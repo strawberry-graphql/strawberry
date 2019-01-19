@@ -1,0 +1,36 @@
+.is-boxed {
+    background: lighten(color(bg, 1), 8%);
+}
+
+.body-wrap {
+    background: color(bg, 1);
+    overflow: hidden;
+    /* Sticky footer */
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+.boxed-container {
+    max-width: 1440px;
+    margin: 0 auto;
+    @include shadow;
+}
+
+main {
+    flex: 1 0 auto;
+}
+
+.section-inner {
+    position: relative; /* To always display inner elements above pseudo decorative stuff */
+    padding-top: 48px;
+    padding-bottom: 48px;
+}
+
+@include media( '>medium' ) {
+
+    .section-inner {
+        padding-top: 80px;
+        padding-bottom: 80px;
+    }
+}

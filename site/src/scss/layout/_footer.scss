@@ -1,0 +1,165 @@
+.site-footer {
+    position: relative;
+    @include font-size(7, mobile, true, true, true);
+    @if ( get-font-size(7, desktop) != get-font-size(7, mobile) ) {
+        @include media( '>medium' ) {
+            @include font-size(7, desktop, true, true, true);
+        }
+    }
+
+    a {
+        @include anchor-aspect(footer);
+    }
+}
+
+.footer-disk,
+.footer-sphere {
+	position: absolute;
+}
+
+.footer-disk {
+
+	svg {
+		width: 300px;
+		height: auto;
+	}
+}
+
+.footer-sphere {
+	display: none;
+
+	svg {
+		transform-origin: 50% 50%;
+		animation: sphere-rotation 60s linear infinite;
+	}
+}
+
+.footer-disk-1 {
+	bottom: -80px;
+	left: -60px;
+
+	svg {
+		transform-origin: 50% 100%;
+		animation: disk-rotation 10s linear infinite alternate;
+	}
+}
+
+.footer-disk-2 {
+	bottom: 0;
+	right: -180px;
+
+	svg {
+		transform-origin: 50% 0;
+		animation: disk-rotation 15s linear infinite alternate;
+	}
+}
+
+.footer-sphere-1 {
+	left: 390px;
+	bottom: 110px;
+}
+
+.site-footer-inner {
+    position: relative; /* To display all elements above the background color */
+    display: flex;
+    flex-wrap: wrap;
+    padding-top: 48px;
+    padding-bottom: 48px;
+}
+
+.footer-brand,
+.footer-links,
+.footer-social-links,
+.footer-copyright {
+    flex: none;
+    width: 100%;
+    display: inline-flex;
+    justify-content: center;
+}
+
+.footer-brand,
+.footer-links,
+.footer-social-links {
+    margin-bottom: 24px;
+}
+
+.footer-links,
+.footer-social-links {
+
+    li {
+
+        + li {
+            margin-left: 16px;
+        }
+    }
+}
+
+.footer-social-links {
+
+    li {
+        display: inline-flex;
+
+        a {
+            padding: 8px;
+        }
+    }
+}
+
+@include media( '>medium' ) {
+
+    .site-footer {
+
+        &::before {
+            height: 202px;
+        }
+    }
+
+	.footer-disk {
+
+		svg {
+			width: 600px;
+		}
+	}
+
+	.footer-sphere {
+		display: block;
+	}
+
+	.footer-disk-1 {
+		bottom: -170px;
+		left: 352px;
+	}
+
+	.footer-disk-2 {
+		bottom: 0;
+		right: -285px;
+	}
+
+    .site-footer-inner {
+        justify-content: space-between;
+		padding-top: 64px;
+		padding-bottom: 60px;
+    }
+
+    .footer-brand,
+    .footer-links,
+    .footer-social-links,
+    .footer-copyright {
+        flex: 50%;
+    }
+
+    .footer-brand,
+    .footer-copyright {
+        justify-content: flex-start;
+    }
+
+    .footer-links,
+    .footer-social-links {
+        justify-content: flex-end;
+    }
+
+    .footer-links {
+        order: 1;
+        margin-bottom: 0;
+    }
+}

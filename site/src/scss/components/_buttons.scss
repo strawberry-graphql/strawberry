@@ -1,0 +1,91 @@
+.button {
+    display: inline-flex;
+    @include font-size(7, mobile, true, false, true);
+    @if ( get-font-size(7, desktop) != get-font-size(7, mobile) ) {
+        @include media( '>medium' ) {
+            @include font-size(7, desktop, true, false, true);
+        }
+    }
+    @include font-weight(bold);
+    line-height: 16px;
+    text-transform: uppercase;
+    text-decoration: none !important;
+    background-color: color(bg, 1);
+    color: color(primary, 1) !important;
+    border: none;
+    border-radius: 2px;
+    cursor: pointer;
+    justify-content: center;
+    padding: 16px 40px;
+	height: 48px;
+    text-align: center;
+    white-space: nowrap;
+
+    &:active {
+        outline: 0;
+    }
+
+    &::before {
+        border-radius: 2px;
+    }
+}
+
+.button-shadow {
+    position: relative;
+
+    &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        box-shadow: 0 8px 48px rgba(color(primary, 1), .48);
+        transition: box-shadow .15s ease;
+    }
+
+    &:hover {
+
+        &::before {
+            box-shadow: 0 8px 48px rgba(color(primary, 1), .6);
+        }
+    }
+}
+
+.button-sm {
+    padding: 8px 24px;
+	height: 32px;
+
+    &.button-shadow {
+
+        &::before {
+            box-shadow: 0 4px 32px rgba(color(primary, 1), .48);
+        }
+
+        &:hover {
+
+            &::before {
+                box-shadow: 0 4px 32px rgba(color(primary, 1), .6);
+            }
+        }
+    }
+}
+
+.button-primary {
+    color: color(typography, 1) !important;
+    transition: background .15s ease;
+}
+
+.button-primary {
+    background: mix(color(primary, 1), color(primary, 2));
+    background: linear-gradient(65deg, color(primary, 1) 0, color(primary, 2) 100%);
+
+    &:hover {
+        background: lighten(mix(color(primary, 1), color(primary, 2)), 1%);
+        background: linear-gradient(65deg, lighten(color(primary, 1), 1%) 0, lighten(color(primary, 2), 1%) 100%);
+    }
+}
+
+.button-block {
+    display: flex;
+}

@@ -1,0 +1,252 @@
+html {
+	@include font-size(5, mobile, true, true);
+	@if ( get-font-size(5, desktop) != get-font-size(5, mobile) ) {
+		@include media( '>medium' ) {
+			@include font-size(5, desktop, true, true, true);
+		}
+	}
+}
+
+body {
+	color: color(typography, 2);
+	font-size: 1rem;
+}
+
+body,
+button,
+input,
+select,
+textarea {
+	@include font-family(base);
+}
+
+a {
+	@include anchor-aspect(main);
+}
+
+h1, h2, h3, h4, h5, h6,
+.h1, .h2, .h3, .h4, .h5, .h6 {
+	clear: both;
+	color: color(typography, 1);
+	@if ( get-font-family(heading) != get-font-family(base) ) {
+		@include font-family(heading);
+	}
+	@include font-weight(semibold);
+}
+
+h1,
+.h1 {
+	@include font-size(1, mobile, true, true, true);
+	@if ( get-font-size(1, desktop) != get-font-size(1, mobile) ) {
+		@include media( '>medium' ) {
+			@include font-size(1, desktop, true, true, true);
+		}
+	}
+}
+
+h2,
+.h2 {
+	@include font-size(2, mobile, true, true, true);
+	@if ( get-font-size(2, desktop) != get-font-size(2, mobile) ) {
+		@include media( '>medium' ) {
+			@include font-size(2, desktop, true, true, true);
+		}
+	}
+}
+
+h3,
+.h3,
+blockquote {
+	@include font-size(3, mobile, true, true, true);
+	@if ( get-font-size(3, desktop) != get-font-size(3, mobile) ) {
+		@include media( '>medium' ) {
+			@include font-size(3, desktop, true, true, true);
+		}
+	}
+}
+
+h4,
+h5,
+h6,
+.h4,
+.h5,
+.h6 {
+	@include font-size(4, mobile, true, true, true);
+	@if ( get-font-size(4, desktop) != get-font-size(4, mobile) ) {
+		@include media( '>medium' ) {
+			@include font-size(4, desktop, true, true, true);
+		}
+	}
+}
+
+@include media( '<=medium' ) {
+
+	.h1-mobile {
+		@include font-size(1, mobile, true, true, true);
+	}
+
+	.h2-mobile {
+		@include font-size(2, mobile, true, true, true);
+	}
+
+	.h3-mobile {
+		@include font-size(3, mobile, true, true, true);
+	}
+
+	.h4-mobile,
+	.h5-mobile,
+	.h6-mobile {
+		@include font-size(4, mobile, true, true, true);
+	}
+}
+
+.text-light {
+	color: color(typography, 2i);
+
+	a {
+		color: color(typography, 2i);
+	}
+}
+
+.text-light {
+
+	h1, h2, h3, h4, h5, h6,
+	.h1, .h2, .h3, .h4, .h5, .h6 {
+		color: color(typography, 1) !important;
+	}
+}
+
+.text-sm {
+	@include font-size(6, mobile, true, true, true);
+	@if ( get-font-size(6, desktop) != get-font-size(6, mobile) ) {
+		@include media( '>medium' ) {
+			@include font-size(6, desktop, true, true, true);
+		}
+	}
+}
+
+.text-xs {
+	@include font-size(7, mobile, true, true, true);
+	@if ( get-font-size(7, desktop) != get-font-size(7, mobile) ) {
+		@include media( '>medium' ) {
+			@include font-size(7, desktop, true, true, true);
+		}
+	}
+}
+
+h1, h2,
+.h1, .h2 {
+	margin-top: 48px;
+	margin-bottom: 16px;
+}
+
+h3,
+.h3 {
+	margin-top: 36px;
+	margin-bottom: 12px;
+}
+
+h4, h5, h6,
+.h4, .h5, .h6 {
+	margin-top: 24px;
+	margin-bottom: 4px;
+}
+
+p {
+	margin-top: 0;
+	margin-bottom: 24px;
+}
+
+dfn, cite, em, i {
+	font-style: italic;
+}
+
+blockquote {
+	color: color(typography, 3);
+	font-style: italic;
+	margin-top: 24px;
+	margin-bottom: 24px;
+	margin-left: 24px;
+
+	&::before {
+		content: "\201C";
+	}
+
+	&::after {
+		content: "\201D";
+	}
+
+	p {
+		display: inline;
+	}
+}
+
+address {
+	color: color(typography, 2);
+	border-width: 1px 0;
+	border-style: solid;
+	border-color: color(bg, 3);
+	padding: 24px 0;
+	margin: 0 0 24px;
+}
+
+pre,
+pre h1,
+pre h2,
+pre h3,
+pre h4,
+pre h5,
+pre h6,
+pre .h1,
+pre .h2,
+pre .h3,
+pre .h4,
+pre .h5,
+pre .h6  {
+	@include font-family(pre);
+}
+
+pre, code, kbd, tt, var {
+	background: color(bg, 2);
+}
+
+pre {
+	@include font-size(7, mobile, true, true);
+	margin-bottom: 1.6em;
+	max-width: 100%;
+	overflow: auto;
+	padding: 24px;
+	margin-top: 24px;
+	margin-bottom: 24px;
+}
+
+code, kbd, tt, var {
+	@include font-family(code);
+	@include font-size(7, mobile, true);
+	padding: 2px 4px;
+}
+
+abbr, acronym {
+	cursor: help;
+}
+
+mark, ins {
+	text-decoration: none;
+}
+
+small {
+	@include font-size(6, mobile, true, true, true);
+}
+
+b,
+strong {
+	@include font-weight(bold);
+}
+
+button,
+input,
+select,
+textarea,
+label {
+	@include font-size(5, mobile, true, true);
+}
