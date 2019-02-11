@@ -7,9 +7,12 @@ license = "MIT"
 
 [tool.poetry.dependencies]
 python = "^3.7"
+graphql-core-next = "^1.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^4.2"
+pdbpp = "^0.9.5"
+bpython = "^0.17.1"
 
 [build-system]
 requires = ["poetry>=0.12"]
