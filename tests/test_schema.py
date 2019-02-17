@@ -14,6 +14,7 @@ def test_simple_type():
 
     result = graphql_sync(schema, query)
 
+    assert not result.errors
     assert result.data["hello"] == "strawberry"
 
 
@@ -32,4 +33,5 @@ def test_resolver():
 
     result = graphql_sync(schema, query)
 
+    assert not result.errors
     assert result.data["hello"] == "I'm a resolver"

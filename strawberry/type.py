@@ -12,7 +12,7 @@ def _get_resolver(cls, field_name):
             # not sure why I need to pass the class
             return field_resolver(cls, obj, info)
 
-        return resolver
+        return field_resolver
 
     return _resolver
 
