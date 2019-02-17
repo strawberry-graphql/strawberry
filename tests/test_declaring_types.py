@@ -3,14 +3,15 @@ import textwrap
 import strawberry
 
 
-def test_simple_type():
+def test_simple_types():
     @strawberry.type
     class MyType:
-        name: str
+        string: str
+        # integer: str
 
     expected_representation = """
     type MyType {
-        name: String!
+      string: String!
     }
     """
 

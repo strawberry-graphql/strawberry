@@ -1,10 +1,7 @@
 from graphql import GraphQLField, GraphQLObjectType, GraphQLString
+from graphql.utilities.schema_printer import print_type
 
 from .type_converter import get_graphql_type_for_annotation
-
-TEST_ = """type MyType {
-    name: String!
-}"""
 
 
 def _get_resolver(cls, field_name):
@@ -42,7 +39,7 @@ def _get_fields(cls):
 def type(cls):
     def wrap():
         def repr_(self):
-            return TEST_
+            return print_type(self.field)
 
         setattr(cls, "__repr__", repr_)
 
