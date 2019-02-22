@@ -22,15 +22,16 @@ def get_graphql_type_for_annotation(annotation, field_name: str):
 
     # checking for optional and union types
     if hasattr(annotation, "__args__"):
-        # TODO: might not be true
-        is_optional = True
-
         types = annotation.__args__
         non_none_types = [x for x in types if x != type(None)]
 
+        # optionals are represented as Union[type, None]
         if len(non_none_types) == 1:
+            is_optional = True
             graphql_type = TYPE_MAP.get(non_none_types[0])
         else:
+            is_optional = type(None) in types
+
             graphql_type = GraphQLUnionType(field_name, [GraphQLInt, GraphQLString])
     else:
         graphql_type = TYPE_MAP.get(annotation)

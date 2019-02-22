@@ -46,7 +46,23 @@ def test_union():
 
     expected_representation = """
     type MyType {
+      s: s!
+    }
+    """
+
+    assert repr(MyType()) == textwrap.dedent(expected_representation).strip()
+
+
+def test_optional_union():
+    @strawberry.type
+    class MyType:
+        s: Optional[Union[str, int]]
+        x: Union[str, int, None]
+
+    expected_representation = """
+    type MyType {
       s: s
+      x: x
     }
     """
 
