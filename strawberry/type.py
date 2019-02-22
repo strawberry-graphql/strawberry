@@ -1,6 +1,8 @@
 from graphql import GraphQLField, GraphQLObjectType, GraphQLString
 from graphql.utilities.schema_printer import print_type
 
+import typing
+
 from .type_converter import get_graphql_type_for_annotation
 
 
@@ -18,11 +20,11 @@ def _get_resolver(cls, field_name):
 
 
 def _get_fields(cls):
-    cls_annotations = cls.__dict__.get("__annotations__", {})
+    cls_annotations = typing.get_type_hints(cls)
 
     cls_annotations.update(
         {
-            key: value.__annotations__["return"]
+            key: typing.get_type_hints(value)["return"]
             for key, value in cls.__dict__.items()
             if getattr(value, "_is_field", False)
         }
