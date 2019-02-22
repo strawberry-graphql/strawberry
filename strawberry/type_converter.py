@@ -1,5 +1,3 @@
-from functools import singledispatch
-
 from graphql import (
     GraphQLBoolean,
     GraphQLFloat,
@@ -17,9 +15,7 @@ TYPE_MAP = {
 }
 
 
-# TODO: create custom single dispatch that works with types
-@singledispatch
-def get_graphql_type_for_annotation(annotation):
+def get_graphql_type_for_annotation(annotation, field_name: str):
     # TODO: nice error
 
     is_optional = False
@@ -35,8 +31,7 @@ def get_graphql_type_for_annotation(annotation):
         if len(non_none_types) == 1:
             graphql_type = TYPE_MAP.get(non_none_types[0])
         else:
-            # TODO: name
-            graphql_type = GraphQLUnionType("asd", [GraphQLInt, GraphQLString])
+            graphql_type = GraphQLUnionType(field_name, [GraphQLInt, GraphQLString])
     else:
         graphql_type = TYPE_MAP.get(annotation)
 

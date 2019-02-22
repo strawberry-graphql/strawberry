@@ -39,7 +39,6 @@ def test_optional():
     assert repr(MyType()) == textwrap.dedent(expected_representation).strip()
 
 
-@pytest.mark.skip(reason="Unions not really supported right now")
 def test_union():
     @strawberry.type
     class MyType:
@@ -47,7 +46,7 @@ def test_union():
 
     expected_representation = """
     type MyType {
-      s: String
+      s: s
     }
     """
 

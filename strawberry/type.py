@@ -32,7 +32,8 @@ def _get_fields(cls):
 
     return {
         key: GraphQLField(
-            get_graphql_type_for_annotation(value), resolve=_get_resolver(cls, key)
+            get_graphql_type_for_annotation(value, field_name=key),
+            resolve=_get_resolver(cls, key),
         )
         for key, value in cls_annotations.items()
     }
