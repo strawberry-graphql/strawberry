@@ -4,7 +4,7 @@
   "jsRules": {},
   "rules": {
     "interface-name": false,
-    "semicolon": [true, "never"],
+    "semicolon": [true, "always"],
     "member-access": [false],
     "ordered-imports": [true],
     "no-console": [false],
@@ -12,7 +12,7 @@
     "jsx-no-lambda": false,
     "no-submodule-imports": false,
     "member-ordering": false,
-    "quotemark": [true, "single", "jsx-double"]
+    "quotemark": [true, "double", "jsx-double"]
   },
   "rulesDirectory": []
 }

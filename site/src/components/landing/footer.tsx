@@ -12,6 +12,8 @@ export const Footer = styled.footer`
 
   svg {
     margin-bottom: 2rem;
+    width: 10rem;
+    height: auto;
   }
 
   @media (min-width: 600px) {

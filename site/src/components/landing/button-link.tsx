@@ -16,11 +16,13 @@ export const ButtonLink = styled.a`
   span {
     transition: 0.2s all ease-out;
     display: inline-block;
-    transform: translate(1rem, 0);
+    transform: translate(1rem);
   }
 
   span:last-child {
     opacity: 0;
+    position: relative;
+    top: 0.2rem;
   }
 
   &:hover span {

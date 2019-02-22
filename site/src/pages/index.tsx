@@ -51,7 +51,7 @@ export default () => (
         <Footer>
           <Logo />
           <p>
-            Follow us on{" "}
+            Follow me on{" "}
             <a href="https://twitter.com/patrick91" target="_blank">
               Twitter.
             </a>
