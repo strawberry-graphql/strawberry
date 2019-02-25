@@ -8,11 +8,12 @@ from .type_converter import get_graphql_type_for_annotation
 
 def _get_resolver(cls, field_name):
     def _resolver(obj, info):
-        field_resolver = getattr(cls, field_name)
+        # TODO: pass data to class?
+        field_resolver = getattr(cls(), field_name)
 
         if getattr(field_resolver, "_is_field", False):
             # not sure why I need to pass the class
-            return field_resolver(cls, obj, info)
+            return field_resolver(obj, info)
 
         return field_resolver
 

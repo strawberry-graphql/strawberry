@@ -32,7 +32,12 @@ def get_graphql_type_for_annotation(annotation, field_name: str):
         else:
             is_optional = type(None) in types
 
-            graphql_type = GraphQLUnionType(field_name, [GraphQLInt, GraphQLString])
+            # TODO: union types don't work with scalar types
+            # so we want to return a nice error
+            # also we want to make sure we have been passed
+            # strawberry types
+
+            graphql_type = GraphQLUnionType(field_name, [type.field for type in types])
     else:
         graphql_type = TYPE_MAP.get(annotation)
 

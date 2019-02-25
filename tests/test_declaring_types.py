@@ -1,6 +1,5 @@
 import textwrap
-import pytest
-from typing import Optional, Union
+from typing import Optional
 
 import strawberry
 
@@ -33,36 +32,6 @@ def test_optional():
     expected_representation = """
     type MyType {
       s: String
-    }
-    """
-
-    assert repr(MyType()) == textwrap.dedent(expected_representation).strip()
-
-
-def test_union():
-    @strawberry.type
-    class MyType:
-        s: Union[str, int]
-
-    expected_representation = """
-    type MyType {
-      s: s!
-    }
-    """
-
-    assert repr(MyType()) == textwrap.dedent(expected_representation).strip()
-
-
-def test_optional_union():
-    @strawberry.type
-    class MyType:
-        s: Optional[Union[str, int]]
-        x: Union[str, int, None]
-
-    expected_representation = """
-    type MyType {
-      s: s
-      x: x
     }
     """
 
