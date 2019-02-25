@@ -18,6 +18,11 @@ TYPE_MAP = {
 def get_graphql_type_for_annotation(annotation, field_name: str):
     # TODO: nice error
 
+    # TODO: this might lead to issues with types that have a
+    # field value
+    if hasattr(annotation, "field"):
+        return annotation.field
+
     is_optional = False
 
     # checking for optional and union types

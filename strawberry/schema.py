@@ -1,4 +1,4 @@
-from graphql import GraphQLSchema, GraphQLObjectType
+from graphql import GraphQLSchema
 
 # TODO: typings
 

@@ -1,15 +1,18 @@
-from graphql import GraphQLField, GraphQLObjectType, GraphQLString
-from graphql.utilities.schema_printer import print_type
-
 import typing
+from dataclasses import dataclass
+
+from graphql import GraphQLField, GraphQLObjectType
+from graphql.utilities.schema_printer import print_type
 
 from .type_converter import get_graphql_type_for_annotation
 
 
 def _get_resolver(cls, field_name):
     def _resolver(obj, info):
-        # TODO: pass data to class?
-        field_resolver = getattr(cls(), field_name)
+        # TODO: can we make this nicer?
+        # does it work in all the cases?
+
+        field_resolver = getattr(cls(**(obj.__dict__ if obj else {})), field_name)
 
         if getattr(field_resolver, "_is_field", False):
             # not sure why I need to pass the class
@@ -50,6 +53,6 @@ def type(cls):
         cls._fields = _get_fields(cls)
         cls.field = GraphQLObjectType(name=cls.__name__, fields=cls._fields)
 
-        return cls
+        return dataclass(cls, repr=False)
 
     return wrap()

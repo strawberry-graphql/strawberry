@@ -35,3 +35,26 @@ def test_resolver():
 
     assert not result.errors
     assert result.data["hello"] == "I'm a resolver"
+
+
+def test_nested_types():
+    @strawberry.type
+    class User:
+        name: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self, root, info) -> User:
+            return User(name="Patrick")
+
+    assert Query().user(None, None) == User(name="Patrick")
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ user { name } }"
+
+    result = graphql_sync(schema, query)
+
+    assert not result.errors
+    assert result.data["user"]["name"] == "Patrick"

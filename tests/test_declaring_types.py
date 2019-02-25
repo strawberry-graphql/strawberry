@@ -21,7 +21,10 @@ def test_simple_required_types():
     }
     """
 
-    assert repr(MyType()) == textwrap.dedent(expected_representation).strip()
+    assert (
+        repr(MyType("a", 1, True, 3.2))
+        == textwrap.dedent(expected_representation).strip()
+    )
 
 
 def test_optional():
@@ -35,4 +38,4 @@ def test_optional():
     }
     """
 
-    assert repr(MyType()) == textwrap.dedent(expected_representation).strip()
+    assert repr(MyType("a")) == textwrap.dedent(expected_representation).strip()
