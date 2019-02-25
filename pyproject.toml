@@ -14,6 +14,7 @@ pytest = "^4.2"
 pdbpp = "^0.9.5"
 bpython = "^0.17.1"
 pytest-emoji = "^0.2.0"
+flake8 = "^3.7"
 
 [build-system]
 requires = ["poetry>=0.12"]
