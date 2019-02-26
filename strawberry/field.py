@@ -8,11 +8,17 @@ from .type_converter import get_graphql_type_for_annotation
 
 def field(wrap):
     setattr(wrap, IS_STRAWBERRY_FIELD, True)
-
-    # TODO: show error if no return type
     annotations = get_type_hints(wrap)
 
-    field_type = get_graphql_type_for_annotation(annotations["return"], wrap.__name__)
+    name = wrap.__name__
+
+    if "return" not in annotations:
+        raise ValueError(
+            # TODO: link to doc
+            f'Return annotation missing for field "{name}", did you forget to add it?'
+        )
+
+    field_type = get_graphql_type_for_annotation(annotations["return"], name)
 
     arguments_annotations = {
         key: value
