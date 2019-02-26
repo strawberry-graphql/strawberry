@@ -22,10 +22,10 @@ def test_resolver():
     @strawberry.type
     class Query:
         @strawberry.field
-        def hello(self, root, info) -> str:
+        def hello(self, info) -> str:
             return "I'm a resolver"
 
-    assert Query().hello(None, None) == "I'm a resolver"
+    assert Query().hello(None) == "I'm a resolver"
 
     schema = strawberry.Schema(query=Query)
 
@@ -45,10 +45,10 @@ def test_nested_types():
     @strawberry.type
     class Query:
         @strawberry.field
-        def user(self, root, info) -> User:
+        def user(self, info) -> User:
             return User(name="Patrick")
 
-    assert Query().user(None, None) == User(name="Patrick")
+    assert Query().user(None) == User(name="Patrick")
 
     schema = strawberry.Schema(query=Query)
 

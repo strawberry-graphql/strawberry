@@ -26,21 +26,23 @@ def _get_resolver(cls, field_name):
 def _get_fields(cls):
     cls_annotations = typing.get_type_hints(cls)
 
-    cls_annotations.update(
-        {
-            key: typing.get_type_hints(value)["return"]
-            for key, value in cls.__dict__.items()
-            if getattr(value, "_is_field", False)
-        }
-    )
-
-    return {
+    fields = {
         key: GraphQLField(
             get_graphql_type_for_annotation(value, field_name=key),
             resolve=_get_resolver(cls, key),
         )
         for key, value in cls_annotations.items()
     }
+
+    fields.update(
+        {
+            key: value.field
+            for key, value in cls.__dict__.items()
+            if getattr(value, "_is_field", False)
+        }
+    )
+
+    return fields
 
 
 def type(cls):
