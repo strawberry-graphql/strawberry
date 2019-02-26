@@ -2,6 +2,7 @@ import pytest
 from graphql import GraphQLField, GraphQLNonNull
 
 import strawberry
+from strawberry.exceptions import MissingReturnAnnotationError
 
 
 def test_field_arguments():
@@ -20,7 +21,7 @@ def test_field_arguments():
 
 
 def test_raises_error_when_return_annotation_missing():
-    with pytest.raises(ValueError) as e:
+    with pytest.raises(MissingReturnAnnotationError) as e:
 
         @strawberry.field
         def hello(self, info):

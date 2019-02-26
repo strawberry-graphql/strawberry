@@ -4,6 +4,7 @@ from graphql import GraphQLField
 
 from .constants import IS_STRAWBERRY_FIELD
 from .type_converter import get_graphql_type_for_annotation
+from .exceptions import MissingReturnAnnotationError
 
 
 def field(wrap):
@@ -13,10 +14,7 @@ def field(wrap):
     name = wrap.__name__
 
     if "return" not in annotations:
-        raise ValueError(
-            # TODO: link to doc
-            f'Return annotation missing for field "{name}", did you forget to add it?'
-        )
+        raise MissingReturnAnnotationError(name)
 
     field_type = get_graphql_type_for_annotation(annotations["return"], name)
 
