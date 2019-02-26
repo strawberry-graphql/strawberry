@@ -11,6 +11,7 @@ def test_simple_required_types():
         i: int
         b: bool
         f: float
+        id: strawberry.ID
 
     expected_representation = """
     type MyType {
@@ -18,11 +19,12 @@ def test_simple_required_types():
       i: Int!
       b: Boolean!
       f: Float!
+      id: ID!
     }
     """
 
     assert (
-        repr(MyType("a", 1, True, 3.2))
+        repr(MyType("a", 1, True, 3.2, "123"))
         == textwrap.dedent(expected_representation).strip()
     )
 

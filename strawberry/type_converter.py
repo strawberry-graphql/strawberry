@@ -4,15 +4,19 @@ from graphql import (
     GraphQLInt,
     GraphQLNonNull,
     GraphQLString,
+    GraphQLID,
     GraphQLList,
     GraphQLUnionType,
 )
+
+from .scalars import ID
 
 TYPE_MAP = {
     str: GraphQLString,
     int: GraphQLInt,
     float: GraphQLFloat,
     bool: GraphQLBoolean,
+    ID: GraphQLID,
 }
 
 
