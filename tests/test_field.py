@@ -2,12 +2,15 @@ import pytest
 from graphql import GraphQLField, GraphQLNonNull
 
 import strawberry
-from strawberry.exceptions import MissingReturnAnnotationError
+from strawberry.exceptions import (
+    MissingReturnAnnotationError,
+    MissingArgumentsAnnotationsError,
+)
 
 
 def test_field_arguments():
     @strawberry.field
-    def hello(self, root, info, id: int) -> str:
+    def hello(self, info, id: int) -> str:
         return "I'm a resolver"
 
     assert hello.field
@@ -29,4 +32,28 @@ def test_raises_error_when_return_annotation_missing():
 
     assert e.value.args == (
         'Return annotation missing for field "hello", did you forget to add it?',
+    )
+
+
+def test_raises_error_when_argument_annotation_missing():
+    with pytest.raises(MissingArgumentsAnnotationsError) as e:
+
+        @strawberry.field
+        def hello(self, info, query) -> str:
+            return "I'm a resolver"
+
+    assert e.value.args == (
+        'Missing annotation for argument "query" in field "hello", '
+        "did you forget to add it?",
+    )
+
+    with pytest.raises(MissingArgumentsAnnotationsError) as e:
+
+        @strawberry.field
+        def hello2(self, info, query, limit) -> str:
+            return "I'm a resolver"
+
+    assert e.value.args == (
+        'Missing annotation for arguments "limit" and "query" '
+        'in field "hello2", did you forget to add it?',
     )
