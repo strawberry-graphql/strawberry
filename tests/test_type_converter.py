@@ -1,9 +1,28 @@
 from typing import Optional, Union, List
 
+import pytest
 from graphql import GraphQLNonNull, GraphQLScalarType, GraphQLObjectType, GraphQLList
 
 import strawberry
 from strawberry.type_converter import get_graphql_type_for_annotation
+
+
+@pytest.mark.parametrize(
+    "annotation, expected_name",
+    [
+        (str, "String"),
+        (int, "Int"),
+        (bool, "Boolean"),
+        (float, "Float"),
+        (strawberry.ID, "ID"),
+    ],
+)
+def test_scalar(annotation, expected_name):
+    field = get_graphql_type_for_annotation(annotation, "Example")
+
+    assert type(field) == GraphQLNonNull
+    assert type(field.of_type) == GraphQLScalarType
+    assert field.of_type.name == expected_name
 
 
 def test_union():
