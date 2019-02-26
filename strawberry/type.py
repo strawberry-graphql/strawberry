@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from graphql import GraphQLField, GraphQLObjectType
 from graphql.utilities.schema_printer import print_type
 
+from .constants import IS_STRAWBERRY_FIELD
 from .type_converter import get_graphql_type_for_annotation
 
 
@@ -14,8 +15,7 @@ def _get_resolver(cls, field_name):
 
         field_resolver = getattr(cls(**(obj.__dict__ if obj else {})), field_name)
 
-        if getattr(field_resolver, "_is_field", False):
-            # not sure why I need to pass the class
+        if getattr(field_resolver, IS_STRAWBERRY_FIELD, False):
             return field_resolver(obj, info)
 
         return field_resolver
@@ -38,7 +38,7 @@ def _get_fields(cls):
         {
             key: value.field
             for key, value in cls.__dict__.items()
-            if getattr(value, "_is_field", False)
+            if getattr(value, IS_STRAWBERRY_FIELD, False)
         }
     )
 

@@ -2,12 +2,13 @@ from typing import get_type_hints
 
 from graphql import GraphQLField
 
+from .constants import IS_STRAWBERRY_FIELD
 from .type_converter import get_graphql_type_for_annotation
 
 
 def field(wrap):
-    # TODO: add prefix, make it a constant
-    wrap._is_field = True
+    setattr(wrap, IS_STRAWBERRY_FIELD, True)
+
     # TODO: show error if no return type
     annotations = get_type_hints(wrap)
 
