@@ -1,15 +1,16 @@
 from graphql import (
     GraphQLBoolean,
     GraphQLFloat,
+    GraphQLID,
     GraphQLInt,
+    GraphQLList,
     GraphQLNonNull,
     GraphQLString,
-    GraphQLID,
-    GraphQLList,
     GraphQLUnionType,
 )
 
 from .scalars import ID
+
 
 TYPE_MAP = {
     str: GraphQLString,
@@ -48,7 +49,7 @@ def get_graphql_type_for_annotation(
         # populated but the type is not an Union, like in the above case with Lists
         if hasattr(annotation, "__args__"):
             types = annotation.__args__
-            non_none_types = [x for x in types if x != type(None)]
+            non_none_types = [x for x in types if x != type(None)]  # noqa:E721
 
             # optionals are represented as Union[type, None]
             if len(non_none_types) == 1:

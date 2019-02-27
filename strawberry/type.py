@@ -1,6 +1,6 @@
 import typing
-from dataclasses import dataclass
 
+from dataclasses import dataclass
 from graphql import GraphQLField, GraphQLObjectType
 from graphql.utilities.schema_printer import print_type
 

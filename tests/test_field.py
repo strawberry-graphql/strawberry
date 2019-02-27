@@ -1,10 +1,10 @@
 import pytest
-from graphql import GraphQLField, GraphQLNonNull
 
 import strawberry
+from graphql import GraphQLField, GraphQLNonNull
 from strawberry.exceptions import (
-    MissingReturnAnnotationError,
     MissingArgumentsAnnotationsError,
+    MissingReturnAnnotationError,
 )
 
 

@@ -1,5 +1,4 @@
 import strawberry
-
 from graphql import graphql_sync
 
 
@@ -46,7 +45,9 @@ def test_nested_types():
     class Query:
         @strawberry.field
         def user(self, info) -> User:
-            return User(name="Patrick")
+            # TODO: mypy is complaining about the next line, need to
+            # understand how to fix it
+            return User(name="Patrick")  # type:ignore
 
     assert Query().user(None) == User(name="Patrick")
 

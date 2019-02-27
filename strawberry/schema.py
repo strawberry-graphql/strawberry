@@ -1,5 +1,6 @@
 from graphql import GraphQLSchema
 
+
 # TODO: typings
 
 

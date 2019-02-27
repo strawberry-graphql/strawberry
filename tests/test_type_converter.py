@@ -1,9 +1,9 @@
-from typing import Optional, Union, List
+from typing import List, Optional, Union
 
 import pytest
-from graphql import GraphQLNonNull, GraphQLScalarType, GraphQLObjectType, GraphQLList
 
 import strawberry
+from graphql import GraphQLList, GraphQLNonNull, GraphQLObjectType, GraphQLScalarType
 from strawberry.type_converter import get_graphql_type_for_annotation
 
 

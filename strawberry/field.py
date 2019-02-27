@@ -3,7 +3,7 @@ from typing import get_type_hints
 from graphql import GraphQLField
 
 from .constants import IS_STRAWBERRY_FIELD
-from .exceptions import MissingReturnAnnotationError, MissingArgumentsAnnotationsError
+from .exceptions import MissingArgumentsAnnotationsError, MissingReturnAnnotationError
 from .type_converter import get_graphql_type_for_annotation
 from .utils.inspect import get_func_args
 
