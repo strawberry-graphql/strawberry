@@ -1,15 +1,20 @@
+import datetime
 import functools
 import json
 import typing
 
 from graphql import graphql
 from graphql.error import GraphQLError, format_error as format_graphql_error
+from pygments import highlight, lexers
+from pygments.formatters import Terminal256Formatter
 from starlette import status
 from starlette.background import BackgroundTasks
 from starlette.concurrency import run_in_threadpool
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, JSONResponse, PlainTextResponse, Response
 from starlette.types import ASGIInstance, Receive, Scope, Send
+
+from .utils.graphql_lexer import GraphqlLexer
 
 
 class GraphQLApp:
@@ -23,6 +28,21 @@ class GraphQLApp:
         request = Request(scope, receive=receive)
         response = await self.handle_graphql(request)
         await response(receive, send)
+
+    def _debug_log(
+        self, operation_name: str, query: str, variables: typing.Dict["str", typing.Any]
+    ):
+        if operation_name == "IntrospectionQuery":
+            return
+
+        now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
+        print(f"[{now}]: {operation_name or 'No operation name'}")
+        print(highlight(query, GraphqlLexer(), Terminal256Formatter()))
+
+        if variables:
+            variables_json = json.dumps(variables, indent=4)
+            print(highlight(variables_json, lexers.JsonLexer(), Terminal256Formatter()))
 
     async def handle_graphql(self, request: Request) -> Response:
         if request.method == "POST":
@@ -55,6 +75,8 @@ class GraphQLApp:
                 "No GraphQL query found in the request",
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
+
+        self._debug_log(operation_name, query, variables)
 
         background = BackgroundTasks()
         context = {"request": request, "background": background}

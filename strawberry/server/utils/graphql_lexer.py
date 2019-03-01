@@ -1,0 +1,28 @@
+from pygments import token
+from pygments.lexer import RegexLexer
+
+
+class GraphqlLexer(RegexLexer):
+    name = "GraphQL"
+    aliases = ["graphql", "gql"]
+    filenames = ["*.graphql", "*.gql"]
+    mimetypes = ["application/graphql"]
+
+    tokens = {
+        "root": [
+            (r"#.*", token.Comment.Singline),
+            (r"\.\.\.", token.Operator),
+            (r'"[\u0009\u000A\u000D\u0020-\uFFFF]*"', token.String.Double),
+            (
+                r"(-?0|-?[1-9][0-9]*)(\.[0-9]+[eE][+-]?[0-9]+|\.[0-9]+|[eE][+-]?[0-9]+)",
+                token.Number.Float,
+            ),
+            (r"(-?0|-?[1-9][0-9]*)", token.Number.Integer),
+            (r"\$+[_A-Za-z][_0-9A-Za-z]*", token.Name.Variable),
+            (r"[_A-Za-z][_0-9A-Za-z]+\s?:", token.Text),
+            (r"(type|query|mutation|@[a-z]+|on|true|false|null)\b", token.Keyword.Type),
+            (r"[!$():=@\[\]{|}]+?", token.Punctuation),
+            (r"[_A-Za-z][_0-9A-Za-z]*", token.Keyword),
+            (r"(\s|,)", token.Text),
+        ]
+    }
