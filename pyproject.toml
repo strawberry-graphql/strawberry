@@ -8,6 +8,10 @@ license = "MIT"
 [tool.poetry.dependencies]
 python = "^3.7"
 graphql-core-next = "^1.0"
+starlette = "^0.11.3"
+click = "^7.0"
+hupper = "^1.5"
+pygments = "^2.3"
 
 [tool.poetry.dev-dependencies]
 pytest = "^4.2"
@@ -18,6 +22,9 @@ flake8 = "^3.7"
 flake8-black = {version = "^0.0.3",allows-prereleases = true}
 black = {version = "^18.3-alpha.0",allows-prereleases = true}
 isort = "^4.3"
+
+[tool.poetry.scripts]
+server = "strawberry.server:main"
 
 [build-system]
 requires = ["poetry>=0.12"]
