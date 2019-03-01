@@ -7,6 +7,7 @@ import importlib
 import uvicorn
 
 import pathlib
+import hupper
 
 from .graphql_app import GraphQLApp
 
@@ -28,7 +29,11 @@ async def homepage(request):
 @click.command()
 @click.argument("module")
 def main(module):
-    schema = importlib.import_module(module).schema
 
-    app.add_route("/graphql", GraphQLApp(schema))
+    reloaded = hupper.start_reloader("strawberry.server.main")
+    schema_module = importlib.import_module(module)
+
+    reloaded.watch_files([schema_module.__file__])
+
+    app.add_route("/graphql", GraphQLApp(schema_module.schema))
     uvicorn.run(app, host="0.0.0.0", port=8000)
