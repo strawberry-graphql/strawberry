@@ -28,7 +28,7 @@ async def homepage(request):
 
 @click.command()
 @click.argument("module")
-def main(module):
+def server(module):
     reloaded = hupper.start_reloader("strawberry.server.main")
     schema_module = importlib.import_module(module)
 
@@ -36,3 +36,11 @@ def main(module):
 
     app.add_route("/graphql", GraphQLApp(schema_module.schema))
     uvicorn.run(app, host="0.0.0.0", port=8000, log_level="error")
+
+
+@click.group()
+def run():
+    pass
+
+
+run.add_command(server)
