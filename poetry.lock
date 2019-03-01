@@ -142,18 +142,6 @@ pycodestyle = ">=2.5.0,<2.6.0"
 pyflakes = ">=2.1.0,<2.2.0"
 
 [[package]]
-category = "dev"
-description = "flake8 plugin to call black as a code style validator"
-name = "flake8-black"
-optional = false
-python-versions = "*"
-version = "0.0.3"
-
-[package.dependencies]
-black = "*"
-flake8 = ">=3.0.0"
-
-[[package]]
 category = "main"
 description = "GraphQL-core-next is a Python port of GraphQL.js, the JavaScript reference implementation for GraphQL."
 name = "graphql-core-next"
@@ -374,7 +362,7 @@ python-versions = "*"
 version = "0.3"
 
 [metadata]
-content-hash = "51dd5e85234dc613d955f7a07a34ca59f54097410149018ec873f2b6b3f8b148"
+content-hash = "f55b4dfbd8ea88414b88b026b0f337fd2e7683e6a65b89456b0cf3c307c5549b"
 python-versions = "^3.7"
 
 [metadata.hashes]
@@ -392,7 +380,6 @@ curtsies = ["89c802ec051d01dec6fc983e9856a3706e4ea8265d2940b1f6d504a9e26ed3a9"]
 entrypoints = ["589f874b313739ad35be6e0cd7efde2a4e9b6fea91edcc34e58ecbb8dbe56d19", "c70dd71abe5a8c85e55e12c19bd91ccfeec11a6e99044204511f9ed547d48451"]
 fancycompleter = ["d2522f1f3512371f295379c4c0d1962de06762eb586c199620a2a5d423539b12"]
 flake8 = ["6d8c66a65635d46d54de59b027a1dda40abbe2275b3164b634835ac9c13fd048", "6eab21c6e34df2c05416faa40d0c59963008fff29b6f0ccfe8fa28152ab3e383"]
-flake8-black = ["be751bdf8111285aa644f10176d4b88a0c2d71a87cb3090d442ff89c625931c1"]
 graphql-core-next = ["95509fc50cd632c5b004b959ffc397d47c709ba297162aa841839f610f1a6c70", "e40b5a6cb879fd269f4cfa0db267496273b575a6bfe487dfc46559fa46781c51"]
 greenlet = ["000546ad01e6389e98626c1367be58efa613fa82a1be98b0c6fc24b563acc6d0", "0d48200bc50cbf498716712129eef819b1729339e34c3ae71656964dac907c28", "23d12eacffa9d0f290c0fe0c4e81ba6d5f3a5b7ac3c30a5eaf0126bf4deda5c8", "37c9ba82bd82eb6a23c2e5acc03055c0e45697253b2393c9a50cef76a3985304", "51503524dd6f152ab4ad1fbd168fc6c30b5795e8c70be4410a64940b3abb55c0", "8041e2de00e745c0e05a502d6e6db310db7faa7c979b3a5877123548a4c0b214", "81fcd96a275209ef117e9ec91f75c731fa18dcfd9ffaa1c0adbdaa3616a86043", "853da4f9563d982e4121fed8c92eea1a4594a2299037b3034c3c898cb8e933d6", "8b4572c334593d449113f9dc8d19b93b7b271bdbe90ba7509eb178923327b625", "9416443e219356e3c31f1f918a91badf2e37acf297e2fa13d24d1cc2380f8fbc", "9854f612e1b59ec66804931df5add3b2d5ef0067748ea29dc60f0efdcda9a638", "99a26afdb82ea83a265137a398f570402aa1f2b5dfb4ac3300c026931817b163", "a19bf883b3384957e4a4a13e6bd1ae3d85ae87f4beb5957e35b0be287f12f4e4", "a9f145660588187ff835c55a7d2ddf6abfc570c2651c276d3d4be8a2766db490", "ac57fcdcfb0b73bb3203b58a14501abb7e5ff9ea5e2edfa06bb03035f0cff248", "bcb530089ff24f6458a81ac3fa699e8c00194208a724b644ecc68422e1111939", "beeabe25c3b704f7d56b573f7d2ff88fc99f0138e43480cecdfcaa3b87fe4f87", "d634a7ea1fc3380ff96f9e44d8d22f38418c1c381d5fac680b272d7d90883720", "d97b0661e1aead761f0ded3b769044bb00ed5d33e1ec865e891a8b128bf7c656"]
 hupper = ["626b77e3ce55dbfc11e670a0eeed413de6fdbf5cf0bb92458dd4e0d5fc462ab8", "693a167badbe82177219fccf1a27c5a007498c843c21d0071795a9bbb3f0c60a"]
