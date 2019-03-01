@@ -531,8 +531,16 @@
       const root = document.getElementById('root');
       root.classList.add('playgroundIn');
 
+      const colors = {
+        selection: 'rgba(247, 116, 102, 0.3)',
+        cursorColor: '#d53032',
+        background: '#d53032',
+        icon: 'white',
+      }
+
       GraphQLPlayground.init(root, {
-        // you can add more options here
+        endpoint: '/graphql',
+        codeTheme: colors,
       })
     })
   </script>
