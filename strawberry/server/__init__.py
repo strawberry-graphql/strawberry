@@ -1,20 +1,14 @@
+import click
+
 from starlette.applications import Starlette
 from starlette.templating import Jinja2Templates
+import importlib
+
 import uvicorn
 
 import pathlib
 
 from .graphql_app import GraphQLApp
-
-import strawberry
-
-
-@strawberry.type
-class Query:
-    hello: str = "World"
-
-
-schema = strawberry.Schema(query=Query)
 
 
 app = Starlette()
@@ -31,8 +25,10 @@ async def homepage(request):
     return templates.TemplateResponse("playground.html", {"request": request})
 
 
-app.add_route("/graphql", GraphQLApp(schema))
+@click.command()
+@click.argument("module")
+def main(module):
+    schema = importlib.import_module(module).schema
 
-
-def main():
+    app.add_route("/graphql", GraphQLApp(schema))
     uvicorn.run(app, host="0.0.0.0", port=8000)
