@@ -1,5 +1,7 @@
 import click
+import sys
 
+import os
 from starlette.applications import Starlette
 from starlette.responses import HTMLResponse
 import importlib
@@ -36,7 +38,10 @@ def run():
 @run.command("server")
 @click.argument("module", type=str)
 def server(module):
+    sys.path.append(os.getcwd())
+
     reloader = hupper.start_reloader("strawberry.cli.run")
+
     schema_module = importlib.import_module(module)
 
     reloader.watch_files([schema_module.__file__])
