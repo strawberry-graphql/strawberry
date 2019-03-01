@@ -13,6 +13,7 @@ starlette = "^0.11.3"
 click = "^7.0"
 hupper = "^1.5"
 pygments = "^2.3"
+uvicorn = "^0.4.6"
 
 [tool.poetry.dev-dependencies]
 pytest = "^4.2"
