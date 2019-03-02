@@ -31,4 +31,10 @@ def server(module):
 
     app = Starlette(debug=True)
     app.add_route("/graphql", GraphQLApp(schema_module.schema))
-    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="error")
+
+    host = "0.0.0.0"
+    port = 8000
+
+    print(f"Running strawberry on http://{host}:{port}/graphql 🍓")
+
+    uvicorn.run(app, host=host, port=port, log_level="error")
