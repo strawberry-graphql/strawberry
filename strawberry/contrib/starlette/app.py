@@ -1,6 +1,7 @@
 import datetime
 import functools
 import json
+import pathlib
 import typing
 
 from graphql import graphql
@@ -17,9 +18,20 @@ from starlette.types import ASGIInstance, Receive, Scope, Send
 from .utils.graphql_lexer import GraphqlLexer
 
 
+def _get_playground_template(request_path: str):
+    here = pathlib.Path(__file__).parent
+    templates_path = here / "templates"
+
+    with open(templates_path / "playground.html") as f:
+        template = f.read()
+
+    return template.replace("{{REQUEST_PATH}}", request_path)
+
+
 class GraphQLApp:
-    def __init__(self, schema) -> None:
+    def __init__(self, schema, playground: bool = True) -> None:
         self.schema = schema
+        self.playground = playground
 
     def __call__(self, scope: Scope) -> ASGIInstance:
         return functools.partial(self.asgi, scope=scope)
@@ -42,10 +54,19 @@ class GraphQLApp:
 
         if variables:
             variables_json = json.dumps(variables, indent=4)
+
             print(highlight(variables_json, lexers.JsonLexer(), Terminal256Formatter()))
 
     async def handle_graphql(self, request: Request) -> Response:
-        if request.method == "POST":
+        if request.method in ("GET", "HEAD"):
+            if "text/html" in request.headers.get("Accept", ""):
+                if not self.playground:
+                    return PlainTextResponse(
+                        "Not Found", status_code=status.HTTP_404_NOT_FOUND
+                    )
+            return await self.handle_playground(request)
+
+        elif request.method == "POST":
             content_type = request.headers.get("Content-Type", "")
 
             if "application/json" in content_type:
@@ -106,3 +127,8 @@ class GraphQLApp:
             operation_name=operation_name,
             context_value=context,
         )
+
+    async def handle_playground(self, request: Request) -> Response:
+        text = _get_playground_template(request.url.path)
+
+        return HTMLResponse(text)
