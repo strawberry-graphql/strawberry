@@ -11,7 +11,7 @@ import uvicorn
 import pathlib
 import hupper
 
-from .graphql_app import GraphQLApp
+from strawberry.contrib.starlette import GraphQLApp
 
 
 app = Starlette()
