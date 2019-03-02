@@ -23,7 +23,7 @@ def run():
 def server(module):
     sys.path.append(os.getcwd())
 
-    reloader = hupper.start_reloader("strawberry.cli.run")
+    reloader = hupper.start_reloader("strawberry.cli.run", verbose=False)
 
     schema_module = importlib.import_module(module)
 
