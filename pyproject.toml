@@ -13,6 +13,7 @@ starlette = "^0.11.3"
 click = "^7.0"
 hupper = "^1.5"
 pygments = "^2.3"
+uvicorn = "^0.4.6"
 
 [tool.poetry.dev-dependencies]
 pytest = "^4.2"
@@ -24,7 +25,7 @@ black = {version = "^18.3-alpha.0",allows-prereleases = true}
 isort = "^4.3"
 
 [tool.poetry.scripts]
-server = "strawberry.server:main"
+strawberry = "strawberry.cli:run"
 
 [build-system]
 requires = ["poetry>=0.12"]
