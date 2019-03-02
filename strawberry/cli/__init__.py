@@ -20,10 +20,12 @@ def run():
 
 @run.command("server")
 @click.argument("module", type=str)
-def server(module):
+@click.option("-h", "--host", default="0.0.0.0", type=str)
+@click.option("-p", "--port", default=8000, type=int)
+def server(module, host, port):
     sys.path.append(os.getcwd())
 
-    reloader = hupper.start_reloader("strawberry.cli.run")
+    reloader = hupper.start_reloader("strawberry.cli.run", verbose=False)
 
     schema_module = importlib.import_module(module)
 
@@ -31,4 +33,7 @@ def server(module):
 
     app = Starlette(debug=True)
     app.add_route("/graphql", GraphQLApp(schema_module.schema))
-    uvicorn.run(app, host="0.0.0.0", port=8000, log_level="error")
+
+    print(f"Running strawberry on http://{host}:{port}/graphql 🍓")
+
+    uvicorn.run(app, host=host, port=port, log_level="error")
