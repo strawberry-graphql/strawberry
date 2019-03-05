@@ -1,7 +1,12 @@
 import typing
 
 from dataclasses import dataclass
-from graphql import GraphQLField, GraphQLObjectType
+from graphql import (
+    GraphQLField,
+    GraphQLInputField,
+    GraphQLInputObjectType,
+    GraphQLObjectType,
+)
 from graphql.utilities.schema_printer import print_type
 
 from .constants import IS_STRAWBERRY_FIELD
@@ -56,6 +61,26 @@ def type(cls):
             return fields
 
         cls.field = GraphQLObjectType(name, lambda: _get_fields())
+
+        return dataclass(cls, repr=False)
+
+    return wrap()
+
+
+# TODO: this is not DRY
+
+
+def input(cls):
+    def wrap():
+        def repr_(self):
+            return print_type(self.field)
+
+        setattr(cls, "__repr__", repr_)
+
+        # TODO: recursive
+
+        cls._fields = _get_input_fields(cls)
+        cls.field = GraphQLInputObjectType(name=cls.__name__, fields=cls._fields)
 
         return dataclass(cls, repr=False)
 
