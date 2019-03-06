@@ -1,6 +1,6 @@
 import typing
-
 from dataclasses import dataclass
+
 from graphql import (
     GraphQLField,
     GraphQLInputField,
@@ -9,7 +9,7 @@ from graphql import (
 )
 from graphql.utilities.schema_printer import print_type
 
-from .constants import IS_STRAWBERRY_FIELD
+from .constants import IS_STRAWBERRY_FIELD, IS_STRAWBERRY_INPUT
 from .type_converter import REGISTRY, get_graphql_type_for_annotation
 
 
@@ -76,6 +76,7 @@ def input(cls):
             return print_type(self.field)
 
         setattr(cls, "__repr__", repr_)
+        setattr(cls, IS_STRAWBERRY_INPUT, True)
 
         # TODO: recursive
 

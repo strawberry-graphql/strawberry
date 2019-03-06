@@ -59,3 +59,49 @@ def test_nested_types():
 
     assert not result.errors
     assert result.data["user"]["name"] == "Patrick"
+
+
+def test_mutation():
+    @strawberry.type
+    class Query:
+        hello: str = "Hello"
+
+    @strawberry.type
+    class Mutation:
+        @strawberry.mutation
+        def say(self, info) -> str:
+            return "Hello!"
+
+    schema = strawberry.Schema(query=Query, mutation=Mutation)
+
+    query = "mutation { say }"
+
+    result = graphql_sync(schema, query)
+
+    assert not result.errors
+    assert result.data["say"] == "Hello!"
+
+
+def test_mutation_with_input_type():
+    @strawberry.input
+    class SayInput:
+        name: str
+
+    @strawberry.type
+    class Query:
+        hello: str = "Hello"
+
+    @strawberry.type
+    class Mutation:
+        @strawberry.mutation
+        def say(self, info, input: SayInput) -> str:
+            return f"Hello {input.name}!"
+
+    schema = strawberry.Schema(query=Query, mutation=Mutation)
+
+    query = 'mutation { say(input: { name: "Patrick"}) }'
+
+    result = graphql_sync(schema, query)
+
+    assert not result.errors
+    assert result.data["say"] == "Hello Patrick!"
