@@ -15,7 +15,41 @@ running.
 pip install strawberry-graphql
 ```
 
-TODO:
+Create a file called `app.py` with the following code:
+
+```python
+import strawberry
+
+
+@strawberry.type
+class User:
+    name: str
+    age: int
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def user(self, info) -> User:
+        return User(name="Patrick", age=100)
+
+
+schema = strawberry.Schema(query=Query)
+```
+
+This will create a GraphQL schema defining a `User` type and a single query
+field `user` that will return a hard coded user.
+
+To run the debug server run the following command:
+
+```shell
+strawberry run server app
+```
+
+Open the debug server by clicking on the follwing link:
+[http://0.0.0.0:8000/graphql](http://0.0.0.0:8000/graphql)
+
+This will open a GraphQL playground where you can test the API.
 
 ## Contributing
 
