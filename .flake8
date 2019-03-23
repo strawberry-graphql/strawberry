@@ -1,7 +1,7 @@
 [flake8]
 max-line-length = 89
 exclude=.venv,.git
-ignore = F401, W503
+ignore = F401, F821, W503
 extend-ignore =
     # See https://github.com/PyCQA/pycodestyle/issues/373
     E203,
