@@ -1,10 +1,12 @@
 from typing import get_type_hints
 
+from dataclasses import dataclass, is_dataclass
 from graphql import GraphQLField
 
-from .constants import IS_STRAWBERRY_FIELD
+from .constants import IS_STRAWBERRY_FIELD, IS_STRAWBERRY_INPUT
 from .exceptions import MissingArgumentsAnnotationsError, MissingReturnAnnotationError
 from .type_converter import get_graphql_type_for_annotation
+from .utils.dict_to_type import dict_to_type
 from .utils.inspect import get_func_args
 
 
@@ -38,5 +40,21 @@ def field(wrap):
         for name, annotation in arguments_annotations.items()
     }
 
-    wrap.field = GraphQLField(field_type, args=arguments, resolve=wrap)
+    def convert_args(args):
+        converted_args = {}
+
+        for key, value in args.items():
+            if getattr(arguments_annotations[key], IS_STRAWBERRY_INPUT):
+                converted_args[key] = dict_to_type(value, arguments_annotations[key])
+            else:
+                converted_args[key] = value
+
+        return converted_args
+
+    def resolver(source, info, **args):
+        args = convert_args(args)
+
+        return wrap(source, info, **args)
+
+    wrap.field = GraphQLField(field_type, args=arguments, resolve=resolver)
     return wrap
