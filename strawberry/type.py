@@ -5,7 +5,7 @@ from graphql import GraphQLField, GraphQLObjectType
 from graphql.utilities.schema_printer import print_type
 
 from .constants import IS_STRAWBERRY_FIELD
-from .type_converter import get_graphql_type_for_annotation
+from .type_converter import REGISTRY, get_graphql_type_for_annotation
 
 
 def _get_resolver(cls, field_name):
@@ -23,37 +23,39 @@ def _get_resolver(cls, field_name):
     return _resolver
 
 
-def _get_fields(cls):
-    cls_annotations = typing.get_type_hints(cls)
-
-    fields = {
-        key: GraphQLField(
-            get_graphql_type_for_annotation(value, field_name=key),
-            resolve=_get_resolver(cls, key),
-        )
-        for key, value in cls_annotations.items()
-    }
-
-    fields.update(
-        {
-            key: value.field
-            for key, value in cls.__dict__.items()
-            if getattr(value, IS_STRAWBERRY_FIELD, False)
-        }
-    )
-
-    return fields
-
-
 def type(cls):
     def wrap():
+        name = cls.__name__
+        REGISTRY[name] = cls
+
         def repr_(self):
             return print_type(self.field)
 
         setattr(cls, "__repr__", repr_)
 
-        cls._fields = _get_fields(cls)
-        cls.field = GraphQLObjectType(name=cls.__name__, fields=cls._fields)
+        annotations = typing.get_type_hints(cls, None, REGISTRY)
+
+        def _get_fields():
+
+            fields = {
+                key: GraphQLField(
+                    get_graphql_type_for_annotation(value, key),
+                    resolve=_get_resolver(cls, key),
+                )
+                for key, value in annotations.items()
+            }
+
+            fields.update(
+                {
+                    key: value.field
+                    for key, value in cls.__dict__.items()
+                    if getattr(value, IS_STRAWBERRY_FIELD, False)
+                }
+            )
+
+            return fields
+
+        cls.field = GraphQLObjectType(name, lambda: _get_fields())
 
         return dataclass(cls, repr=False)
 

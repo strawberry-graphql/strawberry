@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import textwrap
 from typing import Optional
 
@@ -27,6 +29,20 @@ def test_simple_required_types():
         repr(MyType("a", 1, True, 3.2, "123"))
         == textwrap.dedent(expected_representation).strip()
     )
+
+
+def test_recursive_type():
+    @strawberry.type
+    class MyType:
+        s: MyType
+
+    expected_representation = """
+    type MyType {
+      s: MyType!
+    }
+    """
+
+    assert repr(MyType("a")) == textwrap.dedent(expected_representation).strip()
 
 
 def test_optional():
