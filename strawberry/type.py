@@ -1,6 +1,7 @@
 import typing
-from dataclasses import dataclass
+from functools import partial
 
+from dataclasses import dataclass
 from graphql import (
     GraphQLField,
     GraphQLInputField,
@@ -28,7 +29,7 @@ def _get_resolver(cls, field_name):
     return _resolver
 
 
-def type(cls):
+def type(cls, *, is_input=False):
     def wrap():
         name = cls.__name__
         REGISTRY[name] = cls
@@ -41,11 +42,12 @@ def type(cls):
         annotations = typing.get_type_hints(cls, None, REGISTRY)
 
         def _get_fields():
+            FieldClass = GraphQLInputField if is_input else GraphQLField
 
             fields = {
-                key: GraphQLField(
+                key: FieldClass(
                     get_graphql_type_for_annotation(value, key),
-                    resolve=_get_resolver(cls, key),
+                    **({} if is_input else {"resolve": _get_resolver(cls, key)})
                 )
                 for key, value in annotations.items()
             }
@@ -60,29 +62,15 @@ def type(cls):
 
             return fields
 
-        cls.field = GraphQLObjectType(name, lambda: _get_fields())
+        if is_input:
+            cls.field = GraphQLInputObjectType(name, lambda: _get_fields())
+            setattr(cls, IS_STRAWBERRY_INPUT, True)
+        else:
+            cls.field = GraphQLObjectType(name, lambda: _get_fields())
 
         return dataclass(cls, repr=False)
 
     return wrap()
 
 
-# TODO: this is not DRY
-
-
-def input(cls):
-    def wrap():
-        def repr_(self):
-            return print_type(self.field)
-
-        setattr(cls, "__repr__", repr_)
-        setattr(cls, IS_STRAWBERRY_INPUT, True)
-
-        # TODO: recursive
-
-        cls._fields = _get_input_fields(cls)
-        cls.field = GraphQLInputObjectType(name=cls.__name__, fields=cls._fields)
-
-        return dataclass(cls, repr=False)
-
-    return wrap()
+input = partial(type, is_input=True)
