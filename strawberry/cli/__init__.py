@@ -10,7 +10,7 @@ import uvicorn
 
 import hupper
 
-from strawberry.contrib.starlette import GraphQLApp
+from strawberry.contrib.starlette import GraphQLApp, GraphQLSubscriptionApp
 
 
 @click.group()
@@ -33,6 +33,7 @@ def server(module, host, port):
 
     app = Starlette(debug=True)
     app.add_route("/graphql", GraphQLApp(schema_module.schema))
+    app.add_websocket_route("/graphql", GraphQLSubscriptionApp(schema_module.schema))
 
     print(f"Running strawberry on http://{host}:{port}/graphql 🍓")
 
