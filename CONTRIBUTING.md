@@ -1,12 +1,12 @@
 # Contributing to Strawberry
 
-First off, thank for taking the time to contribute!
+First off, thanks for taking the time to contribute!
 
 The following is a set of guidelines for contributing to Strawberry on GitHub.
-These are mostly guidelines, not rules. Use your best judgment, and feel free to
-propose changes to this document in a pull request.
+These are mostly guidelines, not rules. Use your best judgement, and feel free
+to propose changes to this document in a pull request.
 
-#### Table of Contents
+#### Table of contents
 
 [How to contribute](#how-to-contribute)
 
@@ -33,10 +33,10 @@ possible. Make sure you include the Python and Strawberry versions.
 
 #### Before submitting a bug report
 
-- **Check that your issue does not already exist in the
-  [issue tracker](https://github.com/strawberry-graphql/strawberry/issues)**.
+- Check that your issue does not already exist in the
+  [issue tracker](https://github.com/strawberry-graphql/strawberry/issues).
 
-#### How do I submit a bug report
+#### How do I submit a bug report?
 
 Bugs are tracked on the
 [official issue tracker](https://github.com/strawberry-graphql/strawberry/issues)
@@ -49,7 +49,7 @@ the problem:
 - **Describe the exact steps which reproduce the problem** in as many details as
   possible.
 - **Provide specific examples to demonstrate the steps to reproduce the issue**.
-  Include links to files or GitHub projects, or copy/pasteable snippets, which
+  Include links to files or GitHub projects, or copy-paste-able snippets, which
   you use in those examples.
 - **Describe the behavior you observed after following the steps** and point out
   what exactly is the problem with that behavior.
@@ -86,7 +86,7 @@ suggestion, please
 
 #### Before submitting an enhancement suggestion
 
-- \*\*Check that your issue does not already exist in the
+- Check that your issue does not already exist in the
   [issue tracker](https://github.com/strawberry-graphql/strawberry/issues).
 
 #### How do I submit an Enhancement suggestion?
@@ -144,7 +144,7 @@ present your code will not be merged.
 
 #### Pull requests
 
-- Be sure that you pull request contains tests that cover the changed or added
+- Be sure that your pull request contains tests that cover the changed or added
   code.
-- If you changes warrant a documentation change, the pull request must also
+- If your changes warrant a documentation change, the pull request must also
   update the documentation.

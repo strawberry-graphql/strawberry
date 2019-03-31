@@ -6,14 +6,15 @@
 
 [![CircleCI](https://img.shields.io/circleci/token/307b40d5e152e074d34f84d30d226376a15667d5/project/github/patrick91/strawberry/master.svg?style=for-the-badge)](https://circleci.com/gh/patrick91/strawberry/tree/master)
 
-## Installing / Getting started
+## Installation
 
-A quick introduction of the minimal setup you need to get a hello world up &
-running.
+Install with:
 
 ```shell
 pip install strawberry-graphql
 ```
+
+## Getting Started
 
 Create a file called `app.py` with the following code:
 
