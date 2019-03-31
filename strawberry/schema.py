@@ -5,7 +5,9 @@ from graphql import GraphQLSchema
 
 
 class Schema(GraphQLSchema):
-    def __init__(self, query, mutation=None):
+    def __init__(self, query, mutation=None, subscription=None):
         super().__init__(
-            query=query.field, mutation=mutation.field if mutation else None
+            query=query.field,
+            mutation=mutation.field if mutation else None,
+            subscription=subscription.field if subscription else None,
         )

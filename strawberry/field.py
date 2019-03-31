@@ -10,7 +10,7 @@ from .utils.dict_to_type import dict_to_type
 from .utils.inspect import get_func_args
 
 
-def field(wrap):
+def field(wrap, *, is_subscription=False):
     setattr(wrap, IS_STRAWBERRY_FIELD, True)
     annotations = get_type_hints(wrap)
 
@@ -56,5 +56,10 @@ def field(wrap):
 
         return wrap(source, info, **args)
 
-    wrap.field = GraphQLField(field_type, args=arguments, resolve=resolver)
+    if is_subscription:
+        kwargs = {"subscribe": resolver}
+    else:
+        kwargs = {"resolve": resolver}
+
+    wrap.field = GraphQLField(field_type, args=arguments, **kwargs)
     return wrap

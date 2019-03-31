@@ -1,34 +1,18 @@
-import datetime
 import functools
-import json
-import pathlib
-import typing
 
 from graphql import graphql
-from graphql.error import GraphQLError, format_error as format_graphql_error
-from pygments import highlight, lexers
-from pygments.formatters import Terminal256Formatter
+from graphql.error import format_error as format_graphql_error
 from starlette import status
 from starlette.background import BackgroundTasks
-from starlette.concurrency import run_in_threadpool
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, JSONResponse, PlainTextResponse, Response
 from starlette.types import ASGIInstance, Receive, Scope, Send
 
-from .utils.graphql_lexer import GraphqlLexer
+from .base import BaseApp
+from .utils import get_playground_template
 
 
-def _get_playground_template(request_path: str):
-    here = pathlib.Path(__file__).parent
-    templates_path = here / "templates"
-
-    with open(templates_path / "playground.html") as f:
-        template = f.read()
-
-    return template.replace("{{REQUEST_PATH}}", request_path)
-
-
-class GraphQLApp:
+class GraphQLApp(BaseApp):
     def __init__(self, schema, playground: bool = True) -> None:
         self.schema = schema
         self.playground = playground
@@ -40,22 +24,6 @@ class GraphQLApp:
         request = Request(scope, receive=receive)
         response = await self.handle_graphql(request)
         await response(receive, send)
-
-    def _debug_log(
-        self, operation_name: str, query: str, variables: typing.Dict["str", typing.Any]
-    ):
-        if operation_name == "IntrospectionQuery":
-            return
-
-        now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-        print(f"[{now}]: {operation_name or 'No operation name'}")
-        print(highlight(query, GraphqlLexer(), Terminal256Formatter()))
-
-        if variables:
-            variables_json = json.dumps(variables, indent=4)
-
-            print(highlight(variables_json, lexers.JsonLexer(), Terminal256Formatter()))
 
     async def handle_graphql(self, request: Request) -> Response:
         if request.method in ("GET", "HEAD"):
@@ -119,6 +87,11 @@ class GraphQLApp:
             response_data, status_code=status_code, background=background
         )
 
+    async def handle_playground(self, request: Request) -> Response:
+        text = get_playground_template(str(request.url))
+
+        return HTMLResponse(text)
+
     async def execute(self, query, variables=None, context=None, operation_name=None):
         return await graphql(
             self.schema,
@@ -127,8 +100,3 @@ class GraphQLApp:
             operation_name=operation_name,
             context_value=context,
         )
-
-    async def handle_playground(self, request: Request) -> Response:
-        text = _get_playground_template(request.url.path)
-
-        return HTMLResponse(text)

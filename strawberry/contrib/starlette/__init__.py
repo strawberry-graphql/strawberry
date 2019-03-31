@@ -1,1 +1,1 @@
-from .app import GraphQLApp
+from .app import GraphQLApp, GraphQLSubscriptionApp
