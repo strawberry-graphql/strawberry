@@ -1,6 +1,5 @@
 from typing import get_type_hints
 
-from dataclasses import dataclass, is_dataclass
 from graphql import GraphQLField
 
 from .constants import IS_STRAWBERRY_FIELD, IS_STRAWBERRY_INPUT

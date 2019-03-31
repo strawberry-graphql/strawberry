@@ -3,7 +3,7 @@ import sys
 
 import os
 from starlette.applications import Starlette
-from starlette.responses import HTMLResponse
+
 import importlib
 
 import uvicorn
