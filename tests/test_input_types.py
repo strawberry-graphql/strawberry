@@ -1,5 +1,4 @@
 import textwrap
-from typing import Optional
 
 import strawberry
 
