@@ -56,7 +56,11 @@ def field(wrap, *, is_subscription=False):
         return wrap(source, info, **args)
 
     if is_subscription:
-        kwargs = {"subscribe": resolver}
+
+        def _resolve(event, info):
+            return event
+
+        kwargs = {"subscribe": resolver, "resolve": _resolve}
     else:
         kwargs = {"resolve": resolver}
 
