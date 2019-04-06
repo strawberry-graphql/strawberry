@@ -60,8 +60,10 @@ class GraphQLSubscriptionApp(BaseApp):
             operation_name=payload["operationName"],
         )
 
-        async for result in data.iterator:
-            await self._send_message(websocket, "data", {"data": result}, id_)
+        async for result in data:
+            # TODO: send errors if any
+
+            await self._send_message(websocket, "data", {"data": result.data}, id_)
 
         await self._send_message(websocket, "complete")
         await websocket.close()
