@@ -1,3 +1,5 @@
+from collections.abc import AsyncGenerator
+
 from graphql import (
     GraphQLBoolean,
     GraphQLFloat,
@@ -42,10 +44,17 @@ def get_graphql_type_for_annotation(
 
             return GraphQLList(list_of_type)
 
+        annotation_origin = getattr(annotation, "__origin__", None)
+
+        if annotation_origin == AsyncGenerator:
+            # async generators are used in subscription, we only need the yield type
+            # https://docs.python.org/3/library/typing.html#typing.AsyncGenerator
+            return get_graphql_type_for_annotation(annotation.__args__[0], field_name)
+
         # for some reason _name is None for Optional and Union types, so we check if we
         # have __args__ populated, there might be some edge cases where __args__ is
         # populated but the type is not an Union, like in the above case with Lists
-        if hasattr(annotation, "__args__"):
+        elif hasattr(annotation, "__args__"):
             types = annotation.__args__
             non_none_types = [x for x in types if x != None.__class__]  # noqa:E721
 
