@@ -79,8 +79,8 @@ pre-commit install
 ## Links
 
 - Project homepage: https://strawberry.rocks
-- Repository: https://github.com/patrick91/strawberry
-- Issue tracker: https://github.com/patrick91/strawberryissues
+- Repository: https://github.com/strawberry-graphql/strawberry
+- Issue tracker: https://github.com/strawberry-graphql/strawberry/issues
   - In case of sensitive bugs like security vulnerabilities, please contact
     patrick.arminio@gmail.com directly instead of using issue tracker. We value
     your effort to improve the security and privacy of this project!
