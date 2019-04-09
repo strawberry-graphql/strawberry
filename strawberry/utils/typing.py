@@ -1,13 +1,20 @@
 import typing
 
 
-def is_optional(annotation):
-    """Returns True if the annotation is typing.Optional[SomeType]"""
+def is_union(annotation):
+    """Returns True if annotation is a typing.Union"""
 
     annotation_origin = getattr(annotation, "__origin__", None)
 
+    return annotation_origin == typing.Union
+
+
+def is_optional(annotation):
+    """Returns True if the annotation is typing.Optional[SomeType]"""
+
     # Optionals are represented as unions
-    if annotation_origin != typing.Union:
+
+    if not is_union(annotation):
         return False
 
     types = annotation.__args__
