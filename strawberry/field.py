@@ -18,6 +18,10 @@ def convert_args(args, annotations):
     for key, value in args.items():
         annotation = annotations[key]
 
+        # we don't need to check about unions here since they are not
+        # yet supported for arguments.
+        # see https://github.com/graphql/graphql-spec/issues/488
+
         if is_optional(annotation):
             annotation = get_optional_annotation(annotation)
 
