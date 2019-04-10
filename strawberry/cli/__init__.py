@@ -3,6 +3,7 @@ import sys
 
 import os
 from starlette.applications import Starlette
+from starlette.middleware.cors import CORSMiddleware
 
 import importlib
 
@@ -32,6 +33,11 @@ def server(module, host, port):
     reloader.watch_files([schema_module.__file__])
 
     app = Starlette(debug=True)
+
+    app.add_middleware(
+        CORSMiddleware, allow_headers=["*"], allow_origins=["*"], allow_methods=["*"]
+    )
+
     app.add_route("/graphql", GraphQLApp(schema_module.schema))
     app.add_websocket_route("/graphql", GraphQLSubscriptionApp(schema_module.schema))
 
