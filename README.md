@@ -58,7 +58,7 @@ We use [poetry](https://github.com/sdispater/poetry) to manage dependencies, to
 get started follow these steps:
 
 ```shell
-git clone https://github.com/patrick91/strawberry
+git clone https://github.com/strawberry-graphql/strawberry
 cd strawberry
 poetry install
 poetry run pytest
