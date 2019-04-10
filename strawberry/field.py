@@ -7,7 +7,12 @@ from .exceptions import MissingArgumentsAnnotationsError, MissingReturnAnnotatio
 from .type_converter import get_graphql_type_for_annotation
 from .utils.dict_to_type import dict_to_type
 from .utils.inspect import get_func_args
-from .utils.typing import get_optional_annotation, is_optional
+from .utils.typing import (
+    get_list_annotation,
+    get_optional_annotation,
+    is_list,
+    is_optional,
+)
 
 
 def convert_args(args, annotations):
@@ -22,11 +27,20 @@ def convert_args(args, annotations):
         # yet supported for arguments.
         # see https://github.com/graphql/graphql-spec/issues/488
 
-        if is_optional(annotation):
+        is_list_of_args = False
+
+        if is_list(annotation):
+            annotation = get_list_annotation(annotation)
+            is_list_of_args = True
+
+        elif is_optional(annotation):
             annotation = get_optional_annotation(annotation)
 
         if getattr(annotation, IS_STRAWBERRY_INPUT, False):
-            converted_args[key] = dict_to_type(value, annotation)
+            if is_list_of_args:
+                converted_args[key] = [dict_to_type(x, annotation) for x in value]
+            else:
+                converted_args[key] = dict_to_type(value, annotation)
         else:
             converted_args[key] = value
 

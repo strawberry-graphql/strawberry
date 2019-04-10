@@ -1,6 +1,14 @@
 import typing
 
 
+def is_list(annotation):
+    """Returns True if annotation is a typing.List"""
+
+    annotation_origin = getattr(annotation, "__origin__", None)
+
+    return annotation_origin == list
+
+
 def is_union(annotation):
     """Returns True if annotation is a typing.Union"""
 
@@ -28,3 +36,7 @@ def get_optional_annotation(annotation):
     non_none_types = [x for x in types if x != None.__class__]  # noqa:E721
 
     return non_none_types[0]
+
+
+def get_list_annotation(annotation):
+    return annotation.__args__[0]
