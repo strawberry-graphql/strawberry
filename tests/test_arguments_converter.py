@@ -70,3 +70,15 @@ def test_list_of_input_types():
     annotations = {"input_list": typing.List[MyInput]}
 
     assert convert_args(args, annotations) == {"input_list": [MyInput(abc="example")]}
+
+
+def test_optional_list_of_input_types():
+    @strawberry.input
+    class MyInput:
+        abc: str
+
+    args = {"input_list": [{"abc": "example"}]}
+
+    annotations = {"input_list": typing.Optional[typing.List[MyInput]]}
+
+    assert convert_args(args, annotations) == {"input_list": [MyInput(abc="example")]}

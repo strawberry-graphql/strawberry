@@ -29,12 +29,12 @@ def convert_args(args, annotations):
 
         is_list_of_args = False
 
+        if is_optional(annotation):
+            annotation = get_optional_annotation(annotation)
+
         if is_list(annotation):
             annotation = get_list_annotation(annotation)
             is_list_of_args = True
-
-        elif is_optional(annotation):
-            annotation = get_optional_annotation(annotation)
 
         if getattr(annotation, IS_STRAWBERRY_INPUT, False):
             if is_list_of_args:
