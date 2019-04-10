@@ -12,6 +12,7 @@ from graphql import (
 )
 
 from .scalars import ID
+from .utils.typing import is_union
 
 
 REGISTRY = {
@@ -30,7 +31,7 @@ def get_graphql_type_for_annotation(
     annotation, field_name: str, force_optional: bool = False
 ):
     # TODO: this might lead to issues with types that have a field value
-    is_optional = force_optional
+    is_field_optional = force_optional
 
     if hasattr(annotation, "field"):
         graphql_type = annotation.field
@@ -51,21 +52,18 @@ def get_graphql_type_for_annotation(
             # https://docs.python.org/3/library/typing.html#typing.AsyncGenerator
             return get_graphql_type_for_annotation(annotation.__args__[0], field_name)
 
-        # for some reason _name is None for Optional and Union types, so we check if we
-        # have __args__ populated, there might be some edge cases where __args__ is
-        # populated but the type is not an Union, like in the above case with Lists
-        elif hasattr(annotation, "__args__"):
+        elif is_union(annotation):
             types = annotation.__args__
             non_none_types = [x for x in types if x != None.__class__]  # noqa:E721
 
             # optionals are represented as Union[type, None]
             if len(non_none_types) == 1:
-                is_optional = True
+                is_field_optional = True
                 graphql_type = get_graphql_type_for_annotation(
                     non_none_types[0], field_name, force_optional=True
                 )
             else:
-                is_optional = None.__class__ in types
+                is_field_optional = None.__class__ in types
 
                 # TODO: union types don't work with scalar types
                 # so we want to return a nice error
@@ -80,7 +78,7 @@ def get_graphql_type_for_annotation(
     if not graphql_type:
         raise ValueError(f"Unable to get GraphQL type for {annotation}")
 
-    if is_optional:
+    if is_field_optional:
         return graphql_type
 
     return GraphQLNonNull(graphql_type)

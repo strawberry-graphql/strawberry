@@ -7,6 +7,44 @@ from .exceptions import MissingArgumentsAnnotationsError, MissingReturnAnnotatio
 from .type_converter import get_graphql_type_for_annotation
 from .utils.dict_to_type import dict_to_type
 from .utils.inspect import get_func_args
+from .utils.typing import (
+    get_list_annotation,
+    get_optional_annotation,
+    is_list,
+    is_optional,
+)
+
+
+def convert_args(args, annotations):
+    """Converts a nested dictionary to a dictionary of strawberry input types."""
+
+    converted_args = {}
+
+    for key, value in args.items():
+        annotation = annotations[key]
+
+        # we don't need to check about unions here since they are not
+        # yet supported for arguments.
+        # see https://github.com/graphql/graphql-spec/issues/488
+
+        is_list_of_args = False
+
+        if is_optional(annotation):
+            annotation = get_optional_annotation(annotation)
+
+        if is_list(annotation):
+            annotation = get_list_annotation(annotation)
+            is_list_of_args = True
+
+        if getattr(annotation, IS_STRAWBERRY_INPUT, False):
+            if is_list_of_args:
+                converted_args[key] = [dict_to_type(x, annotation) for x in value]
+            else:
+                converted_args[key] = dict_to_type(value, annotation)
+        else:
+            converted_args[key] = value
+
+    return converted_args
 
 
 def field(wrap, *, is_subscription=False):
@@ -39,19 +77,8 @@ def field(wrap, *, is_subscription=False):
         for name, annotation in arguments_annotations.items()
     }
 
-    def convert_args(args):
-        converted_args = {}
-
-        for key, value in args.items():
-            if getattr(arguments_annotations[key], IS_STRAWBERRY_INPUT):
-                converted_args[key] = dict_to_type(value, arguments_annotations[key])
-            else:
-                converted_args[key] = value
-
-        return converted_args
-
     def resolver(source, info, **args):
-        args = convert_args(args)
+        args = convert_args(args, arguments_annotations)
 
         return wrap(source, info, **args)
 
