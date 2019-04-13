@@ -7,6 +7,7 @@ from .exceptions import MissingArgumentsAnnotationsError, MissingReturnAnnotatio
 from .type_converter import get_graphql_type_for_annotation
 from .utils.dict_to_type import dict_to_type
 from .utils.inspect import get_func_args
+from .utils.str_converters import to_camel_case, to_snake_case
 from .utils.typing import (
     get_list_annotation,
     get_optional_annotation,
@@ -21,6 +22,7 @@ def convert_args(args, annotations):
     converted_args = {}
 
     for key, value in args.items():
+        key = to_snake_case(key)
         annotation = annotations[key]
 
         # we don't need to check about unions here since they are not
@@ -73,7 +75,7 @@ def field(wrap, *, is_subscription=False):
         raise MissingArgumentsAnnotationsError(name, arguments_missing_annotations)
 
     arguments = {
-        name: get_graphql_type_for_annotation(annotation, name)
+        to_camel_case(name): get_graphql_type_for_annotation(annotation, name)
         for name, annotation in arguments_annotations.items()
     }
 

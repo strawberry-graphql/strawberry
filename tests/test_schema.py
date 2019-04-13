@@ -105,3 +105,26 @@ def test_mutation_with_input_type():
 
     assert not result.errors
     assert result.data["say"] == "Hello Patrick!"
+
+
+def test_does_camel_case_conversion():
+    @strawberry.type
+    class Query:
+        hello_world: str = "strawberry"
+
+        @strawberry.field
+        def example(self, info, query_param: str) -> str:
+            return query_param
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        helloWorld
+        example(queryParam: "hi")
+    }"""
+
+    result = graphql_sync(schema, query)
+
+    assert not result.errors
+    assert result.data["helloWorld"] == "strawberry"
+    assert result.data["example"] == "hi"
