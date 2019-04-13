@@ -12,6 +12,7 @@ from graphql.utilities.schema_printer import print_type
 
 from .constants import IS_STRAWBERRY_FIELD, IS_STRAWBERRY_INPUT
 from .type_converter import REGISTRY, get_graphql_type_for_annotation
+from .utils.str_converters import to_camel_case
 
 
 def _get_resolver(cls, field_name):
@@ -45,7 +46,7 @@ def type(cls, *, is_input=False):
             FieldClass = GraphQLInputField if is_input else GraphQLField
 
             fields = {
-                key: FieldClass(
+                to_camel_case(key): FieldClass(
                     get_graphql_type_for_annotation(value, key),
                     **({} if is_input else {"resolve": _get_resolver(cls, key)})
                 )
@@ -54,7 +55,7 @@ def type(cls, *, is_input=False):
 
             fields.update(
                 {
-                    key: value.field
+                    to_camel_case(key): value.field
                     for key, value in cls.__dict__.items()
                     if getattr(value, IS_STRAWBERRY_FIELD, False)
                 }
