@@ -1,6 +1,7 @@
 import typing
 from functools import partial
 
+import dataclasses
 from dataclasses import dataclass
 from graphql import (
     GraphQLField,
@@ -46,11 +47,13 @@ def type(cls, *, is_input=False):
             FieldClass = GraphQLInputField if is_input else GraphQLField
 
             fields = {
-                to_camel_case(key): FieldClass(
-                    get_graphql_type_for_annotation(value, key),
-                    **({} if is_input else {"resolve": _get_resolver(cls, key)})
+                to_camel_case(field.name): FieldClass(
+                    get_graphql_type_for_annotation(
+                        annotations[field.name], field.name
+                    ),
+                    **({} if is_input else {"resolve": _get_resolver(cls, field.name)})
                 )
-                for key, value in annotations.items()
+                for field in dataclasses.fields(cls)
             }
 
             fields.update(

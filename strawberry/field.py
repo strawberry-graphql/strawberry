@@ -1,5 +1,6 @@
 from typing import get_type_hints
 
+import dataclasses
 from graphql import GraphQLField
 
 from .constants import IS_STRAWBERRY_FIELD, IS_STRAWBERRY_INPUT
@@ -49,7 +50,13 @@ def convert_args(args, annotations):
     return converted_args
 
 
-def field(wrap, *, is_subscription=False):
+def field(wrap=None, *, is_subscription=False):
+    if not wrap:
+        # when used as a function we return a dataclass field
+        # in the future we can use the `metadata` argument of `field` to pass
+        # extra arguments like the description
+        return dataclasses.field()
+
     setattr(wrap, IS_STRAWBERRY_FIELD, True)
     annotations = get_type_hints(wrap)
 
