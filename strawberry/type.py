@@ -51,7 +51,7 @@ def _convert_annotations_fields(cls, *, is_input=False):
     return fields
 
 
-def _process_type(cls, *, is_input=False, description=""):
+def _process_type(cls, *, is_input=False, description=None):
     name = cls.__name__
     REGISTRY[name] = cls
 
@@ -84,11 +84,20 @@ def _process_type(cls, *, is_input=False, description=""):
     return dataclass(cls, repr=False)
 
 
-def type(cls=None, *, is_input=False, description=""):
+def type(cls=None, *, is_input=False, description=None):
+    """Annotates a class as a GraphQL type.
+
+    Example usage:
+
+    >>> @strawberry.type:
+    >>> class X:
+    >>>     field_abc: str = "ABC"
+    """
+
     def wrap(cls):
         return _process_type(cls, is_input=is_input, description=description)
 
-    if not cls:
+    if cls is None:
         return wrap
 
     return wrap(cls)

@@ -17,6 +17,46 @@ from .utils.typing import (
 )
 
 
+class strawberry_field:
+    """A small wrapper for a field in strawberry.
+
+    You shouldn't be using this directly as this is used internally
+    when using `strawberry.field`.
+
+    This allows to use the following two syntaxes when using the type
+    decorator:
+
+    >>> class X:
+    >>>     field_abc: str = strawberry.field(description="ABC")
+
+    >>> class X:
+    >>>     @strawberry.field(description="ABC")
+    >>>     def field_a(self, info) -> str:
+    >>>         return "abc"
+
+    When calling this class as strawberry_field it creates a field
+    that stores metadata (such as field description). In addition
+    to that it also acts as decorator when called as a function,
+    allowing us to us both syntaxes.
+    """
+
+    def __init__(self, *, is_subscription=False, **kwargs):
+        self.field = dataclasses.field()
+        self.is_subscription = is_subscription
+        self.description = kwargs.get("description", None)
+        self.kwargs = kwargs
+
+    def __call__(self, wrap):
+        setattr(wrap, IS_STRAWBERRY_FIELD, True)
+
+        self.kwargs["description"] = self.description or wrap.__doc__
+
+        wrap.field = _get_field(
+            wrap, is_subscription=self.is_subscription, **self.kwargs
+        )
+        return wrap
+
+
 def convert_args(args, annotations):
     """Converts a nested dictionary to a dictionary of strawberry input types."""
 
@@ -89,38 +129,40 @@ def _get_field(wrap, *, is_subscription=False, **kwargs):
         def _resolve(event, info):
             return event
 
-        kwargs = {"subscribe": resolver, "resolve": _resolve, **kwargs}
+        kwargs.update({"subscribe": resolver, "resolve": _resolve})
     else:
-        kwargs = {"resolve": resolver, **kwargs}
+        kwargs.update({"resolve": resolver})
+
+    kwargs["description"] = kwargs.get("description", wrap.__doc__)
 
     return GraphQLField(field_type, args=arguments, **kwargs)
 
 
-class strawberry_field:
-    def __init__(self, *, is_subscription=False, **kwargs):
-        self.field = dataclasses.field()
-        self.is_subscription = is_subscription
-        self.description = kwargs.get("description", None)
-        self.kwargs = kwargs
+def field(wrap=None, *, is_subscription=False, description=None):
+    """Annotates a method or property as a GraphQL field.
 
-    def __call__(self, wrap):
-        setattr(wrap, IS_STRAWBERRY_FIELD, True)
+    This is normally used inside a type declaration:
 
-        self.kwargs["description"] = self.description or wrap.__doc__
+    >>> @strawberry.type:
+    >>> class X:
+    >>>     field_abc: str = strawberry.field(description="ABC")
 
-        wrap.field = _get_field(
-            wrap, is_subscription=self.is_subscription, **self.kwargs
-        )
-        return wrap
+    >>>     @strawberry.field(description="ABC")
+    >>>     def field_with_resolver(self, info) -> str:
+    >>>         return "abc"
 
+    it can be used both as decorator and as a normal function.
+    """
 
-def field(wrap=None, *, is_subscription=False, **kwargs):
-    if not wrap:
-        return strawberry_field(**kwargs, is_subscription=is_subscription)
+    field = strawberry_field(description=description, is_subscription=is_subscription)
 
-    setattr(wrap, IS_STRAWBERRY_FIELD, True)
+    # when calling this with parens we are going to return a strawberry_field
+    # instance, so it can be used as both decorator and function.
 
-    kwargs["description"] = kwargs.get("description", wrap.__doc__)
+    if wrap is None:
+        return field
 
-    wrap.field = _get_field(wrap, **kwargs, is_subscription=is_subscription)
-    return wrap
+    # otherwise we run the decorator directly,
+    # when called as @strawberry.field, without parens.
+
+    return field(wrap)
