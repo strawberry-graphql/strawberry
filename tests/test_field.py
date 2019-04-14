@@ -78,6 +78,16 @@ def test_stores_description():
         def c(self, info, id: int) -> str:
             return "I'm a resolver"
 
+        @strawberry.field
+        def d(self, info, id: int) -> str:
+            """Example D"""
+            return "I'm a resolver"
+
+        @strawberry.field(description="Inline description")
+        def e(self, info, id: int) -> str:
+            """Doc string description"""
+            return "I'm a resolver"
+
     schema = strawberry.Schema(query=Query)
 
     query = """{
@@ -97,4 +107,6 @@ def test_stores_description():
         {"name": "a", "description": "Example"},
         {"name": "b", "description": None},
         {"name": "c", "description": "Example C"},
+        {"name": "d", "description": "Example D"},
+        {"name": "e", "description": "Inline description"},
     ]

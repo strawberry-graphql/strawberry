@@ -103,25 +103,24 @@ class strawberry_field:
         self.description = kwargs.get("description", None)
         self.kwargs = kwargs
 
-    def __call__(self, wrap=None):
+    def __call__(self, wrap):
         setattr(wrap, IS_STRAWBERRY_FIELD, True)
+
+        self.kwargs["description"] = self.description or wrap.__doc__
 
         wrap.field = _get_field(
             wrap, is_subscription=self.is_subscription, **self.kwargs
         )
         return wrap
 
-        return _get_field(wrap)
-
 
 def field(wrap=None, *, is_subscription=False, **kwargs):
     if not wrap:
-        # when used as a function we return a dataclass field
-        # in the future we can use the `metadata` argument of `field` to pass
-        # extra arguments like the description
         return strawberry_field(**kwargs, is_subscription=is_subscription)
 
     setattr(wrap, IS_STRAWBERRY_FIELD, True)
 
-    wrap.field = _get_field(wrap, is_subscription=is_subscription)
+    kwargs["description"] = kwargs.get("description", wrap.__doc__)
+
+    wrap.field = _get_field(wrap, **kwargs, is_subscription=is_subscription)
     return wrap
