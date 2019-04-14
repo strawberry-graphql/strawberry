@@ -1,3 +1,5 @@
+from enum import Enum
+
 import strawberry
 from graphql import graphql_sync
 
@@ -228,3 +230,50 @@ def test_field_description():
         {"name": "d", "description": "Example D"},
         {"name": "e", "description": "Inline description"},
     ]
+
+
+def test_enum_description():
+    @strawberry.enum(description="We love ice-creams")
+    class IceCreamFlavour(Enum):
+        VANILLA = "vanilla"
+        STRAWBERRY = "strawberry"
+        CHOCOLATE = "chocolate"
+
+    @strawberry.enum
+    class PizzaType(Enum):
+        """We also love pizza"""
+
+        MARGHERITA = "margherita"
+
+    @strawberry.type
+    class Query:
+        favorite_ice_cream: IceCreamFlavour = IceCreamFlavour.STRAWBERRY
+        pizza: PizzaType = PizzaType.MARGHERITA
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        iceCreamFlavour: __type(name: "IceCreamFlavour") {
+            description
+            enumValues {
+                name
+                description
+            }
+        }
+        pizzas: __type(name: "PizzaType") {
+            description
+        }
+    }"""
+
+    result = graphql_sync(schema, query)
+
+    assert not result.errors
+
+    assert result.data["iceCreamFlavour"]["description"] == "We love ice-creams"
+    assert result.data["iceCreamFlavour"]["enumValues"] == [
+        {"name": "VANILLA", "description": None},
+        {"name": "STRAWBERRY", "description": None},
+        {"name": "CHOCOLATE", "description": None},
+    ]
+
+    assert result.data["pizzas"]["description"] == "We also love pizza"
