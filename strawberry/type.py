@@ -51,38 +51,47 @@ def _convert_annotations_fields(cls, *, is_input=False):
     return fields
 
 
-def type(cls, *, is_input=False):
-    def wrap():
-        name = cls.__name__
-        REGISTRY[name] = cls
+def _process_type(cls, *, is_input=False, description=""):
+    name = cls.__name__
+    REGISTRY[name] = cls
 
-        def repr_(self):
-            return print_type(self.field)
+    def repr_(self):
+        return print_type(self.field)
 
-        setattr(cls, "__repr__", repr_)
+    setattr(cls, "__repr__", repr_)
 
-        def _get_fields():
-            fields = _convert_annotations_fields(cls, is_input=is_input)
+    def _get_fields():
+        fields = _convert_annotations_fields(cls, is_input=is_input)
 
-            fields.update(
-                {
-                    to_camel_case(key): value.field
-                    for key, value in cls.__dict__.items()
-                    if getattr(value, IS_STRAWBERRY_FIELD, False)
-                }
-            )
+        fields.update(
+            {
+                to_camel_case(key): value.field
+                for key, value in cls.__dict__.items()
+                if getattr(value, IS_STRAWBERRY_FIELD, False)
+            }
+        )
 
-            return fields
+        return fields
 
-        if is_input:
-            cls.field = GraphQLInputObjectType(name, lambda: _get_fields())
-            setattr(cls, IS_STRAWBERRY_INPUT, True)
-        else:
-            cls.field = GraphQLObjectType(name, lambda: _get_fields())
+    if is_input:
+        setattr(cls, IS_STRAWBERRY_INPUT, True)
 
-        return dataclass(cls, repr=False)
+    extra_kwargs = {"description": description or cls.__doc__}
 
-    return wrap()
+    TypeClass = GraphQLInputObjectType if is_input else GraphQLObjectType
+    cls.field = TypeClass(name, lambda: _get_fields(), **extra_kwargs)
+
+    return dataclass(cls, repr=False)
+
+
+def type(cls=None, *, is_input=False, description=""):
+    def wrap(cls):
+        return _process_type(cls, is_input=is_input, description=description)
+
+    if not cls:
+        return wrap
+
+    return wrap(cls)
 
 
 input = partial(type, is_input=True)

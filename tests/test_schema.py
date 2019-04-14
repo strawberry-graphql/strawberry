@@ -128,3 +128,56 @@ def test_does_camel_case_conversion():
     assert not result.errors
     assert result.data["helloWorld"] == "strawberry"
     assert result.data["example"] == "hi"
+
+
+def test_type_description():
+    @strawberry.type(description="Decorator argument description")
+    class TypeA:
+        a: str
+
+    @strawberry.type
+    class TypeB:
+        """Docstring description"""
+
+        a: str
+
+    @strawberry.type(description="Decorator description overrides docstring")
+    class TypeC:
+        """Docstring description"""
+
+        a: str
+
+    @strawberry.type
+    class Query:
+        a: TypeA
+        b: TypeB
+        c: TypeC
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        __schema {
+            types {
+                name
+                description
+            }
+        }
+    }"""
+
+    result = graphql_sync(schema, query)
+
+    assert not result.errors
+
+    assert {
+        "name": "TypeA",
+        "description": "Decorator argument description",
+    } in result.data["__schema"]["types"]
+
+    assert {"name": "TypeB", "description": "Docstring description"} in result.data[
+        "__schema"
+    ]["types"]
+
+    assert {
+        "name": "TypeC",
+        "description": "Decorator description overrides docstring",
+    } in result.data["__schema"]["types"]
