@@ -1,6 +1,5 @@
 import pytest
 
-import dataclasses
 import strawberry
 from graphql import GraphQLField, GraphQLNonNull
 from strawberry.exceptions import (
@@ -12,8 +11,7 @@ from strawberry.exceptions import (
 def test_field_as_function():
     field: str = strawberry.field()
 
-    assert type(field) == dataclasses.Field
-    assert field.metadata == {}
+    assert field.description is None
 
 
 def test_field_arguments():

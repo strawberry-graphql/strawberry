@@ -1,7 +1,6 @@
 import typing
 from functools import partial
 
-import dataclasses
 from dataclasses import dataclass
 from graphql import (
     GraphQLField,
@@ -31,50 +30,77 @@ def _get_resolver(cls, field_name):
     return _resolver
 
 
-def type(cls, *, is_input=False):
-    def wrap():
-        name = cls.__name__
-        REGISTRY[name] = cls
+def _convert_annotations_fields(cls, *, is_input=False):
+    FieldClass = GraphQLInputField if is_input else GraphQLField
+    annotations = typing.get_type_hints(cls, None, REGISTRY)
 
-        def repr_(self):
-            return print_type(self.field)
+    fields = {}
 
-        setattr(cls, "__repr__", repr_)
+    for key, annotation in annotations.items():
+        field_name = to_camel_case(key)
+        class_field = getattr(cls, key, None)
 
-        annotations = typing.get_type_hints(cls, None, REGISTRY)
+        description = getattr(class_field, "description", None)
 
-        def _get_fields():
-            FieldClass = GraphQLInputField if is_input else GraphQLField
+        fields[field_name] = FieldClass(
+            get_graphql_type_for_annotation(annotation, key),
+            description=description,
+            **({} if is_input else {"resolve": _get_resolver(cls, key)})
+        )
 
-            fields = {
-                to_camel_case(field.name): FieldClass(
-                    get_graphql_type_for_annotation(
-                        annotations[field.name], field.name
-                    ),
-                    **({} if is_input else {"resolve": _get_resolver(cls, field.name)})
-                )
-                for field in dataclasses.fields(cls)
+    return fields
+
+
+def _process_type(cls, *, is_input=False, description=None):
+    name = cls.__name__
+    REGISTRY[name] = cls
+
+    def repr_(self):
+        return print_type(self.field)
+
+    setattr(cls, "__repr__", repr_)
+
+    def _get_fields():
+        fields = _convert_annotations_fields(cls, is_input=is_input)
+
+        fields.update(
+            {
+                to_camel_case(key): value.field
+                for key, value in cls.__dict__.items()
+                if getattr(value, IS_STRAWBERRY_FIELD, False)
             }
+        )
 
-            fields.update(
-                {
-                    to_camel_case(key): value.field
-                    for key, value in cls.__dict__.items()
-                    if getattr(value, IS_STRAWBERRY_FIELD, False)
-                }
-            )
+        return fields
 
-            return fields
+    if is_input:
+        setattr(cls, IS_STRAWBERRY_INPUT, True)
 
-        if is_input:
-            cls.field = GraphQLInputObjectType(name, lambda: _get_fields())
-            setattr(cls, IS_STRAWBERRY_INPUT, True)
-        else:
-            cls.field = GraphQLObjectType(name, lambda: _get_fields())
+    extra_kwargs = {"description": description or cls.__doc__}
 
-        return dataclass(cls, repr=False)
+    TypeClass = GraphQLInputObjectType if is_input else GraphQLObjectType
+    cls.field = TypeClass(name, lambda: _get_fields(), **extra_kwargs)
 
-    return wrap()
+    return dataclass(cls, repr=False)
+
+
+def type(cls=None, *, is_input=False, description=None):
+    """Annotates a class as a GraphQL type.
+
+    Example usage:
+
+    >>> @strawberry.type:
+    >>> class X:
+    >>>     field_abc: str = "ABC"
+    """
+
+    def wrap(cls):
+        return _process_type(cls, is_input=is_input, description=description)
+
+    if cls is None:
+        return wrap
+
+    return wrap(cls)
 
 
 input = partial(type, is_input=True)

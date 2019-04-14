@@ -1,3 +1,5 @@
+from enum import Enum
+
 import strawberry
 from graphql import graphql_sync
 
@@ -128,3 +130,150 @@ def test_does_camel_case_conversion():
     assert not result.errors
     assert result.data["helloWorld"] == "strawberry"
     assert result.data["example"] == "hi"
+
+
+def test_type_description():
+    @strawberry.type(description="Decorator argument description")
+    class TypeA:
+        a: str
+
+    @strawberry.type
+    class TypeB:
+        """Docstring description"""
+
+        a: str
+
+    @strawberry.type(description="Decorator description overrides docstring")
+    class TypeC:
+        """Docstring description"""
+
+        a: str
+
+    @strawberry.type
+    class Query:
+        a: TypeA
+        b: TypeB
+        c: TypeC
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        __schema {
+            types {
+                name
+                description
+            }
+        }
+    }"""
+
+    result = graphql_sync(schema, query)
+
+    assert not result.errors
+
+    assert {
+        "name": "TypeA",
+        "description": "Decorator argument description",
+    } in result.data["__schema"]["types"]
+
+    assert {"name": "TypeB", "description": "Docstring description"} in result.data[
+        "__schema"
+    ]["types"]
+
+    assert {
+        "name": "TypeC",
+        "description": "Decorator description overrides docstring",
+    } in result.data["__schema"]["types"]
+
+
+def test_field_description():
+    @strawberry.type
+    class Query:
+        a: str = strawberry.field(description="Example")
+
+        @strawberry.field
+        def b(self, info, id: int) -> str:
+            return "I'm a resolver"
+
+        @strawberry.field(description="Example C")
+        def c(self, info, id: int) -> str:
+            return "I'm a resolver"
+
+        @strawberry.field
+        def d(self, info, id: int) -> str:
+            """Example D"""
+            return "I'm a resolver"
+
+        @strawberry.field(description="Inline description")
+        def e(self, info, id: int) -> str:
+            """Doc string description"""
+            return "I'm a resolver"
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        __type(name: "Query") {
+            fields {
+                name
+                description
+            }
+        }
+    }"""
+
+    result = graphql_sync(schema, query)
+
+    assert not result.errors
+
+    assert result.data["__type"]["fields"] == [
+        {"name": "a", "description": "Example"},
+        {"name": "b", "description": None},
+        {"name": "c", "description": "Example C"},
+        {"name": "d", "description": "Example D"},
+        {"name": "e", "description": "Inline description"},
+    ]
+
+
+def test_enum_description():
+    @strawberry.enum(description="We love ice-creams")
+    class IceCreamFlavour(Enum):
+        VANILLA = "vanilla"
+        STRAWBERRY = "strawberry"
+        CHOCOLATE = "chocolate"
+
+    @strawberry.enum
+    class PizzaType(Enum):
+        """We also love pizza"""
+
+        MARGHERITA = "margherita"
+
+    @strawberry.type
+    class Query:
+        favorite_ice_cream: IceCreamFlavour = IceCreamFlavour.STRAWBERRY
+        pizza: PizzaType = PizzaType.MARGHERITA
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        iceCreamFlavour: __type(name: "IceCreamFlavour") {
+            description
+            enumValues {
+                name
+                description
+            }
+        }
+        pizzas: __type(name: "PizzaType") {
+            description
+        }
+    }"""
+
+    result = graphql_sync(schema, query)
+
+    assert not result.errors
+
+    assert result.data["iceCreamFlavour"]["description"] == "We love ice-creams"
+    assert result.data["iceCreamFlavour"]["enumValues"] == [
+        {"name": "VANILLA", "description": None},
+        {"name": "STRAWBERRY", "description": None},
+        {"name": "CHOCOLATE", "description": None},
+    ]
+
+    assert result.data["pizzas"]["description"] == "We also love pizza"

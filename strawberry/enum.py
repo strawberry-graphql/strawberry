@@ -7,7 +7,7 @@ from .exceptions import NotAnEnum
 from .type_converter import REGISTRY
 
 
-def _process_enum(cls, name="", description=""):
+def _process_enum(cls, name=None, description=None):
     if not isinstance(cls, EnumMeta):
         raise NotAnEnum()
 
@@ -21,6 +21,8 @@ def _process_enum(cls, name="", description=""):
 
     setattr(cls, "__repr__", repr_)
 
+    description = description or cls.__doc__
+
     cls.field = GraphQLEnumType(
         name=name,
         values=[(item.name, GraphQLEnumValue(item.value)) for item in cls],
@@ -30,7 +32,7 @@ def _process_enum(cls, name="", description=""):
     return cls
 
 
-def enum(_cls=None, *, name="", description=""):
+def enum(_cls=None, *, name=None, description=None):
     """Registers the enum in the GraphQL type system.
 
     If name is passed, the name of the GraphQL type will be

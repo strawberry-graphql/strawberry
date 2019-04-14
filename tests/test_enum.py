@@ -107,6 +107,20 @@ def test_create_enum_with_arguments():
     assert Test.field.name == "NewName"
     assert Test.field.description == "This is the description"
 
+    @strawberry.enum(name="Example")
+    class Test2(Enum):
+        """Example"""
+
+        A = 1
+        B = 2
+        C = 3
+
+    assert Test.field
+
+    assert type(Test2.field) == GraphQLEnumType
+    assert Test2.field.name == "Example"
+    assert Test2.field.description == "Example"
+
 
 def test_raises_error_when_using_enum_with_a_not_enum_class():
     with pytest.raises(NotAnEnum) as e:
