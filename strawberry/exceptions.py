@@ -3,6 +3,13 @@
 from typing import List, Set
 
 
+class NotAnEnum(Exception):
+    def __init__(self):
+        message = "strawberry.enum can only be used with subclasses of Enum"
+
+        super().__init__(message)
+
+
 class MissingReturnAnnotationError(Exception):
     """The field is missing the return annotation"""
 
