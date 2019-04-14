@@ -1,0 +1,46 @@
+from enum import EnumMeta
+
+from graphql import GraphQLEnumType, GraphQLEnumValue
+from graphql.utilities.schema_printer import print_type
+
+from .exceptions import NotAnEnum
+from .type_converter import REGISTRY
+
+
+def _process_enum(cls, name="", description=""):
+    if not isinstance(cls, EnumMeta):
+        raise NotAnEnum()
+
+    if not name:
+        name = cls.__name__
+
+    REGISTRY[name] = cls
+
+    def repr_(self):
+        return print_type(self.field)
+
+    setattr(cls, "__repr__", repr_)
+
+    cls.field = GraphQLEnumType(
+        name=name,
+        values=[(item.name, GraphQLEnumValue(item.value)) for item in cls],
+        description=description,
+    )
+
+    return cls
+
+
+def enum(_cls=None, *, name="", description=""):
+    """Registers the enum in the GraphQL type system.
+
+    If name is passed, the name of the GraphQL type will be
+    the value passed of name instead of the Enum class name.
+    """
+
+    def wrap(cls):
+        return _process_enum(cls, name, description)
+
+    if not _cls:
+        return wrap
+
+    return wrap(_cls)
