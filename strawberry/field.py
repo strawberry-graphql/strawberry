@@ -50,14 +50,7 @@ def convert_args(args, annotations):
     return converted_args
 
 
-def field(wrap=None, *, is_subscription=False):
-    if not wrap:
-        # when used as a function we return a dataclass field
-        # in the future we can use the `metadata` argument of `field` to pass
-        # extra arguments like the description
-        return dataclasses.field()
-
-    setattr(wrap, IS_STRAWBERRY_FIELD, True)
+def _get_field(wrap, *, is_subscription=False, **kwargs):
     annotations = get_type_hints(wrap)
 
     name = wrap.__name__
@@ -96,9 +89,39 @@ def field(wrap=None, *, is_subscription=False):
         def _resolve(event, info):
             return event
 
-        kwargs = {"subscribe": resolver, "resolve": _resolve}
+        kwargs = {"subscribe": resolver, "resolve": _resolve, **kwargs}
     else:
-        kwargs = {"resolve": resolver}
+        kwargs = {"resolve": resolver, **kwargs}
 
-    wrap.field = GraphQLField(field_type, args=arguments, **kwargs)
+    return GraphQLField(field_type, args=arguments, **kwargs)
+
+
+class strawberry_field:
+    def __init__(self, *, is_subscription=False, **kwargs):
+        self.field = dataclasses.field()
+        self.is_subscription = is_subscription
+        self.description = kwargs.get("description", None)
+        self.kwargs = kwargs
+
+    def __call__(self, wrap=None):
+        setattr(wrap, IS_STRAWBERRY_FIELD, True)
+
+        wrap.field = _get_field(
+            wrap, is_subscription=self.is_subscription, **self.kwargs
+        )
+        return wrap
+
+        return _get_field(wrap)
+
+
+def field(wrap=None, *, is_subscription=False, **kwargs):
+    if not wrap:
+        # when used as a function we return a dataclass field
+        # in the future we can use the `metadata` argument of `field` to pass
+        # extra arguments like the description
+        return strawberry_field(**kwargs, is_subscription=is_subscription)
+
+    setattr(wrap, IS_STRAWBERRY_FIELD, True)
+
+    wrap.field = _get_field(wrap, is_subscription=is_subscription)
     return wrap

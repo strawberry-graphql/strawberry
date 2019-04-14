@@ -1,7 +1,6 @@
 import typing
 from functools import partial
 
-import dataclasses
 from dataclasses import dataclass
 from graphql import (
     GraphQLField,
@@ -31,6 +30,27 @@ def _get_resolver(cls, field_name):
     return _resolver
 
 
+def _convert_annotations_fields(cls, *, is_input=False):
+    FieldClass = GraphQLInputField if is_input else GraphQLField
+    annotations = typing.get_type_hints(cls, None, REGISTRY)
+
+    fields = {}
+
+    for key, annotation in annotations.items():
+        field_name = to_camel_case(key)
+        class_field = getattr(cls, key, None)
+
+        description = getattr(class_field, "description", None)
+
+        fields[field_name] = FieldClass(
+            get_graphql_type_for_annotation(annotation, key),
+            description=description,
+            **({} if is_input else {"resolve": _get_resolver(cls, key)})
+        )
+
+    return fields
+
+
 def type(cls, *, is_input=False):
     def wrap():
         name = cls.__name__
@@ -41,20 +61,8 @@ def type(cls, *, is_input=False):
 
         setattr(cls, "__repr__", repr_)
 
-        annotations = typing.get_type_hints(cls, None, REGISTRY)
-
         def _get_fields():
-            FieldClass = GraphQLInputField if is_input else GraphQLField
-
-            fields = {
-                to_camel_case(field.name): FieldClass(
-                    get_graphql_type_for_annotation(
-                        annotations[field.name], field.name
-                    ),
-                    **({} if is_input else {"resolve": _get_resolver(cls, field.name)})
-                )
-                for field in dataclasses.fields(cls)
-            }
+            fields = _convert_annotations_fields(cls, is_input=is_input)
 
             fields.update(
                 {
