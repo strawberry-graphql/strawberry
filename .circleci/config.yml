@@ -66,6 +66,19 @@ jobs:
       - run:
           command: |
             poetry run flake8
+  deploy:
+    docker:
+      - image: circleci/python:3.7.3
+    steps:
+      - add_ssh_keys
+      - checkout
+      - run: make check-has-release
+      - run: make install-deploy-deps
+      - run: make prepare-release
+      - run: poetry build
+      - run: make create-github-release
+      - run: make publish-changes
+      - run: poetry publish --username $PYPI_USERNAME --password $PYPI_PASSWORD
 
 
 workflows:
@@ -76,3 +89,9 @@ workflows:
       # TODO: need typings to be fixed
       # - mypy
       - flake8
+  deploy:
+    jobs:
+      - deploy:
+          filters:
+            branches:
+              only: master
