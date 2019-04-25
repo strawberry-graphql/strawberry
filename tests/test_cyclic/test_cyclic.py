@@ -29,7 +29,7 @@ def test_cyclic_import():
         == textwrap.dedent(
             """
             type TypeA {
-              typeB: String!
+              typeB: TypeB!
             }
             """
         ).strip()
@@ -40,7 +40,7 @@ def test_cyclic_import():
         == textwrap.dedent(
             """
             type TypeB {
-              typeA: String!
+              typeA: TypeA!
             }
             """
         ).strip()

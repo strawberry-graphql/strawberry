@@ -1,13 +1,14 @@
-from typing import get_type_hints
+import typing
 
 import dataclasses
 from graphql import GraphQLField
 
 from .constants import IS_STRAWBERRY_FIELD, IS_STRAWBERRY_INPUT
 from .exceptions import MissingArgumentsAnnotationsError, MissingReturnAnnotationError
-from .type_converter import get_graphql_type_for_annotation
+from .type_converter import REGISTRY, get_graphql_type_for_annotation
 from .utils.dict_to_type import dict_to_type
 from .utils.inspect import get_func_args
+from .utils.lazy_property import lazy_property
 from .utils.str_converters import to_camel_case, to_snake_case
 from .utils.typing import (
     get_list_annotation,
@@ -15,6 +16,67 @@ from .utils.typing import (
     is_list,
     is_optional,
 )
+
+
+class LazyFieldWrapper:
+    """A lazy wrapper for a strawberry field.
+    This allows to use cyclic dependencies in a strawberry fields:
+
+    >>> @strawberry.type
+    >>> class TypeA:
+    >>>     @strawberry.field
+    >>>     def type_b(self, info) -> "TypeB":
+    >>>         from .type_b import TypeB
+    >>>         return TypeB()
+    """
+
+    def __init__(self, obj, is_subscription, **kwargs):
+        self._wrapped_obj = obj
+        self.is_subscription = is_subscription
+        self.kwargs = kwargs
+
+        if callable(self._wrapped_obj):
+            self._check_has_annotations()
+
+    def _check_has_annotations(self):
+        # using annotations without passing from typing.get_type_hints
+        # as we don't the actually types for the annotations
+        annotations = self._wrapped_obj.__annotations__
+        name = self._wrapped_obj.__name__
+
+        if "return" not in annotations:
+            raise MissingReturnAnnotationError(name)
+
+        function_arguments = set(get_func_args(self._wrapped_obj)) - {"self", "info"}
+
+        arguments_annotations = {
+            key: value
+            for key, value in annotations.items()
+            if key not in ["info", "return"]
+        }
+
+        annotated_function_arguments = set(arguments_annotations.keys())
+        arguments_missing_annotations = (
+            function_arguments - annotated_function_arguments
+        )
+
+        if len(arguments_missing_annotations) > 0:
+            raise MissingArgumentsAnnotationsError(name, arguments_missing_annotations)
+
+    def __getattr__(self, attr):
+        if attr in self.__dict__:
+            return getattr(self, attr)
+
+        return getattr(self._wrapped_obj, attr)
+
+    def __call__(self, *args, **kwargs):
+        return self._wrapped_obj(self, *args, **kwargs)
+
+    @lazy_property
+    def field(self):
+        return _get_field(
+            self._wrapped_obj, is_subscription=self.is_subscription, **self.kwargs
+        )
 
 
 class strawberry_field:
@@ -51,10 +113,7 @@ class strawberry_field:
 
         self.kwargs["description"] = self.description or wrap.__doc__
 
-        wrap.field = _get_field(
-            wrap, is_subscription=self.is_subscription, **self.kwargs
-        )
-        return wrap
+        return LazyFieldWrapper(wrap, self.is_subscription, **self.kwargs)
 
 
 def convert_args(args, annotations):
@@ -91,28 +150,17 @@ def convert_args(args, annotations):
 
 
 def _get_field(wrap, *, is_subscription=False, **kwargs):
-    annotations = get_type_hints(wrap)
+    annotations = typing.get_type_hints(wrap, None, REGISTRY)
 
     name = wrap.__name__
 
-    if "return" not in annotations:
-        raise MissingReturnAnnotationError(name)
-
     field_type = get_graphql_type_for_annotation(annotations["return"], name)
-
-    function_arguments = set(get_func_args(wrap)) - {"self", "info"}
 
     arguments_annotations = {
         key: value
         for key, value in annotations.items()
         if key not in ["info", "return"]
     }
-
-    annotated_function_arguments = set(arguments_annotations.keys())
-    arguments_missing_annotations = function_arguments - annotated_function_arguments
-
-    if len(arguments_missing_annotations) > 0:
-        raise MissingArgumentsAnnotationsError(name, arguments_missing_annotations)
 
     arguments = {
         to_camel_case(name): get_graphql_type_for_annotation(annotation, name)
