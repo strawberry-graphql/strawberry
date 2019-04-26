@@ -5,6 +5,17 @@ version = "0.5.5"
 description = "A library for creating GraphQL APIs"
 authors = ["Patrick Arminio <patrick.arminio@gmail.com>"]
 license = "MIT"
+readme = "README.md"
+keywords = ["grapqhl", "api", "rest", "starlette", "async"]
+
+homepage = "https://strawberry.rocks/"
+repository = "https://github.com/strawberry-graphql/strawberry"
+documentation = "https://strawberry.rocks/"
+
+classifiers = [
+    "Topic :: Software Development :: Libraries",
+    "Topic :: Software Development :: Libraries :: Python Modules"
+]
 
 [tool.poetry.dependencies]
 python = "^3.7"
