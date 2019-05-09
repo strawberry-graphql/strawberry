@@ -1,6 +1,17 @@
 CHANGELOG
 =========
 
+0.7.0 - 2019-05-09
+------------------
+
+Added support for declaring interface by using `@strawberry.interface`
+Example:
+```python
+@strawberry.interface
+class Node:
+id: strawberry.ID
+```
+
 0.6.0 - 2019-05-02
 ------------------
 
