@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.8.0 - 2019-05-09
+------------------
+
+Added support for renaming fields. Example usage:
+```python
+@strawberry.type
+class Query:
+example: str = strawberry.field(name='test')
+```
+
 0.7.0 - 2019-05-09
 ------------------
 
