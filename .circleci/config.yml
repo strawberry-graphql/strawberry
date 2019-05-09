@@ -76,8 +76,8 @@ jobs:
       - run: make install-deploy-deps
       - run: make prepare-release
       - run: poetry build
-      - run: make create-github-release
       - run: make publish-changes
+      - run: make create-github-release
       - run: poetry publish --username $PYPI_USERNAME --password $PYPI_PASSWORD
 
 
