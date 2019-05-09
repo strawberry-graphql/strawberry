@@ -6,11 +6,12 @@ from graphql import (
     GraphQLField,
     GraphQLInputField,
     GraphQLInputObjectType,
+    GraphQLInterfaceType,
     GraphQLObjectType,
 )
 from graphql.utilities.schema_printer import print_type
 
-from .constants import IS_STRAWBERRY_FIELD, IS_STRAWBERRY_INPUT
+from .constants import IS_STRAWBERRY_FIELD, IS_STRAWBERRY_INPUT, IS_STRAWBERRY_INTERFACE
 from .type_converter import REGISTRY, get_graphql_type_for_annotation
 from .utils.str_converters import to_camel_case
 
@@ -51,7 +52,7 @@ def _convert_annotations_fields(cls, *, is_input=False):
     return fields
 
 
-def _process_type(cls, *, is_input=False, description=None):
+def _process_type(cls, *, is_input=False, is_interface=False, description=None):
     name = cls.__name__
     REGISTRY[name] = cls
 
@@ -75,16 +76,30 @@ def _process_type(cls, *, is_input=False, description=None):
 
     if is_input:
         setattr(cls, IS_STRAWBERRY_INPUT, True)
+    elif is_interface:
+        setattr(cls, IS_STRAWBERRY_INTERFACE, True)
 
     extra_kwargs = {"description": description or cls.__doc__}
 
-    TypeClass = GraphQLInputObjectType if is_input else GraphQLObjectType
+    if is_input:
+        TypeClass = GraphQLInputObjectType
+    elif is_interface:
+        TypeClass = GraphQLInterfaceType
+    else:
+        TypeClass = GraphQLObjectType
+
+        extra_kwargs["interfaces"] = [
+            klass.field
+            for klass in cls.__bases__
+            if hasattr(klass, IS_STRAWBERRY_INTERFACE)
+        ]
+
     cls.field = TypeClass(name, lambda: _get_fields(), **extra_kwargs)
 
     return dataclass(cls, repr=False)
 
 
-def type(cls=None, *, is_input=False, description=None):
+def type(cls=None, *, is_input=False, is_interface=False, description=None):
     """Annotates a class as a GraphQL type.
 
     Example usage:
@@ -95,7 +110,9 @@ def type(cls=None, *, is_input=False, description=None):
     """
 
     def wrap(cls):
-        return _process_type(cls, is_input=is_input, description=description)
+        return _process_type(
+            cls, is_input=is_input, is_interface=is_interface, description=description
+        )
 
     if cls is None:
         return wrap
@@ -104,3 +121,4 @@ def type(cls=None, *, is_input=False, description=None):
 
 
 input = partial(type, is_input=True)
+interface = partial(type, is_interface=True)

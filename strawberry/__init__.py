@@ -6,4 +6,4 @@ from .field import field  # noqa
 from .mutation import mutation, subscription  # noqa
 from .scalars import ID  # noqa
 from .schema import Schema  # noqa
-from .type import input, type  # noqa
+from .type import input, type, interface  # noqa
