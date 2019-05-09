@@ -1,3 +1,4 @@
+import typing
 from enum import Enum
 
 import strawberry
@@ -130,6 +131,29 @@ def test_does_camel_case_conversion():
     assert not result.errors
     assert result.data["helloWorld"] == "strawberry"
     assert result.data["example"] == "hi"
+
+
+def test_can_rename_fields():
+    @strawberry.type
+    class Query:
+        hello_world: typing.Optional[str] = strawberry.field(name="hello")
+
+        @strawberry.field(name="example1")
+        def example(self, info, query_param: str) -> str:
+            return query_param
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        hello
+        example1(queryParam: "hi")
+    }"""
+
+    result = graphql_sync(schema, query)
+
+    assert not result.errors
+    assert result.data["hello"] is None
+    assert result.data["example1"] == "hi"
 
 
 def test_type_description():

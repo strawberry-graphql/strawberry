@@ -12,6 +12,7 @@ from graphql import (
 from graphql.utilities.schema_printer import print_type
 
 from .constants import IS_STRAWBERRY_FIELD, IS_STRAWBERRY_INPUT, IS_STRAWBERRY_INTERFACE
+from .field import strawberry_field
 from .type_converter import REGISTRY, get_graphql_type_for_annotation
 from .utils.str_converters import to_camel_case
 
@@ -26,6 +27,10 @@ def _get_resolver(cls, field_name):
         if getattr(field_resolver, IS_STRAWBERRY_FIELD, False):
             return field_resolver(obj, info)
 
+        elif field_resolver.__class__ is strawberry_field:
+            # TODO: support default values
+            return None
+
         return field_resolver
 
     return _resolver
@@ -38,10 +43,12 @@ def _convert_annotations_fields(cls, *, is_input=False):
     fields = {}
 
     for key, annotation in annotations.items():
-        field_name = to_camel_case(key)
         class_field = getattr(cls, key, None)
 
         description = getattr(class_field, "description", None)
+        name = getattr(class_field, "name", None)
+
+        field_name = name or to_camel_case(key)
 
         fields[field_name] = FieldClass(
             get_graphql_type_for_annotation(annotation, key),
@@ -64,13 +71,16 @@ def _process_type(cls, *, is_input=False, is_interface=False, description=None):
     def _get_fields():
         fields = _convert_annotations_fields(cls, is_input=is_input)
 
-        fields.update(
-            {
-                to_camel_case(key): value.field
-                for key, value in cls.__dict__.items()
-                if getattr(value, IS_STRAWBERRY_FIELD, False)
-            }
-        )
+        strawberry_fields = {
+            key: value
+            for key, value in cls.__dict__.items()
+            if getattr(value, IS_STRAWBERRY_FIELD, False)
+        }
+
+        for key, value in strawberry_fields.items():
+            name = getattr(value, "name", None) or to_camel_case(key)
+
+            fields[name] = value.field
 
         return fields
 

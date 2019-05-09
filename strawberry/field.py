@@ -30,9 +30,10 @@ class LazyFieldWrapper:
     >>>         return TypeB()
     """
 
-    def __init__(self, obj, is_subscription, **kwargs):
+    def __init__(self, obj, is_subscription, name=None, **kwargs):
         self._wrapped_obj = obj
         self.is_subscription = is_subscription
+        self.name = name
         self.kwargs = kwargs
 
         if callable(self._wrapped_obj):
@@ -106,6 +107,7 @@ class strawberry_field:
         self.field = dataclasses.field()
         self.is_subscription = is_subscription
         self.description = kwargs.get("description", None)
+        self.name = kwargs.pop("name", None)
         self.kwargs = kwargs
 
     def __call__(self, wrap):
@@ -113,7 +115,7 @@ class strawberry_field:
 
         self.kwargs["description"] = self.description or wrap.__doc__
 
-        return LazyFieldWrapper(wrap, self.is_subscription, **self.kwargs)
+        return LazyFieldWrapper(wrap, self.is_subscription, self.name, **self.kwargs)
 
 
 def convert_args(args, annotations):
@@ -186,7 +188,7 @@ def _get_field(wrap, *, is_subscription=False, **kwargs):
     return GraphQLField(field_type, args=arguments, **kwargs)
 
 
-def field(wrap=None, *, is_subscription=False, description=None):
+def field(wrap=None, *, is_subscription=False, name=None, description=None):
     """Annotates a method or property as a GraphQL field.
 
     This is normally used inside a type declaration:
@@ -202,7 +204,9 @@ def field(wrap=None, *, is_subscription=False, description=None):
     it can be used both as decorator and as a normal function.
     """
 
-    field = strawberry_field(description=description, is_subscription=is_subscription)
+    field = strawberry_field(
+        name=name, description=description, is_subscription=is_subscription
+    )
 
     # when calling this with parens we are going to return a strawberry_field
     # instance, so it can be used as both decorator and function.
