@@ -37,18 +37,18 @@ class LazyFieldWrapper:
         self.kwargs = kwargs
 
         if callable(self._wrapped_obj):
-            self._check_has_annotations()
+            self._check_has_annotations(self._wrapped_obj)
 
-    def _check_has_annotations(self):
+    def _check_has_annotations(self, func):
         # using annotations without passing from typing.get_type_hints
         # as we don't the actually types for the annotations
-        annotations = self._wrapped_obj.__annotations__
-        name = self._wrapped_obj.__name__
+        annotations = func.__annotations__
+        name = func.__name__
 
         if "return" not in annotations:
             raise MissingReturnAnnotationError(name)
 
-        function_arguments = set(get_func_args(self._wrapped_obj)) - {"self", "info"}
+        function_arguments = set(get_func_args(func)) - {"self", "info"}
 
         arguments_annotations = {
             key: value
@@ -108,6 +108,7 @@ class strawberry_field:
         self.is_subscription = is_subscription
         self.description = kwargs.get("description", None)
         self.name = kwargs.pop("name", None)
+        self.resolver = kwargs.pop("resolver", None)
         self.kwargs = kwargs
 
     def __call__(self, wrap):
@@ -188,7 +189,7 @@ def _get_field(wrap, *, is_subscription=False, **kwargs):
     return GraphQLField(field_type, args=arguments, **kwargs)
 
 
-def field(wrap=None, *, is_subscription=False, name=None, description=None):
+def field(wrap=None, *, name=None, description=None, resolver=None, **kwargs):
     """Annotates a method or property as a GraphQL field.
 
     This is normally used inside a type declaration:
@@ -205,7 +206,7 @@ def field(wrap=None, *, is_subscription=False, name=None, description=None):
     """
 
     field = strawberry_field(
-        name=name, description=description, is_subscription=is_subscription
+        name=name, description=description, resolver=resolver, **kwargs
     )
 
     # when calling this with parens we are going to return a strawberry_field

@@ -21,14 +21,20 @@ def _get_resolver(cls, field_name):
     def _resolver(obj, info):
         # TODO: can we make this nicer?
         # does it work in all the cases?
+        instance = cls(**(obj.__dict__ if obj else {}))
 
-        field_resolver = getattr(cls(**(obj.__dict__ if obj else {})), field_name)
+        field_resolver = getattr(instance, field_name)
 
         if getattr(field_resolver, IS_STRAWBERRY_FIELD, False):
             return field_resolver(obj, info)
 
         elif field_resolver.__class__ is strawberry_field:
-            # TODO: support default values
+            resolver = getattr(field_resolver, "resolver", None)
+
+            if resolver:
+                return resolver(instance, info)
+
+            # TODO: support default values (@strawberry.field(default='123'))
             return None
 
         return field_resolver

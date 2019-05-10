@@ -1,8 +1,10 @@
 import typing
 from enum import Enum
 
+import pytest
+
 import strawberry
-from graphql import graphql_sync
+from graphql import graphql, graphql_sync
 
 
 def test_simple_type():
@@ -37,6 +39,37 @@ def test_resolver():
 
     assert not result.errors
     assert result.data["hello"] == "I'm a resolver"
+
+
+@pytest.mark.asyncio
+async def test_resolver_function():
+    def function_resolver(root, info) -> str:
+        return "I'm a function resolver"
+
+    async def async_resolver(root, info) -> str:
+        return "I'm an async resolver"
+
+    def resolve_name(root, info) -> str:
+        return root.name
+
+    @strawberry.type
+    class Query:
+        hello: str = strawberry.field(resolver=function_resolver)
+        hello_async: str = strawberry.field(resolver=async_resolver)
+        get_name: str = strawberry.field(resolver=resolve_name)
+
+        name = "Patrick"
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ hello, helloAsync, getName }"
+
+    result = await graphql(schema, query)
+
+    assert not result.errors
+    assert result.data["hello"] == "I'm a function resolver"
+    assert result.data["helloAsync"] == "I'm an async resolver"
+    assert result.data["getName"] == "Patrick"
 
 
 def test_nested_types():
