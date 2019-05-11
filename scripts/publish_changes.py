@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
     git(["add", PROJECT_TOML_FILE_NAME])
     git(["add", CHANGELOG_FILE_NAME])
-    git(["rm", RELEASE_FILE_NAME])
+    git(["rm", "--cached", RELEASE_FILE_NAME])
 
     git(["commit", "-m", f"Release 🍓 {version}"])
     git(["push", "origin", "HEAD"])
