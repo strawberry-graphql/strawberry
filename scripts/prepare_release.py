@@ -49,7 +49,7 @@ if __name__ == "__main__":
         f.write(f"\n{new_version_header}\n")
         f.write(f"{'-' * len(new_version_header)}\n\n")
 
-        f.write("\n".join(release_changelog))
+        f.write(release_changelog)
         f.write("\n")
 
         f.write("".join(old_changelog_data))
