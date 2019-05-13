@@ -46,6 +46,6 @@ if __name__ == "__main__":
         version,
         publish=True,
         name=f"{PROJECT_NAME} {version}",
-        body="\n".join(changelog),
+        body=changelog,
         asset_pattern="dist/*",
     )
