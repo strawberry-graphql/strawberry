@@ -44,7 +44,7 @@ field `user` that will return a hard coded user.
 To run the debug server run the following command:
 
 ```shell
-strawberry run server app
+strawberry server app
 ```
 
 Open the debug server by clicking on the follwing link:
