@@ -52,24 +52,34 @@ async def test_resolver_function():
     def resolve_name(root, info) -> str:
         return root.name
 
+    def resolve_say_hello(root, info, name: str) -> str:
+        return f"Hello {name}"
+
     @strawberry.type
     class Query:
         hello: str = strawberry.field(resolver=function_resolver)
         hello_async: str = strawberry.field(resolver=async_resolver)
         get_name: str = strawberry.field(resolver=resolve_name)
+        say_hello: str = strawberry.field(resolver=resolve_say_hello)
 
         name = "Patrick"
 
     schema = strawberry.Schema(query=Query)
 
-    query = "{ hello, helloAsync, getName }"
+    query = """{
+        hello
+        helloAsync
+        getName
+        sayHello(name: "Marco")
+    }"""
 
-    result = await graphql(schema, query)
+    result = await graphql(schema, query, root_value=Query())
 
     assert not result.errors
     assert result.data["hello"] == "I'm a function resolver"
     assert result.data["helloAsync"] == "I'm an async resolver"
     assert result.data["getName"] == "Patrick"
+    assert result.data["sayHello"] == "Hello Marco"
 
 
 def test_nested_types():

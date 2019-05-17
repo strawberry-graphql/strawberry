@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import textwrap
 from typing import Optional
 
@@ -34,7 +32,7 @@ def test_simple_required_types():
 def test_recursive_type():
     @strawberry.type
     class MyType:
-        s: MyType
+        s: "MyType"
 
     expected_representation = """
     type MyType {
