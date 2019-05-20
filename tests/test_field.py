@@ -11,7 +11,7 @@ from strawberry.exceptions import (
 def test_field_as_function():
     field: str = strawberry.field()
 
-    assert field.description is None
+    assert field.field_description is None
 
 
 def test_field_arguments():

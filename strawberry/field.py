@@ -30,12 +30,22 @@ class LazyFieldWrapper:
     >>>         return TypeB()
     """
 
-    def __init__(self, obj, is_subscription, is_input, name=None, **kwargs):
+    def __init__(
+        self,
+        obj,
+        *,
+        is_input=False,
+        is_subscription=False,
+        resolver=None,
+        name=None,
+        description=None,
+    ):
         self._wrapped_obj = obj
         self.is_subscription = is_subscription
         self.is_input = is_input
-        self.name = name
-        self.kwargs = kwargs
+        self.field_name = name
+        self.field_resolver = resolver
+        self.field_description = description
 
         if callable(self._wrapped_obj):
             self._check_has_annotations(self._wrapped_obj)
@@ -78,13 +88,14 @@ class LazyFieldWrapper:
     def field(self):
         return _get_field(
             self._wrapped_obj,
-            is_subscription=self.is_subscription,
             is_input=self.is_input,
-            **self.kwargs
+            is_subscription=self.is_subscription,
+            name=self.field_name,
+            description=self.field_description,
         )
 
 
-class strawberry_field:
+class strawberry_field(dataclasses.Field):
     """A small wrapper for a field in strawberry.
 
     You shouldn't be using this directly as this is used internally
@@ -107,22 +118,45 @@ class strawberry_field:
     allowing us to us both syntaxes.
     """
 
-    def __init__(self, *, is_input=False, is_subscription=False, **kwargs):
-        self.field = dataclasses.field()
+    def __init__(
+        self,
+        *,
+        is_input=False,
+        is_subscription=False,
+        resolver=None,
+        name=None,
+        description=None,
+        metadata=None,
+    ):
+        self.field_name = name
+        self.field_description = description
+        self.field_resolver = resolver
         self.is_subscription = is_subscription
         self.is_input = is_input
-        self.description = kwargs.get("description", None)
-        self.name = kwargs.pop("name", None)
-        self.resolver = kwargs.pop("resolver", None)
-        self.kwargs = kwargs
+
+        super().__init__(
+            # TODO:
+            default=dataclasses.MISSING,
+            default_factory=dataclasses.MISSING,
+            init=False,
+            repr=True,
+            hash=None,
+            compare=True,
+            metadata=metadata,
+        )
 
     def __call__(self, wrap):
         setattr(wrap, IS_STRAWBERRY_FIELD, True)
 
-        self.kwargs["description"] = self.description or wrap.__doc__
+        self.field_description = self.field_description or wrap.__doc__
 
         return LazyFieldWrapper(
-            wrap, self.is_subscription, self.is_input, self.name, **self.kwargs
+            wrap,
+            is_input=self.is_input,
+            is_subscription=self.is_subscription,
+            resolver=self.field_resolver,
+            name=self.field_name,
+            description=self.field_description,
         )
 
 
@@ -159,11 +193,12 @@ def convert_args(args, annotations):
     return converted_args
 
 
-def _get_field(wrap, *, is_subscription=False, is_input=False, **kwargs):
-    annotations = typing.get_type_hints(wrap, None, REGISTRY)
-
+def _get_field(
+    wrap, *, is_input=False, is_subscription=False, name=None, description=None
+):
     name = wrap.__name__
 
+    annotations = typing.get_type_hints(wrap, None, REGISTRY)
     field_type = get_graphql_type_for_annotation(annotations["return"], name)
 
     arguments_annotations = {
@@ -182,27 +217,35 @@ def _get_field(wrap, *, is_subscription=False, is_input=False, **kwargs):
 
         return wrap(source, info, **args)
 
+    field_params = {}
+
     if not is_input:
-        kwargs["args"] = arguments
+        field_params["args"] = arguments
 
         if is_subscription:
 
             def _resolve(event, info):
                 return event
 
-            kwargs.update({"subscribe": resolver, "resolve": _resolve})
+            field_params.update({"subscribe": resolver, "resolve": _resolve})
         else:
-            kwargs.update({"resolve": resolver})
+            field_params.update({"resolve": resolver})
 
-    kwargs["description"] = kwargs.get("description", wrap.__doc__)
+    field_params["description"] = description or wrap.__doc__
 
     FieldType = GraphQLInputField if is_input else GraphQLField
 
-    return FieldType(field_type, **kwargs)
+    return FieldType(field_type, **field_params)
 
 
 def field(
-    wrap=None, *, name=None, description=None, resolver=None, is_input=False, **kwargs
+    wrap=None,
+    *,
+    name=None,
+    description=None,
+    resolver=None,
+    is_input=False,
+    is_subscription=False,
 ):
     """Annotates a method or property as a GraphQL field.
 
@@ -224,7 +267,7 @@ def field(
         description=description,
         resolver=resolver,
         is_input=is_input,
-        **kwargs
+        is_subscription=is_subscription,
     )
 
     # when calling this with parens we are going to return a strawberry_field

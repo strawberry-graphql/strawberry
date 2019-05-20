@@ -17,7 +17,9 @@ def _get_resolver(cls, field_name):
         return class_field.resolver
 
     def _resolver(root, info):
-        field_resolver = getattr(cls(**(root.__dict__ if root else {})), field_name)
+        field_resolver = getattr(
+            cls(**(root.__dict__ if root else {})), field_name, None
+        )
 
         if getattr(field_resolver, IS_STRAWBERRY_FIELD, False):
             return field_resolver(root, info)
@@ -46,11 +48,14 @@ def _process_type(cls, *, is_input=False, is_interface=False, description=None):
         fields = {}
 
         for class_field in class_fields:
-            f = getattr(cls, class_field.name, None)
-            field_name = getattr(f, "name", None) or to_camel_case(class_field.name)
-            description = getattr(f, "description", None)
+            field_name = getattr(class_field, "field_name", None) or to_camel_case(
+                class_field.name
+            )
+            description = getattr(class_field, "field_description", None)
 
-            resolver = _get_resolver(cls, class_field.name)
+            resolver = getattr(class_field, "field_resolver", None) or _get_resolver(
+                cls, class_field.name
+            )
             resolver.__annotations__["return"] = class_field.type
 
             fields[field_name] = field(
@@ -64,7 +69,7 @@ def _process_type(cls, *, is_input=False, is_interface=False, description=None):
         }
 
         for key, value in strawberry_fields.items():
-            name = getattr(value, "name", None) or to_camel_case(key)
+            name = getattr(value, "field_name", None) or to_camel_case(key)
 
             fields[name] = value.field
 
