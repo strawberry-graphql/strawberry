@@ -53,7 +53,7 @@ description = "Fancy Interface to the Python Interpreter"
 name = "bpython"
 optional = false
 python-versions = "*"
-version = "0.17.1"
+version = "0.18"
 
 [package.dependencies]
 curtsies = ">=0.1.18"
@@ -294,7 +294,7 @@ setuptools = "*"
 six = ">=1.10.0"
 
 [package.dependencies.more-itertools]
-python = ">2.7"
+python = ">=2.8"
 version = ">=4.0.0"
 
 [[package]]
@@ -422,7 +422,7 @@ python-versions = "*"
 version = "0.3"
 
 [metadata]
-content-hash = "372b5153cacaaa6de438383cc72c4671aa98089f47d57ac2d11c2fabf58e860a"
+content-hash = "eebc066fb8fb933460ed94d746b41b3ac5bfc46c3a3d02eb4cab055591b952f8"
 python-versions = "^3.7"
 
 [metadata.hashes]
@@ -431,7 +431,7 @@ atomicwrites = ["03472c30eb2c5d1ba9227e4c2ca66ab8287fbfbbda3888aa93dc2e28fc6811b
 attrs = ["10cbf6e27dbce8c30807caf056c8eb50917e0eaafe86347671b57254006c3e69", "ca4be454458f9dec299268d472aaa5a11f67a4ff70093396e1ceae9c76cf4bbb"]
 black = ["817243426042db1d36617910df579a54f1afd659adb96fc5032fcf4b36209739", "e030a9a28f542debc08acceb273f228ac422798e5215ba2a791a6ddeaaca22a5"]
 blessings = ["98e5854d805f50a5b58ac2333411b0482516a8210f23f43308baeb58d77c157d", "b1fdd7e7a675295630f9ae71527a8ebc10bfefa236b3d6aa4932ee4462c17ba3", "caad5211e7ba5afe04367cdd4cfc68fa886e2e08f6f35e76b7387d2109ccea6e"]
-bpython = ["6cd1b165888c232f2fcdd4313577b6066155d6c94b3d42c0f11649c000394417", "8907c510bca3c4d9bc0a157279bdc5e3b739cc68c0f247167279b6fe4becb02f"]
+bpython = ["56cc20dbe568c98c81de4990fddf5862c0d8d3ab0ad1cf7057988abc5f7686c2", "c7c6de7309311fd607d6cb47ef7e2d6e065d0a299199d51220d57732850a3efa"]
 certifi = ["47f9c83ef4c0c621eaef743f133f09fa8a74a9b75f037e8624f83bd1b6626cb7", "993f830721089fef441cdfeb4b2c8c9df86f0c63239f06bd025a76a7daddb033"]
 chardet = ["84ab92ed1c4d4f16916e05906b6b75a6c0fb5db821cc65e70cbd64a3e2a5eaae", "fc323ffcaeaed0e0a02bf4d117757b98aed530d9ed4531e3e15460124c106691"]
 click = ["2335065e6395b9e67ca716de5f7526736bfa6ceead690adf616d925bdc622b13", "5b94b49521f6456670fdb30cd82a4eca9412788a93fa6dd6df72c94d5a8ff2d7"]
@@ -446,7 +446,7 @@ h11 = ["acca6a44cb52a32ab442b1779adf0875c443c689e9e028f8d831a3769f9c5208", "f2b1
 httptools = ["e00cbd7ba01ff748e494248183abc6e153f49181169d8a3d41bb49132ca01dfc"]
 hupper = ["626b77e3ce55dbfc11e670a0eeed413de6fdbf5cf0bb92458dd4e0d5fc462ab8", "693a167badbe82177219fccf1a27c5a007498c843c21d0071795a9bbb3f0c60a"]
 idna = ["c357b3f628cf53ae2c4c05627ecc484553142ca23264e593d327bcde5e9c3407", "ea8b7f6188e6fa117537c3df7da9fc686d485087abf6ac197f9c46432f7e4a3c"]
-isort = ["f19b23b22fb5a919a081bc31aabcc0991614c244d9215267e11abf2ca7b684ce"]
+isort = ["ee5fddfd792e6e1d664ee28f3fbe00dfc26d8d3c6f059ee78f4da4c19718007c", "f19b23b22fb5a919a081bc31aabcc0991614c244d9215267e11abf2ca7b684ce"]
 mccabe = ["ab8a6258860da4b6677da4bd2fe5dc2c659cff31b3ee4f7f5d64e79735b80d42", "dd8d182285a0fe56bace7f45b5e7d1a6ebcbf524e8f3bd87eb0f125271b8831f"]
 more-itertools = ["0125e8f60e9e031347105eb1682cef932f5e97d7b9a1a28d9bf00c22a5daef40", "590044e3942351a1bdb1de960b739ff4ce277960f2425ad4509446dbace8d9d1"]
 pdbpp = ["438bb2c885e40e9dcf649d9b598e4fe30fd1e3558c89a6ad3f447a9839a04e9f"]

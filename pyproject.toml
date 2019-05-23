@@ -29,7 +29,7 @@ uvicorn = "^0.4.6"
 [tool.poetry.dev-dependencies]
 pytest = "^4.2"
 pdbpp = "^0.9.5"
-bpython = "^0.17.1"
+bpython = "^0.18"
 pytest-emoji = "^0.2.0"
 flake8 = "^3.7"
 black = {version = "^18.3-alpha.0",allows-prereleases = true}
