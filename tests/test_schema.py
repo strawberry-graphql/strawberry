@@ -82,6 +82,42 @@ async def test_resolver_function():
     assert result.data["sayHello"] == "Hello Marco"
 
 
+def test_resolvers_on_types():
+    def function_resolver(root, info) -> str:
+        return "I'm a function resolver"
+
+    def function_resolver_with_params(root, info, x: str) -> str:
+        return f"I'm {x}"
+
+    @strawberry.type
+    class Example:
+        hello: str = strawberry.field(resolver=function_resolver)
+        hello_with_params: str = strawberry.field(
+            resolver=function_resolver_with_params
+        )
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def example(self, info) -> Example:
+            return Example()
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        example {
+            hello
+            helloWithParams(x: "abc")
+        }
+    }"""
+
+    result = graphql_sync(schema, query, root_value=Query())
+
+    assert not result.errors
+    assert result.data["example"]["hello"] == "I'm a function resolver"
+    assert result.data["example"]["helloWithParams"] == "I'm abc"
+
+
 def test_nested_types():
     @strawberry.type
     class User:

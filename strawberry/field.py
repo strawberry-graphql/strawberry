@@ -141,7 +141,10 @@ class strawberry_field(dataclasses.Field):
             init=False,
             repr=True,
             hash=None,
-            compare=True,
+            # TODO: this needs to be False when init is False
+            # we could turn it to True when and if we have a default
+            # probably can't be True when passing a resolver
+            compare=False,
             metadata=metadata,
         )
 
