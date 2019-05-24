@@ -1,6 +1,22 @@
 CHANGELOG
 =========
 
+0.9.0 - 2019-05-24
+------------------
+
+Added support for passing resolver functions
+
+```python
+def resolver(root, info, par: str) -> str:
+    return f"hello {par}"
+
+@strawberry.type
+class Query:
+    example: str = strawberry.field(resolver=resolver)
+```
+
+Also we updated some of the dependencies of the project
+
 0.8.0 - 2019-05-09
 ------------------
 
