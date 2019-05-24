@@ -1,31 +1,28 @@
-import typing
 from functools import partial
 
-from dataclasses import dataclass
-from graphql import (
-    GraphQLField,
-    GraphQLInputField,
-    GraphQLInputObjectType,
-    GraphQLInterfaceType,
-    GraphQLObjectType,
-)
+import dataclasses
+from graphql import GraphQLInputObjectType, GraphQLInterfaceType, GraphQLObjectType
 from graphql.utilities.schema_printer import print_type
 
 from .constants import IS_STRAWBERRY_FIELD, IS_STRAWBERRY_INPUT, IS_STRAWBERRY_INTERFACE
-from .field import strawberry_field
-from .type_converter import REGISTRY, get_graphql_type_for_annotation
+from .field import field, strawberry_field
+from .type_converter import REGISTRY
 from .utils.str_converters import to_camel_case
 
 
 def _get_resolver(cls, field_name):
-    def _resolver(obj, info):
-        # TODO: can we make this nicer?
-        # does it work in all the cases?
+    class_field = getattr(cls, field_name, None)
 
-        field_resolver = getattr(cls(**(obj.__dict__ if obj else {})), field_name)
+    if class_field and getattr(class_field, "resolver", None):
+        return class_field.resolver
+
+    def _resolver(root, info):
+        field_resolver = getattr(
+            cls(**(root.__dict__ if root else {})), field_name, None
+        )
 
         if getattr(field_resolver, IS_STRAWBERRY_FIELD, False):
-            return field_resolver(obj, info)
+            return field_resolver(root, info)
 
         elif field_resolver.__class__ is strawberry_field:
             # TODO: support default values
@@ -34,29 +31,6 @@ def _get_resolver(cls, field_name):
         return field_resolver
 
     return _resolver
-
-
-def _convert_annotations_fields(cls, *, is_input=False):
-    FieldClass = GraphQLInputField if is_input else GraphQLField
-    annotations = typing.get_type_hints(cls, None, REGISTRY)
-
-    fields = {}
-
-    for key, annotation in annotations.items():
-        class_field = getattr(cls, key, None)
-
-        description = getattr(class_field, "description", None)
-        name = getattr(class_field, "name", None)
-
-        field_name = name or to_camel_case(key)
-
-        fields[field_name] = FieldClass(
-            get_graphql_type_for_annotation(annotation, key),
-            description=description,
-            **({} if is_input else {"resolve": _get_resolver(cls, key)})
-        )
-
-    return fields
 
 
 def _process_type(cls, *, is_input=False, is_interface=False, description=None):
@@ -68,8 +42,25 @@ def _process_type(cls, *, is_input=False, is_interface=False, description=None):
 
     setattr(cls, "__repr__", repr_)
 
-    def _get_fields():
-        fields = _convert_annotations_fields(cls, is_input=is_input)
+    def _get_fields(wrapped):
+        class_fields = dataclasses.fields(wrapped)
+
+        fields = {}
+
+        for class_field in class_fields:
+            field_name = getattr(class_field, "field_name", None) or to_camel_case(
+                class_field.name
+            )
+            description = getattr(class_field, "field_description", None)
+
+            resolver = getattr(class_field, "field_resolver", None) or _get_resolver(
+                cls, class_field.name
+            )
+            resolver.__annotations__["return"] = class_field.type
+
+            fields[field_name] = field(
+                resolver, is_input=is_input, description=description
+            ).field
 
         strawberry_fields = {
             key: value
@@ -78,7 +69,7 @@ def _process_type(cls, *, is_input=False, is_interface=False, description=None):
         }
 
         for key, value in strawberry_fields.items():
-            name = getattr(value, "name", None) or to_camel_case(key)
+            name = getattr(value, "field_name", None) or to_camel_case(key)
 
             fields[name] = value.field
 
@@ -104,9 +95,10 @@ def _process_type(cls, *, is_input=False, is_interface=False, description=None):
             if hasattr(klass, IS_STRAWBERRY_INTERFACE)
         ]
 
-    cls.field = TypeClass(name, lambda: _get_fields(), **extra_kwargs)
+    wrapped = dataclasses.dataclass(cls, repr=False)
+    wrapped.field = TypeClass(name, lambda: _get_fields(wrapped), **extra_kwargs)
 
-    return dataclass(cls, repr=False)
+    return wrapped
 
 
 def type(cls=None, *, is_input=False, is_interface=False, description=None):

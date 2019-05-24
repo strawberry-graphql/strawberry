@@ -1,8 +1,10 @@
 import typing
 from enum import Enum
 
+import pytest
+
 import strawberry
-from graphql import graphql_sync
+from graphql import graphql, graphql_sync
 
 
 def test_simple_type():
@@ -37,6 +39,83 @@ def test_resolver():
 
     assert not result.errors
     assert result.data["hello"] == "I'm a resolver"
+
+
+@pytest.mark.asyncio
+async def test_resolver_function():
+    def function_resolver(root, info) -> str:
+        return "I'm a function resolver"
+
+    async def async_resolver(root, info) -> str:
+        return "I'm an async resolver"
+
+    def resolve_name(root, info) -> str:
+        return root.name
+
+    def resolve_say_hello(root, info, name: str) -> str:
+        return f"Hello {name}"
+
+    @strawberry.type
+    class Query:
+        hello: str = strawberry.field(resolver=function_resolver)
+        hello_async: str = strawberry.field(resolver=async_resolver)
+        get_name: str = strawberry.field(resolver=resolve_name)
+        say_hello: str = strawberry.field(resolver=resolve_say_hello)
+
+        name = "Patrick"
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        hello
+        helloAsync
+        getName
+        sayHello(name: "Marco")
+    }"""
+
+    result = await graphql(schema, query, root_value=Query())
+
+    assert not result.errors
+    assert result.data["hello"] == "I'm a function resolver"
+    assert result.data["helloAsync"] == "I'm an async resolver"
+    assert result.data["getName"] == "Patrick"
+    assert result.data["sayHello"] == "Hello Marco"
+
+
+def test_resolvers_on_types():
+    def function_resolver(root, info) -> str:
+        return "I'm a function resolver"
+
+    def function_resolver_with_params(root, info, x: str) -> str:
+        return f"I'm {x}"
+
+    @strawberry.type
+    class Example:
+        hello: str = strawberry.field(resolver=function_resolver)
+        hello_with_params: str = strawberry.field(
+            resolver=function_resolver_with_params
+        )
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def example(self, info) -> Example:
+            return Example()
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        example {
+            hello
+            helloWithParams(x: "abc")
+        }
+    }"""
+
+    result = graphql_sync(schema, query, root_value=Query())
+
+    assert not result.errors
+    assert result.data["example"]["hello"] == "I'm a function resolver"
+    assert result.data["example"]["helloWithParams"] == "I'm abc"
 
 
 def test_nested_types():
