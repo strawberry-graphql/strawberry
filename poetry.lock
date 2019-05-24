@@ -221,7 +221,7 @@ description = "pdb++, a drop-in replacement for pdb"
 name = "pdbpp"
 optional = false
 python-versions = "*"
-version = "0.9.6"
+version = "0.10.0"
 
 [package.dependencies]
 fancycompleter = ">=0.8"
@@ -423,7 +423,7 @@ python-versions = "*"
 version = "0.3"
 
 [metadata]
-content-hash = "44c6ddac963d3068d0ace1a4e871d7cb5a9cbc514bd4eefd59e0e90696879825"
+content-hash = "7334605e53056283dbffa35c474205bf3d9668f3f4008e212cfad5e7e563af50"
 python-versions = "^3.7"
 
 [metadata.hashes]
@@ -450,7 +450,7 @@ idna = ["c357b3f628cf53ae2c4c05627ecc484553142ca23264e593d327bcde5e9c3407", "ea8
 isort = ["ee5fddfd792e6e1d664ee28f3fbe00dfc26d8d3c6f059ee78f4da4c19718007c", "f19b23b22fb5a919a081bc31aabcc0991614c244d9215267e11abf2ca7b684ce"]
 mccabe = ["ab8a6258860da4b6677da4bd2fe5dc2c659cff31b3ee4f7f5d64e79735b80d42", "dd8d182285a0fe56bace7f45b5e7d1a6ebcbf524e8f3bd87eb0f125271b8831f"]
 more-itertools = ["0125e8f60e9e031347105eb1682cef932f5e97d7b9a1a28d9bf00c22a5daef40", "590044e3942351a1bdb1de960b739ff4ce277960f2425ad4509446dbace8d9d1"]
-pdbpp = ["438bb2c885e40e9dcf649d9b598e4fe30fd1e3558c89a6ad3f447a9839a04e9f"]
+pdbpp = ["ee7eab02ecf32d92bd66b45eedb9bda152fa13f7be0dceb7050413a52cbbc4dd"]
 pluggy = ["25a1bc1d148c9a640211872b4ff859878d422bccb59c9965e04eed468a0aa180", "964cedd2b27c492fbf0b7f58b3284a09cf7f99b0f715941fb24a439b3af1bd1a"]
 py = ["bf92637198836372b520efcba9e020c330123be8ce527e535d185ed4b6f45694", "e76826342cefe3c3d5f7e8ee4316b80d1dd8a300781612ddbc765c17ba25a6c6"]
 pycodestyle = ["95a2219d12372f05704562a14ec30bc76b05a5b297b21a5dfe3f6fac3491ae56", "e40a936c9a450ad81df37f549d676d127b1b66000a6c500caa2b085bc0ca976c"]
