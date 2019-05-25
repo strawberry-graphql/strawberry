@@ -1,4 +1,4 @@
-<img src="./.github/logo.png" width="124" height="150">
+<img src="https://github.com/strawberry-graphql/strawberry/raw/master/.github/logo.png" width="124" height="150">
 
 # Strawberry GraphQL
 
