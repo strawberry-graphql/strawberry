@@ -17,9 +17,7 @@ def _get_resolver(cls, field_name):
         return class_field.resolver
 
     def _resolver(root, info):
-        field_resolver = getattr(
-            cls(**(root.__dict__ if root else {})), field_name, None
-        )
+        field_resolver = getattr(root or cls(), field_name, None)
 
         if getattr(field_resolver, IS_STRAWBERRY_FIELD, False):
             return field_resolver(root, info)

@@ -4,6 +4,7 @@ from enum import Enum
 import pytest
 
 import strawberry
+from dataclasses import InitVar
 from graphql import graphql, graphql_sync
 
 
@@ -20,6 +21,28 @@ def test_simple_type():
 
     assert not result.errors
     assert result.data["hello"] == "strawberry"
+
+
+def test_init_var():
+    @strawberry.type
+    class Category:
+        name: str
+        id: InitVar[str]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def category(self, info) -> Category:
+            return Category(name="example", id="123")  # type:ignore
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ category { name } }"
+
+    result = graphql_sync(schema, query)
+
+    assert not result.errors
+    assert result.data["category"]["name"] == "example"
 
 
 def test_resolver():
