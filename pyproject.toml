@@ -27,7 +27,7 @@ pygments = "^2.3"
 uvicorn = "^0.4.6"
 
 [tool.poetry.dev-dependencies]
-pytest = "^4.5"
+pytest = "^4.6"
 pdbpp = "^0.10.0"
 bpython = "^0.18"
 pytest-emoji = "^0.2.0"
