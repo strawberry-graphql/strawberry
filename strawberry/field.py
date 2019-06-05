@@ -202,6 +202,7 @@ def _get_field(
     name = wrap.__name__
 
     annotations = typing.get_type_hints(wrap, None, REGISTRY)
+    default_argument_start_index = len(annotations) - len(wrap.__defaults__) - 1
     field_type = get_graphql_type_for_annotation(annotations["return"], name)
 
     arguments_annotations = {
@@ -211,8 +212,10 @@ def _get_field(
     }
 
     arguments = {
-        to_camel_case(name): get_graphql_type_for_annotation(annotation, name)
-        for name, annotation in arguments_annotations.items()
+        to_camel_case(name): get_graphql_type_for_annotation(
+            arguments_annotations[name], name, index >= default_argument_start_index
+        )
+        for index, name in enumerate(arguments_annotations.keys())
     }
 
     def resolver(source, info, **args):

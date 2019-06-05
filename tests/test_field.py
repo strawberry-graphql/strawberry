@@ -1,7 +1,7 @@
 import pytest
 
 import strawberry
-from graphql import GraphQLField, GraphQLNonNull
+from graphql import GraphQLField, GraphQLNonNull, GraphQLScalarType
 from strawberry.exceptions import (
     MissingArgumentsAnnotationsError,
     MissingReturnAnnotationError,
@@ -27,6 +27,24 @@ def test_field_arguments():
 
     assert type(hello.field.args["id"].type) == GraphQLNonNull
     assert hello.field.args["id"].type.of_type.name == "Int"
+
+
+def test_field_default_arguments_are_optional():
+    @strawberry.field
+    def hello(self, info, test: int, id: int = 1, asdf: str = "hello") -> str:
+        return "I'm a resolver"
+
+    assert hello.field
+
+    assert type(hello.field) == GraphQLField
+    assert type(hello.field.type) == GraphQLNonNull
+    assert hello.field.type.of_type.name == "String"
+
+    assert type(hello.field.args["id"].type) == GraphQLScalarType
+    assert hello.field.args["id"].type.name == "Int"
+
+    assert type(hello.field.args["asdf"].type) == GraphQLScalarType
+    assert hello.field.args["asdf"].type.name == "String"
 
 
 def test_raises_error_when_return_annotation_missing():
