@@ -83,7 +83,6 @@ def test_starlette_tracing_disabled_without_flag():
     )
 
     response = client.post("/graphql", json=query)
-    print(response.content)
     assert response.status_code == 200
 
     json = response.json()
