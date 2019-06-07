@@ -1,3 +1,4 @@
+import inspect
 import typing
 
 import dataclasses
@@ -202,6 +203,7 @@ def _get_field(
     name = wrap.__name__
 
     annotations = typing.get_type_hints(wrap, None, REGISTRY)
+    parameters = inspect.signature(wrap).parameters
     field_type = get_graphql_type_for_annotation(annotations["return"], name)
 
     arguments_annotations = {
@@ -211,7 +213,9 @@ def _get_field(
     }
 
     arguments = {
-        to_camel_case(name): get_graphql_type_for_annotation(annotation, name)
+        to_camel_case(name): get_graphql_type_for_annotation(
+            annotation, name, parameters[name].default != inspect._empty
+        )
         for name, annotation in arguments_annotations.items()
     }
 
