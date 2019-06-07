@@ -1,6 +1,26 @@
 CHANGELOG
 =========
 
+0.11.0 - 2019-06-07
+-------------------
+
+Added support for optional fields with default arguments in the GraphQL schema when default arguments are passed to the resolver.
+
+Example:
+ ```python
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self, info, name: str = "world") -> str:
+        return name
+```
+
+```graphql
+type Query {
+    hello(name: String = "world"): String
+}
+```
+
 0.10.0 - 2019-05-28
 -------------------
 
