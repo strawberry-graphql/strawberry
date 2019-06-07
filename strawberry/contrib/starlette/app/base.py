@@ -9,12 +9,16 @@ from ..utils.graphql_lexer import GraphqlLexer
 
 
 class BaseApp:
-    def __init__(self, schema) -> None:
+    def __init__(self, schema, logging: bool = True) -> None:
         self.schema = schema
+        self.logging = logging
 
     def _debug_log(
         self, operation_name: str, query: str, variables: typing.Dict["str", typing.Any]
     ):
+        if not self.logging:
+            return
+
         if operation_name == "IntrospectionQuery":
             return
 

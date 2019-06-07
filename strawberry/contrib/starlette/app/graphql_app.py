@@ -13,9 +13,10 @@ from .utils import get_playground_template
 
 
 class GraphQLApp(BaseApp):
-    def __init__(self, schema, playground: bool = True) -> None:
+    def __init__(self, schema, logging: bool = True, playground: bool = True) -> None:
         self.schema = schema
         self.playground = playground
+        self.logging = logging
 
     def __call__(self, scope: Scope) -> ASGIInstance:
         return functools.partial(self.asgi, scope=scope)
