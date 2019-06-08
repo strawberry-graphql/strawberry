@@ -25,6 +25,7 @@ click = "^7.0"
 hupper = "^1.5"
 pygments = "^2.3"
 uvicorn = "=0.8.6"
+django = {version = "^2.2",optional = true}
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.1"
@@ -37,6 +38,9 @@ isort = "^4.3"
 pytest-asyncio = "^0.10.0"
 pytest-cov = "^2.7"
 mypy = "^0.720.0"
+
+[tool.poetry.extras]
+django = ["django"]
 
 [tool.poetry.scripts]
 strawberry = "strawberry.cli:run"
