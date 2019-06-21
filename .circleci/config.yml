@@ -1,4 +1,6 @@
-version: 2
+version: 2.1
+orbs:
+  codecov: codecov/codecov@1.0.2
 jobs:
   test:
     docker:
@@ -21,7 +23,10 @@ jobs:
             - "/usr/local/lib/python3.7/site-packages"
       - run:
           command: |
-            poetry run pytest
+            poetry run pytest --cov-report=xml --cov-report=xml --cov=strawberry
+      - codecov/upload:
+          file: coverage.xml
+          token: 80512ef0-0884-43c9-978d-1519450129d7
   mypy:
     docker:
       - image: circleci/python:3.7.2
