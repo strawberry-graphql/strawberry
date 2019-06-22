@@ -89,12 +89,7 @@ class GraphQL:
             pretty_print_graphql_operation(operation_name, query, variables)
 
         data = await subscribe(
-            self.schema,
-            query,
-            variable_values=variables,
-            operation_name=operation_name,
-            # TODO: context
-            context_value=None,
+            self.schema, query, variable_values=variables, operation_name=operation_name
         )
 
         try:
