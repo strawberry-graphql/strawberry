@@ -28,7 +28,7 @@ class GraphQL:
         schema: GraphQLSchema,
         playground: bool = True,
         keep_alive: bool = False,
-        keep_alive_interval: int = 1,
+        keep_alive_interval: float = 1,
         debug: bool = False,
     ) -> None:
         self.schema = schema
