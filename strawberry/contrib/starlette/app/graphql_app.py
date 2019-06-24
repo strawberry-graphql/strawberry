@@ -99,4 +99,5 @@ class GraphQLApp(BaseApp):
             variable_values=variables,
             operation_name=operation_name,
             context_value=context,
+            root_value=self.schema.query_type
         )
