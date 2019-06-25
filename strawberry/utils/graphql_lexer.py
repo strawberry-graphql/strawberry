@@ -2,7 +2,9 @@ from pygments import token
 from pygments.lexer import RegexLexer
 
 
-class GraphqlLexer(RegexLexer):
+class GraphQLLexer(RegexLexer):
+    """GraphQL Lexer for Pygments, used by the debug server."""
+
     name = "GraphQL"
     aliases = ["graphql", "gql"]
     filenames = ["*.graphql", "*.gql"]

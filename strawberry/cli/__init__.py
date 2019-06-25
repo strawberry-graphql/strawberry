@@ -11,7 +11,7 @@ import uvicorn
 
 import hupper
 
-from strawberry.contrib.starlette import GraphQLApp, GraphQLSubscriptionApp
+from strawberry.asgi import GraphQL
 
 
 @click.group()
@@ -38,8 +38,10 @@ def server(module, host, port):
         CORSMiddleware, allow_headers=["*"], allow_origins=["*"], allow_methods=["*"]
     )
 
-    app.add_route("/graphql", GraphQLApp(schema_module.schema))
-    app.add_websocket_route("/graphql", GraphQLSubscriptionApp(schema_module.schema))
+    graphql_app = GraphQL(schema_module.schema, debug=True)
+
+    app.add_route("/graphql", graphql_app)
+    app.add_websocket_route("/graphql", graphql_app)
 
     print(f"Running strawberry on http://{host}:{port}/graphql 🍓")
 
