@@ -40,6 +40,7 @@ class LazyFieldWrapper:
         resolver=None,
         name=None,
         description=None,
+        permission_classes=None
     ):
         self._wrapped_obj = obj
         self.is_subscription = is_subscription
@@ -47,6 +48,7 @@ class LazyFieldWrapper:
         self.field_name = name
         self.field_resolver = resolver
         self.field_description = description
+        self.permission_classes = permission_classes
 
         if callable(self._wrapped_obj):
             self._check_has_annotations(self._wrapped_obj)
@@ -84,6 +86,33 @@ class LazyFieldWrapper:
 
     def __call__(self, *args, **kwargs):
         return self._wrapped_obj(self, *args, **kwargs)
+    
+    def _get_permissions(self):
+        """
+        Gets all permissions defined in the permission classes
+        >>> strawberry.field(permission_classes=[IsAuthenticated])
+        """
+        if self.permission_classes:
+            return [permission() for permission in self.permission_classes]
+
+    def _check_permissions(self, info):
+        """
+        Checks if the permission should be accepted and 
+        raises an exception if not
+        """
+        if not self._get_permissions():
+            return
+        for permission in self._get_permissions():
+            if not permission.has_permission(info):
+                message = getattr(permission, 'message', None)
+                return self.permission_denied(
+                    message=message
+                )
+    
+    def permission_denied(self, message=None):
+        raise PermissionError(
+            message
+        )
 
     @lazy_property
     def field(self):
@@ -93,6 +122,7 @@ class LazyFieldWrapper:
             is_subscription=self.is_subscription,
             name=self.field_name,
             description=self.field_description,
+            check_permission=self._check_permissions
         )
 
 
@@ -128,12 +158,14 @@ class strawberry_field(dataclasses.Field):
         name=None,
         description=None,
         metadata=None,
+        permission_classes=None
     ):
         self.field_name = name
         self.field_description = description
         self.field_resolver = resolver
         self.is_subscription = is_subscription
         self.is_input = is_input
+        self.field_permission_classes = permission_classes
 
         super().__init__(
             # TODO:
@@ -161,6 +193,7 @@ class strawberry_field(dataclasses.Field):
             resolver=self.field_resolver,
             name=self.field_name,
             description=self.field_description,
+            permission_classes=self.field_permission_classes
         )
 
 
@@ -198,7 +231,7 @@ def convert_args(args, annotations):
 
 
 def _get_field(
-    wrap, *, is_input=False, is_subscription=False, name=None, description=None
+    wrap, *, is_input=False, is_subscription=False, name=None, description=None, check_permission=None
 ):
     name = wrap.__name__
 
@@ -220,8 +253,9 @@ def _get_field(
     }
 
     def resolver(source, info, **args):
+        if check_permission:
+            check_permission(info)
         args = convert_args(args, arguments_annotations)
-
         return wrap(source, info, **args)
 
     field_params = {}
@@ -253,6 +287,7 @@ def field(
     resolver=None,
     is_input=False,
     is_subscription=False,
+    permission_classes=None
 ):
     """Annotates a method or property as a GraphQL field.
 
@@ -275,6 +310,7 @@ def field(
         resolver=resolver,
         is_input=is_input,
         is_subscription=is_subscription,
+        permission_classes=permission_classes
     )
 
     # when calling this with parens we are going to return a strawberry_field
