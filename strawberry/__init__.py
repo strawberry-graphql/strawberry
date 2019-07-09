@@ -7,4 +7,4 @@ from .mutation import mutation, subscription  # noqa
 from .scalars import ID  # noqa
 from .schema import Schema  # noqa
 from .type import input, type, interface  # noqa
-from .permission import BasePermission
+from .permission import BasePermission  # noqa
