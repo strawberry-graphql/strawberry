@@ -86,7 +86,7 @@ class LazyFieldWrapper:
 
     def __call__(self, *args, **kwargs):
         return self._wrapped_obj(self, *args, **kwargs)
-    
+
     def _get_permissions(self):
         """
         Gets all permissions defined in the permission classes
@@ -97,22 +97,18 @@ class LazyFieldWrapper:
 
     def _check_permissions(self, info):
         """
-        Checks if the permission should be accepted and 
+        Checks if the permission should be accepted and
         raises an exception if not
         """
         if not self._get_permissions():
             return
         for permission in self._get_permissions():
             if not permission.has_permission(info):
-                message = getattr(permission, 'message', None)
-                return self.permission_denied(
-                    message=message
-                )
-    
+                message = getattr(permission, "message", None)
+                return self.permission_denied(message=message)
+
     def permission_denied(self, message=None):
-        raise PermissionError(
-            message
-        )
+        raise PermissionError(message)
 
     @lazy_property
     def field(self):
@@ -122,7 +118,7 @@ class LazyFieldWrapper:
             is_subscription=self.is_subscription,
             name=self.field_name,
             description=self.field_description,
-            check_permission=self._check_permissions
+            check_permission=self._check_permissions,
         )
 
 
@@ -193,7 +189,7 @@ class strawberry_field(dataclasses.Field):
             resolver=self.field_resolver,
             name=self.field_name,
             description=self.field_description,
-            permission_classes=self.field_permission_classes
+            permission_classes=self.field_permission_classes,
         )
 
 
@@ -231,7 +227,13 @@ def convert_args(args, annotations):
 
 
 def _get_field(
-    wrap, *, is_input=False, is_subscription=False, name=None, description=None, check_permission=None
+    wrap,
+    *,
+    is_input=False,
+    is_subscription=False,
+    name=None,
+    description=None,
+    check_permission=None
 ):
     name = wrap.__name__
 
@@ -310,7 +312,7 @@ def field(
         resolver=resolver,
         is_input=is_input,
         is_subscription=is_subscription,
-        permission_classes=permission_classes
+        permission_classes=permission_classes,
     )
 
     # when calling this with parens we are going to return a strawberry_field
