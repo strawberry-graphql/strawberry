@@ -48,7 +48,7 @@ class LazyFieldWrapper:
         self.field_name = name
         self.field_resolver = resolver
         self.field_description = description
-        self.permission_classes = permission_classes
+        self.permission_classes = permission_classes or []
 
         if callable(self._wrapped_obj):
             self._check_has_annotations(self._wrapped_obj)
@@ -92,23 +92,17 @@ class LazyFieldWrapper:
         Gets all permissions defined in the permission classes
         >>> strawberry.field(permission_classes=[IsAuthenticated])
         """
-        if self.permission_classes:
-            return [permission() for permission in self.permission_classes]
+        return (permission() for permission in self.permission_classes)
 
     def _check_permissions(self, info):
         """
         Checks if the permission should be accepted and
         raises an exception if not
         """
-        if not self._get_permissions():
-            return
         for permission in self._get_permissions():
             if not permission.has_permission(info):
                 message = getattr(permission, "message", None)
-                return self.permission_denied(message=message)
-
-    def permission_denied(self, message=None):
-        raise PermissionError(message)
+                raise PermissionError(message)
 
     @lazy_property
     def field(self):
@@ -268,6 +262,8 @@ def _get_field(
         if is_subscription:
 
             def _resolve(event, info):
+                if check_permission:
+                    check_permission(info)
                 return event
 
             field_params.update({"subscribe": resolver, "resolve": _resolve})

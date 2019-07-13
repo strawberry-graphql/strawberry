@@ -1,4 +1,4 @@
-class BasePermission(object):
+class BasePermission:
     """
     Base class for creating permissions
     """
