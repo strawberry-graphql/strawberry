@@ -60,11 +60,16 @@ def _process_type(cls, *, is_input=False, is_interface=False, description=None):
                 resolver, is_input=is_input, description=description
             ).field
 
-        strawberry_fields = {
-            key: value
-            for key, value in cls.__dict__.items()
-            if getattr(value, IS_STRAWBERRY_FIELD, False)
-        }
+        strawberry_fields = {}
+
+        for base in [cls, *cls.__bases__]:
+            strawberry_fields.update(
+                {
+                    key: value
+                    for key, value in base.__dict__.items()
+                    if getattr(value, IS_STRAWBERRY_FIELD, False)
+                }
+            )
 
         for key, value in strawberry_fields.items():
             name = getattr(value, "field_name", None) or to_camel_case(key)
