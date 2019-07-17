@@ -1,6 +1,26 @@
 CHANGELOG
 =========
 
+0.13.1 - 2019-07-17
+-------------------
+
+Fix missing fields when extending a class, now we can do this:
+
+
+```python
+@strawberry.type
+class Parent:
+    cheese: str = "swiss"
+
+    @strawberry.field
+    def friend(self, info) -> str:
+        return 'food'
+
+@strawberry.type
+class Schema(Parent):
+    cake: str = "made_in_swiss"
+```
+
 0.13.0 - 2019-07-16
 -------------------
 
