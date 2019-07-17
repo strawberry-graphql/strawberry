@@ -403,3 +403,34 @@ def test_enum_description():
     ]
 
     assert result.data["pizzas"]["description"] == "We also love pizza"
+
+
+def test_parent_class_fields_are_inherited():
+    @strawberry.type
+    class Parent:
+        cheese: str = "swiss"
+
+        @strawberry.field
+        def friend(self, info) -> str:
+            return "food"
+
+    @strawberry.type
+    class Schema(Parent):
+        cake: str = "made_in_switzerland"
+
+        @strawberry.field
+        def hello_this_is(self, info) -> str:
+            return "patrick"
+
+    schema = strawberry.Schema(query=Schema)
+
+    query = "{ cheese, cake, friend, helloThisIs }"
+
+    result = graphql_sync(schema, query)
+
+    assert not result.errors
+
+    assert result.data["cheese"] == "swiss"
+    assert result.data["cake"] == "made_in_switzerland"
+    assert result.data["friend"] == "food"
+    assert result.data["helloThisIs"] == "patrick"
