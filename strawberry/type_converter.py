@@ -11,6 +11,7 @@ from graphql import (
     GraphQLUnionType,
 )
 
+from .exceptions import WrongReturnTypeForUnion
 from .scalars import ID
 from .utils.typing import is_union
 
@@ -65,6 +66,12 @@ def get_graphql_type_for_annotation(
             else:
                 is_field_optional = None.__class__ in types
 
+                def _resolve_type(self, value, _type):
+                    if not hasattr(self, "field"):
+                        raise WrongReturnTypeForUnion(value.field_name, str(type(self)))
+
+                    return self.field
+
                 # TODO: union types don't work with scalar types
                 # so we want to return a nice error
                 # also we want to make sure we have been passed
@@ -72,6 +79,7 @@ def get_graphql_type_for_annotation(
                 graphql_type = GraphQLUnionType(
                     field_name, [type.field for type in types]
                 )
+                graphql_type.resolve_type = _resolve_type
         else:
             graphql_type = REGISTRY.get(annotation)
 

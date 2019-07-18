@@ -40,3 +40,15 @@ class MissingArgumentsAnnotationsError(Exception):
         )
 
         super().__init__(message)
+
+
+class WrongReturnTypeForUnion(Exception):
+    """The Union type cannot be resolved because it's not a field"""
+
+    def __init__(self, field_name: str, result_type: str):
+        message = (
+            f'The type "{result_type}" cannot be resolved for the field "{field_name}" '
+            ", are you using a strawberry.field?"
+        )
+
+        super().__init__(message)
