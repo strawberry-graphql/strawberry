@@ -11,7 +11,7 @@ from graphql import (
     GraphQLUnionType,
 )
 
-from .exceptions import WrongReturnTypeForUnion
+from .exceptions import UnallowedReturnTypeForUnion, WrongReturnTypeForUnion
 from .scalars import ID
 from .utils.typing import is_union
 
@@ -69,6 +69,11 @@ def get_graphql_type_for_annotation(
                 def _resolve_type(self, value, _type):
                     if not hasattr(self, "field"):
                         raise WrongReturnTypeForUnion(value.field_name, str(type(self)))
+
+                    if self.field not in _type.types:
+                        raise UnallowedReturnTypeForUnion(
+                            value.field_name, str(type(self)), _type.types
+                        )
 
                     return self.field
 

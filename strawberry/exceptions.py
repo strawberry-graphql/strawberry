@@ -2,6 +2,8 @@
 
 from typing import List, Set
 
+from graphql import GraphQLObjectType
+
 
 class NotAnEnum(Exception):
     def __init__(self):
@@ -49,6 +51,22 @@ class WrongReturnTypeForUnion(Exception):
         message = (
             f'The type "{result_type}" cannot be resolved for the field "{field_name}" '
             ", are you using a strawberry.field?"
+        )
+
+        super().__init__(message)
+
+
+class UnallowedReturnTypeForUnion(Exception):
+    """The return type is not in the list of Union types"""
+
+    def __init__(
+        self, field_name: str, result_type: str, allowed_types: Set[GraphQLObjectType]
+    ):
+        formatted_allowed_types = [type_.name for type_ in allowed_types]
+
+        message = (
+            f'The type "{result_type}" of the field "{field_name}" '
+            f'is not in the list of the types of the union: "{formatted_allowed_types}"'
         )
 
         super().__init__(message)
