@@ -161,13 +161,13 @@ class strawberry_field(dataclasses.Field):
             # TODO:
             default=dataclasses.MISSING,
             default_factory=dataclasses.MISSING,
-            init=False,
+            init=is_input,
             repr=True,
             hash=None,
             # TODO: this needs to be False when init is False
             # we could turn it to True when and if we have a default
             # probably can't be True when passing a resolver
-            compare=False,
+            compare=is_input,
             metadata=metadata,
         )
 
