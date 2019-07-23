@@ -1,6 +1,17 @@
 CHANGELOG
 =========
 
+0.13.3 - 2019-07-23
+-------------------
+
+Fix field initialization not allowed when using `strawberry.field` in an `input` type
+
+```python
+@strawberry.input
+class Say:
+    what = strawberry.field(is_input=True)
+```
+
 0.13.2 - 2019-07-18
 -------------------
 
