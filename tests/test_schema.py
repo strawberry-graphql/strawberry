@@ -191,6 +191,7 @@ def test_mutation_with_input_type():
     @strawberry.input
     class SayInput:
         name: str
+        age: int = strawberry.field(is_input=True)
 
     @strawberry.type
     class Query:
@@ -200,16 +201,16 @@ def test_mutation_with_input_type():
     class Mutation:
         @strawberry.mutation
         def say(self, info, input: SayInput) -> str:
-            return f"Hello {input.name}!"
+            return f"Hello {input.name} of {input.age} years old!"
 
     schema = strawberry.Schema(query=Query, mutation=Mutation)
 
-    query = 'mutation { say(input: { name: "Patrick"}) }'
+    query = 'mutation { say(input: { name: "Patrick", age: 10 }) }'
 
     result = graphql_sync(schema, query)
 
     assert not result.errors
-    assert result.data["say"] == "Hello Patrick!"
+    assert result.data["say"] == "Hello Patrick of 10 years old!"
 
 
 def test_does_camel_case_conversion():
