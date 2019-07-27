@@ -55,7 +55,7 @@ class LazyFieldWrapper:
 
     def _check_has_annotations(self, func):
         # using annotations without passing from typing.get_type_hints
-        # as we don't the actually types for the annotations
+        # as we don't need the actually types for the annotations
         annotations = func.__annotations__
         name = func.__name__
 
