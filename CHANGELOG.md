@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.13.4 - 2019-08-01
+-------------------
+
+Improve dict_to_type conversion by checking if the field has a different name or case
+
 0.13.3 - 2019-07-23
 -------------------
 
