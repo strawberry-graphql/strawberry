@@ -40,12 +40,19 @@ def test_input_types():
     @strawberry.input
     class MyInput:
         abc: str
+        say_hello_to: str
+        was: int = strawberry.field(name="having", is_input=True)
+        fun: str = strawberry.field(is_input=True)
 
-    args = {"input": {"abc": "example"}}
+    args = {
+        "input": {"abc": "example", "sayHelloTo": "Patrick", "having": 10, "fun": "yes"}
+    }
 
     annotations = {"input": MyInput}
 
-    assert convert_args(args, annotations) == {"input": MyInput(abc="example")}
+    assert convert_args(args, annotations) == {
+        "input": MyInput(abc="example", say_hello_to="Patrick", was=10, fun="yes")
+    }
 
 
 def test_optional_input_types():
