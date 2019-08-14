@@ -1,6 +1,28 @@
 CHANGELOG
 =========
 
+0.14.0 - 2019-08-14
+-------------------
+
+Added support for defining query directives, example:
+
+```python
+import strawberry
+from strawberry.directives import DirectiveLocation
+
+@strawberry.type
+class Query:
+    cake: str = "made_in_switzerland"
+
+@strawberry.directive(
+    locations=[DirectiveLocation.FIELD], description="Make string uppercase"
+)
+def uppercase(value: str, example: str):
+    return value.upper()
+
+schema = strawberry.Schema(query=Query, directives=[uppercase])
+```
+
 0.13.4 - 2019-08-01
 -------------------
 
