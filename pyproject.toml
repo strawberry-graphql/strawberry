@@ -20,7 +20,7 @@ classifiers = [
 [tool.poetry.dependencies]
 python = "^3.7"
 graphql-core-next = "^1.0"
-starlette = "=0.12.4"
+starlette = "=0.12.7"
 click = "^7.0"
 hupper = "^1.5"
 pygments = "^2.3"
