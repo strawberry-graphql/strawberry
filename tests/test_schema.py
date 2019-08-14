@@ -1,3 +1,4 @@
+import textwrap
 import typing
 from enum import Enum
 
@@ -5,7 +6,7 @@ import pytest
 
 import strawberry
 from dataclasses import InitVar
-from graphql import graphql, graphql_sync
+from graphql import DirectiveLocation, graphql, graphql_sync
 
 
 def test_simple_type():
@@ -435,3 +436,28 @@ def test_parent_class_fields_are_inherited():
     assert result.data["cake"] == "made_in_switzerland"
     assert result.data["friend"] == "food"
     assert result.data["helloThisIs"] == "patrick"
+
+
+def test_can_declare_directives():
+    @strawberry.type
+    class Query:
+        cake: str = "made_in_switzerland"
+
+    @strawberry.directive(
+        locations=[DirectiveLocation.FIELD], description="Make string uppercase"
+    )
+    def uppercase(value: str, example: str):
+        return value.upper()
+
+    schema = strawberry.Schema(query=Query, directives=[uppercase])
+
+    expected_schema = '''
+    """Make string uppercase"""
+    directive @uppercase(example: String!) on FIELD
+
+    type Query {
+      cake: String!
+    }
+    '''
+
+    assert repr(schema) == textwrap.dedent(expected_schema).lstrip()
