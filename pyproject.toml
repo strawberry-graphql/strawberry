@@ -26,6 +26,7 @@ hupper = "^1.5"
 pygments = "^2.3"
 uvicorn = "=0.8.6"
 django = {version = "^2.2",optional = true}
+asgiref = {version = "^3.2",optional = true}
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.1"
@@ -41,7 +42,7 @@ mypy = "^0.720.0"
 pytest-django = {version = "^3.5"}
 
 [tool.poetry.extras]
-django = ["django","pytest-django"]
+django = ["django","pytest-django","asgiref"]
 
 
 [tool.poetry.scripts]

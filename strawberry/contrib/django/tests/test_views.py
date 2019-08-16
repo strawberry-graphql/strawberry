@@ -1,15 +1,41 @@
+import json
+
 from django.test.client import RequestFactory
 
-from strawberry.contrib.django.views import GraphQLPlaygroundView
+import strawberry
+from strawberry.contrib.django.views import GraphQLView
+
+
+@strawberry.type
+class Query:
+    hello: str = "strawberry"
+
+
+schema = strawberry.Schema(query=Query)
 
 
 def test_playground_view():
     factory = RequestFactory()
 
-    request = factory.get("/")
+    request = factory.get("/graphql/", HTTP_ACCEPT="text/html")
 
-    response = GraphQLPlaygroundView.as_view()(request)
+    response = GraphQLView.as_view(schema=schema)(request)
     body = response.content.decode()
 
     assert "GraphQL Playground" in body
     assert f'endpoint: "{request.get_full_path()}"' in body
+
+
+def test_graphql_query():
+
+    query = "{ hello }"
+
+    factory = RequestFactory()
+    request = factory.post(
+        "/graphql/", {"query": query}, content_type="application/json"
+    )
+
+    response = GraphQLView.as_view(schema=schema)(request)
+    data = json.loads(response.content.decode())
+
+    assert data["data"]["hello"] == "strawberry"
