@@ -1,0 +1,19 @@
+name: Release file check
+
+on:
+  pull_request:
+    branches:
+    - master
+
+jobs:
+  release-file-check:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v1
+
+    - name: Release file check
+      uses: ./.github/release-check-action
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        BOTBERRY_GITHUB_TOKEN: ${{ secrets.BOTBERRY_GITHUB_TOKEN }}

@@ -1,8 +1,8 @@
+import re
 import subprocess
 import sys
-import re
-
 from pathlib import Path
+
 
 ROOT = Path(
     subprocess.check_output(["git", "rev-parse", "--show-toplevel"])
@@ -49,15 +49,15 @@ def get_project_version():
             match = VERSION_REGEX.match(line)
 
             if match:
-                return match.group('version')
+                return match.group("version")
 
     return None
 
 
-def get_release_info():
+def get_release_info(file_path=RELEASE_FILE):
     RELEASE_TYPE_REGEX = re.compile(r"^[Rr]elease [Tt]ype: (major|minor|patch)$")
 
-    with open(RELEASE_FILE, "r") as f:
+    with open(file_path, "r") as f:
         line = f.readline()
         match = RELEASE_TYPE_REGEX.match(line)
 
