@@ -10,6 +10,10 @@ from strawberry.contrib.django.views import GraphQLView
 class Query:
     hello: str = "strawberry"
 
+    @strawberry.field
+    async def hello_async(root, info) -> str:
+        return "async strawberry"
+
 
 schema = strawberry.Schema(query=Query)
 
@@ -39,3 +43,18 @@ def test_graphql_query():
     data = json.loads(response.content.decode())
 
     assert data["data"]["hello"] == "strawberry"
+
+
+def test_async_graphql_query():
+
+    query = "{ hello_async }"
+
+    factory = RequestFactory()
+    request = factory.post(
+        "/graphql/", {"query": query}, content_type="application/json"
+    )
+
+    response = GraphQLView.as_view(schema=schema)(request)
+    data = json.loads(response.content.decode())
+
+    assert data["data"]["hello"] == "async strawberry"
