@@ -578,7 +578,7 @@ more-itertools = "*"
 django = ["django", "asgiref"]
 
 [metadata]
-content-hash = "5a4a3ec3e0ede6c307da24bfc4f9e1ee79226403bddbf33752813447550ffd3e"
+content-hash = "83c41f3833d0a208fa160ce1b6466f39155493e7b4c5ed22d5fdab407e721915"
 python-versions = "^3.7"
 
 [metadata.hashes]
