@@ -62,7 +62,6 @@ class GraphQLView(View):
         response_data = {"data": result.data}
 
         if result.errors:
-            print(result.errors)
             response_data["errors"] = [
                 format_graphql_error(err) for err in result.errors
             ]
