@@ -7,8 +7,7 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
 
-from asgiref.sync import async_to_sync
-from graphql import graphql
+from graphql import graphql_sync
 from graphql.error import format_error as format_graphql_error
 from graphql.type.schema import GraphQLSchema
 
@@ -49,8 +48,6 @@ class GraphQLView(View):
             return HttpResponseBadRequest("No GraphQL query found in the request")
 
         context = {"request": request}
-
-        graphql_sync = async_to_sync(graphql)
 
         result = graphql_sync(
             self.schema,
