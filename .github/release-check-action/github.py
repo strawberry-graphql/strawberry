@@ -3,6 +3,7 @@ from urllib.parse import urljoin
 
 import httpx
 from config import GITHUB_TOKEN
+from release import ReleaseInfo
 
 
 SIGNATURE = "<!-- action-check: release-file -->"
@@ -57,13 +58,18 @@ def add_or_edit_comment(github_event_data: dict, comment: str):
         print(request.status_code)
 
 
-def update_labels(github_event_data: dict, has_valid_release_file: bool):
+def update_labels(github_event_data: dict, release_info: typing.Optional[ReleaseInfo]):
     labels_to_add = {"bot:has-release-file"}
     labels_to_remove: typing.Set[str] = set()
 
-    if not has_valid_release_file:
+    new_release_label = None
+
+    if release_info is None:
         labels_to_remove = labels_to_add
         labels_to_add = set()
+    else:
+        new_release_label = f"bot:release-type-{release_info.change_type.value}"
+        labels_to_add.add(new_release_label)
 
     labels_url = get_labels_link(github_event_data)
 
@@ -73,6 +79,15 @@ def update_labels(github_event_data: dict, has_valid_release_file: bool):
     }
 
     current_labels = set(current_labels_url_by_name.keys())
+
+    release_labels_to_remove = [
+        label
+        for label in current_labels
+        if label.startswith("bot:release-type-") and label != new_release_label
+    ]
+    labels_to_remove.update(release_labels_to_remove)
+
+    print("current_labels", current_labels, "labels_to_remove", labels_to_remove)
 
     if not current_labels.issuperset(labels_to_add):
         request = httpx.post(

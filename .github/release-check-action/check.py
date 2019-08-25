@@ -19,6 +19,7 @@ with open(GITHUB_EVENT_PATH) as f:
 release_file = pathlib.Path(GITHUB_WORKSPACE) / RELEASE_FILE_PATH
 
 exit_code = 0
+release_info = None
 
 if not release_file.exists():
     print("release file does not exist")
@@ -36,6 +37,6 @@ else:
 
 
 add_or_edit_comment(event_data, comment)
-update_labels(event_data, exit_code == 0)
+update_labels(event_data, release_info)
 
 sys.exit(exit_code)
