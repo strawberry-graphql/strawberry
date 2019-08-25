@@ -1,6 +1,12 @@
 CHANGELOG
 =========
 
+0.14.1 - 2019-08-25
+-------------------
+
+This release doesn't add any feature or fixes, it only introduces a GitHub
+Action to let people know how to add a RELEASE.md file when submitting a PR.
+
 0.14.0 - 2019-08-14
 -------------------
 
