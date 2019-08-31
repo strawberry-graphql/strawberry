@@ -63,18 +63,33 @@ def test_optional_object_type():
 
 
 def test_list_of_scalar():
-    field = get_graphql_type_for_annotation(List[str], "Example")
+    field = get_graphql_type_for_annotation(Optional[List[str]], "Example")
 
     assert type(field) == GraphQLList
     assert type(field.of_type) == GraphQLNonNull
     assert type(field.of_type.of_type) == GraphQLScalarType
     assert field.of_type.of_type.name == "String"
 
-    field = get_graphql_type_for_annotation(List[Optional[str]], "Example")
+    field = get_graphql_type_for_annotation(List[str], "Example")
+
+    assert type(field) == GraphQLNonNull
+    assert type(field.of_type) == GraphQLList
+    assert type(field.of_type.of_type) == GraphQLNonNull
+    assert type(field.of_type.of_type.of_type) == GraphQLScalarType
+    assert field.of_type.of_type.of_type.name == "String"
+
+    field = get_graphql_type_for_annotation(Optional[List[Optional[str]]], "Example")
 
     assert type(field) == GraphQLList
     assert type(field.of_type) == GraphQLScalarType
     assert field.of_type.name == "String"
+
+    field = get_graphql_type_for_annotation(List[Optional[str]], "Example")
+
+    assert type(field) == GraphQLNonNull
+    assert type(field.of_type) == GraphQLList
+    assert type(field.of_type.of_type) == GraphQLScalarType
+    assert field.of_type.of_type.name == "String"
 
 
 def test_list_of_object_types():
@@ -82,15 +97,30 @@ def test_list_of_object_types():
     class A:
         x: int
 
-    field = get_graphql_type_for_annotation(List[A], "Example")
+    field = get_graphql_type_for_annotation(Optional[List[A]], "Example")
 
     assert type(field) == GraphQLList
     assert type(field.of_type) == GraphQLNonNull
     assert type(field.of_type.of_type) == GraphQLObjectType
     assert field.of_type.of_type.name == "A"
 
-    field = get_graphql_type_for_annotation(List[Optional[A]], "Example")
+    field = get_graphql_type_for_annotation(List[A], "Example")
+
+    assert type(field) == GraphQLNonNull
+    assert type(field.of_type) == GraphQLList
+    assert type(field.of_type.of_type) == GraphQLNonNull
+    assert type(field.of_type.of_type.of_type) == GraphQLObjectType
+    assert field.of_type.of_type.of_type.name == "A"
+
+    field = get_graphql_type_for_annotation(Optional[List[Optional[A]]], "Example")
 
     assert type(field) == GraphQLList
     assert type(field.of_type) == GraphQLObjectType
     assert field.of_type.name == "A"
+
+    field = get_graphql_type_for_annotation(List[Optional[A]], "Example")
+
+    assert type(field) == GraphQLNonNull
+    assert type(field.of_type) == GraphQLList
+    assert type(field.of_type.of_type) == GraphQLObjectType
+    assert field.of_type.of_type.name == "A"
