@@ -48,7 +48,7 @@ jobs:
             - "/usr/local/lib/python3.7/site-packages"
       - run:
           command: |
-            poetry run mypy
+            poetry run mypy --ignore-missing-imports .
   flake8:
     docker:
       - image: circleci/python:3.7.2
@@ -91,8 +91,7 @@ workflows:
   main:
     jobs:
       - test
-      # TODO: need typings to be fixed
-      # - mypy
+      - mypy
       - flake8
   deploy:
     jobs:

@@ -80,8 +80,7 @@ def test_union_as_mutation_return():
     class Mutation:
         @strawberry.mutation
         def hello(self, info) -> Union[A, B]:
-            # TODO: mypy is unable to understand that B is a dataclass
-            return B(y=5)  # type:ignore
+            return B(y=5)
 
     schema = strawberry.Schema(query=A, mutation=Mutation)
 
@@ -124,7 +123,6 @@ def test_types_not_included_in_the_union_are_rejected():
     class Mutation:
         @strawberry.mutation
         def hello(self, info) -> Union[A, B]:
-            # TODO: mypy is unable to understand that Outside is a dataclass
             return Outside(c=5)  # type:ignore
 
     schema = strawberry.Schema(query=A, mutation=Mutation)
