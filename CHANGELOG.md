@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.14.2 - 2019-08-31
+-------------------
+
+Fix List types being converted to Optional GraphQL lists.
+
 0.14.1 - 2019-08-25
 -------------------
 
