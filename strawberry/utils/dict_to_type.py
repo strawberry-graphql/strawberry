@@ -1,3 +1,5 @@
+import enum
+
 from dataclasses import is_dataclass
 
 from .str_converters import to_camel_case
@@ -20,5 +22,10 @@ def dict_to_type(dict, cls):
             kwargs[name] = dict_to_type(dict.get(dict_name, {}), field.type)
         else:
             kwargs[name] = dict.get(dict_name)
+
+            # Convert Enum fields to instances using the value. This is safe
+            # because graphql-core has already validated the input.
+            if isinstance(field.type, enum.EnumMeta) and kwargs[name]:
+                kwargs[name] = field.type(kwargs[name])
 
     return cls(**kwargs)

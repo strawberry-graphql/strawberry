@@ -132,7 +132,6 @@ def test_raises_error_when_using_enum_with_a_not_enum_class():
     assert ("strawberry.enum can only be used with subclasses of Enum",) == e.value.args
 
 
-@pytest.mark.xfail(strict=True)
 def test_enum_resolver():
     @strawberry.enum
     class IceCreamFlavour(Enum):
@@ -179,7 +178,6 @@ def test_enum_resolver():
     assert result.data["cone"]["flavour"] == "STRAWBERRY"
 
 
-@pytest.mark.xfail(strict=True)
 def test_enum_arguments():
     @strawberry.enum
     class IceCreamFlavour(Enum):
