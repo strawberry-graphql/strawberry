@@ -44,7 +44,9 @@ def get_graphql_type_for_annotation(
                 annotation.__args__[0], field_name
             )
 
-            return GraphQLList(list_of_type)
+            list_type = GraphQLList(list_of_type)
+
+            return list_type if is_field_optional else GraphQLNonNull(list_type)
 
         annotation_origin = getattr(annotation, "__origin__", None)
 
