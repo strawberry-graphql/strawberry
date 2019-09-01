@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.14.4 - 2019-09-01
+-------------------
+
+Fixes the conversion of Enums in resolvers, arguments and input types.
+
 0.14.3 - 2019-09-01
 -------------------
 
