@@ -7,7 +7,7 @@ from comment_templates import (
     MISSING_RELEASE_FILE,
     RELEASE_FILE_ADDED,
 )
-from config import GITHUB_EVENT_PATH, GITHUB_WORKSPACE, RELEASE_FILE_PATH
+from config import GITHUB_EVENT_PATH, GITHUB_TOKEN, GITHUB_WORKSPACE, RELEASE_FILE_PATH
 from github import add_or_edit_comment, update_labels
 from release import InvalidReleaseFileError, get_release_info
 
@@ -35,8 +35,11 @@ else:
         exit_code = 2
         comment = INVALID_RELEASE_FILE
 
-
-add_or_edit_comment(event_data, comment)
-update_labels(event_data, release_info)
+if GITHUB_TOKEN != "":
+    add_or_edit_comment(event_data, comment)
+    update_labels(event_data, release_info)
+else:
+    print("No GitHub token set, skipping sending a comment")
+    print(comment)
 
 sys.exit(exit_code)
