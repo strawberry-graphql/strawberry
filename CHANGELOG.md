@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.14.3 - 2019-09-01
+-------------------
+
+Add a mypy plugin that enables typechecking Strawberry types
+
 0.14.2 - 2019-08-31
 -------------------
 
