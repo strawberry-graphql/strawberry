@@ -1,3 +1,4 @@
+import enum
 import inspect
 import typing
 
@@ -214,6 +215,12 @@ def convert_args(args, annotations):
                 converted_args[key] = [dict_to_type(x, annotation) for x in value]
             else:
                 converted_args[key] = dict_to_type(value, annotation)
+
+        elif isinstance(annotation, enum.EnumMeta):
+            # Convert Enum fields to instances using the value. This is safe
+            # because graphql-core has already validated the input.
+            converted_args[key] = annotation(value)
+
         else:
             converted_args[key] = value
 
@@ -252,7 +259,14 @@ def _get_field(
         if check_permission:
             check_permission(info)
         args = convert_args(args, arguments_annotations)
-        return wrap(source, info, **args)
+        result = wrap(source, info, **args)
+
+        # graphql-core expects a resolver for an Enum type to return
+        # the enum's *value* (not its name or an instance of the enum).
+        if isinstance(result, enum.Enum):
+            return result.value
+
+        return result
 
     field_params = {}
 

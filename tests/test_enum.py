@@ -3,7 +3,7 @@ from enum import Enum
 import pytest
 
 import strawberry
-from graphql import GraphQLEnumType, GraphQLEnumValue
+from graphql import GraphQLEnumType, GraphQLEnumValue, graphql_sync
 from strawberry.exceptions import NotAnEnum
 
 
@@ -130,3 +130,108 @@ def test_raises_error_when_using_enum_with_a_not_enum_class():
             hello = "world"
 
     assert ("strawberry.enum can only be used with subclasses of Enum",) == e.value.args
+
+
+def test_enum_resolver():
+    @strawberry.enum
+    class IceCreamFlavour(Enum):
+        VANILLA = "vanilla"
+        STRAWBERRY = "strawberry"
+        CHOCOLATE = "chocolate"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def best_flavour(self, info) -> IceCreamFlavour:
+            return IceCreamFlavour.STRAWBERRY
+
+    assert Query().best_flavour(None) == IceCreamFlavour.STRAWBERRY
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ bestFlavour }"
+
+    result = graphql_sync(schema, query)
+
+    assert not result.errors
+    assert result.data["bestFlavour"] == "STRAWBERRY"
+
+    @strawberry.type
+    class Cone:
+        flavour: IceCreamFlavour
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def cone(self, info) -> Cone:
+            return Cone(flavour=IceCreamFlavour.STRAWBERRY)
+
+    assert Query().cone(None).flavour == IceCreamFlavour.STRAWBERRY
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ cone { flavour } }"
+
+    result = graphql_sync(schema, query)
+
+    assert not result.errors
+    assert result.data["cone"]["flavour"] == "STRAWBERRY"
+
+
+def test_enum_arguments():
+    @strawberry.enum
+    class IceCreamFlavour(Enum):
+        VANILLA = "vanilla"
+        STRAWBERRY = "strawberry"
+        CHOCOLATE = "chocolate"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def flavour_available(self, info, flavour: IceCreamFlavour) -> bool:
+            return flavour == IceCreamFlavour.STRAWBERRY
+
+    @strawberry.input
+    class ConeInput:
+        flavour: IceCreamFlavour
+
+    @strawberry.type
+    class Mutation:
+        @strawberry.mutation
+        def eat_cone(self, info, input: ConeInput) -> bool:
+            return input.flavour == IceCreamFlavour.STRAWBERRY
+
+    assert Query().flavour_available(None, IceCreamFlavour.VANILLA) is False
+    assert Query().flavour_available(None, IceCreamFlavour.STRAWBERRY) is True
+
+    input_bad = ConeInput(flavour=IceCreamFlavour.VANILLA)
+    input_good = ConeInput(flavour=IceCreamFlavour.STRAWBERRY)
+
+    assert Mutation().eat_cone(None, input_bad) is False
+    assert Mutation().eat_cone(None, input_good) is True
+
+    schema = strawberry.Schema(query=Query, mutation=Mutation)
+
+    query = "{ flavourAvailable(flavour: VANILLA) }"
+    result = graphql_sync(schema, query)
+
+    assert not result.errors
+    assert result.data["flavourAvailable"] is False
+
+    query = "{ flavourAvailable(flavour: STRAWBERRY) }"
+    result = graphql_sync(schema, query)
+
+    assert not result.errors
+    assert result.data["flavourAvailable"] is True
+
+    query = "mutation { eatCone(input: { flavour: VANILLA }) }"
+    result = graphql_sync(schema, query)
+
+    assert not result.errors
+    assert result.data["eatCone"] is False
+
+    query = "mutation { eatCone(input: { flavour: STRAWBERRY }) }"
+    result = graphql_sync(schema, query)
+
+    assert not result.errors
+    assert result.data["eatCone"] is True
