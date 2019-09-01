@@ -36,6 +36,7 @@ black = {version = "^19.3b0",allows-prereleases = true}
 isort = "^4.3"
 pytest-asyncio = "^0.10.0"
 pytest-cov = "^2.7"
+mypy = "^0.720.0"
 
 [tool.poetry.scripts]
 strawberry = "strawberry.cli:run"

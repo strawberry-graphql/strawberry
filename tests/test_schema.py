@@ -34,7 +34,7 @@ def test_init_var():
     class Query:
         @strawberry.field
         def category(self, info) -> Category:
-            return Category(name="example", id="123")  # type:ignore
+            return Category(name="example", id="123")
 
     schema = strawberry.Schema(query=Query)
 
@@ -151,9 +151,7 @@ def test_nested_types():
     class Query:
         @strawberry.field
         def user(self, info) -> User:
-            # TODO: mypy is complaining about the next line, need to
-            # understand how to fix it
-            return User(name="Patrick")  # type:ignore
+            return User(name="Patrick")
 
     assert Query().user(None) == User(name="Patrick")
 

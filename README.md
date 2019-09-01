@@ -52,6 +52,17 @@ Open the debug server by clicking on the follwing link:
 
 This will open a GraphQL playground where you can test the API.
 
+### Type-checking
+
+Strawberry comes with a [mypy] plugin that enables statically type-checking your GraphQL schema. To enable it, add the following lines to your `mypy.ini` configuration:
+
+```ini
+[mypy]
+plugins = strawberry.ext.mypy_plugin
+```
+
+[mypy]: http://www.mypy-lang.org/
+
 ## Contributing
 
 We use [poetry](https://github.com/sdispater/poetry) to manage dependencies, to
