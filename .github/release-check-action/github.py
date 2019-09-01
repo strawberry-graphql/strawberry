@@ -87,8 +87,6 @@ def update_labels(github_event_data: dict, release_info: typing.Optional[Release
     ]
     labels_to_remove.update(release_labels_to_remove)
 
-    print("current_labels", current_labels, "labels_to_remove", labels_to_remove)
-
     if not current_labels.issuperset(labels_to_add):
         request = httpx.post(
             labels_url,

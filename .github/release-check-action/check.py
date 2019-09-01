@@ -16,6 +16,12 @@ with open(GITHUB_EVENT_PATH) as f:
     event_data = json.load(f)
 
 
+sender = event_data["sender"]["login"]
+
+if sender in ["dependabot-preview", "dependabot"]:
+    print("Skipping dependencies PRs for now.")
+    sys.exit(0)
+
 release_file = pathlib.Path(GITHUB_WORKSPACE) / RELEASE_FILE_PATH
 
 exit_code = 0
