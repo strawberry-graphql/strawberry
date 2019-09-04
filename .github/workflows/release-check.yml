@@ -15,4 +15,4 @@ jobs:
     - name: Release file check
       uses: ./.github/release-check-action
       env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        API_URL: ${{ secrets.BOT_UTILS_API_URL }}

@@ -2,13 +2,8 @@ import json
 import pathlib
 import sys
 
-from comment_templates import (
-    INVALID_RELEASE_FILE,
-    MISSING_RELEASE_FILE,
-    RELEASE_FILE_ADDED,
-)
-from config import GITHUB_EVENT_PATH, GITHUB_TOKEN, GITHUB_WORKSPACE, RELEASE_FILE_PATH
-from github import add_or_edit_comment, update_labels
+import httpx
+from config import API_URL, GITHUB_EVENT_PATH, GITHUB_WORKSPACE, RELEASE_FILE_PATH
 from release import InvalidReleaseFileError, get_release_info
 
 
@@ -26,26 +21,40 @@ release_file = pathlib.Path(GITHUB_WORKSPACE) / RELEASE_FILE_PATH
 
 exit_code = 0
 release_info = None
+status = "MISSING"
 
 if not release_file.exists():
-    print("release file does not exist")
+    status = "MISSING"
 
     exit_code = 1
-    comment = MISSING_RELEASE_FILE
 else:
     try:
-        release_info = get_release_info(release_file)
+        info = get_release_info(release_file)
+        release_info = {
+            "changeType": info.change_type.name,
+            "changelog": info.changelog,
+        }
 
-        comment = RELEASE_FILE_ADDED.format(changelog_preview=release_info.changelog)
+        status = "OK"
     except InvalidReleaseFileError:
         exit_code = 2
-        comment = INVALID_RELEASE_FILE
+        status = "INVALID"
 
-if GITHUB_TOKEN != "":
-    add_or_edit_comment(event_data, comment)
-    update_labels(event_data, release_info)
-else:
-    print("No GitHub token set, skipping sending a comment")
-    print(comment)
+mutation = """mutation AddReleaseComment($input: AddReleaseFileCommentInput!) {
+  addReleaseFileComment(input: $input)
+}"""
 
+mutation_input = {
+    "prNumber": event_data["number"],
+    "status": status,
+    "releaseInfo": release_info,
+}
+
+
+response = httpx.post(
+    API_URL, json={"query": mutation, "variables": {"input": mutation_input}}
+)
+response.raise_for_status()
+
+print(f"Status is {status}")
 sys.exit(exit_code)
