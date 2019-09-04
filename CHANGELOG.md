@@ -1,6 +1,12 @@
 CHANGELOG
 =========
 
+0.15.0 - 2019-09-04
+-------------------
+
+This release doesn't add any feature or fixes, but it fixes an issue with
+checking for release files when submitting PRs ✨.
+
 0.14.4 - 2019-09-01
 -------------------
 
