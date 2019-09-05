@@ -7,14 +7,6 @@ python-versions = "*"
 version = "1.4.3"
 
 [[package]]
-category = "main"
-description = "ASGI specs, helper code, and adapters"
-name = "asgiref"
-optional = true
-python-versions = "*"
-version = "3.2.2"
-
-[[package]]
 category = "dev"
 description = "Atomic file writes."
 name = "atomicwrites"
@@ -408,7 +400,7 @@ pytest = ">=3.6"
 category = "dev"
 description = "A Django plugin for pytest."
 name = "pytest-django"
-optional = false
+optional = true
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 version = "3.5.1"
 
@@ -575,15 +567,14 @@ version = "0.6.0"
 more-itertools = "*"
 
 [extras]
-django = ["django", "asgiref"]
+django = ["django"]
 
 [metadata]
-content-hash = "83c41f3833d0a208fa160ce1b6466f39155493e7b4c5ed22d5fdab407e721915"
+content-hash = "5b5aafc01598b170ae69f59e25e5c666a528723df53ad8fb1e34659023d1b498"
 python-versions = "^3.7"
 
 [metadata.hashes]
 appdirs = ["9e5896d1372858f8dd3344faf4e5014d21849c756c8d5701f78f8a103b372d92", "d8b24664561d0d34ddfaec54636d502d7cea6e29c3eaf68f3df6180863e2166e"]
-asgiref = ["a4ce726e6ef49cca13642ff49588530ebabcc47c669c7a95af37ea5a74b9b823", "f62b1c88ebf5fe95db202a372982970edcf375c1513d7e70717df0750f5c2b98"]
 atomicwrites = ["03472c30eb2c5d1ba9227e4c2ca66ab8287fbfbbda3888aa93dc2e28fc6811b4", "75a9445bac02d8d058d5e1fe689654ba5a6556a1dfd8ce6ec55a0ed79866cfa6"]
 attrs = ["69c0dbf2ed392de1cb5ec704444b08a5ef81680a61cb899dc08127123af36a79", "f0b870f674851ecbfbbbd364d6b5cbdff9dcedbc7f3f5e18a6891057f21fe399"]
 black = ["09a9dcb7c46ed496a9850b76e4e825d6049ecd38b611f1224857a79bd985a8cf", "68950ffd4d9169716bcb8719a56c07a2f4485354fec061cdd5910aa07369731c"]

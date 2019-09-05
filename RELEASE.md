@@ -6,6 +6,9 @@ Usage:
 
 ```python
 
+# Install
+$ pip install strawberry-graphql[django]
+
 # settings.py
 INSTALLED_APPS = [
     ...
