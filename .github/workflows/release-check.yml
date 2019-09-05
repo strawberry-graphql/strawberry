@@ -14,5 +14,3 @@ jobs:
 
     - name: Release file check
       uses: ./.github/release-check-action
-      env:
-        API_URL: ${{ secrets.BOT_UTILS_API_URL }}
