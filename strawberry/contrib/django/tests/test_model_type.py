@@ -41,6 +41,36 @@ async def test_model_type():
 
 
 @pytest.mark.asyncio
+async def test_model_type_doesnt_override_type_fields():
+    @model_type(model=TestModel, only_fields=["name"])
+    class TestModelType:
+        @strawberry.field
+        def name(self, info) -> str:
+            return "joe"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def model_type(root, info) -> TestModelType:
+            return TestModel(name="modeltype")
+
+    schema = strawberry.Schema(query=Query)
+
+    response = await execute(
+        query="""
+        query {
+            modelType {
+                name
+            }
+        }
+    """,
+        schema=schema,
+    )
+
+    assert response.data["modelType"]["name"] == "joe"
+
+
+@pytest.mark.asyncio
 async def test_model_type_exclude_fields():
     @model_type(model=TestModel, exclude_fields=["secret"])
     class TestModelType:
