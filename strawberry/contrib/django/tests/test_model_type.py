@@ -116,7 +116,6 @@ async def test_model_input_type():
     class Mutation:
         @strawberry.field
         def create_test_model(self, info, test: TestModelInputType) -> TestModelType:
-            print(test.__dict__)
             return TestModel.objects.create(**test.__dict__)
 
     schema = strawberry.Schema(query=Query, mutation=Mutation)
@@ -126,11 +125,9 @@ async def test_model_input_type():
         mutation {
             createTestModel(test: {
                 name: "Hello world"
-                secret: "something secret"
             }) {
                 id
                 name
-                secret
             }
         }
     """,
@@ -138,4 +135,3 @@ async def test_model_input_type():
     )
 
     assert response.data["createTestModel"]["name"] == "Hello world"
-    assert response.data["createTestModel"]["secret"] == "something secret"
