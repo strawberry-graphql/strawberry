@@ -35,7 +35,7 @@ def dict_to_type(dict, cls):
 
             # Convert Enum fields to instances using the value. This is safe
             # because graphql-core has already validated the input.
-            if isinstance(annotation, enum.EnumMeta) and kwargs[name]:
+            if isinstance(annotation, enum.EnumMeta) and kwargs[name] is not None:
                 kwargs[name] = annotation(kwargs[name])
 
     return cls(**kwargs)

@@ -1,3 +1,4 @@
+import typing
 from enum import Enum
 
 import pytest
@@ -235,3 +236,35 @@ def test_enum_arguments():
 
     assert not result.errors
     assert result.data["eatCone"] is True
+
+
+def test_enum_falsy_values():
+    @strawberry.enum
+    class IceCreamFlavour(Enum):
+        VANILLA = ""
+        STRAWBERRY = 0
+
+    @strawberry.input
+    class Input:
+        flavour: IceCreamFlavour
+        optionalFlavour: typing.Optional[IceCreamFlavour]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def print_flavour(self, info, input: Input) -> str:
+            return f"{input.flavour.value}"
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ printFlavour(input: { flavour: VANILLA }) }"
+    result = graphql_sync(schema, query)
+
+    assert not result.errors
+    assert result.data["printFlavour"] == ""
+
+    query = "{ printFlavour(input: { flavour: STRAWBERRY }) }"
+    result = graphql_sync(schema, query)
+
+    assert not result.errors
+    assert result.data["printFlavour"] == "0"
