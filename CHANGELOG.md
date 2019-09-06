@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.15.3 - 2019-09-06
+-------------------
+
+Fixed issue when trying to convert optional arguments to a type
+
 0.15.2 - 2019-09-06
 -------------------
 
