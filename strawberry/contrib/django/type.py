@@ -1,3 +1,4 @@
+import strawberry
 from strawberry.contrib.django.converter import convert_django_field_to_resolver
 from strawberry.type import type as strawberry_type
 
@@ -18,17 +19,38 @@ def model_type(
         raise ValueError("Each model type must define a model")
 
     def wrap(cls):
+
         for field in model._meta.get_fields():
-            resolver = convert_django_field_to_resolver(field)
+            field_type = convert_django_field_to_resolver(field)
 
-            setattr(cls, field.name, resolver)
+            if is_input:
+                if field.name == "id":
+                    continue
 
-        return strawberry_type(
+                if not hasattr(cls, "__annotations__"):
+                    cls.__annotations__ = {}
+
+                cls.__annotations__[field.name] = field_type
+            else:
+
+                def create_resolver(field_name):
+                    @strawberry.field
+                    def resolver(self, info) -> field_type:
+                        value = getattr(self, field_name)
+                        return value
+
+                    return resolver
+
+                setattr(cls, field.name, create_resolver(field.name))
+
+        _type = strawberry_type(
             cls,
             is_input=is_input,
             is_interface=is_interface,
             description=description or model.__doc__,
         )
+
+        return _type
 
     if cls is None:
         return wrap
