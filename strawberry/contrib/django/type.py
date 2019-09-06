@@ -1,5 +1,5 @@
 import strawberry
-from strawberry.contrib.django.converter import convert_django_field_to_resolver
+from strawberry.contrib.django.converter import convert_django_field
 from strawberry.type import type as strawberry_type
 
 
@@ -34,7 +34,7 @@ def model_type(
             if only_fields and field.name not in only_fields:
                 continue
 
-            field_type = convert_django_field_to_resolver(field)
+            field_type = convert_django_field(field)
 
             if is_input:
                 if field.name == "id":
