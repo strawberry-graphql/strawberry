@@ -41,6 +41,26 @@ async def test_model_type():
 
 
 @pytest.mark.asyncio
+async def test_model_type_exclude_fields():
+    @model_type(model=TestModel, exclude_fields=["secret"])
+    class TestModelType:
+        pass
+
+    assert "secret" not in TestModelType.field.fields
+
+
+@pytest.mark.asyncio
+async def test_model_type_only_fields():
+    @model_type(model=TestModel, only_fields=["name"])
+    class TestModelType:
+        pass
+
+    assert "name" in TestModelType.field.fields
+    assert "id" not in TestModelType.field.fields
+    assert "secret" not in TestModelType.field.fields
+
+
+@pytest.mark.asyncio
 @pytest.mark.django_db
 async def test_model_type_list():
     @model_type(model=TestModel)
@@ -106,15 +126,16 @@ async def test_model_input_type():
         mutation {
             createTestModel(test: {
                 name: "Hello world"
+                secret: "something secret"
             }) {
                 id
                 name
+                secret
             }
         }
     """,
         schema=schema,
     )
 
-    print(response)
-
     assert response.data["createTestModel"]["name"] == "Hello world"
+    assert response.data["createTestModel"]["secret"] == "something secret"

@@ -4,7 +4,14 @@ from strawberry.type import type as strawberry_type
 
 
 def model_type(
-    cls=None, *, model=None, is_input=False, is_interface=False, description=None
+    cls=None,
+    *,
+    model=None,
+    exclude_fields=[],
+    only_fields=[],
+    is_input=False,
+    is_interface=False,
+    description=None
 ):
     """Defines a Django model type and generates resolvers for each field.
 
@@ -21,6 +28,12 @@ def model_type(
     def wrap(cls):
 
         for field in model._meta.get_fields():
+            if exclude_fields and field.name in exclude_fields:
+                continue
+
+            if only_fields and field.name not in only_fields:
+                continue
+
             field_type = convert_django_field_to_resolver(field)
 
             if is_input:
