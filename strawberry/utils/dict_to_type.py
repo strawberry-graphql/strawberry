@@ -25,7 +25,11 @@ def dict_to_type(dict, cls):
             annotation = get_optional_annotation(annotation)
 
         if is_dataclass(annotation):
-            kwargs[name] = dict_to_type(dict.get(dict_name, {}), annotation)
+            value = dict.get(dict_name)
+
+            kwargs[name] = (
+                dict_to_type(value, annotation) if value is not None else None
+            )
         else:
             kwargs[name] = dict.get(dict_name)
 
