@@ -52,7 +52,9 @@ mutation_input = {
 
 
 response = httpx.post(
-    API_URL, json={"query": mutation, "variables": {"input": mutation_input}}
+    API_URL,
+    json={"query": mutation, "variables": {"input": mutation_input}},
+    timeout=120,
 )
 response.raise_for_status()
 
