@@ -1,3 +1,5 @@
+Release type: patch
+
 Added automatic GraphQL type generation for Django models.
 
 Usage:
