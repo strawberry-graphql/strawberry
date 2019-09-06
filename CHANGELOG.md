@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.15.4 - 2019-09-06
+-------------------
+
+Fixed conversion of enum when value was falsy.
+
 0.15.3 - 2019-09-06
 -------------------
 
