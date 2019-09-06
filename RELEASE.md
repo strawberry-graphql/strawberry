@@ -4,6 +4,7 @@ Added automatic GraphQL type generation for Django models.
 
 Usage:
 
+```python
 # models.py
 from django.db import models
 
@@ -25,3 +26,4 @@ type TodoType {
     name: String!
     done: Boolean!
 }
+```
