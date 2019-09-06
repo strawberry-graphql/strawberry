@@ -1,6 +1,13 @@
 CHANGELOG
 =========
 
+0.15.2 - 2019-09-06
+-------------------
+
+Fix issue with converting arguments with optional fields.
+
+Thanks to [@sciyoshi](https://github.com/sciyoshi) for the fix!
+
 0.15.1 - 2019-09-05
 -------------------
 
