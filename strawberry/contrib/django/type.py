@@ -36,6 +36,9 @@ def model_type(
 
             field_type = convert_django_field(field)
 
+            if hasattr(cls, field.name):
+                continue
+
             if is_input:
                 if field.name == "id":
                     continue
