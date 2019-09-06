@@ -75,3 +75,46 @@ async def test_model_type_list():
     )
 
     assert len(response.data["modelTypeList"]) == 3
+
+
+@pytest.mark.asyncio
+@pytest.mark.django_db
+async def test_model_input_type():
+    @model_type(model=TestModel)
+    class TestModelType:
+        extra: str
+
+    @model_type(model=TestModel, is_input=True)
+    class TestModelInputType:
+        pass
+
+    @strawberry.type
+    class Query:
+        hello: str = "world"
+
+    @strawberry.type
+    class Mutation:
+        @strawberry.field
+        def create_test_model(self, info, test: TestModelInputType) -> TestModelType:
+            print(test.__dict__)
+            return TestModel.objects.create(**test.__dict__)
+
+    schema = strawberry.Schema(query=Query, mutation=Mutation)
+
+    response = await execute(
+        query="""
+        mutation {
+            createTestModel(test: {
+                name: "Hello world"
+            }) {
+                id
+                name
+            }
+        }
+    """,
+        schema=schema,
+    )
+
+    print(response)
+
+    assert response.data["createTestModel"]["name"] == "Hello world"
