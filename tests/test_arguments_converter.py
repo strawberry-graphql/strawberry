@@ -136,3 +136,19 @@ def test_nested_input_types():
             release_info=ReleaseInfo(change_type=ChangeType.MAJOR, changelog="example"),
         )
     }
+
+    args = {
+        "input": {
+            "prNumber": 12,
+            "status": ReleaseFileStatus.OK.value,
+            "releaseInfo": None,
+        }
+    }
+
+    annotations = {"input": AddReleaseFileCommentInput}
+
+    assert convert_args(args, annotations) == {
+        "input": AddReleaseFileCommentInput(
+            pr_number=12, status=ReleaseFileStatus.OK, release_info=None
+        )
+    }
