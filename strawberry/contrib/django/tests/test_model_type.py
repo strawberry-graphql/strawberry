@@ -137,7 +137,8 @@ async def test_model_input_type():
     class Mutation:
         @strawberry.field
         def create_test_model(self, info, test: TestModelInputType) -> TestModelType:
-            return TestModel.objects.create(**test.__dict__)
+            name = getattr(test, "name")
+            return TestModel.objects.create(name=name)
 
     schema = strawberry.Schema(query=Query, mutation=Mutation)
 
