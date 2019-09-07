@@ -7,7 +7,7 @@ def model_type(
     cls=None,
     *,
     model=None,
-    only_fields=[],
+    fields=[],
     is_input=False,
     is_interface=False,
     description=None
@@ -27,7 +27,7 @@ def model_type(
     def wrap(cls):
 
         for field in model._meta.get_fields():
-            if only_fields and field.name not in only_fields:
+            if fields != "__all__" and field.name not in fields:
                 continue
 
             field_type = convert_django_field(field)
