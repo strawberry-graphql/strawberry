@@ -41,7 +41,7 @@ async def test_model_type():
 
 
 @pytest.mark.asyncio
-async def test_model_type_doesnt_override_type_fields():
+async def test_model_type_can_override_type_fields():
     @model_type(model=TestModel, only_fields=["name"])
     class TestModelType:
         @strawberry.field
