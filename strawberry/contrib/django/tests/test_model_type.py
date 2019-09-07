@@ -10,7 +10,7 @@ from strawberry.graphql import execute
 
 @pytest.mark.asyncio
 async def test_model_type():
-    @model_type(model=TestModel)
+    @model_type(model=TestModel, fields="__all__")
     class TestModelType:
         @strawberry.field
         def extra_info(self, info) -> str:
@@ -42,7 +42,7 @@ async def test_model_type():
 
 @pytest.mark.asyncio
 async def test_model_type_can_override_type_fields():
-    @model_type(model=TestModel, only_fields=["name"])
+    @model_type(model=TestModel, fields=["name"])
     class TestModelType:
         @strawberry.field
         def name(self, info) -> str:
@@ -72,7 +72,7 @@ async def test_model_type_can_override_type_fields():
 
 @pytest.mark.asyncio
 async def test_model_type_only_fields():
-    @model_type(model=TestModel, only_fields=["name"])
+    @model_type(model=TestModel, fields=["name"])
     class TestModelType:
         pass
 
@@ -84,7 +84,7 @@ async def test_model_type_only_fields():
 @pytest.mark.asyncio
 @pytest.mark.django_db
 async def test_model_type_list():
-    @model_type(model=TestModel)
+    @model_type(model=TestModel, fields="__all__")
     class TestModelType:
         @strawberry.field
         def extra_info(self, info) -> str:
@@ -121,11 +121,11 @@ async def test_model_type_list():
 @pytest.mark.asyncio
 @pytest.mark.django_db
 async def test_model_input_type():
-    @model_type(model=TestModel)
+    @model_type(model=TestModel, fields="__all__")
     class TestModelType:
         extra: str
 
-    @model_type(model=TestModel, is_input=True)
+    @model_type(model=TestModel, is_input=True, fields="__all__")
     class TestModelInputType:
         pass
 
@@ -154,5 +154,7 @@ async def test_model_input_type():
     """,
         schema=schema,
     )
+
+    print(response)
 
     assert response.data["createTestModel"]["name"] == "Hello world"
