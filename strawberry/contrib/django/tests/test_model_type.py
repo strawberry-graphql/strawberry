@@ -71,15 +71,6 @@ async def test_model_type_can_override_type_fields():
 
 
 @pytest.mark.asyncio
-async def test_model_type_exclude_fields():
-    @model_type(model=TestModel, exclude_fields=["secret"])
-    class TestModelType:
-        pass
-
-    assert "secret" not in TestModelType.field.fields
-
-
-@pytest.mark.asyncio
 async def test_model_type_only_fields():
     @model_type(model=TestModel, only_fields=["name"])
     class TestModelType:
