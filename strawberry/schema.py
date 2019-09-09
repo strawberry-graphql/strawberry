@@ -7,7 +7,7 @@ from graphql.utilities.schema_printer import print_schema
 
 
 class Schema(GraphQLSchema):
-    def __init__(self, query, mutation=None, subscription=None, directives=[]):
+    def __init__(self, query, mutation=None, subscription=None, directives=()):
         super().__init__(
             query=query.field,
             mutation=mutation.field if mutation else None,

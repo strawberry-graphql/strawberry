@@ -19,7 +19,7 @@ def _process_enum(cls, name=None, description=None):
     def repr_(self):
         return print_type(self.field)
 
-    setattr(cls, "__repr__", repr_)
+    cls.__repr__ = repr_
 
     description = description or cls.__doc__
 
