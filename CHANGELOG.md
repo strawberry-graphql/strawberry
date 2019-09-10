@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.15.5 - 2019-09-10
+-------------------
+
+Add the flake8-bugbear linting plugin to catch likely bugs
+
 0.15.4 - 2019-09-06
 -------------------
 
