@@ -38,7 +38,7 @@ def _process_type(cls, *, is_input=False, is_interface=False, description=None):
     def repr_(self):
         return print_type(self.field)
 
-    setattr(cls, "__repr__", repr_)
+    cls.__repr__ = repr_
 
     def _get_fields(wrapped):
         class_fields = dataclasses.fields(wrapped)
