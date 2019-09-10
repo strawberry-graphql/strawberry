@@ -8,11 +8,14 @@ class StrawberryPlugin(Plugin):
     def get_class_decorator_hook(
         self, fullname: str
     ) -> Optional[Callable[[ClassDefContext], None]]:
-        if fullname in {
-            "strawberry.type.type",
-            "strawberry.type.input",
-            "strawberry.type.interface",
-        }:
+        if any(
+            strawberry_decorator in fullname
+            for strawberry_decorator in {
+                "strawberry.type",
+                "strawberry.input",
+                "strawberry.interface",
+            }
+        ):
             return dataclasses.dataclass_class_maker_callback
         return None
 
