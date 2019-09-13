@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.16.0 - 2019-09-13
+-------------------
+
+Switched from `graphql-core-next` dependency to `graphql-core@^3.0.0a0`.
+
 0.15.6 - 2019-09-11
 -------------------
 
