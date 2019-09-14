@@ -203,7 +203,7 @@ class IsAdmin(BasePermission):
 
 @strawberry.type
 class Query:
-    @strawberry.field(permisson_classes=[IsAdmin])
+    @strawberry.field(permission_classes=[IsAdmin])
     def hello(self, info) -> str:
       return "Hello"
 ```
