@@ -9,6 +9,7 @@
     User(n="Patrick")
     User(name="Patrick")
   out: |
+    Found 1 error in 1 file (checked 1 source file)
     main:7: error: Unexpected keyword argument "n" for "User"
 
 - case: test_input
@@ -22,6 +23,7 @@
     EditUserInput(n="Patrick")
     EditUserInput(name="Patrick")
   out: |
+    Found 1 error in 1 file (checked 1 source file)
     main:7: error: Unexpected keyword argument "n" for "EditUserInput"
 
 - case: test_interface
@@ -35,4 +37,5 @@
     NameInterface(n="Patrick")
     NameInterface(name="Patrick")
   out: |
+    Found 1 error in 1 file (checked 1 source file)
     main:7: error: Unexpected keyword argument "n" for "NameInterface"
