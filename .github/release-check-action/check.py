@@ -10,10 +10,9 @@ from release import InvalidReleaseFileError, get_release_info
 with open(GITHUB_EVENT_PATH) as f:
     event_data = json.load(f)
 
+sender = event_data["pull_request"]["user"]["login"]
 
-sender = event_data["sender"]["login"]
-
-if sender in ["dependabot-preview", "dependabot"]:
+if sender in ["dependabot-preview[bot]", "dependabot-preview", "dependabot"]:
     print("Skipping dependencies PRs for now.")
     sys.exit(0)
 
