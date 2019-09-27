@@ -11,7 +11,7 @@ def test_returns_errors(schema, test_client):
         "data": None,
         "errors": [
             {
-                "locations": [[1, 3]],
+                "locations": [{"column": 3, "line": 1}],
                 "message": "Cannot query field 'donut' on type 'Query'.",
                 "path": None,
             }
