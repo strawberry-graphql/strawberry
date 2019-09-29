@@ -2,6 +2,7 @@ import textwrap
 from typing import Optional
 
 import strawberry
+from strawberry.printer import print_type
 
 
 def test_simple_required_types():
@@ -13,7 +14,7 @@ def test_simple_required_types():
         f: float
         id: strawberry.ID
 
-    expected_representation = """
+    expected_type = """
     type MyType {
       s: String!
       i: Int!
@@ -24,8 +25,8 @@ def test_simple_required_types():
     """
 
     assert (
-        repr(MyType("a", 1, True, 3.2, "123"))
-        == textwrap.dedent(expected_representation).strip()
+        print_type(MyType("a", 1, True, 3.2, "123"))
+        == textwrap.dedent(expected_type).strip()
     )
 
 
@@ -34,13 +35,13 @@ def test_recursive_type():
     class MyType:
         s: "MyType"
 
-    expected_representation = """
+    expected_type = """
     type MyType {
       s: MyType!
     }
     """
 
-    assert repr(MyType("a")) == textwrap.dedent(expected_representation).strip()
+    assert print_type(MyType("a")) == textwrap.dedent(expected_type).strip()
 
 
 def test_optional():
@@ -48,10 +49,10 @@ def test_optional():
     class MyType:
         s: Optional[str]
 
-    expected_representation = """
+    expected_type = """
     type MyType {
       s: String
     }
     """
 
-    assert repr(MyType("a")) == textwrap.dedent(expected_representation).strip()
+    assert print_type(MyType("a")) == textwrap.dedent(expected_type).strip()

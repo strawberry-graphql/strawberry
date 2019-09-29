@@ -1,6 +1,7 @@
 import textwrap
 
 import strawberry
+from strawberry.printer import print_type
 
 
 def test_simple_required_types():
@@ -12,7 +13,7 @@ def test_simple_required_types():
         f: float
         id: strawberry.ID
 
-    expected_representation = """
+    expected_type = """
     input MyInput {
       s: String!
       i: Int!
@@ -23,6 +24,6 @@ def test_simple_required_types():
     """
 
     assert (
-        repr(MyInput("a", 1, True, 3.2, "123"))
-        == textwrap.dedent(expected_representation).strip()
+        print_type(MyInput("a", 1, True, 3.2, "123"))
+        == textwrap.dedent(expected_type).strip()
     )

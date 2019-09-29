@@ -6,6 +6,7 @@ import pytest
 import strawberry
 from graphql.language import parse
 from graphql.subscription import subscribe
+from strawberry.printer import print_type
 
 
 def test_subscription_type():
@@ -15,13 +16,13 @@ def test_subscription_type():
         async def x(self, info) -> typing.AsyncGenerator[str, None]:
             yield "Hi"
 
-    expected_representation = """
+    expected_type = """
     type MySub {
       x: String!
     }
     """
 
-    assert repr(MySub()) == textwrap.dedent(expected_representation).strip()
+    assert print_type(MySub()) == textwrap.dedent(expected_type).strip()
 
 
 @pytest.mark.asyncio

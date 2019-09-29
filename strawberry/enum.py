@@ -1,7 +1,6 @@
 from enum import EnumMeta
 
 from graphql import GraphQLEnumType, GraphQLEnumValue
-from graphql.utilities.schema_printer import print_type
 
 from .exceptions import NotAnEnum
 from .type_converter import REGISTRY
@@ -15,11 +14,6 @@ def _process_enum(cls, name=None, description=None):
         name = cls.__name__
 
     REGISTRY[name] = cls
-
-    def repr_(self):
-        return print_type(self.field)
-
-    cls.__repr__ = repr_
 
     description = description or cls.__doc__
 
