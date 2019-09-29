@@ -1,6 +1,12 @@
 CHANGELOG
 =========
 
+0.16.1 - 2019-09-29
+-------------------
+
+Removed custom representation for Strawberry types,
+this should make using types much nicer.
+
 0.16.0 - 2019-09-13
 -------------------
 
