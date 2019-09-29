@@ -1,6 +1,7 @@
 import textwrap
 
 import strawberry
+from strawberry.printer import print_type
 
 
 def test_interface():
@@ -8,13 +9,13 @@ def test_interface():
     class Node:
         id: strawberry.ID
 
-    expected_representation = """
+    expected_type = """
     interface Node {
       id: ID!
     }
     """
 
-    assert repr(Node("a")) == textwrap.dedent(expected_representation).strip()
+    assert print_type(Node("a")) == textwrap.dedent(expected_type).strip()
 
 
 def test_implementing_interface():
@@ -26,11 +27,11 @@ def test_implementing_interface():
     class Post(Node):
         title: str
 
-    expected_representation = """
+    expected_type = """
     type Post implements Node {
       id: ID!
       title: String!
     }
     """
 
-    assert repr(Post("a", "abc")) == textwrap.dedent(expected_representation).strip()
+    assert print_type(Post("a", "abc")) == textwrap.dedent(expected_type).strip()
