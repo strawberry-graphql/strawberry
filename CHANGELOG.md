@@ -101,7 +101,7 @@ Added support for defining query directives, example:
 
 ```python
 import strawberry
-from strawberry.directives import DirectiveLocation
+from strawberry.directive import DirectiveLocation
 
 @strawberry.type
 class Query:
