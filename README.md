@@ -65,6 +65,17 @@ plugins = strawberry.ext.mypy_plugin
 
 ### Django Integration
 
+A Django view is provided for adding a GraphQL endpoint to your application.
+
+1. Add the app to your `INSTALLED_APPS`.
+```python
+INSTALLED_APPS = [
+    ...
+    'strawberry.contrib.django',
+]
+```
+
+2. Add the view to your `urls.py` file.
 ```python
 from strawberry.contrib.django.views import GraphQLView
 from .schema import schema
