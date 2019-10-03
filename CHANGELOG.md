@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.16.2 - 2019-10-03
+-------------------
+
+Updated docs to provide reference on how to use Django view.
+
 0.16.1 - 2019-09-29
 -------------------
 
