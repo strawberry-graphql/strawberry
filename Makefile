@@ -12,3 +12,6 @@ check-has-release:
 
 install-deploy-deps:
 	pip install --user githubrelease
+
+build-docs-html:
+	sphinx-build -M html "docs/source" "docs/build" $(O)

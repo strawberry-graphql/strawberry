@@ -194,3 +194,6 @@ $RECYCLE.BIN/
 
 
 .vscode/
+
+# Build Docs
+docs/build
