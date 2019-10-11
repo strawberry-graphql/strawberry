@@ -47,7 +47,7 @@ To run the debug server run the following command:
 strawberry server app
 ```
 
-Open the debug server by clicking on the follwing link:
+Open the debug server by clicking on the following link:
 [http://0.0.0.0:8000/graphql](http://0.0.0.0:8000/graphql)
 
 This will open a GraphQL playground where you can test the API.
