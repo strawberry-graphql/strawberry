@@ -2,7 +2,7 @@
 
 # Strawberry GraphQL
 
-> Python GraphQL library based on dataclasses
+> Python GraphQL library based on data classes
 
 [![CircleCI](https://img.shields.io/circleci/token/307b40d5e152e074d34f84d30d226376a15667d5/project/github/strawberry-graphql/strawberry/master.svg?style=for-the-badge)](https://circleci.com/gh/strawberry-graphql/strawberry/tree/master)
 
@@ -39,7 +39,7 @@ schema = strawberry.Schema(query=Query)
 ```
 
 This will create a GraphQL schema defining a `User` type and a single query
-field `user` that will return a hard coded user.
+field `user` that will return a hardcoded user.
 
 To run the debug server run the following command:
 
@@ -47,7 +47,7 @@ To run the debug server run the following command:
 strawberry server app
 ```
 
-Open the debug server by clicking on the follwing link:
+Open the debug server by clicking on the following link:
 [http://0.0.0.0:8000/graphql](http://0.0.0.0:8000/graphql)
 
 This will open a GraphQL playground where you can test the API.
@@ -89,7 +89,7 @@ urlpatterns = [
 ## Contributing
 
 We use [poetry](https://github.com/sdispater/poetry) to manage dependencies, to
-get started follow these steps:
+get started to follow these steps:
 
 ```shell
 git clone https://github.com/strawberry-graphql/strawberry
@@ -116,7 +116,7 @@ pre-commit install
 - Repository: https://github.com/strawberry-graphql/strawberry
 - Issue tracker: https://github.com/strawberry-graphql/strawberry/issues
   - In case of sensitive bugs like security vulnerabilities, please contact
-    patrick.arminio@gmail.com directly instead of using issue tracker. We value
+    patrick.arminio@gmail.com directly instead of using the issue tracker. We value
     your effort to improve the security and privacy of this project!
 
 ## Licensing
