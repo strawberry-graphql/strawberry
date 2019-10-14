@@ -25,8 +25,8 @@ class TodoType:
 @model_type
 class TodoType:
     class Meta:
-        model=Todo
-        fields=['id', 'name', 'done']
+        model = Todo
+        fields = ['id', 'name', 'done']
 
 # Generated type:
 type TodoType {
