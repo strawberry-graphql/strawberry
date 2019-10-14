@@ -156,6 +156,4 @@ async def test_model_input_type():
         schema=schema,
     )
 
-    print(response)
-
     assert response.data["createTestModel"]["name"] == "Hello world"

@@ -3,15 +3,7 @@ from strawberry.contrib.django.converter import convert_django_field
 from strawberry.type import type as strawberry_type
 
 
-def model_type(
-    cls=None,
-    *,
-    model=None,
-    fields=[],
-    is_input=False,
-    is_interface=False,
-    description=None
-):
+def model_type(cls=None, *, model=None, fields=[], is_input=False, is_interface=False):
     """Defines a Django model type and generates resolvers for each field.
 
     Example usage:
@@ -59,7 +51,7 @@ def model_type(
             cls,
             is_input=is_input,
             is_interface=is_interface,
-            description=description or model.__doc__,
+            description=cls.__doc__ or model.__doc__,
         )
 
         return _type
