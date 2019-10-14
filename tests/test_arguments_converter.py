@@ -1,4 +1,5 @@
 import typing
+from enum import Enum
 
 import strawberry
 from strawberry.field import convert_args
@@ -89,3 +90,65 @@ def test_optional_list_of_input_types():
     annotations = {"input_list": typing.Optional[typing.List[MyInput]]}
 
     assert convert_args(args, annotations) == {"input_list": [MyInput(abc="example")]}
+
+
+def test_nested_input_types():
+    @strawberry.enum
+    class ChangeType(Enum):
+        MAJOR = "major"
+        MINOR = "minor"
+        PATCH = "patch"
+
+    @strawberry.input
+    class ReleaseInfo:
+        change_type: ChangeType
+        changelog: str
+
+    @strawberry.enum
+    class ReleaseFileStatus(Enum):
+        MISSING = "missing"
+        INVALID = "invalid"
+        OK = "ok"
+
+    @strawberry.input
+    class AddReleaseFileCommentInput:
+        pr_number: int
+        status: ReleaseFileStatus
+        release_info: typing.Optional[ReleaseInfo]
+
+    args = {
+        "input": {
+            "prNumber": 12,
+            "status": ReleaseFileStatus.OK.value,
+            "releaseInfo": {
+                "changeType": ChangeType.MAJOR.value,
+                "changelog": "example",
+            },
+        }
+    }
+
+    annotations = {"input": AddReleaseFileCommentInput}
+
+    assert convert_args(args, annotations) == {
+        "input": AddReleaseFileCommentInput(
+            pr_number=12,
+            status=ReleaseFileStatus.OK,
+            release_info=ReleaseInfo(change_type=ChangeType.MAJOR, changelog="example"),
+        )
+    }
+
+    args = {
+        "input": {
+            "prNumber": 12,
+            "status": ReleaseFileStatus.OK.value,
+            "releaseInfo": None,
+        }
+    }
+
+    annotations = {"input": AddReleaseFileCommentInput}
+
+    assert convert_args(args, annotations) == {
+        "input": AddReleaseFileCommentInput(
+            pr_number=12, status=ReleaseFileStatus.OK, release_info=None
+        )
+    }

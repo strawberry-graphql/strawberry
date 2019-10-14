@@ -6,6 +6,22 @@ from strawberry.graphql import execute
 
 
 @pytest.mark.asyncio
+async def test_handles_async_resolvers():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        async def async_field(self, info) -> str:
+            return "async result"
+
+    schema = strawberry.Schema(Query)
+
+    result = await execute(schema, "{ asyncField }")
+
+    assert not result.errors
+    assert result.data["asyncField"] == "async result"
+
+
+@pytest.mark.asyncio
 async def test_runs_directives():
     @strawberry.type
     class Query:

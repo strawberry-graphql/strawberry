@@ -1,6 +1,59 @@
 CHANGELOG
 =========
 
+0.16.4 - 2019-10-14
+-------------------
+
+Fix execution of async resolvers.
+
+0.16.3 - 2019-10-14
+-------------------
+
+Typo fix - changed the spelling from 'follwing' to 'following'.
+
+0.16.2 - 2019-10-03
+-------------------
+
+Updated docs to provide reference on how to use Django view.
+
+0.16.1 - 2019-09-29
+-------------------
+
+Removed custom representation for Strawberry types,
+this should make using types much nicer.
+
+0.16.0 - 2019-09-13
+-------------------
+
+Switched from `graphql-core-next` dependency to `graphql-core@^3.0.0a0`.
+
+0.15.6 - 2019-09-11
+-------------------
+
+Fixes MYPY plugin
+
+0.15.5 - 2019-09-10
+-------------------
+
+Add the flake8-bugbear linting plugin to catch likely bugs
+
+0.15.4 - 2019-09-06
+-------------------
+
+Fixed conversion of enum when value was falsy.
+
+0.15.3 - 2019-09-06
+-------------------
+
+Fixed issue when trying to convert optional arguments to a type
+
+0.15.2 - 2019-09-06
+-------------------
+
+Fix issue with converting arguments with optional fields.
+
+Thanks to [@sciyoshi](https://github.com/sciyoshi) for the fix!
+
 0.15.1 - 2019-09-05
 -------------------
 
@@ -63,7 +116,7 @@ Added support for defining query directives, example:
 
 ```python
 import strawberry
-from strawberry.directives import DirectiveLocation
+from strawberry.directive import DirectiveLocation
 
 @strawberry.type
 class Query:
@@ -171,7 +224,7 @@ class IsAdmin(BasePermission):
 
 @strawberry.type
 class Query:
-    @strawberry.field(permisson_classes=[IsAdmin])
+    @strawberry.field(permission_classes=[IsAdmin])
     def hello(self, info) -> str:
       return "Hello"
 ```

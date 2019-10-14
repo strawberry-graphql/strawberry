@@ -2,7 +2,6 @@ from functools import partial
 
 import dataclasses
 from graphql import GraphQLInputObjectType, GraphQLInterfaceType, GraphQLObjectType
-from graphql.utilities.schema_printer import print_type
 
 from .constants import IS_STRAWBERRY_FIELD, IS_STRAWBERRY_INPUT, IS_STRAWBERRY_INTERFACE
 from .field import field, strawberry_field
@@ -34,11 +33,6 @@ def _get_resolver(cls, field_name):
 def _process_type(cls, *, is_input=False, is_interface=False, description=None):
     name = cls.__name__
     REGISTRY[name] = cls
-
-    def repr_(self):
-        return print_type(self.field)
-
-    setattr(cls, "__repr__", repr_)
 
     def _get_fields(wrapped):
         class_fields = dataclasses.fields(wrapped)
@@ -98,7 +92,7 @@ def _process_type(cls, *, is_input=False, is_interface=False, description=None):
             if hasattr(klass, IS_STRAWBERRY_INTERFACE)
         ]
 
-    wrapped = dataclasses.dataclass(cls, repr=False)
+    wrapped = dataclasses.dataclass(cls)
     wrapped.field = TypeClass(name, lambda: _get_fields(wrapped), **extra_kwargs)
 
     return wrapped
