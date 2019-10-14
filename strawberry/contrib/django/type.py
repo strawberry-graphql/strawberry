@@ -13,13 +13,19 @@ def model_type(cls=None, *, model=None, fields=[], is_input=False, is_interface=
     >>>     pass
     """
 
-    if not model:
-        raise ValueError("Each model type must define a model")
-
     def wrap(cls):
 
-        for field in model._meta.get_fields():
-            if fields != "__all__" and field.name not in fields:
+        meta = getattr(cls, "Meta", None)
+        _model = getattr(meta, "model", model)
+        _fields = getattr(meta, "fields", fields)
+        _is_input = getattr(meta, "is_input", is_input)
+        _is_interface = getattr(meta, "is_interface", is_interface)
+
+        if not _model:
+            raise ValueError("Each model type must define a model")
+
+        for field in _model._meta.get_fields():
+            if _fields != "__all__" and field.name not in _fields:
                 continue
 
             field_type = convert_django_field(field)
@@ -27,7 +33,7 @@ def model_type(cls=None, *, model=None, fields=[], is_input=False, is_interface=
             if hasattr(cls, field.name):
                 continue
 
-            if is_input:
+            if _is_input:
                 if field.name == "id":
                     continue
 
@@ -49,9 +55,9 @@ def model_type(cls=None, *, model=None, fields=[], is_input=False, is_interface=
 
         _type = strawberry_type(
             cls,
-            is_input=is_input,
-            is_interface=is_interface,
-            description=cls.__doc__ or model.__doc__,
+            is_input=_is_input,
+            is_interface=_is_interface,
+            description=cls.__doc__ or _model.__doc__,
         )
 
         return _type
