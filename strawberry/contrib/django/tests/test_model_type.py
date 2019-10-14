@@ -41,6 +41,42 @@ async def test_model_type():
 
 
 @pytest.mark.asyncio
+async def test_model_type_meta():
+    @model_type
+    class TestModelType:
+        class Meta:
+            model = TestModel
+            fields = "__all__"
+
+        @strawberry.field
+        def extra_info(self, info) -> str:
+            return "more info"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def model_type(root, info) -> TestModelType:
+            return TestModel(name="modeltype")
+
+    schema = strawberry.Schema(query=Query)
+
+    response = await execute(
+        query="""
+        query {
+            modelType {
+                name
+                extraInfo
+            }
+        }
+    """,
+        schema=schema,
+    )
+
+    assert response.data["modelType"]["name"] == "modeltype"
+    assert response.data["modelType"]["extraInfo"] == "more info"
+
+
+@pytest.mark.asyncio
 async def test_model_type_can_override_type_fields():
     @model_type(model=TestModel, fields=["name"])
     class TestModelType:
