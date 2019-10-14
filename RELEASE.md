@@ -16,7 +16,7 @@ class Todo(models.Model):
 from todo.models import Todo
 from strawberry.contrib.django.type import model_type
 
-@model_type(model=Todo)
+@model_type(model=Todo, fields=['id', 'name', 'done'])
 class TodoType:
     pass
 
