@@ -1,4 +1,5 @@
 import typing
+from inspect import isawaitable
 
 from graphql import (
     ExecutionResult,
@@ -38,7 +39,7 @@ async def execute(
     if validation_errors:
         return ExecutionResult(data=None, errors=validation_errors)
 
-    return graphql_excute(
+    result = graphql_excute(
         schema,
         parse(query),
         middleware=[DirectivesMiddleware()],
@@ -46,6 +47,9 @@ async def execute(
         operation_name=operation_name,
         context_value=context_value,
     )
+    if isawaitable(result):
+        result = await result
+    return result
 
 
 async def subscribe(
