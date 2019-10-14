@@ -6,17 +6,17 @@ on: pull_request
 jobs:
   unit-tests:
     runs-on: ubuntu-latest
+    name: Test on ${{ matrix.container }}
+    container: ${{ matrix.container }}
 
     strategy:
       matrix:
-        python: ['3.7.x', '3.8.0b4']
-    name: Python ${{ matrix.python }} unit test
+        container:
+          - python:3.8
+          - python:3.7
 
     steps:
       - uses: actions/checkout@master
-      - uses: actions/setup-python@v1
-        with:
-          python-version: ${{ matrix.python }}
       - run: pip install poetry
       - name: Install dependencies
         run: poetry install --extras=django
