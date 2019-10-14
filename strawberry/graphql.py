@@ -48,7 +48,7 @@ async def execute(
         context_value=context_value,
     )
     if isawaitable(result):
-        result = await result
+        result = await typing.cast(typing.Awaitable[ExecutionResult], result)
     return result
 
 
