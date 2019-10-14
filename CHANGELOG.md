@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.16.3 - 2019-10-14
+-------------------
+
+Typo fix - changed the spelling from 'follwing' to 'following'.
+
 0.16.2 - 2019-10-03
 -------------------
 
