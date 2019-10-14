@@ -20,6 +20,14 @@ from strawberry.contrib.django.type import model_type
 class TodoType:
     pass
 
+# OR
+
+@model_type
+class TodoType:
+    class Meta:
+        model=Todo
+        fields=['id', 'name', 'done']
+
 # Generated type:
 type TodoType {
     id: ID!
