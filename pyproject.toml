@@ -19,7 +19,7 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = "^3.7"
-starlette = "=0.12.9"
+starlette = "=0.12.10"
 click = "^7.0"
 hupper = "^1.5"
 pygments = "^2.3"
