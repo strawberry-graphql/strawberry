@@ -14,7 +14,7 @@ about: Create a bug report to help us improve the Strawberry GraphQL library
 ## System Information
 
  - Operating system:
- - Strawberry version
+ - Strawberry version:
 
 ## Additional Context
 
