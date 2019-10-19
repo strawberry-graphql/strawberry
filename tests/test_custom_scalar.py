@@ -1,4 +1,5 @@
 import base64
+from typing import NewType
 
 import pytest
 
@@ -7,8 +8,15 @@ from strawberry.graphql import execute
 
 
 Base64Encoded = strawberry.scalar(
-    bytes, serialize=base64.b64encode, parse_value=base64.b64decode
+    NewType("Base64Encoded", bytes),
+    serialize=base64.b64encode,
+    parse_value=base64.b64decode,
 )
+
+
+@strawberry.scalar(serialize=lambda x: 42, parse_value=lambda x: Always42())
+class Always42:
+    pass
 
 
 @pytest.mark.asyncio
@@ -42,3 +50,19 @@ async def test_custom_scalar_deserialization():
 
     assert not result.errors
     assert result.data["decodeBase64"] == "decoded"
+
+
+@pytest.mark.asyncio
+async def test_custom_scalar_decorated_class():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def answer(self, info) -> Always42:
+            return Always42()
+
+    schema = strawberry.Schema(Query)
+
+    result = await execute(schema, "{ answer }")
+
+    assert not result.errors
+    assert result.data["answer"] == 42
