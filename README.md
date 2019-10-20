@@ -6,6 +6,8 @@
 
 [![CircleCI](https://img.shields.io/circleci/token/307b40d5e152e074d34f84d30d226376a15667d5/project/github/strawberry-graphql/strawberry/master.svg?style=for-the-badge)](https://circleci.com/gh/strawberry-graphql/strawberry/tree/master)
 
+##Introduction:
+Strawberry is a new GraphQL library for Python 3, inspired by dataclasses. (https://strawberry.rocks/)
 ## Installation
 
 Install with:
