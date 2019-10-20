@@ -19,6 +19,9 @@ class Always42:
     pass
 
 
+MyStr = strawberry.scalar(NewType("MyStr", str))
+
+
 @pytest.mark.asyncio
 async def test_custom_scalar_serialization():
     @strawberry.type
@@ -69,3 +72,19 @@ async def test_custom_scalar_decorated_class():
 
     assert not result.errors
     assert result.data["answer"] == 42
+
+
+@pytest.mark.asyncio
+async def test_custom_scalar_default_serialization():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def my_str(self, info, arg: MyStr) -> MyStr:
+            return MyStr(str(arg) + "Suffix")
+
+    schema = strawberry.Schema(Query)
+
+    result = await execute(schema, '{ myStr(arg: "value") }')
+
+    assert not result.errors
+    assert result.data["myStr"] == "valueSuffix"
