@@ -25,16 +25,19 @@ def scalar(cls=None, *, description=None, serialize, parse_value, parse_literal=
     >>> strawberry.scalar(
     >>>     datetime.date,
     >>>     serialize=lambda value: value.isoformat(),
-    >>>     parse_value=datetime.parse_date)
+    >>>     parse_value=datetime.parse_date
+    >>> )
 
     >>> Base64Encoded = strawberry.scalar(
     >>>     NewType("Base64Encoded", bytes),
     >>>     serialize=base64.b64encode,
-    >>>     parse_value=base64.b64decode)
+    >>>     parse_value=base64.b64decode
+    >>> )
 
     >>> @strawberry.scalar(
     >>>     serialize=lambda value: ",".join(value.items),
-    >>>     parse_value=lambda value: CustomList(value.split(",")))
+    >>>     parse_value=lambda value: CustomList(value.split(","))
+    >>> )
     >>> class CustomList:
     >>>     def __init__(self, items):
     >>>         self.items = items
