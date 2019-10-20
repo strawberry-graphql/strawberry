@@ -45,8 +45,11 @@ async def test_custom_scalar_deserialization():
 
     schema = strawberry.Schema(Query)
 
-    encoded = base64.b64encode(b"decoded").decode("ascii")
-    result = await execute(schema, f'{{ decodeBase64(encoded: "{encoded}") }}')
+    encoded = Base64Encoded(base64.b64encode(b"decoded"))
+    query = """query decode($encoded: Base64Encoded!) {
+        decodeBase64(encoded: $encoded)
+    }"""
+    result = await execute(schema, query, variable_values={"encoded": encoded})
 
     assert not result.errors
     assert result.data["decodeBase64"] == "decoded"
