@@ -7,13 +7,16 @@ from graphql.utilities.schema_printer import print_schema
 
 
 class Schema(GraphQLSchema):
-    def __init__(self, query, mutation=None, subscription=None, directives=()):
+    def __init__(
+        self, query, mutation=None, subscription=None, directives=(), types=()
+    ):
         super().__init__(
             query=query.field,
             mutation=mutation.field if mutation else None,
             subscription=subscription.field if subscription else None,
             directives=specified_directives
             + [directive.directive for directive in directives],
+            types=[type.field for type in types],
         )
 
     def __repr__(self):
