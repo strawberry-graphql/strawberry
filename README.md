@@ -121,5 +121,4 @@ pre-commit install
 
 ## Licensing
 
-The code in this project is licensed under MIT license. See [LICENSE](./LICENSE)
-for more information.
+The code in this project is licensed under the [MIT license](https://github.com/strawberry-graphql/strawberry/blob/master/LICENSE).
