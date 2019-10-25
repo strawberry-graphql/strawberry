@@ -2,7 +2,7 @@ import datetime
 
 import aniso8601
 
-from .custom_scalar import scalar
+from ..custom_scalar import scalar
 
 
 def _serialize_isoformatted(value):
