@@ -17,8 +17,17 @@ def _process_scalar(cls, *, description, serialize, parse_value, parse_literal):
     return cls
 
 
+def identity(x):
+    return x
+
+
 def scalar(
-    cls=None, *, description=None, serialize=None, parse_value=None, parse_literal=None
+    cls=None,
+    *,
+    description=None,
+    serialize=identity,
+    parse_value=None,
+    parse_literal=None
 ):
     """Annotates a class or type as a GraphQL custom scalar.
 
@@ -45,11 +54,6 @@ def scalar(
     >>>         self.items = items
 
     """
-
-    if serialize is None:
-
-        def serialize(x):
-            return x
 
     if parse_value is None:
         parse_value = cls
