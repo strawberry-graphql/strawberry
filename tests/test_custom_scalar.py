@@ -1,10 +1,8 @@
 import base64
 from typing import NewType
 
-import pytest
-
 import strawberry
-from strawberry.graphql import execute
+from graphql import graphql_sync
 
 
 Base64Encoded = strawberry.scalar(
@@ -22,8 +20,7 @@ class Always42:
 MyStr = strawberry.scalar(NewType("MyStr", str))
 
 
-@pytest.mark.asyncio
-async def test_custom_scalar_serialization():
+def test_custom_scalar_serialization():
     @strawberry.type
     class Query:
         @strawberry.field
@@ -32,14 +29,13 @@ async def test_custom_scalar_serialization():
 
     schema = strawberry.Schema(Query)
 
-    result = await execute(schema, "{ customScalarField }")
+    result = graphql_sync(schema, "{ customScalarField }")
 
     assert not result.errors
     assert base64.b64decode(result.data["customScalarField"]) == b"decoded value"
 
 
-@pytest.mark.asyncio
-async def test_custom_scalar_deserialization():
+def test_custom_scalar_deserialization():
     @strawberry.type
     class Query:
         @strawberry.field
@@ -52,14 +48,13 @@ async def test_custom_scalar_deserialization():
     query = """query decode($encoded: Base64Encoded!) {
         decodeBase64(encoded: $encoded)
     }"""
-    result = await execute(schema, query, variable_values={"encoded": encoded})
+    result = graphql_sync(schema, query, variable_values={"encoded": encoded})
 
     assert not result.errors
     assert result.data["decodeBase64"] == "decoded"
 
 
-@pytest.mark.asyncio
-async def test_custom_scalar_decorated_class():
+def test_custom_scalar_decorated_class():
     @strawberry.type
     class Query:
         @strawberry.field
@@ -68,14 +63,13 @@ async def test_custom_scalar_decorated_class():
 
     schema = strawberry.Schema(Query)
 
-    result = await execute(schema, "{ answer }")
+    result = graphql_sync(schema, "{ answer }")
 
     assert not result.errors
     assert result.data["answer"] == 42
 
 
-@pytest.mark.asyncio
-async def test_custom_scalar_default_serialization():
+def test_custom_scalar_default_serialization():
     @strawberry.type
     class Query:
         @strawberry.field
@@ -84,7 +78,7 @@ async def test_custom_scalar_default_serialization():
 
     schema = strawberry.Schema(Query)
 
-    result = await execute(schema, '{ myStr(arg: "value") }')
+    result = graphql_sync(schema, '{ myStr(arg: "value") }')
 
     assert not result.errors
     assert result.data["myStr"] == "valueSuffix"
