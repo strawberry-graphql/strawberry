@@ -3,8 +3,9 @@ from graphql.type.scalars import GraphQLScalarType
 from .type_converter import REGISTRY
 
 
-def _process_scalar(cls, *, description, serialize, parse_value, parse_literal):
-    name = cls.__name__
+def _process_scalar(cls, *, name, description, serialize, parse_value, parse_literal):
+    if name is None:
+        name = cls.__name__
 
     REGISTRY[cls] = GraphQLScalarType(
         name=name,
@@ -24,6 +25,7 @@ def identity(x):
 def scalar(
     cls=None,
     *,
+    name=None,
     description=None,
     serialize=identity,
     parse_value=None,
@@ -61,6 +63,7 @@ def scalar(
     def wrap(cls):
         return _process_scalar(
             cls,
+            name=name,
             description=description,
             serialize=serialize,
             parse_value=parse_value,
