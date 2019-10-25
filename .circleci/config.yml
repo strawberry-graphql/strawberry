@@ -14,7 +14,7 @@ jobs:
       - restore_cache:
           key: deps-{{ .Branch }}-{{ checksum "poetry.lock" }}
       - run:
-          command: poetry install --extras=django
+          command: poetry install --extras="django datetime"
       - save_cache:
           key: deps-{{ .Branch }}-{{ checksum "poetry.lock" }}
           paths:
