@@ -1,6 +1,6 @@
 import click
 
-from .commands.cmd_server import server as cmd_server
+from .commands.server import server as cmd_server
 
 
 @click.group()
