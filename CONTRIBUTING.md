@@ -103,7 +103,7 @@ where you can create a new one and provide the following information:
 
 #### Local development
 
-You will need Poetry to start contributing to the Strawberry. Refer to the
+You will need Poetry to start contributing to Strawberry. Refer to the
 [documentation](https://poetry.eustace.io/docs/#introduction) to start using
 Poetry.
 
