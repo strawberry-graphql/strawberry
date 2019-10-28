@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.16.7 - 2019-10-28
+-------------------
+
+Minimal support for registering types without fields and abstract interface querying.
+
 0.16.6 - 2019-10-27
 -------------------
 
