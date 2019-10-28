@@ -50,7 +50,7 @@ the problem:
 - **Provide specific examples to demonstrate the steps to reproduce the issue**.
   Include links to files or GitHub projects, or copy-paste-able snippets, which you use in those examples.
 - **Describe the behavior you observed after following the steps** and point out
-  what exactly is the problem with that behavior?
+  what exactly is the problem with that behavior.
 - **Explain which behavior you expected to see instead and why.**
 
 Provide more context by answering these questions:
