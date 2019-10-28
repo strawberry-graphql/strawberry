@@ -20,18 +20,15 @@ jobs:
       - run: pip install poetry
       - name: Install dependencies
         run: poetry install --extras=django
-      - name: Install codecov
-        working-directory: backend
-        run: pip install codecov
 
       - name: pytest
-        working-directory: backend
         run: |
             set +e
+            cd backend/
             OUTPUT=$(poetry run py.test --cov-report xml --cov=. --cov-fail-under 80)
             STATUS=$?
             echo "$OUTPUT"
-            codecov
+            poetry run codecov
             exit $STATUS
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
