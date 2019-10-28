@@ -134,7 +134,7 @@ is in order:
 $ poetry run pre-commit install
 ```
 
-Your code must always be accompanied by corresponding tests if tests are not
+Your code must always be accompanied by corresponding tests, if tests are not
 present your code will not be merged.
 
 #### Pull requests
