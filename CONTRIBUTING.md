@@ -69,7 +69,7 @@ Include details about your configuration and environment:
 
 - **Which version of Strawberry are you using?**
 - **Which Python version Strawberry has been installed for?**
-- **What's the name and version of the OS you're using**?
+- **What's the name and version of the OS you're using?**
 
 ### Suggesting enhancements
 
@@ -119,7 +119,7 @@ $ git clone git@github.com:strawberry-graphql/strawberry.git
 $ cd strawberry
 ```
 
-Now, you will need to install the required dependency for Strawberry and be sure
+Now, you will need to install the required dependencies for Strawberry and be sure
 that the current tests are passing on your machine:
 
 ```bash
@@ -140,7 +140,7 @@ $ poetry run pre-commit install
 ```
 
 Your code must always be accompanied by corresponding tests. If tests are not
-present your code will not be merged.
+present, your code will not be merged.
 
 #### Pull requests
 
