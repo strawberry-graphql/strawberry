@@ -24,28 +24,6 @@ jobs:
       - run:
           command: |
             poetry run mypy --ignore-missing-imports .
-  flake8:
-    docker:
-      - image: circleci/python:3.7.2
-    steps:
-      - checkout
-      - run: sudo chown -R circleci:circleci /usr/local/bin
-      - run:
-          sudo chown -R circleci:circleci /usr/local/lib/python3.7/site-packages
-      - run: poetry config settings.virtualenvs.in-project true
-      - restore_cache:
-          key: deps-{{ .Branch }}-{{ checksum "poetry.lock" }}
-      - run:
-          command: poetry install
-      - save_cache:
-          key: deps-{{ .Branch }}-{{ checksum "poetry.lock" }}
-          paths:
-            - ".venv"
-            - "/usr/local/bin"
-            - "/usr/local/lib/python3.7/site-packages"
-      - run:
-          command: |
-            poetry run flake8
   deploy:
     docker:
       - image: circleci/python:3.7.3
@@ -66,7 +44,6 @@ workflows:
   main:
     jobs:
       - mypy
-      - flake8
   deploy:
     jobs:
       - deploy:

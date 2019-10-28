@@ -1,4 +1,3 @@
-
 name: Backend tests
 
 on: pull_request
@@ -17,37 +16,28 @@ jobs:
 
     steps:
       - uses: actions/checkout@master
-      - run: pip install poetry
+      - run: pip install poetry codecov
       - name: Install dependencies
         run: poetry install --extras=django
 
       - name: pytest
         run: |
             set +e
-            cd backend/
             OUTPUT=$(poetry run py.test --cov-report xml --cov=. --cov-fail-under 80)
             STATUS=$?
             echo "$OUTPUT"
-            poetry run codecov
+            codecov
             exit $STATUS
         env:
           CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
-  integration-tests:
+  flake8:
     runs-on: ubuntu-latest
+    container: python:3.8
 
     steps:
       - uses: actions/checkout@master
-      - uses: actions/setup-python@v1
-        with:
-          python-version: '3.7.4'
       - run: pip install poetry
       - name: Install dependencies
-        working-directory: backend
         run: poetry install
-
-      - name: pytest
-        working-directory: backend
-        run: poetry run py.test integration_tests/
-        env:
-          STRIPE_SECRET_KEY: ${{ secrets.STRIPE_SECRET_KEY }}
+      - run: poetry run flake8
