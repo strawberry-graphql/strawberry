@@ -89,7 +89,7 @@ urlpatterns = [
 ## Contributing
 
 We use [poetry](https://github.com/sdispater/poetry) to manage dependencies, to
-get started to follow these steps:
+get started follow these steps:
 
 ```shell
 git clone https://github.com/strawberry-graphql/strawberry
