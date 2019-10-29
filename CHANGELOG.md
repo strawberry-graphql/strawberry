@@ -1,6 +1,31 @@
 CHANGELOG
 =========
 
+0.16.7 - 2019-10-28
+-------------------
+
+Minimal support for registering types without fields and abstract interface querying.
+
+0.16.6 - 2019-10-27
+-------------------
+
+Grammar fixes - changed 'corresponding tests, if tests' to 'corresponding tests. If tests' and removed extraneous period from 'Provide specific examples to demonstrate the steps..'. Also made 'Enhancement' lowercase to stay consistent with its usage in documentation and changed 'on the Strawberry' to 'to Strawberry'.
+
+0.16.5 - 2019-10-16
+-------------------
+
+Added issue template files (bug_report.md, feature_request.md, other_issues.md) and a pull request template file.
+
+0.16.4 - 2019-10-14
+-------------------
+
+Fix execution of async resolvers.
+
+0.16.3 - 2019-10-14
+-------------------
+
+Typo fix - changed the spelling from 'follwing' to 'following'.
+
 0.16.2 - 2019-10-03
 -------------------
 

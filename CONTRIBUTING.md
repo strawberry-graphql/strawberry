@@ -85,7 +85,7 @@ suggestion, please
 - Check that your issue does not already exist in the
   [issue tracker](https://github.com/strawberry-graphql/strawberry/issues).
 
-#### How do I submit an Enhancement suggestion?
+#### How do I submit an enhancement suggestion?
 
 Enhancement suggestions are tracked on the
 [official issue tracker](https://github.com/strawberry-graphql/strawberry/issues)
@@ -95,7 +95,7 @@ where you can create a new one and provide the following information:
   suggestion.
 - **Provide a step-by-step description of the suggested enhancement** in as many
   details as possible.
-- **Provide specific examples to demonstrate the steps**...
+- **Provide specific examples to demonstrate the steps**.
 - **Describe the current behavior** and **explain which behavior you expected to
   see instead** and why.
 
@@ -134,7 +134,7 @@ is in order:
 $ poetry run pre-commit install
 ```
 
-Your code must always be accompanied by corresponding tests, if tests are not
+Your code must always be accompanied by corresponding tests. If tests are not
 present your code will not be merged.
 
 #### Pull requests

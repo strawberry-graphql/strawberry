@@ -79,6 +79,8 @@ def _process_type(cls, *, is_input=False, is_interface=False, description=None):
 
     extra_kwargs = {"description": description or cls.__doc__}
 
+    wrapped = dataclasses.dataclass(cls)
+
     if is_input:
         TypeClass = GraphQLInputObjectType
     elif is_interface:
@@ -92,7 +94,10 @@ def _process_type(cls, *, is_input=False, is_interface=False, description=None):
             if hasattr(klass, IS_STRAWBERRY_INTERFACE)
         ]
 
-    wrapped = dataclasses.dataclass(cls)
+        # the user might want to register other classes,
+        # but for now let's just add our dataclass
+        extra_kwargs["is_type_of"] = lambda obj, _: isinstance(obj, wrapped)
+
     wrapped.field = TypeClass(name, lambda: _get_fields(wrapped), **extra_kwargs)
 
     return wrapped
