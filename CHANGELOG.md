@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.16.8 - 2019-10-29
+-------------------
+
+Fixed some typos in readme.md and contributing.md.
+
 0.16.7 - 2019-10-28
 -------------------
 
