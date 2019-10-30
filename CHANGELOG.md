@@ -1,6 +1,31 @@
 CHANGELOG
 =========
 
+0.16.10 - 2019-10-30
+--------------------
+
+Tests are now run on GitHub actions on both python 3.7 and python3.8 🐍
+
+0.16.9 - 2019-10-30
+-------------------
+
+Fixed some typos in contributing.md .
+
+0.16.8 - 2019-10-29
+-------------------
+
+Fixed some typos in readme.md and contributing.md.
+
+0.16.7 - 2019-10-28
+-------------------
+
+Minimal support for registering types without fields and abstract interface querying.
+
+0.16.6 - 2019-10-27
+-------------------
+
+Grammar fixes - changed 'corresponding tests, if tests' to 'corresponding tests. If tests' and removed extraneous period from 'Provide specific examples to demonstrate the steps..'. Also made 'Enhancement' lowercase to stay consistent with its usage in documentation and changed 'on the Strawberry' to 'to Strawberry'.
+
 0.16.5 - 2019-10-16
 -------------------
 

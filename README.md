@@ -39,7 +39,7 @@ schema = strawberry.Schema(query=Query)
 ```
 
 This will create a GraphQL schema defining a `User` type and a single query
-field `user` that will return a hard coded user.
+field `user` that will return a hardcoded user.
 
 To run the debug server run the following command:
 
@@ -116,7 +116,7 @@ pre-commit install
 - Repository: https://github.com/strawberry-graphql/strawberry
 - Issue tracker: https://github.com/strawberry-graphql/strawberry/issues
   - In case of sensitive bugs like security vulnerabilities, please contact
-    patrick.arminio@gmail.com directly instead of using issue tracker. We value
+    patrick.arminio@gmail.com directly instead of using the issue tracker. We value
     your effort to improve the security and privacy of this project!
 
 ## Licensing

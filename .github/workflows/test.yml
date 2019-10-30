@@ -1,0 +1,54 @@
+name: Backend tests
+
+on: pull_request
+
+jobs:
+  unit-tests:
+    runs-on: ubuntu-latest
+    name: Test on ${{ matrix.container }}
+    container: ${{ matrix.container }}
+
+    strategy:
+      matrix:
+        container:
+          - python:3.8
+          - python:3.7
+
+    steps:
+      - uses: actions/checkout@master
+      - run: pip install poetry codecov
+      - name: Install dependencies
+        run: poetry install --extras=django
+
+      - name: pytest
+        run: |
+            set +e
+            OUTPUT=$(poetry run py.test --cov-report xml --cov=. --cov-fail-under 80)
+            STATUS=$?
+            echo "$OUTPUT"
+            codecov
+            exit $STATUS
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+
+  flake8:
+    runs-on: ubuntu-latest
+    container: python:3.8
+
+    steps:
+      - uses: actions/checkout@master
+      - run: pip install poetry
+      - name: Install dependencies
+        run: poetry install
+      - run: poetry run flake8
+
+  mypy:
+    runs-on: ubuntu-latest
+    container: python:3.8
+
+    steps:
+      - uses: actions/checkout@master
+      - run: pip install poetry
+      - name: Install dependencies
+        run: poetry install
+      - run: poetry run mypy --ignore-missing-imports .

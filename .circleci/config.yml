@@ -2,75 +2,6 @@ version: 2.1
 orbs:
   codecov: codecov/codecov@1.0.2
 jobs:
-  test:
-    docker:
-      - image: circleci/python:3.7.2
-    steps:
-      - checkout
-      - run: sudo chown -R circleci:circleci /usr/local/bin
-      - run:
-          sudo chown -R circleci:circleci /usr/local/lib/python3.7/site-packages
-      - run: poetry config settings.virtualenvs.in-project true
-      - restore_cache:
-          key: deps-{{ .Branch }}-{{ checksum "poetry.lock" }}
-      - run:
-          command: poetry install --extras=django
-      - save_cache:
-          key: deps-{{ .Branch }}-{{ checksum "poetry.lock" }}
-          paths:
-            - ".venv"
-            - "/usr/local/bin"
-            - "/usr/local/lib/python3.7/site-packages"
-      - run:
-          command: |
-            poetry run pytest -vv --cov-report=xml --cov-report=xml --cov=strawberry
-      - codecov/upload:
-          file: coverage.xml
-          token: 80512ef0-0884-43c9-978d-1519450129d7
-  mypy:
-    docker:
-      - image: circleci/python:3.7.2
-    steps:
-      - checkout
-      - run: sudo chown -R circleci:circleci /usr/local/bin
-      - run:
-          sudo chown -R circleci:circleci /usr/local/lib/python3.7/site-packages
-      - run: poetry config settings.virtualenvs.in-project true
-      - restore_cache:
-          key: deps-{{ .Branch }}-{{ checksum "poetry.lock" }}
-      - run:
-          command: poetry install
-      - save_cache:
-          key: deps-{{ .Branch }}-{{ checksum "poetry.lock" }}
-          paths:
-            - ".venv"
-            - "/usr/local/bin"
-            - "/usr/local/lib/python3.7/site-packages"
-      - run:
-          command: |
-            poetry run mypy --ignore-missing-imports .
-  flake8:
-    docker:
-      - image: circleci/python:3.7.2
-    steps:
-      - checkout
-      - run: sudo chown -R circleci:circleci /usr/local/bin
-      - run:
-          sudo chown -R circleci:circleci /usr/local/lib/python3.7/site-packages
-      - run: poetry config settings.virtualenvs.in-project true
-      - restore_cache:
-          key: deps-{{ .Branch }}-{{ checksum "poetry.lock" }}
-      - run:
-          command: poetry install
-      - save_cache:
-          key: deps-{{ .Branch }}-{{ checksum "poetry.lock" }}
-          paths:
-            - ".venv"
-            - "/usr/local/bin"
-            - "/usr/local/lib/python3.7/site-packages"
-      - run:
-          command: |
-            poetry run flake8
   deploy:
     docker:
       - image: circleci/python:3.7.3
@@ -88,11 +19,6 @@ jobs:
 
 workflows:
   version: 2
-  main:
-    jobs:
-      - test
-      - mypy
-      - flake8
   deploy:
     jobs:
       - deploy:
