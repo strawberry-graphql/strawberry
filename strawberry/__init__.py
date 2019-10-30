@@ -1,6 +1,7 @@
 __version__ = "0.1.0"
 
 
+from .custom_scalar import scalar  # noqa
 from .enum import enum  # noqa
 from .field import field  # noqa
 from .mutation import mutation, subscription  # noqa

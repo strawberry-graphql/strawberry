@@ -1,4 +1,12 @@
 [[package]]
+category = "main"
+description = "A library for parsing ISO 8601 strings."
+name = "aniso8601"
+optional = false
+python-versions = "*"
+version = "8.0.0"
+
+[[package]]
 category = "dev"
 description = "A small Python module for determining appropriate platform-specific dirs, e.g. a \"user data dir\"."
 name = "appdirs"
@@ -663,10 +671,11 @@ more-itertools = "*"
 django = ["django"]
 
 [metadata]
-content-hash = "1185c3b6c93ff0a781c3cf7746f815e220c83e1eb5bd97ace000fd5a0e11eeb1"
+content-hash = "3370d368db67e883024ad6cf6f083b4b66d3c011395a8048fea15a0c1e82accf"
 python-versions = "^3.7"
 
 [metadata.hashes]
+aniso8601 = ["529dcb1f5f26ee0df6c0a1ee84b7b27197c3c50fc3a6321d66c544689237d072", "c033f63d028b9a58e3ab0c2c7d0532ab4bfa7452bfc788fbfe3ddabd327b181a"]
 appdirs = ["9e5896d1372858f8dd3344faf4e5014d21849c756c8d5701f78f8a103b372d92", "d8b24664561d0d34ddfaec54636d502d7cea6e29c3eaf68f3df6180863e2166e"]
 atomicwrites = ["03472c30eb2c5d1ba9227e4c2ca66ab8287fbfbbda3888aa93dc2e28fc6811b4", "75a9445bac02d8d058d5e1fe689654ba5a6556a1dfd8ce6ec55a0ed79866cfa6"]
 attrs = ["08a96c641c3a74e44eb59afb61a24f2cb9f4d7188748e76ba4bb5edfa3cb7d1c", "f7b7ce16570fe9965acd6d30101a28f62fb4a7f9e926b3bbc9b61f8b04247e72"]
