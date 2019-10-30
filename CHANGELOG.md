@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.16.10 - 2019-10-30
+--------------------
+
+Tests are now run on GitHub actions on both python 3.7 and python3.8 🐍
+
 0.16.9 - 2019-10-30
 -------------------
 
