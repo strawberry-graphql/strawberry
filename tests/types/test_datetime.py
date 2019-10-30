@@ -62,3 +62,32 @@ def test_deserialization(typing, name, instance, serialized):
 
     assert not result.errors
     assert Query.deserialized == instance
+
+
+@pytest.mark.parametrize(
+    "typing,instance,serialized",
+    [
+        (Date, datetime.date(2019, 10, 25), "2019-10-25"),
+        (DateTime, datetime.datetime(2019, 10, 25, 13, 37), "2019-10-25T13:37:00"),
+        (Time, datetime.time(13, 37), "13:37:00"),
+    ],
+)
+def test_deserialization_with_parse_literal(typing, instance, serialized):
+    @strawberry.type
+    class Query:
+        deserialized = None
+
+        @strawberry.field
+        def deserialize(self, info, arg: typing) -> bool:
+            Query.deserialized = arg
+            return True
+
+    schema = strawberry.Schema(Query)
+
+    query = f"""query Deserialize {{
+        deserialize(arg: "{serialized}")
+    }}"""
+    result = graphql_sync(schema, query)
+
+    assert not result.errors
+    assert Query.deserialized == instance
