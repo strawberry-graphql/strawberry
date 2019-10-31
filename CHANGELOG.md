@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.18.0 - 2019-10-31
+-------------------
+
+Refactored CLI folder structure, importing click commands from a subfolder. Follows click's complex example.
+
 0.17.0 - 2019-10-30
 -------------------
 
