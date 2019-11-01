@@ -1,3 +1,5 @@
+from functools import partial
+
 import strawberry
 from strawberry.contrib.django.converter import convert_django_field
 from strawberry.type import type as strawberry_type
@@ -66,3 +68,7 @@ def model_type(cls=None, *, model=None, fields=[], is_input=False, is_interface=
         return wrap
 
     return wrap(cls)
+
+
+model_input_type = partial(model_type, is_input=True)
+model_interface = partial(model_type, is_interface=True)
