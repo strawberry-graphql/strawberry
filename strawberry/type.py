@@ -9,6 +9,11 @@ from .type_converter import REGISTRY
 from .utils.str_converters import to_camel_case
 
 
+def _interface_resolve_type(result, info, return_type):
+    """Resolves the correct type for an interface"""
+    return result.__class__.field
+
+
 def _get_resolver(cls, field_name):
     class_field = getattr(cls, field_name, None)
 
@@ -85,6 +90,11 @@ def _process_type(cls, *, is_input=False, is_interface=False, description=None):
         TypeClass = GraphQLInputObjectType
     elif is_interface:
         TypeClass = GraphQLInterfaceType
+
+        # TODO: in future we might want to be able to override this
+        # for example to map a class (like a django model) to one
+        # type of the interface
+        extra_kwargs["resolve_type"] = _interface_resolve_type
     else:
         TypeClass = GraphQLObjectType
 
@@ -93,10 +103,6 @@ def _process_type(cls, *, is_input=False, is_interface=False, description=None):
             for klass in cls.__bases__
             if hasattr(klass, IS_STRAWBERRY_INTERFACE)
         ]
-
-        # the user might want to register other classes,
-        # but for now let's just add our dataclass
-        extra_kwargs["is_type_of"] = lambda obj, _: isinstance(obj, wrapped)
 
     wrapped.field = TypeClass(name, lambda: _get_fields(wrapped), **extra_kwargs)
 

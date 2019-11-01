@@ -5,7 +5,7 @@ from enum import Enum
 import pytest
 
 import strawberry
-from dataclasses import InitVar
+from dataclasses import InitVar, dataclass
 from graphql import DirectiveLocation, graphql, graphql_sync
 
 
@@ -504,3 +504,35 @@ def test_query_interface():
         {"name": "Asiago", "province": "Friuli"},
         {"canton": "Vaud", "name": "Tomme"},
     ]
+
+
+def test_can_return_compatibile_type():
+    """Test that we can return a different type that has the same fields,
+    for example when returning a Django Model."""
+
+    @dataclass
+    class Example:
+        name: str
+
+    @strawberry.type
+    class Cheese:
+        name: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def assortment(self, info) -> Cheese:
+            return Example(name="Asiago")  # type: ignore
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        assortment {
+            name
+        }
+    }"""
+
+    result = graphql_sync(schema, query)
+
+    assert not result.errors
+    assert result.data["assortment"]["name"] == "Asiago"
