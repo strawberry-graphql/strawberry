@@ -1,6 +1,12 @@
 CHANGELOG
 =========
 
+0.18.1 - 2019-11-03
+-------------------
+
+Set `is_type_of` only when the type implements an interface,
+this allows to return different (but compatibile) types in simple cases.
+
 0.18.0 - 2019-10-31
 -------------------
 
