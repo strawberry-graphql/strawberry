@@ -1,5 +1,5 @@
 from flask import Flask
-from strawberry.contrib.flask_api.views import GraphQLView
+from strawberry.flask.views import GraphQLView
 
 from .schema import schema
 
