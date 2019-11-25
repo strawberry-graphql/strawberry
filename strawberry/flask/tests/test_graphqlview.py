@@ -1,5 +1,4 @@
 import json
-from urllib.parse import urlencode
 
 import pytest
 
@@ -11,15 +10,6 @@ from .app import init_app
 @pytest.fixture
 def app():
     return init_app()
-
-
-def url_string(**params):
-    url = url_for("graphql_view")
-
-    if params:
-        url += "?" + urlencode(params)
-
-    return url
 
 
 def test_graphql_query(client):
