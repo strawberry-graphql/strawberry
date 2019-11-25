@@ -27,6 +27,7 @@ uvicorn = "=0.11.2"
 django = {version = ">=2,<4",optional = true}
 graphql-core = {version = "^3.0.0a0", allows-prereleases = true}
 asgiref = {version = "^3.2",optional = true}
+flask = "^1.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.3"
@@ -45,10 +46,10 @@ pytest-mock = "^2.0"
 django = {version = ">=2,<4"}
 pytest-django = {version = "^3.8"}
 asgiref = "^3.2"
+pytest-flask = "^0.15.0"
 
 [tool.poetry.extras]
 django = ["django", "asgiref"]
-
 
 [tool.poetry.scripts]
 strawberry = "strawberry.cli:run"
