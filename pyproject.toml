@@ -29,7 +29,7 @@ graphql-core = {version = "^3.0.0a0", allows-prereleases = true}
 aniso8601 = "^8.0.0"
 
 [tool.poetry.dev-dependencies]
-pytest = "^5.2"
+pytest = "^5.3"
 pdbpp = "^0.10.2"
 bpython = "^0.18"
 pytest-emoji = "^0.2.0"
