@@ -2,9 +2,39 @@ import json
 
 import pytest
 
-from flask import url_for
+import strawberry
+from flask import Flask, url_for
+from strawberry.flask.views import GraphQLView
 
-from .app import init_app
+
+@strawberry.type
+class User:
+    name: str
+    age: int
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def user(self, info) -> User:
+        return User(name="Patrick", age=100)
+
+
+schema = strawberry.Schema(query=Query)
+
+
+def init_app():
+    app = Flask(__name__)
+    app.debug = True
+    app.add_url_rule(
+        "/graphql", view_func=GraphQLView.as_view("graphql_view", schema=schema)
+    )
+    return app
+
+
+if __name__ == "__main__":
+    test_app = init_app()
+    test_app.run()
 
 
 @pytest.fixture

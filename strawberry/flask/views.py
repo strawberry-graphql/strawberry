@@ -6,7 +6,7 @@ from graphql import graphql_sync
 from graphql.error import format_error as format_graphql_error
 from graphql.type.schema import GraphQLSchema
 
-from .playground import playground_template
+from .playground import render_playground_page
 
 
 class GraphQLView(View):
@@ -23,12 +23,13 @@ class GraphQLView(View):
         if not isinstance(self.schema, GraphQLSchema):
             raise ValueError("A valid schema is required to be provided to GraphQLView")
 
-    def render_template(self, request, template=None or playground_template):
-        return render_template_string(template, request_path=request.full_path)
+    def render_template(self, request, template=None):
+        return render_template_string(template, REQUEST_PATH=request.full_path)
 
     def dispatch_request(self):
         if "text/html" in request.environ.get("HTTP_ACCEPT", ""):
-            return self.render_template(request)
+            template = render_playground_page()
+            return self.render_template(request, template=template)
 
         data = request.json
 
