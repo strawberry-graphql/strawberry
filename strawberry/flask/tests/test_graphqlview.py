@@ -2,28 +2,11 @@ import json
 
 import pytest
 
-import strawberry
 from flask import Flask, url_for
 from strawberry.flask.views import GraphQLView
 
 
-@strawberry.type
-class User:
-    name: str
-    age: int
-
-
-@strawberry.type
-class Query:
-    @strawberry.field
-    def user(self, info) -> User:
-        return User(name="Patrick", age=100)
-
-
-schema = strawberry.Schema(query=Query)
-
-
-def init_app():
+def init_app(schema=None):
     app = Flask(__name__)
     app.debug = True
     app.add_url_rule(
@@ -38,12 +21,22 @@ if __name__ == "__main__":
 
 
 @pytest.fixture
-def app():
-    return init_app()
+@pytest.mark.usefixtures("schema")
+def app(schema):
+    return init_app(schema)
 
 
 def test_graphql_query(client):
-    query = {"query": "query {\n  user {\n    name\n    age\n  }\n}"}
+    query = {
+        "query": """
+            query {
+                user {
+                    name
+                    age
+                }
+            }
+        """
+    }
 
     response = client.get(url_for("graphql_view"), json=query)
     data = json.loads(response.data.decode())

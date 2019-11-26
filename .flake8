@@ -1,6 +1,6 @@
 [flake8]
 max-line-length = 89
-exclude=.venv,.git,playground.py
+exclude=.venv,.git
 ignore = W503
 extend-ignore =
     # See https://github.com/PyCQA/pycodestyle/issues/373
