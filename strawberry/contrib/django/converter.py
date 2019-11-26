@@ -10,8 +10,8 @@ import strawberry
 @singledispatch
 def convert_django_field(field):
     raise ImproperlyConfigured(
-        f"Don't know how to convert the Django model "
-        + "field {field} ({field.__class__}) to type"
+        "Don't know how to convert the Django model "
+        + f"field {field} ({field.__class__}) to type"
     )
 
 
