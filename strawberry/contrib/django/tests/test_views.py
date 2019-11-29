@@ -47,7 +47,7 @@ def test_graphql_query():
 
 def test_async_graphql_query():
 
-    query = "{ hello_async }"
+    query = "{ helloAsync }"
 
     factory = RequestFactory()
     request = factory.post(
@@ -57,4 +57,4 @@ def test_async_graphql_query():
     response = GraphQLView.as_view(schema=schema)(request)
     data = json.loads(response.content.decode())
 
-    assert data["data"]["hello"] == "async strawberry"
+    assert data["data"]["helloAsync"] == "async strawberry"

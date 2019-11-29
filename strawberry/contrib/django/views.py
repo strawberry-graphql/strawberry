@@ -7,9 +7,10 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
 
-from graphql import graphql_sync
+from asgiref.sync import async_to_sync
 from graphql.error import format_error as format_graphql_error
 from graphql.type.schema import GraphQLSchema
+from strawberry.graphql import execute
 
 
 class GraphQLView(View):
@@ -49,7 +50,8 @@ class GraphQLView(View):
 
         context = {"request": request}
 
-        result = graphql_sync(
+        execute_sync = async_to_sync(execute)
+        result = execute_sync(
             self.schema,
             query,
             variable_values=variables,

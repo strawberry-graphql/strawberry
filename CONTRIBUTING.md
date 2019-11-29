@@ -119,7 +119,7 @@ Now, you will need to install the required dependencies for Strawberry and be su
 that the current tests are passing on your machine:
 
 ```bash
-$ poetry install
+$ poetry install --extras "django"
 $ poetry run pytest tests
 ```
 

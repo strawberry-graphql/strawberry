@@ -3,15 +3,15 @@ from typing import List
 import pytest
 
 import strawberry
-from strawberry.contrib.django.tests.models import TestModel
+from strawberry.contrib.django.tests.models import DummyModel
 from strawberry.contrib.django.type import model_type
 from strawberry.graphql import execute
 
 
 @pytest.mark.asyncio
 async def test_model_type():
-    @model_type(model=TestModel, fields="__all__")
-    class TestModelType:
+    @model_type(model=DummyModel, fields="__all__")
+    class DummyModelType:
         @strawberry.field
         def extra_info(self, info) -> str:
             return "more info"
@@ -19,8 +19,8 @@ async def test_model_type():
     @strawberry.type
     class Query:
         @strawberry.field
-        def model_type(root, info) -> TestModelType:
-            return TestModel(name="modeltype")
+        def model_type(root, info) -> DummyModelType:
+            return DummyModel(name="modeltype")
 
     schema = strawberry.Schema(query=Query)
 
@@ -43,9 +43,9 @@ async def test_model_type():
 @pytest.mark.asyncio
 async def test_model_type_meta():
     @model_type
-    class TestModelType:
+    class DummyModelType:
         class Meta:
-            model = TestModel
+            model = DummyModel
             fields = "__all__"
 
         @strawberry.field
@@ -55,8 +55,8 @@ async def test_model_type_meta():
     @strawberry.type
     class Query:
         @strawberry.field
-        def model_type(root, info) -> TestModelType:
-            return TestModel(name="modeltype")
+        def model_type(root, info) -> DummyModelType:
+            return DummyModel(name="modeltype")
 
     schema = strawberry.Schema(query=Query)
 
@@ -78,8 +78,8 @@ async def test_model_type_meta():
 
 @pytest.mark.asyncio
 async def test_model_type_can_override_type_fields():
-    @model_type(model=TestModel, fields=["name"])
-    class TestModelType:
+    @model_type(model=DummyModel, fields=["name"])
+    class DummyModelType:
         @strawberry.field
         def name(self, info) -> str:
             return "joe"
@@ -87,8 +87,8 @@ async def test_model_type_can_override_type_fields():
     @strawberry.type
     class Query:
         @strawberry.field
-        def model_type(root, info) -> TestModelType:
-            return TestModel(name="modeltype")
+        def model_type(root, info) -> DummyModelType:
+            return DummyModel(name="modeltype")
 
     schema = strawberry.Schema(query=Query)
 
@@ -108,20 +108,20 @@ async def test_model_type_can_override_type_fields():
 
 @pytest.mark.asyncio
 async def test_model_type_only_fields():
-    @model_type(model=TestModel, fields=["name"])
-    class TestModelType:
+    @model_type(model=DummyModel, fields=["name"])
+    class DummyModelType:
         pass
 
-    assert "name" in TestModelType.field.fields
-    assert "id" not in TestModelType.field.fields
-    assert "secret" not in TestModelType.field.fields
+    assert "name" in DummyModelType.field.fields
+    assert "id" not in DummyModelType.field.fields
+    assert "secret" not in DummyModelType.field.fields
 
 
 @pytest.mark.asyncio
 @pytest.mark.django_db
 async def test_model_type_list():
-    @model_type(model=TestModel, fields="__all__")
-    class TestModelType:
+    @model_type(model=DummyModel, fields="__all__")
+    class DummyModelType:
         @strawberry.field
         def extra_info(self, info) -> str:
             return "more info"
@@ -129,14 +129,14 @@ async def test_model_type_list():
     @strawberry.type
     class Query:
         @strawberry.field
-        def model_type_list(root, info) -> List[TestModelType]:
-            return TestModel.objects.all()
+        def model_type_list(root, info) -> List[DummyModelType]:
+            return DummyModel.objects.all()
 
     schema = strawberry.Schema(query=Query)
 
-    TestModel.objects.create(name="modeltype")
-    TestModel.objects.create(name="modeltype")
-    TestModel.objects.create(name="modeltype")
+    DummyModel.objects.create(name="modeltype")
+    DummyModel.objects.create(name="modeltype")
+    DummyModel.objects.create(name="modeltype")
 
     response = await execute(
         query="""
@@ -157,12 +157,12 @@ async def test_model_type_list():
 @pytest.mark.asyncio
 @pytest.mark.django_db
 async def test_model_input_type():
-    @model_type(model=TestModel, fields="__all__")
-    class TestModelType:
+    @model_type(model=DummyModel, fields="__all__")
+    class DummyModelType:
         extra: str
 
-    @model_type(model=TestModel, is_input=True, fields="__all__")
-    class TestModelInputType:
+    @model_type(model=DummyModel, is_input=True, fields="__all__")
+    class DummyModelInputType:
         pass
 
     @strawberry.type
@@ -172,16 +172,18 @@ async def test_model_input_type():
     @strawberry.type
     class Mutation:
         @strawberry.field
-        def create_test_model(self, info, test: TestModelInputType) -> TestModelType:
+        def create_dummy_model(self, info, test: DummyModelInputType) -> DummyModelType:
             name = getattr(test, "name")
-            return TestModel.objects.create(name=name)
+            return DummyModel.objects.create(name=name)
 
     schema = strawberry.Schema(query=Query, mutation=Mutation)
+
+    print(dir(DummyModelInputType))
 
     response = await execute(
         query="""
         mutation {
-            createTestModel(test: {
+            createDummyModel(test: {
                 name: "Hello world"
             }) {
                 id
@@ -192,4 +194,4 @@ async def test_model_input_type():
         schema=schema,
     )
 
-    assert response.data["createTestModel"]["name"] == "Hello world"
+    assert response.data["createDummyModel"]["name"] == "Hello world"

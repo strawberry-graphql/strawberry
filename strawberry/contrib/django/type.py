@@ -10,8 +10,8 @@ def model_type(cls=None, *, model=None, fields=[], is_input=False, is_interface=
 
     Example usage:
 
-    >>> @strawberry.model_type(model=TestModel):
-    >>> class TestModelType:
+    >>> @strawberry.model_type(model=DummyModel):
+    >>> class DummyModelType:
     >>>     pass
     """
 
