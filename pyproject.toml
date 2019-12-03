@@ -24,7 +24,7 @@ click = "^7.0"
 hupper = "^1.5"
 pygments = "^2.3"
 uvicorn = "=0.10.8"
-django = {version = "^2.0",optional = true}
+django = {version = ">=2,<4",optional = true}
 graphql-core = {version = "^3.0.0a0", allows-prereleases = true}
 aniso8601 = "^8.0.0"
 
