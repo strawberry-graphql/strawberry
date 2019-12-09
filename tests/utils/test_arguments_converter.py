@@ -2,7 +2,7 @@ import typing
 from enum import Enum
 
 import strawberry
-from strawberry.field import convert_args
+from strawberry.utils.arguments import convert_args
 
 
 def test_simple_types():
@@ -151,4 +151,22 @@ def test_nested_input_types():
         "input": AddReleaseFileCommentInput(
             pr_number=12, status=ReleaseFileStatus.OK, release_info=None
         )
+    }
+
+
+def test_nested_list_of_complex_types():
+    @strawberry.input
+    class Number:
+        value: int
+
+    @strawberry.input
+    class Input:
+        numbers: typing.List[Number]
+
+    args = {"input": {"numbers": [{"value": 1}, {"value": 2}]}}
+
+    annotations = {"input": Input}
+
+    assert convert_args(args, annotations) == {
+        "input": Input(numbers=[Number(1), Number(2)])
     }
