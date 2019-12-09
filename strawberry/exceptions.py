@@ -70,3 +70,10 @@ class UnallowedReturnTypeForUnion(Exception):
         )
 
         super().__init__(message)
+
+
+class UnsupportedTypeError(Exception):
+    def __init__(self, annotation):
+        message = f"{annotation} conversion is not supported"
+
+        super().__init__(message)

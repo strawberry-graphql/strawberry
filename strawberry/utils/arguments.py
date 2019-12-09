@@ -1,9 +1,14 @@
 import enum
+from datetime import date, datetime, time
 
 from dataclasses import is_dataclass
 
+from ..exceptions import UnsupportedTypeError
 from .str_converters import to_camel_case, to_snake_case
 from .typing import get_list_annotation, get_optional_annotation, is_list, is_optional
+
+
+SCALAR_TYPES = [int, str, float, bytes, datetime, date, time]
 
 
 def _to_type(value, annotation):
@@ -13,7 +18,8 @@ def _to_type(value, annotation):
     if is_optional(annotation):
         annotation = get_optional_annotation(annotation)
 
-    if annotation in [int, str, float]:
+    # TODO: change this to be a is_scalar util and make sure it works with any scalar
+    if getattr(annotation, "__supertype__", annotation) in SCALAR_TYPES:
         return value
 
     # Convert Enum fields to instances using the value. This is safe
@@ -42,6 +48,8 @@ def _to_type(value, annotation):
             kwargs[name] = _to_type(value.get(dict_name), field.type)
 
         return annotation(**kwargs)
+
+    raise UnsupportedTypeError(annotation)
 
 
 def convert_args(args, annotations):
