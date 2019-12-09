@@ -63,31 +63,4 @@ def convert_args(args, annotations):
 
         converted_args[key] = _to_type(value, annotation)
 
-        # # we don't need to check about unions here since they are not
-        # # yet supported for arguments.
-        # # see https://github.com/graphql/graphql-spec/issues/488
-
-        # is_list_of_args = False
-
-        # if is_optional(annotation):
-        #     annotation = get_optional_annotation(annotation)
-
-        # if is_list(annotation):
-        #     annotation = get_list_annotation(annotation)
-        #     is_list_of_args = True
-
-        # if getattr(annotation, IS_STRAWBERRY_INPUT, False):
-        #     if is_list_of_args:
-        #         converted_args[key] = [dict_to_type(x, annotation) for x in value]
-        #     else:
-        #         converted_args[key] = dict_to_type(value, annotation)
-
-        # elif isinstance(annotation, enum.EnumMeta):
-        #     # Convert Enum fields to instances using the value. This is safe
-        #     # because graphql-core has already validated the input.
-        #     converted_args[key] = annotation(value)
-
-        # else:
-        #     converted_args[key] = value
-
     return converted_args
