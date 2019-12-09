@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.18.3 - 2019-12-09
+-------------------
+
+Fix missing support for booleans when converting arguments
+
 0.18.2 - 2019-12-09
 -------------------
 
