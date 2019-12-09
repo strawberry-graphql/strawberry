@@ -5,19 +5,13 @@ import typing
 import dataclasses
 from graphql import GraphQLField, GraphQLInputField
 
-from .constants import IS_STRAWBERRY_FIELD, IS_STRAWBERRY_INPUT
+from .constants import IS_STRAWBERRY_FIELD
 from .exceptions import MissingArgumentsAnnotationsError, MissingReturnAnnotationError
 from .type_converter import REGISTRY, get_graphql_type_for_annotation
-from .utils.dict_to_type import dict_to_type
+from .utils.arguments import convert_args
 from .utils.inspect import get_func_args
 from .utils.lazy_property import lazy_property
-from .utils.str_converters import to_camel_case, to_snake_case
-from .utils.typing import (
-    get_list_annotation,
-    get_optional_annotation,
-    is_list,
-    is_optional,
-)
+from .utils.str_converters import to_camel_case
 
 
 class LazyFieldWrapper:
@@ -186,45 +180,6 @@ class strawberry_field(dataclasses.Field):
             description=self.field_description,
             permission_classes=self.field_permission_classes,
         )
-
-
-def convert_args(args, annotations):
-    """Converts a nested dictionary to a dictionary of strawberry input types."""
-
-    converted_args = {}
-
-    for key, value in args.items():
-        key = to_snake_case(key)
-        annotation = annotations[key]
-
-        # we don't need to check about unions here since they are not
-        # yet supported for arguments.
-        # see https://github.com/graphql/graphql-spec/issues/488
-
-        is_list_of_args = False
-
-        if is_optional(annotation):
-            annotation = get_optional_annotation(annotation)
-
-        if is_list(annotation):
-            annotation = get_list_annotation(annotation)
-            is_list_of_args = True
-
-        if getattr(annotation, IS_STRAWBERRY_INPUT, False):
-            if is_list_of_args:
-                converted_args[key] = [dict_to_type(x, annotation) for x in value]
-            else:
-                converted_args[key] = dict_to_type(value, annotation)
-
-        elif isinstance(annotation, enum.EnumMeta):
-            # Convert Enum fields to instances using the value. This is safe
-            # because graphql-core has already validated the input.
-            converted_args[key] = annotation(value)
-
-        else:
-            converted_args[key] = value
-
-    return converted_args
 
 
 def _get_field(
