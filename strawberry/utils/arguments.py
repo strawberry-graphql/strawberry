@@ -8,7 +8,7 @@ from .str_converters import to_camel_case, to_snake_case
 from .typing import get_list_annotation, get_optional_annotation, is_list, is_optional
 
 
-SCALAR_TYPES = [int, str, float, bytes, datetime, date, time]
+SCALAR_TYPES = [int, str, float, bytes, bool, datetime, date, time]
 
 
 def _to_type(value, annotation):
