@@ -6,14 +6,15 @@ from strawberry.utils.arguments import convert_args
 
 
 def test_simple_types():
-    args = {"integer": 1, "string": "abc", "float": 1.2}
+    args = {"integer": 1, "string": "abc", "float": 1.2, "bool": True}
 
-    annotations = {"integer": int, "string": str, "float": float}
+    annotations = {"integer": int, "string": str, "float": float, "bool": bool}
 
     assert convert_args(args, annotations) == {
         "integer": 1,
         "string": "abc",
         "float": 1.2,
+        "bool": True,
     }
 
 
