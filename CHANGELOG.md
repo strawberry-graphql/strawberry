@@ -1,6 +1,12 @@
 CHANGELOG
 =========
 
+0.18.2 - 2019-12-09
+-------------------
+
+This releases fixes an issue when converting complex input types, 
+now it should support lists of complex types properly.
+
 0.18.1 - 2019-11-03
 -------------------
 
