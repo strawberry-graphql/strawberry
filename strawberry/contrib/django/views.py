@@ -64,4 +64,4 @@ class GraphQLView(View):
                 format_graphql_error(err) for err in result.errors
             ]
 
-        return JsonResponse(response_data, status=400 if result.errors else 200)
+        return JsonResponse(response_data)

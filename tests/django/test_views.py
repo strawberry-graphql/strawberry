@@ -69,3 +69,20 @@ def test_async_graphql_query():
     data = json.loads(response.content.decode())
 
     assert data["data"]["hello"] == "async strawberry"
+
+
+def test_returns_errors_and_data():
+    query = "{ hello, alwaysFail }"
+
+    factory = RequestFactory()
+    request = factory.post(
+        "/graphql/", {"query": query}, content_type="application/json"
+    )
+
+    response = GraphQLView.as_view(schema=schema)(request)
+    data = json.loads(response.content.decode())
+
+    assert response.status_code == 200
+
+    assert data["data"]["hello"] == "strawberry"
+    assert data["data"]["alwaysFail"] is None
