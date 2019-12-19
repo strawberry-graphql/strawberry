@@ -4,7 +4,7 @@ from typing import Optional
 from django.test.client import RequestFactory
 
 import strawberry
-from strawberry.contrib.django.views import GraphQLView
+from strawberry.django.views import GraphQLView
 from strawberry.permission import BasePermission
 
 
