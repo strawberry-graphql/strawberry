@@ -27,6 +27,7 @@ uvicorn = "=0.10.8"
 django = {version = "^2.0",optional = true}
 graphql-core = {version = "^3.0.0a0", allows-prereleases = true}
 aniso8601 = "^8.0.0"
+asgiref = {version = "^3.2",optional = true}
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.3"
@@ -44,10 +45,10 @@ pytest-mypy-plugins = "^1.2"
 pytest-mock = "^1.13"
 django = {version = "^2.0"}
 pytest-django = {version = "^3.7"}
-
+asgiref = "^3.2"
 
 [tool.poetry.extras]
-django = ["django"]
+django = ["django", "asgiref"]
 
 
 [tool.poetry.scripts]

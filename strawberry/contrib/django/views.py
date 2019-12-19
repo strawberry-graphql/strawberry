@@ -1,4 +1,3 @@
-import asyncio
 import json
 
 from django.http import HttpResponseNotAllowed, JsonResponse
@@ -8,15 +7,10 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
 
+from asgiref.sync import async_to_sync
 from graphql import graphql
 from graphql.error import format_error as format_graphql_error
 from graphql.type.schema import GraphQLSchema
-
-
-# TODO: check if this is enough, or if we need to
-# handle more edge cases (django should have something like this built-in)
-def async_to_sync(coroutine):
-    return asyncio.run(coroutine)
 
 
 class GraphQLView(View):
@@ -56,14 +50,12 @@ class GraphQLView(View):
 
         context = {"request": request}
 
-        result = async_to_sync(
-            graphql(
-                self.schema,
-                query,
-                variable_values=variables,
-                context_value=context,
-                operation_name=operation_name,
-            )
+        result = async_to_sync(graphql)(
+            self.schema,
+            query,
+            variable_values=variables,
+            context_value=context,
+            operation_name=operation_name,
         )
 
         response_data = {"data": result.data}
