@@ -29,3 +29,19 @@ def test_can_pass_variables(schema, test_client):
     )
 
     assert response.json() == {"data": {"hello": "Hello James"}}
+
+
+def test_returns_errors_and_data(schema, test_client):
+    response = test_client.post("/", json={"query": "{ hello, alwaysFail }"})
+
+    assert response.status_code == 200
+    assert response.json() == {
+        "data": {"hello": "Hello world", "alwaysFail": None},
+        "errors": [
+            {
+                "locations": [{"column": 10, "line": 1}],
+                "message": "You are not authorized",
+                "path": ["alwaysFail"],
+            }
+        ],
+    }

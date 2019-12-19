@@ -7,7 +7,8 @@ from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
 
-from graphql import graphql_sync
+from asgiref.sync import async_to_sync
+from graphql import graphql
 from graphql.error import format_error as format_graphql_error
 from graphql.type.schema import GraphQLSchema
 
@@ -49,7 +50,7 @@ class GraphQLView(View):
 
         context = {"request": request}
 
-        result = graphql_sync(
+        result = async_to_sync(graphql)(
             self.schema,
             query,
             variable_values=variables,
@@ -64,4 +65,4 @@ class GraphQLView(View):
                 format_graphql_error(err) for err in result.errors
             ]
 
-        return JsonResponse(response_data, status=400 if result.errors else 200)
+        return JsonResponse(response_data)

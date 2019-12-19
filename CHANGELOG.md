@@ -9,7 +9,7 @@ Fix missing support for booleans when converting arguments
 0.18.2 - 2019-12-09
 -------------------
 
-This releases fixes an issue when converting complex input types, 
+This releases fixes an issue when converting complex input types,
 now it should support lists of complex types properly.
 
 0.18.1 - 2019-11-03
@@ -126,11 +126,11 @@ $ pip install strawberry-graphql[django]
 # settings.py
 INSTALLED_APPS = [
     ...
-    'strawberry.contrib.django',
+    'strawberry.django',
 ]
 
 # urls.py
-from strawberry.contrib.django.views import GraphQLView
+from strawberry.django.views import GraphQLView
 from your_project.schema import schema
 
 urlpatterns = [
@@ -266,7 +266,7 @@ class Schema(Parent):
 0.13.0 - 2019-07-16
 -------------------
 
-This release adds field support for permissions 
+This release adds field support for permissions
 
 ```python
 import strawberry
