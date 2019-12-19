@@ -1,6 +1,6 @@
 SECRET_KEY = 1
 
-INSTALLED_APPS = ["strawberry.contrib.django", "strawberry.contrib.django.tests"]
+INSTALLED_APPS = ["strawberry.contrib.django", "tests.django.app"]
 
 TEMPLATES = [
     {
