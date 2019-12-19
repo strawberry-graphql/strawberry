@@ -41,7 +41,7 @@ pytest-cov = "^2.8"
 mypy = "^0.760"
 flake8-bugbear = "^19.8"
 pytest-django = {version = "^3.7", optional = true}
-pytest-mypy-plugins = "^1.1"
+pytest-mypy-plugins = "^1.2"
 pytest-mock = "^1.12"
 
 [tool.poetry.extras]
