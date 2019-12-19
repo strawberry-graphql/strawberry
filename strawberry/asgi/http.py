@@ -49,6 +49,4 @@ async def get_http_response(request: Request, execute: typing.Callable) -> Respo
     if result.errors:
         response_data["errors"] = [format_graphql_error(err) for err in result.errors]
 
-    status_code = status.HTTP_400_BAD_REQUEST if result.errors else status.HTTP_200_OK
-
-    return JSONResponse(response_data, status_code=status_code)
+    return JSONResponse(response_data, status_code=status.HTTP_200_OK)

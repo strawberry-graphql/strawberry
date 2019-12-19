@@ -1,11 +1,20 @@
 import asyncio
 import typing
+from typing import Optional
 
 import pytest
 
 import strawberry
 from starlette.testclient import TestClient
 from strawberry.asgi import GraphQL
+from strawberry.permission import BasePermission
+
+
+class AlwaysFailPermission(BasePermission):
+    message = "You are not authorized"
+
+    def has_permission(self, info):
+        return False
 
 
 @pytest.fixture
@@ -15,6 +24,10 @@ def schema():
         @strawberry.field
         def hello(self, info, name: typing.Optional[str] = None) -> str:
             return f"Hello {name or 'world'}"
+
+        @strawberry.field(permission_classes=[AlwaysFailPermission])
+        def always_fail(self, info) -> Optional[str]:
+            return "Hey"
 
     @strawberry.type
     class Subscription:
