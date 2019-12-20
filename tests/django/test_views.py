@@ -1,11 +1,15 @@
 import json
 from typing import Optional
 
+import pytest
+
 from django.test.client import RequestFactory
 
 import strawberry
 from strawberry.django.views import GraphQLView
 from strawberry.permission import BasePermission
+
+from .app.models import Example
 
 
 class AlwaysFailPermission(BasePermission):
@@ -20,12 +24,20 @@ class Query:
     hello: str = "strawberry"
 
     @strawberry.field
-    async def hello_async(root, info) -> str:
+    async def hello_async(self, info) -> str:
         return "async strawberry"
 
     @strawberry.field(permission_classes=[AlwaysFailPermission])
     def always_fail(self, info) -> Optional[str]:
         return "Hey"
+
+    @strawberry.field
+    async def example_async(self, info) -> str:
+        return Example.objects.first().name
+
+    @strawberry.field
+    def example(self, info) -> str:
+        return Example.objects.first().name
 
 
 schema = strawberry.Schema(query=Query)
@@ -57,6 +69,24 @@ def test_graphql_query():
     assert data["data"]["hello"] == "strawberry"
 
 
+@pytest.mark.django_db
+def test_graphql_query_model():
+    Example.objects.create(name="This is a demo")
+
+    query = "{ example }"
+
+    factory = RequestFactory()
+    request = factory.post(
+        "/graphql/", {"query": query}, content_type="application/json"
+    )
+
+    response = GraphQLView.as_view(schema=schema)(request)
+    data = json.loads(response.content.decode())
+
+    assert data["data"]["example"] == "This is a demo"
+
+
+@pytest.mark.xfail(reason="We don't support async on django at the moment")
 def test_async_graphql_query():
     query = "{ helloAsync }"
 
@@ -69,6 +99,23 @@ def test_async_graphql_query():
     data = json.loads(response.content.decode())
 
     assert data["data"]["helloAsync"] == "async strawberry"
+
+
+@pytest.mark.xfail(reason="We don't support async on django at the moment")
+def test_async_graphql_query_model():
+    Example.objects.create(name="This is a demo async")
+
+    query = "{ exampleAsync }"
+
+    factory = RequestFactory()
+    request = factory.post(
+        "/graphql/", {"query": query}, content_type="application/json"
+    )
+
+    response = GraphQLView.as_view(schema=schema)(request)
+    data = json.loads(response.content.decode())
+
+    assert data["data"]["exampleAsync"] == "This is a demo async"
 
 
 def test_returns_errors_and_data():
