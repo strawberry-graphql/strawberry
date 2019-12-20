@@ -1,6 +1,12 @@
 CHANGELOG
 =========
 
+0.19.1 - 2019-12-20
+-------------------
+
+This releases removes support for async resolver in django
+as they causes issues when accessing the databases.
+
 0.19.0 - 2019-12-19
 -------------------
 
