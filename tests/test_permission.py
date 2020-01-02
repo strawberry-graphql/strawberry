@@ -144,3 +144,34 @@ def test_can_use_args_when_testing_permission():
 
     result = graphql_sync(schema, query)
     assert result.errors[0].message == "Cannot see email for this user"
+
+
+def test_can_use_on_simple_fields():
+    class CanSeeEmail(BasePermission):
+        message = "Cannot see email for this user"
+
+        def has_permission(self, source, info):
+            return source.name.lower() == "patrick"
+
+    @strawberry.type
+    class User:
+        name: str
+        email: str = strawberry.field(permission_classes=[CanSeeEmail], is_input=True)
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self, info, name: str) -> User:
+            return User(name=name, email="patrick.arminio@gmail.com")
+
+    schema = strawberry.Schema(query=Query)
+
+    query = '{ user(name: "patrick") { email } }'
+
+    result = graphql_sync(schema, query)
+    assert result.data["user"]["email"] == "patrick.arminio@gmail.com"
+
+    query = '{ user(name: "marco") { email } }'
+
+    result = graphql_sync(schema, query)
+    assert result.errors[0].message == "Cannot see email for this user"
