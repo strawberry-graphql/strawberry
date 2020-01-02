@@ -21,7 +21,10 @@ def _get_resolver(cls, field_name):
         return class_field.resolver
 
     def _resolver(root, info):
-        field_resolver = getattr(root or cls(), field_name, None)
+        if not root:
+            return None
+
+        field_resolver = getattr(root, field_name, None)
 
         if getattr(field_resolver, IS_STRAWBERRY_FIELD, False):
             return field_resolver(root, info)

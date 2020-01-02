@@ -156,7 +156,7 @@ def test_can_use_on_simple_fields():
     @strawberry.type
     class User:
         name: str
-        email: str = strawberry.field(permission_classes=[CanSeeEmail], is_input=True)
+        email: str = strawberry.field(permission_classes=[CanSeeEmail])
 
     @strawberry.type
     class Query:

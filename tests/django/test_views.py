@@ -6,7 +6,7 @@ import pytest
 from django.test.client import RequestFactory
 
 import strawberry
-from strawberry.django.views import GraphQLView
+from strawberry.django.views import GraphQLView as BaseGraphQLView
 from strawberry.permission import BasePermission
 
 from .app.models import Example
@@ -41,6 +41,11 @@ class Query:
 
 
 schema = strawberry.Schema(query=Query)
+
+
+class GraphQLView(BaseGraphQLView):
+    def get_root_value(self):
+        return Query()
 
 
 def test_playground_view():

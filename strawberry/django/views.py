@@ -24,6 +24,9 @@ class GraphQLView(View):
 
         self.schema = schema
 
+    def get_root_value(self):
+        return None
+
     @method_decorator(csrf_exempt)
     def dispatch(self, request, *args, **kwargs):
         if request.method.lower() not in ("get", "post"):
@@ -52,6 +55,7 @@ class GraphQLView(View):
         result = graphql_sync(
             self.schema,
             query,
+            root_value=self.get_root_value(),
             variable_values=variables,
             context_value=context,
             operation_name=operation_name,
