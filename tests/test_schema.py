@@ -9,21 +9,6 @@ from dataclasses import InitVar, dataclass
 from graphql import DirectiveLocation, graphql, graphql_sync
 
 
-def test_simple_type():
-    @strawberry.type
-    class Query:
-        hello: str = "strawberry"
-
-    schema = strawberry.Schema(query=Query)
-
-    query = "{ hello }"
-
-    result = graphql_sync(schema, query)
-
-    assert not result.errors
-    assert result.data["hello"] == "strawberry"
-
-
 def test_init_var():
     @strawberry.type
     class Category:
@@ -215,30 +200,32 @@ def test_mutation_with_input_type():
 def test_does_camel_case_conversion():
     @strawberry.type
     class Query:
-        hello_world: str = "strawberry"
-
         @strawberry.field
-        def example(self, info, query_param: str) -> str:
+        def hello_world(self, info, query_param: str) -> str:
             return query_param
 
     schema = strawberry.Schema(query=Query)
 
     query = """{
-        helloWorld
-        example(queryParam: "hi")
+        helloWorld(queryParam: "hi")
     }"""
 
     result = graphql_sync(schema, query)
 
     assert not result.errors
-    assert result.data["helloWorld"] == "strawberry"
-    assert result.data["example"] == "hi"
+    assert result.data["helloWorld"] == "hi"
 
 
 def test_can_rename_fields():
     @strawberry.type
+    class Hello:
+        value: typing.Optional[str] = strawberry.field(name="name")
+
+    @strawberry.type
     class Query:
-        hello_world: typing.Optional[str] = strawberry.field(name="hello")
+        @strawberry.field
+        def hello(self, info) -> Hello:
+            return Hello("hi")
 
         @strawberry.field(name="example1")
         def example(self, info, query_param: str) -> str:
@@ -247,14 +234,14 @@ def test_can_rename_fields():
     schema = strawberry.Schema(query=Query)
 
     query = """{
-        hello
+        hello { name }
         example1(queryParam: "hi")
     }"""
 
     result = graphql_sync(schema, query)
 
     assert not result.errors
-    assert result.data["hello"] is None
+    assert result.data["hello"]["name"] == "hi"
     assert result.data["example1"] == "hi"
 
 
@@ -422,18 +409,24 @@ def test_parent_class_fields_are_inherited():
         def hello_this_is(self, info) -> str:
             return "patrick"
 
-    schema = strawberry.Schema(query=Schema)
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def example(self, info) -> Schema:
+            return Schema()
 
-    query = "{ cheese, cake, friend, helloThisIs }"
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ example { cheese, cake, friend, helloThisIs } }"
 
     result = graphql_sync(schema, query)
 
     assert not result.errors
 
-    assert result.data["cheese"] == "swiss"
-    assert result.data["cake"] == "made_in_switzerland"
-    assert result.data["friend"] == "food"
-    assert result.data["helloThisIs"] == "patrick"
+    assert result.data["example"]["cheese"] == "swiss"
+    assert result.data["example"]["cake"] == "made_in_switzerland"
+    assert result.data["example"]["friend"] == "food"
+    assert result.data["example"]["helloThisIs"] == "patrick"
 
 
 def test_can_declare_directives():

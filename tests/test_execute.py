@@ -24,8 +24,14 @@ async def test_handles_async_resolvers():
 @pytest.mark.asyncio
 async def test_runs_directives():
     @strawberry.type
-    class Query:
+    class Person:
         name: str = "Jess"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def person(self, info) -> Person:
+            return Person()
 
     @strawberry.directive(
         locations=[DirectiveLocation.FIELD], description="Make string uppercase"
@@ -40,12 +46,16 @@ async def test_runs_directives():
     schema = strawberry.Schema(query=Query, directives=[uppercase, replace])
 
     query = """{
-        name @uppercase
-        jess: name @replace(old: "Jess", new: "Jessica")
+        person {
+            name @uppercase
+        }
+        jess: person {
+            name @replace(old: "Jess", new: "Jessica")
+        }
     }"""
 
     result = await execute(schema, query)
 
     assert not result.errors
-    assert result.data["name"] == "JESS"
-    assert result.data["jess"] == "Jessica"
+    assert result.data["person"]["name"] == "JESS"
+    assert result.data["jess"]["name"] == "Jessica"

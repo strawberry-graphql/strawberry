@@ -21,7 +21,10 @@ def _get_resolver(cls, field_name):
         return class_field.resolver
 
     def _resolver(root, info):
-        field_resolver = getattr(root or cls(), field_name, None)
+        if not root:
+            return None
+
+        field_resolver = getattr(root, field_name, None)
 
         if getattr(field_resolver, IS_STRAWBERRY_FIELD, False):
             return field_resolver(root, info)
@@ -49,14 +52,17 @@ def _process_type(cls, *, is_input=False, is_interface=False, description=None):
                 class_field.name
             )
             description = getattr(class_field, "field_description", None)
-
+            permission_classes = getattr(class_field, "field_permission_classes", None)
             resolver = getattr(class_field, "field_resolver", None) or _get_resolver(
                 cls, class_field.name
             )
             resolver.__annotations__["return"] = class_field.type
 
             fields[field_name] = field(
-                resolver, is_input=is_input, description=description
+                resolver,
+                is_input=is_input,
+                description=description,
+                permission_classes=permission_classes,
             ).field
 
         strawberry_fields = {}

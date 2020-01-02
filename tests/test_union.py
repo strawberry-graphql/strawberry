@@ -28,7 +28,7 @@ def test_union_as_field():
         }
     }"""
 
-    result = graphql_sync(schema, query)
+    result = graphql_sync(schema, query, root_value=Query())
 
     assert not result.errors
     assert result.data["ab"] == {"__typename": "A", "a": 5}
@@ -58,7 +58,7 @@ def test_cannot_use_non_strawberry_fields_for_the_union():
         }
     }"""
 
-    result = graphql_sync(schema, query)
+    result = graphql_sync(schema, query, root_value=Query())
 
     assert (
         result.errors[0].message

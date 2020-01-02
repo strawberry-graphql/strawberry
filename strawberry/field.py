@@ -89,13 +89,13 @@ class LazyFieldWrapper:
         """
         return (permission() for permission in self.permission_classes)
 
-    def _check_permissions(self, info):
+    def _check_permissions(self, source, info, **kwargs):
         """
         Checks if the permission should be accepted and
         raises an exception if not
         """
         for permission in self._get_permissions():
-            if not permission.has_permission(info):
+            if not permission.has_permission(source, info, **kwargs):
                 message = getattr(permission, "message", None)
                 raise PermissionError(message)
 
@@ -156,7 +156,7 @@ class strawberry_field(dataclasses.Field):
             # TODO:
             default=dataclasses.MISSING,
             default_factory=dataclasses.MISSING,
-            init=is_input,
+            init=resolver is None,
             repr=True,
             hash=None,
             # TODO: this needs to be False when init is False
@@ -210,11 +210,12 @@ def _get_field(
         for name, annotation in arguments_annotations.items()
     }
 
-    def resolver(source, info, **args):
+    def resolver(source, info, **kwargs):
         if check_permission:
-            check_permission(info)
-        args = convert_args(args, arguments_annotations)
-        result = wrap(source, info, **args)
+            check_permission(source, info, **kwargs)
+
+        kwargs = convert_args(kwargs, arguments_annotations)
+        result = wrap(source, info, **kwargs)
 
         # graphql-core expects a resolver for an Enum type to return
         # the enum's *value* (not its name or an instance of the enum).
@@ -232,7 +233,8 @@ def _get_field(
 
             def _resolve(event, info):
                 if check_permission:
-                    check_permission(info)
+                    check_permission(event, info)
+
                 return event
 
             field_params.update({"subscribe": resolver, "resolve": _resolve})
