@@ -13,7 +13,7 @@ from strawberry.permission import BasePermission
 class AlwaysFailPermission(BasePermission):
     message = "You are not authorized"
 
-    def has_permission(self, info):
+    def has_permission(self, source, info):
         return False
 
 

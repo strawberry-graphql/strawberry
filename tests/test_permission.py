@@ -34,7 +34,7 @@ def test_raises_graphql_error_when_permission_is_denied():
     class IsAuthenticated(BasePermission):
         message = "User is not authenticated"
 
-        def has_permission(self, info):
+        def has_permission(self, source, info):
             return False
 
     @strawberry.type
@@ -56,7 +56,7 @@ async def test_raises_permission_error_for_subscription():
     class IsAdmin(BasePermission):
         message = "You are not authorized"
 
-        def has_permission(self, info):
+        def has_permission(self, source, info):
             return False
 
     @strawberry.type
@@ -76,3 +76,71 @@ async def test_raises_permission_error_for_subscription():
     result = await subscribe(schema, parse(query))
 
     assert result.errors[0].message == "You are not authorized"
+
+
+def test_can_use_source_when_testing_permission():
+    class CanSeeEmail(BasePermission):
+        message = "Cannot see email for this user"
+
+        def has_permission(self, source, info):
+            return source.name.lower() == "patrick"
+
+    @strawberry.type
+    class User:
+        name: str
+
+        @strawberry.field(permission_classes=[CanSeeEmail])
+        def email(self, info) -> str:
+            return "patrick.arminio@gmail.com"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self, info, name: str) -> User:
+            return User(name=name)
+
+    schema = strawberry.Schema(query=Query)
+
+    query = '{ user(name: "patrick") { email } }'
+
+    result = graphql_sync(schema, query)
+    assert result.data["user"]["email"] == "patrick.arminio@gmail.com"
+
+    query = '{ user(name: "marco") { email } }'
+
+    result = graphql_sync(schema, query)
+    assert result.errors[0].message == "Cannot see email for this user"
+
+
+def test_can_use_args_when_testing_permission():
+    class CanSeeEmail(BasePermission):
+        message = "Cannot see email for this user"
+
+        def has_permission(self, source, info, secure):
+            return secure
+
+    @strawberry.type
+    class User:
+        name: str
+
+        @strawberry.field(permission_classes=[CanSeeEmail])
+        def email(self, info, secure: bool) -> str:
+            return "patrick.arminio@gmail.com"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self, info, name: str) -> User:
+            return User(name=name)
+
+    schema = strawberry.Schema(query=Query)
+
+    query = '{ user(name: "patrick") { email(secure: true) } }'
+
+    result = graphql_sync(schema, query)
+    assert result.data["user"]["email"] == "patrick.arminio@gmail.com"
+
+    query = '{ user(name: "patrick") { email(secure: false) } }'
+
+    result = graphql_sync(schema, query)
+    assert result.errors[0].message == "Cannot see email for this user"
