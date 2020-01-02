@@ -40,7 +40,7 @@ isort = "^4.3"
 pytest-asyncio = "^0.10.0"
 pytest-cov = "^2.8"
 mypy = "^0.760"
-flake8-bugbear = "^19.8"
+flake8-bugbear = "^20.1"
 pytest-mypy-plugins = "^1.2"
 pytest-mock = "^1.13"
 django = {version = "^2.0"}
