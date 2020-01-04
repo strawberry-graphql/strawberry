@@ -1,4 +1,4 @@
-Release type: minor release
+Release type: minor
 
 Added a Flask view that allows you to query the schema and interact with it via GraphQL playground.
 
