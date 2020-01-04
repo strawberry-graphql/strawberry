@@ -14,7 +14,7 @@ class GraphQLView(View):
 
     methods = ["GET", "POST"]
 
-    def __init__(self, schema=None):
+    def __init__(self, schema):
         self.schema = schema
 
         if not self.schema:
