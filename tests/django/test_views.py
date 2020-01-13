@@ -1,4 +1,5 @@
 import json
+import logging
 from typing import Optional
 
 import pytest
@@ -15,7 +16,7 @@ from .app.models import Example
 class AlwaysFailPermission(BasePermission):
     message = "You are not authorized"
 
-    def has_permission(self, info):
+    def has_permission(self, source, info):
         return False
 
 
@@ -138,3 +139,55 @@ def test_returns_errors_and_data():
 
     assert data["data"]["hello"] == "strawberry"
     assert data["data"]["alwaysFail"] is None
+
+
+class ListHandler(logging.Handler):
+    def __init__(self, *args, **kwargs):
+        super(ListHandler, self).__init__(*args, **kwargs)
+
+        for level in logging._nameToLevel.keys():
+            setattr(self, level.lower(), [])
+
+    def emit(self, record):
+        msg = record.getMessage()
+        getattr(self, record.levelname.lower()).append(msg)
+
+
+@pytest.fixture
+def get_logger():
+    logger = logging.getLogger("test")
+    logger.setLevel(logging.WARNING)
+
+    handler = ListHandler()
+    logger.addHandler(handler)
+
+    return logger, handler
+
+
+def test_log_handled_error(get_logger):
+    logger, handler = get_logger
+
+    query = "{ hello, alwaysFail }"
+
+    factory = RequestFactory()
+    request = factory.post(
+        "/graphql/", {"query": query}, content_type="application/json"
+    )
+    GraphQLView.as_view(schema=schema, logger=logger)(request)
+    assert handler.error == ["You are not authorized"]
+
+
+def test_log_unhandled_error(get_logger):
+    logger, handler = get_logger
+
+    query = "{ hello, mistake }"
+
+    factory = RequestFactory()
+    request = factory.post(
+        "/graphql/", {"query": query}, content_type="application/json"
+    )
+
+    GraphQLView.as_view(schema=schema, logger=logger)(request)
+    assert handler.error == [
+        "Cannot query field 'mistake' on type 'Query'.\n\nGraphQL request:1:10\n1 | { hello, mistake }\n  |          ^"  # noqa
+    ]

@@ -14,8 +14,9 @@ from graphql.type.schema import GraphQLSchema
 
 class GraphQLView(View):
     schema = None
+    logger = None
 
-    def __init__(self, schema=None):
+    def __init__(self, schema=None, logger=None):
         if not schema:
             raise ValueError("You must pass in a schema to GraphQLView")
 
@@ -23,6 +24,7 @@ class GraphQLView(View):
             raise ValueError("You must pass in a valid schema to GraphQLView")
 
         self.schema = schema
+        self.logger = logger
 
     def get_root_value(self):
         return None
@@ -62,10 +64,19 @@ class GraphQLView(View):
         )
 
         response_data = {"data": result.data}
-
         if result.errors:
             response_data["errors"] = [
                 format_graphql_error(err) for err in result.errors
             ]
+            self.log_errors(result.errors)
 
         return JsonResponse(response_data)
+
+    def log_errors(self, errors):
+        if not self.logger:
+            return
+        for error in errors:
+            if hasattr(error, "original_error") and error.original_error:
+                self.logger.error(error.original_error)
+            else:
+                self.logger.error(error)
