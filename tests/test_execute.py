@@ -45,17 +45,21 @@ async def test_runs_directives():
 
     schema = strawberry.Schema(query=Query, directives=[uppercase, replace])
 
-    query = """{
+    query = """query persons($identified: Boolean!){
         person {
             name @uppercase
         }
         jess: person {
             name @replace(old: "Jess", new: "Jessica")
         }
+        johnDoe: person {
+            name @replace(old: "Jess", new: "John") @include(if: $identified)
+        }
     }"""
 
-    result = await execute(schema, query)
+    result = await execute(schema, query, variable_values={"identified": False})
 
     assert not result.errors
     assert result.data["person"]["name"] == "JESS"
     assert result.data["jess"]["name"] == "Jessica"
+    assert result.data["johnDoe"].get("name") is None
