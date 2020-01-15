@@ -45,7 +45,7 @@ async def test_runs_directives():
 
     schema = strawberry.Schema(query=Query, directives=[uppercase, replace])
 
-    query = """query persons($identified: Boolean!){
+    query = """query People($identified: Boolean!){
         person {
             name @uppercase
         }
