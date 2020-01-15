@@ -12,3 +12,4 @@ def test_declaring_executable_directive():
     assert uppercase.directive.__class__ == GraphQLDirective
     assert uppercase.directive.name == "uppercase"
     assert uppercase.directive.description == "Sample description"
+    assert uppercase.directive.args == {}
