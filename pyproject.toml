@@ -44,7 +44,7 @@ flake8-bugbear = "^20.1"
 pytest-mypy-plugins = "^1.2"
 pytest-mock = "^2.0"
 django = {version = "^2.0"}
-pytest-django = {version = "^3.7"}
+pytest-django = {version = "^3.8"}
 asgiref = "^3.2"
 
 [tool.poetry.extras]

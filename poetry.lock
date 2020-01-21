@@ -452,7 +452,7 @@ description = "A Django plugin for pytest."
 name = "pytest-django"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
-version = "3.7.0"
+version = "3.8.0"
 
 [package.dependencies]
 pytest = ">=3.6"
@@ -659,7 +659,7 @@ more-itertools = "*"
 django = ["django", "asgiref"]
 
 [metadata]
-content-hash = "aea182c9569c320557217c6bf4e7f426249514c849668f6815d32aab1818a0ca"
+content-hash = "754bac59aba942ec57f116011f46efd79442ab9f651a052bf9eac689ab4de2f0"
 python-versions = "^3.7"
 
 [metadata.hashes]
@@ -708,7 +708,7 @@ pyrepl = ["292570f34b5502e871bbb966d639474f2b57fbfcd3373c2d6a2f3d56e681a775"]
 pytest = ["1d122e8be54d1a709e56f82e2d85dcba3018313d64647f38a91aec88c239b600", "c13d1943c63e599b98cf118fcb9703e4d7bde7caa9a432567bcdcae4bf512d20"]
 pytest-asyncio = ["9fac5100fd716cbecf6ef89233e8590a4ad61d729d1732e0a96b84182df1daaf", "d734718e25cfc32d2bf78d346e99d33724deeba774cc4afdf491530c6184b63b"]
 pytest-cov = ["cc6742d8bac45070217169f5f72ceee1e0e55b0221f54bcf24845972d3a47f2b", "cdbdef4f870408ebdbfeb44e63e07eb18bb4619fae852f6e760645fa36172626"]
-pytest-django = ["17592f06d51c2ef4b7a0fb24aa32c8b6998506a03c8439606cb96db160106659", "ef3d15b35ed7e46293475e6f282e71a53bcd8c6f87bdc5d5e7ad0f4d49352127"]
+pytest-django = ["456fa6854d04ee625d6bbb8b38ca2259e7040a6f93333bfe8bc8159b7e987203", "489b904f695f9fb880ce591cf5a4979880afb467763b1f180c07574554bdfd26"]
 pytest-emoji = ["6e34ed21970fa4b80a56ad11417456bd873eb066c02315fe9df0fafe6d4d4436", "e1bd4790d87649c2d09c272c88bdfc4d37c1cc7c7a46583087d7c510944571e8"]
 pytest-mock = ["b35eb281e93aafed138db25c8772b95d3756108b601947f89af503f8c629413f", "cb67402d87d5f53c579263d37971a164743dc33c159dfb4fb4a86f37c5552307"]
 pytest-mypy-plugins = ["9012dddb48b27652b432a5b8102b3046d7da36a7a15a9cffa5b0d123484afe68", "ca562a5e49ccbc8e46a6281050eae9ad6f10512b9000d36571c0fe78334b8ea3"]
