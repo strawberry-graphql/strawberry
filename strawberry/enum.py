@@ -22,6 +22,8 @@ def _process_enum(cls, name=None, description=None):
         values=[(item.name, GraphQLEnumValue(item.value)) for item in cls],
         description=description,
     )
+    # :D
+    cls.graphql_type._strawberry_type = cls
 
     return cls
 

@@ -40,8 +40,10 @@ def _get_resolver(cls, field_name):
     return _resolver
 
 
-def _process_type(cls, *, is_input=False, is_interface=False, description=None):
-    name = cls.__name__
+def _process_type(
+    cls, *, name=None, is_input=False, is_interface=False, description=None
+):
+    name = name or cls.__name__
     REGISTRY[name] = cls
 
     def _get_fields(wrapped, types_replacement_map=None):
@@ -77,6 +79,8 @@ def _process_type(cls, *, is_input=False, is_interface=False, description=None):
             # supply a graphql default_value if the type annotation has a default
             if class_field.default not in (dataclasses.MISSING, None):
                 fields[field_name].default_value = class_field.default
+
+            fields[field_name]._strawberry_type = class_field
 
         strawberry_fields = {}
 
@@ -128,11 +132,12 @@ def _process_type(cls, *, is_input=False, is_interface=False, description=None):
         lambda types_replacement_map=None: _get_fields(wrapped, types_replacement_map),
         **extra_kwargs
     )
+    wrapped.graphql_type._strawberry_type = cls
 
     return wrapped
 
 
-def type(cls=None, *, is_input=False, is_interface=False, description=None):
+def type(cls=None, *, name=None, is_input=False, is_interface=False, description=None):
     """Annotates a class as a GraphQL type.
 
     Example usage:
@@ -144,7 +149,11 @@ def type(cls=None, *, is_input=False, is_interface=False, description=None):
 
     def wrap(cls):
         return _process_type(
-            cls, is_input=is_input, is_interface=is_interface, description=description
+            cls,
+            name=name,
+            is_input=is_input,
+            is_interface=is_interface,
+            description=description,
         )
 
     if cls is None:
