@@ -11,8 +11,11 @@ from strawberry.types.datetime import Date, DateTime, Time
     "typing,instance,serialized",
     [
         (Date, datetime.date(2019, 10, 25), "2019-10-25"),
+        (datetime.date, datetime.date(2019, 10, 25), "2019-10-25"),
         (DateTime, datetime.datetime(2019, 10, 25, 13, 37), "2019-10-25T13:37:00"),
+        (datetime.datetime, datetime.datetime(2019, 10, 25, 13, 37), "2019-10-25T13:37:00"),
         (Time, datetime.time(13, 37), "13:37:00"),
+        (datetime.time, datetime.time(13, 37), "13:37:00"),
     ],
 )
 def test_serialization(typing, instance, serialized):
@@ -34,13 +37,21 @@ def test_serialization(typing, instance, serialized):
     "typing,name,instance,serialized",
     [
         (Date, "Date", datetime.date(2019, 10, 25), "2019-10-25"),
+        (datetime.date, "Date", datetime.date(2019, 10, 25), "2019-10-25"),
         (
             DateTime,
             "DateTime",
             datetime.datetime(2019, 10, 25, 13, 37),
             "2019-10-25T13:37:00",
         ),
+        (
+            datetime.datetime,
+            "DateTime",
+            datetime.datetime(2019, 10, 25, 13, 37),
+            "2019-10-25T13:37:00",
+        ),
         (Time, "Time", datetime.time(13, 37), "13:37:00"),
+        (datetime.time, "Time", datetime.time(13, 37), "13:37:00"),
     ],
 )
 def test_deserialization(typing, name, instance, serialized):
@@ -68,8 +79,11 @@ def test_deserialization(typing, name, instance, serialized):
     "typing,instance,serialized",
     [
         (Date, datetime.date(2019, 10, 25), "2019-10-25"),
+        (datetime.date, datetime.date(2019, 10, 25), "2019-10-25"),
         (DateTime, datetime.datetime(2019, 10, 25, 13, 37), "2019-10-25T13:37:00"),
+        (datetime.datetime, datetime.datetime(2019, 10, 25, 13, 37), "2019-10-25T13:37:00"),
         (Time, datetime.time(13, 37), "13:37:00"),
+        (datetime.time, datetime.time(13, 37), "13:37:00"),
     ],
 )
 def test_deserialization_with_parse_literal(typing, instance, serialized):
