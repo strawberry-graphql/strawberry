@@ -1,32 +1,30 @@
 import datetime
 
-import aniso8601
+from operator import methodcaller
 
 from ..custom_scalar import scalar
 
-
-def _serialize_isoformatted(value):
-    return value.isoformat()
+isoformat = methodcaller("isoformat")
 
 
 Date = scalar(
     datetime.date,
     name="Date",
     description="Date (isoformat)",
-    serialize=_serialize_isoformatted,
-    parse_value=aniso8601.parse_date,
+    serialize=isoformat,
+    parse_value=datetime.date.fromisoformat,
 )
 DateTime = scalar(
     datetime.datetime,
     name="DateTime",
     description="Date with time (isoformat)",
-    serialize=_serialize_isoformatted,
-    parse_value=aniso8601.parse_datetime,
+    serialize=isoformat,
+    parse_value=datetime.datetime.fromisoformat,
 )
 Time = scalar(
     datetime.time,
     name="Time",
     description="Time (isoformat)",
-    serialize=_serialize_isoformatted,
-    parse_value=aniso8601.parse_time,
+    serialize=isoformat,
+    parse_value=datetime.time.fromisoformat,
 )
