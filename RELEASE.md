@@ -1,3 +1,5 @@
 Release type: patch
 
-Fix builtin datetime, date and time classes conversion
+Improve datetime, date and time types conversion. Removes aniso dependency
+and also adds support for python types, so now we can do use python datetime's types 
+instead of our custom scalar types.
