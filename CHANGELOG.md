@@ -1,6 +1,13 @@
 CHANGELOG
 =========
 
+0.20.3 - 2020-02-11
+-------------------
+
+Improve datetime, date and time types conversion. Removes aniso dependency
+and also adds support for python types, so now we can do use python datetime's types 
+instead of our custom scalar types.
+
 0.20.2 - 2020-01-22
 -------------------
 
