@@ -19,7 +19,7 @@ jobs:
       - uses: actions/checkout@master
       - run: pip install poetry codecov
       - name: Install dependencies
-        run: poetry install --extras=django
+        run: poetry install --extras "django flask"
       - name: Install dependencies
         run: poetry add django==${{ matrix.django }}
 
