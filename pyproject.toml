@@ -46,7 +46,7 @@ pytest-mock = "^2.0"
 django = {version = ">=2,<4"}
 pytest-django = {version = "^3.8"}
 asgiref = "^3.2"
-pytest-flask = {version = "^0.15.0",optional = true}
+pytest-flask = {version = "^0.15.0"}
 
 [tool.poetry.extras]
 django = ["django","pytest-django"]
