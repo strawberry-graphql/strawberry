@@ -1,6 +1,6 @@
 from graphql import GraphQLSchema
 from graphql.type.directives import specified_directives
-from graphql.utilities.schema_printer import print_schema
+from graphql.utilities.print_schema import print_schema
 
 
 # TODO: typings
