@@ -1,4 +1,4 @@
-from graphql.utilities.schema_printer import print_type as graphql_print
+from graphql.utilities.print_schema import print_type as graphql_print
 
 
 def print_type(type_) -> str:
