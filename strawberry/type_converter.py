@@ -13,7 +13,7 @@ from graphql import (
 
 from .exceptions import UnallowedReturnTypeForUnion, WrongReturnTypeForUnion
 from .scalars import ID
-from .utils.typing import is_union
+from .utils.typing import is_generic, is_union
 
 
 REGISTRY = {
@@ -34,7 +34,10 @@ def get_graphql_type_for_annotation(
     # TODO: this might lead to issues with types that have a field value
     is_field_optional = force_optional
 
-    if hasattr(annotation, "field"):
+    if is_generic(annotation):
+        # TODO: now we are assuming we have this function, but we should check
+        graphql_type = annotation.copy_with_type(*annotation.__args__)
+    elif hasattr(annotation, "field"):
         graphql_type = annotation.field
     else:
         annotation_name = getattr(annotation, "_name", None)

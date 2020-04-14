@@ -40,3 +40,16 @@ def get_optional_annotation(annotation):
 
 def get_list_annotation(annotation):
     return annotation.__args__[0]
+
+
+def is_generic(annotation):
+    if isinstance(annotation, typing._GenericAlias):
+        bases = [
+            getattr(b, "__origin__", None)
+            for b in getattr(annotation.__origin__, "__orig_bases__", [])
+        ]
+
+        if any(base is typing.Generic for base in bases):
+            return True
+
+    return False
