@@ -53,3 +53,29 @@ def is_generic(annotation):
             return True
 
     return False
+
+
+def is_type_var(annotation) -> bool:
+    return isinstance(annotation, typing.TypeVar)  # type:ignore
+
+
+def has_type_var(annotation) -> bool:
+    return any(
+        is_type_var(arg) or has_type_var(arg)
+        for arg in getattr(annotation, "__args__", [])
+    )
+
+
+def get_actual_type(annotation, types_replacement_map):
+    if is_type_var(annotation):
+        return types_replacement_map[annotation.__name__]
+
+    if has_type_var(annotation):
+        return annotation.copy_with(
+            tuple(
+                get_actual_type(arg, types_replacement_map)
+                for arg in annotation.__args__
+            )
+        )
+
+    return annotation

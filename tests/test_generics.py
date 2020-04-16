@@ -110,3 +110,151 @@ def test_supports_multiple_generic():
     assert result.data == {
         "multiple": {"__typename": "IntStrMultiple", "a": 123, "b": "123"}
     }
+
+
+def test_support_nested_generics():
+    T = typing.TypeVar("T")
+
+    @strawberry.type
+    class User:
+        name: str
+
+    @strawberry.type
+    class Edge(typing.Generic[T]):
+        node: T
+
+    @strawberry.type
+    class Connection(typing.Generic[T]):
+        edge: Edge[T]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def users(self, info, **kwargs) -> Connection[User]:
+            return Connection(edge=Edge(node=User("Patrick")))
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        users {
+            __typename
+            edge {
+                __typename
+                node {
+                    name
+                }
+            }
+        }
+    }"""
+
+    result = graphql_sync(schema, query)
+
+    assert not result.errors
+    assert result.data == {
+        "users": {
+            "__typename": "UserConnection",
+            "edge": {"__typename": "UserEdge", "node": {"name": "Patrick"}},
+        }
+    }
+
+
+def test_supports_optional():
+    T = typing.TypeVar("T")
+
+    @strawberry.type
+    class User:
+        name: str
+
+    @strawberry.type
+    class Edge(typing.Generic[T]):
+        node: typing.Optional[T] = None
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self, info, **kwargs) -> Edge[User]:
+            return Edge()
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        user {
+            __typename
+            node {
+                name
+            }
+        }
+    }"""
+
+    result = graphql_sync(schema, query)
+
+    assert not result.errors
+    assert result.data == {"user": {"__typename": "UserEdge", "node": None}}
+
+
+def test_supports_lists():
+    T = typing.TypeVar("T")
+
+    @strawberry.type
+    class User:
+        name: str
+
+    @strawberry.type
+    class Edge(typing.Generic[T]):
+        nodes: typing.List[T]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self, info, **kwargs) -> Edge[User]:
+            return Edge(nodes=[])
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        user {
+            __typename
+            nodes {
+                name
+            }
+        }
+    }"""
+
+    result = graphql_sync(schema, query)
+
+    assert not result.errors
+    assert result.data == {"user": {"__typename": "UserEdge", "nodes": []}}
+
+
+def test_supports_lists_of_optionals():
+    T = typing.TypeVar("T")
+
+    @strawberry.type
+    class User:
+        name: str
+
+    @strawberry.type
+    class Edge(typing.Generic[T]):
+        nodes: typing.List[typing.Optional[T]]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self, info, **kwargs) -> Edge[User]:
+            return Edge(nodes=[None])
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        user {
+            __typename
+            nodes {
+                name
+            }
+        }
+    }"""
+
+    result = graphql_sync(schema, query)
+
+    assert not result.errors
+    assert result.data == {"user": {"__typename": "UserEdge", "nodes": [None]}}

@@ -1,3 +1,4 @@
+import dataclasses
 from collections.abc import AsyncGenerator
 
 from graphql import (
@@ -13,6 +14,7 @@ from graphql import (
 
 from .exceptions import UnallowedReturnTypeForUnion, WrongReturnTypeForUnion
 from .scalars import ID
+from .utils.str_converters import to_camel_case
 from .utils.typing import is_generic, is_union
 
 
@@ -25,6 +27,41 @@ REGISTRY = {
 }
 
 
+def copy_annotation_with_types(annotation, *types):
+    # unfortunately we need to have this back and forth with GraphQL types
+    # and original classes for the time being. In future we might migrate
+    # away from GraphQL-Core or build our own tiny class wrapper that will
+    # help with generic types, but this works ok for now.
+    origin = annotation.__origin__
+    field = origin.field
+    TypeClass = type(field)
+
+    types_replacement_map = dict(
+        zip([param.__name__ for param in origin.__parameters__], types)
+    )
+    copied_name = "".join([type.__name__.capitalize() for type in types]) + field.name
+
+    extra_kwargs = {"description": field.description, "interfaces": field._interfaces}
+
+    def get_fields():
+        origin_fields = dict(
+            (to_camel_case(f.name), f) for f in dataclasses.fields(origin)
+        )
+        fields = field._fields(types_replacement_map)
+
+        for field_name in fields.keys():
+            origin_field = origin_fields[field_name]
+
+            if is_generic(origin_field.type):
+                fields[field_name] = copy_annotation_with_types(
+                    origin_field.type, *types
+                )
+
+        return fields
+
+    return TypeClass(copied_name, get_fields, **extra_kwargs)
+
+
 # TODO: make so that we don't pass force optional
 # we use that when trying to get the type for a
 # option field (which can either be a scalar or an object type)
@@ -35,8 +72,7 @@ def get_graphql_type_for_annotation(
     is_field_optional = force_optional
 
     if is_generic(annotation):
-        # TODO: now we are assuming we have this function, but we should check
-        graphql_type = annotation.copy_with_type(*annotation.__args__)
+        graphql_type = copy_annotation_with_types(annotation, *annotation.__args__)
     elif hasattr(annotation, "field"):
         graphql_type = annotation.field
     else:
@@ -63,6 +99,7 @@ def get_graphql_type_for_annotation(
             non_none_types = [x for x in types if x != None.__class__]  # noqa:E721
 
             # optionals are represented as Union[type, None]
+            # todo use is_optional
             if len(non_none_types) == 1:
                 is_field_optional = True
                 graphql_type = get_graphql_type_for_annotation(

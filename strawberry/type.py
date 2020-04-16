@@ -1,5 +1,4 @@
 import dataclasses
-import typing
 from functools import partial
 
 from graphql import GraphQLInputObjectType, GraphQLInterfaceType, GraphQLObjectType
@@ -8,6 +7,7 @@ from .constants import IS_STRAWBERRY_FIELD, IS_STRAWBERRY_INPUT, IS_STRAWBERRY_I
 from .field import field, strawberry_field
 from .type_converter import REGISTRY
 from .utils.str_converters import to_camel_case
+from .utils.typing import get_actual_type
 
 
 def _interface_resolve_type(result, info, return_type):
@@ -49,8 +49,7 @@ def _process_type(cls, *, is_input=False, is_interface=False, description=None):
         fields = {}
 
         for class_field in class_fields:
-            if isinstance(class_field.type, typing.TypeVar):
-                class_field.type = types_replacement_map[class_field.type.__name__]
+            class_field.type = get_actual_type(class_field.type, types_replacement_map)
 
             field_name = getattr(class_field, "field_name", None) or to_camel_case(
                 class_field.name
@@ -114,20 +113,11 @@ def _process_type(cls, *, is_input=False, is_interface=False, description=None):
             if hasattr(klass, IS_STRAWBERRY_INTERFACE)
         ]
 
-    def copy_with_type(*types):
-        types_replacement_map = dict(
-            zip([param.__name__ for param in wrapped.__parameters__], types)
-        )
-        copied_name = "".join([type.__name__.capitalize() for type in types]) + name
-
-        return TypeClass(
-            copied_name,
-            lambda: _get_fields(wrapped, types_replacement_map=types_replacement_map),
-            **extra_kwargs
-        )
-
-    wrapped.field = TypeClass(name, lambda: _get_fields(wrapped), **extra_kwargs)
-    wrapped.copy_with_type = copy_with_type
+    wrapped.field = TypeClass(
+        name,
+        lambda types_replacement_map=None: _get_fields(wrapped, types_replacement_map),
+        **extra_kwargs
+    )
 
     return wrapped
 
