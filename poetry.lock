@@ -77,7 +77,7 @@ description = "Fancy Interface to the Python Interpreter"
 name = "bpython"
 optional = false
 python-versions = "*"
-version = "0.18"
+version = "0.19"
 
 [package.dependencies]
 curtsies = ">=0.1.18"
@@ -812,7 +812,7 @@ django = ["django"]
 flask = ["flask"]
 
 [metadata]
-content-hash = "c0f52eb5d5f446f28258a0a5f69a3b2c71a337310f96e569aee196d0ed4a3313"
+content-hash = "f029144ff2b5f26c6f33b3be5125ee41b6692435967526f860f4722aba1adc29"
 python-versions = "^3.7"
 
 [metadata.files]
@@ -842,8 +842,8 @@ blessings = [
     {file = "blessings-1.7.tar.gz", hash = "sha256:98e5854d805f50a5b58ac2333411b0482516a8210f23f43308baeb58d77c157d"},
 ]
 bpython = [
-    {file = "bpython-0.18-py2.py3-none-any.whl", hash = "sha256:c7c6de7309311fd607d6cb47ef7e2d6e065d0a299199d51220d57732850a3efa"},
-    {file = "bpython-0.18.tar.gz", hash = "sha256:56cc20dbe568c98c81de4990fddf5862c0d8d3ab0ad1cf7057988abc5f7686c2"},
+    {file = "bpython-0.19-py2.py3-none-any.whl", hash = "sha256:95d95783bfadfa0a25300a648de5aba4423b0ee76b034022a81dde2b5e853c00"},
+    {file = "bpython-0.19.tar.gz", hash = "sha256:476ce09a896c4d34bf5e56aca64650c56fdcfce45781a20dc1521221df8cc49c"},
 ]
 certifi = [
     {file = "certifi-2019.11.28-py2.py3-none-any.whl", hash = "sha256:017c25db2a153ce562900032d5bc68e9f191e44e9a0f762f373977de9df1fbb3"},
