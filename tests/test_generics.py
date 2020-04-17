@@ -1,5 +1,7 @@
 import typing
 
+import pytest
+
 import strawberry
 from graphql import graphql_sync
 
@@ -7,7 +9,6 @@ from graphql import graphql_sync
 def test_supports_generic_simple_type():
     T = typing.TypeVar("T")
 
-    # TODO: we should forbid this to be used directly
     @strawberry.type
     class Edge(typing.Generic[T]):
         cursor: strawberry.ID
@@ -35,6 +36,29 @@ def test_supports_generic_simple_type():
     assert result.data == {
         "intEdge": {"__typename": "IntEdge", "cursor": "1", "node": 1}
     }
+
+
+def test_errors_when_using_a_generic_without_passing_a_type():
+    T = typing.TypeVar("T")
+
+    @strawberry.type
+    class Edge(typing.Generic[T]):
+        cursor: strawberry.ID
+        node: T
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def int_edge(self, info, **kwargs) -> Edge:
+            return Edge(cursor=strawberry.ID("1"), node=1)
+
+    with pytest.raises(TypeError) as error:
+        strawberry.Schema(query=Query)
+
+        assert str(error) == (
+            f'Query fields cannot be resolved. The type "{Edge}" '
+            'of the field "int_edge" is generic, but no type has been passed'
+        )
 
 
 def test_supports_generic():

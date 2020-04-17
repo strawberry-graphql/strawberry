@@ -12,7 +12,11 @@ from graphql import (
     GraphQLUnionType,
 )
 
-from .exceptions import UnallowedReturnTypeForUnion, WrongReturnTypeForUnion
+from .exceptions import (
+    MissingTypesForGenericError,
+    UnallowedReturnTypeForUnion,
+    WrongReturnTypeForUnion,
+)
 from .scalars import ID
 from .utils.str_converters import to_camel_case
 from .utils.typing import is_generic, is_union
@@ -72,7 +76,12 @@ def get_graphql_type_for_annotation(
     is_field_optional = force_optional
 
     if is_generic(annotation):
-        graphql_type = copy_annotation_with_types(annotation, *annotation.__args__)
+        types = getattr(annotation, "__args__", None)
+
+        if types is None:
+            raise MissingTypesForGenericError(field_name, annotation)
+
+        graphql_type = copy_annotation_with_types(annotation, *types)
     elif hasattr(annotation, "field"):
         graphql_type = annotation.field
     else:
