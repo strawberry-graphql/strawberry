@@ -43,11 +43,12 @@ def get_list_annotation(annotation):
     return annotation.__args__[0]
 
 
-def is_generic(annotation):
+def is_generic(annotation) -> bool:
+    """Returns True if the annotation is or extends a generic."""
     return (
         isinstance(annotation, type)
-        and issubclass(annotation, typing.Generic)
-        or isinstance(annotation, typing._GenericAlias)
+        and issubclass(annotation, typing.Generic)  # type:ignore
+        or isinstance(annotation, typing._GenericAlias)  # type:ignore
         and annotation.__origin__
         not in (
             list,
@@ -60,10 +61,16 @@ def is_generic(annotation):
 
 
 def is_type_var(annotation) -> bool:
+    """Returns True if the annotation is a TypeVar."""
+
     return isinstance(annotation, typing.TypeVar)  # type:ignore
 
 
 def has_type_var(annotation) -> bool:
+    """
+    Returns True if the annotation or any of
+    its argument have a TypeVar as argument.
+    """
     return any(
         is_type_var(arg) or has_type_var(arg)
         for arg in getattr(annotation, "__args__", [])
@@ -71,6 +78,7 @@ def has_type_var(annotation) -> bool:
 
 
 def get_actual_type(annotation, types_replacement_map):
+    """Returns a copy of an annotation by replacing TypeVar"""
     if is_type_var(annotation):
         return types_replacement_map[annotation.__name__]
 
