@@ -258,3 +258,55 @@ def test_supports_lists_of_optionals():
 
     assert not result.errors
     assert result.data == {"user": {"__typename": "UserEdge", "nodes": [None]}}
+
+
+def test_can_extend_generics():
+    T = typing.TypeVar("T")
+
+    @strawberry.type
+    class User:
+        name: str
+
+    @strawberry.type
+    class Edge(typing.Generic[T]):
+        node: T
+
+    @strawberry.type
+    class Connection(typing.Generic[T]):
+        edges: typing.List[Edge[T]]
+
+    @strawberry.type
+    class ConnectionWithMeta(Connection[T]):
+        meta: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def users(self, info, **kwargs) -> ConnectionWithMeta[User]:
+            return ConnectionWithMeta(meta="123", edges=[Edge(node=User("Patrick"))])
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        users {
+            __typename
+            meta
+            edges {
+                __typename
+                node {
+                    name
+                }
+            }
+        }
+    }"""
+
+    result = graphql_sync(schema, query)
+
+    assert not result.errors
+    assert result.data == {
+        "users": {
+            "__typename": "UserConnectionWithMeta",
+            "meta": "123",
+            "edges": [{"__typename": "UserEdge", "node": {"name": "Patrick"}}],
+        }
+    }

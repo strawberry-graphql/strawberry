@@ -1,3 +1,4 @@
+import collections
 import typing
 
 
@@ -43,16 +44,19 @@ def get_list_annotation(annotation):
 
 
 def is_generic(annotation):
-    if isinstance(annotation, typing._GenericAlias):
-        bases = [
-            getattr(b, "__origin__", None)
-            for b in getattr(annotation.__origin__, "__orig_bases__", [])
-        ]
-
-        if any(base is typing.Generic for base in bases):
-            return True
-
-    return False
+    return (
+        isinstance(annotation, type)
+        and issubclass(annotation, typing.Generic)
+        or isinstance(annotation, typing._GenericAlias)
+        and annotation.__origin__
+        not in (
+            list,
+            typing.Union,
+            tuple,
+            typing.ClassVar,
+            collections.abc.AsyncGenerator,
+        )
+    )
 
 
 def is_type_var(annotation) -> bool:
