@@ -589,13 +589,13 @@ category = "dev"
 description = "A set of py.test fixtures to test Flask applications."
 name = "pytest-flask"
 optional = false
-python-versions = "*"
-version = "0.15.1"
+python-versions = ">=3.5"
+version = "1.0.0"
 
 [package.dependencies]
 Flask = "*"
 Werkzeug = ">=0.7"
-pytest = [">=3.6", "*"]
+pytest = ">=5.2"
 
 [package.extras]
 docs = ["sphinx", "sphinx-rtd-theme"]
@@ -812,7 +812,7 @@ django = ["django"]
 flask = ["flask"]
 
 [metadata]
-content-hash = "f029144ff2b5f26c6f33b3be5125ee41b6692435967526f860f4722aba1adc29"
+content-hash = "01f2620a4689a2fdb4480f01c8f958954b4130a35a9b666fdbf0c3171dbfdc4e"
 python-versions = "^3.7"
 
 [metadata.files]
@@ -1123,8 +1123,8 @@ pytest-emoji = [
     {file = "pytest_emoji-0.2.0-py3-none-any.whl", hash = "sha256:6e34ed21970fa4b80a56ad11417456bd873eb066c02315fe9df0fafe6d4d4436"},
 ]
 pytest-flask = [
-    {file = "pytest-flask-0.15.1.tar.gz", hash = "sha256:cbd8c5b9f8f1b83e9c159ac4294964807c4934317a5fba181739ac15e1b823e6"},
-    {file = "pytest_flask-0.15.1-py2.py3-none-any.whl", hash = "sha256:9001f6128c5c4a0d243ce46c117f3691052828d2faf39ac151b8388657dce447"},
+    {file = "pytest-flask-1.0.0.tar.gz", hash = "sha256:4d5678a045c07317618d80223ea124e21e8acc89dae109542dd1fdf6783d96c2"},
+    {file = "pytest_flask-1.0.0-py3-none-any.whl", hash = "sha256:44948d3feab48c69e89b087129cc4db66bad9cb5aa472c08dfc798c69f4eac67"},
 ]
 pytest-mock = [
     {file = "pytest-mock-2.0.0.tar.gz", hash = "sha256:b35eb281e93aafed138db25c8772b95d3756108b601947f89af503f8c629413f"},
