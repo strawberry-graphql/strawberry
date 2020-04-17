@@ -1,11 +1,11 @@
 import textwrap
 import typing
+from dataclasses import InitVar, dataclass
 from enum import Enum
 
 import pytest
 
 import strawberry
-from dataclasses import InitVar, dataclass
 from graphql import DirectiveLocation, graphql, graphql_sync
 
 
@@ -499,7 +499,7 @@ def test_query_interface():
     ]
 
 
-def test_can_return_compatibile_type():
+def test_can_return_compatible_type():
     """Test that we can return a different type that has the same fields,
     for example when returning a Django Model."""
 
@@ -529,3 +529,95 @@ def test_can_return_compatibile_type():
 
     assert not result.errors
     assert result.data["assortment"]["name"] == "Asiago"
+
+
+def test_optional_info_and_root_params_function_resolver():
+    def function_resolver() -> str:
+        return "I'm a function resolver"
+
+    def function_resolver_with_root(root) -> str:
+        return root._example
+
+    def function_resolver_with_params(x: str) -> str:
+        return f"I'm {x}"
+
+    @strawberry.type
+    class Query:
+        hello: str = strawberry.field(resolver=function_resolver)
+        hello_with_root: str = strawberry.field(resolver=function_resolver_with_root)
+        hello_with_params: str = strawberry.field(
+            resolver=function_resolver_with_params
+        )
+
+        def __post_init__(self):
+            self._example = "Example"
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        hello
+        helloWithRoot
+        helloWithParams(x: "abc")
+    }"""
+
+    result = graphql_sync(schema, query, root_value=Query())
+
+    assert not result.errors
+    assert result.data["hello"] == "I'm a function resolver"
+    assert result.data["helloWithParams"] == "I'm abc"
+    assert result.data["helloWithRoot"] == "Example"
+
+
+def test_optional_info_and_root_params():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(self) -> str:
+            return "I'm a function resolver"
+
+        @strawberry.field
+        def hello_with_params(self, x: str) -> str:
+            return f"I'm {x}"
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        hello
+        helloWithParams(x: "abc")
+    }"""
+
+    result = graphql_sync(schema, query)
+
+    assert not result.errors
+    assert result.data["hello"] == "I'm a function resolver"
+    assert result.data["helloWithParams"] == "I'm abc"
+
+
+def test_only_info_function_resolvers():
+    def function_resolver(info) -> str:
+        return f"I'm a function resolver for {info.field_name}"
+
+    def function_resolver_with_params(info, x: str) -> str:
+        return f"I'm {x} for {info.field_name}"
+
+    @strawberry.type
+    class Query:
+        hello: str = strawberry.field(resolver=function_resolver)
+        hello_with_params: str = strawberry.field(
+            resolver=function_resolver_with_params
+        )
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        hello
+        helloWithParams(x: "abc")
+    }"""
+
+    result = graphql_sync(schema, query)
+
+    assert not result.errors
+    assert result.data["hello"] == "I'm a function resolver for hello"
+    # TODO: in future, should we map names of info.field_name to the matching
+    # dataclass field name?
+    assert result.data["helloWithParams"] == "I'm abc for helloWithParams"

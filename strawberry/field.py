@@ -214,8 +214,27 @@ def _get_field(
         if check_permission:
             check_permission(source, info, **kwargs)
 
+        # the following code allows to omit info and root arguments
+        # by inspecting the original resolver arguments,
+        # if it asks for self, the source will be passed as first argument
+        # if it asks for root, the source it will be passed as kwarg
+        # if it asks for info, the info will be passed as kwarg
+
         kwargs = convert_args(kwargs, arguments_annotations)
-        result = wrap(source, info, **kwargs)
+        function_args = get_func_args(wrap)
+
+        args = []
+
+        if "self" in function_args:
+            args.append(wrap)
+
+        if "root" in function_args:
+            kwargs["root"] = source
+
+        if "info" in function_args:
+            kwargs["info"] = info
+
+        result = wrap(*args, **kwargs)
 
         # graphql-core expects a resolver for an Enum type to return
         # the enum's *value* (not its name or an instance of the enum).
