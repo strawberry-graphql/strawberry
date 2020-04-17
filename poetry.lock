@@ -692,7 +692,7 @@ description = "The little ASGI library that shines."
 name = "starlette"
 optional = false
 python-versions = ">=3.6"
-version = "0.13.0"
+version = "0.13.3"
 
 [package.extras]
 full = ["aiofiles", "graphene", "itsdangerous", "jinja2", "python-multipart", "pyyaml", "requests", "ujson"]
@@ -812,7 +812,7 @@ django = ["django"]
 flask = ["flask"]
 
 [metadata]
-content-hash = "01f2620a4689a2fdb4480f01c8f958954b4130a35a9b666fdbf0c3171dbfdc4e"
+content-hash = "9b99cb39b2f77ee6a7c5e35d17c2a1da7d0d201a9640d8e0431905c32e129927"
 python-versions = "^3.7"
 
 [metadata.files]
@@ -1187,7 +1187,8 @@ sqlparse = [
     {file = "sqlparse-0.3.0.tar.gz", hash = "sha256:7c3dca29c022744e95b547e867cee89f4fce4373f3549ccd8797d8eb52cdb873"},
 ]
 starlette = [
-    {file = "starlette-0.13.0.tar.gz", hash = "sha256:6bd414152d40d000ccbf6aa40ed89718b40868366a0f69fb83034f416303acef"},
+    {file = "starlette-0.13.3-py3-none-any.whl", hash = "sha256:b316d53119813d12fa1d02ae80ef11a71ff603ff10abb143bd4aaadb59d03dd9"},
+    {file = "starlette-0.13.3.tar.gz", hash = "sha256:e15689e130a358c5cb220b9aad1e7bcb8052504c321235dab431f065c77f010d"},
 ]
 toml = [
     {file = "toml-0.10.0-py2.7.egg", hash = "sha256:f1db651f9657708513243e61e6cc67d101a39bad662eaa9b5546f789338e07a3"},
