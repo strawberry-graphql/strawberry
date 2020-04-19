@@ -58,3 +58,10 @@ def test_client_keep_alive(schema):
     app = GraphQL(schema, keep_alive=True, keep_alive_interval=2)
 
     return TestClient(app)
+
+
+@pytest.fixture
+def test_client_no_graphiql(schema):
+    app = GraphQL(schema, graphiql=False)
+
+    return TestClient(app)

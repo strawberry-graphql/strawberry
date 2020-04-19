@@ -1,6 +1,6 @@
 import json
 
-from django.http import HttpResponseNotAllowed, JsonResponse
+from django.http import HttpResponseNotAllowed, JsonResponse, Http404
 from django.http.response import HttpResponseBadRequest
 from django.shortcuts import render
 from django.utils.decorators import method_decorator
@@ -14,8 +14,9 @@ from graphql.type.schema import GraphQLSchema
 
 class GraphQLView(View):
     schema = None
+    graphiql = True
 
-    def __init__(self, schema=None):
+    def __init__(self, schema=None, graphiql=True):
         if not schema:
             raise ValueError("You must pass in a schema to GraphQLView")
 
@@ -23,6 +24,7 @@ class GraphQLView(View):
             raise ValueError("You must pass in a valid schema to GraphQLView")
 
         self.schema = schema
+        self.graphiql = graphiql
 
     def get_root_value(self):
         return None
@@ -35,9 +37,12 @@ class GraphQLView(View):
             )
 
         if "text/html" in request.META.get("HTTP_ACCEPT", ""):
+            if not self.graphiql:
+                raise Http404("GraphiQL has been disabled")
+
             return render(
                 request,
-                "graphql/playground.html",
+                "graphql/graphiql.html",
                 {"REQUEST_PATH": request.get_full_path()},
             )
 

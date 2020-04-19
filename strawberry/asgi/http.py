@@ -3,14 +3,24 @@ import typing
 from graphql.error import format_error as format_graphql_error
 from starlette import status
 from starlette.requests import Request
-from starlette.responses import HTMLResponse, JSONResponse, PlainTextResponse, Response
+from starlette.responses import (
+    HTMLResponse,
+    JSONResponse,
+    PlainTextResponse,
+    Response,
+)
 
-from .utils import get_playground_html
+from .utils import get_graphiql_html
 
 
-async def get_http_response(request: Request, execute: typing.Callable) -> Response:
+async def get_http_response(
+    request: Request, execute: typing.Callable, graphiql: bool
+) -> Response:
     if request.method == "GET":
-        html = get_playground_html(str(request.url))
+        if not graphiql:
+            return HTMLResponse(status_code=status.HTTP_404_NOT_FOUND)
+
+        html = get_graphiql_html(str(request.url))
         return HTMLResponse(html)
 
     if request.method == "POST":
@@ -25,7 +35,8 @@ async def get_http_response(request: Request, execute: typing.Callable) -> Respo
             )
     else:
         return PlainTextResponse(
-            "Method Not Allowed", status_code=status.HTTP_405_METHOD_NOT_ALLOWED
+            "Method Not Allowed",
+            status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
         )
 
     try:
@@ -41,12 +52,17 @@ async def get_http_response(request: Request, execute: typing.Callable) -> Respo
     context = {"request": request}
 
     result = await execute(
-        query, variables=variables, context=context, operation_name=operation_name
+        query,
+        variables=variables,
+        context=context,
+        operation_name=operation_name,
     )
 
     response_data = {"data": result.data}
 
     if result.errors:
-        response_data["errors"] = [format_graphql_error(err) for err in result.errors]
+        response_data["errors"] = [
+            format_graphql_error(err) for err in result.errors
+        ]
 
     return JSONResponse(response_data, status_code=status.HTTP_200_OK)

@@ -26,13 +26,13 @@ class GraphQL:
     def __init__(
         self,
         schema: GraphQLSchema,
-        playground: bool = True,
+        graphiql: bool = True,
         keep_alive: bool = False,
         keep_alive_interval: float = 1,
         debug: bool = False,
     ) -> None:
         self.schema = schema
-        self.playground = playground
+        self.graphiql = graphiql
         self.keep_alive = keep_alive
         self.keep_alive_interval = keep_alive_interval
         self._keep_alive_task = None
@@ -138,7 +138,7 @@ class GraphQL:
 
     async def handle_http(self, scope: Scope, receive: Receive, send: Send):
         request = Request(scope=scope, receive=receive)
-        response = await get_http_response(request, self.execute)
+        response = await get_http_response(request, self.execute, self.graphiql)
 
         await response(scope, receive, send)
 
