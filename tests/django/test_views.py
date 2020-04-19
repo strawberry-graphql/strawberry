@@ -57,8 +57,7 @@ def test_graphiql_view():
     body = response.content.decode()
 
     assert "GraphiQL" in body
-    assert f"fetch('{request.get_full_path()}'" in body
-
+    assert f"var fetchURL = '{request.get_full_path()}';" in body
 
 def test_graphql_query():
     query = "{ hello }"

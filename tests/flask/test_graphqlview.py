@@ -30,4 +30,4 @@ def test_graphiql_view(flask_client):
     url = url_for("graphql_view") + "?"
 
     assert "GraphiQL" in body
-    assert f"fetch('{url}'" in body
+    assert f"var fetchURL = '{url}';" in body
