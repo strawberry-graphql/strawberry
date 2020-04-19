@@ -17,16 +17,8 @@ def create_app(schema, **kwargs):
 @pytest.fixture
 def app(schema):
     app = create_app(schema)
-    # app = Flask(__name__)
-    # app.debug = True
-    # app.add_url_rule(
-    #     "/graphql",
-    #     view_func=GraphQLView.as_view("graphql_view", schema=schema),
-    # )
-
     ctx = app.app_context()
     ctx.push()
-
     return app
 
 

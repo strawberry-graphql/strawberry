@@ -1,10 +1,18 @@
 import json
 
 from flask import url_for
-
 import pytest
+import strawberry
 
 from .conftest import create_app
+
+
+@strawberry.type
+class Query:
+    hello: str = "strawberry"
+
+
+schema = strawberry.Schema(query=Query)
 
 
 def test_graphql_query(flask_client):
@@ -37,12 +45,9 @@ def test_graphiql_view(flask_client):
     assert f"var fetchURL = '{url}';" in body
 
 
-@pytest.mark.parametrize("app", [create_app(graphiql=False)])
+@pytest.mark.parametrize("app", [create_app(schema=schema, graphiql=False)])
 def test_graphiql_disabled_view(app, flask_client):
     flask_client.environ_base["HTTP_ACCEPT"] = "text/html"
     response = flask_client.get(url_for("graphql_view"))
-    body = response.data.decode()
-    url = url_for("graphql_view") + "?"
 
-    assert "GraphiQL" in body
-    assert f"var fetchURL = '{url}';" in body
+    assert response.status_code == 404
