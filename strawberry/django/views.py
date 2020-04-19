@@ -37,7 +37,7 @@ class GraphQLView(View):
         if "text/html" in request.META.get("HTTP_ACCEPT", ""):
             return render(
                 request,
-                "graphql/playground.html",
+                "graphql/graphiql.html",
                 {"REQUEST_PATH": request.get_full_path()},
             )
 

@@ -30,7 +30,7 @@ Update version of graphql-core to 3.1.0b2
 0.21.0 - 2020-02-13
 -------------------
 
-Added a Flask view that allows you to query the schema and interact with it via GraphQL playground.
+Added a Flask view that allows you to query the schema and interact with it via GraphiQL.
 
 Usage:
 
@@ -235,7 +235,7 @@ Thanks to [@sciyoshi](https://github.com/sciyoshi) for the fix!
 0.15.1 - 2019-09-05
 -------------------
 
-Added a Django view that allows you to query the schema and interact with it via GraphQL playground.
+Added a Django view that allows you to query the schema and interact with it via GraphiQL
 
 Usage:
 

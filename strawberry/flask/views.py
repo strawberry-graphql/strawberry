@@ -6,7 +6,7 @@ from graphql import graphql_sync
 from graphql.error import format_error as format_graphql_error
 from graphql.type.schema import GraphQLSchema
 
-from .playground import render_playground_page
+from .graphiql import render_graphiql_page
 
 
 class GraphQLView(View):
@@ -28,7 +28,7 @@ class GraphQLView(View):
 
     def dispatch_request(self):
         if "text/html" in request.environ.get("HTTP_ACCEPT", ""):
-            template = render_playground_page()
+            template = render_graphiql_page()
             return self.render_template(request, template=template)
 
         data = request.json

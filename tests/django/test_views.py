@@ -48,7 +48,7 @@ class GraphQLView(BaseGraphQLView):
         return Query()
 
 
-def test_playground_view():
+def test_graphiql_view():
     factory = RequestFactory()
 
     request = factory.get("/graphql/", HTTP_ACCEPT="text/html")
@@ -56,8 +56,8 @@ def test_playground_view():
     response = GraphQLView.as_view(schema=schema)(request)
     body = response.content.decode()
 
-    assert "GraphQL Playground" in body
-    assert f'endpoint: "{request.get_full_path()}"' in body
+    assert "GraphiQL" in body
+    assert f"fetch('{request.get_full_path()}'" in body
 
 
 def test_graphql_query():

@@ -5,12 +5,12 @@ from starlette import status
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, JSONResponse, PlainTextResponse, Response
 
-from .utils import get_playground_html
+from .utils import get_graphiql_html
 
 
 async def get_http_response(request: Request, execute: typing.Callable) -> Response:
     if request.method == "GET":
-        html = get_playground_html(str(request.url))
+        html = get_graphiql_html(str(request.url))
         return HTMLResponse(html)
 
     if request.method == "POST":

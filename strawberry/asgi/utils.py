@@ -1,9 +1,9 @@
 import pathlib
 
 
-def get_playground_html(request_path: str) -> str:
+def get_graphiql_html(request_path: str) -> str:
     here = pathlib.Path(__file__).parents[1]
-    path = here / "static/playground.html"
+    path = here / "static/graphiql.html"
 
     with open(path) as f:
         template = f.read()
