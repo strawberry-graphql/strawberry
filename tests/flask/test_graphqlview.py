@@ -2,6 +2,10 @@ import json
 
 from flask import url_for
 
+import pytest
+
+from .conftest import create_app
+
 
 def test_graphql_query(flask_client):
     query = {
@@ -24,6 +28,17 @@ def test_graphql_query(flask_client):
 
 
 def test_graphiql_view(flask_client):
+    flask_client.environ_base["HTTP_ACCEPT"] = "text/html"
+    response = flask_client.get(url_for("graphql_view"))
+    body = response.data.decode()
+    url = url_for("graphql_view") + "?"
+
+    assert "GraphiQL" in body
+    assert f"var fetchURL = '{url}';" in body
+
+
+@pytest.mark.parametrize("app", [create_app(graphiql=False)])
+def test_graphiql_disabled_view(app, flask_client):
     flask_client.environ_base["HTTP_ACCEPT"] = "text/html"
     response = flask_client.get(url_for("graphql_view"))
     body = response.data.decode()

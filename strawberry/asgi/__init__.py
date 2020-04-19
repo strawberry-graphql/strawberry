@@ -138,7 +138,7 @@ class GraphQL:
 
     async def handle_http(self, scope: Scope, receive: Receive, send: Send):
         request = Request(scope=scope, receive=receive)
-        response = await get_http_response(request, self.execute)
+        response = await get_http_response(request, self.execute, self.graphiql)
 
         await response(scope, receive, send)
 

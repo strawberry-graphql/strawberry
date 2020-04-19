@@ -3,6 +3,7 @@ from typing import Optional
 
 import pytest
 
+from django.http import Http404
 from django.test.client import RequestFactory
 
 import strawberry
@@ -58,6 +59,16 @@ def test_graphiql_view():
 
     assert "GraphiQL" in body
     assert f"var fetchURL = '{request.get_full_path()}';" in body
+
+
+def test_graphiql_disabled_view():
+    factory = RequestFactory()
+
+    request = factory.get("/graphql/", HTTP_ACCEPT="text/html")
+
+    with pytest.raises(Http404):
+        GraphQLView.as_view(schema=schema, graphiql=False)(request)
+
 
 def test_graphql_query():
     query = "{ hello }"

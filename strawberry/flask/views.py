@@ -1,6 +1,6 @@
 import json
 
-from flask import Response, render_template_string, request
+from flask import Response, render_template_string, request, abort
 from flask.views import View
 from graphql import graphql_sync
 from graphql.error import format_error as format_graphql_error
@@ -11,11 +11,13 @@ from .graphiql import render_graphiql_page
 
 class GraphQLView(View):
     schema = None
+    graphiql = True
 
     methods = ["GET", "POST"]
 
-    def __init__(self, schema):
+    def __init__(self, schema, graphiql=True):
         self.schema = schema
+        self.graphiql = graphiql
 
         if not self.schema:
             raise ValueError("You must pass in a schema to GraphQLView")
@@ -28,6 +30,9 @@ class GraphQLView(View):
 
     def dispatch_request(self):
         if "text/html" in request.environ.get("HTTP_ACCEPT", ""):
+            if not self.graphiql:
+                abort(404)
+
             template = render_graphiql_page()
             return self.render_template(request, template=template)
 
