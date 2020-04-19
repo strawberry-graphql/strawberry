@@ -1,8 +1,8 @@
+import dataclasses
 import enum
 import inspect
 import typing
 
-import dataclasses
 from graphql import GraphQLField, GraphQLInputField
 
 from .constants import IS_STRAWBERRY_FIELD

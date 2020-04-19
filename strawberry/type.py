@@ -1,12 +1,13 @@
+import dataclasses
 from functools import partial
 
-import dataclasses
 from graphql import GraphQLInputObjectType, GraphQLInterfaceType, GraphQLObjectType
 
 from .constants import IS_STRAWBERRY_FIELD, IS_STRAWBERRY_INPUT, IS_STRAWBERRY_INTERFACE
 from .field import field, strawberry_field
 from .type_converter import REGISTRY
 from .utils.str_converters import to_camel_case
+from .utils.typing import get_actual_type
 
 
 def _interface_resolve_type(result, info, return_type):
@@ -42,12 +43,14 @@ def _process_type(cls, *, is_input=False, is_interface=False, description=None):
     name = cls.__name__
     REGISTRY[name] = cls
 
-    def _get_fields(wrapped):
+    def _get_fields(wrapped, types_replacement_map=None):
         class_fields = dataclasses.fields(wrapped)
 
         fields = {}
 
         for class_field in class_fields:
+            class_field.type = get_actual_type(class_field.type, types_replacement_map)
+
             field_name = getattr(class_field, "field_name", None) or to_camel_case(
                 class_field.name
             )
@@ -110,7 +113,11 @@ def _process_type(cls, *, is_input=False, is_interface=False, description=None):
             if hasattr(klass, IS_STRAWBERRY_INTERFACE)
         ]
 
-    wrapped.field = TypeClass(name, lambda: _get_fields(wrapped), **extra_kwargs)
+    wrapped.field = TypeClass(
+        name,
+        lambda types_replacement_map=None: _get_fields(wrapped, types_replacement_map),
+        **extra_kwargs
+    )
 
     return wrapped
 

@@ -1,3 +1,4 @@
+import collections
 import typing
 
 
@@ -40,3 +41,53 @@ def get_optional_annotation(annotation):
 
 def get_list_annotation(annotation):
     return annotation.__args__[0]
+
+
+def is_generic(annotation) -> bool:
+    """Returns True if the annotation is or extends a generic."""
+    return (
+        isinstance(annotation, type)
+        and issubclass(annotation, typing.Generic)  # type:ignore
+        or isinstance(annotation, typing._GenericAlias)  # type:ignore
+        and annotation.__origin__
+        not in (
+            list,
+            typing.Union,
+            tuple,
+            typing.ClassVar,
+            collections.abc.AsyncGenerator,
+        )
+    )
+
+
+def is_type_var(annotation) -> bool:
+    """Returns True if the annotation is a TypeVar."""
+
+    return isinstance(annotation, typing.TypeVar)  # type:ignore
+
+
+def has_type_var(annotation) -> bool:
+    """
+    Returns True if the annotation or any of
+    its argument have a TypeVar as argument.
+    """
+    return any(
+        is_type_var(arg) or has_type_var(arg)
+        for arg in getattr(annotation, "__args__", [])
+    )
+
+
+def get_actual_type(annotation, types_replacement_map):
+    """Returns a copy of an annotation by replacing TypeVar"""
+    if is_type_var(annotation):
+        return types_replacement_map[annotation.__name__]
+
+    if has_type_var(annotation):
+        return annotation.copy_with(
+            tuple(
+                get_actual_type(arg, types_replacement_map)
+                for arg in annotation.__args__
+            )
+        )
+
+    return annotation
