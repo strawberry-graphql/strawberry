@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.23.0 - 2020-04-19
+-------------------
+
+This releases replaces the playground with GraphiQL including the GraphiQL explorer plugin.
+
 0.22.0 - 2020-04-19
 -------------------
 
