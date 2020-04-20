@@ -20,7 +20,7 @@ async def get_http_response(
         if not graphiql:
             return HTMLResponse(status_code=status.HTTP_404_NOT_FOUND)
 
-        html = get_graphiql_html(str(request.url))
+        html = get_graphiql_html()
         return HTMLResponse(html)
 
     if request.method == "POST":

@@ -1,12 +1,17 @@
 import json
+import os
 
-from django.http import HttpResponseNotAllowed, JsonResponse, Http404
+from django.http import Http404, HttpResponseNotAllowed, JsonResponse
 from django.http.response import HttpResponseBadRequest
-from django.shortcuts import render
+from django.template.exceptions import TemplateDoesNotExist
+from django.template.loader import render_to_string
+from django.template import Template, RequestContext
+from django.template.response import TemplateResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
 
+import strawberry
 from graphql import graphql_sync
 from graphql.error import format_error as format_graphql_error
 from graphql.type.schema import GraphQLSchema
@@ -40,10 +45,8 @@ class GraphQLView(View):
             if not self.graphiql:
                 raise Http404("GraphiQL has been disabled")
 
-            return render(
-                request,
-                "graphql/graphiql.html",
-                {"REQUEST_PATH": request.get_full_path()},
+            return self._render_graphiql(
+                request
             )
 
         data = json.loads(request.body)
@@ -53,7 +56,9 @@ class GraphQLView(View):
             variables = data.get("variables")
             operation_name = data.get("operationName")
         except KeyError:
-            return HttpResponseBadRequest("No GraphQL query found in the request")
+            return HttpResponseBadRequest(
+                "No GraphQL query found in the request"
+            )
 
         context = {"request": request}
 
@@ -74,3 +79,24 @@ class GraphQLView(View):
             ]
 
         return JsonResponse(response_data)
+
+    def _render_graphiql(self, request, context=None):
+        try:
+            template = Template(render_to_string("graphql/graphiql.html"))
+        except TemplateDoesNotExist:
+            template = Template(
+                open(
+                    os.path.join(
+                        os.path.dirname(os.path.abspath(strawberry.__file__)),
+                        "static/graphiql.html",
+                    ),
+                    "r",
+                ).read()
+            )
+
+        response = TemplateResponse(
+            request=request, template=None, context=context
+        )
+        response.content = template.render(RequestContext(request, context))
+
+        return response

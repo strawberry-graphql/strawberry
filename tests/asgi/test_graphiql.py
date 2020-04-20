@@ -10,7 +10,6 @@ def test_renders_graphiql(path, schema, test_client):
     assert response.status_code == status.HTTP_200_OK
 
     assert "<title>Strawberry GraphiQL</title>" in response.text
-    assert f"var fetchURL = 'http://testserver{path}';" in response.text
 
 
 @pytest.mark.parametrize("path", ("/", "/graphql"))
