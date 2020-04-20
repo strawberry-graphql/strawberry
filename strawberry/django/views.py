@@ -46,7 +46,7 @@ class GraphQLView(View):
                 raise Http404("GraphiQL has been disabled")
 
             return self._render_graphiql(
-                request, {"REQUEST_PATH": request.build_absolute_uri()}
+                request
             )
 
         data = json.loads(request.body)
@@ -80,7 +80,7 @@ class GraphQLView(View):
 
         return JsonResponse(response_data)
 
-    def _render_graphiql(self, request, context):
+    def _render_graphiql(self, request, context=None):
         try:
             template = Template(render_to_string("graphql/graphiql.html"))
         except TemplateDoesNotExist:

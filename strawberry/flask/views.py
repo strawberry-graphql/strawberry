@@ -26,7 +26,7 @@ class GraphQLView(View):
             raise ValueError("A valid schema is required to be provided to GraphQLView")
 
     def render_template(self, request, template=None):
-        return render_template_string(template, REQUEST_PATH=request.base_url)
+        return render_template_string(template)
 
     def dispatch_request(self):
         if "text/html" in request.environ.get("HTTP_ACCEPT", ""):

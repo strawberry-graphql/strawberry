@@ -41,7 +41,7 @@
 <body>
     <div id="graphiql"></div>
     <script>
-        var fetchURL = '{{REQUEST_PATH}}';
+        var fetchURL = window.location.href;
 
         function httpUrlToWebSockeUrl(url) {
             return url.replace(/(http)(s)?\:\/\//, "ws$2://");

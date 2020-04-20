@@ -42,7 +42,6 @@ def test_graphiql_view(flask_client):
     url = url_for("graphql_view") + "?"
 
     assert "GraphiQL" in body
-    assert f"var fetchURL = '{url}';" in body
 
 
 @pytest.mark.parametrize("app", [create_app(schema=schema, graphiql=False)])
