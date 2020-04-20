@@ -46,7 +46,7 @@ class GraphQLView(View):
                 raise Http404("GraphiQL has been disabled")
 
             return self._render_graphiql(
-                request, {"REQUEST_PATH": request.get_full_path()}
+                request, {"REQUEST_PATH": request.build_absolute_uri()}
             )
 
         data = json.loads(request.body)
