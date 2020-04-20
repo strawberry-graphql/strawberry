@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.23.1 - 2020-04-20
+-------------------
+
+Removes the need for duplicate graphiql template file.
+
 0.23.0 - 2020-04-19
 -------------------
 
