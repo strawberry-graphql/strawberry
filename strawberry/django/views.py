@@ -43,7 +43,7 @@ class GraphQLView(View):
             return render(
                 request,
                 "graphql/graphiql.html",
-                {"REQUEST_PATH": request.get_full_path()},
+                {"REQUEST_PATH": request.build_absolute_uri()},
             )
 
         data = json.loads(request.body)
