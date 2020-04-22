@@ -620,7 +620,7 @@ description = "pytest plugin for writing tests for mypy plugins"
 name = "pytest-mypy-plugins"
 optional = false
 python-versions = "*"
-version = "1.2.0"
+version = "1.3.0"
 
 [package.dependencies]
 decorator = "*"
@@ -812,7 +812,7 @@ django = ["django"]
 flask = ["flask"]
 
 [metadata]
-content-hash = "449afc99608da68d78e35ed54fb3bd25c5356e168513071cd5ace9a424cd8f2a"
+content-hash = "02864a8c21aa7c9ab6dbc68f79b7edb3d7cbc3bcc01f2da072b9155518f834f7"
 python-versions = "^3.7"
 
 [metadata.files]
@@ -1131,8 +1131,8 @@ pytest-mock = [
     {file = "pytest_mock-3.1.0-py2.py3-none-any.whl", hash = "sha256:997729451dfc36b851a9accf675488c7020beccda15e11c75632ee3d1b1ccd71"},
 ]
 pytest-mypy-plugins = [
-    {file = "pytest-mypy-plugins-1.2.0.tar.gz", hash = "sha256:9012dddb48b27652b432a5b8102b3046d7da36a7a15a9cffa5b0d123484afe68"},
-    {file = "pytest_mypy_plugins-1.2.0-py3-none-any.whl", hash = "sha256:ca562a5e49ccbc8e46a6281050eae9ad6f10512b9000d36571c0fe78334b8ea3"},
+    {file = "pytest-mypy-plugins-1.3.0.tar.gz", hash = "sha256:7920a38520f914e849cafc81582318673bec8924ff71ee2d0f98dc738995d06d"},
+    {file = "pytest_mypy_plugins-1.3.0-py3-none-any.whl", hash = "sha256:db18943f8775260308a11948a42739c6789bbab8a1bafb64103e4429ce31dfc0"},
 ]
 pytz = [
     {file = "pytz-2019.3-py2.py3-none-any.whl", hash = "sha256:1c557d7d0e871de1f5ccd5833f60fb2550652da6be2693c1e02300743d21500d"},
