@@ -151,3 +151,41 @@ def test_types_not_included_in_the_union_are_rejected():
         ' of the field "hello" '
         "is not in the list of the types of the union: \"['A', 'B']\""
     )
+
+
+def test_named_union():
+    @strawberry.type
+    class A:
+        a: int
+
+    @strawberry.type
+    class B:
+        b: int
+
+    Result = strawberry.union("Result", (A, B))
+
+    @strawberry.type
+    class Query:
+        ab: Result = A(a=5)
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        __type(name: "Result") {
+            kind
+        }
+
+        ab {
+            __typename,
+
+            ... on A {
+                a
+            }
+        }
+    }"""
+
+    result = graphql_sync(schema, query, root_value=Query())
+
+    assert not result.errors
+    assert result.data["ab"] == {"__typename": "A", "a": 5}
+    assert result.data["__type"] == {"kind": "UNION"}

@@ -9,15 +9,11 @@ from graphql import (
     GraphQLList,
     GraphQLNonNull,
     GraphQLString,
-    GraphQLUnionType,
 )
 
-from .exceptions import (
-    MissingTypesForGenericError,
-    UnallowedReturnTypeForUnion,
-    WrongReturnTypeForUnion,
-)
+from .exceptions import MissingTypesForGenericError
 from .scalars import ID
+from .union import union
 from .utils.str_converters import to_camel_case
 from .utils.typing import is_generic, is_union
 
@@ -108,7 +104,7 @@ def get_graphql_type_for_annotation(
             non_none_types = [x for x in types if x != None.__class__]  # noqa:E721
 
             # optionals are represented as Union[type, None]
-            # todo use is_optional
+
             if len(non_none_types) == 1:
                 is_field_optional = True
                 graphql_type = get_graphql_type_for_annotation(
@@ -117,25 +113,7 @@ def get_graphql_type_for_annotation(
             else:
                 is_field_optional = None.__class__ in types
 
-                def _resolve_type(self, value, _type):
-                    if not hasattr(self, "field"):
-                        raise WrongReturnTypeForUnion(value.field_name, str(type(self)))
-
-                    if self.field not in _type.types:
-                        raise UnallowedReturnTypeForUnion(
-                            value.field_name, str(type(self)), _type.types
-                        )
-
-                    return self.field
-
-                # TODO: union types don't work with scalar types
-                # so we want to return a nice error
-                # also we want to make sure we have been passed
-                # strawberry types
-                graphql_type = GraphQLUnionType(
-                    field_name, [type.field for type in types]
-                )
-                graphql_type.resolve_type = _resolve_type
+                graphql_type = union(field_name, types)
         else:
             graphql_type = REGISTRY.get(annotation)
 
