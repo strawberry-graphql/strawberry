@@ -1,20 +1,16 @@
-import click
+import importlib
+import os
 import sys
 
-import os
+import click
+import hupper
+import uvicorn
 from starlette.applications import Starlette
 from starlette.middleware.cors import CORSMiddleware
-
-import importlib
-
-import uvicorn
-
-import hupper
-
 from strawberry.asgi import GraphQL
 
 
-@click.command("server", short_help='Starts debug server')
+@click.command("server", short_help="Starts debug server")
 @click.argument("module", type=str)
 @click.option("-h", "--host", default="0.0.0.0", type=str)
 @click.option("-p", "--port", default=8000, type=int)
@@ -35,9 +31,12 @@ def server(module, host, port):
 
     graphql_app = GraphQL(schema_module.schema, debug=True)
 
-    app.add_route("/graphql", graphql_app)
-    app.add_websocket_route("/graphql", graphql_app)
+    paths = ["/", "/graphql"]
 
-    print(f"Running strawberry on http://{host}:{port}/graphql 🍓")
+    for path in paths:
+        app.add_route(path, graphql_app)
+        app.add_websocket_route(path, graphql_app)
+
+    print(f"Running strawberry on http://{host}:{port}/ 🍓")
 
     uvicorn.run(app, host=host, port=port, log_level="error")
