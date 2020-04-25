@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.23.2 - 2020-04-25
+-------------------
+
+This releases updates the _debug server_ to serve the API on '/' as well as '/graphql'.
+
 0.23.1 - 2020-04-20
 -------------------
 
