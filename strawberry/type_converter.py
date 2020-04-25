@@ -33,21 +33,26 @@ def copy_annotation_with_types(annotation, *types):
     # away from GraphQL-Core or build our own tiny class wrapper that will
     # help with generic types, but this works ok for now.
     origin = annotation.__origin__
-    field = origin.field
-    TypeClass = type(field)
+    graphql_type = origin.graphql_type
+    TypeClass = type(graphql_type)
 
     types_replacement_map = dict(
         zip([param.__name__ for param in origin.__parameters__], types)
     )
-    copied_name = "".join([type.__name__.capitalize() for type in types]) + field.name
+    copied_name = (
+        "".join([type.__name__.capitalize() for type in types]) + graphql_type.name
+    )
 
-    extra_kwargs = {"description": field.description, "interfaces": field._interfaces}
+    extra_kwargs = {
+        "description": graphql_type.description,
+        "interfaces": graphql_type._interfaces,
+    }
 
     def get_fields():
         origin_fields = dict(
             (to_camel_case(f.name), f) for f in dataclasses.fields(origin)
         )
-        fields = field._fields(types_replacement_map)
+        fields = graphql_type._fields(types_replacement_map)
 
         for field_name in fields.keys():
             origin_field = origin_fields[field_name]
@@ -78,8 +83,8 @@ def get_graphql_type_for_annotation(
             raise MissingTypesForGenericError(field_name, annotation)
 
         graphql_type = copy_annotation_with_types(annotation, *types)
-    elif hasattr(annotation, "field"):
-        graphql_type = annotation.field
+    elif hasattr(annotation, "graphql_type"):
+        graphql_type = annotation.graphql_type
     else:
         annotation_name = getattr(annotation, "_name", None)
 
@@ -113,7 +118,7 @@ def get_graphql_type_for_annotation(
             else:
                 is_field_optional = None.__class__ in types
 
-                graphql_type = union(field_name, types)
+                graphql_type = union(field_name, types).graphql_type
         else:
             graphql_type = REGISTRY.get(annotation)
 

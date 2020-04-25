@@ -12,7 +12,7 @@ from .utils.typing import get_actual_type
 
 def _interface_resolve_type(result, info, return_type):
     """Resolves the correct type for an interface"""
-    return result.__class__.field
+    return result.__class__.graphql_type
 
 
 def _get_resolver(cls, field_name):
@@ -66,7 +66,7 @@ def _process_type(cls, *, is_input=False, is_interface=False, description=None):
                 is_input=is_input,
                 description=description,
                 permission_classes=permission_classes,
-            ).field
+            ).graphql_type
 
         strawberry_fields = {}
 
@@ -82,7 +82,7 @@ def _process_type(cls, *, is_input=False, is_interface=False, description=None):
         for key, value in strawberry_fields.items():
             name = getattr(value, "field_name", None) or to_camel_case(key)
 
-            fields[name] = value.field
+            fields[name] = value.graphql_type
 
         return fields
 
@@ -108,12 +108,12 @@ def _process_type(cls, *, is_input=False, is_interface=False, description=None):
         TypeClass = GraphQLObjectType
 
         extra_kwargs["interfaces"] = [
-            klass.field
+            klass.graphql_type
             for klass in cls.__bases__
             if hasattr(klass, IS_STRAWBERRY_INTERFACE)
         ]
 
-    wrapped.field = TypeClass(
+    wrapped.graphql_type = TypeClass(
         name,
         lambda types_replacement_map=None: _get_fields(wrapped, types_replacement_map),
         **extra_kwargs

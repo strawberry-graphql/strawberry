@@ -40,13 +40,11 @@ def test_union():
 
     assert field.of_type.name == "Example1"
 
-    assert A.field in field.of_type.types
-    assert B.field in field.of_type.types
+    assert A.graphql_type in field.of_type.types
+    assert B.graphql_type in field.of_type.types
 
 
 def test_optional_scalar():
-    # import pdb; pdb.set_trace()
-
     field = get_graphql_type_for_annotation(Optional[str], "Example2")
 
     assert type(field) == GraphQLScalarType

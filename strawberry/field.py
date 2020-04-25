@@ -100,7 +100,7 @@ class LazyFieldWrapper:
                 raise PermissionError(message)
 
     @lazy_property
-    def field(self):
+    def graphql_type(self):
         return _get_field(
             self._wrapped_obj,
             is_input=self.is_input,

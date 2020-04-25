@@ -24,14 +24,14 @@ def test_field_arguments():
     def hello(self, info, id: int) -> str:
         return "I'm a resolver"
 
-    assert hello.field
+    assert hello.graphql_type
 
-    assert type(hello.field) == GraphQLField
-    assert type(hello.field.type) == GraphQLNonNull
-    assert hello.field.type.of_type.name == "String"
+    assert type(hello.graphql_type) == GraphQLField
+    assert type(hello.graphql_type.type) == GraphQLNonNull
+    assert hello.graphql_type.type.of_type.name == "String"
 
-    assert type(hello.field.args["id"].type) == GraphQLNonNull
-    assert hello.field.args["id"].type.of_type.name == "Int"
+    assert type(hello.graphql_type.args["id"].type) == GraphQLNonNull
+    assert hello.graphql_type.args["id"].type.of_type.name == "Int"
 
 
 def test_field_default_arguments_are_optional():
@@ -39,17 +39,17 @@ def test_field_default_arguments_are_optional():
     def hello(self, info, test: int, id: int = 1, asdf: str = "hello") -> str:
         return "I'm a resolver"
 
-    assert hello.field
+    assert hello.graphql_type
 
-    assert type(hello.field) == GraphQLField
-    assert type(hello.field.type) == GraphQLNonNull
-    assert hello.field.type.of_type.name == "String"
+    assert type(hello.graphql_type) == GraphQLField
+    assert type(hello.graphql_type.type) == GraphQLNonNull
+    assert hello.graphql_type.type.of_type.name == "String"
 
-    assert type(hello.field.args["id"].type) == GraphQLScalarType
-    assert hello.field.args["id"].type.name == "Int"
+    assert type(hello.graphql_type.args["id"].type) == GraphQLScalarType
+    assert hello.graphql_type.args["id"].type.name == "Int"
 
-    assert type(hello.field.args["asdf"].type) == GraphQLScalarType
-    assert hello.field.args["asdf"].type.name == "String"
+    assert type(hello.graphql_type.args["asdf"].type) == GraphQLScalarType
+    assert hello.graphql_type.args["asdf"].type.name == "String"
 
 
 def test_field_default_optional_argument_custom_type():
@@ -63,17 +63,17 @@ def test_field_default_optional_argument_custom_type():
     ) -> str:
         return "I'm a resolver"
 
-    assert hello.field
+    assert hello.graphql_type
 
-    assert type(hello.field) == GraphQLField
-    assert type(hello.field.type) == GraphQLNonNull
-    assert hello.field.type.of_type.name == "String"
+    assert type(hello.graphql_type) == GraphQLField
+    assert type(hello.graphql_type.type) == GraphQLNonNull
+    assert hello.graphql_type.type.of_type.name == "String"
 
-    assert type(hello.field.args["required"].type) == GraphQLNonNull
-    assert hello.field.args["required"].type.of_type.name == "CustomInputType"
+    assert type(hello.graphql_type.args["required"].type) == GraphQLNonNull
+    assert hello.graphql_type.args["required"].type.of_type.name == "CustomInputType"
 
-    assert type(hello.field.args["optional"].type) == GraphQLInputObjectType
-    assert hello.field.args["optional"].type.name == "CustomInputType"
+    assert type(hello.graphql_type.args["optional"].type) == GraphQLInputObjectType
+    assert hello.graphql_type.args["optional"].type.name == "CustomInputType"
 
 
 def test_raises_error_when_return_annotation_missing():

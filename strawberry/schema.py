@@ -23,12 +23,12 @@ class Schema(GraphQLSchema):
                       to be manually registered
         """
         super().__init__(
-            query=query.field,
-            mutation=mutation.field if mutation else None,
-            subscription=subscription.field if subscription else None,
+            query=query.graphql_type,
+            mutation=mutation.graphql_type if mutation else None,
+            subscription=subscription.graphql_type if subscription else None,
             directives=specified_directives
             + [directive.directive for directive in directives],
-            types=[type.field for type in types],
+            types=[type.graphql_type for type in types],
         )
 
     def __repr__(self):
