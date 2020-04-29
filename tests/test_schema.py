@@ -579,18 +579,27 @@ def test_optional_info_and_root_params():
         def hello_with_params(self, x: str) -> str:
             return f"I'm {x}"
 
+        @strawberry.field
+        def uses_self(self) -> str:
+            return f"I'm {self._example}"
+
+        def __post_init__(self):
+            self._example = "self"
+
     schema = strawberry.Schema(query=Query)
 
     query = """{
         hello
         helloWithParams(x: "abc")
+        usesSelf
     }"""
 
-    result = graphql_sync(schema, query)
+    result = graphql_sync(schema, query, root_value=Query())
 
     assert not result.errors
     assert result.data["hello"] == "I'm a function resolver"
     assert result.data["helloWithParams"] == "I'm abc"
+    assert result.data["usesSelf"] == "I'm self"
 
 
 def test_only_info_function_resolvers():

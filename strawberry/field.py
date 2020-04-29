@@ -226,7 +226,7 @@ def _get_field(
         args = []
 
         if "self" in function_args:
-            args.append(wrap)
+            args.append(source)
 
         if "root" in function_args:
             kwargs["root"] = source
