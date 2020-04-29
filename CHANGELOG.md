@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.23.3 - 2020-04-29
+-------------------
+
+This release fixes the dependecy of GraphQL-core
+
 0.23.2 - 2020-04-25
 -------------------
 
