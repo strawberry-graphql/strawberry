@@ -62,37 +62,6 @@ d = ["aiohttp (>=3.3.2)", "aiohttp-cors"]
 
 [[package]]
 category = "dev"
-description = "A thin, practical wrapper around terminal coloring, styling, and positioning"
-name = "blessings"
-optional = false
-python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
-version = "1.7"
-
-[package.dependencies]
-six = "*"
-
-[[package]]
-category = "dev"
-description = "Fancy Interface to the Python Interpreter"
-name = "bpython"
-optional = false
-python-versions = "*"
-version = "0.19"
-
-[package.dependencies]
-curtsies = ">=0.1.18"
-greenlet = "*"
-pygments = "*"
-requests = "*"
-six = ">=1.5"
-
-[package.extras]
-jedi = ["jedi"]
-urwid = ["urwid"]
-watch = ["watchdog"]
-
-[[package]]
-category = "dev"
 description = "Python package for providing Mozilla's CA Bundle."
 name = "certifi"
 optional = false
@@ -134,18 +103,6 @@ version = "5.1"
 
 [package.extras]
 toml = ["toml"]
-
-[[package]]
-category = "dev"
-description = "Curses-like terminal wrapper, with colored strings!"
-name = "curtsies"
-optional = false
-python-versions = "*"
-version = "0.3.1"
-
-[package.dependencies]
-blessings = ">=1.5"
-wcwidth = ">=0.1.4"
 
 [[package]]
 category = "dev"
@@ -244,14 +201,6 @@ name = "graphql-core"
 optional = false
 python-versions = ">=3.6,<4"
 version = "3.1.0"
-
-[[package]]
-category = "dev"
-description = "Lightweight in-process concurrent programming"
-name = "greenlet"
-optional = false
-python-versions = "*"
-version = "0.4.15"
 
 [[package]]
 category = "main"
@@ -815,7 +764,7 @@ django = ["django"]
 flask = ["flask"]
 
 [metadata]
-content-hash = "9175a29d94f9237718338d3109dd5fdbe0ceeae994887a596177b19352b42823"
+content-hash = "27c1f92d6015718462e4a65a08c97e6054c4656b668b4ffe61b8cd7c2e8fdda2"
 python-versions = "^3.7"
 
 [metadata.files]
@@ -838,15 +787,6 @@ attrs = [
 black = [
     {file = "black-19.10b0-py36-none-any.whl", hash = "sha256:1b30e59be925fafc1ee4565e5e08abef6b03fe455102883820fe5ee2e4734e0b"},
     {file = "black-19.10b0.tar.gz", hash = "sha256:c2edb73a08e9e0e6f65a0e6af18b059b8b1cdd5bef997d7a0b181df93dc81539"},
-]
-blessings = [
-    {file = "blessings-1.7-py2-none-any.whl", hash = "sha256:caad5211e7ba5afe04367cdd4cfc68fa886e2e08f6f35e76b7387d2109ccea6e"},
-    {file = "blessings-1.7-py3-none-any.whl", hash = "sha256:b1fdd7e7a675295630f9ae71527a8ebc10bfefa236b3d6aa4932ee4462c17ba3"},
-    {file = "blessings-1.7.tar.gz", hash = "sha256:98e5854d805f50a5b58ac2333411b0482516a8210f23f43308baeb58d77c157d"},
-]
-bpython = [
-    {file = "bpython-0.19-py2.py3-none-any.whl", hash = "sha256:95d95783bfadfa0a25300a648de5aba4423b0ee76b034022a81dde2b5e853c00"},
-    {file = "bpython-0.19.tar.gz", hash = "sha256:476ce09a896c4d34bf5e56aca64650c56fdcfce45781a20dc1521221df8cc49c"},
 ]
 certifi = [
     {file = "certifi-2020.4.5.1-py2.py3-none-any.whl", hash = "sha256:1d987a998c75633c40847cc966fcf5904906c920a7f17ef374f5aa4282abd304"},
@@ -897,10 +837,6 @@ coverage = [
     {file = "coverage-5.1-cp39-cp39-win_amd64.whl", hash = "sha256:bb28a7245de68bf29f6fb199545d072d1036a1917dca17a1e75bbb919e14ee8e"},
     {file = "coverage-5.1.tar.gz", hash = "sha256:f90bfc4ad18450c80b024036eaf91e4a246ae287701aaa88eaebebf150868052"},
 ]
-curtsies = [
-    {file = "curtsies-0.3.1-py2.py3-none-any.whl", hash = "sha256:9169d734323a1356e7563b1ca0bff3c5358c1b1dcce52506a9d4d8ab8a8f5604"},
-    {file = "curtsies-0.3.1.tar.gz", hash = "sha256:b2c913a8113c4382e1a221679f2338139b112839deb16c00ee873e57a4b33bd4"},
-]
 decorator = [
     {file = "decorator-4.4.2-py2.py3-none-any.whl", hash = "sha256:41fa54c2a0cc4ba648be4fd43cff00aedf5b9465c9bf18d64325bc225f08f760"},
     {file = "decorator-4.4.2.tar.gz", hash = "sha256:e3a62f0520172440ca0dcc823749319382e377f37f140a0b99ef45fecb84bfe7"},
@@ -932,30 +868,6 @@ flask = [
 graphql-core = [
     {file = "graphql-core-3.1.0.tar.gz", hash = "sha256:d43cf1f149772c7014656d4bc4c512278a16722e80e4be2daf99894ffef871db"},
     {file = "graphql_core-3.1.0-py3-none-any.whl", hash = "sha256:b654666330c46d6a98405a542e9fde0a499916428cbc11da51eb82be37ef1e05"},
-]
-greenlet = [
-    {file = "greenlet-0.4.15-cp27-cp27m-manylinux1_x86_64.whl", hash = "sha256:99a26afdb82ea83a265137a398f570402aa1f2b5dfb4ac3300c026931817b163"},
-    {file = "greenlet-0.4.15-cp27-cp27m-win32.whl", hash = "sha256:beeabe25c3b704f7d56b573f7d2ff88fc99f0138e43480cecdfcaa3b87fe4f87"},
-    {file = "greenlet-0.4.15-cp27-cp27m-win_amd64.whl", hash = "sha256:9854f612e1b59ec66804931df5add3b2d5ef0067748ea29dc60f0efdcda9a638"},
-    {file = "greenlet-0.4.15-cp27-cp27mu-manylinux1_x86_64.whl", hash = "sha256:ac57fcdcfb0b73bb3203b58a14501abb7e5ff9ea5e2edfa06bb03035f0cff248"},
-    {file = "greenlet-0.4.15-cp33-cp33m-win32.whl", hash = "sha256:d634a7ea1fc3380ff96f9e44d8d22f38418c1c381d5fac680b272d7d90883720"},
-    {file = "greenlet-0.4.15-cp33-cp33m-win_amd64.whl", hash = "sha256:0d48200bc50cbf498716712129eef819b1729339e34c3ae71656964dac907c28"},
-    {file = "greenlet-0.4.15-cp34-cp34m-manylinux1_x86_64.whl", hash = "sha256:bcb530089ff24f6458a81ac3fa699e8c00194208a724b644ecc68422e1111939"},
-    {file = "greenlet-0.4.15-cp34-cp34m-win32.whl", hash = "sha256:8b4572c334593d449113f9dc8d19b93b7b271bdbe90ba7509eb178923327b625"},
-    {file = "greenlet-0.4.15-cp34-cp34m-win_amd64.whl", hash = "sha256:a9f145660588187ff835c55a7d2ddf6abfc570c2651c276d3d4be8a2766db490"},
-    {file = "greenlet-0.4.15-cp35-cp35m-manylinux1_x86_64.whl", hash = "sha256:51503524dd6f152ab4ad1fbd168fc6c30b5795e8c70be4410a64940b3abb55c0"},
-    {file = "greenlet-0.4.15-cp35-cp35m-win32.whl", hash = "sha256:a19bf883b3384957e4a4a13e6bd1ae3d85ae87f4beb5957e35b0be287f12f4e4"},
-    {file = "greenlet-0.4.15-cp35-cp35m-win_amd64.whl", hash = "sha256:853da4f9563d982e4121fed8c92eea1a4594a2299037b3034c3c898cb8e933d6"},
-    {file = "greenlet-0.4.15-cp36-cp36m-manylinux1_x86_64.whl", hash = "sha256:23d12eacffa9d0f290c0fe0c4e81ba6d5f3a5b7ac3c30a5eaf0126bf4deda5c8"},
-    {file = "greenlet-0.4.15-cp36-cp36m-win32.whl", hash = "sha256:000546ad01e6389e98626c1367be58efa613fa82a1be98b0c6fc24b563acc6d0"},
-    {file = "greenlet-0.4.15-cp36-cp36m-win_amd64.whl", hash = "sha256:d97b0661e1aead761f0ded3b769044bb00ed5d33e1ec865e891a8b128bf7c656"},
-    {file = "greenlet-0.4.15-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:8041e2de00e745c0e05a502d6e6db310db7faa7c979b3a5877123548a4c0b214"},
-    {file = "greenlet-0.4.15-cp37-cp37m-win32.whl", hash = "sha256:81fcd96a275209ef117e9ec91f75c731fa18dcfd9ffaa1c0adbdaa3616a86043"},
-    {file = "greenlet-0.4.15-cp37-cp37m-win_amd64.whl", hash = "sha256:37c9ba82bd82eb6a23c2e5acc03055c0e45697253b2393c9a50cef76a3985304"},
-    {file = "greenlet-0.4.15-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:e538b8dae561080b542b0f5af64d47ef859f22517f7eca617bb314e0e03fd7ef"},
-    {file = "greenlet-0.4.15-cp38-cp38-win32.whl", hash = "sha256:51155342eb4d6058a0ffcd98a798fe6ba21195517da97e15fca3db12ab201e6e"},
-    {file = "greenlet-0.4.15-cp38-cp38-win_amd64.whl", hash = "sha256:7457d685158522df483196b16ec648b28f8e847861adb01a55d41134e7734122"},
-    {file = "greenlet-0.4.15.tar.gz", hash = "sha256:9416443e219356e3c31f1f918a91badf2e37acf297e2fa13d24d1cc2380f8fbc"},
 ]
 h11 = [
     {file = "h11-0.9.0-py2.py3-none-any.whl", hash = "sha256:4bc6d6a1238b7615b266ada57e0618568066f57dd6fa967d1290ec9309b2f2f1"},
