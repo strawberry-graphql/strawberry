@@ -75,6 +75,7 @@ def union(name: str, types: typing.Tuple[typing.Type], *, description=None):
             get_graphql_type_for_annotation(type, name, force_optional=True)
             for type in types
         ],
+        description=description,
     )
     graphql_type.resolve_type = _resolve_type
 

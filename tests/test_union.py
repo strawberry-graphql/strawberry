@@ -173,6 +173,7 @@ def test_named_union():
     query = """{
         __type(name: "Result") {
             kind
+            description
         }
 
         ab {
@@ -188,4 +189,43 @@ def test_named_union():
 
     assert not result.errors
     assert result.data["ab"] == {"__typename": "A", "a": 5}
-    assert result.data["__type"] == {"kind": "UNION"}
+    assert result.data["__type"] == {"kind": "UNION", "description": None}
+
+
+def test_named_union_description():
+    @strawberry.type
+    class A:
+        a: int
+
+    @strawberry.type
+    class B:
+        b: int
+
+    Result = strawberry.union("Result", (A, B), description="Example Result")
+
+    @strawberry.type
+    class Query:
+        ab: Result = A(a=5)
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        __type(name: "Result") {
+            kind
+            description
+        }
+
+        ab {
+            __typename,
+
+            ... on A {
+                a
+            }
+        }
+    }"""
+
+    result = graphql_sync(schema, query, root_value=Query())
+
+    assert not result.errors
+    assert result.data["ab"] == {"__typename": "A", "a": 5}
+    assert result.data["__type"] == {"kind": "UNION", "description": "Example Result"}
