@@ -373,3 +373,43 @@ def test_supports_generic_in_unions():
     assert result.data == {
         "example": {"__typename": "IntEdge", "cursor": "1", "node": 1}
     }
+
+
+def test_supports_generic_in_unions_multiple_vars():
+    A = typing.TypeVar("A")
+    B = typing.TypeVar("B")
+
+    @strawberry.type
+    class Edge(typing.Generic[A, B]):
+        node: B
+        info: A
+
+    @strawberry.type
+    class Fallback:
+        node: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def example(self, info, **kwargs) -> typing.Union[Fallback, Edge[int, str]]:
+            return Edge(node="string", info=1)
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        example {
+            __typename
+
+            ... on IntStrEdge {
+                node
+                info
+            }
+        }
+    }"""
+
+    result = graphql_sync(schema, query)
+
+    assert not result.errors
+    assert result.data == {
+        "example": {"__typename": "IntStrEdge", "node": "string", "info": 1}
+    }

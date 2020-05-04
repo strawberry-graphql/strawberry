@@ -8,13 +8,19 @@ from .utils.typing import is_generic, is_type_var
 
 def _find_type_for_generic_union(root):
     # might need to preserve ordering (typing.Generic[T, V] vs typing.Generic[V, T])
-    type_var_fields = [
-        field_name
-        for field_name, field_type in root.__annotations__.items()
-        if is_type_var(field_type)
-    ]
 
-    types = tuple(type(getattr(root, field)) for field in type_var_fields)
+    # this is a ordered tuple of the type vars for the generic class, so for
+    # typing.Generic[T, V] it would return (T, V)
+    type_params = root.__parameters__
+
+    # we map ~T to the actual type of root
+    type_var_to_actual_type = {
+        var: type(getattr(root, field_name))
+        for field_name, var in root.__annotations__.items()
+        if is_type_var(var)
+    }
+
+    types = tuple(type_var_to_actual_type[param] for param in type_params)
 
     return root._copies[types]
 
