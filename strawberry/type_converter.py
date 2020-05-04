@@ -64,7 +64,14 @@ def copy_annotation_with_types(annotation, *types):
 
         return fields
 
-    return TypeClass(copied_name, get_fields, **extra_kwargs)
+    new_type = TypeClass(copied_name, get_fields, **extra_kwargs)
+
+    if not hasattr(origin, "_copies"):
+        origin._copies = {}
+
+    origin._copies[types] = new_type
+
+    return new_type
 
 
 # TODO: make so that we don't pass force optional
