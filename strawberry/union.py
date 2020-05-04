@@ -79,6 +79,12 @@ def union(name: str, types: typing.Tuple[typing.Type], *, description=None):
     )
     graphql_type.resolve_type = _resolve_type
 
+    # This is currently a temporary solution, this is ok for now
+    # But in future we might want to change this so that it works
+    # properly with mypy, but there's no way to return a type like NewType does
+    # so we return this class instance as it allows us to reuse the rest of
+    # our code without doing too many changes
+
     class X:
         def __init__(self, graphql_type):
             self.graphql_type = graphql_type
