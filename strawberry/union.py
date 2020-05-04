@@ -6,21 +6,29 @@ from .exceptions import UnallowedReturnTypeForUnion, WrongReturnTypeForUnion
 from .utils.typing import is_generic, is_type_var
 
 
-def _find_type_for_generic_union(root):
-    # might need to preserve ordering (typing.Generic[T, V] vs typing.Generic[V, T])
+def _get_type_mapping_from_actual_type(root) -> typing.Dict[typing.Any, typing.Type]:
+    # we map ~T to the actual type of root
+    type_var_to_actual_type = {}
 
+    for field_name, annotation in root.__annotations__.items():
+        if is_type_var(annotation):
+            type_var_to_actual_type[annotation] = type(getattr(root, field_name))
+
+        if is_generic(annotation):
+            type_var_to_actual_type.update(
+                _get_type_mapping_from_actual_type(getattr(root, field_name))
+            )
+
+    return type_var_to_actual_type
+
+
+def _find_type_for_generic_union(root: typing.Any) -> typing.Type:
     # this is a ordered tuple of the type vars for the generic class, so for
     # typing.Generic[T, V] it would return (T, V)
     type_params = root.__parameters__
 
-    # we map ~T to the actual type of root
-    type_var_to_actual_type = {
-        var: type(getattr(root, field_name))
-        for field_name, var in root.__annotations__.items()
-        if is_type_var(var)
-    }
-
-    types = tuple(type_var_to_actual_type[param] for param in type_params)
+    mapping = _get_type_mapping_from_actual_type(root)
+    types = tuple(mapping[param] for param in type_params)
 
     return root._copies[types]
 
