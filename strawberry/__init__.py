@@ -11,3 +11,4 @@ from .type import input, type, interface  # noqa
 from .types import *  # noqa
 from .permission import BasePermission  # noqa
 from .directive import directive  # noqa
+from .union import union  # noqa

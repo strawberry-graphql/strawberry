@@ -34,18 +34,18 @@ def test_union():
     class B:
         x: int
 
-    field = get_graphql_type_for_annotation(Union[A, B], "Example")
+    field = get_graphql_type_for_annotation(Union[A, B], "Example1")
 
     assert type(field) == GraphQLNonNull
 
-    assert field.of_type.name == "Example"
+    assert field.of_type.name == "Example1"
 
-    assert A.field in field.of_type.types
-    assert B.field in field.of_type.types
+    assert A.graphql_type in field.of_type.types
+    assert B.graphql_type in field.of_type.types
 
 
 def test_optional_scalar():
-    field = get_graphql_type_for_annotation(Optional[str], "Example")
+    field = get_graphql_type_for_annotation(Optional[str], "Example2")
 
     assert type(field) == GraphQLScalarType
     assert field.name == "String"
@@ -56,14 +56,14 @@ def test_optional_object_type():
     class A:
         x: int
 
-    field = get_graphql_type_for_annotation(Optional[A], "Example")
+    field = get_graphql_type_for_annotation(Optional[A], "Example3")
 
     assert type(field) == GraphQLObjectType
     assert field.name == "A"
 
 
 def test_list_of_scalar():
-    field = get_graphql_type_for_annotation(Optional[List[str]], "Example")
+    field = get_graphql_type_for_annotation(Optional[List[str]], "Example4")
 
     assert type(field) == GraphQLList
     assert type(field.of_type) == GraphQLNonNull

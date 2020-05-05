@@ -9,16 +9,12 @@ from graphql import (
     GraphQLList,
     GraphQLNonNull,
     GraphQLString,
-    GraphQLUnionType,
 )
 
-from .exceptions import (
-    MissingTypesForGenericError,
-    UnallowedReturnTypeForUnion,
-    WrongReturnTypeForUnion,
-)
+from .exceptions import MissingTypesForGenericError
 from .scalars import ID
-from .utils.str_converters import to_camel_case
+from .union import union
+from .utils.str_converters import capitalize_first, to_camel_case
 from .utils.typing import is_generic, is_union
 
 
@@ -37,21 +33,26 @@ def copy_annotation_with_types(annotation, *types):
     # away from GraphQL-Core or build our own tiny class wrapper that will
     # help with generic types, but this works ok for now.
     origin = annotation.__origin__
-    field = origin.field
-    TypeClass = type(field)
+    graphql_type = origin.graphql_type
+    TypeClass = type(graphql_type)
 
     types_replacement_map = dict(
         zip([param.__name__ for param in origin.__parameters__], types)
     )
-    copied_name = "".join([type.__name__.capitalize() for type in types]) + field.name
+    copied_name = (
+        "".join([capitalize_first(type.__name__) for type in types]) + graphql_type.name
+    )
 
-    extra_kwargs = {"description": field.description, "interfaces": field._interfaces}
+    extra_kwargs = {
+        "description": graphql_type.description,
+        "interfaces": graphql_type._interfaces,
+    }
 
     def get_fields():
         origin_fields = dict(
             (to_camel_case(f.name), f) for f in dataclasses.fields(origin)
         )
-        fields = field._fields(types_replacement_map)
+        fields = graphql_type._fields(types_replacement_map)
 
         for field_name in fields.keys():
             origin_field = origin_fields[field_name]
@@ -63,7 +64,19 @@ def copy_annotation_with_types(annotation, *types):
 
         return fields
 
-    return TypeClass(copied_name, get_fields, **extra_kwargs)
+    new_type = TypeClass(copied_name, get_fields, **extra_kwargs)
+
+    # we use _copied to easily find a previously created type,
+    # this is used by unions when needing to find the proper GraphQL
+    # type when returning something
+    # TODO: we could use this to prevent running all the code above
+
+    if not hasattr(origin, "_copies"):
+        origin._copies = {}
+
+    origin._copies[types] = new_type
+
+    return new_type
 
 
 # TODO: make so that we don't pass force optional
@@ -82,8 +95,8 @@ def get_graphql_type_for_annotation(
             raise MissingTypesForGenericError(field_name, annotation)
 
         graphql_type = copy_annotation_with_types(annotation, *types)
-    elif hasattr(annotation, "field"):
-        graphql_type = annotation.field
+    elif hasattr(annotation, "graphql_type"):
+        graphql_type = annotation.graphql_type
     else:
         annotation_name = getattr(annotation, "_name", None)
 
@@ -108,7 +121,7 @@ def get_graphql_type_for_annotation(
             non_none_types = [x for x in types if x != None.__class__]  # noqa:E721
 
             # optionals are represented as Union[type, None]
-            # todo use is_optional
+
             if len(non_none_types) == 1:
                 is_field_optional = True
                 graphql_type = get_graphql_type_for_annotation(
@@ -117,25 +130,7 @@ def get_graphql_type_for_annotation(
             else:
                 is_field_optional = None.__class__ in types
 
-                def _resolve_type(self, value, _type):
-                    if not hasattr(self, "field"):
-                        raise WrongReturnTypeForUnion(value.field_name, str(type(self)))
-
-                    if self.field not in _type.types:
-                        raise UnallowedReturnTypeForUnion(
-                            value.field_name, str(type(self)), _type.types
-                        )
-
-                    return self.field
-
-                # TODO: union types don't work with scalar types
-                # so we want to return a nice error
-                # also we want to make sure we have been passed
-                # strawberry types
-                graphql_type = GraphQLUnionType(
-                    field_name, [type.field for type in types]
-                )
-                graphql_type.resolve_type = _resolve_type
+                graphql_type = union(field_name, types).graphql_type
         else:
             graphql_type = REGISTRY.get(annotation)
 

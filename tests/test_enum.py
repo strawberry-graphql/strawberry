@@ -16,12 +16,12 @@ def test_create_enum():
         C = "a"
         D = "o"
 
-    assert StringTest.field
+    assert StringTest.graphql_type
 
-    assert type(StringTest.field) == GraphQLEnumType
-    assert StringTest.field.name == "StringTest"
+    assert type(StringTest.graphql_type) == GraphQLEnumType
+    assert StringTest.graphql_type.name == "StringTest"
 
-    assert StringTest.field.values == {
+    assert StringTest.graphql_type.values == {
         "A": GraphQLEnumValue("c"),
         "B": GraphQLEnumValue("i"),
         "C": GraphQLEnumValue("a"),
@@ -34,12 +34,12 @@ def test_create_enum():
         B = 2
         C = 3
 
-    assert IntTest.field
+    assert IntTest.graphql_type
 
-    assert type(IntTest.field) == GraphQLEnumType
-    assert IntTest.field.name == "IntTest"
+    assert type(IntTest.graphql_type) == GraphQLEnumType
+    assert IntTest.graphql_type.name == "IntTest"
 
-    assert IntTest.field.values == {
+    assert IntTest.graphql_type.values == {
         "A": GraphQLEnumValue(1),
         "B": GraphQLEnumValue(2),
         "C": GraphQLEnumValue(3),
@@ -65,12 +65,12 @@ def test_create_enum():
             G = 6.67300e-11
             return G * self.mass / (self.radius * self.radius)
 
-    assert ComplexTest.field
+    assert ComplexTest.graphql_type
 
-    assert type(ComplexTest.field) == GraphQLEnumType
-    assert ComplexTest.field.name == "ComplexTest"
+    assert type(ComplexTest.graphql_type) == GraphQLEnumType
+    assert ComplexTest.graphql_type.name == "ComplexTest"
 
-    assert ComplexTest.field.values == {
+    assert ComplexTest.graphql_type.values == {
         "MERCURY": GraphQLEnumValue((3.303e23, 2.4397e6)),
         "VENUS": GraphQLEnumValue((4.869e24, 6.0518e6)),
         "EARTH": GraphQLEnumValue((5.976e24, 6.37814e6)),
@@ -89,10 +89,10 @@ def test_create_enum_with_custom_name():
         B = 2
         C = 3
 
-    assert Test.field
+    assert Test.graphql_type
 
-    assert type(Test.field) == GraphQLEnumType
-    assert Test.field.name == "NewName"
+    assert type(Test.graphql_type) == GraphQLEnumType
+    assert Test.graphql_type.name == "NewName"
 
 
 def test_create_enum_with_arguments():
@@ -102,11 +102,11 @@ def test_create_enum_with_arguments():
         B = 2
         C = 3
 
-    assert Test.field
+    assert Test.graphql_type
 
-    assert type(Test.field) == GraphQLEnumType
-    assert Test.field.name == "NewName"
-    assert Test.field.description == "This is the description"
+    assert type(Test.graphql_type) == GraphQLEnumType
+    assert Test.graphql_type.name == "NewName"
+    assert Test.graphql_type.description == "This is the description"
 
     @strawberry.enum(name="Example")
     class Test2(Enum):
@@ -116,11 +116,11 @@ def test_create_enum_with_arguments():
         B = 2
         C = 3
 
-    assert Test.field
+    assert Test.graphql_type
 
-    assert type(Test2.field) == GraphQLEnumType
-    assert Test2.field.name == "Example"
-    assert Test2.field.description == "Example"
+    assert type(Test2.graphql_type) == GraphQLEnumType
+    assert Test2.graphql_type.name == "Example"
+    assert Test2.graphql_type.description == "Example"
 
 
 def test_raises_error_when_using_enum_with_a_not_enum_class():

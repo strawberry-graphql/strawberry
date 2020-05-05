@@ -17,7 +17,7 @@ def _process_enum(cls, name=None, description=None):
 
     description = description or cls.__doc__
 
-    cls.field = GraphQLEnumType(
+    cls.graphql_type = GraphQLEnumType(
         name=name,
         values=[(item.name, GraphQLEnumValue(item.value)) for item in cls],
         description=description,

@@ -334,3 +334,226 @@ def test_can_extend_generics():
             "edges": [{"__typename": "UserEdge", "node": {"name": "Patrick"}}],
         }
     }
+
+
+def test_supports_generic_in_unions():
+    T = typing.TypeVar("T")
+
+    @strawberry.type
+    class Edge(typing.Generic[T]):
+        cursor: strawberry.ID
+        node: T
+
+    @strawberry.type
+    class Fallback:
+        node: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def example(self, info, **kwargs) -> typing.Union[Fallback, Edge[int]]:
+            return Edge(cursor=strawberry.ID("1"), node=1)
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        example {
+            __typename
+
+            ... on IntEdge {
+                cursor
+                node
+            }
+        }
+    }"""
+
+    result = graphql_sync(schema, query)
+
+    assert not result.errors
+    assert result.data == {
+        "example": {"__typename": "IntEdge", "cursor": "1", "node": 1}
+    }
+
+
+def test_supports_generic_in_unions_multiple_vars():
+    A = typing.TypeVar("A")
+    B = typing.TypeVar("B")
+
+    @strawberry.type
+    class Edge(typing.Generic[A, B]):
+        node: B
+        info: A
+
+    @strawberry.type
+    class Fallback:
+        node: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def example(self, info, **kwargs) -> typing.Union[Fallback, Edge[int, str]]:
+            return Edge(node="string", info=1)
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        example {
+            __typename
+
+            ... on IntStrEdge {
+                node
+                info
+            }
+        }
+    }"""
+
+    result = graphql_sync(schema, query)
+
+    assert not result.errors
+    assert result.data == {
+        "example": {"__typename": "IntStrEdge", "node": "string", "info": 1}
+    }
+
+
+def test_supports_generic_in_unions_with_nesting():
+    T = typing.TypeVar("T")
+
+    @strawberry.type
+    class User:
+        name: str
+
+    @strawberry.type
+    class Edge(typing.Generic[T]):
+        node: T
+
+    @strawberry.type
+    class Connection(typing.Generic[T]):
+        edge: Edge[T]
+
+    @strawberry.type
+    class Fallback:
+        node: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def users(self, info, **kwargs) -> typing.Union[Connection[User], Fallback]:
+            return Connection(edge=Edge(node=User("Patrick")))
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        users {
+            __typename
+            ... on UserConnection {
+                edge {
+                    __typename
+                    node {
+                        name
+                    }
+                }
+            }
+        }
+    }"""
+
+    result = graphql_sync(schema, query)
+
+    assert not result.errors
+    assert result.data == {
+        "users": {
+            "__typename": "UserConnection",
+            "edge": {"__typename": "UserEdge", "node": {"name": "Patrick"}},
+        }
+    }
+
+
+def test_supports_multiple_generics_in_union():
+    T = typing.TypeVar("T")
+
+    @strawberry.type
+    class Edge(typing.Generic[T]):
+        cursor: strawberry.ID
+        node: T
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def example(
+            self, info, **kwargs
+        ) -> typing.List[typing.Union[Edge[int], Edge[str]]]:
+            return [
+                Edge(cursor=strawberry.ID("1"), node=1),
+                Edge(cursor=strawberry.ID("2"), node="string"),
+            ]
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        example {
+            __typename
+
+            ... on IntEdge {
+                cursor
+                intNode: node
+            }
+
+            ... on StrEdge {
+                cursor
+                strNode: node
+            }
+        }
+    }"""
+
+    result = graphql_sync(schema, query)
+
+    assert not result.errors
+    assert result.data == {
+        "example": [
+            {"__typename": "IntEdge", "cursor": "1", "intNode": 1},
+            {"__typename": "StrEdge", "cursor": "2", "strNode": "string"},
+        ]
+    }
+
+
+def test_generated_names():
+    T = typing.TypeVar("T")
+
+    @strawberry.type
+    class EdgeWithCursor(typing.Generic[T]):
+        cursor: strawberry.ID
+        node: T
+
+    @strawberry.type
+    class SpecialPerson:
+        name: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def person_edge(self, info, **kwargs) -> EdgeWithCursor[SpecialPerson]:
+            return EdgeWithCursor(
+                cursor=strawberry.ID("1"), node=SpecialPerson(name="Example")
+            )
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        personEdge {
+            __typename
+            cursor
+            node {
+                name
+            }
+        }
+    }"""
+
+    result = graphql_sync(schema, query)
+
+    assert not result.errors
+    assert result.data == {
+        "personEdge": {
+            "__typename": "SpecialPersonEdgeWithCursor",
+            "cursor": "1",
+            "node": {"name": "Example"},
+        }
+    }
