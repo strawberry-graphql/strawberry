@@ -1,3 +1,4 @@
+import copy
 import dataclasses
 from functools import partial
 
@@ -7,7 +8,7 @@ from .constants import IS_STRAWBERRY_FIELD, IS_STRAWBERRY_INPUT, IS_STRAWBERRY_I
 from .field import field, strawberry_field
 from .type_converter import REGISTRY
 from .utils.str_converters import to_camel_case
-from .utils.typing import get_actual_type
+from .utils.typing import get_actual_type, has_type_var, is_type_var
 
 
 def _interface_resolve_type(result, info, return_type):
@@ -49,7 +50,13 @@ def _process_type(cls, *, is_input=False, is_interface=False, description=None):
         fields = {}
 
         for class_field in class_fields:
-            class_field.type = get_actual_type(class_field.type, types_replacement_map)
+            # we want to make a copy of the original field when dealing
+            # with generic types and also get the actual type for the type var
+            if is_type_var(class_field.type) or has_type_var(class_field.type):
+                class_field = copy.copy(class_field)
+                class_field.type = get_actual_type(
+                    class_field.type, types_replacement_map
+                )
 
             field_name = getattr(class_field, "field_name", None) or to_camel_case(
                 class_field.name

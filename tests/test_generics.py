@@ -465,3 +465,51 @@ def test_supports_generic_in_unions_with_nesting():
             "edge": {"__typename": "UserEdge", "node": {"name": "Patrick"}},
         }
     }
+
+
+def test_supports_multiple_generics_in_union():
+    T = typing.TypeVar("T")
+
+    @strawberry.type
+    class Edge(typing.Generic[T]):
+        cursor: strawberry.ID
+        node: T
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def example(
+            self, info, **kwargs
+        ) -> typing.List[typing.Union[Edge[int], Edge[str]]]:
+            return [
+                Edge(cursor=strawberry.ID("1"), node=1),
+                Edge(cursor=strawberry.ID("2"), node="string"),
+            ]
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        example {
+            __typename
+
+            ... on IntEdge {
+                cursor
+                intNode: node
+            }
+
+            ... on StrEdge {
+                cursor
+                strNode: node
+            }
+        }
+    }"""
+
+    result = graphql_sync(schema, query)
+
+    assert not result.errors
+    assert result.data == {
+        "example": [
+            {"__typename": "IntEdge", "cursor": "1", "intNode": 1},
+            {"__typename": "StrEdge", "cursor": "2", "strNode": "string"},
+        ]
+    }
