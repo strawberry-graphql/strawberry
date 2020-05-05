@@ -66,6 +66,11 @@ def copy_annotation_with_types(annotation, *types):
 
     new_type = TypeClass(copied_name, get_fields, **extra_kwargs)
 
+    # we use _copied to easily find a previously created type,
+    # this is used by unions when needing to find the proper GraphQL
+    # type when returning something
+    # TODO: we could use this to prevent running all the code above
+
     if not hasattr(origin, "_copies"):
         origin._copies = {}
 
