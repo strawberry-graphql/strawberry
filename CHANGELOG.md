@@ -1,6 +1,19 @@
 CHANGELOG
 =========
 
+0.25.0 - 2020-05-05
+-------------------
+
+This release add supports for named unions, now you can create
+a new union type by writing:
+
+```python
+Result = strawberry.union("Result", (A, B), description="Example Result")
+```
+
+This also improves the support for Union and Generic types, as it 
+was broken before.
+
 0.24.1 - 2020-04-29
 -------------------
 
