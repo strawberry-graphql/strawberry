@@ -513,3 +513,47 @@ def test_supports_multiple_generics_in_union():
             {"__typename": "StrEdge", "cursor": "2", "strNode": "string"},
         ]
     }
+
+
+def test_generated_names():
+    T = typing.TypeVar("T")
+
+    @strawberry.type
+    class EdgeWithCursor(typing.Generic[T]):
+        cursor: strawberry.ID
+        node: T
+
+    @strawberry.type
+    class SpecialPerson:
+        name: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def person_edge(self, info, **kwargs) -> EdgeWithCursor[SpecialPerson]:
+            return EdgeWithCursor(
+                cursor=strawberry.ID("1"), node=SpecialPerson(name="Example")
+            )
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        personEdge {
+            __typename
+            cursor
+            node {
+                name
+            }
+        }
+    }"""
+
+    result = graphql_sync(schema, query)
+
+    assert not result.errors
+    assert result.data == {
+        "personEdge": {
+            "__typename": "SpecialPersonEdgeWithCursor",
+            "cursor": "1",
+            "node": {"name": "Example"},
+        }
+    }

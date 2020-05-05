@@ -14,7 +14,7 @@ from graphql import (
 from .exceptions import MissingTypesForGenericError
 from .scalars import ID
 from .union import union
-from .utils.str_converters import to_camel_case
+from .utils.str_converters import capitalize_first, to_camel_case
 from .utils.typing import is_generic, is_union
 
 
@@ -40,7 +40,7 @@ def copy_annotation_with_types(annotation, *types):
         zip([param.__name__ for param in origin.__parameters__], types)
     )
     copied_name = (
-        "".join([type.__name__.capitalize() for type in types]) + graphql_type.name
+        "".join([capitalize_first(type.__name__) for type in types]) + graphql_type.name
     )
 
     extra_kwargs = {
