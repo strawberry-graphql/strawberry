@@ -689,7 +689,7 @@ description = "The lightning-fast ASGI server."
 name = "uvicorn"
 optional = false
 python-versions = "*"
-version = "0.11.4"
+version = "0.11.5"
 
 [package.dependencies]
 click = ">=7.0.0,<8.0.0"
@@ -764,7 +764,7 @@ django = ["django"]
 flask = ["flask"]
 
 [metadata]
-content-hash = "f0df0fa0525c55d4e05990b0ac04aea480271145013c5e800e0091eee63e69b7"
+content-hash = "d807c6a04b409e71d4f9ba4e0e59676df315634fde9ceca00dd8969dd0df5ea7"
 python-versions = "^3.7"
 
 [metadata.files]
@@ -1142,8 +1142,8 @@ urllib3 = [
     {file = "urllib3-1.25.9.tar.gz", hash = "sha256:3018294ebefce6572a474f0604c2021e33b3fd8006ecd11d62107a5d2a963527"},
 ]
 uvicorn = [
-    {file = "uvicorn-0.11.4-py3-none-any.whl", hash = "sha256:aa6db2200cff18f8c550c869fab01f78ca987464d499f654e7aeb166fe0c0616"},
-    {file = "uvicorn-0.11.4.tar.gz", hash = "sha256:a19de5b2f8dec56ec95bbbf3ce334b168efca6a238b2ba7c6cb020e3a42ce71a"},
+    {file = "uvicorn-0.11.5-py3-none-any.whl", hash = "sha256:50577d599775dac2301bac8bd5b540d19a9560144143c5bdab13cba92783b6e7"},
+    {file = "uvicorn-0.11.5.tar.gz", hash = "sha256:596eaa8645b6dbc24d6610e335f8ddf5f925b4c4b86fdc7146abb0bf0da65d17"},
 ]
 uvloop = [
     {file = "uvloop-0.14.0-cp35-cp35m-macosx_10_11_x86_64.whl", hash = "sha256:08b109f0213af392150e2fe6f81d33261bb5ce968a288eb698aad4f46eb711bd"},
