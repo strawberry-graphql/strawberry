@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.25.1 - 2020-05-08
+-------------------
+
+Fix error when a subscription accepted input arguments
+
 0.25.0 - 2020-05-05
 -------------------
 
