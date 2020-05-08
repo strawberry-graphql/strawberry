@@ -250,9 +250,9 @@ def _get_field(
 
         if is_subscription:
 
-            def _resolve(event, info):
+            def _resolve(event, info, **kwargs):
                 if check_permission:
-                    check_permission(event, info)
+                    check_permission(event, info, **kwargs)
 
                 return event
 
