@@ -45,3 +45,9 @@ def test_returns_errors_and_data(schema, test_client):
             }
         ],
     }
+
+
+def test_root_value(schema, test_client):
+    response = test_client.post("/", json={"query": "{ rootName }"})
+
+    assert response.json() == {"data": {"rootName": "Query"}}
