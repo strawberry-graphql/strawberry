@@ -1,6 +1,17 @@
 CHANGELOG
 =========
 
+0.25.2 - 2020-05-11
+-------------------
+
+Add support for setting `root_value` in asgi.
+
+Usage:
+```python
+schema = strawberry.Schema(query=Query)
+app = strawberry.asgi.GraphQL(schema, root_value=Query())
+```
+
 0.25.1 - 2020-05-08
 -------------------
 
