@@ -26,6 +26,7 @@ class GraphQL:
     def __init__(
         self,
         schema: GraphQLSchema,
+        root_value: typing.Any = None,
         graphiql: bool = True,
         keep_alive: bool = False,
         keep_alive_interval: float = 1,
@@ -33,6 +34,7 @@ class GraphQL:
     ) -> None:
         self.schema = schema
         self.graphiql = graphiql
+        self.root_value = root_value
         self.keep_alive = keep_alive
         self.keep_alive_interval = keep_alive_interval
         self._keep_alive_task = None
@@ -149,6 +151,7 @@ class GraphQL:
         return await execute(
             self.schema,
             query,
+            root_value=self.root_value,
             variable_values=variables,
             operation_name=operation_name,
             context_value=context,

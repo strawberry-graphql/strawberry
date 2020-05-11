@@ -18,6 +18,7 @@ from .middleware import DirectivesMiddleware
 async def execute(
     schema: GraphQLSchema,
     query: str,
+    root_value: typing.Any = None,
     context_value: typing.Any = None,
     variable_values: typing.Dict[str, typing.Any] = None,
     operation_name: str = None,
@@ -42,6 +43,7 @@ async def execute(
     result = graphql_excute(
         schema,
         parse(query),
+        root_value=root_value,
         middleware=[DirectivesMiddleware()],
         variable_values=variable_values,
         operation_name=operation_name,

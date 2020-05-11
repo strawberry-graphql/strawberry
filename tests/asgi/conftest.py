@@ -17,38 +17,44 @@ class AlwaysFailPermission(BasePermission):
         return False
 
 
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self, info, name: typing.Optional[str] = None) -> str:
+        return f"Hello {name or 'world'}"
+
+    @strawberry.field(permission_classes=[AlwaysFailPermission])
+    def always_fail(self, info) -> Optional[str]:
+        return "Hey"
+
+    @strawberry.field
+    def root_name(root) -> str:
+        return type(root).__name__
+
+
+@strawberry.type
+class Subscription:
+    @strawberry.subscription
+    async def example(self, info) -> typing.AsyncGenerator[str, None]:
+        await asyncio.sleep(1.5)
+
+        yield "Hi"
+
+    @strawberry.subscription
+    async def example_error(self, info) -> typing.AsyncGenerator[str, None]:
+        raise ValueError("This is an example")
+
+        yield "Hi"
+
+
 @pytest.fixture
 def schema():
-    @strawberry.type
-    class Query:
-        @strawberry.field
-        def hello(self, info, name: typing.Optional[str] = None) -> str:
-            return f"Hello {name or 'world'}"
-
-        @strawberry.field(permission_classes=[AlwaysFailPermission])
-        def always_fail(self, info) -> Optional[str]:
-            return "Hey"
-
-    @strawberry.type
-    class Subscription:
-        @strawberry.subscription
-        async def example(self, info) -> typing.AsyncGenerator[str, None]:
-            await asyncio.sleep(1.5)
-
-            yield "Hi"
-
-        @strawberry.subscription
-        async def example_error(self, info) -> typing.AsyncGenerator[str, None]:
-            raise ValueError("This is an example")
-
-            yield "Hi"
-
     return strawberry.Schema(Query, subscription=Subscription)
 
 
 @pytest.fixture
 def test_client(schema):
-    app = GraphQL(schema)
+    app = GraphQL(schema, root_value=Query())
 
     return TestClient(app)
 
