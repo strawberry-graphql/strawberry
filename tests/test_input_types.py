@@ -1,3 +1,4 @@
+from typing import Optional
 import textwrap
 
 import strawberry
@@ -25,5 +26,24 @@ def test_simple_required_types():
 
     assert (
         print_type(MyInput("a", 1, True, 3.2, "123"))
+        == textwrap.dedent(expected_type).strip()
+    )
+
+
+def test_optional_default():
+    @strawberry.input
+    class MyInput:
+        s: Optional[str]
+        i: int = 0
+
+    expected_type = """
+    input MyInput {
+      s: String
+      i: Int! = 0
+    }
+    """
+
+    assert (
+        print_type(MyInput("a", 1))
         == textwrap.dedent(expected_type).strip()
     )
