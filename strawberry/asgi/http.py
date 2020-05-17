@@ -3,12 +3,7 @@ import typing
 from graphql.error import format_error as format_graphql_error
 from starlette import status
 from starlette.requests import Request
-from starlette.responses import (
-    HTMLResponse,
-    JSONResponse,
-    PlainTextResponse,
-    Response,
-)
+from starlette.responses import HTMLResponse, JSONResponse, PlainTextResponse, Response
 
 from .utils import get_graphiql_html
 
@@ -35,8 +30,7 @@ async def get_http_response(
             )
     else:
         return PlainTextResponse(
-            "Method Not Allowed",
-            status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
+            "Method Not Allowed", status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
         )
 
     try:
@@ -52,17 +46,12 @@ async def get_http_response(
     context = {"request": request}
 
     result = await execute(
-        query,
-        variables=variables,
-        context=context,
-        operation_name=operation_name,
+        query, variables=variables, context=context, operation_name=operation_name,
     )
 
     response_data = {"data": result.data}
 
     if result.errors:
-        response_data["errors"] = [
-            format_graphql_error(err) for err in result.errors
-        ]
+        response_data["errors"] = [format_graphql_error(err) for err in result.errors]
 
     return JSONResponse(response_data, status_code=status.HTTP_200_OK)

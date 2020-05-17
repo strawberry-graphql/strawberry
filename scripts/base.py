@@ -69,7 +69,7 @@ def get_release_info(file_path=RELEASE_FILE):
             sys.exit(1)
 
         type_ = match.group(1)
-        changelog = "".join([l for l in f.readlines()]).strip()
+        changelog = "".join([line for line in f.readlines()]).strip()
 
     return type_, changelog
 

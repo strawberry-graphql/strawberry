@@ -1,8 +1,7 @@
+import dataclasses
 import re
 from enum import Enum
 from pathlib import Path
-
-import dataclasses
 
 
 RELEASE_TYPE_REGEX = re.compile(r"^[Rr]elease [Tt]ype: (major|minor|patch)$")
@@ -35,6 +34,6 @@ def get_release_info(file_path: Path) -> ReleaseInfo:
 
         change_type_key = match.group(1)
         change_type = ChangeType[change_type_key.upper()]
-        changelog = "".join([l for l in f.readlines()]).strip()
+        changelog = "".join([line for line in f.readlines()]).strip()
 
     return ReleaseInfo(change_type, changelog)

@@ -1,16 +1,17 @@
-import sys
 import os
-
-sys.path.append(os.path.dirname(__file__))  # noqa
+import sys
 
 from base import (
+    CHANGELOG_FILE_NAME,
+    PROJECT_TOML_FILE_NAME,
+    RELEASE_FILE_NAME,
+    configure_git,
     get_project_version,
     git,
-    configure_git,
-    PROJECT_TOML_FILE_NAME,
-    CHANGELOG_FILE_NAME,
-    RELEASE_FILE_NAME,
 )
+
+
+sys.path.append(os.path.dirname(__file__))  # noqa
 
 
 if __name__ == "__main__":

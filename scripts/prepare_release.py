@@ -1,12 +1,12 @@
-import sys
 import os
 import re
-
-sys.path.append(os.path.dirname(__file__))  # noqa
-
+import sys
 from datetime import datetime
 
-from base import run_process, get_release_info, CHANGELOG_FILE
+from base import CHANGELOG_FILE, get_release_info, run_process
+
+
+sys.path.append(os.path.dirname(__file__))  # noqa
 
 
 if __name__ == "__main__":
@@ -24,11 +24,11 @@ if __name__ == "__main__":
         print("Unable to bump the project version using poetry")
         sys.exit(1)
 
-    new_version = version_match.group('version')
+    new_version = version_match.group("version")
     current_date = datetime.utcnow().strftime("%Y-%m-%d")
 
-    old_changelog_data = ""
-    header = ""
+    old_changelog_data = []
+    header = []
 
     with open(CHANGELOG_FILE, "r") as f:
         lines = f.readlines()

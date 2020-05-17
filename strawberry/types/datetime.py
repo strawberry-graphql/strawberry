@@ -1,8 +1,8 @@
 import datetime
-
 from operator import methodcaller
 
 from ..custom_scalar import scalar
+
 
 isoformat = methodcaller("isoformat")
 

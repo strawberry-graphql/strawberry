@@ -1,7 +1,6 @@
 import enum
-from datetime import date, datetime, time
-
 from dataclasses import is_dataclass
+from datetime import date, datetime, time
 
 from ..exceptions import UnsupportedTypeError
 from .str_converters import to_camel_case, to_snake_case

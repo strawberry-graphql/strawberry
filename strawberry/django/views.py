@@ -3,9 +3,9 @@ import os
 
 from django.http import Http404, HttpResponseNotAllowed, JsonResponse
 from django.http.response import HttpResponseBadRequest
+from django.template import RequestContext, Template
 from django.template.exceptions import TemplateDoesNotExist
 from django.template.loader import render_to_string
-from django.template import Template, RequestContext
 from django.template.response import TemplateResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
@@ -45,9 +45,7 @@ class GraphQLView(View):
             if not self.graphiql:
                 raise Http404("GraphiQL has been disabled")
 
-            return self._render_graphiql(
-                request
-            )
+            return self._render_graphiql(request)
 
         data = json.loads(request.body)
 
@@ -56,9 +54,7 @@ class GraphQLView(View):
             variables = data.get("variables")
             operation_name = data.get("operationName")
         except KeyError:
-            return HttpResponseBadRequest(
-                "No GraphQL query found in the request"
-            )
+            return HttpResponseBadRequest("No GraphQL query found in the request")
 
         context = {"request": request}
 
@@ -94,9 +90,7 @@ class GraphQLView(View):
                 ).read()
             )
 
-        response = TemplateResponse(
-            request=request, template=None, context=context
-        )
+        response = TemplateResponse(request=request, template=None, context=context)
         response.content = template.render(RequestContext(request, context))
 
         return response
