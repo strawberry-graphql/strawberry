@@ -78,6 +78,10 @@ def convert_args(args, annotations):
 
         if not value:
             value = UNSET
+        else:
+            if isinstance(value, dict):
+                if None in value.values():
+                    value = UNSET
 
         converted_args[key] = _to_type(value, annotation)
 
