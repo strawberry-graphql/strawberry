@@ -20,9 +20,9 @@ def test_simple_types():
 
 def test_list():
     args = {
-        "integer_list": [1, 2],
-        "string_list": ["abc", "cde"],
-        "float_list": [1.2, 2.3],
+        "integerList": [1, 2],
+        "stringList": ["abc", "cde"],
+        "floatList": [1.2, 2.3],
     }
 
     annotations = {
@@ -74,7 +74,7 @@ def test_list_of_input_types():
     class MyInput:
         abc: str
 
-    args = {"input_list": [{"abc": "example"}]}
+    args = {"inputList": [{"abc": "example"}]}
 
     annotations = {"input_list": typing.List[MyInput]}
 
@@ -86,7 +86,7 @@ def test_optional_list_of_input_types():
     class MyInput:
         abc: str
 
-    args = {"input_list": [{"abc": "example"}]}
+    args = {"inputList": [{"abc": "example"}]}
 
     annotations = {"input_list": typing.Optional[typing.List[MyInput]]}
 

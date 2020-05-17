@@ -1,9 +1,10 @@
 import enum
+import typing
 from dataclasses import is_dataclass
 from datetime import date, datetime, time
 
 from ..exceptions import UnsupportedTypeError
-from .str_converters import to_camel_case, to_snake_case
+from .str_converters import to_camel_case
 from .typing import get_list_annotation, get_optional_annotation, is_list, is_optional
 
 
@@ -18,16 +19,26 @@ class _Unset:
 UNSET = _Unset()
 
 
-# this utility might be useful, so we don't have to use an internal representation
-def is_unset(value):  # type Any
+def is_unset(value: typing.Any) -> bool:
     return value is UNSET
 
 
-def _to_type(value, annotation):
+def convert_args(
+    value: typing.Union[typing.Dict[str, typing.Any], typing.Any],
+    annotation: typing.Union[typing.Dict[str, typing.Type], typing.Type],
+):
+    """Converts a nested dictionary to a dictionary of actual types.
+
+    It deals with conversion of input types to proper dataclasses and
+    also uses a sentinel value for unset values."""
+
+    if annotation == {}:
+        return value
+
     if value is None:
         return None
 
-    if isinstance(value, _Unset):
+    if is_unset(value):
         return value
 
     if is_optional(annotation):
@@ -40,19 +51,27 @@ def _to_type(value, annotation):
     # Convert Enum fields to instances using the value. This is safe
     # because graphql-core has already validated the input.
     if isinstance(annotation, enum.EnumMeta):
-        return annotation(value)
+        return annotation(value)  # type: ignore
 
     if is_list(annotation):
         annotation = get_list_annotation(annotation)
 
-        return [_to_type(x, annotation) for x in value]
+        return [convert_args(x, annotation) for x in value]
 
-    if is_dataclass(annotation):
-        fields = annotation.__dataclass_fields__
+    fields = None
 
+    # we receive dicts when converting resolvers arguments to
+    # actual types
+    if isinstance(annotation, dict):
+        fields = annotation.items()
+
+    elif is_dataclass(annotation):
+        fields = annotation.__dataclass_fields__.items()
+
+    if fields:
         kwargs = {}
 
-        for name, field in fields.items():
+        for name, field in fields:
             dict_name = name
 
             if hasattr(field, "field_name") and field.field_name:
@@ -60,22 +79,19 @@ def _to_type(value, annotation):
             else:
                 dict_name = to_camel_case(name)
 
-            kwargs[name] = _to_type(value.get(dict_name, UNSET), field.type)
+            # dataclasses field have a .type attribute
+            if hasattr(field, "type"):
+                field_type = field.type
+            # meanwhile when using dicts the value of the field is
+            # the actual type, for example in: { 'name': str }
+            else:
+                field_type = field
 
-        return annotation(**kwargs)
+            kwargs[name] = convert_args(value.get(dict_name, UNSET), field_type)
+
+        if is_dataclass(annotation):
+            return annotation(**kwargs)  # type: ignore
+
+        return kwargs
 
     raise UnsupportedTypeError(annotation)
-
-
-def convert_args(args, annotations):
-    """Converts a nested dictionary to a dictionary of strawberry input types."""
-
-    converted_args = {}
-
-    for key, value in args.items():
-        key = to_snake_case(key)
-        annotation = annotations[key]
-
-        converted_args[key] = _to_type(value, annotation)
-
-    return converted_args
