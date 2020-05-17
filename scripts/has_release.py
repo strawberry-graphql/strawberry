@@ -1,9 +1,10 @@
-import sys
 import os
+import sys
+
+from base import RELEASE_FILE, run_process
+
 
 sys.path.append(os.path.dirname(__file__))  # noqa
-
-from base import run_process, RELEASE_FILE
 
 
 if __name__ == "__main__":

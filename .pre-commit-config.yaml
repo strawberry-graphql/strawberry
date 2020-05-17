@@ -1,24 +1,24 @@
 repos:
   - repo: https://github.com/ambv/black
-    rev: stable
+    rev: 19.10b0
     hooks:
       - id: black
 
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v1.2.3
+  - repo: https://gitlab.com/pycqa/flake8
+    rev: 3.8.1
     hooks:
       - id: flake8
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: master
+    rev: v0.770
     hooks:
       - id: mypy
 
   - repo: https://github.com/asottile/seed-isort-config
-    rev: v1.6.0
+    rev: v2.1.1
     hooks:
       - id: seed-isort-config
   - repo: https://github.com/pre-commit/mirrors-isort
-    rev: v4.3.4
+    rev: v4.3.21
     hooks:
       - id: isort

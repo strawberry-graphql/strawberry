@@ -118,7 +118,7 @@ def get_graphql_type_for_annotation(
 
         elif is_union(annotation):
             types = annotation.__args__
-            non_none_types = [x for x in types if x != None.__class__]  # noqa:E721
+            non_none_types = [x for x in types if x != None.__class__]  # noqa:E711
 
             # optionals are represented as Union[type, None]
 

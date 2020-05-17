@@ -1,6 +1,6 @@
 import json
 
-from flask import Response, render_template_string, request, abort
+from flask import Response, abort, render_template_string, request
 from flask.views import View
 from graphql import graphql_sync
 from graphql.error import format_error as format_graphql_error

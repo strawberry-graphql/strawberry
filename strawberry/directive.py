@@ -16,7 +16,7 @@ def _get_arguments(func):
     arguments = {}
 
     for name, type_ in islice(annotations.items(), 1, None):
-        if name == 'return':
+        if name == "return":
             continue
 
         argument_type = get_graphql_type_for_annotation(type_, name)

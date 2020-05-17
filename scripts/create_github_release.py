@@ -1,18 +1,18 @@
-import sys
 import os
-
-sys.path.append(os.path.dirname(__file__))  # noqa
-
-from github_release import gh_release_create
+import sys
 
 from base import (
-    run_process,
-    check_exit_code,
-    get_project_version,
-    configure_git,
     PROJECT_NAME,
+    check_exit_code,
+    configure_git,
+    get_project_version,
     get_release_info,
+    run_process,
 )
+from github_release import gh_release_create
+
+
+sys.path.append(os.path.dirname(__file__))  # noqa
 
 
 if __name__ == "__main__":
@@ -36,8 +36,8 @@ if __name__ == "__main__":
 
     _, changelog = get_release_info()
 
-    project_username = os.environ['CIRCLE_PROJECT_USERNAME']
-    project_reponame = os.environ['CIRCLE_PROJECT_REPONAME']
+    project_username = os.environ["CIRCLE_PROJECT_USERNAME"]
+    project_reponame = os.environ["CIRCLE_PROJECT_REPONAME"]
 
     repo_url = f"{project_username}/{project_reponame}"
 

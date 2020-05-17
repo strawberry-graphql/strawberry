@@ -1,8 +1,9 @@
 import json
 
-from flask import url_for
 import pytest
+
 import strawberry
+from flask import url_for
 
 from .conftest import create_app
 
