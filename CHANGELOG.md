@@ -1,6 +1,12 @@
 CHANGELOG
 =========
 
+0.25.3 - 2020-05-17
+-------------------
+
+Improves tooling by updating `pre-commit` hooks and adding `pre-commit` to
+`pyproject.toml`.
+
 0.25.2 - 2020-05-11
 -------------------
 
