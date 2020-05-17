@@ -10,9 +10,25 @@ from .typing import get_list_annotation, get_optional_annotation, is_list, is_op
 SCALAR_TYPES = [int, str, float, bytes, bool, datetime, date, time]
 
 
+class _Unset:
+    def __bool__(self):
+        return False
+
+
+UNSET = _Unset()
+
+
+# this utility might be useful, so we don't have to use an internal representation
+def is_unset(value):  # type Any
+    return value is UNSET
+
+
 def _to_type(value, annotation):
     if value is None:
         return None
+
+    if isinstance(value, _Unset):
+        return value
 
     if is_optional(annotation):
         annotation = get_optional_annotation(annotation)
@@ -59,6 +75,9 @@ def convert_args(args, annotations):
     for key, value in args.items():
         key = to_snake_case(key)
         annotation = annotations[key]
+
+        if not value:
+            value = UNSET
 
         converted_args[key] = _to_type(value, annotation)
 

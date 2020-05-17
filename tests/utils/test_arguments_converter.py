@@ -2,7 +2,7 @@ import typing
 from enum import Enum
 
 import strawberry
-from strawberry.utils.arguments import convert_args
+from strawberry.utils.arguments import UNSET, convert_args
 
 
 def test_simple_types():
@@ -171,3 +171,19 @@ def test_nested_list_of_complex_types():
     assert convert_args(args, annotations) == {
         "input": Input(numbers=[Number(1), Number(2)])
     }
+
+
+def test_uses_unset_for_optional_types_when_nothing_is_passed():
+    @strawberry.input
+    class Number:
+        value: int
+
+    @strawberry.input
+    class Input:
+        numbers: typing.Optional[Number]
+
+    args = {"input": {}}
+
+    annotations = {"input": Input}
+
+    assert convert_args(args, annotations) == {"input": UNSET}
