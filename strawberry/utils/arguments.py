@@ -60,7 +60,7 @@ def _to_type(value, annotation):
             else:
                 dict_name = to_camel_case(name)
 
-            kwargs[name] = _to_type(value.get(dict_name), field.type)
+            kwargs[name] = _to_type(value.get(dict_name, UNSET), field.type)
 
         return annotation(**kwargs)
 
@@ -75,13 +75,6 @@ def convert_args(args, annotations):
     for key, value in args.items():
         key = to_snake_case(key)
         annotation = annotations[key]
-
-        if not value:
-            value = UNSET
-        else:
-            if isinstance(value, dict):
-                if None in value.values():
-                    value = UNSET
 
         converted_args[key] = _to_type(value, annotation)
 

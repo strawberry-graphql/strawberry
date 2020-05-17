@@ -148,12 +148,11 @@ def test_nested_input_types():
 
     annotations = {"input": AddReleaseFileCommentInput}
 
-    # assert convert_args(args, annotations) == {
-    #     "input": AddReleaseFileCommentInput(
-    #         pr_number=12, status=ReleaseFileStatus.OK, release_info=None
-    #     )
-    # }
-    assert convert_args(args, annotations) == {"input": UNSET}
+    assert convert_args(args, annotations) == {
+        "input": AddReleaseFileCommentInput(
+            pr_number=12, status=ReleaseFileStatus.OK, release_info=None
+        )
+    }
 
 
 def test_nested_list_of_complex_types():
@@ -189,18 +188,11 @@ def test_uses_unset_for_optional_types_when_nothing_is_passed():
 
     annotations = {"input": Input}
 
-    assert convert_args(args, annotations) == {"input": UNSET}
+    assert convert_args(args, annotations) == {"input": Input(UNSET, UNSET)}
 
     # case 2
     args = {"input": {"numbersSecond": None}}
 
     annotations = {"input": Input}
 
-    assert convert_args(args, annotations) == {"input": UNSET}
-
-    # case 3
-    args = {"input": {"numbers": None, "numbersSecond": 5}}
-
-    annotations = {"input": Input}
-
-    assert convert_args(args, annotations) == {"input": UNSET}
+    assert convert_args(args, annotations) == {"input": Input(UNSET, None)}
