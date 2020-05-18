@@ -3,7 +3,7 @@ import enum
 import inspect
 import typing
 
-from graphql import GraphQLField, GraphQLInputField
+from graphql import GraphQLArgument, GraphQLField, GraphQLInputField, Undefined
 
 from .constants import IS_STRAWBERRY_FIELD
 from .exceptions import MissingArgumentsAnnotationsError, MissingReturnAnnotationError
@@ -203,12 +203,13 @@ def _get_field(
         if key not in ["info", "return"]
     }
 
-    arguments = {
-        to_camel_case(name): get_graphql_type_for_annotation(
-            annotation, name, parameters[name].default != inspect._empty
+    arguments = {}
+    for name, annotation in arguments_annotations.items():
+        default = parameters[name].default
+        arguments[to_camel_case(name)] = GraphQLArgument(
+            get_graphql_type_for_annotation(annotation, name, default != inspect._empty),
+            default_value=Undefined if default in (inspect._empty, None) else default,
         )
-        for name, annotation in arguments_annotations.items()
-    }
 
     def resolver(source, info, **kwargs):
         if check_permission:

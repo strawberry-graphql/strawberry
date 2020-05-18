@@ -6,6 +6,7 @@ from graphql import (
     GraphQLInputObjectType,
     GraphQLNonNull,
     GraphQLScalarType,
+    Undefined,
 )
 from strawberry.exceptions import (
     MissingArgumentsAnnotationsError,
@@ -47,9 +48,11 @@ def test_field_default_arguments_are_optional():
 
     assert type(hello.graphql_type.args["id"].type) == GraphQLScalarType
     assert hello.graphql_type.args["id"].type.name == "Int"
+    assert hello.graphql_type.args["id"].default_value == 1
 
     assert type(hello.graphql_type.args["asdf"].type) == GraphQLScalarType
     assert hello.graphql_type.args["asdf"].type.name == "String"
+    assert hello.graphql_type.args["asdf"].default_value == "hello"
 
 
 def test_field_default_optional_argument_custom_type():
@@ -71,9 +74,11 @@ def test_field_default_optional_argument_custom_type():
 
     assert type(hello.graphql_type.args["required"].type) == GraphQLNonNull
     assert hello.graphql_type.args["required"].type.of_type.name == "CustomInputType"
+    assert hello.graphql_type.args["required"].default_value == Undefined
 
     assert type(hello.graphql_type.args["optional"].type) == GraphQLInputObjectType
     assert hello.graphql_type.args["optional"].type.name == "CustomInputType"
+    assert hello.graphql_type.args["optional"].default_value == Undefined
 
 
 def test_raises_error_when_return_annotation_missing():

@@ -74,6 +74,9 @@ def _process_type(cls, *, is_input=False, is_interface=False, description=None):
                 description=description,
                 permission_classes=permission_classes,
             ).graphql_type
+            # supply a graphql default_value if the type annotation has a default
+            if class_field.default not in (dataclasses.MISSING, None):
+                fields[field_name].default_value = class_field.default
 
         strawberry_fields = {}
 
