@@ -1,5 +1,5 @@
-from typing import Optional
 import textwrap
+from typing import Optional
 
 import strawberry
 from strawberry.printer import print_type
@@ -43,7 +43,4 @@ def test_optional_default():
     }
     """
 
-    assert (
-        print_type(MyInput("a", 1))
-        == textwrap.dedent(expected_type).strip()
-    )
+    assert print_type(MyInput("a", 1)) == textwrap.dedent(expected_type).strip()
