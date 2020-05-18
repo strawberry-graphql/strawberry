@@ -1,6 +1,12 @@
 CHANGELOG
 =========
 
+0.25.5 - 2020-05-18
+-------------------
+
+Added sentinel value for input parameters that aren't sent by the clients.
+It checks for when a field is unset.
+
 0.25.4 - 2020-05-18
 -------------------
 
