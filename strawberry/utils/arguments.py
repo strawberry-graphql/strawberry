@@ -12,6 +12,9 @@ SCALAR_TYPES = [int, str, float, bytes, bool, datetime, date, time]
 
 
 class _Unset:
+    def __str__(self):
+        return ""
+
     def __bool__(self):
         return False
 

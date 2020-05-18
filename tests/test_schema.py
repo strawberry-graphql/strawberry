@@ -285,6 +285,29 @@ def test_unset_types_name_with_underscore():
     assert result.data["sayAge"] == "Hello Patrick of age unset!"
 
 
+def test_unset_types_stringify_empty():
+    @strawberry.type
+    class Query:
+        hello: str = "Hello"
+
+    @strawberry.type
+    class Mutation:
+        @strawberry.mutation
+        def say(self, info, first_name: typing.Optional[str]) -> str:
+            return f"Hello {first_name}!"
+
+    schema = strawberry.Schema(query=Query, mutation=Mutation)
+
+    query = """mutation {
+        say
+    }"""
+
+    result = graphql_sync(schema, query)
+
+    assert not result.errors
+    assert result.data["say"] == "Hello !"
+
+
 def test_does_camel_case_conversion():
     @strawberry.type
     class Query:
