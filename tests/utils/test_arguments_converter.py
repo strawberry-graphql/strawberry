@@ -2,7 +2,7 @@ import typing
 from enum import Enum
 
 import strawberry
-from strawberry.utils.arguments import convert_args
+from strawberry.utils.arguments import UNSET, convert_args
 
 
 def test_simple_types():
@@ -20,9 +20,9 @@ def test_simple_types():
 
 def test_list():
     args = {
-        "integer_list": [1, 2],
-        "string_list": ["abc", "cde"],
-        "float_list": [1.2, 2.3],
+        "integerList": [1, 2],
+        "stringList": ["abc", "cde"],
+        "floatList": [1.2, 2.3],
     }
 
     annotations = {
@@ -74,7 +74,7 @@ def test_list_of_input_types():
     class MyInput:
         abc: str
 
-    args = {"input_list": [{"abc": "example"}]}
+    args = {"inputList": [{"abc": "example"}]}
 
     annotations = {"input_list": typing.List[MyInput]}
 
@@ -86,7 +86,7 @@ def test_optional_list_of_input_types():
     class MyInput:
         abc: str
 
-    args = {"input_list": [{"abc": "example"}]}
+    args = {"inputList": [{"abc": "example"}]}
 
     annotations = {"input_list": typing.Optional[typing.List[MyInput]]}
 
@@ -171,3 +171,28 @@ def test_nested_list_of_complex_types():
     assert convert_args(args, annotations) == {
         "input": Input(numbers=[Number(1), Number(2)])
     }
+
+
+def test_uses_unset_for_optional_types_when_nothing_is_passed():
+    @strawberry.input
+    class Number:
+        value: int
+
+    @strawberry.input
+    class Input:
+        numbers: typing.Optional[Number] = None
+        numbers_second: typing.Optional[Number] = None
+
+    # case 1
+    args = {"input": {}}
+
+    annotations = {"input": Input}
+
+    assert convert_args(args, annotations) == {"input": Input(UNSET, UNSET)}
+
+    # case 2
+    args = {"input": {"numbersSecond": None}}
+
+    annotations = {"input": Input}
+
+    assert convert_args(args, annotations) == {"input": Input(UNSET, None)}
