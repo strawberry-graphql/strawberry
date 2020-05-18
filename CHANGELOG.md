@@ -1,6 +1,24 @@
 CHANGELOG
 =========
 
+0.25.4 - 2020-05-18
+-------------------
+
+Support for `default_value` on inputs and arguments.
+
+Usage:
+```python
+class MyInput:
+    s: Optional[str]
+    i: int = 0
+```
+```graphql
+input MyInput {
+  s: String
+  i: Int! = 0
+}
+```
+
 0.25.3 - 2020-05-17
 -------------------
 
