@@ -37,7 +37,7 @@ def test_field_arguments():
 
 def test_field_default_arguments_are_optional():
     @strawberry.field
-    def hello(self, info, test: int, id: int = 1, asdf: str = "hello") -> str:
+    def hello(self, info, test: int, id: int = 1, asdf: str = None) -> str:
         return "I'm a resolver"
 
     assert hello.graphql_type
@@ -46,13 +46,13 @@ def test_field_default_arguments_are_optional():
     assert type(hello.graphql_type.type) == GraphQLNonNull
     assert hello.graphql_type.type.of_type.name == "String"
 
-    assert type(hello.graphql_type.args["id"].type) == GraphQLScalarType
-    assert hello.graphql_type.args["id"].type.name == "Int"
+    assert type(hello.graphql_type.args["id"].type) == GraphQLNonNull
+    assert hello.graphql_type.args["id"].type.of_type.name == "Int"
     assert hello.graphql_type.args["id"].default_value == 1
 
     assert type(hello.graphql_type.args["asdf"].type) == GraphQLScalarType
     assert hello.graphql_type.args["asdf"].type.name == "String"
-    assert hello.graphql_type.args["asdf"].default_value == "hello"
+    assert hello.graphql_type.args["asdf"].default_value == Undefined
 
 
 def test_field_default_optional_argument_custom_type():
