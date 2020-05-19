@@ -1,6 +1,22 @@
 CHANGELOG
 =========
 
+0.25.6 - 2020-05-19
+-------------------
+
+Default values make input arguments nullable when the default is None.
+```python
+class Query:
+     @strawberry.field
+     def hello(self, i: int = 0, s: str = None) -> str:
+         return s
+```
+```graphql
+type Query {
+  hello(i: Int! = 0, s: String): String!
+}
+```
+
 0.25.5 - 2020-05-18
 -------------------
 
