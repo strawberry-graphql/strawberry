@@ -207,9 +207,7 @@ def _get_field(
     for name, annotation in arguments_annotations.items():
         default = parameters[name].default
         arguments[to_camel_case(name)] = GraphQLArgument(
-            get_graphql_type_for_annotation(
-                annotation, name, default != inspect._empty
-            ),
+            get_graphql_type_for_annotation(annotation, name, default is None),
             default_value=Undefined if default in (inspect._empty, None) else default,
         )
 
