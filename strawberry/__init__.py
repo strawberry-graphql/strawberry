@@ -1,6 +1,7 @@
 __version__ = "0.1.0"
 
 
+from . import federation  # noqa
 from .custom_scalar import scalar  # noqa
 from .directive import directive  # noqa
 from .enum import enum  # noqa

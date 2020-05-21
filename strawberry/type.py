@@ -6,7 +6,7 @@ from graphql import GraphQLInputObjectType, GraphQLInterfaceType, GraphQLObjectT
 
 from .constants import IS_STRAWBERRY_FIELD, IS_STRAWBERRY_INPUT, IS_STRAWBERRY_INTERFACE
 from .field import field, strawberry_field
-from .type_converter import REGISTRY
+from .type_registry import register_type
 from .utils.str_converters import to_camel_case
 from .utils.typing import get_actual_type, has_type_var, is_type_var
 
@@ -40,9 +40,10 @@ def _get_resolver(cls, field_name):
     return _resolver
 
 
-def _process_type(cls, *, is_input=False, is_interface=False, description=None):
-    name = cls.__name__
-    REGISTRY[name] = cls
+def _process_type(
+    cls, *, name=None, is_input=False, is_interface=False, description=None
+):
+    name = name or cls.__name__
 
     def _get_fields(wrapped, types_replacement_map=None):
         class_fields = dataclasses.fields(wrapped)
@@ -123,16 +124,17 @@ def _process_type(cls, *, is_input=False, is_interface=False, description=None):
             if hasattr(klass, IS_STRAWBERRY_INTERFACE)
         ]
 
-    wrapped.graphql_type = TypeClass(
+    graphql_type = TypeClass(
         name,
         lambda types_replacement_map=None: _get_fields(wrapped, types_replacement_map),
         **extra_kwargs
     )
+    register_type(cls, graphql_type)
 
     return wrapped
 
 
-def type(cls=None, *, is_input=False, is_interface=False, description=None):
+def type(cls=None, *, name=None, is_input=False, is_interface=False, description=None):
     """Annotates a class as a GraphQL type.
 
     Example usage:
@@ -144,7 +146,11 @@ def type(cls=None, *, is_input=False, is_interface=False, description=None):
 
     def wrap(cls):
         return _process_type(
-            cls, is_input=is_input, is_interface=is_interface, description=description
+            cls,
+            name=name,
+            is_input=is_input,
+            is_interface=is_interface,
+            description=description,
         )
 
     if cls is None:
