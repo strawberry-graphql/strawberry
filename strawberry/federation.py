@@ -4,6 +4,7 @@ from graphql import (
     GraphQLNonNull,
     GraphQLObjectType,
     GraphQLScalarType,
+    GraphQLType,
     GraphQLUnionType,
 )
 
@@ -11,6 +12,7 @@ from .field import strawberry_field
 from .printer import print_schema
 from .schema import Schema as BaseSchema
 from .type import _process_type
+from .type_registry import get_strawberry_type_for_graphql_type
 
 
 def type(cls=None, *args, **kwargs):
@@ -64,10 +66,21 @@ def entities_resolver(root, info, representations):
         type_name = representation.pop("__typename")
         graphql_type = info.schema.get_type(type_name)
 
-        result = graphql_type._strawberry_type.resolve_reference(**representation)
+        result = get_strawberry_type_for_graphql_type(graphql_type).resolve_reference(
+            **representation
+        )
         results.append(result)
 
     return results
+
+
+def has_federation_keys(graphql_type: GraphQLType):
+    strawberry_type = get_strawberry_type_for_graphql_type(graphql_type)
+
+    if strawberry_type and getattr(strawberry_type, "_federation_keys", []):
+        return True
+
+    return False
 
 
 class Schema(BaseSchema):
@@ -116,21 +129,27 @@ class Schema(BaseSchema):
         self.type_map[self.query_type.name] = self.query_type
 
     def _get_entity_type(self):
-        federation_key_types = []
+        # https://www.apollographql.com/docs/apollo-server/federation/federation-spec/#resolve-requests-for-entities
 
-        for graphql_type in self.type_map.values():
-            if hasattr(graphql_type, "_strawberry_type"):
-                if graphql_type._strawberry_type and getattr(
-                    graphql_type._strawberry_type, "_federation_keys", []
-                ):
-                    federation_key_types.append(graphql_type)
+        # To implement the _Entity union, each type annotated with @key
+        # should be added to the _Entity union.
 
-        if federation_key_types:
-            entity_type = GraphQLUnionType("_Entity", federation_key_types)
+        federation_key_types = [
+            graphql_type
+            for graphql_type in self.type_map.values()
+            if has_federation_keys(graphql_type)
+        ]
 
-            def _resolve_type(self, value, _type):
-                return self.graphql_type
+        # If no types are annotated with the key directive, then the _Entity
+        # union and Query._entities field should be removed from the schema.
+        if not federation_key_types:
+            return None
 
-            entity_type.resolve_type = _resolve_type
+        entity_type = GraphQLUnionType("_Entity", federation_key_types)
 
-            return entity_type
+        def _resolve_type(self, value, _type):
+            return self.graphql_type
+
+        entity_type.resolve_type = _resolve_type
+
+        return entity_type

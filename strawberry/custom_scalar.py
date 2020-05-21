@@ -1,19 +1,21 @@
 from graphql.type.scalars import GraphQLScalarType
 
-from .type_converter import REGISTRY
+from .type_registry import register_type
 
 
 def _process_scalar(cls, *, name, description, serialize, parse_value, parse_literal):
     if name is None:
         name = cls.__name__
 
-    REGISTRY[cls] = GraphQLScalarType(
+    graphql_type = GraphQLScalarType(
         name=name,
         description=description,
         serialize=serialize,
         parse_value=parse_value,
         parse_literal=parse_literal,
     )
+
+    register_type(cls, graphql_type, store_type_information=False)
 
     return cls
 

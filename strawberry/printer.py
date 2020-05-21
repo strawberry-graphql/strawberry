@@ -21,6 +21,8 @@ from graphql.utilities.print_schema import (
     print_type as original_print_type,
 )
 
+from .type_registry import get_strawberry_type_for_graphql_type
+
 
 def print_federation_field_directive(field, metadata):
     out = ""
@@ -45,7 +47,7 @@ def print_federation_field_directive(field, metadata):
 
 
 def print_fields(type_) -> str:
-    strawberry_type = getattr(type_, "_strawberry_type", None)
+    strawberry_type = get_strawberry_type_for_graphql_type(type_)
     strawberry_fields = dataclasses.fields(strawberry_type) if strawberry_type else []
 
     def _get_metadata(field_name):
@@ -71,7 +73,7 @@ def print_fields(type_) -> str:
 
 
 def print_federation_key_directive(type_):
-    strawberry_type = getattr(type_, "_strawberry_type", None)
+    strawberry_type = get_strawberry_type_for_graphql_type(type_)
 
     if not strawberry_type:
         return ""
@@ -90,7 +92,7 @@ def print_federation_key_directive(type_):
 
 
 def print_extends(type_):
-    strawberry_type = getattr(type_, "_strawberry_type", None)
+    strawberry_type = get_strawberry_type_for_graphql_type(type_)
 
     if strawberry_type and getattr(strawberry_type, "_federation_extend", False):
         return "extend "

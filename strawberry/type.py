@@ -6,7 +6,7 @@ from graphql import GraphQLInputObjectType, GraphQLInterfaceType, GraphQLObjectT
 
 from .constants import IS_STRAWBERRY_FIELD, IS_STRAWBERRY_INPUT, IS_STRAWBERRY_INTERFACE
 from .field import field, strawberry_field
-from .type_converter import REGISTRY
+from .type_registry import register_type
 from .utils.str_converters import to_camel_case
 from .utils.typing import get_actual_type, has_type_var, is_type_var
 
@@ -44,7 +44,6 @@ def _process_type(
     cls, *, name=None, is_input=False, is_interface=False, description=None
 ):
     name = name or cls.__name__
-    REGISTRY[name] = cls
 
     def _get_fields(wrapped, types_replacement_map=None):
         class_fields = dataclasses.fields(wrapped)
@@ -79,8 +78,6 @@ def _process_type(
             # supply a graphql default_value if the type annotation has a default
             if class_field.default not in (dataclasses.MISSING, None):
                 fields[field_name].default_value = class_field.default
-
-            fields[field_name]._strawberry_type = class_field
 
         strawberry_fields = {}
 
@@ -127,12 +124,12 @@ def _process_type(
             if hasattr(klass, IS_STRAWBERRY_INTERFACE)
         ]
 
-    wrapped.graphql_type = TypeClass(
+    graphql_type = TypeClass(
         name,
         lambda types_replacement_map=None: _get_fields(wrapped, types_replacement_map),
         **extra_kwargs
     )
-    wrapped.graphql_type._strawberry_type = cls
+    register_type(cls, graphql_type)
 
     return wrapped
 
