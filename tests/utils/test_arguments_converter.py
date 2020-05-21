@@ -173,15 +173,15 @@ def test_nested_list_of_complex_types():
     }
 
 
-def test_uses_unset_for_optional_types_when_nothing_is_passed():
+def test_uses_default_for_optional_types_when_nothing_is_passed():
     @strawberry.input
     class Number:
         value: int
 
     @strawberry.input
     class Input:
-        numbers: typing.Optional[Number] = None
-        numbers_second: typing.Optional[Number] = None
+        numbers: typing.Optional[Number] = UNSET
+        numbers_second: typing.Optional[Number] = UNSET
 
     # case 1
     args = {"input": {}}

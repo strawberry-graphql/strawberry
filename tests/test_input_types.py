@@ -35,11 +35,13 @@ def test_optional_default():
     class MyInput:
         s: Optional[str]
         i: int = 0
+        f: float = None
 
     expected_type = """
     input MyInput {
       s: String
       i: Int! = 0
+      f: Float
     }
     """
 

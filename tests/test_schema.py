@@ -7,7 +7,7 @@ import pytest
 
 import strawberry
 from graphql import DirectiveLocation, graphql, graphql_sync
-from strawberry.utils.arguments import is_unset
+from strawberry.utils.arguments import UNSET, is_unset
 
 
 def test_init_var():
@@ -206,12 +206,12 @@ def test_unset_types():
     @strawberry.input
     class InputExample:
         name: str
-        age: typing.Optional[int]
+        age: typing.Optional[int] = UNSET
 
     @strawberry.type
     class Mutation:
         @strawberry.mutation
-        def say(self, info, name: typing.Optional[str]) -> str:
+        def say(self, info, name: typing.Optional[str] = UNSET) -> str:  # type: ignore
             if is_unset(name):
                 return "Name is unset"
 
@@ -242,12 +242,14 @@ def test_unset_types_name_with_underscore():
     @strawberry.input
     class InputExample:
         first_name: str
-        age: typing.Optional[str]
+        age: typing.Optional[str] = UNSET
 
     @strawberry.type
     class Mutation:
         @strawberry.mutation
-        def say(self, info, first_name: typing.Optional[str]) -> str:
+        def say(
+            self, info, first_name: typing.Optional[str] = UNSET  # type: ignore
+        ) -> str:
             if is_unset(first_name):
                 return "Name is unset"
 
@@ -293,7 +295,9 @@ def test_unset_types_stringify_empty():
     @strawberry.type
     class Mutation:
         @strawberry.mutation
-        def say(self, info, first_name: typing.Optional[str]) -> str:
+        def say(
+            self, info, first_name: typing.Optional[str] = UNSET  # type: ignore
+        ) -> str:
             return f"Hello {first_name}!"
 
     schema = strawberry.Schema(query=Query, mutation=Mutation)
@@ -306,6 +310,15 @@ def test_unset_types_stringify_empty():
 
     assert not result.errors
     assert result.data["say"] == "Hello !"
+
+    query = """mutation {
+        say(firstName: null)
+    }"""
+
+    result = graphql_sync(schema, query)
+
+    assert not result.errors
+    assert result.data["say"] == "Hello None!"
 
 
 def test_does_camel_case_conversion():
