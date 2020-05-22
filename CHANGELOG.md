@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.26.1 - 2020-05-22
+-------------------
+
+Argument conversion doesn't populate missing args with defaults.
+```python
+@strawberry.field
+def hello(self, null_or_unset: Optional[str] = UNSET, nullable: str = None) -> None:
+    pass
+```
+
 0.26.0 - 2020-05-21
 -------------------
 
