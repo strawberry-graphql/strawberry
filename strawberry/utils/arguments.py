@@ -90,7 +90,8 @@ def convert_args(
             else:
                 field_type = field
 
-            kwargs[name] = convert_args(value.get(dict_name, UNSET), field_type)
+            if dict_name in value:
+                kwargs[name] = convert_args(value[dict_name], field_type)
 
         if is_dataclass(annotation):
             return annotation(**kwargs)  # type: ignore

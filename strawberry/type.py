@@ -1,6 +1,7 @@
 import copy
 import dataclasses
 from functools import partial
+from typing import Optional
 
 from graphql import GraphQLInputObjectType, GraphQLInterfaceType, GraphQLObjectType
 
@@ -58,6 +59,9 @@ def _process_type(
                 class_field.type = get_actual_type(
                     class_field.type, types_replacement_map
                 )
+            # like args, a None default implies Optional
+            if class_field.default is None:
+                class_field.type = Optional[class_field.type]
 
             field_name = getattr(class_field, "field_name", None) or to_camel_case(
                 class_field.name
