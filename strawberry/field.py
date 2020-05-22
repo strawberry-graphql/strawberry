@@ -7,7 +7,8 @@ from graphql import GraphQLArgument, GraphQLField, GraphQLInputField, Undefined
 
 from .constants import IS_STRAWBERRY_FIELD
 from .exceptions import MissingArgumentsAnnotationsError, MissingReturnAnnotationError
-from .type_converter import REGISTRY, get_graphql_type_for_annotation
+from .type_converter import get_graphql_type_for_annotation
+from .type_registry import get_registered_types
 from .utils.arguments import convert_args
 from .utils.inspect import get_func_args
 from .utils.lazy_property import lazy_property
@@ -193,7 +194,7 @@ def _get_field(
 ):
     name = wrap.__name__
 
-    annotations = typing.get_type_hints(wrap, None, REGISTRY)
+    annotations = typing.get_type_hints(wrap, None, get_registered_types())
     parameters = inspect.signature(wrap).parameters
     field_type = get_graphql_type_for_annotation(annotations["return"], name)
 

@@ -1,30 +1,13 @@
 import dataclasses
 from collections.abc import AsyncGenerator
 
-from graphql import (
-    GraphQLBoolean,
-    GraphQLFloat,
-    GraphQLID,
-    GraphQLInt,
-    GraphQLList,
-    GraphQLNonNull,
-    GraphQLString,
-)
+from graphql import GraphQLList, GraphQLNonNull
 
 from .exceptions import MissingTypesForGenericError
-from .scalars import ID
+from .type_registry import get_type_for_annotation
 from .union import union
 from .utils.str_converters import capitalize_first, to_camel_case
 from .utils.typing import is_generic, is_union
-
-
-REGISTRY = {
-    str: GraphQLString,
-    int: GraphQLInt,
-    float: GraphQLFloat,
-    bool: GraphQLBoolean,
-    ID: GraphQLID,
-}
 
 
 def copy_annotation_with_types(annotation, *types):
@@ -132,7 +115,7 @@ def get_graphql_type_for_annotation(
 
                 graphql_type = union(field_name, types).graphql_type
         else:
-            graphql_type = REGISTRY.get(annotation)
+            graphql_type = get_type_for_annotation(annotation)
 
     if not graphql_type:
         raise ValueError(f"Unable to get GraphQL type for {annotation}")

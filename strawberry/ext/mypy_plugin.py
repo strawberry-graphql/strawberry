@@ -12,6 +12,7 @@ class StrawberryPlugin(Plugin):
             strawberry_decorator in fullname
             for strawberry_decorator in {
                 "strawberry.type",
+                "strawberry.federation.type",
                 "strawberry.input",
                 "strawberry.interface",
             }
