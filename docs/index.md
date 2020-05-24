@@ -57,7 +57,7 @@ class Query:
     books: typing.List[Book]
 ```
 
-This will create a simple GraphQL schema where clients will be able to execute a
+This will create a GraphQL schema where clients will be able to execute a
 query named `books` that will return a list of zero or more books.
 
 ## Step 3: Define your data set
@@ -96,7 +96,7 @@ class Query:
     books: typing.List[Book] = strawberry.field(resolver=get_books)
 ```
 
-Using `strawberry.field` allows us to easily specify a resolver for a particular
+Using `strawberry.field` allows us to specify a resolver for a particular
 field.
 
 > **NOTE**: we didn't have to specify any resolver for the Book's fields, this
@@ -164,6 +164,7 @@ title for each book.
 
 ## Next steps
 
+<!--alex ignore retext-equality -->
 Well done! You just created your first GraphQL API using Strawberry 🙌!
 
 Check out the following resources to learn more about GraphQL and Strawberry.

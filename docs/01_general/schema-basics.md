@@ -86,6 +86,7 @@ GraphQL supports a few different types:
 
 ## Scalar types
 
+<!--alex ignore-->
 Scalar types are similar to python primitive types. Here’s the list of the
 default scalar types in GraphQL:
 
@@ -100,6 +101,7 @@ default scalar types in GraphQL:
 > objects, they are not officially included with the GraphQL spec, but they are
 > usually needed in most servers. They are serialized as ISO-8601.
 
+<!--alex ignore-->
 These primitives work for the majority for the uses cases, but you can also
 specify your [own scalar types](...).
 

@@ -117,7 +117,7 @@ a new union type by writing:
 Result = strawberry.union("Result", (A, B), description="Example Result")
 ```
 
-This also improves the support for Union and Generic types, as it 
+This also improves the support for Union and Generic types, as it
 was broken before.
 
 0.24.1 - 2020-04-29
@@ -128,7 +128,7 @@ This release fixes a bug introduced by 0.24.0
 0.24.0 - 2020-04-29
 -------------------
 
-This releases allows to use resolver without having 
+This releases allows to use resolver without having
 to specify root and info arguments:
 
 ```python
@@ -184,7 +184,7 @@ This releases replaces the playground with GraphiQL including the GraphiQL explo
 -------------------
 
 This release adds support for generic types, allowing
-to reuse types easily, here's an example:
+to reuse types, here's an example:
 
 ```python
 T = typing.TypeVar("T")
@@ -232,7 +232,7 @@ if __name__ == "__main__":
 -------------------
 
 Improve datetime, date and time types conversion. Removes aniso dependency
-and also adds support for python types, so now we can do use python datetime's types 
+and also adds support for python types, so now we can do use python datetime's types
 instead of our custom scalar types.
 
 0.20.2 - 2020-01-22
@@ -254,9 +254,9 @@ Fix directives bugs:
 
 This release improves support for permissions (it is a breaking change).
 Now you will receive the source and the arguments in the `has_permission` method,
-so you can run more complex permission checks. It also allows to use permissions 
-on simple fields, here's an example:
- 
+so you can run more complex permission checks. It also allows to use permissions
+on fields, here's an example:
+
 
 ```python
 import strawberry
@@ -316,7 +316,7 @@ now it should support lists of complex types properly.
 -------------------
 
 Set `is_type_of` only when the type implements an interface,
-this allows to return different (but compatibile) types in simple cases.
+this allows to return different (but compatibile) types in basic cases.
 
 0.18.0 - 2019-10-31
 -------------------
