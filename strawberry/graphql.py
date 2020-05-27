@@ -14,8 +14,9 @@ from graphql.subscription import subscribe as graphql_subscribe
 from graphql.type import validate_schema
 from graphql.validation import validate
 
-from .middleware import DirectivesMiddleware, Middleware
+from .middleware import DirectivesMiddleware
 from .extensions import Extension, ExtensionsRunner
+from .schema import Schema
 
 
 @dataclasses.dataclass
@@ -26,14 +27,12 @@ class ExecutionResult:
 
 
 def _execute(
-    # TODO: GraphQLSchema should really be a Strawberry GraphQL schema
-    schema: GraphQLSchema,
+    schema: Schema,
     query: str,
     extensions_runner: ExtensionsRunner,
     root_value: typing.Any = None,
     context_value: typing.Any = None,
     variable_values: typing.Dict[str, typing.Any] = None,
-    middleware: typing.List[Middleware] = None,
     operation_name: str = None,
 ):
     with extensions_runner.request():
@@ -71,7 +70,7 @@ def _execute(
 
 
 def execute_sync(
-    schema: GraphQLSchema,
+    schema: Schema,
     query: str,
     root_value: typing.Any = None,
     context_value: typing.Any = None,
@@ -105,7 +104,7 @@ def execute_sync(
 
 
 async def execute(
-    schema: GraphQLSchema,
+    schema: Schema,
     query: str,
     root_value: typing.Any = None,
     context_value: typing.Any = None,
