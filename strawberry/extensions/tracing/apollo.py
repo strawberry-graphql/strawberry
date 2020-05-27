@@ -2,9 +2,9 @@ import dataclasses
 import time
 import typing
 from datetime import datetime
-from inspect import isawaitable
 
 from graphql import GraphQLResolveInfo
+from strawberry.extensions import Extension
 
 
 DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
@@ -80,28 +80,28 @@ class ApolloTracingStats:
         }
 
 
-class SyncTracingMiddleware:
+class ApolloTracingExtension(Extension):
     def __init__(self):
         self._resolver_stats: typing.List[ApolloResolverStats] = []
 
-    def start(self):
+    def on_request_start(self):
         self._start_timestamp = self.now()
         self._start_time = datetime.utcnow()
 
-    def stop(self):
+    def on_request_end(self):
         self._end_timestamp = self.now()
         self._end_time = datetime.utcnow()
 
-    def start_parsing(self):
+    def on_parsing_start(self):
         self._start_parsing = self.now()
 
-    def end_parsing(self):
+    def on_parsing_end(self):
         self._end_parsing = self.now()
 
-    def start_validation(self):
+    def on_validation_start(self):
         self._start_validation = self.now()
 
-    def end_validation(self):
+    def on_validation_end(self):
         self._end_validation = self.now()
 
     def now(self) -> int:
@@ -124,6 +124,9 @@ class SyncTracingMiddleware:
             ),
         )
 
+    def get_results(self):
+        return {"tracing": self.stats.to_json()}
+
     def resolve(self, _next, root, info, *args, **kwargs):
         start_timestamp = self.now()
 
@@ -137,31 +140,6 @@ class SyncTracingMiddleware:
 
         try:
             return _next(root, info, *args, **kwargs)
-        finally:
-            end_timestamp = self.now()
-            resolver_stats.duration = end_timestamp - start_timestamp
-            self._resolver_stats.append(resolver_stats)
-
-
-class TracingMiddleware(SyncTracingMiddleware):
-    async def resolve(self, _next, root, info, *args, **kwargs):
-        start_timestamp = self.now()
-
-        resolver_stats = ApolloResolverStats(
-            path=get_path_from_info(info),
-            field_name=info.field_name,
-            parent_type=info.parent_type,
-            return_type=info.return_type,
-            start_offset=start_timestamp - self._start_timestamp,
-        )
-
-        try:
-            result = _next(root, info, *args, **kwargs)
-
-            if isawaitable(result):
-                return await result
-
-            return result
         finally:
             end_timestamp = self.now()
             resolver_stats.duration = end_timestamp - start_timestamp

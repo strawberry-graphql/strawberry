@@ -3,12 +3,19 @@ import typing
 from asyncio import ensure_future
 from inspect import isawaitable
 
-from graphql import GraphQLError, GraphQLSchema, execute as graphql_excute, parse
+from graphql import (
+    ExecutionResult as GraphQLExecutionResult,
+    GraphQLError,
+    GraphQLSchema,
+    execute as graphql_excute,
+    parse,
+)
 from graphql.subscription import subscribe as graphql_subscribe
 from graphql.type import validate_schema
 from graphql.validation import validate
 
-from .middleware import DirectivesMiddleware, Middleware, SyncTracingMiddleware
+from .middleware import DirectivesMiddleware, Middleware
+from .extensions import Extension, ExtensionsRunner
 
 
 @dataclasses.dataclass
@@ -22,70 +29,45 @@ def _execute(
     # TODO: GraphQLSchema should really be a Strawberry GraphQL schema
     schema: GraphQLSchema,
     query: str,
+    extensions_runner: ExtensionsRunner,
     root_value: typing.Any = None,
     context_value: typing.Any = None,
     variable_values: typing.Dict[str, typing.Any] = None,
     middleware: typing.List[Middleware] = None,
     operation_name: str = None,
-    enable_tracing: bool = False,
 ):
-    enabled_middlewares: typing.List[typing.Any] = [DirectivesMiddleware()]
+    with extensions_runner.request():
+        schema_validation_errors = validate_schema(schema)
 
-    if enable_tracing:
-        tracing_middleware = SyncTracingMiddleware()
-        enabled_middlewares.append(tracing_middleware)
-        tracing_middleware.start()
+        if schema_validation_errors:
+            return None, schema_validation_errors, None
 
-    schema_validation_errors = validate_schema(schema)
+        try:
+            with extensions_runner.parsing():
+                document = parse(query)
+        except GraphQLError as error:
+            return None, [error], None
 
-    if schema_validation_errors:
-        return ExecutionResult(data=None, errors=schema_validation_errors)
+        except Exception as error:
+            error = GraphQLError(str(error), original_error=error)
 
-    try:
-        if enable_tracing:
-            tracing_middleware.start_parsing()
+            return None, [error], None
 
-        document = parse(query)
+        with extensions_runner.validation():
+            validation_errors = validate(schema, document)
 
-        if enable_tracing:
-            tracing_middleware.end_parsing()
+        if validation_errors:
+            return ExecutionResult(data=None, errors=validation_errors)
 
-    except GraphQLError as error:
-        return ExecutionResult(data=None, errors=[error])
-    except Exception as error:
-        error = GraphQLError(str(error), original_error=error)
-        return ExecutionResult(data=None, errors=[error])
-
-    if enable_tracing:
-        tracing_middleware.start_validation()
-
-    validation_errors = validate(schema, document)
-
-    if validation_errors:
-        return ExecutionResult(data=None, errors=validation_errors)
-
-    if enable_tracing:
-        tracing_middleware.end_validation()
-
-    extensions = {}
-
-    result = graphql_excute(
-        schema,
-        parse(query),
-        root_value=root_value,
-        middleware=enabled_middlewares,
-        variable_values=variable_values,
-        operation_name=operation_name,
-        context_value=context_value,
-    )
-
-    if enable_tracing:
-        tracing_middleware.stop()
-        extensions["tracing"] = tracing_middleware.stats.to_json()
-
-    return ExecutionResult(
-        data=result.data, errors=result.errors, extensions=extensions
-    )
+        return graphql_excute(
+            schema,
+            document,
+            root_value=root_value,
+            middleware=extensions_runner.as_middleware_manager(DirectivesMiddleware()),
+            variable_values=variable_values,
+            operation_name=operation_name,
+            context_value=context_value,
+        )
 
 
 def execute_sync(
@@ -95,18 +77,18 @@ def execute_sync(
     context_value: typing.Any = None,
     variable_values: typing.Dict[str, typing.Any] = None,
     operation_name: str = None,
-    middleware: typing.List[typing.Any] = None,
-    enable_tracing: bool = False,
-):
+    extensions: typing.List[Extension] = None,
+) -> ExecutionResult:
+    extensions_runner = ExtensionsRunner(extensions or [])
+
     result = _execute(
         schema=schema,
         query=query,
+        extensions_runner=extensions_runner,
         root_value=root_value,
         context_value=context_value,
         variable_values=variable_values,
         operation_name=operation_name,
-        middleware=middleware,
-        enable_tracing=enable_tracing,
     )
 
     # Assert that the execution was synchronous.
@@ -115,7 +97,11 @@ def execute_sync(
 
         raise RuntimeError("GraphQL execution failed to complete synchronously.")
 
-    return typing.cast(ExecutionResult, result)
+    return ExecutionResult(
+        data=result.data,
+        errors=result.errors,
+        extensions=extensions_runner.get_extensions_results(),
+    )
 
 
 async def execute(
@@ -125,24 +111,28 @@ async def execute(
     context_value: typing.Any = None,
     variable_values: typing.Dict[str, typing.Any] = None,
     operation_name: str = None,
-    middleware: typing.List[typing.Any] = None,
-    enable_tracing: bool = False,
+    extensions: typing.List[Extension] = None,
 ):
+    extensions_runner = ExtensionsRunner(extensions or [])
+
     result = _execute(
         schema=schema,
         query=query,
+        extensions_runner=extensions_runner,
         root_value=root_value,
         context_value=context_value,
         variable_values=variable_values,
         operation_name=operation_name,
-        middleware=middleware,
-        enable_tracing=enable_tracing,
     )
 
     if isawaitable(result):
         result = await typing.cast(typing.Awaitable[ExecutionResult], result)
 
-    return result
+    return ExecutionResult(
+        data=result.data,
+        errors=result.errors,
+        extensions=extensions_runner.get_extensions_results(),
+    )
 
 
 async def subscribe(
@@ -152,9 +142,7 @@ async def subscribe(
     context_value: typing.Any = None,
     variable_values: typing.Dict[str, typing.Any] = None,
     operation_name: str = None,
-) -> typing.Union[
-    typing.AsyncIterator[ExecutionResult], ExecutionResult
-]:  # pragma: no cover
+) -> typing.Union[typing.AsyncIterator[GraphQLExecutionResult], GraphQLExecutionResult]:
     document = parse(query)
 
     return await graphql_subscribe(

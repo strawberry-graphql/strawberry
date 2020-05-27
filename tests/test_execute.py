@@ -3,6 +3,7 @@ import pytest
 import strawberry
 from freezegun import freeze_time
 from graphql import DirectiveLocation
+from strawberry.extensions.tracing import ApolloTracingExtension
 from strawberry.graphql import execute, execute_sync
 
 
@@ -68,7 +69,9 @@ async def test_runs_directives():
 
 @freeze_time("2012-01-14 12:00:01")
 def test_tracing_sync(mocker):
-    mocker.patch("strawberry.middleware.tracing.time.perf_counter_ns", return_value=0)
+    mocker.patch(
+        "strawberry.extensions.tracing.apollo.time.perf_counter_ns", return_value=0
+    )
 
     @strawberry.type
     class Person:
@@ -90,7 +93,7 @@ def test_tracing_sync(mocker):
         }
     """
 
-    result = execute_sync(schema, query, enable_tracing=True)
+    result = execute_sync(schema, query, extensions=[ApolloTracingExtension()])
 
     assert not result.errors
 
@@ -129,7 +132,9 @@ def test_tracing_sync(mocker):
 @pytest.mark.asyncio
 @freeze_time("2012-01-14 12:00:01")
 async def test_tracing_async(mocker):
-    mocker.patch("strawberry.middleware.tracing.time.perf_counter_ns", return_value=0)
+    mocker.patch(
+        "strawberry.extensions.tracing.apollo.time.perf_counter_ns", return_value=0
+    )
 
     @strawberry.type
     class Person:
@@ -151,7 +156,7 @@ async def test_tracing_async(mocker):
         }
     """
 
-    result = await execute(schema, query, enable_tracing=True)
+    result = await execute(schema, query, extensions=[ApolloTracingExtension()])
 
     assert not result.errors
 
