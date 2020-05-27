@@ -10,12 +10,13 @@ from graphql import (
     execute as graphql_excute,
     parse,
 )
+from graphql.pyutils import AwaitableOrValue
 from graphql.subscription import subscribe as graphql_subscribe
 from graphql.type import validate_schema
 from graphql.validation import validate
 
+from .extensions import ExtensionsRunner
 from .middleware import DirectivesMiddleware
-from .extensions import Extension, ExtensionsRunner
 from .schema import Schema
 
 
@@ -34,29 +35,29 @@ def _execute(
     context_value: typing.Any = None,
     variable_values: typing.Dict[str, typing.Any] = None,
     operation_name: str = None,
-):
+) -> AwaitableOrValue[GraphQLExecutionResult]:
     with extensions_runner.request():
         schema_validation_errors = validate_schema(schema)
 
         if schema_validation_errors:
-            return None, schema_validation_errors, None
+            return GraphQLExecutionResult(data=None, errors=schema_validation_errors)
 
         try:
             with extensions_runner.parsing():
                 document = parse(query)
         except GraphQLError as error:
-            return None, [error], None
+            return GraphQLExecutionResult(data=None, errors=[error])
 
         except Exception as error:
             error = GraphQLError(str(error), original_error=error)
 
-            return None, [error], None
+            return GraphQLExecutionResult(data=None, errors=[error])
 
         with extensions_runner.validation():
             validation_errors = validate(schema, document)
 
         if validation_errors:
-            return ExecutionResult(data=None, errors=validation_errors)
+            return GraphQLExecutionResult(data=None, errors=validation_errors)
 
         return graphql_excute(
             schema,
@@ -76,9 +77,8 @@ def execute_sync(
     context_value: typing.Any = None,
     variable_values: typing.Dict[str, typing.Any] = None,
     operation_name: str = None,
-    extensions: typing.List[Extension] = None,
 ) -> ExecutionResult:
-    extensions_runner = ExtensionsRunner(extensions or [])
+    extensions_runner = ExtensionsRunner(schema.strawberry_extensions)
 
     result = _execute(
         schema=schema,
@@ -96,6 +96,8 @@ def execute_sync(
 
         raise RuntimeError("GraphQL execution failed to complete synchronously.")
 
+    result = typing.cast(GraphQLExecutionResult, result)
+
     return ExecutionResult(
         data=result.data,
         errors=result.errors,
@@ -110,9 +112,8 @@ async def execute(
     context_value: typing.Any = None,
     variable_values: typing.Dict[str, typing.Any] = None,
     operation_name: str = None,
-    extensions: typing.List[Extension] = None,
 ):
-    extensions_runner = ExtensionsRunner(extensions or [])
+    extensions_runner = ExtensionsRunner(schema.strawberry_extensions)
 
     result = _execute(
         schema=schema,
@@ -125,7 +126,9 @@ async def execute(
     )
 
     if isawaitable(result):
-        result = await typing.cast(typing.Awaitable[ExecutionResult], result)
+        result = await typing.cast(typing.Awaitable[GraphQLExecutionResult], result)
+
+    result = typing.cast(GraphQLExecutionResult, result)
 
     return ExecutionResult(
         data=result.data,

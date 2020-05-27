@@ -83,7 +83,7 @@ def test_tracing_sync(mocker):
         def person(self, info) -> Person:
             return Person()
 
-    schema = strawberry.Schema(query=Query)
+    schema = strawberry.Schema(query=Query, extensions=[ApolloTracingExtension()])
 
     query = """
         query {
@@ -93,7 +93,7 @@ def test_tracing_sync(mocker):
         }
     """
 
-    result = execute_sync(schema, query, extensions=[ApolloTracingExtension()])
+    result = execute_sync(schema, query)
 
     assert not result.errors
 
@@ -146,7 +146,7 @@ async def test_tracing_async(mocker):
         def person(self, info) -> Person:
             return Person()
 
-    schema = strawberry.Schema(query=Query)
+    schema = strawberry.Schema(query=Query, extensions=[ApolloTracingExtension()])
 
     query = """
         query {
@@ -156,7 +156,7 @@ async def test_tracing_async(mocker):
         }
     """
 
-    result = await execute(schema, query, extensions=[ApolloTracingExtension()])
+    result = await execute(schema, query)
 
     assert not result.errors
 

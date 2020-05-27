@@ -5,7 +5,7 @@ from contextlib import contextmanager
 from graphql import MiddlewareManager
 
 
-class Extension:
+class Extension:  # pragma: no cover
     def on_request_start(self):
         ...
 
@@ -46,18 +46,20 @@ def run_on_all_extension(func):
         for extension in self.extensions:
             getattr(extension, method_name_start)()
 
-        result = func(self, *args, **kwargs)
+        try:
+            result = func(self, *args, **kwargs)
 
-        for extension in self.extensions:
-            getattr(extension, method_name_end)()
+            return result
 
-        return result
+        finally:
+            for extension in self.extensions:
+                getattr(extension, method_name_end)()
 
     return wrap
 
 
 class ExtensionsRunner:
-    def __init__(self, extensions: typing.List[Extension] = None):
+    def __init__(self, extensions: typing.Sequence[Extension] = None):
         self.extensions = extensions or []
 
     @contextmanager
