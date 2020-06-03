@@ -3,7 +3,7 @@ import typing
 from graphql import GraphQLUnionType
 
 from .exceptions import UnallowedReturnTypeForUnion, WrongReturnTypeForUnion
-from .utils.typing import is_generic, is_type_var
+from .utils.typing import get_list_annotation, is_generic, is_list, is_type_var
 
 
 def _get_type_mapping_from_actual_type(root) -> typing.Dict[typing.Any, typing.Type]:
@@ -11,10 +11,23 @@ def _get_type_mapping_from_actual_type(root) -> typing.Dict[typing.Any, typing.T
     type_var_to_actual_type = {}
 
     for field_name, annotation in root.__annotations__.items():
-        if is_type_var(annotation):
+        # when we have a list we want to get the type of the elements contained in the
+        # list, to do so we currently only get the first time (if the list is not empty)
+        # this might break in more complex cases, but should suffice for now.
+
+        if is_list(annotation):
+            annotation = get_list_annotation(annotation)
+
+            if is_type_var(annotation):
+                values = getattr(root, field_name)
+
+                if values:
+                    type_var_to_actual_type[annotation] = type(values[0])
+
+        elif is_type_var(annotation):
             type_var_to_actual_type[annotation] = type(getattr(root, field_name))
 
-        if is_generic(annotation):
+        elif is_generic(annotation):
             type_var_to_actual_type.update(
                 _get_type_mapping_from_actual_type(getattr(root, field_name))
             )
@@ -28,9 +41,23 @@ def _find_type_for_generic_union(root: typing.Any) -> typing.Type:
     type_params = root.__parameters__
 
     mapping = _get_type_mapping_from_actual_type(root)
+
+    if not mapping:
+        # if we weren't able to find a mapping, ie. when returning an empty list
+        # for a generic type, then we fall back to returning the first copy.
+        # This a very simplistic heuristic and it is bound to break with complex
+        # uses cases. We can improve it later if this becomes an issue.
+
+        return next((t for t in root._copies.values()))
+
     types = tuple(mapping[param] for param in type_params)
 
-    return root._copies[types]
+    type = root._copies.get(types)
+
+    if type is None:
+        raise ValueError(f"Unable to find type for {root.__class__} and {types}")
+
+    return type
 
 
 def union(name: str, types: typing.Tuple[typing.Type], *, description=None):
