@@ -557,3 +557,117 @@ def test_generated_names():
             "node": {"name": "Example"},
         }
     }
+
+
+def test_supports_lists_within_unions():
+    T = typing.TypeVar("T")
+
+    @strawberry.type
+    class User:
+        name: str
+
+    @strawberry.type
+    class Edge(typing.Generic[T]):
+        nodes: typing.List[T]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self, info, **kwargs) -> typing.Union[User, Edge[User]]:
+            return Edge(nodes=[User("P")])
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        user {
+            __typename
+
+            ... on UserEdge {
+                nodes {
+                    name
+                }
+            }
+        }
+    }"""
+
+    result = graphql_sync(schema, query)
+
+    assert not result.errors
+    assert result.data == {"user": {"__typename": "UserEdge", "nodes": [{"name": "P"}]}}
+
+
+def test_supports_lists_within_unions_empty_list():
+    T = typing.TypeVar("T")
+
+    @strawberry.type
+    class User:
+        name: str
+
+    @strawberry.type
+    class Edge(typing.Generic[T]):
+        nodes: typing.List[T]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self, info, **kwargs) -> typing.Union[User, Edge[User]]:
+            return Edge(nodes=[])
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        user {
+            __typename
+
+            ... on UserEdge {
+                nodes {
+                    name
+                }
+            }
+        }
+    }"""
+
+    result = graphql_sync(schema, query)
+
+    assert not result.errors
+    assert result.data == {"user": {"__typename": "UserEdge", "nodes": []}}
+
+
+def test_raises_error_when_unable_to_find_type():
+    T = typing.TypeVar("T")
+
+    @strawberry.type
+    class User:
+        name: str
+
+    @strawberry.type
+    class Edge(typing.Generic[T]):
+        nodes: typing.List[T]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self, info, **kwargs) -> typing.Union[User, Edge[User]]:
+            return Edge(nodes=["bad example"])  # type: ignore
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        user {
+            __typename
+
+            ... on UserEdge {
+                nodes {
+                    name
+                }
+            }
+        }
+    }"""
+
+    result = graphql_sync(schema, query)
+
+    assert result.errors[0].message == (
+        "Unable to find type for <class 'tests.test_generics."
+        "test_raises_error_when_unable_to_find_type.<locals>.Edge'> "
+        "and (<class 'str'>,)"
+    )
