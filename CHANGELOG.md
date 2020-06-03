@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.26.2 - 2020-06-03
+-------------------
+
+Fixes a bug when using unions and lists together
+
 0.26.1 - 2020-05-22
 -------------------
 
