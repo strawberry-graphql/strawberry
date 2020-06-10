@@ -1,4 +1,3 @@
-import sys
 import re
 import os
 from os.path import abspath
@@ -53,12 +52,12 @@ def import_schema(schema, output, recursive, multifile):
             schema_string = imports + schema_string
             write_strawberry_schema(schema_string, output, schema)
 
-    except FileNotFoundError as e:
+    except FileNotFoundError:
         print(f"File or files not found on schema path: {schema}")
 
-    except GraphQLError as e:
+    except GraphQLError:
         # TODO: Test this to see if print output can be improved
-        print(f"A file contains syntax errors")
+        print("A file contains syntax errors")
 
 
 def get_ast(paths):
