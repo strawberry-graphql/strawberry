@@ -90,6 +90,9 @@ class GraphQLView(View):
                 ).read()
             )
 
+        context = context or {}
+        context.update({"SUBSCRIPTION_ENABLED": "false"})
+
         response = TemplateResponse(request=request, template=None, context=context)
         response.content = template.render(RequestContext(request, context))
 

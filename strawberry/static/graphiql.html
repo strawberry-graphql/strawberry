@@ -70,19 +70,20 @@
                 });
         }
 
-        subscriptionsEndpoint = httpUrlToWebSockeUrl(fetchURL);
+        var subscriptionsEndpoint = httpUrlToWebSockeUrl(fetchURL);
+        var subscriptionsEnabled = JSON.parse('{{ SUBSCRIPTION_ENABLED }}')
 
         const subscriptionsClient =
-            new window.SubscriptionsTransportWs.SubscriptionClient(
+            subscriptionsEnabled ? new window.SubscriptionsTransportWs.SubscriptionClient(
                 subscriptionsEndpoint,
                 {
                     reconnect: true
                 }
-            );
+            ) : null;
 
-        const graphQLFetcherWithSubscriptions = 
+        const graphQLFetcherWithSubscriptions =
             window.GraphiQLSubscriptionsFetcher.graphQLFetcher(
-                subscriptionsClient, 
+                subscriptionsClient,
                 graphQLFetcher
             );
 
