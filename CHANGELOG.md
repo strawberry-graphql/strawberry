@@ -1,6 +1,20 @@
 CHANGELOG
 =========
 
+0.27.0 - 2020-06-10
+-------------------
+
+This release adds support for decimal type, example:
+
+
+```python
+@strawberry.type
+class Query:
+    @strawberry.field
+    def example_decimal(self) -> Decimal:
+        return Decimal("3.14159")
+```
+
 0.26.3 - 2020-06-10
 -------------------
 
