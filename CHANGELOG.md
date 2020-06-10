@@ -1,6 +1,12 @@
 CHANGELOG
 =========
 
+0.26.3 - 2020-06-10
+-------------------
+
+This release disables subscription in GraphiQL where it 
+is not supported.
+
 0.26.2 - 2020-06-03
 -------------------
 
