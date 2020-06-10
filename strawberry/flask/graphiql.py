@@ -6,6 +6,8 @@ def render_graphiql_page():
     graphiql_html_file = f"{dir_path}/static/graphiql.html"
 
     html_string = None
+
     with open(graphiql_html_file, "r") as f:
         html_string = f.read()
-    return html_string
+
+    return html_string.replace("{{ SUBSCRIPTION_ENABLED }}", "false")

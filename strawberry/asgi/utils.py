@@ -8,4 +8,4 @@ def get_graphiql_html() -> str:
     with open(path) as f:
         template = f.read()
 
-    return template
+    return template.replace("{{ SUBSCRIPTION_ENABLED }}", "true")
