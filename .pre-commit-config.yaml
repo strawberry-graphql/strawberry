@@ -18,12 +18,13 @@ repos:
     rev: v2.1.1
     hooks:
       - id: seed-isort-config
+
   - repo: https://github.com/pre-commit/mirrors-isort
     rev: v4.3.21
     hooks:
       - id: isort
 
-  -   repo: https://github.com/patrick91/pre-commit-alex
-      rev: aa5da9e54b92ab7284feddeaf52edf14b1690de3
-      hooks:
-      -   id: alex
+  - repo: https://github.com/patrick91/pre-commit-alex
+    rev: aa5da9e54b92ab7284feddeaf52edf14b1690de3
+    hooks:
+      - id: alex

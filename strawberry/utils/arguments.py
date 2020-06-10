@@ -2,13 +2,15 @@ import enum
 import typing
 from dataclasses import is_dataclass
 from datetime import date, datetime, time
+from decimal import Decimal
 
 from ..exceptions import UnsupportedTypeError
 from .str_converters import to_camel_case
 from .typing import get_list_annotation, get_optional_annotation, is_list, is_optional
 
 
-SCALAR_TYPES = [int, str, float, bytes, bool, datetime, date, time]
+# TODO: these need to be update when defining a custom scalar
+SCALAR_TYPES = [int, str, float, bytes, bool, datetime, date, time, Decimal]
 
 
 class _Unset:
