@@ -1,0 +1,8 @@
+"""An edge in a connection."""
+type FilmSpeciesEdge {
+  """The item at the end of the edge"""
+  node: Species
+
+  """A cursor for use in pagination"""
+  cursor: String!
+}

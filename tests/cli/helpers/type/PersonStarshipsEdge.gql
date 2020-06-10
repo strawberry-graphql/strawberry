@@ -1,0 +1,8 @@
+"""An edge in a connection."""
+type PersonStarshipsEdge {
+  """The item at the end of the edge"""
+  node: Starship
+
+  """A cursor for use in pagination"""
+  cursor: String!
+}
