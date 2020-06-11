@@ -103,7 +103,7 @@ default scalar types in GraphQL:
 
 <!--alex ignore-->
 These primitives work for the majority for the uses cases, but you can also
-specify your [own scalar types](...).
+specify your [own scalar types](/docs/types/scalars).
 
 ## Object types
 
