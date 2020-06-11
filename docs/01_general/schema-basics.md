@@ -1,6 +1,6 @@
 ---
 title: Schema Basics
-path: /docs/schema-basic
+path: /docs/schema-basics
 ---
 
 # Schema basics
