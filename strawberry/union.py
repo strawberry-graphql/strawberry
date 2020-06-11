@@ -116,4 +116,7 @@ def union(name: str, types: typing.Tuple[typing.Type], *, description=None):
         def __init__(self, graphql_type):
             self.graphql_type = graphql_type
 
+        def __call__(self):
+            raise ValueError("Cannot use union type directly")
+
     return X(graphql_type)
