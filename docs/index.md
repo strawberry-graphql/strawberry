@@ -85,7 +85,7 @@ that we can also reuse them to create the data objects.
 
 We now have a function that returns some books, but Strawberry doesn’t know it
 should use it when executing a query. To fix this we need to update our query to
-specify the [resolver](/docs/resolvers/) for our books. A resolver tells
+specify the [resolver](/docs/types/resolvers) for our books. A resolver tells
 Strawberry how to fetch the data associated with a particular field.
 
 Let’s update our Query:
@@ -170,5 +170,5 @@ Well done! You just created your first GraphQL API using Strawberry 🙌!
 Check out the following resources to learn more about GraphQL and Strawberry.
 
 - [Schema Basics](/docs/schema-basics)
-- [Resolvers](/docs/resolvers/)
-- [Deploy](/docs/deploy/)
+- [Resolvers](/docs/types/resolvers)
+- [Deployment](/docs/ops/deployment)
