@@ -1,4 +1,6 @@
-from typing import Union
+from typing import Optional, Union
+
+import pytest
 
 import strawberry
 from graphql import graphql_sync
@@ -229,3 +231,56 @@ def test_named_union_description():
     assert not result.errors
     assert result.data["ab"] == {"__typename": "A", "a": 5}
     assert result.data["__type"] == {"kind": "UNION", "description": "Example Result"}
+
+
+def test_can_use_union_in_generics():
+    @strawberry.type
+    class A:
+        a: int
+
+    @strawberry.type
+    class B:
+        b: int
+
+    Result = strawberry.union("Result", (A, B))
+
+    @strawberry.type
+    class Query:
+        ab: Optional[Result] = None
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        __type(name: "Result") {
+            kind
+            description
+        }
+
+        ab {
+            __typename,
+
+            ... on A {
+                a
+            }
+        }
+    }"""
+
+    result = graphql_sync(schema, query, root_value=Query())
+
+    assert not result.errors
+    assert result.data["ab"] is None
+
+
+def test_cannot_use_union_directly():
+    @strawberry.type
+    class A:
+        a: int
+
+    @strawberry.type
+    class B:
+        b: int
+
+    Result = strawberry.union("Result", (A, B))
+
+    with pytest.raises(ValueError, match=r"Cannot use union type directly"):
+        Result()
