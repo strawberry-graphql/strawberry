@@ -1,148 +1,85 @@
+# type: ignore
+
 import textwrap
-import typing
+from typing import List
 
 import strawberry
-from strawberry.printer import print_schema, print_type
 
 
-def test_print_extend():
-    @strawberry.federation.type(extend=True)
-    class Product:
-        upc: str
-        name: typing.Optional[str]
-        price: typing.Optional[int]
-        weight: typing.Optional[int]
+def test_entities_type_when_no_type_has_keys():
+    global Review
 
-    expected_representation = """
-        extend type Product {
-          upc: String!
-          name: String
-          price: Int
-          weight: Int
-        }
-    """
+    @strawberry.federation.type
+    class User:
+        username: str
 
-    assert print_type(Product) == textwrap.dedent(expected_representation).strip()
-
-
-def test_print_type_with_key():
-    @strawberry.federation.type(keys=["upc"])
-    class Product:
-        upc: str
-        name: typing.Optional[str]
-        price: typing.Optional[int]
-        weight: typing.Optional[int]
-
-    expected_representation = """
-        type Product @key(fields: "upc") {
-          upc: String!
-          name: String
-          price: Int
-          weight: Int
-        }
-    """
-
-    assert print_type(Product) == textwrap.dedent(expected_representation).strip()
-
-
-def test_print_type_with_multiple_keys():
-    @strawberry.federation.type(keys=["upc", "sku"])
-    class Product:
-        upc: str
-        sku: str
-        name: typing.Optional[str]
-        price: typing.Optional[int]
-        weight: typing.Optional[int]
-
-    expected_representation = """
-        type Product @key(fields: "upc") @key(fields: "sku") {
-          upc: String!
-          sku: String!
-          name: String
-          price: Int
-          weight: Int
-        }
-    """
-
-    assert print_type(Product) == textwrap.dedent(expected_representation).strip()
-
-
-def test_print_provides():
-    @strawberry.federation.type(keys=["upc"])
-    class Product:
-        upc: str
-        name: typing.Optional[str]
-
-    @strawberry.federation.type(keys=["id"])
-    class Review:
-        product: Product = strawberry.federation.field(provides="name")
-
-    expected_representation = """
-        type Review @key(fields: "id") {
-          product: Product! @provides(fields: "name")
-        }
-    """
-
-    assert print_type(Review) == textwrap.dedent(expected_representation).strip()
-
-
-def test_print_external():
-    @strawberry.federation.type(keys=["upc"])
+    @strawberry.federation.type(keys=["upc"], extend=True)
     class Product:
         upc: str = strawberry.federation.field(external=True)
-        name: str = strawberry.federation.field(external=True)
+        reviews: List["Review"]
 
-    expected_representation = """
-        type Product @key(fields: "upc") {
-          upc: String! @external
-          name: String! @external
-        }
-    """
+    @strawberry.federation.type
+    class Review:
+        body: str
+        author: User
+        product: Product
 
-    assert print_type(Product) == textwrap.dedent(expected_representation).strip()
-
-
-def test_print_requires():
-    @strawberry.federation.type(keys=["upc"])
-    class Product:
-        name: str = strawberry.federation.field(requires="email")
-
-    expected_representation = """
-        type Product @key(fields: "upc") {
-          name: String! @requires(fields: "email")
-        }
-    """
-
-    assert print_type(Product) == textwrap.dedent(expected_representation).strip()
-
-
-def test_print_schema():
-    @strawberry.federation.type(keys=["upc"])
-    class Product:
-        upc: str
-        name: typing.Optional[str]
-        price: typing.Optional[int]
-        weight: typing.Optional[int]
-
-    @strawberry.federation.type(extend=True)
+    @strawberry.federation.type
     class Query:
         @strawberry.field
-        def top_products(self, info, first: int) -> typing.List[Product]:
+        def top_products(self, info, first: int) -> List[Product]:
             return []
 
-    expected_representation = """
-        type Product @key(fields: "upc") {
-          upc: String!
-          name: String
-          price: Int
-          weight: Int
+    schema = strawberry.federation.Schema(query=Query)
+
+    expected = """
+        extend type Product @key(fields: "upc") {
+          upc: String! @external
+          reviews: [Review!]!
         }
 
-        extend type Query {
+        type Query {
+          _service: _Service!
+          _entities(representations: [_Any!]!): [_Entity]!
           topProducts(first: Int!): [Product!]!
+        }
+
+        type Review {
+          body: String!
+          author: User!
+          product: Product!
+        }
+
+        type User {
+          username: String!
+        }
+
+        scalar _Any
+
+        union _Entity = Product
+
+        type _Service {
+          sdl: String!
         }
     """
 
-    schema = strawberry.Schema(query=Query)
+    assert schema.as_str() == textwrap.dedent(expected).strip()
 
-    assert print_schema(schema) == textwrap.dedent(expected_representation).strip()
+    del Review
+
+
+# type Review {
+#   body: String
+#   author: User @provides(fields: "username")
+#   product: Product
+# }
+
+# extend type User @key(fields: "id") {
+#   id: ID! @external
+#   reviews: [Review]
+# }
+
+# extend type Product @key(fields: "upc") {
+#   upc: String! @external
+#   reviews: [Review]
+# }

@@ -10,7 +10,7 @@ from .graphql_lexer import GraphQLLexer
 
 def pretty_print_graphql_operation(
     operation_name: str, query: str, variables: typing.Dict["str", typing.Any]
-):
+):  # pragma: no cover
     """Pretty print a GraphQL operation using pygments.
 
     Won't print introspection operation to prevent noise in the output."""

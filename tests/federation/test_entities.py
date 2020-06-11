@@ -1,7 +1,6 @@
 import typing
 
 import strawberry
-from graphql import graphql_sync
 
 
 def test_fetch_entities():
@@ -31,8 +30,7 @@ def test_fetch_entities():
         }
     """
 
-    result = graphql_sync(
-        schema,
+    result = schema.execute_sync(
         query,
         variable_values={
             "representations": [{"__typename": "Product", "upc": "B00005N5PF"}]

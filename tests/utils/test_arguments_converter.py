@@ -1,16 +1,21 @@
-import typing
 from enum import Enum
+from typing import List, Optional
 
 import strawberry
-from strawberry.utils.arguments import UNSET, convert_args
+from strawberry.arguments import UNSET, ArgumentDefinition, convert_arguments
 
 
 def test_simple_types():
     args = {"integer": 1, "string": "abc", "float": 1.2, "bool": True}
 
-    annotations = {"integer": int, "string": str, "float": float, "bool": bool}
+    arguments = [
+        ArgumentDefinition(name="integer", type=int, origin_name="integer"),
+        ArgumentDefinition(name="string", type=str, origin_name="string"),
+        ArgumentDefinition(name="float", type=float, origin_name="float"),
+        ArgumentDefinition(name="bool", type=bool, origin_name="bool"),
+    ]
 
-    assert convert_args(args, annotations) == {
+    assert convert_arguments(args, arguments) == {
         "integer": 1,
         "string": "abc",
         "float": 1.2,
@@ -22,19 +27,28 @@ def test_list():
     args = {
         "integerList": [1, 2],
         "stringList": ["abc", "cde"],
-        "floatList": [1.2, 2.3],
     }
 
-    annotations = {
-        "integer_list": typing.List[int],
-        "string_list": typing.List[str],
-        "float_list": typing.List[float],
-    }
+    arguments = [
+        ArgumentDefinition(
+            name="integerList",
+            origin_name="integer_list",
+            type=int,
+            is_list=True,
+            child=ArgumentDefinition(type=int),
+        ),
+        ArgumentDefinition(
+            name="stringList",
+            origin_name="string_list",
+            type=str,
+            is_list=True,
+            child=ArgumentDefinition(type=str),
+        ),
+    ]
 
-    assert convert_args(args, annotations) == {
+    assert convert_arguments(args, arguments) == {
         "integer_list": [1, 2],
         "string_list": ["abc", "cde"],
-        "float_list": [1.2, 2.3],
     }
 
 
@@ -43,16 +57,16 @@ def test_input_types():
     class MyInput:
         abc: str
         say_hello_to: str
-        was: int = strawberry.field(name="having", is_input=True)
-        fun: str = strawberry.field(is_input=True)
+        fun: str
+        was: int = strawberry.field(name="having")
 
     args = {
         "input": {"abc": "example", "sayHelloTo": "Patrick", "having": 10, "fun": "yes"}
     }
 
-    annotations = {"input": MyInput}
+    arguments = [ArgumentDefinition(name="input", origin_name="input", type=MyInput)]
 
-    assert convert_args(args, annotations) == {
+    assert convert_arguments(args, arguments) == {
         "input": MyInput(abc="example", say_hello_to="Patrick", was=10, fun="yes")
     }
 
@@ -64,9 +78,13 @@ def test_optional_input_types():
 
     args = {"input": {"abc": "example"}}
 
-    annotations = {"input": typing.Optional[MyInput]}
+    arguments = [
+        ArgumentDefinition(
+            name="input", origin_name="input", type=MyInput, is_optional=True
+        )
+    ]
 
-    assert convert_args(args, annotations) == {"input": MyInput(abc="example")}
+    assert convert_arguments(args, arguments) == {"input": MyInput(abc="example")}
 
 
 def test_list_of_input_types():
@@ -76,9 +94,18 @@ def test_list_of_input_types():
 
     args = {"inputList": [{"abc": "example"}]}
 
-    annotations = {"input_list": typing.List[MyInput]}
+    arguments = [
+        ArgumentDefinition(
+            name="inputList",
+            origin_name="input_list",
+            child=ArgumentDefinition(type=MyInput),
+            is_list=True,
+        )
+    ]
 
-    assert convert_args(args, annotations) == {"input_list": [MyInput(abc="example")]}
+    assert convert_arguments(args, arguments) == {
+        "input_list": [MyInput(abc="example")]
+    }
 
 
 def test_optional_list_of_input_types():
@@ -88,9 +115,18 @@ def test_optional_list_of_input_types():
 
     args = {"inputList": [{"abc": "example"}]}
 
-    annotations = {"input_list": typing.Optional[typing.List[MyInput]]}
-
-    assert convert_args(args, annotations) == {"input_list": [MyInput(abc="example")]}
+    arguments = [
+        ArgumentDefinition(
+            name="inputList",
+            origin_name="input_list",
+            is_optional=True,
+            child=ArgumentDefinition(type=MyInput),
+            is_list=True,
+        )
+    ]
+    assert convert_arguments(args, arguments) == {
+        "input_list": [MyInput(abc="example")]
+    }
 
 
 def test_nested_input_types():
@@ -115,7 +151,7 @@ def test_nested_input_types():
     class AddReleaseFileCommentInput:
         pr_number: int
         status: ReleaseFileStatus
-        release_info: typing.Optional[ReleaseInfo]
+        release_info: Optional[ReleaseInfo]
 
     args = {
         "input": {
@@ -128,9 +164,13 @@ def test_nested_input_types():
         }
     }
 
-    annotations = {"input": AddReleaseFileCommentInput}
+    arguments = [
+        ArgumentDefinition(
+            name="input", origin_name="input", type=AddReleaseFileCommentInput
+        )
+    ]
 
-    assert convert_args(args, annotations) == {
+    assert convert_arguments(args, arguments) == {
         "input": AddReleaseFileCommentInput(
             pr_number=12,
             status=ReleaseFileStatus.OK,
@@ -146,9 +186,13 @@ def test_nested_input_types():
         }
     }
 
-    annotations = {"input": AddReleaseFileCommentInput}
+    arguments = [
+        ArgumentDefinition(
+            name="input", origin_name="input", type=AddReleaseFileCommentInput
+        )
+    ]
 
-    assert convert_args(args, annotations) == {
+    assert convert_arguments(args, arguments) == {
         "input": AddReleaseFileCommentInput(
             pr_number=12, status=ReleaseFileStatus.OK, release_info=None
         )
@@ -162,13 +206,13 @@ def test_nested_list_of_complex_types():
 
     @strawberry.input
     class Input:
-        numbers: typing.List[Number]
+        numbers: List[Number]
 
     args = {"input": {"numbers": [{"value": 1}, {"value": 2}]}}
 
-    annotations = {"input": Input}
+    arguments = [ArgumentDefinition(name="input", origin_name="input", type=Input)]
 
-    assert convert_args(args, annotations) == {
+    assert convert_arguments(args, arguments) == {
         "input": Input(numbers=[Number(1), Number(2)])
     }
 
@@ -180,19 +224,19 @@ def test_uses_default_for_optional_types_when_nothing_is_passed():
 
     @strawberry.input
     class Input:
-        numbers: typing.Optional[Number] = UNSET
-        numbers_second: typing.Optional[Number] = UNSET
+        numbers: Optional[Number] = UNSET
+        numbers_second: Optional[Number] = UNSET
 
     # case 1
     args = {"input": {}}
 
-    annotations = {"input": Input}
+    arguments = [ArgumentDefinition(name="input", origin_name="input", type=Input)]
 
-    assert convert_args(args, annotations) == {"input": Input(UNSET, UNSET)}
+    assert convert_arguments(args, arguments) == {"input": Input(UNSET, UNSET)}
 
     # case 2
     args = {"input": {"numbersSecond": None}}
 
-    annotations = {"input": Input}
+    arguments = [ArgumentDefinition(name="input", origin_name="input", type=Input)]
 
-    assert convert_args(args, annotations) == {"input": Input(UNSET, None)}
+    assert convert_arguments(args, arguments) == {"input": Input(UNSET, None)}

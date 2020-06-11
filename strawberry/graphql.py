@@ -5,14 +5,14 @@ from graphql import (
     ExecutionResult,
     GraphQLError,
     GraphQLSchema,
-    execute as graphql_excute,
+    execute as graphql_execute,
     parse,
 )
 from graphql.subscription import subscribe as graphql_subscribe
 from graphql.type import validate_schema
 from graphql.validation import validate
 
-from .middleware import DirectivesMiddleware
+from .middleware import Middleware
 
 
 async def execute(
@@ -21,8 +21,9 @@ async def execute(
     root_value: typing.Any = None,
     context_value: typing.Any = None,
     variable_values: typing.Dict[str, typing.Any] = None,
+    middleware: typing.List[Middleware] = None,
     operation_name: str = None,
-):
+):  # pragma: no cover
     schema_validation_errors = validate_schema(schema)
     if schema_validation_errors:
         return ExecutionResult(data=None, errors=schema_validation_errors)
@@ -40,11 +41,11 @@ async def execute(
     if validation_errors:
         return ExecutionResult(data=None, errors=validation_errors)
 
-    result = graphql_excute(
+    result = graphql_execute(
         schema,
         parse(query),
         root_value=root_value,
-        middleware=[DirectivesMiddleware()],
+        middleware=middleware or [],
         variable_values=variable_values,
         operation_name=operation_name,
         context_value=context_value,
@@ -61,7 +62,9 @@ async def subscribe(
     context_value: typing.Any = None,
     variable_values: typing.Dict[str, typing.Any] = None,
     operation_name: str = None,
-) -> typing.Union[typing.AsyncIterator[ExecutionResult], ExecutionResult]:
+) -> typing.Union[
+    typing.AsyncIterator[ExecutionResult], ExecutionResult
+]:  # pragma: no cover
     document = parse(query)
 
     return await graphql_subscribe(

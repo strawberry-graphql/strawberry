@@ -11,5 +11,4 @@ from .permission import BasePermission  # noqa
 from .scalars import ID  # noqa
 from .schema import Schema  # noqa
 from .type import input, interface, type  # noqa
-from .types import *  # noqa
 from .union import union  # noqa

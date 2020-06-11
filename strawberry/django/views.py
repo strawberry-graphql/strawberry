@@ -1,5 +1,6 @@
 import json
 import os
+import typing
 
 from django.http import Http404, HttpResponseNotAllowed, JsonResponse
 from django.http.response import HttpResponseBadRequest
@@ -12,22 +13,16 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
 
 import strawberry
-from graphql import graphql_sync
 from graphql.error import format_error as format_graphql_error
-from graphql.type.schema import GraphQLSchema
+
+from ..schema import BaseSchema
 
 
 class GraphQLView(View):
-    schema = None
     graphiql = True
+    schema: typing.Optional[BaseSchema] = None
 
-    def __init__(self, schema=None, graphiql=True):
-        if not schema:
-            raise ValueError("You must pass in a schema to GraphQLView")
-
-        if not isinstance(schema, GraphQLSchema):
-            raise ValueError("You must pass in a valid schema to GraphQLView")
-
+    def __init__(self, schema: BaseSchema, graphiql=True):
         self.schema = schema
         self.graphiql = graphiql
 
@@ -58,8 +53,7 @@ class GraphQLView(View):
 
         context = {"request": request}
 
-        result = graphql_sync(
-            self.schema,
+        result = self.schema.execute_sync(
             query,
             root_value=self.get_root_value(),
             variable_values=variables,

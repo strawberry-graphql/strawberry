@@ -1,37 +1,64 @@
-from graphql.type.scalars import GraphQLScalarType
+from dataclasses import dataclass
+from typing import Callable, Optional
 
-from .type_registry import register_type
-
-
-def _process_scalar(cls, *, name, description, serialize, parse_value, parse_literal):
-    if name is None:
-        name = cls.__name__
-
-    graphql_type = GraphQLScalarType(
-        name=name,
-        description=description,
-        serialize=serialize,
-        parse_value=parse_value,
-        parse_literal=parse_literal,
-    )
-
-    register_type(cls, graphql_type, store_type_information=False)
-
-    return cls
+from .utils.str_converters import to_camel_case
 
 
 def identity(x):
     return x
 
 
+@dataclass
+class ScalarDefinition:
+    name: str
+    description: Optional[str]
+    serialize: Callable
+    parse_value: Callable
+    parse_literal: Callable
+
+
+class ScalarWrapper:
+    _scalar_definition: ScalarDefinition
+
+    def __init__(self, wrap):
+        self.wrap = wrap
+
+    def __call__(self, *args, **kwargs):
+        return self.wrap(*args, **kwargs)
+
+
+def _process_scalar(
+    cls,
+    *,
+    name: str,
+    description: str,
+    serialize: Callable,
+    parse_value: Callable,
+    parse_literal: Callable
+):
+
+    name = name or to_camel_case(cls.__name__)
+
+    wrapper = ScalarWrapper(cls)
+    wrapper._scalar_definition = ScalarDefinition(
+        name=name,
+        description=description,
+        serialize=serialize,
+        parse_literal=parse_literal,
+        parse_value=parse_value,
+    )
+
+    return wrapper
+
+
 def scalar(
     cls=None,
     *,
-    name=None,
-    description=None,
-    serialize=identity,
-    parse_value=None,
-    parse_literal=None
+    name: str = None,
+    description: str = None,
+    serialize: Callable = identity,
+    parse_value: Optional[Callable] = None,
+    parse_literal: Optional[Callable] = None
 ):
     """Annotates a class or type as a GraphQL custom scalar.
 

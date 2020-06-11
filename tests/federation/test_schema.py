@@ -2,7 +2,6 @@ import textwrap
 import typing
 
 import strawberry
-from graphql import graphql_sync
 
 
 def test_entities_type_when_no_type_has_keys():
@@ -32,7 +31,7 @@ def test_entities_type_when_no_type_has_keys():
         }
     """
 
-    result = graphql_sync(schema, query)
+    result = schema.execute_sync(query)
 
     assert not result.errors
 
@@ -66,7 +65,7 @@ def test_entities_type():
         }
     """
 
-    result = graphql_sync(schema, query)
+    result = schema.execute_sync(query)
 
     assert not result.errors
 
@@ -96,7 +95,7 @@ def test_additional_scalars():
         }
     """
 
-    result = graphql_sync(schema, query)
+    result = schema.execute_sync(query)
 
     assert not result.errors
 
@@ -124,7 +123,7 @@ def test_service():
         }
     """
 
-    result = graphql_sync(schema, query)
+    result = schema.execute_sync(query)
 
     assert not result.errors
 
@@ -133,7 +132,7 @@ def test_service():
           upc: String!
         }
 
-        type Query {
+        extend type Query {
           _service: _Service!
           topProducts(first: Int!): [Product!]!
         }

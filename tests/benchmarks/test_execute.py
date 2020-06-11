@@ -1,13 +1,12 @@
 import datetime
 import random
+from datetime import date
 from typing import List
 
 import pytest
 
 import strawberry
 from asgiref.sync import async_to_sync
-from strawberry.graphql import execute
-from strawberry.types import Date
 
 
 @pytest.mark.asyncio
@@ -28,7 +27,7 @@ def test_execute(benchmark, items):
         id: int
         name: str
         age: int
-        birthday: Date
+        birthday: date
         tags: List[str]
 
         @strawberry.field
@@ -67,6 +66,6 @@ def test_execute(benchmark, items):
           }
         }
     """
-    result = benchmark(async_to_sync(execute), schema, query)
+    result = benchmark(async_to_sync(schema.execute), query)
     assert not result.errors
     assert len(result.data["patrons"]) == items

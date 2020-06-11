@@ -1,29 +1,26 @@
 import json
+from typing import Any, Optional
 
 from flask import Response, abort, render_template_string, request
 from flask.views import View
-from graphql import graphql_sync
 from graphql.error import format_error as format_graphql_error
-from graphql.type.schema import GraphQLSchema
 
+from ..schema import BaseSchema
 from .graphiql import render_graphiql_page
 
 
 class GraphQLView(View):
-    schema = None
-    graphiql = True
-
     methods = ["GET", "POST"]
 
-    def __init__(self, schema, graphiql=True):
-        self.schema = schema
+    def __init__(
+        self,
+        schema: BaseSchema,
+        graphiql: bool = True,
+        root_value: Optional[Any] = None,
+    ):
         self.graphiql = graphiql
-
-        if not self.schema:
-            raise ValueError("You must pass in a schema to GraphQLView")
-
-        if not isinstance(self.schema, GraphQLSchema):
-            raise ValueError("A valid schema is required to be provided to GraphQLView")
+        self.schema = schema
+        self.root_value = root_value
 
     def render_template(self, request, template=None):
         return render_template_string(template)
@@ -46,13 +43,14 @@ class GraphQLView(View):
         except KeyError:
             return Response("No valid query was provided for the request", 400)
 
-        context = dict(request=request)
-        result = graphql_sync(
-            self.schema,
+        context = {"request": request}
+
+        result = self.schema.execute_sync(
             query,
             variable_values=variables,
             context_value=context,
             operation_name=operation_name,
+            root_value=self.root_value,
         )
 
         response_data = {"data": result.data}

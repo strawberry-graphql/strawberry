@@ -1,0 +1,55 @@
+import datetime
+import decimal
+from typing import Dict, Type, cast
+
+from graphql import (
+    GraphQLBoolean,
+    GraphQLFloat,
+    GraphQLID,
+    GraphQLInt,
+    GraphQLScalarType,
+    GraphQLString,
+)
+from strawberry.custom_scalar import ScalarDefinition
+from strawberry.scalars import ID
+
+from .base_scalars import Date, DateTime, Decimal, Time
+from .types import ConcreteType, TypeMap
+
+
+def _make_scalar_type(definition: ScalarDefinition) -> GraphQLScalarType:
+    return GraphQLScalarType(
+        name=definition.name,
+        description=definition.description,
+        serialize=definition.serialize,
+        parse_value=definition.parse_value,
+        parse_literal=definition.parse_literal,
+    )
+
+
+SCALAR_REGISTRY: Dict[Type, GraphQLScalarType] = {
+    str: GraphQLString,
+    int: GraphQLInt,
+    float: GraphQLFloat,
+    bool: GraphQLBoolean,
+    ID: GraphQLID,
+    datetime.date: _make_scalar_type(Date._scalar_definition),
+    datetime.datetime: _make_scalar_type(DateTime._scalar_definition),
+    datetime.time: _make_scalar_type(Time._scalar_definition),
+    decimal.Decimal: _make_scalar_type(Decimal._scalar_definition),
+}
+
+
+def get_scalar_type(annotation: Type, type_map: TypeMap) -> GraphQLScalarType:
+    if not hasattr(annotation, "_scalar_definition"):
+        return SCALAR_REGISTRY[annotation]
+
+    scalar_definition = annotation._scalar_definition
+
+    if scalar_definition.name not in type_map:
+        type_map[scalar_definition.name] = ConcreteType(
+            definition=scalar_definition,
+            implementation=_make_scalar_type(scalar_definition),
+        )
+
+    return cast(GraphQLScalarType, type_map[scalar_definition.name].implementation)
