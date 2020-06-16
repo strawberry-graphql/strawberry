@@ -1,13 +1,10 @@
 import re
-import os
-from os.path import abspath
 
 import click
 from graphql.language import parse
 from graphql.error import GraphQLError
 
 from ...utils.sdl_transpiler import render_template
-from ...utils.str_converters import to_snake_case
 
 
 # Regex pattern to extract import statement
