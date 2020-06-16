@@ -52,7 +52,8 @@ def get_ast(paths):
     return ast
 
 
-def gql_file_to_string(path: str) -> [str]:
+# def gql_file_to_string(path: str) -> list[str]:
+def gql_file_to_string(path: str) -> list[str]:
     """ Returns schema string """
     with open(path, "r") as file:
         string = file.read()
