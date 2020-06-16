@@ -40,7 +40,7 @@ def import_schema(schema):
 
 def get_ast(paths):
     """ Parse the content of files to AST """
-    gql_strings = []
+    gql_strings = list()
     # Looping through the passed argument paths
     for path in paths:
         gql_strings += gql_file_to_string(path)
