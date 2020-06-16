@@ -16,14 +16,14 @@ GQL_SCHEMA_TYPE = r"(?si)^Schema.*?}"
 @click.argument("schema", type=str, required=True, nargs=-1)
 def import_schema(schema):
     """ Parses SDL file to python dataclasses and writes them out """
-    
+
     templates = []  # Put rendered templates here
     try:
         ast = get_ast(schema)  # Get abstract syntax tree
         for definition in ast.definitions:
             # Parse and render specific ast definitions
             templates.append(render_template(definition))
-        
+
         imports = "import strawberry"
         schema_string = "\n\n".join(templates)
         imports += "\nimport typing\n\n" if "typing" in schema_string else ""
@@ -41,7 +41,7 @@ def import_schema(schema):
 def get_ast(paths):
     """ Parse the content of files to AST """
     gql_strings = []
-    # Looping through the passed argument paths 
+    # Looping through the passed argument paths
     for path in paths:
         gql_strings += gql_file_to_string(path)
     # Join read file strings and parse them to ast

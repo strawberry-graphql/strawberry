@@ -23,6 +23,8 @@ def test_cli_cmd_import_specific_object_type(mocker):
     result = runner.invoke(cmd_import_schema, [file])
     cwd = os.getcwd()
     # Just so it's easier to read the result it is in the .gitignore file
-    with open(os.path.join(cwd, 'tests', 'cli', 'output', 'test_import_schema.py'), 'w') as f:
+    with open(
+        os.path.join(cwd, "tests", "cli", "output", "test_import_schema.py"), "w"
+    ) as f:
         f.write(result.output)
     assert result.exit_code == 0
