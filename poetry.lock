@@ -219,7 +219,7 @@ description = "GraphQL implementation for Python, a port of GraphQL.js, the Java
 name = "graphql-core"
 optional = false
 python-versions = ">=3.6,<4"
-version = "3.1.1"
+version = "3.1.2"
 
 [[package]]
 category = "main"
@@ -953,8 +953,8 @@ flask = [
     {file = "Flask-1.1.2.tar.gz", hash = "sha256:4efa1ae2d7c9865af48986de8aeb8504bf32c7f3d6fdc9353d34b21f4b127060"},
 ]
 graphql-core = [
-    {file = "graphql-core-3.1.1.tar.gz", hash = "sha256:1fdc57d08f4492f06b21f3d487311e88fa8c33e0ac1e2d74ec79fb411ceba64a"},
-    {file = "graphql_core-3.1.1-py3-none-any.whl", hash = "sha256:25c2f537b430abc380de8765577938c78b5993584af627b7eb56b061b4ae234d"},
+    {file = "graphql-core-3.1.2.tar.gz", hash = "sha256:c056424cbdaa0ff67446e4379772f43746bad50a44ec23d643b9bdcd052f5b3a"},
+    {file = "graphql_core-3.1.2-py3-none-any.whl", hash = "sha256:b1826fbd1c6c290f7180d758ecf9c3859a46574cff324bf35a10167533c0e463"},
 ]
 h11 = [
     {file = "h11-0.9.0-py2.py3-none-any.whl", hash = "sha256:4bc6d6a1238b7615b266ada57e0618568066f57dd6fa967d1290ec9309b2f2f1"},
