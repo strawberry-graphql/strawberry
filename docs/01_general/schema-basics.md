@@ -60,16 +60,18 @@ import strawberry
 @strawberry.type
 class Book:
   title: str
-  author: Author
+  author: 'Author'
 
 @strawberry.type
 class Author:
   name: str
-  books: typing.List[Book]
+  books: typing.List['Book']
 ```
 
 As you can see the code maps almost one to one with the schema, thanks to
-python’s type hints feature.
+python’s type hints feature. However, note that we need to wrap our custom
+strawberry types with quotes in order to avoid a 'name Author not defined' 
+TypeError.
 
 Note that here we are also not specifying how to fetch data, that will be
 explained in the resolvers section.
