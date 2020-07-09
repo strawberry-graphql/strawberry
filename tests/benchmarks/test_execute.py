@@ -21,9 +21,7 @@ async def test_execute(aio_benchmark, items):
     class Query:
         @strawberry.field
         async def patrons(self, info) -> List[Patron]:
-            return [
-                Patron(id=i, name="Patrick", age=100) for i in range(items)
-            ]
+            return [Patron(id=i, name="Patrick", age=100) for i in range(items)]
 
     schema = strawberry.Schema(query=Query)
 
