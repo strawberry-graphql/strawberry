@@ -9,8 +9,7 @@ from strawberry.graphql import execute
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "items",
-    [25, 100, 250],
+    "items", [25, 100, 250],
 )
 async def test_execute(aio_benchmark, items):
     @strawberry.type
@@ -23,7 +22,9 @@ async def test_execute(aio_benchmark, items):
     class Query:
         @strawberry.field
         async def patrons(self, info) -> List[Patron]:
-            return [Patron(id=i, name="Patrick", age=100) for i in range(items)]
+            return [
+                Patron(id=i, name="Patrick", age=100) for i in range(items)
+            ]
 
     schema = strawberry.Schema(query=Query)
 
@@ -37,5 +38,5 @@ async def test_execute(aio_benchmark, items):
         }
     """
     result = aio_benchmark(execute, schema, query)
-    assert len(result.data['patrons']) == items
+    assert len(result.data["patrons"]) == items
     assert not result.errors
