@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.27.3 - 2020-07-10
+-------------------
+
+Optimized signature reflection and added benchmarks.
+
 0.27.2 - 2020-06-11
 -------------------
 
