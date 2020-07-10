@@ -510,6 +510,14 @@ version = "0.9.0"
 
 [[package]]
 category = "dev"
+description = "Mustache for Python"
+name = "pystache"
+optional = false
+python-versions = "*"
+version = "0.5.4"
+
+[[package]]
+category = "dev"
 description = "pytest: simple powerful testing with Python"
 name = "pytest"
 optional = false
@@ -624,13 +632,14 @@ category = "dev"
 description = "pytest plugin for writing tests for mypy plugins"
 name = "pytest-mypy-plugins"
 optional = false
-python-versions = "*"
-version = "1.3.0"
+python-versions = ">=3.6"
+version = "1.4.0"
 
 [package.dependencies]
 decorator = "*"
 mypy = ">=0.730"
-pytest = "*"
+pystache = ">=0.5.4"
+pytest = ">=5.4.0"
 pyyaml = "*"
 
 [[package]]
@@ -842,7 +851,7 @@ django = ["django"]
 flask = ["flask"]
 
 [metadata]
-content-hash = "d48c86aaa15e9ae625635c0e49389114c374fd201ed24760cc58ac20cb0e4db3"
+content-hash = "2ee864d0703723b4d134261f337308be805a2d471f3f8679ce8759ede7f70c8e"
 python-versions = "^3.7"
 
 [metadata.files]
@@ -1113,6 +1122,9 @@ pyreadline = [
 pyrepl = [
     {file = "pyrepl-0.9.0.tar.gz", hash = "sha256:292570f34b5502e871bbb966d639474f2b57fbfcd3373c2d6a2f3d56e681a775"},
 ]
+pystache = [
+    {file = "pystache-0.5.4.tar.gz", hash = "sha256:f7bbc265fb957b4d6c7c042b336563179444ab313fb93a719759111eabd3b85a"},
+]
 pytest = [
     {file = "pytest-5.4.3-py3-none-any.whl", hash = "sha256:5c0db86b698e8f170ba4582a492248919255fcd4c79b1ee64ace34301fb589a1"},
     {file = "pytest-5.4.3.tar.gz", hash = "sha256:7979331bfcba207414f5e1263b5a0f8f521d0f457318836a7355531ed1a4c7d8"},
@@ -1142,8 +1154,8 @@ pytest-mock = [
     {file = "pytest_mock-3.1.1-py3-none-any.whl", hash = "sha256:a9fedba70e37acf016238bb2293f2652ce19985ceb245bbd3d7f3e4032667402"},
 ]
 pytest-mypy-plugins = [
-    {file = "pytest-mypy-plugins-1.3.0.tar.gz", hash = "sha256:7920a38520f914e849cafc81582318673bec8924ff71ee2d0f98dc738995d06d"},
-    {file = "pytest_mypy_plugins-1.3.0-py3-none-any.whl", hash = "sha256:db18943f8775260308a11948a42739c6789bbab8a1bafb64103e4429ce31dfc0"},
+    {file = "pytest-mypy-plugins-1.4.0.tar.gz", hash = "sha256:f1a1d34bf01cb6d8bf455409ed4e391c0b2f0a64cb0f6e743db975bcafcc8cf2"},
+    {file = "pytest_mypy_plugins-1.4.0-py3-none-any.whl", hash = "sha256:baa43948e9873220876fae86dbefc69727803b2df8c20f8164ff0be9823e91d7"},
 ]
 pytz = [
     {file = "pytz-2020.1-py2.py3-none-any.whl", hash = "sha256:a494d53b6d39c3c6e44c3bec237336e14305e4f29bbf800b599253057fbb79ed"},
