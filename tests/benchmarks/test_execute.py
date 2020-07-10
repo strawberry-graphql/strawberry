@@ -3,6 +3,7 @@ from typing import List
 import pytest
 
 import strawberry
+from asgiref.sync import async_to_sync
 from strawberry.graphql import execute
 
 
@@ -10,7 +11,7 @@ from strawberry.graphql import execute
 @pytest.mark.parametrize(
     "items", [25, 100, 250],
 )
-async def test_execute(aio_benchmark, items):
+def test_execute(benchmark, items):
     @strawberry.type
     class Patron:
         id: int
@@ -20,8 +21,10 @@ async def test_execute(aio_benchmark, items):
     @strawberry.type
     class Query:
         @strawberry.field
-        async def patrons(self, info) -> List[Patron]:
-            return [Patron(id=i, name="Patrick", age=100) for i in range(items)]
+        def patrons(self, info) -> List[Patron]:
+            return [
+                Patron(id=i, name="Patrick", age=100) for i in range(items)
+            ]
 
     schema = strawberry.Schema(query=Query)
 
@@ -34,6 +37,6 @@ async def test_execute(aio_benchmark, items):
           }
         }
     """
-    result = aio_benchmark(execute, schema, query)
+    result = benchmark(async_to_sync(execute), schema, query)
     assert len(result.data["patrons"]) == items
     assert not result.errors
