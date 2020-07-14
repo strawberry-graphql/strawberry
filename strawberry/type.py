@@ -38,6 +38,8 @@ def _get_resolver(cls, field_name):
 
         return field_resolver
 
+    _resolver.__name__ = field_name
+
     return _resolver
 
 

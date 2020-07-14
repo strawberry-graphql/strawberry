@@ -284,3 +284,49 @@ def test_cannot_use_union_directly():
 
     with pytest.raises(ValueError, match=r"Cannot use union type directly"):
         Result()
+
+
+def test_multiple_unions():
+    @strawberry.type
+    class CoolType:
+        @strawberry.type
+        class UnionA1:
+            value: int
+
+        @strawberry.type
+        class UnionA2:
+            value: int
+
+        @strawberry.type
+        class UnionB1:
+            value: int
+
+        @strawberry.type
+        class UnionB2:
+            value: int
+
+        field1: Union[UnionA1, UnionA2]
+        field2: Union[UnionB1, UnionB2]
+
+    schema = strawberry.Schema(query=CoolType)
+
+    query = """
+        {
+            __type(name:"CoolType") {
+                name
+                description
+                fields {
+                    name
+                }
+            }
+        }
+    """
+
+    result = graphql_sync(schema, query)
+
+    assert not result.errors
+    assert result.data["__type"] == {
+        "description": None,
+        "fields": [{"name": "field1"}, {"name": "field2"}],
+        "name": "CoolType",
+    }
