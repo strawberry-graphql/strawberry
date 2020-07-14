@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.27.4 - 2020-07-14
+-------------------
+
+This PR fixes a bug when declaring multiple non-named union types
+
 0.27.3 - 2020-07-10
 -------------------
 
