@@ -1,4 +1,4 @@
-from typing import List, Optional, Union
+from typing import Generic, List, Optional, TypeVar, Union
 
 import pytest
 
@@ -83,6 +83,45 @@ def test_unions_inside_list():
 
     assert union_type_definition.name == "UserError"
     assert union_type_definition.types == (User, Error)
+
+
+def test_named_union():
+    @strawberry.type
+    class A:
+        a: int
+
+    @strawberry.type
+    class B:
+        b: int
+
+    Result = strawberry.union("Result", (A, B))
+
+    union_type_definition = Result._union_definition
+
+    assert union_type_definition.name == "Result"
+    assert union_type_definition.types == (A, B)
+
+
+def test_union_with_generic():
+    T = TypeVar("T")
+
+    @strawberry.type
+    class Error:
+        message: str
+
+    @strawberry.type
+    class Edge(Generic[T]):
+        node: T
+
+    Result = strawberry.union("Result", (Error, Edge[str]))
+
+    union_type_definition = Result._union_definition
+
+    assert union_type_definition.name == "Result"
+    assert union_type_definition.types[0] == Error
+
+    assert union_type_definition.types[1]._type_definition.is_generic is False
+    assert union_type_definition.types[1]._type_definition.name == "StrEdge"
 
 
 def test_cannot_use_union_directly():

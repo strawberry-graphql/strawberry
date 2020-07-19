@@ -91,9 +91,11 @@ def get_union_type(
 
         return returned_type
 
+    types = union_definition.types  # type: ignore
+
     return GraphQLUnionType(
         union_definition.name,
-        [get_object_type(type, type_map) for type in union_definition.types],
+        [get_object_type(type, type_map) for type in types],
         description=union_definition.description,
         resolve_type=_resolve_type,
     )
