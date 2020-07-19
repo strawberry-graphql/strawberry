@@ -10,7 +10,7 @@ from graphql import (
     GraphQLScalarType,
     GraphQLString,
 )
-from strawberry.custom_scalar import ScalarDefinition
+from strawberry.custom_scalar import SCALAR_REGISTRY, ScalarDefinition
 from strawberry.scalars import ID
 
 from .base_scalars import Date, DateTime, Decimal, Time
@@ -27,7 +27,7 @@ def _make_scalar_type(definition: ScalarDefinition) -> GraphQLScalarType:
     )
 
 
-SCALAR_REGISTRY: Dict[Type, GraphQLScalarType] = {
+DEFAULT_SCALAR_REGISTRY: Dict[Type, GraphQLScalarType] = {
     str: GraphQLString,
     int: GraphQLInt,
     float: GraphQLFloat,
@@ -41,10 +41,13 @@ SCALAR_REGISTRY: Dict[Type, GraphQLScalarType] = {
 
 
 def get_scalar_type(annotation: Type, type_map: TypeMap) -> GraphQLScalarType:
-    if not hasattr(annotation, "_scalar_definition"):
-        return SCALAR_REGISTRY[annotation]
+    if annotation in DEFAULT_SCALAR_REGISTRY:
+        return DEFAULT_SCALAR_REGISTRY[annotation]
 
-    scalar_definition = annotation._scalar_definition
+    if annotation in SCALAR_REGISTRY:
+        scalar_definition = SCALAR_REGISTRY[annotation]
+    else:
+        scalar_definition = annotation._scalar_definition
 
     if scalar_definition.name not in type_map:
         type_map[scalar_definition.name] = ConcreteType(

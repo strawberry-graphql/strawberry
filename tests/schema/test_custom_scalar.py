@@ -1,4 +1,5 @@
 import base64
+import uuid
 from typing import NewType
 
 import strawberry
@@ -81,3 +82,20 @@ def test_custom_scalar_default_serialization():
 
     assert not result.errors
     assert result.data["myStr"] == "valueSuffix"
+
+
+def test_can_register_python_types():
+    strawberry.scalar(uuid.UUID, name="UUID", serialize=str, parse_value=uuid.UUID)
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def answer(self, info) -> uuid.UUID:
+            return uuid.UUID(int=1)
+
+    schema = strawberry.Schema(Query)
+
+    result = schema.execute_sync("{ answer }")
+
+    assert not result.errors
+    assert result.data["answer"] == "00000000-0000-0000-0000-000000000001"
