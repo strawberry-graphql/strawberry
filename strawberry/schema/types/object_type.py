@@ -27,6 +27,8 @@ def _get_object_type_for_type_definition(
             for interface in type_definition.interfaces
         ]
 
+    assert not type_definition.is_generic
+
     return TypeClass(
         name=type_definition.name,
         fields=lambda: {
