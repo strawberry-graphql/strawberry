@@ -9,13 +9,13 @@ def test_supports_generic_simple_type():
     @strawberry.type
     class Edge(typing.Generic[T]):
         cursor: strawberry.ID
-        node: T
+        node_field: T
 
     @strawberry.type
     class Query:
         @strawberry.field
         def int_edge(self, info) -> Edge[int]:
-            return Edge(cursor=strawberry.ID("1"), node=1)
+            return Edge(cursor=strawberry.ID("1"), node_field=1)
 
     schema = strawberry.Schema(query=Query)
 
@@ -23,7 +23,7 @@ def test_supports_generic_simple_type():
         intEdge {
             __typename
             cursor
-            node
+            nodeField
         }
     }"""
 
@@ -31,7 +31,7 @@ def test_supports_generic_simple_type():
 
     assert not result.errors
     assert result.data == {
-        "intEdge": {"__typename": "IntEdge", "cursor": "1", "node": 1}
+        "intEdge": {"__typename": "IntEdge", "cursor": "1", "nodeField": 1}
     }
 
 

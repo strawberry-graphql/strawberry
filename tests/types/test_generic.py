@@ -13,17 +13,17 @@ T = TypeVar("T")
 def test_basic_generic():
     @strawberry.type
     class Edge(Generic[T]):
-        node: T
+        node_field: T
 
     definition = Edge._type_definition
 
     assert definition.name == "Edge"
     assert definition.is_generic
-    assert definition.type_params == {"node": T}
+    assert definition.type_params == {"node_field": T}
 
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "node"
+    assert definition.fields[0].name == "nodeField"
     assert definition.fields[0].type == T
     assert definition.fields[0].is_optional is False
 
@@ -39,7 +39,7 @@ def test_basic_generic():
 
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "node"
+    assert definition.fields[0].name == "nodeField"
     assert definition.fields[0].type == str
     assert definition.fields[0].is_optional is False
 

@@ -194,7 +194,7 @@ def _get_type_params(fields: List[FieldDefinition]) -> Dict[str, Type]:
     type_params = {}
 
     for field in fields:
-        name = cast(str, field.name)
+        name = cast(str, field.origin_name)
         params = _get_type_params_for_field(field)
 
         # TODO: support multiple
