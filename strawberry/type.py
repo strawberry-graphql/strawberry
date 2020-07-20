@@ -2,6 +2,8 @@ import dataclasses
 from functools import partial
 from typing import List, Optional, Type, cast
 
+from strawberry.utils.typing import is_generic
+
 from .types.types import FederationTypeParams, TypeDefinition
 from .utils.str_converters import to_camel_case
 
@@ -39,6 +41,7 @@ def _process_type(
         name=name,
         is_input=is_input,
         is_interface=is_interface,
+        is_generic=is_generic(cls),
         interfaces=interfaces,
         description=description,
         federation=federation or FederationTypeParams(),

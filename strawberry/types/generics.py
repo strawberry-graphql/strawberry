@@ -76,6 +76,7 @@ def copy_type_with(
                 is_input=definition.is_input,
                 origin=definition.origin,
                 is_interface=definition.is_interface,
+                is_generic=False,
                 federation=definition.federation,
                 interfaces=definition.interfaces,
                 description=definition.description,

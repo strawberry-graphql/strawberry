@@ -18,6 +18,7 @@ class TypeDefinition:
     name: str
     is_input: bool
     is_interface: bool
+    is_generic: bool
     origin: Type
     description: Optional[str]
     federation: FederationTypeParams
@@ -49,10 +50,6 @@ class TypeDefinition:
             self._type_params = _get_type_params(self.fields)
 
         return self._type_params
-
-    @property
-    def is_generic(self) -> bool:
-        return bool(self.type_params)
 
 
 @dataclasses.dataclass
