@@ -1,5 +1,5 @@
 import dataclasses
-from typing import Callable, List, Optional, Type, cast
+from typing import Any, Callable, List, Optional, Type, cast
 
 from strawberry.exceptions import MissingReturnAnnotationError
 
@@ -34,7 +34,7 @@ class StrawberryField(dataclasses.Field):
         )
 
     def __setattr__(self, name, value):
-        if name == "type":
+        if name == "type" and not self._field_definition.type:
             self._field_definition.type = value
 
         if value and name == "name":
@@ -57,7 +57,9 @@ class StrawberryField(dataclasses.Field):
 
         check_return_annotation(f._field_definition)
 
-        f._field_definition.type = f.__annotations__["return"]
+        f._field_definition.type = (
+            f._field_definition.type or f.__annotations__["return"]
+        )
 
         return f
 
@@ -70,7 +72,8 @@ def field(
     description: Optional[str] = None,
     resolver: Optional[Callable] = None,
     permission_classes: Optional[List[Type[BasePermission]]] = None,
-    federation: Optional[FederationFieldParams] = None
+    federation: Optional[FederationFieldParams] = None,
+    type: Optional[Any] = None
 ):
     """Annotates a method or property as a GraphQL field.
 
@@ -94,7 +97,7 @@ def field(
         field_definition=FieldDefinition(
             origin_name=origin_name,
             name=name,
-            type=None,  # type: ignore
+            type=type,  # type: ignore
             origin=f,  # type: ignore
             description=description,
             base_resolver=resolver,

@@ -53,11 +53,25 @@ def resolve_type(field_definition: Union[FieldDefinition, ArgumentDefinition]) -
     type = cast(Type, field_definition.type)
     origin_name = cast(str, field_definition.origin_name)
 
+    if getattr(type, "__name__", None) == "<lambda>":
+        type = type()
+        field_definition.type = type
+
     if isinstance(type, str):
         module = sys.modules[field_definition.origin.__module__].__dict__
 
-        type = eval(type, module)
-        field_definition.type = type
+        # if we have a string annotation, we evaluate it, using the module
+        # where the field was defined as the global namespace
+        # if that doesn't work we keep the string as the type of the field
+        # so we can check later if we have this type inside the type_map
+        # this is not great, but helps in simple cases, and in complex cases
+        # we still have the opportunity of declaring the field type lazily
+        try:
+            type = eval(type, module)
+
+            field_definition.type = type
+        except NameError:
+            pass
 
     if is_forward_ref(type):
         # if the type is a forward reference we try to resolve the type by

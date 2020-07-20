@@ -39,8 +39,6 @@ class TypeDefinition:
             fields = _get_fields(self.origin)
             self._fields = _resolve_types(fields)
 
-        # type_params =
-
         return self._fields
 
     @property
