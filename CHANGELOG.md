@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.27.5 - 2020-07-22
+-------------------
+
+Add websocket object to the subscription context.
+
 0.27.4 - 2020-07-14
 -------------------
 
