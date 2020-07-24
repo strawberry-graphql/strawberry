@@ -28,14 +28,6 @@ def test_cyclic_import():
     }
     """
 
-    fields = Query._type_definition.fields
-
-    assert fields[0].name == "a"
-    assert fields[0].type == TypeA
-
-    assert fields[1].name == "b"
-    assert fields[1].type == TypeB
-
     schema = strawberry.Schema(Query)
 
     assert print_schema(schema) == textwrap.dedent(expected).strip()
