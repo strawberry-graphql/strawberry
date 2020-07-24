@@ -3,6 +3,7 @@ import sys
 from typing import Dict, List, Optional, Type, Union, cast
 
 from strawberry.exceptions import MissingTypesForGenericError
+from strawberry.lazy_type import LazyType
 from strawberry.union import union
 from strawberry.utils.str_converters import to_camel_case
 from strawberry.utils.typing import (
@@ -53,9 +54,8 @@ def resolve_type(field_definition: Union[FieldDefinition, ArgumentDefinition]) -
     type = cast(Type, field_definition.type)
     origin_name = cast(str, field_definition.origin_name)
 
-    if getattr(type, "__name__", None) == "<lambda>":
-        type = type()
-        field_definition.type = type
+    if isinstance(type, LazyType):
+        field_definition.type = type.resolve_type()
 
     if isinstance(type, str):
         module = sys.modules[field_definition.origin.__module__].__dict__
