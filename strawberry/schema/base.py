@@ -41,9 +41,9 @@ class BaseSchema(Protocol):
         self,
         query: str,
         variable_values: Optional[Dict[str, Any]] = None,
-        operation_name: Optional[str] = None,
-        root_value: Optional[Any] = None,
         context_value: Optional[Any] = None,
+        root_value: Optional[Any] = None,
+        operation_name: Optional[str] = None,
     ):
         raise NotImplementedError
 
