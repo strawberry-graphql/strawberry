@@ -1,13 +1,13 @@
 import asyncio
 import typing
 
-from graphql import GraphQLError, GraphQLSchema
+from graphql import GraphQLError
 from graphql.error import format_error as format_graphql_error
 from starlette.requests import Request
 from starlette.types import Receive, Scope, Send
 from starlette.websockets import WebSocket, WebSocketState
 
-from ..graphql import execute, subscribe
+from ..schema import BaseSchema
 from ..utils.debug import pretty_print_graphql_operation
 from .constants import (
     GQL_COMPLETE,
@@ -25,7 +25,7 @@ from .http import get_http_response
 class GraphQL:
     def __init__(
         self,
-        schema: GraphQLSchema,
+        schema: BaseSchema,
         root_value: typing.Any = None,
         graphiql: bool = True,
         keep_alive: bool = False,
@@ -92,8 +92,7 @@ class GraphQL:
 
         context = {"websocket": websocket}
 
-        data = await subscribe(
-            self.schema,
+        data = await self.schema.subscribe(
             query,
             variable_values=variables,
             operation_name=operation_name,
@@ -154,8 +153,7 @@ class GraphQL:
         if self.debug:
             pretty_print_graphql_operation(operation_name, query, variables)
 
-        return await execute(
-            self.schema,
+        return await self.schema.execute(
             query,
             root_value=self.root_value,
             variable_values=variables,

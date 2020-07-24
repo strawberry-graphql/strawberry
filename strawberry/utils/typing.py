@@ -1,25 +1,33 @@
-import collections
 import typing
+from collections.abc import AsyncGenerator, Callable
+from typing import Type, TypeVar
 
 
-def is_list(annotation):
-    """Returns True if annotation is a typing.List"""
+try:
+    from typing import ForwardRef  # type: ignore
+except ImportError:  # pragma: no cover
+    # ForwardRef is private in python 3.6 and 3.7
+    from typing import _ForwardRef as ForwardRef  # type: ignore
+
+
+def is_list(annotation: Type) -> bool:
+    """Returns True if annotation is a List"""
 
     annotation_origin = getattr(annotation, "__origin__", None)
 
     return annotation_origin == list
 
 
-def is_union(annotation):
-    """Returns True if annotation is a typing.Union"""
+def is_union(annotation: Type) -> bool:
+    """Returns True if annotation is a Union"""
 
     annotation_origin = getattr(annotation, "__origin__", None)
 
     return annotation_origin == typing.Union
 
 
-def is_optional(annotation):
-    """Returns True if the annotation is typing.Optional[SomeType]"""
+def is_optional(annotation: Type) -> bool:
+    """Returns True if the annotation is Optional[SomeType]"""
 
     # Optionals are represented as unions
 
@@ -32,41 +40,43 @@ def is_optional(annotation):
     return any([x == None.__class__ for x in types])  # noqa:E711
 
 
-def get_optional_annotation(annotation):
+def get_optional_annotation(annotation: Type) -> Type:
     types = annotation.__args__
     non_none_types = [x for x in types if x != None.__class__]  # noqa:E711
 
     return non_none_types[0]
 
 
-def get_list_annotation(annotation):
+def get_list_annotation(annotation: Type) -> Type:
     return annotation.__args__[0]
 
 
-def is_generic(annotation) -> bool:
+def is_async_generator(annotation: Type) -> bool:
+    return getattr(annotation, "__origin__", None) == AsyncGenerator
+
+
+def get_async_generator_annotation(annotation: Type) -> Type:
+    return annotation.__args__[0]
+
+
+def is_generic(annotation: Type) -> bool:
     """Returns True if the annotation is or extends a generic."""
     return (
         isinstance(annotation, type)
         and issubclass(annotation, typing.Generic)  # type:ignore
         or isinstance(annotation, typing._GenericAlias)  # type:ignore
         and annotation.__origin__
-        not in (
-            list,
-            typing.Union,
-            tuple,
-            typing.ClassVar,
-            collections.abc.AsyncGenerator,
-        )
+        not in (list, typing.Union, tuple, typing.ClassVar, AsyncGenerator,)
     )
 
 
-def is_type_var(annotation) -> bool:
+def is_type_var(annotation: Type) -> bool:
     """Returns True if the annotation is a TypeVar."""
 
-    return isinstance(annotation, typing.TypeVar)  # type:ignore
+    return isinstance(annotation, TypeVar)  # type:ignore
 
 
-def has_type_var(annotation) -> bool:
+def has_type_var(annotation: Type) -> bool:
     """
     Returns True if the annotation or any of
     its argument have a TypeVar as argument.
@@ -77,17 +87,45 @@ def has_type_var(annotation) -> bool:
     )
 
 
-def get_actual_type(annotation, types_replacement_map):
-    """Returns a copy of an annotation by replacing TypeVar"""
-    if is_type_var(annotation):
-        return types_replacement_map[annotation.__name__]
+def get_parameters(annotation: Type):
+    if (
+        isinstance(annotation, typing._GenericAlias)  # type:ignore
+        or isinstance(annotation, type)
+        and issubclass(annotation, typing.Generic)  # type:ignore
+        and annotation is not typing.Generic
+    ):
+        return annotation.__parameters__
+    else:
+        return ()  # pragma: no cover
 
-    if has_type_var(annotation):
-        return annotation.copy_with(
-            tuple(
-                get_actual_type(arg, types_replacement_map)
-                for arg in annotation.__args__
-            )
+
+def get_origin(annotation: Type):
+    if isinstance(annotation, typing._GenericAlias):  # type:ignore
+        return (
+            annotation.__origin__
+            if annotation.__origin__ is not typing.ClassVar
+            else None
         )
 
-    return annotation
+    if annotation is typing.Generic:  # pragma: no cover
+        return typing.Generic
+
+    return None  # pragma: no cover
+
+
+def get_args(annotation: Type):
+    if isinstance(annotation, typing._GenericAlias):  # type:ignore
+        res = annotation.__args__
+
+        if (
+            get_origin(annotation) is Callable and res[0] is not Ellipsis
+        ):  # pragma: no cover
+            res = (list(res[:-1]), res[-1])
+
+        return res
+
+    return ()
+
+
+def is_forward_ref(annotation: Type) -> bool:
+    return isinstance(annotation, ForwardRef)

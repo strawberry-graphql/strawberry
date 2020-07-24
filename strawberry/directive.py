@@ -1,48 +1,30 @@
-import typing
-from itertools import islice
+import dataclasses
+from typing import Callable, List, Optional
 
-from graphql import DirectiveLocation, GraphQLArgument, GraphQLDirective
+from graphql import DirectiveLocation
 
-from .type_converter import get_graphql_type_for_annotation
 from .utils.str_converters import to_camel_case
 
 
-DIRECTIVE_REGISTRY = {}
+@dataclasses.dataclass
+class DirectiveDefinition:
+    name: str
+    resolver: Callable
+    locations: List[DirectiveLocation]
+    description: Optional[str] = None
 
 
-def _get_arguments(func):
-    annotations = func.__annotations__
+def directive(*, locations: List[DirectiveLocation], description=None, name=None):
+    def _wrap(f):
+        directive_name = name or to_camel_case(f.__name__)
 
-    arguments = {}
-
-    for name, type_ in islice(annotations.items(), 1, None):
-        if name == "return":
-            continue
-
-        argument_type = get_graphql_type_for_annotation(type_, name)
-
-        name = to_camel_case(name)
-
-        arguments[name] = GraphQLArgument(argument_type)
-
-    return arguments
-
-
-def directive(
-    *, locations: typing.List[DirectiveLocation], description=None, name=None
-):
-    def _wrap(func):
-        directive_name = name or to_camel_case(func.__name__)
-
-        func.directive = GraphQLDirective(
+        f.directive_definition = DirectiveDefinition(
             name=directive_name,
             locations=locations,
-            args=_get_arguments(func),
             description=description,
+            resolver=f,
         )
 
-        DIRECTIVE_REGISTRY[directive_name] = func
-
-        return func
+        return f
 
     return _wrap

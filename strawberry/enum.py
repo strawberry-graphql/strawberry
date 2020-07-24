@@ -1,9 +1,21 @@
+import dataclasses
 from enum import EnumMeta
-
-from graphql import GraphQLEnumType, GraphQLEnumValue
+from typing import Any, List, Optional
 
 from .exceptions import NotAnEnum
-from .type_registry import register_type
+
+
+@dataclasses.dataclass
+class EnumValue:
+    name: str
+    value: Any
+
+
+@dataclasses.dataclass
+class EnumDefinition:
+    name: str
+    values: List[EnumValue]
+    description: Optional[str]
 
 
 def _process_enum(cls, name=None, description=None):
@@ -13,15 +25,13 @@ def _process_enum(cls, name=None, description=None):
     if not name:
         name = cls.__name__
 
-    description = description or cls.__doc__
+    description = description
 
-    graphql_type = GraphQLEnumType(
+    cls._enum_definition = EnumDefinition(
         name=name,
-        values=[(item.name, GraphQLEnumValue(item.value)) for item in cls],
+        values=[EnumValue(item.name, item.value) for item in cls],
         description=description,
     )
-
-    register_type(cls, graphql_type)
 
     return cls
 

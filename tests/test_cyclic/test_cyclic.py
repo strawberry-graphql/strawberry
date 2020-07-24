@@ -1,7 +1,7 @@
 import textwrap
 
 import strawberry
-from strawberry.printer import print_type
+from strawberry.printer import print_schema
 
 
 def test_cyclic_import():
@@ -13,36 +13,21 @@ def test_cyclic_import():
         a: TypeA
         b: TypeB
 
-    assert (
-        print_type(Query(None, None))
-        == textwrap.dedent(
-            """
-            type Query {
-              a: TypeA!
-              b: TypeB!
-            }
-            """
-        ).strip()
-    )
+    expected = """
+    type Query {
+      a: TypeA!
+      b: TypeB!
+    }
 
-    assert (
-        print_type(TypeA())
-        == textwrap.dedent(
-            """
-            type TypeA {
-              typeB: TypeB!
-            }
-            """
-        ).strip()
-    )
+    type TypeA {
+      typeB: TypeB!
+    }
 
-    assert (
-        print_type(TypeB())
-        == textwrap.dedent(
-            """
-            type TypeB {
-              typeA: TypeA!
-            }
-            """
-        ).strip()
-    )
+    type TypeB {
+      typeA: TypeA!
+    }
+    """
+
+    schema = strawberry.Schema(Query)
+
+    assert print_schema(schema) == textwrap.dedent(expected).strip()

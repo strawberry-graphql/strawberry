@@ -1,14 +1,7 @@
-import dataclasses
 from itertools import chain
-from typing import Callable
+from typing import Optional, cast
 
-from graphql.type import (
-    GraphQLDirective,
-    GraphQLNamedType,
-    GraphQLSchema,
-    is_object_type,
-    is_specified_directive,
-)
+from graphql.type import is_object_type, is_specified_directive
 from graphql.utilities.print_schema import (
     is_defined_type,
     print_args,
@@ -20,65 +13,56 @@ from graphql.utilities.print_schema import (
     print_schema_definition,
     print_type as original_print_type,
 )
+from strawberry.types.types import FieldDefinition, TypeDefinition
 
-from .type_registry import get_strawberry_type_for_graphql_type
+from .schema import BaseSchema
 
 
-def print_federation_field_directive(field, metadata):
+def print_federation_field_directive(field: Optional[FieldDefinition]) -> str:
+    if not field:
+        return ""
+
     out = ""
 
-    if metadata and "federation" in metadata:
-        federation = metadata["federation"]
+    if field.federation.provides:
+        out += f' @provides(fields: "{field.federation.provides}")'
 
-        provides = federation.get("provides", "")
-        requires = federation.get("requires", "")
-        external = federation.get("external", False)
+    if field.federation.requires:
+        out += f' @requires(fields: "{field.federation.requires}")'
 
-        if provides:
-            out += f' @provides(fields: "{provides}")'
-
-        if requires:
-            out += f' @requires(fields: "{requires}")'
-
-        if external:
-            out += " @external"
+    if field.federation.external:
+        out += " @external"
 
     return out
 
 
-def print_fields(type_) -> str:
-    strawberry_type = get_strawberry_type_for_graphql_type(type_)
-    strawberry_fields = dataclasses.fields(strawberry_type) if strawberry_type else []
+def print_fields(type_, schema: BaseSchema) -> str:
+    strawberry_type = cast(TypeDefinition, schema.get_type_by_name(type_.name))
 
-    def _get_metadata(field_name):
-        return next(
-            (
-                f.metadata
-                for f in strawberry_fields
-                if (getattr(f, "field_name", None) or f.name) == field_name
-            ),
-            None,
+    fields = []
+
+    for i, (name, field) in enumerate(type_.fields.items()):
+        field_definition = strawberry_type.get_field(name) if strawberry_type else None
+
+        fields.append(
+            print_description(field, "  ", not i)
+            + f"  {name}"
+            + print_args(field.args, "  ")
+            + f": {field.type}"
+            + print_federation_field_directive(field_definition)
+            + print_deprecated(field)
         )
 
-    fields = [
-        print_description(field, "  ", not i)
-        + f"  {name}"
-        + print_args(field.args, "  ")
-        + f": {field.type}"
-        + print_federation_field_directive(field, _get_metadata(name))
-        + print_deprecated(field)
-        for i, (name, field) in enumerate(type_.fields.items())
-    ]
     return print_block(fields)
 
 
-def print_federation_key_directive(type_):
-    strawberry_type = get_strawberry_type_for_graphql_type(type_)
+def print_federation_key_directive(type_, schema: BaseSchema):
+    strawberry_type = cast(TypeDefinition, schema.get_type_by_name(type_.name))
 
     if not strawberry_type:
         return ""
 
-    keys = getattr(strawberry_type, "_federation_keys", [])
+    keys = strawberry_type.federation.keys
 
     parts = []
 
@@ -91,58 +75,47 @@ def print_federation_key_directive(type_):
     return " " + " ".join(parts)
 
 
-def print_extends(type_):
-    strawberry_type = get_strawberry_type_for_graphql_type(type_)
+def print_extends(type_, schema: BaseSchema):
+    strawberry_type = cast(TypeDefinition, schema.get_type_by_name(type_.name))
 
-    if strawberry_type and getattr(strawberry_type, "_federation_extend", False):
+    if strawberry_type and strawberry_type.federation.extend:
         return "extend "
 
     return ""
 
 
-def print_object(type_) -> str:
+def _print_object(type_, schema: BaseSchema) -> str:
     return (
         print_description(type_)
-        + print_extends(type_)
+        + print_extends(type_, schema)
         + f"type {type_.name}"
-        + print_federation_key_directive(type_)
+        + print_federation_key_directive(type_, schema)
         + print_implemented_interfaces(type_)
-        + print_fields(type_)
+        + print_fields(type_, schema)
     )
 
 
-def print_type(field) -> str:
-    """Returns a string representation of a strawberry type"""
-
-    if hasattr(field, "graphql_type"):
-        field = field.graphql_type
-
+def _print_type(field, schema: BaseSchema) -> str:
     if is_object_type(field):
-        return print_object(field)
+        return _print_object(field, schema)
 
     return original_print_type(field)
 
 
-def print_filtered_schema(
-    schema: GraphQLSchema,
-    directive_filter: Callable[[GraphQLDirective], bool],
-    type_filter: Callable[[GraphQLNamedType], bool],
-) -> str:
-    directives = filter(directive_filter, schema.directives)
-    type_map = schema.type_map
+def print_schema(schema: BaseSchema) -> str:
+    graphql_core_schema = schema._schema  # type: ignore
 
-    types = filter(type_filter, map(type_map.get, sorted(type_map)))  # type: ignore
+    directives = filter(
+        lambda n: not is_specified_directive(n), graphql_core_schema.directives
+    )
+    type_map = graphql_core_schema.type_map
+
+    types = filter(is_defined_type, map(type_map.get, sorted(type_map)))  # type: ignore
 
     return "\n\n".join(
         chain(
-            filter(None, [print_schema_definition(schema)]),
+            filter(None, [print_schema_definition(graphql_core_schema)]),
             (print_directive(directive) for directive in directives),
-            (print_type(type_) for type_ in types),  # type: ignore
+            (_print_type(type_, schema) for type_ in types),  # type: ignore
         )
-    )
-
-
-def print_schema(schema: GraphQLSchema) -> str:
-    return print_filtered_schema(
-        schema, lambda n: not is_specified_directive(n), is_defined_type
     )

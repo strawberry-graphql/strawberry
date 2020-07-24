@@ -1,155 +1,166 @@
+from typing import Callable, List, Optional, Type, Union
+
 from graphql import (
     GraphQLField,
     GraphQLList,
     GraphQLNonNull,
     GraphQLObjectType,
     GraphQLScalarType,
-    GraphQLType,
+    GraphQLString,
     GraphQLUnionType,
 )
+from graphql.type.definition import GraphQLArgument
+from strawberry.custom_scalar import ScalarDefinition
+from strawberry.enum import EnumDefinition
+from strawberry.permission import BasePermission
+from strawberry.schema.types.types import TypeMap
+from strawberry.types.types import TypeDefinition
 
-from .field import strawberry_field
+from .field import FederationFieldParams, field as base_field
 from .printer import print_schema
 from .schema import Schema as BaseSchema
-from .type import _process_type
-from .type_registry import get_strawberry_type_for_graphql_type
+from .type import FederationTypeParams, type as base_type
 
 
-def type(cls=None, *args, **kwargs):
-    def wrap(cls):
-        keys = kwargs.pop("keys", [])
-        extend = kwargs.pop("extend", False)
-
-        wrapped = _process_type(cls, *args, **kwargs)
-        wrapped._federation_keys = keys
-        wrapped._federation_extend = extend
-
-        return wrapped
-
-    if cls is None:
-        return wrap
-
-    return wrap(cls)
-
-
-def strawberry_federation_field(*args, **kwargs):
-    provides = kwargs.pop("provides", "")
-    requires = kwargs.pop("requires", "")
-    external = kwargs.pop("external", False)
-
-    metadata = kwargs.get("metadata") or {}
-    metadata["federation"] = {
-        "provides": provides,
-        "external": external,
-        "requires": requires,
-    }
-    kwargs["metadata"] = metadata
-
-    field = strawberry_field(*args, **kwargs)
-
-    return field
+def type(
+    cls: Type = None,
+    *,
+    name: str = None,
+    description: str = None,
+    keys: List[str] = None,
+    extend: bool = False
+):
+    return base_type(
+        cls,
+        name=name,
+        description=description,
+        federation=FederationTypeParams(keys=keys or [], extend=extend),
+    )
 
 
-def field(wrap=None, *args, **kwargs):
-    field = strawberry_federation_field(*args, **kwargs)
+def field(
+    f=None,
+    *,
+    name: Optional[str] = None,
+    provides: Optional[List[str]] = None,
+    requires: Optional[List[str]] = None,
+    external: bool = False,
+    is_subscription: bool = False,
+    description: Optional[str] = None,
+    resolver: Optional[Callable] = None,
+    permission_classes: Optional[List[Type[BasePermission]]] = None
+):
+    return base_field(
+        f,
+        name=name,
+        is_subscription=is_subscription,
+        description=description,
+        resolver=resolver,
+        permission_classes=permission_classes,
+        federation=FederationFieldParams(
+            provides=provides or [], requires=requires or [], external=external
+        ),
+    )
 
-    if wrap is None:
-        return field
 
-    return field(wrap)
-
-
-def entities_resolver(root, info, representations):
-    results = []
-
-    for representation in representations:
-        type_name = representation.pop("__typename")
-        graphql_type = info.schema.get_type(type_name)
-
-        result = get_strawberry_type_for_graphql_type(graphql_type).resolve_reference(
-            **representation
-        )
-        results.append(result)
-
-    return results
-
-
-def has_federation_keys(graphql_type: GraphQLType):
-    strawberry_type = get_strawberry_type_for_graphql_type(graphql_type)
-
-    if strawberry_type and getattr(strawberry_type, "_federation_keys", []):
-        return True
+def _has_federation_keys(
+    definition: Union[TypeDefinition, ScalarDefinition, EnumDefinition]
+) -> bool:
+    if isinstance(definition, TypeDefinition):
+        return len(definition.federation.keys) > 0
 
     return False
+
+
+def _get_entity_type(type_map: TypeMap):
+    # https://www.apollographql.com/docs/apollo-server/federation/federation-spec/#resolve-requests-for-entities
+
+    # To implement the _Entity union, each type annotated with @key
+    # should be added to the _Entity union.
+
+    federation_key_types = [
+        type.implementation
+        for type in type_map.values()
+        if _has_federation_keys(type.definition)
+    ]
+
+    # If no types are annotated with the key directive, then the _Entity
+    # union and Query._entities field should be removed from the schema.
+    if not federation_key_types:
+        return None
+
+    entity_type = GraphQLUnionType("_Entity", federation_key_types)  # type: ignore
+
+    def _resolve_type(self, value, _type):
+        return type_map[self._type_definition.name].implementation
+
+    entity_type.resolve_type = _resolve_type
+
+    return entity_type
 
 
 class Schema(BaseSchema):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
+        self._add_scalars()
+        self._create_service_field()
         self._extend_query_type()
 
+    def entities_resolver(self, root, info, representations):
+        results = []
+
+        for representation in representations:
+            type_name = representation.pop("__typename")
+            type = self.type_map[type_name]
+
+            results.append(type.definition.origin.resolve_reference(**representation))
+
+        return results
+
+    def _add_scalars(self):
+        self.Any = GraphQLScalarType("_Any")
+
+        self._schema.type_map["_Any"] = self.Any
+
     def _extend_query_type(self):
-        @type(name="_Service")
-        class Service:
-            sdl: str
+        fields = {"_service": self._service_field}
 
-        Any = GraphQLScalarType("_Any")
+        entity_type = _get_entity_type(self.type_map)
 
-        fields = {
-            "_service": GraphQLField(
-                GraphQLNonNull(Service.graphql_type),
-                resolve=lambda _, info: Service(sdl=print_schema(info.schema)),
-            )
-        }
+        if entity_type:
+            self._schema.type_map[entity_type.name] = entity_type
 
-        entities_type = self._get_entity_type()
+            fields["_entities"] = self._get_entities_field(entity_type)
 
-        if entities_type:
-            self.type_map[entities_type.name] = entities_type
+        fields.update(self._schema.query_type.fields)
 
-            fields["_entities"] = GraphQLField(
-                GraphQLNonNull(GraphQLList(entities_type)),
-                args={
-                    "representations": GraphQLNonNull(GraphQLList(GraphQLNonNull(Any)))
-                },
-                resolve=entities_resolver,
-            )
-
-        fields.update(self.query_type.fields)
-
-        self.query_type = GraphQLObjectType(
-            name=self.query_type.name,
-            description=self.query_type.description,
+        self._schema.query_type = GraphQLObjectType(
+            name=self._schema.query_type.name,
+            description=self._schema.query_type.description,
             fields=fields,
         )
 
-        self.type_map["_Any"] = Any
-        self.type_map["_Service"] = Service.graphql_type
-        self.type_map[self.query_type.name] = self.query_type
+        self._schema.type_map["_Service"] = self._service_type
+        self._schema.type_map[self._schema.query_type.name] = self._schema.query_type
 
-    def _get_entity_type(self):
-        # https://www.apollographql.com/docs/apollo-server/federation/federation-spec/#resolve-requests-for-entities
+    def _get_entities_field(self, entity_type: GraphQLUnionType) -> GraphQLField:
+        return GraphQLField(
+            GraphQLNonNull(GraphQLList(entity_type)),
+            args={
+                "representations": GraphQLArgument(
+                    GraphQLNonNull(GraphQLList(GraphQLNonNull(self.Any)))
+                )
+            },
+            resolve=self.entities_resolver,
+        )
 
-        # To implement the _Entity union, each type annotated with @key
-        # should be added to the _Entity union.
+    def _create_service_field(self):
+        self._service_type = GraphQLObjectType(
+            name="_Service", fields={"sdl": GraphQLField(GraphQLNonNull(GraphQLString))}
+        )
 
-        federation_key_types = [
-            graphql_type
-            for graphql_type in self.type_map.values()
-            if has_federation_keys(graphql_type)
-        ]
-
-        # If no types are annotated with the key directive, then the _Entity
-        # union and Query._entities field should be removed from the schema.
-        if not federation_key_types:
-            return None
-
-        entity_type = GraphQLUnionType("_Entity", federation_key_types)
-
-        def _resolve_type(self, value, _type):
-            return self.graphql_type
-
-        entity_type.resolve_type = _resolve_type
-
-        return entity_type
+        self._service_field = GraphQLField(
+            GraphQLNonNull(self._service_type),
+            resolve=lambda _, info: {"sdl": print_schema(self)},
+        )

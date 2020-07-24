@@ -97,6 +97,7 @@ def test_graphql_query_model():
     response = GraphQLView.as_view(schema=schema)(request)
     data = json.loads(response.content.decode())
 
+    assert not data.get("errors")
     assert data["data"]["example"] == "This is a demo"
 
 
