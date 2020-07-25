@@ -1,20 +1,17 @@
+# type: ignore
 from __future__ import annotations
 
 import textwrap
-
-import pytest
+from typing import List
 
 import strawberry
 from strawberry.printer import print_schema
 
 
-# Need to investigate this more, see: https://bugs.python.org/issue34776
-# Looks like types are returned as strings, so we'd need to find the actual
-# class, maybe from the global namespace. Or maybe from our type map
-
-
-@pytest.mark.xfail(strict=True, reason="Future style annotation are currently broken")
 def test_forward_reference():
+
+    global MyType
+
     @strawberry.type
     class MyType:
         id: strawberry.ID
@@ -36,3 +33,26 @@ def test_forward_reference():
     schema = strawberry.Schema(Query)
 
     assert print_schema(schema) == textwrap.dedent(expected_representation).strip()
+
+
+def test_with_resolver():
+    @strawberry.type
+    class User:
+        name: str
+
+    def get_users():
+        return []
+
+    @strawberry.type
+    class Query:
+        users: List[User] = strawberry.field(resolver=get_users)
+
+    definition = Query._type_definition
+
+    assert definition.name == "Query"
+    assert len(definition.fields) == 1
+    assert definition.fields[0].name == "users"
+    assert definition.fields[0].is_list
+    assert definition.fields[0].type is None
+    assert definition.fields[0].is_optional is False
+    assert definition.fields[0].child.is_optional is False

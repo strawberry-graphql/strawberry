@@ -238,6 +238,7 @@ def _get_fields(cls: Type) -> List[FieldDefinition]:
     for field in dataclass_fields:
         if hasattr(field, "_field_definition"):
             field_definition = field._field_definition  # type: ignore
+            field_definition.origin = field_definition.origin or cls
         else:
             # for fields that don't have a field definition, we create one
             # based on the dataclass field
