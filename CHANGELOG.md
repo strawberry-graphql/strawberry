@@ -1,6 +1,26 @@
 CHANGELOG
 =========
 
+0.28.1 - 2020-07-25
+-------------------
+
+This release fixes support for PEP-563, now you can safely use `from __future__ import annotations`,
+like the following example:
+
+
+```python
+from __future__ import annotations
+
+@strawberry.type
+class Query:
+    me: MyType = strawberry.field(name="myself")
+
+@strawberry.type
+class MyType:
+    id: strawberry.ID
+
+```
+
 0.28.0 - 2020-07-24
 -------------------
 
