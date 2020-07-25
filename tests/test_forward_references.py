@@ -9,7 +9,6 @@ from strawberry.printer import print_schema
 
 
 def test_forward_reference():
-
     global MyType
 
     @strawberry.type
@@ -34,8 +33,12 @@ def test_forward_reference():
 
     assert print_schema(schema) == textwrap.dedent(expected_representation).strip()
 
+    del MyType
+
 
 def test_with_resolver():
+    global User
+
     @strawberry.type
     class User:
         name: str
@@ -56,3 +59,5 @@ def test_with_resolver():
     assert definition.fields[0].type is None
     assert definition.fields[0].is_optional is False
     assert definition.fields[0].child.is_optional is False
+
+    del User
