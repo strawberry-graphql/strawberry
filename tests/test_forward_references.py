@@ -17,7 +17,7 @@ def test_forward_reference():
 
     @strawberry.type
     class Query:
-        me: MyType
+        me: MyType = strawberry.field(name="myself")
 
     expected_representation = """
     type MyType {
@@ -25,7 +25,7 @@ def test_forward_reference():
     }
 
     type Query {
-      me: MyType!
+      myself: MyType!
     }
     """
 

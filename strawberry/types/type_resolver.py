@@ -238,6 +238,15 @@ def _get_fields(cls: Type) -> List[FieldDefinition]:
     for field in dataclass_fields:
         if hasattr(field, "_field_definition"):
             field_definition = field._field_definition  # type: ignore
+
+            # we make sure that the origin is either the field's resolver
+            # when called as:
+            # >>> @strawberry.field
+            # >>> def x(self): ...
+            # or the class where this field was defined, so we always have
+            # the correct origin for determining field types when resolving
+            # the types.
+
             field_definition.origin = field_definition.origin or cls
         else:
             # for fields that don't have a field definition, we create one
