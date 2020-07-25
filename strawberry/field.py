@@ -54,6 +54,7 @@ class StrawberryField(dataclasses.Field):
         f._field_definition.arguments = get_arguments_from_resolver(
             f, f._field_definition.name
         )
+        f._field_definition.description = f._field_definition.description or f.__doc__
 
         check_return_annotation(f._field_definition)
 

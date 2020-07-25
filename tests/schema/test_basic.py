@@ -109,8 +109,15 @@ def test_type_description():
         a: str
 
     @strawberry.type
+    class TypeB:
+        """Docstring description"""
+
+        b: str
+
+    @strawberry.type
     class Query:
         a: TypeA
+        b: TypeB
 
     schema = strawberry.Schema(query=Query)
 
@@ -129,6 +136,21 @@ def test_type_description():
         "description": "Decorator argument description",
     }
 
+    query = """{
+        __type(name: "TypeB") {
+            name
+            description
+        }
+    }"""
+
+    result = schema.execute_sync(query)
+    assert not result.errors
+
+    assert result.data["__type"] == {
+        "name": "TypeB",
+        "description": "Docstring description",
+    }
+
 
 def test_field_description():
     @strawberry.type
@@ -141,6 +163,11 @@ def test_field_description():
 
         @strawberry.field(description="Example C")
         def c(self, info, id: int) -> str:
+            return "I'm a resolver"
+
+        @strawberry.field
+        def d(self, info, id: int) -> str:
+            """Example D"""
             return "I'm a resolver"
 
     schema = strawberry.Schema(query=Query)
@@ -162,6 +189,7 @@ def test_field_description():
         {"name": "a", "description": "Example"},
         {"name": "b", "description": None},
         {"name": "c", "description": "Example C"},
+        {"name": "d", "description": "Example D"},
     ]
 
 

@@ -75,7 +75,7 @@ def type(
             name=name,
             is_input=is_input,
             is_interface=is_interface,
-            description=description,
+            description=description or cls.__doc__,
             federation=federation,
         )
 
