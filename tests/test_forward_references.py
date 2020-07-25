@@ -12,12 +12,12 @@ def test_forward_reference():
     global MyType
 
     @strawberry.type
-    class MyType:
-        id: strawberry.ID
-
-    @strawberry.type
     class Query:
         me: MyType = strawberry.field(name="myself")
+
+    @strawberry.type
+    class MyType:
+        id: strawberry.ID
 
     expected_representation = """
     type MyType {
