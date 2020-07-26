@@ -28,3 +28,9 @@ repos:
     rev: aa5da9e54b92ab7284feddeaf52edf14b1690de3
     hooks:
       - id: alex
+
+  - repo: https://github.com/prettier/prettier
+    rev: "master"
+    hooks:
+      - id: prettier
+        files: '^docs/.*\.mdx?$'

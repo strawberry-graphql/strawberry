@@ -69,13 +69,14 @@ class Author:
   name: str
   books: typing.List['Book']
 ```
+
 As you can see the code maps almost one to one with the schema, thanks to
 python’s type hints feature.
 
 The `__future__` import allows us to annotate types that are defined later in
-the file, as per [PEP 563](https://www.python.org/dev/peps/pep-0563/).
-If you can’t use this feature (because your other code is incompatible with it),
-you need to quote the `Author` annotation.
+the file, as per [PEP 563](https://www.python.org/dev/peps/pep-0563/). If you
+can’t use this feature (because your other code is incompatible with it), you
+need to quote the `Author` annotation.
 
 ```python
     ...
@@ -99,6 +100,7 @@ GraphQL supports a few different types:
 ## Scalar types
 
 <!--alex ignore-->
+
 Scalar types are similar to python primitive types. Here’s the list of the
 default scalar types in GraphQL:
 
@@ -114,6 +116,7 @@ default scalar types in GraphQL:
 > usually needed in most servers. They are serialized as ISO-8601.
 
 <!--alex ignore-->
+
 These primitives work for the majority for the uses cases, but you can also
 specify your [own scalar types](/docs/types/scalars).
 
