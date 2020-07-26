@@ -16,30 +16,32 @@ To define an enum type, we need to follow these steps:
 
 1. Create a new class for the new type, which extends class Enum:
 
-    ```class IceCreamFlavour(Enum):```
+   ```python
+   class IceCreamFlavour(Enum):
+   ```
 
 2. Next, list options as variables in that class:
 
-   ```
+   ```python
    class IceCreamFlavour(Enum):
-        VANILLA = "vanilla"
-        STRAWBERRY = "strawberry"
-        CHOCOLATE = "chocolate"
+       VANILLA = "vanilla"
+       STRAWBERRY = "strawberry"
+       CHOCOLATE = "chocolate"
    ```
 
 3. Then we need to register our class as a strawberry type. It's done with a decorator `strawberry.enum`:
 
-    ```
-    @strawberry.enum
-    class IceCreamFlavour(Enum):
-        VANILLA = "vanilla"
-        STRAWBERRY = "strawberry"
-        CHOCOLATE = "chocolate"
+    ```python
+   @strawberry.enum
+   class IceCreamFlavour(Enum):
+       VANILLA = "vanilla"
+       STRAWBERRY = "strawberry"
+       CHOCOLATE = "chocolate"
     ```
 
 After that, we can use this enum type when defining types:
 
-```
+```python
 @strawberry.type
 class Cone:
     flavour: IceCreamFlavour
@@ -48,7 +50,7 @@ class Cone:
 
 and queries:
 
-```
+```python
 @strawberry.type
 class Query:
     @strawberry.field
@@ -58,7 +60,7 @@ class Query:
 
 Defining the enum type above would produce this schema:
 
-```
+```graphql
 enum IceCreamFlavour {
   VANILLA
   STRAWBERRY
@@ -68,10 +70,11 @@ enum IceCreamFlavour {
 
 Then it can be queried by the user, for example:
 
-```
+```graphql
 query {
   cone(IceCreamFlavour: STRAWBERRY)
 }
 ```
 
-You can also refer to the GraphQL documentation about Enu, types here: https://graphql.org/learn/schema/#enumeration-types 
+You can also refer to the GraphQL documentation about Enum types here: https://graphql.org/learn/schema/#enumeration-types 
+GraphQL specification of enum types is here: https://spec.graphql.org/June2018/#sec-Enums
