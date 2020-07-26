@@ -5,7 +5,7 @@ path: /docs/types/enums
 
 # Enums
 
-Enums are used for listing values, that can be used in other places. 
+Enums are used for listing items, that can be used as values in other places. 
 It's useful when we need to provide user with options to chose from. 
 
 For example, we have a few options of ice cream available, and would like to allow user to choose only from those options.
@@ -73,3 +73,5 @@ query {
   cone(IceCreamFlavour: STRAWBERRY)
 }
 ```
+
+You can also refer to the GraphQL documentation about Enu, types here: https://graphql.org/learn/schema/#enumeration-types 
