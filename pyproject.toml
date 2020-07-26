@@ -19,11 +19,11 @@ classifiers = [
 
 [tool.poetry.dependencies]
 python = "^3.7"
-starlette = "=0.13.4"
+starlette = "^0.13.6"
 click = "^7.0"
 hupper = "^1.5"
 pygments = "^2.3"
-uvicorn = "=0.11.5"
+uvicorn = "^0.11.6"
 django = {version = ">=2,<4",optional = true}
 graphql-core = {version = "^3.0.0"}
 asgiref = {version = "^3.2",optional = true}
@@ -36,7 +36,7 @@ pdbpp = "^0.10.2"
 pytest-emoji = "^0.2.0"
 flake8 = "^3.8"
 black = {version = "^19.3b0",allow-prereleases = true}
-isort = "^5.0"
+isort = "^5.1.4"
 pytest-asyncio = "^0.14.0"
 pytest-cov = "^2.10"
 mypy = "^0.782"
