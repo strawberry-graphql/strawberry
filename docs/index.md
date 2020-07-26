@@ -165,6 +165,7 @@ title for each book.
 ## Next steps
 
 <!--alex ignore retext-equality -->
+
 Well done! You just created your first GraphQL API using Strawberry 🙌!
 
 Check out the following resources to learn more about GraphQL and Strawberry.
