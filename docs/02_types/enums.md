@@ -5,15 +5,13 @@ path: /docs/types/enums
 
 # Enums
 
-Enums are used for listing items, that can be used as values in other places.
-It's useful when we need to provide user with options to chose from.
+Enums are a special kind of type that is restrict to a particular set of values.
 
-For example, we have a few options of ice cream available, and would like to
-allow user to choose only from those options.
+For example, we have a few options of ice cream available, and we want to allow
+user to choose only from those options.
 
-Enum is a custom type, defined by a developer.
-
-To define an enum type, we need to follow these steps:
+Strawberry supports defining enums using enums from python's standard library.
+Here's a quick tutorial on how to create an enum type in Strawberry:
 
 First, create a new class for the new type, which extends class Enum:
 
@@ -30,8 +28,8 @@ class IceCreamFlavour(Enum):
     CHOCOLATE = "chocolate"
 ```
 
-Finally we need to register our class as a strawberry type. It's done with a
-decorator `strawberry.enum`:
+Finally we need to register our class as a strawberry type. It's done with the
+`strawberry.enum` decorator:
 
 ```python
 @strawberry.enum
@@ -77,6 +75,10 @@ query {
   cone(IceCreamFlavour: STRAWBERRY)
 }
 ```
+
+> **NOTE**: GraphQL types are not a map of name: value, like in python enums.
+> Strawberry uses the name of the members of the enum to create the GraphQL
+> type.
 
 You can also refer to the GraphQL documentation about Enum types here:
 https://graphql.org/learn/schema/#enumeration-types GraphQL specification of
