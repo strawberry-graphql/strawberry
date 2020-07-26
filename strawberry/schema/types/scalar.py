@@ -1,6 +1,7 @@
 import datetime
 import decimal
 from typing import Dict, Type, cast
+from uuid import UUID
 
 from graphql import (
     GraphQLBoolean,
@@ -33,6 +34,7 @@ DEFAULT_SCALAR_REGISTRY: Dict[Type, GraphQLScalarType] = {
     float: GraphQLFloat,
     bool: GraphQLBoolean,
     ID: GraphQLID,
+    UUID: GraphQLID,
     datetime.date: _make_scalar_type(Date._scalar_definition),
     datetime.datetime: _make_scalar_type(DateTime._scalar_definition),
     datetime.time: _make_scalar_type(Time._scalar_definition),

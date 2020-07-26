@@ -1,5 +1,6 @@
 import textwrap
 from typing import Optional
+from uuid import UUID
 
 import strawberry
 from strawberry.printer import print_schema
@@ -13,6 +14,7 @@ def test_simple_required_types():
         b: bool
         f: float
         id: strawberry.ID
+        uid: UUID
 
     expected_type = """
     type Query {
@@ -21,6 +23,7 @@ def test_simple_required_types():
       b: Boolean!
       f: Float!
       id: ID!
+      uid: ID!
     }
     """
 
@@ -69,6 +72,7 @@ def test_input_simple_required_types():
         b: bool
         f: float
         id: strawberry.ID
+        uid: UUID
 
     @strawberry.type
     class Query:
@@ -83,6 +87,7 @@ def test_input_simple_required_types():
       b: Boolean!
       f: Float!
       id: ID!
+      uid: ID!
     }
 
     type Query {
