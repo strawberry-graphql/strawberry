@@ -1,6 +1,12 @@
 CHANGELOG
 =========
 
+0.28.2 - 2020-07-26
+-------------------
+
+This releae add support for UUID as field types. They will be
+represented as GraphQL ID in the GraphQL schema.
+
 0.28.1 - 2020-07-25
 -------------------
 
