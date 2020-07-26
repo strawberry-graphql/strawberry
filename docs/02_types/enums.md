@@ -80,6 +80,8 @@ query {
 > Strawberry uses the name of the members of the enum to create the GraphQL
 > type.
 
-You can also refer to the GraphQL documentation about Enum types here:
-https://graphql.org/learn/schema/#enumeration-types GraphQL specification of
-enum types is here: https://spec.graphql.org/June2018/#sec-Enums
+<AdditionalResources
+  title="Enums"
+  spec="https://spec.graphql.org/June2018/#sec-Enums"
+  graphqlDocs="https://graphql.org/learn/schema/#enumeration-types"
+/>
