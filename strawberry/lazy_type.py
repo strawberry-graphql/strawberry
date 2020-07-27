@@ -29,3 +29,9 @@ class LazyType(Generic[TypeName, Module]):
         module = importlib.import_module(self.module, self.package)
 
         return module.__dict__[self.type_name]
+
+    # this empty call method allows LazyTypes to be used in generic types
+    # for example: List[LazyType["A", "module"]]
+
+    def __call__(self):
+        return None
