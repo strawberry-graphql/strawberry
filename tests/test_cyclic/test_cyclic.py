@@ -20,6 +20,7 @@ def test_cyclic_import():
     }
 
     type TypeA {
+      listOfB: [TypeB!]
       typeB: TypeB!
     }
 
