@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.28.3 - 2020-07-27
+-------------------
+
+Add support for using lazy types inside generics.
+
 0.28.2 - 2020-07-26
 -------------------
 
