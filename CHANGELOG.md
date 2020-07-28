@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.28.4 - 2020-07-28
+-------------------
+
+Fix issue when using generic types with federation
+
 0.28.3 - 2020-07-27
 -------------------
 
