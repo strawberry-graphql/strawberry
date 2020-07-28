@@ -6,7 +6,7 @@ from strawberry.union import union
 from strawberry.utils.str_converters import capitalize_first
 from strawberry.utils.typing import is_type_var
 
-from .types import FieldDefinition, TypeDefinition
+from .types import FederationFieldParams, FieldDefinition, TypeDefinition
 
 
 def get_name_from_types(types: Iterable[Type]):
@@ -69,7 +69,10 @@ def copy_type_with(
                         field_type, params_to_type=params_to_type
                     )
 
-                fields.append(FieldDefinition(**kwargs,))
+                federation_args = kwargs.pop("federation")
+                kwargs["federation"] = FederationFieldParams(**federation_args)
+
+                fields.append(FieldDefinition(**kwargs))
 
             type_definition = TypeDefinition(
                 name=name,
