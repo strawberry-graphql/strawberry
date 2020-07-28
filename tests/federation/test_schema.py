@@ -1,5 +1,5 @@
 import textwrap
-import typing
+from typing import Generic, List, Optional, TypeVar
 
 import strawberry
 
@@ -8,14 +8,14 @@ def test_entities_type_when_no_type_has_keys():
     @strawberry.federation.type()
     class Product:
         upc: str
-        name: typing.Optional[str]
-        price: typing.Optional[int]
-        weight: typing.Optional[int]
+        name: Optional[str]
+        price: Optional[int]
+        weight: Optional[int]
 
     @strawberry.federation.type(extend=True)
     class Query:
         @strawberry.field
-        def top_products(self, info, first: int) -> typing.List[Product]:
+        def top_products(self, info, first: int) -> List[Product]:
             return []
 
     schema = strawberry.federation.Schema(query=Query)
@@ -42,14 +42,14 @@ def test_entities_type():
     @strawberry.federation.type(keys=["upc"])
     class Product:
         upc: str
-        name: typing.Optional[str]
-        price: typing.Optional[int]
-        weight: typing.Optional[int]
+        name: Optional[str]
+        price: Optional[int]
+        weight: Optional[int]
 
     @strawberry.federation.type(extend=True)
     class Query:
         @strawberry.field
-        def top_products(self, info, first: int) -> typing.List[Product]:
+        def top_products(self, info, first: int) -> List[Product]:
             return []
 
     schema = strawberry.federation.Schema(query=Query)
@@ -82,7 +82,7 @@ def test_additional_scalars():
     @strawberry.federation.type(extend=True)
     class Query:
         @strawberry.field
-        def top_products(self, info, first: int) -> typing.List[Example]:
+        def top_products(self, info, first: int) -> List[Example]:
             return []
 
     schema = strawberry.federation.Schema(query=Query)
@@ -110,7 +110,7 @@ def test_service():
     @strawberry.federation.type(extend=True)
     class Query:
         @strawberry.field
-        def top_products(self, info, first: int) -> typing.List[Product]:
+        def top_products(self, info, first: int) -> List[Product]:
             return []
 
     schema = strawberry.federation.Schema(query=Query)
@@ -135,6 +135,61 @@ def test_service():
         extend type Query {
           _service: _Service!
           topProducts(first: Int!): [Product!]!
+        }
+
+        scalar _Any
+
+        type _Service {
+          sdl: String!
+        }
+    """
+
+    assert result.data == {"_service": {"sdl": textwrap.dedent(sdl).strip()}}
+
+
+def test_using_generics():
+    T = TypeVar("T")
+
+    @strawberry.federation.type
+    class Product:
+        upc: str
+
+    @strawberry.type
+    class ListOfProducts(Generic[T]):
+        products: List[T]
+
+    @strawberry.federation.type(extend=True)
+    class Query:
+        @strawberry.field
+        def top_products(self, info, first: int) -> ListOfProducts[Product]:
+            return ListOfProducts([])
+
+    schema = strawberry.federation.Schema(query=Query)
+
+    query = """
+        query {
+            _service {
+                sdl
+            }
+        }
+    """
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+
+    sdl = """
+        type Product {
+          upc: String!
+        }
+
+        type ProductListOfProducts {
+          products: [Product!]!
+        }
+
+        extend type Query {
+          _service: _Service!
+          topProducts(first: Int!): ProductListOfProducts!
         }
 
         scalar _Any
