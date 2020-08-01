@@ -2,6 +2,7 @@ from typing import Any, Dict, List, Optional, Type, Union
 
 from graphql import GraphQLSchema, graphql_sync, parse
 from graphql.subscription import subscribe
+from graphql.type.definition import GraphQLType
 from graphql.type.directives import specified_directives
 from strawberry.custom_scalar import ScalarDefinition
 from strawberry.enum import EnumDefinition
@@ -24,7 +25,6 @@ class Schema:
         directives=(),
         types=(),
     ):
-
         self.type_map: Dict[str, ConcreteType] = {}
 
         query_type = get_object_type(query, self.type_map)
@@ -39,15 +39,41 @@ class Schema:
             get_directive_type(directive, self.type_map) for directive in directives
         ]
 
+        types = [get_object_type(type, self.type_map) for type in types]
+
         self._schema = GraphQLSchema(
             query=query_type,
             mutation=mutation_type,
             subscription=subscription_type if subscription else None,
             directives=specified_directives + directives,
-            types=[get_object_type(type, self.type_map) for type in types],
+            types=types,
         )
 
+        # TODO: don't use GraphQL core's feature here, let's find the interfaces
+        # and types by navigating our schema, so this won't break with changes of
+        # GraphQL core, and hopefully the code is cleaner as well.
+
+        types_from_interfaces = self.find_types_from_interfaces()
+
+        for type in types_from_interfaces:
+            name = type.name  # type: ignore
+            self._schema.type_map[name] = type  # type: ignore
+
         self.query = self.type_map[query_type.name]
+
+    def find_types_from_interfaces(self) -> List[GraphQLType]:
+        types: List[GraphQLType] = []
+
+        collected_types = list(self.type_map.values())
+
+        for type in collected_types:
+            if not getattr(type.definition, "is_interface", False):
+                continue
+
+            for subclass in type.definition.origin.__subclasses__():  # type: ignore
+                types.append(get_object_type(subclass, self.type_map))
+
+        return types
 
     def get_type_by_name(
         self, name: str

@@ -25,7 +25,7 @@ def test_query_interface():
                 Swiss(name="Tomme", canton="Vaud"),
             ]
 
-    schema = strawberry.Schema(query=Root, types=[Swiss, Italian])
+    schema = strawberry.Schema(query=Root)
 
     query = """{
         assortment {
@@ -34,6 +34,8 @@ def test_query_interface():
             ... on Swiss { canton }
         }
     }"""
+
+    print(schema.as_str())
 
     result = schema.execute_sync(query)
 
