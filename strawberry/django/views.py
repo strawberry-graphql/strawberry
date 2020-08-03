@@ -14,6 +14,7 @@ from django.views.generic import View
 
 import strawberry
 from graphql.error import format_error as format_graphql_error
+from strawberry.file_uploads.data import replace_placeholders_with_files
 
 from ..schema import BaseSchema
 
@@ -29,6 +30,17 @@ class GraphQLView(View):
     def get_root_value(self):
         return None
 
+    def parse_body(self, request):
+        if request.content_type == "multipart/form-data":
+            data = json.loads(request.POST.get("operations", "{}"))
+            files_map = json.loads(request.POST.get("map", "{}"))
+
+            data = replace_placeholders_with_files(data, files_map, request.FILES)
+
+            return data
+
+        return json.loads(request.body)
+
     @method_decorator(csrf_exempt)
     def dispatch(self, request, *args, **kwargs):
         if request.method.lower() not in ("get", "post"):
@@ -42,7 +54,7 @@ class GraphQLView(View):
 
             return self._render_graphiql(request)
 
-        data = json.loads(request.body)
+        data = self.parse_body(request)
 
         try:
             query = data["query"]

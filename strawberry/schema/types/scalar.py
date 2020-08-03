@@ -12,6 +12,7 @@ from graphql import (
     GraphQLString,
 )
 from strawberry.custom_scalar import SCALAR_REGISTRY, ScalarDefinition
+from strawberry.file_uploads.scalars import Upload
 from strawberry.scalars import ID
 
 from .base_scalars import Date, DateTime, Decimal, Time
@@ -35,6 +36,7 @@ DEFAULT_SCALAR_REGISTRY: Dict[Type, GraphQLScalarType] = {
     bool: GraphQLBoolean,
     ID: GraphQLID,
     UUID: GraphQLID,
+    Upload: _make_scalar_type(Upload._scalar_definition),
     datetime.date: _make_scalar_type(Date._scalar_definition),
     datetime.datetime: _make_scalar_type(DateTime._scalar_definition),
     datetime.time: _make_scalar_type(Time._scalar_definition),
