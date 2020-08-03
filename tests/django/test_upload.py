@@ -37,7 +37,6 @@ def test_upload():
 
     factory = RequestFactory()
 
-    # TODO: test with wrong content type
     request = factory.post(
         "/graphql/",
         data={
