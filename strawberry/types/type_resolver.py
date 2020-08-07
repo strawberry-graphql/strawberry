@@ -22,7 +22,7 @@ from strawberry.utils.typing import (
 )
 
 from .generics import copy_type_with, get_name_from_types
-from .types import ArgumentDefinition, FieldDefinition
+from .types import ArgumentDefinition, FieldDefinition, undefined
 
 
 def _resolve_generic_type(type: Type, field_name: str) -> Type:
@@ -257,6 +257,7 @@ def _get_fields(cls: Type) -> List[FieldDefinition]:
                 name=to_camel_case(field.name),
                 type=field.type,
                 origin=cls,
+                default_value=getattr(cls, field.name, undefined),
             )
 
         fields.append(field_definition)

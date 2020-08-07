@@ -3,6 +3,7 @@ import typing
 from graphql import GraphQLField, GraphQLInputField
 from strawberry.field import FieldDefinition
 from strawberry.resolvers import get_resolver
+from strawberry.types.types import undefined
 
 from .arguments import convert_arguments
 from .type import get_graphql_type
@@ -24,6 +25,8 @@ def get_field(field: FieldDefinition, is_input: bool, type_map: TypeMap,) -> Fie
 
     if is_input:
         TypeClass = GraphQLInputField
+        if field.default_value is not undefined:
+            kwargs["default_value"] = field.default_value
     elif field.is_subscription:
         kwargs["args"] = convert_arguments(field.arguments, type_map)
         kwargs["subscribe"] = resolver

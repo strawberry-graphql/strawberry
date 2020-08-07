@@ -98,3 +98,4 @@ class FieldDefinition:
     permission_classes: List[Type[BasePermission]] = dataclasses.field(
         default_factory=list
     )
+    default_value: Any = undefined
