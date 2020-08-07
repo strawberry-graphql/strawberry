@@ -100,34 +100,32 @@ def test_input_simple_required_types():
     assert print_schema(schema) == textwrap.dedent(expected_type).strip()
 
 
-# def test_input_optional_default():
-#     @strawberry.input
-#     class MyInput:
-#         s: Optional[str]
-#         i: int = 0
-#         f: float = None
+def test_input_defaults():
+    @strawberry.input
+    class MyInput:
+        s: Optional[str] = None
+        i: int = 0
 
-#     @strawberry.type
-#     class Query:
-#         @strawberry.field
-#         def search(self, input: MyInput) -> str:
-#             return input.s
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def search(self, input: MyInput) -> int:
+            return input.i
 
-#     expected_type = """
-#     input MyInput {
-#       s: String
-#       i: Int! = 0
-#       f: Float
-#     }
+    expected_type = """
+    input MyInput {
+      s: String = null
+      i: Int! = 0
+    }
 
-#     type Query {
-#       search(input: MyInput!): String!
-#     }
-#     """
+    type Query {
+      search(input: MyInput!): Int!
+    }
+    """
 
-#     schema = strawberry.Schema(query=Query)
+    schema = strawberry.Schema(query=Query)
 
-#     assert print_schema(schema) == textwrap.dedent(expected_type).strip()
+    assert print_schema(schema) == textwrap.dedent(expected_type).strip()
 
 
 def test_interface():
