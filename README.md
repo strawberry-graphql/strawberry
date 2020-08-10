@@ -5,8 +5,8 @@
 > Python GraphQL library based on dataclasses
 
 [![CircleCI](https://img.shields.io/circleci/token/307b40d5e152e074d34f84d30d226376a15667d5/project/github/strawberry-graphql/strawberry/master.svg?style=for-the-badge)](https://circleci.com/gh/strawberry-graphql/strawberry/tree/master)
-[![Discord](https://discord.gg/ZkRTEJQ)](https://img.shields.io/discord/689806334337482765?label=discord&logo=discord&logoColor=white&style=for-the-badge)
-[![PyPI](https://pypi.org/project/strawberry-graphql/)](https://img.shields.io/pypi/v/strawberry-graphql?logo=pypi&logoColor=white&style=for-the-badge)
+[![Discord](https://img.shields.io/discord/689806334337482765?label=discord&logo=discord&logoColor=white&style=for-the-badge&color=blue)](https://discord.gg/ZkRTEJQ)
+[![PyPI](https://img.shields.io/pypi/v/strawberry-graphql?logo=pypi&logoColor=white&style=for-the-badge)](https://pypi.org/project/strawberry-graphql/)
 
 ## Installation
 
@@ -56,7 +56,9 @@ This will open GraphiQL where you can test the API.
 
 ### Type-checking
 
-Strawberry comes with a [mypy] plugin that enables statically type-checking your GraphQL schema. To enable it, add the following lines to your `mypy.ini` configuration:
+Strawberry comes with a [mypy] plugin that enables statically type-checking your
+GraphQL schema. To enable it, add the following lines to your `mypy.ini`
+configuration:
 
 ```ini
 [mypy]
@@ -70,6 +72,7 @@ plugins = strawberry.ext.mypy_plugin
 A Django view is provided for adding a GraphQL endpoint to your application.
 
 1. Add the app to your `INSTALLED_APPS`.
+
 ```python
 INSTALLED_APPS = [
     ...
@@ -78,6 +81,7 @@ INSTALLED_APPS = [
 ```
 
 2. Add the view to your `urls.py` file.
+
 ```python
 from strawberry.django.views import GraphQLView
 from .schema import schema
@@ -118,8 +122,8 @@ pre-commit install
 - Repository: https://github.com/strawberry-graphql/strawberry
 - Issue tracker: https://github.com/strawberry-graphql/strawberry/issues
   - In case of sensitive bugs like security vulnerabilities, please contact
-    patrick.arminio@gmail.com directly instead of using the issue tracker. We value
-    your effort to improve the security and privacy of this project!
+    patrick.arminio@gmail.com directly instead of using the issue tracker. We
+    value your effort to improve the security and privacy of this project!
 
 ## Licensing
 
