@@ -72,8 +72,8 @@ Let’s create a function that returns some books.
 def get_books():
     return [
         Book(
-            title='Harry Potter and the Chamber of Secrets',
-            author='J.K. Rowling',
+            title='The Great Gatsby',
+            author='F. Scott Fitzgerald',
         ),
     ]
 ```
