@@ -57,8 +57,8 @@ class Query:
     books: typing.List[Book]
 ```
 
-This will create a GraphQL schema where clients will be able to execute a
-query named `books` that will return a list of zero or more books.
+This will create a GraphQL schema where clients will be able to execute a query
+named `books` that will return a list of zero or more books.
 
 ## Step 3: Define your data set
 
@@ -96,8 +96,7 @@ class Query:
     books: typing.List[Book] = strawberry.field(resolver=get_books)
 ```
 
-Using `strawberry.field` allows us to specify a resolver for a particular
-field.
+Using `strawberry.field` allows us to specify a resolver for a particular field.
 
 > **NOTE**: we didn't have to specify any resolver for the Book's fields, this
 > is because Strawberry adds a default for each field, returning the value of
@@ -125,16 +124,14 @@ This will start a debug server, you should see the following output:
 ## Step 6: execute your first query
 
 We can now execute GraphQL queries. Strawberry comes with a tool called
-**GraphQL Playground**. To open it go to
+**GraphiQL**. To open it go to
 [http://0.0.0.0:8000/graphql](http://0.0.0.0:8000/graphql)
 
 You should see something like this:
 
 ![](./images/index-server.png)
 
-<!-- TODO: replace this with GraphiQL -->
-
-The GraphQL Playground UI includes:
+The GraphiQL UI includes:
 
 - A text area (to the left) for writing queries
 - A Play button (the triangle button in the middle) for executing queries
