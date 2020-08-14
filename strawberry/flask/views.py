@@ -1,5 +1,4 @@
 import json
-from typing import Any, Optional
 
 from flask import Response, abort, render_template_string, request
 from flask.views import View
@@ -13,14 +12,13 @@ class GraphQLView(View):
     methods = ["GET", "POST"]
 
     def __init__(
-        self,
-        schema: BaseSchema,
-        graphiql: bool = True,
-        root_value: Optional[Any] = None,
+        self, schema: BaseSchema, graphiql: bool = True,
     ):
         self.graphiql = graphiql
         self.schema = schema
-        self.root_value = root_value
+
+    def get_root_value(self, request):
+        return None
 
     def get_context(self, request):
         return {"request": request}
@@ -53,7 +51,7 @@ class GraphQLView(View):
             variable_values=variables,
             context_value=context,
             operation_name=operation_name,
-            root_value=self.root_value,
+            root_value=self.get_root_value(request),
         )
 
         response_data = {"data": result.data}

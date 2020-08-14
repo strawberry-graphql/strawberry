@@ -4,7 +4,7 @@ import pytest
 
 import strawberry
 from flask import Flask
-from strawberry.flask.views import GraphQLView
+from strawberry.flask.views import GraphQLView as BaseGraphQLView
 
 
 def create_app(**kwargs):
@@ -14,14 +14,16 @@ def create_app(**kwargs):
 
     schema = strawberry.Schema(query=Query)
 
+    class GraphQLView(BaseGraphQLView):
+        def get_root_value(self, request):
+            return Query()
+
     app = Flask(__name__)
     app.debug = True
 
     app.add_url_rule(
         "/graphql",
-        view_func=GraphQLView.as_view(
-            "graphql_view", schema=schema, root_value=Query(), **kwargs
-        ),
+        view_func=GraphQLView.as_view("graphql_view", schema=schema, **kwargs),
     )
     return app
 
@@ -76,7 +78,7 @@ def test_graphiql_disabled_view():
 
 
 def test_custom_context():
-    class CustomGraphQLView(GraphQLView):
+    class CustomGraphQLView(BaseGraphQLView):
         def get_context(self, request):
             return {
                 "request": request,
