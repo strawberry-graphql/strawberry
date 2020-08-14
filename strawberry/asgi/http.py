@@ -9,7 +9,11 @@ from .utils import get_graphiql_html
 
 
 async def get_http_response(
-    request: Request, execute: typing.Callable, graphiql: bool
+    request: Request,
+    execute: typing.Callable,
+    graphiql: bool,
+    root_value: typing.Optional[typing.Any],
+    context: typing.Optional[typing.Any],
 ) -> Response:
     if request.method == "GET":
         if not graphiql:
@@ -43,10 +47,12 @@ async def get_http_response(
             status_code=status.HTTP_400_BAD_REQUEST,
         )
 
-    context = {"request": request}
-
     result = await execute(
-        query, variables=variables, context=context, operation_name=operation_name,
+        query,
+        variables=variables,
+        context=context,
+        operation_name=operation_name,
+        root_value=root_value,
     )
 
     response_data = {"data": result.data}

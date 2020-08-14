@@ -6,7 +6,7 @@ import pytest
 
 import strawberry
 from starlette.testclient import TestClient
-from strawberry.asgi import GraphQL
+from strawberry.asgi import GraphQL as BaseGraphQL
 from strawberry.permission import BasePermission
 
 
@@ -47,6 +47,11 @@ class Subscription:
         yield "Hi"
 
 
+class GraphQL(BaseGraphQL):
+    def get_root_value(self, request):
+        return Query()
+
+
 @pytest.fixture
 def schema():
     return strawberry.Schema(Query, subscription=Subscription)
@@ -54,7 +59,7 @@ def schema():
 
 @pytest.fixture
 def test_client(schema):
-    app = GraphQL(schema, root_value=Query())
+    app = GraphQL(schema)
 
     return TestClient(app)
 
