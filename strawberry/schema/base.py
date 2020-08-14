@@ -13,6 +13,7 @@ from typing_extensions import Protocol
 class ExecutionResult:
     data: Optional[Dict[str, Any]]
     errors: Optional[List[GraphQLError]]
+    extensions: Optional[Dict[str, Any]] = None
 
 
 class BaseSchema(Protocol):

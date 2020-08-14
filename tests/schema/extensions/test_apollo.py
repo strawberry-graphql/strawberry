@@ -2,72 +2,10 @@ import pytest
 
 import strawberry
 from freezegun import freeze_time
-from graphql import DirectiveLocation
-from strawberry.extensions.tracing import ApolloTracingExtension
-from strawberry.graphql import execute, execute_sync
+from strawberry.extensions.tracing.apollo import ApolloTracingExtension
 
 
-@pytest.mark.asyncio
-async def test_handles_async_resolvers():
-    @strawberry.type
-    class Query:
-        @strawberry.field
-        async def async_field(self, info) -> str:
-            return "async result"
-
-    schema = strawberry.Schema(Query)
-
-    result = await execute(schema, "{ asyncField }")
-
-    assert not result.errors
-    assert result.data["asyncField"] == "async result"
-
-
-@pytest.mark.asyncio
-async def test_runs_directives():
-    @strawberry.type
-    class Person:
-        name: str = "Jess"
-
-    @strawberry.type
-    class Query:
-        @strawberry.field
-        def person(self, info) -> Person:
-            return Person()
-
-    @strawberry.directive(
-        locations=[DirectiveLocation.FIELD], description="Make string uppercase"
-    )
-    def uppercase(value: str):
-        return value.upper()
-
-    @strawberry.directive(locations=[DirectiveLocation.FIELD])
-    def replace(value: str, old: str, new: str):
-        return value.replace(old, new)
-
-    schema = strawberry.Schema(query=Query, directives=[uppercase, replace])
-
-    query = """query People($identified: Boolean!){
-        person {
-            name @uppercase
-        }
-        jess: person {
-            name @replace(old: "Jess", new: "Jessica")
-        }
-        johnDoe: person {
-            name @replace(old: "Jess", new: "John") @include(if: $identified)
-        }
-    }"""
-
-    result = await execute(schema, query, variable_values={"identified": False})
-
-    assert not result.errors
-    assert result.data["person"]["name"] == "JESS"
-    assert result.data["jess"]["name"] == "Jessica"
-    assert result.data["johnDoe"].get("name") is None
-
-
-@freeze_time("2012-01-14 12:00:01")
+@freeze_time("20120114 12:00:01")
 def test_tracing_sync(mocker):
     mocker.patch(
         "strawberry.extensions.tracing.apollo.time.perf_counter_ns", return_value=0
@@ -93,7 +31,7 @@ def test_tracing_sync(mocker):
         }
     """
 
-    result = execute_sync(schema, query)
+    result = schema.execute_sync(query)
 
     assert not result.errors
 
@@ -130,7 +68,7 @@ def test_tracing_sync(mocker):
 
 
 @pytest.mark.asyncio
-@freeze_time("2012-01-14 12:00:01")
+@freeze_time("20120114 12:00:01")
 async def test_tracing_async(mocker):
     mocker.patch(
         "strawberry.extensions.tracing.apollo.time.perf_counter_ns", return_value=0
@@ -156,7 +94,7 @@ async def test_tracing_async(mocker):
         }
     """
 
-    result = await execute(schema, query)
+    result = await schema.execute(query)
 
     assert not result.errors
 

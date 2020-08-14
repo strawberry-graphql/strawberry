@@ -1,16 +1,18 @@
-from typing import Any, Dict, List, Optional, Type, Union
+from inspect import isawaitable
+from typing import Any, Awaitable, Dict, List, Optional, Sequence, Type, Union, cast
 
-from graphql import GraphQLSchema, graphql_sync, parse
+from graphql import ExecutionResult as GraphQLExecutionResult, GraphQLSchema, parse
 from graphql.subscription import subscribe
 from graphql.type.directives import specified_directives
 from strawberry.custom_scalar import ScalarDefinition
 from strawberry.enum import EnumDefinition
+from strawberry.extensions import Extension, ExtensionsRunner
 from strawberry.types.types import TypeDefinition
 
-# TODO: get rid of this module ?
-from ..graphql import execute
 from ..middleware import DirectivesMiddleware, Middleware
 from ..printer import print_schema
+from .base import ExecutionResult
+from .execute import execute
 from .types import ConcreteType, get_directive_type, get_object_type
 
 
@@ -23,6 +25,7 @@ class Schema:
         subscription: Optional[Type] = None,
         directives=(),
         types=(),
+        extensions: Sequence[Extension] = (),
     ):
 
         self.type_map: Dict[str, ConcreteType] = {}
@@ -48,6 +51,7 @@ class Schema:
         )
 
         self.query = self.type_map[query_type.name]
+        self.extensions_runner = ExtensionsRunner(extensions)
 
     def get_type_by_name(
         self, name: str
@@ -57,8 +61,6 @@ class Schema:
 
         return None
 
-    # TODO: type return value of these
-
     async def execute(
         self,
         query: str,
@@ -66,15 +68,25 @@ class Schema:
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
-    ):
-        return await execute(
+    ) -> ExecutionResult:
+        result = execute(
             self._schema,
             query,
             variable_values=variable_values,
             root_value=root_value,
             context_value=context_value,
-            middleware=self.middleware,
             operation_name=operation_name,
+            additional_middlewares=self.middleware,
+            extensions_runner=self.extensions_runner,
+        )
+
+        if isawaitable(result):
+            result = await cast(Awaitable[GraphQLExecutionResult], result)
+
+        return ExecutionResult(
+            data=result.data,  # type: ignore
+            errors=result.errors,  # type: ignore
+            extensions=self.extensions_runner.get_extensions_results(),
         )
 
     def execute_sync(
@@ -84,15 +96,22 @@ class Schema:
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
-    ):
-        return graphql_sync(
+    ) -> ExecutionResult:
+        result = execute(
             self._schema,
             query,
             variable_values=variable_values,
             root_value=root_value,
             context_value=context_value,
-            middleware=self.middleware,
             operation_name=operation_name,
+            additional_middlewares=self.middleware,
+            extensions_runner=self.extensions_runner,
+        )
+
+        return ExecutionResult(
+            data=result.data,  # type: ignore
+            errors=result.errors,  # type: ignore
+            extensions=self.extensions_runner.get_extensions_results(),
         )
 
     async def subscribe(
