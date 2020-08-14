@@ -73,3 +73,36 @@ def test_graphiql_disabled_view():
         response = client.get("/graphql")
 
         assert response.status_code == 404
+
+
+def test_custom_context():
+    class CustomGraphQLView(GraphQLView):
+        def get_context(self, request):
+            return {
+                "request": request,
+                "custom_value": "Hi!",
+            }
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def custom_context_value(self, info) -> str:
+            return info.context["custom_value"]
+
+    schema = strawberry.Schema(query=Query)
+
+    app = Flask(__name__)
+    app.debug = True
+
+    app.add_url_rule(
+        "/graphql", view_func=CustomGraphQLView.as_view("graphql_view", schema=schema),
+    )
+
+    with app.test_client() as client:
+        query = "{ customContextValue }"
+
+        response = client.get("/graphql", json={"query": query})
+        data = json.loads(response.data.decode())
+
+        assert response.status_code == 200
+        assert data["data"] == {"customContextValue": "Hi!"}

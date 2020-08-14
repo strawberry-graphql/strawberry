@@ -22,6 +22,9 @@ class GraphQLView(View):
         self.schema = schema
         self.root_value = root_value
 
+    def get_context(self, request):
+        return {"request": request}
+
     def render_template(self, request, template=None):
         return render_template_string(template)
 
@@ -43,7 +46,7 @@ class GraphQLView(View):
         except KeyError:
             return Response("No valid query was provided for the request", 400)
 
-        context = {"request": request}
+        context = self.get_context(request)
 
         result = self.schema.execute_sync(
             query,

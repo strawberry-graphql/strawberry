@@ -180,4 +180,4 @@ def test_custom_context():
     data = json.loads(response.content.decode())
 
     assert response.status_code == 200
-    assert data == {"data": {"customContextValue": "Hi!"}}
+    assert data["data"] == {"customContextValue": "Hi!"}
