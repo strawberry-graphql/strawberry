@@ -149,8 +149,8 @@ class GraphQL:
 
     async def handle_http(self, scope: Scope, receive: Receive, send: Send):
         request = Request(scope=scope, receive=receive)
-        root_value = self.get_root_value(request)
-        context = self.get_context(request)
+        root_value = await self.get_root_value(request)
+        context = await self.get_context(request)
 
         response = await get_http_response(
             request=request,

@@ -48,7 +48,7 @@ class Subscription:
 
 
 class GraphQL(BaseGraphQL):
-    def get_root_value(self, request):
+    async def get_root_value(self, request):
         return Query()
 
 
