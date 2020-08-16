@@ -26,7 +26,6 @@ class GraphQL:
     def __init__(
         self,
         schema: BaseSchema,
-        root_value: typing.Any = None,
         graphiql: bool = True,
         keep_alive: bool = False,
         keep_alive_interval: float = 1,
@@ -34,7 +33,6 @@ class GraphQL:
     ) -> None:
         self.schema = schema
         self.graphiql = graphiql
-        self.root_value = root_value
         self.keep_alive = keep_alive
         self.keep_alive_interval = keep_alive_interval
         self._keep_alive_task = None
@@ -47,6 +45,12 @@ class GraphQL:
             await self.handle_websocket(scope=scope, receive=receive, send=send)
         else:
             raise ValueError("Unknown scope type: %r" % (scope["type"],))
+
+    async def get_root_value(self, request: Request) -> typing.Optional[typing.Any]:
+        return None
+
+    async def get_context(self, request: Request) -> typing.Optional[typing.Any]:
+        return {"request": request}
 
     async def handle_keep_alive(self, websocket):
         if websocket.application_state == WebSocketState.DISCONNECTED:
@@ -145,17 +149,28 @@ class GraphQL:
 
     async def handle_http(self, scope: Scope, receive: Receive, send: Send):
         request = Request(scope=scope, receive=receive)
-        response = await get_http_response(request, self.execute, self.graphiql)
+        root_value = await self.get_root_value(request)
+        context = await self.get_context(request)
+
+        response = await get_http_response(
+            request=request,
+            execute=self.execute,
+            graphiql=self.graphiql,
+            root_value=root_value,
+            context=context,
+        )
 
         await response(scope, receive, send)
 
-    async def execute(self, query, variables=None, context=None, operation_name=None):
+    async def execute(
+        self, query, variables=None, context=None, operation_name=None, root_value=None
+    ):
         if self.debug:
             pretty_print_graphql_operation(operation_name, query, variables)
 
         return await self.schema.execute(
             query,
-            root_value=self.root_value,
+            root_value=root_value,
             variable_values=variables,
             operation_name=operation_name,
             context_value=context,

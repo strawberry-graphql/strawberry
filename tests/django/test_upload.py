@@ -24,7 +24,7 @@ schema = strawberry.Schema(query=Query, mutation=Mutation)
 
 
 class GraphQLView(BaseGraphQLView):
-    def get_root_value(self):
+    def get_root_value(self, request):
         return Query()
 
 

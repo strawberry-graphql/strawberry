@@ -16,7 +16,7 @@ from .app.models import Example
 class AlwaysFailPermission(BasePermission):
     message = "You are not authorized"
 
-    def has_permission(self, info):
+    def has_permission(self, source, info):
         return False
 
 
@@ -45,7 +45,7 @@ schema = strawberry.Schema(query=Query)
 
 
 class GraphQLView(BaseGraphQLView):
-    def get_root_value(self):
+    def get_root_value(self, request):
         return Query()
 
 
@@ -148,3 +148,36 @@ def test_returns_errors_and_data():
 
     assert data["data"]["hello"] == "strawberry"
     assert data["data"]["alwaysFail"] is None
+
+    assert len(data["errors"]) == 1
+    assert data["errors"][0]["message"] == "You are not authorized"
+
+
+def test_custom_context():
+    class CustomGraphQLView(BaseGraphQLView):
+        def get_context(self, request):
+            return {
+                "request": request,
+                "custom_value": "Hi!",
+            }
+
+    factory = RequestFactory()
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def custom_context_value(self, info) -> str:
+            return info.context["custom_value"]
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ customContextValue }"
+    request = factory.post(
+        "/graphql/", {"query": query}, content_type="application/json"
+    )
+
+    response = CustomGraphQLView.as_view(schema=schema)(request)
+    data = json.loads(response.content.decode())
+
+    assert response.status_code == 200
+    assert data["data"] == {"customContextValue": "Hi!"}

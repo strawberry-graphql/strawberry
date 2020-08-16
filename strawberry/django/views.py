@@ -27,8 +27,11 @@ class GraphQLView(View):
         self.schema = schema
         self.graphiql = graphiql
 
-    def get_root_value(self):
+    def get_root_value(self, request):
         return None
+
+    def get_context(self, request):
+        return {"request": request}
 
     def parse_body(self, request):
         if request.content_type == "multipart/form-data":
@@ -63,11 +66,11 @@ class GraphQLView(View):
         except KeyError:
             return HttpResponseBadRequest("No GraphQL query found in the request")
 
-        context = {"request": request}
+        context = self.get_context(request)
 
         result = self.schema.execute_sync(
             query,
-            root_value=self.get_root_value(),
+            root_value=self.get_root_value(request),
             variable_values=variables,
             context_value=context,
             operation_name=operation_name,
