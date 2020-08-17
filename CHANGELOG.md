@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.30.1 - 2020-08-17
+-------------------
+
+This releases fixes the check for unset values.
+
 0.30.0 - 2020-08-16
 -------------------
 
