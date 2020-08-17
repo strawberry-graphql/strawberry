@@ -1,3 +1,4 @@
+import dataclasses
 import typing
 
 import strawberry
@@ -172,3 +173,35 @@ def test_unset_types_stringify_empty():
 
     assert not result.errors
     assert result.data["say"] == "Hello None!"
+
+
+def test_converting_to_dict_with_unset():
+    @strawberry.type
+    class Query:
+        hello: str = "Hello"
+
+    @strawberry.input
+    class Input:
+        name: typing.Optional[str] = UNSET
+
+    @strawberry.type
+    class Mutation:
+        @strawberry.mutation
+        def say(self, info, input: Input) -> str:
+            data = dataclasses.asdict(input)
+
+            if is_unset(data["name"]):
+                return "Hello 🤨"
+
+            return f"Hello {data['name']}!"
+
+    schema = strawberry.Schema(query=Query, mutation=Mutation)
+
+    query = """mutation {
+        say(input: {})
+    }"""
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data["say"] == "Hello 🤨"

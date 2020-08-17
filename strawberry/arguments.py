@@ -73,7 +73,7 @@ UNSET = _Unset()
 
 
 def is_unset(value: Any) -> bool:
-    return value is UNSET
+    return type(value) is _Unset
 
 
 def convert_argument(value: Any, argument_definition: ArgumentDefinition) -> Any:
