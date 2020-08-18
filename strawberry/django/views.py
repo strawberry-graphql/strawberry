@@ -1,6 +1,6 @@
 import json
 import os
-import typing
+from typing import Optional
 
 from django.http import Http404, HttpResponseNotAllowed, JsonResponse
 from django.http.response import HttpResponseBadRequest
@@ -15,13 +15,15 @@ from django.views.generic import View
 import strawberry
 from graphql.error import format_error as format_graphql_error
 from strawberry.file_uploads.data import replace_placeholders_with_files
+from strawberry.http import GraphQLHTTPResponse
+from strawberry.schema.base import ExecutionResult
 
 from ..schema import BaseSchema
 
 
 class GraphQLView(View):
     graphiql = True
-    schema: typing.Optional[BaseSchema] = None
+    schema: Optional[BaseSchema] = None
 
     def __init__(self, schema: BaseSchema, graphiql=True):
         self.schema = schema
@@ -43,6 +45,14 @@ class GraphQLView(View):
             return data
 
         return json.loads(request.body)
+
+    def process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse:
+        data: GraphQLHTTPResponse = {"data": result.data}
+
+        if result.errors:
+            data["errors"] = [format_graphql_error(err) for err in result.errors]
+
+        return data
 
     @method_decorator(csrf_exempt)
     def dispatch(self, request, *args, **kwargs):
@@ -76,12 +86,7 @@ class GraphQLView(View):
             operation_name=operation_name,
         )
 
-        response_data = {"data": result.data}
-
-        if result.errors:
-            response_data["errors"] = [
-                format_graphql_error(err) for err in result.errors
-            ]
+        response_data = self.process_result(result)
 
         return JsonResponse(response_data)
 

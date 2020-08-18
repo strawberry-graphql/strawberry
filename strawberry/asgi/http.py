@@ -1,6 +1,5 @@
 import typing
 
-from graphql.error import format_error as format_graphql_error
 from starlette import status
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, JSONResponse, PlainTextResponse, Response
@@ -11,6 +10,7 @@ from .utils import get_graphiql_html
 async def get_http_response(
     request: Request,
     execute: typing.Callable,
+    process_result: typing.Callable,
     graphiql: bool,
     root_value: typing.Optional[typing.Any],
     context: typing.Optional[typing.Any],
@@ -55,9 +55,6 @@ async def get_http_response(
         root_value=root_value,
     )
 
-    response_data = {"data": result.data}
-
-    if result.errors:
-        response_data["errors"] = [format_graphql_error(err) for err in result.errors]
+    response_data = await process_result(result)
 
     return JSONResponse(response_data, status_code=status.HTTP_200_OK)
