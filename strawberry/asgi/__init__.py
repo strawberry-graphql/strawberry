@@ -6,7 +6,7 @@ from graphql.error import format_error as format_graphql_error
 from starlette.requests import Request
 from starlette.types import Receive, Scope, Send
 from starlette.websockets import WebSocket, WebSocketState
-from strawberry.http import GraphQLHTTPResponse
+from strawberry.http import GraphQLHTTPResponse, process_result
 from strawberry.schema.base import ExecutionResult
 
 from ..schema import BaseSchema
@@ -166,12 +166,7 @@ class GraphQL:
         await response(scope, receive, send)
 
     async def process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse:
-        data: GraphQLHTTPResponse = {"data": result.data}
-
-        if result.errors:
-            data["errors"] = [format_graphql_error(err) for err in result.errors]
-
-        return data
+        return process_result(result)
 
     async def execute(
         self, query, variables=None, context=None, operation_name=None, root_value=None

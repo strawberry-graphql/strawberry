@@ -13,9 +13,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
 
 import strawberry
-from graphql.error import format_error as format_graphql_error
 from strawberry.file_uploads.data import replace_placeholders_with_files
-from strawberry.http import GraphQLHTTPResponse
+from strawberry.http import GraphQLHTTPResponse, process_result
 from strawberry.schema.base import ExecutionResult
 
 from ..schema import BaseSchema
@@ -47,12 +46,7 @@ class GraphQLView(View):
         return json.loads(request.body)
 
     def process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse:
-        data: GraphQLHTTPResponse = {"data": result.data}
-
-        if result.errors:
-            data["errors"] = [format_graphql_error(err) for err in result.errors]
-
-        return data
+        return process_result(result)
 
     @method_decorator(csrf_exempt)
     def dispatch(self, request, *args, **kwargs):

@@ -2,8 +2,7 @@ import json
 
 from flask import Response, abort, render_template_string, request
 from flask.views import View
-from graphql.error import format_error as format_graphql_error
-from strawberry.http import GraphQLHTTPResponse
+from strawberry.http import GraphQLHTTPResponse, process_result
 from strawberry.schema.base import ExecutionResult
 
 from ..schema import BaseSchema
@@ -29,12 +28,7 @@ class GraphQLView(View):
         return render_template_string(template)
 
     def process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse:
-        data: GraphQLHTTPResponse = {"data": result.data}
-
-        if result.errors:
-            data["errors"] = [format_graphql_error(err) for err in result.errors]
-
-        return data
+        return process_result(result)
 
     def dispatch_request(self):
         if "text/html" in request.environ.get("HTTP_ACCEPT", ""):
