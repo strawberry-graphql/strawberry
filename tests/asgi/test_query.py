@@ -1,7 +1,7 @@
 import strawberry
 from starlette.testclient import TestClient
 from strawberry.asgi import GraphQL as BaseGraphQL
-from strawberry.schema.base import ExecutionResult
+from strawberry.schema import ExecutionResult
 
 
 def test_simple_query(schema, test_client):

@@ -1,2 +1,2 @@
-from .base import BaseSchema  # noqa
+from .base import BaseSchema, ExecutionResult  # noqa
 from .schema import Schema  # noqa
