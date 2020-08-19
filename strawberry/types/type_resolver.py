@@ -225,13 +225,17 @@ def _get_fields(cls: Type) -> List[FieldDefinition]:
     fields = []
 
     # get all the fields from the dataclass
-    dataclass_fields = dataclasses.fields(cls)
+    dataclass_fields = list(dataclasses.fields(cls))
 
     # plus the fields that are defined with the resolvers, using
     # the @strawberry.field decorator
-    dataclass_fields += tuple(
-        field for field in cls.__dict__.values() if hasattr(field, "_field_definition")
-    )
+    original_fields = dataclass_fields.copy()
+    for field_name, field in cls.__dict__.items():
+        if not hasattr(field, "_field_definition"):
+            continue
+        if any(f.name == field_name for f in original_fields):
+            continue
+        dataclass_fields.append(field)
 
     seen_fields = set()
 
