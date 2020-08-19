@@ -1,8 +1,8 @@
 import json
 import os
-from typing import Optional
+from typing import Any, Dict, Optional
 
-from django.http import Http404, HttpResponseNotAllowed, JsonResponse
+from django.http import Http404, HttpRequest, HttpResponseNotAllowed, JsonResponse
 from django.http.response import HttpResponseBadRequest
 from django.template import RequestContext, Template
 from django.template.exceptions import TemplateDoesNotExist
@@ -28,13 +28,13 @@ class GraphQLView(View):
         self.schema = schema
         self.graphiql = graphiql
 
-    def get_root_value(self, request):
+    def get_root_value(self, request: HttpRequest) -> Any:
         return None
 
-    def get_context(self, request):
+    def get_context(self, request: HttpRequest) -> Any:
         return {"request": request}
 
-    def parse_body(self, request):
+    def parse_body(self, request) -> Dict[str, Any]:
         if request.content_type == "multipart/form-data":
             data = json.loads(request.POST.get("operations", "{}"))
             files_map = json.loads(request.POST.get("map", "{}"))
@@ -45,7 +45,9 @@ class GraphQLView(View):
 
         return json.loads(request.body)
 
-    def process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse:
+    def process_result(
+        self, request: HttpRequest, result: ExecutionResult
+    ) -> GraphQLHTTPResponse:
         return process_result(result)
 
     @method_decorator(csrf_exempt)

@@ -165,7 +165,9 @@ class GraphQL:
 
         await response(scope, receive, send)
 
-    async def process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse:
+    async def process_result(
+        self, request: Request, result: ExecutionResult
+    ) -> GraphQLHTTPResponse:
         return process_result(result)
 
     async def execute(

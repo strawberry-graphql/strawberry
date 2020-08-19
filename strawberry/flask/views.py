@@ -18,13 +18,13 @@ class GraphQLView(View):
         self.graphiql = graphiql
         self.schema = schema
 
-    def get_root_value(self, request):
+    def get_root_value(self):
         return None
 
-    def get_context(self, request):
+    def get_context(self):
         return {"request": request}
 
-    def render_template(self, request, template=None):
+    def render_template(self, template=None):
         return render_template_string(template)
 
     def process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse:
