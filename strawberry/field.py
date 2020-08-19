@@ -1,4 +1,5 @@
 import dataclasses
+import typing
 from typing import Callable, List, Optional, Type, cast
 
 from strawberry.exceptions import MissingReturnAnnotationError
@@ -13,7 +14,7 @@ def check_return_annotation(field_definition: FieldDefinition):
     f = cast(Callable, field_definition.base_resolver)
     name = cast(str, field_definition.name)
 
-    if "return" not in f.__annotations__:
+    if "return" not in typing.get_type_hints(f):
         raise MissingReturnAnnotationError(name)
 
 
@@ -33,6 +34,27 @@ class StrawberryField(dataclasses.Field):
             metadata=None,
         )
 
+    def __call__(self, resolver: Callable) -> Callable:
+        """Migrate the field definition to the resolver"""
+
+        # TODO: This does not copy the data and now two objects share the same
+        #       FieldDefinition. Presumably this field will be GC-ed soon
+        #       though?
+        field_definition = self._field_definition
+
+        resolver_name = to_camel_case(resolver.__name__)
+        field_definition.name = resolver_name
+        field_definition.origin_name = resolver_name
+        field_definition.origin = resolver
+        field_definition.arguments = get_arguments_from_resolver(resolver, self.name)
+
+        # TODO: Enforce that return annotation actually exists, per Patrick
+        field_definition.type = typing.get_type_hints(resolver).get("return")
+
+        resolver._field_definition = field_definition  # type: ignore
+
+        return resolver
+
     def __setattr__(self, name, value):
         if name == "type":
             self._field_definition.type = value
@@ -46,29 +68,13 @@ class StrawberryField(dataclasses.Field):
 
         return super().__setattr__(name, value)
 
-    def __call__(self, f):
-        f._field_definition = self._field_definition
-        f._field_definition.name = f._field_definition.name or to_camel_case(f.__name__)
-        f._field_definition.base_resolver = f
-        f._field_definition.origin = f
-        f._field_definition.arguments = get_arguments_from_resolver(
-            f, f._field_definition.name
-        )
-
-        check_return_annotation(f._field_definition)
-
-        f._field_definition.type = f.__annotations__["return"]
-
-        return f
-
 
 def field(
-    f=None,
+    resolver: Optional[Callable] = None,
     *,
     name: Optional[str] = None,
     is_subscription: bool = False,
     description: Optional[str] = None,
-    resolver: Optional[Callable] = None,
     permission_classes: Optional[List[Type[BasePermission]]] = None,
     federation: Optional[FederationFieldParams] = None
 ):
@@ -87,27 +93,31 @@ def field(
     it can be used both as decorator and as a normal function.
     """
 
-    origin_name = f.__name__ if f else None
-    name = name or (to_camel_case(origin_name) if origin_name else None)
+    resolver_name: Optional[str]
+    if resolver:
+        resolver_name = to_camel_case(resolver.__name__)
+        name = name or resolver_name
+        arguments = get_arguments_from_resolver(resolver, resolver_name)
+    else:
+        resolver_name = None
+        arguments = []
 
-    wrap = StrawberryField(
-        field_definition=FieldDefinition(
-            origin_name=origin_name,
-            name=name,
-            type=None,  # type: ignore
-            origin=f,  # type: ignore
-            description=description,
-            base_resolver=resolver,
-            is_subscription=is_subscription,
-            permission_classes=permission_classes or [],
-            arguments=(
-                get_arguments_from_resolver(resolver, origin_name) if resolver else []
-            ),
-            federation=federation or FederationFieldParams(),
-        )
+    field_definition = FieldDefinition(
+        origin_name=resolver_name,
+        name=name,
+        type=None,  # type: ignore
+        origin=resolver,  # type: ignore
+        description=description,
+        base_resolver=resolver,
+        is_subscription=is_subscription,
+        permission_classes=permission_classes or [],
+        arguments=arguments,
+        federation=federation or FederationFieldParams(),
     )
 
-    if f:
-        return wrap(f)
+    if resolver:
+        field_ = StrawberryField(field_definition)(resolver)
+    else:
+        field_ = StrawberryField(field_definition)
 
-    return wrap
+    return field_

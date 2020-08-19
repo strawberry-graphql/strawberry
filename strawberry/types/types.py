@@ -1,5 +1,5 @@
 import dataclasses
-from typing import Any, Callable, Dict, List, Optional, Type
+from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 from strawberry.permission import BasePermission
 
@@ -82,7 +82,7 @@ class FieldDefinition:
     name: Optional[str]
     origin_name: Optional[str]
     type: Optional[Type]
-    origin: Type
+    origin: Union[Type, Callable]
     child: Optional["FieldDefinition"] = None
     is_subscription: bool = False
     is_optional: bool = False
