@@ -85,7 +85,7 @@ def test_custom_context():
 
 def test_custom_process_result():
     class CustomGraphQL(BaseGraphQL):
-        async def process_result(self, result: ExecutionResult):
+        async def process_result(self, request, result: ExecutionResult):
             return {}
 
     @strawberry.type

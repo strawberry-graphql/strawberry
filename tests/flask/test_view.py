@@ -3,7 +3,7 @@ import json
 import pytest
 
 import strawberry
-from flask import Flask
+from flask import Flask, request
 from strawberry.flask.views import GraphQLView as BaseGraphQLView
 from strawberry.schema import ExecutionResult
 
@@ -16,7 +16,7 @@ def create_app(**kwargs):
     schema = strawberry.Schema(query=Query)
 
     class GraphQLView(BaseGraphQLView):
-        def get_root_value(self, request):
+        def get_root_value(self):
             return Query()
 
     app = Flask(__name__)
@@ -73,7 +73,7 @@ def test_graphiql_disabled_view():
 
 def test_custom_context():
     class CustomGraphQLView(BaseGraphQLView):
-        def get_context(self, request):
+        def get_context(self):
             return {
                 "request": request,
                 "custom_value": "Hi!",

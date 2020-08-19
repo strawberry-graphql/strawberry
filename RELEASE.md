@@ -1,4 +1,4 @@
-Release type: patch
+Release type: minor
 
 Add `process_result` to views for Django, Flask and ASGI. They can be overriden
 to provide a custom response and also to process results and errors.

@@ -82,7 +82,7 @@ class GraphQLView(View):
             operation_name=operation_name,
         )
 
-        response_data = self.process_result(result)
+        response_data = self.process_result(request=request, result=result)
 
         return JsonResponse(response_data)
 

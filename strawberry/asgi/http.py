@@ -55,6 +55,6 @@ async def get_http_response(
         root_value=root_value,
     )
 
-    response_data = await process_result(result)
+    response_data = await process_result(request=request, result=result)
 
     return JSONResponse(response_data, status_code=status.HTTP_200_OK)

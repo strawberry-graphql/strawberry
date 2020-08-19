@@ -36,7 +36,7 @@ class GraphQLView(View):
                 abort(404)
 
             template = render_graphiql_page()
-            return self.render_template(request, template=template)
+            return self.render_template(template=template)
 
         data = request.json
 
@@ -48,14 +48,14 @@ class GraphQLView(View):
         except KeyError:
             return Response("No valid query was provided for the request", 400)
 
-        context = self.get_context(request)
+        context = self.get_context()
 
         result = self.schema.execute_sync(
             query,
             variable_values=variables,
             context_value=context,
             operation_name=operation_name,
-            root_value=self.get_root_value(request),
+            root_value=self.get_root_value(),
         )
 
         response_data = self.process_result(result)
