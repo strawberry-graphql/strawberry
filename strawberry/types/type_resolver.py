@@ -229,11 +229,12 @@ def _get_fields(cls: Type) -> List[FieldDefinition]:
 
     # plus the fields that are defined with the resolvers, using
     # the @strawberry.field decorator
-    original_fields = dataclass_fields.copy()
+    dataclass_field_names = [field.name for field in dataclass_fields]
     for field_name, field in cls.__dict__.items():
         if not hasattr(field, "_field_definition"):
             continue
-        if any(f.name == field_name for f in original_fields):
+        if field_name in dataclass_field_names:
+            # Field already accounted for through the dataclass
             continue
         dataclass_fields.append(field)
 

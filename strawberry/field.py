@@ -1,5 +1,4 @@
 import dataclasses
-import typing
 from typing import Callable, List, Optional, Type, cast
 
 from strawberry.exceptions import MissingReturnAnnotationError
@@ -10,12 +9,14 @@ from .types.types import FederationFieldParams, FieldDefinition
 from .utils.str_converters import to_camel_case
 
 
-def check_return_annotation(field_definition: FieldDefinition):
-    f = cast(Callable, field_definition.base_resolver)
+def get_return_annotation(field_definition: FieldDefinition) -> Type:
+    resolver = cast(Callable, field_definition.base_resolver)
     name = cast(str, field_definition.name)
 
-    if "return" not in typing.get_type_hints(f):
+    if "return" not in resolver.__annotations__:
         raise MissingReturnAnnotationError(name)
+
+    return resolver.__annotations__["return"]
 
 
 class StrawberryField(dataclasses.Field):
@@ -43,13 +44,15 @@ class StrawberryField(dataclasses.Field):
         field_definition = self._field_definition
 
         resolver_name = to_camel_case(resolver.__name__)
+
         field_definition.name = field_definition.name or resolver_name
         field_definition.origin_name = resolver_name
+
         field_definition.origin = resolver
+        field_definition.base_resolver = resolver
         field_definition.arguments = get_arguments_from_resolver(resolver, self.name)
 
-        # TODO: Enforce that return annotation actually exists, per Patrick
-        field_definition.type = typing.get_type_hints(resolver).get("return")
+        field_definition.type = get_return_annotation(field_definition)
 
         resolver._field_definition = field_definition  # type: ignore
 
@@ -93,25 +96,16 @@ def field(
     it can be used both as decorator and as a normal function.
     """
 
-    resolver_name: Optional[str]
-    if resolver:
-        resolver_name = to_camel_case(resolver.__name__)
-        name = name or resolver_name
-        arguments = get_arguments_from_resolver(resolver, resolver_name)
-    else:
-        resolver_name = None
-        arguments = []
-
     field_definition = FieldDefinition(
-        origin_name=resolver_name,
-        name=name,
+        origin_name=None,  # modified by resolver in __call__
+        name=name,  # modified by resolver in __call__
         type=None,  # type: ignore
         origin=resolver,  # type: ignore
         description=description,
         base_resolver=resolver,
         is_subscription=is_subscription,
         permission_classes=permission_classes or [],
-        arguments=arguments,
+        arguments=[],  # modified by resolver in __call__
         federation=federation or FederationFieldParams(),
     )
 

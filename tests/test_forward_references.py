@@ -43,7 +43,7 @@ def test_with_resolver():
     class User:
         name: str
 
-    def get_users():
+    def get_users() -> List[User]:
         return []
 
     @strawberry.type
