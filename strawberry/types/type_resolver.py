@@ -254,7 +254,7 @@ def _get_fields(cls: Type) -> List[FieldDefinition]:
            no way to determine the typing of the field, and it is invalid.
 
     """
-    field_definitions = []
+    field_definitions: Dict[str, FieldDefinition] = {}
 
     # Type #1 fields
     type_1_fields: Dict[str, dataclasses.Field] = {
@@ -314,7 +314,7 @@ def _get_fields(cls: Type) -> List[FieldDefinition]:
                 default_value=getattr(cls, field.name, undefined),
             )
 
-        field_definitions.append(field_definition)
+        field_definitions[field_name] = field_definition
 
     # let's also add fields that are declared with @strawberry.field in
     # parent classes, we do this by checking if parents have a type definition
@@ -324,11 +324,18 @@ def _get_fields(cls: Type) -> List[FieldDefinition]:
     # a mistake
     for base in cls.__bases__:
         if hasattr(base, "_type_definition"):
-            # TODO: Is the check for seen_fields necessary here?
-            fields = base._type_definition.fields  # type: ignore
-            field_definitions.extend(fields)
+            fields = {
+                field.name: field
+                for field in base._type_definition.fields  # type: ignore
+                # Make sure field isn't already accounted for (occurs when using
+                # interfaces)
+                if field.name not in field_definitions
+            }
 
-    return field_definitions
+            # Add base's field definitions to cls' field definitions
+            field_definitions = {**field_definitions, **fields}
+
+    return list(field_definitions.values())
 
 
 # def _get_fields_old(cls: Type) -> List[FieldDefinition]:
