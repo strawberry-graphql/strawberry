@@ -269,45 +269,50 @@ def _get_fields(cls: Type) -> List[FieldDefinition]:
 
     for field_name, field in type_2_fields.items():
 
-        field_definition: FieldDefinition = field._field_definition
-
         # Check if there is a matching Type #1 field:
         if field_name in type_1_fields:
             # Stop tracking the Type #1 field, an explict strawberry.field was
             # defined
             type_1_fields.pop(field_name)
-
         # Otherwise, ensure that a resolver has been specified
         else:
+            field_definition: FieldDefinition = field._field_definition
             if field_definition.base_resolver is None:
                 raise WindowsError(...)
 
-        if not field_definition.name:
-            field_definition.name = to_camel_case(field_name)
+    # Combine our two dicts of fields
+    all_fields = {**type_1_fields, **type_2_fields}
 
-        # we make sure that the origin is either the field's resolver when
-        # called as:
-        #
-        # >>> @strawberry.field
-        # ... def x(self): ...
-        #
-        # or the class where this field was defined, so we always have
-        # the correct origin for determining field types when resolving
-        # the types.
-        field_definition.origin = field_definition.origin or cls
+    for field_name, field in all_fields.items():
 
-        field_definitions.append(field_definition)
+        if hasattr(field, "_field_definition"):
+            # Use the existing FieldDefinition
+            field_definition = field._field_definition
 
-    # Create FieldDefinitions for all remaining Type #1 fields
-    for field in type_1_fields.values():
-        field_definition = FieldDefinition(
-            origin_name=field.name,
-            name=to_camel_case(field.name),
-            type=field.type,
-            origin=cls,
-            # TODO: When will cls.(field.name) not exist?
-            default_value=getattr(cls, field.name, undefined),
-        )
+            if not field_definition.name:
+                field_definition.name = to_camel_case(field_name)
+
+            # we make sure that the origin is either the field's resolver when
+            # called as:
+            #
+            # >>> @strawberry.field
+            # ... def x(self): ...
+            #
+            # or the class where this field was defined, so we always have
+            # the correct origin for determining field types when resolving
+            # the types.
+            field_definition.origin = field_definition.origin or cls
+
+        else:
+            # Create a FieldDefinition
+            field_definition = FieldDefinition(
+                origin_name=field.name,
+                name=to_camel_case(field.name),
+                type=field.type,
+                origin=cls,
+                # TODO: When will cls.(field.name) not exist?
+                default_value=getattr(cls, field.name, undefined),
+            )
 
         field_definitions.append(field_definition)
 
