@@ -1,4 +1,5 @@
 import typing
+from typing import List
 
 import pytest
 
@@ -207,7 +208,7 @@ def test_classmethods_resolvers():
         age: int
 
         @classmethod
-        def get_users(cls):
+        def get_users(cls) -> "List[User]":
             return [cls(name="Bob", age=10), cls(name="Nancy", age=30)]
 
     def get_users() -> typing.List[User]:

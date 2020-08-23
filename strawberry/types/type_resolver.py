@@ -222,65 +222,169 @@ def _resolve_types(fields: List[FieldDefinition]) -> List[FieldDefinition]:
 
 
 def _get_fields(cls: Type) -> List[FieldDefinition]:
-    fields = []
+    """Get all the strawberry field definitions off a strawberry.type cls
 
-    # get all the fields from the dataclass
-    dataclass_fields = list(dataclasses.fields(cls))
+    A strawberry.type class can have 3 different field types:
+        1.  A pure dataclass field, defined without any use of the
+            strawberry.field function/decorator. Will not have a
+            field_definition --> need to create one.
+        2a. A strawberry.field that has not received a resolver. Will be a
+            stand-alone FieldDefinition object.
+        2b. A resolver modified with strawberry.field(resolver=...) or decorated
+            with @strawberry.field. Function object will have a monkey-patched
+            _field_definition attribute.
 
-    # plus the fields that are defined with the resolvers, using
-    # the @strawberry.field decorator
-    dataclass_field_names = [field.name for field in dataclass_fields]
+        Type #2a will have a corresponding Type #1 item. Items of Type #2b will
+        also have a corresponding item if defined with the strawberry.field
+        function (i.e. not the decorator).
+
+        This function needs to return a list of FieldDefinitions, one for each
+        field item, without duplicates, while also paying attention the `name`
+        field.
+
+        Final `name` attribute priority:
+        1. Type #2 `name` attribute. This will be defined with an explicit
+           strawberry.field(name=...). No camelcase-ification will be done,
+           as the user has explicitly stated the field name.
+        2. field name on cls. Will exist for both Type #1 and Type #2 fields.
+
+           Field names will be converted to camelcase
+
+           If a field is Type #2 field, but never received a resolver, there is
+           no way to determine the typing of the field, and it is invalid.
+
+    """
+    field_definitions = []
+
+    # Type #1 fields
+    type_1_fields: Dict[str, dataclasses.Field] = {
+        field.name: field for field in dataclasses.fields(cls)
+    }
+
+    # Type #2 fields
+    type_2_fields = {}
     for field_name, field in cls.__dict__.items():
-        if not hasattr(field, "_field_definition"):
-            continue
-        if field_name in dataclass_field_names:
-            # Field already accounted for through the dataclass
-            continue
-        dataclass_fields.append(field)
-
-    seen_fields = set()
-
-    for field in dataclass_fields:
         if hasattr(field, "_field_definition"):
-            field_definition = field._field_definition  # type: ignore
+            type_2_fields[field_name] = field
 
-            # we make sure that the origin is either the field's resolver
-            # when called as:
-            # >>> @strawberry.field
-            # >>> def x(self): ...
-            # or the class where this field was defined, so we always have
-            # the correct origin for determining field types when resolving
-            # the types.
+    for field_name, field in type_2_fields.items():
 
-            field_definition.origin = field_definition.origin or cls
+        field_definition: FieldDefinition = field._field_definition
+
+        # Check if there is a matching Type #1 field:
+        if field_name in type_1_fields:
+            # Stop tracking the Type #1 field, an explict strawberry.field was
+            # defined
+            type_1_fields.pop(field_name)
+
+        # Otherwise, ensure that a resolver has been specified
         else:
-            # for fields that don't have a field definition, we create one
-            # based on the dataclass field
+            if field_definition.base_resolver is None:
+                raise WindowsError(...)
 
-            field_definition = FieldDefinition(
-                origin_name=field.name,
-                name=to_camel_case(field.name),
-                type=field.type,
-                origin=cls,
-                default_value=getattr(cls, field.name, undefined),
-            )
+        if not field_definition.name:
+            field_definition.name = to_camel_case(field_name)
 
-        fields.append(field_definition)
-        seen_fields.add(field_definition.origin_name)
+        # we make sure that the origin is either the field's resolver when
+        # called as:
+        #
+        # >>> @strawberry.field
+        # ... def x(self): ...
+        #
+        # or the class where this field was defined, so we always have
+        # the correct origin for determining field types when resolving
+        # the types.
+        field_definition.origin = field_definition.origin or cls
+
+        field_definitions.append(field_definition)
+
+    # Create FieldDefinitions for all remaining Type #1 fields
+    for field in type_1_fields.values():
+        field_definition = FieldDefinition(
+            origin_name=field.name,
+            name=to_camel_case(field.name),
+            type=field.type,
+            origin=cls,
+            # TODO: When will cls.(field.name) not exist?
+            default_value=getattr(cls, field.name, undefined),
+        )
+
+        field_definitions.append(field_definition)
 
     # let's also add fields that are declared with @strawberry.field in
     # parent classes, we do this by checking if parents have a type definition
     # and we haven't seen a field already
-
+    #
     # TODO: maybe we want to add a warning when overriding a field, as it might be
     # a mistake
-
     for base in cls.__bases__:
         if hasattr(base, "_type_definition"):
-            fields += [
-                field
-                for field in base._type_definition.fields  # type: ignore
-                if field.origin_name not in seen_fields
-            ]
+            # TODO: Is the check for seen_fields necessary here?
+            fields = base._type_definition.fields  # type: ignore
+            field_definitions.extend(fields)
 
-    return fields
+    return field_definitions
+
+
+# def _get_fields_old(cls: Type) -> List[FieldDefinition]:
+#     fields = []
+#
+#     # get all the fields from the dataclass
+#     dataclass_fields = list(dataclasses.fields(cls))
+#
+#     # plus the fields that are defined with the resolvers, using
+#     # the @strawberry.field decorator
+#     for field_name, field in cls.__dict__.items():
+#         if not hasattr(field, "_field_definition"):
+#             continue
+#         if field_name in dataclass_field_names:
+#             # Field already accounted for through the dataclass
+#             continue
+#         dataclass_fields.append(field)
+#
+#     seen_fields = set()
+#
+#     for field in dataclass_fields:
+#         if hasattr(field, "_field_definition"):
+#             field_definition = field._field_definition  # type: ignore
+#
+#             # we make sure that the origin is either the field's resolver
+#             # when called as:
+#             # >>> @strawberry.field
+#             # >>> def x(self): ...
+#             # or the class where this field was defined, so we always have
+#             # the correct origin for determining field types when resolving
+#             # the types.
+#
+#             field_definition.origin = field_definition.origin or cls
+#         else:
+#             # for fields that don't have a field definition, we create one
+#             # based on the dataclass field
+#
+#             field_definition = FieldDefinition(
+#                 origin_name=field.name,
+#                 name=to_camel_case(field.name),
+#                 type=field.type,
+#                 origin=cls,
+#                 default_value=getattr(cls, field.name, undefined),
+#             )
+#
+#         fields.append(field_definition)
+#         seen_fields.add(field_definition.origin_name)
+#
+#     # let's also add fields that are declared with @strawberry.field in
+#     # parent classes, we do this by checking if parents have a type definition
+#     # and we haven't seen a field already
+#
+#     # TODO: maybe we want to add a warning when overriding a field, as it might be
+#     # a mistake
+#
+#     for base in cls.__bases__:
+#         if hasattr(base, "_type_definition"):
+#             fields += [
+#                 field
+#                 for field in base._type_definition.fields  # type: ignore
+#                 if field.origin_name not in seen_fields
+#             ]
+#
+#     return fields
