@@ -310,7 +310,6 @@ def _get_fields(cls: Type) -> List[FieldDefinition]:
                 name=to_camel_case(field.name),
                 type=field.type,
                 origin=cls,
-                # TODO: When will cls.(field.name) not exist?
                 default_value=getattr(cls, field.name, undefined),
             )
 
