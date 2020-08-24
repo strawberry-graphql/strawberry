@@ -42,7 +42,7 @@ class StrawberryField(dataclasses.Field):
         #       FieldDefinition. Presumably this field will be GC-ed soon
         #       though?
         field_definition = self._field_definition
-        # Note: field.definition.name is determined in type_resolver._get_fields
+        # Note: field_definition.name is finalized in type_resolver._get_fields
 
         resolver_name = to_camel_case(resolver.__name__)
 
