@@ -37,9 +37,7 @@ def get_arguments_from_annotations(
     return arguments
 
 
-def get_arguments_from_resolver(
-    resolver: Callable, field_name: str
-) -> List[ArgumentDefinition]:
+def get_arguments_from_resolver(resolver: Callable) -> List[ArgumentDefinition]:
     annotations = resolver.__annotations__
     parameters = inspect.signature(resolver).parameters
     function_arguments = set(parameters) - {"root", "self", "info"}
@@ -55,7 +53,7 @@ def get_arguments_from_resolver(
 
     if len(arguments_missing_annotations) > 0:
         raise MissingArgumentsAnnotationsError(
-            field_name, arguments_missing_annotations
+            resolver.__name__, arguments_missing_annotations
         )
 
     return get_arguments_from_annotations(annotations, parameters, origin=resolver)

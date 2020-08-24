@@ -11,7 +11,7 @@ from .utils.str_converters import to_camel_case
 
 def get_return_annotation(field_definition: FieldDefinition) -> Type:
     resolver = cast(Callable, field_definition.base_resolver)
-    name = cast(str, field_definition.name)
+    name = resolver.__name__
 
     if "return" not in resolver.__annotations__:
         raise MissingReturnAnnotationError(name)
@@ -50,7 +50,7 @@ class StrawberryField(dataclasses.Field):
 
         field_definition.origin = resolver
         field_definition.base_resolver = resolver
-        field_definition.arguments = get_arguments_from_resolver(resolver, self.name)
+        field_definition.arguments = get_arguments_from_resolver(resolver)
 
         field_definition.type = get_return_annotation(field_definition)
 
