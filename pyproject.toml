@@ -48,7 +48,7 @@ pytest-django = {version = "^3.9"}
 asgiref = "^3.2"
 pytest-flask = {version = "^1.0.0"}
 requests = "^2.24.0"
-pre-commit = "^2.6.0"
+pre-commit = "^2.7.1"
 pytest-benchmark = "^3.2.3"
 
 [tool.poetry.extras]
