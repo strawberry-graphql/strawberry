@@ -54,7 +54,14 @@ class StrawberryField(dataclasses.Field):
 
         field_definition.type = get_return_annotation(field_definition)
 
-        resolver._field_definition = field_definition  # type: ignore
+        try:
+            resolver._field_definition = field_definition  # type: ignore
+        except AttributeError:
+            # classmethods are tiny wrapper on a function, so we can assign
+            # the type definition on the wrapped function since assigning it
+            # on the bounded function is not allowed by python
+
+            resolver.__func__._field_definition = field_definition  # type: ignore
 
         return resolver
 

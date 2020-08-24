@@ -1,3 +1,4 @@
+# type: ignore
 import typing
 from typing import List
 
@@ -202,6 +203,8 @@ def test_only_info_function_resolvers():
 
 
 def test_classmethods_resolvers():
+    global User
+
     @strawberry.type
     class User:
         name: str
@@ -210,9 +213,6 @@ def test_classmethods_resolvers():
         @classmethod
         def get_users(cls) -> "List[User]":
             return [cls(name="Bob", age=10), cls(name="Nancy", age=30)]
-
-    def get_users() -> typing.List[User]:
-        return User.get_users()
 
     @strawberry.type
     class Query:
@@ -226,3 +226,5 @@ def test_classmethods_resolvers():
 
     assert not result.errors
     assert result.data == {"users": [{"name": "Bob"}, {"name": "Nancy"}]}
+
+    del User
