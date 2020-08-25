@@ -224,35 +224,47 @@ def _resolve_types(fields: List[FieldDefinition]) -> List[FieldDefinition]:
 def _get_fields(cls: Type) -> List[FieldDefinition]:
     """Get all the strawberry field definitions off a strawberry.type cls
 
-    A strawberry.type class can have 3 different field types:
-        1.  A pure dataclass field, defined without any use of the
-            strawberry.field function/decorator. Will not have a
-            field_definition --> need to create one.
-        2a. A strawberry.field that has not received a resolver. Will be a
-            stand-alone FieldDefinition object.
-        2b. A resolver modified with strawberry.field(resolver=...) or decorated
-            with @strawberry.field. Function object will have a monkey-patched
-            _field_definition attribute.
+    Strawberry fields can be defined on a strawberry.type class in 4 different
+    ways:
 
-        Type #2a will have a corresponding Type #1 item. Items of Type #2b will
-        also have a corresponding item if defined with the strawberry.field
-        function (i.e. not the decorator).
+    >>> import strawberry
+    >>> @strawberry.type
+    ... class Query:
+    ...     type_1: int = 5
+    ...     type_2: int = strawberry.field(...)
+    ...     type_3: int = strawberry.field(resolver=...)
+    ...     @strawberry.field
+    ...     def type_4(self) -> int:
+    ...         ...
 
-        This function needs to return a list of FieldDefinitions, one for each
-        field item, without duplicates, while also paying attention the `name`
-        field.
+    Type #1:  A pure dataclass field. Will not have a FieldDefinition; one will
+              need to be created in this function.
+    Type #2a: A field defined using strawberry.field as a function, but without
+              supplying a resolver. Again, a FieldDefinition will need to be
+              created in this function.
+    Type #2b: A field defined using strawberry.field as a function, with a
+              supplied resolver. The type hint is optional, but if supplied,
+              must match the return type of the resolver.
+    Type #2c: A field defined using @strawberry.field as a decorator around the
+              resolver.
 
-        Final `name` attribute priority:
-        1. Type #2 `name` attribute. This will be defined with an explicit
-           strawberry.field(name=...). No camelcase-ification will be done,
-           as the user has explicitly stated the field name.
-        2. field name on cls. Will exist for both Type #1 and Type #2 fields.
+    This function needs to return a list of FieldDefinitions, one for each
+    field item, without duplicates, while also paying attention the `name`
+    field.
 
-           Field names will be converted to camelcase
+    Final `name` attribute priority:
+    1. Type #2 `name` attribute. This will be defined with an explicit
+       strawberry.field(name=...). No camelcase-ification will be done, as the
+       user has explicitly stated the field name.
+    2. Field name on the cls. Will exist for all fields other than Type #2c.
+       Field names will be converted to camelcase.
 
-           If a field is Type #2 field, but never received a resolver, there is
-           no way to determine the typing of the field, and it is invalid.
+    If a field is Type #2a field, but is not type annotated, there is no way to
+    determine the typing of the field, and it is invalid.
 
+    Items of Type #2b will have a redundant Type #1 entry in the dataclass'
+    field list if annotated using a type. This redundant field will be ignored,
+    except for its name, if necessary.
     """
     field_definitions: Dict[str, FieldDefinition] = {}
 
@@ -304,7 +316,7 @@ def _get_fields(cls: Type) -> List[FieldDefinition]:
             field_definition.origin = field_definition.origin or cls
 
         else:
-            # Create a FieldDefinition
+            # Create a FieldDefinition, for Type #1 fields
             field_definition = FieldDefinition(
                 origin_name=field.name,
                 name=to_camel_case(field.name),
