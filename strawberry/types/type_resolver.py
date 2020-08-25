@@ -316,7 +316,7 @@ def _get_fields(cls: Type) -> List[FieldDefinition]:
             field_definition.origin = field_definition.origin or cls
 
         else:
-            # Create a FieldDefinition, for Type #1 fields
+            # Create a FieldDefinition, for fields of Types #1 and #2a
             field_definition = FieldDefinition(
                 origin_name=field.name,
                 name=to_camel_case(field.name),
