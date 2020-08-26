@@ -1,6 +1,12 @@
 CHANGELOG
 =========
 
+0.31.1 - 2020-08-26
+-------------------
+
+This release fixes the Flask view that was returning 400 when there were errors
+in the GraphQL results. Now it always returns 200.
+
 0.31.0 - 2020-08-26
 -------------------
 
