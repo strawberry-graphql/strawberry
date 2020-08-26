@@ -1,8 +1,8 @@
 import json
 import os
-import typing
+from typing import Any, Dict, Optional
 
-from django.http import Http404, HttpResponseNotAllowed, JsonResponse
+from django.http import Http404, HttpRequest, HttpResponseNotAllowed, JsonResponse
 from django.http.response import HttpResponseBadRequest
 from django.template import RequestContext, Template
 from django.template.exceptions import TemplateDoesNotExist
@@ -13,27 +13,28 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
 
 import strawberry
-from graphql.error import format_error as format_graphql_error
 from strawberry.file_uploads.data import replace_placeholders_with_files
+from strawberry.http import GraphQLHTTPResponse, process_result
+from strawberry.schema import ExecutionResult
 
 from ..schema import BaseSchema
 
 
 class GraphQLView(View):
     graphiql = True
-    schema: typing.Optional[BaseSchema] = None
+    schema: Optional[BaseSchema] = None
 
     def __init__(self, schema: BaseSchema, graphiql=True):
         self.schema = schema
         self.graphiql = graphiql
 
-    def get_root_value(self, request):
+    def get_root_value(self, request: HttpRequest) -> Any:
         return None
 
-    def get_context(self, request):
+    def get_context(self, request: HttpRequest) -> Any:
         return {"request": request}
 
-    def parse_body(self, request):
+    def parse_body(self, request) -> Dict[str, Any]:
         if request.content_type == "multipart/form-data":
             data = json.loads(request.POST.get("operations", "{}"))
             files_map = json.loads(request.POST.get("map", "{}"))
@@ -43,6 +44,11 @@ class GraphQLView(View):
             return data
 
         return json.loads(request.body)
+
+    def process_result(
+        self, request: HttpRequest, result: ExecutionResult
+    ) -> GraphQLHTTPResponse:
+        return process_result(result)
 
     @method_decorator(csrf_exempt)
     def dispatch(self, request, *args, **kwargs):
@@ -76,12 +82,7 @@ class GraphQLView(View):
             operation_name=operation_name,
         )
 
-        response_data = {"data": result.data}
-
-        if result.errors:
-            response_data["errors"] = [
-                format_graphql_error(err) for err in result.errors
-            ]
+        response_data = self.process_result(request=request, result=result)
 
         return JsonResponse(response_data)
 

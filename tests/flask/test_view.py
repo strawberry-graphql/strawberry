@@ -3,8 +3,9 @@ import json
 import pytest
 
 import strawberry
-from flask import Flask
+from flask import Flask, request
 from strawberry.flask.views import GraphQLView as BaseGraphQLView
+from strawberry.schema import ExecutionResult
 
 
 def create_app(**kwargs):
@@ -15,7 +16,7 @@ def create_app(**kwargs):
     schema = strawberry.Schema(query=Query)
 
     class GraphQLView(BaseGraphQLView):
-        def get_root_value(self, request):
+        def get_root_value(self):
             return Query()
 
     app = Flask(__name__)
@@ -26,13 +27,6 @@ def create_app(**kwargs):
         view_func=GraphQLView.as_view("graphql_view", schema=schema, **kwargs),
     )
     return app
-
-
-# @pytest.fixture
-# def app(schema):
-#     app = create_app(schema)
-
-#     return app
 
 
 @pytest.yield_fixture
@@ -79,7 +73,7 @@ def test_graphiql_disabled_view():
 
 def test_custom_context():
     class CustomGraphQLView(BaseGraphQLView):
-        def get_context(self, request):
+        def get_context(self):
             return {
                 "request": request,
                 "custom_value": "Hi!",
@@ -108,3 +102,33 @@ def test_custom_context():
 
         assert response.status_code == 200
         assert data["data"] == {"customContextValue": "Hi!"}
+
+
+def test_custom_process_result():
+    class CustomGraphQLView(BaseGraphQLView):
+        def process_result(self, result: ExecutionResult):
+            return {}
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def abc(self, info) -> str:
+            return "ABC"
+
+    schema = strawberry.Schema(query=Query)
+
+    app = Flask(__name__)
+    app.debug = True
+
+    app.add_url_rule(
+        "/graphql", view_func=CustomGraphQLView.as_view("graphql_view", schema=schema),
+    )
+
+    with app.test_client() as client:
+        query = "{ abc }"
+
+        response = client.get("/graphql", json={"query": query})
+        data = json.loads(response.data.decode())
+
+        assert response.status_code == 200
+        assert data == {}

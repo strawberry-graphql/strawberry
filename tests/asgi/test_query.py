@@ -1,6 +1,7 @@
 import strawberry
 from starlette.testclient import TestClient
 from strawberry.asgi import GraphQL as BaseGraphQL
+from strawberry.schema import ExecutionResult
 
 
 def test_simple_query(schema, test_client):
@@ -80,3 +81,24 @@ def test_custom_context():
 
     assert response.status_code == 200
     assert response.json() == {"data": {"customContextValue": "Hi!"}}
+
+
+def test_custom_process_result():
+    class CustomGraphQL(BaseGraphQL):
+        async def process_result(self, request, result: ExecutionResult):
+            return {}
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def abc(self, info) -> str:
+            return "ABC"
+
+    schema = strawberry.Schema(query=Query)
+    app = CustomGraphQL(schema)
+
+    test_client = TestClient(app)
+    response = test_client.post("/", json={"query": "{ abc }"})
+
+    assert response.status_code == 200
+    assert response.json() == {}
