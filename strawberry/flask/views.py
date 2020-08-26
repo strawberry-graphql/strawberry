@@ -61,7 +61,5 @@ class GraphQLView(View):
         response_data = self.process_result(result)
 
         return Response(
-            json.dumps(response_data),
-            status=400 if result.errors else 200,
-            content_type="application/json",
+            json.dumps(response_data), status=200, content_type="application/json",
         )
