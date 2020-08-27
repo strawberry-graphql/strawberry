@@ -35,7 +35,7 @@ pytest = "^6.0"
 pdbpp = "^0.10.2"
 pytest-emoji = "^0.2.0"
 flake8 = "^3.8"
-black = {version = "^19.3b0",allow-prereleases = true}
+black = {version = "^20.8b1",allow-prereleases = true}
 isort = "^5.4.2"
 pytest-asyncio = "^0.14.0"
 pytest-cov = "^2.10"
