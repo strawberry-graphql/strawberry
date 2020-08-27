@@ -1,4 +1,5 @@
 import dataclasses
+import inspect
 from typing import Callable, List, Optional, Type, cast
 
 from strawberry.exceptions import MissingReturnAnnotationError
@@ -54,14 +55,15 @@ class StrawberryField(dataclasses.Field):
 
         field_definition.type = get_return_annotation(field_definition)
 
-        try:
+        if not inspect.ismethod(resolver):
+            # resolver is a normal function
             resolver._field_definition = field_definition  # type: ignore
-        except AttributeError:
-            # classmethods are tiny wrapper on a function, so we can assign
-            # the type definition on the wrapped function since assigning it
-            # on the bounded function is not allowed by python
-
-            resolver.__func__._field_definition = field_definition  # type: ignore
+        else:
+            # resolver is a bound method and immutable (most likely a
+            # classmethod or an instance method). We need to monkeypatch its
+            # underlying .__func__ function
+            # https://stackoverflow.com/a/7891681/8134178
+            resolver.__func__._field_definition = field_definition  # type:ignore
 
         return resolver
 
