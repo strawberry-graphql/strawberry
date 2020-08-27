@@ -1,9 +1,11 @@
 import dataclasses
+import re
 from functools import partial
 from typing import List, Optional, Type, cast
 
 from strawberry.utils.typing import is_generic
 
+from .exceptions import MissingResolverError
 from .types.types import FederationTypeParams, TypeDefinition
 from .utils.str_converters import to_camel_case
 
@@ -22,6 +24,22 @@ def _get_interfaces(cls: Type) -> List[TypeDefinition]:
     return interfaces
 
 
+def _wrap_dataclass(cls: Type):
+    try:
+        return dataclasses.dataclass(cls)
+    except TypeError as exc:
+        message: str
+        [message] = exc.args
+
+        pattern = re.compile(
+            r"'(?P<field_name>\w*)' is a field but has no type annotation"
+        )
+        match = pattern.match(message)
+        if match:
+            field_name = match.group("field_name")
+            raise MissingResolverError(field_name) from exc
+
+
 def _process_type(
     cls,
     *,
@@ -33,7 +51,7 @@ def _process_type(
 ):
     name = name or to_camel_case(cls.__name__)
 
-    wrapped = dataclasses.dataclass(cls)
+    wrapped = _wrap_dataclass(cls)
 
     interfaces = _get_interfaces(wrapped)
 

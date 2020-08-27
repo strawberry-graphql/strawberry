@@ -2,7 +2,7 @@ import dataclasses
 import sys
 from typing import Dict, List, Optional, Type, Union, cast
 
-from strawberry.exceptions import MissingTypesForGenericError
+from strawberry.exceptions import MissingResolverError, MissingTypesForGenericError
 from strawberry.lazy_type import LazyType
 from strawberry.union import union
 from strawberry.utils.str_converters import to_camel_case
@@ -290,7 +290,9 @@ def _get_fields(cls: Type) -> List[FieldDefinition]:
         else:
             field_definition: FieldDefinition = field._field_definition
             if field_definition.base_resolver is None:
-                raise WindowsError(...)
+                # This should be caught by _wrap_dataclass in type.py, but just
+                # in case, we'll check again
+                raise MissingResolverError(field_name)
 
     # Combine our two dicts of fields
     all_fields = {**type_1_fields, **type_2_fields}
