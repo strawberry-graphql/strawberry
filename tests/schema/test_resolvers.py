@@ -228,3 +228,18 @@ def test_classmethods_resolvers():
     assert result.data == {"users": [{"name": "Bob"}, {"name": "Nancy"}]}
 
     del User
+
+
+def test_lambda_resolvers():
+    @strawberry.type
+    class Query:
+        letter: str = strawberry.field(resolver=lambda: "λ")
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ letter }"
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data == {"letter": "λ"}

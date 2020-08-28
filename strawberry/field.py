@@ -1,23 +1,11 @@
 import dataclasses
 import inspect
-from typing import Callable, List, Optional, Type, cast
-
-from strawberry.exceptions import MissingReturnAnnotationError
+from typing import Callable, List, Optional, Type
 
 from .arguments import get_arguments_from_resolver
 from .permission import BasePermission
 from .types.types import FederationFieldParams, FieldDefinition
 from .utils.str_converters import to_camel_case
-
-
-def get_return_annotation(field_definition: FieldDefinition) -> Type:
-    resolver = cast(Callable, field_definition.base_resolver)
-    name = resolver.__name__
-
-    if "return" not in resolver.__annotations__:
-        raise MissingReturnAnnotationError(name)
-
-    return resolver.__annotations__["return"]
 
 
 class StrawberryField(dataclasses.Field):
@@ -53,7 +41,7 @@ class StrawberryField(dataclasses.Field):
         field_definition.base_resolver = resolver
         field_definition.arguments = get_arguments_from_resolver(resolver)
 
-        field_definition.type = get_return_annotation(field_definition)
+        field_definition.type = resolver.__annotations__.get("return", None)
 
         if not inspect.ismethod(resolver):
             # resolver is a normal function
