@@ -5,7 +5,7 @@ from typing import List, Optional, Type, cast
 
 from strawberry.utils.typing import is_generic
 
-from .exceptions import MissingResolverError
+from .exceptions import MissingFieldAnnotationError
 from .types.types import FederationTypeParams, TypeDefinition
 from .utils.str_converters import to_camel_case
 
@@ -37,7 +37,7 @@ def _wrap_dataclass(cls: Type):
         match = pattern.match(message)
         if match:
             field_name = match.group("field_name")
-            raise MissingResolverError(field_name) from exc
+            raise MissingFieldAnnotationError(field_name) from exc
 
 
 def _process_type(

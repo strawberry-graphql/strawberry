@@ -3,7 +3,7 @@ import pytest
 import strawberry
 from strawberry.exceptions import (
     MissingArgumentsAnnotationsError,
-    MissingResolverError,
+    MissingFieldAnnotationError,
     MissingReturnAnnotationError,
 )
 
@@ -80,7 +80,7 @@ def test_raises_error_when_argument_annotation_missing():
 
 
 def test_raises_error_when_missing_annotation_and_resolver():
-    with pytest.raises(MissingResolverError) as e:
+    with pytest.raises(MissingFieldAnnotationError) as e:
 
         @strawberry.type
         class Query:

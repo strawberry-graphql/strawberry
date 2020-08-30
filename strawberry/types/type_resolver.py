@@ -3,7 +3,7 @@ import sys
 from typing import Dict, List, Optional, Type, Union, cast
 
 from strawberry.exceptions import (
-    MissingResolverError,
+    MissingFieldAnnotationError,
     MissingReturnAnnotationError,
     MissingTypesForGenericError,
 )
@@ -317,7 +317,7 @@ def _get_fields(cls: Type) -> List[FieldDefinition]:
             if field_definition.base_resolver is None:
                 # This should be caught by _wrap_dataclass in type.py, but just
                 # in case, we'll check again
-                raise MissingResolverError(field_name)
+                raise MissingFieldAnnotationError(field_name)
 
             # resolver with @strawberry.field decorator must be typed
             if field_definition.type is None:

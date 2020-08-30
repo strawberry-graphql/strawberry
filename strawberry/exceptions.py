@@ -91,7 +91,7 @@ class UnsupportedTypeError(Exception):
         super().__init__(message)
 
 
-class MissingResolverError(Exception):
+class MissingFieldAnnotationError(Exception):
     def __init__(self, field_name: str):
         message = (
             f'Unable to determine the type of field "{field_name}". Either '
