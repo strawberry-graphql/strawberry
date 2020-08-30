@@ -243,3 +243,25 @@ def test_lambda_resolvers():
 
     assert not result.errors
     assert result.data == {"letter": "λ"}
+
+
+def test_bounded_instance_method_resolvers():
+    class CoolClass:
+        def method(self):
+            _ = self
+            return "something"
+
+    instance = CoolClass()
+
+    @strawberry.type
+    class Query:
+        blah: str = strawberry.field(resolver=instance.method)
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ blah }"
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data == {"blah": "something"}
