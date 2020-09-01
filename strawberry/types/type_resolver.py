@@ -277,7 +277,6 @@ def _get_fields(cls: Type) -> List[FieldDefinition]:
        user has explicitly stated the field name.
     2. Field name on the cls. Will exist for all fields other than Type #2c.
        Field names will be converted to camelcase.
-
     """
     field_definitions: Dict[str, FieldDefinition] = {}
 
@@ -300,7 +299,7 @@ def _get_fields(cls: Type) -> List[FieldDefinition]:
         if field_name in type_1_fields:
             # Make sure field and resolver types are the same if both are
             # defined
-            # TODO: Implement
+            # TODO: https://github.com/strawberry-graphql/strawberry/issues/396
             # assert field.type == resolver.type
 
             # Grab the type from the field if the resolver has no type

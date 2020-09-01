@@ -106,9 +106,10 @@ def field(
         federation=federation or FederationFieldParams(),
     )
 
-    if resolver:
-        field_ = StrawberryField(field_definition)(resolver)
-    else:
-        field_ = StrawberryField(field_definition)
+    field_ = StrawberryField(field_definition)
 
-    return field_
+    if resolver:
+        patched_resolver = field_(resolver)
+        return patched_resolver
+    else:
+        return field_

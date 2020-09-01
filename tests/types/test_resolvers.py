@@ -79,15 +79,13 @@ def test_raises_error_when_argument_annotation_missing():
     )
 
 
+# noinspection PyUnusedLocal
 def test_raises_error_when_missing_annotation_and_resolver():
     with pytest.raises(MissingFieldAnnotationError) as e:
 
         @strawberry.type
-        class Query:
+        class Query:  # noqa: F841
             missing = strawberry.field(name="annotation")
-
-        # Avoid unused local warning
-        _ = Query
 
     [message] = e.value.args
     assert message == (
