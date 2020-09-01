@@ -37,7 +37,6 @@ class StrawberryField(dataclasses.Field):
         field_definition.origin = resolver
         field_definition.base_resolver = resolver
         field_definition.arguments = get_arguments_from_resolver(resolver)
-
         field_definition.type = resolver.__annotations__.get("return", None)
 
         if not inspect.ismethod(resolver):

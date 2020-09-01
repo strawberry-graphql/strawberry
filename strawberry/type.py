@@ -68,6 +68,8 @@ def _process_type(
 
     interfaces = _get_interfaces(wrapped)
 
+    # TODO: check for missing types here
+
     wrapped._type_definition = TypeDefinition(
         name=name,
         is_input=is_input,

@@ -307,7 +307,7 @@ def _get_fields(cls: Type) -> List[FieldDefinition]:
                 field_type = type_1_fields[field_name].type
                 field_definition.type = field_type
 
-            # Stop tracking the Type #1 field, an explict strawberry.field was
+            # Stop tracking the Type #1 field, an explicit strawberry.field was
             # defined
             type_1_fields.pop(field_name)
 

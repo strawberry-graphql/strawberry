@@ -25,33 +25,32 @@ def test_resolver_fields():
     assert definition.fields[0].base_resolver == Query.name
 
 
-@pytest.mark.xfail
 def test_raises_error_when_return_annotation_missing():
-    @strawberry.type
-    class Query1:
-        @strawberry.field
-        def hello(self, info):
-            return "I'm a resolver"
-
     with pytest.raises(MissingReturnAnnotationError) as e:
-        strawberry.Schema(Query1)
+
+        @strawberry.type
+        class Query:
+            @strawberry.field
+            def hello(self, info):
+                return "I'm a resolver"
 
     assert e.value.args == (
         'Return annotation missing for field "hello", did you forget to add it?',
     )
 
-    @strawberry.type
-    class Query2:
-        def adios(self):
-            return -1
+    with pytest.raises(MissingReturnAnnotationError) as e:
 
-        goodbye = strawberry.field(resolver=adios)
+        @strawberry.type
+        class Query:
+            def adios(self):
+                return -1
 
-    with pytest.raises(MissingArgumentsAnnotationsError) as e:
-        strawberry.Schema(Query2)
+            goodbye = strawberry.field(resolver=adios)
+
+            strawberry.Schema(Query)
 
     assert e.value.args == (
-        'Return annotation missing for field "goodbye", did you forget to add ' "it?",
+        'Return annotation missing for field "goodbye", did you forget to add it?',
     )
 
 
