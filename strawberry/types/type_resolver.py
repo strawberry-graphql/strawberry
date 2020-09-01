@@ -366,7 +366,7 @@ def _get_fields(cls: Type) -> List[FieldDefinition]:
     # a mistake
     for base in cls.__bases__:
         if hasattr(base, "_type_definition"):
-            fields = {
+            base_field_definitions = {
                 field.name: field
                 for field in base._type_definition.fields  # type: ignore
                 # Make sure field isn't already accounted for (occurs when using
@@ -375,6 +375,6 @@ def _get_fields(cls: Type) -> List[FieldDefinition]:
             }
 
             # Add base's field definitions to cls' field definitions
-            field_definitions = {**field_definitions, **fields}
+            field_definitions = {**field_definitions, **base_field_definitions}
 
     return list(field_definitions.values())
