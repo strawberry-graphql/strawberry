@@ -27,9 +27,6 @@ class StrawberryField(dataclasses.Field):
     def __call__(self, resolver: Callable) -> Callable:
         """Migrate the field definition to the resolver"""
 
-        # TODO: This does not copy the data and now two objects share the same
-        #       FieldDefinition. Presumably this field will be GC-ed soon
-        #       though?
         field_definition = self._field_definition
         # Note: field_definition.name is finalized in type_resolver._get_fields
 
