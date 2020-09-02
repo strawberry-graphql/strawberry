@@ -106,7 +106,5 @@ def field(
     field_ = StrawberryField(field_definition)
 
     if resolver:
-        patched_resolver = field_(resolver)
-        return patched_resolver
-    else:
-        return field_
+        return field_(resolver)
+    return field_
