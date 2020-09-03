@@ -79,7 +79,6 @@ def test_raises_error_when_argument_annotation_missing():
     )
 
 
-# noinspection PyUnusedLocal
 def test_raises_error_when_missing_annotation_and_resolver():
     with pytest.raises(MissingFieldAnnotationError) as e:
 
