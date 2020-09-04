@@ -32,22 +32,6 @@ def test_simple_required_types():
     assert print_schema(schema) == textwrap.dedent(expected_type).strip()
 
 
-# def test_recursive_type():
-#     @strawberry.type
-#     class Query:
-#         s: "Query"
-
-#     expected_type = """
-#     type Query {
-#       s: Query!
-#     }
-#     """
-
-#     schema = strawberry.Schema(query=Query)
-
-#     assert print_schema(schema) == textwrap.dedent(expected_type).strip()
-
-
 def test_optional():
     @strawberry.type
     class Query:
