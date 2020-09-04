@@ -349,44 +349,44 @@ def test_supports_generic_in_unions():
     }
 
 
-# def test_supports_generic_in_unions_multiple_vars():
-#     A = typing.TypeVar("A")
-#     B = typing.TypeVar("B")
+def test_supports_generic_in_unions_multiple_vars():
+    A = typing.TypeVar("A")
+    B = typing.TypeVar("B")
 
-#     @strawberry.type
-#     class Edge(typing.Generic[A, B]):
-#         node: B
-#         info: A
+    @strawberry.type
+    class Edge(typing.Generic[A, B]):
+        info: A
+        node: B
 
-#     @strawberry.type
-#     class Fallback:
-#         node: str
+    @strawberry.type
+    class Fallback:
+        node: str
 
-#     @strawberry.type
-#     class Query:
-#         @strawberry.field
-#         def example(self, info) -> typing.Union[Fallback, Edge[int, str]]:
-#             return Edge(node="string", info=1)
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def example(self, info) -> typing.Union[Fallback, Edge[int, str]]:
+            return Edge(node="string", info=1)
 
-#     schema = strawberry.Schema(query=Query)
+    schema = strawberry.Schema(query=Query)
 
-#     query = """{
-#         example {
-#             __typename
+    query = """{
+        example {
+            __typename
 
-#             ... on IntStrEdge {
-#                 node
-#                 info
-#             }
-#         }
-#     }"""
+            ... on IntStrEdge {
+                node
+                info
+            }
+        }
+    }"""
 
-#     result = schema.execute_sync(query)
+    result = schema.execute_sync(query)
 
-#     assert not result.errors
-#     assert result.data == {
-#         "example": {"__typename": "IntStrEdge", "node": "string", "info": 1}
-#     }
+    assert not result.errors
+    assert result.data == {
+        "example": {"__typename": "IntStrEdge", "node": "string", "info": 1}
+    }
 
 
 def test_supports_generic_in_unions_with_nesting():
