@@ -83,8 +83,8 @@ def copy_type_with(
                 federation=definition.federation,
                 interfaces=definition.interfaces,
                 description=definition.description,
+                _fields=fields,
             )
-            type_definition._fields = fields
             type_definition._type_params = {}
 
             copied_type = builtins.type(

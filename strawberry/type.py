@@ -5,6 +5,7 @@ from typing import List, Optional, Type, cast
 from strawberry.utils.typing import is_generic
 
 from .exceptions import MissingFieldAnnotationError
+from .types.type_resolver import _get_fields
 from .types.types import FederationTypeParams, TypeDefinition
 from .utils.str_converters import to_camel_case
 
@@ -67,8 +68,7 @@ def _process_type(
     wrapped = _wrap_dataclass(cls)
 
     interfaces = _get_interfaces(wrapped)
-
-    # TODO: check for missing types here
+    fields = _get_fields(cls)
 
     wrapped._type_definition = TypeDefinition(
         name=name,
@@ -79,6 +79,7 @@ def _process_type(
         description=description,
         federation=federation or FederationTypeParams(),
         origin=cls,
+        _fields=fields,
     )
 
     return wrapped

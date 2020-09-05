@@ -41,16 +41,17 @@ def test_raises_error_when_return_annotation_missing():
     with pytest.raises(MissingReturnAnnotationError) as e:
 
         @strawberry.type
-        class Query:
+        class Query2:
             def adios(self):
                 return -1
 
             goodbye = strawberry.field(resolver=adios)
 
-            strawberry.Schema(Query)
+    # TODO: the name here is wrong, should be goodbye or maybe we should
+    # say that the resolver needs the annotation?
 
     assert e.value.args == (
-        'Return annotation missing for field "goodbye", did you forget to add it?',
+        'Return annotation missing for field "adios", did you forget to add it?',
     )
 
 

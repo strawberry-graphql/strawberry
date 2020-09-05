@@ -24,9 +24,7 @@ class TypeDefinition:
     federation: FederationTypeParams
     interfaces: List["TypeDefinition"]
 
-    _fields: List["FieldDefinition"] = dataclasses.field(
-        default_factory=list, init=False
-    )
+    _fields: List["FieldDefinition"]
     _type_params: Dict[str, Type] = dataclasses.field(default_factory=dict, init=False)
 
     def get_field(self, name: str) -> Optional["FieldDefinition"]:
@@ -34,15 +32,9 @@ class TypeDefinition:
 
     @property
     def fields(self) -> List["FieldDefinition"]:
-        if not self._fields:
-            from .type_resolver import _get_fields, _resolve_types
+        from .type_resolver import _resolve_types
 
-            fields = _get_fields(self.origin)
-            self._fields = _resolve_types(fields)
-
-        # type_params =
-
-        return self._fields
+        return _resolve_types(self._fields)
 
     @property
     def type_params(self) -> Dict[str, Type]:
