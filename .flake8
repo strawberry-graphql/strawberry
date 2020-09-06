@@ -5,3 +5,9 @@ ignore = W503
 extend-ignore =
     # See https://github.com/PyCQA/pycodestyle/issues/373
     E203,
+
+per-file-ignores =
+    tests/test_forward_references.py:E800
+    tests/schema/test_resolvers.py:E800
+    tests/types/test_string_annotations.py:E800
+    tests/federation/test_printer.py:E800
