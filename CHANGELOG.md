@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.32.1 - 2020-09-06
+-------------------
+
+Improves tooling by adding `flake8-eradicate` to `flake8` `pre-commit` hook..
+
 0.32.0 - 2020-09-06
 -------------------
 
