@@ -89,3 +89,14 @@ class UnsupportedTypeError(Exception):
         message = f"{annotation} conversion is not supported"
 
         super().__init__(message)
+
+
+class MissingFieldAnnotationError(Exception):
+    def __init__(self, field_name: str):
+        message = (
+            f'Unable to determine the type of field "{field_name}". Either '
+            f"annotate it directly, or provide a typed resolver using "
+            f"@strawberry.field."
+        )
+
+        super().__init__(message)

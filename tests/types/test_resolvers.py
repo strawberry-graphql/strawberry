@@ -3,6 +3,7 @@ import pytest
 import strawberry
 from strawberry.exceptions import (
     MissingArgumentsAnnotationsError,
+    MissingFieldAnnotationError,
     MissingReturnAnnotationError,
 )
 
@@ -27,12 +28,30 @@ def test_resolver_fields():
 def test_raises_error_when_return_annotation_missing():
     with pytest.raises(MissingReturnAnnotationError) as e:
 
-        @strawberry.field
-        def hello(self, info):
-            return "I'm a resolver"
+        @strawberry.type
+        class Query:
+            @strawberry.field
+            def hello(self, info):
+                return "I'm a resolver"
 
     assert e.value.args == (
         'Return annotation missing for field "hello", did you forget to add it?',
+    )
+
+    with pytest.raises(MissingReturnAnnotationError) as e:
+
+        @strawberry.type
+        class Query2:
+            def adios(self):
+                return -1
+
+            goodbye = strawberry.field(resolver=adios)
+
+    # TODO: the name here is wrong, should be goodbye or maybe we should
+    # say that the resolver needs the annotation?
+
+    assert e.value.args == (
+        'Return annotation missing for field "adios", did you forget to add it?',
     )
 
 
@@ -57,4 +76,18 @@ def test_raises_error_when_argument_annotation_missing():
     assert e.value.args == (
         'Missing annotation for arguments "limit" and "query" '
         'in field "hello2", did you forget to add it?',
+    )
+
+
+def test_raises_error_when_missing_annotation_and_resolver():
+    with pytest.raises(MissingFieldAnnotationError) as e:
+
+        @strawberry.type
+        class Query:  # noqa: F841
+            missing = strawberry.field(name="annotation")
+
+    [message] = e.value.args
+    assert message == (
+        'Unable to determine the type of field "missing". Either annotate it '
+        "directly, or provide a typed resolver using @strawberry.field."
     )

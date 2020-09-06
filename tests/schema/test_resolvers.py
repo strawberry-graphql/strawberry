@@ -1,4 +1,6 @@
+# type: ignore
 import typing
+from typing import List
 
 import pytest
 
@@ -201,17 +203,16 @@ def test_only_info_function_resolvers():
 
 
 def test_classmethods_resolvers():
+    global User
+
     @strawberry.type
     class User:
         name: str
         age: int
 
         @classmethod
-        def get_users(cls):
+        def get_users(cls) -> "List[User]":
             return [cls(name="Bob", age=10), cls(name="Nancy", age=30)]
-
-    def get_users() -> typing.List[User]:
-        return User.get_users()
 
     @strawberry.type
     class Query:
@@ -225,3 +226,42 @@ def test_classmethods_resolvers():
 
     assert not result.errors
     assert result.data == {"users": [{"name": "Bob"}, {"name": "Nancy"}]}
+
+    del User
+
+
+def test_lambda_resolvers():
+    @strawberry.type
+    class Query:
+        letter: str = strawberry.field(resolver=lambda: "λ")
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ letter }"
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data == {"letter": "λ"}
+
+
+def test_bounded_instance_method_resolvers():
+    class CoolClass:
+        def method(self):
+            _ = self
+            return "something"
+
+    instance = CoolClass()
+
+    @strawberry.type
+    class Query:
+        blah: str = strawberry.field(resolver=instance.method)
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ blah }"
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data == {"blah": "something"}

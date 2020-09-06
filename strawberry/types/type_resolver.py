@@ -2,7 +2,11 @@ import dataclasses
 import sys
 from typing import Dict, List, Optional, Type, Union, cast
 
-from strawberry.exceptions import MissingTypesForGenericError
+from strawberry.exceptions import (
+    MissingFieldAnnotationError,
+    MissingReturnAnnotationError,
+    MissingTypesForGenericError,
+)
 from strawberry.lazy_type import LazyType
 from strawberry.union import union
 from strawberry.utils.str_converters import to_camel_case
@@ -222,36 +226,128 @@ def _resolve_types(fields: List[FieldDefinition]) -> List[FieldDefinition]:
 
 
 def _get_fields(cls: Type) -> List[FieldDefinition]:
-    fields = []
+    """Get all the strawberry field definitions off a strawberry.type cls
 
-    # get all the fields from the dataclass
-    dataclass_fields = dataclasses.fields(cls)
+    This function returns a list of FieldDefinitions (one for each field item),
+    without duplicates, while also paying attention the name and typing of the
+    field.
 
-    # plus the fields that are defined with the resolvers, using
-    # the @strawberry.field decorator
-    dataclass_fields += tuple(
-        field for field in cls.__dict__.values() if hasattr(field, "_field_definition")
-    )
+    Strawberry fields can be defined on a strawberry.type class in 4 different
+    ways:
 
-    seen_fields = set()
+    >>> import strawberry
+    >>> @strawberry.type
+    ... class Query:
+    ...     type_1: int = 5
+    ...     type_2a: int = strawberry.field(...)
+    ...     type_2b: int = strawberry.field(resolver=...)
+    ...     @strawberry.field
+    ...     def type_2c(self) -> int:
+    ...         ...
 
-    for field in dataclass_fields:
+    Type #1:
+        A pure dataclass-style field. Will not have a FieldDefinition; one will
+        need to be created in this function. Type annotation is required.
+
+    Type #2a:
+        A field defined using strawberry.field as a function, but without
+        supplying a resolver. Again, a FieldDefinition will need to be created
+        in this function. Type annotation is required.
+
+    Type #2b:
+        A field defined using strawberry.field as a function, with a supplied
+        resolver.
+
+        The type hint is optional, but if supplied, it must match the return
+        type of the resolver. Type annnotation is required if resolver is not
+        type annotated; if both are annotated, they must match.
+
+        Implementation note: If both type annotations are provided, there will
+        be a redundant Type #1-style entry in the dataclass' field list. If the
+        strawberry.field call does not specify a `name`, the name of the field
+        on the class will be used.
+
+    Type #2c:
+        A field defined using @strawberry.field as a decorator around the
+        resolver. The resolver must be type-annotated.
+
+    Final `name` attribute priority:
+    1. Type #2 `name` attribute. This will be defined with an explicit
+       strawberry.field(name=...). No camelcase-ification will be done, as the
+       user has explicitly stated the field name.
+    2. Field name on the cls. Will exist for all fields other than Type #2c.
+       Field names will be converted to camelcase.
+    """
+    field_definitions: Dict[str, FieldDefinition] = {}
+
+    # Type #1 fields
+    type_1_fields: Dict[str, dataclasses.Field] = {
+        field.name: field for field in dataclasses.fields(cls)
+    }
+
+    # Type #2 fields
+    type_2_fields = {}
+    for field_name, field in cls.__dict__.items():
         if hasattr(field, "_field_definition"):
-            field_definition = field._field_definition  # type: ignore
+            type_2_fields[field_name] = field
 
-            # we make sure that the origin is either the field's resolver
-            # when called as:
+    for field_name, field in type_2_fields.items():
+
+        field_definition: FieldDefinition = field._field_definition
+
+        # Check if there is a matching Type #1 field:
+        if field_name in type_1_fields:
+            # Make sure field and resolver types are the same if both are
+            # defined
+            # TODO: https://github.com/strawberry-graphql/strawberry/issues/396
+            # assert field.type == resolver.type
+
+            # Grab the type from the field if the resolver has no type
+            if field_definition.type is None:
+                field_type = type_1_fields[field_name].type
+                field_definition.type = field_type
+
+            # Stop tracking the Type #1 field, an explicit strawberry.field was
+            # defined
+            type_1_fields.pop(field_name)
+
+        # Otherwise, ensure that a resolver has been specified
+        else:
+            if field_definition.base_resolver is None:
+                # This should be caught by _wrap_dataclass in type.py, but just
+                # in case, we'll check again
+                raise MissingFieldAnnotationError(field_name)
+
+            # resolver with @strawberry.field decorator must be typed
+            if field_definition.type is None:
+                resolver_name = field_definition.base_resolver.__name__
+                raise MissingReturnAnnotationError(resolver_name)
+
+    # Combine our two dicts of fields
+    all_fields = {**type_1_fields, **type_2_fields}
+
+    for field_name, field in all_fields.items():
+
+        if hasattr(field, "_field_definition"):
+            # Use the existing FieldDefinition
+            field_definition = field._field_definition
+
+            if not field_definition.name:
+                field_definition.name = to_camel_case(field_name)
+
+            # we make sure that the origin is either the field's resolver when
+            # called as:
+            #
             # >>> @strawberry.field
-            # >>> def x(self): ...
+            # ... def x(self): ...
+            #
             # or the class where this field was defined, so we always have
             # the correct origin for determining field types when resolving
             # the types.
-
             field_definition.origin = field_definition.origin or cls
-        else:
-            # for fields that don't have a field definition, we create one
-            # based on the dataclass field
 
+        else:
+            # Create a FieldDefinition, for fields of Types #1 and #2a
             field_definition = FieldDefinition(
                 origin_name=field.name,
                 name=to_camel_case(field.name),
@@ -260,22 +356,25 @@ def _get_fields(cls: Type) -> List[FieldDefinition]:
                 default_value=getattr(cls, field.name, undefined),
             )
 
-        fields.append(field_definition)
-        seen_fields.add(field_definition.origin_name)
+        field_definitions[field_name] = field_definition
 
     # let's also add fields that are declared with @strawberry.field in
     # parent classes, we do this by checking if parents have a type definition
     # and we haven't seen a field already
-
+    #
     # TODO: maybe we want to add a warning when overriding a field, as it might be
     # a mistake
-
     for base in cls.__bases__:
         if hasattr(base, "_type_definition"):
-            fields += [
-                field
+            base_field_definitions = {
+                field.name: field
                 for field in base._type_definition.fields  # type: ignore
-                if field.origin_name not in seen_fields
-            ]
+                # Make sure field isn't already accounted for (occurs when using
+                # interfaces)
+                if field.name not in field_definitions
+            }
 
-    return fields
+            # Add base's field definitions to cls' field definitions
+            field_definitions = {**field_definitions, **base_field_definitions}
+
+    return list(field_definitions.values())

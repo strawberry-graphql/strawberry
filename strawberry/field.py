@@ -1,20 +1,11 @@
 import dataclasses
-from typing import Callable, List, Optional, Type, cast
-
-from strawberry.exceptions import MissingReturnAnnotationError
+import inspect
+from typing import Callable, List, Optional, Type, Union
 
 from .arguments import get_arguments_from_resolver
 from .permission import BasePermission
 from .types.types import FederationFieldParams, FieldDefinition
 from .utils.str_converters import to_camel_case
-
-
-def check_return_annotation(field_definition: FieldDefinition):
-    f = cast(Callable, field_definition.base_resolver)
-    name = cast(str, field_definition.name)
-
-    if "return" not in f.__annotations__:
-        raise MissingReturnAnnotationError(name)
 
 
 class StrawberryField(dataclasses.Field):
@@ -33,6 +24,33 @@ class StrawberryField(dataclasses.Field):
             metadata=None,
         )
 
+    def __call__(self, resolver: Callable) -> Callable:
+        """Migrate the field definition to the resolver"""
+
+        field_definition = self._field_definition
+        # Note: field_definition.name is finalized in type_resolver._get_fields
+
+        resolver_name = to_camel_case(resolver.__name__)
+
+        field_definition.origin_name = resolver_name
+
+        field_definition.origin = resolver
+        field_definition.base_resolver = resolver
+        field_definition.arguments = get_arguments_from_resolver(resolver)
+        field_definition.type = resolver.__annotations__.get("return", None)
+
+        if not inspect.ismethod(resolver):
+            # resolver is a normal function
+            resolver._field_definition = field_definition  # type: ignore
+        else:
+            # resolver is a bound method and immutable (most likely a
+            # classmethod or an instance method). We need to monkeypatch its
+            # underlying .__func__ function
+            # https://stackoverflow.com/a/7891681/8134178
+            resolver.__func__._field_definition = field_definition  # type:ignore
+
+        return resolver
+
     def __setattr__(self, name, value):
         if name == "type":
             self._field_definition.type = value
@@ -46,32 +64,16 @@ class StrawberryField(dataclasses.Field):
 
         return super().__setattr__(name, value)
 
-    def __call__(self, f):
-        f._field_definition = self._field_definition
-        f._field_definition.name = f._field_definition.name or to_camel_case(f.__name__)
-        f._field_definition.base_resolver = f
-        f._field_definition.origin = f
-        f._field_definition.arguments = get_arguments_from_resolver(
-            f, f._field_definition.name
-        )
-
-        check_return_annotation(f._field_definition)
-
-        f._field_definition.type = f.__annotations__["return"]
-
-        return f
-
 
 def field(
-    f=None,
+    resolver: Optional[Callable] = None,
     *,
     name: Optional[str] = None,
     is_subscription: bool = False,
     description: Optional[str] = None,
-    resolver: Optional[Callable] = None,
     permission_classes: Optional[List[Type[BasePermission]]] = None,
     federation: Optional[FederationFieldParams] = None
-):
+) -> Union[Callable, StrawberryField]:
     """Annotates a method or property as a GraphQL field.
 
     This is normally used inside a type declaration:
@@ -87,27 +89,21 @@ def field(
     it can be used both as decorator and as a normal function.
     """
 
-    origin_name = f.__name__ if f else None
-    name = name or (to_camel_case(origin_name) if origin_name else None)
-
-    wrap = StrawberryField(
-        field_definition=FieldDefinition(
-            origin_name=origin_name,
-            name=name,
-            type=None,  # type: ignore
-            origin=f,  # type: ignore
-            description=description,
-            base_resolver=resolver,
-            is_subscription=is_subscription,
-            permission_classes=permission_classes or [],
-            arguments=(
-                get_arguments_from_resolver(resolver, origin_name) if resolver else []
-            ),
-            federation=federation or FederationFieldParams(),
-        )
+    field_definition = FieldDefinition(
+        origin_name=None,  # modified by resolver in __call__
+        name=name,  # modified by resolver in __call__
+        type=None,  # type: ignore
+        origin=resolver,  # type: ignore
+        description=description,
+        base_resolver=resolver,
+        is_subscription=is_subscription,
+        permission_classes=permission_classes or [],
+        arguments=[],  # modified by resolver in __call__
+        federation=federation or FederationFieldParams(),
     )
 
-    if f:
-        return wrap(f)
+    field_ = StrawberryField(field_definition)
 
-    return wrap
+    if resolver:
+        return field_(resolver)
+    return field_
