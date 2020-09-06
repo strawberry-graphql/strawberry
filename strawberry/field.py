@@ -28,7 +28,7 @@ class StrawberryField(dataclasses.Field):
         """Migrate the field definition to the resolver"""
 
         field_definition = self._field_definition
-        # Note: field_definition.name is finalized in type_resolver._get_fields
+        # note that field_definition.name is finalized in type_resolver._get_fields
 
         resolver_name = to_camel_case(resolver.__name__)
 

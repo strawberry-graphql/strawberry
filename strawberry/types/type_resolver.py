@@ -300,7 +300,7 @@ def _get_fields(cls: Type) -> List[FieldDefinition]:
             # Make sure field and resolver types are the same if both are
             # defined
             # TODO: https://github.com/strawberry-graphql/strawberry/issues/396
-            # assert field.type == resolver.type
+            # >>> assert field.type == resolver.type
 
             # Grab the type from the field if the resolver has no type
             if field_definition.type is None:
