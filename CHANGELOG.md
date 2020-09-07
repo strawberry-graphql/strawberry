@@ -1,6 +1,13 @@
 CHANGELOG
 =========
 
+0.32.2 - 2020-09-07
+-------------------
+
+This releases fixes an issue when extending types, now
+fields should work as they were working before even 
+when extending an exising type.
+
 0.32.1 - 2020-09-06
 -------------------
 
