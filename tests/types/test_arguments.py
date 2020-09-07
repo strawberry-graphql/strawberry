@@ -99,3 +99,65 @@ def test_arguments_lists_of_optionals():
     assert definition.fields[0].arguments[0].is_optional is False
     assert definition.fields[0].arguments[0].child.type == Input
     assert definition.fields[0].arguments[0].child.is_optional is True
+
+
+def test_basic_arguments_on_resolver():
+    def name_resolver(
+        id: strawberry.ID, argument: str, optional_argument: Optional[str]
+    ) -> str:
+        return "Name"
+
+    @strawberry.type
+    class Query:
+        name: str = strawberry.field(resolver=name_resolver)
+
+    definition = Query._type_definition
+
+    assert definition.name == "Query"
+
+    assert len(definition.fields[0].arguments) == 3
+
+    assert definition.fields[0].arguments[0].name == "id"
+    assert definition.fields[0].arguments[0].type == strawberry.ID
+    assert definition.fields[0].arguments[0].is_optional is False
+
+    assert definition.fields[0].arguments[1].name == "argument"
+    assert definition.fields[0].arguments[1].type == str
+    assert definition.fields[0].arguments[1].is_optional is False
+
+    assert definition.fields[0].arguments[2].name == "optionalArgument"
+    assert definition.fields[0].arguments[2].type == str
+    assert definition.fields[0].arguments[2].is_optional
+
+
+def test_arguments_when_extending_a_type():
+    def name_resolver(
+        id: strawberry.ID, argument: str, optional_argument: Optional[str]
+    ) -> str:
+        return "Name"
+
+    @strawberry.type
+    class NameQuery:
+        name: str = strawberry.field(resolver=name_resolver)
+
+    @strawberry.type
+    class Query(NameQuery):
+        pass
+
+    definition = Query._type_definition
+
+    assert definition.name == "Query"
+
+    assert len(definition.fields[0].arguments) == 3
+
+    assert definition.fields[0].arguments[0].name == "id"
+    assert definition.fields[0].arguments[0].type == strawberry.ID
+    assert definition.fields[0].arguments[0].is_optional is False
+
+    assert definition.fields[0].arguments[1].name == "argument"
+    assert definition.fields[0].arguments[1].type == str
+    assert definition.fields[0].arguments[1].is_optional is False
+
+    assert definition.fields[0].arguments[2].name == "optionalArgument"
+    assert definition.fields[0].arguments[2].type == str
+    assert definition.fields[0].arguments[2].is_optional
