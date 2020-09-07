@@ -280,22 +280,36 @@ def _get_fields(cls: Type) -> List[FieldDefinition]:
     """
     field_definitions: Dict[str, FieldDefinition] = {}
 
-    # Type #1 fields
+    # before trying to find any fields, let's first add the fields defined in
+    # parent classes, we do this by checking if parents have a type definition
+    for base in cls.__bases__:
+        if hasattr(base, "_type_definition"):
+            base_field_definitions = {
+                field.name: field
+                # TODO: we need to rename _fields to something else
+                for field in base._type_definition._fields  # type: ignore
+            }
+
+            # Add base's field definitions to cls' field definitions
+            field_definitions = {**field_definitions, **base_field_definitions}
+
+    # then we can proceed with finding the fields for the current class
+
+    # type #1 fields
     type_1_fields: Dict[str, dataclasses.Field] = {
         field.name: field for field in dataclasses.fields(cls)
     }
 
-    # Type #2 fields
-    type_2_fields = {}
+    # type #2 fields
+    type_2_fields: Dict[str, dataclasses.Field] = {}
     for field_name, field in cls.__dict__.items():
         if hasattr(field, "_field_definition"):
             type_2_fields[field_name] = field
 
     for field_name, field in type_2_fields.items():
-
         field_definition: FieldDefinition = field._field_definition
 
-        # Check if there is a matching Type #1 field:
+        # Check if there is a matching type #1 field:
         if field_name in type_1_fields:
             # Make sure field and resolver types are the same if both are
             # defined
@@ -307,7 +321,7 @@ def _get_fields(cls: Type) -> List[FieldDefinition]:
                 field_type = type_1_fields[field_name].type
                 field_definition.type = field_type
 
-            # Stop tracking the Type #1 field, an explicit strawberry.field was
+            # Stop tracking the type #1 field, an explicit strawberry.field was
             # defined
             type_1_fields.pop(field_name)
 
@@ -323,11 +337,9 @@ def _get_fields(cls: Type) -> List[FieldDefinition]:
                 resolver_name = field_definition.base_resolver.__name__
                 raise MissingReturnAnnotationError(resolver_name)
 
-    # Combine our two dicts of fields
     all_fields = {**type_1_fields, **type_2_fields}
 
     for field_name, field in all_fields.items():
-
         if hasattr(field, "_field_definition"):
             # Use the existing FieldDefinition
             field_definition = field._field_definition
@@ -347,6 +359,13 @@ def _get_fields(cls: Type) -> List[FieldDefinition]:
             field_definition.origin = field_definition.origin or cls
 
         else:
+            # if the field doesn't have a field definition and has already been
+            # process we skip the creation of the field definition, as it seems
+            # dataclasses recreates the field in some cases when extending other
+            # dataclasses.
+            if field_name in field_definitions:
+                continue
+
             # Create a FieldDefinition, for fields of Types #1 and #2a
             field_definition = FieldDefinition(
                 origin_name=field.name,
@@ -357,24 +376,5 @@ def _get_fields(cls: Type) -> List[FieldDefinition]:
             )
 
         field_definitions[field_name] = field_definition
-
-    # let's also add fields that are declared with @strawberry.field in
-    # parent classes, we do this by checking if parents have a type definition
-    # and we haven't seen a field already
-    #
-    # TODO: maybe we want to add a warning when overriding a field, as it might be
-    # a mistake
-    for base in cls.__bases__:
-        if hasattr(base, "_type_definition"):
-            base_field_definitions = {
-                field.name: field
-                for field in base._type_definition.fields  # type: ignore
-                # Make sure field isn't already accounted for (occurs when using
-                # interfaces)
-                if field.name not in field_definitions
-            }
-
-            # Add base's field definitions to cls' field definitions
-            field_definitions = {**field_definitions, **base_field_definitions}
 
     return list(field_definitions.values())
