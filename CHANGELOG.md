@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.32.3 - 2020-09-07
+-------------------
+
+This release fixes another issue with extending types.
+
 0.32.2 - 2020-09-07
 -------------------
 
