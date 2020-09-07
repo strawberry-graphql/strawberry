@@ -265,3 +265,32 @@ def test_bounded_instance_method_resolvers():
 
     assert not result.errors
     assert result.data == {"blah": "something"}
+
+
+def test_extending_type():
+    def name_resolver(id: strawberry.ID) -> str:
+        return "Name"
+
+    def name_2_resolver(id: strawberry.ID) -> str:
+        return "Name 2"
+
+    @strawberry.type
+    class NameQuery:
+        name: str = strawberry.field(permission_classes=[], resolver=name_resolver)
+
+    @strawberry.type
+    class ExampleQuery:
+        name_2: str = strawberry.field(permission_classes=[], resolver=name_2_resolver)
+
+    @strawberry.type
+    class RootQuery(NameQuery, ExampleQuery):
+        pass
+
+    schema = strawberry.Schema(query=RootQuery)
+
+    query = '{ name(id: "abc"), name2(id: "abc") }'
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data == {"name": "Name", "name2": "Name 2"}

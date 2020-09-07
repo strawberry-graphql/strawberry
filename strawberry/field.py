@@ -30,10 +30,7 @@ class StrawberryField(dataclasses.Field):
         field_definition = self._field_definition
         # note that field_definition.name is finalized in type_resolver._get_fields
 
-        resolver_name = to_camel_case(resolver.__name__)
-
-        field_definition.origin_name = resolver_name
-
+        field_definition.origin_name = resolver.__name__
         field_definition.origin = resolver
         field_definition.base_resolver = resolver
         field_definition.arguments = get_arguments_from_resolver(resolver)

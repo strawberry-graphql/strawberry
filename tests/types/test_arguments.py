@@ -148,6 +148,7 @@ def test_arguments_when_extending_a_type():
 
     assert definition.name == "Query"
 
+    assert len(definition.fields) == 1
     assert len(definition.fields[0].arguments) == 3
 
     assert definition.fields[0].arguments[0].name == "id"
@@ -161,3 +162,41 @@ def test_arguments_when_extending_a_type():
     assert definition.fields[0].arguments[2].name == "optionalArgument"
     assert definition.fields[0].arguments[2].type == str
     assert definition.fields[0].arguments[2].is_optional
+
+
+def test_arguments_when_extending_multiple_types():
+    def name_resolver(id: strawberry.ID) -> str:
+        return "Name"
+
+    def name_2_resolver(id: strawberry.ID) -> str:
+        return "Name 2"
+
+    @strawberry.type
+    class NameQuery:
+        name: str = strawberry.field(permission_classes=[], resolver=name_resolver)
+
+    @strawberry.type
+    class ExampleQuery:
+        name_2: str = strawberry.field(permission_classes=[], resolver=name_2_resolver)
+
+    @strawberry.type
+    class RootQuery(NameQuery, ExampleQuery):
+        pass
+
+    definition = RootQuery._type_definition
+
+    assert definition.name == "RootQuery"
+
+    assert len(definition.fields) == 2
+    assert len(definition.fields[0].arguments) == 1
+
+    assert definition.fields[0].arguments[0].name == "id"
+    assert definition.fields[0].arguments[0].type == strawberry.ID
+    assert definition.fields[0].arguments[0].is_optional is False
+
+    assert len(definition.fields[1].arguments) == 1
+
+    assert definition.fields[1].name == "name2"
+    assert definition.fields[1].arguments[0].name == "id"
+    assert definition.fields[1].arguments[0].type == strawberry.ID
+    assert definition.fields[1].arguments[0].is_optional is False

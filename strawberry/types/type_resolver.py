@@ -285,7 +285,7 @@ def _get_fields(cls: Type) -> List[FieldDefinition]:
     for base in cls.__bases__:
         if hasattr(base, "_type_definition"):
             base_field_definitions = {
-                field.name: field
+                field.origin_name: field
                 # TODO: we need to rename _fields to something else
                 for field in base._type_definition._fields  # type: ignore
             }
@@ -346,6 +346,7 @@ def _get_fields(cls: Type) -> List[FieldDefinition]:
 
             if not field_definition.name:
                 field_definition.name = to_camel_case(field_name)
+                field_definition.origin_name = field_name
 
             # we make sure that the origin is either the field's resolver when
             # called as:
@@ -375,6 +376,7 @@ def _get_fields(cls: Type) -> List[FieldDefinition]:
                 default_value=getattr(cls, field.name, undefined),
             )
 
+        field_name = cast(str, field_definition.origin_name)
         field_definitions[field_name] = field_definition
 
     return list(field_definitions.values())
