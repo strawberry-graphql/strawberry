@@ -1,4 +1,5 @@
 from . import federation
+from . import pydantic
 from .arguments import argument
 from .custom_scalar import scalar
 from .directive import directive
@@ -31,5 +32,6 @@ __all__ = [
     "scalar",
     "subscription",
     "type",
+    "pydantic",
     "union",
 ]
