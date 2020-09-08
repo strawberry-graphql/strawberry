@@ -1,0 +1,97 @@
+name: Deploy documentation preview
+
+on:
+  pull_request:
+  repository_dispatch:
+    types: [ok-to-preview-command]
+
+jobs:
+  build:
+    name: Deploy docs preview
+    runs-on: ubuntu-latest
+
+    if:
+      github.event_name == 'repository_dispatch' &&
+      github.event.client_payload.slash_command.sha != '' &&
+      contains(github.event.client_payload.pull_request.head.sha,
+      github.event.client_payload.slash_command.sha)
+
+    steps:
+      - name: Add reactions
+        uses: peter-evans/create-or-update-comment@v1
+        with:
+          comment-id: ${{ github.event.comment.id }}
+          reactions: heart, eyes, rocket
+
+      - uses: actions/checkout@v2
+        with:
+          ref:
+            "refs/pull/${{ github.event.client_payload.pull_request.number
+            }}/merge"
+      - run:
+          git clone https://github.com/strawberry-graphql/strawberry.rocks.git
+
+      - name: Cache node modules
+        uses: actions/cache@v2
+        env:
+          cache-name: cache-node-modules
+        with:
+          path: ~/.npm
+          key:
+            ${{ runner.os }}-build-${{ env.cache-name }}-${{
+            hashFiles('**/package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-build-${{ env.cache-name }}-
+            ${{ runner.os }}-build-
+            ${{ runner.os }}-
+
+      - name: install website dependencies
+        run: npm install
+        working-directory: ./strawberry.rocks
+
+      - name: update config
+        run: |
+          echo GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }} > .env
+          echo DOCS_LOCAL_LOCATION=../docs >> .env
+        working-directory: ./strawberry.rocks
+
+      - name: run website build
+        run: npm run build
+        working-directory: ./strawberry.rocks
+
+      - name: deploy site
+        run: |
+          sudo npm install netlify-cli -g
+          netlify deploy --dir=public --json
+        working-directory: ./strawberry.rocks
+        env:
+          NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
+          NETLIFY_SITE_ID: ${{ secrets.NETLIFY_SITE_ID }}
+
+      - uses: actions/github-script@v1
+        id: update-check-run
+        env:
+          number: ${{ github.event.client_payload.pull_request.number }}
+          job: ${{ github.job }}
+          # Conveniently, job.status maps to https://developer.github.com/v3/checks/runs/#update-a-check-run
+          conclusion: ${{ job.status }}
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { data: pull } = await github.pulls.get({
+              ...context.repo,
+              pull_number: process.env.number
+            });
+            const ref = pull.head.sha;
+            const { data: checks } = await github.checks.listForRef({
+              ...context.repo,
+              ref
+            });
+            const check = checks.check_runs.filter(c => c.name === process.env.job);
+            const { data: result } = await github.checks.update({
+              ...context.repo,
+              check_run_id: check[0].id,
+              status: 'completed',
+              conclusion: process.env.conclusion
+            });
+            return result;
