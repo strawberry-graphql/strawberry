@@ -69,7 +69,8 @@ def field(
     is_subscription: bool = False,
     description: Optional[str] = None,
     permission_classes: Optional[List[Type[BasePermission]]] = None,
-    federation: Optional[FederationFieldParams] = None
+    federation: Optional[FederationFieldParams] = None,
+    visible: Callable = lambda: True,
 ) -> Union[Callable, StrawberryField]:
     """Annotates a method or property as a GraphQL field.
 
@@ -97,6 +98,7 @@ def field(
         permission_classes=permission_classes or [],
         arguments=[],  # modified by resolver in __call__
         federation=federation or FederationFieldParams(),
+        visible=visible,
     )
 
     field_ = StrawberryField(field_definition)

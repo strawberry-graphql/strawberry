@@ -33,8 +33,9 @@ class TypeDefinition:
     @property
     def fields(self) -> List["FieldDefinition"]:
         from .type_resolver import _resolve_types
-
-        return _resolve_types(self._fields)
+        # Only register visible fields. (All fields are visible by default)
+        fields = [f for f in self._fields if f.visible()]
+        return _resolve_types(fields)
 
     @property
     def type_params(self) -> Dict[str, Type]:
@@ -75,6 +76,7 @@ class FieldDefinition:
     origin_name: Optional[str]
     type: Optional[Type]
     origin: Union[Type, Callable]
+    visible: Callable
     child: Optional["FieldDefinition"] = None
     is_subscription: bool = False
     is_optional: bool = False
