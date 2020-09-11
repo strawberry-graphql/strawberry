@@ -17,12 +17,6 @@ jobs:
       github.event.client_payload.slash_command.sha)
 
     steps:
-      - name: Add reactions
-        uses: peter-evans/create-or-update-comment@v1
-        with:
-          comment-id: ${{ github.event.comment.id }}
-          reactions: heart, eyes, rocket
-
       - uses: actions/checkout@v2
         with:
           ref:

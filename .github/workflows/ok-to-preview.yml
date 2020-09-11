@@ -2,7 +2,7 @@ name: Ok to preview
 
 on:
   issue_comment:
-    types: [created]
+    types: [created, edited]
 
 jobs:
   ok-to-preview:
@@ -30,4 +30,5 @@ jobs:
         issue-type: pull-request
         commands: preview-docs
         named-args: true
+        allow-edits: true
         permission: write
