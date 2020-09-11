@@ -80,11 +80,8 @@ jobs:
               ...context.repo,
               ref
             });
-            console.log(checks.check_runs);
-            console.log(checks.check_runs.map(c => c.name));
-            console.log(process.env.job);
 
-            const check = checks.check_runs.filter(c => c.name === process.env.job);
+            const check = checks.check_runs.filter(c => c.name === process.env.job || 'Deploy docs preview');
             const { data: result } = await github.checks.update({
               ...context.repo,
               check_run_id: check[0].id,
