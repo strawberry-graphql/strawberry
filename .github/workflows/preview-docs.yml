@@ -82,13 +82,13 @@ jobs:
             });
 
             const check = checks.check_runs.filter(c => c.name === process.env.job || 'Deploy docs preview');
-            # TODO: this is failing due to permissions
-            # const { data: result } = await github.checks.update({
-            #   ...context.repo,
-            #   check_run_id: check[0].id,
-            #   status: 'completed',
-            #   conclusion: process.env.conclusion
-            # });
+            // TODO: this is failing due to permissions
+            // const { data: result } = await github.checks.update({
+            //   ...context.repo,
+            //   check_run_id: check[0].id,
+            //   status: 'completed',
+            //   conclusion: process.env.conclusion
+            // });
 
             await github.issues.createComment({
               issue_number: process.env.number,
