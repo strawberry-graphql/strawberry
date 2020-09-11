@@ -55,7 +55,7 @@ jobs:
       - name: deploy site
         run: |
           sudo npm install netlify-cli -g
-          netlify deploy --dir=public --json
+          ::set-env name=DEPLOY_URL::$(netlify deploy --dir=public --json | jq '.deploy_url')
         working-directory: ./strawberry.rocks
         env:
           NETLIFY_AUTH_TOKEN: ${{ secrets.NETLIFY_AUTH_TOKEN }}
@@ -94,5 +94,5 @@ jobs:
               issue_number: process.env.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
-              body: 'todo'
+              body: process.env.DEPLOY_URL
             })
