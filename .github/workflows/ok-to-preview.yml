@@ -5,7 +5,7 @@ on:
     types: [created]
 
 jobs:
-  ok-to-test:
+  ok-to-preview:
     runs-on: ubuntu-latest
     steps:
     # Generate a GitHub App installation access token from an App ID and private key

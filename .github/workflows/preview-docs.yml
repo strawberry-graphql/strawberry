@@ -3,7 +3,7 @@ name: Deploy documentation preview
 on:
   pull_request:
   repository_dispatch:
-    types: [ok-to-preview-command]
+    types: [preview-docs-command]
 
 jobs:
   build:
