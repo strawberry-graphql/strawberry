@@ -27,10 +27,11 @@ class CoolType:
 ### `strawberry.field` as a function:
 
 ```python
+def my_resolver() -> int:
+    return 4
+
 @strawberry.type
 class CoolType:
-    def my_resolver(self) -> int:
-        return 4
 
     my_field = strawberry.field(resolver=my_resolver)
     my_other_field: int = strawberry.field(resolver=my_resolver)
@@ -61,8 +62,8 @@ functionality:
 
 ### `resolver`
 
-type: `Optional[Callable]`  
-default: `None`
+> type: `Optional[Callable]`  
+> default: `None`
 
 The most commonly used parameter, it allows for a resolver to be added to a
 field. This parameter is also filled when using `strawberry.field` as a
@@ -70,8 +71,8 @@ decorator.
 
 ### `name`
 
-type: `Optional[str]`  
-default: `None`
+> type: `Optional[str]`  
+> default: `None`
 
 By default the GraphQL schema gets its field name from either the Python field,
 or the wrapped resolver function if `strawberry.field` is used as a decorator.
@@ -83,31 +84,86 @@ not camel-cased.
 
 ### `is_subscription`
 
-type: `bool`  
-default: `False`
+> type: `bool`  
+> default: `False`
 
-TODO
+> **NOTE:** It's not recommended to use this argument directly. Use
+> `strawberry.subscription` instead.
+
+Mark a field as a subscription field. See [Subscriptions][subscription_docs] for
+more information.
+
+[subscription_docs]: /docs/subscriptions/
 
 ### `description`
 
-type: `Optional[str]`  
-default: `None`
+> type: `Optional[str]`  
+> default: `None`
 
-TODO
+Add a description to the GraphQL field.
+
+```python
+@strawberry.type
+class Query:
+    a: str = strawberry.field(description="Example")
+
+    @strawberry.field
+    def b(self) -> str:
+        return "I'm a resolver"
+
+    @strawberry.field(description="Example C")
+    def c(self) -> str:
+        return "I'm another resolver"
+```
+
+```graphql+response
+__type(name: "Query") {
+    fields {
+        name
+        description
+    }
+}
+---
+{
+  "data": {
+    "__type": {
+      "fields": [
+        {
+          "name": "a",
+          "description": "Example",
+        },
+        {
+          "name": "b",
+          "description": None,
+        },
+        {
+          "name": "c",
+          "description": "Example C",
+        }
+      ]
+    }
+  }
+}
+```
 
 ### `permission_classes`
 
-type: `Optional[List[Type[BasePermission]]]`  
-default: `None`
+> type: `Optional[List[Type[BasePermission]]]`  
+> default: `None`
 
-TODO
+Add permission classes to the field. See [Permissions][permission_docs] for
+more information.
+
+[permission_docs]: /docs/features/permissions
 
 ### `federation`
 
-type: `Optional[FederationFieldParams]`  
-default: `None`
+> type: `Optional[FederationFieldParams]`  
+> default: `None`
 
-TODO
+See [Federation][federation_docs].
+
+[federation_docs]: /docs/features/federation
 
 ## Typing
 
