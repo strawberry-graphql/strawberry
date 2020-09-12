@@ -90,6 +90,11 @@ jobs:
             //   conclusion: process.env.conclusion
             // });
 
+            const url = json.parse(process.env.DEPLOY_URL)
+            const message = `
+              Website preview is ready here 👉 ${url}
+            `.trim()
+
             await github.issues.createComment({
               issue_number: process.env.number,
               owner: context.repo.owner,
