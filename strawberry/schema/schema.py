@@ -3,15 +3,42 @@ from typing import Any, Dict, List, Optional, Type, Union
 from graphql import GraphQLSchema, graphql_sync, parse
 from graphql.subscription import subscribe
 from graphql.type.directives import specified_directives
+
 from strawberry.custom_scalar import ScalarDefinition
 from strawberry.enum import EnumDefinition
 from strawberry.types.types import TypeDefinition
+from .types import ConcreteType, get_directive_type, get_object_type
 
 # TODO: get rid of this module ?
 from ..graphql import execute
 from ..middleware import DirectivesMiddleware, Middleware
 from ..printer import print_schema
-from .types import ConcreteType, get_directive_type, get_object_type
+from ..type import StrawberryType
+
+
+class StrawberrySchema:
+    def __init__(
+        self,
+        query: StrawberryType,
+        *,
+        mutation: Optional[StrawberryType] = None,
+        subscription: Optional[StrawberryType] = None,
+        directives: list = (),
+        types: list = (),
+    ):
+        self.query = query
+        self.mutation = mutation
+        self.subscription = subscription
+        self.directives = directives
+        self.types = types
+
+        self._schema = GraphQLSchema(
+            query=query.to_graphql_type(),
+            mutation=...,
+            subscription=...,
+            directives=...,
+            types=...,
+        )
 
 
 class Schema:
@@ -24,7 +51,6 @@ class Schema:
         directives=(),
         types=(),
     ):
-
         self.type_map: Dict[str, ConcreteType] = {}
 
         query_type = get_object_type(query, self.type_map)

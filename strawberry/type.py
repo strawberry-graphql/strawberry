@@ -1,13 +1,102 @@
 import dataclasses
+import typing
 from functools import partial
-from typing import List, Optional, Type, cast
+from typing import Dict, List, Optional, Type, cast
+
+from graphql import GraphQLObjectType
 
 from strawberry.utils.typing import is_generic
-
 from .exceptions import MissingFieldAnnotationError
+from .field import StrawberryField
 from .types.type_resolver import _get_fields
 from .types.types import FederationTypeParams, TypeDefinition
 from .utils.str_converters import to_camel_case
+
+
+class StrawberryType:
+    wrapped_class: Type
+
+    def __init__(
+        self,
+        cls: Type,
+        *,
+        name: str,
+        description: Optional[str] = None,
+        is_input: bool = False,
+        is_interface: bool = False,
+        federation: Optional[FederationTypeParams] = None
+    ):
+        self.wrapped_class = dataclasses.dataclass(cls)
+        self.name = name
+        self.description = description
+        self.is_input = is_input
+        self.is_interface = is_interface
+        self.federation = federation
+
+    @property
+    def fields(self) -> List[StrawberryField]:
+        # Get fields defined in base classes
+        inherited_fields: Dict[str, StrawberryField] = {}
+        for base in self.wrapped_class.__bases__:
+            if issubclass(StrawberryType, base):
+                base = typing.cast(StrawberryType, base)
+                # Add base's field definitions to cls' field definitions
+                inherited_fields.update(**{f.name: f for f in base.fields})
+
+        # Get fields defined dataclass-style (i.e. w/o strawberry.field)
+        dataclass_fields: Dict[str, StrawberryField] = {}
+        for field in dataclasses.fields(self.wrapped_class):
+            field = typing.cast(dataclasses.Field, field)
+            dataclass_fields[field.name] = StrawberryField(
+                name=field.name, field_type=field.type
+            )
+
+        # Get fields defined using strawberry.field
+        strawberry_fields: Dict[str, StrawberryField] = {}
+        for field_name, field in self.__dict__.items():
+            if isinstance(field, StrawberryField):
+                # Grab name from class field, if necessary
+                if field.name is None:
+                    field.name = field_name
+
+                # Check for duplicates
+                if field.name in dataclass_fields or field.name in strawberry_fields:
+                    # TODO: raise exception
+                    ...
+
+                strawberry_fields[field_name] = field
+
+        # Aggregate all fields
+        fields = {**inherited_fields, **dataclass_fields, **strawberry_fields}
+
+        return list(fields.values())
+
+    @property
+    def interfaces(self) -> List["StrawberryType"]:
+        interfaces = []
+        for base in self.wrapped_class.__bases__:
+            if not issubclass(StrawberryType, base):
+                continue
+
+            base = typing.cast(StrawberryType, base)
+            if base.is_interface:
+                interfaces.append(base)
+
+        return interfaces
+
+    def __call__(self, wrapped_class: Type):
+        self.wrapped_class = wrapped_class
+
+    def to_graphql_type(self) -> GraphQLObjectType:
+        fields = list(map(StrawberryField.to_graphql_field, self.fields))
+        interfaces = list(map(StrawberryType.to_graphql_type, self.interfaces))
+
+        return GraphQLObjectType(
+            name=self.name,
+            fields=fields,
+            description=self.description,
+            interfaces=interfaces,
+        )
 
 
 def _get_interfaces(cls: Type) -> List[TypeDefinition]:
@@ -93,7 +182,7 @@ def type(
     is_interface: bool = False,
     description: str = None,
     federation: Optional[FederationTypeParams] = None
-):
+) -> StrawberryType:
     """Annotates a class as a GraphQL type.
 
     Example usage:
@@ -103,20 +192,14 @@ def type(
     >>>     field_abc: str = "ABC"
     """
 
-    def wrap(cls):
-        return _process_type(
-            cls,
-            name=name,
-            is_input=is_input,
-            is_interface=is_interface,
-            description=description,
-            federation=federation,
-        )
-
-    if cls is None:
-        return wrap
-
-    return wrap(cls)
+    return StrawberryType(
+        cls=cls,
+        name=name,
+        description=description,
+        is_input=is_input,
+        is_interface=is_interface,
+        federation=federation,
+    )
 
 
 input = partial(type, is_input=True)
