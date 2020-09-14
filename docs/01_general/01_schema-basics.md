@@ -281,9 +281,6 @@ matches the mutation's structure, like so:
 Seuss" } } } }
 ```
 
-A single client request can include multiple mutations to execute. To prevent
-race conditions, mutations are executed serially in the order they're listed.
-
 ## Input types
 
 Input types are special object types that allow you to pass objects as arguments
