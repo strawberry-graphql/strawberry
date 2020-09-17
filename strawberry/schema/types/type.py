@@ -4,7 +4,7 @@ from graphql import GraphQLList, GraphQLNonNull, GraphQLType
 from strawberry.field import FieldDefinition
 from strawberry.scalars import is_scalar
 from strawberry.types.types import ArgumentDefinition
-from strawberry.union import UnionDefinition
+from strawberry.union import StrawberryUnion
 
 from .enum import get_enum_type
 from .scalar import get_scalar_type
@@ -55,8 +55,7 @@ def get_graphql_type(
         type = GraphQLList(get_graphql_type(child, type_map))
 
     elif field.is_union:
-        union_definition = cast(UnionDefinition, field_type._union_definition)
-
+        union_definition = cast(StrawberryUnion, field_type)
         type = get_union_type(union_definition, type_map)
     else:
         type = get_type_for_annotation(field_type, type_map)

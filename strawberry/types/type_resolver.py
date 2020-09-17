@@ -8,7 +8,7 @@ from strawberry.exceptions import (
     MissingTypesForGenericError,
 )
 from strawberry.lazy_type import LazyType
-from strawberry.union import union
+from strawberry.union import StrawberryUnion, union
 from strawberry.utils.str_converters import to_camel_case
 from strawberry.utils.typing import (
     get_args,
@@ -174,7 +174,7 @@ def resolve_type(field_definition: Union[FieldDefinition, ArgumentDefinition]) -
         if not all(is_type_var(a) for a in args):
             field_definition.type = copy_type_with(type, *args)
 
-    if hasattr(type, "_union_definition"):
+    if isinstance(type, StrawberryUnion):
         field_definition.is_union = True
 
 
@@ -188,8 +188,8 @@ def _get_type_params_for_field(
 
     type = cast(Type, field_definition.type)
 
-    if hasattr(type, "_union_definition"):
-        types = type._union_definition.types
+    if isinstance(type, StrawberryUnion):
+        types = type.types
         type_vars = [t for t in types if is_type_var(t)]
 
         if type_vars:

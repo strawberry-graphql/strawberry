@@ -3,6 +3,7 @@ from typing import Generic, List, Optional, TypeVar, Union
 import pytest
 
 import strawberry
+from strawberry.union import StrawberryUnion
 
 
 def test_unions():
@@ -25,8 +26,8 @@ def test_unions():
 
     assert definition.fields[0].name == "user"
 
-    union_type_definition = definition.fields[0].type._union_definition
-
+    union_type_definition = definition.fields[0].type
+    assert isinstance(union_type_definition, StrawberryUnion)
     assert union_type_definition.name == "UserError"
     assert union_type_definition.types == (User, Error)
 
@@ -52,8 +53,8 @@ def test_unions_inside_optional():
     assert definition.fields[0].name == "user"
     assert definition.fields[0].is_optional
 
-    union_type_definition = definition.fields[0].type._union_definition
-
+    union_type_definition = definition.fields[0].type
+    assert isinstance(union_type_definition, StrawberryUnion)
     assert union_type_definition.name == "UserError"
     assert union_type_definition.types == (User, Error)
 
@@ -79,8 +80,8 @@ def test_unions_inside_list():
     assert definition.fields[0].name == "user"
     assert definition.fields[0].is_list
 
-    union_type_definition = definition.fields[0].child.type._union_definition
-
+    union_type_definition = definition.fields[0].child.type
+    assert isinstance(union_type_definition, StrawberryUnion)
     assert union_type_definition.name == "UserError"
     assert union_type_definition.types == (User, Error)
 
@@ -96,8 +97,8 @@ def test_named_union():
 
     Result = strawberry.union("Result", (A, B))
 
-    union_type_definition = Result._union_definition
-
+    union_type_definition = Result
+    assert isinstance(union_type_definition, StrawberryUnion)
     assert union_type_definition.name == "Result"
     assert union_type_definition.types == (A, B)
 
@@ -115,8 +116,8 @@ def test_union_with_generic():
 
     Result = strawberry.union("Result", (Error, Edge[str]))
 
-    union_type_definition = Result._union_definition
-
+    union_type_definition = Result
+    assert isinstance(union_type_definition, StrawberryUnion)
     assert union_type_definition.name == "Result"
     assert union_type_definition.types[0] == Error
 
