@@ -130,15 +130,15 @@ __type(name: "Query") {
       "fields": [
         {
           "name": "a",
-          "description": "Example",
+          "description": "Example"
         },
         {
           "name": "b",
-          "description": None,
+          "description": None
         },
         {
           "name": "c",
-          "description": "Example C",
+          "description": "Example C"
         }
       ]
     }
