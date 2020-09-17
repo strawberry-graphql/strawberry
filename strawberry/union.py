@@ -22,6 +22,11 @@ class StrawberryUnion:
         return types
 
     def __call__(self, *_args, **_kwargs) -> NoReturn:
+        """Do not use.
+
+        Used to bypass
+        https://github.com/python/cpython/blob/5efb1a77e75648012f8b52960c8637fc296a5c6d/Lib/typing.py#L148-L149
+        """
         raise ValueError("Cannot use union type directly")
 
 
