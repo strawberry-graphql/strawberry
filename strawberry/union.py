@@ -37,15 +37,13 @@ def union(
 
     Example usages:
 
-    >>> strawberry.union(
-    ...      "Name",
-    ...      (A, B),
-    ... )
+    >>> strawberry.union("Some Thing", (int, str))
 
-    >>> strawberry.union(
-    ...     "Name",
-    ...     (A, B),
-    ... )
+    >>> @strawberry.type
+    ... class A: ...
+    >>> @strawberry.type
+    ... class B: ...
+    >>> strawberry.union("Name", (A, Optional[B]))
     """
 
     union_definition = StrawberryUnion(name=name, types=types, description=description)
