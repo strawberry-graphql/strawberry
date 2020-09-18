@@ -134,7 +134,7 @@ __type(name: "Query") {
         },
         {
           "name": "b",
-          "description": None
+          "description": null
         },
         {
           "name": "c",
