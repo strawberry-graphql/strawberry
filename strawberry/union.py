@@ -21,7 +21,7 @@ class UnionDefinition:
             if t is not None.__class__
         )
 
-        return types  # type: ignore
+        return types
 
 
 def union(name: str, types: Tuple[Type, ...], *, description=None):
