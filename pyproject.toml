@@ -16,6 +16,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries",
     "Topic :: Software Development :: Libraries :: Python Modules"
 ]
+include = ["strawberry/py.typed"]
 
 [tool.poetry.dependencies]
 python = "^3.7"

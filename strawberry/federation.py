@@ -1,4 +1,4 @@
-from typing import Callable, List, Optional, Type, Union
+from typing import Callable, List, Optional, Type, Union, cast
 
 from graphql import (
     GraphQLField,
@@ -112,7 +112,9 @@ class Schema(BaseSchema):
             type_name = representation.pop("__typename")
             type = self.type_map[type_name]
 
-            results.append(type.definition.origin.resolve_reference(**representation))
+            definition = cast(TypeDefinition, type.definition)
+
+            results.append(definition.origin.resolve_reference(**representation))
 
         return results
 
@@ -131,12 +133,11 @@ class Schema(BaseSchema):
 
             fields["_entities"] = self._get_entities_field(entity_type)
 
-        fields.update(self._schema.query_type.fields)
+        query_type = cast(GraphQLObjectType, self._schema.query_type)
+        fields.update(query_type.fields)
 
         self._schema.query_type = GraphQLObjectType(
-            name=self._schema.query_type.name,
-            description=self._schema.query_type.description,
-            fields=fields,
+            name=query_type.name, description=query_type.description, fields=fields,
         )
 
         self._schema.type_map["_Service"] = self._service_type
