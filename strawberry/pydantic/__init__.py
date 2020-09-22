@@ -1,9 +1,10 @@
-from typing import List, Optional, Type, cast
+import dataclasses
+from typing import Any, Optional, Type, cast
 
 from pydantic import BaseModel
 from pydantic.fields import ModelField
 from strawberry.type import _process_type
-from strawberry.types.types import FederationTypeParams, FieldDefinition
+from strawberry.types.types import FederationTypeParams
 
 
 class UnregisteredTypeException(Exception):
@@ -28,8 +29,23 @@ def resolve_type(field: ModelField) -> Type:
     return cast(Type, field_type)
 
 
+def get_type_for_field(field: ModelField):
+    type_ = field.type_
+
+    if issubclass(type_, BaseModel):
+        if hasattr(type_, "_strawberry_type"):
+            type_ = type_._strawberry_type
+        else:
+            raise UnregisteredTypeException(type_)
+
+    if not field.required:
+        return Optional[type_]
+
+    return type_
+
+
 def type(
-    model: BaseModel = None,
+    model: Type[BaseModel],
     *,
     name: str = None,
     is_input: bool = False,
@@ -38,31 +54,33 @@ def type(
     federation: Optional[FederationTypeParams] = None,
 ):
     def wrap(cls):
-        model._strawberry_type = cls
-
         fields = model.__fields__
 
-        base_fields: List[FieldDefinition] = []
+        cls = dataclasses.make_dataclass(
+            cls.__name__,
+            [(name, get_type_for_field(field)) for name, field in fields.items()],
+        )
 
-        for field_name, field in fields.items():
-            base_fields.append(
-                FieldDefinition(
-                    name=field_name,
-                    origin_name=field_name,
-                    origin=field,
-                    type=resolve_type(field),
-                    is_optional=not field.required,
-                )
-            )
-
-        return _process_type(
+        _process_type(
             cls,
             name=name,
             is_input=is_input,
             is_interface=is_interface,
             description=description,
             federation=federation,
-            _base_fields=base_fields,
         )
+
+        model._strawberry_type = cls  # type: ignore
+
+        def from_pydantic(instance: Any, **kwargs) -> model:
+            instance_kwargs = instance.dict()
+
+            # TODO: convert nested data
+
+            return model(**{**instance_kwargs, **kwargs})
+
+        cls.from_pydantic = staticmethod(from_pydantic)
+
+        return cls
 
     return wrap
