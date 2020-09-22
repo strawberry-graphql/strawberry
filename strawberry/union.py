@@ -6,13 +6,13 @@ from typing import Optional, Tuple, Type
 class UnionDefinition:
     name: str
     description: Optional[str]
-    types: InitVar[Tuple[Type]]
+    types: InitVar[Tuple[Type, ...]]
 
     def __post_init__(self, types):
         self._types = types
 
     @property  # type: ignore
-    def types(self) -> Tuple[Type]:
+    def types(self) -> Tuple[Type, ...]:
         from .types.type_resolver import _resolve_generic_type
 
         types = tuple(
@@ -24,7 +24,7 @@ class UnionDefinition:
         return types  # type: ignore
 
 
-def union(name: str, types: Tuple[Type], *, description=None):
+def union(name: str, types: Tuple[Type, ...], *, description=None):
     """Creates a new named Union type.
 
     Example usages:
