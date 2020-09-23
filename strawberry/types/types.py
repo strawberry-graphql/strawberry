@@ -2,6 +2,7 @@ import dataclasses
 from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 from strawberry.permission import BasePermission
+from strawberry.union import StrawberryUnion
 
 
 undefined = object()
@@ -73,7 +74,7 @@ class FederationFieldParams:
 class FieldDefinition:
     name: Optional[str]
     origin_name: Optional[str]
-    type: Optional[Type]
+    type: Optional[Union[Type, StrawberryUnion]]
     origin: Union[Type, Callable]
     child: Optional["FieldDefinition"] = None
     is_subscription: bool = False

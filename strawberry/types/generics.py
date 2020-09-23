@@ -2,7 +2,7 @@ import builtins
 import dataclasses
 from typing import Dict, Iterable, Tuple, Type, cast
 
-from strawberry.union import union
+from strawberry.union import StrawberryUnion, union
 from strawberry.utils.str_converters import capitalize_first
 from strawberry.utils.typing import is_type_var
 
@@ -19,19 +19,14 @@ def copy_type_with(
     if params_to_type is None:
         params_to_type = {}
 
-    if hasattr(base, "_union_definition"):
+    if isinstance(base, StrawberryUnion):
         types = cast(
-            Tuple[Type],
-            tuple(
-                copy_type_with(t, params_to_type=params_to_type)
-                for t in base._union_definition.types
-            ),
+            Tuple[Type, ...],
+            tuple(copy_type_with(t, params_to_type=params_to_type) for t in base.types),
         )
 
         return union(
-            name=get_name_from_types(types),
-            types=types,
-            description=base._union_definition.description,
+            name=get_name_from_types(types), types=types, description=base.description,
         )
 
     if hasattr(base, "_type_definition"):

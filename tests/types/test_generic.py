@@ -5,6 +5,7 @@ import pytest
 import strawberry
 from strawberry.exceptions import MissingTypesForGenericError
 from strawberry.types.generics import copy_type_with
+from strawberry.union import StrawberryUnion
 
 
 T = TypeVar("T")
@@ -251,8 +252,8 @@ def test_generics_with_unions():
     assert len(definition.fields) == 1
 
     assert definition.fields[0].name == "node"
-    assert definition.fields[0].type._union_definition
-    assert definition.fields[0].type._union_definition.types == (Error, T)
+    assert isinstance(definition.fields[0].type, StrawberryUnion)
+    assert definition.fields[0].type.types == (Error, T)
 
     assert definition.type_params == {"node": T}
 
@@ -269,8 +270,12 @@ def test_generics_with_unions():
     assert len(definition.fields) == 1
 
     assert definition.fields[0].name == "node"
-    assert definition.fields[0].type._union_definition.types == (Error, str)
-    assert definition.fields[0].type._union_definition.name == "ErrorStr"
+
+    union_definition = definition.fields[0].type
+    assert isinstance(union_definition, StrawberryUnion)
+    assert union_definition.name == "ErrorStr"
+    assert union_definition.types == (Error, str)
+
     assert definition.fields[0].is_optional is False
 
 
@@ -460,8 +465,9 @@ def test_generics_inside_unions():
     assert definition.fields[0].name == "user"
     assert definition.fields[0].is_optional is False
 
-    union_definition = definition.fields[0].type._union_definition
+    union_definition = definition.fields[0].type
 
+    assert isinstance(union_definition, StrawberryUnion)
     assert union_definition.name == "StrEdgeError"
     assert union_definition.types[0]._type_definition.name == "StrEdge"
     assert union_definition.types[0]._type_definition.is_generic is False
@@ -485,8 +491,9 @@ def test_multiple_generics_inside_unions():
     assert definition.fields[0].name == "user"
     assert definition.fields[0].is_optional is False
 
-    union_definition = definition.fields[0].type._union_definition
+    union_definition = definition.fields[0].type
 
+    assert isinstance(union_definition, StrawberryUnion)
     assert union_definition.name == "IntEdgeStrEdge"
     assert union_definition.types[0]._type_definition.name == "IntEdge"
     assert union_definition.types[0]._type_definition.is_generic is False
