@@ -12,9 +12,9 @@ def identity(x):
 class ScalarDefinition:
     name: str
     description: Optional[str]
-    serialize: Callable
-    parse_value: Callable
-    parse_literal: Callable
+    serialize: Optional[Callable]
+    parse_value: Optional[Callable]
+    parse_literal: Optional[Callable]
 
 
 SCALAR_REGISTRY: Dict[Type, ScalarDefinition] = {}
@@ -33,11 +33,11 @@ class ScalarWrapper:
 def _process_scalar(
     cls,
     *,
-    name: str,
-    description: str,
-    serialize: Callable,
-    parse_value: Callable,
-    parse_literal: Callable
+    name: str = None,
+    description: str = None,
+    serialize: Callable = None,
+    parse_value: Callable = None,
+    parse_literal: Callable = None
 ):
 
     name = name or to_camel_case(cls.__name__)
