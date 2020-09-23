@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.32.4 - 2020-09-22
+-------------------
+
+This release adds the `py.typed` file for better mypy support.
+
 0.32.3 - 2020-09-07
 -------------------
 

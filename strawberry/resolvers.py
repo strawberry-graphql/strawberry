@@ -1,5 +1,5 @@
 import enum
-from typing import Callable
+from typing import Callable, cast
 
 from .arguments import convert_arguments
 from .field import FieldDefinition
@@ -48,7 +48,8 @@ def get_resolver(field: FieldDefinition) -> Callable:
 
             result = actual_resolver(*args, **kwargs)
         else:
-            result = getattr(source, field.origin_name)
+            origin_name = cast(str, field.origin_name)
+            result = getattr(source, origin_name)
 
         # graphql-core expects a resolver for an Enum type to return
         # the enum's *value* (not its name or an instance of the enum).

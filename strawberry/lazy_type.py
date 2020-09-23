@@ -21,7 +21,7 @@ class LazyType(Generic[TypeName, Module]):
 
         if module.startswith("."):
             current_frame = inspect.currentframe()
-            package = current_frame.f_back.f_globals["__package__"]
+            package = current_frame.f_back.f_globals["__package__"]  # type: ignore
 
         return cls(type_name, module, package)
 
