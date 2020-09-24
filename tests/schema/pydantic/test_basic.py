@@ -17,7 +17,7 @@ def test_basic_type():
     class Query:
         @strawberry.field
         def user(self) -> UserType:
-            return User(age=1)
+            return UserType(age=1, password="ABC")
 
     schema = strawberry.Schema(query=Query)
 

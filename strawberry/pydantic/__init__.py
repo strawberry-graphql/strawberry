@@ -72,7 +72,7 @@ def type(
 
         model._strawberry_type = cls  # type: ignore
 
-        def from_pydantic(instance: Any, **kwargs) -> model:
+        def from_pydantic(instance: Any, **kwargs) -> Any:
             instance_kwargs = instance.dict()
 
             # TODO: convert nested data

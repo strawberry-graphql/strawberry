@@ -1,0 +1,15 @@
+- case: test_type
+  main: |
+    import strawberry
+    import pydantic
+
+    class UserModel(pydantic.BaseModel):
+        name: str
+
+    @strawberry.pydantic.type(model=UserModel)
+    class User:
+        pass
+
+    User(n="Patrick")
+    User(name="Patrick")
+  out: |
