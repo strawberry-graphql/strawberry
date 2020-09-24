@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.33.0 - 2020-09-24
+-------------------
+
+* `UnionDefinition` has been renamed to `StrawberryUnion`
+* `strawberry.union` now returns an instance of `StrawberryUnion` instead of a
+dynamically generated class instance with a `_union_definition` attribute of
+type `UnionDefinition`.
+
 0.32.4 - 2020-09-22
 -------------------
 
