@@ -1,5 +1,5 @@
 import dataclasses
-from typing import Any, Optional, Type, cast
+from typing import Any, Optional, Type
 
 from pydantic import BaseModel
 from pydantic.fields import ModelField
@@ -16,30 +16,25 @@ class UnregisteredTypeException(Exception):
         super().__init__(message)
 
 
-def resolve_type(field: ModelField) -> Type:
-    field_type = {str: str, int: int}.get(field.type_)
-
-    if field_type is None:
-        if issubclass(field.type_, BaseModel):
-            if hasattr(field.type_, "_strawberry_type"):
-                return field.type_._strawberry_type
-
-            raise UnregisteredTypeException(field.type_)
-
-    return cast(Type, field_type)
-
-
-def get_type_for_field(field: ModelField):
-    type_ = field.type_
+def replace_pydantic_types(type_: Any):
+    if hasattr(type_, "__args__"):
+        return type_.copy_with(tuple(replace_pydantic_types(t) for t in type_.__args__))
 
     if issubclass(type_, BaseModel):
         if hasattr(type_, "_strawberry_type"):
-            type_ = type_._strawberry_type
+            return type_._strawberry_type
         else:
             raise UnregisteredTypeException(type_)
 
+    return type_
+
+
+def get_type_for_field(field: ModelField):
+    type_ = field.outer_type_
+    type_ = replace_pydantic_types(type_)
+
     if not field.required:
-        return Optional[type_]
+        type_ = Optional[type_]
 
     return type_
 
