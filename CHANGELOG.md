@@ -1,6 +1,12 @@
 CHANGELOG
 =========
 
+0.33.1 - 2020-09-25
+-------------------
+
+This release fixes an issue when trying to print a type
+with a UNSET default value
+
 0.33.0 - 2020-09-24
 -------------------
 
