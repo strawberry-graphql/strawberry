@@ -22,5 +22,5 @@
   },
 
   "extensions": ["ms-python.python", "ms-python.vscode-pylance", "eamodio.gitlens"],
-  "postCreateCommand": "poetry install && pre-commmit install",
+  "postCreateCommand": "sh ./.devcontainer/post-install.sh",
 }
