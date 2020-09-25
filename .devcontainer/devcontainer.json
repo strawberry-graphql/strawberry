@@ -2,8 +2,7 @@
   "name": "Strawberry GraphQL",
   "context": "..",
   "build": {
-    "dockerfile": "Dockerfile",
-    "args": { "VARIANT": "3.8" }
+    "dockerfile": "Dockerfile"
   },
 
   "settings": {
@@ -22,6 +21,6 @@
     "python.linting.pylintPath": "/usr/local/py-utils/bin/pylint"
   },
 
-  "extensions": ["ms-python.python"],
-  "postCreateCommand": "poetry install",
+  "extensions": ["ms-python.python", "ms-python.vscode-pylance", "eamodio.gitlens"],
+  "postCreateCommand": "poetry install && pre-commmit install",
 }
