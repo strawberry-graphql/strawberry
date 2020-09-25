@@ -1,3 +1,3 @@
 poetry install
-pre-commmit install
-pre-commmit
+pre-commit install
+pre-commit
