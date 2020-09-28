@@ -1,4 +1,5 @@
 import dataclasses
+from functools import partial
 from typing import Any, Optional, Type
 
 from pydantic import BaseModel
@@ -74,10 +75,19 @@ def type(
 
             # TODO: convert nested data
 
-            return model(**{**instance_kwargs, **kwargs})
+            return cls(**{**instance_kwargs, **kwargs})
+
+        def to_pydantic(self) -> Any:
+            instance_kwargs = self.__dict__
+
+            return model(**instance_kwargs)
 
         cls.from_pydantic = staticmethod(from_pydantic)
+        cls.to_pydantic = to_pydantic
 
         return cls
 
     return wrap
+
+
+input = partial(type, is_input=True)

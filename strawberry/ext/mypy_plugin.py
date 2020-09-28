@@ -609,7 +609,13 @@ class StrawberryPlugin(Plugin):
         ):
             return custom_dataclass_class_maker_callback
 
-        if "strawberry.pydantic.type" in fullname:
+        if any(
+            strawberry_decorator in fullname
+            for strawberry_decorator in {
+                "strawberry.pydantic.type",
+                "strawberry.pydantic.input",
+            }
+        ):
             return strawberry_pydantic_class_callback
 
         return None
