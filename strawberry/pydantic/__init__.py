@@ -3,6 +3,7 @@ from typing import Any, Optional, Type
 
 from pydantic import BaseModel
 from pydantic.fields import ModelField
+from strawberry.pydantic.fields import get_basic_type
 from strawberry.type import _process_type
 from strawberry.types.types import FederationTypeParams
 
@@ -31,6 +32,7 @@ def replace_pydantic_types(type_: Any):
 
 def get_type_for_field(field: ModelField):
     type_ = field.outer_type_
+    type_ = get_basic_type(type_)
     type_ = replace_pydantic_types(type_)
 
     if not field.required:
