@@ -29,7 +29,7 @@ This release fixes another issue with extending types.
 -------------------
 
 This releases fixes an issue when extending types, now
-fields should work as they were working before even 
+fields should work as they were working before even
 when extending an exising type.
 
 0.32.1 - 2020-09-06
@@ -45,15 +45,15 @@ when `strawberry.field` was used as a decorator, and one for when it was used as
 a function. These are now combined into a single argument.
 
 The `f` argument of `strawberry.field` no longer exists. This is a
-backwards-incompatible change, but should not affect many users. The `f` 
+backwards-incompatible change, but should not affect many users. The `f`
 argument was the first argument for `strawberry.field` and its use was only
-documented without the keyword. The fix is very straight-forward: replace any 
+documented without the keyword. The fix is very straight-forward: replace any
 `f=` kwarg with `resolver=`.
 
 ```python
 @strawberry.type
 class Query:
-    
+
     my_int: int = strawberry.field(f=lambda: 5)
     # becomes
     my_int: int = strawberry.field(resolver=lambda: 5)
@@ -263,7 +263,7 @@ We follow the following spec: https://github.com/jaydenseric/graphql-multipart-r
 Example:
 
 ```python
-import strawberry 
+import strawberry
 from strawberry.file_uploads import Upload
 
 
@@ -390,7 +390,7 @@ class Query:
 0.26.3 - 2020-06-10
 -------------------
 
-This release disables subscription in GraphiQL where it 
+This release disables subscription in GraphiQL where it
 is not supported.
 
 0.26.2 - 2020-06-03
