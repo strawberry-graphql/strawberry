@@ -3,7 +3,7 @@ import json
 from flask import Response, abort, render_template_string, request
 from flask.views import View
 from strawberry.http import GraphQLHTTPResponse, process_result
-from strawberry.schema import ExecutionResult
+from strawberry.types import ExecutionResult
 
 from ..schema import BaseSchema
 from .graphiql import render_graphiql_page

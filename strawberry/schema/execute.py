@@ -1,5 +1,4 @@
-import dataclasses
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List
 
 from graphql import (
     ExecutionResult as GraphQLExecutionResult,
@@ -11,14 +10,8 @@ from graphql import (
 from graphql.pyutils import AwaitableOrValue
 from graphql.type import validate_schema
 from graphql.validation import validate
-from strawberry.extensions import ExtensionsRunner
-
-
-@dataclasses.dataclass
-class ExecutionResult:
-    data: Optional[Dict[str, Any]]
-    errors: Optional[List[GraphQLError]]
-    extensions: Optional[Dict[str, Any]] = None
+from strawberry.extensions.runner import ExtensionsRunner
+from strawberry.types import ExecutionContext
 
 
 def execute(
@@ -31,9 +24,16 @@ def execute(
     additional_middlewares: List[Any] = None,
     operation_name: str = None,
 ) -> AwaitableOrValue[GraphQLExecutionResult]:
+    execution_context = ExecutionContext(
+        query=query,
+        context=context_value,
+        variables=variable_values,
+        operation_name=operation_name,
+    )
+
     additional_middlewares = additional_middlewares or []
 
-    with extensions_runner.request():
+    with extensions_runner.request(execution_context=execution_context):
         schema_validation_errors = validate_schema(schema)
 
         if schema_validation_errors:

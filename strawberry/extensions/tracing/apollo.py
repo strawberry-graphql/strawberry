@@ -5,6 +5,7 @@ from datetime import datetime
 
 from graphql import GraphQLResolveInfo
 from strawberry.extensions import Extension
+from strawberry.types.execution import ExecutionContext
 
 
 DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
@@ -84,11 +85,11 @@ class ApolloTracingExtension(Extension):
     def __init__(self):
         self._resolver_stats: typing.List[ApolloResolverStats] = []
 
-    def on_request_start(self):
+    def on_request_start(self, *, execution_context: ExecutionContext):
         self.start_timestamp = self.now()
         self.start_time = datetime.utcnow()
 
-    def on_request_end(self):
+    def on_request_end(self, *, execution_context: ExecutionContext):
         self.end_timestamp = self.now()
         self.end_time = datetime.utcnow()
 

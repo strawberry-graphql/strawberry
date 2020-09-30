@@ -6,7 +6,8 @@ from graphql.subscription import subscribe
 from graphql.type.directives import specified_directives
 from strawberry.custom_scalar import ScalarDefinition
 from strawberry.enum import EnumDefinition
-from strawberry.extensions import Extension, ExtensionsRunner
+from strawberry.extensions import Extension
+from strawberry.extensions.runner import ExtensionsRunner
 from strawberry.types.types import TypeDefinition
 
 from ..middleware import DirectivesMiddleware, Middleware

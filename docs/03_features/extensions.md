@@ -26,20 +26,23 @@ class:
 ```python
 from strawberry.extensions import Extension
 
-class MyExtension:
+class MyExtension(Extension):
     def get_results(self):
         return {
             "example": "this is an example for an extension"
         }
-
 ```
+
+You can use the following hooks to run code when needed:
+
+- `on_request_start`
 
 ```python
 class Extension:  # pragma: no cover
-    def on_request_start(self):
+    def on_request_start(self, *, execution_context: ExecutionContext):
         ...
 
-    def on_request_end(self):
+    def on_request_end(self, *, execution_context: ExecutionContext):
         ...
 
     def on_validation_start(self):

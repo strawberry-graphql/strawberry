@@ -9,7 +9,7 @@ from django.test.client import RequestFactory
 import strawberry
 from strawberry.django.views import GraphQLView as BaseGraphQLView
 from strawberry.permission import BasePermission
-from strawberry.schema import ExecutionResult
+from strawberry.types import ExecutionResult
 
 from .app.models import Example
 
