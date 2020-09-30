@@ -1,7 +1,6 @@
 import functools
 import typing
 from contextlib import contextmanager
-from typing import Optional
 
 from graphql import MiddlewareManager
 from strawberry.types import ExecutionContext
@@ -17,9 +16,7 @@ def run_on_all_extensions(func=None, pass_context=False):
             method_name_end = f"on_{func.__name__}_end"
 
             extension_kwargs = (
-                {"execution_context": kwargs["execution_context"]}
-                if pass_context
-                else {}
+                {"execution_context": self.execution_context} if pass_context else {}
             )
 
             for extension in self.extensions:
@@ -43,14 +40,17 @@ def run_on_all_extensions(func=None, pass_context=False):
 
 
 class ExtensionsRunner:
-    execution_context: Optional[ExecutionContext] = None
-
-    def __init__(self, extensions: typing.Sequence[Extension] = None):
+    def __init__(
+        self,
+        execution_context: ExecutionContext,
+        extensions: typing.Sequence[Extension] = None,
+    ):
+        self.execution_context = execution_context
         self.extensions = extensions or []
 
     @contextmanager
     @run_on_all_extensions(pass_context=True)
-    def request(self, *, execution_context: ExecutionContext):
+    def request(self):
         yield
 
     @contextmanager

@@ -20,7 +20,7 @@ def test_base_extension():
         def person(self, info) -> Person:
             return Person()
 
-    schema = strawberry.Schema(query=Query, extensions=[Extension()])
+    schema = strawberry.Schema(query=Query, extensions=[Extension])
 
     query = """
         query {
@@ -48,7 +48,7 @@ def test_extension():
         def person(self, info) -> Person:
             return Person()
 
-    schema = strawberry.Schema(query=Query, extensions=[MyExtension()])
+    schema = strawberry.Schema(query=Query, extensions=[MyExtension])
 
     query = """
         query {
@@ -79,7 +79,7 @@ async def test_extension_async():
         async def person(self, info) -> Person:
             return Person()
 
-    schema = strawberry.Schema(query=Query, extensions=[MyExtension()])
+    schema = strawberry.Schema(query=Query, extensions=[MyExtension])
 
     query = """
         query {
