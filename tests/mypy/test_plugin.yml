@@ -36,3 +36,16 @@
     NameInterface(name="Patrick")
   out: |
     main:7: error: Unexpected keyword argument "n" for "NameInterface"
+
+- case: test_field
+  main: |
+    import strawberry
+
+    @strawberry.type
+    class User:
+        name: str = strawberry.field(description='Example')
+
+    User(n="Patrick")
+    User(name="Patrick")
+  out: |
+    main:7: error: Unexpected keyword argument "n" for "User"
