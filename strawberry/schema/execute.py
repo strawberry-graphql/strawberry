@@ -45,7 +45,7 @@ def execute(
         except GraphQLError as error:
             return GraphQLExecutionResult(data=None, errors=[error])
 
-        except Exception as error:
+        except Exception as error:  # pragma: no cover
             error = GraphQLError(str(error), original_error=error)
 
             return GraphQLExecutionResult(data=None, errors=[error])
