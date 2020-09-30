@@ -1,6 +1,19 @@
 CHANGELOG
 =========
 
+0.34.1 - 2020-09-30
+-------------------
+
+This release fixes an issue with mypy when doing the following:
+
+```python
+import strawberry
+
+@strawberry.type
+class User:
+    name: str = strawberry.field(description='Example')
+```
+
 0.34.0 - 2020-09-30
 -------------------
 
