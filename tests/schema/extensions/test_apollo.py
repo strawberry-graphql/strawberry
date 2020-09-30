@@ -2,7 +2,10 @@ import pytest
 
 import strawberry
 from freezegun import freeze_time
-from strawberry.extensions.tracing.apollo import ApolloTracingExtension
+from strawberry.extensions.tracing.apollo import (
+    ApolloTracingExtension,
+    ApolloTracingExtensionSync,
+)
 
 
 @freeze_time("20120114 12:00:01")
@@ -21,7 +24,7 @@ def test_tracing_sync(mocker):
         def person(self, info) -> Person:
             return Person()
 
-    schema = strawberry.Schema(query=Query, extensions=[ApolloTracingExtension])
+    schema = strawberry.Schema(query=Query, extensions=[ApolloTracingExtensionSync])
 
     query = """
         query {
@@ -81,7 +84,7 @@ async def test_tracing_async(mocker):
     @strawberry.type
     class Query:
         @strawberry.field
-        def person(self, info) -> Person:
+        async def person(self, info) -> Person:
             return Person()
 
     schema = strawberry.Schema(query=Query, extensions=[ApolloTracingExtension])

@@ -2,6 +2,7 @@ import dataclasses
 import time
 import typing
 from datetime import datetime
+from inspect import isawaitable
 
 from graphql import GraphQLResolveInfo
 from strawberry.extensions import Extension
@@ -128,6 +129,31 @@ class ApolloTracingExtension(Extension):
     def get_results(self):
         return {"tracing": self.stats.to_json()}
 
+    async def resolve(self, _next, root, info, *args, **kwargs):
+        start_timestamp = self.now()
+
+        resolver_stats = ApolloResolverStats(
+            path=get_path_from_info(info),
+            field_name=info.field_name,
+            parent_type=info.parent_type,
+            return_type=info.return_type,
+            start_offset=start_timestamp - self.start_timestamp,
+        )
+
+        try:
+            result = _next(root, info, *args, **kwargs)
+
+            if isawaitable(result):
+                result = await result
+
+            return result
+        finally:
+            end_timestamp = self.now()
+            resolver_stats.duration = end_timestamp - start_timestamp
+            self._resolver_stats.append(resolver_stats)
+
+
+class ApolloTracingExtensionSync(ApolloTracingExtension):
     def resolve(self, _next, root, info, *args, **kwargs):
         start_timestamp = self.now()
 
