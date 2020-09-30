@@ -1,11 +1,12 @@
 import functools
 import typing
 from contextlib import contextmanager
+from typing import Any, Dict
 
 from graphql import MiddlewareManager
 
 
-class Extension:  # pragma: no cover
+class Extension:
     def on_request_start(self):
         ...
 
@@ -24,16 +25,10 @@ class Extension:  # pragma: no cover
     def on_parsing_end(self):
         ...
 
-    def on_resolver_start(self):
-        ...
-
-    def on_resolver_end(self):
-        ...
-
     def resolve(self, _next, root, info, *args, **kwargs):
-        ...
+        return _next(root, info, *args, **kwargs)
 
-    def get_results(self):
+    def get_results(self) -> Dict[str, Any]:
         return {}
 
 

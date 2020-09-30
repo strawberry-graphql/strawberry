@@ -85,12 +85,12 @@ class ApolloTracingExtension(Extension):
         self._resolver_stats: typing.List[ApolloResolverStats] = []
 
     def on_request_start(self):
-        self._start_timestamp = self.now()
-        self._start_time = datetime.utcnow()
+        self.start_timestamp = self.now()
+        self.start_time = datetime.utcnow()
 
     def on_request_end(self):
-        self._end_timestamp = self.now()
-        self._end_time = datetime.utcnow()
+        self.end_timestamp = self.now()
+        self.end_time = datetime.utcnow()
 
     def on_parsing_start(self):
         self._start_parsing = self.now()
@@ -110,16 +110,16 @@ class ApolloTracingExtension(Extension):
     @property
     def stats(self) -> ApolloTracingStats:
         return ApolloTracingStats(
-            start_time=self._start_time,
-            end_time=self._end_time,
-            duration=self._end_timestamp - self._start_timestamp,
+            start_time=self.start_time,
+            end_time=self.end_time,
+            duration=self.end_timestamp - self.start_timestamp,
             execution=ApolloExecutionStats(self._resolver_stats),
             validation=ApolloStepStats(
-                start_offset=self._start_validation - self._start_timestamp,
+                start_offset=self._start_validation - self.start_timestamp,
                 duration=self._end_validation - self._start_validation,
             ),
             parsing=ApolloStepStats(
-                start_offset=self._start_parsing - self._start_timestamp,
+                start_offset=self._start_parsing - self.start_timestamp,
                 duration=self._end_parsing - self._start_parsing,
             ),
         )
@@ -135,7 +135,7 @@ class ApolloTracingExtension(Extension):
             field_name=info.field_name,
             parent_type=info.parent_type,
             return_type=info.return_type,
-            start_offset=start_timestamp - self._start_timestamp,
+            start_offset=start_timestamp - self.start_timestamp,
         )
 
         try:
