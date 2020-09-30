@@ -5,7 +5,7 @@ import pytest
 import strawberry
 from flask import Flask, request
 from strawberry.flask.views import GraphQLView as BaseGraphQLView
-from strawberry.schema import ExecutionResult
+from strawberry.types import ExecutionResult
 
 
 def create_app(**kwargs):

@@ -94,7 +94,7 @@ and the execution results.
 
 ```python
 from strawberry.http import GraphQLHTTPResponse
-from strawberry.schema import ExecutionResult
+from strawberry.types import ExecutionResult
 
 from graphql.error import format_error as format_graphql_error
 

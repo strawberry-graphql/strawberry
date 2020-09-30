@@ -97,7 +97,7 @@ Django example:
 from django.http import HttpRequest
 from strawberry.django.views import GraphQLView as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
-from strawberry.schema import ExecutionResult
+from strawberry.types import ExecutionResult
 
 class GraphQLView(BaseGraphQLView):
     def process_result(self, request: HttpRequest, result: ExecutionResult) -> GraphQLHTTPResponse:
@@ -111,7 +111,7 @@ Flask example:
 # views.py
 from strawberry.flask.views import GraphQLView as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
-from strawberry.schema import ExecutionResult
+from strawberry.types import ExecutionResult
 
 class GraphQLView(BaseGraphQLView):
     def process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse:
@@ -124,7 +124,7 @@ ASGI example:
 ```python
 from strawberry.asgi import GraphQL as BaseGraphQL
 from strawberry.http import GraphQLHTTPResponse
-from strawberry.schema import ExecutionResult
+from strawberry.types import ExecutionResult
 from starlette.requests import Request
 
 from .schema import schema
