@@ -24,7 +24,10 @@ class StrawberryPlugin(Plugin):
         if fullname == "strawberry.lazy_type.LazyType":
             return lazy_type_analyze_callback
 
-        if fullname == "strawberry.private.Private":
+        if any(
+            name in fullname
+            for name in {"strawberry.private.Private", "strawberry.Private"}
+        ):
             return private_type_analyze_callback
 
         return None
