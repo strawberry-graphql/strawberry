@@ -64,6 +64,8 @@
 
         @strawberry.field
         def wrong_type(self) -> int:
+            reveal_type(self.age)
             return self.age.trim()
   out: |
-    main:13: error: "int" has no attribute "trim"
+    main:13: note: Revealed type is 'builtins.int'
+    main:14: error: "int" has no attribute "trim"
