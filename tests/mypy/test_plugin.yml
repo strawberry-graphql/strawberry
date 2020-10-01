@@ -49,3 +49,21 @@
     User(n="Patrick")
   out: |
     main:8: error: Unexpected keyword argument "n" for "User"
+
+- case: test_private_field
+  main: |
+    import strawberry
+
+    @strawberry.type
+    class User:
+        age: strawberry.Private[int]
+
+        @strawberry.field
+        def age_in_months(self) -> int:
+            return self.age * 12
+
+        @strawberry.field
+        def wrong_type(self) -> int:
+            return self.age.trim()
+  out: |
+    main:13: error: "int" has no attribute "trim"
