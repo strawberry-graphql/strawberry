@@ -2,13 +2,13 @@ import dataclasses
 import sys
 from typing import Dict, List, Optional, Type, Union, cast
 
-from strawberry.private import Private
 from strawberry.exceptions import (
     MissingFieldAnnotationError,
     MissingReturnAnnotationError,
     MissingTypesForGenericError,
 )
 from strawberry.lazy_type import LazyType
+from strawberry.private import Private
 from strawberry.union import StrawberryUnion, union
 from strawberry.utils.str_converters import to_camel_case
 from strawberry.utils.typing import (
