@@ -2,6 +2,7 @@ import dataclasses
 import sys
 from typing import Dict, List, Optional, Type, Union, cast
 
+from strawberry.private import Private
 from strawberry.exceptions import (
     MissingFieldAnnotationError,
     MissingReturnAnnotationError,
@@ -376,7 +377,8 @@ def _get_fields(cls: Type) -> List[FieldDefinition]:
                 default_value=getattr(cls, field.name, undefined),
             )
 
-        field_name = cast(str, field_definition.origin_name)
-        field_definitions[field_name] = field_definition
+        if not isinstance(field_definition.type, Private):
+            field_name = cast(str, field_definition.origin_name)
+            field_definitions[field_name] = field_definition
 
     return list(field_definitions.values())
