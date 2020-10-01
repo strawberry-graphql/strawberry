@@ -6,6 +6,7 @@ from strawberry.exceptions import (
     MissingFieldAnnotationError,
     MissingReturnAnnotationError,
     MissingTypesForGenericError,
+    PrivateStrawberryFieldError,
 )
 from strawberry.lazy_type import LazyType
 from strawberry.private import Private
@@ -344,6 +345,10 @@ def _get_fields(cls: Type) -> List[FieldDefinition]:
         if hasattr(field, "_field_definition"):
             # Use the existing FieldDefinition
             field_definition = field._field_definition
+
+            # Check that the field type is not Private
+            if isinstance(field_definition.type, Private):
+                raise PrivateStrawberryFieldError(field.name, cls.__name__)
 
             if not field_definition.name:
                 field_definition.name = to_camel_case(field_name)
