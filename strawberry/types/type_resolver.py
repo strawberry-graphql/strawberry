@@ -70,7 +70,7 @@ def resolve_type(field_definition: Union[FieldDefinition, ArgumentDefinition]) -
     if is_forward_ref(type):
         # if the type is a forward reference we try to resolve the type by
         # finding it in the global namespace of the module where the field
-        # was intially declared. This will break when the type is not declared
+        # was initially declared. This will break when the type is not declared
         # in the main scope, but we don't want to support that use case
         # see https://mail.python.org/archives/list/typing-sig@python.org/thread/SNKJB2U5S74TWGDWVD6FMXOP63WVIGDR/  # noqa: E501
 
