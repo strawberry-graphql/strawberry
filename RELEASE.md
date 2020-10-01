@@ -9,9 +9,9 @@ import strawberry
 
 @strawberry.type
 class User:
-	age: strawberry.Private[int]
+    age: strawberry.Private[int]
 
-	@strawberry.field
-	def age_in_months(self) -> int:
-		return self.age * 12
+    @strawberry.field
+    def age_in_months(self) -> int:
+        return self.age * 12
 ```
