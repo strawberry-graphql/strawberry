@@ -1,6 +1,6 @@
 Release type: minor
 
-Add `strawberry.Private` type to mark fields as "private" so they don't show up in the GraphQL schema.
+Added `strawberry.Private` type to mark fields as "private" so they don't show up in the GraphQL schema.
 
 Example:
 
