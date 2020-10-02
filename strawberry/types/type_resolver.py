@@ -373,6 +373,9 @@ def _get_fields(cls: Type) -> List[FieldDefinition]:
             if field_name in field_definitions:
                 continue
 
+            if isinstance(field.type, Private):
+                continue
+
             # Create a FieldDefinition, for fields of Types #1 and #2a
             field_definition = FieldDefinition(
                 origin_name=field.name,
@@ -382,8 +385,7 @@ def _get_fields(cls: Type) -> List[FieldDefinition]:
                 default_value=getattr(cls, field.name, undefined),
             )
 
-        if not isinstance(field_definition.type, Private):
-            field_name = cast(str, field_definition.origin_name)
-            field_definitions[field_name] = field_definition
+        field_name = cast(str, field_definition.origin_name)
+        field_definitions[field_name] = field_definition
 
     return list(field_definitions.values())
