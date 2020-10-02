@@ -6,8 +6,10 @@ from strawberry.exceptions import (
     MissingFieldAnnotationError,
     MissingReturnAnnotationError,
     MissingTypesForGenericError,
+    PrivateStrawberryFieldError,
 )
 from strawberry.lazy_type import LazyType
+from strawberry.private import Private
 from strawberry.union import StrawberryUnion, union
 from strawberry.utils.str_converters import to_camel_case
 from strawberry.utils.typing import (
@@ -344,6 +346,10 @@ def _get_fields(cls: Type) -> List[FieldDefinition]:
             # Use the existing FieldDefinition
             field_definition = field._field_definition
 
+            # Check that the field type is not Private
+            if isinstance(field_definition.type, Private):
+                raise PrivateStrawberryFieldError(field.name, cls.__name__)
+
             if not field_definition.name:
                 field_definition.name = to_camel_case(field_name)
                 field_definition.origin_name = field_name
@@ -365,6 +371,9 @@ def _get_fields(cls: Type) -> List[FieldDefinition]:
             # dataclasses recreates the field in some cases when extending other
             # dataclasses.
             if field_name in field_definitions:
+                continue
+
+            if isinstance(field.type, Private):
                 continue
 
             # Create a FieldDefinition, for fields of Types #1 and #2a
