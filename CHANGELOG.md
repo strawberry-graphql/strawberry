@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.35.1 - 2020-10-02
+-------------------
+
+Fixed bug where you couldn't use the same Union type multiple times in a schema.
+
 0.35.0 - 2020-10-02
 -------------------
 
