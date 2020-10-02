@@ -7,6 +7,7 @@ from strawberry.custom_scalar import ScalarDefinition
 from strawberry.enum import EnumDefinition
 from strawberry.extensions import Extension
 from strawberry.types.types import TypeDefinition
+from strawberry.union import StrawberryUnion
 
 from ..middleware import DirectivesMiddleware, Middleware
 from ..printer import print_schema
@@ -53,7 +54,9 @@ class Schema:
 
     def get_type_by_name(
         self, name: str
-    ) -> Optional[Union[TypeDefinition, ScalarDefinition, EnumDefinition]]:
+    ) -> Optional[
+        Union[TypeDefinition, ScalarDefinition, EnumDefinition, StrawberryUnion]
+    ]:
         if name in self.type_map:
             return self.type_map[name].definition
 
