@@ -3,14 +3,11 @@ class Private:
 
     Example:
 
-    ```
-    import strawberry
-
-    @strawberry.type
-    class User:
-        name: str
-        age: strawberry.Private[int]
-    ```
+    >>> import strawberry
+    >>> @strawberry.type
+    ... class User:
+    ...     name: str
+    ...     age: strawberry.Private[int]
     """
 
     __slots__ = ("type",)
