@@ -11,7 +11,7 @@ from strawberry.utils.typing import (
     is_type_var,
 )
 
-from .types import TypeMap, ConcreteType
+from .types import ConcreteType, TypeMap
 
 
 def _get_type_mapping_from_actual_type(root) -> typing.Dict[typing.Any, typing.Type]:

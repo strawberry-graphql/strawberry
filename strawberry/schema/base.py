@@ -6,6 +6,7 @@ from graphql.error.graphql_error import GraphQLError
 from strawberry.custom_scalar import ScalarDefinition
 from strawberry.enum import EnumDefinition
 from strawberry.types.types import TypeDefinition
+from strawberry.union import StrawberryUnion
 from typing_extensions import Protocol
 
 
@@ -53,7 +54,9 @@ class BaseSchema(Protocol):
     @abstractmethod
     def get_type_by_name(
         self, name: str
-    ) -> Optional[Union[TypeDefinition, ScalarDefinition, EnumDefinition]]:
+    ) -> Optional[
+        Union[TypeDefinition, ScalarDefinition, EnumDefinition, StrawberryUnion]
+    ]:
         raise NotImplementedError
 
     @abstractmethod
