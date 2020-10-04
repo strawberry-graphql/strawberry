@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.35.2 - 2020-10-04
+-------------------
+
+This release fixes an issue with the extension runner and async resolvers
+
 0.35.1 - 2020-10-02
 -------------------
 
