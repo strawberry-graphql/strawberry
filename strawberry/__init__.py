@@ -1,16 +1,10 @@
 __version__ = "0.1.0"
 
-
-from . import federation  # noqa
-from .custom_scalar import scalar  # noqa
-from .directive import directive  # noqa
-from .enum import enum  # noqa
-from .field import field  # noqa
-from .lazy_type import LazyType  # noqa
-from .mutation import mutation, subscription  # noqa
-from .permission import BasePermission  # noqa
-from .private import Private  # noqa
-from .scalars import ID  # noqa
-from .schema import Schema  # noqa
-from .type import input, interface, type  # noqa
-from .union import union  # noqa
+from .custom_scalar import scalar
+from .directive import directive
+from .lazy_type import LazyType
+from .permission import BasePermission
+from .scalars import ID
+from .schema import Schema
+from .types import enum, extends, external, field, key, provides, requires, \
+    scalar, type, union
