@@ -9,9 +9,7 @@ jobs:
 
     strategy:
       matrix:
-        # mypy is currently broken on python 3.9
-        # python-version: ['3.7', '3.8', '3.9']
-        python-version: ['3.7', '3.8']
+        python-version: ['3.7', '3.8', '3.9']
         django: [3.0.2, 2.2]
 
     steps:

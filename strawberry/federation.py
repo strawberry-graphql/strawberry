@@ -15,6 +15,7 @@ from strawberry.enum import EnumDefinition
 from strawberry.permission import BasePermission
 from strawberry.schema.types.types import TypeMap
 from strawberry.types.types import TypeDefinition
+from strawberry.union import StrawberryUnion
 
 from .field import FederationFieldParams, field as base_field
 from .printer import print_schema
@@ -62,7 +63,7 @@ def field(
 
 
 def _has_federation_keys(
-    definition: Union[TypeDefinition, ScalarDefinition, EnumDefinition]
+    definition: Union[TypeDefinition, ScalarDefinition, EnumDefinition, StrawberryUnion]
 ) -> bool:
     if isinstance(definition, TypeDefinition):
         return len(definition.federation.keys) > 0

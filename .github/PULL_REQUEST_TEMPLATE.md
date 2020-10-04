@@ -18,7 +18,7 @@
 
 ## Issues Fixed or Closed by This PR
 
-* 
+*
 
 ## Checklist
 

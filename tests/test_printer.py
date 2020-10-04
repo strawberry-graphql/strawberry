@@ -3,6 +3,7 @@ from typing import Optional
 from uuid import UUID
 
 import strawberry
+from strawberry.arguments import UNSET
 from strawberry.printer import print_schema
 
 
@@ -89,6 +90,7 @@ def test_input_defaults():
     class MyInput:
         s: Optional[str] = None
         i: int = 0
+        x: Optional[int] = UNSET
 
     @strawberry.type
     class Query:
@@ -100,6 +102,7 @@ def test_input_defaults():
     input MyInput {
       s: String = null
       i: Int! = 0
+      x: Int
     }
 
     type Query {

@@ -9,7 +9,7 @@ from django.test.client import RequestFactory
 import strawberry
 from strawberry.django.views import GraphQLView as BaseGraphQLView
 from strawberry.permission import BasePermission
-from strawberry.schema import ExecutionResult
+from strawberry.types import ExecutionResult
 
 from .app.models import Example
 
@@ -102,7 +102,7 @@ def test_graphql_query_model():
     assert data["data"]["example"] == "This is a demo"
 
 
-@pytest.mark.xfail(reason="We don't support async on django at the moment")
+@pytest.mark.skip(reason="We don't support async on django at the moment")
 def test_async_graphql_query():
     query = "{ helloAsync }"
 
@@ -117,7 +117,7 @@ def test_async_graphql_query():
     assert data["data"]["helloAsync"] == "async strawberry"
 
 
-@pytest.mark.xfail(reason="We don't support async on django at the moment")
+@pytest.mark.skip(reason="We don't support async on django at the moment")
 def test_async_graphql_query_model():
     Example.objects.create(name="This is a demo async")
 

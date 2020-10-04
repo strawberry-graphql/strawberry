@@ -13,7 +13,7 @@ from django.urls import path
 
 from strawberry.django.views import GraphQLView
 
-from api.schema import Schema
+from api.schema import schema
 
 urlpatterns = [
     path("graphql/", GraphQLView.as_view(schema=schema)),
@@ -96,7 +96,7 @@ and the execution results.
 
 ```python
 from strawberry.http import GraphQLHTTPResponse
-from strawberry.schema import ExecutionResult
+from strawberry.types import ExecutionResult
 
 from graphql.error import format_error as format_graphql_error
 

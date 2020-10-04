@@ -1,6 +1,88 @@
 CHANGELOG
 =========
 
+0.35.1 - 2020-10-02
+-------------------
+
+Fixed bug where you couldn't use the same Union type multiple times in a schema.
+
+0.35.0 - 2020-10-02
+-------------------
+
+Added `strawberry.Private` type to mark fields as "private" so they don't show up in the GraphQL schema.
+
+Example:
+
+```python
+import strawberry
+
+@strawberry.type
+class User:
+    age: strawberry.Private[int]
+
+    @strawberry.field
+    def age_in_months(self) -> int:
+        return self.age * 12
+```
+
+0.34.2 - 2020-10-01
+-------------------
+
+Fix typo in type_resolver.py
+
+0.34.1 - 2020-09-30
+-------------------
+
+This release fixes an issue with mypy when doing the following:
+
+```python
+import strawberry
+
+@strawberry.type
+class User:
+    name: str = strawberry.field(description='Example')
+```
+
+0.34.0 - 2020-09-30
+-------------------
+
+This release adds support for Apollo Tracing and support for creating Strawberry
+extensions, here's how you can enable Apollo tracing:
+
+```python
+from strawberry.extensions.tracing import ApolloTracingExtension
+
+schema = strawberry.Schema(query=Query, extensions=[ApolloTracingExtension])
+```
+
+And here's an example of custom extension:
+
+```python
+from strawberry.extensions import Extension
+
+class MyExtension(Extension):
+    def get_results(self):
+        return {
+            "example": "this is an example for an extension"
+        }
+
+schema = strawberry.Schema(query=Query, extensions=[MyExtension])
+```
+
+0.33.1 - 2020-09-25
+-------------------
+
+This release fixes an issue when trying to print a type
+with a UNSET default value
+
+0.33.0 - 2020-09-24
+-------------------
+
+* `UnionDefinition` has been renamed to `StrawberryUnion`
+* `strawberry.union` now returns an instance of `StrawberryUnion` instead of a
+dynamically generated class instance with a `_union_definition` attribute of
+type `UnionDefinition`.
+
 0.32.4 - 2020-09-22
 -------------------
 
@@ -15,7 +97,7 @@ This release fixes another issue with extending types.
 -------------------
 
 This releases fixes an issue when extending types, now
-fields should work as they were working before even 
+fields should work as they were working before even
 when extending an exising type.
 
 0.32.1 - 2020-09-06
@@ -31,15 +113,15 @@ when `strawberry.field` was used as a decorator, and one for when it was used as
 a function. These are now combined into a single argument.
 
 The `f` argument of `strawberry.field` no longer exists. This is a
-backwards-incompatible change, but should not affect many users. The `f` 
+backwards-incompatible change, but should not affect many users. The `f`
 argument was the first argument for `strawberry.field` and its use was only
-documented without the keyword. The fix is very straight-forward: replace any 
+documented without the keyword. The fix is very straight-forward: replace any
 `f=` kwarg with `resolver=`.
 
 ```python
 @strawberry.type
 class Query:
-    
+
     my_int: int = strawberry.field(f=lambda: 5)
     # becomes
     my_int: int = strawberry.field(resolver=lambda: 5)
@@ -83,7 +165,7 @@ Django example:
 from django.http import HttpRequest
 from strawberry.django.views import GraphQLView as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
-from strawberry.schema import ExecutionResult
+from strawberry.types import ExecutionResult
 
 class GraphQLView(BaseGraphQLView):
     def process_result(self, request: HttpRequest, result: ExecutionResult) -> GraphQLHTTPResponse:
@@ -97,7 +179,7 @@ Flask example:
 # views.py
 from strawberry.flask.views import GraphQLView as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
-from strawberry.schema import ExecutionResult
+from strawberry.types import ExecutionResult
 
 class GraphQLView(BaseGraphQLView):
     def process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse:
@@ -110,7 +192,7 @@ ASGI example:
 ```python
 from strawberry.asgi import GraphQL as BaseGraphQL
 from strawberry.http import GraphQLHTTPResponse
-from strawberry.schema import ExecutionResult
+from strawberry.types import ExecutionResult
 from starlette.requests import Request
 
 from .schema import schema
@@ -249,7 +331,7 @@ We follow the following spec: https://github.com/jaydenseric/graphql-multipart-r
 Example:
 
 ```python
-import strawberry 
+import strawberry
 from strawberry.file_uploads import Upload
 
 
@@ -376,7 +458,7 @@ class Query:
 0.26.3 - 2020-06-10
 -------------------
 
-This release disables subscription in GraphiQL where it 
+This release disables subscription in GraphiQL where it
 is not supported.
 
 0.26.2 - 2020-06-03
