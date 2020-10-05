@@ -77,3 +77,8 @@ known_graphql = ["graphql"]
 known_pytest = ["pytest"]
 known_first_party = ["strawberry"]
 sections = ["FUTURE", "STDLIB", "PYTEST", "THIRDPARTY", "DJANGO", "GRAPHQL", "FIRSTPARTY", "LOCALFOLDER"]
+
+[tool.pytest.ini_options]
+addopts = "-xs --emoji --mypy-ini-file=tests/mypy/config.cfg --benchmark-disable"
+DJANGO_SETTINGS_MODULE = "tests.django.django_settings"
+testpaths = ["tests/"]
