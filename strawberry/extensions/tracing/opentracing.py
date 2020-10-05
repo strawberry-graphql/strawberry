@@ -12,18 +12,12 @@ from strawberry.extensions import Extension
 from strawberry.types.execution import ExecutionContext
 from strawberry.utils.info import get_path_from_info
 
+from .utils import should_trace
+
 
 DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 
 ArgFilter = Callable[[Dict[str, Any], GraphQLResolveInfo], Dict[str, Any]]
-
-
-def do_trace(info: GraphQLResolveInfo):
-    if info.field_name not in info.parent_type.fields:
-        return False
-
-    resolver = info.parent_type.fields[info.field_name].resolve
-    return resolver is not None
 
 
 @dataclasses.dataclass
@@ -160,7 +154,7 @@ class OpenTracingExtension(Extension):
         )
 
         try:
-            if not do_trace(info):
+            if not should_trace(info):
                 result = _next(root, info, *args, **kwargs)
                 if isawaitable(result):
                     result = await result
@@ -202,7 +196,7 @@ class OpenTracingExtensionSync(OpenTracingExtension):
         )
 
         try:
-            if not do_trace(info):
+            if not should_trace(info):
                 result = _next(root, info, *args, **kwargs)
                 return result
             with self._tracer.start_active_span(info.field_name) as scope:
