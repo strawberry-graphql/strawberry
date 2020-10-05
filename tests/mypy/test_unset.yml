@@ -1,0 +1,13 @@
+- case: test_unset
+  main: |
+    import strawberry
+    from typing import Optional
+    from strawberry.arguments import UNSET
+
+    @strawberry.type
+    class User:
+        name: Optional[str] = UNSET
+
+    reveal_type(User().name)
+  out: |
+    main:9: note: Revealed type is 'Union[builtins.str, None]'
