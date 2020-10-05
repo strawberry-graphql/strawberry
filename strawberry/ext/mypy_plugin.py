@@ -41,6 +41,9 @@ class StrawberryPlugin(Plugin):
     def get_dynamic_class_hook(
         self, fullname: str
     ) -> Optional[Callable[[DynamicClassDefContext], None]]:
+        if "strawberry" in fullname:
+            print(fullname)
+
         if "strawberry.union.union" in fullname:
             return union_hook
 
