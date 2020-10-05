@@ -1,0 +1,22 @@
+- case: test_type
+  main: |
+    import typing
+
+    import strawberry
+
+    @strawberry.type
+    class User:
+        name: str
+
+    @strawberry.type
+    class Error:
+        message: str
+
+    Response = strawberry.union("Response", (User, Error))
+
+    a: Response
+    reveal_type(Response)
+    reveal_type(a)
+  out: |
+    main:16: note: Revealed type is 'Any'
+    main:17: note: Revealed type is 'main.Response'
