@@ -1,6 +1,7 @@
 from typing import Callable, List, Union
 
 from graphql import GraphQLResolveInfo
+from strawberry.resolvers import is_default_resolver
 
 
 def is_instrospection_key(key: Union[str, int]) -> bool:
@@ -24,7 +25,7 @@ def is_instrospection_field(info: GraphQLResolveInfo) -> bool:
 
 
 def should_skip_tracing(resolver: Callable, info: GraphQLResolveInfo) -> bool:
-    return is_instrospection_field(info)
+    return is_instrospection_field(info) or is_default_resolver(resolver)
 
 
 def get_path_from_info(info: GraphQLResolveInfo) -> List[str]:
