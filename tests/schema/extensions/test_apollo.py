@@ -77,6 +77,10 @@ async def test_tracing_async(mocker):
     @strawberry.type
     class Query:
         @strawberry.field
+        def example(self, info) -> str:
+            return "Hi"
+
+        @strawberry.field
         async def person(self, info) -> Person:
             return Person()
 
@@ -84,6 +88,7 @@ async def test_tracing_async(mocker):
 
     query = """
         query {
+            example
             person {
                 name
             }
@@ -102,6 +107,14 @@ async def test_tracing_async(mocker):
             "duration": 0,
             "execution": {
                 "resolvers": [
+                    {
+                        "duration": 0,
+                        "field_name": "example",
+                        "parentType": "Query",
+                        "path": ["example"],
+                        "returnType": "String!",
+                        "startOffset": 0,
+                    },
                     {
                         "path": ["person"],
                         "field_name": "person",
