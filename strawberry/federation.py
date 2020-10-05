@@ -1,3 +1,5 @@
+from typing import Callable, List, Optional, Type, Union, cast
+
 from graphql import (
     GraphQLField,
     GraphQLList,
@@ -8,7 +10,6 @@ from graphql import (
     GraphQLUnionType,
 )
 from graphql.type.definition import GraphQLArgument
-from typing import Callable, List, Optional, Type, Union, cast
 
 from strawberry.custom_scalar import ScalarDefinition
 from strawberry.enum import EnumDefinition

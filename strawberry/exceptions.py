@@ -1,7 +1,8 @@
 # TODO: add links to docs
 
-from graphql import GraphQLObjectType
 from typing import List, Set
+
+from graphql import GraphQLObjectType
 
 
 class NotAnEnum(Exception):

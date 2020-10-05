@@ -1,7 +1,7 @@
+import json
+
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.test.client import RequestFactory
-
-import json
 
 import strawberry
 from strawberry.django.views import GraphQLView as BaseGraphQLView

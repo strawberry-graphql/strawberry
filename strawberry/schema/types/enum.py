@@ -1,5 +1,6 @@
-from graphql import GraphQLEnumType, GraphQLEnumValue
 from typing import cast
+
+from graphql import GraphQLEnumType, GraphQLEnumValue
 
 from strawberry.enum import EnumDefinition
 

@@ -1,7 +1,7 @@
 import json
+
 from flask import Response, abort, render_template_string, request
 from flask.views import View
-
 from strawberry.http import GraphQLHTTPResponse, process_result
 from strawberry.types import ExecutionResult
 

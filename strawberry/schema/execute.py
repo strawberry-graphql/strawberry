@@ -1,4 +1,7 @@
 from asyncio import ensure_future
+from inspect import isawaitable
+from typing import Any, Awaitable, Dict, List, Sequence, Type, cast
+
 from graphql import (
     ExecutionResult as GraphQLExecutionResult,
     GraphQLError,
@@ -8,8 +11,6 @@ from graphql import (
 )
 from graphql.type import validate_schema
 from graphql.validation import validate
-from inspect import isawaitable
-from typing import Any, Awaitable, Dict, List, Sequence, Type, cast
 
 from strawberry.extensions import Extension
 from strawberry.extensions.runner import ExtensionsRunner

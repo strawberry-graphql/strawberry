@@ -1,5 +1,6 @@
-from graphql import GraphQLList, GraphQLNonNull, GraphQLType
 from typing import Callable, Optional, Type, Union, cast
+
+from graphql import GraphQLList, GraphQLNonNull, GraphQLType
 
 from strawberry.field import FieldDefinition
 from strawberry.scalars import is_scalar

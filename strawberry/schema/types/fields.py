@@ -1,4 +1,5 @@
 import typing
+
 from graphql import GraphQLField, GraphQLInputField
 
 from strawberry.arguments import UNSET

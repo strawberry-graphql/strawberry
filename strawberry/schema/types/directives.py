@@ -1,7 +1,8 @@
 import inspect
 import typing
-from graphql import GraphQLDirective
 from itertools import islice
+
+from graphql import GraphQLDirective
 
 from strawberry.arguments import ArgumentDefinition, get_arguments_from_annotations
 

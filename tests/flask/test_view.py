@@ -1,9 +1,9 @@
+import json
+
 import pytest
 
-import json
-from flask import Flask, request
-
 import strawberry
+from flask import Flask, request
 from strawberry.flask.views import GraphQLView as BaseGraphQLView
 from strawberry.types import ExecutionResult
 

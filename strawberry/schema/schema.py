@@ -1,7 +1,8 @@
+from typing import Any, Dict, List, Optional, Sequence, Type, Union
+
 from graphql import GraphQLSchema, parse
 from graphql.subscription import subscribe
 from graphql.type.directives import specified_directives
-from typing import Any, Dict, List, Optional, Sequence, Type, Union
 
 from strawberry.custom_scalar import ScalarDefinition
 from strawberry.enum import EnumDefinition

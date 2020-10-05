@@ -1,5 +1,6 @@
 from abc import abstractmethod
 from typing import Any, Dict, List
+
 from typing_extensions import Protocol
 
 from .directive import DirectiveDefinition

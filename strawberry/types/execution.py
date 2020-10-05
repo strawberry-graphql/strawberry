@@ -1,6 +1,7 @@
 import dataclasses
-from graphql.error.graphql_error import GraphQLError
 from typing import Any, Dict, List, Optional
+
+from graphql.error.graphql_error import GraphQLError
 
 
 @dataclasses.dataclass

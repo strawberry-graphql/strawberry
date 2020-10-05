@@ -15,8 +15,8 @@ repos:
     hooks:
       - id: mypy
 
-  - repo: https://github.com/pre-commit/mirrors-isort
-    rev: v5.5.4
+  - repo: https://github.com/pycqa/isort
+    rev: 5.5.4
     hooks:
       - id: isort
 

@@ -1,8 +1,8 @@
 # type: ignore
-import pytest
-
 import typing
 from typing import List
+
+import pytest
 
 import strawberry
 

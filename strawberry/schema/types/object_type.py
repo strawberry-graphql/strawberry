@@ -1,6 +1,7 @@
+from typing import Type, cast
+
 from graphql import GraphQLInputObjectType, GraphQLObjectType
 from graphql.type.definition import GraphQLInterfaceType
-from typing import Type, cast
 
 from strawberry.type import TypeDefinition
 

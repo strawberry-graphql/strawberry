@@ -1,6 +1,7 @@
 from contextlib import contextmanager
-from graphql import MiddlewareManager
 from typing import Any, Dict, List
+
+from graphql import MiddlewareManager
 
 from strawberry.types import ExecutionContext
 

@@ -1,9 +1,10 @@
-import pytest
-
 import asyncio
 import typing
-from starlette.testclient import TestClient
 from typing import Optional
+
+import pytest
+
+from starlette.testclient import TestClient
 
 import strawberry
 from strawberry.asgi import GraphQL as BaseGraphQL

@@ -1,6 +1,7 @@
+import asyncio
+
 import pytest
 
-import asyncio
 import starlette
 
 from strawberry.asgi.constants import (

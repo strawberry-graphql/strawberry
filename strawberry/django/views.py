@@ -1,3 +1,7 @@
+import json
+import os
+from typing import Any, Dict, Optional
+
 from django.http import Http404, HttpRequest, HttpResponseNotAllowed, JsonResponse
 from django.http.response import HttpResponseBadRequest
 from django.template import RequestContext, Template
@@ -7,10 +11,6 @@ from django.template.response import TemplateResponse
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
-
-import json
-import os
-from typing import Any, Dict, Optional
 
 import strawberry
 from strawberry.file_uploads.data import replace_placeholders_with_files

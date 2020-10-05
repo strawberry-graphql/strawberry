@@ -1,5 +1,6 @@
 import os
 import sys
+
 from base import (
     CHANGELOG_FILE_NAME,
     PROJECT_TOML_FILE_NAME,

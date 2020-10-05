@@ -1,6 +1,6 @@
-import pytest
-
 from typing import Generic, List, Optional, TypeVar, Union
+
+import pytest
 
 import strawberry
 from strawberry.exceptions import MissingTypesForGenericError

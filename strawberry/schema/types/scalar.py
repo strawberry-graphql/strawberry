@@ -1,5 +1,8 @@
 import datetime
 import decimal
+from typing import Dict, Type, cast
+from uuid import UUID
+
 from graphql import (
     GraphQLBoolean,
     GraphQLFloat,
@@ -8,8 +11,6 @@ from graphql import (
     GraphQLScalarType,
     GraphQLString,
 )
-from typing import Dict, Type, cast
-from uuid import UUID
 
 from strawberry.custom_scalar import SCALAR_REGISTRY, ScalarDefinition
 from strawberry.file_uploads.scalars import Upload

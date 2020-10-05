@@ -64,3 +64,16 @@ strawberry = "strawberry.cli:run"
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
+
+[tool.isort]
+src_paths = ["strawberry", "tests", "scripts"]
+profile = "black"
+indent = 4
+combine_star = true
+combine_as_imports = true
+lines_after_imports = 2
+known_django = ["django"]
+known_graphql = ["graphql"]
+known_pytest = ["pytest"]
+known_first_party = ["strawberry"]
+sections = ["FUTURE", "STDLIB", "PYTEST", "THIRDPARTY", "DJANGO", "GRAPHQL", "FIRSTPARTY", "LOCALFOLDER"]

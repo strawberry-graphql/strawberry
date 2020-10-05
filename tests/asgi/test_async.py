@@ -1,6 +1,7 @@
+import typing
+
 import pytest
 
-import typing
 from starlette.testclient import TestClient
 
 import strawberry
