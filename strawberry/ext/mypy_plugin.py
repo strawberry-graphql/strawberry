@@ -47,10 +47,9 @@ class StrawberryPlugin(Plugin):
     def get_dynamic_class_hook(
         self, fullname: str
     ) -> Optional[Callable[[DynamicClassDefContext], None]]:
-        if "strawberry" in fullname and "union" in fullname:
-            print(fullname)
-
-        if "strawberry.union.union" in fullname:
+        # TODO: investigate why we need this instead of `strawberry.union.union` on CI
+        # we have the same issue in the other hooks
+        if "strawberry.union" in fullname:
             return union_hook
 
         return None
