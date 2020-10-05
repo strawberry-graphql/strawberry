@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.35.4 - 2020-10-05
+-------------------
+
+This releases allows UNSET to be used anywhere and prevents mypy to report an error.
+
 0.35.3 - 2020-10-05
 -------------------
 
