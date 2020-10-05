@@ -61,7 +61,7 @@ def union_hook(ctx: DynamicClassDefContext) -> None:
         )
 
         ctx.api.add_symbol_table_node(
-            ctx.name, SymbolTableNode(GDEF, type_alias, plugin_generated=True)
+            ctx.name, SymbolTableNode(GDEF, type_alias, plugin_generated=False)
         )
 
 
