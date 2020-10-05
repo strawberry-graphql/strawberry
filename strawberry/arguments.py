@@ -67,7 +67,7 @@ class _Unset:
         return False
 
 
-UNSET = _Unset()
+UNSET: Any = _Unset()
 
 
 def is_unset(value: Any) -> bool:
