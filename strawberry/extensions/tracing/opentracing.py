@@ -10,22 +10,12 @@ from opentracing import Scope, Tracer, global_tracer
 from opentracing.ext import tags
 from strawberry.extensions import Extension
 from strawberry.types.execution import ExecutionContext
+from strawberry.utils.info import get_path_from_info
 
 
 DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 
 ArgFilter = Callable[[Dict[str, Any], GraphQLResolveInfo], Dict[str, Any]]
-
-
-def get_path_from_info(info: GraphQLResolveInfo) -> List[str]:
-    path = info.path
-    elements = []
-
-    while path:
-        elements.append(path.key)
-        path = path.prev
-
-    return elements[::-1]
 
 
 def do_trace(info: GraphQLResolveInfo):
