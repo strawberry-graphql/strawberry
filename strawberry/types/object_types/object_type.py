@@ -1,11 +1,12 @@
 import dataclasses
 import typing
-from typing import Dict, Generic, Optional, Protocol, Set, Type, TypeVar
+from typing import Dict, Generic, List, Optional, Protocol, Set, Type, TypeVar
 
 from cached_property import cached_property
 
 from strawberry.exceptions import MissingFieldAnnotationError
-from strawberry.types import StrawberryField, StrawberryObject
+from strawberry.types import StrawberryField, StrawberryInterface, \
+    StrawberryObject
 from strawberry.utils.str_converters import to_camel_case
 
 T = TypeVar("T")
@@ -51,6 +52,16 @@ class StrawberryObjectType(StrawberryObject, Generic[T]):
         fields = inherited_fields | dataclass_fields | strawberry_fields
 
         return fields
+
+    @cached_property
+    def interfaces(self) -> List[StrawberryInterface]:
+        interfaces: List[StrawberryInterface] = []
+        for base in self.wrapped_class.__bases__:
+            if issubclass(base, StrawberryInterface):
+                base = typing.cast(StrawberryInterface, base)
+                interfaces.append(base)
+
+        return interfaces
 
     @property
     def name(self) -> str:

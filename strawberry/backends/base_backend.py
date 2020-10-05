@@ -1,14 +1,14 @@
 from abc import ABC, abstractmethod
-from typing import Optional, Type
+from typing import Optional
 
 from strawberry.types import StrawberryObjectType
 
 
 class StrawberryBackend(ABC):
 
-    def __init__(self, query: Type[StrawberryObjectType],
-                 mutation: Optional[Type[StrawberryObjectType]] = None,
-                 subscription: Optional[Type[StrawberryObjectType]] = None):
+    def __init__(self, query: StrawberryObjectType,
+                 mutation: Optional[StrawberryObjectType] = None,
+                 subscription: Optional[StrawberryObjectType] = None):
         self.query = query
         self.mutation = mutation
         self.subscription = subscription
