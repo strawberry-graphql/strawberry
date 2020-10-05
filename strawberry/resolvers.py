@@ -6,6 +6,11 @@ from .field import FieldDefinition
 from .utils.inspect import get_func_args
 
 
+def is_default_resolver(func: Callable) -> bool:
+    """Check whether the function is a default resolver or a user provided one."""
+    return getattr(func, "_is_default", False)
+
+
 def get_resolver(field: FieldDefinition) -> Callable:
     def _check_permissions(source, info, **kwargs):
         """
@@ -57,5 +62,7 @@ def get_resolver(field: FieldDefinition) -> Callable:
             return result.value
 
         return result
+
+    _resolver._is_default = not field.base_resolver  # type: ignore
 
     return _resolver
