@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.35.5 - 2020-10-05
+-------------------
+
+This release disables tracing for default resolvers and introspection queries
+
 0.35.4 - 2020-10-05
 -------------------
 
