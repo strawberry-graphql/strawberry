@@ -91,7 +91,8 @@ def test_custom_context():
     app.debug = True
 
     app.add_url_rule(
-        "/graphql", view_func=CustomGraphQLView.as_view("graphql_view", schema=schema),
+        "/graphql",
+        view_func=CustomGraphQLView.as_view("graphql_view", schema=schema),
     )
 
     with app.test_client() as client:
@@ -121,7 +122,8 @@ def test_custom_process_result():
     app.debug = True
 
     app.add_url_rule(
-        "/graphql", view_func=CustomGraphQLView.as_view("graphql_view", schema=schema),
+        "/graphql",
+        view_func=CustomGraphQLView.as_view("graphql_view", schema=schema),
     )
 
     with app.test_client() as client:

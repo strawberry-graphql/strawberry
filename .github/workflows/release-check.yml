@@ -14,3 +14,4 @@ jobs:
 
     - name: Release file check
       uses: ./.github/release-check-action
+      if: github.event.pull_request.draft == false

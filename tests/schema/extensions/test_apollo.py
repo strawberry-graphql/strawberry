@@ -1,8 +1,10 @@
 import pytest
 
-import strawberry
 from freezegun import freeze_time
+
 from graphql.utilities import get_introspection_query
+
+import strawberry
 from strawberry.extensions.tracing.apollo import (
     ApolloTracingExtension,
     ApolloTracingExtensionSync,

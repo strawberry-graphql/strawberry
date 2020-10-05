@@ -1,11 +1,13 @@
 import asyncio
 import typing
 
-from graphql import GraphQLError
-from graphql.error import format_error as format_graphql_error
 from starlette.requests import Request
 from starlette.types import Receive, Scope, Send
 from starlette.websockets import WebSocket, WebSocketState
+
+from graphql import GraphQLError
+from graphql.error import format_error as format_graphql_error
+
 from strawberry.http import GraphQLHTTPResponse, process_result
 from strawberry.types import ExecutionResult
 

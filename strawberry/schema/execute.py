@@ -11,6 +11,7 @@ from graphql import (
 )
 from graphql.type import validate_schema
 from graphql.validation import validate
+
 from strawberry.extensions import Extension
 from strawberry.extensions.runner import ExtensionsRunner
 from strawberry.types import ExecutionContext, ExecutionResult

@@ -4,8 +4,9 @@ from typing import Optional
 
 import pytest
 
-import strawberry
 from starlette.testclient import TestClient
+
+import strawberry
 from strawberry.asgi import GraphQL as BaseGraphQL
 from strawberry.permission import BasePermission
 

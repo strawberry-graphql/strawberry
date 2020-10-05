@@ -13,6 +13,7 @@ from graphql.utilities.print_schema import (
     print_schema_definition,
     print_type as original_print_type,
 )
+
 from strawberry.types.types import FieldDefinition, TypeDefinition
 
 from .schema import BaseSchema

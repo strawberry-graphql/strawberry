@@ -3,6 +3,7 @@ import typing
 from itertools import islice
 
 from graphql import GraphQLDirective
+
 from strawberry.arguments import ArgumentDefinition, get_arguments_from_annotations
 
 from .arguments import convert_arguments
