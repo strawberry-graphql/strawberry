@@ -1,0 +1,32 @@
+- case: test_field
+  main: |
+    import strawberry
+
+    @strawberry.type
+    class User:
+        name: str = strawberry.field(description='Example')
+
+    User(name="Patrick")
+    User(n="Patrick")
+  out: |
+    main:8: error: Unexpected keyword argument "n" for "User"
+
+- case: test_private_field
+  main: |
+    import strawberry
+
+    @strawberry.type
+    class User:
+        age: strawberry.Private[int]
+
+        @strawberry.field
+        def age_in_months(self) -> int:
+            return self.age * 12
+
+        @strawberry.field
+        def wrong_type(self) -> int:
+            reveal_type(self.age)
+            return self.age.trim()
+  out: |
+    main:13: note: Revealed type is 'builtins.int'
+    main:14: error: "int" has no attribute "trim"
