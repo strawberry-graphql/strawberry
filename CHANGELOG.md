@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.35.3 - 2020-10-05
+-------------------
+
+This releases adds support for strawberry.union inside mypy.
+
 0.35.2 - 2020-10-04
 -------------------
 
