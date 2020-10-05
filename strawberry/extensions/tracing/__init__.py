@@ -1,2 +1,2 @@
-from .apollo import ApolloTracingExtension  # noqa
-from .opentracing import OpenTracingExtension  # noqa
+from .apollo import ApolloTracingExtension, ApolloTracingExtensionSync  # noqa
+from .opentracing import OpenTracingExtension, OpenTracingExtensionSync  # noqa
