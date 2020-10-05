@@ -1,6 +1,6 @@
-import datetime
-
 import pytest
+
+import datetime
 
 import strawberry
 

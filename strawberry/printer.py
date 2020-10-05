@@ -1,6 +1,3 @@
-from itertools import chain
-from typing import Optional, cast
-
 from graphql.type import is_object_type, is_specified_directive
 from graphql.utilities.print_schema import (
     is_defined_type,
@@ -13,6 +10,9 @@ from graphql.utilities.print_schema import (
     print_schema_definition,
     print_type as original_print_type,
 )
+from itertools import chain
+from typing import Optional, cast
+
 from strawberry.types.types import FieldDefinition, TypeDefinition
 
 from .schema import BaseSchema

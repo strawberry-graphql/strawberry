@@ -1,7 +1,6 @@
 import dataclasses
-from typing import Callable, List, Optional
-
 from graphql import DirectiveLocation
+from typing import Callable, List, Optional
 
 from .utils.str_converters import to_camel_case
 

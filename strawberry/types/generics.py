@@ -26,7 +26,9 @@ def copy_type_with(
         )
 
         return union(
-            name=get_name_from_types(types), types=types, description=base.description,
+            name=get_name_from_types(types),
+            types=types,
+            description=base.description,
         )
 
     if hasattr(base, "_type_definition"):
@@ -83,7 +85,9 @@ def copy_type_with(
             type_definition._type_params = {}
 
             copied_type = builtins.type(
-                name, (), {"_type_definition": type_definition},
+                name,
+                (),
+                {"_type_definition": type_definition},
             )
 
             if not hasattr(base, "_copies"):

@@ -1,6 +1,5 @@
 import os
 import sys
-
 from base import (
     PROJECT_NAME,
     check_exit_code,

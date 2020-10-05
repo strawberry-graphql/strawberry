@@ -1,7 +1,6 @@
 import datetime
 import json
 import typing
-
 from pygments import highlight, lexers
 from pygments.formatters import Terminal256Formatter
 

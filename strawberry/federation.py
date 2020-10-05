@@ -1,5 +1,3 @@
-from typing import Callable, List, Optional, Type, Union, cast
-
 from graphql import (
     GraphQLField,
     GraphQLList,
@@ -10,6 +8,8 @@ from graphql import (
     GraphQLUnionType,
 )
 from graphql.type.definition import GraphQLArgument
+from typing import Callable, List, Optional, Type, Union, cast
+
 from strawberry.custom_scalar import ScalarDefinition
 from strawberry.enum import EnumDefinition
 from strawberry.permission import BasePermission
@@ -138,7 +138,9 @@ class Schema(BaseSchema):
         fields.update(query_type.fields)
 
         self._schema.query_type = GraphQLObjectType(
-            name=query_type.name, description=query_type.description, fields=fields,
+            name=query_type.name,
+            description=query_type.description,
+            fields=fields,
         )
 
         self._schema.type_map["_Service"] = self._service_type

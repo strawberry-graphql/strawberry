@@ -1,8 +1,7 @@
+import httpx
 import json
 import pathlib
 import sys
-
-import httpx
 from config import API_URL, GITHUB_EVENT_PATH, GITHUB_WORKSPACE, RELEASE_FILE_PATH
 from release import InvalidReleaseFileError, get_release_info
 

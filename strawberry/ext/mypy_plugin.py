@@ -1,5 +1,3 @@
-from typing import Callable, Optional
-
 from mypy.nodes import (
     GDEF,
     Expression,
@@ -18,6 +16,7 @@ from mypy.plugin import (
 )
 from mypy.plugins import dataclasses
 from mypy.types import Type, UnionType
+from typing import Callable, Optional
 
 
 def lazy_type_analyze_callback(ctx: AnalyzeTypeContext) -> Type:

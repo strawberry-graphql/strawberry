@@ -1,6 +1,6 @@
+from graphql import GraphQLResolveInfo
 from typing import Callable, List, Union
 
-from graphql import GraphQLResolveInfo
 from strawberry.resolvers import is_default_resolver
 
 

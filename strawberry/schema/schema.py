@@ -1,8 +1,8 @@
-from typing import Any, Dict, List, Optional, Sequence, Type, Union
-
 from graphql import GraphQLSchema, parse
 from graphql.subscription import subscribe
 from graphql.type.directives import specified_directives
+from typing import Any, Dict, List, Optional, Sequence, Type, Union
+
 from strawberry.custom_scalar import ScalarDefinition
 from strawberry.enum import EnumDefinition
 from strawberry.extensions import Extension
@@ -82,7 +82,9 @@ class Schema:
         )
 
         return ExecutionResult(
-            data=result.data, errors=result.errors, extensions=result.extensions,
+            data=result.data,
+            errors=result.errors,
+            extensions=result.extensions,
         )
 
     def execute_sync(
@@ -105,7 +107,9 @@ class Schema:
         )
 
         return ExecutionResult(
-            data=result.data, errors=result.errors, extensions=result.extensions,
+            data=result.data,
+            errors=result.errors,
+            extensions=result.extensions,
         )
 
     async def subscribe(

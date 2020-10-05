@@ -1,6 +1,6 @@
-import typing
-
 import pytest
+
+import typing
 
 import strawberry
 

@@ -1,7 +1,7 @@
 from contextlib import contextmanager
+from graphql import MiddlewareManager
 from typing import Any, Dict, List
 
-from graphql import MiddlewareManager
 from strawberry.types import ExecutionContext
 
 from . import Extension
@@ -11,7 +11,9 @@ class ExtensionsRunner:
     extensions: List[Extension]
 
     def __init__(
-        self, execution_context: ExecutionContext, extensions: List[Extension] = None,
+        self,
+        execution_context: ExecutionContext,
+        extensions: List[Extension] = None,
     ):
         self.execution_context = execution_context
         self.extensions = extensions or []

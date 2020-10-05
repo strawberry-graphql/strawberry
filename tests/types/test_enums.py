@@ -1,6 +1,6 @@
-from enum import Enum
-
 import pytest
+
+from enum import Enum
 
 import strawberry
 from strawberry.exceptions import NotAnEnum

@@ -1,8 +1,8 @@
-import asyncio
-
 import pytest
 
+import asyncio
 import starlette
+
 from strawberry.asgi.constants import (
     GQL_COMPLETE,
     GQL_CONNECTION_ACK,

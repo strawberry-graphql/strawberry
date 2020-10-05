@@ -1,12 +1,12 @@
+import click
+import hupper
 import importlib
 import os
 import sys
-
-import click
-import hupper
 import uvicorn
 from starlette.applications import Starlette
 from starlette.middleware.cors import CORSMiddleware
+
 from strawberry.asgi import GraphQL
 
 

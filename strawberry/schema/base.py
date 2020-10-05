@@ -1,13 +1,13 @@
 import dataclasses
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional, Union
-
 from graphql.error.graphql_error import GraphQLError
+from typing import Any, Dict, List, Optional, Union
+from typing_extensions import Protocol
+
 from strawberry.custom_scalar import ScalarDefinition
 from strawberry.enum import EnumDefinition
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
-from typing_extensions import Protocol
 
 
 @dataclasses.dataclass

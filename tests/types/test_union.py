@@ -1,6 +1,6 @@
-from typing import Generic, List, Optional, TypeVar, Union
-
 import pytest
+
+from typing import Generic, List, Optional, TypeVar, Union
 
 import strawberry
 from strawberry.union import StrawberryUnion

@@ -1,6 +1,6 @@
+from graphql import GraphQLList, GraphQLNonNull, GraphQLType
 from typing import Callable, Optional, Type, Union, cast
 
-from graphql import GraphQLList, GraphQLNonNull, GraphQLType
 from strawberry.field import FieldDefinition
 from strawberry.scalars import is_scalar
 from strawberry.types.types import ArgumentDefinition
@@ -38,7 +38,8 @@ def get_type_for_annotation(annotation: Type, type_map: TypeMap) -> GraphQLType:
 
 
 def get_graphql_type(
-    field: Union[FieldDefinition, ArgumentDefinition], type_map: TypeMap,
+    field: Union[FieldDefinition, ArgumentDefinition],
+    type_map: TypeMap,
 ) -> GraphQLType:
     # by default fields in GraphQL-Core are optional, but for us we only want
     # to mark optional fields when they are inside a Optional type hint

@@ -30,7 +30,9 @@ def _process_enum(cls, name=None, description=None):
     values = [EnumValue(item.name, item.value) for item in cls]  # type: ignore
 
     cls._enum_definition = EnumDefinition(  # type: ignore
-        name=name, values=values, description=description,
+        name=name,
+        values=values,
+        description=description,
     )
 
     return cls

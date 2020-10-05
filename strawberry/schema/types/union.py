@@ -1,6 +1,6 @@
 import typing
-
 from graphql import GraphQLUnionType
+
 from strawberry.exceptions import UnallowedReturnTypeForUnion, WrongReturnTypeForUnion
 from strawberry.type import TypeDefinition
 from strawberry.union import StrawberryUnion

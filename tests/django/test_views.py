@@ -1,10 +1,10 @@
-import json
-from typing import Optional
-
 import pytest
 
 from django.http import Http404
 from django.test.client import RequestFactory
+
+import json
+from typing import Optional
 
 import strawberry
 from strawberry.django.views import GraphQLView as BaseGraphQLView

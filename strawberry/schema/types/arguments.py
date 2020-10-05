@@ -1,7 +1,7 @@
-from typing import Dict, List, cast
-
 from graphql import GraphQLArgument, Undefined
 from graphql.type.definition import GraphQLInputType
+from typing import Dict, List, cast
+
 from strawberry.arguments import ArgumentDefinition, undefined
 
 from .type import get_graphql_type
