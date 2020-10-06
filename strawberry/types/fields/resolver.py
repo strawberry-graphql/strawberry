@@ -39,6 +39,7 @@ class StrawberryResolver(StrawberryType[T]):
 
     @property
     def name(self) -> str:
+        # TODO: What to do if resolver is a lambda?
         return self.wrapped_func.__name__
 
     # TODO: Should return type just be T?

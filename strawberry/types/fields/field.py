@@ -13,7 +13,7 @@ class StrawberryField(StrawberryType[T]):
 
     >>> StrawberryField(
     ...     type_=int,
-    ...     resolver=StrawberryResolver(lambda: 5),
+    ...     resolver=lambda: 5,
     ...     name="cool_field"
     ... )
     """
@@ -31,6 +31,8 @@ class StrawberryField(StrawberryType[T]):
     def __init__(
         self, *,
         type_: Optional[Type[T]] = None,
+        # TODO: Should this _only_ take StrawberryResolver, and decorator would
+        #       handle conversion from Callable to StrawberryResolver?
         resolver: Optional[_RESOLVER_TYPE[T]] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
@@ -70,11 +72,14 @@ class StrawberryField(StrawberryType[T]):
 
     @property
     def name(self) -> str:
+        """The name specified explicitly, or if not set the wrapped resolver's
+        name
+        """
         if self._name is not None:
             return self._name
 
         if self.resolver is not None:
-            return self.resolver.__name__
+            return self.resolver.name
 
         # TODO: Should we raise an exception instead?
         return None
