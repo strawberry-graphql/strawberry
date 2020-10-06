@@ -101,6 +101,14 @@ class Schema:
             context_value=context_value,
             middleware=self.middleware,
             operation_name=operation_name,
+            additional_middlewares=self.middleware,
+            extensions=self.extensions,
+        )
+
+        return ExecutionResult(
+            data=result.data,
+            errors=result.errors,
+            extensions=result.extensions,
         )
 
     def execute_sync(
@@ -119,6 +127,14 @@ class Schema:
             context_value=context_value,
             middleware=self.middleware,
             operation_name=operation_name,
+            additional_middlewares=self.middleware,
+            extensions=self.extensions,
+        )
+
+        return ExecutionResult(
+            data=result.data,
+            errors=result.errors,
+            extensions=result.extensions,
         )
 
     async def subscribe(

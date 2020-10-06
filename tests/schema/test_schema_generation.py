@@ -1,4 +1,3 @@
-import strawberry
 from graphql import (
     GraphQLField,
     GraphQLNonNull,
@@ -7,6 +6,8 @@ from graphql import (
     GraphQLString,
     print_schema as graphql_core_print_schema,
 )
+
+import strawberry
 
 
 def test_generates_schema():

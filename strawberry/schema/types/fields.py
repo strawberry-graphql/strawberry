@@ -1,6 +1,7 @@
 import typing
 
 from graphql import GraphQLField, GraphQLInputField
+
 from strawberry.arguments import UNSET
 from strawberry.field import FieldDefinition
 from strawberry.resolvers import get_resolver
@@ -11,7 +12,11 @@ from .type import get_graphql_type
 from .types import Field, TypeMap
 
 
-def get_field(field: FieldDefinition, is_input: bool, type_map: TypeMap,) -> Field:
+def get_field(
+    field: FieldDefinition,
+    is_input: bool,
+    type_map: TypeMap,
+) -> Field:
     graphql_type = get_graphql_type(field, type_map)
 
     TypeClass: typing.Union[

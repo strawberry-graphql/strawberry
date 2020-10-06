@@ -2,8 +2,9 @@ import typing
 
 import pytest
 
-import strawberry
 from starlette.testclient import TestClient
+
+import strawberry
 from strawberry.asgi import GraphQL
 
 

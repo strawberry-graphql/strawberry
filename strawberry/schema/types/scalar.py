@@ -11,6 +11,7 @@ from graphql import (
     GraphQLScalarType,
     GraphQLString,
 )
+
 from strawberry.custom_scalar import SCALAR_REGISTRY, ScalarDefinition
 from strawberry.file_uploads.scalars import Upload
 from strawberry.scalars import ID

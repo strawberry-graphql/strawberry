@@ -1,8 +1,10 @@
 from typing import Any, Dict, List, Optional
 
-from graphql.error import format_error as format_graphql_error
-from strawberry.types import ExecutionResult
 from typing_extensions import TypedDict
+
+from graphql.error import format_error as format_graphql_error
+
+from strawberry.types import ExecutionResult
 
 
 class GraphQLHTTPResponse(TypedDict, total=False):

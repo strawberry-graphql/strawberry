@@ -1,5 +1,6 @@
-import strawberry
 from starlette.testclient import TestClient
+
+import strawberry
 from strawberry.asgi import GraphQL as BaseGraphQL
 from strawberry.types import ExecutionResult
 

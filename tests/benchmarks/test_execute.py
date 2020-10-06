@@ -5,13 +5,15 @@ from typing import List
 
 import pytest
 
-import strawberry
 from asgiref.sync import async_to_sync
+
+import strawberry
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize(
-    "items", [25, 100, 250],
+    "items",
+    [25, 100, 250],
 )
 def test_execute(benchmark, items):
     birthday = datetime.datetime.now()
@@ -32,7 +34,13 @@ def test_execute(benchmark, items):
 
         @strawberry.field
         def pets(self) -> List[Pet]:
-            return [Pet(id=i, name=random.choice(pets),) for i in range(5)]
+            return [
+                Pet(
+                    id=i,
+                    name=random.choice(pets),
+                )
+                for i in range(5)
+            ]
 
     @strawberry.type
     class Query:

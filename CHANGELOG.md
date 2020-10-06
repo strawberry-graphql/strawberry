@@ -1,6 +1,26 @@
 CHANGELOG
 =========
 
+0.35.5 - 2020-10-05
+-------------------
+
+This release disables tracing for default resolvers and introspection queries
+
+0.35.4 - 2020-10-05
+-------------------
+
+This releases allows UNSET to be used anywhere and prevents mypy to report an error.
+
+0.35.3 - 2020-10-05
+-------------------
+
+This releases adds support for strawberry.union inside mypy.
+
+0.35.2 - 2020-10-04
+-------------------
+
+This release fixes an issue with the extension runner and async resolvers
+
 0.35.1 - 2020-10-02
 -------------------
 

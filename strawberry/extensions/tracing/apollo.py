@@ -4,23 +4,13 @@ import typing
 from datetime import datetime
 from inspect import isawaitable
 
-from graphql import GraphQLResolveInfo
 from strawberry.extensions import Extension
 from strawberry.types.execution import ExecutionContext
 
+from .utils import get_path_from_info, should_skip_tracing
+
 
 DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
-
-
-def get_path_from_info(info: GraphQLResolveInfo) -> typing.List[str]:
-    path = info.path
-    elements = []
-
-    while path:
-        elements.append(path.key)
-        path = path.prev
-
-    return elements[::-1]
 
 
 @dataclasses.dataclass
@@ -130,6 +120,14 @@ class ApolloTracingExtension(Extension):
         return {"tracing": self.stats.to_json()}
 
     async def resolve(self, _next, root, info, *args, **kwargs):
+        if should_skip_tracing(_next, info):
+            result = _next(root, info, *args, **kwargs)
+
+            if isawaitable(result):
+                result = await result  # pragma: no cover
+
+            return result
+
         start_timestamp = self.now()
 
         resolver_stats = ApolloResolverStats(
@@ -155,6 +153,9 @@ class ApolloTracingExtension(Extension):
 
 class ApolloTracingExtensionSync(ApolloTracingExtension):
     def resolve(self, _next, root, info, *args, **kwargs):
+        if should_skip_tracing(_next, info):
+            return _next(root, info, *args, **kwargs)
+
         start_timestamp = self.now()
 
         resolver_stats = ApolloResolverStats(
