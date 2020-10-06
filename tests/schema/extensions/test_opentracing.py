@@ -1,7 +1,5 @@
 import pytest
 
-from opentracing.ext import tags
-
 import strawberry
 from strawberry.extensions.tracing.opentracing import (
     OpenTracingExtension,
@@ -139,63 +137,7 @@ async def test_opentracing_Sync_uses_global_tracer(global_tracer_mock):
 
 
 @pytest.mark.asyncio
-async def test_opentracing_creates_span_for_query_root(global_tracer_mock):
-    @strawberry.type
-    class Person:
-        name: str = "Jess"
-
-    @strawberry.type
-    class Query:
-        @strawberry.field
-        async def person(self, info) -> Person:
-            return Person()
-
-    schema = strawberry.Schema(query=Query, extensions=[OpenTracingExtension])
-
-    query = """
-        query {
-            person {
-                name
-            }
-        }
-    """
-
-    await schema.execute(query)
-    global_tracer_mock.return_value.start_active_span.assert_any_call("GraphQL Query")
-
-
-@pytest.mark.asyncio
-async def test_opentracing_sync_creates_span_for_query_root(global_tracer_mock):
-    schema = strawberry.Schema(query=Query, extensions=[OpenTracingExtensionSync])
-    query = """
-        query {
-            person {
-                name
-            }
-        }
-    """
-
-    await schema.execute(query)
-    global_tracer_mock.return_value.start_active_span.assert_any_call("GraphQL Query")
-
-
-@pytest.mark.asyncio
-async def test_opentracing_creates_span_for_field(global_tracer_mock):
-    schema = strawberry.Schema(query=Query, extensions=[OpenTracingExtension])
-    query = """
-        query {
-            person {
-                name
-            }
-        }
-    """
-
-    await schema.execute(query)
-    global_tracer_mock.return_value.start_active_span.assert_any_call("person")
-
-
-@pytest.mark.asyncio
-async def test_opentracing_sets_graphql_component_tag_on_root_span(active_span_mock):
+async def test_open_tracing(global_tracer_mock, mocker):
     schema = strawberry.Schema(query=Query, extensions=[OpenTracingExtension])
     query = """
         query {
@@ -207,7 +149,49 @@ async def test_opentracing_sets_graphql_component_tag_on_root_span(active_span_m
 
     await schema.execute(query)
 
-    active_span_mock.span.set_tag.assert_called_once_with(tags.COMPONENT, "graphql")
+    global_tracer_mock.return_value.start_active_span.assert_has_calls(
+        [
+            mocker.call("GraphQL Query"),
+            mocker.call().span.set_tag("component", "graphql"),
+            mocker.call().span.set_tag("query", query),
+            mocker.call("person"),
+            mocker.call().__enter__(),
+            mocker.call().__enter__().span.set_tag("component", "graphql"),
+            mocker.call().__enter__().span.set_tag("graphql.parentType", "Query"),
+            mocker.call().__enter__().span.set_tag("graphql.path", "person"),
+            mocker.call().__exit__(None, None, None),
+            mocker.call().close(),
+        ]
+    )
+
+
+@pytest.mark.asyncio
+async def test_open_tracing_uses_operation_name(global_tracer_mock, mocker):
+    schema = strawberry.Schema(query=Query, extensions=[OpenTracingExtension])
+    query = """
+        query Example {
+            person {
+                name
+            }
+        }
+    """
+
+    await schema.execute(query, operation_name="Example")
+
+    global_tracer_mock.return_value.start_active_span.assert_has_calls(
+        [
+            mocker.call("GraphQL Query: Example"),
+            mocker.call().span.set_tag("component", "graphql"),
+            mocker.call().span.set_tag("query", query),
+            mocker.call("person"),
+            mocker.call().__enter__(),
+            mocker.call().__enter__().span.set_tag("component", "graphql"),
+            mocker.call().__enter__().span.set_tag("graphql.parentType", "Query"),
+            mocker.call().__enter__().span.set_tag("graphql.path", "person"),
+            mocker.call().__exit__(None, None, None),
+            mocker.call().close(),
+        ]
+    )
 
 
 @pytest.mark.asyncio

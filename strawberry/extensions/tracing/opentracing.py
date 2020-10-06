@@ -29,8 +29,15 @@ class OpenTracingExtension(Extension):
         self._root_scope = None
 
     def on_request_start(self, *, execution_context: ExecutionContext):
-        self._root_scope = self._tracer.start_active_span("GraphQL Query")
+        span_name = (
+            f"GraphQL Query: {execution_context.operation_name}"
+            if execution_context.operation_name
+            else "GraphQL Query"
+        )
+
+        self._root_scope = self._tracer.start_active_span(span_name)
         self._root_scope.span.set_tag(tags.COMPONENT, "graphql")
+        self._root_scope.span.set_tag("query", execution_context.query)
 
     def on_request_end(self, *, execution_context: ExecutionContext):
         self._root_scope.close()
