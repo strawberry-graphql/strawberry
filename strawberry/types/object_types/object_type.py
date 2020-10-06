@@ -1,6 +1,7 @@
 import dataclasses
 import typing
-from typing import Dict, Generic, List, Optional, Protocol, Set, Type, TypeVar
+from typing import Dict, Generic, List, Optional, Protocol, Set, Tuple, Type, \
+    TypeVar
 
 from cached_property import cached_property
 
@@ -44,6 +45,7 @@ class StrawberryObjectType(StrawberryObject, Generic[T]):
 
         # TODO: Filter and remove/shadow duplicates that are in both sub and
         #       base
+        # TODO: Don't cache somehow if wrapped_class is not set? Throw exc?
 
         inherited_fields = self._fields_base
         dataclass_fields = self._fields_dataclass
@@ -172,5 +174,7 @@ def type(
     )
 
 
+# TODO: Move to another file? Not 100% related to StrawberryObjectType
 class _DataclassType(Protocol[T]):
     __dataclass_fields__: Dict
+    __bases__: Tuple[Type]
