@@ -1,19 +1,35 @@
 import pytest
 
 import strawberry
-from freezegun import freeze_time
 from strawberry.extensions.tracing.opentracing import (
     OpenTracingExtension,
     OpenTracingExtensionSync,
 )
 
 
-@freeze_time("20120114 12:00:01")
-def test_tracing_sync(mocker):
-    mocker.patch(
-        "strawberry.extensions.tracing.opentracing.time.perf_counter_ns", return_value=0
-    )
+@pytest.fixture
+def global_tracer_mock(mocker):
+    return mocker.patch("strawberry.extensions.tracing.opentracing.global_tracer")
 
+
+@pytest.fixture
+def active_span_mock(global_tracer_mock):
+    return global_tracer_mock.return_value.start_active_span.return_value
+
+
+@strawberry.type
+class Person:
+    name: str = "Jess"
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    async def person(self, info) -> Person:
+        return Person()
+
+
+def test_tracing_sync(global_tracer_mock):
     @strawberry.type
     class Person:
         name: str = "Jess"
@@ -38,45 +54,9 @@ def test_tracing_sync(mocker):
 
     assert not result.errors
 
-    assert result.extensions == {
-        "tracing": {
-            "version": 1,
-            "startTime": "2012-01-14T12:00:01.000000Z",
-            "endTime": "2012-01-14T12:00:01.000000Z",
-            "duration": 0,
-            "execution": {
-                "resolvers": [
-                    {
-                        "path": ["person"],
-                        "field_name": "person",
-                        "parentType": "Query",
-                        "returnType": "Person!",
-                        "startOffset": 0,
-                        "duration": 0,
-                    },
-                    {
-                        "path": ["person", "name"],
-                        "field_name": "name",
-                        "parentType": "Person",
-                        "returnType": "String!",
-                        "startOffset": 0,
-                        "duration": 0,
-                    },
-                ]
-            },
-            "validation": {"startOffset": 0, "duration": 0},
-            "parsing": {"startOffset": 0, "duration": 0},
-        }
-    }
-
 
 @pytest.mark.asyncio
-@freeze_time("20120114 12:00:01")
-async def test_tracing_async(mocker):
-    mocker.patch(
-        "strawberry.extensions.tracing.opentracing.time.perf_counter_ns", return_value=0
-    )
-
+async def test_tracing_async(global_tracer_mock):
     @strawberry.type
     class Person:
         name: str = "Jess"
@@ -101,33 +81,112 @@ async def test_tracing_async(mocker):
 
     assert not result.errors
 
-    assert result.extensions == {
-        "tracing": {
-            "version": 1,
-            "startTime": "2012-01-14T12:00:01.000000Z",
-            "endTime": "2012-01-14T12:00:01.000000Z",
-            "duration": 0,
-            "execution": {
-                "resolvers": [
-                    {
-                        "path": ["person"],
-                        "field_name": "person",
-                        "parentType": "Query",
-                        "returnType": "Person!",
-                        "startOffset": 0,
-                        "duration": 0,
-                    },
-                    {
-                        "path": ["person", "name"],
-                        "field_name": "name",
-                        "parentType": "Person",
-                        "returnType": "String!",
-                        "startOffset": 0,
-                        "duration": 0,
-                    },
-                ]
-            },
-            "validation": {"startOffset": 0, "duration": 0},
-            "parsing": {"startOffset": 0, "duration": 0},
+
+@pytest.mark.asyncio
+async def test_opentracing_uses_global_tracer(global_tracer_mock):
+    @strawberry.type
+    class Person:
+        name: str = "Jess"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        async def person(self, info) -> Person:
+            return Person()
+
+    schema = strawberry.Schema(query=Query, extensions=[OpenTracingExtension])
+
+    query = """
+        query {
+            person {
+                name
+            }
         }
-    }
+    """
+
+    await schema.execute(query)
+
+    global_tracer_mock.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_opentracing_Sync_uses_global_tracer(global_tracer_mock):
+    @strawberry.type
+    class Person:
+        name: str = "Jess"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        async def person(self, info) -> Person:
+            return Person()
+
+    schema = strawberry.Schema(query=Query, extensions=[OpenTracingExtensionSync])
+
+    query = """
+        query {
+            person {
+                name
+            }
+        }
+    """
+
+    await schema.execute(query)
+
+    global_tracer_mock.assert_called_once()
+
+
+@pytest.mark.asyncio
+async def test_opentracing_creates_span_for_query_root(global_tracer_mock):
+    @strawberry.type
+    class Person:
+        name: str = "Jess"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        async def person(self, info) -> Person:
+            return Person()
+
+    schema = strawberry.Schema(query=Query, extensions=[OpenTracingExtension])
+
+    query = """
+        query {
+            person {
+                name
+            }
+        }
+    """
+
+    await schema.execute(query)
+    global_tracer_mock.return_value.start_active_span.assert_any_call("GraphQL Query")
+
+
+@pytest.mark.asyncio
+async def test_opentracing_sync_creates_span_for_query_root(global_tracer_mock):
+    schema = strawberry.Schema(query=Query, extensions=[OpenTracingExtensionSync])
+    query = """
+        query {
+            person {
+                name
+            }
+        }
+    """
+
+    await schema.execute(query)
+    global_tracer_mock.return_value.start_active_span.assert_any_call("GraphQL Query")
+
+
+@pytest.mark.asyncio
+async def test_opentracing_creates_span_for_field(global_tracer_mock):
+    schema = strawberry.Schema(query=Query, extensions=[OpenTracingExtension])
+    query = """
+        query {
+            person {
+                name
+            }
+        }
+    """
+
+    await schema.execute(query)
+    global_tracer_mock.return_value.start_active_span.assert_any_call("name")
