@@ -6,9 +6,9 @@ from inspect import isawaitable
 
 from strawberry.extensions import Extension
 from strawberry.types.execution import ExecutionContext
-from strawberry.utils.info import get_path_from_info
 
 from .utils import get_path_from_info, should_skip_tracing
+
 
 DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 

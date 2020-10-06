@@ -2,14 +2,15 @@ from copy import deepcopy
 from inspect import isawaitable
 from typing import Any, Callable, Dict, Optional
 
-from graphql import GraphQLResolveInfo
 from opentracing import Scope, Tracer, global_tracer
 from opentracing.ext import tags
+
+from graphql import GraphQLResolveInfo
+
 from strawberry.extensions import Extension
 from strawberry.types.execution import ExecutionContext
-from strawberry.utils.info import get_path_from_info
 
-from .utils import should_trace
+from .utils import get_path_from_info, should_skip_tracing
 
 
 DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
@@ -55,7 +56,7 @@ class OpenTracingExtension(Extension):
     async def resolve(self, _next, root, info, *args, **kwargs):
 
         try:
-            if not should_trace(info):
+            if should_skip_tracing(_next, info):
                 result = _next(root, info, *args, **kwargs)
                 if isawaitable(result):
                     result = await result
@@ -75,7 +76,7 @@ class OpenTracingExtensionSync(OpenTracingExtension):
     def resolve(self, _next, root, info, *args, **kwargs):
 
         try:
-            if not should_trace(info):
+            if should_skip_tracing(_next, info):
                 result = _next(root, info, *args, **kwargs)
                 return result
             with self._tracer.start_active_span(info.field_name) as scope:

@@ -1,5 +1,7 @@
 import pytest
 
+from opentracing.ext import tags
+
 import strawberry
 from strawberry.extensions.tracing.opentracing import (
     OpenTracingExtension,
@@ -189,4 +191,18 @@ async def test_opentracing_creates_span_for_field(global_tracer_mock):
     """
 
     await schema.execute(query)
-    global_tracer_mock.return_value.start_active_span.assert_any_call("name")
+    global_tracer_mock.return_value.start_active_span.assert_any_call("person")
+
+
+@pytest.mark.asyncio
+async def test_opentracing_sets_graphql_component_tag_on_root_span(active_span_mock):
+    schema = strawberry.Schema(query=Query, extensions=[OpenTracingExtension])
+    query = """
+        query {
+            person {
+                name
+            }
+        }
+    """
+    await schema.execute(query)
+    active_span_mock.span.set_tag.assert_called_once_with(tags.COMPONENT, "graphql")
