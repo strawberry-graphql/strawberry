@@ -59,7 +59,7 @@ class OpenTracingExtension(Extension):
         if should_skip_tracing(_next, info):
             result = _next(root, info, *args, **kwargs)
 
-            if isawaitable(result):
+            if isawaitable(result):  # pragma: no cover
                 result = await result
 
             return result
