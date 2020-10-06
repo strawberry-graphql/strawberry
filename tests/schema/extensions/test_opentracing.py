@@ -204,5 +204,71 @@ async def test_opentracing_sets_graphql_component_tag_on_root_span(active_span_m
             }
         }
     """
+
     await schema.execute(query)
+
     active_span_mock.span.set_tag.assert_called_once_with(tags.COMPONENT, "graphql")
+
+
+@pytest.mark.asyncio
+async def test_tracing_add_kwargs(active_span_mock, mocker):
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hi(self, name: str) -> str:
+            return f"Hi {name}"
+
+    schema = strawberry.Schema(query=Query, extensions=[OpenTracingExtension])
+
+    query = """
+        query {
+            hi(name: "Patrick")
+        }
+    """
+
+    await schema.execute(query)
+
+    span_mock = active_span_mock.__enter__.return_value.span
+    span_mock.set_tag.assert_has_calls(
+        [
+            mocker.call("component", "graphql"),
+            mocker.call("graphql.parentType", "Query"),
+            mocker.call("graphql.path", "hi"),
+            mocker.call("graphql.param.name", "Patrick"),
+        ]
+    )
+
+
+@pytest.mark.asyncio
+async def test_tracing_filter_kwargs(active_span_mock, mocker):
+    def arg_filter(kwargs, info):
+        return {"name": "[...]"}
+
+    def extension():
+        return OpenTracingExtension(arg_filter=arg_filter)
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hi(self, name: str) -> str:
+            return f"Hi {name}"
+
+    schema = strawberry.Schema(query=Query, extensions=[extension])
+
+    query = """
+        query {
+            hi(name: "Patrick")
+        }
+    """
+
+    await schema.execute(query)
+
+    span_mock = active_span_mock.__enter__.return_value.span
+    span_mock.set_tag.assert_has_calls(
+        [
+            mocker.call("component", "graphql"),
+            mocker.call("graphql.parentType", "Query"),
+            mocker.call("graphql.path", "hi"),
+            mocker.call("graphql.param.name", "[...]"),
+        ]
+    )

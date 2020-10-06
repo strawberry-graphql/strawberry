@@ -42,47 +42,47 @@ class OpenTracingExtension(Extension):
             return args
         return self._arg_filter(deepcopy(args), info)
 
-    def get_span(self, scope, info, kwargs):
-        span = scope.span
+    def add_tags(self, span, info: GraphQLResolveInfo, kwargs: Dict[str, Any]):
+        graphql_path = ".".join(map(str, get_path_from_info(info)))
+
         span.set_tag(tags.COMPONENT, "graphql")
         span.set_tag("graphql.parentType", info.parent_type.name)
-        graphql_path = ".".join(map(str, get_path_from_info(info)))
         span.set_tag("graphql.path", graphql_path)
+
         if kwargs:
             filtered_kwargs = self.filter_resolver_args(kwargs, info)
+
             for kwarg, value in filtered_kwargs.items():
                 span.set_tag(f"graphql.param.{kwarg}", value)
 
     async def resolve(self, _next, root, info, *args, **kwargs):
+        if should_skip_tracing(_next, info):
+            result = _next(root, info, *args, **kwargs)
 
-        try:
-            if should_skip_tracing(_next, info):
-                result = _next(root, info, *args, **kwargs)
-                if isawaitable(result):
-                    result = await result
-                return result
+            if isawaitable(result):
+                result = await result
 
-            with self._tracer.start_active_span(info.field_name) as scope:
-                self.get_span(scope, info, kwargs)
-                result = _next(root, info, *args, **kwargs)
-                if isawaitable(result):
-                    result = await result
-                return result
-        finally:
-            pass
+            return result
+
+        with self._tracer.start_active_span(info.field_name) as scope:
+            self.add_tags(scope.span, info, kwargs)
+            result = _next(root, info, *args, **kwargs)
+
+            if isawaitable(result):
+                result = await result
+
+            return result
 
 
 class OpenTracingExtensionSync(OpenTracingExtension):
     def resolve(self, _next, root, info, *args, **kwargs):
+        if should_skip_tracing(_next, info):
+            result = _next(root, info, *args, **kwargs)
 
-        try:
-            if should_skip_tracing(_next, info):
-                result = _next(root, info, *args, **kwargs)
-                return result
-            with self._tracer.start_active_span(info.field_name) as scope:
-                self.get_span(scope, info, kwargs)
-                result = _next(root, info, *args, **kwargs)
-                return result
+            return result
 
-        finally:
-            pass
+        with self._tracer.start_active_span(info.field_name) as scope:
+            self.add_tags(scope.span, info, kwargs)
+            result = _next(root, info, *args, **kwargs)
+
+            return result
