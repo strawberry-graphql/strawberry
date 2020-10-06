@@ -404,6 +404,17 @@ optional = true
 python-versions = ">=3.5"
 
 [[package]]
+name = "opentelemetry-sdk"
+version = "0.13b0"
+description = "OpenTelemetry Python SDK"
+category = "main"
+optional = true
+python-versions = ">=3.5"
+
+[package.dependencies]
+opentelemetry-api = "0.13b0"
+
+[[package]]
 name = "packaging"
 version = "20.4"
 description = "Core utilities for Python packages"
@@ -870,12 +881,12 @@ testing = ["pytest (>=3.5,<3.7.3 || >3.7.3)", "pytest-checkdocs (>=1.2.3)", "pyt
 [extras]
 django = ["django"]
 flask = ["flask"]
-opentelemetry = ["opentelemetry-api"]
+opentelemetry = ["opentelemetry-api", "opentelemetry-sdk"]
 
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "6219f9bb36489dca492bba6b3a923931633aa00824b1d49d5d46850bd04f7191"
+content-hash = "0682aea7831ed96e5211ec12f52139b56e80eb0e37961e27c506e7b414581f36"
 
 [metadata.files]
 appdirs = [
@@ -1103,6 +1114,10 @@ nodeenv = [
 opentelemetry-api = [
     {file = "opentelemetry-api-0.13b0.tar.gz", hash = "sha256:ee78db4aa65830ebd9a7a966f9fd342e0898dd7fed087c940f37136093b662b0"},
     {file = "opentelemetry_api-0.13b0-py3-none-any.whl", hash = "sha256:341c759e3e633a800581d47c3c54977f3f122add1760ad4464c8bf04a5462379"},
+]
+opentelemetry-sdk = [
+    {file = "opentelemetry-sdk-0.13b0.tar.gz", hash = "sha256:15f87b7e42551ccef3a3534ddf376fc323d0306d1233b9199eb4e9fe13d04c85"},
+    {file = "opentelemetry_sdk-0.13b0-py3-none-any.whl", hash = "sha256:c6843290980e1023c3e05d387725b7d5fee3f2461d61ede0578b9b2e69519002"},
 ]
 packaging = [
     {file = "packaging-20.4-py2.py3-none-any.whl", hash = "sha256:998416ba6962ae7fbd6596850b80e17859a5753ba17c32284f67bfff33784181"},
