@@ -2,8 +2,8 @@ from copy import deepcopy
 from inspect import isawaitable
 from typing import Any, Callable, Dict, Optional
 
-from opentracing import Scope, Tracer, global_tracer
-from opentracing.ext import tags
+from opentelemetry import trace
+from opentelemetry.trace import Span, SpanKind, Tracer
 
 from graphql import GraphQLResolveInfo
 
@@ -18,15 +18,14 @@ DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 ArgFilter = Callable[[Dict[str, Any], GraphQLResolveInfo], Dict[str, Any]]
 
 
-class OpenTracingExtension(Extension):
+class OpenTelemetryExtension(Extension):
     _arg_filter: Optional[ArgFilter]
-    _root_scope: Scope
+    _root_span: Span
     _tracer: Tracer
 
     def __init__(self, *, arg_filter: Optional[ArgFilter] = None):
         self._arg_filter = arg_filter
-        self._tracer = global_tracer()
-        self._root_scope = None
+        self._tracer = trace.get_tracer("strawberry")
 
     def on_request_start(self, *, execution_context: ExecutionContext):
         span_name = (
@@ -35,12 +34,12 @@ class OpenTracingExtension(Extension):
             else "GraphQL Query"
         )
 
-        self._root_scope = self._tracer.start_active_span(span_name)
-        self._root_scope.span.set_tag(tags.COMPONENT, "graphql")
-        self._root_scope.span.set_tag("query", execution_context.query)
+        self._root_span = self._tracer.start_span(span_name, kind=SpanKind.SERVER)
+        self._root_span.set_attribute("component", "graphql")
+        self._root_span.set_attribute("query", execution_context.query)
 
     def on_request_end(self, *, execution_context: ExecutionContext):
-        self._root_scope.close()
+        self._root_span.end()
 
     def filter_resolver_args(
         self, args: Dict[str, Any], info: GraphQLResolveInfo
@@ -49,18 +48,18 @@ class OpenTracingExtension(Extension):
             return args
         return self._arg_filter(deepcopy(args), info)
 
-    def add_tags(self, span, info: GraphQLResolveInfo, kwargs: Dict[str, Any]):
+    def add_tags(self, span: Span, info: GraphQLResolveInfo, kwargs: Dict[str, Any]):
         graphql_path = ".".join(map(str, get_path_from_info(info)))
 
-        span.set_tag(tags.COMPONENT, "graphql")
-        span.set_tag("graphql.parentType", info.parent_type.name)
-        span.set_tag("graphql.path", graphql_path)
+        span.set_attribute("component", "graphql")
+        span.set_attribute("graphql.parentType", info.parent_type.name)
+        span.set_attribute("graphql.path", graphql_path)
 
         if kwargs:
             filtered_kwargs = self.filter_resolver_args(kwargs, info)
 
             for kwarg, value in filtered_kwargs.items():
-                span.set_tag(f"graphql.param.{kwarg}", value)
+                span.set_attribute(f"graphql.param.{kwarg}", value)
 
     async def resolve(self, _next, root, info, *args, **kwargs):
         if should_skip_tracing(_next, info):
@@ -71,25 +70,27 @@ class OpenTracingExtension(Extension):
 
             return result
 
-        with self._tracer.start_active_span(info.field_name) as scope:
-            self.add_tags(scope.span, info, kwargs)
-            result = _next(root, info, *args, **kwargs)
+        with self._tracer.use_span(self._root_span):
+            with self._tracer.start_span(info.field_name, kind=SpanKind.SERVER) as span:
+                self.add_tags(span, info, kwargs)
+                result = _next(root, info, *args, **kwargs)
 
-            if isawaitable(result):
-                result = await result
+                if isawaitable(result):
+                    result = await result
 
-            return result
+                return result
 
 
-class OpenTracingExtensionSync(OpenTracingExtension):
+class OpenTelemetryExtensionSync(OpenTelemetryExtension):
     def resolve(self, _next, root, info, *args, **kwargs):
         if should_skip_tracing(_next, info):
             result = _next(root, info, *args, **kwargs)
 
             return result
 
-        with self._tracer.start_active_span(info.field_name) as scope:
-            self.add_tags(scope.span, info, kwargs)
-            result = _next(root, info, *args, **kwargs)
+        with self._tracer.use_span(self._root_span):
+            with self._tracer.start_span(info.field_name, kind=SpanKind.SERVER) as span:
+                self.add_tags(span, info, kwargs)
+                result = _next(root, info, *args, **kwargs)
 
-            return result
+                return result
