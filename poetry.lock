@@ -175,11 +175,11 @@ python-versions = "*"
 
 [[package]]
 name = "flake8"
+version = "3.8.4"
 description = "the modular source code checker: pep8 pyflakes and co"
 category = "dev"
 optional = false
 python-versions = "!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*,>=2.7"
-version = "3.8.4"
 
 [package.dependencies]
 importlib-metadata = {version = "*", markers = "python_version < \"3.8\""}
@@ -259,8 +259,6 @@ optional = false
 python-versions = "*"
 
 [[package]]
-category = "main"
-description = "Integrated process monitor for developing and reloading daemons."
 name = "hupper"
 version = "1.10.2"
 description = "Integrated process monitor for developing and reloading daemons."
@@ -271,18 +269,6 @@ python-versions = ">=2.7,!=3.0.*,!=3.1.*,!=3.2.*,!=3.3.*"
 [package.extras]
 docs = ["watchdog", "sphinx", "pylons-sphinx-themes"]
 testing = ["watchdog", "pytest", "pytest-cov", "mock"]
-
-[[package]]
-name = "httptools"
-version = "0.1.1"
-description = "A collection of framework independent HTTP protocol utils."
-category = "main"
-optional = false
-python-versions = "*"
-
-[package.extras]
-test = ["Cython (0.29.14)"]
-
 
 [[package]]
 name = "identify"
@@ -693,7 +679,6 @@ category = "dev"
 optional = false
 python-versions = ">=3.6"
 
-
 [package.dependencies]
 decorator = "*"
 mypy = ">=0.730"
@@ -820,34 +805,19 @@ socks = ["PySocks (>=1.5.6,<1.5.7 || >1.5.7,<2.0)"]
 
 [[package]]
 name = "uvicorn"
-version = "0.11.8"
+version = "0.12.1"
 description = "The lightning-fast ASGI server."
 category = "main"
 optional = false
 python-versions = "*"
-version = "0.12.1"
 
 [package.dependencies]
 click = ">=7.0.0,<8.0.0"
-h11 = ">=0.8,<0.10"
-httptools = {version = ">=0.1.0,<0.2.0", markers = "sys_platform != \"win32\" and sys_platform != \"cygwin\" and platform_python_implementation != \"PyPy\""}
-uvloop = {version = ">=0.14.0", markers = "sys_platform != \"win32\" and sys_platform != \"cygwin\" and platform_python_implementation != \"PyPy\""}
-websockets = ">=8.0.0,<9.0.0"
-
-[package.dependencies.typing-extensions]
-python = "<3.8"
-version = "*"
+h11 = ">=0.8"
+typing-extensions = {version = "*", markers = "python_version < \"3.8\""}
 
 [package.extras]
 standard = ["websockets (>=8.0.0,<9.0.0)", "watchgod (>=0.6,<0.7)", "python-dotenv (>=0.13)", "PyYAML (>=5.1)", "httptools (>=0.1.0,<0.2.0)", "uvloop (>=0.14.0)", "colorama (>=0.4)"]
-
-[[package]]
-name = "uvloop"
-version = "0.14.0"
-description = "Fast implementation of asyncio event loop on top of libuv"
-category = "main"
-optional = false
-python-versions = "*"
 
 [[package]]
 name = "virtualenv"
@@ -867,14 +837,6 @@ six = ">=1.9.0,<2"
 [package.extras]
 docs = ["proselint (>=0.10.2)", "sphinx (>=3)", "sphinx-argparse (>=0.2.5)", "sphinx-rtd-theme (>=0.4.3)", "towncrier (>=19.9.0rc1)"]
 testing = ["coverage (>=5)", "coverage-enable-subprocess (>=1)", "flaky (>=3)", "pytest (>=4)", "pytest-env (>=0.6.2)", "pytest-freezegun (>=0.4.1)", "pytest-mock (>=2)", "pytest-randomly (>=1)", "pytest-timeout (>=1)", "pytest-xdist (>=1.31.0)", "packaging (>=20.0)", "xonsh (>=0.9.16)"]
-
-[[package]]
-name = "websockets"
-version = "8.1"
-description = "An implementation of the WebSocket Protocol (RFC 6455 & 7692)"
-category = "main"
-optional = false
-python-versions = ">=3.6.1"
 
 [[package]]
 name = "werkzeug"
@@ -915,7 +877,7 @@ flask = ["flask"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "49473bfefcb2e001056f3e5025e65e5cec21786d98a03c0a2eef9607058baaee"
+content-hash = "033014a70b647bb1c63e0f8e07f2320f4f5f5809b1df722c5d997b573cc0f37e"
 
 [metadata.files]
 appdirs = [
