@@ -400,7 +400,7 @@ name = "opentelemetry-api"
 version = "0.13b0"
 description = "OpenTelemetry Python API"
 category = "main"
-optional = false
+optional = true
 python-versions = ">=3.5"
 
 [[package]]
@@ -870,11 +870,12 @@ testing = ["pytest (>=3.5,<3.7.3 || >3.7.3)", "pytest-checkdocs (>=1.2.3)", "pyt
 [extras]
 django = ["django"]
 flask = ["flask"]
+opentelemetry = ["opentelemetry-api"]
 
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "572e5e72a311bffe9052022bab42ea4645f86c188424247db12f582af72d5846"
+content-hash = "6219f9bb36489dca492bba6b3a923931633aa00824b1d49d5d46850bd04f7191"
 
 [metadata.files]
 appdirs = [
