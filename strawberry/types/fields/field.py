@@ -1,10 +1,14 @@
-from typing import Callable, List, Optional, Type
+from typing import Callable, Optional, Set, Type, TypeVar, Union
 
 from strawberry.types import StrawberryArgument, StrawberryObject, \
     StrawberryResolver, StrawberryType
 
+T = TypeVar("T")
+S = TypeVar("S")
+_RESOLVER_TYPE = Union[StrawberryResolver[S], Callable[..., S]]
 
-class StrawberryField(StrawberryType):
+
+class StrawberryField(StrawberryType[T]):
     """Strawberry field
 
     >>> StrawberryField(
@@ -26,34 +30,39 @@ class StrawberryField(StrawberryType):
 
     def __init__(
         self, *,
-        type_: Optional[Type[StrawberryObject]] = None,
-        resolver: Optional[StrawberryResolver] = None,
+        type_: Optional[Type[T]] = None,
+        resolver: Optional[_RESOLVER_TYPE[T]] = None,
         name: Optional[str] = None,
         description: Optional[str] = None,
         permission_classes: Optional[object] = None,
     ):
+
+        # TODO: Move this check to someplace better
         if (type_ and resolver) and (type_ != resolver.type):
             # TODO: Raise Strawberry exception
             ...
 
+        self.resolver = self._convert_resolver(resolver) if resolver else None
+
         self._type = type_
-        self.resolver = resolver
         self._name = name
         self._description = description
         # TODO: Deal with permissions
         self.permission_classes = permission_classes
+        # TODO: Default value. Maybe just use a lambda that returns static value
+        #       as resolver instead
         self.default_value: StrawberryObject = self._NO_DEFAULT_VALUE
 
-    def __call__(self, resolver: Callable):
-        self.resolver = resolver
+    def __call__(self, resolver: _RESOLVER_TYPE[T]) -> None:
+        self.resolver = self._convert_resolver(resolver)
 
     @property
-    def arguments(self) -> List[StrawberryArgument]:
-        if self.resolver is not None:
+    def arguments(self) -> Set[StrawberryArgument]:
+        if self.resolver:
             return self.resolver.arguments
 
         # TODO: Should we raise an exception instead?
-        return None
+        return set()
 
     @property
     def description(self) -> Optional[str]:
@@ -74,7 +83,7 @@ class StrawberryField(StrawberryType):
     def name(self, name: str):
         self._name = name
 
-    # TODO: Implement
+    # TODO: Implement. What is it?
     @property
     def origin(self):
         ...
@@ -91,9 +100,17 @@ class StrawberryField(StrawberryType):
         # TODO: Should we raise an exception instead?
         return None
 
+    @staticmethod
+    def _convert_resolver(resolver: _RESOLVER_TYPE[T]) -> StrawberryResolver[T]:
+        if isinstance(resolver, StrawberryResolver):
+            return resolver
+        else:
+            # TODO: Description?
+            return StrawberryResolver(resolver, description=...)
+
 
 def field(
-    resolver: Optional[Callable] = None,
+    resolver: Optional[_RESOLVER_TYPE[T]] = None,
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
