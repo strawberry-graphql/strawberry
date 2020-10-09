@@ -21,11 +21,11 @@ class GraphQLCoreBackend(StrawberryBackend):
         self.schema = converter.to_schema(query, mutation, subscription)
 
     # TODO: Other parameters
-    def execute(self, query: str) -> ...:
+    def execute_sync(self, query: str) -> ...:
         return execute_sync(self.schema, query)
 
     # TODO: Other parameters
-    async def execute_async(self, query: str) -> ...:
+    async def execute(self, query: str) -> ...:
         return await execute(self.schema, query)
 
     # TODO: Other parameters

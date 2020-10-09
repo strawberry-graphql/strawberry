@@ -95,7 +95,6 @@ class StrawberryField(StrawberryType[T]):
 
     @property
     def type(self) -> StrawberryObject:
-        # TODO: This can't be set anywhere
         if self._type is not None:
             return self._type
 

@@ -15,19 +15,16 @@ class StrawberryBackend(ABC):
 
     # TODO: Other parameters
     @abstractmethod
-    def execute(self, query: str) -> ...:
+    async def execute(self, query: str) -> ...:
         # TODO: Rename query to document?
         ...
 
     # TODO: Other parameters
     @abstractmethod
-    async def execute_async(self, query: str) -> ...:
+    def execute_sync(self, query: str) -> ...:
         ...
 
     # TODO: Other parameters
     @abstractmethod
     async def subscribe(self, query: str) -> ...:
-        # TODO: Should you be able to make subscription queries from execute and
-        #       execute_async?
-        # TODO: Should there be a subscribe/subscribe_async combo?
         ...
