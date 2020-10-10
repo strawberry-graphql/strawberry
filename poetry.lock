@@ -314,7 +314,7 @@ python-versions = "*"
 
 [[package]]
 name = "isort"
-version = "5.6.0"
+version = "5.6.2"
 description = "A Python utility / library to sort Python imports."
 category = "dev"
 optional = false
@@ -886,7 +886,7 @@ opentelemetry = ["opentelemetry-api", "opentelemetry-sdk"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "d72594c94e560a176e69dcc90a72ca44c19208903afb5b1a0816cdb36a5a36a7"
+content-hash = "2b0e561297d272a43dabc452c5b2a8cefa1dfb8c64216d41bd88a7bc6a2a7fbd"
 
 [metadata.files]
 appdirs = [
@@ -1036,8 +1036,8 @@ iniconfig = [
     {file = "iniconfig-1.0.1.tar.gz", hash = "sha256:e5f92f89355a67de0595932a6c6c02ab4afddc6fcdc0bfc5becd0d60884d3f69"},
 ]
 isort = [
-    {file = "isort-5.6.0-py3-none-any.whl", hash = "sha256:ef200cc0ebd896c5bb0d7da9fd390392648c56c2099c2d2ff940ac94739f62aa"},
-    {file = "isort-5.6.0.tar.gz", hash = "sha256:20544581447ccb6a80940c5cace8cbc32c0f58d82d67d34a182950fe7b93321b"},
+    {file = "isort-5.6.2-py3-none-any.whl", hash = "sha256:a30c567b88d7b73e448b0f30526eaf2f943f0627809e4f34b9c3271918d96c3e"},
+    {file = "isort-5.6.2.tar.gz", hash = "sha256:c2cfe5b621f62932677004f96f93c4b128dc457d957b0531f204641fe8adc8a6"},
 ]
 itsdangerous = [
     {file = "itsdangerous-1.1.0-py2.py3-none-any.whl", hash = "sha256:b12271b2047cb23eeb98c8b5622e2e5c5e9abd9784a153e9d8ef9cb4dd09d749"},
