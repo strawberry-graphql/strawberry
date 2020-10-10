@@ -40,7 +40,7 @@ def _get_type_for_expr(expr: Expression, api: SemanticAnalyzerPluginInterface):
 
     if isinstance(expr, IndexExpr):
         type_ = _get_type_for_expr(expr.base, api)
-        type_.args = [_get_type_for_expr(expr.index, api)]
+        type_.args = (_get_type_for_expr(expr.index, api),)
 
         return type_
 
