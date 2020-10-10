@@ -11,12 +11,12 @@ repos:
         additional_dependencies: ["flake8-eradicate==0.4.0"]
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v0.782
+    rev: v0.790
     hooks:
       - id: mypy
 
   - repo: https://github.com/pycqa/isort
-    rev: 5.6.1
+    rev: 5.6.2
     hooks:
       - id: isort
 
