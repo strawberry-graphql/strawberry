@@ -1,6 +1,7 @@
 import hupper
 import uvicorn
 from click.testing import CliRunner
+
 from strawberry.cli.commands.server import server as cmd_server
 
 

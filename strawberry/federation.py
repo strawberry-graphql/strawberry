@@ -1,4 +1,4 @@
-from typing import Callable, List, Optional, Type, Union
+from typing import Callable, List, Optional, Type, Union, cast
 
 from graphql import (
     GraphQLField,
@@ -10,11 +10,13 @@ from graphql import (
     GraphQLUnionType,
 )
 from graphql.type.definition import GraphQLArgument
+
 from strawberry.custom_scalar import ScalarDefinition
 from strawberry.enum import EnumDefinition
 from strawberry.permission import BasePermission
 from strawberry.schema.types.types import TypeMap
 from strawberry.types.types import TypeDefinition
+from strawberry.union import StrawberryUnion
 
 from .field import FederationFieldParams, field as base_field
 from .printer import print_schema
@@ -62,7 +64,7 @@ def field(
 
 
 def _has_federation_keys(
-    definition: Union[TypeDefinition, ScalarDefinition, EnumDefinition]
+    definition: Union[TypeDefinition, ScalarDefinition, EnumDefinition, StrawberryUnion]
 ) -> bool:
     if isinstance(definition, TypeDefinition):
         return len(definition.federation.keys) > 0
@@ -112,7 +114,9 @@ class Schema(BaseSchema):
             type_name = representation.pop("__typename")
             type = self.type_map[type_name]
 
-            results.append(type.definition.origin.resolve_reference(**representation))
+            definition = cast(TypeDefinition, type.definition)
+
+            results.append(definition.origin.resolve_reference(**representation))
 
         return results
 
@@ -131,11 +135,12 @@ class Schema(BaseSchema):
 
             fields["_entities"] = self._get_entities_field(entity_type)
 
-        fields.update(self._schema.query_type.fields)
+        query_type = cast(GraphQLObjectType, self._schema.query_type)
+        fields.update(query_type.fields)
 
         self._schema.query_type = GraphQLObjectType(
-            name=self._schema.query_type.name,
-            description=self._schema.query_type.description,
+            name=query_type.name,
+            description=query_type.description,
             fields=fields,
         )
 

@@ -1,9 +1,14 @@
 import enum
-from typing import Callable
+from typing import Callable, cast
 
 from .arguments import convert_arguments
 from .field import FieldDefinition
 from .utils.inspect import get_func_args
+
+
+def is_default_resolver(func: Callable) -> bool:
+    """Check whether the function is a default resolver or a user provided one."""
+    return getattr(func, "_is_default", False)
 
 
 def get_resolver(field: FieldDefinition) -> Callable:
@@ -48,7 +53,8 @@ def get_resolver(field: FieldDefinition) -> Callable:
 
             result = actual_resolver(*args, **kwargs)
         else:
-            result = getattr(source, field.origin_name)
+            origin_name = cast(str, field.origin_name)
+            result = getattr(source, origin_name)
 
         # graphql-core expects a resolver for an Enum type to return
         # the enum's *value* (not its name or an instance of the enum).
@@ -56,5 +62,7 @@ def get_resolver(field: FieldDefinition) -> Callable:
             return result.value
 
         return result
+
+    _resolver._is_default = not field.base_resolver  # type: ignore
 
     return _resolver

@@ -1,9 +1,10 @@
 import typing
 
 from graphql import GraphQLUnionType
+
 from strawberry.exceptions import UnallowedReturnTypeForUnion, WrongReturnTypeForUnion
 from strawberry.type import TypeDefinition
-from strawberry.union import UnionDefinition
+from strawberry.union import StrawberryUnion
 from strawberry.utils.typing import (
     get_list_annotation,
     is_generic,
@@ -11,7 +12,7 @@ from strawberry.utils.typing import (
     is_type_var,
 )
 
-from .types import TypeMap
+from .types import ConcreteType, TypeMap
 
 
 def _get_type_mapping_from_actual_type(root) -> typing.Dict[typing.Any, typing.Type]:
@@ -69,7 +70,7 @@ def _find_type_for_generic_union(root: typing.Any) -> TypeDefinition:
 
 
 def get_union_type(
-    union_definition: UnionDefinition, type_map: TypeMap,
+    union_definition: StrawberryUnion, type_map: TypeMap
 ) -> GraphQLUnionType:
     from .object_type import get_object_type
 
@@ -91,11 +92,17 @@ def get_union_type(
 
         return returned_type
 
-    types = union_definition.types  # type: ignore
+    types = union_definition.types
 
-    return GraphQLUnionType(
-        union_definition.name,
-        [get_object_type(type, type_map) for type in types],
-        description=union_definition.description,
-        resolve_type=_resolve_type,
-    )
+    if union_definition.name not in type_map:
+        type_map[union_definition.name] = ConcreteType(
+            definition=union_definition,
+            implementation=GraphQLUnionType(
+                union_definition.name,
+                [get_object_type(type, type_map) for type in types],
+                description=union_definition.description,
+                resolve_type=_resolve_type,
+            ),
+        )
+
+    return typing.cast(GraphQLUnionType, type_map[union_definition.name].implementation)

@@ -1,6 +1,8 @@
 import os
 import sys
 
+from github_release import gh_release_create
+
 from base import (
     PROJECT_NAME,
     check_exit_code,
@@ -9,7 +11,6 @@ from base import (
     get_release_info,
     run_process,
 )
-from github_release import gh_release_create
 
 
 sys.path.append(os.path.dirname(__file__))  # noqa

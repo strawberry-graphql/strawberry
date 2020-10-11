@@ -100,3 +100,13 @@ class MissingFieldAnnotationError(Exception):
         )
 
         super().__init__(message)
+
+
+class PrivateStrawberryFieldError(Exception):
+    def __init__(self, field_name: str, type_name: str):
+        message = (
+            f"Field {field_name} on type {type_name} cannot be both "
+            "private and a strawberry.field"
+        )
+
+        super().__init__(message)

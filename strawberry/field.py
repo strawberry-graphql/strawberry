@@ -1,6 +1,6 @@
 import dataclasses
 import inspect
-from typing import Callable, List, Optional, Type, Union
+from typing import Callable, List, Optional, Type
 
 from .arguments import get_arguments_from_resolver
 from .permission import BasePermission
@@ -69,9 +69,8 @@ def field(
     is_subscription: bool = False,
     description: Optional[str] = None,
     permission_classes: Optional[List[Type[BasePermission]]] = None,
-    federation: Optional[FederationFieldParams] = None,
-    visible: Callable = lambda: True,
-) -> Union[Callable, StrawberryField]:
+    federation: Optional[FederationFieldParams] = None
+):
     """Annotates a method or property as a GraphQL field.
 
     This is normally used inside a type declaration:
@@ -98,7 +97,6 @@ def field(
         permission_classes=permission_classes or [],
         arguments=[],  # modified by resolver in __call__
         federation=federation or FederationFieldParams(),
-        visible=visible,
     )
 
     field_ = StrawberryField(field_definition)

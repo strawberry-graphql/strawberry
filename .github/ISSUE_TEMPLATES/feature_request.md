@@ -1,6 +1,6 @@
 ---
 name: Feature request
-about: Suggest a new feature or changes to existing features 
+about: Suggest a new feature or changes to existing features
 ---
 <!--- Provide a general summary of the changes you want in the title above. -->
 

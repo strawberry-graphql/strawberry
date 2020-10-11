@@ -26,7 +26,7 @@ def test_supports_default_directives():
         }
     }"""
 
-    schema = strawberry.Schema(query=Query,)
+    schema = strawberry.Schema(query=Query)
     result = schema.execute_sync(query, variable_values={"includePoints": False})
 
     assert not result.errors
@@ -39,7 +39,7 @@ def test_supports_default_directives():
         }
     }"""
 
-    schema = strawberry.Schema(query=Query,)
+    schema = strawberry.Schema(query=Query)
     result = schema.execute_sync(query, variable_values={"skipPoints": False})
 
     assert not result.errors

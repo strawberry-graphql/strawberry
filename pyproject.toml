@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "strawberry-graphql"
 packages = [ { include = "strawberry" } ]
-version = "0.32.3"
+version = "0.36.0"
 description = "A library for creating GraphQL APIs"
 authors = ["Patrick Arminio <patrick.arminio@gmail.com>"]
 license = "MIT"
@@ -16,6 +16,7 @@ classifiers = [
     "Topic :: Software Development :: Libraries",
     "Topic :: Software Development :: Libraries :: Python Modules"
 ]
+include = ["strawberry/py.typed"]
 
 [tool.poetry.dependencies]
 python = "^3.7"
@@ -23,42 +24,63 @@ starlette = "^0.13.6"
 click = "^7.0"
 hupper = "^1.5"
 pygments = "^2.3"
-uvicorn = "^0.11.6"
+uvicorn = ">=0.11.6,<0.13.0"
 django = {version = ">=2,<4",optional = true}
 graphql-core = {version = "^3.0.0"}
 asgiref = {version = "^3.2",optional = true}
 flask = {version = "^1.1",optional = true}
 typing_extensions = "^3.7.4"
+opentelemetry-api = {version = "^0.13b0",optional = true}
+opentelemetry-sdk = {version = "^0.13b0",optional = true}
 
 [tool.poetry.dev-dependencies]
-pytest = "^6.0"
+pytest = "^6.1"
 pdbpp = "^0.10.2"
 pytest-emoji = "^0.2.0"
 flake8 = "^3.8"
 black = {version = "^20.8b1",allow-prereleases = true}
-isort = "^5.5.1"
+isort = "^5.6.2"
 pytest-asyncio = "^0.14.0"
 pytest-cov = "^2.10"
-mypy = "^0.782"
+mypy = "^0.790"
 flake8-bugbear = "^20.1"
 flake8-eradicate = "^0.4.0"
-pytest-mypy-plugins = "^1.4"
+pytest-mypy-plugins = "^1.5"
 pytest-mock = "^3.3"
 django = {version = ">=2,<4"}
-pytest-django = {version = "^3.9"}
+pytest-django = {version = "^3.10"}
 asgiref = "^3.2"
 pytest-flask = {version = "^1.0.0"}
 requests = "^2.24.0"
 pre-commit = "^2.7.1"
 pytest-benchmark = "^3.2.3"
+freezegun = "^1.0.0"
 
 [tool.poetry.extras]
 django = ["django","pytest-django"]
 flask = ["flask","pytest-flask"]
+opentelemetry = ["opentelemetry-api","opentelemetry-sdk"]
 
 [tool.poetry.scripts]
 strawberry = "strawberry.cli:run"
 
+[tool.isort]
+src_paths = ["strawberry", "tests", "scripts"]
+profile = "black"
+indent = 4
+combine_star = true
+combine_as_imports = true
+lines_after_imports = 2
+known_django = ["django"]
+known_graphql = ["graphql"]
+known_pytest = ["pytest"]
+known_first_party = ["strawberry"]
+sections = ["FUTURE", "STDLIB", "PYTEST", "THIRDPARTY", "DJANGO", "GRAPHQL", "FIRSTPARTY", "LOCALFOLDER"]
+
+[tool.pytest.ini_options]
+addopts = "-xs --emoji --mypy-ini-file=tests/mypy/config.cfg --benchmark-disable"
+DJANGO_SETTINGS_MODULE = "tests.django.django_settings"
+testpaths = ["tests/"]
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"

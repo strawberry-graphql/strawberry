@@ -1,6 +1,8 @@
 import typing
 
 from graphql import GraphQLField, GraphQLInputField
+
+from strawberry.arguments import UNSET
 from strawberry.field import FieldDefinition
 from strawberry.resolvers import get_resolver
 from strawberry.types.types import undefined
@@ -10,7 +12,11 @@ from .type import get_graphql_type
 from .types import Field, TypeMap
 
 
-def get_field(field: FieldDefinition, is_input: bool, type_map: TypeMap,) -> Field:
+def get_field(
+    field: FieldDefinition,
+    is_input: bool,
+    type_map: TypeMap,
+) -> Field:
     graphql_type = get_graphql_type(field, type_map)
 
     TypeClass: typing.Union[
@@ -25,7 +31,7 @@ def get_field(field: FieldDefinition, is_input: bool, type_map: TypeMap,) -> Fie
 
     if is_input:
         TypeClass = GraphQLInputField
-        if field.default_value is not undefined:
+        if field.default_value not in (undefined, UNSET):
             kwargs["default_value"] = field.default_value
     elif field.is_subscription:
         kwargs["args"] = convert_arguments(field.arguments, type_map)

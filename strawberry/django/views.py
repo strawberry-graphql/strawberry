@@ -15,7 +15,7 @@ from django.views.generic import View
 import strawberry
 from strawberry.file_uploads.data import replace_placeholders_with_files
 from strawberry.http import GraphQLHTTPResponse, process_result
-from strawberry.schema import ExecutionResult
+from strawberry.types import ExecutionResult
 
 from ..schema import BaseSchema
 

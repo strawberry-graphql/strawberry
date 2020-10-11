@@ -31,7 +31,7 @@ class DirectivesMiddleware:
             if directive_name in SPECIFIED_DIRECTIVES:
                 continue
 
-            func = self.directives.get(directive_name).resolver
+            func = self.directives[directive_name].resolver
 
             # TODO: support converting lists
 
