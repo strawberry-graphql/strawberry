@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional, Sequence, Type, Union
 
-from graphql import GraphQLSchema, parse
+from graphql import GraphQLSchema, get_introspection_query, parse
 from graphql.subscription import subscribe
 from graphql.type.directives import specified_directives
 
@@ -132,3 +132,15 @@ class Schema:
 
     def as_str(self) -> str:
         return print_schema(self)
+
+    def introspect(self) -> Dict[str, Any]:
+        """Return the introspection query result for the current schema
+
+        Raises:
+            ValueError: If the introspection query fails due to an invalid schema
+        """
+        introspection = self.execute_sync(get_introspection_query())
+        if introspection.errors or not introspection.data:
+            raise ValueError(f"Invalid Schema. Errors {introspection.errors!r}")
+
+        return introspection.data
