@@ -1,4 +1,4 @@
-from typing import Optional, Type, TypeVar
+from typing import Any, Optional, Type, TypeVar
 
 from .object import StrawberryObject
 from .type import StrawberryType
@@ -10,7 +10,7 @@ class StrawberryArgument(StrawberryType[T]):
     def __init__(self, name: str, type_: Type[T], *,
                  description: Optional[str],
                  # TODO: Can we use None, or do we want fields.NO_DEFAULT_VALUE?
-                 default_value: Optional[T] = ...):
+                 default_value: Optional[T] = STRAWBERRY_DEFAULT_VALUE):
         self._name = name
         self._type = type_
         self._description = description
@@ -19,6 +19,10 @@ class StrawberryArgument(StrawberryType[T]):
     @property
     def name(self) -> str:
         return self._description
+
+    @property
+    def default_value(self) -> Any:
+        return self._default_value
 
     @property
     def description(self) -> Optional[str]:
