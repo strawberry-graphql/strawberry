@@ -132,3 +132,5 @@ class Schema:
 
     def as_str(self) -> str:
         return print_schema(self)
+
+    __str__ = as_str

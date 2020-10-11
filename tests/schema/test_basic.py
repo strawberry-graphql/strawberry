@@ -1,3 +1,4 @@
+import textwrap
 import typing
 from dataclasses import InitVar, dataclass
 from enum import Enum
@@ -341,3 +342,23 @@ def test_multiple_fields_with_same_type():
     assert not result.errors
     assert result.data["me"] is None
     assert result.data["you"] is None
+
+
+def test_str_magic_method_prints_schema_sdl():
+
+    @strawberry.type
+    class Query:
+        exampleBool: bool
+        exampleStr: str = "Example"
+        exampleInt: int = 1
+
+    schema = strawberry.Schema(query=Query)
+    expected = """
+    type Query {
+      exampleBool: Boolean!
+      exampleStr: String!
+      exampleInt: Int!
+    }
+    """
+    assert str(schema) == textwrap.dedent(expected).strip()
+    assert '<strawberry.schema.schema.Schema object' in repr(schema), "Repr should not be affected"
