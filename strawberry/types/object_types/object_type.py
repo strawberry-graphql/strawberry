@@ -1,7 +1,7 @@
 import dataclasses
 import typing
-from typing import Dict, Generic, List, Optional, Protocol, Set, Tuple, Type, \
-    TypeVar
+from typing import Callable, Dict, Generic, List, Optional, Protocol, Set, \
+    Tuple, Type, TypeVar, Union
 
 from cached_property import cached_property
 
@@ -24,7 +24,7 @@ class StrawberryObjectType(StrawberryObject, Generic[T]):
 
     def __init__(
         self,
-        cls: '_DataclassType[T]', *,
+        cls: 'Type[_DataclassType[T]]', *,
         name: Optional[str] = None,
         description: Optional[str] = None,
     ):
@@ -32,8 +32,8 @@ class StrawberryObjectType(StrawberryObject, Generic[T]):
         self._name = name
         self._description = description
 
-    def __call__(self, cls: '_DataclassType[T]') -> None:
-        self.wrapped_class = cls
+    def __call__(self, *args, **kwargs) -> T:
+        return self.wrapped_class(*args, **kwargs)
 
     @property
     def description(self) -> Optional[str]:
@@ -45,7 +45,6 @@ class StrawberryObjectType(StrawberryObject, Generic[T]):
 
         # TODO: Filter and remove/shadow duplicates that are in both sub and
         #       base
-        # TODO: Don't cache somehow if wrapped_class is not set? Throw exc?
 
         inherited_fields = self._fields_base
         dataclass_fields = self._fields_dataclass
@@ -155,7 +154,8 @@ class StrawberryObjectType(StrawberryObject, Generic[T]):
 
 def type(
     cls: Type[T] = None, *, name: str = None, description: str = None,
-) -> StrawberryObjectType[T]:
+) -> Union[StrawberryObjectType[T],
+           Callable[[Type[T]], StrawberryObjectType[T]]]:
     """Annotates a class as a GraphQL type.
 
     Example usage:
@@ -164,14 +164,21 @@ def type(
     >>> class X:
     >>>     field_abc: str = "ABC"
     """
-    StrawberryObjectType.check_dataclass(cls)
-    wrapped_dataclass = dataclasses.dataclass(cls)
 
-    return StrawberryObjectType(
-        cls=wrapped_dataclass,
-        name=name,
-        description=description
-    )
+    def wrap(cls_: Type[T]) -> StrawberryObjectType[T]:
+        StrawberryObjectType.check_dataclass(cls_)
+        wrapped_dataclass = dataclasses.dataclass(cls_)
+
+        return StrawberryObjectType(
+            cls=wrapped_dataclass,
+            name=name,
+            description=description
+        )
+
+    if cls:
+        return wrap(cls)
+
+    return wrap
 
 
 # TODO: Move to another file? Not 100% related to StrawberryObjectType
