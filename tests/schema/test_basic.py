@@ -345,7 +345,6 @@ def test_multiple_fields_with_same_type():
 
 
 def test_str_magic_method_prints_schema_sdl():
-
     @strawberry.type
     class Query:
         exampleBool: bool
@@ -361,4 +360,6 @@ def test_str_magic_method_prints_schema_sdl():
     }
     """
     assert str(schema) == textwrap.dedent(expected).strip()
-    assert '<strawberry.schema.schema.Schema object' in repr(schema), "Repr should not be affected"
+    assert "<strawberry.schema.schema.Schema object" in repr(
+        schema
+    ), "Repr should not be affected"
