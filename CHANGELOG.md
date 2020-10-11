@@ -1,6 +1,13 @@
 CHANGELOG
 =========
 
+0.36.1 - 2020-10-11
+-------------------
+
+Add `schema.introspect()` method to return introspection result of the schema.
+This might be useful for tools like `apollo codegen` or `graphql-voyager` which
+expect a full json representation of the schema
+
 0.36.0 - 2020-10-06
 -------------------
 
