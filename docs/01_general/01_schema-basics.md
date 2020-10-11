@@ -305,7 +305,7 @@ An input type's definition is similar to an object type's, but it uses the input
 keyword:
 
 ```python
-@strawberry.input:
+@strawberry.input
 class AddBookInput:
   title: str
   author: str
@@ -323,7 +323,7 @@ our schema, it also provides a basis for annotating fields with descriptions
 that are automatically exposed by GraphQL-enabled tools:
 
 ```python
-@strawberry.input:
+@strawberry.input
 class AddBookInput:
   title: str = strawberry.field(description="The title of the book")
   author: str = strawberry.field(description="The name of the author")
