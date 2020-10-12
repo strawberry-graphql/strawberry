@@ -1,7 +1,8 @@
 import datetime
-import dateutil.tz
 
 import pytest
+
+import dateutil.tz
 
 import strawberry
 
