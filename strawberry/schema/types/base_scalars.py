@@ -1,6 +1,7 @@
 import datetime
 import decimal
 from operator import methodcaller
+import dateutil.parser
 
 from strawberry.custom_scalar import scalar
 
@@ -20,7 +21,7 @@ DateTime = scalar(
     name="DateTime",
     description="Date with time (isoformat)",
     serialize=isoformat,
-    parse_value=datetime.datetime.fromisoformat,
+    parse_value=dateutil.parser.isoparse,
 )
 Time = scalar(
     datetime.time,

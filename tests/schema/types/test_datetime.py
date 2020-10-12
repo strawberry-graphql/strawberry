@@ -1,4 +1,5 @@
 import datetime
+import dateutil.tz
 
 import pytest
 
@@ -41,6 +42,12 @@ def test_serialization(typing, instance, serialized):
             "DateTime",
             datetime.datetime(2019, 10, 25, 13, 37),
             "2019-10-25T13:37:00",
+        ),
+        (
+            datetime.datetime,
+            "DateTime",
+            datetime.datetime(2019, 10, 25, 13, 37, tzinfo=dateutil.tz.tzutc()),
+            "2019-10-25T13:37:00Z",
         ),
         (datetime.time, "Time", datetime.time(13, 37), "13:37:00"),
     ],

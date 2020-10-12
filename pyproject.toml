@@ -32,6 +32,7 @@ flask = {version = "^1.1",optional = true}
 typing_extensions = "^3.7.4"
 opentelemetry-api = {version = "^0.13b0",optional = true}
 opentelemetry-sdk = {version = "^0.13b0",optional = true}
+python-dateutil = "^2.7.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.1"
