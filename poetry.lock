@@ -147,7 +147,7 @@ bcrypt = ["bcrypt"]
 
 [[package]]
 name = "eradicate"
-version = "1.0"
+version = "2.0.0"
 description = "Removes commented-out code."
 category = "dev"
 optional = false
@@ -201,15 +201,15 @@ flake8 = ">=3.0.0"
 
 [[package]]
 name = "flake8-eradicate"
-version = "0.4.0"
+version = "1.0.0"
 description = "Flake8 plugin to find commented out code"
 category = "dev"
 optional = false
-python-versions = ">=3.5,<4.0"
+python-versions = ">=3.6,<4.0"
 
 [package.dependencies]
 attrs = "*"
-eradicate = ">=1.0,<2.0"
+eradicate = ">=2.0,<3.0"
 flake8 = ">=3.5,<4.0"
 
 [[package]]
@@ -886,7 +886,7 @@ opentelemetry = ["opentelemetry-api", "opentelemetry-sdk"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "12eb846af1c34a3fbe51ba46b03f23c1edf92ddf2d87e912b527a4fdad80adc6"
+content-hash = "e45b0cf963e606a00a483fbf8d554a331d6a655b0ca868c712bc896bfcd23f33"
 
 [metadata.files]
 appdirs = [
@@ -906,7 +906,6 @@ attrs = [
     {file = "attrs-20.2.0.tar.gz", hash = "sha256:26b54ddbbb9ee1d34d5d3668dd37d6cf74990ab23c828c2888dccdceee395594"},
 ]
 black = [
-    {file = "black-20.8b1-py3-none-any.whl", hash = "sha256:70b62ef1527c950db59062cda342ea224d772abdf6adc58b86a45421bab20a6b"},
     {file = "black-20.8b1.tar.gz", hash = "sha256:1c02557aa099101b9d21496f8a914e9ed2222ef70336404eeeac8edba836fbea"},
 ]
 certifi = [
@@ -978,7 +977,7 @@ django = [
     {file = "Django-3.0.10.tar.gz", hash = "sha256:2d14be521c3ae24960e5e83d4575e156a8c479a75c935224b671b1c6e66eddaf"},
 ]
 eradicate = [
-    {file = "eradicate-1.0.tar.gz", hash = "sha256:4ffda82aae6fd49dfffa777a857cb758d77502a1f2e0f54c9ac5155a39d2d01a"},
+    {file = "eradicate-2.0.0.tar.gz", hash = "sha256:27434596f2c5314cc9b31410c93d8f7e8885747399773cd088d3adea647a60c8"},
 ]
 fancycompleter = [
     {file = "fancycompleter-0.9.1-py3-none-any.whl", hash = "sha256:dd076bca7d9d524cc7f25ec8f35ef95388ffef9ef46def4d3d25e9b044ad7080"},
@@ -997,8 +996,8 @@ flake8-bugbear = [
     {file = "flake8_bugbear-20.1.4-py36.py37.py38-none-any.whl", hash = "sha256:a3ddc03ec28ba2296fc6f89444d1c946a6b76460f859795b35b77d4920a51b63"},
 ]
 flake8-eradicate = [
-    {file = "flake8-eradicate-0.4.0.tar.gz", hash = "sha256:be5ea4521dfd4cb76837635f9ace57e12a7336c4b82054c99fd0394c00eef8ce"},
-    {file = "flake8_eradicate-0.4.0-py3-none-any.whl", hash = "sha256:804a39aef145c193e8d77770efc45df82e631b29c4456ecb5ff2e2e5996cf09a"},
+    {file = "flake8-eradicate-1.0.0.tar.gz", hash = "sha256:fe7167226676823d50cf540532302a6f576c5a398c5260692571a05ef72c5f5b"},
+    {file = "flake8_eradicate-1.0.0-py3-none-any.whl", hash = "sha256:0fc4ab858a18c7ed630621b5345254c8f55be6060ea5c44a25e384d613618d1f"},
 ]
 flask = [
     {file = "Flask-1.1.2-py2.py3-none-any.whl", hash = "sha256:8a4fdd8936eba2512e9c85df320a37e694c93945b33ef33c89946a340a238557"},
