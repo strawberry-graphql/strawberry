@@ -133,6 +133,8 @@ class Schema:
     def as_str(self) -> str:
         return print_schema(self)
 
+    __str__ = as_str
+
     def introspect(self) -> Dict[str, Any]:
         """Return the introspection query result for the current schema
 
