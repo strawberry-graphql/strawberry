@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.36.3 - 2020-10-16
+-------------------
+
+Add `__str__` to `Schema` to allow printing schema sdl with `str(schema)`
+
 0.36.2 - 2020-10-12
 -------------------
 
