@@ -1,6 +1,21 @@
 CHANGELOG
 =========
 
+0.36.2 - 2020-10-12
+-------------------
+
+Extend support for parsing isoformat datetimes,
+adding a dependency on the `dateutil` library.
+For example: "2020-10-12T22:00:00.000Z"
+can now be parsed as a datetime with a UTC timezone.
+
+0.36.1 - 2020-10-11
+-------------------
+
+Add `schema.introspect()` method to return introspection result of the schema.
+This might be useful for tools like `apollo codegen` or `graphql-voyager` which
+expect a full json representation of the schema
+
 0.36.0 - 2020-10-06
 -------------------
 
