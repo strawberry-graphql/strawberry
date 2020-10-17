@@ -1,6 +1,25 @@
 CHANGELOG
 =========
 
+0.36.4 - 2020-10-17
+-------------------
+
+This release adds support for using strawberry.enum as a function with MyPy,
+this is now valid typed code:
+
+```python
+from enum import Enum
+
+import strawberry
+
+class IceCreamFlavour(Enum):
+    VANILLA = "vanilla"
+    STRAWBERRY = "strawberry"
+    CHOCOLATE = "chocolate"
+
+Flavour = strawberry.enum(IceCreamFlavour)
+```
+
 0.36.3 - 2020-10-16
 -------------------
 
