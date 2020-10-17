@@ -65,6 +65,21 @@ def union_hook(ctx: DynamicClassDefContext) -> None:
         )
 
 
+def enum_hook(ctx: DynamicClassDefContext) -> None:
+    enum_type = _get_type_for_expr(ctx.call.args[0], ctx.api)
+
+    type_alias = TypeAlias(
+        enum_type,
+        fullname=ctx.api.qualified_name(ctx.name),
+        line=ctx.call.line,
+        column=ctx.call.column,
+    )
+
+    ctx.api.add_symbol_table_node(
+        ctx.name, SymbolTableNode(GDEF, type_alias, plugin_generated=False)
+    )
+
+
 class StrawberryPlugin(Plugin):
     def get_dynamic_class_hook(
         self, fullname: str
@@ -73,6 +88,9 @@ class StrawberryPlugin(Plugin):
         # we have the same issue in the other hooks
         if "strawberry.union" in fullname:
             return union_hook
+
+        if "strawberry.enum" in fullname:
+            return enum_hook
 
         return None
 
