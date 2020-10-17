@@ -49,7 +49,7 @@ flake8-eradicate = "^1.0.0"
 pytest-mypy-plugins = "^1.5"
 pytest-mock = "^3.3"
 django = {version = ">=2,<4"}
-pytest-django = {version = "^3.10"}
+pytest-django = {version = "^4.0"}
 asgiref = "^3.2"
 pytest-flask = {version = "^1.0.0"}
 requests = "^2.24.0"
