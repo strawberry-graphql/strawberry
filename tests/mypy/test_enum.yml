@@ -1,0 +1,19 @@
+- case: test_union
+  main: |
+    from enum import Enum
+
+    import strawberry
+
+    class IceCreamFlavour(Enum):
+        VANILLA = "vanilla"
+        STRAWBERRY = "strawberry"
+        CHOCOLATE = "chocolate"
+
+    Flavour = strawberry.enum(IceCreamFlavour)
+
+    a: Flavour
+    reveal_type(Flavour)
+    reveal_type(a)
+  out: |
+    main:13: note: Revealed type is 'def (value: builtins.object) -> main.IceCreamFlavour'
+    main:14: note: Revealed type is 'main.IceCreamFlavour'
