@@ -1,12 +1,24 @@
 import enum
 import inspect
-from typing import Any, Callable, Dict, List, Mapping, Type, cast
+from typing import Any, Callable, Dict, List, Mapping, Type, cast, Optional
+from typing_extensions import Annotated, get_origin, get_args
 
-from .exceptions import MissingArgumentsAnnotationsError, UnsupportedTypeError
+from .exceptions import (
+    MissingArgumentsAnnotationsError,
+    UnsupportedTypeError,
+    MultipleStrawberryArgumentsError,
+)
 from .scalars import is_scalar
 from .types.type_resolver import resolve_type
 from .types.types import ArgumentDefinition, undefined
 from .utils.str_converters import to_camel_case
+
+
+class StrawberryArgument:
+    description: Optional[str]
+
+    def __init__(self, description: Optional[str] = None):
+        self.description = description
 
 
 def get_arguments_from_annotations(
@@ -26,9 +38,27 @@ def get_arguments_from_annotations(
             origin_name=name,
             name=to_camel_case(name),
             origin=origin,
-            type=annotation,
             default_value=default_value,
         )
+
+        if get_origin(annotation) is Annotated:
+            argument_definition.type = get_args(annotation)[0]
+
+            argument_metadata = None
+            # Find any instances of StrawberryArgument in the Annotated metadata
+            # raising an exception if there are multiple StrawberryArguments
+            for arg in get_args(annotation)[1:]:
+                if isinstance(arg, StrawberryArgument):
+                    if argument_metadata is not None:
+                        raise MultipleStrawberryArgumentsError(
+                            field_name=origin.__name__, argument_name=name
+                        )
+                    argument_metadata = arg
+
+            if argument_metadata is not None:
+                argument_definition.description = argument_metadata.description
+        else:
+            argument_definition.type = annotation
 
         arguments.append(argument_definition)
 
@@ -111,8 +141,7 @@ def convert_argument(value: Any, argument_definition: ArgumentDefinition) -> Any
 
 
 def convert_arguments(
-    value: Dict[str, Any],
-    arguments: List[ArgumentDefinition],
+    value: Dict[str, Any], arguments: List[ArgumentDefinition],
 ) -> Dict[str, Any]:
     """Converts a nested dictionary to a dictionary of actual types.
 
@@ -132,3 +161,7 @@ def convert_arguments(
             kwargs[origin_name] = convert_argument(current_value, argument)
 
     return kwargs
+
+
+def argument(description: Optional[str] = None) -> StrawberryArgument:
+    return StrawberryArgument(description=description)

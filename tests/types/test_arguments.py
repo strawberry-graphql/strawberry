@@ -1,6 +1,10 @@
 from typing import List, Optional
 
+import pytest
+
 import strawberry
+from strawberry.exceptions import MultipleStrawberryArgumentsError
+from typing_extensions import Annotated
 
 
 def test_basic_arguments():
@@ -200,3 +204,75 @@ def test_arguments_when_extending_multiple_types():
     assert definition.fields[1].arguments[0].name == "id"
     assert definition.fields[1].arguments[0].type == strawberry.ID
     assert definition.fields[1].arguments[0].is_optional is False
+
+
+def test_annotated_argument_on_resolver():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def name(  # type: ignore
+            argument: Annotated[
+                str,
+                strawberry.argument(description="This is a description"),  # noqa: F722
+            ]
+        ) -> str:
+            return "Name"
+
+    definition = Query._type_definition
+
+    assert definition.name == "Query"
+
+    assert len(definition.fields[0].arguments) == 1
+
+    argument = definition.fields[0].arguments[0]
+
+    assert argument.name == "argument"
+    assert argument.type == str
+    assert argument.is_optional is False
+    assert argument.description == "This is a description"
+
+
+def test_annotated_optional_arguments_on_resolver():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def name(  # type: ignore
+            argument: Annotated[
+                Optional[str],
+                strawberry.argument(description="This is a description"),  # noqa: F722
+            ]
+        ) -> str:
+            return "Name"
+
+    definition = Query._type_definition
+
+    assert definition.name == "Query"
+
+    assert len(definition.fields[0].arguments) == 1
+
+    argument = definition.fields[0].arguments[0]
+
+    assert argument.name == "argument"
+    assert argument.type == str
+    assert argument.is_optional is True
+    assert argument.description == "This is a description"
+
+
+def test_multiple_annotated_arguments_exception():
+    with pytest.raises(MultipleStrawberryArgumentsError) as error:
+
+        @strawberry.field
+        def name(  # type: ignore
+            argument: Annotated[
+                str,
+                strawberry.argument(description="This is a description"),  # noqa: F722
+                strawberry.argument(description="Another description"),  # noqa: F722
+            ]
+        ) -> str:
+            return "Name"
+
+    assert str(error.value) == (
+        "Annotation for argument `argument` "
+        "on field `name` cannot have multiple "
+        "`strawberry.argument`s"
+    )
