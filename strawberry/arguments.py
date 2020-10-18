@@ -1,12 +1,13 @@
 import enum
 import inspect
-from typing import Any, Callable, Dict, List, Mapping, Type, cast, Optional
-from typing_extensions import Annotated, get_origin, get_args
+from typing import Any, Callable, Dict, List, Mapping, Optional, Type, cast
+
+from typing_extensions import Annotated, get_args, get_origin
 
 from .exceptions import (
     MissingArgumentsAnnotationsError,
-    UnsupportedTypeError,
     MultipleStrawberryArgumentsError,
+    UnsupportedTypeError,
 )
 from .scalars import is_scalar
 from .types.type_resolver import resolve_type
@@ -141,7 +142,8 @@ def convert_argument(value: Any, argument_definition: ArgumentDefinition) -> Any
 
 
 def convert_arguments(
-    value: Dict[str, Any], arguments: List[ArgumentDefinition],
+    value: Dict[str, Any],
+    arguments: List[ArgumentDefinition],
 ) -> Dict[str, Any]:
     """Converts a nested dictionary to a dictionary of actual types.
 

@@ -2,9 +2,10 @@ from typing import List, Optional
 
 import pytest
 
+from typing_extensions import Annotated
+
 import strawberry
 from strawberry.exceptions import MultipleStrawberryArgumentsError
-from typing_extensions import Annotated
 
 
 def test_basic_arguments():
