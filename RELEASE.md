@@ -7,9 +7,9 @@ from typing import Annotated
 
 @strawberry.type
 class Query:
-	@strawberry.field
-	def user_by_id(id: Annotated[str, strawberry.argument(description="The ID of the user")]) -> User:
-		...
+    @strawberry.field
+    def user_by_id(id: Annotated[str, strawberry.argument(description="The ID of the user")]) -> User:
+        ...
 ```
 
 which results in the following schema:
