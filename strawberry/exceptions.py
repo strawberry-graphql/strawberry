@@ -110,3 +110,13 @@ class PrivateStrawberryFieldError(Exception):
         )
 
         super().__init__(message)
+
+
+class MultipleStrawberryArgumentsError(Exception):
+    def __init__(self, field_name: str, argument_name: str):
+        message = (
+            f"Annotation for argument `{argument_name}` on field "
+            f"`{field_name}` cannot have multiple `strawberry.argument`s"
+        )
+
+        super().__init__(message)
