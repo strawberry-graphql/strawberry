@@ -43,12 +43,15 @@ def get_arguments_from_annotations(
         )
 
         if get_origin(annotation) is Annotated:
-            argument_definition.type = get_args(annotation)[0]
+            annotated_args = get_args(annotation)
+
+            # The first argument to Annotated is always the underlying type
+            argument_definition.type = annotated_args[0]
 
             argument_metadata = None
-            # Find any instances of StrawberryArgument in the Annotated metadata
+            # Find any instances of StrawberryArgument in the other Annotated args,
             # raising an exception if there are multiple StrawberryArguments
-            for arg in get_args(annotation)[1:]:
+            for arg in annotated_args[1:]:
                 if isinstance(arg, StrawberryArgument):
                     if argument_metadata is not None:
                         raise MultipleStrawberryArgumentsError(
