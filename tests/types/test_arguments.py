@@ -1,3 +1,4 @@
+import sys
 from typing import List, Optional
 
 import pytest
@@ -327,3 +328,35 @@ def test_annotated_with_other_information():
     assert argument.type == str
     assert argument.is_optional is False
     assert argument.description is None
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 9),
+    reason="Annotated type was added in python 3.9",
+)
+def test_annotated_python_39():
+    from typing import Annotated
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def name(  # type: ignore
+            argument: Annotated[
+                str,
+                strawberry.argument(description="This is a description"),  # noqa: F722
+            ]
+        ) -> str:
+            return "Name"
+
+    definition = Query._type_definition
+
+    assert definition.name == "Query"
+
+    assert len(definition.fields[0].arguments) == 1
+
+    argument = definition.fields[0].arguments[0]
+
+    assert argument.name == "argument"
+    assert argument.type == str
+    assert argument.is_optional is False
+    assert argument.description == "This is a description"

@@ -1,7 +1,8 @@
 from textwrap import dedent
 
-import strawberry
 from typing_extensions import Annotated
+
+import strawberry
 
 
 def test_argument_descriptions():
