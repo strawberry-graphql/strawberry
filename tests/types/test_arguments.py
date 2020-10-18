@@ -303,3 +303,26 @@ def test_multiple_annotated_arguments_exception():
         "on field `name` cannot have multiple "
         "`strawberry.argument`s"
     )
+
+
+def test_annotated_with_other_information():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def name(  # type: ignore
+            argument: Annotated[str, "Some other info"]  # noqa: F722
+        ) -> str:
+            return "Name"
+
+    definition = Query._type_definition
+
+    assert definition.name == "Query"
+
+    assert len(definition.fields[0].arguments) == 1
+
+    argument = definition.fields[0].arguments[0]
+
+    assert argument.name == "argument"
+    assert argument.type == str
+    assert argument.is_optional is False
+    assert argument.description is None
