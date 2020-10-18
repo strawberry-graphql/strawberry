@@ -258,6 +258,33 @@ def test_annotated_optional_arguments_on_resolver():
     assert argument.description == "This is a description"
 
 
+def test_annotated_argument_with_default_value():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def name(  # type: ignore
+            argument: Annotated[
+                str,
+                strawberry.argument(description="This is a description"),  # noqa: F722
+            ] = "Patrick"
+        ) -> str:
+            return "Name"
+
+    definition = Query._type_definition
+
+    assert definition.name == "Query"
+
+    assert len(definition.fields[0].arguments) == 1
+
+    argument = definition.fields[0].arguments[0]
+
+    assert argument.name == "argument"
+    assert argument.type == str
+    assert argument.is_optional is False
+    assert argument.description == "This is a description"
+    assert argument.default_value == "Patrick"
+
+
 def test_multiple_annotated_arguments_exception():
     with pytest.raises(MultipleStrawberryArgumentsError) as error:
 

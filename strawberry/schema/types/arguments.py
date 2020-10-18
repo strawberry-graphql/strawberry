@@ -20,7 +20,11 @@ def convert_argument(
     # TODO: we could overload the function to tell mypy that it returns input types too
     argument_type = cast(GraphQLInputType, get_graphql_type(argument, type_map))
 
-    return GraphQLArgument(argument_type, default_value=default_value)
+    return GraphQLArgument(
+        argument_type,
+        default_value=default_value,
+        description=argument.description,
+    )
 
 
 def convert_arguments(
