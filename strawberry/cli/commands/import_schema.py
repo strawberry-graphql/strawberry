@@ -3,10 +3,10 @@ from typing import List
 
 import click
 
-from graphql.error import GraphQLError
 from graphql.language import parse
+from graphql.errors import GraphqlError
 
-from ...utils.sdl_transpiler import render_template
+from strawberry.utils.sdl_transpiler import render_template
 
 
 # Regex pattern to extract import statement
@@ -14,10 +14,10 @@ GQL_IMPORT_REGEX = r"#import \"(.*\.gql|.*\.graphql)\""
 GQL_SCHEMA_TYPE = r"(?si)^Schema.*?}"
 
 
-@click.command("import-schema", short_help="Parses SDL file to python dataclasses")
+@click.command("import-schema", short_help="Parses SDL file to strawberry types")
 @click.argument("schema", type=str, required=True, nargs=-1)
 def import_schema(schema):
-    """ Parses SDL file to python dataclasses and writes them out """
+    """ Parses SDL file to strawberry types and writes them out """
 
     templates = []  # Put rendered templates here
     try:
