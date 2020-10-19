@@ -1,8 +1,10 @@
 import re
+from typing import List
 
 import click
-from graphql.language import parse
+
 from graphql.error import GraphQLError
+from graphql.language import parse
 
 from ...utils.sdl_transpiler import render_template
 
@@ -52,8 +54,7 @@ def get_ast(paths):
     return ast
 
 
-# def gql_file_to_string(path: str) -> list[str]:
-def gql_file_to_string(path: str) -> list[str]:
+def gql_file_to_string(path: str) -> List[str]:
     """ Returns schema string """
     with open(path, "r") as file:
         string = file.read()
