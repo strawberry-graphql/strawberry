@@ -1,3 +1,6 @@
+import re
+
+
 # Adapted from this response in Stackoverflow
 # http://stackoverflow.com/a/19053800/1072990
 def to_camel_case(snake_str: str) -> str:
@@ -9,3 +12,10 @@ def to_camel_case(snake_str: str) -> str:
 
 def capitalize_first(name: str) -> str:
     return name[0].upper() + name[1:]
+
+
+# From this response in Stackoverflow
+# http://stackoverflow.com/a/1176023/1072990
+def to_snake_case(name: str) -> str:
+    s1 = re.sub(r"(.)([A-Z][a-z]+)", r"\1_\2", name)
+    return re.sub(r"([a-z0-9])([A-Z])", r"\1_\2", s1).lower()
