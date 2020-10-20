@@ -15,7 +15,7 @@ implement a mutation that is supposed to send an email:
 ```python
 import strawberry
 
-
+@strawberry.type
 class Mutation:
     @strawberry.mutation
     def send_email(self, email: str) -> bool:
