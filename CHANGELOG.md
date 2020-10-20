@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.37.1 - 2020-10-20
+-------------------
+
+Fix ASGI view to call `get_context` during a websocket request
+
 0.37.0 - 2020-10-18
 -------------------
 
