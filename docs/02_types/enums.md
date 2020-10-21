@@ -78,7 +78,7 @@ Here is result of executed query:
 }
 ```
 
-After that, We can use this enum type when defining another types.
+We can also use enums when defining object types (using `strawberry.type`).
 Here is an example of an object that has a field using an Enum:
 
 ```python
