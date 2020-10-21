@@ -49,7 +49,7 @@ class Query:
         return IceCreamFlavour.STRAWBERRY
 ```
 
-Defining the enum type above would produce like this schema in GraphQL:
+Defining the enum type above would produce this schema in GraphQL:
 
 ```graphql
 enum IceCreamFlavour {
