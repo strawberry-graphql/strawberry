@@ -79,7 +79,6 @@ Here is result of executed query:
 
 We can also use enums when defining object types (using `strawberry.type`).
 Here is an example of an object that has a field using an Enum:
-and You can define Query for using cone.
 
 ```python
 @strawberry.type
