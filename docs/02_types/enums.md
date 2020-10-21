@@ -39,16 +39,7 @@ class IceCreamFlavour(Enum):
     CHOCOLATE = "chocolate"
 ```
 
-After that, we can use this enum type when defining types:
-
-```python
-@strawberry.type
-class Cone:
-    flavour: IceCreamFlavour
-    scoops: int
-```
-
-and queries:
+Let's see how we can use Enums in our schema.
 
 ```python
 @strawberry.type
@@ -58,7 +49,7 @@ class Query:
         return IceCreamFlavour.STRAWBERRY
 ```
 
-Defining the enum type above would produce this schema:
+Defining the enum type above would produce this schema in GraphQL:
 
 ```graphql
 enum IceCreamFlavour {
@@ -68,11 +59,61 @@ enum IceCreamFlavour {
 }
 ```
 
-Then it can be queried by the user, for example:
+Here's an example of how you'd use this newly created query:
 
 ```graphql
 query {
-  cone(IceCreamFlavour: STRAWBERRY)
+  bestFlavour
+}
+```
+
+Here is result of executed query:
+
+```graphql
+{
+  "data": {
+    "bestFlavour": "STRAWBERRY"
+  }
+}
+```
+
+We can also use enums when defining object types (using `strawberry.type`).
+Here is an example of an object that has a field using an Enum:
+
+```python
+@strawberry.type
+class Cone:
+    flavour: IceCreamFlavour
+    num_scoops: int
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def cone(self, info) -> Cone:
+        return Cone(flavour=IceCreamFlavour.STRAWBERRY, num_scoops=4)
+```
+
+And here's an example of how you'd use this query:
+
+```graphql
+query {
+  cone {
+    flavour
+    num_scoops
+  }
+}
+```
+
+Here is result of executed query:
+
+```graphql
+{
+  "data": {
+    "cone": {
+      "flavour": "STRAWBERRY",
+      "num_scoops": 4
+    }
+  }
 }
 ```
 
