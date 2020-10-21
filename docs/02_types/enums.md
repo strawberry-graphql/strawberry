@@ -39,26 +39,18 @@ class IceCreamFlavour(Enum):
     CHOCOLATE = "chocolate"
 ```
 
-After that, we can use this enum type when defining types:
+and We should define queries. for example:
 
-```python
-@strawberry.type
-class Cone:
-    flavour: IceCreamFlavour
-    scoops: int
-```
-
-and queries:
 
 ```python
 @strawberry.type
 class Query:
     @strawberry.field
-    def best_flavour(self, info) -> IceCreamFlavour:
-        return IceCreamFlavour.STRAWBERRY
+    def best_Flavour(self, info) -> IceCreamFlavour:
+        return cone(IceCreamFlavour.STRAWBERRY)
 ```
 
-Defining the enum type above would produce this schema:
+Defining the enum type above would produce like this schema in GraphQL:
 
 ```graphql
 enum IceCreamFlavour {
@@ -68,11 +60,65 @@ enum IceCreamFlavour {
 }
 ```
 
-Then it can be queried by the user, for example:
+Then it can be queried by the user. Snakecase is turn camelcase in GraphQL. for example:
 
 ```graphql
 query {
-  cone(IceCreamFlavour: STRAWBERRY)
+  bestFlavour
+}
+```
+
+Here is result of executed query:
+
+```graphql
+{
+  "data": {
+    "bestFlavour": "STRAWBERRY"
+  }
+}
+```
+
+After that, We can use this enum type when defining another types.
+Here is an example of define type using enum type:
+
+```python
+@strawberry.type
+class Cone:
+    flavour: IceCreamFlavour
+    scoop: int
+```
+
+You should define Query for using cone.
+
+```python
+@strawberry.type
+class Query:
+    @strawberry.field
+    def cone(self, info) -> Cone:
+        return Cone(flavour=IceCreamFlavour.STRAWBERRY, scoop=4)
+```
+
+Then user can get cone's data. Here is query:
+
+```graphql
+query {
+  cone {
+    flavour
+    scoop
+  }
+}
+```
+
+Here is result of executed query:
+
+```graphql
+{
+  "data": {
+    "cone": {
+      "flavour": "STRAWBERRY",
+      "scoop": 4
+    }
+  }
 }
 ```
 
