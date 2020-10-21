@@ -8,6 +8,7 @@ from mypy.nodes import (
     SymbolTableNode,
     TupleExpr,
     TypeAlias,
+    Var,
 )
 from mypy.plugin import (
     AnalyzeTypeContext,
@@ -17,7 +18,7 @@ from mypy.plugin import (
     SemanticAnalyzerPluginInterface,
 )
 from mypy.plugins import dataclasses
-from mypy.types import Type, UnionType
+from mypy.types import AnyType, Type, TypeOfAny, UnionType
 
 
 def lazy_type_analyze_callback(ctx: AnalyzeTypeContext) -> Type:
@@ -66,7 +67,32 @@ def union_hook(ctx: DynamicClassDefContext) -> None:
 
 
 def enum_hook(ctx: DynamicClassDefContext) -> None:
-    enum_type = _get_type_for_expr(ctx.call.args[0], ctx.api)
+    first_argument = ctx.call.args[0]
+
+    if isinstance(first_argument, NameExpr):
+        if not first_argument.node:
+            ctx.api.defer()
+
+            return
+
+        if isinstance(first_argument.node, Var):
+            var_type = first_argument.node.type or AnyType(
+                TypeOfAny.implementation_artifact
+            )
+
+            type_alias = TypeAlias(
+                var_type,
+                fullname=ctx.api.qualified_name(ctx.name),
+                line=ctx.call.line,
+                column=ctx.call.column,
+            )
+
+            ctx.api.add_symbol_table_node(
+                ctx.name, SymbolTableNode(GDEF, type_alias, plugin_generated=False)
+            )
+            return
+
+    enum_type = _get_type_for_expr(first_argument, ctx.api)
 
     type_alias = TypeAlias(
         enum_type,
