@@ -93,7 +93,7 @@ class Query:
         return Cone(flavour=IceCreamFlavour.STRAWBERRY, num_scoops=4)
 ```
 
-Then user can get cone's data. Here is query:
+And here's an example of how you'd use this query:
 
 ```graphql
 query {
