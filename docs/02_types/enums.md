@@ -59,7 +59,7 @@ enum IceCreamFlavour {
 }
 ```
 
-Then it can be queried by the user. Snakecase is turn camelcase in GraphQL. for example:
+Here's an example of how you'd use this newly created query:
 
 ```graphql
 query {
