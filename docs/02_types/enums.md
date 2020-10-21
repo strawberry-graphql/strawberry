@@ -79,7 +79,7 @@ Here is result of executed query:
 ```
 
 After that, We can use this enum type when defining another types.
-Here is an example of define type using enum type:
+Here is an example of an object that has a field using an Enum:
 
 ```python
 @strawberry.type
