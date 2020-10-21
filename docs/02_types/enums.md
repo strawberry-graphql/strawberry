@@ -47,7 +47,7 @@ and We should define queries. for example:
 class Query:
     @strawberry.field
     def best_flavour(self, info) -> IceCreamFlavour:
-        return cone(IceCreamFlavour.STRAWBERRY)
+        return IceCreamFlavour.STRAWBERRY
 ```
 
 Defining the enum type above would produce like this schema in GraphQL:
