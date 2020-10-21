@@ -46,7 +46,7 @@ and We should define queries. for example:
 @strawberry.type
 class Query:
     @strawberry.field
-    def best_Flavour(self, info) -> IceCreamFlavour:
+    def best_flavour(self, info) -> IceCreamFlavour:
         return cone(IceCreamFlavour.STRAWBERRY)
 ```
 
