@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.37.2 - 2020-10-21
+-------------------
+
+This release improves support for strawberry.enums when type checking with mypy.
+
 0.37.1 - 2020-10-20
 -------------------
 
