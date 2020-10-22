@@ -16,6 +16,8 @@ Here's a quick tutorial on how to create an enum type in Strawberry:
 First, create a new class for the new type, which extends class Enum:
 
 ```python
+from enum import Enum
+
 class IceCreamFlavour(Enum):
 ```
 
@@ -99,7 +101,7 @@ And here's an example of how you'd use this query:
 query {
   cone {
     flavour
-    num_scoops
+    numScoops
   }
 }
 ```
@@ -111,7 +113,7 @@ Here is result of executed query:
   "data": {
     "cone": {
       "flavour": "STRAWBERRY",
-      "num_scoops": 4
+      "numScoops": 4
     }
   }
 }
