@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.37.4 - 2020-10-22
+-------------------
+
+This releases adds a workaround to prevent mypy from crashing in specific occasions
+
 0.37.3 - 2020-10-22
 -------------------
 
