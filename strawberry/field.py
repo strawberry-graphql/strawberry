@@ -68,7 +68,8 @@ def field(
     permission_classes: Optional[List[Type[BasePermission]]] = None,
     federation: Optional[FederationFieldParams] = None,
     deprecation_reason: Optional[str] = None,
-) -> StrawberryField:
+    decorators: Optional[List[Callable]] = None,
+):
     """Annotates a method or property as a GraphQL field.
 
     This is normally used inside a type declaration:
@@ -94,6 +95,7 @@ def field(
         arguments=[],  # modified by resolver in __call__
         federation=federation or FederationFieldParams(),
         deprecation_reason=deprecation_reason,
+        decorators=decorators,
     )
 
     field_ = StrawberryField(field_definition)

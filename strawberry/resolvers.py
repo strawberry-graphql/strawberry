@@ -1,5 +1,4 @@
 import enum
-import functools
 from inspect import iscoroutine
 from typing import Any, Awaitable, Callable, Dict, List, Tuple, Union, cast
 
@@ -8,6 +7,10 @@ from strawberry.types.info import Info
 from .arguments import convert_arguments
 from .field import FieldDefinition
 from .types.fields.resolver import StrawberryResolver
+
+
+def default_field_resolver(field_name: str, source, info):
+    return getattr(source, field_name)
 
 
 def is_default_resolver(func: Callable) -> bool:
@@ -80,25 +83,7 @@ def get_result_for_field(
     return getattr(source, origin_name)
 
 
-def get_result_for_field(
-    field: FieldDefinition, kwargs: Dict[str, Any], source: Any, info: Any
-) -> Union[Awaitable[Any], Any]:
-    """
-    Calls the resolver defined for `field`. If field doesn't have a
-    resolver defined we default to using getattr on `source`.
-    """
-
-    actual_resolver = field.base_resolver
-
-    if actual_resolver:
-        args, kwargs = get_arguments(field, kwargs, source=source, info=info)
-
-        return actual_resolver(*args, **kwargs)
-
-    origin_name = cast(str, field.origin_name)
-    return getattr(source, origin_name)
-
-
+# TODO: fix and use this
 def run_decorators(result: Any, field: FieldDefinition) -> Any:
     if field.decorators:
         result = "TODO"
@@ -132,8 +117,6 @@ def get_resolver(field: FieldDefinition) -> Callable:
 
         result = convert_enums_to_values(field, result)
 
-        result = run_decorators()
-
         return result
 
     def _resolver(source, info, **kwargs):
@@ -141,7 +124,6 @@ def get_resolver(field: FieldDefinition) -> Callable:
 
         result = get_result_for_field(field, kwargs=kwargs, info=info, source=source)
         result = convert_enums_to_values(field, result)
-        result = run_decorators()
 
         return result
 

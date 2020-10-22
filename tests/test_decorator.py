@@ -84,7 +84,7 @@ def test_decorator_with_graphql_arguments():
     class Query:
         @strawberry.field
         @upper_case
-        def greeting(name: str) -> str:
+        def greeting(self, name: str) -> str:
             return f"hi {name}"
 
     schema = strawberry.Schema(query=Query)
@@ -107,7 +107,7 @@ def test_decorator_modify_argument():
     class Query:
         @strawberry.field
         @title_case_argument("name")
-        def greeting(name: str) -> str:
+        def greeting(self, name: str) -> str:
             return f"hi {name}"
 
     schema = strawberry.Schema(query=Query)
@@ -115,3 +115,35 @@ def test_decorator_modify_argument():
 
     assert not result.errors
     assert result.data == {"greeting": "hi Patrick"}
+
+
+def test_decorator_simple_field():
+    @make_strawberry_decorator
+    def upper_case(resolver, source, info, **kwargs):
+        result = resolver(**kwargs)
+        return result.upper()
+
+    def suffix(value):
+        @make_strawberry_decorator
+        def wrapper(resolver, source, info, **kwargs):
+            result = resolver(**kwargs)
+            return f"{result}{value}"
+
+        return wrapper
+
+    @strawberry.type
+    class Query:
+        name: str = strawberry.field(decorators=[upper_case, suffix(" 👋")])
+
+    schema = strawberry.Schema(query=Query)
+    result = schema.execute_sync(
+        """
+            query {
+                name
+            }
+        """,
+        root_value=Query(name="patrick"),
+    )
+
+    assert not result.errors
+    assert result.data == {"name": "PATRICK 👋"}

@@ -96,3 +96,4 @@ class FieldDefinition:
     )
     default_value: Any = undefined
     deprecation_reason: Optional[str] = None
+    decorators: Optional[List[Callable]] = None
