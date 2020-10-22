@@ -1,5 +1,6 @@
 import typing
 from enum import Enum
+from typing import List
 
 import strawberry
 
@@ -126,3 +127,27 @@ def test_enum_falsy_values():
 
     assert not result.errors
     assert result.data["printFlavour"] == "0"
+
+
+def test_enum_in_list():
+    @strawberry.enum
+    class IceCreamFlavour(Enum):
+        VANILLA = "vanilla"
+        STRAWBERRY = "strawberry"
+        CHOCOLATE = "chocolate"
+        PISTACHIO = "pistachio"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def best_flavours(self, info) -> List[IceCreamFlavour]:
+            return [IceCreamFlavour.STRAWBERRY, IceCreamFlavour.PISTACHIO]
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ bestFlavours }"
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data["bestFlavours"] == ["STRAWBERRY", "PISTACHIO"]
