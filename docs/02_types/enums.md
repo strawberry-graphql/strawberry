@@ -51,7 +51,7 @@ class Query:
         return IceCreamFlavour.STRAWBERRY
 ```
 
-Defining the enum type above would produce like this schema in GraphQL:
+Defining the enum type above would produce this schema in GraphQL:
 
 ```graphql
 enum IceCreamFlavour {
@@ -61,7 +61,7 @@ enum IceCreamFlavour {
 }
 ```
 
-Then it can be queried by the user. Snakecase is turn camelcase in GraphQL. for example:
+Here's an example of how you'd use this newly created query:
 
 ```graphql
 query {
@@ -81,7 +81,6 @@ Here is result of executed query:
 
 We can also use enums when defining object types (using `strawberry.type`).
 Here is an example of an object that has a field using an Enum:
-and You can define Query for using cone.
 
 ```python
 @strawberry.type
@@ -96,7 +95,7 @@ class Query:
         return Cone(flavour=IceCreamFlavour.STRAWBERRY, num_scoops=4)
 ```
 
-Then user can get cone's data. Here is query:
+And here's an example of how you'd use this query:
 
 ```graphql
 query {
