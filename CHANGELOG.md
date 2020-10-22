@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.37.3 - 2020-10-22
+-------------------
+
+This release fixes an issue preventing to return enums in lists
+
 0.37.2 - 2020-10-21
 -------------------
 
