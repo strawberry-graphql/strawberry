@@ -21,6 +21,10 @@ from mypy.plugins import dataclasses
 from mypy.types import AnyType, Type, TypeOfAny, UnionType
 
 
+class InvalidNodeTypeException(Exception):
+    pass
+
+
 def lazy_type_analyze_callback(ctx: AnalyzeTypeContext) -> Type:
     type_name = ctx.type.args[0]
     type_ = ctx.api.analyze_type(type_name)
@@ -37,6 +41,17 @@ def private_type_analyze_callback(ctx: AnalyzeTypeContext) -> Type:
 
 def _get_type_for_expr(expr: Expression, api: SemanticAnalyzerPluginInterface):
     if isinstance(expr, NameExpr):
+        # guarding agains invalid nodes, still have to figure out why this happens
+        # but sometimes mypy crashes because the internal node of the named type
+        # is actually a Var node, which is unexpected, so we do a naive guard here
+        # and raise an exception for it.
+
+        if expr.fullname:
+            sym = api.lookup_fully_qualified_or_none(expr.fullname)
+
+            if sym and isinstance(sym.node, Var):
+                raise InvalidNodeTypeException()
+
         return api.named_type(expr.name)
 
     if isinstance(expr, IndexExpr):
@@ -52,7 +67,24 @@ def union_hook(ctx: DynamicClassDefContext) -> None:
     types = ctx.call.args[1]
 
     if isinstance(types, TupleExpr):
-        type_ = UnionType(tuple(_get_type_for_expr(x, ctx.api) for x in types.items))
+        try:
+            type_ = UnionType(
+                tuple(_get_type_for_expr(x, ctx.api) for x in types.items)
+            )
+        except InvalidNodeTypeException:
+            type_alias = TypeAlias(
+                AnyType(TypeOfAny.from_error),
+                fullname=ctx.api.qualified_name(ctx.name),
+                line=ctx.call.line,
+                column=ctx.call.column,
+            )
+
+            ctx.api.add_symbol_table_node(
+                ctx.name,
+                SymbolTableNode(GDEF, type_alias, plugin_generated=False),
+            )
+
+            return
 
         type_alias = TypeAlias(
             type_,
