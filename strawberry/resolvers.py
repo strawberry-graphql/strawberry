@@ -15,6 +15,10 @@ def convert_enums_to_values(field: FieldDefinition, result: Any) -> Any:
     # graphql-core expects a resolver for an Enum type to return
     # the enum's *value* (not its name or an instance of the enum).
 
+    # short circut to skip checks when result is falsy
+    if not result:
+        return result
+
     if isinstance(result, enum.Enum):
         return result.value
 

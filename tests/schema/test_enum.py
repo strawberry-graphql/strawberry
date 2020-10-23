@@ -1,6 +1,6 @@
 import typing
 from enum import Enum
-from typing import List
+from typing import List, Optional
 
 import strawberry
 
@@ -151,3 +151,27 @@ def test_enum_in_list():
 
     assert not result.errors
     assert result.data["bestFlavours"] == ["STRAWBERRY", "PISTACHIO"]
+
+
+def test_enum_in_optional_list():
+    @strawberry.enum
+    class IceCreamFlavour(Enum):
+        VANILLA = "vanilla"
+        STRAWBERRY = "strawberry"
+        CHOCOLATE = "chocolate"
+        PISTACHIO = "pistachio"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def best_flavours(self, info) -> Optional[List[IceCreamFlavour]]:
+            return None
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ bestFlavours }"
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data["bestFlavours"] is None
