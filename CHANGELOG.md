@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.37.5 - 2020-10-23
+-------------------
+
+This release improves how we handle enum values when returing lists of enums.
+
 0.37.4 - 2020-10-22
 -------------------
 
