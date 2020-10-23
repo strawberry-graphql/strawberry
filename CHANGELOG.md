@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.37.6 - 2020-10-23
+-------------------
+
+This release improves how we check for enums
+
 0.37.5 - 2020-10-23
 -------------------
 
