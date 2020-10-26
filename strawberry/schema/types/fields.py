@@ -40,5 +40,6 @@ def get_field(
     else:
         kwargs["args"] = convert_arguments(field.arguments, type_map)
         kwargs["resolve"] = resolver
+        kwargs["deprecation_reason"] = field.deprecation_reason
 
     return TypeClass(graphql_type, **kwargs)  # type: ignore
