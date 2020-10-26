@@ -1,5 +1,6 @@
 import datetime
 import decimal
+import uuid
 from operator import methodcaller
 
 import dateutil.parser
@@ -38,4 +39,8 @@ Decimal = scalar(
     description="Decimal (fixed-point)",
     serialize=str,
     parse_value=decimal.Decimal,
+)
+
+UUID = scalar(
+    uuid.UUID, name="UUID", description="UUID", serialize=str, parse_value=uuid.UUID,
 )
