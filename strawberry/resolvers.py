@@ -1,6 +1,6 @@
 import enum
 from inspect import iscoroutine, iscoroutinefunction
-from typing import Any, Callable, Dict, List, Tuple, cast
+from typing import Any, Awaitable, Callable, Dict, List, Tuple, Union, cast
 
 from .arguments import convert_arguments
 from .field import FieldDefinition
@@ -60,6 +60,20 @@ def get_arguments(
     return args, kwargs
 
 
+def get_result_for_field(
+    field: FieldDefinition, kwargs: Dict[str, Any], source: Any, info: Any
+) -> Union[Awaitable[Any], Any]:
+    actual_resolver = field.base_resolver
+
+    if actual_resolver:
+        args, kwargs = get_arguments(field, kwargs, source=source, info=info)
+
+        return actual_resolver(*args, **kwargs)
+
+    origin_name = cast(str, field.origin_name)
+    return getattr(source, origin_name)
+
+
 def get_resolver(field: FieldDefinition) -> Callable:
     def _check_permissions(source, info, **kwargs):
         """
@@ -76,17 +90,9 @@ def get_resolver(field: FieldDefinition) -> Callable:
     async def _resolver_async(source, info, **kwargs):
         _check_permissions(source, info, **kwargs)
 
-        actual_resolver = field.base_resolver
+        result = get_result_for_field(field, kwargs=kwargs, info=info, source=source)
 
-        if actual_resolver:
-            args, kwargs = get_arguments(field, kwargs, source=source, info=info)
-
-            result = actual_resolver(*args, **kwargs)
-        else:
-            origin_name = cast(str, field.origin_name)
-            result = getattr(source, origin_name)
-
-        if iscoroutine(result):
+        if iscoroutine(result):  # pragma: no cover
             result = await result
 
         result = convert_enums_to_values(field, result)
@@ -96,16 +102,7 @@ def get_resolver(field: FieldDefinition) -> Callable:
     def _resolver(source, info, **kwargs):
         _check_permissions(source, info, **kwargs)
 
-        actual_resolver = field.base_resolver
-
-        if actual_resolver:
-            args, kwargs = get_arguments(field, kwargs, source=source, info=info)
-
-            result = actual_resolver(*args, **kwargs)
-        else:
-            origin_name = cast(str, field.origin_name)
-            result = getattr(source, origin_name)
-
+        result = get_result_for_field(field, kwargs=kwargs, info=info, source=source)
         result = convert_enums_to_values(field, result)
 
         return result
