@@ -1,5 +1,6 @@
 import enum
-from typing import Any, Callable, cast
+from inspect import iscoroutine, iscoroutinefunction
+from typing import Any, Callable, Dict, List, Tuple, cast
 
 from .arguments import convert_arguments
 from .field import FieldDefinition
@@ -30,6 +31,35 @@ def convert_enums_to_values(field: FieldDefinition, result: Any) -> Any:
     return result
 
 
+def get_arguments(
+    field: FieldDefinition, kwargs: Dict[str, Any], source: Any, info: Any
+) -> Tuple[List[Any], Dict[str, Any]]:
+    actual_resolver = cast(Callable, field.base_resolver)
+
+    kwargs = convert_arguments(kwargs, field.arguments)
+
+    # the following code allows to omit info and root arguments
+    # by inspecting the original resolver arguments,
+    # if it asks for self, the source will be passed as first argument
+    # if it asks for root, the source it will be passed as kwarg
+    # if it asks for info, the info will be passed as kwarg
+
+    function_args = get_func_args(actual_resolver)
+
+    args = []
+
+    if "self" in function_args:
+        args.append(source)
+
+    if "root" in function_args:
+        kwargs["root"] = source
+
+    if "info" in function_args:
+        kwargs["info"] = info
+
+    return args, kwargs
+
+
 def get_resolver(field: FieldDefinition) -> Callable:
     def _check_permissions(source, info, **kwargs):
         """
@@ -43,32 +73,33 @@ def get_resolver(field: FieldDefinition) -> Callable:
                 message = getattr(permission, "message", None)
                 raise PermissionError(message)
 
+    async def _resolver_async(source, info, **kwargs):
+        _check_permissions(source, info, **kwargs)
+
+        actual_resolver = field.base_resolver
+
+        if actual_resolver:
+            args, kwargs = get_arguments(field, kwargs, source=source, info=info)
+
+            result = actual_resolver(*args, **kwargs)
+        else:
+            origin_name = cast(str, field.origin_name)
+            result = getattr(source, origin_name)
+
+        if iscoroutine(result):
+            result = await result
+
+        result = convert_enums_to_values(field, result)
+
+        return result
+
     def _resolver(source, info, **kwargs):
         _check_permissions(source, info, **kwargs)
 
         actual_resolver = field.base_resolver
 
         if actual_resolver:
-            kwargs = convert_arguments(kwargs, field.arguments)
-
-            # the following code allows to omit info and root arguments
-            # by inspecting the original resolver arguments,
-            # if it asks for self, the source will be passed as first argument
-            # if it asks for root, the source it will be passed as kwarg
-            # if it asks for info, the info will be passed as kwarg
-
-            function_args = get_func_args(actual_resolver)
-
-            args = []
-
-            if "self" in function_args:
-                args.append(source)
-
-            if "root" in function_args:
-                kwargs["root"] = source
-
-            if "info" in function_args:
-                kwargs["info"] = info
+            args, kwargs = get_arguments(field, kwargs, source=source, info=info)
 
             result = actual_resolver(*args, **kwargs)
         else:
@@ -79,6 +110,11 @@ def get_resolver(field: FieldDefinition) -> Callable:
 
         return result
 
+    _resolver_async._is_default = not field.base_resolver  # type: ignore
     _resolver._is_default = not field.base_resolver  # type: ignore
 
-    return _resolver
+    return (
+        _resolver_async
+        if field.base_resolver and iscoroutinefunction(field.base_resolver)
+        else _resolver
+    )
