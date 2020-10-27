@@ -59,6 +59,7 @@ freezegun = "^1.0.0"
 opentelemetry-api = "^0.13b0"
 opentelemetry-sdk = "^0.13b0"
 flake8-isort = "^4.0.0"
+flake8-black = "^0.2.1"
 
 [tool.poetry.extras]
 django = ["django","pytest-django"]
