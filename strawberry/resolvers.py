@@ -48,7 +48,7 @@ def get_arguments(
 
     args = []
 
-    if "self" in function_args:
+    if function_args and function_args[0] == "self":
         args.append(source)
 
     if "root" in function_args:
