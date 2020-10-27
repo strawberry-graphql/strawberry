@@ -2,6 +2,8 @@ import typing
 from enum import Enum
 from typing import List, Optional
 
+import pytest
+
 import strawberry
 
 
@@ -175,3 +177,52 @@ def test_enum_in_optional_list():
 
     assert not result.errors
     assert result.data["bestFlavours"] is None
+
+
+@pytest.mark.asyncio
+async def test_enum_resolver_async():
+    @strawberry.enum
+    class IceCreamFlavour(Enum):
+        VANILLA = "vanilla"
+        STRAWBERRY = "strawberry"
+        CHOCOLATE = "chocolate"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        async def best_flavour(self, info) -> IceCreamFlavour:
+            return IceCreamFlavour.STRAWBERRY
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ bestFlavour }"
+
+    result = await schema.execute(query)
+
+    assert not result.errors
+    assert result.data["bestFlavour"] == "STRAWBERRY"
+
+
+@pytest.mark.asyncio
+async def test_enum_in_list_async():
+    @strawberry.enum
+    class IceCreamFlavour(Enum):
+        VANILLA = "vanilla"
+        STRAWBERRY = "strawberry"
+        CHOCOLATE = "chocolate"
+        PISTACHIO = "pistachio"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        async def best_flavours(self, info) -> List[IceCreamFlavour]:
+            return [IceCreamFlavour.STRAWBERRY, IceCreamFlavour.PISTACHIO]
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ bestFlavours }"
+
+    result = await schema.execute(query)
+
+    assert not result.errors
+    assert result.data["bestFlavours"] == ["STRAWBERRY", "PISTACHIO"]

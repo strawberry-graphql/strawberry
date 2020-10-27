@@ -1,5 +1,6 @@
 import enum
-from typing import Any, Callable, cast
+from inspect import iscoroutine, iscoroutinefunction
+from typing import Any, Awaitable, Callable, Dict, List, Tuple, Union, cast
 
 from .arguments import convert_arguments
 from .field import FieldDefinition
@@ -30,6 +31,54 @@ def convert_enums_to_values(field: FieldDefinition, result: Any) -> Any:
     return result
 
 
+def get_arguments(
+    field: FieldDefinition, kwargs: Dict[str, Any], source: Any, info: Any
+) -> Tuple[List[Any], Dict[str, Any]]:
+    actual_resolver = cast(Callable, field.base_resolver)
+
+    kwargs = convert_arguments(kwargs, field.arguments)
+
+    # the following code allows to omit info and root arguments
+    # by inspecting the original resolver arguments,
+    # if it asks for self, the source will be passed as first argument
+    # if it asks for root, the source it will be passed as kwarg
+    # if it asks for info, the info will be passed as kwarg
+
+    function_args = get_func_args(actual_resolver)
+
+    args = []
+
+    if function_args and function_args[0] == "self":
+        args.append(source)
+
+    if "root" in function_args:
+        kwargs["root"] = source
+
+    if "info" in function_args:
+        kwargs["info"] = info
+
+    return args, kwargs
+
+
+def get_result_for_field(
+    field: FieldDefinition, kwargs: Dict[str, Any], source: Any, info: Any
+) -> Union[Awaitable[Any], Any]:
+    """
+    Calls the resolver defined for `field`. If field doesn't have a
+    resolver defined we default to using getattr on `source`.
+    """
+
+    actual_resolver = field.base_resolver
+
+    if actual_resolver:
+        args, kwargs = get_arguments(field, kwargs, source=source, info=info)
+
+        return actual_resolver(*args, **kwargs)
+
+    origin_name = cast(str, field.origin_name)
+    return getattr(source, origin_name)
+
+
 def get_resolver(field: FieldDefinition) -> Callable:
     def _check_permissions(source, info, **kwargs):
         """
@@ -43,42 +92,31 @@ def get_resolver(field: FieldDefinition) -> Callable:
                 message = getattr(permission, "message", None)
                 raise PermissionError(message)
 
-    def _resolver(source, info, **kwargs):
+    async def _resolver_async(source, info, **kwargs):
         _check_permissions(source, info, **kwargs)
 
-        actual_resolver = field.base_resolver
+        result = get_result_for_field(field, kwargs=kwargs, info=info, source=source)
 
-        if actual_resolver:
-            kwargs = convert_arguments(kwargs, field.arguments)
-
-            # the following code allows to omit info and root arguments
-            # by inspecting the original resolver arguments,
-            # if it asks for self, the source will be passed as first argument
-            # if it asks for root, the source it will be passed as kwarg
-            # if it asks for info, the info will be passed as kwarg
-
-            function_args = get_func_args(actual_resolver)
-
-            args = []
-
-            if "self" in function_args:
-                args.append(source)
-
-            if "root" in function_args:
-                kwargs["root"] = source
-
-            if "info" in function_args:
-                kwargs["info"] = info
-
-            result = actual_resolver(*args, **kwargs)
-        else:
-            origin_name = cast(str, field.origin_name)
-            result = getattr(source, origin_name)
+        if iscoroutine(result):  # pragma: no cover
+            result = await result
 
         result = convert_enums_to_values(field, result)
 
         return result
 
+    def _resolver(source, info, **kwargs):
+        _check_permissions(source, info, **kwargs)
+
+        result = get_result_for_field(field, kwargs=kwargs, info=info, source=source)
+        result = convert_enums_to_values(field, result)
+
+        return result
+
+    _resolver_async._is_default = not field.base_resolver  # type: ignore
     _resolver._is_default = not field.base_resolver  # type: ignore
 
-    return _resolver
+    return (
+        _resolver_async
+        if field.base_resolver and iscoroutinefunction(field.base_resolver)
+        else _resolver
+    )
