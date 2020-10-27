@@ -1,6 +1,7 @@
 from dataclasses import dataclass
 from typing import Callable, Dict, Optional, Type
 
+from .exceptions import ScalarAlreadyRegisteredError
 from .utils.str_converters import to_camel_case
 
 
@@ -41,6 +42,9 @@ def _process_scalar(
 ):
 
     name = name or to_camel_case(cls.__name__)
+
+    if cls in SCALAR_REGISTRY:
+        raise ScalarAlreadyRegisteredError(name)
 
     wrapper = ScalarWrapper(cls)
     wrapper._scalar_definition = ScalarDefinition(
