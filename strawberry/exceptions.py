@@ -124,6 +124,6 @@ class MultipleStrawberryArgumentsError(Exception):
 
 class ScalarAlreadyRegisteredError(Exception):
     def __init__(self, scalar_name: str):
-        message = (f"Scalar `{scalar_name}` has already been registered")
+        message = f"Scalar `{scalar_name}` has already been registered"
 
         super().__init__(message)
