@@ -40,8 +40,8 @@ def test_argument_with_default_value_none():
     schema = strawberry.Schema(query=Query)
 
     assert str(schema) == dedent(
-        '''\
+        """\
         type Query {
           hello(name: String = null): String!
-        }'''
+        }"""
     )
