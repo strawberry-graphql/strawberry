@@ -63,6 +63,11 @@ def get_arguments(
 def get_result_for_field(
     field: FieldDefinition, kwargs: Dict[str, Any], source: Any, info: Any
 ) -> Union[Awaitable[Any], Any]:
+    """
+    Calls the resolver defined for `field`. If field doesn't have a
+    resolver defined we default to using getattr on `source`.
+    """
+
     actual_resolver = field.base_resolver
 
     if actual_resolver:
