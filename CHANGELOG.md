@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.38.1 - 2020-10-27
+-------------------
+
+Set default value to null in the schema when it's set to None
+
 0.38.0 - 2020-10-27
 -------------------
 
