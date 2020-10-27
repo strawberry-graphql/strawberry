@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.39.0 - 2020-10-27
+-------------------
+
+This release adds support to mark a field as deprecated via `deprecation_reason`
+
 0.38.1 - 2020-10-27
 -------------------
 
