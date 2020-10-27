@@ -31,7 +31,7 @@ def get_arguments_from_annotations(
         default_value = parameters[name].default
         default_value = (
             undefined
-            if default_value in (inspect._empty, None)  # type: ignore
+            if default_value == inspect._empty  # type: ignore
             else default_value
         )
 

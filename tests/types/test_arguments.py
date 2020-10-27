@@ -7,6 +7,7 @@ from typing_extensions import Annotated
 
 import strawberry
 from strawberry.exceptions import MultipleStrawberryArgumentsError
+from strawberry.types.types import undefined
 
 
 def test_basic_arguments():
@@ -206,6 +207,50 @@ def test_arguments_when_extending_multiple_types():
     assert definition.fields[1].arguments[0].name == "id"
     assert definition.fields[1].arguments[0].type == strawberry.ID
     assert definition.fields[1].arguments[0].is_optional is False
+
+
+def test_argument_with_default_value_none():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def name(self, argument: Optional[str] = None) -> str:
+            return "Name"
+
+    definition = Query._type_definition
+
+    assert definition.name == "Query"
+
+    assert len(definition.fields[0].arguments) == 1
+
+    argument = definition.fields[0].arguments[0]
+
+    assert argument.name == "argument"
+    assert argument.type == str
+    assert argument.is_optional is True
+    assert argument.description is None
+    assert argument.default_value is None
+
+
+def test_argument_with_default_value_undefined():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def name(self, argument: Optional[str]) -> str:
+            return "Name"
+
+    definition = Query._type_definition
+
+    assert definition.name == "Query"
+
+    assert len(definition.fields[0].arguments) == 1
+
+    argument = definition.fields[0].arguments[0]
+
+    assert argument.name == "argument"
+    assert argument.type == str
+    assert argument.is_optional is True
+    assert argument.description is None
+    assert argument.default_value == undefined
 
 
 def test_annotated_argument_on_resolver():
