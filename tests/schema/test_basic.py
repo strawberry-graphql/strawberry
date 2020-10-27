@@ -166,6 +166,70 @@ def test_field_description():
     ]
 
 
+def test_field_deprecated_reason():
+    @strawberry.type
+    class Query:
+        a: str = strawberry.field(deprecation_reason="Deprecated A")
+
+        @strawberry.field
+        def b(self, info, id: int) -> str:
+            return "I'm a resolver"
+
+        @strawberry.field(deprecation_reason="Deprecated B")
+        def c(self, info, id: int) -> str:
+            return "I'm a resolver"
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        __type(name: "Query") {
+            fields(includeDeprecated: true) {
+                name
+                deprecationReason
+            }
+        }
+    }"""
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data["__type"]["fields"] == [
+        {"name": "a", "deprecationReason": "Deprecated A"},
+        {"name": "b", "deprecationReason": None},
+        {"name": "c", "deprecationReason": "Deprecated B"},
+    ]
+
+
+def test_field_deprecated_reason_subscription():
+    @strawberry.type
+    class Query:
+        a: str
+
+    @strawberry.type
+    class Subscription:
+        @strawberry.subscription(deprecation_reason="Deprecated A")
+        def a(self) -> str:
+            return "A"
+
+    schema = strawberry.Schema(query=Query, subscription=Subscription)
+
+    query = """{
+        __type(name: "Subscription") {
+            fields(includeDeprecated: true) {
+                name
+                deprecationReason
+            }
+        }
+    }"""
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data["__type"]["fields"] == [
+        {"name": "a", "deprecationReason": "Deprecated A"},
+    ]
+
+
 def test_enum_description():
     @strawberry.enum(description="We love ice-creams")
     class IceCreamFlavour(Enum):

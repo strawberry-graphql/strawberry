@@ -92,3 +92,4 @@ class FieldDefinition:
         default_factory=list
     )
     default_value: Any = undefined
+    deprecation_reason: Optional[str] = None
