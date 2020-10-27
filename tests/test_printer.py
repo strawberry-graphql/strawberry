@@ -27,7 +27,6 @@ def test_simple_required_types():
       uid: UUID!
     }
 
-    """UUID"""
     scalar UUID
     '''
 
@@ -82,7 +81,6 @@ def test_input_simple_required_types():
       search(input: MyInput!): String!
     }
 
-    """UUID"""
     scalar UUID
     '''
 

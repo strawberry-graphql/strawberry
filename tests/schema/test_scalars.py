@@ -16,7 +16,6 @@ def test_uuid_field_string_value():
         uniqueId: UUID!
       }
 
-      """UUID"""
       scalar UUID
     ''').strip()
 
@@ -41,7 +40,6 @@ def test_uuid_field_uuid_value():
         uniqueId: UUID!
       }
 
-      """UUID"""
       scalar UUID
     ''').strip()
 
