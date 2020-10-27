@@ -17,7 +17,7 @@ def test_simple_required_types():
         id: strawberry.ID
         uid: UUID
 
-    expected_type = '''
+    expected_type = """
     type Query {
       s: String!
       i: Int!
@@ -28,7 +28,7 @@ def test_simple_required_types():
     }
 
     scalar UUID
-    '''
+    """
 
     schema = strawberry.Schema(query=Query)
 
@@ -67,7 +67,7 @@ def test_input_simple_required_types():
         def search(self, input: MyInput) -> str:
             return input.s
 
-    expected_type = '''
+    expected_type = """
     input MyInput {
       s: String!
       i: Int!
@@ -82,7 +82,7 @@ def test_input_simple_required_types():
     }
 
     scalar UUID
-    '''
+    """
 
     schema = strawberry.Schema(query=Query)
 

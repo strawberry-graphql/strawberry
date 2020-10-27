@@ -11,17 +11,25 @@ def test_uuid_field_string_value():
 
     schema = strawberry.Schema(query=Query)
 
-    assert str(schema) == dedent('''
+    assert (
+        str(schema)
+        == dedent(
+            """
       type Query {
         uniqueId: UUID!
       }
 
       scalar UUID
-    ''').strip()
+    """
+        ).strip()
+    )
 
-    result = schema.execute_sync("query { uniqueId }", root_value=Query(
-        unique_id="e350746c-33b6-4469-86b0-5f16e1e12232",
-    ))
+    result = schema.execute_sync(
+        "query { uniqueId }",
+        root_value=Query(
+            unique_id="e350746c-33b6-4469-86b0-5f16e1e12232",
+        ),
+    )
     assert not result.errors
     assert result.data == {
         "uniqueId": "e350746c-33b6-4469-86b0-5f16e1e12232",
@@ -35,17 +43,25 @@ def test_uuid_field_uuid_value():
 
     schema = strawberry.Schema(query=Query)
 
-    assert str(schema) == dedent('''
+    assert (
+        str(schema)
+        == dedent(
+            """
       type Query {
         uniqueId: UUID!
       }
 
       scalar UUID
-    ''').strip()
+    """
+        ).strip()
+    )
 
-    result = schema.execute_sync("query { uniqueId }", root_value=Query(
-        unique_id=UUID("e350746c-33b6-4469-86b0-5f16e1e12232"),
-    ))
+    result = schema.execute_sync(
+        "query { uniqueId }",
+        root_value=Query(
+            unique_id=UUID("e350746c-33b6-4469-86b0-5f16e1e12232"),
+        ),
+    )
     assert not result.errors
     assert result.data == {
         "uniqueId": "e350746c-33b6-4469-86b0-5f16e1e12232",
@@ -66,11 +82,13 @@ def test_uuid_input():
 
     schema = strawberry.Schema(query=Query, mutation=Mutation)
 
-    result = schema.execute_sync("""
+    result = schema.execute_sync(
+        """
         mutation {
             uuidInput(inputId: "e350746c-33b6-4469-86b0-5f16e1e12232")
         }
-    """)
+    """
+    )
 
     assert not result.errors
     assert result.data == {
