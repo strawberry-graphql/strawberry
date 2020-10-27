@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.37.7 - 2020-10-27
+-------------------
+
+This release fixes a bug when returning list in async resolvers
+
 0.37.6 - 2020-10-23
 -------------------
 
