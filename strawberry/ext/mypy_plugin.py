@@ -4,6 +4,7 @@ from mypy.nodes import (
     GDEF,
     Expression,
     IndexExpr,
+    MemberExpr,
     NameExpr,
     SymbolTableNode,
     TupleExpr,
@@ -60,7 +61,13 @@ def _get_type_for_expr(expr: Expression, api: SemanticAnalyzerPluginInterface):
 
         return type_
 
-    raise ValueError(f"Unsupported expression f{type(expr)}")
+    if isinstance(expr, MemberExpr):
+        if expr.fullname:
+            return api.named_type(expr.fullname)
+        else:
+            raise InvalidNodeTypeException()
+
+    raise ValueError(f"Unsupported expression {type(expr)}")
 
 
 def union_hook(ctx: DynamicClassDefContext) -> None:
