@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.39.1 - 2020-10-28
+-------------------
+
+Fix issue when using `strawberry.enum(module.EnumClass)` in mypy
+
 0.39.0 - 2020-10-27
 -------------------
 
