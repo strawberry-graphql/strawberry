@@ -43,3 +43,18 @@
   out: |
     main:19: note: Revealed type is 'Any'
     main:20: note: Revealed type is 'Any'
+
+
+- case: test_enum_from_namespace
+  main: |
+    import enums
+    import strawberry
+
+    Flavour = strawberry.enum(enums.IceCreamFlavour)
+
+    a: Flavour = Flavour.VANILLA
+    reveal_type(Flavour)
+    reveal_type(a)
+  out: |
+    main:7: note: Revealed type is 'def (value: builtins.object) -> enums.IceCreamFlavour'
+    main:8: note: Revealed type is 'enums.IceCreamFlavour'
