@@ -53,7 +53,7 @@ pytest-django = {version = "^4.1"}
 asgiref = "^3.2"
 pytest-flask = {version = "^1.0.0"}
 requests = "^2.24.0"
-pre-commit = "^2.7.1"
+pre-commit = "^2.8.1"
 pytest-benchmark = "^3.2.3"
 freezegun = "^1.0.0"
 opentelemetry-api = "^0.13b0"
