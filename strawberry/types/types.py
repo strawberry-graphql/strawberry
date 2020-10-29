@@ -1,9 +1,11 @@
 import dataclasses
-from typing import Any, Callable, Dict, List, Optional, Type, Union
+from typing import Any, Callable, Dict, List, Optional, TYPE_CHECKING, Type, Union
 
 from strawberry.permission import BasePermission
 from strawberry.union import StrawberryUnion
 
+if TYPE_CHECKING:
+    from strawberry.types.fields.resolver import StrawberryResolver
 
 undefined = object()
 
@@ -87,7 +89,7 @@ class FieldDefinition:
     )
     arguments: List[ArgumentDefinition] = dataclasses.field(default_factory=list)
     description: Optional[str] = None
-    base_resolver: Optional[Callable] = None
+    base_resolver: Optional['StrawberryResolver'] = None
     permission_classes: List[Type[BasePermission]] = dataclasses.field(
         default_factory=list
     )

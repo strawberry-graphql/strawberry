@@ -22,12 +22,11 @@ def test_resolver_fields():
 
     assert definition.fields[0].name == "name"
     assert definition.fields[0].type == str
-    assert definition.fields[0].base_resolver == Query.name
+    assert definition.fields[0].base_resolver.wrapped_func == Query.name
 
 
 def test_raises_error_when_return_annotation_missing():
     with pytest.raises(MissingReturnAnnotationError) as e:
-
         @strawberry.type
         class Query:
             @strawberry.field
@@ -39,7 +38,6 @@ def test_raises_error_when_return_annotation_missing():
     )
 
     with pytest.raises(MissingReturnAnnotationError) as e:
-
         @strawberry.type
         class Query2:
             def adios(self):
@@ -47,17 +45,16 @@ def test_raises_error_when_return_annotation_missing():
 
             goodbye = strawberry.field(resolver=adios)
 
-    # TODO: the name here is wrong, should be goodbye or maybe we should
-    # say that the resolver needs the annotation?
+    # TODO: Maybe we should say that the resolver needs the annotation?
 
     assert e.value.args == (
-        'Return annotation missing for field "adios", did you forget to add it?',
+        'Return annotation missing for field "goodbye", did you forget to add '
+        'it?',
     )
 
 
 def test_raises_error_when_argument_annotation_missing():
     with pytest.raises(MissingArgumentsAnnotationsError) as e:
-
         @strawberry.field
         def hello(self, info, query) -> str:
             return "I'm a resolver"
@@ -68,7 +65,6 @@ def test_raises_error_when_argument_annotation_missing():
     )
 
     with pytest.raises(MissingArgumentsAnnotationsError) as e:
-
         @strawberry.field
         def hello2(self, info, query, limit) -> str:
             return "I'm a resolver"
@@ -81,7 +77,6 @@ def test_raises_error_when_argument_annotation_missing():
 
 def test_raises_error_when_missing_annotation_and_resolver():
     with pytest.raises(MissingFieldAnnotationError) as e:
-
         @strawberry.type
         class Query:  # noqa: F841
             missing = strawberry.field(name="annotation")

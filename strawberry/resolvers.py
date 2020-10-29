@@ -4,7 +4,6 @@ from typing import Any, Awaitable, Callable, Dict, List, Tuple, Union, cast
 
 from .arguments import convert_arguments
 from .field import FieldDefinition
-from .utils.inspect import get_func_args
 
 
 def is_default_resolver(func: Callable) -> bool:
@@ -44,17 +43,15 @@ def get_arguments(
     # if it asks for root, the source it will be passed as kwarg
     # if it asks for info, the info will be passed as kwarg
 
-    function_args = get_func_args(actual_resolver)
-
     args = []
 
-    if function_args and function_args[0] == "self":
+    if actual_resolver.has_self_arg:
         args.append(source)
 
-    if "root" in function_args:
+    if actual_resolver.has_root_arg:
         kwargs["root"] = source
 
-    if "info" in function_args:
+    if actual_resolver.has_info_arg:
         kwargs["info"] = info
 
     return args, kwargs

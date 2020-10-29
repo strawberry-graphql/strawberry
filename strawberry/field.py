@@ -1,11 +1,12 @@
 import dataclasses
-import inspect
-from typing import Callable, List, Optional, Type
+from typing import Callable, List, Optional, Type, Union
 
-from .arguments import get_arguments_from_resolver
 from .permission import BasePermission
+from .types.fields.resolver import StrawberryResolver
 from .types.types import FederationFieldParams, FieldDefinition
 from .utils.str_converters import to_camel_case
+
+_RESOLVER_TYPE = Union[StrawberryResolver, Callable]
 
 
 class StrawberryField(dataclasses.Field):
@@ -24,29 +25,25 @@ class StrawberryField(dataclasses.Field):
             metadata=None,
         )
 
-    def __call__(self, resolver: Callable) -> Callable:
+    def __call__(self, resolver: _RESOLVER_TYPE) -> 'StrawberryField':
         """Migrate the field definition to the resolver"""
+        if not isinstance(resolver, StrawberryResolver):
+            resolver = StrawberryResolver(resolver)
 
-        field_definition = self._field_definition
-        # note that field_definition.name is finalized in type_resolver._get_fields
+        self._field_definition.origin_name = resolver.name
+        self._field_definition.origin = resolver.wrapped_func
+        self._field_definition.base_resolver = resolver
+        self._field_definition.arguments = resolver.arguments
+        self._field_definition.type = resolver.type
 
-        field_definition.origin_name = resolver.__name__
-        field_definition.origin = resolver
-        field_definition.base_resolver = resolver
-        field_definition.arguments = get_arguments_from_resolver(resolver)
-        field_definition.type = resolver.__annotations__.get("return", None)
+        # Don't add field to __init__
+        self.init = False
 
-        if not inspect.ismethod(resolver):
-            # resolver is a normal function
-            resolver._field_definition = field_definition  # type: ignore
-        else:
-            # resolver is a bound method and immutable (most likely a
-            # classmethod or an instance method). We need to monkeypatch its
-            # underlying .__func__ function
-            # https://stackoverflow.com/a/7891681/8134178
-            resolver.__func__._field_definition = field_definition  # type:ignore
+        # Keep field on dataclass. dataclasses.dataclass will remove any Field without a
+        # default value, so we bypass that here
+        self.default = resolver.wrapped_func
 
-        return resolver
+        return self
 
     def __setattr__(self, name, value):
         if name == "type":
@@ -63,7 +60,7 @@ class StrawberryField(dataclasses.Field):
 
 
 def field(
-    resolver: Optional[Callable] = None,
+    resolver: Optional[_RESOLVER_TYPE] = None,
     *,
     name: Optional[str] = None,
     is_subscription: bool = False,
