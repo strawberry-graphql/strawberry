@@ -4,6 +4,7 @@ from typing import Any, Awaitable, Callable, Dict, List, Tuple, Union, cast
 
 from .arguments import convert_arguments
 from .field import FieldDefinition
+from .types.fields.resolver import StrawberryResolver
 
 
 def is_default_resolver(func: Callable) -> bool:
@@ -33,7 +34,7 @@ def convert_enums_to_values(field: FieldDefinition, result: Any) -> Any:
 def get_arguments(
     field: FieldDefinition, kwargs: Dict[str, Any], source: Any, info: Any
 ) -> Tuple[List[Any], Dict[str, Any]]:
-    actual_resolver = cast(Callable, field.base_resolver)
+    actual_resolver = cast(StrawberryResolver, field.base_resolver)
 
     kwargs = convert_arguments(kwargs, field.arguments)
 

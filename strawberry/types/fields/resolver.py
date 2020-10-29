@@ -6,12 +6,12 @@ from strawberry.arguments import get_arguments_from_resolver
 from strawberry.types.types import ArgumentDefinition
 from strawberry.utils.inspect import get_func_args
 
+
 T = TypeVar("T")
 
 
 class StrawberryResolver(Generic[T]):
-    def __init__(self, func: Callable[..., T], *,
-                 description: Optional[str] = None):
+    def __init__(self, func: Callable[..., T], *, description: Optional[str] = None):
         self.wrapped_func = func
         self._description = description
 
@@ -37,7 +37,7 @@ class StrawberryResolver(Generic[T]):
     @cached_property
     def has_self_arg(self) -> bool:
         args = get_func_args(self.wrapped_func)
-        return "self" in args
+        return args and args[0] == "self"
 
     @property
     def description(self) -> Optional[str]:
