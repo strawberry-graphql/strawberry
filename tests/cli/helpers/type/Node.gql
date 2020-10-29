@@ -1,5 +1,0 @@
-"""An object with an ID"""
-interface Node {
-  """The id of the object."""
-  id: ID!
-}

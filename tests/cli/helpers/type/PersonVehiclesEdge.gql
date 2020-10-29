@@ -1,8 +1,0 @@
-"""An edge in a connection."""
-type PersonVehiclesEdge {
-  """The item at the end of the edge"""
-  node: Vehicle
-
-  """A cursor for use in pagination"""
-  cursor: String!
-}
