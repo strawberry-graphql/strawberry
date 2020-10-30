@@ -1,6 +1,6 @@
 import dataclasses
 from functools import partial
-from typing import Any, Optional, Type
+from typing import Any, List, Optional, Type
 
 from pydantic import BaseModel
 from pydantic.fields import ModelField
@@ -45,6 +45,7 @@ def get_type_for_field(field: ModelField):
 def type(
     model: Type[BaseModel],
     *,
+    fields: List[str],
     name: str = None,
     is_input: bool = False,
     is_interface: bool = False,
@@ -52,11 +53,16 @@ def type(
     federation: Optional[FederationTypeParams] = None,
 ):
     def wrap(cls):
-        fields = model.__fields__
+        model_fields = model.__fields__
+        fields_set = set(fields)
 
         cls = dataclasses.make_dataclass(
             cls.__name__,
-            [(name, get_type_for_field(field)) for name, field in fields.items()],
+            [
+                (name, get_type_for_field(field))
+                for name, field in model_fields.items()
+                if name in fields_set
+            ],
         )
 
         _process_type(
