@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.39.3 - 2020-10-30
+-------------------
+
+This release disable implicit re-export of modules. This fixes Strawberry for you if you were using `implicit_reexport = False` in your MyPy config.
+
 0.39.2 - 2020-10-29
 -------------------
 
