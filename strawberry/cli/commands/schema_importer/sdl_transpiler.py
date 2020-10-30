@@ -10,9 +10,16 @@ from strawberry.utils.str_converters import to_snake_case
 # Simple Jinja2 template string for generating valid strawberry class
 TEMPLATE = """{{ get_decorator(ast.kind) }}{{ get_description(ast) }}
 class {{ get_class_name(ast) }}:
+    {%- if ast.kind in ['object_type_definition', 'input_type_definition'] -%}
     {%- for field in ast.fields %}
     {{ get_field_attribute(field) }}
     {%- endfor %}
+    {%- endif -%}
+    {%- if ast.kind == 'enum_type_definition' -%}
+    {%- for value in ast.values %}
+    {{ value.name.value }} = '{{ value.name.value.lower() }}'
+    {%- endfor %}
+    {%- endif -%}
 """
 
 # QUESTION: Is there a better way to determine this?

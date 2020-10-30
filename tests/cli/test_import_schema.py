@@ -284,6 +284,28 @@ def test_import_id_field():
 
 # endregion
 # Enum
+def test_import_enum_type():
+    """ Test for an enum type transpilation """
+    s = """
+    enum SwallowSpecies {
+        AFRICAN
+        EUROPEAN
+    }
+    """
+    output = sdl_importer.import_sdl(s)
+    what_it_should_be = (
+        "import strawberry\n"
+        "\n"
+        "\n"
+        "@strawberry.enum\n"
+        "class SwallowSpecies:\n"
+        "    AFRICAN = 'african'\n"
+        "    EUROPEAN = 'european'"
+    )
+
+    assert output == what_it_should_be
+
+
 # region List types
 def test_import_opt_list_opt_str_field():
     """ Test for an optional list of optional strings type with field description """
