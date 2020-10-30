@@ -28,3 +28,6 @@ def directive(*, locations: List[DirectiveLocation], description=None, name=None
         return f
 
     return _wrap
+
+
+__all__ = ["DirectiveLocation", "DirectiveDefinition", "directive"]
