@@ -8,7 +8,7 @@ from strawberry.cli.commands.schema_importer import (
 )
 
 # Complex object
-def test_cli_cmd_import_specific_object_type(mocker):
+def test_import_specific_object_type(mocker):
     s = '''
     """A single film."""
     type Film implements Node {
@@ -301,6 +301,27 @@ def test_import_enum_type():
         "class SwallowSpecies:\n"
         "    AFRICAN = 'african'\n"
         "    EUROPEAN = 'european'"
+    )
+
+    assert output == what_it_should_be
+
+
+# Interface
+def test_import_enum_type():
+    """ Test for an enum type transpilation """
+    s = """
+    interface Monster {
+        name: String!
+    }
+    """
+    output = sdl_importer.import_sdl(s)
+    what_it_should_be = (
+        "import strawberry\n"
+        "\n"
+        "\n"
+        "@strawberry.interface\n"
+        "class Monster:\n"
+        "    name: str"
     )
 
     assert output == what_it_should_be

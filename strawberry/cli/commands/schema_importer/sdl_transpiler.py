@@ -10,7 +10,7 @@ from strawberry.utils.str_converters import to_snake_case
 # Simple Jinja2 template string for generating valid strawberry class
 TEMPLATE = """{{ get_decorator(ast.kind) }}{{ get_description(ast) }}
 class {{ get_class_name(ast) }}:
-    {%- if ast.kind in ['object_type_definition', 'input_type_definition'] -%}
+    {%- if ast.kind in ['object_type_definition', 'input_type_definition', 'interface_type_definition'] -%}
     {%- for field in ast.fields %}
     {{ get_field_attribute(field) }}
     {%- endfor %}
@@ -34,11 +34,11 @@ SCALAR_TYPES = {
 # Base decorator kinds
 DECORATOR_KINDS = {
     "schema_definition": "@strawberry.type",
-    "object_type_definition": "@strawberry.type",
-    "enum_type_definition": "@strawberry.enum",
     "union_type_definition": "@strawberry.union",
-    "interface_type_definition": "@strawberry.interface",
+    "enum_type_definition": "@strawberry.enum",
     "input_type_definition": "@strawberry.input",
+    "object_type_definition": "@strawberry.type",
+    "interface_type_definition": "@strawberry.interface",
 }
 
 
