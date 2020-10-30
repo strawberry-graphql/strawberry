@@ -18,8 +18,8 @@ class {{ get_class_name(ast) }}:
 # QUESTION: Is there a better way to determine this?
 SCALAR_TYPES = {
     "Int": "int",
-    "Float": "float",
     "String": "str",
+    "Float": "float",
     "Boolean": "bool",
     "ID": "strawberry.ID",
 }
@@ -59,8 +59,8 @@ def get_field_attribute(field):
         "" if field.name.value == field_name else field.name.value, field.description
     )
     sufix = ""
-    if field.type.kind != "non_null_type":
-        sufix = " = None"
+    # if field.type.kind != "non_null_type":
+    #     sufix = " = None"
     field_type += strawberry_type if strawberry_type else sufix
     return f"{field_name}: {field_type}"
 
@@ -69,6 +69,7 @@ def get_field_type(field, optional=True):
     """ Go down the tree to find out the type of field """
     if field.type.kind == "list_type":
         field_type = "typing.List[{}]".format(get_field_type(field.type))
+        field_type = f"typing.Optional[{field_type}]" if optional else field_type
 
     elif field.type.kind == "non_null_type":
         field_type = "{}".format(get_field_type(field.type, optional=False))

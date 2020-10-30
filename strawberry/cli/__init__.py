@@ -1,6 +1,7 @@
 import click
 
 from .commands.server import server as cmd_server
+from .commands.schema_importer.import_schema import import_schema as cmd_import_schema
 
 
 @click.group()
@@ -9,3 +10,4 @@ def run():  # pragma: no cover
 
 
 run.add_command(cmd_server)
+run.add_command(cmd_import_schema)
