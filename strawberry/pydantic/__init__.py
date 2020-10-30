@@ -8,14 +8,7 @@ from strawberry.pydantic.fields import get_basic_type
 from strawberry.type import _process_type
 from strawberry.types.types import FederationTypeParams
 
-
-class UnregisteredTypeException(Exception):
-    def __init__(self, type: BaseModel):
-        message = (
-            f"Cannot find a Strawberry Type for {type} did you forget to register it?"
-        )
-
-        super().__init__(message)
+from .exceptions import UnregisteredTypeException
 
 
 def replace_pydantic_types(type_: Any):
