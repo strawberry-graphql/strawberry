@@ -261,7 +261,7 @@ def test_import_id_field():
     assert output == what_it_should_be
 
 
-def test_import_id_field():
+def test_import_optional_id_field():
     """ Test for a optional ID field type """
     s = """
     type ArgumentClinic {
@@ -307,7 +307,7 @@ def test_import_enum_type():
 
 
 # Interface
-def test_import_enum_type():
+def test_import_interface_type():
     """ Test for an enum type transpilation """
     s = """
     interface Monster {
