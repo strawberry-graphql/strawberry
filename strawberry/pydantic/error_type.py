@@ -90,7 +90,6 @@ def error_type(
         )
 
         model._strawberry_type = cls  # type: ignore
-
         return cls
 
     return wrap
