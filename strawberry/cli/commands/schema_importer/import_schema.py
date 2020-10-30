@@ -1,7 +1,5 @@
-import re
-from typing import List
-
 import click
+
 from graphql.error import GraphQLError
 
 from strawberry.cli.commands.schema_importer import sdl_importer

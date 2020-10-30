@@ -6,11 +6,6 @@ Handles argument:
     * import extraction
     * ast conversion preparation
 """
-import os
-import re
-
-from graphql.error import GraphQLError
-
 from strawberry.cli.commands.schema_importer import ast_converter, sdl_transpiler
 
 

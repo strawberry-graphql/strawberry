@@ -1,11 +1,5 @@
-import os
+from strawberry.cli.commands.schema_importer import sdl_importer
 
-from strawberry.cli.commands.schema_importer import (
-    import_schema,
-    sdl_importer,
-    ast_converter,
-    sdl_transpiler,
-)
 
 # Complex object
 def test_import_specific_object_type(mocker):
@@ -29,11 +23,16 @@ def test_import_specific_object_type(mocker):
 
     """The ISO 8601 date format of film release at original creator country."""
     releaseDate: String
-    speciesConnection(after: String, first: Int, before: String, last: Int): FilmSpeciesConnection
-    starshipConnection(after: String, first: Int, before: String, last: Int): FilmStarshipsConnection
-    vehicleConnection(after: String, first: Int, before: String, last: Int): FilmVehiclesConnection
-    characterConnection(after: String, first: Int, before: String, last: Int): FilmCharactersConnection
-    planetConnection(after: String, first: Int, before: String, last: Int): FilmPlanetsConnection
+    speciesConnection(after: String, first: Int, before: String, last: Int):
+    FilmSpeciesConnection
+    starshipConnection(after: String, first: Int, before: String, last: Int):
+    FilmStarshipsConnection
+    vehicleConnection(after: String, first: Int, before: String, last: Int):
+    FilmVehiclesConnection
+    characterConnection(after: String, first: Int, before: String, last: Int):
+    FilmCharactersConnection
+    planetConnection(after: String, first: Int, before: String, last: Int):
+    FilmPlanetsConnection
 
     """The ISO 8601 date format of the time that this resource was created."""
     created: String
@@ -52,10 +51,16 @@ def test_import_specific_object_type(mocker):
 # region Scalars
 # Boolean
 def test_import_bool_field():
-    """ Test for a required Boolean field type with a field description and case change """
+    """
+    Test for a required Boolean field type
+    with a field description and case change
+    """
     s = '''
     type Woman {
-        """If a woman weighs less than a duck then she is a...?"""
+        """
+        If a woman weighs less than a duck,
+        then she is a...?
+        """
         isWitch: Boolean!
     }
     '''
@@ -68,7 +73,8 @@ def test_import_bool_field():
         "class Woman:\n"
         "    is_witch: bool = strawberry.field(\n"
         "        name='isWitch',\n"
-        "        description='''If a woman weighs less than a duck then she is a...?'''\n"
+        "        description='''If a woman weighs less than a duck,\n"
+        "then she is a...?'''\n"
         "    )"
     )
 
@@ -76,10 +82,16 @@ def test_import_bool_field():
 
 
 def test_import_optional_bool_field():
-    """ Test for a optional Boolean field type with a field description and case change """
+    """
+    Test for a optional Boolean field type
+    with a field description and case change
+    """
     s = '''
     type Woman {
-        """If a woman weighs less than a duck then she is a...?"""
+        """
+        If a woman weighs less than a duck,
+        then she is a...?
+        """
         isWitch: Boolean
     }
     '''
@@ -93,7 +105,8 @@ def test_import_optional_bool_field():
         "class Woman:\n"
         "    is_witch: typing.Optional[bool] = strawberry.field(\n"
         "        name='isWitch',\n"
-        "        description='''If a woman weighs less than a duck then she is a...?'''\n"
+        "        description='''If a woman weighs less than a duck,\n"
+        "then she is a...?'''\n"
         "    )"
     )
 
@@ -197,7 +210,10 @@ def test_import_float_field():
     """ Test for a Float type """
     s = '''
     type Swallow {
-        """What is the airbourn speed of unladen african swallow?"""
+        """
+        What is the airbourn speed
+        of unladen african swallow?
+        """
         speed: Float!
     }
     '''
@@ -209,7 +225,8 @@ def test_import_float_field():
         "@strawberry.type\n"
         "class Swallow:\n"
         "    speed: float = strawberry.field(\n"
-        "        description='''What is the airbourn speed of unladen african swallow?'''\n"
+        "        description='''What is the airbourn speed\n"
+        "of unladen african swallow?'''\n"
         "    )"
     )
 
@@ -220,7 +237,10 @@ def test_import_optional_float_field():
     """ Test for a Float type """
     s = '''
     type Swallow {
-        """What is the airbourn speed of unladen african swallow?"""
+        """
+        What is the airbourn speed
+        of unladen african swallow?
+        """
         speed: Float
     }
     '''
@@ -233,7 +253,8 @@ def test_import_optional_float_field():
         "@strawberry.type\n"
         "class Swallow:\n"
         "    speed: typing.Optional[float] = strawberry.field(\n"
-        "        description='''What is the airbourn speed of unladen african swallow?'''\n"
+        "        description='''What is the airbourn speed\n"
+        "of unladen african swallow?'''\n"
         "    )"
     )
 
@@ -337,16 +358,19 @@ def test_import_opt_list_opt_str_field():
     }
     '''
     output = sdl_importer.import_sdl(s)
+    field = "= strawberry.field(\n"
+    string = "    animals: typing.Optional[typing.List[typing.Optional[str]]] "
+    stringField = string + field
     what_it_should_be = (
-        "import strawberry\n"
-        "import typing\n"
-        "\n"
-        "\n"
-        "@strawberry.type\n"
-        "class HollyHandGrenade:\n"
-        "    animals: typing.Optional[typing.List[typing.Optional[str]]] = strawberry.field(\n"
-        "        description='''And the people did feast on:'''\n"
-        "    )"
+        f"import strawberry\n"
+        f"import typing\n"
+        f"\n"
+        f"\n"
+        f"@strawberry.type\n"
+        f"class HollyHandGrenade:\n"
+        f"{stringField}"
+        f"        description='''And the people did feast on:'''\n"
+        f"    )"
     )
 
     assert output == what_it_should_be

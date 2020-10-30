@@ -5,12 +5,14 @@ to valid strawberry data class strings.
 The file printing is left to the caller which received input and output arguments.
 """
 from jinja2 import Template
+
 from strawberry.utils.str_converters import to_snake_case
+
 
 # Simple Jinja2 template string for generating valid strawberry class
 TEMPLATE = """{{ get_decorator(ast.kind) }}{{ get_description(ast) }}
 class {{ get_class_name(ast) }}:
-    {%- if ast.kind in ['object_type_definition', 'input_type_definition', 'interface_type_definition'] -%}
+    {%- if ast.kind in standard_types -%}
     {%- for field in ast.fields %}
     {{ get_field_attribute(field) }}
     {%- endfor %}
@@ -65,10 +67,7 @@ def get_field_attribute(field):
     strawberry_type = get_strawberry_type(
         "" if field.name.value == field_name else field.name.value, field.description
     )
-    sufix = ""
-    # if field.type.kind != "non_null_type":
-    #     sufix = " = None"
-    field_type += strawberry_type if strawberry_type else sufix
+    field_type += strawberry_type if strawberry_type else ""
     return f"{field_name}: {field_type}"
 
 
@@ -113,6 +112,11 @@ def transpile(ast):
         get_description=get_description,
         get_decorator=get_decorator,
         get_class_name=get_class_name,
+        standard_types=[
+            "object_type_definition",
+            "input_type_definition",
+            "interface_type_definition",
+        ],
         ast=ast,
     )
     return output

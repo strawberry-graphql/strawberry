@@ -2,6 +2,7 @@ import re
 
 from graphql.language import parse
 
+
 GQL_SCHEMA_TYPE = r"(?si)^Schema.*?}"
 
 
