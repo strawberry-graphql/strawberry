@@ -12,7 +12,6 @@ from .exceptions import (
 from .scalars import is_scalar
 from .types.type_resolver import resolve_type
 from .types.types import ArgumentDefinition, undefined
-from .utils.str_converters import to_camel_case
 
 
 class StrawberryArgument:
@@ -37,7 +36,7 @@ def get_arguments_from_annotations(
 
         argument_definition = ArgumentDefinition(
             origin_name=name,
-            name=to_camel_case(name),
+            name=None,
             origin=origin,
             default_value=default_value,
         )
@@ -108,7 +107,11 @@ def is_unset(value: Any) -> bool:
     return type(value) is _Unset
 
 
-def convert_argument(value: Any, argument_definition: ArgumentDefinition) -> Any:
+def convert_argument(
+    value: Any,
+    argument_definition: ArgumentDefinition,
+    auto_camel_case: bool,
+) -> Any:
     if value is None:
         return None
 
@@ -118,7 +121,10 @@ def convert_argument(value: Any, argument_definition: ArgumentDefinition) -> Any
     if argument_definition.is_list:
         child_definition = cast(ArgumentDefinition, argument_definition.child)
 
-        return [convert_argument(x, child_definition) for x in value]
+        return [
+            convert_argument(x, child_definition, auto_camel_case=auto_camel_case)
+            for x in value
+        ]
 
     argument_type = cast(Type, argument_definition.type)
 
@@ -136,8 +142,12 @@ def convert_argument(value: Any, argument_definition: ArgumentDefinition) -> Any
         kwargs = {}
 
         for field in argument_type._type_definition.fields:
-            if field.name in value:
-                kwargs[field.origin_name] = convert_argument(value[field.name], field)
+            field_name = field.get_name(auto_camel_case=auto_camel_case)
+
+            if field_name in value:
+                kwargs[field.origin_name] = convert_argument(
+                    value[field_name], field, auto_camel_case=auto_camel_case
+                )
 
         return argument_type(**kwargs)
 
@@ -147,6 +157,7 @@ def convert_argument(value: Any, argument_definition: ArgumentDefinition) -> Any
 def convert_arguments(
     value: Dict[str, Any],
     arguments: List[ArgumentDefinition],
+    auto_camel_case: bool,
 ) -> Dict[str, Any]:
     """Converts a nested dictionary to a dictionary of actual types.
 
@@ -159,11 +170,14 @@ def convert_arguments(
     kwargs = {}
 
     for argument in arguments:
-        if argument.name in value:
+        argument_name = argument.get_name(auto_camel_case=auto_camel_case)
+        if argument_name in value:
             origin_name = cast(str, argument.origin_name)
-            current_value = value[argument.name]
+            current_value = value[argument_name]
 
-            kwargs[origin_name] = convert_argument(current_value, argument)
+            kwargs[origin_name] = convert_argument(
+                current_value, argument, auto_camel_case=auto_camel_case
+            )
 
     return kwargs
 

@@ -11,7 +11,7 @@ def test_defining_interface():
     assert definition.name == "Node"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "id"
+    assert definition.fields[0].origin_name == "id"
     assert definition.fields[0].type == strawberry.ID
 
     assert definition.is_interface
@@ -31,10 +31,10 @@ def test_implementing_interfaces():
     assert definition.name == "User"
     assert len(definition.fields) == 2
 
-    assert definition.fields[0].name == "id"
+    assert definition.fields[0].origin_name == "id"
     assert definition.fields[0].type == strawberry.ID
 
-    assert definition.fields[1].name == "name"
+    assert definition.fields[1].origin_name == "name"
     assert definition.fields[1].type == str
 
     assert definition.is_interface is False
@@ -59,10 +59,10 @@ def test_implementing_interface_twice():
     assert definition.name == "User"
     assert len(definition.fields) == 2
 
-    assert definition.fields[0].name == "id"
+    assert definition.fields[0].origin_name == "id"
     assert definition.fields[0].type == strawberry.ID
 
-    assert definition.fields[1].name == "name"
+    assert definition.fields[1].origin_name == "name"
     assert definition.fields[1].type == str
 
     assert definition.is_interface is False
@@ -73,10 +73,10 @@ def test_implementing_interface_twice():
     assert definition.name == "Person"
     assert len(definition.fields) == 2
 
-    assert definition.fields[0].name == "id"
+    assert definition.fields[0].origin_name == "id"
     assert definition.fields[0].type == strawberry.ID
 
-    assert definition.fields[1].name == "name"
+    assert definition.fields[1].origin_name == "name"
     assert definition.fields[1].type == str
 
     assert definition.is_interface is False

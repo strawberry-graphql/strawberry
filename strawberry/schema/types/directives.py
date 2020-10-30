@@ -32,6 +32,9 @@ def get_directive_type(origin: typing.Any, type_map: TypeMap) -> GraphQLDirectiv
         locations=origin.directive_definition.locations,
         description=origin.directive_definition.description,
         args=convert_arguments(
-            get_arguments_for_directive(origin.directive_definition.resolver), type_map
+            get_arguments_for_directive(origin.directive_definition.resolver),
+            type_map,
+            # TODO:
+            auto_camel_case=True,
         ),
     )

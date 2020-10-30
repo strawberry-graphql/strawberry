@@ -13,7 +13,9 @@ from .types import TypeMap
 from .union import get_union_type
 
 
-def get_type_for_annotation(annotation: Type, type_map: TypeMap) -> GraphQLType:
+def get_type_for_annotation(
+    annotation: Type, type_map: TypeMap, auto_camel_case: bool
+) -> GraphQLType:
     graphql_type: Optional[GraphQLType] = None
 
     # this adds support for type annotations that use
@@ -30,7 +32,9 @@ def get_type_for_annotation(annotation: Type, type_map: TypeMap) -> GraphQLType:
     elif hasattr(annotation, "_type_definition"):
         from .object_type import get_object_type
 
-        graphql_type = get_object_type(annotation, type_map)
+        graphql_type = get_object_type(
+            annotation, type_map, auto_camel_case=auto_camel_case
+        )
 
     if not graphql_type:
         raise ValueError(f"Unable to get GraphQL type for {annotation}")
@@ -41,6 +45,7 @@ def get_type_for_annotation(annotation: Type, type_map: TypeMap) -> GraphQLType:
 def get_graphql_type(
     field: Union[FieldDefinition, ArgumentDefinition],
     type_map: TypeMap,
+    auto_camel_case: bool,
 ) -> GraphQLType:
     # by default fields in GraphQL-Core are optional, but for us we only want
     # to mark optional fields when they are inside a Optional type hint
@@ -54,13 +59,19 @@ def get_graphql_type(
 
     if field.is_list:
         child = cast(FieldDefinition, field.child)
-        type = GraphQLList(get_graphql_type(child, type_map))
+        type = GraphQLList(
+            get_graphql_type(child, type_map, auto_camel_case=auto_camel_case)
+        )
 
     elif field.is_union:
         union_definition = cast(StrawberryUnion, field_type)
-        type = get_union_type(union_definition, type_map)
+        type = get_union_type(
+            union_definition, type_map, auto_camel_case=auto_camel_case
+        )
     else:
-        type = get_type_for_annotation(field_type, type_map)
+        type = get_type_for_annotation(
+            field_type, type_map, auto_camel_case=auto_camel_case
+        )
 
     if wrap:
         return wrap(type)

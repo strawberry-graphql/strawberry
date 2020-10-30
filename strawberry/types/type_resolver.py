@@ -379,7 +379,7 @@ def _get_fields(cls: Type) -> List[FieldDefinition]:
             # Create a FieldDefinition, for fields of Types #1 and #2a
             field_definition = FieldDefinition(
                 origin_name=field.name,
-                name=to_camel_case(field.name),
+                name=None,
                 type=field.type,
                 origin=cls,
                 default_value=getattr(cls, field.name, undefined),

@@ -70,7 +70,7 @@ def _find_type_for_generic_union(root: typing.Any) -> TypeDefinition:
 
 
 def get_union_type(
-    union_definition: StrawberryUnion, type_map: TypeMap
+    union_definition: StrawberryUnion, type_map: TypeMap, auto_camel_case: bool
 ) -> GraphQLUnionType:
     from .object_type import get_object_type
 
@@ -99,7 +99,10 @@ def get_union_type(
             definition=union_definition,
             implementation=GraphQLUnionType(
                 union_definition.name,
-                [get_object_type(type, type_map) for type in types],
+                [
+                    get_object_type(type, type_map, auto_camel_case=auto_camel_case)
+                    for type in types
+                ],
                 description=union_definition.description,
                 resolve_type=_resolve_type,
             ),

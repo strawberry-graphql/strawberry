@@ -3,6 +3,7 @@ from typing import Any, Callable, Dict, List, Optional, Type, Union
 
 from strawberry.permission import BasePermission
 from strawberry.union import StrawberryUnion
+from strawberry.utils.str_converters import to_camel_case
 
 
 undefined = object()
@@ -62,6 +63,21 @@ class ArgumentDefinition:
     description: Optional[str] = None
     default_value: Any = undefined
 
+    # TODO: merge this with FieldDefinition
+    def get_name(self, auto_camel_case: bool) -> str:
+        name = self.name
+
+        if not name:
+            name = self.origin_name
+
+            if not name:
+                raise ValueError("Something went wrong")
+
+            if auto_camel_case:
+                name = to_camel_case(name)
+
+        return name
+
 
 @dataclasses.dataclass
 class FederationFieldParams:
@@ -93,3 +109,17 @@ class FieldDefinition:
     )
     default_value: Any = undefined
     deprecation_reason: Optional[str] = None
+
+    def get_name(self, auto_camel_case: bool) -> str:
+        name = self.name
+
+        if not name:
+            name = self.origin_name
+
+            if not name:
+                raise ValueError("Something went wrong")
+
+            if auto_camel_case:
+                name = to_camel_case(name)
+
+        return name

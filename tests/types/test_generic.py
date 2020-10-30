@@ -24,7 +24,7 @@ def test_basic_generic():
 
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "nodeField"
+    assert definition.fields[0].origin_name == "node_field"
     assert definition.fields[0].type == T
     assert definition.fields[0].is_optional is False
 
@@ -40,7 +40,7 @@ def test_basic_generic():
 
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "nodeField"
+    assert definition.fields[0].origin_name == "node_field"
     assert definition.fields[0].type == str
     assert definition.fields[0].is_optional is False
 
@@ -62,7 +62,7 @@ def test_generics_nested():
 
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "edge"
+    assert definition.fields[0].origin_name == "edge"
     assert definition.fields[0].type._type_definition.type_params == {"node": T}
     assert definition.fields[0].is_optional is False
 
@@ -78,7 +78,7 @@ def test_generics_nested():
 
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "edge"
+    assert definition.fields[0].origin_name == "edge"
     assert definition.fields[0].type._type_definition.name == "StrEdge"
     assert definition.fields[0].is_optional is False
 
@@ -100,7 +100,7 @@ def test_generics_nested_in_list():
 
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "edges"
+    assert definition.fields[0].origin_name == "edges"
     assert definition.fields[0].is_list
     assert definition.fields[0].type is None
     assert definition.fields[0].is_optional is False
@@ -118,7 +118,7 @@ def test_generics_nested_in_list():
 
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "edges"
+    assert definition.fields[0].origin_name == "edges"
     assert definition.fields[0].type is None
     assert definition.fields[0].is_list
     assert definition.fields[0].is_optional is False
@@ -138,7 +138,7 @@ def test_generic_with_optional():
 
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "node"
+    assert definition.fields[0].origin_name == "node"
     assert definition.fields[0].type == T
     assert definition.fields[0].is_optional is True
 
@@ -154,7 +154,7 @@ def test_generic_with_optional():
 
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "node"
+    assert definition.fields[0].origin_name == "node"
     assert definition.fields[0].type == str
     assert definition.fields[0].is_optional is True
 
@@ -172,7 +172,7 @@ def test_generic_with_list():
 
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "edges"
+    assert definition.fields[0].origin_name == "edges"
     assert definition.fields[0].type is None
     assert definition.fields[0].is_list
     assert definition.fields[0].is_optional is False
@@ -190,7 +190,7 @@ def test_generic_with_list():
 
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "edges"
+    assert definition.fields[0].origin_name == "edges"
     assert definition.fields[0].type is None
     assert definition.fields[0].is_list
     assert definition.fields[0].is_optional is False
@@ -210,7 +210,7 @@ def test_generic_with_list_of_optionals():
 
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "edges"
+    assert definition.fields[0].origin_name == "edges"
     assert definition.fields[0].type is None
     assert definition.fields[0].is_list
     assert definition.fields[0].is_optional is False
@@ -229,7 +229,7 @@ def test_generic_with_list_of_optionals():
 
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "edges"
+    assert definition.fields[0].origin_name == "edges"
     assert definition.fields[0].type is None
     assert definition.fields[0].is_list
     assert definition.fields[0].is_optional is False
@@ -251,7 +251,7 @@ def test_generics_with_unions():
     assert definition.name == "Edge"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "node"
+    assert definition.fields[0].origin_name == "node"
     assert isinstance(definition.fields[0].type, StrawberryUnion)
     assert definition.fields[0].type.types == (Error, T)
 
@@ -269,7 +269,7 @@ def test_generics_with_unions():
 
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "node"
+    assert definition.fields[0].origin_name == "node"
 
     union_definition = definition.fields[0].type
     assert isinstance(union_definition, StrawberryUnion)
@@ -297,10 +297,10 @@ def test_using_generics():
     assert definition.name == "Query"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "user"
+    assert definition.fields[0].origin_name == "user"
     assert definition.fields[0].type._type_definition.name == "UserEdge"
     assert definition.fields[0].type._type_definition.is_generic is False
-    assert definition.fields[0].type._type_definition.fields[0].name == "node"
+    assert definition.fields[0].type._type_definition.fields[0].origin_name == "node"
     assert definition.fields[0].type._type_definition.fields[0].type == User
 
 
@@ -331,10 +331,10 @@ def test_using_generics_nested():
     assert definition.name == "Query"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "users"
+    assert definition.fields[0].origin_name == "users"
     assert definition.fields[0].type._type_definition.name == "UserConnection"
     assert definition.fields[0].type._type_definition.is_generic is False
-    assert definition.fields[0].type._type_definition.fields[0].name == "edges"
+    assert definition.fields[0].type._type_definition.fields[0].origin_name == "edges"
     assert (
         definition.fields[0].type._type_definition.fields[0].type._type_definition.name
         == "UserEdge"
@@ -407,7 +407,7 @@ def test_generics_inside_optional():
     assert definition.name == "Query"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "user"
+    assert definition.fields[0].origin_name == "user"
     assert definition.fields[0].type._type_definition.name == "StrEdge"
     assert definition.fields[0].type._type_definition.is_generic is False
     assert definition.fields[0].is_optional
@@ -433,7 +433,7 @@ def test_generics_inside_list():
     assert definition.name == "Query"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "user"
+    assert definition.fields[0].origin_name == "user"
     assert definition.fields[0].type is None
     assert definition.fields[0].is_optional is False
     assert definition.fields[0].is_list
@@ -462,7 +462,7 @@ def test_generics_inside_unions():
     assert len(definition.fields) == 1
 
     assert definition.type_params == {}
-    assert definition.fields[0].name == "user"
+    assert definition.fields[0].origin_name == "user"
     assert definition.fields[0].is_optional is False
 
     union_definition = definition.fields[0].type
@@ -488,7 +488,7 @@ def test_multiple_generics_inside_unions():
     assert len(definition.fields) == 1
 
     assert definition.type_params == {}
-    assert definition.fields[0].name == "user"
+    assert definition.fields[0].origin_name == "user"
     assert definition.fields[0].is_optional is False
 
     union_definition = definition.fields[0].type

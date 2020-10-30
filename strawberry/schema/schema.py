@@ -27,14 +27,26 @@ class Schema:
         directives=(),
         types=(),
         extensions: Sequence[Type[Extension]] = (),
+        auto_camel_case: bool = True,
     ):
         self.extensions = extensions
         self.type_map: Dict[str, ConcreteType] = {}
+        self.auto_camel_case = auto_camel_case
 
-        query_type = get_object_type(query, self.type_map)
-        mutation_type = get_object_type(mutation, self.type_map) if mutation else None
+        query_type = get_object_type(
+            query, self.type_map, auto_camel_case=auto_camel_case
+        )
+        mutation_type = (
+            get_object_type(mutation, self.type_map, auto_camel_case=auto_camel_case)
+            if mutation
+            else None
+        )
         subscription_type = (
-            get_object_type(subscription, self.type_map) if subscription else None
+            get_object_type(
+                subscription, self.type_map, auto_camel_case=auto_camel_case
+            )
+            if subscription
+            else None
         )
 
         self.middleware: List[Middleware] = [DirectivesMiddleware(directives)]
@@ -48,7 +60,10 @@ class Schema:
             mutation=mutation_type,
             subscription=subscription_type if subscription else None,
             directives=specified_directives + directives,
-            types=[get_object_type(type, self.type_map) for type in types],
+            types=[
+                get_object_type(type, self.type_map, auto_camel_case=auto_camel_case)
+                for type in types
+            ],
         )
 
         self.query = self.type_map[query_type.name]

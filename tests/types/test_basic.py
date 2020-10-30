@@ -12,10 +12,12 @@ def test_type_add_type_definition_with_fields():
     assert definition.name == "Query"
     assert len(definition.fields) == 2
 
-    assert definition.fields[0].name == "name"
+    assert definition.fields[0].name is None
+    assert definition.fields[0].origin_name == "name"
     assert definition.fields[0].type == str
 
-    assert definition.fields[1].name == "age"
+    assert definition.fields[1].name is None
+    assert definition.fields[1].origin_name == "age"
     assert definition.fields[1].type == int
 
 
@@ -48,8 +50,10 @@ def test_passing_nothing_to_fields():
     assert definition.name == "Query"
     assert len(definition.fields) == 2
 
-    assert definition.fields[0].name == "name"
+    assert definition.fields[0].name is None
+    assert definition.fields[0].origin_name == "name"
     assert definition.fields[0].type == str
 
-    assert definition.fields[1].name == "age"
+    assert definition.fields[1].name is None
+    assert definition.fields[0].origin_name == "age"
     assert definition.fields[1].type == int

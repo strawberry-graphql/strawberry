@@ -32,11 +32,15 @@ def convert_enums_to_values(field: FieldDefinition, result: Any) -> Any:
 
 
 def get_arguments(
-    field: FieldDefinition, kwargs: Dict[str, Any], source: Any, info: Any
+    field: FieldDefinition,
+    kwargs: Dict[str, Any],
+    source: Any,
+    info: Any,
+    auto_camel_case: bool,
 ) -> Tuple[List[Any], Dict[str, Any]]:
     actual_resolver = cast(Callable, field.base_resolver)
 
-    kwargs = convert_arguments(kwargs, field.arguments)
+    kwargs = convert_arguments(kwargs, field.arguments, auto_camel_case=auto_camel_case)
 
     # the following code allows to omit info and root arguments
     # by inspecting the original resolver arguments,
@@ -61,7 +65,11 @@ def get_arguments(
 
 
 def get_result_for_field(
-    field: FieldDefinition, kwargs: Dict[str, Any], source: Any, info: Any
+    field: FieldDefinition,
+    kwargs: Dict[str, Any],
+    source: Any,
+    info: Any,
+    auto_camel_case: bool,
 ) -> Union[Awaitable[Any], Any]:
     """
     Calls the resolver defined for `field`. If field doesn't have a
@@ -71,7 +79,9 @@ def get_result_for_field(
     actual_resolver = field.base_resolver
 
     if actual_resolver:
-        args, kwargs = get_arguments(field, kwargs, source=source, info=info)
+        args, kwargs = get_arguments(
+            field, kwargs, source=source, info=info, auto_camel_case=auto_camel_case
+        )
 
         return actual_resolver(*args, **kwargs)
 
@@ -79,7 +89,10 @@ def get_result_for_field(
     return getattr(source, origin_name)
 
 
-def get_resolver(field: FieldDefinition) -> Callable:
+def get_resolver(
+    field: FieldDefinition,
+    auto_camel_case: bool,
+) -> Callable:
     def _check_permissions(source, info, **kwargs):
         """
         Checks if the permission should be accepted and
@@ -95,7 +108,13 @@ def get_resolver(field: FieldDefinition) -> Callable:
     async def _resolver_async(source, info, **kwargs):
         _check_permissions(source, info, **kwargs)
 
-        result = get_result_for_field(field, kwargs=kwargs, info=info, source=source)
+        result = get_result_for_field(
+            field,
+            kwargs=kwargs,
+            info=info,
+            source=source,
+            auto_camel_case=auto_camel_case,
+        )
 
         if iscoroutine(result):  # pragma: no cover
             result = await result
@@ -107,7 +126,13 @@ def get_resolver(field: FieldDefinition) -> Callable:
     def _resolver(source, info, **kwargs):
         _check_permissions(source, info, **kwargs)
 
-        result = get_result_for_field(field, kwargs=kwargs, info=info, source=source)
+        result = get_result_for_field(
+            field,
+            kwargs=kwargs,
+            info=info,
+            source=source,
+            auto_camel_case=auto_camel_case,
+        )
         result = convert_enums_to_values(field, result)
 
         return result

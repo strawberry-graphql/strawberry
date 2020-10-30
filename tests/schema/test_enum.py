@@ -226,3 +226,35 @@ async def test_enum_in_list_async():
 
     assert not result.errors
     assert result.data["bestFlavours"] == ["STRAWBERRY", "PISTACHIO"]
+
+
+def test_enum_input_camelcasing_disabled():
+    @strawberry.enum
+    class IceCreamFlavour(Enum):
+        VANILLA = "vanilla"
+        STRAWBERRY = "strawberry"
+        CHOCOLATE = "chocolate"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def flavour_available(self, info, flavour: IceCreamFlavour) -> bool:
+            return flavour == IceCreamFlavour.STRAWBERRY
+
+    @strawberry.input
+    class ConeInput:
+        flavour_name: IceCreamFlavour
+
+    @strawberry.type
+    class Mutation:
+        @strawberry.mutation
+        def eat_cone(self, info, input: ConeInput) -> bool:
+            return input.flavour_name == IceCreamFlavour.STRAWBERRY
+
+    schema = strawberry.Schema(query=Query, mutation=Mutation, auto_camel_case=False)
+
+    query = "mutation { eatCone(input: { flavour_name: VANILLA }) }"
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data["eatCone"] is False

@@ -10,7 +10,7 @@ from .types import TypeMap
 
 
 def convert_argument(
-    argument: ArgumentDefinition, type_map: TypeMap
+    argument: ArgumentDefinition, type_map: TypeMap, auto_camel_case: bool
 ) -> GraphQLArgument:
     # TODO: test and support generic arguments?
     default_value = (
@@ -18,7 +18,10 @@ def convert_argument(
     )
 
     # TODO: we could overload the function to tell mypy that it returns input types too
-    argument_type = cast(GraphQLInputType, get_graphql_type(argument, type_map))
+    argument_type = cast(
+        GraphQLInputType,
+        get_graphql_type(argument, type_map, auto_camel_case=auto_camel_case),
+    )
 
     return GraphQLArgument(
         argument_type,
@@ -28,12 +31,15 @@ def convert_argument(
 
 
 def convert_arguments(
-    arguments: List[ArgumentDefinition], type_map: TypeMap
+    arguments: List[ArgumentDefinition], type_map: TypeMap, auto_camel_case: bool
 ) -> Dict[str, GraphQLArgument]:
     arguments_dict = {}
 
     for argument in arguments:
-        name = cast(str, argument.name)
-        arguments_dict[name] = convert_argument(argument, type_map)
+        name = argument.get_name(auto_camel_case=auto_camel_case)
+
+        arguments_dict[name] = convert_argument(
+            argument, type_map, auto_camel_case=auto_camel_case
+        )
 
     return arguments_dict

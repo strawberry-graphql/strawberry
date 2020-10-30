@@ -15,7 +15,7 @@ def test_private_field():
     assert definition.name == "Query"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "name"
+    assert definition.fields[0].origin_name == "name"
     assert definition.fields[0].type == str
 
     instance = Query(name="Luke", age=22)

@@ -10,9 +10,8 @@ from .types import ConcreteType, GraphQLType, TypeMap
 
 
 def _get_object_type_for_type_definition(
-    type_definition: TypeDefinition, type_map: TypeMap
+    type_definition: TypeDefinition, type_map: TypeMap, auto_camel_case: bool
 ) -> GraphQLType:
-
     if type_definition.name not in type_map:
         TypeClass: Type = GraphQLObjectType
 
@@ -25,7 +24,9 @@ def _get_object_type_for_type_definition(
 
         if type_definition.interfaces:
             kwargs["interfaces"] = [
-                _get_object_type_for_type_definition(interface, type_map)
+                _get_object_type_for_type_definition(
+                    interface, type_map, auto_camel_case=auto_camel_case
+                )
                 for interface in type_definition.interfaces
             ]
 
@@ -45,7 +46,12 @@ def _get_object_type_for_type_definition(
         object_type = TypeClass(
             name=type_definition.name,
             fields=lambda: {
-                field.name: get_field(field, type_definition.is_input, type_map)
+                field.get_name(auto_camel_case=auto_camel_case): get_field(
+                    field,
+                    type_definition.is_input,
+                    type_map,
+                    auto_camel_case=auto_camel_case,
+                )
                 for field in type_definition.fields
             },
             description=type_definition.description,
@@ -59,7 +65,9 @@ def _get_object_type_for_type_definition(
     return type_map[type_definition.name].implementation
 
 
-def get_object_type(origin: Type, type_map: TypeMap) -> GraphQLObjectType:
+def get_object_type(
+    origin: Type, type_map: TypeMap, auto_camel_case: bool
+) -> GraphQLObjectType:
     """Returns a root type (Query, Mutation, Subscription) from a decorated type"""
 
     if not hasattr(origin, "_type_definition"):
@@ -69,5 +77,7 @@ def get_object_type(origin: Type, type_map: TypeMap) -> GraphQLObjectType:
 
     return cast(
         GraphQLObjectType,
-        _get_object_type_for_type_definition(type_definition, type_map),
+        _get_object_type_for_type_definition(
+            type_definition, type_map, auto_camel_case=auto_camel_case
+        ),
     )
