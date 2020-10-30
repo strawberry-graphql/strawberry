@@ -8,6 +8,7 @@ from strawberry.pydantic.fields import get_basic_type
 from strawberry.type import _process_type
 from strawberry.types.types import FederationTypeParams
 
+from .error_type import error_type  # noqa
 from .exceptions import UnregisteredTypeException
 
 
@@ -39,10 +40,10 @@ def type(
     model: Type[BaseModel],
     *,
     fields: List[str],
-    name: str = None,
+    name: Optional[str] = None,
     is_input: bool = False,
     is_interface: bool = False,
-    description: str = None,
+    description: Optional[str] = None,
     federation: Optional[FederationTypeParams] = None,
 ):
     def wrap(cls):
