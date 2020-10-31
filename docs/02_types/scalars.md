@@ -87,15 +87,43 @@ class Query:
 
 schema = strawberry.Schema(query=Query)
 
-results = schema.execute_sync("""
-    query {
-        oneWeekFrom(dateInput: "2006-01-02")
-    }
-""")
+results = schema.execute_sync("{ oneWeekFrom(dateInput: "2006-01-02") }")
 
 assert results.data == {"oneWeekFrom": "2006-01-09"}
 ```
 
 ## Custom scalars
 
-TODO
+You can create custom scalars for your schema to repesent specific data types in
+your data model. This can be helpful to let clients know what kind of data they
+can expect for a particular field.
+
+To define a custom scalar you need to give it a name and functions that tell
+Strawberry how to serialize and deserialise the type.
+
+For example here is a custom scalar type to represent a Base64 string:
+
+```python
+import base64
+from typing import NewType
+
+import strawberry
+
+Base64 = strawberry.scalar(
+    NewType("Base64", bytes),
+    serialize=lambda v: base64.b64encode(v).decode("utf-8"),
+    parse_value=lambda v: base64.b64decode(v.encode("utf-8")),
+)
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def base64(self) -> Base64:
+        return Base64(b"hi")
+
+schema = strawberry.Schema(Query)
+
+result = schema.execute_sync("{ base64 }")
+
+assert results.data  == {"base64": "aGk="}
+```
