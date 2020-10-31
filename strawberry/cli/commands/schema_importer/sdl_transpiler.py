@@ -38,7 +38,7 @@ DECORATOR_KINDS = {
     "schema_definition": "@strawberry.type",
     "union_type_definition": "@strawberry.union",
     "enum_type_definition": "@strawberry.enum",
-    "input_type_definition": "@strawberry.input",
+    "input_object_type_definition": "@strawberry.input",
     "object_type_definition": "@strawberry.type",
     "interface_type_definition": "@strawberry.interface",
 }
@@ -114,7 +114,7 @@ def transpile(ast):
         get_class_name=get_class_name,
         standard_types=[
             "object_type_definition",
-            "input_type_definition",
+            "input_object_type_definition",
             "interface_type_definition",
         ],
         ast=ast,

@@ -1,4 +1,21 @@
+import os
+
+import pytest
+
 from strawberry.cli.commands.schema_importer import sdl_importer
+
+
+@pytest.fixture
+def schema():
+    path = os.path.join(os.getcwd(), "tests", "cli", "helpers", "swapi_schema.gql")
+    with open(path, "r") as f:
+        return f.read()
+
+
+# Complex object
+def test_import_whole_schema(schema):
+    output = sdl_importer.import_sdl(schema)
+    assert output
 
 
 # Complex object
@@ -341,6 +358,27 @@ def test_import_interface_type():
         "\n"
         "\n"
         "@strawberry.interface\n"
+        "class Monster:\n"
+        "    name: str"
+    )
+
+    assert output == what_it_should_be
+
+
+# Input
+def test_import_input_type():
+    """ Test for input type transpilation """
+    s = """
+    input Monster {
+        name: String!
+    }
+    """
+    output = sdl_importer.import_sdl(s)
+    what_it_should_be = (
+        "import strawberry\n"
+        "\n"
+        "\n"
+        "@strawberry.input\n"
         "class Monster:\n"
         "    name: str"
     )
