@@ -94,7 +94,7 @@ assert results.data == {"oneWeekFrom": "2006-01-09"}
 
 ## Custom scalars
 
-You can create custom scalars for your schema to repesent specific data types in
+You can create custom scalars for your schema to repesent specific types in
 your data model. This can be helpful to let clients know what kind of data they
 can expect for a particular field.
 
