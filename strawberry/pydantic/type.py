@@ -77,7 +77,7 @@ def type(
             return cls(**{**instance_kwargs, **kwargs})
 
         def to_pydantic(self) -> Any:
-            instance_kwargs = self.__dict__
+            instance_kwargs = dataclasses.asdict(self)
 
             return model(**instance_kwargs)
 
