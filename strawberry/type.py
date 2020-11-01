@@ -3,8 +3,8 @@ from functools import partial
 from typing import List, Optional, Type, cast
 
 from strawberry.utils.typing import is_generic
-from .exceptions import MissingFieldAnnotationError, \
-    MissingReturnAnnotationError
+
+from .exceptions import MissingFieldAnnotationError, MissingReturnAnnotationError
 from .field import StrawberryField
 from .types.type_resolver import _get_fields
 from .types.types import FederationTypeParams, TypeDefinition
@@ -61,13 +61,12 @@ def _check_field_annotations(cls: Type):
                 if field_definition.base_resolver.type is None:
                     raise MissingReturnAnnotationError(field_name)
 
-                cls_annotations[field_name] \
-                    = field_definition.base_resolver.type
+                cls_annotations[field_name] = field_definition.base_resolver.type
 
-            # # Make sure the cls annotation agrees with the field's type
-            # if cls_annotations[field_name] != field.base_resolver.type:
-            #     # TODO: Proper error
-            #     raise Exception
+            # TODO: Make sure the cls annotation agrees with the field's type
+            # >>> if cls_annotations[field_name] != field.base_resolver.type:
+            # >>>     # TODO: Proper error
+            # >>>    raise Exception
 
         if field_name not in cls_annotations:
             # Field object exists but did not get an annotation

@@ -6,6 +6,7 @@ from .types.fields.resolver import StrawberryResolver
 from .types.types import FederationFieldParams, FieldDefinition
 from .utils.str_converters import to_camel_case
 
+
 _RESOLVER_TYPE = Union[StrawberryResolver, Callable]
 
 
@@ -25,7 +26,7 @@ class StrawberryField(dataclasses.Field):
             metadata=None,
         )
 
-    def __call__(self, resolver: _RESOLVER_TYPE) -> 'StrawberryField':
+    def __call__(self, resolver: _RESOLVER_TYPE) -> "StrawberryField":
         """Migrate the field definition to the resolver"""
         if not isinstance(resolver, StrawberryResolver):
             resolver = StrawberryResolver(resolver)
@@ -38,6 +39,7 @@ class StrawberryField(dataclasses.Field):
 
         # Don't add field to __init__
         self.init = False
+        self.repr = False
 
         # Keep field on dataclass. dataclasses.dataclass will remove any Field without a
         # default value, so we bypass that here
