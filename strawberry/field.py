@@ -41,10 +41,6 @@ class StrawberryField(dataclasses.Field):
         self.init = False
         self.repr = False
 
-        # Keep field on dataclass. dataclasses.dataclass will remove any Field without a
-        # default value, so we bypass that here
-        self.default = resolver.wrapped_func
-
         return self
 
     def __setattr__(self, name, value):
