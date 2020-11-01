@@ -14,7 +14,7 @@ def _get_object_type_for_type_definition(
 ) -> GraphQLType:
 
     if type_definition.name not in type_map:
-        TypeClass: Type = GraphQLInterfaceType
+        TypeClass: Type = GraphQLObjectType
 
         kwargs = {}
 
