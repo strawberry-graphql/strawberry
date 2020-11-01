@@ -14,7 +14,7 @@ def _get_object_type_for_type_definition(
 ) -> GraphQLType:
 
     if type_definition.name not in type_map:
-        TypeClass: Type = GraphQLObjectType
+        TypeClass: Type = GraphQLInterfaceType
 
         kwargs = {}
 
@@ -28,10 +28,17 @@ def _get_object_type_for_type_definition(
                 _get_object_type_for_type_definition(interface, type_map)
                 for interface in type_definition.interfaces
             ]
-            # this tells GraphQL core what the returned object's actual type is
-            kwargs["is_type_of"] = lambda obj, _: isinstance(  # type: ignore
-                obj, type_definition.origin
-            )
+
+            # After https://github.com/graphql/graphql-spec/pull/373/files
+            # Now interfaces can also implement interfaces.
+            # But `GraphQLInterfaceType` constructor doesn't accept
+            # `is_type_of` argument.
+            # So we check first, and only add it for `GraphQLInterfaceType`
+            if TypeClass == GraphQLObjectType:
+                # this tells GraphQL core what the returned object's actual type is
+                kwargs["is_type_of"] = lambda obj, _: isinstance(  # type: ignore
+                    obj, type_definition.origin
+                )
 
         assert not type_definition.is_generic
 
