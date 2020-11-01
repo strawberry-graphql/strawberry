@@ -40,17 +40,17 @@ class StrawberryResolver(Generic[T]):
         args = get_func_args(self.wrapped_func)
         return args and args[0] == "self"
 
-    @property
+    @cached_property
     def description(self) -> Optional[str]:
         # TODO: Do resolvers get descriptions?
         return self._description
 
-    @property
+    @cached_property
     def name(self) -> str:
         # TODO: What to do if resolver is a lambda?
         return self.wrapped_func.__name__
 
-    @property
+    @cached_property
     def type(self) -> Type[T]:
         return self.wrapped_func.__annotations__.get("return", None)
 
