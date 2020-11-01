@@ -1,5 +1,5 @@
 import enum
-from inspect import iscoroutine, iscoroutinefunction
+from inspect import iscoroutine
 from typing import Any, Awaitable, Callable, Dict, List, Tuple, Union, cast
 
 from .arguments import convert_arguments
@@ -115,6 +115,6 @@ def get_resolver(field: FieldDefinition) -> Callable:
 
     return (
         _resolver_async
-        if field.base_resolver and iscoroutinefunction(field.base_resolver)
+        if field.base_resolver and field.base_resolver.is_async
         else _resolver
     )
