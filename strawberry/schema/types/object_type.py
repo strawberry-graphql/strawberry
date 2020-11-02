@@ -33,8 +33,8 @@ def _get_object_type_for_type_definition(
             # Now interfaces can also implement interfaces.
             # But `GraphQLInterfaceType` constructor doesn't accept
             # `is_type_of` argument.
-            # So we check first, and only add it for `GraphQLInterfaceType`
-            if TypeClass == GraphQLObjectType:
+            # So we check first, and we avoid adding it for `GraphQLInterfaceType`s
+            if not type_definition.is_interface:
                 # this tells GraphQL core what the returned object's actual type is
                 kwargs["is_type_of"] = lambda obj, _: isinstance(  # type: ignore
                     obj, type_definition.origin
