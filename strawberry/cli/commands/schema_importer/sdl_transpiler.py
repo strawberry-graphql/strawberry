@@ -45,7 +45,9 @@ DECORATOR_KINDS = {
 
 
 def get_class_name(ast):
-    return "Schema" if ast.kind == "schema_definition" else ast.name.value
+    name = "Schema" if ast.kind == "schema_definition" else ast.name.value
+    name += "(Enum)" if ast.kind == "enum_type_definition" else ""
+    return name
 
 
 def get_decorator(kind):

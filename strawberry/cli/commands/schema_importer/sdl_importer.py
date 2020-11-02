@@ -23,8 +23,9 @@ def import_sdl(sdl: str) -> str:
         templates.add(sdl_transpiler.transpile(d))
 
     strawberries = "\n\n".join(templates)
-    imports = "import strawberry\n"
-    imports += "import typing\n\n\n" if "typing" in strawberries else "\n\n"
+    imports = "from enum import Enum\n\n" if "(Enum)" in strawberries else ""
+    imports += "import typing\n\n" if "typing." in strawberries else ""
+    imports += "import strawberry\n\n\n"
 
     strawberries = imports + strawberries
 

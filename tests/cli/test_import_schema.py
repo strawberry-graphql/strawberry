@@ -114,8 +114,8 @@ def test_import_optional_bool_field():
     '''
     output = sdl_importer.import_sdl(s)
     what_it_should_be = (
+        "import typing\n\n"
         "import strawberry\n"
-        "import typing\n"
         "\n"
         "\n"
         "@strawberry.type\n"
@@ -172,8 +172,8 @@ def test_import_optional_int_field():
     '''
     output = sdl_importer.import_sdl(s)
     what_it_should_be = (
+        "import typing\n\n"
         "import strawberry\n"
-        "import typing\n"
         "\n"
         "\n"
         "@strawberry.type\n"
@@ -205,8 +205,8 @@ def test_import_str_fields():
     '''
     output = sdl_importer.import_sdl(s)
     what_it_should_be = (
+        "import typing\n\n"
         "import strawberry\n"
-        "import typing\n"
         "\n"
         "\n"
         "@strawberry.type(description='''He who wants to cross the bridge,\n"
@@ -263,8 +263,8 @@ def test_import_optional_float_field():
     '''
     output = sdl_importer.import_sdl(s)
     what_it_should_be = (
+        "import typing\n\n"
         "import strawberry\n"
-        "import typing\n"
         "\n"
         "\n"
         "@strawberry.type\n"
@@ -308,8 +308,8 @@ def test_import_optional_id_field():
     """
     output = sdl_importer.import_sdl(s)
     what_it_should_be = (
+        "import typing\n\n"
         "import strawberry\n"
-        "import typing\n"
         "\n"
         "\n"
         "@strawberry.type\n"
@@ -332,11 +332,12 @@ def test_import_enum_type():
     """
     output = sdl_importer.import_sdl(s)
     what_it_should_be = (
+        "from enum import Enum\n\n"
         "import strawberry\n"
         "\n"
         "\n"
         "@strawberry.enum\n"
-        "class SwallowSpecies:\n"
+        "class SwallowSpecies(Enum):\n"
         "    AFRICAN = 'african'\n"
         "    EUROPEAN = 'european'"
     )
@@ -400,8 +401,8 @@ def test_import_opt_list_opt_str_field():
     string = "    animals: typing.Optional[typing.List[typing.Optional[str]]] "
     stringField = string + field
     what_it_should_be = (
+        f"import typing\n\n"
         f"import strawberry\n"
-        f"import typing\n"
         f"\n"
         f"\n"
         f"@strawberry.type\n"
@@ -424,8 +425,8 @@ def test_import_list_opt_str_field():
     '''
     output = sdl_importer.import_sdl(s)
     what_it_should_be = (
+        "import typing\n\n"
         "import strawberry\n"
-        "import typing\n"
         "\n"
         "\n"
         "@strawberry.type\n"
@@ -448,8 +449,8 @@ def test_import_opt_list_str_field():
     '''
     output = sdl_importer.import_sdl(s)
     what_it_should_be = (
+        "import typing\n\n"
         "import strawberry\n"
-        "import typing\n"
         "\n"
         "\n"
         "@strawberry.type\n"
@@ -472,8 +473,8 @@ def test_import_list_str_field():
     '''
     output = sdl_importer.import_sdl(s)
     what_it_should_be = (
+        "import typing\n\n"
         "import strawberry\n"
-        "import typing\n"
         "\n"
         "\n"
         "@strawberry.type\n"
