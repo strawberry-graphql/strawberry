@@ -1,11 +1,14 @@
 import dataclasses
 import inspect
-from typing import Callable, List, Optional, Type
+from typing import Any, Callable, List, Optional, Type, TypeVar, Union, overload
 
 from .arguments import get_arguments_from_resolver
 from .permission import BasePermission
 from .types.types import FederationFieldParams, FieldDefinition
 from .utils.str_converters import to_camel_case
+
+
+F = TypeVar("F", bound=Callable[..., Any])
 
 
 class StrawberryField(dataclasses.Field):
@@ -24,7 +27,7 @@ class StrawberryField(dataclasses.Field):
             metadata=None,
         )
 
-    def __call__(self, resolver: Callable) -> Callable:
+    def __call__(self, resolver: F) -> F:
         """Migrate the field definition to the resolver"""
 
         field_definition = self._field_definition
@@ -62,6 +65,34 @@ class StrawberryField(dataclasses.Field):
         return super().__setattr__(name, value)
 
 
+@overload
+def field(
+    resolver: Callable,
+    *,
+    name: Optional[str] = None,
+    is_subscription: bool = False,
+    description: Optional[str] = None,
+    permission_classes: Optional[List[Type[BasePermission]]] = None,
+    federation: Optional[FederationFieldParams] = None,
+    deprecation_reason: Optional[str] = None,
+) -> Any:
+    ...
+
+
+@overload
+def field(
+    resolver: Optional[None] = None,
+    *,
+    name: Optional[str] = None,
+    is_subscription: bool = False,
+    description: Optional[str] = None,
+    permission_classes: Optional[List[Type[BasePermission]]] = None,
+    federation: Optional[FederationFieldParams] = None,
+    deprecation_reason: Optional[str] = None,
+) -> StrawberryField:
+    ...
+
+
 def field(
     resolver: Optional[Callable] = None,
     *,
@@ -71,7 +102,7 @@ def field(
     permission_classes: Optional[List[Type[BasePermission]]] = None,
     federation: Optional[FederationFieldParams] = None,
     deprecation_reason: Optional[str] = None,
-):
+) -> Union[Any, StrawberryField]:
     """Annotates a method or property as a GraphQL field.
 
     This is normally used inside a type declaration:
