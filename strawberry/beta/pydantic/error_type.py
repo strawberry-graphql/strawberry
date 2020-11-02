@@ -3,7 +3,8 @@ from typing import Any, List, Optional, Type
 
 from pydantic import BaseModel
 from pydantic.fields import ModelField
-from strawberry.pydantic.exceptions import UnregisteredTypeException
+
+from strawberry.beta.pydantic.exceptions import UnregisteredTypeException
 from strawberry.type import _process_type
 from strawberry.types.types import FederationTypeParams
 from strawberry.utils.typing import (

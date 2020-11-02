@@ -1,6 +1,7 @@
 from typing import List, Optional
 
 import pydantic
+
 import strawberry
 
 
@@ -9,7 +10,7 @@ def test_basic_type():
         age: int
         password: Optional[str]
 
-    @strawberry.pydantic.type(User)
+    @strawberry.beta.pydantic.type(User, fields=["age", "password"])
     class UserType:
         pass
 
@@ -34,7 +35,7 @@ def test_basic_type_with_list():
         age: int
         friend_names: List[str]
 
-    @strawberry.pydantic.type(User)
+    @strawberry.beta.pydantic.type(User, fields=["age", "friend_names"])
     class UserType:
         pass
 

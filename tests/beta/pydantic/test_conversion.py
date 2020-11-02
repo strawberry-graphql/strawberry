@@ -1,6 +1,7 @@
 from typing import Optional
 
 import pydantic
+
 import strawberry
 
 
@@ -9,7 +10,7 @@ def test_can_use_type_standalone():
         age: int
         password: Optional[str]
 
-    @strawberry.pydantic.type(User, fields=["age", "password"])
+    @strawberry.beta.pydantic.type(User, fields=["age", "password"])
     class UserType:
         pass
 
@@ -24,7 +25,7 @@ def test_can_covert_pydantic_type_to_strawberry():
         age: int
         password: Optional[str]
 
-    @strawberry.pydantic.type(User, fields=["age", "password"])
+    @strawberry.beta.pydantic.type(User, fields=["age", "password"])
     class UserType:
         pass
 

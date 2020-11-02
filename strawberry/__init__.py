@@ -1,5 +1,4 @@
-from . import federation
-from . import pydantic
+from . import beta, federation
 from .arguments import argument
 from .custom_scalar import scalar
 from .directive import directive
@@ -17,6 +16,7 @@ from .union import union
 
 __all__ = [
     "BasePermission",
+    "beta",
     "ID",
     "LazyType",
     "Private",
@@ -32,6 +32,5 @@ __all__ = [
     "scalar",
     "subscription",
     "type",
-    "pydantic",
     "union",
 ]

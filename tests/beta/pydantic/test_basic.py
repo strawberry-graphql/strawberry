@@ -3,6 +3,7 @@ from typing import List, Optional
 import pytest
 
 import pydantic
+
 import strawberry
 from strawberry.types.types import TypeDefinition
 
@@ -12,7 +13,7 @@ def test_basic_type():
         age: int
         password: Optional[str]
 
-    @strawberry.pydantic.type(User, fields=["age", "password"])
+    @strawberry.beta.pydantic.type(User, fields=["age", "password"])
     class UserType:
         pass
 
@@ -40,11 +41,11 @@ def test_referencing_other_models_fails_when_not_registered():
         group: Group
 
     with pytest.raises(
-        strawberry.pydantic.UnregisteredTypeException,
+        strawberry.beta.pydantic.UnregisteredTypeException,
         match=("Cannot find a Strawberry Type for (.*) did you forget to register it?"),
     ):
 
-        @strawberry.pydantic.type(User, fields=["age", "password", "group"])
+        @strawberry.beta.pydantic.type(User, fields=["age", "password", "group"])
         class UserType:
             pass
 
@@ -57,11 +58,11 @@ def test_referencing_other_registered_models():
         age: int
         group: Group
 
-    @strawberry.pydantic.type(Group, fields=["name"])
+    @strawberry.beta.pydantic.type(Group, fields=["name"])
     class GroupType:
         pass
 
-    @strawberry.pydantic.type(User, fields=["age", "group"])
+    @strawberry.beta.pydantic.type(User, fields=["age", "group"])
     class UserType:
         pass
 
@@ -82,7 +83,7 @@ def test_list():
     class User(pydantic.BaseModel):
         friend_names: List[str]
 
-    @strawberry.pydantic.type(User, fields=["friend_names"])
+    @strawberry.beta.pydantic.type(User, fields=["friend_names"])
     class UserType:
         pass
 
@@ -105,11 +106,11 @@ def test_list_of_types():
     class User(pydantic.BaseModel):
         friends: Optional[List[Optional[Friend]]]
 
-    @strawberry.pydantic.type(Friend, fields=["name"])
+    @strawberry.beta.pydantic.type(Friend, fields=["name"])
     class FriendType:
         pass
 
-    @strawberry.pydantic.type(User, fields=["friends"])
+    @strawberry.beta.pydantic.type(User, fields=["friends"])
     class UserType:
         pass
 

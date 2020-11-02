@@ -17,7 +17,7 @@ class UserModel(BaseModel):
     signup_ts: Optional[datetime] = None
     friends: List[int] = []
 
-@strawberry.pydantic.type(model=UserModel, fields=[
+@strawberry.beta.pydantic.type(model=UserModel, fields=[
     'id',
     'name',
     'friends'

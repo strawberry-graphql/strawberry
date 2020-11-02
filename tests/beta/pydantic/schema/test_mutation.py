@@ -1,4 +1,5 @@
 import pydantic
+
 import strawberry
 
 
@@ -6,11 +7,11 @@ def test_mutation():
     class User(pydantic.BaseModel):
         name: pydantic.constr(min_length=2)
 
-    @strawberry.pydantic.input(User)
+    @strawberry.beta.pydantic.input(User, fields=["name"])
     class CreateUserInput:
         pass
 
-    @strawberry.pydantic.type(User)
+    @strawberry.beta.pydantic.type(User, fields=["name"])
     class UserType:
         pass
 
@@ -44,11 +45,11 @@ def test_mutation_with_validation():
     class User(pydantic.BaseModel):
         name: pydantic.constr(min_length=2)
 
-    @strawberry.pydantic.input(User)
+    @strawberry.beta.pydantic.input(User, fields=["name"])
     class CreateUserInput:
         pass
 
-    @strawberry.pydantic.type(User)
+    @strawberry.beta.pydantic.type(User, fields=["name"])
     class UserType:
         pass
 

@@ -4,7 +4,8 @@ from typing import Any, List, Optional, Type
 
 from pydantic import BaseModel
 from pydantic.fields import ModelField
-from strawberry.pydantic.fields import get_basic_type
+
+from strawberry.beta.pydantic.fields import get_basic_type
 from strawberry.type import _process_type
 from strawberry.types.types import FederationTypeParams
 

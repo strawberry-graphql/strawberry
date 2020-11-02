@@ -14,7 +14,7 @@ documentation = "https://strawberry.rocks/"
 
 classifiers = [
     "Topic :: Software Development :: Libraries",
-    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Software Development :: Libraries :: Python Modules"
 ]
 include = ["strawberry/py.typed"]
 

@@ -25,7 +25,7 @@ class User(BaseModel):
     friends: List[int] = []
 ```
 
-We can create a Strawberry type by using the `strawberry.pydantic.type`
+We can create a Strawberry type by using the `strawberry.beta.pydantic.type`
 decorator:
 
 ```python
@@ -33,7 +33,7 @@ import strawberry
 
 from .models import User
 
-@strawberry.pydantic.type(model=User, fields=[
+@strawberry.beta.pydantic.type(model=User, fields=[
     'id',
     'name',
     'friends'
@@ -42,7 +42,7 @@ class UserType:
     pass
 ```
 
-The `strawberry.pydantic.type` decorator accepts a Pydantic model and a list of
+The `strawberry.beta.pydantic.type` decorator accepts a Pydantic model and a list of
 fields that we want to expose on our GraphQL API.
 
 > **Note** specifying the list of field is required to prevent accidentally
@@ -51,14 +51,14 @@ fields that we want to expose on our GraphQL API.
 ## Input types
 
 Input types are similar to types, we can create one by using the
-`strawberry.pydantic.input` decorator:
+`strawberry.beta.pydantic.input` decorator:
 
 ```python
 import strawberry
 
 from .models import User
 
-@strawberry.pydantic.input(model=User, fields=[
+@strawberry.beta.pydantic.input(model=User, fields=[
     'id',
     'name',
     'friends'
@@ -83,7 +83,7 @@ class User(BaseModel):
     signup_ts: Optional[datetime] = None
     friends: List[int] = []
 
-@strawberry.pydantic.input(model=User, fields=[
+@strawberry.beta.pydantic.input(model=User, fields=[
     'id',
     'name',
     'friends'
@@ -112,7 +112,7 @@ class User(BaseModel):
     name: str
 
 
-@strawberry.pydantic.type(model=User, fields=[
+@strawberry.beta.pydantic.type(model=User, fields=[
     'id',
     'name',
 ])
@@ -138,7 +138,7 @@ class User(BaseModel):
     name: str
 
 
-@strawberry.pydantic.input(model=User, fields=[
+@strawberry.beta.pydantic.input(model=User, fields=[
     'id',
     'name',
 ])
@@ -164,14 +164,14 @@ class User(BaseModel):
     id: int
     name: str
 
-@strawberry.pydantic.input(model=User, fields=[
+@strawberry.beta.pydantic.input(model=User, fields=[
     'id',
     'name',
 ])
 class UserInput:
     pass
 
-@strawberry.pydantic.error_type(model=User)
+@strawberry.beta.pydantic.error_type(model=User)
 class UserInputError:
     pass
 
