@@ -18,6 +18,7 @@ class LoaderTask:
 @dataclass
 class Batch:
     tasks: List[LoaderTask] = dataclasses.field(default_factory=list)
+    dispatched: bool = False
 
     def add_task(self, key: Any, future: Future):
         task = LoaderTask(key, future)
@@ -43,11 +44,13 @@ class DataLoader(Generic[T, K]):
 
 
 def should_create_new_batch(batch: Batch) -> bool:
+    if batch.dispatched:
+        return True
+
     return False
 
 
 def get_current_batch(loader: DataLoader) -> Batch:
-
     if loader.batch and not should_create_new_batch(loader.batch):
         return loader.batch
 
@@ -66,7 +69,7 @@ def dispatch(loader: DataLoader, batch: Batch):
 
 
 async def dispatch_batch(loader: DataLoader, batch: Batch) -> None:
-    # TODO: set guards on batch so we don't redispatch a dispatched batch
+    batch.dispatched = True
 
     keys = [task.key for task in batch.tasks]
 
