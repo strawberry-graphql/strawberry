@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.39.4 - 2020-11-02
+-------------------
+
+Improve typing for `field` and `StrawberryField`.
+
 0.39.3 - 2020-10-30
 -------------------
 
