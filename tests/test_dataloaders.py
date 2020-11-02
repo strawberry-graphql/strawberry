@@ -42,3 +42,24 @@ async def test_gathering(mocker):
     assert value_a == 1
     assert value_b == 2
     assert value_c == 3
+
+
+async def test_max_batch_size(mocker):
+    async def idx(keys):
+        return keys
+
+    mock_loader = mocker.Mock(side_effect=idx)
+
+    loader = DataLoader(load_fn=mock_loader, max_batch_size=2)
+
+    [value_a, value_b, value_c] = await asyncio.gather(
+        loader.load(1),
+        loader.load(2),
+        loader.load(3),
+    )
+
+    mock_loader.assert_has_calls([mocker.call([1, 2]), mocker.call([3])])
+
+    assert value_a == 1
+    assert value_b == 2
+    assert value_c == 3

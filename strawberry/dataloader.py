@@ -24,13 +24,17 @@ class Batch:
         task = LoaderTask(key, future)
         self.tasks.append(task)
 
+    def __len__(self) -> int:
+        return len(self.tasks)
+
 
 class DataLoader(Generic[T, K]):
     queue: List[LoaderTask] = []
     batch: Optional[Batch] = None
 
-    def __init__(self, load_fn: Callable):
+    def __init__(self, load_fn: Callable, max_batch_size: Optional[int] = None):
         self.load_fn = load_fn
+        self.max_batch_size = max_batch_size
 
         self.loop = get_event_loop()
 
@@ -43,15 +47,19 @@ class DataLoader(Generic[T, K]):
         return future
 
 
-def should_create_new_batch(batch: Batch) -> bool:
-    if batch.dispatched:
+def should_create_new_batch(loader: DataLoader, batch: Batch) -> bool:
+    if (
+        batch.dispatched
+        or loader.max_batch_size
+        and len(batch) >= loader.max_batch_size
+    ):
         return True
 
     return False
 
 
 def get_current_batch(loader: DataLoader) -> Batch:
-    if loader.batch and not should_create_new_batch(loader.batch):
+    if loader.batch and not should_create_new_batch(loader, loader.batch):
         return loader.batch
 
     loader.batch = Batch()
