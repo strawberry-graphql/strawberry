@@ -63,3 +63,28 @@ async def test_max_batch_size(mocker):
     assert value_a == 1
     assert value_b == 2
     assert value_c == 3
+
+
+async def test_error():
+    async def idx(keys):
+        return [ValueError()]
+
+    loader = DataLoader(load_fn=idx)
+
+    with pytest.raises(ValueError):
+        await loader.load(1)
+
+
+async def test_error_and_values():
+    async def idx(keys):
+        if keys == [2]:
+            return [2]
+
+        return [ValueError()]
+
+    loader = DataLoader(load_fn=idx)
+
+    with pytest.raises(ValueError):
+        await loader.load(1)
+
+    assert await loader.load(2) == 2

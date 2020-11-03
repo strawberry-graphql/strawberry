@@ -88,4 +88,7 @@ async def dispatch_batch(loader: DataLoader, batch: Batch) -> None:
     values = list(values)
 
     for task, value in zip(batch.tasks, values):
-        task.future.set_result(value)
+        if isinstance(value, BaseException):
+            task.future.set_exception(value)
+        else:
+            task.future.set_result(value)
