@@ -128,6 +128,9 @@ class GraphQLView(BaseView):
 class AsyncGraphQLView(BaseView):
     @classonlymethod
     def as_view(cls, **initkwargs):
+        # This code tells django that this view is async, see docs here:
+        # https://docs.djangoproject.com/en/3.1/topics/async/#async-views
+
         view = super().as_view(**initkwargs)
         view._is_coroutine = asyncio.coroutines._is_coroutine
         return view
