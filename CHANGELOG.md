@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.40.0 - 2020-11-03
+-------------------
+
+This release adds a new AsyncGraphQLView for django.
+
 0.39.4 - 2020-11-02
 -------------------
 
