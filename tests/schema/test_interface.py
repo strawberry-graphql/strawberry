@@ -55,7 +55,7 @@ def test_interfaces_can_implement_other_interfaces():
         field: str
 
     @strawberry.type
-    class PasswordTooShort(FieldError, Error):  # Bug? FieldError should be enough, Error is redundant
+    class PasswordTooShort(FieldError):
         message: str
         field: str
         fix: str
