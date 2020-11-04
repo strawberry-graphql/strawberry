@@ -2,7 +2,7 @@ import dataclasses
 from asyncio import create_task, get_event_loop
 from asyncio.futures import Future
 from dataclasses import dataclass
-from typing import Any, Awaitable, Callable, Generic, List, Optional, TypeVar
+from typing import Any, Awaitable, Callable, Dict, Generic, List, Optional, TypeVar
 
 from .exceptions import WrongNumberOfResultsReturned
 
@@ -33,15 +33,36 @@ class Batch:
 class DataLoader(Generic[T, K]):
     queue: List[LoaderTask] = []
     batch: Optional[Batch] = None
+    cache: bool = False
+    cache_map: Dict[K, Future]
 
-    def __init__(self, load_fn: Callable, max_batch_size: Optional[int] = None):
+    def __init__(
+        self,
+        load_fn: Callable,
+        max_batch_size: Optional[int] = None,
+        cache: bool = False,
+    ):
         self.load_fn = load_fn
         self.max_batch_size = max_batch_size
 
         self.loop = get_event_loop()
 
+        self.cache = cache
+
+        if self.cache:
+            self.cache_map = {}
+
     def load(self, key: K) -> Awaitable:
+        if self.cache:
+            future = self.cache_map.get(key)
+
+            if future:
+                return future
+
         future = self.loop.create_future()
+
+        if self.cache:
+            self.cache_map[key] = future
 
         batch = get_current_batch(self)
         batch.add_task(key, future)

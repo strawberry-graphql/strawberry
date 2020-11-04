@@ -122,3 +122,40 @@ async def test_returning_wrong_number_of_results():
         ),
     ):
         await loader.load(1)
+
+
+async def test_caches_by_id(mocker):
+    async def idx(keys):
+        return keys
+
+    mock_loader = mocker.Mock(side_effect=idx)
+
+    loader = DataLoader(load_fn=mock_loader, cache=True)
+
+    a = loader.load(1)
+    b = loader.load(1)
+
+    assert a == b
+
+    assert await a == 1
+    assert await b == 1
+
+    mock_loader.assert_called_once_with([1])
+
+
+async def test_caches_by_id_when_loading_many(mocker):
+    async def idx(keys):
+        return keys
+
+    mock_loader = mocker.Mock(side_effect=idx)
+
+    loader = DataLoader(load_fn=mock_loader, cache=True)
+
+    a = loader.load(1)
+    b = loader.load(1)
+
+    assert a == b
+
+    assert [1, 1] == await asyncio.gather(a, b)
+
+    mock_loader.assert_called_once_with([1])
