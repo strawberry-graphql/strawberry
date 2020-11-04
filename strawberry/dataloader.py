@@ -84,11 +84,15 @@ async def dispatch_batch(loader: DataLoader, batch: Batch) -> None:
     # TODO: check if load_fn return an awaitable and it is a list
     # TODO: check size
 
-    values = await loader.load_fn(keys)
-    values = list(values)
+    try:
+        values = await loader.load_fn(keys)
+        values = list(values)
 
-    for task, value in zip(batch.tasks, values):
-        if isinstance(value, BaseException):
-            task.future.set_exception(value)
-        else:
-            task.future.set_result(value)
+        for task, value in zip(batch.tasks, values):
+            if isinstance(value, BaseException):
+                task.future.set_exception(value)
+            else:
+                task.future.set_result(value)
+    except Exception as e:
+        for task in batch.tasks:
+            task.future.set_exception(e)

@@ -88,3 +88,20 @@ async def test_error_and_values():
         await loader.load(1)
 
     assert await loader.load(2) == 2
+
+
+async def test_when_raising_error_in_loader():
+    async def idx(keys):
+        raise ValueError()
+
+    loader = DataLoader(load_fn=idx)
+
+    with pytest.raises(ValueError):
+        await loader.load(1)
+
+    with pytest.raises(ValueError):
+        await asyncio.gather(
+            loader.load(1),
+            loader.load(2),
+            loader.load(3),
+        )
