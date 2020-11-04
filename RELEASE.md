@@ -1,4 +1,4 @@
-Release type: bugfix
+Release type: patch
 
 Allow interfaces to implement other interfaces.
 This may be useful if you are using the relay pattern
