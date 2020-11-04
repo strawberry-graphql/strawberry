@@ -3,6 +3,7 @@ import asyncio
 import pytest
 
 from strawberry.dataloader import DataLoader
+from strawberry.exceptions import WrongNumberOfResultsReturned
 
 
 pytestmark = pytest.mark.asyncio
@@ -105,3 +106,19 @@ async def test_when_raising_error_in_loader():
             loader.load(2),
             loader.load(3),
         )
+
+
+async def test_returning_wrong_number_of_results():
+    async def idx(keys):
+        return [1, 2]
+
+    loader = DataLoader(load_fn=idx)
+
+    with pytest.raises(
+        WrongNumberOfResultsReturned,
+        match=(
+            "Received wrong number of results in dataloader, "
+            "expected: 1, received: 2"
+        ),
+    ):
+        await loader.load(1)

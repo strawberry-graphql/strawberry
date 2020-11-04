@@ -4,6 +4,8 @@ from asyncio.futures import Future
 from dataclasses import dataclass
 from typing import Any, Awaitable, Callable, Generic, List, Optional, TypeVar
 
+from .exceptions import WrongNumberOfResultsReturned
+
 
 T = TypeVar("T")
 K = TypeVar("K")
@@ -82,11 +84,15 @@ async def dispatch_batch(loader: DataLoader, batch: Batch) -> None:
     keys = [task.key for task in batch.tasks]
 
     # TODO: check if load_fn return an awaitable and it is a list
-    # TODO: check size
 
     try:
         values = await loader.load_fn(keys)
         values = list(values)
+
+        if len(values) != len(batch):
+            raise WrongNumberOfResultsReturned(
+                expected=len(batch), received=len(values)
+            )
 
         for task, value in zip(batch.tasks, values):
             if isinstance(value, BaseException):
