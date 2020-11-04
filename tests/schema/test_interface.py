@@ -62,11 +62,12 @@ def test_interfaces_can_implement_other_interfaces():
 
     @strawberry.type
     class Query:
-
         @strawberry.field
         def always_error(self) -> Error:
             return PasswordTooShort(
-                message='Password Too Short', field='Password', fix='Choose more characters'
+                message="Password Too Short",
+                field="Password",
+                fix="Choose more characters",
             )
 
     schema = strawberry.Schema(Query, types=[PasswordTooShort])
@@ -88,7 +89,7 @@ def test_interfaces_can_implement_other_interfaces():
 
     assert not result.errors
     assert result.data["alwaysError"] == {
-        'message': 'Password Too Short',
-        'field': 'Password',
-        'fix': 'Choose more characters',
+        "message": "Password Too Short",
+        "field": "Password",
+        "fix": "Choose more characters",
     }

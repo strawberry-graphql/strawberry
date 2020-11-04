@@ -1,5 +1,4 @@
 import strawberry
-import textwrap
 
 
 def test_defining_interface():
@@ -104,4 +103,7 @@ def test_interfaces_can_implement_other_interfaces():
 
     definition = Person._type_definition
     assert definition.is_interface is False
-    assert definition.interfaces == [UserNodeInterface._type_definition, Node._type_definition]
+    assert definition.interfaces == [
+        UserNodeInterface._type_definition,
+        Node._type_definition,
+    ]
