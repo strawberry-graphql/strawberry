@@ -40,7 +40,7 @@ class DataLoader(Generic[T, K]):
         self,
         load_fn: Callable,
         max_batch_size: Optional[int] = None,
-        cache: bool = False,
+        cache: bool = True,
     ):
         self.load_fn = load_fn
         self.max_batch_size = max_batch_size

@@ -159,3 +159,38 @@ async def test_caches_by_id_when_loading_many(mocker):
     assert [1, 1] == await asyncio.gather(a, b)
 
     mock_loader.assert_called_once_with([1])
+
+
+async def test_cache_disabled(mocker):
+    async def idx(keys):
+        return keys
+
+    mock_loader = mocker.Mock(side_effect=idx)
+
+    loader = DataLoader(load_fn=mock_loader, cache=False)
+
+    a = loader.load(1)
+    b = loader.load(1)
+
+    assert a != b
+
+    assert await a == 1
+    assert await b == 1
+
+    mock_loader.assert_has_calls([mocker.call([1, 1])])
+
+
+async def test_cache_disabled_immediate_await(mocker):
+    async def idx(keys):
+        return keys
+
+    mock_loader = mocker.Mock(side_effect=idx)
+
+    loader = DataLoader(load_fn=mock_loader, cache=False)
+
+    a = await loader.load(1)
+    b = await loader.load(1)
+
+    assert a == b
+
+    mock_loader.assert_has_calls([mocker.call([1]), mocker.call([1])])
