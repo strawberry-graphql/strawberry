@@ -38,7 +38,7 @@ from .models import User
     'name',
     'friends'
 ])
-class UserType:
+class User:
     pass
 ```
 
@@ -63,7 +63,7 @@ from .models import User
     'name',
     'friends'
 ])
-class UserType:
+class UserInput:
     pass
 ```
 
@@ -128,7 +128,7 @@ class User(BaseModel):
     'id',
     'name',
 ])
-class UserType:
+class User:
     pass
 
 instance = User(id='123', name='Jake')
