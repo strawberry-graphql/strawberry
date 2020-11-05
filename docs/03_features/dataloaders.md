@@ -3,7 +3,7 @@ title: DataLoaders
 path: /docs/features/dataloaders
 ---
 
-# DataLoader
+# DataLoaders
 
 Strawberry comes with a built-in DataLoader, a generic utility that can be used
 to reduce the number of requests to databases or third party APIs by batching
@@ -125,3 +125,44 @@ We can use this query by doing the following request:
 
 Even if this query is fetching two users, it still results in one call to
 `load_users`.
+
+## Usage with context
+
+As you have seen in the code above, the dataloader is instantiated outside the
+resolver, since we need to share it between multiple resolvers or even between
+multiple resolver calls.
+
+A common pattern is to create the dataloader when creating the GraphQL context.
+Let's see an example of this using our ASGI view:
+
+```python
+import strawberry
+from strawberry.asgi import GraphQL
+from strawberry.dataloder import DataLoader
+
+from starlette.requests import Request
+from starlette.websockets import WebSocket
+
+
+@strawberry.type
+class User:
+    id: strawberry.ID
+
+
+async def load_users(keys) -> List[User]:
+    return [User(id=key) for key in keys]
+
+
+class MyGraphQL(GraphQL):
+    async def get_context(self, request: Union[Request, WebSocket]) -> Any:
+        return {
+            "user_loader": DataLoader(load_fn=load_user)
+        }
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    async def get_user(self, info, id: strawberry.ID) -> User:
+        return await info.context["user_loader"].load(id)
+```
