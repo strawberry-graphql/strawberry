@@ -55,17 +55,18 @@ def test_basic_type_with_list():
     assert result.data["user"]["friendNames"] == ["A", "B"]
 
 
-def test_basic_type_excluding_fields():
-    class User(pydantic.BaseModel):
-        age: int
-        password: Optional[str]
+def test_basic_type_with_nested_model():
+    class Hobby(pydantic.BaseModel):
+        name: str
 
-    @strawberry.beta.pydantic.type(
-        User,
-        fields=[
-            "age",
-        ],
-    )
+    @strawberry.beta.pydantic.type(Hobby, fields=["name"])
+    class HobbyType:
+        pass
+
+    class User(pydantic.BaseModel):
+        hobby: Hobby
+
+    @strawberry.beta.pydantic.type(User, fields=["hobby"])
     class UserType:
         pass
 
@@ -73,13 +74,52 @@ def test_basic_type_excluding_fields():
     class Query:
         @strawberry.field
         def user(self) -> UserType:
-            return UserType(age=1)
+            return UserType(hobby=HobbyType(name="Skii"))
 
     schema = strawberry.Schema(query=Query)
 
-    query = "{ user { age } }"
+    query = "{ user { hobby { name } } }"
 
     result = schema.execute_sync(query)
 
     assert not result.errors
-    assert result.data["user"]["age"] == 1
+    assert result.data["user"]["hobby"]["name"] == "Skii"
+
+
+def test_basic_type_with_list_of_nested_model():
+    class Hobby(pydantic.BaseModel):
+        name: str
+
+    @strawberry.beta.pydantic.type(Hobby, fields=["name"])
+    class HobbyType:
+        pass
+
+    class User(pydantic.BaseModel):
+        hobbies: List[Hobby]
+
+    @strawberry.beta.pydantic.type(User, fields=["hobbies"])
+    class UserType:
+        pass
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self) -> UserType:
+            return UserType(
+                hobbies=[
+                    HobbyType(name="Skii"),
+                    HobbyType(name="Cooking"),
+                ]
+            )
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ user { hobbies { name } } }"
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data["user"]["hobbies"] == [
+        {"name": "Skii"},
+        {"name": "Cooking"},
+    ]

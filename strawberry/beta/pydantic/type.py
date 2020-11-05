@@ -9,7 +9,7 @@ from strawberry.beta.pydantic.fields import get_basic_type
 from strawberry.type import _process_type
 from strawberry.types.types import FederationTypeParams
 
-from .exceptions import UnregisteredTypeException
+from .exceptions import MissingFieldsListError, UnregisteredTypeException
 
 
 def replace_pydantic_types(type_: Any):
@@ -47,6 +47,9 @@ def type(
     federation: Optional[FederationTypeParams] = None,
 ):
     def wrap(cls):
+        if not fields:
+            raise MissingFieldsListError(model)
+
         model_fields = model.__fields__
         fields_set = set(fields)
 

@@ -1,6 +1,13 @@
 from pydantic import BaseModel
 
 
+class MissingFieldsListError(Exception):
+    def __init__(self, type: BaseModel):
+        message = f"List of fields to copy from {type} is empty"
+
+        super().__init__(message)
+
+
 class UnsupportedTypeError(Exception):
     pass
 

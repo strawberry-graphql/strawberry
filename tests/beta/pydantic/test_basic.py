@@ -5,6 +5,7 @@ import pytest
 import pydantic
 
 import strawberry
+from strawberry.beta.pydantic.exceptions import MissingFieldsListError
 from strawberry.types.types import TypeDefinition
 
 
@@ -127,25 +128,16 @@ def test_list_of_types():
     assert definition.fields[0].child.is_optional is True
 
 
-def test_basic_type_with_field_excluded():
+def test_basic_type_without_fields_throws_an_error():
     class User(pydantic.BaseModel):
         age: int
         password: Optional[str]
 
-    @strawberry.beta.pydantic.type(
-        User,
-        fields=[
-            "age",
-        ],
-    )
-    class UserType:
-        pass
+    with pytest.raises(MissingFieldsListError):
 
-    definition: TypeDefinition = UserType._type_definition
-
-    assert definition.name == "UserType"
-    assert len(definition.fields) == 1
-
-    assert definition.fields[0].name == "age"
-    assert definition.fields[0].type == int
-    assert definition.fields[0].is_optional is False
+        @strawberry.beta.pydantic.type(
+            User,
+            fields=[],
+        )
+        class UserType:
+            pass
