@@ -83,14 +83,26 @@ class User(BaseModel):
     signup_ts: Optional[datetime] = None
     friends: List[int] = []
 
-@strawberry.beta.pydantic.input(model=User, fields=[
+@strawberry.beta.pydantic.error_type(model=User, fields=[
     'id',
     'name',
     'friends'
 ])
-class UserType:
+class UserError:
     pass
 ```
+
+The generated type will look like this:
+
+```python
+@strawberry.type
+class UserError:
+    id: List[str]
+    name: List[str]
+    friends: List[List[str]]
+```
+
+where each field will hold a list of error messages
 
 ### Converting types
 
