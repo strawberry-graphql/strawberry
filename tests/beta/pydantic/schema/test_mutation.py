@@ -81,3 +81,56 @@ def test_mutation_with_validation():
         "1 validation error for User\nname\n  ensure this value has at "
         "least 2 characters (type=value_error.any_str.min_length; limit_value=2)"
     )
+
+
+def test_mutation_with_validation_of_nested_model():
+    class HobbyInputModel(pydantic.BaseModel):
+        name: pydantic.constr(min_length=2)
+
+    class CreateUserModel(pydantic.BaseModel):
+        hobby: HobbyInputModel
+
+    @strawberry.beta.pydantic.input(HobbyInputModel, fields=["name"])
+    class HobbyInput:
+        pass
+
+    @strawberry.beta.pydantic.input(CreateUserModel, fields=["hobby"])
+    class CreateUserInput:
+        pass
+
+    class UserModel(pydantic.BaseModel):
+        name: str
+
+    @strawberry.beta.pydantic.type(UserModel, fields=["name"])
+    class UserType:
+        pass
+
+    @strawberry.type
+    class Query:
+        h: str
+
+    @strawberry.type
+    class Mutation:
+        @strawberry.mutation
+        def create_user(self, input: CreateUserInput) -> UserType:
+            data = input.to_pydantic()
+
+            return UserType(data.name)
+
+    schema = strawberry.Schema(query=Query, mutation=Mutation)
+
+    query = """
+        mutation {
+            createUser(input: { hobby: { name: "P" } }) {
+                name
+            }
+        }
+    """
+
+    result = schema.execute_sync(query)
+
+    assert result.errors[0].message == (
+        "1 validation error for CreateUserModel\nhobby -> name\n"
+        "  ensure this value has at least 2 characters "
+        "(type=value_error.any_str.min_length; limit_value=2)"
+    )

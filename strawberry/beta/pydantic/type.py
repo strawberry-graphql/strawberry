@@ -6,10 +6,57 @@ from pydantic import BaseModel
 from pydantic.fields import ModelField
 
 from strawberry.beta.pydantic.fields import get_basic_type
+from strawberry.beta.pydantic.utils import (
+    get_strawberry_type_from_model,
+    normalize_type,
+)
 from strawberry.type import _process_type
 from strawberry.types.types import FederationTypeParams
+from strawberry.utils.typing import get_list_annotation, is_list
 
 from .exceptions import MissingFieldsListError, UnregisteredTypeException
+
+
+def parse_type_to_data(type_, data):
+    if is_list(type_):
+        inner_type = get_list_annotation(type_)
+        items = [None for _ in data]
+
+        if is_list(inner_type):
+            for index, item in enumerate(data):
+                items[index] = parse_type_to_data(inner_type, item)
+
+            return items
+        elif issubclass(inner_type, BaseModel):
+            # The inner type is a model so we take the
+            # strawberry type and convert it
+            strawberry_type = get_strawberry_type_from_model(inner_type)
+
+            for index, item in enumerate(data):
+                items[index] = convert_class(item, strawberry_type)
+        else:
+            # We do not know how to better convert the data
+            # so we just put the raw value
+            for index, item in enumerate(data):
+                items[index] = item
+
+        return items
+    elif issubclass(type_, BaseModel):
+        strawberry_type = get_strawberry_type_from_model(type_)
+        return strawberry_type.from_pydantic(data)
+    else:
+        return data
+
+
+def convert_class(model_instance, cls):
+    kwargs = {}
+
+    for name, field in model_instance.__fields__.items():
+        outer_type = normalize_type(field.outer_type_)
+        data = getattr(model_instance, name)
+        kwargs[name] = parse_type_to_data(outer_type, data)
+
+    return cls(**kwargs)
 
 
 def replace_pydantic_types(type_: Any):
@@ -74,11 +121,7 @@ def type(
         model._strawberry_type = cls  # type: ignore
 
         def from_pydantic(instance: Any, **kwargs) -> Any:
-            instance_kwargs = instance.dict()
-
-            # TODO: convert nested data
-
-            return cls(**{**instance_kwargs, **kwargs})
+            return convert_class(model_instance=instance, cls=cls)
 
         def to_pydantic(self) -> Any:
             instance_kwargs = dataclasses.asdict(self)

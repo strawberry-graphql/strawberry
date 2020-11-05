@@ -1,35 +1,16 @@
 import dataclasses
-from typing import Any, List, Optional, Type
+from typing import List, Optional, Type
 
 from pydantic import BaseModel
 from pydantic.fields import ModelField
 
-from strawberry.beta.pydantic.exceptions import UnregisteredTypeException
+from strawberry.beta.pydantic.utils import (
+    get_strawberry_type_from_model,
+    normalize_type,
+)
 from strawberry.type import _process_type
 from strawberry.types.types import FederationTypeParams
-from strawberry.utils.typing import (
-    get_list_annotation,
-    get_optional_annotation,
-    is_list,
-    is_optional,
-)
-
-
-def get_strawberry_type_from_model(type_: Any):
-    if hasattr(type_, "_strawberry_type"):
-        return type_._strawberry_type
-    else:
-        raise UnregisteredTypeException(type_)
-
-
-def normalize_type(type_):
-    if is_list(type_):
-        return List[normalize_type(get_list_annotation(type_))]
-
-    if is_optional(type_):
-        return get_optional_annotation(type_)
-
-    return type_
+from strawberry.utils.typing import get_list_annotation, is_list
 
 
 def get_type_for_field(field: ModelField):
