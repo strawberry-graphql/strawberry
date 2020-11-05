@@ -62,6 +62,7 @@ opentelemetry-sdk = "^0.13b0"
 flake8-isort = "^4.0.0"
 flake8-black = "^0.2.1"
 django = {version = ">=2,<4",optional = false}
+pydantic = {version = "^1.6.1", optional = false}
 
 [tool.poetry.extras]
 django = ["django","pytest-django"]
