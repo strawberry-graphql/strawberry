@@ -15,7 +15,7 @@ and caching requests.
 
 Here's how you'd use a DataLoader, first we need to define a function that
 allows to fetch data in batches. Let's say that we have a user type, that has
-only a id:
+only an id:
 
 ```python
 import strawberry
@@ -25,7 +25,7 @@ class User:
     id: strawberry.ID
 ```
 
-we need define a function that returns a list of users based on a list of keys
+we need to define a function that returns a list of users based on a list of keys
 passed:
 
 ```python
@@ -35,7 +35,7 @@ async def load_users(keys: List[int]) -> List[User]:
     return [User(id=key) for key in keys]
 ```
 
-Ideally this function would talk with a database or 3rd party API, but for our
+Normally this function would interact with a database or 3rd party API, but for our
 example we don't need that.
 
 Now that we have a loader function, we can define a DataLoader and use it:
@@ -48,8 +48,8 @@ loader = DataLoader(load_fn=load_users)
 user = await loader.load(1)
 ```
 
-This will result in a call to `load_user` with keys equal to `[1]`. This becomes
-really powerful when doing many load requests, like in this example:
+This will result in a call to `load_user` with keys equal to `[1]`. Where this becomes
+really powerful is when you make multiple requests, like in this example:
 
 ```python
 import asyncio
@@ -130,9 +130,9 @@ Even if this query is fetching two users, it still results in one call to
 
 As you have seen in the code above, the dataloader is instantiated outside the
 resolver, since we need to share it between multiple resolvers or even between
-multiple resolver calls.
+multiple resolver calls. However this is a not a recommended pattern when using your schema inside a server because the dataloader will so cache results for as long as the server is running.
 
-A common pattern is to create the dataloader when creating the GraphQL context.
+Instead a common pattern is to create the dataloader when creating the GraphQL context so that it only caches results with a single request.
 Let's see an example of this using our ASGI view:
 
 ```python
