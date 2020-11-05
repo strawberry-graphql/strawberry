@@ -71,7 +71,12 @@ def _get_type_for_expr(expr: Expression, api: SemanticAnalyzerPluginInterface):
 
 
 def union_hook(ctx: DynamicClassDefContext) -> None:
-    types = ctx.call.args[1]
+    try:
+        # Check if types is passed as a keyword argument
+        types = ctx.call.args[ctx.call.arg_names.index("types")]
+    except ValueError:
+        # Fall back to assuming position arguments
+        types = ctx.call.args[1]
 
     if isinstance(types, TupleExpr):
         try:
