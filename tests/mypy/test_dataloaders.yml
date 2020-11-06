@@ -14,7 +14,7 @@
 
       reveal_type(user)
   out: |
-    main:8: note: Revealed type is 'Any'
+    main:8: note: Revealed type is 'strawberry.dataloader.DataLoader[Any, Any]'
     main:13: note: Revealed type is 'Any'
 
 - case: test_dataloader
