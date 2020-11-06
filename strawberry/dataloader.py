@@ -13,33 +13,33 @@ K = TypeVar("K")
 
 
 @dataclass
-class LoaderTask:
-    key: Any
+class LoaderTask(Generic[K, T]):
+    key: K
     future: Future
 
 
 @dataclass
-class Batch:
+class Batch(Generic[K, T]):
     tasks: List[LoaderTask] = dataclasses.field(default_factory=list)
     dispatched: bool = False
 
     def add_task(self, key: Any, future: Future):
-        task = LoaderTask(key, future)
+        task = LoaderTask[K, T](key, future)
         self.tasks.append(task)
 
     def __len__(self) -> int:
         return len(self.tasks)
 
 
-class DataLoader(Generic[T, K]):
+class DataLoader(Generic[K, T]):
     queue: List[LoaderTask] = []
-    batch: Optional[Batch] = None
+    batch: Optional[Batch[K, T]] = None
     cache: bool = False
     cache_map: Dict[K, Future]
 
     def __init__(
         self,
-        load_fn: Callable,
+        load_fn: Callable[[List[K]], Awaitable[List[T]]],
         max_batch_size: Optional[int] = None,
         cache: bool = True,
         loop: AbstractEventLoop = None,
@@ -54,7 +54,7 @@ class DataLoader(Generic[T, K]):
         if self.cache:
             self.cache_map = {}
 
-    def load(self, key: K) -> Awaitable:
+    def load(self, key: K) -> Awaitable[T]:
         if self.cache:
             future = self.cache_map.get(key)
 
