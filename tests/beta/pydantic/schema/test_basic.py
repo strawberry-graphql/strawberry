@@ -1,3 +1,4 @@
+import textwrap
 from typing import List, Optional
 
 import pydantic
@@ -6,21 +7,34 @@ import strawberry
 
 
 def test_basic_type():
-    class User(pydantic.BaseModel):
+    class UserModel(pydantic.BaseModel):
         age: int
         password: Optional[str]
 
-    @strawberry.beta.pydantic.type(User, fields=["age", "password"])
-    class UserType:
+    @strawberry.beta.pydantic.type(UserModel, fields=["age", "password"])
+    class User:
         pass
 
     @strawberry.type
     class Query:
         @strawberry.field
-        def user(self) -> UserType:
-            return UserType(age=1, password="ABC")
+        def user(self) -> User:
+            return User(age=1, password="ABC")
 
     schema = strawberry.Schema(query=Query)
+
+    expected_schema = """
+    type Query {
+      user: User!
+    }
+
+    type User {
+      age: Int!
+      password: String
+    }
+    """
+
+    assert str(schema) == textwrap.dedent(expected_schema).strip()
 
     query = "{ user { age } }"
 
@@ -31,19 +45,19 @@ def test_basic_type():
 
 
 def test_basic_type_with_list():
-    class User(pydantic.BaseModel):
+    class UserModel(pydantic.BaseModel):
         age: int
         friend_names: List[str]
 
-    @strawberry.beta.pydantic.type(User, fields=["age", "friend_names"])
-    class UserType:
+    @strawberry.beta.pydantic.type(UserModel, fields=["age", "friend_names"])
+    class User:
         pass
 
     @strawberry.type
     class Query:
         @strawberry.field
-        def user(self) -> UserType:
-            return UserType(age=1, friend_names=["A", "B"])
+        def user(self) -> User:
+            return User(age=1, friend_names=["A", "B"])
 
     schema = strawberry.Schema(query=Query)
 
@@ -123,3 +137,40 @@ def test_basic_type_with_list_of_nested_model():
         {"name": "Skii"},
         {"name": "Cooking"},
     ]
+
+
+def test_basic_type_with_extended_fields():
+    class UserModel(pydantic.BaseModel):
+        age: int
+
+    @strawberry.beta.pydantic.type(UserModel, fields=["age"])
+    class User:
+        name: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self) -> User:
+            return User(name="Marco", age=100)
+
+    schema = strawberry.Schema(query=Query)
+
+    expected_schema = """
+    type Query {
+      user: User!
+    }
+
+    type User {
+      age: Int!
+      name: String!
+    }
+    """
+    assert str(schema) == textwrap.dedent(expected_schema).strip()
+
+    query = "{ user { name age } }"
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data["user"]["name"] == "Marco"
+    assert result.data["user"]["age"] == 100
