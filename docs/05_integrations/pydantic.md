@@ -1,6 +1,6 @@
 ---
-title: Pydantic Support
-path: /docs/feature/pydantic
+title: Pydantic
+path: /docs/integrations/pydantic
 ---
 
 # Pydantic support
@@ -73,7 +73,7 @@ In addition to object types and input types strawberry allows you to create
 "error types", you can use these error types to have a typed representation of
 Pydantic errors in GraphQL, let's see an example:
 
-```python
+```python+schema
 import pydantic
 import strawberry
 
@@ -90,16 +90,14 @@ class User(BaseModel):
 ])
 class UserError:
     pass
-```
 
-The generated type will look like this:
+---
 
-```python
-@strawberry.type
-class UserError:
-    id: List[str]
-    name: List[str]
-    friends: List[List[str]]
+type UserError {
+  id: [String!]
+  name: [String!]
+  friends: [[String!]]
+}
 ```
 
 where each field will hold a list of error messages
@@ -109,7 +107,7 @@ where each field will hold a list of error messages
 You can use the usual Strawberry syntax to add additional new fields to the
 GraphQL type that aren't defined in the pydantic model
 
-```python
+```python+schema
 import strawberry
 import pydantic
 
@@ -125,16 +123,14 @@ class User(BaseModel):
 ])
 class User:
     age: int
-```
 
-The generated type will look like this:
+---
 
-```python
-@strawberry.type
-class User:
-    id: int
-    name: str
-    age: str
+type User {
+    id: Int!
+    name: String!
+    age: Int!
+}
 ```
 
 ### Converting types
