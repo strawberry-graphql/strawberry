@@ -1,5 +1,6 @@
 import dataclasses
 from asyncio import create_task, get_event_loop
+from asyncio.events import AbstractEventLoop
 from asyncio.futures import Future
 from dataclasses import dataclass
 from typing import Any, Awaitable, Callable, Dict, Generic, List, Optional, TypeVar
@@ -41,11 +42,12 @@ class DataLoader(Generic[T, K]):
         load_fn: Callable,
         max_batch_size: Optional[int] = None,
         cache: bool = True,
+        loop: AbstractEventLoop = None,
     ):
         self.load_fn = load_fn
         self.max_batch_size = max_batch_size
 
-        self.loop = get_event_loop()
+        self.loop = loop or get_event_loop()
 
         self.cache = cache
 
