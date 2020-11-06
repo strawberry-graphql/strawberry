@@ -18,7 +18,7 @@ app = GraphQL(schema)
 
 ## Options
 
-The `GraphQLView` accepts two options at the moment:
+The `GraphQL` app accepts two options at the moment:
 
 - schema: mandatory, the schema created by `strawberry.Schema`.
 - graphiql: optional, defaults to `True`, whether to enable the GraphiQL
@@ -26,7 +26,7 @@ The `GraphQLView` accepts two options at the moment:
 
 ## Extending the view
 
-We allow to extend the base `GraphQLView`, by overriding the following methods:
+We allow to extend the base `GraphQL` app, by overriding the following methods:
 
 - `async get_context(self, request: Union[Request, WebSocket]) -> Any`
 - `async get_root_value(self, request: Request) -> Any`
@@ -39,7 +39,7 @@ resolver. You can return anything here, by default we return a dictionary with
 the request.
 
 ```python
-class MyGraphQLView(GraphQLView):
+class MyGraphQL(GraphQL):
     async def get_context(self, request: Union[Request, WebSocket]) -> Any:
         return {"example": 1}
 
@@ -65,7 +65,7 @@ probably not used a lot but it might be useful in certain situations.
 Here's an example:
 
 ```python
-class MyGraphQLView(GraphQLView):
+class MyGraphQL(GraphQL):
     async def get_root_value(self, request: Request) -> Any:
         return Query(name="Patrick")
 
@@ -93,7 +93,7 @@ from strawberry.types import ExecutionResult
 
 from graphql.error import format_error as format_graphql_error
 
-class MyGraphQLView(GraphQLView):
+class MyGraphQL(GraphQL):
     async def process_result(
         self, request: Request, result: ExecutionResult
     ) -> GraphQLHTTPResponse:

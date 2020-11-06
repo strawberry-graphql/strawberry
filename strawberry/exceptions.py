@@ -127,3 +127,13 @@ class ScalarAlreadyRegisteredError(Exception):
         message = f"Scalar `{scalar_name}` has already been registered"
 
         super().__init__(message)
+
+
+class WrongNumberOfResultsReturned(Exception):
+    def __init__(self, expected: int, received: int):
+        message = (
+            "Received wrong number of results in dataloader, "
+            f"expected: {expected}, received: {received}"
+        )
+
+        super().__init__(message)
