@@ -174,3 +174,137 @@ def test_can_covert_pydantic_type_with_matrix_list_of_nested_model_to_strawberry
             Hour(hour=6),
         ],
     ]
+
+
+def test_can_covert_pydantic_type_to_strawberry_with_additional_fields():
+    class UserModel(pydantic.BaseModel):
+        password: Optional[str]
+
+    @strawberry.beta.pydantic.type(UserModel, fields=["password"])
+    class User:
+        age: int
+
+    origin_user = UserModel(password="abc")
+    user = User.from_pydantic(origin_user, extra={"age": 1})
+
+    assert user.age == 1
+    assert user.password == "abc"
+
+
+def test_can_covert_pydantic_type_to_strawberry_with_additional_nested_fields():
+    @strawberry.type
+    class Work:
+        name: str
+
+    class UserModel(pydantic.BaseModel):
+        password: Optional[str]
+
+    @strawberry.beta.pydantic.type(UserModel, fields=["password"])
+    class User:
+        work: Work
+
+    origin_user = UserModel(password="abc")
+    user = User.from_pydantic(origin_user, extra={"work": {"name": "Ice inc"}})
+
+    assert user.work.name == "Ice inc"
+    assert user.password == "abc"
+
+
+def test_can_covert_pydantic_type_to_strawberry_with_additional_list_nested_fields():
+    @strawberry.type
+    class Work:
+        name: str
+
+    class UserModel(pydantic.BaseModel):
+        password: Optional[str]
+
+    @strawberry.beta.pydantic.type(UserModel, fields=["password"])
+    class User:
+        work: List[Work]
+
+    origin_user = UserModel(password="abc")
+    user = User.from_pydantic(
+        origin_user,
+        extra={
+            "work": [
+                {"name": "Software inc"},
+                {"name": "Homemade inc"},
+            ]
+        },
+    )
+
+    assert user.work == [
+        Work(name="Software inc"),
+        Work(name="Homemade inc"),
+    ]
+    assert user.password == "abc"
+
+
+def test_can_covert_pydantic_type_to_strawberry_with_missing_data_in_nested_type():
+    class WorkModel(pydantic.BaseModel):
+        name: str
+
+    @strawberry.beta.pydantic.type(WorkModel, fields=["name"])
+    class Work:
+        year: int
+
+    class UserModel(pydantic.BaseModel):
+        work: List[WorkModel]
+
+    @strawberry.beta.pydantic.type(UserModel, fields=["work"])
+    class User:
+        pass
+
+    origin_user = UserModel(work=[WorkModel(name="Software inc")])
+
+    user = User.from_pydantic(
+        origin_user,
+        extra={
+            "work": [
+                {"year": 2020},
+            ]
+        },
+    )
+
+    assert user.work == [
+        Work(name="Software inc", year=2020),
+    ]
+
+
+def test_can_covert_pydantic_type_to_strawberry_with_missing_index_data_in_nested_type():
+    class WorkModel(pydantic.BaseModel):
+        name: str
+
+    @strawberry.beta.pydantic.type(WorkModel, fields=["name"])
+    class Work:
+        year: int
+
+    class UserModel(pydantic.BaseModel):
+        work: List[Optional[WorkModel]]
+
+    @strawberry.beta.pydantic.type(UserModel, fields=["work"])
+    class User:
+        pass
+
+    origin_user = UserModel(
+        work=[
+            WorkModel(name="Software inc"),
+            None,
+        ]
+    )
+
+    user = User.from_pydantic(
+        origin_user,
+        extra={
+            "work": [
+                {"year": 2020},
+                {"name": "Alternative", "year": 3030},
+            ]
+        },
+    )
+
+    assert user.work == [
+        Work(name="Software inc", year=2020),
+        # This was None in the UserModel
+        Work(name="Alternative", year=3030),
+    ]
