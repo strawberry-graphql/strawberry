@@ -7,7 +7,7 @@ from strawberry.utils.typing import is_generic
 from .exceptions import MissingFieldAnnotationError, MissingReturnAnnotationError
 from .field import StrawberryField
 from .types.type_resolver import _get_fields
-from .types.types import FederationTypeParams, FieldDefinition, TypeDefinition
+from .types.types import FederationTypeParams, TypeDefinition
 from .utils.str_converters import to_camel_case
 
 
@@ -97,14 +97,13 @@ def _process_type(
     is_interface: bool = False,
     description: Optional[str] = None,
     federation: Optional[FederationTypeParams] = None,
-    _base_fields: Optional[List[FieldDefinition]] = None
 ):
     name = name or to_camel_case(cls.__name__)
 
     wrapped = _wrap_dataclass(cls)
 
     interfaces = _get_interfaces(wrapped)
-    fields = (_base_fields or []) + _get_fields(cls)
+    fields = _get_fields(cls)
 
     wrapped._type_definition = TypeDefinition(
         name=name,
@@ -128,7 +127,7 @@ def type(
     is_input: bool = False,
     is_interface: bool = False,
     description: str = None,
-    federation: Optional[FederationTypeParams] = None
+    federation: Optional[FederationTypeParams] = None,
 ):
     """Annotates a class as a GraphQL type.
 
