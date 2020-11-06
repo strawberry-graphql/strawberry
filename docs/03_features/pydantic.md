@@ -104,6 +104,39 @@ class UserError:
 
 where each field will hold a list of error messages
 
+### Extending types
+
+You can use the usual Strawberry syntax to add additional new fields to the
+GraphQL type that aren't defined in the pydantic model
+
+```python
+import strawberry
+import pydantic
+
+from .models import User
+
+class User(BaseModel):
+    id: int
+    name: str
+
+@strawberry.beta.pydantic.type(model=User, fields=[
+    'id',
+    'name',
+])
+class User:
+    age: int
+```
+
+The generated type will look like this:
+
+```python
+@strawberry.type
+class User:
+    id: int
+    name: str
+    age: str
+```
+
 ### Converting types
 
 The generated types won't run any pydantic validation, this is to prevent
