@@ -169,6 +169,40 @@ instance = User(id='123', name='Jake')
 data = UserType.from_pydantic(instance)
 ```
 
+If your Strawberry type includes additional fields that aren't defined in the
+pydantic model, you will need to use the `extra` parameter of `from_pydantic` to
+specify the values to assign to them.
+
+```python
+import strawberry
+from typing import List, Optional
+from pydantic import BaseModel
+
+
+class User(BaseModel):
+    id: int
+    name: str
+
+
+@strawberry.beta.pydantic.type(model=User, fields=[
+    'id',
+    'name',
+])
+class User:
+    age: int
+
+instance = User(id='123', name='Jake')
+
+data = UserType.from_pydantic(instance, extra={'age': 10})
+```
+
+The data dictionary structure follows the structure of your data, if you have
+a list of `User`, you should send an extra that is the list of User with
+the missing data (in this case, `age`).
+
+You don't need to send all fields, data from the model is used first and then the
+`extra` parameter is used to fill in any additional missing data
+
 To convert a strawberry instance to a pydantic instance and trigger validation,
 you can use `to_pydantic` on the strawberry instance:
 
