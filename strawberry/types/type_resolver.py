@@ -336,7 +336,7 @@ def _get_fields(cls: Type) -> List[FieldDefinition]:
 
             # resolver with @strawberry.field decorator must be typed
             if field_definition.type is None:
-                resolver_name = field_definition.base_resolver.__name__
+                resolver_name = field_definition.base_resolver.name
                 raise MissingReturnAnnotationError(resolver_name)
 
     all_fields = {**type_1_fields, **type_2_fields}

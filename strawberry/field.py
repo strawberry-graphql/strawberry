@@ -84,11 +84,9 @@ def field(
 
     field_definition = FieldDefinition(
         origin_name=None,  # modified by resolver in __call__
-        name=name,  # modified by resolver in __call__
-        type=None,  # type: ignore
-        origin=resolver,  # type: ignore
+        name=name,
+        type=None,
         description=description,
-        base_resolver=resolver,
         is_subscription=is_subscription,
         permission_classes=permission_classes or [],
         arguments=[],  # modified by resolver in __call__

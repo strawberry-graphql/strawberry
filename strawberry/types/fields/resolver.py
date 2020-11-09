@@ -1,7 +1,7 @@
 from inspect import iscoroutinefunction
 from typing import Callable, Generic, List, Optional, Type, TypeVar
 
-from cached_property import cached_property
+from cached_property import cached_property  # type: ignore
 
 from strawberry.arguments import get_arguments_from_resolver
 from strawberry.types.types import ArgumentDefinition
@@ -57,3 +57,6 @@ class StrawberryResolver(Generic[T]):
     @cached_property
     def is_async(self) -> bool:
         return iscoroutinefunction(self.wrapped_func)
+
+
+__all__ = ["StrawberryResolver"]
