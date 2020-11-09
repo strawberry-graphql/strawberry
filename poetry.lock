@@ -793,7 +793,7 @@ python-versions = ">=3.5"
 
 [[package]]
 name = "starlette"
-version = "0.13.8"
+version = "0.14.0"
 description = "The little ASGI library that shines."
 category = "main"
 optional = false
@@ -927,7 +927,7 @@ opentelemetry = ["opentelemetry-api", "opentelemetry-sdk"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "3864a3844e2f26b30b9ff496c427e8a0971af5b4ca9fd5e378e8b0f1f8130ccf"
+content-hash = "8b8fad5465d0cc81b262dd3cce8b8aa8cb5a5d32f4df24f9978e4a4c6fa94cb8"
 
 [metadata.files]
 appdirs = [
@@ -1334,8 +1334,8 @@ sqlparse = [
     {file = "sqlparse-0.4.1.tar.gz", hash = "sha256:0f91fd2e829c44362cbcfab3e9ae12e22badaa8a29ad5ff599f9ec109f0454e8"},
 ]
 starlette = [
-    {file = "starlette-0.13.8-py3-none-any.whl", hash = "sha256:40afea6ffa830849800cc4efdf006a86ad579d6ba6b64cb1925a1897b020ba6e"},
-    {file = "starlette-0.13.8.tar.gz", hash = "sha256:82df29b2149437ad828a883674bf031788600c876dae50835e98398bd1706183"},
+    {file = "starlette-0.14.0-py3-none-any.whl", hash = "sha256:03457f2a13e8c9866772b1ca85c74f025f46e02ba3d37624ddb26a92326082aa"},
+    {file = "starlette-0.14.0.tar.gz", hash = "sha256:5ec03e00dbdc31b01b0363ef25c2a49b3a07715153732b83a54d07d925f3dae7"},
 ]
 testfixtures = [
     {file = "testfixtures-6.15.0-py2.py3-none-any.whl", hash = "sha256:e17f4f526fc90b0ac9bc7f8ca62b7dec17d9faf3d721f56bda4f0fd94d02f85a"},
