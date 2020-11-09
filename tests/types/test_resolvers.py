@@ -76,7 +76,7 @@ def test_raises_error_when_return_annotation_missing():
     # TODO: Maybe we should say that the resolver needs the annotation?
 
     assert e.value.args == (
-        'Return annotation missing for field "goodbye", did you forget to add ' "it?",
+        'Return annotation missing for field "goodbye", did you forget to add it?',
     )
 
 
