@@ -1,4 +1,4 @@
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 from mypy.nodes import (
     GDEF,
@@ -23,7 +23,13 @@ from mypy.types import AnyType, Type, TypeOfAny, UnionType
 
 
 class InvalidNodeTypeException(Exception):
-    pass
+    def __init__(self, node: Any) -> None:
+        self.message = f"Invalid node type: {str(node)}"
+
+        super().__init__()
+
+    def __str__(self) -> str:
+        return self.message
 
 
 def lazy_type_analyze_callback(ctx: AnalyzeTypeContext) -> Type:
@@ -51,7 +57,7 @@ def _get_type_for_expr(expr: Expression, api: SemanticAnalyzerPluginInterface):
             sym = api.lookup_fully_qualified_or_none(expr.fullname)
 
             if sym and isinstance(sym.node, Var):
-                raise InvalidNodeTypeException()
+                raise InvalidNodeTypeException(sym.node)
 
         return api.named_type(expr.name)
 
@@ -65,13 +71,18 @@ def _get_type_for_expr(expr: Expression, api: SemanticAnalyzerPluginInterface):
         if expr.fullname:
             return api.named_type(expr.fullname)
         else:
-            raise InvalidNodeTypeException()
+            raise InvalidNodeTypeException(expr)
 
     raise ValueError(f"Unsupported expression {type(expr)}")
 
 
 def union_hook(ctx: DynamicClassDefContext) -> None:
-    types = ctx.call.args[1]
+    try:
+        # Check if types is passed as a keyword argument
+        types = ctx.call.args[ctx.call.arg_names.index("types")]
+    except ValueError:
+        # Fall back to assuming position arguments
+        types = ctx.call.args[1]
 
     if isinstance(types, TupleExpr):
         try:
@@ -131,14 +142,22 @@ def enum_hook(ctx: DynamicClassDefContext) -> None:
             )
             return
 
-    enum_type = _get_type_for_expr(first_argument, ctx.api)
+    try:
+        enum_type = _get_type_for_expr(first_argument, ctx.api)
 
-    type_alias = TypeAlias(
-        enum_type,
-        fullname=ctx.api.qualified_name(ctx.name),
-        line=ctx.call.line,
-        column=ctx.call.column,
-    )
+        type_alias = TypeAlias(
+            enum_type,
+            fullname=ctx.api.qualified_name(ctx.name),
+            line=ctx.call.line,
+            column=ctx.call.column,
+        )
+    except InvalidNodeTypeException:
+        type_alias = TypeAlias(
+            AnyType(TypeOfAny.from_error),
+            fullname=ctx.api.qualified_name(ctx.name),
+            line=ctx.call.line,
+            column=ctx.call.column,
+        )
 
     ctx.api.add_symbol_table_node(
         ctx.name, SymbolTableNode(GDEF, type_alias, plugin_generated=False)

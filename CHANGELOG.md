@@ -1,6 +1,94 @@
 CHANGELOG
 =========
 
+0.41.0 - 2020-11-06
+-------------------
+
+This release adds a built-in dataloader. Example:
+
+```python
+async def app():
+    async def idx(keys):
+        return keys
+
+    loader = DataLoader(load_fn=idx)
+
+    [value_a, value_b, value_c] = await asyncio.gather(
+        loader.load(1),
+        loader.load(2),
+        loader.load(3),
+    )
+
+
+    assert value_a == 1
+    assert value_b == 2
+    assert value_c == 3
+```
+
+0.40.2 - 2020-11-05
+-------------------
+
+Allow interfaces to implement other interfaces.
+This may be useful if you are using the relay pattern
+or if you want to model base interfaces that can be extended.
+
+Example:
+```python
+import strawberry
+
+
+@strawberry.interface
+class Error:
+    message: str
+
+@strawberry.interface
+class FieldError(Error):
+    message: str
+    field: str
+
+@strawberry.type
+class PasswordTooShort(FieldError):
+    message: str
+    field: str
+    fix: str
+```
+Produces the following SDL:
+```graphql
+interface Error {
+  message: String!
+}
+
+interface FieldError implements Error {
+  message: String!
+  field: String!
+}
+
+type PasswordTooShort implements FieldError & Error {
+  message: String!
+  field: String!
+  fix: String!
+}
+```
+
+0.40.1 - 2020-11-05
+-------------------
+
+Fix mypy plugin to handle bug where the `types` argument to `strawberry.union` is passed in as a keyword argument instead of a position one.
+
+```python
+MyUnion = strawberry.union(types=(TypeA, TypeB), name="MyUnion")
+```
+
+0.40.0 - 2020-11-03
+-------------------
+
+This release adds a new AsyncGraphQLView for django.
+
+0.39.4 - 2020-11-02
+-------------------
+
+Improve typing for `field` and `StrawberryField`.
+
 0.39.3 - 2020-10-30
 -------------------
 

@@ -4,12 +4,48 @@
 
     @strawberry.type
     class User:
-        name: str = strawberry.field(description='Example')
+        name: str = strawberry.field(description='Example')  # type: ignore
 
     User(name="Patrick")
     User(n="Patrick")
   out: |
     main:8: error: Unexpected keyword argument "n" for "User"
+
+- case: test_all_field_usage
+  main: |
+    import strawberry
+
+    def some_resolver() -> str:
+        return ""
+
+    @strawberry.type
+    class Example:
+        a: str
+        b: str = strawberry.field(name="b")  # type: ignore
+        c: str = strawberry.field(name="c", resolver=some_resolver)  # type: ignore
+        d: str = strawberry.field(resolver=some_resolver)  # type: ignore
+
+        @strawberry.field(description="ABC")
+        def e(self, info) -> str:
+            return ""
+
+        @strawberry.field(name="f")
+        def f_resolver(self, info) -> str:
+            return ""
+
+    reveal_type(Example.a)
+    reveal_type(Example.b)
+    reveal_type(Example.c)
+    reveal_type(Example.d)
+    reveal_type(Example.e)
+    reveal_type(Example.f_resolver)
+  out: |
+    main:21: note: Revealed type is 'builtins.str'
+    main:22: note: Revealed type is 'builtins.str'
+    main:23: note: Revealed type is 'builtins.str'
+    main:24: note: Revealed type is 'builtins.str'
+    main:25: note: Revealed type is 'def (self: main.Example, info: Any) -> builtins.str'
+    main:26: note: Revealed type is 'def (self: main.Example, info: Any) -> builtins.str'
 
 - case: test_private_field
   main: |

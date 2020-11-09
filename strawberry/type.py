@@ -22,6 +22,9 @@ def _get_interfaces(cls: Type) -> List[TypeDefinition]:
         if type_definition and type_definition.is_interface:
             interfaces.append(type_definition)
 
+        for inherited_interface in _get_interfaces(base):
+            interfaces.append(inherited_interface)
+
     return interfaces
 
 

@@ -1,0 +1,39 @@
+- case: test_dataloader_no_types
+  main: |
+    from strawberry.dataloader import DataLoader
+
+    def load(keys):
+        return keys
+
+    loader = DataLoader(load)
+
+    reveal_type(loader)
+
+    async def run() -> None:
+      user = await loader.load(1)
+
+      reveal_type(user)
+  out: |
+    main:8: note: Revealed type is 'strawberry.dataloader.DataLoader[Any, Any]'
+    main:13: note: Revealed type is 'Any'
+
+- case: test_dataloader
+  main: |
+    from typing import List
+
+    from strawberry.dataloader import DataLoader
+
+    async def load(keys: List[int]) -> List[str]:
+        return [str(k) for k in keys]
+
+    loader = DataLoader[int, str](load)
+
+    reveal_type(loader)
+
+    async def run() -> None:
+      user = await loader.load(1)
+
+      reveal_type(user)
+  out: |
+    main:10: note: Revealed type is 'strawberry.dataloader.DataLoader[builtins.int*, builtins.str*]'
+    main:15: note: Revealed type is 'builtins.str*'
