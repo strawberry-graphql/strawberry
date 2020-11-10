@@ -4,7 +4,7 @@ from typing import List, Optional, Type
 from pydantic import BaseModel
 from pydantic.fields import ModelField
 
-from strawberry.beta.pydantic.utils import (
+from strawberry.experimental.pydantic.utils import (
     get_strawberry_type_from_model,
     normalize_type,
 )

@@ -7,11 +7,11 @@ def test_mutation():
     class User(pydantic.BaseModel):
         name: pydantic.constr(min_length=2)
 
-    @strawberry.beta.pydantic.input(User, fields=["name"])
+    @strawberry.experimental.pydantic.input(User, fields=["name"])
     class CreateUserInput:
         pass
 
-    @strawberry.beta.pydantic.type(User, fields=["name"])
+    @strawberry.experimental.pydantic.type(User, fields=["name"])
     class UserType:
         pass
 
@@ -45,11 +45,11 @@ def test_mutation_with_validation():
     class User(pydantic.BaseModel):
         name: pydantic.constr(min_length=2)
 
-    @strawberry.beta.pydantic.input(User, fields=["name"])
+    @strawberry.experimental.pydantic.input(User, fields=["name"])
     class CreateUserInput:
         pass
 
-    @strawberry.beta.pydantic.type(User, fields=["name"])
+    @strawberry.experimental.pydantic.type(User, fields=["name"])
     class UserType:
         pass
 
@@ -90,18 +90,18 @@ def test_mutation_with_validation_of_nested_model():
     class CreateUserModel(pydantic.BaseModel):
         hobby: HobbyInputModel
 
-    @strawberry.beta.pydantic.input(HobbyInputModel, fields=["name"])
+    @strawberry.experimental.pydantic.input(HobbyInputModel, fields=["name"])
     class HobbyInput:
         pass
 
-    @strawberry.beta.pydantic.input(CreateUserModel, fields=["hobby"])
+    @strawberry.experimental.pydantic.input(CreateUserModel, fields=["hobby"])
     class CreateUserInput:
         pass
 
     class UserModel(pydantic.BaseModel):
         name: str
 
-    @strawberry.beta.pydantic.type(UserModel, fields=["name"])
+    @strawberry.experimental.pydantic.type(UserModel, fields=["name"])
     class UserType:
         pass
 

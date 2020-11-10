@@ -5,7 +5,7 @@ import pytest
 import pydantic
 
 import strawberry
-from strawberry.beta.pydantic.exceptions import MissingFieldsListError
+from strawberry.experimental.pydantic.exceptions import MissingFieldsListError
 from strawberry.types.types import TypeDefinition
 
 
@@ -14,7 +14,7 @@ def test_basic_type():
         age: int
         password: Optional[str]
 
-    @strawberry.beta.pydantic.type(User, fields=["age", "password"])
+    @strawberry.experimental.pydantic.type(User, fields=["age", "password"])
     class UserType:
         pass
 
@@ -42,11 +42,13 @@ def test_referencing_other_models_fails_when_not_registered():
         group: Group
 
     with pytest.raises(
-        strawberry.beta.pydantic.UnregisteredTypeException,
+        strawberry.experimental.pydantic.UnregisteredTypeException,
         match=("Cannot find a Strawberry Type for (.*) did you forget to register it?"),
     ):
 
-        @strawberry.beta.pydantic.type(User, fields=["age", "password", "group"])
+        @strawberry.experimental.pydantic.type(
+            User, fields=["age", "password", "group"]
+        )
         class UserType:
             pass
 
@@ -59,11 +61,11 @@ def test_referencing_other_registered_models():
         age: int
         group: Group
 
-    @strawberry.beta.pydantic.type(Group, fields=["name"])
+    @strawberry.experimental.pydantic.type(Group, fields=["name"])
     class GroupType:
         pass
 
-    @strawberry.beta.pydantic.type(User, fields=["age", "group"])
+    @strawberry.experimental.pydantic.type(User, fields=["age", "group"])
     class UserType:
         pass
 
@@ -84,7 +86,7 @@ def test_list():
     class User(pydantic.BaseModel):
         friend_names: List[str]
 
-    @strawberry.beta.pydantic.type(User, fields=["friend_names"])
+    @strawberry.experimental.pydantic.type(User, fields=["friend_names"])
     class UserType:
         pass
 
@@ -107,11 +109,11 @@ def test_list_of_types():
     class User(pydantic.BaseModel):
         friends: Optional[List[Optional[Friend]]]
 
-    @strawberry.beta.pydantic.type(Friend, fields=["name"])
+    @strawberry.experimental.pydantic.type(Friend, fields=["name"])
     class FriendType:
         pass
 
-    @strawberry.beta.pydantic.type(User, fields=["friends"])
+    @strawberry.experimental.pydantic.type(User, fields=["friends"])
     class UserType:
         pass
 
@@ -135,7 +137,7 @@ def test_basic_type_without_fields_throws_an_error():
 
     with pytest.raises(MissingFieldsListError):
 
-        @strawberry.beta.pydantic.type(
+        @strawberry.experimental.pydantic.type(
             User,
             fields=[],
         )
@@ -148,7 +150,7 @@ def test_type_with_fields_coming_from_strawberry_and_pydantic():
         age: int
         password: Optional[str]
 
-    @strawberry.beta.pydantic.type(User, fields=["age", "password"])
+    @strawberry.experimental.pydantic.type(User, fields=["age", "password"])
     class UserType:
         name: str
 
@@ -180,7 +182,7 @@ def test_type_with_nested_fields_coming_from_strawberry_and_pydantic():
         age: int
         password: Optional[str]
 
-    @strawberry.beta.pydantic.type(User, fields=["age", "password"])
+    @strawberry.experimental.pydantic.type(User, fields=["age", "password"])
     class UserType:
         name: Name
 

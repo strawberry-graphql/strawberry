@@ -1,6 +1,6 @@
 from typing import Any, List
 
-from strawberry.beta.pydantic.exceptions import UnregisteredTypeException
+from strawberry.experimental.pydantic.exceptions import UnregisteredTypeException
 from strawberry.utils.typing import (
     get_list_annotation,
     get_optional_annotation,

@@ -612,9 +612,9 @@ class StrawberryPlugin(Plugin):
         if any(
             strawberry_decorator in fullname
             for strawberry_decorator in {
-                "strawberry.beta.pydantic.type",
-                "strawberry.beta.pydantic.input",
-                "strawberry.beta.pydantic.error_type",
+                "strawberry.experimental.pydantic.type",
+                "strawberry.experimental.pydantic.input",
+                "strawberry.experimental.pydantic.error_type",
             }
         ):
             return strawberry_pydantic_class_callback

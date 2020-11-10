@@ -25,7 +25,7 @@ def test_types(pydantic_type, field_type):
     class Model(pydantic.BaseModel):
         field: pydantic_type
 
-    @strawberry.beta.pydantic.type(Model, fields=["field"])
+    @strawberry.experimental.pydantic.type(Model, fields=["field"])
     class Type:
         pass
 
@@ -47,7 +47,7 @@ def test_types_optional(pydantic_type, field_type):
     class Model(pydantic.BaseModel):
         field: pydantic_type
 
-    @strawberry.beta.pydantic.type(Model, fields=["field"])
+    @strawberry.experimental.pydantic.type(Model, fields=["field"])
     class Type:
         pass
 
@@ -65,7 +65,7 @@ def test_conint():
     class Model(pydantic.BaseModel):
         field: pydantic.conint(lt=100)
 
-    @strawberry.beta.pydantic.type(Model, fields=["field"])
+    @strawberry.experimental.pydantic.type(Model, fields=["field"])
     class Type:
         pass
 
@@ -83,7 +83,7 @@ def test_constr():
     class Model(pydantic.BaseModel):
         field: pydantic.constr(max_length=100)
 
-    @strawberry.beta.pydantic.type(Model, fields=["field"])
+    @strawberry.experimental.pydantic.type(Model, fields=["field"])
     class Type:
         pass
 
@@ -117,8 +117,10 @@ def test_unsupported_types(pydantic_type):
     class Model(pydantic.BaseModel):
         field: pydantic_type
 
-    with pytest.raises(strawberry.beta.pydantic.exceptions.UnsupportedTypeError):
+    with pytest.raises(
+        strawberry.experimental.pydantic.exceptions.UnsupportedTypeError
+    ):
 
-        @strawberry.beta.pydantic.type(Model, fields=["field"])
+        @strawberry.experimental.pydantic.type(Model, fields=["field"])
         class Type:
             pass

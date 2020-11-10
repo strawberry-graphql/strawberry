@@ -6,7 +6,7 @@
     class UserModel(pydantic.BaseModel):
         name: str
 
-    @strawberry.beta.pydantic.type(model=UserModel)
+    @strawberry.experimental.pydantic.type(model=UserModel)
     class User:
         pass
 

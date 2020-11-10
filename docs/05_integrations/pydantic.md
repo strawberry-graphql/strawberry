@@ -1,6 +1,7 @@
 ---
 title: Pydantic
 path: /docs/integrations/pydantic
+experimental: true
 ---
 
 # Pydantic support
@@ -25,15 +26,15 @@ class User(BaseModel):
     friends: List[int] = []
 ```
 
-We can create a Strawberry type by using the `strawberry.beta.pydantic.type`
-decorator:
+We can create a Strawberry type by using the
+`strawberry.experimental.pydantic.type` decorator:
 
 ```python
 import strawberry
 
 from .models import User
 
-@strawberry.beta.pydantic.type(model=User, fields=[
+@strawberry.experimental.pydantic.type(model=User, fields=[
     'id',
     'name',
     'friends'
@@ -42,8 +43,8 @@ class User:
     pass
 ```
 
-The `strawberry.beta.pydantic.type` decorator accepts a Pydantic model and a list of
-fields that we want to expose on our GraphQL API.
+The `strawberry.experimental.pydantic.type` decorator accepts a Pydantic model
+and a list of fields that we want to expose on our GraphQL API.
 
 > **Note** specifying the list of field is required to prevent accidentally
 > exposing fields that weren't meant to be exposed on a API
@@ -51,14 +52,14 @@ fields that we want to expose on our GraphQL API.
 ## Input types
 
 Input types are similar to types, we can create one by using the
-`strawberry.beta.pydantic.input` decorator:
+`strawberry.experimental.pydantic.input` decorator:
 
 ```python
 import strawberry
 
 from .models import User
 
-@strawberry.beta.pydantic.input(model=User, fields=[
+@strawberry.experimental.pydantic.input(model=User, fields=[
     'id',
     'name',
     'friends'
@@ -83,7 +84,7 @@ class User(BaseModel):
     signup_ts: Optional[datetime] = None
     friends: List[int] = []
 
-@strawberry.beta.pydantic.error_type(model=User, fields=[
+@strawberry.experimental.pydantic.error_type(model=User, fields=[
     'id',
     'name',
     'friends'
@@ -117,7 +118,7 @@ class User(BaseModel):
     id: int
     name: str
 
-@strawberry.beta.pydantic.type(model=User, fields=[
+@strawberry.experimental.pydantic.type(model=User, fields=[
     'id',
     'name',
 ])
@@ -153,7 +154,7 @@ class User(BaseModel):
     name: str
 
 
-@strawberry.beta.pydantic.type(model=User, fields=[
+@strawberry.experimental.pydantic.type(model=User, fields=[
     'id',
     'name',
 ])
@@ -180,7 +181,7 @@ class User(BaseModel):
     name: str
 
 
-@strawberry.beta.pydantic.type(model=User, fields=[
+@strawberry.experimental.pydantic.type(model=User, fields=[
     'id',
     'name',
 ])
@@ -192,12 +193,12 @@ instance = User(id='123', name='Jake')
 data = UserType.from_pydantic(instance, extra={'age': 10})
 ```
 
-The data dictionary structure follows the structure of your data, if you have
-a list of `User`, you should send an extra that is the list of User with
-the missing data (in this case, `age`).
+The data dictionary structure follows the structure of your data, if you have a
+list of `User`, you should send an extra that is the list of User with the
+missing data (in this case, `age`).
 
-You don't need to send all fields, data from the model is used first and then the
-`extra` parameter is used to fill in any additional missing data
+You don't need to send all fields, data from the model is used first and then
+the `extra` parameter is used to fill in any additional missing data
 
 To convert a strawberry instance to a pydantic instance and trigger validation,
 you can use `to_pydantic` on the strawberry instance:
@@ -213,7 +214,7 @@ class User(BaseModel):
     name: str
 
 
-@strawberry.beta.pydantic.input(model=User, fields=[
+@strawberry.experimental.pydantic.input(model=User, fields=[
     'id',
     'name',
 ])

@@ -11,7 +11,7 @@ def test_basic_type():
         age: int
         password: Optional[str]
 
-    @strawberry.beta.pydantic.type(UserModel, fields=["age", "password"])
+    @strawberry.experimental.pydantic.type(UserModel, fields=["age", "password"])
     class User:
         pass
 
@@ -49,7 +49,7 @@ def test_basic_type_with_list():
         age: int
         friend_names: List[str]
 
-    @strawberry.beta.pydantic.type(UserModel, fields=["age", "friend_names"])
+    @strawberry.experimental.pydantic.type(UserModel, fields=["age", "friend_names"])
     class User:
         pass
 
@@ -73,14 +73,14 @@ def test_basic_type_with_nested_model():
     class Hobby(pydantic.BaseModel):
         name: str
 
-    @strawberry.beta.pydantic.type(Hobby, fields=["name"])
+    @strawberry.experimental.pydantic.type(Hobby, fields=["name"])
     class HobbyType:
         pass
 
     class User(pydantic.BaseModel):
         hobby: Hobby
 
-    @strawberry.beta.pydantic.type(User, fields=["hobby"])
+    @strawberry.experimental.pydantic.type(User, fields=["hobby"])
     class UserType:
         pass
 
@@ -104,14 +104,14 @@ def test_basic_type_with_list_of_nested_model():
     class Hobby(pydantic.BaseModel):
         name: str
 
-    @strawberry.beta.pydantic.type(Hobby, fields=["name"])
+    @strawberry.experimental.pydantic.type(Hobby, fields=["name"])
     class HobbyType:
         pass
 
     class User(pydantic.BaseModel):
         hobbies: List[Hobby]
 
-    @strawberry.beta.pydantic.type(User, fields=["hobbies"])
+    @strawberry.experimental.pydantic.type(User, fields=["hobbies"])
     class UserType:
         pass
 
@@ -143,7 +143,7 @@ def test_basic_type_with_extended_fields():
     class UserModel(pydantic.BaseModel):
         age: int
 
-    @strawberry.beta.pydantic.type(UserModel, fields=["age"])
+    @strawberry.experimental.pydantic.type(UserModel, fields=["age"])
     class User:
         name: str
 

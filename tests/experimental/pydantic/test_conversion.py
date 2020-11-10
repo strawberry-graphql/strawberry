@@ -10,7 +10,7 @@ def test_can_use_type_standalone():
         age: int
         password: Optional[str]
 
-    @strawberry.beta.pydantic.type(User, fields=["age", "password"])
+    @strawberry.experimental.pydantic.type(User, fields=["age", "password"])
     class UserType:
         pass
 
@@ -25,7 +25,7 @@ def test_can_covert_pydantic_type_to_strawberry():
         age: int
         password: Optional[str]
 
-    @strawberry.beta.pydantic.type(User, fields=["age", "password"])
+    @strawberry.experimental.pydantic.type(User, fields=["age", "password"])
     class UserType:
         pass
 
@@ -40,14 +40,14 @@ def test_can_covert_pydantic_type_with_nested_data_to_strawberry():
     class WorkModel(pydantic.BaseModel):
         name: str
 
-    @strawberry.beta.pydantic.type(WorkModel, fields=["name"])
+    @strawberry.experimental.pydantic.type(WorkModel, fields=["name"])
     class Work(pydantic.BaseModel):
         pass
 
     class UserModel(pydantic.BaseModel):
         work: WorkModel
 
-    @strawberry.beta.pydantic.type(UserModel, fields=["work"])
+    @strawberry.experimental.pydantic.type(UserModel, fields=["work"])
     class User:
         pass
 
@@ -61,14 +61,14 @@ def test_can_covert_pydantic_type_with_list_of_nested_data_to_strawberry():
     class WorkModel(pydantic.BaseModel):
         name: str
 
-    @strawberry.beta.pydantic.type(WorkModel, fields=["name"])
+    @strawberry.experimental.pydantic.type(WorkModel, fields=["name"])
     class Work(pydantic.BaseModel):
         pass
 
     class UserModel(pydantic.BaseModel):
         work: List[WorkModel]
 
-    @strawberry.beta.pydantic.type(UserModel, fields=["work"])
+    @strawberry.experimental.pydantic.type(UserModel, fields=["work"])
     class User:
         pass
 
@@ -87,7 +87,7 @@ def test_can_covert_pydantic_type_with_list_of_nested_int_to_strawberry():
     class UserModel(pydantic.BaseModel):
         hours: List[int]
 
-    @strawberry.beta.pydantic.type(UserModel, fields=["hours"])
+    @strawberry.experimental.pydantic.type(UserModel, fields=["hours"])
     class User:
         pass
 
@@ -107,7 +107,7 @@ def test_can_covert_pydantic_type_with_matrix_list_of_nested_int_to_strawberry()
     class UserModel(pydantic.BaseModel):
         hours: List[List[int]]
 
-    @strawberry.beta.pydantic.type(UserModel, fields=["hours"])
+    @strawberry.experimental.pydantic.type(UserModel, fields=["hours"])
     class User:
         pass
 
@@ -131,14 +131,14 @@ def test_can_covert_pydantic_type_with_matrix_list_of_nested_model_to_strawberry
     class HourModel(pydantic.BaseModel):
         hour: int
 
-    @strawberry.beta.pydantic.type(HourModel, fields=["hour"])
+    @strawberry.experimental.pydantic.type(HourModel, fields=["hour"])
     class Hour:
         pass
 
     class UserModel(pydantic.BaseModel):
         hours: List[List[HourModel]]
 
-    @strawberry.beta.pydantic.type(UserModel, fields=["hours"])
+    @strawberry.experimental.pydantic.type(UserModel, fields=["hours"])
     class User:
         pass
 
@@ -180,7 +180,7 @@ def test_can_covert_pydantic_type_to_strawberry_with_additional_fields():
     class UserModel(pydantic.BaseModel):
         password: Optional[str]
 
-    @strawberry.beta.pydantic.type(UserModel, fields=["password"])
+    @strawberry.experimental.pydantic.type(UserModel, fields=["password"])
     class User:
         age: int
 
@@ -199,7 +199,7 @@ def test_can_covert_pydantic_type_to_strawberry_with_additional_nested_fields():
     class UserModel(pydantic.BaseModel):
         password: Optional[str]
 
-    @strawberry.beta.pydantic.type(UserModel, fields=["password"])
+    @strawberry.experimental.pydantic.type(UserModel, fields=["password"])
     class User:
         work: Work
 
@@ -218,7 +218,7 @@ def test_can_covert_pydantic_type_to_strawberry_with_additional_list_nested_fiel
     class UserModel(pydantic.BaseModel):
         password: Optional[str]
 
-    @strawberry.beta.pydantic.type(UserModel, fields=["password"])
+    @strawberry.experimental.pydantic.type(UserModel, fields=["password"])
     class User:
         work: List[Work]
 
@@ -244,14 +244,14 @@ def test_can_covert_pydantic_type_to_strawberry_with_missing_data_in_nested_type
     class WorkModel(pydantic.BaseModel):
         name: str
 
-    @strawberry.beta.pydantic.type(WorkModel, fields=["name"])
+    @strawberry.experimental.pydantic.type(WorkModel, fields=["name"])
     class Work:
         year: int
 
     class UserModel(pydantic.BaseModel):
         work: List[WorkModel]
 
-    @strawberry.beta.pydantic.type(UserModel, fields=["work"])
+    @strawberry.experimental.pydantic.type(UserModel, fields=["work"])
     class User:
         pass
 
@@ -275,14 +275,14 @@ def test_can_covert_pydantic_type_to_strawberry_with_missing_index_data_in_neste
     class WorkModel(pydantic.BaseModel):
         name: str
 
-    @strawberry.beta.pydantic.type(WorkModel, fields=["name"])
+    @strawberry.experimental.pydantic.type(WorkModel, fields=["name"])
     class Work:
         year: int
 
     class UserModel(pydantic.BaseModel):
         work: List[Optional[WorkModel]]
 
-    @strawberry.beta.pydantic.type(UserModel, fields=["work"])
+    @strawberry.experimental.pydantic.type(UserModel, fields=["work"])
     class User:
         pass
 

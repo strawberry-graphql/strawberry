@@ -5,10 +5,10 @@ from typing import Any, Dict, List, Optional, Type
 from pydantic import BaseModel
 from pydantic.fields import ModelField
 
-from strawberry.beta.pydantic.conversion import (
+from strawberry.experimental.pydantic.conversion import (
     convert_pydantic_model_to_strawberry_class,
 )
-from strawberry.beta.pydantic.fields import get_basic_type
+from strawberry.experimental.pydantic.fields import get_basic_type
 from strawberry.type import _process_type
 from strawberry.types.types import FederationTypeParams
 
