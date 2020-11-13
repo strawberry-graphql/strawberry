@@ -44,6 +44,37 @@ def test_basic_type():
     assert result.data["user"]["age"] == 1
 
 
+def test_basic_alias_type():
+    class UserModel(pydantic.BaseModel):
+        age_: int = pydantic.Field(..., alias="age")
+        password: Optional[str]
+
+    @strawberry.experimental.pydantic.type(UserModel, fields=["age_", "password"])
+    class User:
+        pass
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self) -> User:
+            return User(age=1, password="ABC")
+
+    schema = strawberry.Schema(query=Query)
+
+    expected_schema = """
+    type Query {
+      user: User!
+    }
+
+    type User {
+      age: Int!
+      password: String
+    }
+    """
+
+    assert str(schema) == textwrap.dedent(expected_schema).strip()
+
+
 def test_basic_type_with_list():
     class UserModel(pydantic.BaseModel):
         age: int

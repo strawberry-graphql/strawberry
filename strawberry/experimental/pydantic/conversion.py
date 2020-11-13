@@ -34,14 +34,14 @@ def convert_pydantic_model_to_strawberry_class(cls, *, model_instance=None, extr
     kwargs = {}
 
     for field in cls._type_definition.fields:
-        name = field.origin_name
         field = cast(FieldDefinition, field)
+        origin_name = field.origin_name
 
-        data_from_extra = extra.get(name, None)
+        data_from_extra = extra.get(origin_name, None)
         data_from_model = (
-            getattr(model_instance, name, None) if model_instance else None
+            getattr(model_instance, origin_name, None) if model_instance else None
         )
-        kwargs[name] = _convert_from_pydantic_to_strawberry_field(
+        kwargs[origin_name] = _convert_from_pydantic_to_strawberry_field(
             field, data_from_model, extra=data_from_extra
         )
 

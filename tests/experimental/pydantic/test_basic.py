@@ -202,3 +202,26 @@ def test_type_with_nested_fields_coming_from_strawberry_and_pydantic():
     assert definition.fields[2].name == "name"
     assert definition.fields[2].type == Name
     assert definition.fields[2].is_optional is False
+
+
+def test_type_with_alised_pydantic_field():
+    class UserModel(pydantic.BaseModel):
+        age_: int = pydantic.Field(..., alias="age")
+        password: Optional[str]
+
+    @strawberry.experimental.pydantic.type(UserModel, fields=["age_", "password"])
+    class User:
+        pass
+
+    definition: TypeDefinition = User._type_definition
+
+    assert definition.name == "User"
+    assert len(definition.fields) == 2
+
+    assert definition.fields[0].name == "age"
+    assert definition.fields[0].type == int
+    assert definition.fields[0].is_optional is False
+
+    assert definition.fields[1].name == "password"
+    assert definition.fields[1].type == str
+    assert definition.fields[1].is_optional
