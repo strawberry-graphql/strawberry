@@ -9,9 +9,9 @@ from strawberry.utils.typing import (
 )
 
 
-def normalize_type(type_):
+def normalize_type(type_) -> Any:
     if is_list(type_):
-        return List[normalize_type(get_list_annotation(type_))]
+        return List[normalize_type(get_list_annotation(type_))]  # type: ignore
 
     if is_optional(type_):
         return get_optional_annotation(type_)

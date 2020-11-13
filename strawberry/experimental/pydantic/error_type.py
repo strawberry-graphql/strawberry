@@ -1,5 +1,5 @@
 import dataclasses
-from typing import List, Optional, Type
+from typing import Any, List, Optional, Type
 
 from pydantic import BaseModel
 from pydantic.fields import ModelField
@@ -20,8 +20,8 @@ def get_type_for_field(field: ModelField):
 
 
 def field_type_to_type(type_):
-    error_class = str
-    strawberry_type = error_class
+    error_class: Any = str
+    strawberry_type: Any = error_class
 
     if is_list(type_):
         child_type = get_list_annotation(type_)
@@ -56,7 +56,11 @@ def error_type(
         cls = dataclasses.make_dataclass(
             cls.__name__,
             [
-                (name, get_type_for_field(field), dataclasses.field(default=None))
+                (
+                    name,
+                    get_type_for_field(field),
+                    dataclasses.field(default=None),  # type: ignore
+                )
                 for name, field in model_fields.items()
                 if name in fields_set
             ],

@@ -1,8 +1,10 @@
+from typing import Type
+
 from pydantic import BaseModel
 
 
 class MissingFieldsListError(Exception):
-    def __init__(self, type: BaseModel):
+    def __init__(self, type: Type[BaseModel]):
         message = f"List of fields to copy from {type} is empty"
 
         super().__init__(message)
