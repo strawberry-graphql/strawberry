@@ -26,9 +26,7 @@ def get_arguments_from_annotations(
     for name, annotation in annotations.items():
         default_value = parameters[name].default
         default_value = (
-            undefined
-            if default_value == inspect._empty  # type: ignore
-            else default_value
+            undefined if default_value is inspect.Parameter.empty else default_value
         )
 
         argument_definition = ArgumentDefinition(
