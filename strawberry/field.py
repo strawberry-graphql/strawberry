@@ -27,7 +27,9 @@ class StrawberryField(dataclasses.Field):
         )
 
     def __call__(self, resolver: _RESOLVER_TYPE) -> "StrawberryField":
-        """Migrate the field definition to the resolver"""
+        """Add a resolver to the field"""
+
+        # Allow for StrawberryResolvers or bare functions to be provided
         if not isinstance(resolver, StrawberryResolver):
             resolver = StrawberryResolver(resolver)
 
@@ -37,7 +39,7 @@ class StrawberryField(dataclasses.Field):
         self._field_definition.arguments = resolver.arguments
         self._field_definition.type = resolver.type
 
-        # Don't add field to __init__
+        # Don't add field to __init__ or __repr__
         self.init = False
         self.repr = False
 
