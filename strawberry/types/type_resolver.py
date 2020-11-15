@@ -240,6 +240,7 @@ def _get_fields(cls: Type) -> List[FieldDefinition]:
     ...     type_1a: int = 5
     ...     type_1b: int = strawberry.field(...)
     ...     type_1c: int = strawberry.field(resolver=...)
+    ...
     ...     @strawberry.field
     ...     def type_2(self) -> int:
     ...         ...
@@ -297,7 +298,9 @@ def _get_fields(cls: Type) -> List[FieldDefinition]:
             # the types.
             field_definition.origin = field_definition.origin or cls
 
+        # Create a FieldDefinition for fields that didn't use strawberry.field
         else:
+            # Only ignore Private fields that weren't defined using StrawberryFields
             if isinstance(field.type, Private):
                 continue
 
@@ -310,7 +313,8 @@ def _get_fields(cls: Type) -> List[FieldDefinition]:
                 default_value=getattr(cls, field.name, undefined),
             )
 
-        field_name = cast(str, field_definition.origin_name)
+        field_name = field_definition.origin_name
+        assert field_name is not None  # Not Optional by this point
         field_definitions[field_name] = field_definition
 
     return list(field_definitions.values())
