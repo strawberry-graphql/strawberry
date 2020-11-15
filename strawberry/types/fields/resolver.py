@@ -1,9 +1,11 @@
+import inspect
 from inspect import iscoroutinefunction
 from typing import Callable, Generic, List, Optional, Type, TypeVar
 
 from cached_property import cached_property  # type: ignore
 
-from strawberry.arguments import get_arguments_from_resolver
+from strawberry.arguments import get_arguments_from_annotations
+from strawberry.exceptions import MissingArgumentsAnnotationsError
 from strawberry.types.types import ArgumentDefinition
 from strawberry.utils.inspect import get_func_args
 
@@ -16,14 +18,40 @@ class StrawberryResolver(Generic[T]):
         self.wrapped_func = func
         self._description = description
 
+    # TODO: Use this when doing the actual resolving? How to deal with async resolvers?
     def __call__(self, *args, **kwargs) -> T:
         return self.wrapped_func(*args, **kwargs)
 
-    # TODO: Return StrawberryArguments instead
+    # TODO: Return StrawberryArguments instead. Maybe this should be a classmethod
+    #       there instead?
     # TODO: Return a set instead
     @cached_property
     def arguments(self) -> List[ArgumentDefinition]:
-        return list(get_arguments_from_resolver(self.wrapped_func))
+        # TODO: Move to StrawberryArgument? StrawberryResolver ClassVar?
+        SPECIAL_ARGS = {"root", "self", "info"}
+
+        annotations = self.wrapped_func.__annotations__
+        parameters = inspect.signature(self.wrapped_func).parameters
+        function_arguments = set(parameters) - SPECIAL_ARGS
+
+        annotations = {
+            name: annotation
+            for name, annotation in annotations.items()
+            if name not in (SPECIAL_ARGS | {"return"})
+        }
+
+        annotated_arguments = set(annotations)
+        arguments_missing_annotations = function_arguments - annotated_arguments
+
+        if any(arguments_missing_annotations):
+            raise MissingArgumentsAnnotationsError(
+                field_name=self.wrapped_func.__name__,
+                arguments=arguments_missing_annotations,
+            )
+
+        return get_arguments_from_annotations(
+            annotations, parameters, origin=self.wrapped_func
+        )
 
     @cached_property
     def has_info_arg(self) -> bool:
@@ -39,11 +67,6 @@ class StrawberryResolver(Generic[T]):
     def has_self_arg(self) -> bool:
         args = get_func_args(self.wrapped_func)
         return args and args[0] == "self"
-
-    @cached_property
-    def description(self) -> Optional[str]:
-        # TODO: Do resolvers get descriptions?
-        return self._description
 
     @cached_property
     def name(self) -> str:
