@@ -71,6 +71,9 @@ def _check_field_annotations(cls: Type):
             # >>>     # TODO: Proper error
             # >>>    raise Exception
 
+        # If somehow a non-StrawberryField field is added to the cls without annotations
+        # it raises an exception. This would occur if someone manually uses
+        # dataclasses.field
         if field_name not in cls_annotations:
             # Field object exists but did not get an annotation
             raise MissingFieldAnnotationError(field_name)

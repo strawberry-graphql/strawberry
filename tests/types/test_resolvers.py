@@ -1,3 +1,5 @@
+import dataclasses
+
 import pytest
 
 import strawberry
@@ -110,6 +112,23 @@ def test_raises_error_when_missing_annotation_and_resolver():
         @strawberry.type
         class Query:  # noqa: F841
             missing = strawberry.field(name="annotation")
+
+    [message] = e.value.args
+    assert message == (
+        'Unable to determine the type of field "missing". Either annotate it '
+        "directly, or provide a typed resolver using @strawberry.field."
+    )
+
+
+def test_raises_error_when_missing_type():
+    """Test to make sure that if somehow a non-StrawberryField field is added to the cls
+    without annotations it raises an exception. This would occur if someone manually
+    uses dataclasses.field"""
+    with pytest.raises(MissingFieldAnnotationError) as e:
+
+        @strawberry.type
+        class Query:  # noqa: F841
+            missing = dataclasses.field()
 
     [message] = e.value.args
     assert message == (
