@@ -51,7 +51,7 @@ pytest-mock = "^3.3"
 pytest-django = {version = "^4.1"}
 asgiref = "^3.2"
 pytest-flask = {version = "^1.1.0"}
-requests = "^2.24.0"
+requests = "^2.25.0"
 pre-commit = "^2.8.2"
 pytest-benchmark = "^3.2.3"
 freezegun = "^1.0.0"
