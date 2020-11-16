@@ -58,14 +58,15 @@ def resolve_type(field_definition: Union[FieldDefinition, ArgumentDefinition]) -
     type = cast(Type, field_definition.type)
     origin_name = cast(str, field_definition.origin_name)
 
-    if isinstance(type, LazyType):
-        field_definition.type = type.resolve_type()
-
     if isinstance(type, str):
         module = sys.modules[field_definition.origin.__module__].__dict__
 
         type = eval(type, module)
         field_definition.type = type
+
+    if isinstance(type, LazyType):
+        field_definition.type = type.resolve_type()
+        type = cast(Type, field_definition.type)
 
     if is_forward_ref(type):
         # if the type is a forward reference we try to resolve the type by
