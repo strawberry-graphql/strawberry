@@ -219,6 +219,8 @@ def _collect_field_args(expr: Expression) -> Tuple[bool, Dict[str, Expression]]:
 # Custom dataclass transfomer that knows about strawberry.field, we cannot
 # extend the mypy one as it might be compiled by mypyc and we'd get this error
 # >>> TypeError: interpreted classes cannot inherit from compiled
+# Original copy from
+# https://github.com/python/mypy/blob/849a7f73/mypy/plugins/dataclasses.py
 
 SELF_TVAR_NAME = "_DT"  # type: Final
 
