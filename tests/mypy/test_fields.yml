@@ -66,3 +66,30 @@
   out: |
     main:13: note: Revealed type is 'builtins.int'
     main:14: error: "int" has no attribute "trim"
+
+
+- case: test_field_with_default_cannot_be_before_non_default
+  main: |
+    import strawberry
+
+    @strawberry.type
+    class Example:
+        a: str = "ABC"
+        b: str
+
+  out: |
+    main:6: error: Attributes without a default cannot follow attributes with one
+
+
+- case: test_using_strawberry_field_does_not_break
+  main: |
+    import strawberry
+
+    @strawberry.type
+    class Example:
+        a: str = strawberry.field(description='Example')
+        b: str
+
+    reveal_type(Example.a)
+  out: |
+    main:8: note: Revealed type is 'builtins.str'
