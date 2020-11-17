@@ -1,5 +1,7 @@
 from typing import NoReturn, Optional, Tuple, Type
 
+from .scalars import SCALAR_TYPES
+
 
 class StrawberryUnion:
     def __init__(
@@ -37,14 +39,25 @@ def union(
 
     Example usages:
 
-    >>> strawberry.union("Some Thing", (int, str))
-
     >>> @strawberry.type
     ... class A: ...
     >>> @strawberry.type
     ... class B: ...
     >>> strawberry.union("Name", (A, Optional[B]))
     """
+
+    # Validate types
+    if len(types) == 0:
+        raise TypeError("No types passed to `union`")
+
+    for _type in types:
+        if _type in SCALAR_TYPES:
+            raise TypeError(
+                f"Scalar type `{_type.__name__}` cannot be used in a GraphQL Union"
+            )
+
+        if not hasattr(_type, "_type_definition"):
+            raise TypeError(f"Union type `{_type.__name__}` is not a Strawberry type")
 
     union_definition = StrawberryUnion(name=name, types=types, description=description)
 
