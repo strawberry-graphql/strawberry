@@ -1,6 +1,13 @@
 CHANGELOG
 =========
 
+0.42.3 - 2020-11-17
+-------------------
+
+This release type improves support for strawberry.field in mypy,
+now we don't get `Attributes without a default cannot follow attributes with one`
+when using strawberry.field before a type without a default.
+
 0.42.2 - 2020-11-17
 -------------------
 
