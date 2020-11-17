@@ -274,11 +274,11 @@ def _get_fields(cls: Type) -> List[FieldDefinition]:
             # Add base's field definitions to cls' field definitions
             field_definitions = {**field_definitions, **base_field_definitions}
 
+    # Deferred import to avoid import cycles
+    from strawberry.field import StrawberryField
+
     # then we can proceed with finding the fields for the current class
     for field in dataclasses.fields(cls):
-        # TODO: Importing at top of file cause cyclical import problems. Maybe there's
-        #       a better place for this?
-        from strawberry.field import StrawberryField
 
         if isinstance(field, StrawberryField):
             # Use the existing FieldDefinition
@@ -315,7 +315,10 @@ def _get_fields(cls: Type) -> List[FieldDefinition]:
             )
 
         field_name = field_definition.origin_name
-        assert field_name is not None  # Not Optional by this point
+
+        assert_message = "Field must have a name by the time the schema is generated"
+        assert field_name is not None, assert_message
+
         field_definitions[field_name] = field_definition
 
     return list(field_definitions.values())
