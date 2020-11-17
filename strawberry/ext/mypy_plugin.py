@@ -15,6 +15,7 @@ from mypy.plugin import (
     AnalyzeTypeContext,
     ClassDefContext,
     DynamicClassDefContext,
+    FunctionContext,
     Plugin,
     SemanticAnalyzerPluginInterface,
 )
@@ -37,6 +38,13 @@ def lazy_type_analyze_callback(ctx: AnalyzeTypeContext) -> Type:
     type_ = ctx.api.analyze_type(type_name)
 
     return type_
+
+
+def strawberry_field_hook(ctx: FunctionContext) -> Type:
+    # TODO: check when used as decorator, check type of the caller
+    # TODO: check type of resolver if any
+
+    return AnyType(TypeOfAny.special_form)
 
 
 def private_type_analyze_callback(ctx: AnalyzeTypeContext) -> Type:
@@ -175,6 +183,14 @@ class StrawberryPlugin(Plugin):
 
         if "strawberry.enum" in fullname:
             return enum_hook
+
+        return None
+
+    def get_function_hook(
+        self, fullname: str
+    ) -> Optional[Callable[[FunctionContext], Type]]:
+        if fullname == "strawberry.field.field":
+            return strawberry_field_hook
 
         return None
 

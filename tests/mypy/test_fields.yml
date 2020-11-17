@@ -4,7 +4,7 @@
 
     @strawberry.type
     class User:
-        name: str = strawberry.field(description='Example')  # type: ignore
+        name: str = strawberry.field(description='Example')
 
     User(name="Patrick")
     User(n="Patrick")
@@ -21,9 +21,9 @@
     @strawberry.type
     class Example:
         a: str
-        b: str = strawberry.field(name="b")  # type: ignore
-        c: str = strawberry.field(name="c", resolver=some_resolver)  # type: ignore
-        d: str = strawberry.field(resolver=some_resolver)  # type: ignore
+        b: str = strawberry.field(name="b")
+        c: str = strawberry.field(name="c", resolver=some_resolver)
+        d: str = strawberry.field(resolver=some_resolver)
 
         @strawberry.field(description="ABC")
         def e(self, info) -> str:
@@ -44,8 +44,8 @@
     main:22: note: Revealed type is 'builtins.str'
     main:23: note: Revealed type is 'builtins.str'
     main:24: note: Revealed type is 'builtins.str'
-    main:25: note: Revealed type is 'strawberry.field.StrawberryField'
-    main:26: note: Revealed type is 'strawberry.field.StrawberryField'
+    main:25: note: Revealed type is 'Any'
+    main:26: note: Revealed type is 'Any'
 
 - case: test_private_field
   main: |
