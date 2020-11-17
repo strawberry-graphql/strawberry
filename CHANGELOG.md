@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.42.1 - 2020-11-17
+-------------------
+
+This release improves mypy support for strawberry.field
+
 0.42.0 - 2020-11-17
 -------------------
 
