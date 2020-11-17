@@ -1,14 +1,10 @@
 import enum
 import inspect
-from typing import Any, Callable, Dict, List, Mapping, Optional, Type, cast
+from typing import Any, Dict, List, Mapping, Optional, Type, cast
 
 from typing_extensions import Annotated, get_args, get_origin
 
-from .exceptions import (
-    MissingArgumentsAnnotationsError,
-    MultipleStrawberryArgumentsError,
-    UnsupportedTypeError,
-)
+from .exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError
 from .scalars import is_scalar
 from .types.type_resolver import resolve_type
 from .types.types import ArgumentDefinition, undefined
@@ -30,9 +26,7 @@ def get_arguments_from_annotations(
     for name, annotation in annotations.items():
         default_value = parameters[name].default
         default_value = (
-            undefined
-            if default_value == inspect._empty  # type: ignore
-            else default_value
+            undefined if default_value is inspect.Parameter.empty else default_value
         )
 
         argument_definition = ArgumentDefinition(
@@ -69,28 +63,6 @@ def get_arguments_from_annotations(
         resolve_type(argument_definition)
 
     return arguments
-
-
-def get_arguments_from_resolver(resolver: Callable) -> List[ArgumentDefinition]:
-    annotations = resolver.__annotations__
-    parameters = inspect.signature(resolver).parameters
-    function_arguments = set(parameters) - {"root", "self", "info"}
-
-    annotations = {
-        name: annotation
-        for name, annotation in annotations.items()
-        if name not in ["root", "info", "return", "self"]
-    }
-
-    annotated_function_arguments = set(annotations.keys())
-    arguments_missing_annotations = function_arguments - annotated_function_arguments
-
-    if len(arguments_missing_annotations) > 0:
-        raise MissingArgumentsAnnotationsError(
-            resolver.__name__, arguments_missing_annotations
-        )
-
-    return get_arguments_from_annotations(annotations, parameters, origin=resolver)
 
 
 class _Unset:
@@ -180,7 +152,6 @@ __all__ = [
     "convert_argument",
     "convert_arguments",
     "get_arguments_from_annotations",
-    "get_arguments_from_resolver",
     "is_unset",
     "undefined",
 ]

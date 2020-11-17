@@ -44,8 +44,8 @@
     main:22: note: Revealed type is 'builtins.str'
     main:23: note: Revealed type is 'builtins.str'
     main:24: note: Revealed type is 'builtins.str'
-    main:25: note: Revealed type is 'def (self: main.Example, info: Any) -> builtins.str'
-    main:26: note: Revealed type is 'def (self: main.Example, info: Any) -> builtins.str'
+    main:25: note: Revealed type is 'strawberry.field.StrawberryField'
+    main:26: note: Revealed type is 'strawberry.field.StrawberryField'
 
 - case: test_private_field
   main: |

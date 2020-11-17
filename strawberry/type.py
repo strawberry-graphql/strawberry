@@ -4,7 +4,8 @@ from typing import List, Optional, Type, cast
 
 from strawberry.utils.typing import is_generic
 
-from .exceptions import MissingFieldAnnotationError
+from .exceptions import MissingFieldAnnotationError, MissingReturnAnnotationError
+from .field import StrawberryField
 from .types.type_resolver import _get_fields
 from .types.types import FederationTypeParams, TypeDefinition
 from .utils.str_converters import to_camel_case
@@ -30,18 +31,49 @@ def _get_interfaces(cls: Type) -> List[TypeDefinition]:
 def _check_field_annotations(cls: Type):
     """Are any of the dataclass Fields missing type annotations?
 
-    This replicates the check that dataclasses do during creation, but allows a
-    proper Strawberry exception to be raised
+    This is similar to the check that dataclasses do during creation, but allows us to
+    manually add fields to cls' __annotations__ or raise proper Strawberry exceptions if
+    necessary
 
     https://github.com/python/cpython/blob/6fed3c85402c5ca704eb3f3189ca3f5c67a08d19/Lib/dataclasses.py#L881-L884
     """
     cls_annotations = cls.__dict__.get("__annotations__", {})
+    cls.__annotations__ = cls_annotations
 
-    for field_name, value in cls.__dict__.items():
-        if not isinstance(value, dataclasses.Field):
-            # Not a dataclasses.Field. Ignore
+    for field_name, field in cls.__dict__.items():
+        if not isinstance(field, (StrawberryField, dataclasses.Field)):
+            # Not a dataclasses.Field, nor a StrawberryField. Ignore
             continue
 
+        # If the field is a StrawberryField we need to do a bit of extra work
+        # to make sure dataclasses.dataclass is ready for it
+        if isinstance(field, StrawberryField):
+
+            field_definition = field._field_definition
+
+            # Make sure the cls has an annotation
+            if field_name not in cls_annotations:
+                # If the field uses the default resolver, the field _must_ be
+                # annotated
+                if not field_definition.base_resolver:
+                    raise MissingFieldAnnotationError(field_name)
+
+                # The resolver _must_ have a return type annotation
+                # TODO: Maybe check this immediately when adding resolver to
+                #       field
+                if field_definition.base_resolver.type is None:
+                    raise MissingReturnAnnotationError(field_name)
+
+                cls_annotations[field_name] = field_definition.base_resolver.type
+
+            # TODO: Make sure the cls annotation agrees with the field's type
+            # >>> if cls_annotations[field_name] != field.base_resolver.type:
+            # >>>     # TODO: Proper error
+            # >>>    raise Exception
+
+        # If somehow a non-StrawberryField field is added to the cls without annotations
+        # it raises an exception. This would occur if someone manually uses
+        # dataclasses.field
         if field_name not in cls_annotations:
             # Field object exists but did not get an annotation
             raise MissingFieldAnnotationError(field_name)

@@ -1,10 +1,10 @@
 import enum
-from inspect import iscoroutine, iscoroutinefunction
+from inspect import iscoroutine
 from typing import Any, Awaitable, Callable, Dict, List, Tuple, Union, cast
 
 from .arguments import convert_arguments
 from .field import FieldDefinition
-from .utils.inspect import get_func_args
+from .types.fields.resolver import StrawberryResolver
 
 
 def is_default_resolver(func: Callable) -> bool:
@@ -34,7 +34,7 @@ def convert_enums_to_values(field: FieldDefinition, result: Any) -> Any:
 def get_arguments(
     field: FieldDefinition, kwargs: Dict[str, Any], source: Any, info: Any
 ) -> Tuple[List[Any], Dict[str, Any]]:
-    actual_resolver = cast(Callable, field.base_resolver)
+    actual_resolver = cast(StrawberryResolver, field.base_resolver)
 
     kwargs = convert_arguments(kwargs, field.arguments)
 
@@ -44,17 +44,15 @@ def get_arguments(
     # if it asks for root, the source it will be passed as kwarg
     # if it asks for info, the info will be passed as kwarg
 
-    function_args = get_func_args(actual_resolver)
-
     args = []
 
-    if function_args and function_args[0] == "self":
+    if actual_resolver.has_self_arg:
         args.append(source)
 
-    if "root" in function_args:
+    if actual_resolver.has_root_arg:
         kwargs["root"] = source
 
-    if "info" in function_args:
+    if actual_resolver.has_info_arg:
         kwargs["info"] = info
 
     return args, kwargs
@@ -117,6 +115,6 @@ def get_resolver(field: FieldDefinition) -> Callable:
 
     return (
         _resolver_async
-        if field.base_resolver and iscoroutinefunction(field.base_resolver)
+        if field.base_resolver and field.base_resolver.is_async
         else _resolver
     )
