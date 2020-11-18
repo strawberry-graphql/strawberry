@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.43.1 - 2020-11-18
+-------------------
+
+This releases fixes an issue with Strawberry requiring Pydantic even when not used.
+
 0.43.0 - 2020-11-18
 -------------------
 
