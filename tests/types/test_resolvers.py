@@ -135,3 +135,28 @@ def test_raises_error_when_missing_type():
         'Unable to determine the type of field "missing". Either annotate it '
         "directly, or provide a typed resolver using @strawberry.field."
     )
+
+
+def test_can_reuse_resolver():
+    def get_name(self) -> str:
+        return "Name"
+
+    @strawberry.type
+    class Query:
+        name: str = strawberry.field(resolver=get_name)
+        name_2: str = strawberry.field(resolver=get_name)
+
+    definition = Query._type_definition
+
+    assert definition.name == "Query"
+    assert len(definition.fields) == 2
+
+    assert definition.fields[0].name == "name"
+    assert definition.fields[0].origin_name == "name"
+    assert definition.fields[0].type == str
+    assert definition.fields[0].base_resolver.wrapped_func == get_name
+
+    assert definition.fields[1].name == "name2"
+    assert definition.fields[1].origin_name == "name_2"
+    assert definition.fields[1].type == str
+    assert definition.fields[1].base_resolver.wrapped_func == get_name

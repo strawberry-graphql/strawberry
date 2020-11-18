@@ -298,6 +298,7 @@ def _get_fields(cls: Type) -> List[FieldDefinition]:
             # the correct origin for determining field types when resolving
             # the types.
             field_definition.origin = field_definition.origin or cls
+            field_definition.origin_name = field.name
 
         # Create a FieldDefinition for fields that didn't use strawberry.field
         else:
