@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.42.7 - 2020-11-18
+-------------------
+
+Add some checks to make sure the types passed to `.union` are valid.
+
 0.42.6 - 2020-11-18
 -------------------
 
