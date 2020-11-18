@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.42.5 - 2020-11-18
+-------------------
+
+Another small improvement for mypy, this should prevent mypy from crashing when it can't find a type
+
 0.42.4 - 2020-11-18
 -------------------
 
