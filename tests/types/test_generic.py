@@ -259,11 +259,15 @@ def test_generics_with_unions():
 
     # let's make a copy of this generic type
 
-    Copy = copy_type_with(Edge, str)
+    @strawberry.type
+    class Node:
+        name: str
+
+    Copy = copy_type_with(Edge, Node)
 
     definition = Copy._type_definition
 
-    assert definition.name == "StrEdge"
+    assert definition.name == "NodeEdge"
     assert definition.is_generic is False
     assert definition.type_params == {}
 
@@ -273,8 +277,8 @@ def test_generics_with_unions():
 
     union_definition = definition.fields[0].type
     assert isinstance(union_definition, StrawberryUnion)
-    assert union_definition.name == "ErrorStr"
-    assert union_definition.types == (Error, str)
+    assert union_definition.name == "ErrorNode"
+    assert union_definition.types == (Error, Node)
 
     assert definition.fields[0].is_optional is False
 

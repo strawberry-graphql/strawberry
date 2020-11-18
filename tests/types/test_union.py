@@ -1,8 +1,10 @@
+from dataclasses import dataclass
 from typing import Generic, List, Optional, TypeVar, Union
 
 import pytest
 
 import strawberry
+from strawberry.exceptions import InvalidUnionType
 from strawberry.union import StrawberryUnion
 
 
@@ -138,3 +140,26 @@ def test_cannot_use_union_directly():
 
     with pytest.raises(ValueError, match=r"Cannot use union type directly"):
         Result()
+
+
+def test_error_with_empty_type_list():
+    with pytest.raises(TypeError, match="No types passed to `union`"):
+        strawberry.union("Result", [])
+
+
+def test_error_with_scalar_types():
+    with pytest.raises(
+        InvalidUnionType, match="Scalar type `int` cannot be used in a GraphQL Union"
+    ):
+        strawberry.union("Result", (int,))
+
+
+def test_error_with_non_strawberry_type():
+    @dataclass
+    class A:
+        a: int
+
+    with pytest.raises(
+        InvalidUnionType, match="Union type `A` is not a Strawberry type"
+    ):
+        strawberry.union("Result", (A,))
