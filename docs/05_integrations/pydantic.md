@@ -7,7 +7,7 @@ experimental: true
 # Pydantic support
 
 Strawberry comes with support for
-[Pydantic](https://pydantic-docs.helpmanual.io/). This allows to create
+[Pydantic](https://pydantic-docs.helpmanual.io/). This allows the creation of
 Strawberry types from Pydantic models without having to write code twice.
 
 Here's a basic example of how this works, let's say we have a Pydantic Model for
