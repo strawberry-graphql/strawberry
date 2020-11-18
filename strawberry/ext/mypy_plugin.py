@@ -79,6 +79,13 @@ def private_type_analyze_callback(ctx: AnalyzeTypeContext) -> Type:
     return type_
 
 
+def _get_named_type(name: str, api: SemanticAnalyzerPluginInterface):
+    if "." in name:
+        return api.named_type_or_none(name)  # type: ignore
+
+    return api.named_type(name)
+
+
 def _get_type_for_expr(expr: Expression, api: SemanticAnalyzerPluginInterface):
     if isinstance(expr, NameExpr):
         # guarding agains invalid nodes, still have to figure out why this happens
@@ -92,7 +99,7 @@ def _get_type_for_expr(expr: Expression, api: SemanticAnalyzerPluginInterface):
             if sym and isinstance(sym.node, Var):
                 raise InvalidNodeTypeException(sym.node)
 
-        return api.named_type(expr.name)
+        return _get_named_type(expr.name, api)
 
     if isinstance(expr, IndexExpr):
         type_ = _get_type_for_expr(expr.base, api)
@@ -102,7 +109,7 @@ def _get_type_for_expr(expr: Expression, api: SemanticAnalyzerPluginInterface):
 
     if isinstance(expr, MemberExpr):
         if expr.fullname:
-            return api.named_type(expr.fullname)
+            return _get_named_type(expr.fullname, api)
         else:
             raise InvalidNodeTypeException(expr)
 
