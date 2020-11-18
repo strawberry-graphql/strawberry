@@ -1,4 +1,4 @@
-from typing import NoReturn, Optional, Tuple, Type
+from typing import NoReturn, Optional, Tuple, Type, TypeVar
 
 from .scalars import SCALAR_TYPES
 
@@ -56,7 +56,7 @@ def union(
                 f"Scalar type `{_type.__name__}` cannot be used in a GraphQL Union"
             )
 
-        if not hasattr(_type, "_type_definition"):
+        if not isinstance(_type, TypeVar) and not hasattr(_type, "_type_definition"):
             raise TypeError(f"Union type `{_type.__name__}` is not a Strawberry type")
 
     union_definition = StrawberryUnion(name=name, types=types, description=description)
