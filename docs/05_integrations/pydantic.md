@@ -7,10 +7,10 @@ experimental: true
 # Pydantic support
 
 Strawberry comes with support for
-[Pydantic](https://pydantic-docs.helpmanual.io/). This allows the creation of
-Strawberry types from Pydantic models without having to write code twice.
+[Pydantic](https://pydantic-docs.helpmanual.io/). This allows for the creation
+of Strawberry types from pydantic models without having to write code twice.
 
-Here's a basic example of how this works, let's say we have a Pydantic Model for
+Here's a basic example of how this works, let's say we have a pydantic Model for
 a user, like this:
 
 ```python
@@ -51,7 +51,7 @@ and a list of fields that we want to expose on our GraphQL API.
 
 ## Input types
 
-Input types are similar to types, we can create one by using the
+Input types are similar to types; we can create one by using the
 `strawberry.experimental.pydantic.input` decorator:
 
 ```python
@@ -70,9 +70,9 @@ class UserInput:
 
 ## Error Types
 
-In addition to object types and input types strawberry allows you to create
-"error types", you can use these error types to have a typed representation of
-Pydantic errors in GraphQL, let's see an example:
+In addition to object types and input types, Strawberry allows you to create
+"error types". You can use these error types to have a typed representation of
+Pydantic errors in GraphQL. Let's see an example:
 
 ```python+schema
 import pydantic
@@ -136,12 +136,12 @@ type User {
 
 ### Converting types
 
-The generated types won't run any pydantic validation, this is to prevent
+The generated types won't run any pydantic validation. This is to prevent
 confusion when extending types and also to be able to run validation exactly
 where it is needed.
 
-To convert a Pydantic instance to a strawberry instance you can use
-`from_pydantic` on the strawberry type:
+To convert a Pydantic instance to a Strawberry instance you can use
+`from_pydantic` on the Strawberry type:
 
 ```python
 import strawberry
@@ -193,15 +193,15 @@ instance = User(id='123', name='Jake')
 data = UserType.from_pydantic(instance, extra={'age': 10})
 ```
 
-The data dictionary structure follows the structure of your data, if you have a
-list of `User`, you should send an extra that is the list of User with the
+The data dictionary structure follows the structure of your data -- if you have
+a list of `User`, you should send an `extra` that is the list of `User` with the
 missing data (in this case, `age`).
 
-You don't need to send all fields, data from the model is used first and then
-the `extra` parameter is used to fill in any additional missing data
+You don't need to send all fields; data from the model is used first and then
+the `extra` parameter is used to fill in any additional missing data.
 
-To convert a strawberry instance to a pydantic instance and trigger validation,
-you can use `to_pydantic` on the strawberry instance:
+To convert a Strawberry instance to a pydantic instance and trigger validation,
+you can use `to_pydantic` on the Strawberry instance:
 
 ```python
 import strawberry
@@ -224,6 +224,5 @@ class UserInput:
 input_data = UserInput(id='abc', name='Jake')
 
 # this will run pydantic's validation
-
 instance = input_data.to_pydantic()
 ```

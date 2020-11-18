@@ -21,15 +21,15 @@ def test_basic_error_type():
     assert len(definition.fields) == 2
 
     assert definition.fields[0].name == "name"
-    assert definition.fields[0].is_list
-    assert definition.fields[0].is_optional
-    assert definition.fields[0].child.type == str
+    assert definition.fields[0].is_list is True
+    assert definition.fields[0].is_optional is True
+    assert definition.fields[0].child.type is str
     assert definition.fields[0].child.is_optional is False
 
     assert definition.fields[1].name == "age"
-    assert definition.fields[1].is_list
-    assert definition.fields[1].is_optional
-    assert definition.fields[1].child.type == str
+    assert definition.fields[1].is_list is True
+    assert definition.fields[1].is_optional is True
+    assert definition.fields[1].child.type is str
     assert definition.fields[1].child.is_optional is False
 
 
@@ -55,8 +55,8 @@ def test_error_type_with_nested_model():
 
     assert definition.fields[0].name == "friend"
     assert definition.fields[0].is_list is False
-    assert definition.fields[0].is_optional
-    assert definition.fields[0].type == FriendError
+    assert definition.fields[0].is_optional is True
+    assert definition.fields[0].type is FriendError
 
 
 def test_error_type_with_list_nested_model():
@@ -81,9 +81,9 @@ def test_error_type_with_list_nested_model():
 
     assert definition.fields[0].name == "friends"
     assert definition.fields[0].is_list is True
-    assert definition.fields[0].is_optional
-    assert definition.fields[0].child.type == FriendError
-    assert definition.fields[0].child.is_optional
+    assert definition.fields[0].is_optional is True
+    assert definition.fields[0].child.type is FriendError
+    assert definition.fields[0].child.is_optional is True
 
 
 def test_error_type_with_list_of_scalar():
@@ -101,9 +101,9 @@ def test_error_type_with_list_of_scalar():
 
     assert definition.fields[0].name == "friends"
     assert definition.fields[0].is_list is True
-    assert definition.fields[0].is_optional
+    assert definition.fields[0].is_optional is True
     assert definition.fields[0].child.is_list is True
-    assert definition.fields[0].child.is_optional
+    assert definition.fields[0].child.is_optional is True
     assert definition.fields[0].child.child.type is str
     assert definition.fields[0].child.child.is_optional is False
 
@@ -122,9 +122,9 @@ def test_error_type_with_optional_field():
     assert len(definition.fields) == 1
 
     assert definition.fields[0].name == "age"
-    assert definition.fields[0].is_list
-    assert definition.fields[0].is_optional
-    assert definition.fields[0].child.type == str
+    assert definition.fields[0].is_list is True
+    assert definition.fields[0].is_optional is True
+    assert definition.fields[0].child.type is str
     assert definition.fields[0].child.is_optional is False
 
 
@@ -142,11 +142,11 @@ def test_error_type_with_list_of_optional_scalar():
     assert len(definition.fields) == 1
 
     assert definition.fields[0].name == "age"
-    assert definition.fields[0].is_list
-    assert definition.fields[0].is_optional
-    assert definition.fields[0].child.is_list
-    assert definition.fields[0].child.is_optional
-    assert definition.fields[0].child.child.type == str
+    assert definition.fields[0].is_list is True
+    assert definition.fields[0].is_optional is True
+    assert definition.fields[0].child.is_list is True
+    assert definition.fields[0].child.is_optional is True
+    assert definition.fields[0].child.child.type is str
     assert definition.fields[0].child.child.is_optional is False
 
 
@@ -164,11 +164,11 @@ def test_error_type_with_optional_list_scalar():
     assert len(definition.fields) == 1
 
     assert definition.fields[0].name == "age"
-    assert definition.fields[0].is_list
-    assert definition.fields[0].is_optional
-    assert definition.fields[0].child.is_list
-    assert definition.fields[0].child.is_optional
-    assert definition.fields[0].child.child.type == str
+    assert definition.fields[0].is_list is True
+    assert definition.fields[0].is_optional is True
+    assert definition.fields[0].child.is_list is True
+    assert definition.fields[0].child.is_optional is True
+    assert definition.fields[0].child.child.type is str
     assert definition.fields[0].child.child.is_optional is False
 
 
@@ -186,11 +186,11 @@ def test_error_type_with_optional_list_of_optional_scalar():
     assert len(definition.fields) == 1
 
     assert definition.fields[0].name == "age"
-    assert definition.fields[0].is_list
-    assert definition.fields[0].is_optional
-    assert definition.fields[0].child.is_list
-    assert definition.fields[0].child.is_optional
-    assert definition.fields[0].child.child.type == str
+    assert definition.fields[0].is_list is True
+    assert definition.fields[0].is_optional is True
+    assert definition.fields[0].child.is_list is True
+    assert definition.fields[0].child.is_optional is True
+    assert definition.fields[0].child.child.type is str
     assert definition.fields[0].child.child.is_optional is False
 
 
@@ -215,11 +215,11 @@ def test_error_type_with_optional_list_of_nested_model():
     assert len(definition.fields) == 1
 
     assert definition.fields[0].name == "friends"
-    assert definition.fields[0].is_list
-    assert definition.fields[0].is_optional
+    assert definition.fields[0].is_list is True
+    assert definition.fields[0].is_optional is True
     assert definition.fields[0].child.is_list is False
-    assert definition.fields[0].child.is_optional
-    assert definition.fields[0].child.type == FriendError
+    assert definition.fields[0].child.is_optional is True
+    assert definition.fields[0].child.type is FriendError
 
 
 def test_error_type_with_matrix_list_of_scalar():
@@ -236,15 +236,15 @@ def test_error_type_with_matrix_list_of_scalar():
     assert len(definition.fields) == 1
 
     assert definition.fields[0].name == "age"
-    assert definition.fields[0].is_list
-    assert definition.fields[0].is_optional
+    assert definition.fields[0].is_list is True
+    assert definition.fields[0].is_optional is True
 
-    assert definition.fields[0].child.is_list
-    assert definition.fields[0].child.is_optional
+    assert definition.fields[0].child.is_list is True
+    assert definition.fields[0].child.is_optional is True
 
-    assert definition.fields[0].child.child.is_list
-    assert definition.fields[0].child.child.is_optional
+    assert definition.fields[0].child.child.is_list is True
+    assert definition.fields[0].child.child.is_optional is True
 
-    assert definition.fields[0].child.child.is_list
-    assert definition.fields[0].child.child.child.type == str
+    assert definition.fields[0].child.child.is_list is True
+    assert definition.fields[0].child.child.child.type is str
     assert definition.fields[0].child.child.child.is_optional is False

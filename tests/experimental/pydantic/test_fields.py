@@ -35,7 +35,7 @@ def test_types(pydantic_type, field_type):
     assert len(definition.fields) == 1
 
     assert definition.fields[0].name == "field"
-    assert definition.fields[0].type == field_type
+    assert definition.fields[0].type is field_type
     assert definition.fields[0].is_optional is False
 
 
@@ -57,7 +57,7 @@ def test_types_optional(pydantic_type, field_type):
     assert len(definition.fields) == 1
 
     assert definition.fields[0].name == "field"
-    assert definition.fields[0].type == field_type
+    assert definition.fields[0].type is field_type
     assert definition.fields[0].is_optional is True
 
 
@@ -75,7 +75,7 @@ def test_conint():
     assert len(definition.fields) == 1
 
     assert definition.fields[0].name == "field"
-    assert definition.fields[0].type == int
+    assert definition.fields[0].type is int
     assert definition.fields[0].is_optional is False
 
 
@@ -93,7 +93,7 @@ def test_constr():
     assert len(definition.fields) == 1
 
     assert definition.fields[0].name == "field"
-    assert definition.fields[0].type == str
+    assert definition.fields[0].type is str
     assert definition.fields[0].is_optional is False
 
 
