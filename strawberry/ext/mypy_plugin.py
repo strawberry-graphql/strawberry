@@ -234,6 +234,8 @@ def _collect_field_args(expr: Expression) -> Tuple[bool, Dict[str, Expression]]:
 # Custom dataclass transfomer that knows about strawberry.field, we cannot
 # extend the mypy one as it might be compiled by mypyc and we'd get this error
 # >>> TypeError: interpreted classes cannot inherit from compiled
+# Original copy from
+# https://github.com/python/mypy/blob/849a7f73/mypy/plugins/dataclasses.py
 
 SELF_TVAR_NAME = "_DT"  # type: Final
 
@@ -425,6 +427,10 @@ class CustomDataclassTransformer:
                 is_in_init = True
             else:
                 is_in_init = bool(ctx.api.parse_bool(is_in_init_param))
+
+            # fields with a resolver are never put in the __init__ method
+            if "resolver" in field_args:
+                is_in_init = False
 
             has_default = False
             # Ensure that something like x: int = field() is rejected
