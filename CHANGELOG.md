@@ -1,6 +1,21 @@
 CHANGELOG
 =========
 
+0.42.6 - 2020-11-18
+-------------------
+
+Fix issue preventing reusing the same resolver for multiple fields, like here:
+
+```python
+def get_name(self) -> str:
+    return "Name"
+
+@strawberry.type
+class Query:
+    name: str = strawberry.field(resolver=get_name)
+    name_2: str = strawberry.field(resolver=get_name)
+```
+
 0.42.5 - 2020-11-18
 -------------------
 
