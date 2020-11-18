@@ -1,4 +1,6 @@
-from . import pydantic
-
-
-__all__ = ["pydantic"]
+try:
+    from . import pydantic
+except ImportError:
+    pass
+else:
+    __all__ = ["pydantic"]
