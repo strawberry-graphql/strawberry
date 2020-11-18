@@ -34,6 +34,7 @@ opentelemetry-api = {version = "^0.13b0",optional = true}
 opentelemetry-sdk = {version = "^0.13b0",optional = true}
 python-dateutil = "^2.7.0"
 cached-property = "^1.5.2"
+pydantic = {version = "^1.6.1", optional = true}
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.1"
@@ -61,11 +62,13 @@ opentelemetry-sdk = "^0.13b0"
 flake8-isort = "^4.0.0"
 flake8-black = "^0.2.1"
 django = {version = ">=2,<4",optional = false}
+pydantic = {version = "^1.6.1", optional = false}
 
 [tool.poetry.extras]
 django = ["django","pytest-django"]
 flask = ["flask","pytest-flask"]
 opentelemetry = ["opentelemetry-api","opentelemetry-sdk"]
+pydantic = ["pydantic"]
 
 [tool.poetry.scripts]
 strawberry = "strawberry.cli:run"

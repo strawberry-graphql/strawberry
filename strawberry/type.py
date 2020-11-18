@@ -96,7 +96,7 @@ def _process_type(
     is_input: bool = False,
     is_interface: bool = False,
     description: Optional[str] = None,
-    federation: Optional[FederationTypeParams] = None
+    federation: Optional[FederationTypeParams] = None,
 ):
     name = name or to_camel_case(cls.__name__)
 
@@ -127,7 +127,7 @@ def type(
     is_input: bool = False,
     is_interface: bool = False,
     description: str = None,
-    federation: Optional[FederationTypeParams] = None
+    federation: Optional[FederationTypeParams] = None,
 ):
     """Annotates a class as a GraphQL type.
 

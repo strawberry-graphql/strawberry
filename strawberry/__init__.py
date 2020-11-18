@@ -1,4 +1,4 @@
-from . import federation
+from . import experimental, federation
 from .arguments import argument
 from .custom_scalar import scalar
 from .directive import directive
@@ -16,6 +16,7 @@ from .union import union
 
 __all__ = [
     "BasePermission",
+    "experimental",
     "ID",
     "LazyType",
     "Private",
