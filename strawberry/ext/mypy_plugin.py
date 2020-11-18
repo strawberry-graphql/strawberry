@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, cast
 
 from typing_extensions import Final
 
@@ -197,22 +197,37 @@ def enum_hook(ctx: DynamicClassDefContext) -> None:
     )
 
 
+def is_dataclasses_field_or_strawberry_field(expr: Expression) -> bool:
+    if isinstance(expr, CallExpr):
+        if isinstance(expr.callee, RefExpr):
+            if expr.callee.fullname in ("dataclasses.field", "strawberry.field.field"):
+                return True
+
+        if isinstance(expr.callee, MemberExpr) and isinstance(
+            expr.callee.expr, NameExpr
+        ):
+            return expr.callee.name == "field" and expr.callee.expr.name == "strawberry"
+
+    return False
+
+
 def _collect_field_args(expr: Expression) -> Tuple[bool, Dict[str, Expression]]:
     """Returns a tuple where the first value represents whether or not
     the expression is a call to dataclass.field and the second is a
     dictionary of the keyword arguments that field() was called with.
     """
-    if (
-        isinstance(expr, CallExpr)
-        and isinstance(expr.callee, RefExpr)
-        and expr.callee.fullname in ("dataclasses.field", "strawberry.field.field")
-    ):
+
+    if is_dataclasses_field_or_strawberry_field(expr):
+        expr = cast(CallExpr, expr)
+
         # field() only takes keyword arguments.
         args = {}
+
         for name, arg in zip(expr.arg_names, expr.args):
             assert name is not None
             args[name] = arg
         return True, args
+
     return False, {}
 
 
@@ -412,6 +427,10 @@ class CustomDataclassTransformer:
                 is_in_init = True
             else:
                 is_in_init = bool(ctx.api.parse_bool(is_in_init_param))
+
+            # fields with a resolver are never put in the __init__ method
+            if "resolver" in field_args:
+                is_in_init = False
 
             has_default = False
             # Ensure that something like x: int = field() is rejected

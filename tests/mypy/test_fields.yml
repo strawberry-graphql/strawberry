@@ -93,3 +93,23 @@
     reveal_type(Example.a)
   out: |
     main:8: note: Revealed type is 'builtins.str'
+
+
+- case: test_does_not_put_fields_with_resolver_in_init
+  main: |
+    import strawberry
+
+    def resolver() -> str:
+        return "hi"
+
+    @strawberry.type
+    class Example:
+        a: str = strawberry.field(description='Example')
+        b: str = strawberry.field(resolver=resolver)
+        c: str
+
+    i = Example(a='a', c='c')
+
+    reveal_type(i.a)
+  out: |
+    main:14: note: Revealed type is 'builtins.str'
