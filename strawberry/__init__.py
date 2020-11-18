@@ -1,4 +1,6 @@
-from . import experimental, federation
+from typing import TYPE_CHECKING
+
+from . import federation
 from .arguments import argument
 from .custom_scalar import scalar
 from .directive import directive
@@ -16,7 +18,6 @@ from .union import union
 
 __all__ = [
     "BasePermission",
-    "experimental",
     "ID",
     "LazyType",
     "Private",
@@ -34,3 +35,10 @@ __all__ = [
     "type",
     "union",
 ]
+
+# This tells mypy that the "strawberry.experimental" namespace exists
+
+if TYPE_CHECKING:
+    from . import experimental
+
+    __all__ += ["experimental"]
