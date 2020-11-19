@@ -21,17 +21,17 @@ include = ["strawberry/py.typed"]
 [tool.poetry.dependencies]
 python = "^3.7"
 starlette = "^0.13.6"
-click = "^7.0"
+click = {version = "^7.0", optional = true}
 hupper = "^1.5"
 pygments = "^2.3"
-uvicorn = ">=0.11.6,<0.13.0"
-django = {version = ">=2,<4",optional = true}
+uvicorn = {version = ">=0.11.6,<0.13.0", optional = true}
+django = {version = ">=2,<4", optional = true}
 graphql-core = {version = "^3.0.0"}
-asgiref = {version = "^3.2",optional = true}
-flask = {version = "^1.1",optional = true}
+asgiref = {version = "^3.2", optional = true}
+flask = {version = "^1.1", optional = true}
 typing_extensions = "^3.7.4"
-opentelemetry-api = {version = "^0.13b0",optional = true}
-opentelemetry-sdk = {version = "^0.13b0",optional = true}
+opentelemetry-api = {version = "^0.13b0", optional = true}
+opentelemetry-sdk = {version = "^0.13b0", optional = true}
 python-dateutil = "^2.7.0"
 cached-property = "^1.5.2"
 pydantic = {version = "^1.6.1", optional = true}
@@ -41,7 +41,7 @@ pytest = "^6.1"
 pdbpp = "^0.10.2"
 pytest-emoji = "^0.2.0"
 flake8 = "^3.8"
-black = {version = "^20.8b1",allow-prereleases = true}
+black = {version = "^20.8b1", allow-prereleases = true}
 isort = "^5.6.4"
 pytest-asyncio = "^0.14.0"
 pytest-cov = "^2.10"
@@ -53,6 +53,7 @@ pytest-mock = "^3.3"
 pytest-django = {version = "^4.1"}
 asgiref = "^3.2"
 pytest-flask = {version = "^1.1.0"}
+flask = {version = "^1.1"}
 requests = "^2.25.0"
 pre-commit = "^2.8.2"
 pytest-benchmark = "^3.2.3"
@@ -61,13 +62,15 @@ opentelemetry-api = "^0.13b0"
 opentelemetry-sdk = "^0.13b0"
 flake8-isort = "^4.0.0"
 flake8-black = "^0.2.1"
-django = {version = ">=2,<4",optional = false}
+django = {version = ">=2,<4", optional = false}
 pydantic = {version = "^1.6.1", optional = false}
+uvicorn = ">=0.11.6,<0.13.0"
 
 [tool.poetry.extras]
-django = ["django","pytest-django"]
-flask = ["flask","pytest-flask"]
-opentelemetry = ["opentelemetry-api","opentelemetry-sdk"]
+debug-server = ["uvicorn"]
+django = ["django", "pytest-django", "asgiref"]
+flask = ["flask", "pytest-flask"]
+opentelemetry = ["opentelemetry-api", "opentelemetry-sdk"]
 pydantic = ["pydantic"]
 
 [tool.poetry.scripts]
