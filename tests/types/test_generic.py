@@ -506,3 +506,83 @@ def test_multiple_generics_inside_unions():
     assert union_definition.types[1]._type_definition.name == "StrEdge"
     assert union_definition.types[1]._type_definition.is_generic is False
     assert union_definition.types[1]._type_definition.fields[0].type == str
+
+
+def test_union_inside_generics():
+    @strawberry.type
+    class Dog:
+        name: str
+
+    @strawberry.type
+    class Cat:
+        name: str
+
+    @strawberry.type
+    class Connection(Generic[T]):
+        nodes: List[T]
+
+    DogCat = strawberry.union("DogCat", (Dog, Cat))
+
+    @strawberry.type
+    class Query:
+        connection: Connection[DogCat]
+
+    definition = Query._type_definition
+
+    assert definition.name == "Query"
+    assert len(definition.fields) == 1
+
+    assert definition.type_params == {}
+    assert definition.fields[0].name == "connection"
+    assert definition.fields[0].is_optional is False
+
+    type_definition = definition.fields[0].type._type_definition
+
+    assert type_definition.name == "DogCatConnection"
+    assert len(type_definition.fields) == 1
+    assert type_definition.fields[0].is_list is True
+
+    union_definition = type_definition.fields[0].child.type
+
+    assert isinstance(union_definition, StrawberryUnion)
+    assert union_definition.types[0]._type_definition.name == "Dog"
+    assert union_definition.types[1]._type_definition.name == "Cat"
+
+
+def test_anonymous_union_inside_generics():
+    @strawberry.type
+    class Dog:
+        name: str
+
+    @strawberry.type
+    class Cat:
+        name: str
+
+    @strawberry.type
+    class Connection(Generic[T]):
+        nodes: List[T]
+
+    @strawberry.type
+    class Query:
+        connection: Connection[Union[Dog, Cat]]
+
+    definition = Query._type_definition
+
+    assert definition.name == "Query"
+    assert len(definition.fields) == 1
+
+    assert definition.type_params == {}
+    assert definition.fields[0].name == "connection"
+    assert definition.fields[0].is_optional is False
+
+    type_definition = definition.fields[0].type._type_definition
+
+    assert type_definition.name == "DogCatConnection"
+    assert len(type_definition.fields) == 1
+    assert type_definition.fields[0].is_list is True
+
+    union_definition = type_definition.fields[0].child.type
+
+    assert isinstance(union_definition, StrawberryUnion)
+    assert union_definition.types[0]._type_definition.name == "Dog"
+    assert union_definition.types[1]._type_definition.name == "Cat"
