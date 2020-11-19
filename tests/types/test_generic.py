@@ -586,3 +586,28 @@ def test_anonymous_union_inside_generics():
     assert isinstance(union_definition, StrawberryUnion)
     assert union_definition.types[0]._type_definition.name == "Dog"
     assert union_definition.types[1]._type_definition.name == "Cat"
+
+
+def test_using_generics_with_interfaces():
+    @strawberry.type
+    class Edge(Generic[T]):
+        node: T
+
+    @strawberry.interface
+    class WithName:
+        name: str
+
+    @strawberry.type
+    class Query:
+        user: Edge[WithName]
+
+    definition = Query._type_definition
+
+    assert definition.name == "Query"
+    assert len(definition.fields) == 1
+
+    assert definition.fields[0].name == "user"
+    assert definition.fields[0].type._type_definition.name == "WithNameEdge"
+    assert definition.fields[0].type._type_definition.is_generic is False
+    assert definition.fields[0].type._type_definition.fields[0].name == "node"
+    assert definition.fields[0].type._type_definition.fields[0].type == WithName
