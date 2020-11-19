@@ -21,7 +21,7 @@ jobs:
 
       - run: pip install poetry codecov
       - name: Install dependencies
-        run: poetry install --extras "django flask opentelemetry"
+        run: poetry install --extras "debug-server django flask pydantic opentelemetry"
       - name: Install dependencies
         run: poetry add django==${{ matrix.django }}
 
