@@ -8,12 +8,13 @@
 [![Discord](https://img.shields.io/discord/689806334337482765?label=discord&logo=discord&logoColor=white&style=for-the-badge&color=blue)](https://discord.gg/ZkRTEJQ)
 [![PyPI](https://img.shields.io/pypi/v/strawberry-graphql?logo=pypi&logoColor=white&style=for-the-badge)](https://pypi.org/project/strawberry-graphql/)
 
-## Installation
+## Installation ( Quick Start )
 
+The quick start method provides a server and CLI to get going quickly.
 Install with:
 
 ```shell
-pip install strawberry-graphql
+pip install strawberry-graphql[debug-server]
 ```
 
 ## Getting Started
@@ -90,6 +91,16 @@ urlpatterns = [
     ...,
     path('graphql', GraphQLView.as_view(schema=schema)),
 ]
+```
+
+## WebSockets
+
+To support graphql Subscriptions over WebSockets you need to provide a WebSocket
+enabled server. The debug server can be made to support WebSockets with these commands:
+
+```shell
+pip install strawberry-graphql[debug-server]
+pip install uvicorn[standard]
 ```
 
 ## Contributing
