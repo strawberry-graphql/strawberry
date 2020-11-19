@@ -1,6 +1,31 @@
 CHANGELOG
 =========
 
+0.43.2 - 2020-11-19
+-------------------
+
+This release fixes an issue when usign unions inside generic types, this is now
+supported:
+
+
+```python
+@strawberry.type
+class Dog:
+    name: str
+
+@strawberry.type
+class Cat:
+    name: str
+
+@strawberry.type
+class Connection(Generic[T]):
+    nodes: List[T]
+
+@strawberry.type
+class Query:
+    connection: Connection[Union[Dog, Cat]]
+```
+
 0.43.1 - 2020-11-18
 -------------------
 
