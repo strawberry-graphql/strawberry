@@ -291,7 +291,7 @@ name = "h11"
 version = "0.11.0"
 description = "A pure-Python, bring-your-own-I/O implementation of HTTP/1.1"
 category = "main"
-optional = true
+optional = false
 python-versions = "*"
 
 [[package]]
@@ -878,7 +878,7 @@ name = "uvicorn"
 version = "0.12.2"
 description = "The lightning-fast ASGI server."
 category = "main"
-optional = true
+optional = false
 python-versions = "*"
 
 [package.dependencies]
@@ -950,7 +950,7 @@ pydantic = ["pydantic"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "8ffca9f9e6973700794efb7f7a204c38a0ea69d915ca25eaffdacba79ddaca80"
+content-hash = "9e9e56259fa72241cab90ad395f29dacd32cea7759e15e88a5dbdc48bb838173"
 
 [metadata.files]
 appdirs = [
