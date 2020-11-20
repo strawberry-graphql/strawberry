@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.44.1 - 2020-11-20
+-------------------
+
+This release adds support for strawberry.federation.field under mypy.
+
 0.44.0 - 2020-11-19
 -------------------
 
