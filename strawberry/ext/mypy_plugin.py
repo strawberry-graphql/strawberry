@@ -220,7 +220,11 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext):
 def is_dataclasses_field_or_strawberry_field(expr: Expression) -> bool:
     if isinstance(expr, CallExpr):
         if isinstance(expr.callee, RefExpr):
-            if expr.callee.fullname in ("dataclasses.field", "strawberry.field.field"):
+            if expr.callee.fullname in (
+                "dataclasses.field",
+                "strawberry.field.field",
+                "strawberry.federation.field",
+            ):
                 return True
 
         if isinstance(expr.callee, MemberExpr) and isinstance(
@@ -579,6 +583,9 @@ class StrawberryPlugin(Plugin):
         self, fullname: str
     ) -> Optional[Callable[[FunctionContext], Type]]:
         if fullname == "strawberry.field.field":
+            return strawberry_field_hook
+
+        if fullname == "strawberry.federation.field":
             return strawberry_field_hook
 
         return None
