@@ -53,7 +53,7 @@ def test_schema_introspect_returns_the_introspection_query_result():
 def test_schema_fails_on_an_invalid_schema():
     @strawberry.type
     class Query:
-        ...  # Schema must have at least one field
+        ...  # Type must have at least one field
 
     with pytest.raises(ValueError, match="Invalid Schema. Errors.*"):
         strawberry.Schema(query=Query)
