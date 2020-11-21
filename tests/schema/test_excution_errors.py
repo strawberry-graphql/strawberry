@@ -9,25 +9,6 @@ class MyExtension(Extension):
         return {"example": "example"}
 
 
-def test_runs_schema_validation():
-    @strawberry.type
-    class Query:
-        ...
-
-    schema = strawberry.Schema(query=Query)
-
-    query = """
-        query {
-            example
-        }
-    """
-
-    result = schema.execute_sync(query)
-
-    assert len(result.errors) == 1
-    assert result.errors[0].message == "Type Query must define one or more fields."
-
-
 def test_runs_parsing():
     @strawberry.type
     class Query:
@@ -67,26 +48,6 @@ async def test_errors_when_running_async_in_sync_mode():
         schema.execute_sync(query)
 
     assert e.value.args[0] == "GraphQL execution failed to complete synchronously."
-
-
-@pytest.mark.asyncio
-async def test_runs_schema_validation_async():
-    @strawberry.type
-    class Query:
-        ...
-
-    schema = strawberry.Schema(query=Query)
-
-    query = """
-        query {
-            example
-        }
-    """
-
-    result = await schema.execute(query)
-
-    assert len(result.errors) == 1
-    assert result.errors[0].message == "Type Query must define one or more fields."
 
 
 @pytest.mark.asyncio
