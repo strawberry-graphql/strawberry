@@ -190,6 +190,6 @@ import strawberry
 @strawberry.type
 class Query:
     @strawberry.field
-    def bestCustomer(self, id: str) -> Customer:
+    def bestCustomer(self) -> Customer:
         return Individual(name="Patrick")
 ```
