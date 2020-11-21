@@ -37,7 +37,7 @@ type Query {
 ```
 
 Notice that the `Customer` interface requires the `name: String!` field. Both
-`Company` and `Individual` implements that field so that they can implement the
+`Company` and `Individual` implement that field so that they can satisfy the
 `Customer` interface.
 
 When querying, you can select the fields on an interface:
@@ -91,8 +91,8 @@ interface Customer {
 
 ## Implementing interfaces
 
-To define object type that implement an interface the type must inherit from the
-interface:
+To define an object type that implements an interface, the type must inherit from
+the interface:
 
 ```python
 import strawberry
@@ -190,9 +190,6 @@ import strawberry
 @strawberry.type
 class Query:
     @strawberry.field
-    def customers(self) -> List[Customer]:
-        return [
-            Individual(name="Patrick"),
-            Company(name="Strawberry"),
-        ]
+    def bestCustomer(self, id: str) -> Customer:
+        return Individual(name="Patrick")
 ```
