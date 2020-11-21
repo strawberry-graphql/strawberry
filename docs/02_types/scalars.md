@@ -5,7 +5,9 @@ path: /docs/types/scalars
 
 # Scalars
 
-Scalar types represent concrete values at the leaves of a query. For example in the following query the name field will resolve to a scalar type (in this case it's a string type):
+Scalar types represent concrete values at the leaves of a query. For example
+in the following query the name field will resolve to a scalar type
+(in this case it's a string type):
 
 ```graphql+response
 {
@@ -23,31 +25,21 @@ Scalar types represent concrete values at the leaves of a query. For example in 
 }
 ```
 
-Strawberry will automatically map the Python built in types to the corresponding
-GraphQL type:
+There are several built-in scalars, and you can define custom scalars too.
+([Enums](/docs/types/enums) are also leaf values.) The built in scalars are:
 
-```python+schema
-import strawberry
+* `String`, maps to Python’s `str`
+* `Int`, a signed 32-bit integer, maps to Python’s `int`
+* `Float`, a signed double-precision floating-point value, maps to python’s `float`
+* `Boolean`, true or false, maps to Python’s `bool`
+* `ID`, a specialised `String` for representing unique object identifiers
+* `Date`, an ISO 8601 encoded date
+* `DateTime`, an ISO 8601 encoded datetime
+* `Time`, an ISO 8601 encoded time
+* `Decimal`, a [Decimal](https://docs.python.org/3/library/decimal.html#decimal.Decimal) value serialized as a string
+* `UUID`, a [UUID](https://docs.python.org/3/library/uuid.html#uuid.UUID) value serialized as a string
 
-@strawberry.type
-class User:
-    name: str
-    age: int
-    like_strawberries: bool
-    number_of_strawberries_eaten: float
-
----
-type User {
-  name: String!
-  age: Int!
-  likesStrawberries: Boolean!
-  numberOfStrawberriesEaten: Float!
-}
-```
-
-## Built in scalars
-
-Strawberry also provides some built in scalars for common Python datatypes:
+Fields can return built-in scalars by using the Python equivilant:
 
 ```python+schema
 import datetime
@@ -58,22 +50,27 @@ import strawberry
 @strawberry.type
 class Product:
     id: uuid.UUID
-    created_at: datetime.datetime
-    available_until: datetime.date
+    name: str
+    stock: int
+    is_available: bool
+    available_from: datetime.date
     same_day_shipping_before: datetime.time
+    created_at: datetime.datetime
     price: decimal.Decimal
-
 ---
 type Product {
   id: UUID!
-  createdAt: DateTime!
-  availableUntil: Date!
+  name: String!
+  stock: Int!
+  isAvailable: Boolean!
+  availableFrom: Date!
   sameDayShippingBefore: Time!
+  createdAt: DateTime!
   price: Decimal!
 }
 ```
 
-These types can also be used as inputs to fields:
+Scalar types can also be used as inputs:
 
 ```python
 import datetime
@@ -84,12 +81,6 @@ class Query:
     @strawberry.field
     def one_week_from(self, date_input: datetime.date) -> datetime.date:
         return date_input + datetime.timedelta(weeks=1)
-
-schema = strawberry.Schema(query=Query)
-
-results = schema.execute_sync("{ oneWeekFrom(dateInput: "2006-01-02") }")
-
-assert results.data == {"oneWeekFrom": "2006-01-09"}
 ```
 
 ## Custom scalars
