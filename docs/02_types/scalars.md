@@ -7,7 +7,7 @@ path: /docs/types/scalars
 
 Scalar types represent concrete values at the leaves of a query. For example
 in the following query the name field will resolve to a scalar type
-(in this case it's a string type):
+(in this case it's a `String` type):
 
 ```graphql+response
 {
@@ -30,12 +30,12 @@ There are several built-in scalars, and you can define custom scalars too.
 
 * `String`, maps to Python’s `str`
 * `Int`, a signed 32-bit integer, maps to Python’s `int`
-* `Float`, a signed double-precision floating-point value, maps to python’s `float`
+* `Float`, a signed double-precision floating-point value, maps to Python’s `float`
 * `Boolean`, true or false, maps to Python’s `bool`
 * `ID`, a specialised `String` for representing unique object identifiers
-* `Date`, an ISO 8601 encoded date
-* `DateTime`, an ISO 8601 encoded datetime
-* `Time`, an ISO 8601 encoded time
+* `Date`, an ISO 8601 encoded [date](https://docs.python.org/3/library/datetime.html#date-objects)
+* `DateTime`, an ISO 8601 encoded [datetime](https://docs.python.org/3/library/datetime.html#datetime-objects)
+* `Time`, an ISO 8601 encoded [time](https://docs.python.org/3/library/datetime.html#time-objects)
 * `Decimal`, a [Decimal](https://docs.python.org/3/library/decimal.html#decimal.Decimal) value serialized as a string
 * `UUID`, a [UUID](https://docs.python.org/3/library/uuid.html#uuid.UUID) value serialized as a string
 
