@@ -1,6 +1,6 @@
 ---
 title: Union types
-path: /docs/types/union-types
+path: /docs/types/unions
 ---
 
 # Union types
