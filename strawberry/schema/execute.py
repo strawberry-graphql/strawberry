@@ -42,14 +42,8 @@ async def execute(
     additional_middlewares = additional_middlewares or []
 
     with extensions_runner.request():
-        schema_validation_errors = validate_schema(schema)
-
-        if schema_validation_errors:
-            return ExecutionResult(
-                data=None,
-                errors=schema_validation_errors,
-                extensions=extensions_runner.get_extensions_results(),
-            )
+        # Note: In graphql-core the schema would be validated here but in
+        # Strawberry we are validating it at initialisation time instead
 
         try:
             with extensions_runner.parsing():
@@ -122,14 +116,8 @@ def execute_sync(
     additional_middlewares = additional_middlewares or []
 
     with extensions_runner.request():
-        schema_validation_errors = validate_schema(schema)
-
-        if schema_validation_errors:
-            return ExecutionResult(
-                data=None,
-                errors=schema_validation_errors,
-                extensions=extensions_runner.get_extensions_results(),
-            )
+        # Note: In graphql-core the schema would be validated here but in
+        # Strawberry we are validating it at initialisation time instead
 
         try:
             with extensions_runner.parsing():
