@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.44.2 - 2020-11-22
+-------------------
+
+Validate the schema when it is created instead of at runtime.
+
 0.44.1 - 2020-11-20
 -------------------
 
