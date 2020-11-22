@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Optional, Sequence, Type, Union
 
-from graphql import GraphQLSchema, get_introspection_query, parse
+from graphql import GraphQLSchema, get_introspection_query, parse, validate_schema
 from graphql.subscription import subscribe
 from graphql.type.directives import specified_directives
 
@@ -50,6 +50,13 @@ class Schema:
             directives=specified_directives + directives,
             types=[get_object_type(type, self.type_map) for type in types],
         )
+
+        # Validate schema early because we want developers to know about
+        # possible issues as soon as possible
+        errors = validate_schema(self._schema)
+        if errors:
+            formatted_errors = "\n\n".join(f"❌ {error.message}" for error in errors)
+            raise ValueError(f"Invalid Schema. Errors:\n\n{formatted_errors}")
 
         self.query = self.type_map[query_type.name]
 

@@ -50,11 +50,10 @@ def test_schema_introspect_returns_the_introspection_query_result():
     } == introspection["__schema"].keys()
 
 
-def test_schema_introspect_fails_on_an_invalid_schema():
+def test_schema_fails_on_an_invalid_schema():
     @strawberry.type
     class Query:
-        ...  # Schema must have at least one field
+        ...  # Type must have at least one field
 
-    schema = strawberry.Schema(query=Query)
-    with pytest.raises(ValueError, match="Invalid Schema. Errors .*"):
-        schema.introspect()
+    with pytest.raises(ValueError, match="Invalid Schema. Errors.*"):
+        strawberry.Schema(query=Query)
