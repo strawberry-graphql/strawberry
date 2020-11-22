@@ -39,7 +39,7 @@ There are several built-in scalars, and you can define custom scalars too.
 * `Decimal`, a [Decimal](https://docs.python.org/3/library/decimal.html#decimal.Decimal) value serialized as a string
 * `UUID`, a [UUID](https://docs.python.org/3/library/uuid.html#uuid.UUID) value serialized as a string
 
-Fields can return built-in scalars by using the Python equivilant:
+Fields can return built-in scalars by using the Python equivalent:
 
 ```python+schema
 import datetime
@@ -85,7 +85,7 @@ class Query:
 
 ## Custom scalars
 
-You can create custom scalars for your schema to repesent specific types in
+You can create custom scalars for your schema to represent specific types in
 your data model. This can be helpful to let clients know what kind of data they
 can expect for a particular field.
 
