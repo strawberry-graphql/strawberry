@@ -14,7 +14,8 @@ member of that interface.
 
 For example, let's say a `Customer` (interface) can either be an `Individual`
 (object) or a `Company` (object). Here's what that might look like in the
-[GraphQL Schema Definition Language](https://graphql.org/learn/schema/#type-language) (SDL):
+[GraphQL Schema Definition Language](https://graphql.org/learn/schema/#type-language)
+(SDL):
 
 ```graphql
 interface Customer {
@@ -52,8 +53,9 @@ query {
 
 Whether the object is a `Company` or an `Individual`, it doesn’t matter – you
 still get their name. If you want some object-specific fields, you can query
-them with an [inline fragment](https://graphql.org/learn/queries/#inline-fragments),
-for example:
+them with an
+[inline fragment](https://graphql.org/learn/queries/#inline-fragments), for
+example:
 
 ```graphql
 query {
@@ -92,8 +94,8 @@ interface Customer {
 
 ## Implementing interfaces
 
-To define an object type that implements an interface, the type must inherit from
-the interface:
+To define an object type that implements an interface, the type must inherit
+from the interface:
 
 ```python
 import strawberry
@@ -107,7 +109,7 @@ class Company(Customer):
     # additional fields
 ```
 
-> ⚠️  If you add an object type which implements an interface, but that object
+> ⚠️ If you add an object type which implements an interface, but that object
 > type doesn’t appear in your schema as a field return type or a union member,
 > then you will need to add that object to the Schema defintion directly.
 
@@ -174,7 +176,6 @@ class Company(Customer):
     def name(self) -> str:
         return f"{self.name} Limited"
 ```
-
 
 ## Resolving an interface
 
