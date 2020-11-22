@@ -104,11 +104,11 @@ GraphQL supports a few different types:
 Scalar types are similar to Python primitive types. Here’s the list of the
 default scalar types in GraphQL:
 
-* Int, a signed 32-bit integer, maps to python’s int
-* Float, a signed double-precision floating-point value, maps to python’s float
-* String, maps to python’s str
-* Boolean, true or false, maps to python’s bool
-* ID, a unique identifier that usually used to refetch an object or as the key
+- Int, a signed 32-bit integer, maps to python’s int
+- Float, a signed double-precision floating-point value, maps to python’s float
+- String, maps to python’s str
+- Boolean, true or false, maps to python’s bool
+- ID, a unique identifier that usually used to refetch an object or as the key
   for a cache. Serialized as string and available as `strawberry.ID(“value”)`
 
 > **NOTE:** Strawberry also includes support for date, time and datetime
