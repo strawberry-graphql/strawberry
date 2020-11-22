@@ -52,7 +52,8 @@ query {
 
 Whether the object is a `Company` or an `Individual`, it doesn’t matter – you
 still get their name. If you want some object-specific fields, you can query
-them with an inline fragment, for example:
+them with an [inline fragment](https://graphql.org/learn/queries/#inline-fragments),
+for example:
 
 ```graphql
 query {
