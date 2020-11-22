@@ -33,9 +33,9 @@ There are several built-in scalars, and you can define custom scalars too.
 * `Float`, a signed double-precision floating-point value, maps to Python’s `float`
 * `Boolean`, true or false, maps to Python’s `bool`
 * `ID`, a specialised `String` for representing unique object identifiers
-* `Date`, an ISO 8601 encoded [date](https://docs.python.org/3/library/datetime.html#date-objects)
-* `DateTime`, an ISO 8601 encoded [datetime](https://docs.python.org/3/library/datetime.html#datetime-objects)
-* `Time`, an ISO 8601 encoded [time](https://docs.python.org/3/library/datetime.html#time-objects)
+* `Date`, an ISO-8601 encoded [date](https://docs.python.org/3/library/datetime.html#date-objects)
+* `DateTime`, an ISO-8601 encoded [datetime](https://docs.python.org/3/library/datetime.html#datetime-objects)
+* `Time`, an ISO-8601 encoded [time](https://docs.python.org/3/library/datetime.html#time-objects)
 * `Decimal`, a [Decimal](https://docs.python.org/3/library/decimal.html#decimal.Decimal) value serialized as a string
 * `UUID`, a [UUID](https://docs.python.org/3/library/uuid.html#uuid.UUID) value serialized as a string
 
