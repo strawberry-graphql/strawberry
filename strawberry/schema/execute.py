@@ -9,7 +9,6 @@ from graphql import (
     execute as original_execute,
     parse,
 )
-from graphql.type import validate_schema
 from graphql.validation import validate
 
 from strawberry.extensions import Extension
