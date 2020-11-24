@@ -24,8 +24,10 @@ def test_simple_required_types():
       b: Boolean!
       f: Float!
       id: ID!
-      uid: ID!
+      uid: UUID!
     }
+
+    scalar UUID
     """
 
     schema = strawberry.Schema(query=Query)
@@ -72,12 +74,14 @@ def test_input_simple_required_types():
       b: Boolean!
       f: Float!
       id: ID!
-      uid: ID!
+      uid: UUID!
     }
 
     type Query {
       search(input: MyInput!): String!
     }
+
+    scalar UUID
     """
 
     schema = strawberry.Schema(query=Query)

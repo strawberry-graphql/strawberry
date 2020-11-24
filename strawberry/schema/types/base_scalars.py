@@ -1,6 +1,9 @@
 import datetime
 import decimal
+import uuid
 from operator import methodcaller
+
+import dateutil.parser
 
 from strawberry.custom_scalar import scalar
 
@@ -20,7 +23,7 @@ DateTime = scalar(
     name="DateTime",
     description="Date with time (isoformat)",
     serialize=isoformat,
-    parse_value=datetime.datetime.fromisoformat,
+    parse_value=dateutil.parser.isoparse,
 )
 Time = scalar(
     datetime.time,
@@ -36,4 +39,11 @@ Decimal = scalar(
     description="Decimal (fixed-point)",
     serialize=str,
     parse_value=decimal.Decimal,
+)
+
+UUID = scalar(
+    uuid.UUID,
+    name="UUID",
+    serialize=str,
+    parse_value=uuid.UUID,
 )

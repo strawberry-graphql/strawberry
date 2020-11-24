@@ -1,3 +1,4 @@
+import textwrap
 import typing
 from dataclasses import InitVar, dataclass
 from enum import Enum
@@ -162,6 +163,70 @@ def test_field_description():
         {"name": "a", "description": "Example"},
         {"name": "b", "description": None},
         {"name": "c", "description": "Example C"},
+    ]
+
+
+def test_field_deprecated_reason():
+    @strawberry.type
+    class Query:
+        a: str = strawberry.field(deprecation_reason="Deprecated A")
+
+        @strawberry.field
+        def b(self, info, id: int) -> str:
+            return "I'm a resolver"
+
+        @strawberry.field(deprecation_reason="Deprecated B")
+        def c(self, info, id: int) -> str:
+            return "I'm a resolver"
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        __type(name: "Query") {
+            fields(includeDeprecated: true) {
+                name
+                deprecationReason
+            }
+        }
+    }"""
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data["__type"]["fields"] == [
+        {"name": "a", "deprecationReason": "Deprecated A"},
+        {"name": "b", "deprecationReason": None},
+        {"name": "c", "deprecationReason": "Deprecated B"},
+    ]
+
+
+def test_field_deprecated_reason_subscription():
+    @strawberry.type
+    class Query:
+        a: str
+
+    @strawberry.type
+    class Subscription:
+        @strawberry.subscription(deprecation_reason="Deprecated A")
+        def a(self) -> str:
+            return "A"
+
+    schema = strawberry.Schema(query=Query, subscription=Subscription)
+
+    query = """{
+        __type(name: "Subscription") {
+            fields(includeDeprecated: true) {
+                name
+                deprecationReason
+            }
+        }
+    }"""
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data["__type"]["fields"] == [
+        {"name": "a", "deprecationReason": "Deprecated A"},
     ]
 
 
@@ -341,3 +406,24 @@ def test_multiple_fields_with_same_type():
     assert not result.errors
     assert result.data["me"] is None
     assert result.data["you"] is None
+
+
+def test_str_magic_method_prints_schema_sdl():
+    @strawberry.type
+    class Query:
+        exampleBool: bool
+        exampleStr: str = "Example"
+        exampleInt: int = 1
+
+    schema = strawberry.Schema(query=Query)
+    expected = """
+    type Query {
+      exampleBool: Boolean!
+      exampleStr: String!
+      exampleInt: Int!
+    }
+    """
+    assert str(schema) == textwrap.dedent(expected).strip()
+    assert "<strawberry.schema.schema.Schema object" in repr(
+        schema
+    ), "Repr should not be affected"

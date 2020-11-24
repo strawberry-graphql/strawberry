@@ -3,6 +3,7 @@ from typing import Optional
 
 import pytest
 
+from django.core.exceptions import SuspiciousOperation
 from django.http import Http404
 from django.test.client import RequestFactory
 
@@ -25,17 +26,9 @@ class AlwaysFailPermission(BasePermission):
 class Query:
     hello: str = "strawberry"
 
-    @strawberry.field
-    async def hello_async(self, info) -> str:
-        return "async strawberry"
-
     @strawberry.field(permission_classes=[AlwaysFailPermission])
     def always_fail(self, info) -> Optional[str]:
         return "Hey"
-
-    @strawberry.field
-    async def example_async(self, info) -> str:
-        return Example.objects.first().name
 
     @strawberry.field
     def example(self, info) -> str:
@@ -59,6 +52,30 @@ def test_graphiql_view():
     body = response.content.decode()
 
     assert "GraphiQL" in body
+
+
+@pytest.mark.parametrize("method", ["DELETE", "HEAD", "PUT", "PATCH"])
+def test_disabled_methods(method):
+    factory = RequestFactory()
+
+    rf = getattr(factory, method.lower())
+
+    request = rf("/graphql/")
+
+    response = GraphQLView.as_view(schema=schema, graphiql=False)(request)
+
+    assert response.status_code == 405
+
+
+def test_fails_when_not_sending_query():
+    factory = RequestFactory()
+
+    request = factory.post("/graphql/")
+
+    with pytest.raises(SuspiciousOperation) as e:
+        GraphQLView.as_view(schema=schema, graphiql=False)(request)
+
+        assert e.value.args == ("No GraphQL query found in the request",)
 
 
 def test_graphiql_disabled_view():
@@ -101,37 +118,7 @@ def test_graphql_query_model():
     assert not data.get("errors")
     assert data["data"]["example"] == "This is a demo"
 
-
-@pytest.mark.skip(reason="We don't support async on django at the moment")
-def test_async_graphql_query():
-    query = "{ helloAsync }"
-
-    factory = RequestFactory()
-    request = factory.post(
-        "/graphql/", {"query": query}, content_type="application/json"
-    )
-
-    response = GraphQLView.as_view(schema=schema)(request)
-    data = json.loads(response.content.decode())
-
-    assert data["data"]["helloAsync"] == "async strawberry"
-
-
-@pytest.mark.skip(reason="We don't support async on django at the moment")
-def test_async_graphql_query_model():
-    Example.objects.create(name="This is a demo async")
-
-    query = "{ exampleAsync }"
-
-    factory = RequestFactory()
-    request = factory.post(
-        "/graphql/", {"query": query}, content_type="application/json"
-    )
-
-    response = GraphQLView.as_view(schema=schema)(request)
-    data = json.loads(response.content.decode())
-
-    assert data["data"]["exampleAsync"] == "This is a demo async"
+    Example.objects.all().delete()
 
 
 def test_returns_errors_and_data():

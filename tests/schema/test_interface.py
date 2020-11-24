@@ -42,3 +42,54 @@ def test_query_interface():
         {"name": "Asiago", "province": "Friuli"},
         {"canton": "Vaud", "name": "Tomme"},
     ]
+
+
+def test_interfaces_can_implement_other_interfaces():
+    @strawberry.interface
+    class Error:
+        message: str
+
+    @strawberry.interface
+    class FieldError(Error):
+        message: str
+        field: str
+
+    @strawberry.type
+    class PasswordTooShort(FieldError):
+        message: str
+        field: str
+        fix: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def always_error(self) -> Error:
+            return PasswordTooShort(
+                message="Password Too Short",
+                field="Password",
+                fix="Choose more characters",
+            )
+
+    schema = strawberry.Schema(Query, types=[PasswordTooShort])
+    query = """{
+        alwaysError {
+            ... on Error {
+                message
+            }
+            ... on FieldError {
+                field
+            }
+            ... on PasswordTooShort {
+                fix
+            }
+        }
+    }"""
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data["alwaysError"] == {
+        "message": "Password Too Short",
+        "field": "Password",
+        "fix": "Choose more characters",
+    }

@@ -11,12 +11,12 @@ repos:
         additional_dependencies: ["flake8-eradicate==0.4.0"]
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v0.782
+    rev: v0.790
     hooks:
       - id: mypy
 
   - repo: https://github.com/pycqa/isort
-    rev: 5.5.4
+    rev: 5.6.4
     hooks:
       - id: isort
 
@@ -25,8 +25,8 @@ repos:
     hooks:
       - id: alex
 
-  - repo: https://github.com/prettier/prettier
-    rev: "2.1.2"
+  - repo: https://github.com/prettier/pre-commit
+    rev: v2.1.2
     hooks:
       - id: prettier
         files: '^docs/.*\.mdx?$'

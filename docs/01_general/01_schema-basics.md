@@ -1,5 +1,5 @@
 ---
-title: Schema Basics
+title: Schema basics
 path: /docs/schema-basics
 ---
 
@@ -101,24 +101,24 @@ GraphQL supports a few different types:
 
 <!--alex ignore-->
 
-Scalar types are similar to python primitive types. Here’s the list of the
+Scalar types are similar to Python primitive types. Here’s the list of the
 default scalar types in GraphQL:
 
-1. Int, a signed 32-bit integer, maps to python’s int
-2. Float, a signed double-precision floating-point value, maps to python’s float
-3. String, maps to python’s str
-4. Boolean, true or false, maps to python’s bool
-5. ID, a unique identifier that usually used to refetch an object or as the key
-   for a cache. Serialized as string and available as `strawberry.ID(“value”)`
+- Int, a signed 32-bit integer, maps to python’s int
+- Float, a signed double-precision floating-point value, maps to python’s float
+- String, maps to python’s str
+- Boolean, true or false, maps to python’s bool
+- ID, a unique identifier that usually used to refetch an object or as the key
+  for a cache. Serialized as string and available as `strawberry.ID(“value”)`
 
-> **NOTE:** strawberry also includes support for date, time and datetime
+> **NOTE:** Strawberry also includes support for date, time and datetime
 > objects, they are not officially included with the GraphQL spec, but they are
 > usually needed in most servers. They are serialized as ISO-8601.
 
 <!--alex ignore-->
 
-These primitives work for the majority for the uses cases, but you can also
-specify your [own scalar types](/docs/types/scalars).
+These primitives work for the majority of use cases, but you can also
+specify your [own scalar types](/docs/types/scalars#custom-scalars).
 
 ## Object types
 
@@ -305,7 +305,7 @@ An input type's definition is similar to an object type's, but it uses the input
 keyword:
 
 ```python
-@strawberry.input:
+@strawberry.input
 class AddBookInput:
   title: str
   author: str
@@ -323,7 +323,7 @@ our schema, it also provides a basis for annotating fields with descriptions
 that are automatically exposed by GraphQL-enabled tools:
 
 ```python
-@strawberry.input:
+@strawberry.input
 class AddBookInput:
   title: str = strawberry.field(description="The title of the book")
   author: str = strawberry.field(description="The name of the author")

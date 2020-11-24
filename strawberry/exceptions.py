@@ -72,6 +72,12 @@ class UnallowedReturnTypeForUnion(Exception):
         super().__init__(message)
 
 
+class InvalidUnionType(Exception):
+    """The union is constructed with an invalid type"""
+
+    pass
+
+
 class MissingTypesForGenericError(Exception):
     """Raised when a generic types was used without passing any type."""
 
@@ -107,6 +113,33 @@ class PrivateStrawberryFieldError(Exception):
         message = (
             f"Field {field_name} on type {type_name} cannot be both "
             "private and a strawberry.field"
+        )
+
+        super().__init__(message)
+
+
+class MultipleStrawberryArgumentsError(Exception):
+    def __init__(self, field_name: str, argument_name: str):
+        message = (
+            f"Annotation for argument `{argument_name}` on field "
+            f"`{field_name}` cannot have multiple `strawberry.argument`s"
+        )
+
+        super().__init__(message)
+
+
+class ScalarAlreadyRegisteredError(Exception):
+    def __init__(self, scalar_name: str):
+        message = f"Scalar `{scalar_name}` has already been registered"
+
+        super().__init__(message)
+
+
+class WrongNumberOfResultsReturned(Exception):
+    def __init__(self, expected: int, received: int):
+        message = (
+            "Received wrong number of results in dataloader, "
+            f"expected: {expected}, received: {received}"
         )
 
         super().__init__(message)

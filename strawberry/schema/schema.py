@@ -1,44 +1,20 @@
-from typing import Any, Dict, List, Optional, Type, Union
+from typing import Any, Dict, List, Optional, Sequence, Type, Union
 
-from graphql import GraphQLSchema, graphql_sync, parse
+from graphql import GraphQLSchema, get_introspection_query, parse, validate_schema
 from graphql.subscription import subscribe
 from graphql.type.directives import specified_directives
 
 from strawberry.custom_scalar import ScalarDefinition
 from strawberry.enum import EnumDefinition
+from strawberry.extensions import Extension
 from strawberry.types.types import TypeDefinition
-from .types import ConcreteType, get_directive_type, get_object_type
+from strawberry.union import StrawberryUnion
 
-# TODO: get rid of this module ?
-from ..graphql import execute
 from ..middleware import DirectivesMiddleware, Middleware
 from ..printer import print_schema
-from ..type import StrawberryType
-
-
-class StrawberrySchema:
-    def __init__(
-        self,
-        query: StrawberryType,
-        *,
-        mutation: Optional[StrawberryType] = None,
-        subscription: Optional[StrawberryType] = None,
-        directives: list = (),
-        types: list = (),
-    ):
-        self.query = query
-        self.mutation = mutation
-        self.subscription = subscription
-        self.directives = directives
-        self.types = types
-
-        self._schema = GraphQLSchema(
-            query=query.to_graphql_type(),
-            mutation=...,
-            subscription=...,
-            directives=...,
-            types=...,
-        )
+from .base import ExecutionResult
+from .execute import execute, execute_sync
+from .types import ConcreteType, get_directive_type, get_object_type
 
 
 class Schema:
@@ -50,7 +26,9 @@ class Schema:
         subscription: Optional[Type] = None,
         directives=(),
         types=(),
+        extensions: Sequence[Type[Extension]] = (),
     ):
+        self.extensions = extensions
         self.type_map: Dict[str, ConcreteType] = {}
 
         query_type = get_object_type(query, self.type_map)
@@ -73,17 +51,24 @@ class Schema:
             types=[get_object_type(type, self.type_map) for type in types],
         )
 
+        # Validate schema early because we want developers to know about
+        # possible issues as soon as possible
+        errors = validate_schema(self._schema)
+        if errors:
+            formatted_errors = "\n\n".join(f"❌ {error.message}" for error in errors)
+            raise ValueError(f"Invalid Schema. Errors:\n\n{formatted_errors}")
+
         self.query = self.type_map[query_type.name]
 
     def get_type_by_name(
         self, name: str
-    ) -> Optional[Union[TypeDefinition, ScalarDefinition, EnumDefinition]]:
+    ) -> Optional[
+        Union[TypeDefinition, ScalarDefinition, EnumDefinition, StrawberryUnion]
+    ]:
         if name in self.type_map:
             return self.type_map[name].definition
 
         return None
-
-    # TODO: type return value of these
 
     async def execute(
         self,
@@ -92,14 +77,13 @@ class Schema:
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
-    ):
-        return await execute(
+    ) -> ExecutionResult:
+        result = await execute(
             self._schema,
             query,
             variable_values=variable_values,
             root_value=root_value,
             context_value=context_value,
-            middleware=self.middleware,
             operation_name=operation_name,
             additional_middlewares=self.middleware,
             extensions=self.extensions,
@@ -118,14 +102,13 @@ class Schema:
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
-    ):
-        return graphql_sync(
+    ) -> ExecutionResult:
+        result = execute_sync(
             self._schema,
             query,
             variable_values=variable_values,
             root_value=root_value,
             context_value=context_value,
-            middleware=self.middleware,
             operation_name=operation_name,
             additional_middlewares=self.middleware,
             extensions=self.extensions,
@@ -156,3 +139,17 @@ class Schema:
 
     def as_str(self) -> str:
         return print_schema(self)
+
+    __str__ = as_str
+
+    def introspect(self) -> Dict[str, Any]:
+        """Return the introspection query result for the current schema
+
+        Raises:
+            ValueError: If the introspection query fails due to an invalid schema
+        """
+        introspection = self.execute_sync(get_introspection_query())
+        if introspection.errors or not introspection.data:
+            raise ValueError(f"Invalid Schema. Errors {introspection.errors!r}")
+
+        return introspection.data

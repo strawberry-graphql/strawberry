@@ -1,30 +1,22 @@
-from typing import Callable, Optional, Set, TypeVar
+from inspect import iscoroutinefunction
+from typing import Callable, Optional, Set, Type, TypeVar
 
-from cached_property import cached_property
+from cached_property import cached_property  # type: ignore
 
-from strawberry.types import StrawberryArgument, StrawberryObject, \
-    StrawberryType
+from strawberry.types import StrawberryArgument, StrawberryType
+from strawberry.utils.inspect import get_func_args
+
 
 T = TypeVar("T")
 
 
 class StrawberryResolver(StrawberryType[T]):
-    def __init__(self, func: Callable[..., T], *, description: Optional[str]):
+    def __init__(self, func: Callable[..., T], *, description: Optional[str] = None):
         self.wrapped_func = func
         self._description = description
 
+    # TODO: Use this when doing the actual resolving? How to deal with async resolvers?
     def __call__(self, *args, **kwargs) -> T:
-        # TODO: Should *args/**kwargs be some special object, or raw values?
-
-        if self._is_func_bound:
-            ...
-        if self._has_root_arg:
-            ...
-        if self._has_info_arg:
-            ...
-
-        # Deal with default args
-
         return self.wrapped_func(*args, **kwargs)
 
     @cached_property
@@ -32,40 +24,33 @@ class StrawberryResolver(StrawberryType[T]):
         # TODO: Implement
         ...
 
-    @property
-    def description(self) -> Optional[str]:
-        # TODO: Do resolvers get descriptions?
-        return self._description
+    @cached_property
+    def has_info_arg(self) -> bool:
+        args = get_func_args(self.wrapped_func)
+        return "info" in args
 
-    @property
+    @cached_property
+    def has_root_arg(self) -> bool:
+        args = get_func_args(self.wrapped_func)
+        return "root" in args
+
+    @cached_property
+    def has_self_arg(self) -> bool:
+        args = get_func_args(self.wrapped_func)
+        return args and args[0] == "self"
+
+    @cached_property
     def name(self) -> str:
         # TODO: What to do if resolver is a lambda?
         return self.wrapped_func.__name__
 
-    # TODO: Should return type just be T?
-    @property
-    def type(self) -> Optional[StrawberryObject[T]]:
-        annotations = self.wrapped_func.__annotations__
-
-        if "return" not in annotations:
-            return None
-
-        return_type = annotations["return"]
-
-        if isinstance(return_type, StrawberryObject):
-            return return_type
-
-        # TODO: Figure out what to do without name
-        return StrawberryType(return_type)
+    @cached_property
+    def type(self) -> Type[T]:
+        return self.wrapped_func.__annotations__.get("return", None)
 
     @cached_property
-    def _is_func_bound(self) -> bool:
-        ...
+    def is_async(self) -> bool:
+        return iscoroutinefunction(self.wrapped_func)
 
-    @cached_property
-    def _has_info_arg(self) -> bool:
-        ...
 
-    @property
-    def _has_root_arg(self) -> bool:
-        ...
+__all__ = ["StrawberryResolver"]

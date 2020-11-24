@@ -1,0 +1,45 @@
+- case: test_enum
+  main: |
+    from enum import Enum
+
+    import strawberry
+
+    class IceCreamFlavour(Enum):
+        VANILLA = "vanilla"
+        STRAWBERRY = "strawberry"
+        CHOCOLATE = "chocolate"
+
+    Flavour = strawberry.enum(IceCreamFlavour)
+
+    a: Flavour
+    reveal_type(Flavour)
+    reveal_type(a)
+  out: |
+    main:13: note: Revealed type is 'def (value: builtins.object) -> main.IceCreamFlavour'
+    main:14: note: Revealed type is 'main.IceCreamFlavour'
+
+- case: test_enum_from_var
+  main: |
+    from typing import Type
+    from enum import Enum
+
+    import strawberry
+
+    def get_enum() -> Type[Enum]:
+        class I(Enum):
+            VANILLA = "vanilla"
+            STRAWBERRY = "strawberry"
+            CHOCOLATE = "chocolate"
+
+        return I
+
+    IceCreamFlavour = get_enum()
+
+    Flavour = strawberry.enum(IceCreamFlavour)
+
+    a: Flavour
+    reveal_type(Flavour)
+    reveal_type(a)
+  out: |
+    main:19: note: Revealed type is 'Any'
+    main:20: note: Revealed type is 'Any'

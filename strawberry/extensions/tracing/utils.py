@@ -26,7 +26,14 @@ def is_instrospection_field(info: GraphQLResolveInfo) -> bool:
 
 
 def should_skip_tracing(resolver: Callable, info: GraphQLResolveInfo) -> bool:
-    return is_instrospection_field(info) or is_default_resolver(resolver)
+    if info.field_name not in info.parent_type.fields:
+        return True
+    resolver = info.parent_type.fields[info.field_name].resolve
+    return (
+        is_instrospection_field(info)
+        or is_default_resolver(resolver)
+        or resolver is None
+    )
 
 
 def get_path_from_info(info: GraphQLResolveInfo) -> List[str]:
