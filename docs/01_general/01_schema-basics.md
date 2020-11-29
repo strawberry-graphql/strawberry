@@ -223,7 +223,7 @@ structure:
 ```json
 {
   "data": {
-    "getBooks": [
+    "books": [
       { "title": "Jurassic Park", "author": { "name": "Michael Crichton" } }
     ]
   }
