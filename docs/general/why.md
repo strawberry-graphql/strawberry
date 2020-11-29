@@ -25,8 +25,9 @@ We also are going to provide useful features and integrations; for example we
 provide support for Apollo Federation, File Uploads, Permissions and integration
 with popular frameworks like Django, ASGI and Flask.
 
-Finally, we try to fix bugs and provide help via GitHub or our Discord server,
-so if you have any issue feel free to drop an issue or ask on Discord.
+Finally, we try to fix bugs and provide help via GitHub or our
+[Discord server](http://strawberry.rocks/discord), so if you have any issue feel
+free to drop an issue or ask on Discord.
 
 [^1] More specifically by this
 [talk on dataclasses](https://www.youtube.com/watch?v=epKegvx_Jws)
