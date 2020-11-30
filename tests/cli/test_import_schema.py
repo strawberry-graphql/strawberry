@@ -1,21 +1,4 @@
-import os
-
-import pytest
-
 from strawberry.cli.commands.schema_importer import sdl_importer
-
-
-@pytest.fixture
-def schema():
-    path = os.path.join(os.getcwd(), "tests", "cli", "helpers", "swapi_schema.gql")
-    with open(path, "r") as f:
-        return f.read()
-
-
-# Complex object
-def test_import_whole_schema(schema):
-    output = sdl_importer.import_sdl(schema)
-    assert output
 
 
 # Complex object
@@ -107,7 +90,7 @@ def test_import_optional_bool_field():
     type Woman {
         """
         If a woman weighs less than a duck,
-        then she is a...?
+        then she is a witch ?
         """
         isWitch: Boolean
     }
@@ -123,7 +106,7 @@ def test_import_optional_bool_field():
         "    is_witch: typing.Optional[bool] = strawberry.field(\n"
         "        name='isWitch',\n"
         "        description='''If a woman weighs less than a duck,\n"
-        "then she is a...?'''\n"
+        "then she is a witch ?'''\n"
         "    )"
     )
 
