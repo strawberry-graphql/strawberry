@@ -168,7 +168,7 @@ class Customer:
 ```
 
 This resolve method will be called by objects who implement the interface.
-Object classes can override the implmentation by defining their own `name`
+Object classes can override the implementation by defining their own `name`
 field:
 
 ```python
