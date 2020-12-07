@@ -7,7 +7,7 @@ title: Subscriptions
 In GraphQL you can use subscriptions to stream data from a server. To enable
 this with Strawberry your server must support ASGI and websockets.
 
-This is how you define a subscription capable resolver:
+This is how you define a subscription-capable resolver:
 
 ```python
 import asyncio
@@ -18,7 +18,7 @@ import strawberry
 class Subscription:
     @strawberry.subscription
     async def count(self, target: int = 100) -> int:
-        for i in range(0, target):
+        for i in range(target):
             yield i
             await asyncio.sleep(0.5)
 
@@ -51,8 +51,8 @@ demonstrated here.
 Typically a GraphQL subscription is streaming something more interesting back.
 With that in mind your subscription function can return one of:
 
-- AsyncIterator, or
-- AsyncGenerator
+- `AsyncIterator`, or
+- `AsyncGenerator`
 
 Both of these types are documented in [PEP-525][pep-525]. Anything yielded from
 these types of resolvers will be shipped across the websocket. Care needs to be
@@ -93,7 +93,8 @@ async def lines(stream: streams.StreamReader) -> AsyncIterator[str]:
     strings.
     """
     while True:
-        if b := await wait_for_call(stream.readline):
+        b = await wait_for_call(stream.readline)
+        if b:
             yield b.decode("UTF-8").rstrip()
         else:
             break
@@ -111,7 +112,7 @@ async def exec_proc(target: int) -> subprocess.Process:
     )
 
 
-async def tail(proc) -> AsyncGenerator[str, None]:
+async def tail(proc: subprocess.Process) -> AsyncGenerator[str, None]:
     """
     tail reads from stdout until the process finishes
     """
@@ -131,7 +132,7 @@ async def tail(proc) -> AsyncGenerator[str, None]:
 @strawberry.type
 class Subscription:
     @strawberry.subscription
-    async def runCommand(self, target: int = 100) -> AsyncGenerator[str, None]:
+    async def run_command(self, target: int = 100) -> AsyncGenerator[str, None]:
         proc = await exec_proc(target)
         return tail(proc)
 
