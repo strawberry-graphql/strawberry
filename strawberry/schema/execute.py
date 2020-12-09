@@ -2,7 +2,7 @@ from asyncio import ensure_future
 from inspect import isawaitable
 from typing import Any, Awaitable, List, Optional, Sequence, Type, cast
 
-from promise import is_thenable, Promise
+from promise import Promise, is_thenable
 
 from graphql import (
     ExecutionContext as GraphQLExecutionContext,
@@ -18,8 +18,6 @@ from graphql.validation import validate
 from strawberry.extensions import Extension
 from strawberry.extensions.runner import ExtensionsRunner
 from strawberry.types import ExecutionContext, ExecutionResult
-
-from .execute_context import ExecutionContextWithPromise
 
 
 async def execute(

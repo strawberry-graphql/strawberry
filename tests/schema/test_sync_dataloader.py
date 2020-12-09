@@ -2,6 +2,7 @@ from promise import Promise
 from promise.dataloader import DataLoader
 
 import strawberry
+from strawberry.schema.execute_context import ExecutionContextWithPromise
 
 
 def test_batches_correct():
@@ -27,6 +28,7 @@ def test_batches_correct():
         }
     """,
         context_value={"dataloader": TestDataLoader()},
+        execution_context_class=ExecutionContextWithPromise,
     )
     assert not result.errors
     assert result.data == {"id1": "1", "id2": "2"}

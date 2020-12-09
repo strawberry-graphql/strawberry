@@ -127,9 +127,7 @@ class Schema:
             self.process_errors(result.errors, execution_context=execution_context)
 
         return ExecutionResult(
-            data=result.data,
-            errors=result.errors,
-            extensions=result.extensions,
+            data=result.data, errors=result.errors, extensions=result.extensions,
         )
 
     def execute_sync(
@@ -163,9 +161,7 @@ class Schema:
             self.process_errors(result.errors, execution_context=execution_context)
 
         return ExecutionResult(
-            data=result.data,
-            errors=result.errors,
-            extensions=result.extensions,
+            data=result.data, errors=result.errors, extensions=result.extensions,
         )
 
     async def subscribe(
