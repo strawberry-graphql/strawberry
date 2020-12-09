@@ -2,6 +2,8 @@ from asyncio import ensure_future
 from inspect import isawaitable
 from typing import Any, Awaitable, Dict, List, Sequence, Type, cast
 
+from promise import is_thenable, Promise
+
 from graphql import (
     ExecutionResult as GraphQLExecutionResult,
     GraphQLError,
@@ -9,11 +11,14 @@ from graphql import (
     execute as original_execute,
     parse,
 )
+from graphql.pyutils import is_awaitable as default_is_awaitable
 from graphql.validation import validate
 
 from strawberry.extensions import Extension
 from strawberry.extensions.runner import ExtensionsRunner
 from strawberry.types import ExecutionContext, ExecutionResult
+
+from .execute_context import ExecutionContextWithPromise
 
 
 async def execute(
@@ -91,6 +96,12 @@ async def execute(
     )
 
 
+def is_awaitable(value):
+    if is_thenable(value):
+        return False
+    return default_is_awaitable(value)
+
+
 def execute_sync(
     schema: GraphQLSchema,
     query: str,
@@ -143,15 +154,23 @@ def execute_sync(
         if validation_errors:
             return ExecutionResult(data=None, errors=validation_errors)
 
-        result = original_execute(
-            schema,
-            document,
-            root_value=root_value,
-            middleware=extensions_runner.as_middleware_manager(*additional_middlewares),
-            variable_values=variable_values,
-            operation_name=operation_name,
-            context_value=context_value,
-        )
+        def promise_executor(v):
+            return original_execute(
+                schema,
+                document,
+                root_value=root_value,
+                middleware=extensions_runner.as_middleware_manager(
+                    *additional_middlewares
+                ),
+                variable_values=variable_values,
+                operation_name=operation_name,
+                context_value=context_value,
+                execution_context_class=ExecutionContextWithPromise,
+                is_awaitable=is_awaitable,
+            )
+
+        promise = Promise.resolve(None).then(promise_executor)
+        result = promise.get()
 
         if isawaitable(result):
             ensure_future(cast(Awaitable[GraphQLExecutionResult], result)).cancel()
