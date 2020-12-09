@@ -15,6 +15,14 @@ implement a mutation that is supposed to send an email:
 ```python
 import strawberry
 
+# Reader, you can safely ignore Query in this example, it is required by
+# strawberry.Schema so it is included here for completeness
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello() -> str:
+        return "world"
+
 @strawberry.type
 class Mutation:
     @strawberry.mutation
@@ -23,7 +31,7 @@ class Mutation:
 
         return True
 
-schema = strawberry.Schema(mutation=Mutation)
+schema = strawberry.Schema(query=Query, mutation=Mutation)
 ```
 
 Like queries, mutations are defined in a class that is then passed to the Schema
