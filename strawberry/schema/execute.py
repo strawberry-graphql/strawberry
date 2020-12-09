@@ -1,10 +1,11 @@
 from asyncio import ensure_future
 from inspect import isawaitable
-from typing import Any, Awaitable, Dict, List, Sequence, Type, cast
+from typing import Any, Awaitable, Dict, List, Optional, Sequence, Type, cast
 
-from promise import is_thenable, Promise
+from promise import Promise, is_thenable
 
 from graphql import (
+    ExecutionContext as GraphQLExecutionContext,
     ExecutionResult as GraphQLExecutionResult,
     GraphQLError,
     GraphQLSchema,
@@ -17,8 +18,6 @@ from graphql.validation import validate
 from strawberry.extensions import Extension
 from strawberry.extensions.runner import ExtensionsRunner
 from strawberry.types import ExecutionContext, ExecutionResult
-
-from .execute_context import ExecutionContextWithPromise
 
 
 async def execute(
@@ -111,6 +110,7 @@ def execute_sync(
     variable_values: Dict[str, Any] = None,
     additional_middlewares: List[Any] = None,
     operation_name: str = None,
+    execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
 ) -> ExecutionResult:
     execution_context = ExecutionContext(
         query=query,
@@ -165,7 +165,7 @@ def execute_sync(
                 variable_values=variable_values,
                 operation_name=operation_name,
                 context_value=context_value,
-                execution_context_class=ExecutionContextWithPromise,
+                execution_context_class=execution_context_class,
                 is_awaitable=is_awaitable,
             )
 
