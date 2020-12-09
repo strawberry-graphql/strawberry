@@ -71,6 +71,7 @@ uvicorn = ">=0.11.6,<0.14.0"
 sanic = "^20.12.2"
 aiohttp = "^3.7.4.post0"
 pytest-aiohttp = "^0.3.0"
+promise = "^2.3"
 
 [tool.poetry.extras]
 aiohttp = ["aiohttp", "pytest-aiohttp"]
