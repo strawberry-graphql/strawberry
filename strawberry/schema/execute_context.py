@@ -8,8 +8,23 @@ from graphql import (
     GraphQLOutputType,
     GraphQLResolveInfo,
 )
-from graphql.language import FieldNode
-from graphql.pyutils import AwaitableOrValue, Path, Undefined
+from graphql.language import FieldNode, OperationDefinitionNode
+from graphql.pyutils import (
+    AwaitableOrValue,
+    Path,
+    Undefined,
+    is_awaitable as default_is_awaitable,
+)
+
+
+def is_awaitable(value):
+    """
+    Create custom is_awaitable function to make sure that Promises' aren't
+    considered awaitable
+    """
+    if is_thenable(value):
+        return False
+    return default_is_awaitable(value)
 
 
 S = TypeVar("S")
@@ -31,6 +46,20 @@ def promise_for_dict(
 
 
 class ExecutionContextWithPromise(ExecutionContext):
+    is_awaitable = staticmethod(is_awaitable)
+
+    def execute_operation(
+        self, operation: OperationDefinitionNode, root_value: Any
+    ) -> Optional[AwaitableOrValue[Any]]:
+        # Wrap execute in a Promise
+        original_execute_operation = super().execute_operation
+
+        def promise_executor(v):
+            return original_execute_operation(operation, root_value)
+
+        promise = Promise.resolve(None).then(promise_executor)
+        return promise
+
     def build_response(self, data):
         if is_thenable(data):
             original_build_response = super().build_response
@@ -43,7 +72,7 @@ class ExecutionContextWithPromise(ExecutionContext):
                 return original_build_response(data)
 
             promise = data.catch(on_rejected).then(on_resolve)
-            return promise
+            return promise.get()
         return super().build_response(data)
 
     def complete_value_catching_error(
