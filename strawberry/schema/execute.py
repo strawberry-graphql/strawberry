@@ -154,14 +154,14 @@ def execute_sync(
         if validation_errors:
             return ExecutionResult(data=None, errors=validation_errors)
 
+        middleware = extensions_runner.as_middleware_manager(*additional_middlewares)
+
         def promise_executor(v):
             return original_execute(
                 schema,
                 document,
                 root_value=root_value,
-                middleware=extensions_runner.as_middleware_manager(
-                    *additional_middlewares
-                ),
+                middleware=middleware,
                 variable_values=variable_values,
                 operation_name=operation_name,
                 context_value=context_value,
