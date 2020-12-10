@@ -83,6 +83,7 @@ class Schema:
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
+        execution_context_class: Optional[Type[ExecutionContext]] = None,
     ) -> ExecutionResult:
         result = await execute(
             self._schema,
@@ -93,10 +94,13 @@ class Schema:
             operation_name=operation_name,
             additional_middlewares=self.middleware,
             extensions=self.extensions,
+            execution_context_class=execution_context_class,
         )
 
         return ExecutionResult(
-            data=result.data, errors=result.errors, extensions=result.extensions,
+            data=result.data,
+            errors=result.errors,
+            extensions=result.extensions,
         )
 
     def execute_sync(
@@ -121,7 +125,9 @@ class Schema:
         )
 
         return ExecutionResult(
-            data=result.data, errors=result.errors, extensions=result.extensions,
+            data=result.data,
+            errors=result.errors,
+            extensions=result.extensions,
         )
 
     async def subscribe(
