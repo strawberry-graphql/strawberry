@@ -24,7 +24,7 @@ starlette = ">=0.13.6,<0.15.0"
 click = {version = "^7.0", optional = true}
 hupper = "^1.5"
 pygments = "^2.3"
-uvicorn = {version = ">=0.11.6,<0.13.0", optional = true}
+uvicorn = {version = ">=0.11.6,<0.14.0", optional = true}
 django = {version = ">=2,<4", optional = true}
 graphql-core = {version = "^3.0.0"}
 asgiref = {version = "^3.2", optional = true}
@@ -64,7 +64,7 @@ flake8-isort = "^4.0.0"
 flake8-black = "^0.2.1"
 django = {version = ">=2,<4", optional = false}
 pydantic = {version = "^1.6.1", optional = false}
-uvicorn = ">=0.11.6,<0.13.0"
+uvicorn = ">=0.11.6,<0.14.0"
 
 [tool.poetry.extras]
 debug-server = ["uvicorn"]
