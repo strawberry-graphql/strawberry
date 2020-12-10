@@ -32,38 +32,6 @@ class ExecutionContextWithPromise(ExecutionContext):
             return promise
         return super().build_response(data)
 
-    def resolve_field_value_or_error(
-        self,
-        field_def: GraphQLField,
-        field_nodes: List[FieldNode],
-        resolve_fn: GraphQLFieldResolver,
-        source: Any,
-        info: GraphQLResolveInfo,
-    ) -> Union[Exception, Any]:
-        """Resolve field to a value or an error.
-
-        Isolates the "ReturnOrAbrupt" behavior to not de-opt the resolve_field()
-        method. Returns the result of resolveFn or the abrupt-return Error object.
-
-        For internal use only.
-        """
-        try:
-            # Build a dictionary of arguments from the field.arguments AST, using the
-            # variables scope to fulfill any variable references.
-            args = get_argument_values(field_def, field_nodes[0], self.variable_values)
-
-            # Note that contrary to the JavaScript implementation, we pass the context
-            # value as part of the resolve info.
-            result = resolve_fn(source, info, **args)
-            if is_thenable(result):
-                return result
-
-            return result
-        except GraphQLError as error:
-            return error
-        except Exception as error:
-            return GraphQLError(str(error), original_error=error)
-
     def complete_value_catching_error(
         self,
         return_type: GraphQLOutputType,
