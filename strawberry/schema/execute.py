@@ -2,8 +2,6 @@ from asyncio import ensure_future
 from inspect import isawaitable
 from typing import Any, Awaitable, Dict, List, Optional, Sequence, Type, cast
 
-from promise import Promise, is_thenable
-
 from graphql import (
     ExecutionContext as GraphQLExecutionContext,
     ExecutionResult as GraphQLExecutionResult,
@@ -12,7 +10,6 @@ from graphql import (
     execute as original_execute,
     parse,
 )
-from graphql.pyutils import is_awaitable as default_is_awaitable
 from graphql.validation import validate
 
 from strawberry.extensions import Extension
@@ -95,12 +92,6 @@ async def execute(
     )
 
 
-def is_awaitable(value):
-    if is_thenable(value):
-        return False
-    return default_is_awaitable(value)
-
-
 def execute_sync(
     schema: GraphQLSchema,
     query: str,
@@ -156,21 +147,16 @@ def execute_sync(
 
         middleware = extensions_runner.as_middleware_manager(*additional_middlewares)
 
-        def promise_executor(v):
-            return original_execute(
-                schema,
-                document,
-                root_value=root_value,
-                middleware=middleware,
-                variable_values=variable_values,
-                operation_name=operation_name,
-                context_value=context_value,
-                execution_context_class=execution_context_class,
-                is_awaitable=is_awaitable,
-            )
-
-        promise = Promise.resolve(None).then(promise_executor)
-        result = promise.get()
+        result = original_execute(
+            schema,
+            document,
+            root_value=root_value,
+            middleware=middleware,
+            variable_values=variable_values,
+            operation_name=operation_name,
+            context_value=context_value,
+            execution_context_class=execution_context_class,
+        )
 
         if isawaitable(result):
             ensure_future(cast(Awaitable[GraphQLExecutionResult], result)).cancel()
