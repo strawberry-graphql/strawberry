@@ -1,19 +1,33 @@
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Hashable, List, Optional, TypeVar, Union
 
-from promise import Promise, is_thenable, promise_for_dict
+from promise import Promise, is_thenable
 
 from graphql import (
     ExecutionContext,
-    GraphQLError,
-    GraphQLField,
-    GraphQLFieldResolver,
     GraphQLObjectType,
     GraphQLOutputType,
     GraphQLResolveInfo,
 )
-from graphql.execution.values import get_argument_values
 from graphql.language import FieldNode
 from graphql.pyutils import AwaitableOrValue, Path, Undefined
+
+
+S = TypeVar("S")
+
+
+def promise_for_dict(
+    value: Dict[Hashable, Union[S, Promise[S]]]
+) -> Promise[Dict[Hashable, S]]:
+    """
+    A special function that takes a dictionary of promises
+    and turns them into a promise for a dictionary of values.
+    """
+
+    def handle_success(resolved_values: List[S]) -> Dict[Hashable, S]:
+        return_value = zip(value.keys(), resolved_values)
+        return dict(return_value)
+
+    return Promise.all(value.values()).then(handle_success)
 
 
 class ExecutionContextWithPromise(ExecutionContext):
@@ -78,7 +92,7 @@ class ExecutionContextWithPromise(ExecutionContext):
         Implements the "Evaluating selection sets" section of the spec for "read" mode.
         """
         contains_promise = False
-        results = {}
+        results: Dict[Hashable, Union[Promise[Any], Any]] = {}
         for response_name, field_nodes in fields.items():
             field_path = Path(path, response_name)
             result = self.resolve_field(
