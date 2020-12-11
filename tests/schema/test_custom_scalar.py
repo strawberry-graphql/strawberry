@@ -92,3 +92,31 @@ def test_error_when_registering_duplicate_scalar():
         strawberry.scalar(uuid.UUID, name="UUID", serialize=str, parse_value=uuid.UUID)
 
     assert str(error.value) == "Scalar `UUID` has already been registered"
+
+
+def test_scalar_parse_value_object():
+    def parse_value(value):
+        assert value == {"foo": "bar"}
+        return value
+
+    MyScalar = strawberry.scalar(NewType("MyScalar", str), parse_value=parse_value)
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def custom_input(self, value: MyScalar) -> str:
+            assert value == {"foo": "bar"}
+            return "hi"
+
+    schema = strawberry.Schema(Query)
+
+    result = schema.execute_sync(
+        """
+        query TestQuery($value: MyScalar!) {
+            customInput(value: $value)
+        }
+        """,
+        variable_values={"value": {"foo": "bar"}},
+    )
+
+    assert not result.errors
