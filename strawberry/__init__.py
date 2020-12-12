@@ -1,36 +1,10 @@
-from . import experimental, federation
-from .arguments import argument
-from .custom_scalar import scalar
-from .directive import directive
-from .enum import enum
-from .field import field
-from .lazy_type import LazyType
-from .mutation import mutation, subscription
-from .permission import BasePermission
-from .private import Private
-from .scalars import ID
-from .schema import Schema
-from .type import input, interface, type
-from .union import union
+__version__ = "0.1.0"
 
+from .schema import Schema
+from .types import enum, extends, external, field, key, provides, requires, \
+    scalar, type, union
 
 __all__ = [
-    "BasePermission",
-    "experimental",
-    "ID",
-    "LazyType",
-    "Private",
-    "Schema",
-    "argument",
-    "directive",
-    "enum",
-    "federation",
-    "field",
-    "input",
-    "interface",
-    "mutation",
-    "scalar",
-    "subscription",
-    "type",
-    "union",
+    "Schema", "enum", "extends", "external", "field", "key", "provides",
+    "requires", "scalar", "type", "union"
 ]

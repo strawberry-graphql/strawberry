@@ -1,19 +1,16 @@
-import inspect
 from inspect import iscoroutinefunction
-from typing import Callable, Generic, List, Optional, Type, TypeVar
+from typing import Callable, Optional, Set, Type, TypeVar
 
 from cached_property import cached_property  # type: ignore
 
-from strawberry.arguments import get_arguments_from_annotations
-from strawberry.exceptions import MissingArgumentsAnnotationsError
-from strawberry.types.types import ArgumentDefinition
+from strawberry.types import StrawberryArgument, StrawberryType
 from strawberry.utils.inspect import get_func_args
 
 
 T = TypeVar("T")
 
 
-class StrawberryResolver(Generic[T]):
+class StrawberryResolver(StrawberryType[T]):
     def __init__(self, func: Callable[..., T], *, description: Optional[str] = None):
         self.wrapped_func = func
         self._description = description
@@ -22,36 +19,10 @@ class StrawberryResolver(Generic[T]):
     def __call__(self, *args, **kwargs) -> T:
         return self.wrapped_func(*args, **kwargs)
 
-    # TODO: Return StrawberryArguments instead. Maybe this should be a classmethod
-    #       there instead?
-    # TODO: Return a set instead
     @cached_property
-    def arguments(self) -> List[ArgumentDefinition]:
-        # TODO: Move to StrawberryArgument? StrawberryResolver ClassVar?
-        SPECIAL_ARGS = {"root", "self", "info"}
-
-        annotations = self.wrapped_func.__annotations__
-        parameters = inspect.signature(self.wrapped_func).parameters
-        function_arguments = set(parameters) - SPECIAL_ARGS
-
-        annotations = {
-            name: annotation
-            for name, annotation in annotations.items()
-            if name not in (SPECIAL_ARGS | {"return"})
-        }
-
-        annotated_arguments = set(annotations)
-        arguments_missing_annotations = function_arguments - annotated_arguments
-
-        if any(arguments_missing_annotations):
-            raise MissingArgumentsAnnotationsError(
-                field_name=self.wrapped_func.__name__,
-                arguments=arguments_missing_annotations,
-            )
-
-        return get_arguments_from_annotations(
-            annotations, parameters, origin=self.wrapped_func
-        )
+    def arguments(self) -> Set[StrawberryArgument]:
+        # TODO: Implement
+        ...
 
     @cached_property
     def has_info_arg(self) -> bool:
