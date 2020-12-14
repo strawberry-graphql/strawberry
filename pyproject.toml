@@ -37,7 +37,7 @@ cached-property = "^1.5.2"
 pydantic = {version = "^1.6.1", optional = true}
 
 [tool.poetry.dev-dependencies]
-pytest = "^6.1"
+pytest = "^6.2"
 pdbpp = "^0.10.2"
 pytest-emoji = "^0.2.0"
 flake8 = "^3.8"
