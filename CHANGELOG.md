@@ -1,6 +1,12 @@
 CHANGELOG
 =========
 
+0.44.3 - 2020-12-16
+-------------------
+
+This releases fixes an issue where methods marked as field were
+removed from the class.
+
 0.44.2 - 2020-11-22
 -------------------
 
