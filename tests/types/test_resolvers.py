@@ -42,15 +42,7 @@ def test_resolver_fields():
 
     assert definition.fields[0].name == "name"
     assert definition.fields[0].type == str
-
-    # We are not testing for field.base_resolver.wrapped_func == Query.name
-    # because dataclasses is deleting the attribute from the class here:
-    # https://github.com/python/cpython/blob/577d7c4e/Lib/dataclasses.py#L873-L880
-    # This prevents us from doing anything like:
-    # >>> Query().name()
-    # but we can fix this in a future release.
-
-    assert definition.fields[0].base_resolver(None) == "Name"
+    assert definition.fields[0].base_resolver(None) == Query().name()
 
 
 def test_raises_error_when_return_annotation_missing():

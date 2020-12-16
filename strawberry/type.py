@@ -117,6 +117,15 @@ def _process_type(
         _fields=fields,
     )
 
+    # dataclasses removes attributes from the class here:
+    # https://github.com/python/cpython/blob/577d7c4e/Lib/dataclasses.py#L873-L880
+    # so we need to restore them, this will change in future, but for now this
+    # solution should suffice
+
+    for field in fields:
+        if field.base_resolver and field.origin_name:
+            setattr(cls, field.origin_name, field.base_resolver.wrapped_func)
+
     return wrapped
 
 
