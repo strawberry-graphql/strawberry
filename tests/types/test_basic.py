@@ -53,3 +53,17 @@ def test_passing_nothing_to_fields():
 
     assert definition.fields[1].name == "age"
     assert definition.fields[1].type == int
+
+
+def test_can_use_types_directly():
+    @strawberry.type
+    class User:
+        username: str
+
+        @strawberry.field
+        def email(self) -> str:
+            return self.username + "@somesite.com"
+
+    user = User(username="abc")
+    assert user.username == "abc"
+    assert user.email() == "abc@somesite.com"
