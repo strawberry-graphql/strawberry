@@ -34,7 +34,7 @@ searchMedia(term: "strawberry") {
 }
 ```
 
-Here, the `searchMedia` field returns `[MediaItem!]`, a list where each member
+Here, the `searchMedia` field returns `[MediaItem!]!`, a list where each member
 is part of the `MediaItem` union. Since union members share no fields,
 selections are always made with [inline fragments](https://graphql.org/learn/queries/#inline-fragments).
 
