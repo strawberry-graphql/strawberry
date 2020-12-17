@@ -16,7 +16,8 @@ union MediaItem = Audio | Video | Image
 
 Whenever we return a `MediaItem` in our schema, we might get an `Audio`, a
 `Video` or an `Image`. Note that members of a union type need to be concrete
-object types; you cannot create a union type out of interfaces or other unions.
+object types; you cannot create a union type out of interfaces, other unions or
+scalars.
 
 A good usecase for unions would be on a search field for example:
 
@@ -42,7 +43,8 @@ selections are always made with [inline fragments](https://graphql.org/learn/que
 
 In Strawberry there are two ways to define a union:
 
-You can use the use the `Union` type from the `typing` module:
+You can use the use the `Union` type from the `typing` module which will
+autogenerate the type name from the names of the union members:
 
 ```python+schema
 from typing import Union
