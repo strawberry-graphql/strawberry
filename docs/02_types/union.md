@@ -26,11 +26,10 @@ searchMedia(term: "strawberry") {
     duration
   }
   ... on Video {
-    previewUrl
-    resolution
+    thumbnailUrl
   }
   ... on Image {
-    thumbnailUrl
+    src
   }
 }
 ```
@@ -55,37 +54,37 @@ class Audio:
 
 @strawberry.type
 class Video:
-    preview_url: str
-
-@strawberry.type
-class Image:
     thumbnail_url: str
 
 @strawberry.type
+class Image:
+    src: str
+
+@strawberry.type
 class Query:
-    search_media: Union[Audio, Video, Image]
+    latest_media: Union[Audio, Video, Image]
 ---
 union AudioVideoImage = Audio | Video | Image
 
 type Query {
-  searchMedia: AudioVideoImage!
+  latestMedia: AudioVideoImage!
 }
 
 type Audio {
   duration: Int!
 }
 
-type Image {
+type Video {
   thumbnailUrl: String!
 }
 
-type Video {
-  previewUrl: String!
+type Image {
+  src: String!
 }
 ```
 
 Or if you need to specify a name or a description for a union you can use the
-`@strawberry.union` function:
+`strawberry.union` function:
 
 ```python+schema
 import strawberry
@@ -94,23 +93,45 @@ MediaItem = strawberry.union("MediaItem", types=(Audio, Video, Image))
 
 @strawberry.type
 class Query:
-    search_media: MediaItem
+    latest_media: MediaItem
 ---
 union MediaItem = Audio | Video | Image
 
 type Query {
-  searchMedia: AudioVideoImage!
+  latest_media: AudioVideoImage!
 }
 
 type Audio {
   duration: Int!
 }
 
-type Image {
+type Video {
   thumbnailUrl: String!
 }
 
-type Video {
-  previewUrl: String!
+type Image {
+  src: String!
 }
+```
+
+> Note: Union types should never be instantiated directly.
+
+## Resolving a union
+
+When a field’s return type is a union, GraphQL needs to know what specific
+object type to use for the return value. In the example above, each `MediaItem`
+must be categorized as an `Audio`, `Image` or `Video` type. To do this you need
+to always return an instance of an object type from your resolver:
+
+```python
+from typing import Union
+import strawberry
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def latest_media(self) -> Union[Audio, Video, Image]:
+        return Video(
+            thumbnail_url="https://i.ytimg.com/vi/dQw4w9WgXcQ/hq720.jpg",
+        )
 ```
