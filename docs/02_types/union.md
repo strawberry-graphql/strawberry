@@ -5,8 +5,10 @@ path: /docs/types/unions
 
 # Union types
 
-Union types are very similar to [interfaces](/docs/types/interfaces), but they don't have any common fields
-between the types. Here’s a union, expressed in
+Union types are similar to [interfaces](/docs/types/interfaces) however, while interfaces
+dictate fields that must be common to all implementations, unions do not. Unions
+just represent a selection of allowed types and make no requirements on those
+types. Here’s a union, expressed in
 [GraphQL Schema Definition Language](https://graphql.org/learn/schema/#type-language)
 (SDL):
 
@@ -36,8 +38,9 @@ searchMedia(term: "strawberry") {
 ```
 
 Here, the `searchMedia` field returns `[MediaItem!]!`, a list where each member
-is part of the `MediaItem` union. Since union members share no fields,
-selections are always made with [inline fragments](https://graphql.org/learn/queries/#inline-fragments).
+is part of the `MediaItem` union. So, for each member, we want to select different
+fields depending on which kind of object that member is. We can do that by using
+[inline fragments](https://graphql.org/learn/queries/#inline-fragments).
 
 ## Defining unions
 
@@ -91,11 +94,9 @@ Or if you need to specify a name or a description for a union you can use the
 ```python+schema
 import strawberry
 
-MediaItem = strawberry.union("MediaItem", types=(Audio, Video, Image))
-
 @strawberry.type
 class Query:
-    latest_media: MediaItem
+    latest_media: strawberry.union("MediaItem", types=(Audio, Video, Image))
 ---
 union MediaItem = Audio | Video | Image
 
@@ -115,8 +116,6 @@ type Image {
   src: String!
 }
 ```
-
-> Note: Union types should never be instantiated directly.
 
 ## Resolving a union
 
