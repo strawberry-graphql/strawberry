@@ -19,7 +19,7 @@ Whenever we return a `MediaItem` in our schema, we might get an `Audio`, a
 object types; you cannot create a union type out of interfaces, other unions or
 scalars.
 
-A good usecase for unions would be on a search field for example:
+A good use case for unions would be on a search field. For example:
 
 ```graphql
 searchMedia(term: "strawberry") {
