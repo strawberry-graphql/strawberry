@@ -21,6 +21,7 @@ FIELDS_MAP = {
     pydantic.conset: None,
     pydantic.ConstrainedStr: str,
     pydantic.constr: str,
+    pydantic.EmailStr: str,
     pydantic.PyObject: None,
     pydantic.ConstrainedInt: int,
     pydantic.conint: int,
@@ -47,6 +48,11 @@ FIELDS_MAP = {
     pydantic.StrictFloat: float,
     pydantic.PaymentCardNumber: None,
     pydantic.ByteSize: None,
+    pydantic.AnyUrl: str,
+    pydantic.AnyHttpUrl: str,
+    pydantic.HttpUrl: str,
+    pydantic.PostgresDsn: str,
+    pydantic.RedisDsn: str,
 }
 
 

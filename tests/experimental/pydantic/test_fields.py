@@ -19,6 +19,12 @@ from strawberry.types.types import TypeDefinition
         (pydantic.StrictBool, bool),
         (pydantic.ConstrainedBytes, bytes),
         (pydantic.SecretBytes, bytes),
+        (pydantic.EmailStr, str),
+        (pydantic.AnyUrl, str),
+        (pydantic.AnyHttpUrl, str),
+        (pydantic.HttpUrl, str),
+        (pydantic.PostgresDsn, str),
+        (pydantic.RedisDsn, str),
     ],
 )
 def test_types(pydantic_type, field_type):
