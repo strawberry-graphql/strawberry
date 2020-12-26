@@ -1,6 +1,12 @@
 from typing import Any, Dict, List, Optional, Sequence, Type, Union
 
-from graphql import GraphQLSchema, get_introspection_query, parse, validate_schema
+from graphql import (
+    ExecutionContext as GraphQLExecutionContext,
+    GraphQLSchema,
+    get_introspection_query,
+    parse,
+    validate_schema,
+)
 from graphql.subscription import subscribe
 from graphql.type.directives import specified_directives
 
@@ -27,9 +33,11 @@ class Schema:
         directives=(),
         types=(),
         extensions: Sequence[Type[Extension]] = (),
+        execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
     ):
         self.extensions = extensions
         self.type_map: Dict[str, ConcreteType] = {}
+        self.execution_context_class = execution_context_class
 
         query_type = get_object_type(query, self.type_map)
         mutation_type = get_object_type(mutation, self.type_map) if mutation else None
@@ -87,6 +95,7 @@ class Schema:
             operation_name=operation_name,
             additional_middlewares=self.middleware,
             extensions=self.extensions,
+            execution_context_class=self.execution_context_class,
         )
 
         return ExecutionResult(
@@ -112,6 +121,7 @@ class Schema:
             operation_name=operation_name,
             additional_middlewares=self.middleware,
             extensions=self.extensions,
+            execution_context_class=self.execution_context_class,
         )
 
         return ExecutionResult(

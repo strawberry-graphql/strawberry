@@ -1,6 +1,10 @@
+from typing import Any, Dict, Optional, cast
+
 import pytest
 
 from graphql import (
+    ExecutionContext as GraphQLExecutionContext,
+    ExecutionResult,
     GraphQLField,
     GraphQLNonNull,
     GraphQLObjectType,
@@ -8,6 +12,7 @@ from graphql import (
     GraphQLString,
     print_schema as graphql_core_print_schema,
 )
+from graphql.pyutils import AwaitableOrValue
 
 import strawberry
 
@@ -57,3 +62,37 @@ def test_schema_fails_on_an_invalid_schema():
 
     with pytest.raises(ValueError, match="Invalid Schema. Errors.*"):
         strawberry.Schema(query=Query)
+
+
+def test_custom_execution_context():
+    class CustomExecutionContext(GraphQLExecutionContext):
+        def build_response(
+            self, data: AwaitableOrValue[Optional[Dict[str, Any]]]
+        ) -> AwaitableOrValue[ExecutionResult]:
+            result = cast(ExecutionResult, super().build_response(data))
+
+            if not result.data:
+                return result
+
+            # Add some extra data to the response
+            result.data.update(
+                {
+                    "extra": "data",
+                }
+            )
+            return result
+
+    @strawberry.type
+    class Query:
+        hello: str = "World"
+
+    schema = strawberry.Schema(
+        query=Query, execution_context_class=CustomExecutionContext
+    )
+
+    result = schema.execute_sync("{ hello }", root_value=Query())
+
+    assert result.data == {
+        "hello": "World",
+        "extra": "data",
+    }

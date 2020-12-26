@@ -1,8 +1,9 @@
 from asyncio import ensure_future
 from inspect import isawaitable
-from typing import Any, Awaitable, Dict, List, Sequence, Type, cast
+from typing import Any, Awaitable, Dict, List, Optional, Sequence, Type, cast
 
 from graphql import (
+    ExecutionContext as GraphQLExecutionContext,
     ExecutionResult as GraphQLExecutionResult,
     GraphQLError,
     GraphQLSchema,
@@ -25,6 +26,7 @@ async def execute(
     variable_values: Dict[str, Any] = None,
     additional_middlewares: List[Any] = None,
     operation_name: str = None,
+    execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
 ) -> ExecutionResult:
     execution_context = ExecutionContext(
         query=query,
@@ -77,6 +79,7 @@ async def execute(
             variable_values=variable_values,
             operation_name=operation_name,
             context_value=context_value,
+            execution_context_class=execution_context_class,
         )
 
         if isawaitable(result):
@@ -100,6 +103,7 @@ def execute_sync(
     variable_values: Dict[str, Any] = None,
     additional_middlewares: List[Any] = None,
     operation_name: str = None,
+    execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
 ) -> ExecutionResult:
     execution_context = ExecutionContext(
         query=query,
@@ -151,6 +155,7 @@ def execute_sync(
             variable_values=variable_values,
             operation_name=operation_name,
             context_value=context_value,
+            execution_context_class=execution_context_class,
         )
 
         if isawaitable(result):
