@@ -827,7 +827,7 @@ full = ["aiofiles", "graphene", "itsdangerous", "jinja2", "python-multipart", "p
 
 [[package]]
 name = "testfixtures"
-version = "6.15.0"
+version = "6.17.0"
 description = "A collection of helpers and mock objects for unit tests and doc tests."
 category = "dev"
 optional = false
@@ -1391,8 +1391,8 @@ starlette = [
     {file = "starlette-0.14.1.tar.gz", hash = "sha256:5268ef5d4904ec69582d5fd207b869a5aa0cd59529848ba4cf429b06e3ced99a"},
 ]
 testfixtures = [
-    {file = "testfixtures-6.15.0-py2.py3-none-any.whl", hash = "sha256:e17f4f526fc90b0ac9bc7f8ca62b7dec17d9faf3d721f56bda4f0fd94d02f85a"},
-    {file = "testfixtures-6.15.0.tar.gz", hash = "sha256:409f77cfbdad822d12a8ce5c4aa8fb4d0bb38073f4a5444fede3702716a2cec2"},
+    {file = "testfixtures-6.17.0-py2.py3-none-any.whl", hash = "sha256:ebcc3e024d47bb58a60cdc678604151baa0c920ae2814004c89ac9066de31b2c"},
+    {file = "testfixtures-6.17.0.tar.gz", hash = "sha256:fa7c170df68ca6367eda061e9ec339ae3e6d3679c31e04033f83ef97a7d7d0ce"},
 ]
 toml = [
     {file = "toml-0.10.2-py2.py3-none-any.whl", hash = "sha256:806143ae5bfb6a3c6e736a764057db0e6a0e05e338b5630894a5f779cabb4f9b"},
