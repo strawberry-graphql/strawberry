@@ -1,6 +1,18 @@
 CHANGELOG
 =========
 
+0.44.4 - 2020-12-27
+-------------------
+
+Add support for converting more pydantic types
+
+- pydantic.EmailStr
+- pydantic.AnyUrl
+- pydantic.AnyHttpUrl
+- pydantic.HttpUrl
+- pydantic.PostgresDsn
+- pydantic.RedisDsn
+
 0.44.3 - 2020-12-16
 -------------------
 
