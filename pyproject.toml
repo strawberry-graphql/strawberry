@@ -64,6 +64,7 @@ flake8-isort = "^4.0.0"
 flake8-black = "^0.2.1"
 django = {version = ">=2,<4", optional = false}
 pydantic = {version = "^1.6.1", optional = false}
+email-validator = {version = "^1.1.2", optional = false}
 uvicorn = ">=0.11.6,<0.14.0"
 
 [tool.poetry.extras]
