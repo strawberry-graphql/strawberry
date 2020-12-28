@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.44.5 - 2020-12-28
+-------------------
+
+Pass `execution_context_class` to Schema creation
+
 0.44.4 - 2020-12-27
 -------------------
 
