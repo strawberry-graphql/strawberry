@@ -47,7 +47,7 @@ class GraphQL:
             await self.handle_http(scope=scope, receive=receive, send=send)
         elif scope["type"] == "websocket":
             await self.handle_websocket(scope=scope, receive=receive, send=send)
-        else:
+        else:  # pragma: no cover
             raise ValueError("Unknown scope type: %r" % (scope["type"],))
 
     async def get_root_value(self, request: Request) -> typing.Optional[typing.Any]:
@@ -59,7 +59,9 @@ class GraphQL:
         return {"request": request}
 
     async def handle_keep_alive(self, websocket):
-        if websocket.application_state == WebSocketState.DISCONNECTED:
+        if (
+            websocket.application_state == WebSocketState.DISCONNECTED
+        ):  # pragma: no cover
             return
 
         await asyncio.sleep(self.keep_alive_interval)
@@ -104,7 +106,7 @@ class GraphQL:
                     tasks[operation_id] = asyncio.create_task(
                         self.handle_async_results(async_result, operation_id, websocket)
                     )
-                elif message_type == GQL_STOP:
+                elif message_type == GQL_STOP:  # pragma: no cover
                     if operation_id not in subscriptions:
                         return
 
@@ -112,7 +114,7 @@ class GraphQL:
                     tasks[operation_id].cancel()
                     del tasks[operation_id]
                     del subscriptions[operation_id]
-        except WebSocketDisconnect:
+        except WebSocketDisconnect:  # pragma: no cover
             pass
         finally:
             if self._keep_alive_task:
