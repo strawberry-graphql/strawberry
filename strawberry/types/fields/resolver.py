@@ -1,5 +1,5 @@
 import inspect
-from inspect import iscoroutinefunction
+from inspect import isasyncgenfunction, iscoroutinefunction
 from typing import Callable, Generic, List, Optional, Type, TypeVar
 
 from cached_property import cached_property  # type: ignore
@@ -79,7 +79,9 @@ class StrawberryResolver(Generic[T]):
 
     @cached_property
     def is_async(self) -> bool:
-        return iscoroutinefunction(self.wrapped_func)
+        return iscoroutinefunction(self.wrapped_func) or isasyncgenfunction(
+            self.wrapped_func
+        )
 
 
 __all__ = ["StrawberryResolver"]
