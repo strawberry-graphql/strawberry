@@ -132,7 +132,7 @@ class GraphQL:
 
         context = await self.get_context(websocket)
 
-        data = await self.schema.subscribe(
+        return await self.schema.subscribe(
             query,
             variable_values=variables,
             operation_name=operation_name,
