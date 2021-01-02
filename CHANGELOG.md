@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.44.6 - 2021-01-02
+-------------------
+
+Fix Strawberry to handle multiple subscriptions at the same time
+
 0.44.5 - 2020-12-28
 -------------------
 
