@@ -7,7 +7,7 @@ path: /docs/types/unions
 
 Union types are similar to [interfaces](/docs/types/interfaces) however, while interfaces
 dictate fields that must be common to all implementations, unions do not. Unions
-just represent a selection of allowed types and make no requirements on those
+only represent a selection of allowed types and make no requirements on those
 types. Here’s a union, expressed in
 [GraphQL Schema Definition Language](https://graphql.org/learn/schema/#type-language)
 (SDL):
