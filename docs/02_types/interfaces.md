@@ -168,7 +168,7 @@ class Customer:
 ```
 
 This resolve method will be called by objects who implement the interface.
-Object classes can override the implmentation by defining their own `name`
+Object classes can override the implementation by defining their own `name`
 field:
 
 ```python
@@ -186,12 +186,10 @@ class Company(Customer):
 When a field’s return type is an interface, GraphQL needs to know what specific
 object type to use for the return value. In the example above, each customer
 must be categorized as an `Individual` or `Company`. To do this you need to
-always return an instance of an object type:
+always return an instance of an object type from your resolver:
 
 ```python
-from typing import List
 import strawberry
-
 
 @strawberry.type
 class Query:
