@@ -28,7 +28,7 @@ def test_batches_correct():
             id1: getId(id: "1")
             id2: getId(id: "2")
         }
-    """,
+        """,
         context_value={"dataloader": loader},
     )
     assert not result.errors
@@ -65,7 +65,7 @@ def test_handles_promise_and_plain():
             id1: getId(id: "1")
             id2: getId(id: "2")
         }
-    """,
+        """,
         context_value={"dataloader": loader},
     )
     assert not result.errors
@@ -134,7 +134,7 @@ def test_batches_multiple_loaders():
                 }
             }
         }
-    """,
+        """,
         context_value={
             "company_dataloader": company_loader,
             "location_dataloader": location_loader,
