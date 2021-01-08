@@ -32,7 +32,6 @@ class Batch(Generic[K, T]):
 
 
 class DataLoader(Generic[K, T]):
-    queue: List[LoaderTask] = []
     batch: Optional[Batch[K, T]] = None
     cache: bool = False
     cache_map: Dict[K, Future]
