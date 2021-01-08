@@ -1,17 +1,17 @@
-from promise import Promise
-from promise.dataloader import DataLoader
-
 import strawberry
+from strawberry.promise import Promise
+from strawberry.promise.dataloader import PromiseDataLoader
 from strawberry.schema.execute_context import ExecutionContextWithPromise
 
 
 def test_batches_correct():
     load_calls = []
 
-    class TestDataLoader(DataLoader):
-        def batch_load_fn(self, keys):
-            load_calls.append(keys)
-            return Promise.resolve(keys)
+    def load_fn(keys):
+        load_calls.append(keys)
+        return Promise.resolve(keys)
+
+    loader = PromiseDataLoader(load_fn)
 
     @strawberry.type
     class Query:
@@ -19,7 +19,9 @@ def test_batches_correct():
         def get_id(self, info, id: str) -> str:
             return info.context["dataloader"].load(id)
 
-    schema = strawberry.Schema(query=Query)
+    schema = strawberry.Schema(
+        query=Query, execution_context_class=ExecutionContextWithPromise
+    )
     result = schema.execute_sync(
         """
         query {
@@ -27,8 +29,7 @@ def test_batches_correct():
             id2: getId(id: "2")
         }
     """,
-        context_value={"dataloader": TestDataLoader()},
-        execution_context_class=ExecutionContextWithPromise,
+        context_value={"dataloader": loader},
     )
     assert not result.errors
     assert result.data == {"id1": "1", "id2": "2"}
@@ -38,10 +39,11 @@ def test_batches_correct():
 def test_handles_promise_and_plain():
     load_calls = []
 
-    class TestDataLoader(DataLoader):
-        def batch_load_fn(self, keys):
-            load_calls.append(keys)
-            return Promise.resolve(keys)
+    def load_fn(keys):
+        load_calls.append(keys)
+        return Promise.resolve(keys)
+
+    loader = PromiseDataLoader(load_fn)
 
     @strawberry.type
     class Query:
@@ -53,7 +55,9 @@ def test_handles_promise_and_plain():
         def hello(self) -> str:
             return "world"
 
-    schema = strawberry.Schema(query=Query)
+    schema = strawberry.Schema(
+        query=Query, execution_context_class=ExecutionContextWithPromise
+    )
     result = schema.execute_sync(
         """
         query {
@@ -62,8 +66,7 @@ def test_handles_promise_and_plain():
             id2: getId(id: "2")
         }
     """,
-        context_value={"dataloader": TestDataLoader()},
-        execution_context_class=ExecutionContextWithPromise,
+        context_value={"dataloader": loader},
     )
     assert not result.errors
     assert result.data == {"hello": "world", "id1": "1", "id2": "2"}
@@ -74,15 +77,17 @@ def test_batches_multiple_loaders():
     location_load_calls = []
     company_load_calls = []
 
-    class LocationDataLoader(DataLoader):
-        def batch_load_fn(self, keys):
-            location_load_calls.append(keys)
-            return Promise.resolve(keys)
+    def location_load_fn(keys):
+        location_load_calls.append(keys)
+        return Promise.resolve(keys)
 
-    class CompanyDataLoader(DataLoader):
-        def batch_load_fn(self, keys):
-            company_load_calls.append(keys)
-            return Promise.resolve(keys)
+    location_loader = PromiseDataLoader(location_load_fn)
+
+    def company_load_fn(keys):
+        company_load_calls.append(keys)
+        return Promise.resolve(keys)
+
+    company_loader = PromiseDataLoader(company_load_fn)
 
     @strawberry.type
     class Location:
@@ -110,7 +115,9 @@ def test_batches_multiple_loaders():
                 .then(lambda id: Company(id=id))
             )
 
-    schema = strawberry.Schema(query=Query)
+    schema = strawberry.Schema(
+        query=Query, execution_context_class=ExecutionContextWithPromise
+    )
     result = schema.execute_sync(
         """
         query {
@@ -129,10 +136,9 @@ def test_batches_multiple_loaders():
         }
     """,
         context_value={
-            "company_dataloader": CompanyDataLoader(),
-            "location_dataloader": LocationDataLoader(),
+            "company_dataloader": company_loader,
+            "location_dataloader": location_loader,
         },
-        execution_context_class=ExecutionContextWithPromise,
     )
     assert not result.errors
     assert result.data == {

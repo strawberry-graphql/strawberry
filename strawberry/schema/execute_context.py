@@ -1,7 +1,5 @@
 from typing import Any, Dict, Hashable, List, Optional, TypeVar, Union
 
-from promise import Promise, is_thenable
-
 from graphql import (
     ExecutionContext,
     GraphQLObjectType,
@@ -15,6 +13,8 @@ from graphql.pyutils import (
     Undefined,
     is_awaitable as default_is_awaitable,
 )
+
+from strawberry.promise import Promise, is_thenable
 
 
 def is_awaitable(value):
