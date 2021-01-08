@@ -1,7 +1,7 @@
 import dataclasses
 from dataclasses import dataclass
-from typing import Any, Awaitable, Callable, Dict, Generic, List, Optional, TypeVar
 from threading import local
+from typing import Any, Awaitable, Callable, Dict, Generic, List, Optional, TypeVar
 
 from strawberry.exceptions import WrongNumberOfResultsReturned
 from strawberry.promise import Promise, async_instance, default_scheduler
@@ -46,7 +46,7 @@ class Batch(Generic[K, T]):
         return len(self.tasks)
 
 
-class PromiseDataLoader(Generic[K, T]):
+class PromiseDataLoader(Generic[K, T], local):
     batch: Optional[Batch[K, T]] = None
     cache: bool = False
     cache_map: Dict[K, Promise]

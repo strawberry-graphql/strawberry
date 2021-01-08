@@ -32,6 +32,7 @@ import threading
 import pytest
 
 from strawberry.promise import Promise
+from strawberry.promise.dataloader import PromiseDataLoader
 
 
 def test_promise_thread_safety():
@@ -85,66 +86,67 @@ def test_promise_thread_safety():
     assert assert_object["is_same_thread"]
 
 
-# def test_dataloader_thread_safety():
-#     """
-#     Dataloader should only batch `load` calls that happened on the same thread.
+def test_dataloader_thread_safety():
+    """
+    Dataloader should only batch `load` calls that happened on the same thread.
 
-#     Here we assert that `load` calls on thread 2 are not batched on thread 1 as
-#     thread 1 batches its own `load` calls.
-#     """
-#     def load_many(keys):
-#         thead_name = threading.current_thread().getName()
-#         return Promise.resolve([thead_name for key in keys])
+    Here we assert that `load` calls on thread 2 are not batched on thread 1 as
+    thread 1 batches its own `load` calls.
+    """
 
-#     thread_name_loader = DataLoader(load_many)
+    def load_many(keys):
+        thead_name = threading.current_thread().getName()
+        return Promise.resolve([thead_name for key in keys])
 
-#     event_1 = threading.Event()
-#     event_2 = threading.Event()
-#     event_3 = threading.Event()
+    thread_name_loader = PromiseDataLoader(load_many)
 
-#     assert_object = {
-#       'is_same_thread_1': True,
-#       'is_same_thread_2': True,
-#     }
+    event_1 = threading.Event()
+    event_2 = threading.Event()
+    event_3 = threading.Event()
 
-#     def task_1():
-#         @Promise.safe
-#         def do():
-#             promise = thread_name_loader.load(1)
-#             event_1.set()
-#             event_2.wait()  # Wait for thread 2 to call `load`
-#             assert_object['is_same_thread_1'] = (
-#               promise.get() == threading.current_thread().getName()
-#             )
-#             event_3.set()  # Unblock thread 2
+    assert_object = {
+        "is_same_thread_1": True,
+        "is_same_thread_2": True,
+    }
 
-#         do().get()
+    def task_1():
+        @Promise.safe
+        def do():
+            promise = thread_name_loader.load(1)
+            event_1.set()
+            event_2.wait()  # Wait for thread 2 to call `load`
+            assert_object["is_same_thread_1"] = (
+                promise.get() == threading.current_thread().getName()
+            )
+            event_3.set()  # Unblock thread 2
 
-#     def task_2():
-#         @Promise.safe
-#         def do():
-#             promise = thread_name_loader.load(2)
-#             event_2.set()
-#             event_3.wait()  # Wait for thread 1 to run `dispatch_queue_batch`
-#             assert_object['is_same_thread_2'] = (
-#               promise.get() == threading.current_thread().getName()
-#             )
+        do().get()
 
-#         do().get()
+    def task_2():
+        @Promise.safe
+        def do():
+            promise = thread_name_loader.load(2)
+            event_2.set()
+            event_3.wait()  # Wait for thread 1 to run `dispatch_queue_batch`
+            assert_object["is_same_thread_2"] = (
+                promise.get() == threading.current_thread().getName()
+            )
 
-#     thread_1 = threading.Thread(target=task_1)
-#     thread_1.start()
+        do().get()
 
-#     event_1.wait() # Wait for thread 1 to call `load`
+    thread_1 = threading.Thread(target=task_1)
+    thread_1.start()
 
-#     thread_2 = threading.Thread(target=task_2)
-#     thread_2.start()
+    event_1.wait()  # Wait for thread 1 to call `load`
 
-#     for thread in (thread_1, thread_2):
-#       thread.join()
+    thread_2 = threading.Thread(target=task_2)
+    thread_2.start()
 
-#     assert assert_object['is_same_thread_1']
-#     assert assert_object['is_same_thread_2']
+    for thread in (thread_1, thread_2):
+        thread.join()
+
+    assert assert_object["is_same_thread_1"]
+    assert assert_object["is_same_thread_2"]
 
 
 @pytest.mark.parametrize("num_threads", [1])
@@ -157,7 +159,7 @@ def test_with_process_loop(num_threads, count):
     from random import randint
     from sys import setswitchinterval
     from threading import Barrier, Thread
-    from traceback import format_exc, print_exc
+    from traceback import format_exc
 
     test_with_process_loop._force_stop = False
     items = queue.Queue()
@@ -210,15 +212,11 @@ def test_with_process_loop(num_threads, count):
                 p.get(timeout=1)
             except ZeroDivisionError:
                 pass
-            except AssertionError as e:
-                print("ASSERT", e)
-                print_exc()
+            except AssertionError:
                 test_with_process_loop._force_stop = True
                 items.put(("ABORT",))
                 asserts.append(format_exc())
-            except Exception as e:
-                print("Timeout", e)
-                print_exc()
+            except Exception:
                 test_with_process_loop._force_stop = True
                 items.put(("ABORT",))
                 timeouts.append(format_exc())
