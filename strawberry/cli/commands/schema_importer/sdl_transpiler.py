@@ -10,8 +10,8 @@ from strawberry.utils.str_converters import to_snake_case
 
 
 # Simple Jinja2 template string for generating valid strawberry class
-TEMPLATE = """{{ get_decorator(ast.kind) }}{{ get_description(ast) }}
-class {{ get_class_name(ast) }}:
+TEMPLATE = """{{ deco + description if deco else '' }}
+{{ 'class ' if deco else ''}}{{ class_name }}{{':' if deco else get_union(ast)}}
     {%- if ast.kind in standard_types -%}
     {%- for field in ast.fields %}
     {{ get_field_attribute(field) }}
@@ -36,7 +36,7 @@ SCALAR_TYPES = {
 # Base decorator kinds
 DECORATOR_KINDS = {
     "schema_definition": "@strawberry.type",
-    "union_type_definition": "@strawberry.union",
+    "union_type_definition": "",
     "enum_type_definition": "@strawberry.enum",
     "input_object_type_definition": "@strawberry.input",
     "object_type_definition": "@strawberry.type",
@@ -61,6 +61,20 @@ def get_description(ast):
         return ""
     else:
         return f"(description='''{ast.description.value}''')"
+
+
+def get_union(ast):
+    """ Format union type """
+    types = "(" + ", ".join((t.name.value for t in ast.types)) + ")"
+    description = get_description(ast)
+    description = f"{description[1:-1]}" if description else ""
+    union_type = " = strawberry.union({}{}{})".format(
+        f"\n    '{get_class_name(ast)}',",
+        f"\n    {types},",
+        f"\n    {description}\n" if description else "",
+    )
+
+    return union_type
 
 
 def get_field_attribute(field):
@@ -110,10 +124,11 @@ def transpile(ast):
     """ Populates templates based on type of graphql object definition """
     template = Template(TEMPLATE)
     output = template.render(
+        get_union=get_union,
+        deco=get_decorator(ast.kind),
+        class_name=get_class_name(ast),
+        description=get_description(ast),
         get_field_attribute=get_field_attribute,
-        get_description=get_description,
-        get_decorator=get_decorator,
-        get_class_name=get_class_name,
         standard_types=[
             "object_type_definition",
             "input_object_type_definition",
@@ -121,4 +136,4 @@ def transpile(ast):
         ],
         ast=ast,
     )
-    return output
+    return output[1:] if output.startswith("\n") else output

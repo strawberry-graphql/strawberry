@@ -328,6 +328,47 @@ def test_import_enum_type():
     assert output == what_it_should_be
 
 
+# Union
+def test_import_union_type():
+    s = "union Result = Book | Author"
+    output = sdl_importer.import_sdl(s)
+
+    what_it_should_be = (
+        "import strawberry\n"
+        "\n"
+        "\n"
+        'Result = strawberry.union("Result", (Book, Author))'
+    )
+
+    assert output == what_it_should_be
+
+
+def test_import_union_with_description():
+    s = '''
+    """
+    How do you defend yourself
+    against an attacker armed with fruit?
+    """
+    union Result = Orange | Bannana
+    '''
+
+    output = sdl_importer.import_sdl(s)
+
+    what_it_should_be = (
+        "import strawberry\n"
+        "\n"
+        "\n"
+        "Result = strawberry.union(\n"
+        "    'Result',\n"
+        "    (Orange, Bannana),\n"
+        "    description='''How do you defend yourself\n"
+        "against an attacker armed with fruit?'''\n"
+        ")"
+    )
+
+    assert output == what_it_should_be
+
+
 # Interface
 def test_import_interface_type():
     """ Test for an enum type transpilation """
