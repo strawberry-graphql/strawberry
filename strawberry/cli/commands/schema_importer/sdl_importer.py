@@ -24,6 +24,11 @@ def import_sdl(sdl: str) -> str:
 
     strawberries = "\n\n".join(templates)
     imports = "from enum import Enum\n\n" if "(Enum)" in strawberries else ""
+    imports += (
+        "from strawberry.directive import DirectiveLocation\n\n"
+        if "DirectiveLocation" in strawberries
+        else ""
+    )
     imports += "import typing\n\n" if "typing." in strawberries else ""
     imports += "from typing import Union\n\n" if "Union[" in strawberries else ""
     imports += "import strawberry\n\n\n"

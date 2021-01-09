@@ -337,7 +337,10 @@ def test_import_union_type():
         "import strawberry\n"
         "\n"
         "\n"
-        'Result = strawberry.union("Result", (Book, Author))'
+        "Result = strawberry.union(\n"
+        "    'Result',\n"
+        "    (Book, Author),\n"
+        ")"
     )
 
     assert output == what_it_should_be
@@ -406,6 +409,63 @@ def test_import_input_type():
         "@strawberry.input\n"
         "class Monster:\n"
         "    name: str"
+    )
+
+    assert output == what_it_should_be
+
+
+# Directives
+def test_directives_description():
+    s = '''
+    """Make string uppercase"""
+    directive @uppercase(example: String!) on FIELD_DEFINITION
+    '''
+
+    output = sdl_importer.import_sdl(s)
+
+    what_it_should_be = (
+        "from strawberry.directive import DirectiveLocation\n"
+        "\n"
+        "import strawberry\n"
+        "\n"
+        "\n"
+        "@strawberry.directive(\n"
+        "    locations=[\n"
+        "        DirectiveLocation.FIELD_DEFINITION\n"
+        "    ],\n"
+        "    description='''Make string uppercase'''\n"
+        ")\n"
+        "def uppercase(\n"
+        "    example: str\n"
+        "):\n"
+        "    pass"
+    )
+
+    assert output == what_it_should_be
+
+
+def test_directives():
+    s = """
+    directive @uppercase(example: String!) on FIELD_DEFINITION
+    """
+
+    output = sdl_importer.import_sdl(s)
+
+    what_it_should_be = (
+        "from strawberry.directive import DirectiveLocation\n"
+        "\n"
+        "import strawberry\n"
+        "\n"
+        "\n"
+        "@strawberry.directive(\n"
+        "    locations=[\n"
+        "        DirectiveLocation.FIELD_DEFINITION\n"
+        "    ],\n"
+        ")\n"
+        "def uppercase(\n"
+        "    example: str\n"
+        "):\n"
+        "    pass"
     )
 
     assert output == what_it_should_be

@@ -9,9 +9,10 @@ from jinja2 import Template
 from strawberry.utils.str_converters import to_snake_case
 
 
-# Simple Jinja2 template string for generating valid strawberry class
-TEMPLATE = """{{ deco + description if deco else '' }}
-{{ 'class ' if deco else ''}}{{ class_name }}{{':' if deco else get_union(ast)}}
+# Jinja2 templates
+# strawberry class
+TEMPLATE = """{{ decorator + description }}
+class {{ class_name }}:
     {%- if ast.kind in standard_types -%}
     {%- for field in ast.fields %}
     {{ get_field_attribute(field) }}
@@ -22,6 +23,27 @@ TEMPLATE = """{{ deco + description if deco else '' }}
     {{ value.name.value }} = '{{ value.name.value.lower() }}'
     {%- endfor %}
     {%- endif -%}
+"""
+
+# strawberry union definitions
+UNION_TEMPLATE = """{{ class_name }} = {{ get_union(ast) }}"""
+
+# strawberry directives
+# TODO: How do i know which type should first arg(value) be ?
+DIRECTIVE_TEMPLATE = """@strawberry.directive(
+    locations=[
+        {%- for field in ast.locations %}
+        DirectiveLocation.{{ field.value }}
+        {%- endfor %}
+    ],
+{% if description -%}{{ '    ' + description[1:-1] + '\n' }}{%- endif -%}
+)
+def {{ class_name }}(
+    {%- for field in ast.arguments %}
+    {{ get_field_attribute(field) }}
+    {%- endfor %}
+):
+    pass
 """
 
 # QUESTION: Is there a better way to determine this?
@@ -35,11 +57,12 @@ SCALAR_TYPES = {
 
 # Base decorator kinds
 DECORATOR_KINDS = {
-    "schema_definition": "@strawberry.type",
     "union_type_definition": "",
+    "schema_definition": "@strawberry.type",
     "enum_type_definition": "@strawberry.enum",
-    "input_object_type_definition": "@strawberry.input",
     "object_type_definition": "@strawberry.type",
+    "directive_definition": "@strawberry.directive",
+    "input_object_type_definition": "@strawberry.input",
     "interface_type_definition": "@strawberry.interface",
 }
 
@@ -50,9 +73,9 @@ def get_class_name(ast):
     return name
 
 
-def get_decorator(kind):
+def get_decorator(ast):
     """ Creates and returns decorator string """
-    return DECORATOR_KINDS[kind]
+    return DECORATOR_KINDS[ast.kind]
 
 
 def get_description(ast):
@@ -63,15 +86,29 @@ def get_description(ast):
         return f"(description='''{ast.description.value}''')"
 
 
+def get_directive(ast):
+    """ Format union type """
+    types = "(" + ", ".join((t.name.value for t in ast.types)) + ")"
+    description = get_description(ast)
+    description = f"{description[1:-1]}" if description else ""
+    union_type = "strawberry.union({}{}{})".format(
+        f"\n    '{get_class_name(ast)}',",
+        f"\n    {types},",
+        f"\n    {description}\n" if description else "\n",
+    )
+
+    return union_type
+
+
 def get_union(ast):
     """ Format union type """
     types = "(" + ", ".join((t.name.value for t in ast.types)) + ")"
     description = get_description(ast)
     description = f"{description[1:-1]}" if description else ""
-    union_type = " = strawberry.union({}{}{})".format(
+    union_type = "strawberry.union({}{}{})".format(
         f"\n    '{get_class_name(ast)}',",
         f"\n    {types},",
-        f"\n    {description}\n" if description else "",
+        f"\n    {description}\n" if description else "\n",
     )
 
     return union_type
@@ -120,14 +157,25 @@ def get_strawberry_type(name, description):
     return strawberry_type
 
 
+def get_template(ast):
+    if ast.kind == "directive_definition":
+        t = DIRECTIVE_TEMPLATE
+    elif ast.kind == "union_type_definition":
+        t = UNION_TEMPLATE
+    else:
+        t = TEMPLATE
+
+    return Template(t)
+
+
 def transpile(ast):
     """ Populates templates based on type of graphql object definition """
-    template = Template(TEMPLATE)
+    template = get_template(ast)
     output = template.render(
-        get_union=get_union,
-        deco=get_decorator(ast.kind),
+        decorator=get_decorator(ast),
         class_name=get_class_name(ast),
         description=get_description(ast),
+        get_union=get_union,
         get_field_attribute=get_field_attribute,
         standard_types=[
             "object_type_definition",
