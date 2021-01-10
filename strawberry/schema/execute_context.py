@@ -1,7 +1,8 @@
-from typing import Any, Dict, Hashable, List, Optional, TypeVar, Union
+from typing import Any, Dict, Hashable, List, Optional, TypeVar, Union, cast
 
 from graphql import (
     ExecutionContext,
+    ExecutionResult,
     GraphQLObjectType,
     GraphQLOutputType,
     GraphQLResolveInfo,
@@ -17,7 +18,7 @@ from graphql.pyutils import (
 from strawberry.promise import Promise, is_thenable
 
 
-def is_awaitable(value):
+def is_awaitable(value: object) -> bool:
     """
     Create custom is_awaitable function to make sure that Promises' aren't
     considered awaitable
@@ -46,6 +47,11 @@ def promise_for_dict(
 
 
 class ExecutionContextWithPromise(ExecutionContext):
+    """
+    Extend the default ExecutionContext with support of Promises.
+    Note: Only usable in a sync context
+    """
+
     is_awaitable = staticmethod(is_awaitable)
 
     def execute_operation(
@@ -60,8 +66,11 @@ class ExecutionContextWithPromise(ExecutionContext):
         promise = Promise.resolve(None).then(promise_executor)
         return promise
 
-    def build_response(self, data):
+    def build_response(
+        self, data: Union[AwaitableOrValue[Optional[Dict[str, Any]]], Promise]
+    ) -> AwaitableOrValue[ExecutionResult]:
         if is_thenable(data):
+            data = cast(Promise, data)
             original_build_response = super().build_response
 
             def on_rejected(error):
@@ -73,6 +82,8 @@ class ExecutionContextWithPromise(ExecutionContext):
 
             promise = data.catch(on_rejected).then(on_resolve)
             return promise.get()
+
+        data = cast(AwaitableOrValue[Optional[Dict[str, Any]]], data)
         return super().build_response(data)
 
     def complete_value_catching_error(
@@ -91,15 +102,15 @@ class ExecutionContextWithPromise(ExecutionContext):
         try:
             if is_thenable(result):
 
-                def handle_error(error):
+                def handle_resolve(resolved: Any):
+                    return self.complete_value(
+                        return_type, field_nodes, info, path, resolved
+                    )
+
+                def handle_error(error: Exception):
                     self.handle_field_error(error, field_nodes, path, return_type)
 
-                completed = Promise.resolve(result).then(
-                    lambda resolved: self.complete_value(
-                        return_type, field_nodes, info, path, resolved
-                    ),
-                    handle_error,
-                )
+                completed = Promise.resolve(result).then(handle_resolve, handle_error)
             else:
                 completed = self.complete_value(
                     return_type, field_nodes, info, path, result
