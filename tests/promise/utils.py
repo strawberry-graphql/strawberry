@@ -27,6 +27,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
+
 def assert_exception(exception, expected_exception_cls, expected_message):
     assert isinstance(exception, expected_exception_cls)
     assert str(exception) == expected_message

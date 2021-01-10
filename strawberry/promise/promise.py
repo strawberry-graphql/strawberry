@@ -149,7 +149,7 @@ class Promise(Generic[T]):
     _scheduler = None
 
     def __init__(self, executor=None, scheduler=None):
-        # type: (Optional[Callable[[Callable[[T], None], Callable[[Exception], None]], None]], Any) -> None
+        # type: (Optional[Callable[[Callable[[T], None], Callable[[Exception], None]], None]], Any) -> None  # noqa
         """
         Initialize the Promise into a pending state.
         """
@@ -452,7 +452,7 @@ class Promise(Generic[T]):
             self._length = 0
 
     def _resolve_from_executor(self, executor):
-        # type: (Callable[[Callable[[T], None], Callable[[Exception], None]], None]) -> None
+        # type: (Callable[[Callable[[T], None], Callable[[Exception], None]], None]) -> None  # noqa
         synchronous = True
 
         def resolve(value: T) -> None:
@@ -520,19 +520,28 @@ class Promise(Generic[T]):
     @property
     def is_pending(self):
         # type: (Promise) -> bool
-        """Indicate whether the Promise is still pending. Could be wrong the moment the function returns."""
+        """
+        Indicate whether the Promise is still pending.
+        Could be wrong the moment the function returns.
+        """
         return self._target()._state == STATE_PENDING
 
     @property
     def is_fulfilled(self):
         # type: (Promise) -> bool
-        """Indicate whether the Promise has been fulfilled. Could be wrong the moment the function returns."""
+        """
+        Indicate whether the Promise has been fulfilled.
+        Could be wrong the moment the function returns.
+        """
         return self._target()._state == STATE_FULFILLED
 
     @property
     def is_rejected(self):
         # type: (Promise) -> bool
-        """Indicate whether the Promise has been rejected. Could be wrong the moment the function returns."""
+        """
+        Indicate whether the Promise has been rejected.
+        Could be wrong the moment the function returns.
+        """
         return self._target()._state == STATE_REJECTED
 
     def catch(self, on_rejection):
@@ -579,7 +588,7 @@ class Promise(Generic[T]):
     do_reject = _reject_callback
 
     def then(self, did_fulfill=None, did_reject=None):
-        # type: (Promise, Callable[[T], S], Optional[Callable[[Exception], S]]) -> Promise[S]
+        # type: (Promise, Callable[[T], S], Optional[Callable[[Exception], S]]) -> Promise[S]  # noqa
         """
         This method takes two optional arguments.  The first argument
         is used if the "self promise" is fulfilled and the other is
@@ -614,7 +623,7 @@ class Promise(Generic[T]):
         promise._is_final = True
 
     def done_all(self, handlers=None):
-        # type: (Promise, Optional[List[Union[Dict[str, Optional[Callable]], Tuple[Callable, Callable], Callable]]]) -> None
+        # type: (Promise, Optional[List[Union[Dict[str, Optional[Callable]], Tuple[Callable, Callable], Callable]]]) -> None  # noqa
         """
         :type handlers: list[(Any) -> object] | list[((Any) -> object, (Any) -> object)]
         """

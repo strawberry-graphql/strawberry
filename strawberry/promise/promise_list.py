@@ -104,9 +104,6 @@ class PromiseList(object):
         for i, val in enumerate(values):
             if Promise.is_thenable(val):
                 maybe_promise = Promise._try_convert_to_promise(val)._target()
-                # if is_resolved:
-                #     # maybe_promise.suppressUnhandledRejections
-                #     pass
                 if maybe_promise.is_pending:
                     maybe_promise._add_callbacks(
                         partial(self._promise_fulfilled, i=i),
