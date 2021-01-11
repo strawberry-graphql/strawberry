@@ -745,7 +745,7 @@ docs = ["sphinx", "sphinx-rtd-theme"]
 
 [[package]]
 name = "pytest-mock"
-version = "3.5.0"
+version = "3.5.1"
 description = "Thin-wrapper around the mock package for easier use with pytest"
 category = "dev"
 optional = false
@@ -1351,8 +1351,8 @@ pytest-flask = [
     {file = "pytest_flask-1.1.0-py3-none-any.whl", hash = "sha256:28a24a5c12778f6e2b12eaf825e71944210aaba061edbd2c3e15e3664bc15407"},
 ]
 pytest-mock = [
-    {file = "pytest-mock-3.5.0.tar.gz", hash = "sha256:4992db789175540d40a193bc60e987b1e69f1a989adad525a44e581c82149b14"},
-    {file = "pytest_mock-3.5.0-py3-none-any.whl", hash = "sha256:f9d77233b3af6c71cec6a8b8b5e9e9a2effd1bb6ff56e9ace72541ff6843ac81"},
+    {file = "pytest-mock-3.5.1.tar.gz", hash = "sha256:a1e2aba6af9560d313c642dae7e00a2a12b022b80301d9d7fc8ec6858e1dd9fc"},
+    {file = "pytest_mock-3.5.1-py3-none-any.whl", hash = "sha256:379b391cfad22422ea2e252bdfc008edd08509029bcde3c25b2c0bd741e0424e"},
 ]
 pytest-mypy-plugins = [
     {file = "pytest-mypy-plugins-1.6.1.tar.gz", hash = "sha256:f73986d4d78057f259518b81b019896985b19a698ce41deb6996ec73c3d7fcc6"},
