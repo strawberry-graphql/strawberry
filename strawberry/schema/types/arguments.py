@@ -5,7 +5,7 @@ from graphql.type.definition import GraphQLInputType
 
 from strawberry.arguments import ArgumentDefinition, undefined
 
-from .type import get_graphql_type
+# from .type import get_graphql_type
 from .types import TypeMap
 
 

@@ -69,40 +69,40 @@ def _find_type_for_generic_union(root: typing.Any) -> TypeDefinition:
     return type._type_definition
 
 
-def get_union_type(
-    union_definition: StrawberryUnion, type_map: TypeMap
-) -> GraphQLUnionType:
-    from .object_type import get_object_type
-
-    def _resolve_type(root, info, _type):
-        if not hasattr(root, "_type_definition"):
-            raise WrongReturnTypeForUnion(info.field_name, str(type(root)))
-
-        type_definition = root._type_definition
-
-        if is_generic(type(root)):
-            type_definition = _find_type_for_generic_union(root)
-
-        returned_type = type_map[type_definition.name].implementation
-
-        if returned_type not in _type.types:
-            raise UnallowedReturnTypeForUnion(
-                info.field_name, str(type(root)), _type.types
-            )
-
-        return returned_type
-
-    types = union_definition.types
-
-    if union_definition.name not in type_map:
-        type_map[union_definition.name] = ConcreteType(
-            definition=union_definition,
-            implementation=GraphQLUnionType(
-                union_definition.name,
-                [get_object_type(type, type_map) for type in types],
-                description=union_definition.description,
-                resolve_type=_resolve_type,
-            ),
-        )
-
-    return typing.cast(GraphQLUnionType, type_map[union_definition.name].implementation)
+# def get_union_type(
+#     union_definition: StrawberryUnion, type_map: TypeMap
+# ) -> GraphQLUnionType:
+#     from .object_type import get_object_type
+#
+#     def _resolve_type(root, info, _type):
+#         if not hasattr(root, "_type_definition"):
+#             raise WrongReturnTypeForUnion(info.field_name, str(type(root)))
+#
+#         type_definition = root._type_definition
+#
+#         if is_generic(type(root)):
+#             type_definition = _find_type_for_generic_union(root)
+#
+#         returned_type = type_map[type_definition.name].implementation
+#
+#         if returned_type not in _type.types:
+#             raise UnallowedReturnTypeForUnion(
+#                 info.field_name, str(type(root)), _type.types
+#             )
+#
+#         return returned_type
+#
+#     types = union_definition.types
+#
+#     if union_definition.name not in type_map:
+#         type_map[union_definition.name] = ConcreteType(
+#             definition=union_definition,
+#             implementation=GraphQLUnionType(
+#                 union_definition.name,
+#                 [get_object_type(type, type_map) for type in types],
+#                 description=union_definition.description,
+#                 resolve_type=_resolve_type,
+#             ),
+#         )
+#
+#     return typing.cast(GraphQLUnionType, type_map[union_definition.name].implementation)
