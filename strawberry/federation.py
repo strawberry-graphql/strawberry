@@ -112,7 +112,7 @@ class Schema(BaseSchema):
 
         for representation in representations:
             type_name = representation.pop("__typename")
-            type = self.type_map[type_name]
+            type = self.schema_converter.type_map[type_name]
 
             definition = cast(TypeDefinition, type.definition)
 
@@ -128,7 +128,7 @@ class Schema(BaseSchema):
     def _extend_query_type(self):
         fields = {"_service": self._service_field}
 
-        entity_type = _get_entity_type(self.type_map)
+        entity_type = _get_entity_type(self.schema_converter.type_map)
 
         if entity_type:
             self._schema.type_map[entity_type.name] = entity_type
