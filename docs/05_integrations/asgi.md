@@ -107,3 +107,27 @@ class MyGraphQL(GraphQL):
 
 In this case we are doing the default processing of the result, but it can
 be tweaked based on your needs.
+
+## Uploads
+
+Strawberry supports multipart uploads as described here: https://github.com/jaydenseric/graphql-multipart-request-spec.
+
+Uploads can be used in mutations like via the `Upload` type.
+
+Example:
+
+```python
+from strawberry.file_uploads import Upload
+
+
+...
+
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    async def read_text(self, text_file: Upload) -> str:
+        file_contents = await text_file.read()
+
+        # do something awesome
+        return "a string"
+```
