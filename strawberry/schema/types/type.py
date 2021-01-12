@@ -13,7 +13,7 @@ from strawberry.field import FieldDefinition
 from strawberry.resolvers import get_resolver
 from strawberry.scalars import is_scalar
 from strawberry.schema.types.directives import get_arguments_for_directive
-from strawberry.types.types import ArgumentDefinition, undefined
+from strawberry.types.types import ArgumentDefinition, undefined, TypeDefinition
 from strawberry.union import StrawberryUnion
 
 from .enum import get_enum_type
@@ -216,22 +216,17 @@ class GraphQLCoreConverter:
             description=type_definition.description,
         )
 
-    def from_interface(self, interface: FIELD_ARGUMENT_TYPE) -> GraphQLInterfaceType:
+    def from_interface(self, interface: TypeDefinition) -> GraphQLInterfaceType:
         # TODO: Use StrawberryInterface when it's implemented in another PR
-        if not hasattr(interface, "_type_definition"):
-            raise TypeError(f"Wrong type passed to get object type {interface}")
-
-        type_definition = interface._type_definition
-
         return GraphQLInterfaceType(
-            name=type_definition.name,
+            name=interface.name,
             # TODO: Does this need to be deferred?
             fields={
-                field.name: self.from_input_field(field)
-                for field in type_definition.fields
+                field.name: self.from_field(field)
+                for field in interface.fields
             },
-            interfaces=list(map(self.from_interface, type_definition.interfaces)),
-            description=type_definition.description,
+            interfaces=list(map(self.from_interface, interface.interfaces)),
+            description=interface.description,
         )
 
     def from_list(self, list_: FIELD_ARGUMENT_TYPE) -> GraphQLList:
