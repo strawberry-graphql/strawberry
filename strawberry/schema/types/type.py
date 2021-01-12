@@ -240,10 +240,13 @@ class GraphQLCoreConverter:
 
         type_definition = object_type._type_definition
 
+        # Don't reevaluate known types
+        if type_definition.name in self.type_map:
+            return self.type_map[type_definition.name].implementation
+
         object_type = GraphQLObjectType(
             name=type_definition.name,
-            # TODO: Does this need to be deferred?
-            fields={
+            fields=lambda: {
                 field.name: self.from_field(field)
                 for field in type_definition.fields
             },
