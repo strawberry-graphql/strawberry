@@ -51,7 +51,10 @@ class Schema:
 
         self.middleware: List[Middleware] = [DirectivesMiddleware(directives)]
 
-        directives = list(map(self.schema_converter.from_directive, directives))
+        directives = [
+            self.schema_converter.from_directive(directive.directive_definition)
+            for directive in directives
+        ]
 
         self._schema = GraphQLSchema(
             query=query_type,
