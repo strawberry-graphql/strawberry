@@ -1,8 +1,11 @@
+import json
 import typing
 
 from starlette import status
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, JSONResponse, PlainTextResponse, Response
+
+from strawberry.file_uploads.data import replace_placeholders_with_files
 
 from .utils import get_graphiql_html
 
@@ -24,9 +27,17 @@ async def get_http_response(
 
     if request.method == "POST":
         content_type = request.headers.get("Content-Type", "")
-
         if "application/json" in content_type:
             data = await request.json()
+        elif content_type.startswith("multipart/form-data"):
+            multipart_data = await request.form()
+            operations = json.loads(multipart_data.get("operations", "{}"))
+            files_map = json.loads(multipart_data.get("map", "{}"))
+
+            data = replace_placeholders_with_files(
+                operations, files_map, multipart_data
+            )
+
         else:
             return PlainTextResponse(
                 "Unsupported Media Type",
