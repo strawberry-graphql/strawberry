@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.44.7 - 2021-01-13
+-------------------
+
+Supporting multipart uploads as described here: https://github.com/jaydenseric/graphql-multipart-request-spec for ASGI.
+
 0.44.6 - 2021-01-02
 -------------------
 
