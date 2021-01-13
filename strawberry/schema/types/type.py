@@ -57,7 +57,7 @@ class GraphQLCoreConverter:
             else:
                 return self.from_object_type(type_)
         elif _is_enum(type_):
-            return self.from_enum(type_)
+            return self.from_enum(type_._enum_definition)
         elif _is_scalar(type_):
             return self.from_scalar(type_)
 
