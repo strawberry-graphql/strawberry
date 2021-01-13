@@ -9,12 +9,14 @@ from graphql import GraphQLList, GraphQLType, GraphQLNullableType, GraphQLEnumTy
 from strawberry.arguments import UNSET
 from strawberry.directive import DirectiveDefinition
 from strawberry.enum import EnumDefinition, EnumValue
+from strawberry.exceptions import WrongReturnTypeForUnion, UnallowedReturnTypeForUnion
 from strawberry.field import FieldDefinition
 from strawberry.resolvers import get_resolver
 from strawberry.scalars import is_scalar
 from strawberry.schema.types.directives import get_arguments_for_directive
 from strawberry.types.types import ArgumentDefinition, undefined, TypeDefinition
 from strawberry.union import StrawberryUnion
+from strawberry.utils.typing import is_generic
 
 from .scalar import get_scalar_type
 from .types import ConcreteType
@@ -241,8 +243,38 @@ class GraphQLCoreConverter:
         return get_scalar_type(scalar, self.type_map)
 
     def from_union(self, union: StrawberryUnion) -> GraphQLUnionType:
-        raise NotImplementedError
-        # return get_union_type(union, type_map)
+
+        def resolve_type(root, info, type_):
+            if not hasattr(root, "_type_definition"):
+                raise WrongReturnTypeForUnion(info.field_name, str(type(root)))
+
+            type_definition = root._type_definition
+
+            if is_generic(type(root)):
+                # TODO:
+                type_definition = ...
+
+            returned_type = self.type_map[type_definition.name].implementation
+
+            if returned_type not in type_.types:
+                raise UnallowedReturnTypeForUnion(
+                    info.field_name, str(type(root)), type_.types
+                )
+
+        graphql_types = []
+        for type_ in union.types:
+            graphql_type = self.get_graphql_type(type_)
+            assert isinstance(graphql_type, GraphQLObjectType)
+            graphql_types.append(graphql_type)
+
+        graphql_union = GraphQLUnionType(
+            name=union.name,
+            types=graphql_types,
+            description=union.description,
+            resolve_type=resolve_type
+        )
+
+        return graphql_union
 
 
 ################################################################################
