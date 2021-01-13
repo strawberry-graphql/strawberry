@@ -83,13 +83,25 @@ class GraphQLCoreConverter:
 
         assert enum.name is not None
 
-        return GraphQLEnumType(
-            name=enum.name,
-            values={
-                item.name: self.from_enum_value(item) for item in enum.values
-            },
-            description=enum.description
-        )
+        # Don't reevaluate known types
+        if enum.name in self.type_map:
+            graphql_enum = self.type_map[enum.name].implementation
+            assert isinstance(graphql_enum, GraphQLEnumType)
+
+        else:
+            graphql_enum = GraphQLEnumType(
+                name=enum.name,
+                values={
+                    item.name: self.from_enum_value(item) for item in enum.values
+                },
+                description=enum.description
+            )
+
+            self.type_map[enum.name] = ConcreteType(
+                definition=enum, implementation=graphql_enum
+            )
+
+        return graphql_enum
 
     def from_enum_value(self, enum_value: EnumValue) -> GraphQLEnumValue:
         return GraphQLEnumValue(enum_value.value)
@@ -202,22 +214,22 @@ class GraphQLCoreConverter:
         if type_definition.name in self.type_map:
             graphql_object_type = self.type_map[type_definition.name].implementation
             assert isinstance(graphql_object_type, GraphQLObjectType)
-            return graphql_object_type
 
-        graphql_object_type = GraphQLObjectType(
-            name=type_definition.name,
-            fields=lambda: {
-                field.name: self.from_field(field)
-                for field in type_definition.fields
-            },
-            interfaces=list(map(self.from_interface, type_definition.interfaces)),
-            is_type_of=lambda obj, _: isinstance(obj, type_definition.origin),
-            description=type_definition.description,
-        )
+        else:
+            graphql_object_type = GraphQLObjectType(
+                name=type_definition.name,
+                fields=lambda: {
+                    field.name: self.from_field(field)
+                    for field in type_definition.fields
+                },
+                interfaces=list(map(self.from_interface, type_definition.interfaces)),
+                is_type_of=lambda obj, _: isinstance(obj, type_definition.origin),
+                description=type_definition.description,
+            )
 
-        self.type_map[type_definition.name] = ConcreteType(
-            definition=type_definition, implementation=graphql_object_type
-        )
+            self.type_map[type_definition.name] = ConcreteType(
+                definition=type_definition, implementation=graphql_object_type
+            )
 
         return graphql_object_type
 
