@@ -56,6 +56,8 @@ class GraphQLCoreConverter:
         if _is_object_type(type_):
             if type_._type_definition.is_input:
                 return self.from_input_object_type(type_)
+            elif type_._type_definition.is_interface:
+                return self.from_interface(type_._type_definition)
             else:
                 return self.from_object_type(type_)
         elif _is_enum(type_):
@@ -187,17 +189,31 @@ class GraphQLCoreConverter:
     def from_interface(self, interface: TypeDefinition) -> GraphQLInterfaceType:
         # TODO: Use StrawberryInterface when it's implemented in another PR
 
-        graphql_fields = {}
-        for field in interface.fields:
-            assert field.name is not None
-            graphql_fields[field.name] = self.from_field(field)
+        # Don't reevaluate known types
+        if interface.name in self.type_map:
+            graphql_interface = self.type_map[interface.name].implementation
+            assert isinstance(graphql_interface, GraphQLInterfaceType)
 
-        return GraphQLInterfaceType(
-            name=interface.name,
-            fields=graphql_fields,
-            interfaces=list(map(self.from_interface, interface.interfaces)),
-            description=interface.description,
-        )
+        else:
+            def get_graphql_fields() -> Dict[str, GraphQLField]:
+                graphql_fields = {}
+                for field in interface.fields:
+                    assert field.name is not None
+                    graphql_fields[field.name] = self.from_field(field)
+                return graphql_fields
+
+            graphql_interface = GraphQLInterfaceType(
+                name=interface.name,
+                fields=get_graphql_fields,
+                interfaces=list(map(self.from_interface, interface.interfaces)),
+                description=interface.description,
+            )
+
+            self.type_map[interface.name] = ConcreteType(
+                definition=interface, implementation=graphql_interface
+            )
+
+        return graphql_interface
 
     def from_list(self, list_: FIELD_ARGUMENT_TYPE) -> GraphQLList:
         assert list_.child is not None
