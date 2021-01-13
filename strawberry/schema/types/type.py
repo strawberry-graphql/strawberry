@@ -132,6 +132,7 @@ class GraphQLCoreConverter:
             args=graphql_arguments,
             resolve=resolver,
             subscribe=subscribe,
+            description=field.description,
             deprecation_reason=field.deprecation_reason
         )
 
