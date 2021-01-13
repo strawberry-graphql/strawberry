@@ -1,8 +1,10 @@
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Mapping
 
 
 def replace_placeholders_with_files(
-    operations: Dict[str, Any], files_map: Dict[str, List[str]], files: Dict[str, Any]
+    operations: Dict[str, Any],
+    files_map: Dict[str, List[str]],
+    files: Mapping[str, Any],
 ) -> Dict[str, Any]:
     path_to_key_iter = (
         (value.split("."), key)
