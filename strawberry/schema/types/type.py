@@ -277,6 +277,8 @@ class GraphQLCoreConverter:
                     info.field_name, str(type(root)), type_.types
                 )
 
+            return returned_type
+
         graphql_types = []
         for type_ in union.types:
             graphql_type = self.get_graphql_type(type_)
