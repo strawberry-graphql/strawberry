@@ -1,10 +1,22 @@
-from typing import NoReturn, Optional, Tuple, Type, TypeVar, Callable, Any, \
-    TYPE_CHECKING
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    NoReturn,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+)
 
-from strawberry.exceptions import InvalidUnionType, WrongReturnTypeForUnion, \
-    UnallowedReturnTypeForUnion
+from strawberry.exceptions import (
+    InvalidUnionType,
+    UnallowedReturnTypeForUnion,
+    WrongReturnTypeForUnion,
+)
 from strawberry.scalars import SCALAR_TYPES
 from strawberry.utils.typing import is_generic
+
 
 if TYPE_CHECKING:
     from strawberry.schema.types.types import TypeMap
@@ -12,7 +24,7 @@ if TYPE_CHECKING:
 
 class StrawberryUnion:
     def __init__(
-            self, name: str, types: Tuple[Type, ...], description: Optional[str] = None
+        self, name: str, types: Tuple[Type, ...], description: Optional[str] = None
     ):
         self.name = name
         self._types = types

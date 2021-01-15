@@ -1,26 +1,42 @@
 import inspect
 from itertools import islice
-from typing import Type, Union, Any, Dict, Callable, cast, List
+from typing import Any, Callable, Dict, List, Type, Union, cast
 
-from graphql import GraphQLList, GraphQLType, GraphQLNullableType, GraphQLEnumType, \
-    GraphQLEnumValue, GraphQLObjectType, GraphQLInterfaceType, GraphQLField, \
-    GraphQLInputField, GraphQLInputObjectType, Undefined, GraphQLUnionType, \
-    GraphQLScalarType, GraphQLArgument, GraphQLDirective, GraphQLNonNull, \
-    GraphQLInputType, GraphQLOutputType
+from graphql import (
+    GraphQLArgument,
+    GraphQLDirective,
+    GraphQLEnumType,
+    GraphQLEnumValue,
+    GraphQLField,
+    GraphQLInputField,
+    GraphQLInputObjectType,
+    GraphQLInputType,
+    GraphQLInterfaceType,
+    GraphQLList,
+    GraphQLNonNull,
+    GraphQLNullableType,
+    GraphQLObjectType,
+    GraphQLOutputType,
+    GraphQLScalarType,
+    GraphQLType,
+    GraphQLUnionType,
+    Undefined,
+)
 
 from strawberry.arguments import UNSET, get_arguments_from_annotations
 from strawberry.directive import DirectiveDefinition
 from strawberry.enum import EnumDefinition, EnumValue
-from strawberry.exceptions import WrongReturnTypeForUnion, UnallowedReturnTypeForUnion
+from strawberry.exceptions import UnallowedReturnTypeForUnion, WrongReturnTypeForUnion
 from strawberry.field import FieldDefinition
 from strawberry.resolvers import get_resolver
 from strawberry.scalars import is_scalar
-from strawberry.types.types import ArgumentDefinition, undefined, TypeDefinition
+from strawberry.types.types import ArgumentDefinition, TypeDefinition, undefined
 from strawberry.union import StrawberryUnion
 from strawberry.utils.typing import is_generic
 
 from .scalar import get_scalar_type
 from .types import ConcreteType
+
 
 FIELD_ARGUMENT_TYPE = Union[FieldDefinition, ArgumentDefinition]
 
@@ -70,9 +86,7 @@ class GraphQLCoreConverter:
 
     def from_argument(self, argument: ArgumentDefinition) -> GraphQLArgument:
         default_value = (
-            Undefined
-            if argument.default_value is undefined
-            else argument.default_value
+            Undefined if argument.default_value is undefined else argument.default_value
         )
 
         argument_type = self.get_graphql_type_field(argument)
@@ -81,7 +95,7 @@ class GraphQLCoreConverter:
         return GraphQLArgument(
             type_=argument_type,
             default_value=default_value,
-            description=argument.description
+            description=argument.description,
         )
 
     def from_enum(self, enum: EnumDefinition) -> GraphQLEnumType:
@@ -96,10 +110,8 @@ class GraphQLCoreConverter:
         else:
             graphql_enum = GraphQLEnumType(
                 name=enum.name,
-                values={
-                    item.name: self.from_enum_value(item) for item in enum.values
-                },
-                description=enum.description
+                values={item.name: self.from_enum_value(item) for item in enum.values},
+                description=enum.description,
             )
 
             self.type_map[enum.name] = ConcreteType(
@@ -122,7 +134,7 @@ class GraphQLCoreConverter:
             name=directive.name,
             locations=directive.locations,
             args=graphql_arguments,
-            description=directive.description
+            description=directive.description,
         )
 
     def from_field(self, field: FieldDefinition) -> GraphQLField:
@@ -149,7 +161,7 @@ class GraphQLCoreConverter:
             resolve=resolver,
             subscribe=subscribe,
             description=field.description,
-            deprecation_reason=field.deprecation_reason
+            deprecation_reason=field.deprecation_reason,
         )
 
     def from_input_field(self, field: FieldDefinition) -> GraphQLInputField:
@@ -162,9 +174,7 @@ class GraphQLCoreConverter:
         field_type = cast(GraphQLInputType, field_type)
 
         return GraphQLInputField(
-            type_=field_type,
-            default_value=default_value,
-            description=field.description
+            type_=field_type, default_value=default_value, description=field.description
         )
 
     def from_input_object_type(self, object_type: Type) -> GraphQLInputObjectType:
@@ -195,6 +205,7 @@ class GraphQLCoreConverter:
             assert isinstance(graphql_interface, GraphQLInterfaceType)  # For mypy
 
         else:
+
             def get_graphql_fields() -> Dict[str, GraphQLField]:
                 graphql_fields = {}
                 for field in interface.fields:
@@ -276,7 +287,7 @@ class GraphQLCoreConverter:
                 name=union.name,
                 types=graphql_types,
                 description=union.description,
-                resolve_type=union.get_type_resolver(self.type_map)
+                resolve_type=union.get_type_resolver(self.type_map),
             )
 
             self.type_map[union.name] = ConcreteType(

@@ -5,8 +5,8 @@ from typing import Callable, List, Optional
 
 from graphql import DirectiveLocation
 
-from strawberry.types.types import ArgumentDefinition
 from strawberry.arguments import get_arguments_from_annotations
+from strawberry.types.types import ArgumentDefinition
 from strawberry.utils.str_converters import to_camel_case
 
 

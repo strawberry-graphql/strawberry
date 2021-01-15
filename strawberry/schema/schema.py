@@ -46,7 +46,9 @@ class Schema:
             self.schema_converter.from_object_type(mutation) if mutation else None
         )
         subscription_type = (
-            self.schema_converter.from_object_type(subscription) if subscription else None
+            self.schema_converter.from_object_type(subscription)
+            if subscription
+            else None
         )
 
         self.middleware: List[Middleware] = [DirectivesMiddleware(directives)]
