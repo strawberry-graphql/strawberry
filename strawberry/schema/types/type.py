@@ -112,10 +112,9 @@ class GraphQLCoreConverter:
         return GraphQLEnumValue(enum_value.value)
 
     def from_directive(self, directive: DirectiveDefinition) -> GraphQLDirective:
-        arguments = self._get_arguments_for_directive(directive.resolver)
 
         graphql_arguments = {}
-        for argument in arguments:
+        for argument in directive.arguments:
             assert argument.name is not None
             graphql_arguments[argument.name] = self.from_argument(argument)
 
@@ -285,18 +284,6 @@ class GraphQLCoreConverter:
             )
 
         return graphql_union
-
-    # Helper methods
-    @staticmethod
-    def _get_arguments_for_directive(resolver: Callable) -> List[ArgumentDefinition]:
-        # TODO: move this into future StrawberryDirective class
-        annotations = resolver.__annotations__
-        annotations = dict(islice(annotations.items(), 1, None))
-        annotations.pop("return", None)
-
-        parameters = inspect.signature(resolver).parameters
-
-        return get_arguments_from_annotations(annotations, parameters, origin=resolver)
 
 
 ################################################################################
