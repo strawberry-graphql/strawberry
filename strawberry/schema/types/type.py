@@ -1,4 +1,6 @@
-from typing import Type, Union, Any, Dict, Callable, cast
+import inspect
+from itertools import islice
+from typing import Type, Union, Any, Dict, Callable, cast, List
 
 from graphql import GraphQLList, GraphQLType, GraphQLNullableType, GraphQLEnumType, \
     GraphQLEnumValue, GraphQLObjectType, GraphQLInterfaceType, GraphQLField, \
@@ -6,14 +8,13 @@ from graphql import GraphQLList, GraphQLType, GraphQLNullableType, GraphQLEnumTy
     GraphQLScalarType, GraphQLArgument, GraphQLDirective, GraphQLNonNull, \
     GraphQLInputType, GraphQLOutputType
 
-from strawberry.arguments import UNSET
+from strawberry.arguments import UNSET, get_arguments_from_annotations
 from strawberry.directive import DirectiveDefinition
 from strawberry.enum import EnumDefinition, EnumValue
 from strawberry.exceptions import WrongReturnTypeForUnion, UnallowedReturnTypeForUnion
 from strawberry.field import FieldDefinition
 from strawberry.resolvers import get_resolver
 from strawberry.scalars import is_scalar
-from strawberry.schema.types.directives import get_arguments_for_directive
 from strawberry.types.types import ArgumentDefinition, undefined, TypeDefinition
 from strawberry.union import StrawberryUnion
 from strawberry.utils.typing import is_generic
@@ -111,7 +112,7 @@ class GraphQLCoreConverter:
         return GraphQLEnumValue(enum_value.value)
 
     def from_directive(self, directive: DirectiveDefinition) -> GraphQLDirective:
-        arguments = get_arguments_for_directive(directive.resolver)
+        arguments = self._get_arguments_for_directive(directive.resolver)
 
         graphql_arguments = {}
         for argument in arguments:
@@ -285,9 +286,23 @@ class GraphQLCoreConverter:
 
         return graphql_union
 
+    # Helper methods
+    # TODO: This feel too specific to have on the conversion class. Might be a symptom
+    # of the monolithic design.
+
+    @staticmethod
+    def _get_arguments_for_directive(resolver: Callable) -> List[ArgumentDefinition]:
+        # TODO: move this into future StrawberryDirective class
+        annotations = resolver.__annotations__
+        annotations = dict(islice(annotations.items(), 1, None))
+        annotations.pop("return", None)
+
+        parameters = inspect.signature(resolver).parameters
+
+        return get_arguments_from_annotations(annotations, parameters, origin=resolver)
+
     def _resolve_union_type(self, root, info, type_):
         # TODO: Typing
-        # TODO: This is the only helper method on the entire class. Feels too specific.
 
         if not hasattr(root, "_type_definition"):
             raise WrongReturnTypeForUnion(info.field_name, str(type(root)))
