@@ -1,12 +1,18 @@
-from typing import NoReturn, Optional, Tuple, Type, TypeVar
+from typing import NoReturn, Optional, Tuple, Type, TypeVar, Callable, Any, \
+    TYPE_CHECKING
 
-from .exceptions import InvalidUnionType
-from .scalars import SCALAR_TYPES
+from strawberry.exceptions import InvalidUnionType, WrongReturnTypeForUnion, \
+    UnallowedReturnTypeForUnion
+from strawberry.scalars import SCALAR_TYPES
+from strawberry.utils.typing import is_generic
+
+if TYPE_CHECKING:
+    from strawberry.schema.types.types import TypeMap
 
 
 class StrawberryUnion:
     def __init__(
-        self, name: str, types: Tuple[Type, ...], description: Optional[str] = None
+            self, name: str, types: Tuple[Type, ...], description: Optional[str] = None
     ):
         self.name = name
         self._types = types
@@ -31,6 +37,31 @@ class StrawberryUnion:
         https://github.com/python/cpython/blob/5efb1a77e75648012f8b52960c8637fc296a5c6d/Lib/typing.py#L148-L149
         """
         raise ValueError("Cannot use union type directly")
+
+    def get_type_resolver(self, type_map: "TypeMap") -> Callable[[Any, Any, Any], Any]:
+        # TODO: Type annotate returned function
+
+        def _resolve_union_type(root, info, type_):
+            if not hasattr(root, "_type_definition"):
+                raise WrongReturnTypeForUnion(info.field_name, str(type(root)))
+
+            type_definition = root._type_definition
+
+            if is_generic(type(root)):
+                # TODO:
+                type_definition = ...
+
+            # TODO: There should be a way to do this without needing the TypeMap
+            returned_type = type_map[type_definition.name].implementation
+
+            if returned_type not in type_.types:
+                raise UnallowedReturnTypeForUnion(
+                    info.field_name, str(type(root)), type_.types
+                )
+
+            return returned_type
+
+        return _resolve_union_type
 
 
 def union(

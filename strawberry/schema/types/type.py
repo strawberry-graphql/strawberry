@@ -277,7 +277,7 @@ class GraphQLCoreConverter:
                 name=union.name,
                 types=graphql_types,
                 description=union.description,
-                resolve_type=self._resolve_union_type
+                resolve_type=union.get_type_resolver(self.type_map)
             )
 
             self.type_map[union.name] = ConcreteType(
@@ -287,9 +287,6 @@ class GraphQLCoreConverter:
         return graphql_union
 
     # Helper methods
-    # TODO: This feel too specific to have on the conversion class. Might be a symptom
-    # of the monolithic design.
-
     @staticmethod
     def _get_arguments_for_directive(resolver: Callable) -> List[ArgumentDefinition]:
         # TODO: move this into future StrawberryDirective class
@@ -300,27 +297,6 @@ class GraphQLCoreConverter:
         parameters = inspect.signature(resolver).parameters
 
         return get_arguments_from_annotations(annotations, parameters, origin=resolver)
-
-    def _resolve_union_type(self, root, info, type_):
-        # TODO: Typing
-
-        if not hasattr(root, "_type_definition"):
-            raise WrongReturnTypeForUnion(info.field_name, str(type(root)))
-
-        type_definition = root._type_definition
-
-        if is_generic(type(root)):
-            # TODO:
-            type_definition = ...
-
-        returned_type = self.type_map[type_definition.name].implementation
-
-        if returned_type not in type_.types:
-            raise UnallowedReturnTypeForUnion(
-                info.field_name, str(type(root)), type_.types
-            )
-
-        return returned_type
 
 
 ################################################################################
