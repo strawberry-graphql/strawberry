@@ -1,6 +1,4 @@
-import inspect
-from itertools import islice
-from typing import Any, Callable, Dict, List, Type, Union, cast
+from typing import Any, Callable, Dict, Type, Union, cast
 
 from graphql import (
     GraphQLArgument,
@@ -23,16 +21,14 @@ from graphql import (
     Undefined,
 )
 
-from strawberry.arguments import UNSET, get_arguments_from_annotations
+from strawberry.arguments import UNSET
 from strawberry.directive import DirectiveDefinition
 from strawberry.enum import EnumDefinition, EnumValue
-from strawberry.exceptions import UnallowedReturnTypeForUnion, WrongReturnTypeForUnion
 from strawberry.field import FieldDefinition
 from strawberry.resolvers import get_resolver
 from strawberry.scalars import is_scalar
 from strawberry.types.types import ArgumentDefinition, TypeDefinition, undefined
 from strawberry.union import StrawberryUnion
-from strawberry.utils.typing import is_generic
 
 from .scalar import get_scalar_type
 from .types import ConcreteType
