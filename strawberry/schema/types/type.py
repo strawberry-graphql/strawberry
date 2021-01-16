@@ -174,13 +174,7 @@ class GraphQLCoreConverter:
         )
 
     def from_input_object_type(self, object_type: Type) -> GraphQLInputObjectType:
-        if not hasattr(object_type, "_type_definition"):
-            raise TypeError(f"Wrong type passed to get object type: {object_type}")
-
         type_definition = object_type._type_definition
-
-        if not type_definition.is_input:
-            raise TypeError(f"{object_type} is not an input type")
 
         return GraphQLInputObjectType(
             name=type_definition.name,
@@ -230,8 +224,6 @@ class GraphQLCoreConverter:
 
     def from_object_type(self, object_type: Type) -> GraphQLObjectType:
         # TODO: Use StrawberryObjectType when it's implemented in another PR
-        if not hasattr(object_type, "_type_definition"):
-            raise TypeError(f"Wrong type passed to get object type {object_type}")
 
         type_definition = object_type._type_definition
 
