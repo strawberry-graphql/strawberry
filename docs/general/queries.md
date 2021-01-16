@@ -1,3 +1,7 @@
+---
+title: Queries
+---
+
 # Queries
 
 In GraphQL you use queries to fetch data from a server. In Strawberry you can

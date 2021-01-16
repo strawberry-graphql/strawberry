@@ -1,3 +1,7 @@
+---
+title: Interfaces
+---
+
 # Interfaces
 
 Interfaces are an abstract type which may be implemented by object types.

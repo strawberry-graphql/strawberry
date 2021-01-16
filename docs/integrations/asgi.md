@@ -1,3 +1,7 @@
+---
+title: ASGI
+---
+
 # ASGI
 
 Strawberry comes with a basic ASGI integration. It provides an app that you

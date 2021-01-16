@@ -1,3 +1,7 @@
+---
+title: Extensions
+---
+
 # Extensions
 
 Strawberry provides support for adding extensions. Extensions can be used to

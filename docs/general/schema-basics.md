@@ -1,3 +1,7 @@
+---
+title: Schema basics
+---
+
 # Schema basics
 
 GraphQL servers use a **schema** to describe the shape of the data. The schema

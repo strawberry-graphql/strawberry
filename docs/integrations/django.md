@@ -1,3 +1,7 @@
+---
+title: Django
+---
+
 # Django
 
 Strawberry comes with a basic Django integration. It provides a view that you
@@ -107,8 +111,8 @@ class MyGraphQLView(GraphQLView):
         return data
 ```
 
-In this case we are doing the default processing of the result, but it can
-be tweaked based on your needs.
+In this case we are doing the default processing of the result, but it can be
+tweaked based on your needs.
 
 # Async Django
 
@@ -139,7 +143,8 @@ The `AsyncGraphQLView` accepts two options at the moment:
 
 ## Extending the view
 
-We allow to extend the base `AsyncGraphQLView`, by overriding the following methods:
+We allow to extend the base `AsyncGraphQLView`, by overriding the following
+methods:
 
 - `async get_context(self, request: HttpRequest) -> Any`
 - `async get_root_value(self, request: HttpRequest) -> Any`
@@ -218,5 +223,5 @@ class MyGraphQLView(AsyncGraphQLView):
         return data
 ```
 
-In this case we are doing the default processing of the result, but it can
-be tweaked based on your needs.
+In this case we are doing the default processing of the result, but it can be
+tweaked based on your needs.

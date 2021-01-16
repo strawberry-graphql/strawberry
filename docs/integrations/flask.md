@@ -1,3 +1,7 @@
+---
+title: Flask
+---
+
 # Flask
 
 Strawberry comes with a basic Flask integration. It provides a view that you can

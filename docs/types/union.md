@@ -1,3 +1,7 @@
+---
+title: Union types
+---
+
 # Union types
 
 Union types are similar to [interfaces](/docs/types/interfaces) however, while interfaces

@@ -1,3 +1,7 @@
+---
+title: Scalars
+---
+
 # Scalars
 
 Scalar types represent concrete values at the leaves of a query. For example

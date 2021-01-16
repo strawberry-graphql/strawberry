@@ -1,3 +1,7 @@
+---
+title: Mutations
+---
+
 # Mutations
 
 As opposed to queries, mutation in GraphQL represent operation that cause writes

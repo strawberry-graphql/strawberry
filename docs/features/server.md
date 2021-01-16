@@ -1,3 +1,7 @@
+---
+title: Builtin server
+---
+
 # Builtin server
 
 Sometimes you need to quickly prototype an API and don’t really need to use a

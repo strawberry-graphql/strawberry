@@ -1,3 +1,7 @@
+---
+title: Enums
+---
+
 # Enums
 
 Enums are a special kind of type that is restrict to a particular set of values.

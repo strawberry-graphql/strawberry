@@ -1,3 +1,7 @@
+---
+title: DataLoaders
+---
+
 # DataLoaders
 
 Strawberry comes with a built-in DataLoader, a generic utility that can be used

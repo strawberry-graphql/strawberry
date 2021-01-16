@@ -1,3 +1,7 @@
+---
+title: File Upload
+---
+
 # File Upload
 
 Strawberry supports multipart uploads as described here: https://github.com/jaydenseric/graphql-multipart-request-spec for ASGI and Django.

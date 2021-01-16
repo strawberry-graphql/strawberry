@@ -1,3 +1,7 @@
+---
+title: Getting started with Strawberry
+---
+
 # Getting started with Strawberry
 
 This tutorial will help you:

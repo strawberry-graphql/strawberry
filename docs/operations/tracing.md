@@ -1,3 +1,7 @@
+---
+title: Tracing
+---
+
 # Tracing
 
 ## Apollo
