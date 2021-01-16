@@ -1,8 +1,3 @@
----
-title: Getting started
-path: /docs/
----
-
 # Getting started with Strawberry
 
 This tutorial will help you:

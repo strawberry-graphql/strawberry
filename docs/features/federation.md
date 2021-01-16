@@ -1,0 +1,3 @@
+# Federation
+
+Documentation coming soon

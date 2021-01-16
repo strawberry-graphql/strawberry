@@ -1,0 +1,3 @@
+# Generics
+
+Documentation coming soon
