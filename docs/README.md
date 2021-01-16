@@ -1,10 +1,10 @@
 # Strawberry docs
 
-- [Getting Started](./index.md)
+- [Getting started](./index.md)
 
 ## General
 
-- [Schema Basics](./general/schema-basics.md)
+- [Schema basics](./general/schema-basics.md)
 - [Queries](./general/queries.md)
 - [Mutations](./general/mutations.md)
 - [Subscriptions](./general/subscriptions.md)
@@ -19,8 +19,8 @@
 - [Interfaces](./types/interfaces.md)
 - [Object types](./types/object-types.md)
 - [Resolvers](./types/resolvers.md)
-- [Scalar](./types/scalars.md)
-- [Union](./types/union.md)
+- [Scalars](./types/scalars.md)
+- [Union types](./types/union.md)
 
 ## Features
 
@@ -32,12 +32,12 @@
 - [File upload](./features/file-upload.md)
 - [Pagination](./features/pagination.md)
 - [Permissions](./features/permissions.md)
-- [Server](./features/server.md)
+- [Builtin server](./features/server.md)
 
 ## Concepts
 
 - [Async](./concepts/async.md)
-- [Typings](./concepts/typings.md)
+- [Type hints](./concepts/typings.md)
 
 ## Integrations
 
