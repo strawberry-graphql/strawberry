@@ -1,10 +1,10 @@
-from typing import TYPE_CHECKING, Any, NoReturn, Optional, Tuple, Type, TypeVar, Dict
+from typing import TYPE_CHECKING, Any, Dict, NoReturn, Optional, Tuple, Type, TypeVar
 
 from graphql import (
-    GraphQLTypeResolver,
+    GraphQLAbstractType,
     GraphQLResolveInfo,
+    GraphQLTypeResolver,
     GraphQLUnionType,
-    GraphQLAbstractType
 )
 
 from strawberry.exceptions import (
@@ -13,8 +13,13 @@ from strawberry.exceptions import (
     WrongReturnTypeForUnion,
 )
 from strawberry.scalars import SCALAR_TYPES
-from strawberry.utils.typing import is_generic, is_list, is_type_var, \
-    get_list_annotation
+from strawberry.utils.typing import (
+    get_list_annotation,
+    is_generic,
+    is_list,
+    is_type_var,
+)
+
 
 if TYPE_CHECKING:
     from strawberry.schema.types.types import TypeMap
@@ -53,7 +58,7 @@ class StrawberryUnion:
         # TODO: Type annotate returned function
 
         def _resolve_union_type(
-                root: Any, info: GraphQLResolveInfo, type_: GraphQLAbstractType
+            root: Any, info: GraphQLResolveInfo, type_: GraphQLAbstractType
         ) -> Any:
             if not hasattr(root, "_type_definition"):
                 raise WrongReturnTypeForUnion(info.field_name, str(type(root)))
@@ -75,7 +80,6 @@ class StrawberryUnion:
             return returned_type
 
         return _resolve_union_type
-
 
     def _find_type_for_generic_union(self, root: Any) -> "TypeDefinition":
         # this is a ordered tuple of the type vars for the generic class, so for
@@ -100,7 +104,6 @@ class StrawberryUnion:
             raise ValueError(f"Unable to find type for {root.__class__} and {types}")
 
         return type._type_definition
-
 
     def _get_type_mapping_from_actual_type(self, root) -> Dict[Any, Type]:
         # we map ~T to the actual type of root

@@ -1,7 +1,5 @@
 import typing
 
-import pytest
-
 import strawberry
 
 
