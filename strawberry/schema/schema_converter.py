@@ -144,7 +144,7 @@ class GraphQLCoreConverter:
 
         if field.is_subscription:
             subscribe = resolver
-            resolver = lambda event, *_, **__: event
+            resolver = lambda event, *_, **__: event  # noqa: E731
 
         graphql_arguments = {}
         for argument in field.arguments:
@@ -251,7 +251,6 @@ class GraphQLCoreConverter:
         return graphql_object_type
 
     def from_resolver(self, field: FieldDefinition) -> Callable:
-        # TODO: Take in StrawberryResolver
         return get_resolver(field)
 
     def from_scalar(self, scalar: Type) -> GraphQLScalarType:
@@ -291,30 +290,30 @@ class GraphQLCoreConverter:
 
 
 def _is_list(field: FIELD_ARGUMENT_TYPE) -> bool:
-    # isinstance(type_, StrawberryList)
+    # isinstance(type_, StrawberryList)  # noqa: E800
     return field.is_list
 
 
 def _is_optional(field: FIELD_ARGUMENT_TYPE) -> bool:
-    # isinstance(type_, StrawberryOptional)
+    # isinstance(type_, StrawberryOptional)  # noqa: E800
     return field.is_optional
 
 
 def _is_union(field: FIELD_ARGUMENT_TYPE) -> bool:
-    # isinstance(type_, StrawberryUnion)
+    # isinstance(type_, StrawberryUnion)  # noqa: E800
     return field.is_union
 
 
 def _is_scalar(type_: Type) -> bool:
-    # isinstance(type_, StrawberryScalar)
+    # isinstance(type_, StrawberryScalar)  # noqa: E800
     return is_scalar(type_)
 
 
 def _is_object_type(type_: Type) -> bool:
-    # isinstance(type_, StrawberryObjectType)
+    # isinstance(type_, StrawberryObjectType)  # noqa: E800
     return hasattr(type_, "_type_definition")
 
 
 def _is_enum(type_: Type) -> bool:
-    # isinstance(type_, StrawberryEnum)
+    # isinstance(type_, StrawberryEnum)  # noqa: E800
     return hasattr(type_, "_enum_definition")
