@@ -1,5 +1,6 @@
 ---
 title: Pydantic support
+experimental: true
 ---
 
 # Pydantic support
@@ -220,10 +221,6 @@ class UserInput:
     pass
 
 input_data = UserInput(id='abc', name='Jake')
-
----
-title: this will run pydantic's validation
----
 
 # this will run pydantic's validation
 instance = input_data.to_pydantic()
