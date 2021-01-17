@@ -233,6 +233,15 @@ class GraphQLCoreConverter:
             assert isinstance(graphql_object_type, GraphQLObjectType)  # For mypy
 
         else:
+
+            # Only define an is_type_of function for Types that implement an interface.
+            # Otherwise, leave it to the default implementation
+            is_type_of = (
+                (lambda obj, _: isinstance(obj, type_definition.origin))
+                if type_definition.interfaces
+                else None
+            )
+
             graphql_object_type = GraphQLObjectType(
                 name=type_definition.name,
                 fields=lambda: {
@@ -240,7 +249,7 @@ class GraphQLCoreConverter:
                     for field in type_definition.fields
                 },
                 interfaces=list(map(self.from_interface, type_definition.interfaces)),
-                is_type_of=lambda obj, _: isinstance(obj, type_definition.origin),
+                is_type_of=is_type_of,
                 description=type_definition.description,
             )
 

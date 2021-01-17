@@ -4,8 +4,6 @@ from dataclasses import InitVar, dataclass
 from enum import Enum
 from typing import Optional
 
-import pytest
-
 import strawberry
 
 
@@ -314,7 +312,6 @@ def test_parent_class_fields_are_inherited():
     assert result.data["example"]["helloThisIs"] == "patrick"
 
 
-@pytest.mark.skip("fix before PR")
 def test_can_return_compatible_type():
     """Test that we can return a different type that has the same fields,
     for example when returning a Django Model."""
