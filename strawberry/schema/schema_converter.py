@@ -30,8 +30,8 @@ from strawberry.scalars import is_scalar
 from strawberry.types.types import ArgumentDefinition, TypeDefinition, undefined
 from strawberry.union import StrawberryUnion
 
-from .scalar import get_scalar_type
-from .types import ConcreteType
+from .types.concrete_type import ConcreteType
+from .types.scalar import get_scalar_type
 
 
 FIELD_ARGUMENT_TYPE = Union[FieldDefinition, ArgumentDefinition]

@@ -1,4 +1,4 @@
-from .types import ConcreteType as ConcreteType
+from .concrete_type import ConcreteType as ConcreteType
 
 
 __all__ = ["ConcreteType"]

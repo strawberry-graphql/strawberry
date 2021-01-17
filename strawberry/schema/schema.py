@@ -13,7 +13,7 @@ from graphql.type.directives import specified_directives
 from strawberry.custom_scalar import ScalarDefinition
 from strawberry.enum import EnumDefinition
 from strawberry.extensions import Extension
-from strawberry.schema.types.type import GraphQLCoreConverter
+from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 

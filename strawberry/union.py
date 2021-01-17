@@ -22,7 +22,7 @@ from strawberry.utils.typing import (
 
 
 if TYPE_CHECKING:
-    from strawberry.schema.types.types import TypeMap
+    from strawberry.schema.types.concrete_type import TypeMap
     from strawberry.types.types import TypeDefinition
 
 

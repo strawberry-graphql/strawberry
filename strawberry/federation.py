@@ -14,7 +14,7 @@ from graphql.type.definition import GraphQLArgument
 from strawberry.custom_scalar import ScalarDefinition
 from strawberry.enum import EnumDefinition
 from strawberry.permission import BasePermission
-from strawberry.schema.types.types import TypeMap
+from strawberry.schema.types.concrete_type import TypeMap
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 
