@@ -17,7 +17,6 @@ jobs:
     - name: Get list of links
       id: links_list
       run: |
-        # -*- coding: utf-8 -*-
         import os, json, textwrap
 
         all_files_path = os.path.join(os.environ["HOME"], "files.json")
