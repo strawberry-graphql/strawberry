@@ -102,17 +102,17 @@ class GraphQLCoreConverter:
         if enum.name in self.type_map:
             graphql_enum = self.type_map[enum.name].implementation
             assert isinstance(graphql_enum, GraphQLEnumType)  # For mypy
+            return graphql_enum
 
-        else:
-            graphql_enum = GraphQLEnumType(
-                name=enum.name,
-                values={item.name: self.from_enum_value(item) for item in enum.values},
-                description=enum.description,
-            )
+        graphql_enum = GraphQLEnumType(
+            name=enum.name,
+            values={item.name: self.from_enum_value(item) for item in enum.values},
+            description=enum.description,
+        )
 
-            self.type_map[enum.name] = ConcreteType(
-                definition=enum, implementation=graphql_enum
-            )
+        self.type_map[enum.name] = ConcreteType(
+            definition=enum, implementation=graphql_enum
+        )
 
         return graphql_enum
 
@@ -135,7 +135,6 @@ class GraphQLCoreConverter:
 
     def from_field(self, field: FieldDefinition) -> GraphQLField:
 
-        # This shouldn't be used here. Messes up conversion hierarchy
         field_type = self.get_graphql_type_field(field)
         field_type = cast(GraphQLOutputType, field_type)
 
@@ -193,26 +192,25 @@ class GraphQLCoreConverter:
         if interface.name in self.type_map:
             graphql_interface = self.type_map[interface.name].implementation
             assert isinstance(graphql_interface, GraphQLInterfaceType)  # For mypy
+            return graphql_interface
 
-        else:
+        def get_graphql_fields() -> Dict[str, GraphQLField]:
+            graphql_fields = {}
+            for field in interface.fields:
+                assert field.name is not None
+                graphql_fields[field.name] = self.from_field(field)
+            return graphql_fields
 
-            def get_graphql_fields() -> Dict[str, GraphQLField]:
-                graphql_fields = {}
-                for field in interface.fields:
-                    assert field.name is not None
-                    graphql_fields[field.name] = self.from_field(field)
-                return graphql_fields
+        graphql_interface = GraphQLInterfaceType(
+            name=interface.name,
+            fields=get_graphql_fields,
+            interfaces=list(map(self.from_interface, interface.interfaces)),
+            description=interface.description,
+        )
 
-            graphql_interface = GraphQLInterfaceType(
-                name=interface.name,
-                fields=get_graphql_fields,
-                interfaces=list(map(self.from_interface, interface.interfaces)),
-                description=interface.description,
-            )
-
-            self.type_map[interface.name] = ConcreteType(
-                definition=interface, implementation=graphql_interface
-            )
+        self.type_map[interface.name] = ConcreteType(
+            definition=interface, implementation=graphql_interface
+        )
 
         return graphql_interface
 
@@ -231,31 +229,29 @@ class GraphQLCoreConverter:
         if type_definition.name in self.type_map:
             graphql_object_type = self.type_map[type_definition.name].implementation
             assert isinstance(graphql_object_type, GraphQLObjectType)  # For mypy
+            return graphql_object_type
 
-        else:
+        # Only define an is_type_of function for Types that implement an interface.
+        # Otherwise, leave it to the default implementation
+        is_type_of = (
+            (lambda obj, _: isinstance(obj, type_definition.origin))
+            if type_definition.interfaces
+            else None
+        )
 
-            # Only define an is_type_of function for Types that implement an interface.
-            # Otherwise, leave it to the default implementation
-            is_type_of = (
-                (lambda obj, _: isinstance(obj, type_definition.origin))
-                if type_definition.interfaces
-                else None
-            )
+        graphql_object_type = GraphQLObjectType(
+            name=type_definition.name,
+            fields=lambda: {
+                field.name: self.from_field(field) for field in type_definition.fields
+            },
+            interfaces=list(map(self.from_interface, type_definition.interfaces)),
+            is_type_of=is_type_of,
+            description=type_definition.description,
+        )
 
-            graphql_object_type = GraphQLObjectType(
-                name=type_definition.name,
-                fields=lambda: {
-                    field.name: self.from_field(field)
-                    for field in type_definition.fields
-                },
-                interfaces=list(map(self.from_interface, type_definition.interfaces)),
-                is_type_of=is_type_of,
-                description=type_definition.description,
-            )
-
-            self.type_map[type_definition.name] = ConcreteType(
-                definition=type_definition, implementation=graphql_object_type
-            )
+        self.type_map[type_definition.name] = ConcreteType(
+            definition=type_definition, implementation=graphql_object_type
+        )
 
         return graphql_object_type
 
@@ -271,24 +267,24 @@ class GraphQLCoreConverter:
         if union.name in self.type_map:
             graphql_union = self.type_map[union.name].implementation
             assert isinstance(graphql_union, GraphQLUnionType)  # For mypy
+            return graphql_union
 
-        else:
-            graphql_types = []
-            for type_ in union.types:
-                graphql_type = self.get_graphql_type(type_)
-                assert isinstance(graphql_type, GraphQLObjectType)  # For mypy
-                graphql_types.append(graphql_type)
+        graphql_types = []
+        for type_ in union.types:
+            graphql_type = self.get_graphql_type(type_)
+            assert isinstance(graphql_type, GraphQLObjectType)  # For mypy
+            graphql_types.append(graphql_type)
 
-            graphql_union = GraphQLUnionType(
-                name=union.name,
-                types=graphql_types,
-                description=union.description,
-                resolve_type=union.get_type_resolver(self.type_map),
-            )
+        graphql_union = GraphQLUnionType(
+            name=union.name,
+            types=graphql_types,
+            description=union.description,
+            resolve_type=union.get_type_resolver(self.type_map),
+        )
 
-            self.type_map[union.name] = ConcreteType(
-                definition=union, implementation=graphql_union
-            )
+        self.type_map[union.name] = ConcreteType(
+            definition=union, implementation=graphql_union
+        )
 
         return graphql_union
 
