@@ -31,7 +31,7 @@ jobs:
         links = [
           "https://strawberry.rocks/docs/pr/{pr_number}/{path}".format(
             pr_number=event_data["number"],
-            path=file.replace(".md", "")
+            path=file.replace(".md", "").replace("docs/", "")
           )
           for file in all_files
           if file.startswith("docs/") and file.endswith(".md")
