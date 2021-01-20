@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.44.8 - 2021-01-20
+-------------------
+
+This releases fixes a wrong dependency issue
+
 0.44.7 - 2021-01-13
 -------------------
 
