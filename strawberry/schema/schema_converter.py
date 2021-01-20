@@ -175,13 +175,16 @@ class GraphQLCoreConverter:
     def from_input_object_type(self, object_type: Type) -> GraphQLInputObjectType:
         type_definition = object_type._type_definition
 
+        def get_graphql_fields() -> Dict[str, GraphQLInputField]:
+            graphql_fields = {}
+            for field in type_definition.fields:
+                assert field.name is not None
+                graphql_fields[field.name] = self.from_input_field(field)
+            return graphql_fields
+
         return GraphQLInputObjectType(
             name=type_definition.name,
-            # TODO: Does this need to be deferred?
-            fields={
-                field.name: self.from_input_field(field)
-                for field in type_definition.fields
-            },
+            fields=get_graphql_fields,
             description=type_definition.description,
         )
 
@@ -239,11 +242,16 @@ class GraphQLCoreConverter:
             else None
         )
 
+        def get_graphql_fields() -> Dict[str, GraphQLField]:
+            graphql_fields = {}
+            for field in type_definition.fields:
+                assert field.name is not None
+                graphql_fields[field.name] = self.from_field(field)
+            return graphql_fields
+
         graphql_object_type = GraphQLObjectType(
             name=type_definition.name,
-            fields=lambda: {
-                field.name: self.from_field(field) for field in type_definition.fields
-            },
+            fields=get_graphql_fields,
             interfaces=list(map(self.from_interface, type_definition.interfaces)),
             is_type_of=is_type_of,
             description=type_definition.description,
