@@ -4,9 +4,10 @@ This module contains functions designed to parse GraphQL SDL to AST and transpil
 to valid strawberry data class strings.
 The file printing is left to the caller which received input and output arguments.
 """
+
 from jinja2 import Template
 
-from strawberry.utils.str_converters import to_snake_case, to_camel_case
+from strawberry.utils import str_converters
 
 
 # Jinja2 templates
@@ -119,13 +120,13 @@ def get_field_attribute(field):
     field_type = get_field_type(field)
     strawberry_type = get_strawberry_type(field_name, field.description)
     field_type += strawberry_type if strawberry_type else ""
-    return f"{to_snake_case(field.name.value)}: {field_type}"
+    return f"{str_converters.to_snake_case(field.name.value)}: {field_type}"
 
 
 def get_field_name(field_name):
     """ Extract field name """
-    snake_name = to_snake_case(field_name)
-    camel_name = to_camel_case(field_name)
+    snake_name = str_converters.to_snake_case(field_name)
+    camel_name = str_converters.str_converters.to_camel_case(field_name)
     if camel_name == snake_name or camel_name == field_name:
         return ""
     else:
