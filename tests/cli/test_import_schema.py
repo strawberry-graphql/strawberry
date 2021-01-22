@@ -1,4 +1,4 @@
-from strawberry.cli.commands.schema_importer import sdl_importer
+from strawberry.cli.commands.schema_importer import sdl_importer, sdl_transpiler
 
 
 # Complex object
@@ -72,7 +72,6 @@ def test_import_bool_field():
         "@strawberry.type\n"
         "class Woman:\n"
         "    is_witch: bool = strawberry.field(\n"
-        "        name='isWitch',\n"
         "        description='''If a woman weighs less than a duck,\n"
         "then she is a...?'''\n"
         "    )"
@@ -104,7 +103,6 @@ def test_import_optional_bool_field():
         "@strawberry.type\n"
         "class Woman:\n"
         "    is_witch: typing.Optional[bool] = strawberry.field(\n"
-        "        name='isWitch',\n"
         "        description='''If a woman weighs less than a duck,\n"
         "then she is a witch ?'''\n"
         "    )"
@@ -133,7 +131,6 @@ def test_import_int_field():
         "@strawberry.type\n"
         "class HolyHandGrenade:\n"
         "    number_thou_shalt_count: int = strawberry.field(\n"
-        "        name='numberThouShaltCount',\n"
         "        description='''First shalt thou take out the Holy Pin.\n"
         "Then shalt thou count to...'''\n"
         "    )"
@@ -162,7 +159,6 @@ def test_import_optional_int_field():
         "@strawberry.type\n"
         "class HolyHandGrenade:\n"
         "    number_thou_shalt_count: typing.Optional[int] = strawberry.field(\n"
-        "        name='numberThouShaltCount',\n"
         "        description='''First shalt thou take out the Holy Pin.\n"
         "Then shalt thou count to...'''\n"
         "    )"
@@ -572,3 +568,10 @@ def test_import_list_str_field():
 
 
 # endregion
+
+# region
+def test_get_field_name():
+    """ test field name attribute acquisition """
+    assert sdl_transpiler.get_field_name("non_camel_ast_name") == "non_camel_ast_name"
+    assert sdl_transpiler.get_field_name("camelAstName") == ""
+    assert sdl_transpiler.get_field_name("snacamel") == ""

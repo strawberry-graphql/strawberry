@@ -6,7 +6,7 @@ The file printing is left to the caller which received input and output argument
 """
 from jinja2 import Template
 
-from strawberry.utils.str_converters import to_snake_case
+from strawberry.utils.str_converters import to_snake_case, to_camel_case
 
 
 # Jinja2 templates
@@ -115,13 +115,21 @@ def get_union(ast):
 
 
 def get_field_attribute(field):
-    field_name = to_snake_case(field.name.value)
+    field_name = get_field_name(field.name.value)
     field_type = get_field_type(field)
-    strawberry_type = get_strawberry_type(
-        "" if field.name.value == field_name else field.name.value, field.description
-    )
+    strawberry_type = get_strawberry_type(field_name, field.description)
     field_type += strawberry_type if strawberry_type else ""
-    return f"{field_name}: {field_type}"
+    return f"{to_snake_case(field.name.value)}: {field_type}"
+
+
+def get_field_name(field_name):
+    """ Extract field name """
+    snake_name = to_snake_case(field_name)
+    camel_name = to_camel_case(field_name)
+    if camel_name == snake_name or camel_name == field_name:
+        return ""
+    else:
+        return field_name
 
 
 def get_field_type(field, optional=True):
