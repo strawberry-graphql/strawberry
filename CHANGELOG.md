@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.44.9 - 2021-01-22
+-------------------
+
+Improves typing when decorating an enum with kwargs like description and name. Adds more mypy tests.
+
 0.44.8 - 2021-01-20
 -------------------
 
