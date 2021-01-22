@@ -1,5 +1,16 @@
 import dataclasses
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Type, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Generic,
+    List,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+)
 
 from strawberry.permission import BasePermission
 from strawberry.union import StrawberryUnion
@@ -9,6 +20,8 @@ if TYPE_CHECKING:
     from strawberry.types.fields.resolver import StrawberryResolver
 
 undefined = object()
+
+T = TypeVar("T")
 
 
 @dataclasses.dataclass
@@ -74,10 +87,10 @@ class FederationFieldParams:
 
 
 @dataclasses.dataclass
-class FieldDefinition:
+class FieldDefinition(Generic[T]):
     name: Optional[str]
     origin_name: Optional[str]
-    type: Optional[Union[Type, StrawberryUnion]]
+    type: Optional[Union[Type[T], StrawberryUnion]]
     origin: Optional[Union[Type, Callable]] = None
     child: Optional["FieldDefinition"] = None
     is_subscription: bool = False
@@ -90,7 +103,7 @@ class FieldDefinition:
     )
     arguments: List[ArgumentDefinition] = dataclasses.field(default_factory=list)
     description: Optional[str] = None
-    base_resolver: Optional["StrawberryResolver"] = None
+    base_resolver: Optional["StrawberryResolver[T]"] = None
     permission_classes: List[Type[BasePermission]] = dataclasses.field(
         default_factory=list
     )

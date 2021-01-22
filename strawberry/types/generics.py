@@ -1,6 +1,6 @@
 import builtins
 import dataclasses
-from typing import Dict, Iterable, Tuple, Type, Union, cast
+from typing import Any, Dict, Iterable, Tuple, Type, Union, cast
 
 from strawberry.union import StrawberryUnion, union
 from strawberry.utils.str_converters import capitalize_first
@@ -98,7 +98,7 @@ def copy_type_with(
                 federation_args = kwargs.pop("federation")
                 kwargs["federation"] = FederationFieldParams(**federation_args)
 
-                fields.append(FieldDefinition(**kwargs))
+                fields.append(FieldDefinition[Any](**kwargs))
 
             type_definition = TypeDefinition(
                 name=name,

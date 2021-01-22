@@ -47,6 +47,36 @@
     main:25: note: Revealed type is 'Any'
     main:26: note: Revealed type is 'Any'
 
+- case: test_field_resolver_return_type
+  main: |
+    import strawberry
+
+    def some_resolver() -> str:
+        return ""
+
+    class Foo:
+      a: str
+
+
+    @strawberry.type
+    class Example:
+
+        @strawberry.field(name="f")
+        def f_resolver(self, info) -> Foo:
+            foo = Foo()
+            foo.a = 'test'
+            return foo
+
+    example = Example()
+    f = example.f_resolver('fake_info')
+
+
+    reveal_type(Example.f_resolver)
+    reveal_type(f)
+  out: |
+    main:23: note: Revealed type is 'Any'
+    main:24: note: Revealed type is 'Any'
+
 - case: test_private_field
   main: |
     import strawberry

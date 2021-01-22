@@ -1,5 +1,7 @@
+from __future__ import annotations
+
 import dataclasses
-from typing import Callable, List, Optional, Type, Union
+from typing import Callable, Generic, List, Optional, Type, TypeVar, Union, cast
 
 from .permission import BasePermission
 from .types.fields.resolver import StrawberryResolver
@@ -7,10 +9,12 @@ from .types.types import FederationFieldParams, FieldDefinition
 from .utils.str_converters import to_camel_case
 
 
-_RESOLVER_TYPE = Union[StrawberryResolver, Callable]
+T = TypeVar("T")
+
+_RESOLVER_TYPE = Union[StrawberryResolver[T], Callable[..., T]]
 
 
-class StrawberryField(dataclasses.Field):
+class StrawberryField(dataclasses.Field, Generic[T]):
     _field_definition: FieldDefinition
 
     def __init__(self, field_definition: FieldDefinition):
@@ -26,10 +30,8 @@ class StrawberryField(dataclasses.Field):
             metadata=None,
         )
 
-    def __call__(self, resolver: _RESOLVER_TYPE) -> "StrawberryField":
+    def __call__(self, resolver: _RESOLVER_TYPE[T]) -> StrawberryField[T]:
         """Add a resolver to the field"""
-
-        # Allow for StrawberryResolvers or bare functions to be provided
         if not isinstance(resolver, StrawberryResolver):
             resolver = StrawberryResolver(resolver)
 
@@ -42,7 +44,6 @@ class StrawberryField(dataclasses.Field):
         # Don't add field to __init__ or __repr__
         self.init = False
         self.repr = False
-
         return self
 
     def __setattr__(self, name, value):
@@ -58,9 +59,17 @@ class StrawberryField(dataclasses.Field):
 
         return super().__setattr__(name, value)
 
+    @property
+    def type(self) -> Type[T]:  # type: ignore
+        if self._field_definition.base_resolver:
+            return cast(Type[T], self._field_definition.base_resolver.type)
+        else:
+            assert self.type is not None
+            return self.type
+
 
 def field(
-    resolver: Optional[_RESOLVER_TYPE] = None,
+    resolver: Optional[_RESOLVER_TYPE[T]] = None,
     *,
     name: Optional[str] = None,
     is_subscription: bool = False,
@@ -68,7 +77,7 @@ def field(
     permission_classes: Optional[List[Type[BasePermission]]] = None,
     federation: Optional[FederationFieldParams] = None,
     deprecation_reason: Optional[str] = None,
-) -> StrawberryField:
+) -> StrawberryField[T]:
     """Annotates a method or property as a GraphQL field.
 
     This is normally used inside a type declaration:
@@ -84,7 +93,7 @@ def field(
     it can be used both as decorator and as a normal function.
     """
 
-    field_definition = FieldDefinition(
+    field_definition = FieldDefinition[T](
         origin_name=None,  # modified by resolver in __call__
         name=name,
         type=None,
@@ -96,7 +105,7 @@ def field(
         deprecation_reason=deprecation_reason,
     )
 
-    field_ = StrawberryField(field_definition)
+    field_: StrawberryField[T] = StrawberryField(field_definition)
 
     if resolver:
         return field_(resolver)
