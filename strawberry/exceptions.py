@@ -62,7 +62,7 @@ class UnallowedReturnTypeForUnion(Exception):
     def __init__(
         self, field_name: str, result_type: str, allowed_types: Set[GraphQLObjectType]
     ):
-        formatted_allowed_types = [type_.name for type_ in allowed_types]
+        formatted_allowed_types = list(sorted(type_.name for type_ in allowed_types))
 
         message = (
             f'The type "{result_type}" of the field "{field_name}" '

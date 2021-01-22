@@ -16,7 +16,7 @@ from strawberry.file_uploads.scalars import Upload
 from strawberry.scalars import ID
 
 from .base_scalars import UUID, Date, DateTime, Decimal, Time
-from .types import ConcreteType, TypeMap
+from .concrete_type import ConcreteType, TypeMap
 
 
 def _make_scalar_type(definition: ScalarDefinition) -> GraphQLScalarType:
