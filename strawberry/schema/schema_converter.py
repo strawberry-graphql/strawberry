@@ -175,6 +175,12 @@ class GraphQLCoreConverter:
     def from_input_object_type(self, object_type: Type) -> GraphQLInputObjectType:
         type_definition = object_type._type_definition
 
+        # Don't reevaluate known types
+        if type_definition.name in self.type_map:
+            graphql_object_type = self.type_map[type_definition.name].implementation
+            assert isinstance(graphql_object_type, GraphQLInputObjectType)  # For mypy
+            return graphql_object_type
+
         def get_graphql_fields() -> Dict[str, GraphQLInputField]:
             graphql_fields = {}
             for field in type_definition.fields:
@@ -182,11 +188,17 @@ class GraphQLCoreConverter:
                 graphql_fields[field.name] = self.from_input_field(field)
             return graphql_fields
 
-        return GraphQLInputObjectType(
+        graphql_object_type = GraphQLInputObjectType(
             name=type_definition.name,
             fields=get_graphql_fields,
             description=type_definition.description,
         )
+
+        self.type_map[type_definition.name] = ConcreteType(
+            definition=type_definition, implementation=graphql_object_type
+        )
+
+        return graphql_object_type
 
     def from_interface(self, interface: TypeDefinition) -> GraphQLInterfaceType:
         # TODO: Use StrawberryInterface when it's implemented in another PR
