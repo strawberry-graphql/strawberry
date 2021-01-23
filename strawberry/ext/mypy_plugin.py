@@ -472,17 +472,27 @@ class CustomDataclassTransformer:
                 sym.implicit = True
 
             known_attrs.add(lhs.name)
-            attrs.append(
-                DataclassAttribute(
-                    name=lhs.name,
-                    is_in_init=is_in_init,
-                    is_init_var=is_init_var,
-                    has_default=has_default,
-                    line=stmt.line,
-                    column=stmt.column,
-                    type=sym.type,
-                )
+            params = dict(
+                name=lhs.name,
+                is_in_init=is_in_init,
+                is_init_var=is_init_var,
+                has_default=has_default,
+                line=stmt.line,
+                column=stmt.column,
+                type=sym.type,
             )
+
+            # add support for mypy >= 0.800 without breaking backwards compatibility
+            # https://github.com/python/mypy/pull/9380/file
+            # https://github.com/strawberry-graphql/strawberry/issues/678
+
+            try:
+                attribute = DataclassAttribute(**params)  # type: ignore
+            except TypeError:
+                params["info"] = cls.info
+                attribute = DataclassAttribute(**params)  # type: ignore
+
+            attrs.append(attribute)
 
         # Next, collect attributes belonging to any class in the MRO
         # as long as those attributes weren't already collected.  This
