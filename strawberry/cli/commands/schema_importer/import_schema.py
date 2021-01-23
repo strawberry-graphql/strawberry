@@ -5,10 +5,12 @@ from graphql.error import GraphQLError
 from strawberry.cli.commands.schema_importer import sdl_importer
 
 
-@click.command("import_schema", short_help="Parses SDL file to strawberry types")
+@click.command(
+    "import_schema", short_help="Transpiles SDL from a path to strawberry types"
+)
 @click.argument("schema", type=str, required=True, nargs=-1)
 def import_schema(schema):
-    """ Parses SDL file to strawberry types and writes them out """
+    """ Parses SDL to strawberry types and prints to console """
     strawberries = ""
     for s in schema:
         try:

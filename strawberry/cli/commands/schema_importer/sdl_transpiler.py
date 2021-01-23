@@ -116,6 +116,10 @@ def get_union(ast):
 
 
 def get_field_attribute(field):
+    """
+    Format and return a whole attribute string
+    consists of attribute name in snake case and field type
+    """
     field_name = get_field_name(field.name.value)
     field_type = get_field_type(field)
     strawberry_type = get_strawberry_type(field_name, field.description)
@@ -124,7 +128,7 @@ def get_field_attribute(field):
 
 
 def get_field_name(field_name):
-    """ Extract field name """
+    """ Check if name attribute Extract field name """
     snake_name = str_converters.to_snake_case(field_name)
     camel_name = str_converters.str_converters.to_camel_case(field_name)
     if camel_name == snake_name or camel_name == field_name:
@@ -155,6 +159,7 @@ def get_field_type(field, optional=True):
 
 
 def get_strawberry_type(name, description):
+    """ Create strawberry type field as a string """
     strawberry_type = ""
     if name or description is not None:
         strawberry_type = " = strawberry.field({}{}    )".format(

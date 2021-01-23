@@ -467,6 +467,25 @@ def test_directives():
     assert output == what_it_should_be
 
 
+def test_depricated():
+    """ Test depricated directive both definition and schema directive """
+    s = """
+    directive @deprecated(
+        reason: String = "No longer supported"
+    ) on FIELD_DEFINITION | ENUM_VALUE
+
+    type ExampleType {
+    newField: String
+    oldField: String @deprecated(reason: "Use `newField`.")
+    }"""
+
+    output = sdl_importer.import_sdl(s)
+
+    what_it_should_be = ""
+
+    assert output == what_it_should_be
+
+
 # region List types
 def test_import_opt_list_opt_str_field():
     """ Test for an optional list of optional strings type with field description """
