@@ -4,7 +4,7 @@ title: Input types
 
 # Input types
 
-In addition to [object types](./object/types) GraphQL also supports input types. While being similar to object types, they are better suited for input data as they limit the kind of types you can use for fields.
+In addition to [object types](./object-types) GraphQL also supports input types. While being similar to object types, they are better suited for input data as they limit the kind of types you can use for fields.
 
 This is how the [GraphQL spec defines the difference between object types and input types](https://spec.graphql.org/June2018/#sec-Input-Objects):
 
