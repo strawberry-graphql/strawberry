@@ -34,11 +34,11 @@ class Schema:
         types=(),
         extensions: Sequence[Type[Extension]] = (),
         execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
+        validate_queries: bool = True,
     ):
         self.extensions = extensions
-
+        self.validate_queries = validate_queries
         self.execution_context_class = execution_context_class
-
         self.schema_converter = GraphQLCoreConverter()
 
         query_type = self.schema_converter.from_object_type(query)
@@ -103,6 +103,7 @@ class Schema:
             additional_middlewares=self.middleware,
             extensions=self.extensions,
             execution_context_class=self.execution_context_class,
+            validate_queries=self.validate_queries,
         )
 
         return ExecutionResult(
@@ -129,6 +130,7 @@ class Schema:
             additional_middlewares=self.middleware,
             extensions=self.extensions,
             execution_context_class=self.execution_context_class,
+            validate_queries=self.validate_queries,
         )
 
         return ExecutionResult(
