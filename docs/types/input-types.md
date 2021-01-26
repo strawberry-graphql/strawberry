@@ -44,7 +44,7 @@ class Mutation:
 
 ## API
 
-`@strawberry.type(name: str = None, description: str = None)`
+`@strawberry.input(name: str = None, description: str = None)`
 
 Creates an input type from a class definition.
 
