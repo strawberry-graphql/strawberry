@@ -65,3 +65,26 @@ async def test_invalid_query_with_validation_disabled():
         "4 |     \n"
         "  |     ^"
     )
+
+
+@pytest.mark.asyncio
+async def test_asking_for_wrong_field():
+    @strawberry.type
+    class Query:
+        example: Optional[str] = None
+
+    schema = strawberry.Schema(
+        query=Query,
+        validate_queries=False,
+    )
+
+    query = """
+        query {
+            sample
+        }
+    """
+
+    result = await schema.execute(query, root_value=Query())
+
+    assert result.errors is None
+    assert result.data == {}
