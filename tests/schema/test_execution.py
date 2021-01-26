@@ -1,3 +1,4 @@
+import textwrap
 from typing import Optional
 
 import pytest
@@ -88,3 +89,40 @@ async def test_asking_for_wrong_field():
 
     assert result.errors is None
     assert result.data == {}
+
+
+@pytest.mark.asyncio
+async def test_sending_wrong_variables():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def example(self, value: str) -> int:
+            return 1
+
+    schema = strawberry.Schema(
+        query=Query,
+        validate_queries=False,
+    )
+
+    query = """
+        query {
+            example(value: 123)
+        }
+    """
+
+    result = await schema.execute(query, root_value=Query())
+
+    assert (
+        str(result.errors[0])
+        == textwrap.dedent(
+            """
+            Argument 'value' has invalid value 123.
+
+            GraphQL request:3:28
+            2 |         query {
+            3 |             example(value: 123)
+              |                            ^
+            4 |         }
+            """
+        ).strip()
+    )
