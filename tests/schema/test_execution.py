@@ -15,7 +15,7 @@ async def test_enabling_query_validation(validate_queries, mocker):
 
     @strawberry.type
     class Query:
-        example: Optional[str]
+        example: Optional[str] = None
 
     schema = strawberry.Schema(
         query=Query,
@@ -29,9 +29,39 @@ async def test_enabling_query_validation(validate_queries, mocker):
         }
     """
 
-    result = await schema.execute(query)
+    result = await schema.execute(
+        query,
+        root_value=Query(),
+    )
 
     assert not result.errors
 
     assert extension_mock.on_validation_start.called is validate_queries
     assert extension_mock.on_validation_end.called is validate_queries
+
+
+@pytest.mark.asyncio
+async def test_invalid_query_with_validation_disabled():
+    @strawberry.type
+    class Query:
+        example: Optional[str] = None
+
+    schema = strawberry.Schema(
+        query=Query,
+        validate_queries=False,
+    )
+
+    query = """
+        query {
+            example
+    """
+
+    result = await schema.execute(query, root_value=Query())
+
+    assert str(result.errors[0]) == (
+        "Syntax Error: Expected Name, found <EOF>.\n\n"
+        "GraphQL request:4:5\n"
+        "3 |             example\n"
+        "4 |     \n"
+        "  |     ^"
+    )
