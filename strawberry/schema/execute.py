@@ -27,6 +27,7 @@ async def execute(
     additional_middlewares: List[Any] = None,
     operation_name: str = None,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
+    validate_queries: bool = True,
 ) -> ExecutionResult:
     execution_context = ExecutionContext(
         query=query,
@@ -65,11 +66,12 @@ async def execute(
                 extensions=extensions_runner.get_extensions_results(),
             )
 
-        with extensions_runner.validation():
-            validation_errors = validate(schema, document)
+        if validate_queries:
+            with extensions_runner.validation():
+                validation_errors = validate(schema, document)
 
-        if validation_errors:
-            return ExecutionResult(data=None, errors=validation_errors)
+            if validation_errors:
+                return ExecutionResult(data=None, errors=validation_errors)
 
         result = original_execute(
             schema,
@@ -104,6 +106,7 @@ def execute_sync(
     additional_middlewares: List[Any] = None,
     operation_name: str = None,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
+    validate_queries: bool = True,
 ) -> ExecutionResult:
     execution_context = ExecutionContext(
         query=query,
@@ -141,11 +144,12 @@ def execute_sync(
                 extensions=extensions_runner.get_extensions_results(),
             )
 
-        with extensions_runner.validation():
-            validation_errors = validate(schema, document)
+        if validate_queries:
+            with extensions_runner.validation():
+                validation_errors = validate(schema, document)
 
-        if validation_errors:
-            return ExecutionResult(data=None, errors=validation_errors)
+            if validation_errors:
+                return ExecutionResult(data=None, errors=validation_errors)
 
         result = original_execute(
             schema,

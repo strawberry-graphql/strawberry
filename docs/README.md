@@ -12,14 +12,15 @@
 
 ## Types
 
+- [Schema](./types/schema.md)
+- [Scalars](./types/scalars.md)
+- [Object types](./types/object-types.md)
+- [Interfaces](./types/interfaces.md)
+- [Input types](./types/input-types.md)
 - [Directives](./types/directives.md)
 - [Enums](./types/enums.md)
 - [Generics](./types/generics.md)
-- [Input types](./types/input-types.md)
-- [Interfaces](./types/interfaces.md)
-- [Object types](./types/object-types.md)
 - [Resolvers](./types/resolvers.md)
-- [Scalars](./types/scalars.md)
 - [Union types](./types/union.md)
 
 ## Features

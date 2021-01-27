@@ -36,9 +36,7 @@ class Schema:
         execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
     ):
         self.extensions = extensions
-
         self.execution_context_class = execution_context_class
-
         self.schema_converter = GraphQLCoreConverter()
 
         query_type = self.schema_converter.from_object_type(query)
@@ -92,6 +90,7 @@ class Schema:
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
+        validate_queries: bool = True,
     ) -> ExecutionResult:
         result = await execute(
             self._schema,
@@ -103,6 +102,7 @@ class Schema:
             additional_middlewares=self.middleware,
             extensions=self.extensions,
             execution_context_class=self.execution_context_class,
+            validate_queries=validate_queries,
         )
 
         return ExecutionResult(
@@ -118,6 +118,7 @@ class Schema:
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
+        validate_queries: bool = True,
     ) -> ExecutionResult:
         result = execute_sync(
             self._schema,
@@ -129,6 +130,7 @@ class Schema:
             additional_middlewares=self.middleware,
             extensions=self.extensions,
             execution_context_class=self.execution_context_class,
+            validate_queries=validate_queries,
         )
 
         return ExecutionResult(
