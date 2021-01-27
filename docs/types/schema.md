@@ -44,7 +44,42 @@ Creates a GraphQL schema
 - `query`: The root query type
 - `mutation`: The root mutation type
 - `subscription`: The root subscription type
-- `validate_queries`: This flag allows to disable query validation (see below)
+
+```python
+async Schema().execute(
+    query: str,
+    variable_values: Optional[Dict[str, Any]] = None,
+    context_value: Optional[Any] = None,
+    root_value: Optional[Any] = None,
+    operation_name: Optional[str] = None,
+    validate_queries: Optional[bool] = True,
+) -> ExecutionResult:
+```
+
+Executes a GraphQL operation:
+
+- `query`: The document to be executed
+- `variable_values`: The variables for this operation
+- `context_value`: The value of the context that will be passed down to
+  resolvers
+- `root_value`: The value for the root type that will passed down to root
+  resolvers
+- `operation_name`: The name of the operation you want to execute, useful when
+  sending a document with multiple operations
+- `validate_queries`: This flag allows to disable query validation
+
+```python
+Schema().execute_sync(
+    query: str,
+    variable_values: Optional[Dict[str, Any]] = None,
+    context_value: Optional[Any] = None,
+    root_value: Optional[Any] = None,
+    operation_name: Optional[str] = None,
+    validate_queries: Optional[bool] = True,
+) -> ExecutionResult:
+```
+
+Sync version of `Schema().execute`
 
 ## Query validation
 

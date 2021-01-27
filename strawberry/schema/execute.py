@@ -27,7 +27,7 @@ async def execute(
     additional_middlewares: List[Any] = None,
     operation_name: str = None,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
-    validate_queries: bool = True,
+    validate_queries: Optional[bool] = True,
 ) -> ExecutionResult:
     execution_context = ExecutionContext(
         query=query,
@@ -106,7 +106,7 @@ def execute_sync(
     additional_middlewares: List[Any] = None,
     operation_name: str = None,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
-    validate_queries: bool = True,
+    validate_queries: Optional[bool] = True,
 ) -> ExecutionResult:
     execution_context = ExecutionContext(
         query=query,

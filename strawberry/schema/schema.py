@@ -34,10 +34,8 @@ class Schema:
         types=(),
         extensions: Sequence[Type[Extension]] = (),
         execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
-        validate_queries: bool = True,
     ):
         self.extensions = extensions
-        self.validate_queries = validate_queries
         self.execution_context_class = execution_context_class
         self.schema_converter = GraphQLCoreConverter()
 
@@ -92,6 +90,7 @@ class Schema:
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
+        validate_queries: Optional[bool] = True,
     ) -> ExecutionResult:
         result = await execute(
             self._schema,
@@ -103,7 +102,7 @@ class Schema:
             additional_middlewares=self.middleware,
             extensions=self.extensions,
             execution_context_class=self.execution_context_class,
-            validate_queries=self.validate_queries,
+            validate_queries=validate_queries,
         )
 
         return ExecutionResult(
@@ -119,6 +118,7 @@ class Schema:
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
+        validate_queries: Optional[bool] = True,
     ) -> ExecutionResult:
         result = execute_sync(
             self._schema,
@@ -130,7 +130,7 @@ class Schema:
             additional_middlewares=self.middleware,
             extensions=self.extensions,
             execution_context_class=self.execution_context_class,
-            validate_queries=self.validate_queries,
+            validate_queries=validate_queries,
         )
 
         return ExecutionResult(
