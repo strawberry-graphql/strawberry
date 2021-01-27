@@ -45,45 +45,43 @@ Creates a GraphQL schema
 - `mutation`: The root mutation type
 - `subscription`: The root subscription type
 
-```python
-async Schema().execute(
-    query: str,
-    variable_values: Optional[Dict[str, Any]] = None,
-    context_value: Optional[Any] = None,
-    root_value: Optional[Any] = None,
-    operation_name: Optional[str] = None,
-    validate_queries: Optional[bool] = True,
-) -> ExecutionResult:
-```
+---
 
-Executes a GraphQL operation:
+### `.execute()` (async)
 
-- `query`: The document to be executed
-- `variable_values`: The variables for this operation
-- `context_value`: The value of the context that will be passed down to
-  resolvers
-- `root_value`: The value for the root type that will passed down to root
-  resolvers
-- `operation_name`: The name of the operation you want to execute, useful when
-  sending a document with multiple operations
-- `validate_queries`: This flag allows to disable query validation
+Executes a GraphQL operation against a schema (async)
 
-```python
-Schema().execute_sync(
-    query: str,
-    variable_values: Optional[Dict[str, Any]] = None,
-    context_value: Optional[Any] = None,
-    root_value: Optional[Any] = None,
-    operation_name: Optional[str] = None,
-    validate_queries: Optional[bool] = True,
-) -> ExecutionResult:
-```
+`execute(query, variable_values, context_value, root_value, operation_name, validate_queries)`
 
-Sync version of `Schema().execute`
+| Parameter name   | Type                       | Default | Description                                                                                            |
+| ---------------- | -------------------------- | ------- | ------------------------------------------------------------------------------------------------------ |
+| query            | `str`                      | N/A     | The document to be executed                                                                            |
+| variable_values  | `Optional[Dict[str, Any]]` | `None`  | The variables for this operation                                                                       |
+| context_value    | `Optional[Any]`            | `None`  | The value of the context that will be passed down to resolvers                                         |
+| root_value       | `Optional[Any]`            | `None`  | The value for the root type that will passed down to root resolvers                                    |
+| operation_name   | `Optional[str]`            | `None`  | The name of the operation you want to execute, useful when sending a document with multiple operations |
+| validate_queries | `bool`                     | `True`  | This flag allows to disable query validation                                                           |
+
+---
+
+### `.execute_sync()`
+
+Executes a GraphQL operation against a schema
+
+`execute_sync(query, variable_values, context_value, root_value, operation_name, validate_queries)`
+
+| Parameter name   | Type                       | Default | Description                                                                                            |
+| ---------------- | -------------------------- | ------- | ------------------------------------------------------------------------------------------------------ |
+| query            | `str`                      | N/A     | The document to be executed                                                                            |
+| variable_values  | `Optional[Dict[str, Any]]` | `None`  | The variables for this operation                                                                       |
+| context_value    | `Optional[Any]`            | `None`  | The value of the context that will be passed down to resolvers                                         |
+| root_value       | `Optional[Any]`            | `None`  | The value for the root type that will passed down to root resolvers                                    |
+| operation_name   | `Optional[str]`            | `None`  | The name of the operation you want to execute, useful when sending a document with multiple operations |
+| validate_queries | `bool`                     | `True`  | This flag allows to disable query validation                                                           |
 
 ## Query validation
 
-When creating a schema you can decide to opt-out from validating the queries
+When creating a schema you can decide to disable the validation of the queries
 sent from clients. This can be useful to improve performances in some specific
 cases, for example when dealing with internal APIs where queries can be trusted.
 

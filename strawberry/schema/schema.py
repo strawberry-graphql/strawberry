@@ -90,7 +90,7 @@ class Schema:
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
-        validate_queries: Optional[bool] = True,
+        validate_queries: bool = True,
     ) -> ExecutionResult:
         result = await execute(
             self._schema,
@@ -118,7 +118,7 @@ class Schema:
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
-        validate_queries: Optional[bool] = True,
+        validate_queries: bool = True,
     ) -> ExecutionResult:
         result = execute_sync(
             self._schema,
