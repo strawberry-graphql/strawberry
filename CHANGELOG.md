@@ -1,6 +1,25 @@
 CHANGELOG
 =========
 
+0.45.0 - 2021-01-27
+-------------------
+
+This release add the ability to disable query validation by setting
+`validate_queries` to `False`
+
+```python
+import strawberry
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self) -> str:
+        return "Hello"
+
+
+schema = strawberry.Schema(Query, validate_queries=validate_queries)
+```
+
 0.44.12 - 2021-01-23
 --------------------
 
