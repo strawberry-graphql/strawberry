@@ -83,6 +83,30 @@ def test_generics_nested():
     assert definition.fields[0].is_optional is False
 
 
+def test_generics_name():
+    @strawberry.type(name="AnotherName")
+    class EdgeName:
+        node: str
+
+    @strawberry.type
+    class Connection(Generic[T]):
+        edge: T
+
+    Copy = copy_type_with(Connection, EdgeName)
+
+    definition = Copy._type_definition
+
+    assert definition.name == "AnotherNameConnection"
+    assert definition.is_generic is False
+    assert definition.type_params == {}
+
+    assert len(definition.fields) == 1
+
+    assert definition.fields[0].name == "edge"
+    assert definition.fields[0].type._type_definition.name == "AnotherName"
+    assert definition.fields[0].is_optional is False
+
+
 def test_generics_nested_in_list():
     @strawberry.type
     class Edge(Generic[T]):

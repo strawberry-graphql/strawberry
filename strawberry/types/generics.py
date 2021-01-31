@@ -15,6 +15,8 @@ def get_name_from_types(types: Iterable[Union[Type, StrawberryUnion]]):
     for type_ in types:
         if isinstance(type_, StrawberryUnion):
             return type_.name
+        elif hasattr(type_, "_type_definition"):
+            name = capitalize_first(type_._type_definition.name)
         else:
             name = capitalize_first(type_.__name__)
 
