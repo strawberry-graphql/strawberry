@@ -429,7 +429,7 @@ def test_directives_description():
         "    locations=[\n"
         "        DirectiveLocation.FIELD_DEFINITION\n"
         "    ],\n"
-        "    description='''Make string uppercase''',\n"
+        "    description='''Make string uppercase'''\n"
         ")\n"
         "def uppercase(\n"
         "    example: str\n"
