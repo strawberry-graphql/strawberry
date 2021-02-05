@@ -122,7 +122,9 @@ def get_field_attribute(field):
     """
     field_name = get_field_name(field.name.value)
     field_type = get_field_type(field)
-    strawberry_type = get_strawberry_type(field_name, field.description)
+    strawberry_type = get_strawberry_type(
+        field_name, field.description, field.directives
+    )
     field_type += strawberry_type if strawberry_type else ""
     return f"{str_converters.to_snake_case(field.name.value)}: {field_type}"
 
@@ -130,7 +132,7 @@ def get_field_attribute(field):
 def get_field_name(field_name):
     """ Check if name attribute Extract field name """
     snake_name = str_converters.to_snake_case(field_name)
-    camel_name = str_converters.str_converters.to_camel_case(field_name)
+    camel_name = str_converters.to_camel_case(field_name)
     if camel_name == snake_name or camel_name == field_name:
         return ""
     else:
@@ -158,14 +160,19 @@ def get_field_type(field, optional=True):
     return field_type
 
 
-def get_strawberry_type(name, description):
+def get_strawberry_type(name, description, directives):
     """ Create strawberry type field as a string """
     strawberry_type = ""
-    if name or description is not None:
-        strawberry_type = " = strawberry.field({}{}    )".format(
+    deprecated = [d for d in directives if d.name.value == "deprecated"]
+    deprecated = deprecated[0] if deprecated else None
+    if name or description is not None or directives or deprecated:
+        strawberry_type = " = strawberry.field({}{}{}    )".format(
             f"\n        name='{name}'," if name else "",
-            f"\n        description='''{description.value}'''\n"
+            f"\n        description='''{description.value}''',\n"
             if description is not None
+            else "",
+            f"\n        derpecation_reason='{deprecated.arguments[0].value.value}',\n"
+            if deprecated
             else "",
         )
     return strawberry_type

@@ -73,7 +73,7 @@ def test_import_bool_field():
         "class Woman:\n"
         "    is_witch: bool = strawberry.field(\n"
         "        description='''If a woman weighs less than a duck,\n"
-        "then she is a...?'''\n"
+        "then she is a...?''',\n"
         "    )"
     )
 
@@ -104,7 +104,7 @@ def test_import_optional_bool_field():
         "class Woman:\n"
         "    is_witch: typing.Optional[bool] = strawberry.field(\n"
         "        description='''If a woman weighs less than a duck,\n"
-        "then she is a witch ?'''\n"
+        "then she is a witch ?''',\n"
         "    )"
     )
 
@@ -132,7 +132,7 @@ def test_import_int_field():
         "class HolyHandGrenade:\n"
         "    number_thou_shalt_count: int = strawberry.field(\n"
         "        description='''First shalt thou take out the Holy Pin.\n"
-        "Then shalt thou count to...'''\n"
+        "Then shalt thou count to...''',\n"
         "    )"
     )
 
@@ -160,7 +160,7 @@ def test_import_optional_int_field():
         "class HolyHandGrenade:\n"
         "    number_thou_shalt_count: typing.Optional[int] = strawberry.field(\n"
         "        description='''First shalt thou take out the Holy Pin.\n"
-        "Then shalt thou count to...'''\n"
+        "Then shalt thou count to...''',\n"
         "    )"
     )
 
@@ -193,7 +193,7 @@ def test_import_str_fields():
         "and the other side he see...''')\n"
         "class BridgeOfDeath:\n"
         "    question: str = strawberry.field(\n"
-        "        description='''What is your name?'''\n"
+        "        description='''What is your name?''',\n"
         "    )\n"
         "    answer: typing.Optional[str]"
     )
@@ -222,7 +222,7 @@ def test_import_float_field():
         "class Swallow:\n"
         "    speed: float = strawberry.field(\n"
         "        description='''What is the airbourn speed\n"
-        "of unladen african swallow?'''\n"
+        "of unladen african swallow?''',\n"
         "    )"
     )
 
@@ -250,7 +250,7 @@ def test_import_optional_float_field():
         "class Swallow:\n"
         "    speed: typing.Optional[float] = strawberry.field(\n"
         "        description='''What is the airbourn speed\n"
-        "of unladen african swallow?'''\n"
+        "of unladen african swallow?''',\n"
         "    )"
     )
 
@@ -429,7 +429,7 @@ def test_directives_description():
         "    locations=[\n"
         "        DirectiveLocation.FIELD_DEFINITION\n"
         "    ],\n"
-        "    description='''Make string uppercase'''\n"
+        "    description='''Make string uppercase''',\n"
         ")\n"
         "def uppercase(\n"
         "    example: str\n"
@@ -470,19 +470,25 @@ def test_directives():
 def test_depricated():
     """ Test depricated directive both definition and schema directive """
     s = """
-    directive @deprecated(
-        reason: String = "No longer supported"
-    ) on FIELD_DEFINITION | ENUM_VALUE
-
     type ExampleType {
     newField: String
     oldField: String @deprecated(reason: "Use `newField`.")
     }"""
 
     output = sdl_importer.import_sdl(s)
-
-    what_it_should_be = ""
-
+    what_it_should_be = (
+        "import typing\n"
+        "\n"
+        "import strawberry\n"
+        "\n"
+        "\n"
+        "@strawberry.type\n"
+        "class ExampleType:\n"
+        "    new_field: typing.Optional[str]\n"
+        "    old_field: typing.Optional[str] = strawberry.field(\n"
+        "        derpecation_reason='Use `newField`.',\n"
+        "    )"
+    )
     assert output == what_it_should_be
 
 
@@ -507,7 +513,7 @@ def test_import_opt_list_opt_str_field():
         f"@strawberry.type\n"
         f"class HollyHandGrenade:\n"
         f"{stringField}"
-        f"        description='''And the people did feast on:'''\n"
+        f"        description='''And the people did feast on:''',\n"
         f"    )"
     )
 
@@ -531,7 +537,7 @@ def test_import_list_opt_str_field():
         "@strawberry.type\n"
         "class HollyHandGrenade:\n"
         "    animals: typing.List[typing.Optional[str]] = strawberry.field(\n"
-        "        description='''And the people did feast on:'''\n"
+        "        description='''And the people did feast on:''',\n"
         "    )"
     )
 
@@ -555,7 +561,7 @@ def test_import_opt_list_str_field():
         "@strawberry.type\n"
         "class HollyHandGrenade:\n"
         "    animals: typing.Optional[typing.List[str]] = strawberry.field(\n"
-        "        description='''And the people did feast on:'''\n"
+        "        description='''And the people did feast on:''',\n"
         "    )"
     )
 
@@ -579,7 +585,7 @@ def test_import_list_str_field():
         "@strawberry.type\n"
         "class HollyHandGrenade:\n"
         "    animals: typing.List[str] = strawberry.field(\n"
-        "        description='''And the people did feast on:'''\n"
+        "        description='''And the people did feast on:''',\n"
         "    )"
     )
 
