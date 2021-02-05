@@ -10,7 +10,7 @@ jobs:
     strategy:
       matrix:
         python-version: ['3.7', '3.8', '3.9']
-        django: [3.0.2, 2.2]
+        django: [3.1.4, 3.0.11, 2.2.17]
 
     steps:
       - uses: actions/checkout@master
@@ -21,7 +21,7 @@ jobs:
 
       - run: pip install poetry codecov
       - name: Install dependencies
-        run: poetry install --extras "django flask opentelemetry"
+        run: poetry install
       - name: Install dependencies
         run: poetry add django==${{ matrix.django }}
 
@@ -38,7 +38,7 @@ jobs:
 
   flake8:
     runs-on: ubuntu-latest
-    container: python:3.8
+    container: python:3.9
 
     steps:
       - uses: actions/checkout@master
@@ -49,11 +49,11 @@ jobs:
 
   mypy:
     runs-on: ubuntu-latest
-    container: python:3.8
+    container: python:3.9
 
     steps:
       - uses: actions/checkout@master
       - run: pip install poetry
       - name: Install dependencies
         run: poetry install
-      - run: poetry run mypy --ignore-missing-imports .
+      - run: poetry run mypy --ignore-missing-imports --config-file mypy.ini .

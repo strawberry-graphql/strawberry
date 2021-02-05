@@ -24,6 +24,10 @@ exclude_lines =
     if 0:
     if __name__ == .__main__.:
 
+    # Don't complain about TYPE_CHECKING
+    if TYPE_CHECKING:
+
+    @overload
 
 
 omit =

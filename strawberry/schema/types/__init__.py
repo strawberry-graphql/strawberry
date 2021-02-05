@@ -1,3 +1,4 @@
-from .directives import get_directive_type  # noqa
-from .object_type import get_object_type  # noqa
-from .types import ConcreteType  # noqa
+from .concrete_type import ConcreteType as ConcreteType
+
+
+__all__ = ["ConcreteType"]

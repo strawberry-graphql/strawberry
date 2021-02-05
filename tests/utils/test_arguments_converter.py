@@ -240,3 +240,24 @@ def test_uses_default_for_optional_types_when_nothing_is_passed():
     arguments = [ArgumentDefinition(name="input", origin_name="input", type=Input)]
 
     assert convert_arguments(args, arguments) == {"input": Input(UNSET, None)}
+
+
+def test_when_optional():
+    @strawberry.input
+    class Number:
+        value: int
+
+    @strawberry.input
+    class Input:
+        numbers: Optional[Number] = UNSET
+        numbers_second: Optional[Number] = UNSET
+
+    args = {}
+
+    arguments = [
+        ArgumentDefinition(
+            name="input", origin_name="input", type=Input, is_optional=True
+        )
+    ]
+
+    assert convert_arguments(args, arguments) == {}

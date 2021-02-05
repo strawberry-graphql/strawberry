@@ -42,7 +42,14 @@ def is_optional(annotation: Type) -> bool:
 
 def get_optional_annotation(annotation: Type) -> Type:
     types = annotation.__args__
-    non_none_types = [x for x in types if x != None.__class__]  # noqa:E711
+
+    non_none_types = tuple(x for x in types if x != None.__class__)  # noqa:E711
+
+    # if we have multiple non none types we want to return a copy of this
+    # type (normally a Union type).
+
+    if len(non_none_types) > 1:
+        return annotation.copy_with(non_none_types)
 
     return non_none_types[0]
 

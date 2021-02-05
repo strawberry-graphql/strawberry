@@ -29,7 +29,7 @@ def create_app(**kwargs):
     return app
 
 
-@pytest.yield_fixture
+@pytest.fixture
 def flask_client():
     app = create_app()
 

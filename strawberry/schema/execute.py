@@ -1,15 +1,15 @@
 from asyncio import ensure_future
 from inspect import isawaitable
-from typing import Any, Awaitable, Dict, List, Sequence, Type, cast
+from typing import Any, Awaitable, Dict, List, Optional, Sequence, Type, cast
 
 from graphql import (
+    ExecutionContext as GraphQLExecutionContext,
     ExecutionResult as GraphQLExecutionResult,
     GraphQLError,
     GraphQLSchema,
     execute as original_execute,
     parse,
 )
-from graphql.type import validate_schema
 from graphql.validation import validate
 
 from strawberry.extensions import Extension
@@ -26,6 +26,8 @@ async def execute(
     variable_values: Dict[str, Any] = None,
     additional_middlewares: List[Any] = None,
     operation_name: str = None,
+    execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
+    validate_queries: bool = True,
 ) -> ExecutionResult:
     execution_context = ExecutionContext(
         query=query,
@@ -42,14 +44,8 @@ async def execute(
     additional_middlewares = additional_middlewares or []
 
     with extensions_runner.request():
-        schema_validation_errors = validate_schema(schema)
-
-        if schema_validation_errors:
-            return ExecutionResult(
-                data=None,
-                errors=schema_validation_errors,
-                extensions=extensions_runner.get_extensions_results(),
-            )
+        # Note: In graphql-core the schema would be validated here but in
+        # Strawberry we are validating it at initialisation time instead
 
         try:
             with extensions_runner.parsing():
@@ -70,11 +66,12 @@ async def execute(
                 extensions=extensions_runner.get_extensions_results(),
             )
 
-        with extensions_runner.validation():
-            validation_errors = validate(schema, document)
+        if validate_queries:
+            with extensions_runner.validation():
+                validation_errors = validate(schema, document)
 
-        if validation_errors:
-            return ExecutionResult(data=None, errors=validation_errors)
+            if validation_errors:
+                return ExecutionResult(data=None, errors=validation_errors)
 
         result = original_execute(
             schema,
@@ -84,6 +81,7 @@ async def execute(
             variable_values=variable_values,
             operation_name=operation_name,
             context_value=context_value,
+            execution_context_class=execution_context_class,
         )
 
         if isawaitable(result):
@@ -107,6 +105,8 @@ def execute_sync(
     variable_values: Dict[str, Any] = None,
     additional_middlewares: List[Any] = None,
     operation_name: str = None,
+    execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
+    validate_queries: bool = True,
 ) -> ExecutionResult:
     execution_context = ExecutionContext(
         query=query,
@@ -122,14 +122,8 @@ def execute_sync(
     additional_middlewares = additional_middlewares or []
 
     with extensions_runner.request():
-        schema_validation_errors = validate_schema(schema)
-
-        if schema_validation_errors:
-            return ExecutionResult(
-                data=None,
-                errors=schema_validation_errors,
-                extensions=extensions_runner.get_extensions_results(),
-            )
+        # Note: In graphql-core the schema would be validated here but in
+        # Strawberry we are validating it at initialisation time instead
 
         try:
             with extensions_runner.parsing():
@@ -150,11 +144,12 @@ def execute_sync(
                 extensions=extensions_runner.get_extensions_results(),
             )
 
-        with extensions_runner.validation():
-            validation_errors = validate(schema, document)
+        if validate_queries:
+            with extensions_runner.validation():
+                validation_errors = validate(schema, document)
 
-        if validation_errors:
-            return ExecutionResult(data=None, errors=validation_errors)
+            if validation_errors:
+                return ExecutionResult(data=None, errors=validation_errors)
 
         result = original_execute(
             schema,
@@ -164,6 +159,7 @@ def execute_sync(
             variable_values=variable_values,
             operation_name=operation_name,
             context_value=context_value,
+            execution_context_class=execution_context_class,
         )
 
         if isawaitable(result):

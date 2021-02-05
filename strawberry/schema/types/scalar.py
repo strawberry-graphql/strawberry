@@ -1,7 +1,6 @@
 import datetime
 import decimal
 from typing import Dict, Type, cast
-from uuid import UUID
 
 from graphql import (
     GraphQLBoolean,
@@ -16,8 +15,8 @@ from strawberry.custom_scalar import SCALAR_REGISTRY, ScalarDefinition
 from strawberry.file_uploads.scalars import Upload
 from strawberry.scalars import ID
 
-from .base_scalars import Date, DateTime, Decimal, Time
-from .types import ConcreteType, TypeMap
+from .base_scalars import UUID, Date, DateTime, Decimal, Time
+from .concrete_type import ConcreteType, TypeMap
 
 
 def _make_scalar_type(definition: ScalarDefinition) -> GraphQLScalarType:
@@ -36,7 +35,7 @@ DEFAULT_SCALAR_REGISTRY: Dict[Type, GraphQLScalarType] = {
     float: GraphQLFloat,
     bool: GraphQLBoolean,
     ID: GraphQLID,
-    UUID: GraphQLID,
+    UUID: _make_scalar_type(UUID._scalar_definition),
     Upload: _make_scalar_type(Upload._scalar_definition),
     datetime.date: _make_scalar_type(Date._scalar_definition),
     datetime.datetime: _make_scalar_type(DateTime._scalar_definition),

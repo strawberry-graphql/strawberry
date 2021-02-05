@@ -62,7 +62,7 @@ class UnallowedReturnTypeForUnion(Exception):
     def __init__(
         self, field_name: str, result_type: str, allowed_types: Set[GraphQLObjectType]
     ):
-        formatted_allowed_types = [type_.name for type_ in allowed_types]
+        formatted_allowed_types = list(sorted(type_.name for type_ in allowed_types))
 
         message = (
             f'The type "{result_type}" of the field "{field_name}" '
@@ -70,6 +70,12 @@ class UnallowedReturnTypeForUnion(Exception):
         )
 
         super().__init__(message)
+
+
+class InvalidUnionType(Exception):
+    """The union is constructed with an invalid type"""
+
+    pass
 
 
 class MissingTypesForGenericError(Exception):
@@ -117,6 +123,23 @@ class MultipleStrawberryArgumentsError(Exception):
         message = (
             f"Annotation for argument `{argument_name}` on field "
             f"`{field_name}` cannot have multiple `strawberry.argument`s"
+        )
+
+        super().__init__(message)
+
+
+class ScalarAlreadyRegisteredError(Exception):
+    def __init__(self, scalar_name: str):
+        message = f"Scalar `{scalar_name}` has already been registered"
+
+        super().__init__(message)
+
+
+class WrongNumberOfResultsReturned(Exception):
+    def __init__(self, expected: int, received: int):
+        message = (
+            "Received wrong number of results in dataloader, "
+            f"expected: {expected}, received: {received}"
         )
 
         super().__init__(message)

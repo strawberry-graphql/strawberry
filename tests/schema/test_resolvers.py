@@ -294,3 +294,21 @@ def test_extending_type():
 
     assert not result.errors
     assert result.data == {"name": "Name", "name2": "Name 2"}
+
+
+@pytest.mark.asyncio
+async def test_async_list_resolver():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        async def best_flavours(self, info) -> List[str]:
+            return ["strawberry", "pistachio"]
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ bestFlavours }"
+
+    result = await schema.execute(query, root_value=Query())
+
+    assert not result.errors
+    assert result.data["bestFlavours"] == ["strawberry", "pistachio"]
