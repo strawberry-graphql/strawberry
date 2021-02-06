@@ -28,7 +28,7 @@ After that we need a new virtualenv:
 
     python -m venv virtualenv
 
-Activate the virtualenv and then install strawberry plus the development server. 
+Activate the virtualenv and then install strawberry plus the debug server.
 
     source virtualenv/bin/activate
     pip install strawberry-graphql[debug-server]
