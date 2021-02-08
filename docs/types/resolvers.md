@@ -8,8 +8,6 @@ When defining a GraphQL schema, you usually start with the definition of the
 structure of the API, for example, let's take a look at this schema:
 
 ```python+schema
-from typing import Optional
-
 import strawberry
 
 @strawberry.type
@@ -19,14 +17,14 @@ class User:
 
 @strawberry.type
 class Query:
-    last_user: Optional[User]
+    last_user: User
 ---
 type User {
     name: String!
 }
 
 type Query {
-    lastUser: User
+    lastUser: User!
 }
 ```
 
@@ -40,12 +38,12 @@ Python function that returns data. In Strawberry there are two ways of defining
 resolvers; the first is to pass a function to the field definition, like this:
 
 ```python
-def get_last_user() -> Optional[User]:
+def get_last_user() -> User:
     return User(name="Marco")
 
 @strawberry.type
 class Query:
-    last_user: Optional[User] = strawberry.field(resolver=get_last_user)
+    last_user: User = strawberry.field(resolver=get_last_user)
 ```
 
 Now when Strawberry executes the following query, it will call the
@@ -77,7 +75,7 @@ like here:
 @strawberry.type
 class Query:
     @strawberry.field
-    def last_user(self) -> Optional[User]:
+    def last_user(self) -> User:
         return User(name="Marco")
 ```
 
@@ -98,8 +96,6 @@ defined on the resolver, as you would normally do in a Python function. Let's
 define a field on a Query that returns a user by ID:
 
 ```python+schema
-from typing import Optional
-
 import strawberry
 
 
@@ -111,7 +107,8 @@ class User:
 @strawberry.type
 class Query:
     @strawberry.field
-    def user(self, id: strawberry.ID) -> Optional[User]:
+    def user(self, id: strawberry.ID) -> User:
+        # here you'd use the `id` to get the user from the database
         return User(name="Marco")
 ---
 type User {
@@ -119,16 +116,16 @@ type User {
 }
 
 type Query {
-    user(id: ID!): User
+    user(id: ID!): User!
 }
 ```
 
 ## Accessing parent's data
 
 It is quite common to want to be able to access the data from the parent in a
-resolver. For example let's say that we want to define a `fullName` field on
-our `User`. We can define a new field with a resolver that combines its first
-and last names:
+resolver. For example let's say that we want to define a `fullName` field on our
+`User`. We can define a new field with a resolver that combines its first and
+last names:
 
 ```python+schema
 import strawberry
@@ -154,7 +151,8 @@ In the case of a decorated resolver you can use the _self_ parameter as you
 would do in a method on a normal Python class[^1].
 
 For resolvers defined as normal Python functions, you can use the special `root`
-parameter, when defined, Strawberry will pass to it the value of the parent:
+parameter, when added to arguments of the function, Strawberry will pass to it
+the value of the parent:
 
 ```python
 import strawberry
@@ -192,14 +190,14 @@ class User:
 
 `Info[ContextType, RootValueType]`
 
-| Parameter name  | Type                       | Description                                                           |
-| --------------- | -------------------------- | --------------------------------------------------------------------- |
-| field_name      | `str`                      | The name of the current field                                         |
-| context         | `ContextType`              | The value of the context                                              |
-| root_value      | `RootValueType`            | The value for the root type                                           |
-| variable_values | `Optional[Dict[str, Any]]` | The variables for this operation                                      |
-| operation       | `OperationDefinitionNode`  | The ast for the current operation (public API might change in future) |
-| path            | `Path`                     | The path for the current field                                        |
+| Parameter name  | Type                      | Description                                                           |
+| --------------- | ------------------------- | --------------------------------------------------------------------- |
+| field_name      | `str`                     | The name of the current field                                         |
+| context         | `ContextType`             | The value of the context                                              |
+| root_value      | `RootValueType`           | The value for the root type                                           |
+| variable_values | `Dict[str, Any]`          | The variables for this operation                                      |
+| operation       | `OperationDefinitionNode` | The ast for the current operation (public API might change in future) |
+| path            | `Path`                    | The path for the current field                                        |
 
 [^1]:
     see
