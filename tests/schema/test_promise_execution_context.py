@@ -1,3 +1,5 @@
+# type: ignore
+
 import strawberry
 from strawberry.promise import Promise
 from strawberry.promise.dataloader import PromiseDataLoader
