@@ -80,7 +80,9 @@ def get_result_for_field(
 
 
 def get_resolver(field: FieldDefinition) -> Callable:
-    # TODO: convert info to our info
+    # TODO: make sure that info is of type Info, currently it
+    # is the value returned by graphql-core
+    # https://github.com/strawberry-graphql/strawberry/issues/709
     def _check_permissions(source, info: Info, **kwargs):
         """
         Checks if the permission should be accepted and
