@@ -79,7 +79,7 @@ def test_union_as_mutation_return():
     @strawberry.type
     class Mutation:
         @strawberry.mutation
-        def hello(self, info) -> Union[A, B]:
+        def hello(self) -> Union[A, B]:
             return B(y=5)
 
     schema = strawberry.Schema(query=A, mutation=Mutation)
@@ -122,7 +122,7 @@ def test_types_not_included_in_the_union_are_rejected():
     @strawberry.type
     class Mutation:
         @strawberry.mutation
-        def hello(self, info) -> Union[A, B]:
+        def hello(self) -> Union[A, B]:
             return Outside(c=5)  # type:ignore
 
     schema = strawberry.Schema(query=A, mutation=Mutation, types=[Outside])

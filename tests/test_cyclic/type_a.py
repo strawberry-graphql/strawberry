@@ -16,7 +16,7 @@ class TypeA:
     ] = None
 
     @strawberry.field()
-    def type_b(self, info) -> strawberry.LazyType["TypeB", "tests.test_cyclic.type_b"]:
+    def type_b(self) -> strawberry.LazyType["TypeB", "tests.test_cyclic.type_b"]:
         from .type_b import TypeB
 
         return TypeB()

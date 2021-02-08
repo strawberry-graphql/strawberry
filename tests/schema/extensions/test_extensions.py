@@ -17,7 +17,7 @@ def test_base_extension():
     @strawberry.type
     class Query:
         @strawberry.field
-        def person(self, info) -> Person:
+        def person(self) -> Person:
             return Person()
 
     schema = strawberry.Schema(query=Query, extensions=[Extension])
@@ -45,7 +45,7 @@ def test_extension():
     @strawberry.type
     class Query:
         @strawberry.field
-        def person(self, info) -> Person:
+        def person(self) -> Person:
             return Person()
 
     schema = strawberry.Schema(query=Query, extensions=[MyExtension])
@@ -76,7 +76,7 @@ async def test_extension_async():
     @strawberry.type
     class Query:
         @strawberry.field
-        async def person(self, info) -> Person:
+        async def person(self) -> Person:
             return Person()
 
     schema = strawberry.Schema(query=Query, extensions=[MyExtension])

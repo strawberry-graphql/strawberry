@@ -1,5 +1,5 @@
 import json
-from typing import Optional
+from typing import Any, Optional
 
 import pytest
 
@@ -10,7 +10,7 @@ from django.test.client import RequestFactory
 import strawberry
 from strawberry.django.views import GraphQLView as BaseGraphQLView
 from strawberry.permission import BasePermission
-from strawberry.types import ExecutionResult
+from strawberry.types import ExecutionResult, Info
 
 from .app.models import Example
 
@@ -18,7 +18,7 @@ from .app.models import Example
 class AlwaysFailPermission(BasePermission):
     message = "You are not authorized"
 
-    def has_permission(self, source, info):
+    def has_permission(self, source: Any, info: Info, **kwargs) -> bool:
         return False
 
 
@@ -27,11 +27,11 @@ class Query:
     hello: str = "strawberry"
 
     @strawberry.field(permission_classes=[AlwaysFailPermission])
-    def always_fail(self, info) -> Optional[str]:
+    def always_fail(self) -> Optional[str]:
         return "Hey"
 
     @strawberry.field
-    def example(self, info) -> str:
+    def example(self) -> str:
         return Example.objects.first().name
 
 
@@ -154,7 +154,7 @@ def test_custom_context():
     @strawberry.type
     class Query:
         @strawberry.field
-        def custom_context_value(self, info) -> str:
+        def custom_context_value(self, info: Info) -> str:
             return info.context["custom_value"]
 
     schema = strawberry.Schema(query=Query)
@@ -181,7 +181,7 @@ def test_custom_process_result():
     @strawberry.type
     class Query:
         @strawberry.field
-        def abc(self, info) -> str:
+        def abc(self) -> str:
             return "ABC"
 
     schema = strawberry.Schema(query=Query)

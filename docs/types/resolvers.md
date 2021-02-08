@@ -170,4 +170,9 @@ class User:
     full_name: str = strawberry.field(resolver=full_name)
 ```
 
+## Accessing execution information
+
+Sometimes it is useful to access the information for the current execution
+context, to do so you can provide the `info` parameter to resolvers, like this:
+
 [^1]: TODO: write a page on gotchas around the self parameter

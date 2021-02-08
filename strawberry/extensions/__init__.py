@@ -1,6 +1,6 @@
 from typing import Any, Dict
 
-from strawberry.types import ExecutionContext
+from strawberry.types import ExecutionContext, Info
 
 
 class Extension:
@@ -22,7 +22,7 @@ class Extension:
     def on_parsing_end(self):
         ...
 
-    def resolve(self, _next, root, info, *args, **kwargs):
+    def resolve(self, _next, root, info: Info, *args, **kwargs):
         return _next(root, info, *args, **kwargs)
 
     def get_results(self) -> Dict[str, Any]:

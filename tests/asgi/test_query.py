@@ -2,7 +2,7 @@ from starlette.testclient import TestClient
 
 import strawberry
 from strawberry.asgi import GraphQL as BaseGraphQL
-from strawberry.types import ExecutionResult
+from strawberry.types import ExecutionResult, Info
 
 
 def test_simple_query(schema, test_client):
@@ -71,7 +71,7 @@ def test_custom_context():
     @strawberry.type
     class Query:
         @strawberry.field
-        def custom_context_value(self, info) -> str:
+        def custom_context_value(self, info: Info) -> str:
             return info.context["custom_context_value"]
 
     schema = strawberry.Schema(query=Query)
@@ -92,7 +92,7 @@ def test_custom_process_result():
     @strawberry.type
     class Query:
         @strawberry.field
-        def abc(self, info) -> str:
+        def abc(self) -> str:
             return "ABC"
 
     schema = strawberry.Schema(query=Query)

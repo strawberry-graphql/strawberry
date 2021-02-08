@@ -15,7 +15,7 @@ def test_entities_type_when_no_type_has_keys():
     @strawberry.federation.type(extend=True)
     class Query:
         @strawberry.field
-        def top_products(self, info, first: int) -> List[Product]:
+        def top_products(self, first: int) -> List[Product]:
             return []
 
     schema = strawberry.federation.Schema(query=Query)
@@ -49,7 +49,7 @@ def test_entities_type():
     @strawberry.federation.type(extend=True)
     class Query:
         @strawberry.field
-        def top_products(self, info, first: int) -> List[Product]:
+        def top_products(self, first: int) -> List[Product]:
             return []
 
     schema = strawberry.federation.Schema(query=Query)
@@ -82,7 +82,7 @@ def test_additional_scalars():
     @strawberry.federation.type(extend=True)
     class Query:
         @strawberry.field
-        def top_products(self, info, first: int) -> List[Example]:
+        def top_products(self, first: int) -> List[Example]:
             return []
 
     schema = strawberry.federation.Schema(query=Query)
@@ -110,7 +110,7 @@ def test_service():
     @strawberry.federation.type(extend=True)
     class Query:
         @strawberry.field
-        def top_products(self, info, first: int) -> List[Product]:
+        def top_products(self, first: int) -> List[Product]:
             return []
 
     schema = strawberry.federation.Schema(query=Query)
@@ -161,7 +161,7 @@ def test_using_generics():
     @strawberry.federation.type(extend=True)
     class Query:
         @strawberry.field
-        def top_products(self, info, first: int) -> ListOfProducts[Product]:
+        def top_products(self, first: int) -> ListOfProducts[Product]:
             return ListOfProducts([])
 
     schema = strawberry.federation.Schema(query=Query)

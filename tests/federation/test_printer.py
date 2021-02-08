@@ -27,7 +27,7 @@ def test_entities_type_when_no_type_has_keys():
     @strawberry.federation.type
     class Query:
         @strawberry.field
-        def top_products(self, info, first: int) -> List[Product]:
+        def top_products(self, first: int) -> List[Product]:
             return []
 
     schema = strawberry.federation.Schema(query=Query)

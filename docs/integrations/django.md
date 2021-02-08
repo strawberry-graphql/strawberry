@@ -53,7 +53,7 @@ class MyGraphQLView(GraphQLView):
 @strawberry.type
 class Query:
     @strawberry.field
-    def example(self, info) -> str:
+    def example(self, info: Info) -> str:
         return str(info.context["example"])
 ```
 
@@ -165,7 +165,7 @@ class MyGraphQLView(AsyncGraphQLView):
 @strawberry.type
 class Query:
     @strawberry.field
-    def example(self, info) -> str:
+    def example(self, info: Info) -> str:
         return str(info.context["example"])
 ```
 

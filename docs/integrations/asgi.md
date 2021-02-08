@@ -4,8 +4,8 @@ title: ASGI
 
 # ASGI
 
-Strawberry comes with a basic ASGI integration. It provides an app that you
-can use to serve your GraphQL schema:
+Strawberry comes with a basic ASGI integration. It provides an app that you can
+use to serve your GraphQL schema:
 
 ```python
 from strawberry.asgi import GraphQL
@@ -46,7 +46,7 @@ class MyGraphQL(GraphQL):
 @strawberry.type
 class Query:
     @strawberry.field
-    def example(self, info) -> str:
+    def example(self, info: Info) -> str:
         return str(info.context["example"])
 ```
 
@@ -104,5 +104,5 @@ class MyGraphQL(GraphQL):
         return data
 ```
 
-In this case we are doing the default processing of the result, but it can
-be tweaked based on your needs.
+In this case we are doing the default processing of the result, but it can be
+tweaked based on your needs.

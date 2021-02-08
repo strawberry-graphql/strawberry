@@ -2,6 +2,8 @@ import enum
 from inspect import iscoroutine
 from typing import Any, Awaitable, Callable, Dict, List, Tuple, Union, cast
 
+from strawberry.types.info import Info
+
 from .arguments import convert_arguments
 from .field import FieldDefinition
 from .types.fields.resolver import StrawberryResolver
@@ -78,7 +80,8 @@ def get_result_for_field(
 
 
 def get_resolver(field: FieldDefinition) -> Callable:
-    def _check_permissions(source, info, **kwargs):
+    # TODO: convert info to our info
+    def _check_permissions(source, info: Info, **kwargs):
         """
         Checks if the permission should be accepted and
         raises an exception if not
@@ -90,7 +93,7 @@ def get_resolver(field: FieldDefinition) -> Callable:
                 message = getattr(permission, "message", None)
                 raise PermissionError(message)
 
-    async def _resolver_async(source, info, **kwargs):
+    async def _resolver_async(source, info: Info, **kwargs):
         _check_permissions(source, info, **kwargs)
 
         result = get_result_for_field(field, kwargs=kwargs, info=info, source=source)

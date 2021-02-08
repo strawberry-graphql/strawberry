@@ -19,7 +19,7 @@ def test_query_interface():
     @strawberry.type
     class Root:
         @strawberry.field
-        def assortment(self, info) -> List[Cheese]:
+        def assortment(self) -> List[Cheese]:
             return [
                 Italian(name="Asiago", province="Friuli"),
                 Swiss(name="Tomme", canton="Vaud"),
