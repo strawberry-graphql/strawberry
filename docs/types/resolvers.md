@@ -175,4 +175,31 @@ class User:
 Sometimes it is useful to access the information for the current execution
 context, to do so you can provide the `info` parameter to resolvers, like this:
 
+```python
+import strawberry
+from strawberry.types import info
+
+def full_name(root: User, info: Info) -> str:
+    return f"{root.first_name} {root.last_name} {info.field_name}"
+
+@strawberry.type
+class User:
+    first_name: str
+    last_name: str
+    full_name: str = strawberry.field(resolver=full_name)
+```
+
+### API
+
+`Info[ContextType, RootValueType]`
+
+| Parameter name  | Type                       | Description                                                           |
+| --------------- | -------------------------- | --------------------------------------------------------------------- |
+| field_name      | `str`                      | The name of the current field                                         |
+| context         | `ContextType`              | The value of the context                                              |
+| root_value      | `RootValueType`            | The value for the root type                                           |
+| variable_values | `Optional[Dict[str, Any]]` | The variables for this operation                                      |
+| operation       | `OperationDefinitionNode`  | The ast for the current operation (public API might change in future) |
+| path            | `Path`                     | The path for the current field                                        |
+
 [^1]: TODO: write a page on gotchas around the self parameter

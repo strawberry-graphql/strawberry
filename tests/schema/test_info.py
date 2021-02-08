@@ -11,6 +11,7 @@ def test_info_has_the_correct_shape():
         field_name: str
         operation: str
         path: str
+        variable_values: str
         context_equal: bool
         root_equal: bool
 
@@ -22,6 +23,7 @@ def test_info_has_the_correct_shape():
                 path="".join([str(p) for p in info.path.as_list()]),
                 operation=str(info.operation),
                 field_name=info.field_name,
+                variable_values=str(info.variable_values),
                 context_equal=info.context == my_context,
                 root_equal=info.root_value == root_value,
             )
@@ -35,6 +37,7 @@ def test_info_has_the_correct_shape():
             operation
             path
             rootEqual
+            variableValues
         }
     }"""
 
@@ -43,9 +46,10 @@ def test_info_has_the_correct_shape():
     assert not result.errors
     assert result.data["hello"] == {
         # TODO: abstract this (in future)
-        "operation": "OperationDefinitionNode at 0:141",
+        "operation": "OperationDefinitionNode at 0:168",
         "fieldName": "hello",
         "path": "hello",
         "contextEqual": True,
         "rootEqual": True,
+        "variableValues": "{}",
     }
