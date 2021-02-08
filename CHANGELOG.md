@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.45.3 - 2021-02-08
+-------------------
+
+Fixes mypy failing when casting in enum decorator
+
 0.45.2 - 2021-02-08
 -------------------
 
