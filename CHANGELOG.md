@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.45.2 - 2021-02-08
+-------------------
+
+Suggest installing the debug server on the getting started docs, so examples can work without import errors of uvicorn
+
 0.45.1 - 2021-01-31
 -------------------
 
