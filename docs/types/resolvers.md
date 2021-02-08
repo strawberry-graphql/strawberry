@@ -152,7 +152,7 @@ type User {
 ```
 
 In the case of a decorated resolver you can use the _self_ parameter as you
-would do in a normal python class[^1]
+would do in a normal python class[^1].
 
 For resolvers defined as normal python functions you can use the special `root`
 parameter, when defined, Strawberry will pass to it the value of the parent:
@@ -202,4 +202,7 @@ class User:
 | operation       | `OperationDefinitionNode`  | The ast for the current operation (public API might change in future) |
 | path            | `Path`                     | The path for the current field                                        |
 
-[^1]: TODO: write a page on gotchas around the self parameter
+[^1]:
+    see
+    [this discussion](https://github.com/strawberry-graphql/strawberry/discussions/515)
+    for more context around the self parameter.
