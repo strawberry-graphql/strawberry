@@ -9,6 +9,7 @@ from mypy.nodes import (
     Argument,
     AssignmentStmt,
     CallExpr,
+    CastExpr,
     Context,
     Expression,
     IndexExpr,
@@ -112,6 +113,15 @@ def _get_type_for_expr(expr: Expression, api: SemanticAnalyzerPluginInterface):
             return _get_named_type(expr.fullname, api)
         else:
             raise InvalidNodeTypeException(expr)
+
+    if isinstance(expr, CallExpr):
+        if expr.analyzed:
+            return _get_type_for_expr(expr.analyzed, api)
+        else:
+            raise InvalidNodeTypeException(expr)
+
+    if isinstance(expr, CastExpr):
+        return expr.type
 
     raise ValueError(f"Unsupported expression {type(expr)}")
 
