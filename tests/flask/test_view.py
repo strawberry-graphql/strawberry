@@ -7,26 +7,7 @@ from flask import Flask, request
 from strawberry.flask.views import GraphQLView as BaseGraphQLView
 from strawberry.types import ExecutionResult
 
-
-def create_app(**kwargs):
-    @strawberry.type
-    class Query:
-        hello: str = "strawberry"
-
-    schema = strawberry.Schema(query=Query)
-
-    class GraphQLView(BaseGraphQLView):
-        def get_root_value(self):
-            return Query()
-
-    app = Flask(__name__)
-    app.debug = True
-
-    app.add_url_rule(
-        "/graphql",
-        view_func=GraphQLView.as_view("graphql_view", schema=schema, **kwargs),
-    )
-    return app
+from .app import create_app
 
 
 @pytest.fixture
