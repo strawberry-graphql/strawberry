@@ -26,6 +26,23 @@ class Mutation:
         return "a string"
 ```
 
+## Flask
+
+Example:
+
+```python
+from strawberry.file_uploads import Upload
+...
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    def read_text(self, text_file: Upload) -> str:
+        file_contents = await text_file.read()
+
+        return "a pizza"
+
+```
+
 ## Django
 
 Documentation coming soon
