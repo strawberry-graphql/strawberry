@@ -14,7 +14,7 @@ def flask_client():
         yield client
 
 
-def test_graphql_query(flask_client):
+def test_upload(flask_client):
     f = (BytesIO(b"strawberry"), "textFile.txt")
 
     query = """mutation($textFile: Upload!) {
