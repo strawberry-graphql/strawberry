@@ -46,7 +46,7 @@ Let's see how we can use Enums in our schema.
 @strawberry.type
 class Query:
     @strawberry.field
-    def best_flavour(self, info) -> IceCreamFlavour:
+    def best_flavour(self) -> IceCreamFlavour:
         return IceCreamFlavour.STRAWBERRY
 ```
 
@@ -78,8 +78,8 @@ Here is result of executed query:
 }
 ```
 
-We can also use enums when defining object types (using `strawberry.type`).
-Here is an example of an object that has a field using an Enum:
+We can also use enums when defining object types (using `strawberry.type`). Here
+is an example of an object that has a field using an Enum:
 
 ```python
 @strawberry.type
@@ -90,7 +90,7 @@ class Cone:
 @strawberry.type
 class Query:
     @strawberry.field
-    def cone(self, info) -> Cone:
+    def cone(self) -> Cone:
         return Cone(flavour=IceCreamFlavour.STRAWBERRY, num_scoops=4)
 ```
 

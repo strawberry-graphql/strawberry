@@ -61,7 +61,7 @@ def test_can_use_enum_as_arguments():
     @strawberry.type
     class Query:
         @strawberry.field
-        def flavour_available(self, info, flavour: IceCreamFlavour) -> bool:
+        def flavour_available(self, flavour: IceCreamFlavour) -> bool:
             return flavour == IceCreamFlavour.STRAWBERRY
 
     field = Query._type_definition.fields[0]

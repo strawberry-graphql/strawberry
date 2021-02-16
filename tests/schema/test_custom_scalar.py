@@ -27,7 +27,7 @@ def test_custom_scalar_serialization():
     @strawberry.type
     class Query:
         @strawberry.field
-        def custom_scalar_field(self, info) -> Base64Encoded:
+        def custom_scalar_field(self) -> Base64Encoded:
             return Base64Encoded(b"decoded value")
 
     schema = strawberry.Schema(Query)
@@ -42,7 +42,7 @@ def test_custom_scalar_deserialization():
     @strawberry.type
     class Query:
         @strawberry.field
-        def decode_base64(self, info, encoded: Base64Encoded) -> str:
+        def decode_base64(self, encoded: Base64Encoded) -> str:
             return bytes(encoded).decode("ascii")
 
     schema = strawberry.Schema(Query)
@@ -61,7 +61,7 @@ def test_custom_scalar_decorated_class():
     @strawberry.type
     class Query:
         @strawberry.field
-        def answer(self, info) -> Always42:
+        def answer(self) -> Always42:
             return Always42()
 
     schema = strawberry.Schema(Query)
@@ -76,7 +76,7 @@ def test_custom_scalar_default_serialization():
     @strawberry.type
     class Query:
         @strawberry.field
-        def my_str(self, info, arg: MyStr) -> MyStr:
+        def my_str(self, arg: MyStr) -> MyStr:
             return MyStr(str(arg) + "Suffix")
 
     schema = strawberry.Schema(Query)

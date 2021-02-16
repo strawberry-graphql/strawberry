@@ -14,7 +14,7 @@ def test_supports_generic_simple_type():
     @strawberry.type
     class Query:
         @strawberry.field
-        def int_edge(self, info) -> Edge[int]:
+        def int_edge(self) -> Edge[int]:
             return Edge(cursor=strawberry.ID("1"), node_field=1)
 
     schema = strawberry.Schema(query=Query)
@@ -50,7 +50,7 @@ def test_supports_generic():
     @strawberry.type
     class Query:
         @strawberry.field
-        def person_edge(self, info) -> Edge[Person]:
+        def person_edge(self) -> Edge[Person]:
             return Edge(cursor=strawberry.ID("1"), node=Person(name="Example"))
 
     schema = strawberry.Schema(query=Query)
@@ -89,7 +89,7 @@ def test_supports_multiple_generic():
     @strawberry.type
     class Query:
         @strawberry.field
-        def multiple(self, info) -> Multiple[int, str]:
+        def multiple(self) -> Multiple[int, str]:
             return Multiple(a=123, b="123")
 
     schema = strawberry.Schema(query=Query)
@@ -128,7 +128,7 @@ def test_support_nested_generics():
     @strawberry.type
     class Query:
         @strawberry.field
-        def users(self, info) -> Connection[User]:
+        def users(self) -> Connection[User]:
             return Connection(edge=Edge(node=User("Patrick")))
 
     schema = strawberry.Schema(query=Query)
@@ -170,7 +170,7 @@ def test_supports_optional():
     @strawberry.type
     class Query:
         @strawberry.field
-        def user(self, info) -> Edge[User]:
+        def user(self) -> Edge[User]:
             return Edge()
 
     schema = strawberry.Schema(query=Query)
@@ -204,7 +204,7 @@ def test_supports_lists():
     @strawberry.type
     class Query:
         @strawberry.field
-        def user(self, info) -> Edge[User]:
+        def user(self) -> Edge[User]:
             return Edge(nodes=[])
 
     schema = strawberry.Schema(query=Query)
@@ -238,7 +238,7 @@ def test_supports_lists_of_optionals():
     @strawberry.type
     class Query:
         @strawberry.field
-        def user(self, info) -> Edge[User]:
+        def user(self) -> Edge[User]:
             return Edge(nodes=[None])
 
     schema = strawberry.Schema(query=Query)
@@ -280,7 +280,7 @@ def test_can_extend_generics():
     @strawberry.type
     class Query:
         @strawberry.field
-        def users(self, info) -> ConnectionWithMeta[User]:
+        def users(self) -> ConnectionWithMeta[User]:
             return ConnectionWithMeta(meta="123", edges=[Edge(node=User("Patrick"))])
 
     schema = strawberry.Schema(query=Query)
@@ -325,7 +325,7 @@ def test_supports_generic_in_unions():
     @strawberry.type
     class Query:
         @strawberry.field
-        def example(self, info) -> typing.Union[Fallback, Edge[int]]:
+        def example(self) -> typing.Union[Fallback, Edge[int]]:
             return Edge(cursor=strawberry.ID("1"), node=1)
 
     schema = strawberry.Schema(query=Query)
@@ -365,7 +365,7 @@ def test_supports_generic_in_unions_multiple_vars():
     @strawberry.type
     class Query:
         @strawberry.field
-        def example(self, info) -> typing.Union[Fallback, Edge[int, str]]:
+        def example(self) -> typing.Union[Fallback, Edge[int, str]]:
             return Edge(node="string", info=1)
 
     schema = strawberry.Schema(query=Query)
@@ -411,7 +411,7 @@ def test_supports_generic_in_unions_with_nesting():
     @strawberry.type
     class Query:
         @strawberry.field
-        def users(self, info) -> typing.Union[Connection[User], Fallback]:
+        def users(self) -> typing.Union[Connection[User], Fallback]:
             return Connection(edge=Edge(node=User("Patrick")))
 
     schema = strawberry.Schema(query=Query)
@@ -452,7 +452,7 @@ def test_supports_multiple_generics_in_union():
     @strawberry.type
     class Query:
         @strawberry.field
-        def example(self, info) -> typing.List[typing.Union[Edge[int], Edge[str]]]:
+        def example(self) -> typing.List[typing.Union[Edge[int], Edge[str]]]:
             return [
                 Edge(cursor=strawberry.ID("1"), node=1),
                 Edge(cursor=strawberry.ID("2"), node="string"),
@@ -502,7 +502,7 @@ def test_generated_names():
     @strawberry.type
     class Query:
         @strawberry.field
-        def person_edge(self, info) -> EdgeWithCursor[SpecialPerson]:
+        def person_edge(self) -> EdgeWithCursor[SpecialPerson]:
             return EdgeWithCursor(
                 cursor=strawberry.ID("1"), node=SpecialPerson(name="Example")
             )
@@ -545,7 +545,7 @@ def test_supports_lists_within_unions():
     @strawberry.type
     class Query:
         @strawberry.field
-        def user(self, info) -> typing.Union[User, Edge[User]]:
+        def user(self) -> typing.Union[User, Edge[User]]:
             return Edge(nodes=[User("P")])
 
     schema = strawberry.Schema(query=Query)
@@ -582,7 +582,7 @@ def test_supports_lists_within_unions_empty_list():
     @strawberry.type
     class Query:
         @strawberry.field
-        def user(self, info) -> typing.Union[User, Edge[User]]:
+        def user(self) -> typing.Union[User, Edge[User]]:
             return Edge(nodes=[])
 
     schema = strawberry.Schema(query=Query)
@@ -619,7 +619,7 @@ def test_raises_error_when_unable_to_find_type():
     @strawberry.type
     class Query:
         @strawberry.field
-        def user(self, info) -> typing.Union[User, Edge[User]]:
+        def user(self) -> typing.Union[User, Edge[User]]:
             return Edge(nodes=["bad example"])  # type: ignore
 
     schema = strawberry.Schema(query=Query)

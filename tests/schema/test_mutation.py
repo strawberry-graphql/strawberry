@@ -13,7 +13,7 @@ def test_mutation():
     @strawberry.type
     class Mutation:
         @strawberry.mutation
-        def say(self, info) -> str:
+        def say(self) -> str:
             return "Hello!"
 
     schema = strawberry.Schema(query=Query, mutation=Mutation)
@@ -39,7 +39,7 @@ def test_mutation_with_input_type():
     @strawberry.type
     class Mutation:
         @strawberry.mutation
-        def say(self, info, input: SayInput) -> str:
+        def say(self, input: SayInput) -> str:
             return f"Hello {input.name} of {input.age} years old!"
 
     schema = strawberry.Schema(query=Query, mutation=Mutation)
@@ -65,14 +65,14 @@ def test_unset_types():
     @strawberry.type
     class Mutation:
         @strawberry.mutation
-        def say(self, info, name: typing.Optional[str] = UNSET) -> str:  # type: ignore
+        def say(self, name: typing.Optional[str] = UNSET) -> str:  # type: ignore
             if is_unset(name):
                 return "Name is unset"
 
             return f"Hello {name}!"
 
         @strawberry.mutation
-        def say_age(self, info, input: InputExample) -> str:
+        def say_age(self, input: InputExample) -> str:
             age = "unset" if is_unset(input.age) else input.age
 
             return f"Hello {input.name} of age {age}!"
@@ -101,9 +101,7 @@ def test_unset_types_name_with_underscore():
     @strawberry.type
     class Mutation:
         @strawberry.mutation
-        def say(
-            self, info, first_name: typing.Optional[str] = UNSET  # type: ignore
-        ) -> str:
+        def say(self, first_name: typing.Optional[str] = UNSET) -> str:  # type: ignore
             if is_unset(first_name):
                 return "Name is unset"
 
@@ -113,7 +111,7 @@ def test_unset_types_name_with_underscore():
             return f"Hello {first_name}!"
 
         @strawberry.mutation
-        def say_age(self, info, input: InputExample) -> str:
+        def say_age(self, input: InputExample) -> str:
             age = "unset" if is_unset(input.age) else input.age
             age = "empty" if age == "" else age
 
@@ -149,9 +147,7 @@ def test_unset_types_stringify_empty():
     @strawberry.type
     class Mutation:
         @strawberry.mutation
-        def say(
-            self, info, first_name: typing.Optional[str] = UNSET  # type: ignore
-        ) -> str:
+        def say(self, first_name: typing.Optional[str] = UNSET) -> str:  # type: ignore
             return f"Hello {first_name}!"
 
     schema = strawberry.Schema(query=Query, mutation=Mutation)
@@ -187,7 +183,7 @@ def test_converting_to_dict_with_unset():
     @strawberry.type
     class Mutation:
         @strawberry.mutation
-        def say(self, info, input: Input) -> str:
+        def say(self, input: Input) -> str:
             data = dataclasses.asdict(input)
 
             if is_unset(data["name"]):

@@ -10,8 +10,8 @@
 
 ## Installation ( Quick Start )
 
-The quick start method provides a server and CLI to get going quickly.
-Install with:
+The quick start method provides a server and CLI to get going quickly. Install
+with:
 
 ```shell
 pip install strawberry-graphql[debug-server]
@@ -34,7 +34,7 @@ class User:
 @strawberry.type
 class Query:
     @strawberry.field
-    def user(self, info) -> User:
+    def user(self) -> User:
         return User(name="Patrick", age=100)
 
 
@@ -96,7 +96,8 @@ urlpatterns = [
 ## WebSockets
 
 To support graphql Subscriptions over WebSockets you need to provide a WebSocket
-enabled server. The debug server can be made to support WebSockets with these commands:
+enabled server. The debug server can be made to support WebSockets with these
+commands:
 
 ```shell
 pip install strawberry-graphql[debug-server]

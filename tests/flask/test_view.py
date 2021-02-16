@@ -5,7 +5,7 @@ import pytest
 import strawberry
 from flask import Flask, request
 from strawberry.flask.views import GraphQLView as BaseGraphQLView
-from strawberry.types import ExecutionResult
+from strawberry.types import ExecutionResult, Info
 
 
 def create_app(**kwargs):
@@ -82,7 +82,7 @@ def test_custom_context():
     @strawberry.type
     class Query:
         @strawberry.field
-        def custom_context_value(self, info) -> str:
+        def custom_context_value(self, info: Info) -> str:
             return info.context["custom_value"]
 
     schema = strawberry.Schema(query=Query)
@@ -113,7 +113,7 @@ def test_custom_process_result():
     @strawberry.type
     class Query:
         @strawberry.field
-        def abc(self, info) -> str:
+        def abc(self) -> str:
             return "ABC"
 
     schema = strawberry.Schema(query=Query)

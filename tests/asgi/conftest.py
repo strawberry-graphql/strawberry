@@ -9,23 +9,24 @@ from starlette.testclient import TestClient
 import strawberry
 from strawberry.asgi import GraphQL as BaseGraphQL
 from strawberry.permission import BasePermission
+from strawberry.types import Info
 
 
 class AlwaysFailPermission(BasePermission):
     message = "You are not authorized"
 
-    def has_permission(self, source, info):
+    def has_permission(self, source: typing.Any, info: Info, **kwargs) -> bool:
         return False
 
 
 @strawberry.type
 class Query:
     @strawberry.field
-    def hello(self, info, name: typing.Optional[str] = None) -> str:
+    def hello(self, name: typing.Optional[str] = None) -> str:
         return f"Hello {name or 'world'}"
 
     @strawberry.field(permission_classes=[AlwaysFailPermission])
-    def always_fail(self, info) -> Optional[str]:
+    def always_fail(self) -> Optional[str]:
         return "Hey"
 
     @strawberry.field
@@ -36,13 +37,13 @@ class Query:
 @strawberry.type
 class Subscription:
     @strawberry.subscription
-    async def example(self, info) -> typing.AsyncGenerator[str, None]:
+    async def example(self) -> typing.AsyncGenerator[str, None]:
         await asyncio.sleep(1.5)
 
         yield "Hi"
 
     @strawberry.subscription
-    async def example_error(self, info) -> typing.AsyncGenerator[str, None]:
+    async def example_error(self) -> typing.AsyncGenerator[str, None]:
         raise ValueError("This is an example")
 
         yield "Hi"

@@ -45,7 +45,7 @@ def test_execute(benchmark, items):
     @strawberry.type
     class Query:
         @strawberry.field
-        def patrons(self, info) -> List[Patron]:
+        def patrons(self) -> List[Patron]:
             return [
                 Patron(
                     id=i,

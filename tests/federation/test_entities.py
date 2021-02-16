@@ -15,7 +15,7 @@ def test_fetch_entities():
     @strawberry.federation.type(extend=True)
     class Query:
         @strawberry.field
-        def top_products(self, info, first: int) -> typing.List[Product]:
+        def top_products(self, first: int) -> typing.List[Product]:
             return []
 
     schema = strawberry.federation.Schema(query=Query)
