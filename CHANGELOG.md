@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.45.4 - 2021-02-16
+-------------------
+
+Expose execution info under `strawberry.types.Info`
+
 0.45.3 - 2021-02-08
 -------------------
 
