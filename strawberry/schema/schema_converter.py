@@ -257,8 +257,11 @@ class GraphQLCoreConverter:
         def get_graphql_fields() -> Dict[str, GraphQLField]:
             graphql_fields = {}
             for field in type_definition.fields:
-                assert field.name is not None
-                graphql_fields[field.name] = self.from_field(field)
+                field_definition = field._field_definition
+                assert field_definition.name is not None
+                graphql_fields[field_definition.name] = self.from_field(
+                    field_definition
+                )
             return graphql_fields
 
         graphql_object_type = GraphQLObjectType(

@@ -123,8 +123,13 @@ def _process_type(
     # solution should suffice
 
     for field in fields:
-        if field.base_resolver and field.origin_name:
-            setattr(cls, field.origin_name, field.base_resolver.wrapped_func)
+        field_definition = field._field_definition
+        if field_definition.base_resolver and field_definition.origin_name:
+            setattr(
+                cls,
+                field_definition.origin_name,
+                field_definition.base_resolver.wrapped_func
+            )
 
     return wrapped
 

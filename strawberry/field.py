@@ -46,9 +46,6 @@ class StrawberryField(dataclasses.Field):
         return self
 
     def __setattr__(self, name, value):
-        if name == "type":
-            self._field_definition.type = value
-
         if value and name == "name":
             if not self._field_definition.origin_name:
                 self._field_definition.origin_name = value
@@ -57,6 +54,35 @@ class StrawberryField(dataclasses.Field):
                 self._field_definition.name = to_camel_case(value)
 
         return super().__setattr__(name, value)
+
+    @property
+    def is_child_optional(self) -> bool:
+        return self._field_definition.is_child_optional
+
+    @property
+    def is_list(self) -> bool:
+        return self._field_definition.is_list
+
+    @property
+    def is_optional(self) -> bool:
+        return self._field_definition.is_optional
+
+    @property
+    def is_subscription(self) -> bool:
+        return self._field_definition.is_subscription
+
+    @property
+    def is_union(self) -> bool:
+        return self._field_definition.is_union
+
+    # @property
+    # def type_(self) -> Optional[Union[Type, StrawberryUnion]]:
+    #     if self._type is not None:
+    #         return self._type
+    #     elif self._field_definition.base_resolver:
+    #         return self._field_definition.base_resolver.type
+    #     else:
+    #         return None
 
 
 def field(

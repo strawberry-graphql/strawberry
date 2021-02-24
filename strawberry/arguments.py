@@ -6,7 +6,6 @@ from typing_extensions import Annotated, get_args, get_origin
 
 from .exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError
 from .scalars import is_scalar
-from .types.type_resolver import resolve_type
 from .types.types import ArgumentDefinition, undefined
 from .utils.str_converters import to_camel_case
 
@@ -62,7 +61,10 @@ def get_arguments_from_annotations(
 
         arguments.append(argument_definition)
 
-        resolve_type(argument_definition)
+        # Deferred to prevent import cycles
+        from .types.type_resolver import _resolve_type
+
+        _resolve_type(argument_definition)
 
     return arguments
 

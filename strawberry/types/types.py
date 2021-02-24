@@ -6,6 +6,7 @@ from strawberry.union import StrawberryUnion
 
 
 if TYPE_CHECKING:
+    from strawberry.field import StrawberryField
     from strawberry.types.fields.resolver import StrawberryResolver
 
 undefined = object()
@@ -28,14 +29,14 @@ class TypeDefinition:
     federation: FederationTypeParams
     interfaces: List["TypeDefinition"]
 
-    _fields: List["FieldDefinition"]
+    _fields: List["StrawberryField"]
     _type_params: Dict[str, Type] = dataclasses.field(default_factory=dict, init=False)
 
-    def get_field(self, name: str) -> Optional["FieldDefinition"]:
+    def get_field(self, name: str) -> Optional["StrawberryField"]:
         return next((field for field in self.fields if field.name == name), None)
 
     @property
-    def fields(self) -> List["FieldDefinition"]:
+    def fields(self) -> List["StrawberryField"]:
         from .type_resolver import _resolve_types
 
         return _resolve_types(self._fields)
@@ -79,7 +80,7 @@ class FieldDefinition:
     origin_name: Optional[str]
     type: Optional[Union[Type, StrawberryUnion]]
     origin: Optional[Union[Type, Callable]] = None
-    child: Optional["FieldDefinition"] = None
+    child: Optional["StrawberryField"] = None
     is_subscription: bool = False
     is_optional: bool = False
     is_child_optional: bool = False

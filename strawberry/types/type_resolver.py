@@ -6,6 +6,7 @@ from strawberry.exceptions import (
     MissingTypesForGenericError,
     PrivateStrawberryFieldError,
 )
+from strawberry.field import StrawberryField
 from strawberry.lazy_type import LazyType
 from strawberry.private import Private
 from strawberry.union import StrawberryUnion, union
@@ -49,8 +50,14 @@ def _resolve_generic_type(type: Type, field_name: str) -> Type:
     return type
 
 
-def resolve_type(field_definition: Union[FieldDefinition, ArgumentDefinition]) -> None:
-    # convert a python type to include a strawberry definition, so for example
+def resolve_type_field(field: StrawberryField) -> None:
+    _resolve_type(field._field_definition)
+
+
+def _resolve_type(field_definition: Union[FieldDefinition, ArgumentDefinition]) -> None:
+    # TODO: This should be removed along with FieldDefinition/ArgumentDefinition in
+    # favor of StrawberryField/StrawberryArgument
+    # Convert a python type to include a strawberry definition, so for example
     # Union becomes a class with a UnionDefinition, Generics become an actual
     # type definition. This helps with making the code to convert the type definitions
     # to GraphQL types, as we only have to deal with Python's typings in one place.
@@ -93,7 +100,7 @@ def resolve_type(field_definition: Union[FieldDefinition, ArgumentDefinition]) -
         # https://docs.python.org/3/library/typing.html#typing.AsyncGenerator
         field_definition.type = get_async_generator_annotation(type)
 
-        return resolve_type(field_definition)
+        return _resolve_type(field_definition)
 
     # check for Optional[A] which is represented as Union[A, None], we
     # have an additional check for proper unions below
@@ -110,7 +117,7 @@ def resolve_type(field_definition: Union[FieldDefinition, ArgumentDefinition]) -
         field_definition.is_child_optional = field_definition.is_list
         field_definition.type = get_optional_annotation(type)
 
-        return resolve_type(field_definition)
+        return _resolve_type(field_definition)
 
     elif is_list(type):
         # TODO: maybe this should be an argument definition when it is argument
@@ -122,7 +129,7 @@ def resolve_type(field_definition: Union[FieldDefinition, ArgumentDefinition]) -
             type=get_list_annotation(type),
         )
 
-        resolve_type(child_definition)
+        _resolve_type(child_definition)
 
         field_definition.type = None
         field_definition.is_list = True
@@ -179,9 +186,8 @@ def resolve_type(field_definition: Union[FieldDefinition, ArgumentDefinition]) -
         field_definition.is_union = True
 
 
-def _get_type_params_for_field(
-    field_definition: FieldDefinition,
-) -> Optional[List[Type]]:
+def _get_type_params_for_field(field: StrawberryField) -> Optional[List[Type]]:
+    field_definition = field._field_definition
     if field_definition.is_list:
         child = cast(FieldDefinition, field_definition.child)
 
@@ -205,11 +211,11 @@ def _get_type_params_for_field(
     return None
 
 
-def _get_type_params(fields: List[FieldDefinition]) -> Dict[str, Type]:
+def _get_type_params(fields: List[StrawberryField]) -> Dict[str, Type]:
     type_params = {}
 
     for field in fields:
-        name = cast(str, field.origin_name)
+        name = cast(str, field._field_definition.origin_name)
         params = _get_type_params_for_field(field)
 
         # TODO: support multiple
@@ -219,15 +225,15 @@ def _get_type_params(fields: List[FieldDefinition]) -> Dict[str, Type]:
     return type_params
 
 
-def _resolve_types(fields: List[FieldDefinition]) -> List[FieldDefinition]:
+def _resolve_types(fields: List[StrawberryField]) -> List[StrawberryField]:
     for field in fields:
-        resolve_type(field)
+        resolve_type_field(field)
 
     return fields
 
 
-def _get_fields(cls: Type) -> List[FieldDefinition]:
-    """Get all the strawberry field definitions off a strawberry.type cls
+def _get_fields(cls: Type) -> List[StrawberryField]:
+    """Get all the strawberry fields off a strawberry.type cls
 
     This function returns a list of FieldDefinitions (one for each field item), while
     also paying attention the name and typing of the field.
@@ -259,23 +265,23 @@ def _get_fields(cls: Type) -> List[FieldDefinition]:
     a named function (i.e. not an anonymous lambda) to strawberry.field (typically as a
     decorator).
     """
-    field_definitions: Dict[str, FieldDefinition] = {}
+    # Deferred import to avoid import cycles
+    from strawberry.field import StrawberryField
+
+    fields: Dict[str, StrawberryField] = {}
 
     # before trying to find any fields, let's first add the fields defined in
     # parent classes, we do this by checking if parents have a type definition
     for base in cls.__bases__:
         if hasattr(base, "_type_definition"):
-            base_field_definitions = {
+            base_fields = {
                 field.origin_name: field
                 # TODO: we need to rename _fields to something else
                 for field in base._type_definition._fields  # type: ignore
             }
 
-            # Add base's field definitions to cls' field definitions
-            field_definitions = {**field_definitions, **base_field_definitions}
-
-    # Deferred import to avoid import cycles
-    from strawberry.field import StrawberryField
+            # Add base's fields to cls' fields
+            fields = {**fields, **base_fields}
 
     # then we can proceed with finding the fields for the current class
     for field in dataclasses.fields(cls):
@@ -300,26 +306,33 @@ def _get_fields(cls: Type) -> List[FieldDefinition]:
             field_definition.origin = field_definition.origin or cls
             field_definition.origin_name = field.name
 
-        # Create a FieldDefinition for fields that didn't use strawberry.field
+        # Create a StrawberryField for fields that didn't use strawberry.field
         else:
             # Only ignore Private fields that weren't defined using StrawberryFields
             if isinstance(field.type, Private):
                 continue
 
+            field_type = field.type
+
             # Create a FieldDefinition, for fields of Types #1 and #2a
             field_definition = FieldDefinition(
                 origin_name=field.name,
                 name=to_camel_case(field.name),
-                type=field.type,
+                type=field_type,
                 origin=cls,
                 default_value=getattr(cls, field.name, undefined),
             )
+
+            field = StrawberryField(field_definition)
+
+            # TODO: Figure out why this is necessary. Without, type is set to None
+            # field.type = field_type
 
         field_name = field_definition.origin_name
 
         assert_message = "Field must have a name by the time the schema is generated"
         assert field_name is not None, assert_message
 
-        field_definitions[field_name] = field_definition
+        fields[field_name] = field
 
-    return list(field_definitions.values())
+    return list(fields.values())
