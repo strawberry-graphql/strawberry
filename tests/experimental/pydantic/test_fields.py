@@ -45,10 +45,7 @@ def test_types(pydantic_type, field_type):
     assert definition.fields[0].is_optional is False
 
 
-@pytest.mark.parametrize(
-    "pydantic_type, field_type",
-    [(pydantic.NoneStr, str)],
-)
+@pytest.mark.parametrize("pydantic_type, field_type", [(pydantic.NoneStr, str)])
 def test_types_optional(pydantic_type, field_type):
     class Model(pydantic.BaseModel):
         field: pydantic_type

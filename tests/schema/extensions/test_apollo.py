@@ -56,7 +56,7 @@ def test_tracing_sync(mocker):
                         "returnType": "Person!",
                         "startOffset": 0,
                         "duration": 0,
-                    },
+                    }
                 ]
             },
             "validation": {"startOffset": 0, "duration": 0},

@@ -1,10 +1,10 @@
 import json
 
+from sanic.exceptions import abort
 from sanic.response import HTTPResponse, html
 from sanic.views import HTTPMethodView
 from strawberry.http import GraphQLHTTPResponse, process_result
 from strawberry.types import ExecutionResult
-from sanic.exceptions import abort
 
 from ..schema import BaseSchema
 from .graphiql import render_graphiql_page
@@ -13,11 +13,7 @@ from .graphiql import render_graphiql_page
 class GraphQLView(HTTPMethodView):
     methods = ["GET", "POST"]
 
-    def __init__(
-        self,
-        schema: BaseSchema,
-        graphiql: bool = True,
-    ):
+    def __init__(self, schema: BaseSchema, graphiql: bool = True):
         self.graphiql = graphiql
         self.schema = schema
 
@@ -69,9 +65,7 @@ class GraphQLView(HTTPMethodView):
         response_data = self.process_result(result)
 
         return HTTPResponse(
-            json.dumps(response_data),
-            status=200,
-            content_type="application/json",
+            json.dumps(response_data), status=200, content_type="application/json"
         )
 
     def should_display_graphiql(self, request):

@@ -12,11 +12,7 @@ from .graphiql import render_graphiql_page
 class GraphQLView(View):
     methods = ["GET", "POST"]
 
-    def __init__(
-        self,
-        schema: BaseSchema,
-        graphiql: bool = True,
-    ):
+    def __init__(self, schema: BaseSchema, graphiql: bool = True):
         self.graphiql = graphiql
         self.schema = schema
 
@@ -63,7 +59,5 @@ class GraphQLView(View):
         response_data = self.process_result(result)
 
         return Response(
-            json.dumps(response_data),
-            status=200,
-            content_type="application/json",
+            json.dumps(response_data), status=200, content_type="application/json"
         )

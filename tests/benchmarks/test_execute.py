@@ -11,10 +11,7 @@ import strawberry
 
 
 @pytest.mark.asyncio
-@pytest.mark.parametrize(
-    "items",
-    [25, 100, 250],
-)
+@pytest.mark.parametrize("items", [25, 100, 250])
 def test_execute(benchmark, items):
     birthday = datetime.datetime.now()
     pets = ("cat", "shark", "dog", "lama")
@@ -34,13 +31,7 @@ def test_execute(benchmark, items):
 
         @strawberry.field
         def pets(self) -> List[Pet]:
-            return [
-                Pet(
-                    id=i,
-                    name=random.choice(pets),
-                )
-                for i in range(5)
-            ]
+            return [Pet(id=i, name=random.choice(pets)) for i in range(5)]
 
     @strawberry.type
     class Query:

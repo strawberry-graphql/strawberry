@@ -144,10 +144,7 @@ def test_returns_errors_and_data():
 def test_custom_context():
     class CustomGraphQLView(BaseGraphQLView):
         def get_context(self, request):
-            return {
-                "request": request,
-                "custom_value": "Hi!",
-            }
+            return {"request": request, "custom_value": "Hi!"}
 
     factory = RequestFactory()
 

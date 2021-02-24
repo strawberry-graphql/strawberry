@@ -1,4 +1,4 @@
-import json
+from random import random
 
 import pytest
 
@@ -6,7 +6,7 @@ import strawberry
 from sanic import Sanic
 from strawberry.sanic.views import GraphQLView as BaseGraphQLView
 from strawberry.types import ExecutionResult, Info
-from random import random
+
 
 def create_app(**kwargs):
     @strawberry.type
@@ -33,6 +33,7 @@ def create_app(**kwargs):
 def sanic_client():
     yield create_app()
 
+
 def test_graphql_query(sanic_client):
     query = {
         "query": """
@@ -49,7 +50,6 @@ def test_graphql_query(sanic_client):
 
 
 def test_graphiql_view(sanic_client):
-    #new_app = create_app()
     request, response = sanic_client.test_client.get("/graphql")
     body = response.body.decode()
 
@@ -66,10 +66,7 @@ def test_graphiql_disabled_view():
 def test_custom_context():
     class CustomGraphQLView(BaseGraphQLView):
         def get_context(self, request):
-            return {
-                "request": request,
-                "custom_value": "Hi!",
-            }
+            return {"request": request, "custom_value": "Hi!"}
 
     @strawberry.type
     class Query:
@@ -82,10 +79,7 @@ def test_custom_context():
     app = Sanic("test-app-custom_context")
     app.debug = True
 
-    app.add_route(
-        CustomGraphQLView.as_view(schema=schema, graphiql=True),
-        "/graphql",
-    )
+    app.add_route(CustomGraphQLView.as_view(schema=schema, graphiql=True), "/graphql")
 
     query = "{ customContextValue }"
 
@@ -112,10 +106,7 @@ def test_custom_process_result():
     app = Sanic("test-app-custom_process_result")
     app.debug = True
 
-    app.add_route(
-        CustomGraphQLView.as_view(schema=schema, graphiql=True),
-        "/graphql",
-    )
+    app.add_route(CustomGraphQLView.as_view(schema=schema, graphiql=True), "/graphql")
 
     query = "{ abc }"
 

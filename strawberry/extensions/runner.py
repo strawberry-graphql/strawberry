@@ -12,9 +12,7 @@ class ExtensionsRunner:
     extensions: List[Extension]
 
     def __init__(
-        self,
-        execution_context: ExecutionContext,
-        extensions: List[Extension] = None,
+        self, execution_context: ExecutionContext, extensions: List[Extension] = None
     ):
         self.execution_context = execution_context
         self.extensions = extensions or []

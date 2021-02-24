@@ -75,11 +75,7 @@ def test_custom_execution_context():
                 return result
 
             # Add some extra data to the response
-            result.data.update(
-                {
-                    "extra": "data",
-                }
-            )
+            result.data.update({"extra": "data"})
             return result
 
     @strawberry.type
@@ -92,7 +88,4 @@ def test_custom_execution_context():
 
     result = schema.execute_sync("{ hello }", root_value=Query())
 
-    assert result.data == {
-        "hello": "World",
-        "extra": "data",
-    }
+    assert result.data == {"hello": "World", "extra": "data"}

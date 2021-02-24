@@ -41,9 +41,4 @@ Decimal = scalar(
     parse_value=decimal.Decimal,
 )
 
-UUID = scalar(
-    uuid.UUID,
-    name="UUID",
-    serialize=str,
-    parse_value=uuid.UUID,
-)
+UUID = scalar(uuid.UUID, name="UUID", serialize=str, parse_value=uuid.UUID)

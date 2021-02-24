@@ -376,8 +376,7 @@ def test_annotated_with_other_information():
 
 
 @pytest.mark.skipif(
-    sys.version_info < (3, 9),
-    reason="Annotated type was added in python 3.9",
+    sys.version_info < (3, 9), reason="Annotated type was added in python 3.9"
 )
 def test_annotated_python_39():
     from typing import Annotated

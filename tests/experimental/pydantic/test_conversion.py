@@ -89,10 +89,7 @@ def test_can_covert_pydantic_type_with_list_of_nested_data_to_strawberry():
         pass
 
     origin_user = UserModel(
-        work=[
-            WorkModel(name="Ice Cream inc"),
-            WorkModel(name="Wall Street"),
-        ]
+        work=[WorkModel(name="Ice Cream inc"), WorkModel(name="Wall Street")]
     )
     user = User.from_pydantic(origin_user)
 
@@ -107,13 +104,7 @@ def test_can_covert_pydantic_type_with_list_of_nested_int_to_strawberry():
     class User:
         pass
 
-    origin_user = UserModel(
-        hours=[
-            8,
-            9,
-            10,
-        ]
-    )
+    origin_user = UserModel(hours=[8, 9, 10])
     user = User.from_pydantic(origin_user)
 
     assert user.hours == [8, 9, 10]
@@ -127,20 +118,10 @@ def test_can_covert_pydantic_type_with_matrix_list_of_nested_int_to_strawberry()
     class User:
         pass
 
-    origin_user = UserModel(
-        hours=[
-            [8, 10],
-            [9, 11],
-            [10, 12],
-        ]
-    )
+    origin_user = UserModel(hours=[[8, 10], [9, 11], [10, 12]])
     user = User.from_pydantic(origin_user)
 
-    assert user.hours == [
-        [8, 10],
-        [9, 11],
-        [10, 12],
-    ]
+    assert user.hours == [[8, 10], [9, 11], [10, 12]]
 
 
 def test_can_covert_pydantic_type_with_matrix_list_of_nested_model_to_strawberry():
@@ -160,35 +141,17 @@ def test_can_covert_pydantic_type_with_matrix_list_of_nested_model_to_strawberry
 
     origin_user = UserModel(
         hours=[
-            [
-                HourModel(hour=1),
-                HourModel(hour=2),
-            ],
-            [
-                HourModel(hour=3),
-                HourModel(hour=4),
-            ],
-            [
-                HourModel(hour=5),
-                HourModel(hour=6),
-            ],
+            [HourModel(hour=1), HourModel(hour=2)],
+            [HourModel(hour=3), HourModel(hour=4)],
+            [HourModel(hour=5), HourModel(hour=6)],
         ]
     )
     user = User.from_pydantic(origin_user)
 
     assert user.hours == [
-        [
-            Hour(hour=1),
-            Hour(hour=2),
-        ],
-        [
-            Hour(hour=3),
-            Hour(hour=4),
-        ],
-        [
-            Hour(hour=5),
-            Hour(hour=6),
-        ],
+        [Hour(hour=1), Hour(hour=2)],
+        [Hour(hour=3), Hour(hour=4)],
+        [Hour(hour=5), Hour(hour=6)],
     ]
 
 
@@ -241,18 +204,10 @@ def test_can_covert_pydantic_type_to_strawberry_with_additional_list_nested_fiel
     origin_user = UserModel(password="abc")
     user = User.from_pydantic(
         origin_user,
-        extra={
-            "work": [
-                {"name": "Software inc"},
-                {"name": "Homemade inc"},
-            ]
-        },
+        extra={"work": [{"name": "Software inc"}, {"name": "Homemade inc"}]},
     )
 
-    assert user.work == [
-        Work(name="Software inc"),
-        Work(name="Homemade inc"),
-    ]
+    assert user.work == [Work(name="Software inc"), Work(name="Homemade inc")]
     assert user.password == "abc"
 
 
@@ -273,18 +228,9 @@ def test_can_covert_pydantic_type_to_strawberry_with_missing_data_in_nested_type
 
     origin_user = UserModel(work=[WorkModel(name="Software inc")])
 
-    user = User.from_pydantic(
-        origin_user,
-        extra={
-            "work": [
-                {"year": 2020},
-            ]
-        },
-    )
+    user = User.from_pydantic(origin_user, extra={"work": [{"year": 2020}]})
 
-    assert user.work == [
-        Work(name="Software inc", year=2020),
-    ]
+    assert user.work == [Work(name="Software inc", year=2020)]
 
 
 def test_can_covert_pydantic_type_to_strawberry_with_missing_index_data_in_nested_type():
@@ -302,21 +248,11 @@ def test_can_covert_pydantic_type_to_strawberry_with_missing_index_data_in_neste
     class User:
         pass
 
-    origin_user = UserModel(
-        work=[
-            WorkModel(name="Software inc"),
-            None,
-        ]
-    )
+    origin_user = UserModel(work=[WorkModel(name="Software inc"), None])
 
     user = User.from_pydantic(
         origin_user,
-        extra={
-            "work": [
-                {"year": 2020},
-                {"name": "Alternative", "year": 3030},
-            ]
-        },
+        extra={"work": [{"year": 2020}, {"name": "Alternative", "year": 3030}]},
     )
 
     assert user.work == [
