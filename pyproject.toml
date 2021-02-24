@@ -36,6 +36,7 @@ python-dateutil = "^2.7.0"
 cached-property = "^1.5.2"
 pydantic = {version = "^1.6.1", optional = true}
 python-multipart = "^0.0.5"
+sanic = "^20.12.2"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2"
