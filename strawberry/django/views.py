@@ -20,6 +20,7 @@ from strawberry.types import ExecutionResult
 from strawberry.types.execution import ExecutionContext
 
 from ..schema import BaseSchema
+from .context import StrawberryDjangoContext
 
 
 class BaseView(View):
@@ -92,7 +93,7 @@ class GraphQLView(BaseView):
         return None
 
     def get_context(self, request: HttpRequest) -> Any:
-        return {"request": request}
+        return StrawberryDjangoContext(request)
 
     def process_result(
         self, request: HttpRequest, result: ExecutionResult
