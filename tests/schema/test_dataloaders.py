@@ -38,6 +38,9 @@ async def test_can_use_dataloaders(mocker):
     result = await schema.execute(query)
 
     assert not result.errors
-    assert result.data == {"a": "1", "b": "2"}
+    assert result.data == {
+        "a": "1",
+        "b": "2",
+    }
 
     mock_loader.assert_called_once_with(["1", "2"])

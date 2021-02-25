@@ -119,7 +119,8 @@ def convert_argument(value: Any, argument_definition: ArgumentDefinition) -> Any
 
 
 def convert_arguments(
-    value: Dict[str, Any], arguments: List[ArgumentDefinition]
+    value: Dict[str, Any],
+    arguments: List[ArgumentDefinition],
 ) -> Dict[str, Any]:
     """Converts a nested dictionary to a dictionary of actual types.
 

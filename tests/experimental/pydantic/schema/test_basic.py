@@ -150,7 +150,12 @@ def test_basic_type_with_list_of_nested_model():
     class Query:
         @strawberry.field
         def user(self) -> UserType:
-            return UserType(hobbies=[HobbyType(name="Skii"), HobbyType(name="Cooking")])
+            return UserType(
+                hobbies=[
+                    HobbyType(name="Skii"),
+                    HobbyType(name="Cooking"),
+                ]
+            )
 
     schema = strawberry.Schema(query=Query)
 
@@ -159,7 +164,10 @@ def test_basic_type_with_list_of_nested_model():
     result = schema.execute_sync(query)
 
     assert not result.errors
-    assert result.data["user"]["hobbies"] == [{"name": "Skii"}, {"name": "Cooking"}]
+    assert result.data["user"]["hobbies"] == [
+        {"name": "Skii"},
+        {"name": "Cooking"},
+    ]
 
 
 def test_basic_type_with_extended_fields():

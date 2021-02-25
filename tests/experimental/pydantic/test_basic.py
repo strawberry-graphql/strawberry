@@ -137,7 +137,10 @@ def test_basic_type_without_fields_throws_an_error():
 
     with pytest.raises(MissingFieldsListError):
 
-        @strawberry.experimental.pydantic.type(User, fields=[])
+        @strawberry.experimental.pydantic.type(
+            User,
+            fields=[],
+        )
         class UserType:
             pass
 

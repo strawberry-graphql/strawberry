@@ -35,7 +35,11 @@ def copy_union_with(
         tuple(copy_type_with(t, params_to_type=params_to_type) for t in types),
     )
 
-    return union(name=get_name_from_types(types), types=types, description=description)
+    return union(
+        name=get_name_from_types(types),
+        types=types,
+        description=description,
+    )
 
 
 def copy_type_with(
@@ -111,7 +115,11 @@ def copy_type_with(
             )
             type_definition._type_params = {}
 
-            copied_type = builtins.type(name, (), {"_type_definition": type_definition})
+            copied_type = builtins.type(
+                name,
+                (),
+                {"_type_definition": type_definition},
+            )
 
             if not hasattr(base, "_copies"):
                 base._copies = {}

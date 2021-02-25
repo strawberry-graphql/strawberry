@@ -106,7 +106,9 @@ class Schema:
         )
 
         return ExecutionResult(
-            data=result.data, errors=result.errors, extensions=result.extensions
+            data=result.data,
+            errors=result.errors,
+            extensions=result.extensions,
         )
 
     def execute_sync(
@@ -132,7 +134,9 @@ class Schema:
         )
 
         return ExecutionResult(
-            data=result.data, errors=result.errors, extensions=result.extensions
+            data=result.data,
+            errors=result.errors,
+            extensions=result.extensions,
         )
 
     async def subscribe(

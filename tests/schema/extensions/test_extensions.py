@@ -62,7 +62,9 @@ def test_extension():
 
     assert not result.errors
 
-    assert result.extensions == {"example": "example"}
+    assert result.extensions == {
+        "example": "example",
+    }
 
 
 @pytest.mark.asyncio
@@ -91,4 +93,6 @@ async def test_extension_async():
 
     assert not result.errors
 
-    assert result.extensions == {"example": "example"}
+    assert result.extensions == {
+        "example": "example",
+    }

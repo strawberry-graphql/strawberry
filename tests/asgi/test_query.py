@@ -63,7 +63,10 @@ def test_root_value(schema, test_client):
 def test_custom_context():
     class CustomGraphQL(BaseGraphQL):
         async def get_context(self, request):
-            return {"request": request, "custom_context_value": "Hi!"}
+            return {
+                "request": request,
+                "custom_context_value": "Hi!",
+            }
 
     @strawberry.type
     class Query:

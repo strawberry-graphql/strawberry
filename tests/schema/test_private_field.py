@@ -51,4 +51,6 @@ def test_private_field_access_in_resolver():
     )
 
     assert not result.errors
-    assert result.data == {"ageInMonths": 84}
+    assert result.data == {
+        "ageInMonths": 84,
+    }

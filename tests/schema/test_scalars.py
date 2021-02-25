@@ -26,10 +26,14 @@ def test_uuid_field_string_value():
 
     result = schema.execute_sync(
         "query { uniqueId }",
-        root_value=Query(unique_id="e350746c-33b6-4469-86b0-5f16e1e12232"),
+        root_value=Query(
+            unique_id="e350746c-33b6-4469-86b0-5f16e1e12232",
+        ),
     )
     assert not result.errors
-    assert result.data == {"uniqueId": "e350746c-33b6-4469-86b0-5f16e1e12232"}
+    assert result.data == {
+        "uniqueId": "e350746c-33b6-4469-86b0-5f16e1e12232",
+    }
 
 
 def test_uuid_field_uuid_value():
@@ -54,10 +58,14 @@ def test_uuid_field_uuid_value():
 
     result = schema.execute_sync(
         "query { uniqueId }",
-        root_value=Query(unique_id=UUID("e350746c-33b6-4469-86b0-5f16e1e12232")),
+        root_value=Query(
+            unique_id=UUID("e350746c-33b6-4469-86b0-5f16e1e12232"),
+        ),
     )
     assert not result.errors
-    assert result.data == {"uniqueId": "e350746c-33b6-4469-86b0-5f16e1e12232"}
+    assert result.data == {
+        "uniqueId": "e350746c-33b6-4469-86b0-5f16e1e12232",
+    }
 
 
 def test_uuid_input():
@@ -83,4 +91,6 @@ def test_uuid_input():
     )
 
     assert not result.errors
-    assert result.data == {"uuidInput": "e350746c-33b6-4469-86b0-5f16e1e12232"}
+    assert result.data == {
+        "uuidInput": "e350746c-33b6-4469-86b0-5f16e1e12232",
+    }

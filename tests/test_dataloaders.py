@@ -33,7 +33,9 @@ async def test_gathering(mocker):
     loader = DataLoader(load_fn=mock_loader)
 
     [value_a, value_b, value_c] = await asyncio.gather(
-        loader.load(1), loader.load(2), loader.load(3)
+        loader.load(1),
+        loader.load(2),
+        loader.load(3),
     )
 
     mock_loader.assert_called_once_with([1, 2, 3])
@@ -52,7 +54,9 @@ async def test_max_batch_size(mocker):
     loader = DataLoader(load_fn=mock_loader, max_batch_size=2)
 
     [value_a, value_b, value_c] = await asyncio.gather(
-        loader.load(1), loader.load(2), loader.load(3)
+        loader.load(1),
+        loader.load(2),
+        loader.load(3),
     )
 
     mock_loader.assert_has_calls([mocker.call([1, 2]), mocker.call([3])])
@@ -97,7 +101,11 @@ async def test_when_raising_error_in_loader():
         await loader.load(1)
 
     with pytest.raises(ValueError):
-        await asyncio.gather(loader.load(1), loader.load(2), loader.load(3))
+        await asyncio.gather(
+            loader.load(1),
+            loader.load(2),
+            loader.load(3),
+        )
 
 
 async def test_returning_wrong_number_of_results():

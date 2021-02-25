@@ -84,7 +84,10 @@ def type(
             )
         )
 
-        cls = dataclasses.make_dataclass(cls.__name__, all_fields)
+        cls = dataclasses.make_dataclass(
+            cls.__name__,
+            all_fields,
+        )
 
         _process_type(
             cls,

@@ -167,4 +167,10 @@ input = partial(type, is_input=True)
 interface = partial(type, is_interface=True)
 
 
-__all__ = ["FederationTypeParams", "TypeDefinition", "input", "interface", "type"]
+__all__ = [
+    "FederationTypeParams",
+    "TypeDefinition",
+    "input",
+    "interface",
+    "type",
+]

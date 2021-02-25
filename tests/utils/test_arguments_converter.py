@@ -24,7 +24,10 @@ def test_simple_types():
 
 
 def test_list():
-    args = {"integerList": [1, 2], "stringList": ["abc", "cde"]}
+    args = {
+        "integerList": [1, 2],
+        "stringList": ["abc", "cde"],
+    }
 
     arguments = [
         ArgumentDefinition(

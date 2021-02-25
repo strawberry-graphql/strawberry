@@ -226,7 +226,7 @@ def test_field_deprecated_reason_subscription():
 
     assert not result.errors
     assert result.data["__type"]["fields"] == [
-        {"name": "a", "deprecationReason": "Deprecated A"}
+        {"name": "a", "deprecationReason": "Deprecated A"},
     ]
 
 

@@ -45,7 +45,8 @@ async def get_http_response(
             )
     else:
         return PlainTextResponse(
-            "Method Not Allowed", status_code=status.HTTP_405_METHOD_NOT_ALLOWED
+            "Method Not Allowed",
+            status_code=status.HTTP_405_METHOD_NOT_ALLOWED,
         )
 
     try:

@@ -17,7 +17,10 @@ def test_enabling_query_validation_sync(validate_queries, mocker):
     class Query:
         example: Optional[str] = None
 
-    schema = strawberry.Schema(query=Query, extensions=[extension_class_mock])
+    schema = strawberry.Schema(
+        query=Query,
+        extensions=[extension_class_mock],
+    )
 
     query = """
         query {
@@ -26,7 +29,9 @@ def test_enabling_query_validation_sync(validate_queries, mocker):
     """
 
     result = schema.execute_sync(
-        query, root_value=Query(), validate_queries=validate_queries
+        query,
+        root_value=Query(),
+        validate_queries=validate_queries,
     )
 
     assert not result.errors
@@ -47,7 +52,10 @@ async def test_enabling_query_validation(validate_queries, mocker):
     class Query:
         example: Optional[str] = None
 
-    schema = strawberry.Schema(query=Query, extensions=[extension_class_mock])
+    schema = strawberry.Schema(
+        query=Query,
+        extensions=[extension_class_mock],
+    )
 
     query = """
         query {
@@ -56,7 +64,9 @@ async def test_enabling_query_validation(validate_queries, mocker):
     """
 
     result = await schema.execute(
-        query, root_value=Query(), validate_queries=validate_queries
+        query,
+        root_value=Query(),
+        validate_queries=validate_queries,
     )
 
     assert not result.errors
@@ -103,7 +113,11 @@ async def test_asking_for_wrong_field():
         }
     """
 
-    result = await schema.execute(query, root_value=Query(), validate_queries=False)
+    result = await schema.execute(
+        query,
+        root_value=Query(),
+        validate_queries=False,
+    )
 
     assert result.errors is None
     assert result.data == {}
@@ -125,7 +139,11 @@ async def test_sending_wrong_variables():
         }
     """
 
-    result = await schema.execute(query, root_value=Query(), validate_queries=False)
+    result = await schema.execute(
+        query,
+        root_value=Query(),
+        validate_queries=False,
+    )
 
     assert (
         str(result.errors[0])
