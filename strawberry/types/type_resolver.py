@@ -129,11 +129,12 @@ def _resolve_type(field_definition: Union[FieldDefinition, ArgumentDefinition]) 
             type=get_list_annotation(type),
         )
 
-        _resolve_type(child_definition)
+        child_field = StrawberryField(child_definition)
+        resolve_type_field(child_field)
 
         field_definition.type = None
         field_definition.is_list = True
-        field_definition.child = child_definition
+        field_definition.child = child_field
 
         return
 
@@ -189,8 +190,7 @@ def _resolve_type(field_definition: Union[FieldDefinition, ArgumentDefinition]) 
 def _get_type_params_for_field(field: StrawberryField) -> Optional[List[Type]]:
     field_definition = field._field_definition
     if field_definition.is_list:
-        child = cast(FieldDefinition, field_definition.child)
-
+        child = field_definition.child
         return _get_type_params_for_field(child)
 
     type = cast(Type, field_definition.type)
