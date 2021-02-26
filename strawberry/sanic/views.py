@@ -11,6 +11,23 @@ from .graphiql import render_graphiql_page
 
 
 class GraphQLView(HTTPMethodView):
+    """
+    Class based view to handle GraphQL HTTP Requests
+
+    Args:
+        schema: strawberry.Schema
+        graphiql: bool, default is True
+
+    Returns:
+        None
+
+    Example:
+        app.add_route(
+            GraphQLView.as_view(schema=schema, graphiql=True),
+            "/graphql"
+        )
+    """
+
     methods = ["GET", "POST"]
 
     def __init__(self, schema: BaseSchema, graphiql: bool = True):

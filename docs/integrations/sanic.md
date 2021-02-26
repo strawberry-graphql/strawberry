@@ -4,7 +4,7 @@ title: Sanic
 
 # Sanic
 
-Strawberry comes with a basic Sanic integration. It provides a view that you can
+Strawberry comes with a basic [Sanic](https://github.com/sanic-org/sanic) integration. It provides a view that you can
 use to serve your GraphQL schema:
 
 ```python
