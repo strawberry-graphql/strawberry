@@ -63,8 +63,8 @@ case.
 
 ## get_root_value
 
-`get_root_value` allows to provide a custom root value for your schema, this is
-probably not used a lot but it might be useful in certain situations.
+By overriding `GraphQLView.get_root_value` you can provide a custom root value for your
+schema. This is probably not used a lot but it might be useful in certain situations.
 
 Here's an example:
 
