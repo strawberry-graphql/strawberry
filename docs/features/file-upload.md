@@ -33,7 +33,8 @@ Example:
 ```python
 import strawberry
 from strawberry.file_uploads import Upload
-...
+
+
 @strawberry.type
 class Mutation:
     @strawberry.mutation
