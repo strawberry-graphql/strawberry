@@ -56,7 +56,7 @@ class Query:
 ```
 
 Here we are returning a custom context dictionary that contains only one item
-called "example".
+called `"example"`.
 
 Then we use the context in a resolver, the resolver will return "1" in this
 case.
