@@ -30,7 +30,7 @@ The `GraphQLView` accepts two options at the moment:
 
 ## Extending the view
 
-We allow to extend the base `GraphQLView`, by overriding the following methods:
+The base `GraphQLView` class can be extended by overriding the following methods:
 
 - `get_context(self) -> Any`
 - `get_root_value(self) -> Any`
