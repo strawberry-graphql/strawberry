@@ -58,8 +58,7 @@ class Query:
 Here we are returning a custom context dictionary that contains only one item
 called `"example"`.
 
-Then we use the context in a resolver, the resolver will return "1" in this
-case.
+Then we can use the context in a resolver. In this case the resolver will return `1`.
 
 ## get_root_value
 
