@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.46.0 - 2021-02-26
+-------------------
+
+Supporting multipart file uploads on Flask
+
 0.45.4 - 2021-02-16
 -------------------
 
