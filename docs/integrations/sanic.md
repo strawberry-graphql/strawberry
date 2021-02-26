@@ -38,9 +38,9 @@ The base `GraphQLView` class can be extended by overriding the following methods
 
 ## get_context
 
-`get_context` allows to provide a custom context object that can be used in your
-resolver. You can return anything here, by default we return a dictionary with
-the request.
+By overriding `GraphQLView.get_context` you can provide a custom context object for
+your resolvers. You can return anything here; by default GraphQLView returns a
+dictionary with the request.
 
 ```python
 class MyGraphQLView(GraphQLView):
