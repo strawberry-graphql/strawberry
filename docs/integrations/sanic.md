@@ -79,8 +79,8 @@ class Query:
     name: str
 ```
 
-Here we are returning a Query where the name is "Patrick", so we when requesting
-the field name we'll return "Patrick" in this case.
+Here we configure a Query where requesting the `name` field will return `"Patrick"`
+through the custom root value.
 
 ## process_result
 
