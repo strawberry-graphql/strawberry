@@ -84,9 +84,9 @@ through the custom root value.
 
 ## process_result
 
-`process_result` allows to customize and/or process results before they are sent
-to the clients. This can be useful logging errors or hiding them (for example to
-hide internal exceptions).
+By overriding `GraphQLView.process_result` you can customize and/or process results
+before they are sent to a client. This can be useful for logging errors, or even hiding
+them (for example to hide internal exceptions).
 
 It needs to return an object of `GraphQLHTTPResponse` and accepts the request
 and the execution results.
