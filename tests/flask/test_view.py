@@ -1,21 +1,11 @@
 import json
 
-import pytest
-
 import strawberry
 from flask import Flask, request
 from strawberry.flask.views import GraphQLView as BaseGraphQLView
 from strawberry.types import ExecutionResult
 
 from .app import create_app
-
-
-@pytest.fixture
-def flask_client():
-    app = create_app()
-
-    with app.test_client() as client:
-        yield client
 
 
 def test_graphql_query(flask_client):

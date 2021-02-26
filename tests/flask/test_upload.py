@@ -1,18 +1,6 @@
 import json
 from io import BytesIO
 
-import pytest
-
-from .app import create_app
-
-
-@pytest.fixture
-def flask_client():
-    app = create_app()
-
-    with app.test_client() as client:
-        yield client
-
 
 def test_upload(flask_client):
     f = (BytesIO(b"strawberry"), "textFile.txt")
