@@ -36,7 +36,7 @@ class Query:
 
 
 @strawberry.type
-class GetRequestValueWithDotNotaionQuery:
+class GetRequestValueWithDotNotationQuery:
     @strawberry.field
     def get_request_value(self, info: Info) -> str:
         return info.context.request
@@ -156,7 +156,7 @@ def test_returns_errors_and_data():
 
 
 @pytest.mark.parametrize(
-    "query", (GetRequestValueWithDotNotaionQuery, GetRequestValueQuery)
+    "query", (GetRequestValueWithDotNotationQuery, GetRequestValueQuery)
 )
 def test_strawberry_django_context(query):
     factory = RequestFactory()
