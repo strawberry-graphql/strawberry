@@ -35,6 +35,20 @@ class Query:
         return Example.objects.first().name
 
 
+@strawberry.type
+class GetRequestValueWithDotNotationQuery:
+    @strawberry.field
+    def get_request_value(self, info: Info) -> str:
+        return info.context.request
+
+
+@strawberry.type
+class GetRequestValueQuery:
+    @strawberry.field
+    def get_request_value(self, info: Info) -> str:
+        return info.context["request"]
+
+
 schema = strawberry.Schema(query=Query)
 
 
@@ -141,13 +155,29 @@ def test_returns_errors_and_data():
     assert data["errors"][0]["message"] == "You are not authorized"
 
 
+@pytest.mark.parametrize(
+    "query", (GetRequestValueWithDotNotationQuery, GetRequestValueQuery)
+)
+def test_strawberry_django_context(query):
+    factory = RequestFactory()
+
+    schema = strawberry.Schema(query=query)
+
+    query = "{ getRequestValue }"
+    request = factory.post(
+        "/graphql/", {"query": query}, content_type="application/json"
+    )
+
+    response = GraphQLView.as_view(schema=schema)(request)
+    data = json.loads(response.content.decode())
+    assert response.status_code == 200
+    assert data["data"] == {"getRequestValue": "<WSGIRequest: POST '/graphql/'>"}
+
+
 def test_custom_context():
     class CustomGraphQLView(BaseGraphQLView):
         def get_context(self, request):
-            return {
-                "request": request,
-                "custom_value": "Hi!",
-            }
+            return {"request": request, "custom_value": "Hi!"}
 
     factory = RequestFactory()
 
