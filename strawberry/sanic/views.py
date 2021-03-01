@@ -79,7 +79,7 @@ class GraphQLView(HTTPMethodView):
             root_value=self.get_root_value(),
         )
 
-        response_data = self.process_result(result)
+        response_data = self.process_result(result)  # type: ignore
 
         return HTTPResponse(
             json.dumps(response_data), status=200, content_type="application/json"
