@@ -78,7 +78,7 @@ class GraphQLView(HTTPMethodView):
             operation_name=operation_name,
             root_value=self.get_root_value(),
         )
-
+        # TODO: Fix the type annotation error here
         response_data = self.process_result(result)  # type: ignore
 
         return HTTPResponse(
