@@ -2,6 +2,7 @@ import json
 
 from flask import Response, abort, render_template_string, request
 from flask.views import View
+from strawberry.file_uploads.data import replace_placeholders_with_files
 from strawberry.http import GraphQLHTTPResponse, process_result
 from strawberry.types import ExecutionResult
 
@@ -40,7 +41,14 @@ class GraphQLView(View):
             template = render_graphiql_page()
             return self.render_template(template=template)
 
-        data = request.json
+        if request.content_type.startswith("multipart/form-data"):
+            operations = json.loads(request.form.get("operations", "{}"))
+            files_map = json.loads(request.form.get("map", "{}"))
+
+            data = replace_placeholders_with_files(operations, files_map, request.files)
+
+        else:
+            data = request.json
 
         try:
             query = data["query"]

@@ -26,7 +26,7 @@ jobs:
         run: poetry add django==${{ matrix.django }}
 
       - name: pytest
-        run: poetry run py.test --cov-report xml --cov=. --cov-fail-under 80
+        run: poetry run py.test --cov-report xml --cov=. --cov-fail-under 80 --showlocals -vv
       - uses: codecov/codecov-action@v1
         if: ${{ always() }}
         with:

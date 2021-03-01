@@ -47,7 +47,7 @@ loader = DataLoader(load_fn=load_users)
 user = await loader.load(1)
 ```
 
-This will result in a call to `load_user` with keys equal to `[1]`. Where this
+This will result in a call to `load_users` with keys equal to `[1]`. Where this
 becomes really powerful is when you make multiple requests, like in this
 example:
 
@@ -57,7 +57,7 @@ import asyncio
 [user_a, user_b] = await asyncio.gather(loader.load(1), loader.load(2))
 ```
 
-This will result in a call to `load_user` with keys equal to `[1, 2]`. Thus
+This will result in a call to `load_users` with keys equal to `[1, 2]`. Thus
 reducing the number of calls to our database or 3rd party services to 1.
 
 Additionally by default DataLoader caches the loads, so for example the
@@ -68,7 +68,7 @@ await loader.load(1)
 await loader.load(1)
 ```
 
-Will result in only one call to `load_user`.
+Will result in only one call to `load_users`.
 
 ## Usage with GraphQL
 
