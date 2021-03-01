@@ -729,7 +729,7 @@ pytest = ">=4.2.1"
 
 [[package]]
 name = "pytest-flask"
-version = "1.1.0"
+version = "1.2.0"
 description = "A set of py.test fixtures to test Flask applications."
 category = "dev"
 optional = false
@@ -990,7 +990,7 @@ pydantic = ["pydantic"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "138f91a3151ad3e2e4cb43ce09e971ffa49f265c944b78877ff20a4da2b197b4"
+content-hash = "33380106c52147bad3e2aa0983e8c00900cdfec0796bf64bc7baf140ec72d7de"
 
 [metadata.files]
 appdirs = [
@@ -1385,8 +1385,8 @@ pytest-emoji = [
     {file = "pytest_emoji-0.2.0-py3-none-any.whl", hash = "sha256:6e34ed21970fa4b80a56ad11417456bd873eb066c02315fe9df0fafe6d4d4436"},
 ]
 pytest-flask = [
-    {file = "pytest-flask-1.1.0.tar.gz", hash = "sha256:9c136afd6d0fb045b0b8fd2363421b6670bfebd21d9141f79669d9051c9d2d05"},
-    {file = "pytest_flask-1.1.0-py3-none-any.whl", hash = "sha256:28a24a5c12778f6e2b12eaf825e71944210aaba061edbd2c3e15e3664bc15407"},
+    {file = "pytest-flask-1.2.0.tar.gz", hash = "sha256:46fde652f77777bf02dc91205aec4ce20cdf2acbbbd66a918ab91f5c14693d3d"},
+    {file = "pytest_flask-1.2.0-py3-none-any.whl", hash = "sha256:fe25b39ad0db09c3d1fe728edecf97ced85e774c775db259a6d25f0270a4e7c9"},
 ]
 pytest-mock = [
     {file = "pytest-mock-3.5.1.tar.gz", hash = "sha256:a1e2aba6af9560d313c642dae7e00a2a12b022b80301d9d7fc8ec6858e1dd9fc"},
