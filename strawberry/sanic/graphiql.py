@@ -1,7 +1,7 @@
 from os.path import abspath, dirname, join
 
 
-def render_graphiql_page():
+def render_graphiql_page() -> str:
     dir_path = abspath(join(dirname(__file__), ".."))
     graphiql_html_file = f"{dir_path}/static/graphiql.html"
 

@@ -1,12 +1,15 @@
 import json
+from typing import Any
 
 from sanic.exceptions import abort
+from sanic.request import Request
 from sanic.response import HTTPResponse, html
 from sanic.views import HTTPMethodView
 from strawberry.http import GraphQLHTTPResponse, process_result
-from strawberry.types import ExecutionResult
+from strawberry.types.base import ExecutionResult
 
 from ..schema import BaseSchema
+from .context import StrawberrySanicContext
 from .graphiql import render_graphiql_page
 
 
@@ -37,8 +40,8 @@ class GraphQLView(HTTPMethodView):
     def get_root_value(self):
         return None
 
-    def get_context(self, request):
-        return {"request": request}
+    def get_context(self, request: Request) -> Any:
+        return StrawberrySanicContext(request)
 
     def render_template(self, template=None):
         return html(template)
@@ -46,7 +49,7 @@ class GraphQLView(HTTPMethodView):
     def process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse:
         return process_result(result)
 
-    async def dispatch_request(self, request):
+    async def dispatch_request(self, request) -> HTTPResponse:
         request_method = request.method.lower()
         if not self.graphiql:
             abort(404)
@@ -58,17 +61,14 @@ class GraphQLView(HTTPMethodView):
         if show_graphiql:
             template = render_graphiql_page()
             return self.render_template(template=template)
-
         data = request.json
-
         try:
             query = data["query"]
-            variables = data.get("variables")
-            operation_name = data.get("operationName")
-
         except KeyError:
             return HTTPResponse("No valid query was provided for the request", 400)
 
+        variables = data.get("variables")
+        operation_name = data.get("operationName")
         context = self.get_context(request)
 
         result = await self.schema.execute(
@@ -86,11 +86,11 @@ class GraphQLView(HTTPMethodView):
         )
 
     def should_display_graphiql(self, request):
-        if not self.graphiql or "raw" in request.args:
+        if not self.graphiql:
             return False
         return self.request_wants_html(request)
 
     @staticmethod
-    def request_wants_html(request):
+    def request_wants_html(request: Request):
         accept = request.headers.get("accept", {})
         return "text/html" in accept or "*/*" in accept

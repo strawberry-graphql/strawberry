@@ -115,3 +115,16 @@ def test_custom_process_result():
 
     assert response.status == 200
     assert data == {}
+
+
+def test_malformed_query(sanic_client):
+    query = {
+        "qwary": """
+            qwary {
+                hello
+            }
+        """
+    }
+
+    request, response = sanic_client.test_client.post("/graphql", json=query)
+    assert response.status == 400
