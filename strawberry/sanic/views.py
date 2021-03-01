@@ -6,7 +6,7 @@ from sanic.request import Request
 from sanic.response import HTTPResponse, html
 from sanic.views import HTTPMethodView
 from strawberry.http import GraphQLHTTPResponse, process_result
-from strawberry.types.base import ExecutionResult
+from strawberry.types import ExecutionResult
 
 from ..schema import BaseSchema
 from .context import StrawberrySanicContext
