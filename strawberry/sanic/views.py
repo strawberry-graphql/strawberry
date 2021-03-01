@@ -3,7 +3,7 @@ from typing import Any
 
 from sanic.exceptions import abort
 from sanic.request import Request
-from sanic.response import HTTPResponse, BaseHTTPResponse, html
+from sanic.response import BaseHTTPResponse, HTTPResponse, html
 from sanic.views import HTTPMethodView
 from strawberry.http import GraphQLHTTPResponse, process_result
 from strawberry.types import ExecutionResult
@@ -49,7 +49,9 @@ class GraphQLView(HTTPMethodView):
     def process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse:
         return process_result(result)
 
-    async def dispatch_request(self, request: Request) -> BaseHTTPResponse:  # type: ignore
+    async def dispatch_request(
+        self, request: Request
+    ) -> BaseHTTPResponse:  # type: ignore
         request_method = request.method.lower()
         if not self.graphiql:
             abort(404)
@@ -61,6 +63,7 @@ class GraphQLView(HTTPMethodView):
         if show_graphiql:
             template = render_graphiql_page()
             return self.render_template(template=template)
+
         data = request.json
         try:
             query = data["query"]
