@@ -71,7 +71,7 @@ class GraphQLView(HTTPMethodView):
 
         context = self.get_context(request)
 
-        result = self.schema.execute_sync(
+        result = await self.schema.execute(
             query,
             variable_values=variables,
             context_value=context,
