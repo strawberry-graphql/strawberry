@@ -1,5 +1,5 @@
-from .base import BaseSchema as BaseSchema, ExecutionResult as ExecutionResult
+from .base import BaseSchema as BaseSchema
 from .schema import Schema as Schema
 
 
-__all__ = ["BaseSchema", "ExecutionResult", "Schema"]
+__all__ = ["BaseSchema", "Schema"]

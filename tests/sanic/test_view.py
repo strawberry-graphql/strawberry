@@ -20,7 +20,6 @@ def create_app(**kwargs):
             return Query()
 
     app = Sanic("test-app-" + str(random()))
-    app.debug = True
 
     app.add_route(
         GraphQLView.as_view(schema=schema, graphiql=kwargs.get("graphiql", True)),
