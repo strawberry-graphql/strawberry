@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.47.1 - 2021-03-02
+-------------------
+
+Enable using .get for django context as well as for the square brackets notation.
+
 0.47.0 - 2021-02-28
 -------------------
 
