@@ -4,10 +4,8 @@ Release type: minor
 Added support for sanic webserver.
 
 # Changelog
-Deprecated the following type annotation,
-```python
-from strawberry.schema.base import ExecutionResult # Deprecated
-```
+`ExecutionResult` was erroneously defined twice in the repository. The entry in `strawberry.schema.base` has been removed. If you were using it, switch to using
+`strawberry.types.execution.ExecutionResult` instead.
 
 It is now instead only supported under `strawberry.types`.
 
