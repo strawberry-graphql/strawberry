@@ -13,6 +13,7 @@ Added support for sanic webserver.
 
 ```python
 from strawberry.types import ExecutionResult
+```
 
 0.47.1 - 2021-03-02
 -------------------
