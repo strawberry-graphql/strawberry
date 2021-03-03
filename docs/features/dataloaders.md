@@ -142,7 +142,7 @@ example of this using our ASGI view:
 import strawberry
 from strawberry.types import Info
 from strawberry.asgi import GraphQL
-from strawberry.dataloder import DataLoader
+from strawberry.dataloader import DataLoader
 
 from starlette.requests import Request
 from starlette.websockets import WebSocket
