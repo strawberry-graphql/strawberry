@@ -213,7 +213,7 @@ class GraphQLCoreConverter:
             graphql_fields = {}
             for field in interface.fields:
                 assert field.name is not None
-                graphql_fields[field.name] = self.from_field(field)
+                graphql_fields[field.name] = self.from_field(field._field_definition)
             return graphql_fields
 
         graphql_interface = GraphQLInterfaceType(

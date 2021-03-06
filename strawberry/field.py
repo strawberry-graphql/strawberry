@@ -1,5 +1,5 @@
 import dataclasses
-from typing import Callable, List, Optional, Type, Union
+from typing import Any, Callable, List, Optional, Type, Union
 
 from .permission import BasePermission
 from .types.fields.resolver import StrawberryResolver
@@ -14,17 +14,22 @@ class StrawberryField(dataclasses.Field):
     _field_definition: FieldDefinition
 
     def __init__(self, field_definition: FieldDefinition):
+
         self._field_definition = field_definition
 
-        super().__init__(  # type: ignore
-            default=dataclasses.MISSING,
-            default_factory=dataclasses.MISSING,
-            init=field_definition.base_resolver is None,
-            repr=True,
-            hash=None,
-            compare=True,
-            metadata=None,
-        )
+        # Copied from dataclasses.Field.__init__, but without setting .name and .type
+        # to None
+        self.name = field_definition.name
+        self.type = field_definition.type
+        self.default = dataclasses.MISSING
+        self.default_factory = dataclasses.MISSING
+        self.init = field_definition.base_resolver is None
+        self.repr = True
+        self.hash = None
+        self.compare = True
+        self.metadata = dataclasses._EMPTY_METADATA
+
+        self._field_type = None
 
     def __call__(self, resolver: _RESOLVER_TYPE) -> "StrawberryField":
         """Add a resolver to the field"""
@@ -46,12 +51,17 @@ class StrawberryField(dataclasses.Field):
         return self
 
     def __setattr__(self, name, value):
+        if name == "type":
+            self._field_definition.type = value
+
         if value and name == "name":
             if not self._field_definition.origin_name:
                 self._field_definition.origin_name = value
 
+            camel_case_name = to_camel_case(value)
             if not self._field_definition.name:
-                self._field_definition.name = to_camel_case(value)
+                self._field_definition.name = camel_case_name
+            value = camel_case_name
 
         return super().__setattr__(name, value)
 
@@ -74,6 +84,55 @@ class StrawberryField(dataclasses.Field):
     @property
     def is_union(self) -> bool:
         return self._field_definition.is_union
+
+    # @property
+    # def type_(self) -> Optional[Union[Type, StrawberryUnion]]:
+    #     if self._type is not None:
+    #         return self._type
+    #     elif self._field_definition.base_resolver:
+    #         return self._field_definition.base_resolver.type
+    #     else:
+    #         return None
+
+    @property
+    def child(self) -> "StrawberryField":
+        return self._field_definition.child
+
+    @property
+    def default_value(self) -> Any:
+        return self._field_definition.default_value
+
+    @property
+    def description(self) -> Optional[str]:
+        return self._field_definition.description
+
+    @property
+    def is_child_optional(self) -> bool:
+        return self._field_definition.is_child_optional
+
+    @property
+    def is_list(self) -> bool:
+        return self._field_definition.is_list
+
+    @property
+    def is_optional(self) -> bool:
+        return self._field_definition.is_optional
+
+    @property
+    def is_subscription(self) -> bool:
+        return self._field_definition.is_subscription
+
+    @property
+    def is_union(self) -> bool:
+        return self._field_definition.is_union
+
+    @property
+    def origin(self) -> Optional[Union[Type, Callable]]:
+        return self._field_definition.origin
+
+    @property
+    def origin_name(self) -> Optional[str]:
+        return self._field_definition.origin_name
 
     # @property
     # def type_(self) -> Optional[Union[Type, StrawberryUnion]]:

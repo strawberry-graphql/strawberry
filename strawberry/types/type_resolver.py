@@ -51,10 +51,130 @@ def _resolve_generic_type(type: Type, field_name: str) -> Type:
 
 
 def resolve_type_field(field: StrawberryField) -> None:
-    _resolve_type(field._field_definition)
+    origin_name = cast(str, field.origin_name)
+
+    if isinstance(field.type, str):
+        module = sys.modules[field.origin.__module__].__dict__
+
+        field.type = eval(field.type, module)
+
+    if isinstance(field.type, LazyType):
+        field.type = field.type.resolve_type()
+
+    if is_forward_ref(field.type):
+        # if the type is a forward reference we try to resolve the type by
+        # finding it in the global namespace of the module where the field
+        # was initially declared. This will break when the type is not declared
+        # in the main scope, but we don't want to support that use case
+        # see https://mail.python.org/archives/list/typing-sig@python.org/thread/SNKJB2U5S74TWGDWVD6FMXOP63WVIGDR/  # noqa: E501
+
+        type_name = field.type.__forward_arg__
+
+        module = sys.modules[field.origin.__module__]
+
+        # TODO: we should probably raise an error if we can't find the type
+        field.type = module.__dict__[type_name]
+
+        return
+
+    if is_async_generator(field.type):
+        # TODO: shall we raise a warning if field is not used in a subscription?
+
+        # async generators are used in subscription, we only need the yield type
+        # https://docs.python.org/3/library/typing.html#typing.AsyncGenerator
+        field.type = get_async_generator_annotation(field.type)
+
+        return resolve_type_field(field)
+
+    # check for Optional[A] which is represented as Union[A, None], we
+    # have an additional check for proper unions below
+    if is_optional(field.type) and len(field.type.__args__) == 2:
+        # this logics works around List of optionals and Optional lists of Optionals:
+        # >>> Optional[List[Str]]
+        # >>> Optional[List[Optional[Str]]]
+        # the field is only optional if it is not a list or if it was already optional
+        # since we mark the child as optional when the field is a list
+
+        field._field_definition.is_optional = (
+            True and not field.is_list or field.is_optional
+        )
+        field._field_definition.is_child_optional = field.is_list
+        field.type = get_optional_annotation(field.type)
+
+        return resolve_type_field(field)
+
+    elif is_list(field.type):
+        # TODO: maybe this should be an argument definition when it is argument
+        # but doesn't matter much
+        child_definition = FieldDefinition(
+            origin=field.origin,  # type: ignore
+            name=None,
+            origin_name=None,
+            type=get_list_annotation(field.type),
+        )
+
+        child_field = StrawberryField(child_definition)
+        resolve_type_field(child_field)
+
+        field.type = None
+        field._field_definition.is_list = True
+        field._field_definition.child = child_field
+
+        return
+
+    # case for Union[A, B, C], it also handles Optional[Union[A, B, C]] as optionals
+    # type hints are represented as Union[..., None].
+
+    elif is_union(field.type):
+        # Optional[Union[A, B]] is represented as Union[A, B, None] so we need
+        # too check again if the field is optional as the check above only checks
+        # for single Optionals
+        field._field_definition.is_optional = is_optional(field.type)
+
+        types = field.type.__args__
+
+        # we use a simplified version of resolve_type since unions in GraphQL
+        # are simpler and cannot contain lists or optionals
+
+        types = tuple(
+            _resolve_generic_type(t, origin_name)
+            for t in types
+            if t is not None.__class__
+        )
+
+        field._field_definition.is_union = True
+        field.type = union(get_name_from_types(types), types)
+
+    # case for Type[A], we want to convert generics to have the concrete types
+    # when we pass them, so that we don't have to deal with generics when
+    # generating the GraphQL types later on.
+
+    elif (
+        hasattr(field.type, "_type_definition")
+        and field.type._type_definition.is_generic
+    ):
+        args = get_args(field.type)
+
+        # raise an error when using generics without passing any type parameter, ie:
+        # >>> class X(Generic[T]): ...
+        # >>> a: X
+        # instead of
+        # >>> a: X[str]
+
+        if len(args) == 0:
+            name = cast(str, field.origin_name)
+
+            raise MissingTypesForGenericError(name, field.type)
+
+        # we only make a copy when all the arguments are not type vars
+        if not all(is_type_var(a) for a in args):
+            field.type = copy_type_with(field.type, *args)
+
+    if isinstance(field.type, StrawberryUnion):
+        field._field_definition.is_union = True
 
 
-def _resolve_type(field_definition: Union[FieldDefinition, ArgumentDefinition]) -> None:
+def _resolve_type(field_definition: ArgumentDefinition) -> None:
     # TODO: This should be removed along with FieldDefinition/ArgumentDefinition in
     # favor of StrawberryField/StrawberryArgument
     # Convert a python type to include a strawberry definition, so for example
@@ -140,7 +260,6 @@ def _resolve_type(field_definition: Union[FieldDefinition, ArgumentDefinition]) 
 
     # case for Union[A, B, C], it also handles Optional[Union[A, B, C]] as optionals
     # type hints are represented as Union[..., None].
-
     elif is_union(type):
         # Optional[Union[A, B]] is represented as Union[A, B, None] so we need
         # too check again if the field is optional as the check above only checks
@@ -324,9 +443,6 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
             )
 
             field = StrawberryField(field_definition)
-
-            # TODO: Figure out why this is necessary. Without, type is set to None
-            # field.type = field_type
 
         field_name = field_definition.origin_name
 
