@@ -205,7 +205,7 @@ def test_arguments_when_extending_multiple_types():
 
     assert len(definition.fields[1].arguments) == 1
 
-    assert definition.fields[1].name == "name2"
+    assert definition.fields[1].graphql_name == "name2"
     assert definition.fields[1].arguments[0].name == "id"
     assert definition.fields[1].arguments[0].type == strawberry.ID
     assert definition.fields[1].arguments[0].is_optional is False

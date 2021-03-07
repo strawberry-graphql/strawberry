@@ -20,13 +20,13 @@ def test_basic_error_type():
     assert definition.name == "UserError"
     assert len(definition.fields) == 2
 
-    assert definition.fields[0].name == "name"
+    assert definition.fields[0].graphql_name == "name"
     assert definition.fields[0].is_list is True
     assert definition.fields[0].is_optional is True
     assert definition.fields[0].child.type is str
     assert definition.fields[0].child.is_optional is False
 
-    assert definition.fields[1].name == "age"
+    assert definition.fields[1].graphql_name == "age"
     assert definition.fields[1].is_list is True
     assert definition.fields[1].is_optional is True
     assert definition.fields[1].child.type is str
@@ -53,7 +53,7 @@ def test_error_type_with_nested_model():
     assert definition.name == "UserError"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "friend"
+    assert definition.fields[0].graphql_name == "friend"
     assert definition.fields[0].is_list is False
     assert definition.fields[0].is_optional is True
     assert definition.fields[0].type is FriendError
@@ -79,7 +79,7 @@ def test_error_type_with_list_nested_model():
     assert definition.name == "UserError"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "friends"
+    assert definition.fields[0].graphql_name == "friends"
     assert definition.fields[0].is_list is True
     assert definition.fields[0].is_optional is True
     assert definition.fields[0].child.type is FriendError
@@ -99,7 +99,7 @@ def test_error_type_with_list_of_scalar():
     assert definition.name == "UserError"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "friends"
+    assert definition.fields[0].graphql_name == "friends"
     assert definition.fields[0].is_list is True
     assert definition.fields[0].is_optional is True
     assert definition.fields[0].child.is_list is True
@@ -121,7 +121,7 @@ def test_error_type_with_optional_field():
     assert definition.name == "UserError"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "age"
+    assert definition.fields[0].graphql_name == "age"
     assert definition.fields[0].is_list is True
     assert definition.fields[0].is_optional is True
     assert definition.fields[0].child.type is str
@@ -141,7 +141,7 @@ def test_error_type_with_list_of_optional_scalar():
     assert definition.name == "UserError"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "age"
+    assert definition.fields[0].graphql_name == "age"
     assert definition.fields[0].is_list is True
     assert definition.fields[0].is_optional is True
     assert definition.fields[0].child.is_list is True
@@ -163,7 +163,7 @@ def test_error_type_with_optional_list_scalar():
     assert definition.name == "UserError"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "age"
+    assert definition.fields[0].graphql_name == "age"
     assert definition.fields[0].is_list is True
     assert definition.fields[0].is_optional is True
     assert definition.fields[0].child.is_list is True
@@ -185,7 +185,7 @@ def test_error_type_with_optional_list_of_optional_scalar():
     assert definition.name == "UserError"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "age"
+    assert definition.fields[0].graphql_name == "age"
     assert definition.fields[0].is_list is True
     assert definition.fields[0].is_optional is True
     assert definition.fields[0].child.is_list is True
@@ -214,7 +214,7 @@ def test_error_type_with_optional_list_of_nested_model():
     assert definition.name == "UserError"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "friends"
+    assert definition.fields[0].graphql_name == "friends"
     assert definition.fields[0].is_list is True
     assert definition.fields[0].is_optional is True
     assert definition.fields[0].child.is_list is False
@@ -235,7 +235,7 @@ def test_error_type_with_matrix_list_of_scalar():
     assert definition.name == "UserError"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "age"
+    assert definition.fields[0].graphql_name == "age"
     assert definition.fields[0].is_list is True
     assert definition.fields[0].is_optional is True
 

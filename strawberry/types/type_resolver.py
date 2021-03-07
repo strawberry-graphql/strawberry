@@ -99,6 +99,7 @@ def resolve_type_field(field: StrawberryField) -> None:
             True and not field.is_list or field.is_optional
         )
         field._field_definition.is_child_optional = field.is_list
+
         field.type = get_optional_annotation(field.type)
 
         return resolve_type_field(field)
@@ -116,9 +117,10 @@ def resolve_type_field(field: StrawberryField) -> None:
         child_field = StrawberryField(child_definition)
         resolve_type_field(child_field)
 
-        field.type = None
         field._field_definition.is_list = True
         field._field_definition.child = child_field
+
+        field.type = None
 
         return
 
@@ -143,6 +145,7 @@ def resolve_type_field(field: StrawberryField) -> None:
         )
 
         field._field_definition.is_union = True
+
         field.type = union(get_name_from_types(types), types)
 
     # case for Type[A], we want to convert generics to have the concrete types
@@ -394,7 +397,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
     for base in cls.__bases__:
         if hasattr(base, "_type_definition"):
             base_fields = {
-                field.origin_name: field
+                field.graphql_name: field
                 # TODO: we need to rename _fields to something else
                 for field in base._type_definition._fields  # type: ignore
             }
@@ -423,7 +426,6 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
             # the correct origin for determining field types when resolving
             # the types.
             field_definition.origin = field_definition.origin or cls
-            field_definition.origin_name = field.name
 
         # Create a StrawberryField for fields that didn't use strawberry.field
         else:
@@ -432,6 +434,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
                 continue
 
             field_type = field.type
+            field_name = field.name
 
             # Create a FieldDefinition, for fields of Types #1 and #2a
             field_definition = FieldDefinition(
@@ -444,11 +447,12 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
 
             field = StrawberryField(field_definition)
 
-        field_name = field_definition.origin_name
+        field_name = field.graphql_name
 
         assert_message = "Field must have a name by the time the schema is generated"
         assert field_name is not None, assert_message
 
+        # TODO: Raise exception if field_name already in fields
         fields[field_name] = field
 
     return list(fields.values())

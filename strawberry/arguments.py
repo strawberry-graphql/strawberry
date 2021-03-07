@@ -112,8 +112,8 @@ def convert_argument(value: Any, argument_definition: ArgumentDefinition) -> Any
         kwargs = {}
 
         for field in argument_type._type_definition.fields:
-            if field.name in value:
-                kwargs[field.origin_name] = convert_argument(value[field.name], field)
+            if field.graphql_name in value:
+                kwargs[field.name] = convert_argument(value[field.graphql_name], field)
 
         return argument_type(**kwargs)
 

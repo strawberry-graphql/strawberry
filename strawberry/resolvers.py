@@ -1,10 +1,14 @@
 import enum
 from inspect import iscoroutine
-from typing import Any, Awaitable, Callable, Dict, List, Tuple, Union, cast
+from typing import Any, Awaitable, Callable, Dict, List, Tuple, Union, cast, TYPE_CHECKING
 
 from .arguments import convert_arguments
 from .field import FieldDefinition
 from .types.fields.resolver import StrawberryResolver
+
+
+if TYPE_CHECKING:
+    from .field import StrawberryField
 
 
 def is_default_resolver(func: Callable) -> bool:
@@ -58,8 +62,9 @@ def get_arguments(
     return args, kwargs
 
 
+# TODO: Use StrawberryField
 def get_result_for_field(
-    field: FieldDefinition, kwargs: Dict[str, Any], source: Any, info: Any
+    field: "StrawberryField", kwargs: Dict[str, Any], source: Any, info: Any
 ) -> Union[Awaitable[Any], Any]:
     """
     Calls the resolver defined for `field`. If field doesn't have a
@@ -73,11 +78,11 @@ def get_result_for_field(
 
         return actual_resolver(*args, **kwargs)
 
-    origin_name = cast(str, field.origin_name)
+    origin_name = cast(str, field.name)
     return getattr(source, origin_name)
 
 
-def get_resolver(field: FieldDefinition) -> Callable:
+def get_resolver(field: "StrawberryField") -> Callable:
     def _check_permissions(source, info, **kwargs):
         """
         Checks if the permission should be accepted and
@@ -98,7 +103,7 @@ def get_resolver(field: FieldDefinition) -> Callable:
         if iscoroutine(result):  # pragma: no cover
             result = await result
 
-        result = convert_enums_to_values(field, result)
+        result = convert_enums_to_values(field._field_definition, result)
 
         return result
 
@@ -106,7 +111,7 @@ def get_resolver(field: FieldDefinition) -> Callable:
         _check_permissions(source, info, **kwargs)
 
         result = get_result_for_field(field, kwargs=kwargs, info=info, source=source)
-        result = convert_enums_to_values(field, result)
+        result = convert_enums_to_values(field._field_definition, result)
 
         return result
 

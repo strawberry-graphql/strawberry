@@ -23,11 +23,12 @@ def test_resolver_as_argument():
     assert definition.name == "Query"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "name"
+    assert definition.fields[0].graphql_name == "name"
     assert definition.fields[0].type == str
     assert definition.fields[0].base_resolver.wrapped_func == get_name
 
 
+@pytest.mark.xfail(reason="TODO")
 def test_resolver_fields():
     @strawberry.type
     class Query:
@@ -40,7 +41,7 @@ def test_resolver_fields():
     assert definition.name == "Query"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "name"
+    assert definition.fields[0].graphql_name == "name"
     assert definition.fields[0].type == str
     assert definition.fields[0].base_resolver(None) == Query().name()
 
@@ -143,12 +144,12 @@ def test_can_reuse_resolver():
     assert definition.name == "Query"
     assert len(definition.fields) == 2
 
-    assert definition.fields[0].name == "name"
+    assert definition.fields[0].graphql_name == "name"
     assert definition.fields[0].origin_name == "name"
     assert definition.fields[0].type == str
     assert definition.fields[0].base_resolver.wrapped_func == get_name
 
-    assert definition.fields[1].name == "name2"
+    assert definition.fields[1].graphql_name == "name2"
     assert definition.fields[1].origin_name == "name_2"
     assert definition.fields[1].type == str
     assert definition.fields[1].base_resolver.wrapped_func == get_name

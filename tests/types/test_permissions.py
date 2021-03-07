@@ -18,7 +18,7 @@ def test_permission_classes_basic_fields():
     assert definition.name == "Query"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "user"
+    assert definition.fields[0].graphql_name == "user"
     assert definition.fields[0].permission_classes == [IsAuthenticated]
 
 
@@ -40,5 +40,5 @@ def test_permission_classes():
     assert definition.name == "Query"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "user"
+    assert definition.fields[0].graphql_name == "user"
     assert definition.fields[0].permission_classes == [IsAuthenticated]

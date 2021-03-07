@@ -74,7 +74,7 @@ def copy_type_with(
             name = get_name_from_types(params_to_type.values()) + definition.name
 
             for field in definition.fields:
-                kwargs = dataclasses.asdict(field)
+                kwargs = field.__dict__
 
                 if field.is_list:
                     child = cast(FieldDefinition, field.child)
@@ -97,7 +97,7 @@ def copy_type_with(
                         field_type, params_to_type=params_to_type
                     )
 
-                federation_args = kwargs.pop("federation")
+                federation_args = kwargs.pop("federation", {})
                 kwargs["federation"] = FederationFieldParams(**federation_args)
 
                 fields.append(FieldDefinition(**kwargs))

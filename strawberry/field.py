@@ -3,7 +3,7 @@ from typing import Any, Callable, List, Optional, Type, Union
 
 from .permission import BasePermission
 from .types.fields.resolver import StrawberryResolver
-from .types.types import FederationFieldParams, FieldDefinition
+from .types.types import FederationFieldParams, FieldDefinition, ArgumentDefinition
 from .utils.str_converters import to_camel_case
 
 
@@ -14,22 +14,22 @@ class StrawberryField(dataclasses.Field):
     _field_definition: FieldDefinition
 
     def __init__(self, field_definition: FieldDefinition):
+        super().__init__(  # type: ignore
+            default=dataclasses.MISSING,
+            default_factory=dataclasses.MISSING,
+            init=field_definition.base_resolver is None,
+            repr=True,
+            hash=None,
+            compare=True,
+            metadata=None,
+        )
 
         self._field_definition = field_definition
+        self._graphql_name = field_definition.name
 
-        # Copied from dataclasses.Field.__init__, but without setting .name and .type
-        # to None
-        self.name = field_definition.name
-        self.type = field_definition.type
-        self.default = dataclasses.MISSING
-        self.default_factory = dataclasses.MISSING
-        self.init = field_definition.base_resolver is None
-        self.repr = True
-        self.hash = None
-        self.compare = True
-        self.metadata = dataclasses._EMPTY_METADATA
-
-        self._field_type = None
+        self.name = field_definition.origin_name
+        if field_definition.type is not None:
+            self.type = field_definition.type
 
     def __call__(self, resolver: _RESOLVER_TYPE) -> "StrawberryField":
         """Add a resolver to the field"""
@@ -38,7 +38,6 @@ class StrawberryField(dataclasses.Field):
         if not isinstance(resolver, StrawberryResolver):
             resolver = StrawberryResolver(resolver)
 
-        self._field_definition.origin_name = resolver.name
         self._field_definition.origin = resolver.wrapped_func
         self._field_definition.base_resolver = resolver
         self._field_definition.arguments = resolver.arguments
@@ -50,49 +49,13 @@ class StrawberryField(dataclasses.Field):
 
         return self
 
-    def __setattr__(self, name, value):
-        if name == "type":
-            self._field_definition.type = value
-
-        if value and name == "name":
-            if not self._field_definition.origin_name:
-                self._field_definition.origin_name = value
-
-            camel_case_name = to_camel_case(value)
-            if not self._field_definition.name:
-                self._field_definition.name = camel_case_name
-            value = camel_case_name
-
-        return super().__setattr__(name, value)
+    @property
+    def arguments(self) -> List[ArgumentDefinition]:
+        return self._field_definition.arguments
 
     @property
-    def is_child_optional(self) -> bool:
-        return self._field_definition.is_child_optional
-
-    @property
-    def is_list(self) -> bool:
-        return self._field_definition.is_list
-
-    @property
-    def is_optional(self) -> bool:
-        return self._field_definition.is_optional
-
-    @property
-    def is_subscription(self) -> bool:
-        return self._field_definition.is_subscription
-
-    @property
-    def is_union(self) -> bool:
-        return self._field_definition.is_union
-
-    # @property
-    # def type_(self) -> Optional[Union[Type, StrawberryUnion]]:
-    #     if self._type is not None:
-    #         return self._type
-    #     elif self._field_definition.base_resolver:
-    #         return self._field_definition.base_resolver.type
-    #     else:
-    #         return None
+    def base_resolver(self) -> Optional[StrawberryResolver]:
+        return self._field_definition.base_resolver
 
     @property
     def child(self) -> "StrawberryField":
@@ -103,8 +66,22 @@ class StrawberryField(dataclasses.Field):
         return self._field_definition.default_value
 
     @property
+    def deprecation_reason(self) -> Optional[str]:
+        return self._field_definition.deprecation_reason
+
+    @property
     def description(self) -> Optional[str]:
         return self._field_definition.description
+
+    @property
+    def graphql_name(self) -> Optional[str]:
+        if self._graphql_name:
+            return to_camel_case(self._graphql_name)
+        if self.name:
+            return to_camel_case(self.name)
+        if self.resolver_name:
+            return to_camel_case(self.resolver_name)
+        return None
 
     @property
     def is_child_optional(self) -> bool:
@@ -132,16 +109,31 @@ class StrawberryField(dataclasses.Field):
 
     @property
     def origin_name(self) -> Optional[str]:
-        return self._field_definition.origin_name
+        # TODO: Remove
+        return self.name
 
-    # @property
-    # def type_(self) -> Optional[Union[Type, StrawberryUnion]]:
-    #     if self._type is not None:
-    #         return self._type
-    #     elif self._field_definition.base_resolver:
-    #         return self._field_definition.base_resolver.type
-    #     else:
-    #         return None
+    @property
+    def resolver_name(self) -> Optional[str]:
+        if self.base_resolver:
+            return self.base_resolver.name
+        else:
+            return None
+
+    @property
+    def permission_classes(self) -> List[Type[BasePermission]]:
+        return self._field_definition.permission_classes
+
+    @property
+    def type(self) -> Any:
+        return self._type
+
+    @type.setter
+    def type(self, type_: Any) -> None:
+        self._type = type_
+
+        if hasattr(self, "_field_definition"):
+            assert type_ is not None or self.is_list or self.base_resolver
+            self._field_definition.type = type_
 
 
 def field(

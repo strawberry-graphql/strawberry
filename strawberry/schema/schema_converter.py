@@ -24,7 +24,7 @@ from graphql import (
 from strawberry.arguments import UNSET
 from strawberry.directive import DirectiveDefinition
 from strawberry.enum import EnumDefinition, EnumValue
-from strawberry.field import FieldDefinition
+from strawberry.field import FieldDefinition, StrawberryField
 from strawberry.resolvers import get_resolver
 from strawberry.scalars import is_scalar
 from strawberry.types.types import ArgumentDefinition, TypeDefinition, undefined
@@ -133,9 +133,9 @@ class GraphQLCoreConverter:
             description=directive.description,
         )
 
-    def from_field(self, field: FieldDefinition) -> GraphQLField:
+    def from_field(self, field: StrawberryField) -> GraphQLField:
 
-        field_type = self.get_graphql_type_field(field)
+        field_type = self.get_graphql_type_field(field._field_definition)
         field_type = cast(GraphQLOutputType, field_type)
 
         resolver = self.from_resolver(field)
@@ -159,6 +159,7 @@ class GraphQLCoreConverter:
             deprecation_reason=field.deprecation_reason,
         )
 
+    # TODO: Take StrawberryField
     def from_input_field(self, field: FieldDefinition) -> GraphQLInputField:
         if field.default_value in [undefined, UNSET]:
             default_value = Undefined
@@ -184,8 +185,8 @@ class GraphQLCoreConverter:
         def get_graphql_fields() -> Dict[str, GraphQLInputField]:
             graphql_fields = {}
             for field in type_definition.fields:
-                assert field.name is not None
-                graphql_fields[field.name] = self.from_input_field(field)
+                assert field.graphql_name is not None
+                graphql_fields[field.graphql_name] = self.from_input_field(field._field_definition)
             return graphql_fields
 
         graphql_object_type = GraphQLInputObjectType(
@@ -212,8 +213,8 @@ class GraphQLCoreConverter:
         def get_graphql_fields() -> Dict[str, GraphQLField]:
             graphql_fields = {}
             for field in interface.fields:
-                assert field.name is not None
-                graphql_fields[field.name] = self.from_field(field._field_definition)
+                assert field.graphql_name is not None
+                graphql_fields[field.graphql_name] = self.from_field(field)
             return graphql_fields
 
         graphql_interface = GraphQLInterfaceType(
@@ -257,11 +258,8 @@ class GraphQLCoreConverter:
         def get_graphql_fields() -> Dict[str, GraphQLField]:
             graphql_fields = {}
             for field in type_definition.fields:
-                field_definition = field._field_definition
-                assert field_definition.name is not None
-                graphql_fields[field_definition.name] = self.from_field(
-                    field_definition
-                )
+                assert field.graphql_name is not None
+                graphql_fields[field.graphql_name] = self.from_field(field)
             return graphql_fields
 
         graphql_object_type = GraphQLObjectType(
@@ -278,7 +276,7 @@ class GraphQLCoreConverter:
 
         return graphql_object_type
 
-    def from_resolver(self, field: FieldDefinition) -> Callable:
+    def from_resolver(self, field: StrawberryField) -> Callable:
         return get_resolver(field)
 
     def from_scalar(self, scalar: Type) -> GraphQLScalarType:

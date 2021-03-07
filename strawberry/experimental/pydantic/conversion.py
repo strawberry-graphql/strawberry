@@ -35,7 +35,7 @@ def convert_pydantic_model_to_strawberry_class(cls, *, model_instance=None, extr
 
     for field in cls._type_definition.fields:
         field = cast(FieldDefinition, field)
-        origin_name = field.origin_name
+        origin_name = field.name
 
         data_from_extra = extra.get(origin_name, None)
         data_from_model = (
