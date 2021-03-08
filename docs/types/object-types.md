@@ -56,13 +56,13 @@ class Character:
 @strawberry.type
 class Book:
     title: str
-    main_character: str
+    main_character: Character
 
 ---
 
 type Character {
   name: String!
-  age: Age!
+  age: Int!
 }
 
 type Book {
