@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.48.2 - 2021-03-09
+-------------------
+
+This release fixes a bug when using the debug server and upload a file
+
 0.48.1 - 2021-03-03
 -------------------
 
