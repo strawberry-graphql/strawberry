@@ -2,9 +2,9 @@ import asyncio
 import typing
 
 from starlette.requests import Request
+from starlette.responses import Response
 from starlette.types import Receive, Scope, Send
 from starlette.websockets import WebSocket, WebSocketDisconnect, WebSocketState
-from starlette.responses import Response
 
 from graphql import GraphQLError
 from graphql.error import format_error as format_graphql_error
@@ -55,7 +55,9 @@ class GraphQL:
         return None
 
     async def get_context(
-        self, request: typing.Union[Request, WebSocket], response: typing.Optional[Response] = None
+        self,
+        request: typing.Union[Request, WebSocket],
+        response: typing.Optional[Response] = None,
     ) -> typing.Optional[typing.Any]:
         return {"request": request, "response": response}
 
@@ -195,7 +197,7 @@ class GraphQL:
 
         sub_response = Response(
             content=None,
-            status_code=None,
+            status_code=None,  # type: ignore
             headers=None,
             media_type=None,
             background=None,

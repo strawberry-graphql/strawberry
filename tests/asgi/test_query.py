@@ -66,9 +66,8 @@ def test_context_response():
         @strawberry.field
         def something(self, info: Info) -> str:
             r = info.context["response"]
-            r.raw_headers.append((b'x-bar', b'bar'))
-            print(r.raw_headers)
-            return 'foo'
+            r.raw_headers.append((b"x-bar", b"bar"))
+            return "foo"
 
     schema = strawberry.Schema(query=Query)
     app = BaseGraphQL(schema)
@@ -78,7 +77,26 @@ def test_context_response():
 
     assert response.status_code == 200
     assert response.json() == {"data": {"something": "foo"}}
-    assert response.headers.get('x-bar') == 'bar'
+    assert response.headers.get("x-bar") == "bar"
+
+
+def test_can_set_custom_status_code():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def something(self, info: Info) -> str:
+            r = info.context["response"]
+            r.status_code = 418
+            return "foo"
+
+    schema = strawberry.Schema(query=Query)
+    app = BaseGraphQL(schema)
+
+    test_client = TestClient(app)
+    response = test_client.post("/", json={"query": "{ something }"})
+
+    assert response.status_code == 418
+    assert response.json() == {"data": {"something": "foo"}}
 
 
 def test_custom_context():
