@@ -59,7 +59,7 @@ case.
 ### Setting response headers
 
 It is possible to use `get_context` to set response headers. A common use case might be cookie-based user authentication,
-where your login mutation resolver needs to respond with e.g. `Set-Cookie: token=secret-token`.
+where your login mutation resolver needs to set a cookie on the response.
 
 This is possible by updating the response dict contained inside of the `Info` object.
 
