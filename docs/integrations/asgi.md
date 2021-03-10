@@ -37,7 +37,7 @@ We allow to extend the base `GraphQL` app, by overriding the following methods:
 resolver. You can return anything here, by default we return a dictionary with
 the request and the response.
 
-```python3
+```python
 class MyGraphQL(GraphQL):
     async def get_context(self, request: Union[Request, WebSocket], response: Optional[Response]) -> Any:
         return {"example": 1}
@@ -63,7 +63,7 @@ where your login mutation resolver needs to set a cookie on the response.
 
 This is possible by updating the response dict contained inside of the `Info` object.
 
-```python3
+```python
 @strawberry.type
 class Mutation:
     @strawberry.mutation

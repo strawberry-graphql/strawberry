@@ -60,6 +60,27 @@ def test_root_value(schema, test_client):
     assert response.json() == {"data": {"rootName": "Query"}}
 
 
+def test_context_response():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def something(self, info: Info) -> str:
+            r = info.context["response"]
+            r.raw_headers.append((b'x-bar', b'bar'))
+            print(r.raw_headers)
+            return 'foo'
+
+    schema = strawberry.Schema(query=Query)
+    app = BaseGraphQL(schema)
+
+    test_client = TestClient(app)
+    response = test_client.post("/", json={"query": "{ something }"})
+
+    assert response.status_code == 200
+    assert response.json() == {"data": {"something": "foo"}}
+    assert response.headers.get('x-bar') == 'bar'
+
+
 def test_custom_context():
     class CustomGraphQL(BaseGraphQL):
         async def get_context(self, request, response):
