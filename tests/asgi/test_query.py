@@ -62,7 +62,7 @@ def test_root_value(schema, test_client):
 
 def test_custom_context():
     class CustomGraphQL(BaseGraphQL):
-        async def get_context(self, request):
+        async def get_context(self, request, response):
             return {
                 "request": request,
                 "custom_context_value": "Hi!",
