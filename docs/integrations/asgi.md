@@ -66,7 +66,7 @@ This is possible by updating the response dict contained inside of the `Info` ob
 ```python3
 @strawberry.type
 class Mutation:
-    @strawberry.field
+    @strawberry.mutation
     def login(self, info: Info) -> bool:
         token = do_login()
         info.context["response"].set_cookie(key="token", value=token)
