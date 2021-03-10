@@ -27,7 +27,7 @@ The `GraphQL` app accepts two options at the moment:
 
 We allow to extend the base `GraphQL` app, by overriding the following methods:
 
-- `async get_context(self, request: Union[Request, WebSocket], response: typing.Optional[Response] = None) -> Any`
+- `async get_context(self, request: Union[Request, WebSocket], response: Optional[Response] = None) -> Any`
 - `async get_root_value(self, request: Request) -> Any`
 - `async process_result(self, request: Request, result: ExecutionResult) -> GraphQLHTTPResponse`
 
@@ -61,7 +61,7 @@ case.
 It is possible to use `get_context` to set response headers. A common use case might be cookie-based user authentication,
 where your login mutation resolver needs to set a cookie on the response.
 
-This is possible by updating the response dict contained inside of the `Info` object.
+This is possible by updating the response object contained inside the context of the `Info` object.
 
 ```python
 @strawberry.type
