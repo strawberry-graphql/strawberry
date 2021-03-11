@@ -186,7 +186,9 @@ class GraphQLCoreConverter:
             graphql_fields = {}
             for field in type_definition.fields:
                 assert field.graphql_name is not None
-                graphql_fields[field.graphql_name] = self.from_input_field(field._field_definition)
+                graphql_fields[field.graphql_name] = self.from_input_field(
+                    field._field_definition
+                )
             return graphql_fields
 
         graphql_object_type = GraphQLInputObjectType(

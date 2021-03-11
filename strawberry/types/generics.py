@@ -1,5 +1,5 @@
 import builtins
-import dataclasses
+from strawberry.field import StrawberryField
 from typing import Dict, Iterable, Tuple, Type, Union, cast
 
 from strawberry.union import StrawberryUnion, union
@@ -74,7 +74,28 @@ def copy_type_with(
             name = get_name_from_types(params_to_type.values()) + definition.name
 
             for field in definition.fields:
-                kwargs = field.__dict__
+                keys = {
+                    "name",
+                    "origin_name",
+                    "type",
+                    "origin",
+                    "child",
+                    "is_subscription",
+                    "is_optional",
+                    "is_child_optional",
+                    "is_list",
+                    "is_union",
+                    "arguments",
+                    "description",
+                    "base_resolver",
+                    "permission_classes",
+                    "default_value",
+                    "deprecation_reason",
+                }
+
+                field_definition = field._field_definition
+
+                kwargs = {key: field_definition.__dict__.get(key) for key in keys}
 
                 if field.is_list:
                     child = cast(FieldDefinition, field.child)
@@ -97,10 +118,10 @@ def copy_type_with(
                         field_type, params_to_type=params_to_type
                     )
 
-                federation_args = kwargs.pop("federation", {})
+                federation_args = field_definition.federation.__dict__
                 kwargs["federation"] = FederationFieldParams(**federation_args)
 
-                fields.append(FieldDefinition(**kwargs))
+                fields.append(StrawberryField(FieldDefinition(**kwargs)))
 
             type_definition = TypeDefinition(
                 name=name,
