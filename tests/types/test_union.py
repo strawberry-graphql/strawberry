@@ -105,7 +105,6 @@ def test_named_union():
     assert union_type_definition.types == (A, B)
 
 
-@pytest.mark.skip("TODO")
 def test_union_with_generic():
     T = TypeVar("T")
 
