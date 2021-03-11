@@ -28,7 +28,6 @@ def test_resolver_as_argument():
     assert definition.fields[0].base_resolver.wrapped_func == get_name
 
 
-@pytest.mark.xfail(reason="TODO")
 def test_resolver_fields():
     @strawberry.type
     class Query:

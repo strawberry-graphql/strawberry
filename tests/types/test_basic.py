@@ -1,5 +1,3 @@
-import pytest
-
 import strawberry
 
 
@@ -67,7 +65,6 @@ def test_passing_nothing_to_fields():
             return to_camel_case(name)
 
 
-@pytest.mark.xfail(reason="TODO")
 def test_can_use_types_directly():
     @strawberry.type
     class User:
