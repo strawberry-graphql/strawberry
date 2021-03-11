@@ -1,0 +1,38 @@
+- case: test_type
+  main: |
+    import strawberry
+
+    @strawberry.type
+    class User:
+        name: str
+
+    User(name="Patrick")
+    User(n="Patrick")
+  out: |
+    main:8: error: Unexpected keyword argument "n" for "User"
+
+- case: test_input
+  main: |
+    import strawberry
+
+    @strawberry.input
+    class EditUserInput:
+        name: str
+
+    EditUserInput(name="Patrick")
+    EditUserInput(n="Patrick")
+  out: |
+    main:8: error: Unexpected keyword argument "n" for "EditUserInput"
+
+- case: test_interface
+  main: |
+    import strawberry
+
+    @strawberry.interface
+    class NameInterface:
+        name: str
+
+    NameInterface(name="Patrick")
+    NameInterface(n="Patrick")
+  out: |
+    main:8: error: Unexpected keyword argument "n" for "NameInterface"

@@ -1,0 +1,78 @@
+- case: test_union
+  main: |
+    import typing
+
+    import strawberry
+
+    @strawberry.type
+    class User:
+        name: str
+
+    @strawberry.type
+    class Error:
+        message: str
+
+    Response = strawberry.union("Response", (User, Error))
+
+    a: Response
+    reveal_type(Response)
+    reveal_type(a)
+
+    a = User('abc')
+    reveal_type(a)
+  out: |
+    main:16: note: Revealed type is 'builtins.object'
+    main:17: note: Revealed type is 'Union[main.User, main.Error]'
+    main:20: note: Revealed type is 'main.User'
+
+- case: test_union_generics
+  main: |
+    from typing import Generic, TypeVar
+
+    import strawberry
+
+    T = TypeVar("T")
+
+    @strawberry.type
+    class Error:
+        message: str
+
+    @strawberry.type
+    class Edge(Generic[T]):
+        node: T
+
+    Result = strawberry.union("Result", (Error, Edge[str]))
+    reveal_type(Result)
+
+    a: Result
+    reveal_type(a)
+  out: |
+    main:16: note: Revealed type is 'builtins.object'
+    main:19: note: Revealed type is 'Union[main.Error, main.Edge[builtins.str]]'
+
+- case: test_union_kwargs
+  main: |
+    import typing
+
+    import strawberry
+
+    @strawberry.type
+    class User:
+        name: str
+
+    @strawberry.type
+    class Error:
+        message: str
+
+    Response = strawberry.union(types=(User, Error), name="Response")
+
+    a: Response
+    reveal_type(Response)
+    reveal_type(a)
+
+    a = User('abc')
+    reveal_type(a)
+  out: |
+    main:16: note: Revealed type is 'builtins.object'
+    main:17: note: Revealed type is 'Union[main.User, main.Error]'
+    main:20: note: Revealed type is 'main.User'
