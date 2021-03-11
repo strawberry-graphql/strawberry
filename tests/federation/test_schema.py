@@ -149,7 +149,6 @@ def test_service():
     assert result.data == {"_service": {"sdl": textwrap.dedent(sdl).strip()}}
 
 
-@pytest.mark.skip("@patrick91 to fix")
 def test_using_generics():
     T = TypeVar("T")
 
