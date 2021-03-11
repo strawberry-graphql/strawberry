@@ -1,8 +1,6 @@
 import textwrap
 from typing import Generic, List, Optional, TypeVar
 
-import pytest
-
 import strawberry
 
 
