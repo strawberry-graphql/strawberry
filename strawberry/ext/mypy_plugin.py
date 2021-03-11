@@ -9,6 +9,7 @@ from mypy.nodes import (
     Argument,
     AssignmentStmt,
     CallExpr,
+    CastExpr,
     Context,
     Expression,
     IndexExpr,
@@ -113,6 +114,15 @@ def _get_type_for_expr(expr: Expression, api: SemanticAnalyzerPluginInterface):
         else:
             raise InvalidNodeTypeException(expr)
 
+    if isinstance(expr, CallExpr):
+        if expr.analyzed:
+            return _get_type_for_expr(expr.analyzed, api)
+        else:
+            raise InvalidNodeTypeException(expr)
+
+    if isinstance(expr, CastExpr):
+        return expr.type
+
     raise ValueError(f"Unsupported expression {type(expr)}")
 
 
@@ -209,7 +219,7 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext):
     # let's fallback to any, some resources are here:
     # https://github.com/samuelcolvin/pydantic/blob/master/pydantic/mypy.py
     # >>> model_index = ctx.cls.decorators[0].arg_names.index("model")
-    # >>> model_name = ctx.cls.decorators[0].args[model_index].graphql_name
+    # >>> model_name = ctx.cls.decorators[0].args[model_index].name
 
     # >>> model_type = ctx.api.named_type("UserModel")
     # >>> model_type = ctx.api.lookup(model_name, Context())
