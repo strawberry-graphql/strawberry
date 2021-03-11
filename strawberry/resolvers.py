@@ -1,14 +1,10 @@
 import enum
 from inspect import iscoroutine
-from typing import Any, Awaitable, Callable, Dict, List, Tuple, Union, cast, TYPE_CHECKING
+from typing import Any, Awaitable, Callable, Dict, List, Tuple, Union, cast
 
 from .arguments import convert_arguments
-from .field import FieldDefinition
+from .field import FieldDefinition, StrawberryField
 from .types.fields.resolver import StrawberryResolver
-
-
-if TYPE_CHECKING:
-    from .field import StrawberryField
 
 
 def is_default_resolver(func: Callable) -> bool:
@@ -16,7 +12,7 @@ def is_default_resolver(func: Callable) -> bool:
     return getattr(func, "_is_default", False)
 
 
-def convert_enums_to_values(field: FieldDefinition, result: Any) -> Any:
+def convert_enums_to_values(field: StrawberryField, result: Any) -> Any:
     # graphql-core expects a resolver for an Enum type to return
     # the enum's *value* (not its name or an instance of the enum).
 
@@ -28,9 +24,7 @@ def convert_enums_to_values(field: FieldDefinition, result: Any) -> Any:
         return result.value
 
     if field.is_list:
-        child_type = cast(FieldDefinition, field.child)
-
-        return [convert_enums_to_values(child_type, item) for item in result]
+        return [convert_enums_to_values(field.child, item) for item in result]
 
     return result
 
@@ -103,7 +97,7 @@ def get_resolver(field: "StrawberryField") -> Callable:
         if iscoroutine(result):  # pragma: no cover
             result = await result
 
-        result = convert_enums_to_values(field._field_definition, result)
+        result = convert_enums_to_values(field, result)
 
         return result
 
@@ -111,7 +105,7 @@ def get_resolver(field: "StrawberryField") -> Callable:
         _check_permissions(source, info, **kwargs)
 
         result = get_result_for_field(field, kwargs=kwargs, info=info, source=source)
-        result = convert_enums_to_values(field._field_definition, result)
+        result = convert_enums_to_values(field, result)
 
         return result
 
