@@ -1,6 +1,13 @@
 CHANGELOG
 =========
 
+0.48.3 - 2021-03-11
+-------------------
+
+This release updates `get_context` in the asgi integration to also
+receive a temporal response object that can be used to set headers
+and cookies.
+
 0.48.2 - 2021-03-09
 -------------------
 
