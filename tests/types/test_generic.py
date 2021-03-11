@@ -7,8 +7,6 @@ from strawberry.exceptions import MissingTypesForGenericError
 from strawberry.types.generics import copy_type_with
 from strawberry.union import StrawberryUnion
 
-pytestmark = pytest.mark.skip("TODO")
-
 
 T = TypeVar("T")
 

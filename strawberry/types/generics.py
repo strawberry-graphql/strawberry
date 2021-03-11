@@ -98,24 +98,22 @@ def copy_type_with(
                 kwargs = {key: field_definition.__dict__.get(key) for key in keys}
 
                 if field.is_list:
-                    child = cast(FieldDefinition, field.child)
-                    child_type = cast(Type, child.type)
-
                     # TODO: nested list
+                    child = field.child
 
-                    kwargs["child"] = FieldDefinition(
+                    child_definition = FieldDefinition(
                         name=child.name,
                         origin=child.origin,
                         origin_name=child.origin_name,
                         is_optional=child.is_optional,
-                        type=copy_type_with(child_type, params_to_type=params_to_type),
+                        type=copy_type_with(child.type, params_to_type=params_to_type),
                     )
 
-                else:
-                    field_type = cast(Type, field.type)
+                    kwargs["child"] = StrawberryField(child_definition)
 
+                else:
                     kwargs["type"] = copy_type_with(
-                        field_type, params_to_type=params_to_type
+                        field.type, params_to_type=params_to_type
                     )
 
                 federation_args = field_definition.federation.__dict__
