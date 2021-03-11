@@ -1,7 +1,7 @@
 import builtins
-from strawberry.field import StrawberryField
 from typing import Dict, Iterable, Tuple, Type, Union, cast
 
+from strawberry.field import StrawberryField
 from strawberry.union import StrawberryUnion, union
 from strawberry.utils.str_converters import capitalize_first
 from strawberry.utils.typing import is_type_var, is_union
