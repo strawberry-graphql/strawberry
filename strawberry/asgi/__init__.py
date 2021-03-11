@@ -2,6 +2,7 @@ import asyncio
 import typing
 
 from starlette.requests import Request
+from starlette.responses import Response
 from starlette.types import Receive, Scope, Send
 from starlette.websockets import WebSocket, WebSocketDisconnect, WebSocketState
 
@@ -54,9 +55,11 @@ class GraphQL:
         return None
 
     async def get_context(
-        self, request: typing.Union[Request, WebSocket]
+        self,
+        request: typing.Union[Request, WebSocket],
+        response: typing.Optional[Response] = None,
     ) -> typing.Optional[typing.Any]:
-        return {"request": request}
+        return {"request": request, "response": response}
 
     async def handle_keep_alive(self, websocket):
         if (
@@ -191,7 +194,16 @@ class GraphQL:
     async def handle_http(self, scope: Scope, receive: Receive, send: Send):
         request = Request(scope=scope, receive=receive)
         root_value = await self.get_root_value(request)
-        context = await self.get_context(request)
+
+        sub_response = Response(
+            content=None,
+            status_code=None,  # type: ignore
+            headers=None,
+            media_type=None,
+            background=None,
+        )
+
+        context = await self.get_context(request=request, response=sub_response)
 
         response = await get_http_response(
             request=request,
@@ -201,6 +213,11 @@ class GraphQL:
             root_value=root_value,
             context=context,
         )
+
+        response.headers.raw.extend(sub_response.headers.raw)
+
+        if sub_response.status_code:
+            response.status_code = sub_response.status_code
 
         await response(scope, receive, send)
 
