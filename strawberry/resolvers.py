@@ -3,7 +3,7 @@ from inspect import iscoroutine
 from typing import Any, Awaitable, Callable, Dict, List, Tuple, Union, cast
 
 from .arguments import convert_arguments
-from .field import FieldDefinition, StrawberryField
+from .field import StrawberryField
 from .types.fields.resolver import StrawberryResolver
 
 
@@ -16,7 +16,7 @@ def convert_enums_to_values(field: StrawberryField, result: Any) -> Any:
     # graphql-core expects a resolver for an Enum type to return
     # the enum's *value* (not its name or an instance of the enum).
 
-    # short circut to skip checks when result is falsy
+    # short circuit to skip checks when result is falsy
     if not result:
         return result
 
@@ -30,7 +30,7 @@ def convert_enums_to_values(field: StrawberryField, result: Any) -> Any:
 
 
 def get_arguments(
-    field: FieldDefinition, kwargs: Dict[str, Any], source: Any, info: Any
+    field: StrawberryField, kwargs: Dict[str, Any], source: Any, info: Any
 ) -> Tuple[List[Any], Dict[str, Any]]:
     actual_resolver = cast(StrawberryResolver, field.base_resolver)
 
@@ -58,7 +58,7 @@ def get_arguments(
 
 # TODO: Use StrawberryField
 def get_result_for_field(
-    field: "StrawberryField", kwargs: Dict[str, Any], source: Any, info: Any
+    field: StrawberryField, kwargs: Dict[str, Any], source: Any, info: Any
 ) -> Union[Awaitable[Any], Any]:
     """
     Calls the resolver defined for `field`. If field doesn't have a
@@ -76,7 +76,7 @@ def get_result_for_field(
     return getattr(source, origin_name)
 
 
-def get_resolver(field: "StrawberryField") -> Callable:
+def get_resolver(field: StrawberryField) -> Callable:
     def _check_permissions(source, info, **kwargs):
         """
         Checks if the permission should be accepted and
