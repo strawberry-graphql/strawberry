@@ -160,7 +160,7 @@ class GraphQLCoreConverter:
         )
 
     # TODO: Take StrawberryField
-    def from_input_field(self, field: FieldDefinition) -> GraphQLInputField:
+    def from_input_field(self, field: StrawberryField) -> GraphQLInputField:
         if field.default_value in [undefined, UNSET]:
             default_value = Undefined
         else:
@@ -186,9 +186,7 @@ class GraphQLCoreConverter:
             graphql_fields = {}
             for field in type_definition.fields:
                 assert field.graphql_name is not None
-                graphql_fields[field.graphql_name] = self.from_input_field(
-                    field._field_definition
-                )
+                graphql_fields[field.graphql_name] = self.from_input_field(field)
             return graphql_fields
 
         graphql_object_type = GraphQLInputObjectType(
