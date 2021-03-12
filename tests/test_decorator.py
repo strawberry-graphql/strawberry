@@ -1,10 +1,11 @@
+from strawberry.types.fields.resolver import StrawberryResolver
 import strawberry
 from strawberry.decorator import make_strawberry_decorator
 
 
 def test_basic_decorator():
     @make_strawberry_decorator
-    def upper_case(resolver, source, info, **kwargs):
+    def upper_case(resolver, **kwargs):
         result = resolver(**kwargs)
         return result.upper()
 
@@ -25,7 +26,7 @@ def test_basic_decorator():
 def test_decorator_with_arguments():
     def suffix(value):
         @make_strawberry_decorator
-        def wrapper(resolver, source, info, **kwargs):
+        def wrapper(resolver, **kwargs):
             result = resolver(**kwargs)
             return f"{result}{value}"
 
@@ -47,13 +48,13 @@ def test_decorator_with_arguments():
 
 def test_multiple_decorators():
     @make_strawberry_decorator
-    def upper_case(resolver, source, info, **kwargs):
+    def upper_case(resolver, **kwargs):
         result = resolver(**kwargs)
         return result.upper()
 
     def suffix(value):
         @make_strawberry_decorator
-        def wrapper(resolver, source, info, **kwargs):
+        def wrapper(resolver, **kwargs):
             result = resolver(**kwargs)
             return f"{result}{value}"
 
@@ -76,7 +77,7 @@ def test_multiple_decorators():
 
 def test_decorator_with_graphql_arguments():
     @make_strawberry_decorator
-    def upper_case(resolver, source, info, **kwargs):
+    def upper_case(resolver, **kwargs):
         result = resolver(**kwargs)
         return result.upper()
 
@@ -97,7 +98,7 @@ def test_decorator_with_graphql_arguments():
 def test_decorator_modify_argument():
     def title_case_argument(argument_name):
         @make_strawberry_decorator
-        def wrapped(resolver, source, info, **kwargs):
+        def wrapped(resolver, **kwargs):
             kwargs[argument_name] = kwargs[argument_name].title()
             return resolver(**kwargs)
 
@@ -119,13 +120,13 @@ def test_decorator_modify_argument():
 
 def test_decorator_simple_field():
     @make_strawberry_decorator
-    def upper_case(resolver, source, info, **kwargs):
+    def upper_case(resolver, **kwargs):
         result = resolver(**kwargs)
         return result.upper()
 
     def suffix(value):
         @make_strawberry_decorator
-        def wrapper(resolver, source, info, **kwargs):
+        def wrapper(resolver, **kwargs):
             result = resolver(**kwargs)
             return f"{result}{value}"
 

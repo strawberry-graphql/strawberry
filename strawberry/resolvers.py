@@ -41,6 +41,7 @@ def get_arguments(
     field: FieldDefinition, kwargs: Dict[str, Any], source: Any, info: Any
 ) -> Tuple[List[Any], Dict[str, Any]]:
     actual_resolver = cast(StrawberryResolver, field.base_resolver)
+    is_decorator = getattr(actual_resolver.wrapped_func, "_strawberry_decorator", False)
 
     kwargs = convert_arguments(kwargs, field.arguments)
 
@@ -55,10 +56,10 @@ def get_arguments(
     if actual_resolver.has_self_arg:
         args.append(source)
 
-    if actual_resolver.has_root_arg:
+    if actual_resolver.has_root_arg or is_decorator:
         kwargs["root"] = source
 
-    if actual_resolver.has_info_arg:
+    if actual_resolver.has_info_arg or is_decorator:
         kwargs["info"] = info
 
     return args, kwargs
@@ -81,14 +82,6 @@ def get_result_for_field(
 
     origin_name = cast(str, field.origin_name)
     return getattr(source, origin_name)
-
-
-# TODO: fix and use this
-def run_decorators(result: Any, field: FieldDefinition) -> Any:
-    if field.decorators:
-        result = "TODO"
-
-    return result
 
 
 def get_resolver(field: FieldDefinition) -> Callable:
