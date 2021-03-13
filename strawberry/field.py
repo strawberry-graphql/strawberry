@@ -27,13 +27,15 @@ class StrawberryField(dataclasses.Field):
         self._field_definition = field_definition
         self._graphql_name = field_definition.name
 
+        self.name = field_definition.origin_name
+        if field_definition.type is not None:
+            self.type = field_definition.type
+
         self.description: Optional[str] = field_definition.description
         self.origin: Optional[Union[Type, Callable]] = field_definition.origin
         self.base_resolver: Optional[StrawberryResolver] = field_definition.base_resolver
 
-        self.name = field_definition.origin_name
-        if field_definition.type is not None:
-            self.type = field_definition.type
+        self.child = field_definition.child
 
     def __call__(self, resolver: _RESOLVER_TYPE) -> "StrawberryField":
         """Add a resolver to the field"""
@@ -63,10 +65,6 @@ class StrawberryField(dataclasses.Field):
             return []
 
         return self.base_resolver.arguments
-
-    @property
-    def child(self) -> "StrawberryField":
-        return self._field_definition.child
 
     @property
     def default_value(self) -> Any:
