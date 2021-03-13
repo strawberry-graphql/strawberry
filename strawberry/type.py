@@ -49,22 +49,20 @@ def _check_field_annotations(cls: Type):
         # to make sure dataclasses.dataclass is ready for it
         if isinstance(field, StrawberryField):
 
-            field_definition = field._field_definition
-
             # Make sure the cls has an annotation
             if field_name not in cls_annotations:
                 # If the field uses the default resolver, the field _must_ be
                 # annotated
-                if not field_definition.base_resolver:
+                if not field.base_resolver:
                     raise MissingFieldAnnotationError(field_name)
 
                 # The resolver _must_ have a return type annotation
                 # TODO: Maybe check this immediately when adding resolver to
                 #       field
-                if field_definition.base_resolver.type is None:
+                if field.base_resolver.type is None:
                     raise MissingReturnAnnotationError(field_name)
 
-                cls_annotations[field_name] = field_definition.base_resolver.type
+                cls_annotations[field_name] = field.base_resolver.type
 
             # TODO: Make sure the cls annotation agrees with the field's type
             # >>> if cls_annotations[field_name] != field.base_resolver.type:

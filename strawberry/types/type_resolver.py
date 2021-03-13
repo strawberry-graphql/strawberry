@@ -333,7 +333,7 @@ def _get_type_params(fields: List[StrawberryField]) -> Dict[str, Type]:
     type_params = {}
 
     for field in fields:
-        name = cast(str, field._field_definition.origin_name)
+        name = field.origin_name
         params = _get_type_params_for_field(field)
 
         # TODO: support multiple
