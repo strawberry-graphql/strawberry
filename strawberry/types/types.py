@@ -89,7 +89,6 @@ class FieldDefinition:
     federation: FederationFieldParams = dataclasses.field(
         default_factory=FederationFieldParams
     )
-    arguments: List[ArgumentDefinition] = dataclasses.field(default_factory=list)
     description: Optional[str] = None
     base_resolver: Optional["StrawberryResolver"] = None
     permission_classes: List[Type[BasePermission]] = dataclasses.field(

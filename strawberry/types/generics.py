@@ -85,7 +85,6 @@ def copy_type_with(
                     "is_child_optional",
                     "is_list",
                     "is_union",
-                    "arguments",
                     "description",
                     "base_resolver",
                     "permission_classes",

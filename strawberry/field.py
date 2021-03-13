@@ -40,18 +40,25 @@ class StrawberryField(dataclasses.Field):
 
         self._field_definition.origin = resolver.wrapped_func
         self._field_definition.base_resolver = resolver
-        self._field_definition.arguments = resolver.arguments
         self._field_definition.type = resolver.type
 
         # Don't add field to __init__ or __repr__
         self.init = False
         self.repr = False
 
+        # TODO: We have tests for exceptions at field creation, but using
+        #       properties defers them
+        _ = resolver.arguments
+
         return self
 
     @property
     def arguments(self) -> List[ArgumentDefinition]:
-        return self._field_definition.arguments
+        if not self.base_resolver:
+            # TODO: Should this return None if no resolver?
+            return []
+
+        return self.base_resolver.arguments
 
     @property
     def base_resolver(self) -> Optional[StrawberryResolver]:
@@ -172,7 +179,6 @@ def field(
         description=description,
         is_subscription=is_subscription,
         permission_classes=permission_classes or [],
-        arguments=[],  # modified by resolver in __call__
         federation=federation or FederationFieldParams(),
         deprecation_reason=deprecation_reason,
     )
