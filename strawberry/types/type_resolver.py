@@ -310,25 +310,21 @@ def _resolve_type(argument_definition: ArgumentDefinition) -> None:
 
 
 def _get_type_params_for_field(field: StrawberryField) -> Optional[List[Type]]:
-    field_definition = field._field_definition
-    if field_definition.is_list:
-        child = field_definition.child
-        return _get_type_params_for_field(child)
+    if field.is_list:
+        return _get_type_params_for_field(field.child)
 
-    type = cast(Type, field_definition.type)
-
-    if isinstance(type, StrawberryUnion):
-        types = type.types
+    if isinstance(field.type, StrawberryUnion):
+        types = field.type.types
         type_vars = [t for t in types if is_type_var(t)]
 
         if type_vars:
             return type_vars
 
-    if is_type_var(type):
-        return [type]
+    if is_type_var(field.type):
+        return [field.type]
 
-    if has_type_var(type):
-        return get_parameters(type)
+    if has_type_var(field.type):
+        return get_parameters(field.type)
 
     return None
 
