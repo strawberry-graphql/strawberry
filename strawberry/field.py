@@ -74,6 +74,10 @@ class StrawberryField(dataclasses.Field):
         return self._field_definition.description
 
     @property
+    def federation(self) -> FederationFieldParams:
+        return self._field_definition.federation
+
+    @property
     def graphql_name(self) -> Optional[str]:
         if self._graphql_name:
             return to_camel_case(self._graphql_name)

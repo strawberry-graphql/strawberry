@@ -116,7 +116,7 @@ def copy_type_with(
                         field.type, params_to_type=params_to_type
                     )
 
-                federation_args = field_definition.federation.__dict__
+                federation_args = field.federation.__dict__
                 kwargs["federation"] = FederationFieldParams(**federation_args)
 
                 fields.append(StrawberryField(FieldDefinition(**kwargs)))

@@ -26,13 +26,13 @@ def print_federation_field_directive(field: Optional[StrawberryField]) -> str:
 
     out = ""
 
-    if field._field_definition.federation.provides:
-        out += f' @provides(fields: "{field._field_definition.federation.provides}")'
+    if field.federation.provides:
+        out += f' @provides(fields: "{field.federation.provides}")'
 
-    if field._field_definition.federation.requires:
-        out += f' @requires(fields: "{field._field_definition.federation.requires}")'
+    if field.federation.requires:
+        out += f' @requires(fields: "{field.federation.requires}")'
 
-    if field._field_definition.federation.external:
+    if field.federation.external:
         out += " @external"
 
     return out
