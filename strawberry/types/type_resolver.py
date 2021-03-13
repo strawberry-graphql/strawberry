@@ -405,11 +405,8 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
     for field in dataclasses.fields(cls):
 
         if isinstance(field, StrawberryField):
-            # Use the existing FieldDefinition
-            field_definition = field._field_definition
-
             # Check that the field type is not Private
-            if isinstance(field_definition.type, Private):
+            if isinstance(field.type, Private):
                 raise PrivateStrawberryFieldError(field.name, cls.__name__)
 
             # we make sure that the origin is either the field's resolver when
@@ -421,7 +418,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
             # or the class where this field was defined, so we always have
             # the correct origin for determining field types when resolving
             # the types.
-            field_definition.origin = field_definition.origin or cls
+            field._field_definition.origin = field.origin or cls
 
         # Create a StrawberryField for fields that didn't use strawberry.field
         else:
@@ -430,7 +427,6 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
                 continue
 
             field_type = field.type
-            field_name = field.name
 
             # Create a FieldDefinition, for fields of Types #1 and #2a
             field_definition = FieldDefinition(
