@@ -24,7 +24,7 @@ from graphql import (
 from strawberry.arguments import UNSET
 from strawberry.directive import DirectiveDefinition
 from strawberry.enum import EnumDefinition, EnumValue
-from strawberry.field import FieldDefinition, StrawberryField
+from strawberry.field import StrawberryField
 from strawberry.resolvers import get_resolver
 from strawberry.scalars import is_scalar
 from strawberry.types.types import ArgumentDefinition, TypeDefinition, undefined
@@ -34,30 +34,47 @@ from .types.concrete_type import ConcreteType
 from .types.scalar import get_scalar_type
 
 
-FIELD_ARGUMENT_TYPE = Union[FieldDefinition, ArgumentDefinition]
-
-
 class GraphQLCoreConverter:
     # TODO: Make abstract
 
     def __init__(self):
         self.type_map: Dict[str, ConcreteType] = {}
 
-    def get_graphql_type_field(self, field: FIELD_ARGUMENT_TYPE) -> GraphQLType:
+    def get_graphql_type_argument(self, argument: ArgumentDefinition) -> GraphQLType:
         # TODO: Completely replace with get_graphql_type
 
         graphql_type: GraphQLType
 
-        if _is_list(field):
-            graphql_type = self.from_list(field)
-        elif _is_union(field):
+        if argument.is_list:
+            graphql_type = self.from_list_argument(argument)
+        elif argument.is_union:
+            assert isinstance(argument.type, StrawberryUnion)  # For mypy
+            graphql_type = self.from_union(argument.type)
+        else:
+            graphql_type = self.get_graphql_type(argument.type)
+
+        # TODO: Abstract this somehow. Logic is tricky
+        if not argument.is_optional:
+            graphql_type = cast(GraphQLNullableType, graphql_type)
+            graphql_type = GraphQLNonNull(graphql_type)
+
+        return graphql_type
+
+    def get_graphql_type_field(self, field: StrawberryField) -> GraphQLType:
+        # TODO: Completely replace with get_graphql_type
+
+        graphql_type: GraphQLType
+
+        if field.is_list:
+            graphql_type = self.from_list_field(field)
+        elif field.is_union:
             assert isinstance(field.type, StrawberryUnion)  # For mypy
             graphql_type = self.from_union(field.type)
         else:
             graphql_type = self.get_graphql_type(field.type)
 
         # TODO: Abstract this somehow. Logic is tricky
-        if not _is_optional(field):
+        if not field.is_optional:
             graphql_type = cast(GraphQLNullableType, graphql_type)
             graphql_type = GraphQLNonNull(graphql_type)
 
@@ -85,7 +102,7 @@ class GraphQLCoreConverter:
             Undefined if argument.default_value is undefined else argument.default_value
         )
 
-        argument_type = self.get_graphql_type_field(argument)
+        argument_type = self.get_graphql_type_argument(argument)
         argument_type = cast(GraphQLInputType, argument_type)
 
         return GraphQLArgument(
@@ -135,7 +152,7 @@ class GraphQLCoreConverter:
 
     def from_field(self, field: StrawberryField) -> GraphQLField:
 
-        field_type = self.get_graphql_type_field(field._field_definition)
+        field_type = self.get_graphql_type_field(field)
         field_type = cast(GraphQLOutputType, field_type)
 
         resolver = self.from_resolver(field)
@@ -230,7 +247,13 @@ class GraphQLCoreConverter:
 
         return graphql_interface
 
-    def from_list(self, list_: FIELD_ARGUMENT_TYPE) -> GraphQLList:
+    def from_list_argument(self, list_: ArgumentDefinition) -> GraphQLList:
+        assert list_.child is not None
+        of_type = self.get_graphql_type_argument(list_.child)
+
+        return GraphQLList(of_type)
+
+    def from_list_field(self, list_: StrawberryField) -> GraphQLList:
         assert list_.child is not None
         of_type = self.get_graphql_type_field(list_.child)
 
@@ -313,21 +336,6 @@ class GraphQLCoreConverter:
 ################################################################################
 # Temporary functions to be removed with new types
 ################################################################################
-
-
-def _is_list(field: FIELD_ARGUMENT_TYPE) -> bool:
-    # isinstance(type_, StrawberryList)  # noqa: E800
-    return field.is_list
-
-
-def _is_optional(field: FIELD_ARGUMENT_TYPE) -> bool:
-    # isinstance(type_, StrawberryOptional)  # noqa: E800
-    return field.is_optional
-
-
-def _is_union(field: FIELD_ARGUMENT_TYPE) -> bool:
-    # isinstance(type_, StrawberryUnion)  # noqa: E800
-    return field.is_union
 
 
 def _is_scalar(type_: Type) -> bool:
