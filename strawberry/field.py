@@ -27,6 +27,8 @@ class StrawberryField(dataclasses.Field):
         self._field_definition = field_definition
         self._graphql_name = field_definition.name
 
+        self.description: Optional[str] = field_definition.description
+
         self.name = field_definition.origin_name
         if field_definition.type is not None:
             self.type = field_definition.type
@@ -75,10 +77,6 @@ class StrawberryField(dataclasses.Field):
     @property
     def deprecation_reason(self) -> Optional[str]:
         return self._field_definition.deprecation_reason
-
-    @property
-    def description(self) -> Optional[str]:
-        return self._field_definition.description
 
     @property
     def federation(self) -> FederationFieldParams:
