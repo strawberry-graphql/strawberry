@@ -82,7 +82,6 @@ def copy_type_with(
                     "is_subscription",
                     "is_optional",
                     "is_child_optional",
-                    "is_list",
                     "is_union",
                     "description",
                     "base_resolver",
@@ -94,7 +93,9 @@ def copy_type_with(
                 field_definition = field._field_definition
 
                 kwargs = {key: field_definition.__dict__.get(key) for key in keys}
+
                 kwargs["type"] = field.type
+                kwargs["is_list"] = field.is_list
 
                 if field.is_list:
                     # TODO: nested list

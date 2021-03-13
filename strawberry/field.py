@@ -37,6 +37,8 @@ class StrawberryField(dataclasses.Field):
 
         self.child = field_definition.child
 
+        self.is_list = field_definition.is_list
+
     def __call__(self, resolver: _RESOLVER_TYPE) -> "StrawberryField":
         """Add a resolver to the field"""
 
@@ -91,10 +93,6 @@ class StrawberryField(dataclasses.Field):
     @property
     def is_child_optional(self) -> bool:
         return self._field_definition.is_child_optional
-
-    @property
-    def is_list(self) -> bool:
-        return self._field_definition.is_list
 
     @property
     def is_optional(self) -> bool:

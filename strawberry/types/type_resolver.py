@@ -115,7 +115,7 @@ def resolve_type_field(field: StrawberryField) -> None:
         child_field = StrawberryField(child_definition)
         resolve_type_field(child_field)
 
-        field._field_definition.is_list = True
+        field.is_list = True
         field.child = child_field
 
         field.type = None
