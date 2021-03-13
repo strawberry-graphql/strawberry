@@ -414,7 +414,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
             # or the class where this field was defined, so we always have
             # the correct origin for determining field types when resolving
             # the types.
-            field._field_definition.origin = field.origin or cls
+            field.origin = field.origin or cls
 
         # Create a StrawberryField for fields that didn't use strawberry.field
         else:

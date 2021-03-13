@@ -28,6 +28,7 @@ class StrawberryField(dataclasses.Field):
         self._graphql_name = field_definition.name
 
         self.description: Optional[str] = field_definition.description
+        self.origin: Optional[Union[Type, Callable]] = field_definition.origin
 
         self.name = field_definition.origin_name
         if field_definition.type is not None:
@@ -40,7 +41,7 @@ class StrawberryField(dataclasses.Field):
         if not isinstance(resolver, StrawberryResolver):
             resolver = StrawberryResolver(resolver)
 
-        self._field_definition.origin = resolver.wrapped_func
+        self.origin = resolver.wrapped_func
         self._field_definition.base_resolver = resolver
         self.type = resolver.type
 
@@ -111,10 +112,6 @@ class StrawberryField(dataclasses.Field):
     @property
     def is_union(self) -> bool:
         return self._field_definition.is_union
-
-    @property
-    def origin(self) -> Optional[Union[Type, Callable]]:
-        return self._field_definition.origin
 
     @property
     def python_name(self) -> Optional[str]:

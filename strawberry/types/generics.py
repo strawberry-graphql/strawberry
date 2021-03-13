@@ -78,7 +78,6 @@ def copy_type_with(
                     "name",
                     "origin_name",
                     "type",
-                    "origin",
                     "child",
                     "is_subscription",
                     "is_optional",
