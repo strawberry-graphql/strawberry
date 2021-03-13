@@ -79,10 +79,10 @@ def copy_type_with(
                     "origin_name",
                     "type",
                     "child",
-                    "is_subscription",
+                    # "is_subscription",
                     "is_optional",
-                    "is_child_optional",
-                    "is_union",
+                    # "is_child_optional",
+                    # "is_union",
                     "description",
                     "base_resolver",
                     "permission_classes",
@@ -95,7 +95,14 @@ def copy_type_with(
                 kwargs = {key: field_definition.__dict__.get(key) for key in keys}
 
                 kwargs["type"] = field.type
+
+                kwargs["default_value"] = field.default_value
+
+                kwargs["is_child_optional"] = field.is_child_optional
                 kwargs["is_list"] = field.is_list
+                kwargs["is_optional"] = field.is_optional
+                # kwargs["is_subscription"] = field.is_subscription
+                # kwargs["is_union"] = field.is_union
 
                 if field.is_list:
                     # TODO: nested list

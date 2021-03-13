@@ -35,9 +35,15 @@ class StrawberryField(dataclasses.Field):
         self.origin: Optional[Union[Type, Callable]] = field_definition.origin
         self.base_resolver: Optional[StrawberryResolver] = field_definition.base_resolver
 
+        self.default_value = field_definition.default_value
+
         self.child = field_definition.child
+        self.is_child_optional = field_definition.is_child_optional
 
         self.is_list = field_definition.is_list
+        self.is_optional = field_definition.is_optional
+        self.is_subscription = field_definition.is_subscription
+        self.is_union = field_definition.is_union
 
     def __call__(self, resolver: _RESOLVER_TYPE) -> "StrawberryField":
         """Add a resolver to the field"""
@@ -69,10 +75,6 @@ class StrawberryField(dataclasses.Field):
         return self.base_resolver.arguments
 
     @property
-    def default_value(self) -> Any:
-        return self._field_definition.default_value
-
-    @property
     def deprecation_reason(self) -> Optional[str]:
         return self._field_definition.deprecation_reason
 
@@ -89,22 +91,6 @@ class StrawberryField(dataclasses.Field):
         if self.resolver_name:
             return to_camel_case(self.resolver_name)
         return None
-
-    @property
-    def is_child_optional(self) -> bool:
-        return self._field_definition.is_child_optional
-
-    @property
-    def is_optional(self) -> bool:
-        return self._field_definition.is_optional
-
-    @property
-    def is_subscription(self) -> bool:
-        return self._field_definition.is_subscription
-
-    @property
-    def is_union(self) -> bool:
-        return self._field_definition.is_union
 
     @property
     def python_name(self) -> Optional[str]:

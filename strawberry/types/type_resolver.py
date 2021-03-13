@@ -1,6 +1,6 @@
 import dataclasses
 import sys
-from typing import Dict, List, Optional, Type, Union, cast
+from typing import Dict, List, Optional, Type, cast
 
 from strawberry.exceptions import (
     MissingTypesForGenericError,
@@ -93,10 +93,8 @@ def resolve_type_field(field: StrawberryField) -> None:
         # the field is only optional if it is not a list or if it was already optional
         # since we mark the child as optional when the field is a list
 
-        field._field_definition.is_optional = (
-            True and not field.is_list or field.is_optional
-        )
-        field._field_definition.is_child_optional = field.is_list
+        field.is_optional = True and not field.is_list or field.is_optional
+        field.is_child_optional = field.is_list
 
         field.type = get_optional_annotation(field.type)
 
@@ -129,7 +127,7 @@ def resolve_type_field(field: StrawberryField) -> None:
         # Optional[Union[A, B]] is represented as Union[A, B, None] so we need
         # too check again if the field is optional as the check above only checks
         # for single Optionals
-        field._field_definition.is_optional = is_optional(field.type)
+        field.is_optional = is_optional(field.type)
 
         types = field.type.__args__
 
@@ -142,7 +140,7 @@ def resolve_type_field(field: StrawberryField) -> None:
             if t is not None.__class__
         )
 
-        field._field_definition.is_union = True
+        field.is_union = True
 
         field.type = union(get_name_from_types(types), types)
 
@@ -170,7 +168,7 @@ def resolve_type_field(field: StrawberryField) -> None:
             field.type = copy_type_with(field.type, *args)
 
     if isinstance(field.type, StrawberryUnion):
-        field._field_definition.is_union = True
+        field.is_union = True
 
 
 def _resolve_type(argument_definition: ArgumentDefinition) -> None:
