@@ -29,6 +29,7 @@ class StrawberryField(dataclasses.Field):
 
         self.description: Optional[str] = field_definition.description
         self.origin: Optional[Union[Type, Callable]] = field_definition.origin
+        self.base_resolver: Optional[StrawberryResolver] = field_definition.base_resolver
 
         self.name = field_definition.origin_name
         if field_definition.type is not None:
@@ -42,7 +43,7 @@ class StrawberryField(dataclasses.Field):
             resolver = StrawberryResolver(resolver)
 
         self.origin = resolver.wrapped_func
-        self._field_definition.base_resolver = resolver
+        self.base_resolver = resolver
         self.type = resolver.type
 
         # Don't add field to __init__ or __repr__
@@ -62,10 +63,6 @@ class StrawberryField(dataclasses.Field):
             return []
 
         return self.base_resolver.arguments
-
-    @property
-    def base_resolver(self) -> Optional[StrawberryResolver]:
-        return self._field_definition.base_resolver
 
     @property
     def child(self) -> "StrawberryField":
