@@ -104,7 +104,7 @@ def copy_type_with(
                     child_definition = FieldDefinition(
                         name=child.name,
                         origin=child.origin,
-                        origin_name=child.origin_name,
+                        origin_name=child.python_name,
                         is_optional=child.is_optional,
                         type=copy_type_with(child.type, params_to_type=params_to_type),
                     )

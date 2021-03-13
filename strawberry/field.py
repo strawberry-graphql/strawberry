@@ -112,7 +112,7 @@ class StrawberryField(dataclasses.Field):
         return self._field_definition.origin
 
     @property
-    def origin_name(self) -> Optional[str]:
+    def python_name(self) -> Optional[str]:
         # TODO: Remove
         return self.name
 

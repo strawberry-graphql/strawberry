@@ -72,8 +72,7 @@ def get_result_for_field(
 
         return actual_resolver(*args, **kwargs)
 
-    origin_name = cast(str, field.name)
-    return getattr(source, origin_name)
+    return getattr(source, field.python_name)
 
 
 def get_resolver(field: StrawberryField) -> Callable:

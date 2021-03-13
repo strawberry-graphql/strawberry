@@ -51,8 +51,6 @@ def _resolve_generic_type(type: Type, field_name: str) -> Type:
 
 
 def resolve_type_field(field: StrawberryField) -> None:
-    origin_name = cast(str, field.origin_name)
-
     if isinstance(field.type, str):
         module = sys.modules[field.origin.__module__].__dict__
 
@@ -139,7 +137,7 @@ def resolve_type_field(field: StrawberryField) -> None:
         # are simpler and cannot contain lists or optionals
 
         types = tuple(
-            _resolve_generic_type(t, origin_name)
+            _resolve_generic_type(t, field.python_name)
             for t in types
             if t is not None.__class__
         )
@@ -165,9 +163,7 @@ def resolve_type_field(field: StrawberryField) -> None:
         # >>> a: X[str]
 
         if len(args) == 0:
-            name = cast(str, field.origin_name)
-
-            raise MissingTypesForGenericError(name, field.type)
+            raise MissingTypesForGenericError(field.python_name, field.type)
 
         # we only make a copy when all the arguments are not type vars
         if not all(is_type_var(a) for a in args):
@@ -333,7 +329,7 @@ def _get_type_params(fields: List[StrawberryField]) -> Dict[str, Type]:
     type_params = {}
 
     for field in fields:
-        name = field.origin_name
+        name = field.python_name
         params = _get_type_params_for_field(field)
 
         # TODO: support multiple
