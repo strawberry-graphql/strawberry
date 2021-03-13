@@ -42,7 +42,7 @@ class StrawberryField(dataclasses.Field):
 
         self._field_definition.origin = resolver.wrapped_func
         self._field_definition.base_resolver = resolver
-        self._field_definition.type = resolver.type
+        self.type = resolver.type
 
         # Don't add field to __init__ or __repr__
         self.init = False
@@ -139,10 +139,6 @@ class StrawberryField(dataclasses.Field):
     @type.setter
     def type(self, type_: Any) -> None:
         self._type = type_
-
-        if hasattr(self, "_field_definition"):
-            assert type_ is not None or self.is_list or self.base_resolver
-            self._field_definition.type = type_
 
 
 def field(

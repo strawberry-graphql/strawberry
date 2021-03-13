@@ -95,6 +95,7 @@ def copy_type_with(
                 field_definition = field._field_definition
 
                 kwargs = {key: field_definition.__dict__.get(key) for key in keys}
+                kwargs["type"] = field.type
 
                 if field.is_list:
                     # TODO: nested list
