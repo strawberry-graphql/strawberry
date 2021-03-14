@@ -56,7 +56,6 @@ def get_arguments(
     return args, kwargs
 
 
-# TODO: Use StrawberryField
 def get_result_for_field(
     field: StrawberryField, kwargs: Dict[str, Any], source: Any, info: Any
 ) -> Union[Awaitable[Any], Any]:

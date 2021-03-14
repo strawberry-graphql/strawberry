@@ -176,7 +176,6 @@ class GraphQLCoreConverter:
             deprecation_reason=field.deprecation_reason,
         )
 
-    # TODO: Take StrawberryField
     def from_input_field(self, field: StrawberryField) -> GraphQLInputField:
         if field.default_value in [undefined, UNSET]:
             default_value = Undefined
