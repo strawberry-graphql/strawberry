@@ -6,7 +6,7 @@ from strawberry.union import StrawberryUnion, union
 from strawberry.utils.str_converters import capitalize_first
 from strawberry.utils.typing import is_type_var, is_union
 
-from .types import FederationFieldParams, FieldDefinition, TypeDefinition
+from .types import FederationFieldParams, TypeDefinition
 
 
 def get_name_from_types(types: Iterable[Union[Type, StrawberryUnion]]):
@@ -95,15 +95,13 @@ def copy_type_with(
                     # TODO: nested list
                     child = field.child
 
-                    child_definition = FieldDefinition(
+                    kwargs["child"] = StrawberryField(
                         name=child.name,
                         origin=child.origin,
                         origin_name=child.python_name,
                         is_optional=child.is_optional,
                         type=copy_type_with(child.type, params_to_type=params_to_type),
                     )
-
-                    kwargs["child"] = StrawberryField(child_definition)
 
                 else:
                     kwargs["type"] = copy_type_with(
@@ -113,7 +111,7 @@ def copy_type_with(
                 federation_args = field.federation.__dict__
                 kwargs["federation"] = FederationFieldParams(**federation_args)
 
-                fields.append(StrawberryField(FieldDefinition(**kwargs)))
+                fields.append(StrawberryField(**kwargs))
 
             type_definition = TypeDefinition(
                 name=name,

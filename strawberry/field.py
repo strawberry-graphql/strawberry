@@ -3,52 +3,68 @@ from typing import Any, Callable, List, Optional, Type, Union
 
 from .permission import BasePermission
 from .types.fields.resolver import StrawberryResolver
-from .types.types import FederationFieldParams, FieldDefinition, ArgumentDefinition
+from .types.types import FederationFieldParams, ArgumentDefinition, undefined
+from .union import StrawberryUnion
 from .utils.str_converters import to_camel_case
-
 
 _RESOLVER_TYPE = Union[StrawberryResolver, Callable]
 
 
 class StrawberryField(dataclasses.Field):
-    _field_definition: FieldDefinition
 
-    def __init__(self, field_definition: FieldDefinition):
+    def __init__(
+            self,
+            name: Optional[str],
+            origin_name: Optional[str],
+            type: Optional[Union[Type, StrawberryUnion]],
+            origin: Optional[Union[Type, Callable]] = None,
+            child: Optional["StrawberryField"] = None,
+            is_subscription: bool = False,
+            is_optional: bool = False,
+            is_child_optional: bool = False,
+            is_list: bool = False,
+            is_union: bool = False,
+            federation: FederationFieldParams = FederationFieldParams(),
+            description: Optional[str] = None,
+            base_resolver: Optional["StrawberryResolver"] = None,
+            permission_classes: List[Type[BasePermission]] = [],
+            default_value: Any = undefined,
+            deprecation_reason: Optional[str] = None,
+    ):
+
         super().__init__(  # type: ignore
             default=dataclasses.MISSING,
             default_factory=dataclasses.MISSING,
-            init=field_definition.base_resolver is None,
+            init=base_resolver is None,
             repr=True,
             hash=None,
             compare=True,
             metadata=None,
         )
 
-        self._field_definition = field_definition
-        self._graphql_name = field_definition.name
+        self._graphql_name = name
+        self.name = origin_name
+        if type is not None:
+            self.type = type
 
-        self.name = field_definition.origin_name
-        if field_definition.type is not None:
-            self.type = field_definition.type
+        self.description: Optional[str] = description
+        self.origin: Optional[Union[Type, Callable]] = origin
+        self.base_resolver: Optional[StrawberryResolver] = base_resolver
 
-        self.description: Optional[str] = field_definition.description
-        self.origin: Optional[Union[Type, Callable]] = field_definition.origin
-        self.base_resolver: Optional[StrawberryResolver] = field_definition.base_resolver
+        self.default_value = default_value
 
-        self.default_value = field_definition.default_value
+        self.child = child
+        self.is_child_optional = is_child_optional
 
-        self.child = field_definition.child
-        self.is_child_optional = field_definition.is_child_optional
+        self.is_list = is_list
+        self.is_optional = is_optional
+        self.is_subscription = is_subscription
+        self.is_union = is_union
 
-        self.is_list = field_definition.is_list
-        self.is_optional = field_definition.is_optional
-        self.is_subscription = field_definition.is_subscription
-        self.is_union = field_definition.is_union
+        self.federation: FederationFieldParams = federation
+        self.permission_classes: List[Type[BasePermission]] = permission_classes
 
-        self.federation: FederationFieldParams = field_definition.federation
-        self.permission_classes: List[Type[BasePermission]] = field_definition.permission_classes
-
-        self.deprecation_reason = field_definition.deprecation_reason
+        self.deprecation_reason = deprecation_reason
 
     def __call__(self, resolver: _RESOLVER_TYPE) -> "StrawberryField":
         """Add a resolver to the field"""
@@ -111,14 +127,14 @@ class StrawberryField(dataclasses.Field):
 
 
 def field(
-    resolver: Optional[_RESOLVER_TYPE] = None,
-    *,
-    name: Optional[str] = None,
-    is_subscription: bool = False,
-    description: Optional[str] = None,
-    permission_classes: Optional[List[Type[BasePermission]]] = None,
-    federation: Optional[FederationFieldParams] = None,
-    deprecation_reason: Optional[str] = None,
+        resolver: Optional[_RESOLVER_TYPE] = None,
+        *,
+        name: Optional[str] = None,
+        is_subscription: bool = False,
+        description: Optional[str] = None,
+        permission_classes: Optional[List[Type[BasePermission]]] = None,
+        federation: Optional[FederationFieldParams] = None,
+        deprecation_reason: Optional[str] = None,
 ) -> StrawberryField:
     """Annotates a method or property as a GraphQL field.
 
@@ -135,7 +151,7 @@ def field(
     it can be used both as decorator and as a normal function.
     """
 
-    field_definition = FieldDefinition(
+    field_ = StrawberryField(
         origin_name=None,  # modified by resolver in __call__
         name=name,
         type=None,
@@ -146,11 +162,9 @@ def field(
         deprecation_reason=deprecation_reason,
     )
 
-    field_ = StrawberryField(field_definition)
-
     if resolver:
         return field_(resolver)
     return field_
 
 
-__all__ = ["FederationFieldParams", "FieldDefinition", "StrawberryField", "field"]
+__all__ = ["FederationFieldParams", "StrawberryField", "field"]

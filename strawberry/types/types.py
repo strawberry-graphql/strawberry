@@ -72,27 +72,3 @@ class FederationFieldParams:
     provides: List[str] = dataclasses.field(default_factory=list)
     requires: List[str] = dataclasses.field(default_factory=list)
     external: bool = False
-
-
-@dataclasses.dataclass
-class FieldDefinition:
-    name: Optional[str]
-    origin_name: Optional[str]
-    type: Optional[Union[Type, StrawberryUnion]]
-    origin: Optional[Union[Type, Callable]] = None
-    child: Optional["StrawberryField"] = None
-    is_subscription: bool = False
-    is_optional: bool = False
-    is_child_optional: bool = False
-    is_list: bool = False
-    is_union: bool = False
-    federation: FederationFieldParams = dataclasses.field(
-        default_factory=FederationFieldParams
-    )
-    description: Optional[str] = None
-    base_resolver: Optional["StrawberryResolver"] = None
-    permission_classes: List[Type[BasePermission]] = dataclasses.field(
-        default_factory=list
-    )
-    default_value: Any = undefined
-    deprecation_reason: Optional[str] = None

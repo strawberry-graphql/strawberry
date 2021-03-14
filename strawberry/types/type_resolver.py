@@ -27,7 +27,7 @@ from strawberry.utils.typing import (
 )
 
 from .generics import copy_type_with, get_name_from_types
-from .types import ArgumentDefinition, FieldDefinition, undefined
+from .types import ArgumentDefinition, undefined
 
 
 def _resolve_generic_type(type: Type, field_name: str) -> Type:
@@ -101,16 +101,12 @@ def resolve_type_field(field: StrawberryField) -> None:
         return resolve_type_field(field)
 
     elif is_list(field.type):
-        # TODO: maybe this should be an argument definition when it is argument
-        # but doesn't matter much
-        child_definition = FieldDefinition(
+        child_field = StrawberryField(
             origin=field.origin,  # type: ignore
             name=None,
             origin_name=None,
             type=get_list_annotation(field.type),
         )
-
-        child_field = StrawberryField(child_definition)
         resolve_type_field(child_field)
 
         field.is_list = True
@@ -239,14 +235,13 @@ def _resolve_type(argument_definition: ArgumentDefinition) -> None:
     elif is_list(type):
         # TODO: maybe this should be an argument definition when it is argument
         # but doesn't matter much
-        child_definition = FieldDefinition(
+
+        child_field = StrawberryField(
             origin=argument_definition.origin,  # type: ignore
             name=None,
             origin_name=None,
             type=get_list_annotation(type),
         )
-
-        child_field = StrawberryField(child_definition)
         resolve_type_field(child_field)
 
         argument_definition.type = None
@@ -423,15 +418,13 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
             field_type = field.type
 
             # Create a FieldDefinition, for fields of Types #1 and #2a
-            field_definition = FieldDefinition(
+            field = StrawberryField(
                 origin_name=field.name,
                 name=to_camel_case(field.name),
                 type=field_type,
                 origin=cls,
                 default_value=getattr(cls, field.name, undefined),
             )
-
-            field = StrawberryField(field_definition)
 
         field_name = field.graphql_name
 
