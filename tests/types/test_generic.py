@@ -635,3 +635,39 @@ def test_using_generics_with_interfaces():
     assert definition.fields[0].type._type_definition.is_generic is False
     assert definition.fields[0].type._type_definition.fields[0].name == "node"
     assert definition.fields[0].type._type_definition.fields[0].type == WithName
+
+
+def test_generic_with_arguments():
+    T = TypeVar("T")
+
+    @strawberry.type
+    class Collection(Generic[T]):
+        @strawberry.field
+        def by_id(self, ids: List[int]) -> List[T]:
+            return []
+
+    @strawberry.type
+    class Post:
+        name: str
+
+    @strawberry.type
+    class Query:
+        user: Collection[Post]
+
+    definition = Query._type_definition
+
+    assert definition.name == "Query"
+    assert len(definition.fields) == 1
+
+    assert definition.fields[0].name == "user"
+
+    type_definition = definition.fields[0].type._type_definition
+
+    assert type_definition.name == "PostCollection"
+    assert type_definition.is_generic is False
+    assert type_definition.fields[0].name == "byId"
+    assert type_definition.fields[0].is_list
+    assert type_definition.fields[0].child.type == Post
+    assert type_definition.fields[0].arguments[0].name == "ids"
+    assert type_definition.fields[0].arguments[0].is_list
+    assert type_definition.fields[0].arguments[0].child.type == int
