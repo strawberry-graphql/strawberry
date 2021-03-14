@@ -16,7 +16,7 @@ class StrawberryField(dataclasses.Field):
             self,
             name: Optional[str],
             origin_name: Optional[str],
-            type: Optional[Union[Type, StrawberryUnion]],
+            type_: Optional[Union[Type, StrawberryUnion]],
             origin: Optional[Union[Type, Callable]] = None,
             child: Optional["StrawberryField"] = None,
             is_subscription: bool = False,
@@ -44,8 +44,8 @@ class StrawberryField(dataclasses.Field):
 
         self._graphql_name = name
         self.name = origin_name
-        if type is not None:
-            self.type = type
+        if type_ is not None:
+            self.type = type_
 
         self.description: Optional[str] = description
         self.origin: Optional[Union[Type, Callable]] = origin
@@ -154,7 +154,7 @@ def field(
     field_ = StrawberryField(
         origin_name=None,  # modified by resolver in __call__
         name=name,
-        type=None,
+        type_=None,
         description=description,
         is_subscription=is_subscription,
         permission_classes=permission_classes or [],

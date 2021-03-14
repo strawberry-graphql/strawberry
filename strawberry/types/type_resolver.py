@@ -105,7 +105,7 @@ def resolve_type_field(field: StrawberryField) -> None:
             origin=field.origin,  # type: ignore
             name=None,
             origin_name=None,
-            type=get_list_annotation(field.type),
+            type_=get_list_annotation(field.type),
         )
         resolve_type_field(child_field)
 
@@ -240,7 +240,7 @@ def _resolve_type(argument_definition: ArgumentDefinition) -> None:
             origin=argument_definition.origin,  # type: ignore
             name=None,
             origin_name=None,
-            type=get_list_annotation(type),
+            type_=get_list_annotation(type),
         )
         resolve_type_field(child_field)
 
@@ -421,7 +421,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
             field = StrawberryField(
                 origin_name=field.name,
                 name=to_camel_case(field.name),
-                type=field_type,
+                type_=field_type,
                 origin=cls,
                 default_value=getattr(cls, field.name, undefined),
             )

@@ -79,7 +79,7 @@ def copy_type_with(
                     "name": field.graphql_name,
                     "origin_name": field.python_name,
                     "origin": field.origin,
-                    "type": field.type,
+                    "type_": field.type,
                     "default_value": field.default_value,
                     "child": field.child,
                     "is_child_optional": field.is_child_optional,
@@ -100,11 +100,11 @@ def copy_type_with(
                         origin=child.origin,
                         origin_name=child.python_name,
                         is_optional=child.is_optional,
-                        type=copy_type_with(child.type, params_to_type=params_to_type),
+                        type_=copy_type_with(child.type, params_to_type=params_to_type),
                     )
 
                 else:
-                    kwargs["type"] = copy_type_with(
+                    kwargs["type_"] = copy_type_with(
                         field.type, params_to_type=params_to_type
                     )
 
