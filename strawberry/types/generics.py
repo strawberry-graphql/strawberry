@@ -74,35 +74,22 @@ def copy_type_with(
             name = get_name_from_types(params_to_type.values()) + definition.name
 
             for field in definition.fields:
-                keys = {
-                    "name",
-                    "origin_name",
-                    "type",
-                    "child",
-                    # "is_subscription",
-                    "is_optional",
-                    # "is_child_optional",
-                    # "is_union",
-                    "description",
-                    "base_resolver",
-                    "permission_classes",
-                    "default_value",
-                    "deprecation_reason",
+
+                kwargs = {
+                    "name": field.graphql_name,
+                    "origin_name": field.python_name,
+                    "origin": field.origin,
+                    "type": field.type,
+                    "default_value": field.default_value,
+                    "child": field.child,
+                    "is_child_optional": field.is_child_optional,
+                    "is_list": field.is_list,
+                    "is_optional": field.is_optional,
+                    "is_subscription": field.is_subscription,
+                    "is_union": field.is_union,
+                    "federation": field.federation,
+                    "permission_classes": field.permission_classes
                 }
-
-                field_definition = field._field_definition
-
-                kwargs = {key: field_definition.__dict__.get(key) for key in keys}
-
-                kwargs["type"] = field.type
-
-                kwargs["default_value"] = field.default_value
-
-                kwargs["is_child_optional"] = field.is_child_optional
-                kwargs["is_list"] = field.is_list
-                kwargs["is_optional"] = field.is_optional
-                # kwargs["is_subscription"] = field.is_subscription
-                # kwargs["is_union"] = field.is_union
 
                 if field.is_list:
                     # TODO: nested list

@@ -45,6 +45,11 @@ class StrawberryField(dataclasses.Field):
         self.is_subscription = field_definition.is_subscription
         self.is_union = field_definition.is_union
 
+        self.federation: FederationFieldParams = field_definition.federation
+        self.permission_classes: List[Type[BasePermission]] = field_definition.permission_classes
+
+        self.deprecation_reason = field_definition.deprecation_reason
+
     def __call__(self, resolver: _RESOLVER_TYPE) -> "StrawberryField":
         """Add a resolver to the field"""
 
@@ -75,14 +80,6 @@ class StrawberryField(dataclasses.Field):
         return self.base_resolver.arguments
 
     @property
-    def deprecation_reason(self) -> Optional[str]:
-        return self._field_definition.deprecation_reason
-
-    @property
-    def federation(self) -> FederationFieldParams:
-        return self._field_definition.federation
-
-    @property
     def graphql_name(self) -> Optional[str]:
         if self._graphql_name:
             return to_camel_case(self._graphql_name)
@@ -103,10 +100,6 @@ class StrawberryField(dataclasses.Field):
             return self.base_resolver.name
         else:
             return None
-
-    @property
-    def permission_classes(self) -> List[Type[BasePermission]]:
-        return self._field_definition.permission_classes
 
     @property
     def type(self) -> Any:
