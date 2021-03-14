@@ -4,7 +4,23 @@ from dataclasses import InitVar, dataclass
 from enum import Enum
 from typing import Optional
 
+import pytest
+
 import strawberry
+
+
+def test_raises_exception_with_unsupported_types():
+    class SomeType:
+        ...
+
+    @strawberry.type
+    class Query:
+        example: SomeType
+
+    with pytest.raises(
+        TypeError, match="Query fields cannot be resolved. Unexpected type '.*'"
+    ):
+        strawberry.Schema(query=Query)
 
 
 def test_basic_schema():
