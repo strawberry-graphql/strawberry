@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.49.1 - 2021-03-14
+-------------------
+
+Fix bug when using arguments inside a type that uses typing.Generics
+
 0.49.0 - 2021-03-12
 -------------------
 
