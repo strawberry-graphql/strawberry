@@ -52,6 +52,36 @@ def test_mutation_with_input_type():
     assert result.data["say"] == "Hello Patrick of 10 years old!"
 
 
+def test_mutation_reusing_input_types():
+    @strawberry.input
+    class SayInput:
+        name: str
+        age: int
+
+    @strawberry.type
+    class Query:
+        hello: str = "Hello"
+
+    @strawberry.type
+    class Mutation:
+        @strawberry.mutation
+        def say(self, input: SayInput) -> str:
+            return f"Hello {input.name} of {input.age} years old!"
+
+        @strawberry.mutation
+        def say2(self, input: SayInput) -> str:
+            return f"Hello {input.name} of {input.age}!"
+
+    schema = strawberry.Schema(query=Query, mutation=Mutation)
+
+    query = 'mutation { say2(input: { name: "Patrick", age: 10 }) }'
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data["say2"] == "Hello Patrick of 10!"
+
+
 def test_unset_types():
     @strawberry.type
     class Query:
