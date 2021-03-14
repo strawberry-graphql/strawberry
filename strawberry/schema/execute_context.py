@@ -147,3 +147,12 @@ class ExecutionContextWithPromise(ExecutionContext):
             return promise_for_dict(results)
 
         return results
+
+    def handle_field_error(
+        self, raw_error: Exception, field_nodes, path, return_type,
+    ) -> None:
+        import traceback
+        traceback.print_exception(
+            type(raw_error), raw_error, raw_error.__traceback__
+        )
+        return super().handle_field_error(raw_error, field_nodes, path, return_type)

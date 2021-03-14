@@ -1,5 +1,7 @@
 # type: ignore
 
+from typing import List
+
 import strawberry
 from strawberry.promise import Promise
 from strawberry.promise.dataloader import PromiseDataLoader
@@ -284,3 +286,31 @@ def test_raise_error(mocker):
     assert result.errors
     assert len(result.errors) == 1
     assert result.errors[0].message == "An error"
+
+
+def test_lists(mocker):
+    mock_loader = mocker.Mock(side_effect=idx)
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def get_ids(self, info) -> List[str]:
+            return Promise.all([
+                info.context["dataloader"].load("1"),
+                info.context["dataloader"].load("2"),
+            ])
+
+    schema = strawberry.Schema(
+        query=Query, execution_context_class=ExecutionContextWithPromise
+    )
+    result = schema.execute_sync(
+        """
+        query {
+            getIds
+        }
+        """,
+        context_value={"dataloader": PromiseDataLoader(mock_loader)},
+    )
+    import pdb; pdb.set_trace()
+    assert not result.errors
+    import pdb; pdb.set_trace()
