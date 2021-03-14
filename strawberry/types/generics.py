@@ -75,43 +75,44 @@ def copy_type_with(
 
             for field in definition.fields:
 
-                kwargs = {
-                    "name": field.graphql_name,
-                    "origin_name": field.python_name,
-                    "origin": field.origin,
-                    "type_": field.type,
-                    "default_value": field.default_value,
-                    "child": field.child,
-                    "is_child_optional": field.is_child_optional,
-                    "is_list": field.is_list,
-                    "is_optional": field.is_optional,
-                    "is_subscription": field.is_subscription,
-                    "is_union": field.is_union,
-                    "federation": field.federation,
-                    "permission_classes": field.permission_classes
-                }
+                # Copy federation information
+                federation = FederationFieldParams(**field.federation.__dict__)
+
+                new_field = StrawberryField(
+                    name=field.graphql_name,
+                    origin_name=field.python_name,
+                    origin=field.origin,
+                    type_=field.type,
+                    default_value=field.default_value,
+                    child=field.child,
+                    is_child_optional=field.is_child_optional,
+                    is_list=field.is_list,
+                    is_optional=field.is_optional,
+                    is_subscription=field.is_subscription,
+                    is_union=field.is_union,
+                    federation=federation,
+                    permission_classes=field.permission_classes
+                )
 
                 if field.is_list:
-                    # TODO: nested list
-                    child = field.child
+                    child_type = copy_type_with(
+                        field.child.type, params_to_type=params_to_type
+                    )
 
-                    kwargs["child"] = StrawberryField(
-                        name=child.name,
-                        origin=child.origin,
-                        origin_name=child.python_name,
-                        is_optional=child.is_optional,
-                        type_=copy_type_with(child.type, params_to_type=params_to_type),
+                    new_field.child = StrawberryField(
+                        name=field.child.name,
+                        origin=field.child.origin,
+                        origin_name=field.child.python_name,
+                        is_optional=field.child.is_optional,
+                        type_=child_type,
                     )
 
                 else:
-                    kwargs["type_"] = copy_type_with(
+                    new_field.type = copy_type_with(
                         field.type, params_to_type=params_to_type
                     )
 
-                federation_args = field.federation.__dict__
-                kwargs["federation"] = FederationFieldParams(**federation_args)
-
-                fields.append(StrawberryField(**kwargs))
+                fields.append(new_field)
 
             type_definition = TypeDefinition(
                 name=name,
