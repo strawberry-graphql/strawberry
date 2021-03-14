@@ -671,3 +671,33 @@ def test_generic_with_arguments():
     assert type_definition.fields[0].arguments[0].name == "ids"
     assert type_definition.fields[0].arguments[0].is_list
     assert type_definition.fields[0].arguments[0].child.type == int
+
+
+def test_federation():
+    @strawberry.federation.type(keys=["id"])
+    class Edge(Generic[T]):
+        id: strawberry.ID
+        node_field: T
+
+    definition = Edge._type_definition
+
+    Copy = copy_type_with(Edge, str)
+
+    definition = Copy._type_definition
+
+    assert definition.name == "StrEdge"
+    assert definition.is_generic is False
+    assert definition.type_params == {}
+
+    assert len(definition.fields) == 2
+
+    assert definition.fields[0].name == "id"
+    assert definition.fields[0].type == strawberry.ID
+    assert definition.fields[0].is_optional is False
+
+    assert definition.fields[1].name == "nodeField"
+    assert definition.fields[1].type == str
+    assert definition.fields[1].is_optional is False
+
+    assert definition.federation.keys == ["id"]
+    assert definition.federation.extend is False
