@@ -4,7 +4,7 @@ on:
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review, review_requested]
     branches:
-    - master
+    - main
 
 jobs:
   release-file-check:

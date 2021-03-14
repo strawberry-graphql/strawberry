@@ -13,7 +13,7 @@ jobs:
         django: [3.1.4, 3.0.11, 2.2.17]
 
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
@@ -39,7 +39,7 @@ jobs:
     container: python:3.9
 
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v2
       - run: pip install poetry
       - name: Install dependencies
         run: poetry install
@@ -50,7 +50,7 @@ jobs:
     container: python:3.9
 
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v2
       - run: pip install poetry
       - name: Install dependencies
         run: poetry install
