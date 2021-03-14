@@ -1,12 +1,11 @@
 import builtins
-import dataclasses
 from typing import Dict, Iterable, Tuple, Type, Union, cast
 
 from strawberry.union import StrawberryUnion, union
 from strawberry.utils.str_converters import capitalize_first
 from strawberry.utils.typing import is_type_var, is_union
 
-from .types import FederationFieldParams, FieldDefinition, TypeDefinition
+from .types import FieldDefinition, TypeDefinition
 
 
 def get_name_from_types(types: Iterable[Union[Type, StrawberryUnion]]):
@@ -74,7 +73,7 @@ def copy_type_with(
             name = get_name_from_types(params_to_type.values()) + definition.name
 
             for field in definition.fields:
-                kwargs = dataclasses.asdict(field)
+                kwargs = field.__dict__.copy()
 
                 if field.is_list:
                     child = cast(FieldDefinition, field.child)
@@ -96,9 +95,6 @@ def copy_type_with(
                     kwargs["type"] = copy_type_with(
                         field_type, params_to_type=params_to_type
                     )
-
-                federation_args = kwargs.pop("federation")
-                kwargs["federation"] = FederationFieldParams(**federation_args)
 
                 fields.append(FieldDefinition(**kwargs))
 

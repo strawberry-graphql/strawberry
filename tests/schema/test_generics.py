@@ -1,3 +1,4 @@
+import textwrap
 import typing
 
 import strawberry
@@ -460,6 +461,26 @@ def test_supports_multiple_generics_in_union():
 
     schema = strawberry.Schema(query=Query)
 
+    expected_schema = """
+      type IntEdge {
+        cursor: ID!
+        node: Int!
+      }
+
+      union IntEdgeStrEdge = IntEdge | StrEdge
+
+      type Query {
+        example: [IntEdgeStrEdge!]!
+      }
+
+      type StrEdge {
+        cursor: ID!
+        node: String!
+      }
+    """
+
+    assert str(schema) == textwrap.dedent(expected_schema).strip()
+
     query = """{
         example {
             __typename
@@ -643,3 +664,39 @@ def test_raises_error_when_unable_to_find_type():
         "test_raises_error_when_unable_to_find_type.<locals>.Edge'> "
         "and (<class 'str'>,)"
     )
+
+
+def test_generic_with_arguments():
+    T = typing.TypeVar("T")
+
+    @strawberry.type
+    class Collection(typing.Generic[T]):
+        @strawberry.field
+        def by_id(self, ids: typing.List[int]) -> typing.List[T]:
+            return []
+
+    @strawberry.type
+    class Post:
+        name: str
+
+    @strawberry.type
+    class Query:
+        user: Collection[Post]
+
+    schema = strawberry.Schema(Query)
+
+    expected_schema = """
+    type Post {
+      name: String!
+    }
+
+    type PostCollection {
+      byId(ids: [Int!]!): [Post!]!
+    }
+
+    type Query {
+      user: PostCollection!
+    }
+    """
+
+    assert str(schema) == textwrap.dedent(expected_schema).strip()
