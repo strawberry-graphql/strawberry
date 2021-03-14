@@ -27,7 +27,7 @@ class StrawberryField(dataclasses.Field):
             federation: FederationFieldParams = FederationFieldParams(),
             description: Optional[str] = None,
             base_resolver: Optional["StrawberryResolver"] = None,
-            permission_classes: List[Type[BasePermission]] = [],
+            permission_classes: List[Type[BasePermission]] = (),
             default_value: Any = undefined,
             deprecation_reason: Optional[str] = None,
     ):
@@ -62,7 +62,7 @@ class StrawberryField(dataclasses.Field):
         self.is_union = is_union
 
         self.federation: FederationFieldParams = federation
-        self.permission_classes: List[Type[BasePermission]] = permission_classes
+        self.permission_classes: List[Type[BasePermission]] = list(permission_classes)
 
         self.deprecation_reason = deprecation_reason
 
