@@ -9,10 +9,6 @@ from .field import FieldDefinition
 from .types.fields.resolver import StrawberryResolver
 
 
-def default_field_resolver(field_name: str, source, info):
-    return getattr(source, field_name)
-
-
 def is_default_resolver(func: Callable) -> bool:
     """Check whether the function is a default resolver or a user provided one."""
     return getattr(func, "_is_default", False)
@@ -41,7 +37,6 @@ def get_arguments(
     field: FieldDefinition, kwargs: Dict[str, Any], source: Any, info: Any
 ) -> Tuple[List[Any], Dict[str, Any]]:
     actual_resolver = cast(StrawberryResolver, field.base_resolver)
-    is_decorator = getattr(actual_resolver.wrapped_func, "_strawberry_decorator", False)
 
     kwargs = convert_arguments(kwargs, field.arguments)
 
@@ -56,10 +51,10 @@ def get_arguments(
     if actual_resolver.has_self_arg:
         args.append(source)
 
-    if actual_resolver.has_root_arg or is_decorator:
+    if actual_resolver.has_root_arg:
         kwargs["root"] = source
 
-    if actual_resolver.has_info_arg or is_decorator:
+    if actual_resolver.has_info_arg:
         kwargs["info"] = info
 
     return args, kwargs

@@ -14,38 +14,9 @@ T = TypeVar("T")
 
 
 class StrawberryResolver(Generic[T]):
-    def __init__(
-        self,
-        func: Callable[..., T],
-        *,
-        description: Optional[str] = None,
-        decorators: List[Callable[..., T]] = None
-    ):
+    def __init__(self, func: Callable[..., T], *, description: Optional[str] = None):
+        self.wrapped_func = func
         self._description = description
-        self.decorators = decorators or []
-
-        if isinstance(func, StrawberryResolver):
-            self.wrapped_func = func.wrapped_func
-            self.decorators = func.decorators + self.decorators
-
-        else:
-            # self.wrapped_func = func
-
-            def yad(decorators):
-                def wrap(resolver):
-                    def decorator(root=resolver):
-                        for d in reversed(decorators):
-                            f = d(root)
-                        return f
-
-                    return decorator
-
-                return wrap
-
-            # if func() == "hi":
-            #     breakpoint()
-
-            self.wrapped_func = yad(self.decorators)(func)
 
     # TODO: Use this when doing the actual resolving? How to deal with async resolvers?
     def __call__(self, *args, **kwargs) -> T:

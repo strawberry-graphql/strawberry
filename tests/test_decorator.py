@@ -1,19 +1,23 @@
-from strawberry.types.fields.resolver import StrawberryResolver
+import functools
+from functools import wraps
+
 import strawberry
-from strawberry.decorator import make_strawberry_decorator
+from strawberry.types import Info
 
 
 def test_basic_decorator():
-    @make_strawberry_decorator
-    def upper_case(resolver, **kwargs):
-        result = resolver(**kwargs)
-        return result.upper()
+    def upper_case(resolver):
+        @wraps(resolver)
+        def wrapped(*args, **kwargs):
+            return resolver(*args, **kwargs).upper()
+
+        return wrapped
 
     @strawberry.type
     class Query:
         @strawberry.field
         @upper_case
-        def greeting() -> str:
+        def greeting(self) -> str:
             return "hi"
 
     schema = strawberry.Schema(query=Query)
@@ -25,12 +29,16 @@ def test_basic_decorator():
 
 def test_decorator_with_arguments():
     def suffix(value):
-        @make_strawberry_decorator
-        def wrapper(resolver, **kwargs):
-            result = resolver(**kwargs)
-            return f"{result}{value}"
+        def decorator(resolver):
+            @wraps(resolver)
+            def wrapper(*args, **kwargs):
+                result = resolver(*args, **kwargs)
 
-        return wrapper
+                return f"{result}{value}"
+
+            return wrapper
+
+        return decorator
 
     @strawberry.type
     class Query:
@@ -47,18 +55,25 @@ def test_decorator_with_arguments():
 
 
 def test_multiple_decorators():
-    @make_strawberry_decorator
-    def upper_case(resolver, **kwargs):
-        result = resolver(**kwargs)
-        return result.upper()
+    def upper_case(resolver):
+        @functools.wraps(resolver)
+        def wrap(*args, **kwargs):
+            result = resolver(*args, **kwargs)
+            return result.upper()
+
+        return wrap
 
     def suffix(value):
-        @make_strawberry_decorator
-        def wrapper(resolver, **kwargs):
-            result = resolver(**kwargs)
-            return f"{result}{value}"
+        def decorator(resolver):
+            @wraps(resolver)
+            def wrapper(*args, **kwargs):
+                result = resolver(*args, **kwargs)
 
-        return wrapper
+                return f"{result}{value}"
+
+            return wrapper
+
+        return decorator
 
     @strawberry.type
     class Query:
@@ -76,10 +91,13 @@ def test_multiple_decorators():
 
 
 def test_decorator_with_graphql_arguments():
-    @make_strawberry_decorator
-    def upper_case(resolver, **kwargs):
-        result = resolver(**kwargs)
-        return result.upper()
+    def upper_case(resolver):
+        @functools.wraps(resolver)
+        def wrap(*args, **kwargs):
+            result = resolver(*args, **kwargs)
+            return result.upper()
+
+        return wrap
 
     @strawberry.type
     class Query:
@@ -97,12 +115,15 @@ def test_decorator_with_graphql_arguments():
 
 def test_decorator_modify_argument():
     def title_case_argument(argument_name):
-        @make_strawberry_decorator
-        def wrapped(resolver, **kwargs):
-            kwargs[argument_name] = kwargs[argument_name].title()
-            return resolver(**kwargs)
+        def decorator(resolver):
+            @functools.wraps(resolver)
+            def wrapped(*args, **kwargs):
+                kwargs[argument_name] = kwargs[argument_name].title()
+                return resolver(*args, **kwargs)
 
-        return wrapped
+            return wrapped
+
+        return decorator
 
     @strawberry.type
     class Query:
@@ -118,33 +139,23 @@ def test_decorator_modify_argument():
     assert result.data == {"greeting": "hi Patrick"}
 
 
-def test_decorator_simple_field():
-    @make_strawberry_decorator
-    def upper_case(resolver, **kwargs):
-        result = resolver(**kwargs)
-        return result.upper()
+def test_decorator_with_info():
+    def upper_case(resolver):
+        @wraps(resolver)
+        def wrapped(*args, **kwargs):
+            return resolver(*args, **kwargs).upper()
 
-    def suffix(value):
-        @make_strawberry_decorator
-        def wrapper(resolver, **kwargs):
-            result = resolver(**kwargs)
-            return f"{result}{value}"
-
-        return wrapper
+        return wrapped
 
     @strawberry.type
     class Query:
-        name: str = strawberry.field(decorators=[upper_case, suffix(" 👋")])
+        @strawberry.field
+        @upper_case
+        def greeting(self, info: Info) -> str:
+            return str(info.context)
 
     schema = strawberry.Schema(query=Query)
-    result = schema.execute_sync(
-        """
-            query {
-                name
-            }
-        """,
-        root_value=Query(name="patrick"),
-    )
+    result = schema.execute_sync("query { greeting }")
 
     assert not result.errors
-    assert result.data == {"name": "PATRICK 👋"}
+    assert result.data == {"greeting": "NONE"}
