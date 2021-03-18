@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.49.2 - 2021-03-18
+-------------------
+
+This releases changes how we define resolvers internally, now we have one single resolver for async and sync code.
+
 0.49.1 - 2021-03-14
 -------------------
 
