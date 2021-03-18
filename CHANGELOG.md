@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.50.1 - 2021-03-18
+-------------------
+
+This release fixes a regression with the django sending the wrong content type.
+
 0.50.0 - 2021-03-18
 -------------------
 
