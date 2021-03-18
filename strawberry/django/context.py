@@ -1,11 +1,12 @@
 from dataclasses import dataclass
 
-from django.http import HttpRequest
+from django.http import HttpRequest, HttpResponse
 
 
 @dataclass
 class StrawberryDjangoContext:
     request: HttpRequest
+    response: HttpResponse
 
     def __getitem__(self, key):
         # __getitem__ override needed to avoid issues for who's
