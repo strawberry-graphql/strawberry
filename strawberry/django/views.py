@@ -24,6 +24,10 @@ from ..schema import BaseSchema
 from .context import StrawberryDjangoContext
 
 
+class TemporalHttpResponse(HttpResponse):
+    status_code = None
+
+
 class BaseView(View):
     graphiql = True
     schema: Optional[BaseSchema] = None
@@ -94,7 +98,7 @@ class BaseView(View):
         response = JsonResponse(response_data)
         response._headers.update(sub_response._headers)
 
-        if sub_response.status_code:
+        if sub_response.status_code is not None:
             response.status_code = sub_response.status_code
 
         for name, value in sub_response.cookies.items():
@@ -127,7 +131,7 @@ class GraphQLView(BaseView):
 
         operation_context = self.get_execution_context(request)
 
-        sub_response = HttpResponse()
+        sub_response = TemporalHttpResponse()
         context = self.get_context(request, response=sub_response)
 
         result = self.schema.execute_sync(
@@ -166,7 +170,7 @@ class AsyncGraphQLView(BaseView):
             return self._render_graphiql(request)
 
         operation_context = self.get_execution_context(request)
-        sub_response = HttpResponse()
+        sub_response = TemporalHttpResponse()
         context = await self.get_context(request, response=sub_response)
         root_value = await self.get_root_value(request)
 
