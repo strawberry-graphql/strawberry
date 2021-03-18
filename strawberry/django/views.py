@@ -5,6 +5,7 @@ from typing import Any, Dict, Optional
 
 from django.core.exceptions import SuspiciousOperation
 from django.http import Http404, HttpRequest, HttpResponseNotAllowed, JsonResponse
+from django.http.response import HttpResponse
 from django.template import RequestContext, Template
 from django.template.exceptions import TemplateDoesNotExist
 from django.template.loader import render_to_string
@@ -21,6 +22,10 @@ from strawberry.types.execution import ExecutionContext
 
 from ..schema import BaseSchema
 from .context import StrawberryDjangoContext
+
+
+class TemporalHttpResponse(HttpResponse):
+    status_code = None
 
 
 class BaseView(View):
@@ -87,13 +92,27 @@ class BaseView(View):
 
         return response
 
+    def _create_response(
+        self, response_data: GraphQLHTTPResponse, sub_response: HttpResponse
+    ) -> JsonResponse:
+        response = JsonResponse(response_data)
+        response._headers.update(sub_response._headers)
+
+        if sub_response.status_code is not None:
+            response.status_code = sub_response.status_code
+
+        for name, value in sub_response.cookies.items():
+            response.cookies[name] = value
+
+        return response
+
 
 class GraphQLView(BaseView):
     def get_root_value(self, request: HttpRequest) -> Any:
         return None
 
-    def get_context(self, request: HttpRequest) -> Any:
-        return StrawberryDjangoContext(request)
+    def get_context(self, request: HttpRequest, response: HttpResponse) -> Any:
+        return StrawberryDjangoContext(request=request, response=response)
 
     def process_result(
         self, request: HttpRequest, result: ExecutionResult
@@ -111,7 +130,9 @@ class GraphQLView(BaseView):
             return self._render_graphiql(request)
 
         operation_context = self.get_execution_context(request)
-        context = self.get_context(request)
+
+        sub_response = TemporalHttpResponse()
+        context = self.get_context(request, response=sub_response)
 
         result = self.schema.execute_sync(
             operation_context.query,
@@ -123,7 +144,9 @@ class GraphQLView(BaseView):
 
         response_data = self.process_result(request=request, result=result)
 
-        return JsonResponse(response_data)
+        return self._create_response(
+            response_data=response_data, sub_response=sub_response
+        )
 
 
 class AsyncGraphQLView(BaseView):
@@ -147,7 +170,8 @@ class AsyncGraphQLView(BaseView):
             return self._render_graphiql(request)
 
         operation_context = self.get_execution_context(request)
-        context = await self.get_context(request)
+        sub_response = TemporalHttpResponse()
+        context = await self.get_context(request, response=sub_response)
         root_value = await self.get_root_value(request)
 
         result = await self.schema.execute(
@@ -160,13 +184,15 @@ class AsyncGraphQLView(BaseView):
 
         response_data = await self.process_result(request=request, result=result)
 
-        return JsonResponse(response_data)
+        return self._create_response(
+            response_data=response_data, sub_response=sub_response
+        )
 
     async def get_root_value(self, request: HttpRequest) -> Any:
         return None
 
-    async def get_context(self, request: HttpRequest) -> Any:
-        return {"request": request}
+    async def get_context(self, request: HttpRequest, response: HttpResponse) -> Any:
+        return StrawberryDjangoContext(request=request, response=response)
 
     async def process_result(
         self, request: HttpRequest, result: ExecutionResult

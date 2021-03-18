@@ -41,7 +41,8 @@ We allow to extend the base `GraphQLView`, by overriding the following methods:
 ## get_context
 
 `get_context` allows to provide a custom context object that can be used in your
-resolver. You can return anything here, by default we return a `StrawberryDjangoContext` object.
+resolver. You can return anything here, by default we return a
+`StrawberryDjangoContext` object.
 
 ```python
 @strawberry.type
@@ -55,7 +56,7 @@ or in case of a custom context:
 
 ```python
 class MyGraphQLView(GraphQLView):
-    def get_context(self, request: HttpRequest) -> Any:
+    def get_context(self, request: HttpRequest, response: HttpResponse) -> Any:
         return {"example": 1}
 
 
@@ -167,7 +168,7 @@ the request.
 
 ```python
 class MyGraphQLView(AsyncGraphQLView):
-    async def get_context(self, request: HttpRequest) -> Any:
+    async def get_context(self, request: HttpRequest, response: HttpResponse) -> Any:
         return {"example": 1}
 
 

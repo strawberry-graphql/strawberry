@@ -188,7 +188,7 @@ def test_strawberry_django_context(query):
 
 def test_custom_context():
     class CustomGraphQLView(BaseGraphQLView):
-        def get_context(self, request):
+        def get_context(self, request, response):
             return {"request": request, "custom_value": "Hi!"}
 
     factory = RequestFactory()
@@ -238,3 +238,80 @@ def test_custom_process_result():
 
     assert response.status_code == 200
     assert data == {}
+
+
+def test_can_set_cookies():
+    factory = RequestFactory()
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def abc(self, info: Info) -> str:
+            info.context.response.set_cookie("fruit", "strawberry")
+
+            return "ABC"
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ abc }"
+    request = factory.post(
+        "/graphql/", {"query": query}, content_type="application/json"
+    )
+
+    response = GraphQLView.as_view(schema=schema)(request)
+    data = json.loads(response.content.decode())
+
+    assert response.status_code == 200
+    assert response.cookies["fruit"].value == "strawberry"
+    assert data == {"data": {"abc": "ABC"}}
+
+
+def test_can_set_headers():
+    factory = RequestFactory()
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def abc(self, info: Info) -> str:
+            info.context.response["My-Header"] = "header value"
+
+            return "ABC"
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ abc }"
+    request = factory.post(
+        "/graphql/", {"query": query}, content_type="application/json"
+    )
+
+    response = GraphQLView.as_view(schema=schema)(request)
+    data = json.loads(response.content.decode())
+
+    assert response.status_code == 200
+    assert response["my-header"] == "header value"
+    assert data == {"data": {"abc": "ABC"}}
+
+
+def test_can_change_status_code():
+    factory = RequestFactory()
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def abc(self, info: Info) -> str:
+            info.context.response.status_code = 418
+
+            return "ABC"
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ abc }"
+    request = factory.post(
+        "/graphql/", {"query": query}, content_type="application/json"
+    )
+
+    response = GraphQLView.as_view(schema=schema)(request)
+    data = json.loads(response.content.decode())
+
+    assert response.status_code == 418
+    assert data == {"data": {"abc": "ABC"}}
