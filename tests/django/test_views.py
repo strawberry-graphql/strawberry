@@ -119,6 +119,7 @@ def test_graphql_query():
     response = GraphQLView.as_view(schema=schema)(request)
     data = json.loads(response.content.decode())
 
+    assert response["content-type"] == "application/json"
     assert data["data"]["hello"] == "strawberry"
 
 

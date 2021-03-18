@@ -24,8 +24,11 @@ from ..schema import BaseSchema
 from .context import StrawberryDjangoContext
 
 
-class TemporalHttpResponse(HttpResponse):
+class TemporalHttpResponse(JsonResponse):
     status_code = None
+
+    def __init__(self) -> None:
+        super().__init__({})
 
 
 class BaseView(View):
