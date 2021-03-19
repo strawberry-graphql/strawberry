@@ -52,9 +52,9 @@ def _resolve_generic_type(type: Type, field_name: str) -> Type:
 
 def resolve_type_field(field: StrawberryField) -> None:
     if isinstance(field.type, str):
-        module = sys.modules[field.origin.__module__].__dict__
+        module = sys.modules[field.origin.__module__]
 
-        field.type = eval(field.type, module)
+        field.type = eval(field.type, module.__dict__)
 
     if isinstance(field.type, LazyType):
         field.type = field.type.resolve_type()
@@ -235,7 +235,6 @@ def _resolve_type(argument_definition: ArgumentDefinition) -> None:
     elif is_list(type):
         # TODO: maybe this should be an argument definition when it is argument
         # but doesn't matter much
-
         child_field = StrawberryField(
             origin=argument_definition.origin,  # type: ignore
             name=None,
@@ -246,7 +245,7 @@ def _resolve_type(argument_definition: ArgumentDefinition) -> None:
 
         argument_definition.type = None
         argument_definition.is_list = True
-        argument_definition.child = child_field
+        argument_definition.child = cast(ArgumentDefinition, child_field)
 
         return
 
@@ -300,6 +299,7 @@ def _resolve_type(argument_definition: ArgumentDefinition) -> None:
 
 def _get_type_params_for_field(field: StrawberryField) -> Optional[List[Type]]:
     if field.is_list:
+        assert field.child is not None
         return _get_type_params_for_field(field.child)
 
     if isinstance(field.type, StrawberryUnion):

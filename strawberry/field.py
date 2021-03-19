@@ -106,8 +106,7 @@ class StrawberryField(dataclasses.Field):
         return None
 
     @property
-    def python_name(self) -> Optional[str]:
-        # TODO: Remove
+    def python_name(self) -> str:
         return self.name
 
     @property

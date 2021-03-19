@@ -55,7 +55,7 @@ class TypeDefinition:
 class ArgumentDefinition:
     name: Optional[str] = None
     origin_name: Optional[str] = None
-    type: Optional[Type] = None
+    type: Optional[Union[Type, StrawberryUnion]] = None
     origin: Optional[Type] = None
     child: Optional["ArgumentDefinition"] = None
     is_subscription: bool = False

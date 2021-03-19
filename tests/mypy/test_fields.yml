@@ -1,5 +1,4 @@
 - case: test_field
-  skip: true
   main: |
     import strawberry
 
