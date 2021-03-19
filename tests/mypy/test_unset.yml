@@ -1,5 +1,4 @@
 - case: test_unset
-  skip: true
   main: |
     import strawberry
     from typing import Optional

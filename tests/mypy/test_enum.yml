@@ -1,5 +1,4 @@
 - case: test_enum
-  skip: true
   main: |
     from enum import Enum
 
@@ -20,7 +19,6 @@
     main:14: note: Revealed type is 'main.IceCreamFlavour'
 
 - case: test_enum_from_var
-  skip: true
   main: |
     from typing import Type
     from enum import Enum
@@ -47,7 +45,6 @@
     main:20: note: Revealed type is 'Any'
 
 - case: test_enum_with_decorator
-  skip: true
   main: |
     from enum import Enum
 
@@ -67,7 +64,6 @@
     main:13: note: Revealed type is 'main.IceCreamFlavour'
 
 - case: test_enum_with_decorator_and_name
-  skip: true
   main: |
     from enum import Enum
 

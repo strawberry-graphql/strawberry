@@ -1,5 +1,4 @@
 - case: test_union
-  skip: true
   main: |
     import typing
 
@@ -27,7 +26,6 @@
     main:20: note: Revealed type is 'main.User'
 
 - case: test_union_generics
-  skip: true
   main: |
     from typing import Generic, TypeVar
 
@@ -53,7 +51,6 @@
     main:19: note: Revealed type is 'Union[main.Error, main.Edge[builtins.str]]'
 
 - case: test_union_kwargs
-  skip: true
   main: |
     import typing
 

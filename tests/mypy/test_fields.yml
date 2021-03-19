@@ -48,7 +48,6 @@
     main:26: note: Revealed type is 'Any'
 
 - case: test_private_field
-  skip: true
   main: |
     import strawberry
 
@@ -69,7 +68,6 @@
     main:14: error: "int" has no attribute "trim"
 
 - case: test_field_with_default_cannot_be_before_non_default
-  skip: true
   main: |
     import strawberry
 
@@ -82,7 +80,6 @@
     main:6: error: Attributes without a default cannot follow attributes with one
 
 - case: test_using_strawberry_field_does_not_break
-  skip: true
   main: |
     import strawberry
 
@@ -96,7 +93,6 @@
     main:8: note: Revealed type is 'builtins.str'
 
 - case: test_does_not_put_fields_with_resolver_in_init
-  skip: true
   main: |
     import strawberry
 
@@ -116,7 +112,6 @@
     main:14: note: Revealed type is 'builtins.str'
 
 - case: test_using_strawberry_federation_field_does_not_break
-  skip: true
   main: |
     import strawberry
 

@@ -1,5 +1,4 @@
 - case: test_type
-  skip: true
   main: |
     import strawberry
     import pydantic

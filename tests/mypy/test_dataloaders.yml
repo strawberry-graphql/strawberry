@@ -1,5 +1,4 @@
 - case: test_dataloader_no_types
-  skip: true
   main: |
     from strawberry.dataloader import DataLoader
 
@@ -19,7 +18,6 @@
     main:13: note: Revealed type is 'Any'
 
 - case: test_dataloader
-  skip: true
   main: |
     from typing import List
 
