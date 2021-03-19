@@ -24,6 +24,7 @@ def convert_enums_to_values(field: StrawberryField, result: Any) -> Any:
         return result.value
 
     if field.is_list:
+        assert field.child is not None
         return [convert_enums_to_values(field.child, item) for item in result]
 
     return result

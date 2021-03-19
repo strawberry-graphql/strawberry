@@ -1,4 +1,5 @@
 import dataclasses
+import typing
 from typing import Any, Callable, List, Optional, Type, Union
 
 from .permission import BasePermission
@@ -27,7 +28,7 @@ class StrawberryField(dataclasses.Field):
             federation: FederationFieldParams = FederationFieldParams(),
             description: Optional[str] = None,
             base_resolver: Optional["StrawberryResolver"] = None,
-            permission_classes: List[Type[BasePermission]] = (),
+            permission_classes: List[Type[BasePermission]] = (),  # type: ignore
             default_value: Any = undefined,
             deprecation_reason: Optional[str] = None,
     ):
@@ -43,9 +44,11 @@ class StrawberryField(dataclasses.Field):
         )
 
         self._graphql_name = name
-        self.name = origin_name
+        if origin_name is not None:
+            self.name = origin_name
         if type_ is not None:
-            self.type = type_
+            # TODO: Clean up the typing around StrawberryField.type
+            self.type = typing.cast(type, type_)
 
         self.description: Optional[str] = description
         self.origin: Optional[Union[Type, Callable]] = origin
@@ -115,14 +118,6 @@ class StrawberryField(dataclasses.Field):
             return self.base_resolver.name
         else:
             return None
-
-    @property
-    def type(self) -> Any:
-        return self._type
-
-    @type.setter
-    def type(self, type_: Any) -> None:
-        self._type = type_
 
 
 def field(

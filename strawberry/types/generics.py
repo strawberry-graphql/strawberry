@@ -95,6 +95,8 @@ def copy_type_with(
                 )
 
                 if field.is_list:
+                    assert field.child is not None
+
                     child_type = copy_type_with(
                         field.child.type, params_to_type=params_to_type
                     )

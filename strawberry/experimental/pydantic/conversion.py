@@ -10,12 +10,13 @@ def _convert_from_pydantic_to_strawberry_field(
     data = data_from_model or extra
 
     if field.is_list:
-        child = field.child
+        assert field.child is not None
+
         items = [None for _ in data]
 
         for index, item in enumerate(data):
             items[index] = _convert_from_pydantic_to_strawberry_field(
-                child,
+                field.child,
                 data_from_model=item,
                 extra=extra[index] if extra else None,
             )

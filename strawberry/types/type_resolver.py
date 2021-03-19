@@ -1,5 +1,6 @@
 import dataclasses
 import sys
+import typing
 from typing import Dict, List, Optional, Type, cast
 
 from strawberry.exceptions import (
@@ -112,7 +113,8 @@ def resolve_type_field(field: StrawberryField) -> None:
         field.is_list = True
         field.child = child_field
 
-        field.type = None
+        # TODO: Fix StrawberryField.type typing
+        field.type = typing.cast(type, None)
 
         return
 
@@ -138,7 +140,10 @@ def resolve_type_field(field: StrawberryField) -> None:
 
         field.is_union = True
 
-        field.type = union(get_name_from_types(types), types)
+        # TODO: Fix StrawberryField.type typing
+        strawberry_union = typing.cast(type, union(get_name_from_types(types), types))
+
+        field.type = strawberry_union
 
     # case for Type[A], we want to convert generics to have the concrete types
     # when we pass them, so that we don't have to deal with generics when
