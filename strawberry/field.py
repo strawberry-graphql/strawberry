@@ -4,9 +4,10 @@ from typing import Any, Callable, List, Optional, Type, Union
 
 from .permission import BasePermission
 from .types.fields.resolver import StrawberryResolver
-from .types.types import FederationFieldParams, ArgumentDefinition, undefined
+from .types.types import ArgumentDefinition, FederationFieldParams, undefined
 from .union import StrawberryUnion
 from .utils.str_converters import to_camel_case
+
 
 _RESOLVER_TYPE = Union[StrawberryResolver, Callable]
 
