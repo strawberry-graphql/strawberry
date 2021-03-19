@@ -12,25 +12,24 @@ _RESOLVER_TYPE = Union[StrawberryResolver, Callable]
 
 
 class StrawberryField(dataclasses.Field):
-
     def __init__(
-            self,
-            name: Optional[str],
-            origin_name: Optional[str],
-            type_: Optional[Union[Type, StrawberryUnion]],
-            origin: Optional[Union[Type, Callable]] = None,
-            child: Optional["StrawberryField"] = None,
-            is_subscription: bool = False,
-            is_optional: bool = False,
-            is_child_optional: bool = False,
-            is_list: bool = False,
-            is_union: bool = False,
-            federation: FederationFieldParams = FederationFieldParams(),
-            description: Optional[str] = None,
-            base_resolver: Optional["StrawberryResolver"] = None,
-            permission_classes: List[Type[BasePermission]] = (),  # type: ignore
-            default_value: Any = undefined,
-            deprecation_reason: Optional[str] = None,
+        self,
+        name: Optional[str],
+        origin_name: Optional[str],
+        type_: Optional[Union[Type, StrawberryUnion]],
+        origin: Optional[Union[Type, Callable]] = None,
+        child: Optional["StrawberryField"] = None,
+        is_subscription: bool = False,
+        is_optional: bool = False,
+        is_child_optional: bool = False,
+        is_list: bool = False,
+        is_union: bool = False,
+        federation: FederationFieldParams = FederationFieldParams(),
+        description: Optional[str] = None,
+        base_resolver: Optional["StrawberryResolver"] = None,
+        permission_classes: List[Type[BasePermission]] = (),  # type: ignore
+        default_value: Any = undefined,
+        deprecation_reason: Optional[str] = None,
     ):
 
         super().__init__(  # type: ignore
@@ -121,14 +120,14 @@ class StrawberryField(dataclasses.Field):
 
 
 def field(
-        resolver: Optional[_RESOLVER_TYPE] = None,
-        *,
-        name: Optional[str] = None,
-        is_subscription: bool = False,
-        description: Optional[str] = None,
-        permission_classes: Optional[List[Type[BasePermission]]] = None,
-        federation: Optional[FederationFieldParams] = None,
-        deprecation_reason: Optional[str] = None,
+    resolver: Optional[_RESOLVER_TYPE] = None,
+    *,
+    name: Optional[str] = None,
+    is_subscription: bool = False,
+    description: Optional[str] = None,
+    permission_classes: Optional[List[Type[BasePermission]]] = None,
+    federation: Optional[FederationFieldParams] = None,
+    deprecation_reason: Optional[str] = None,
 ) -> StrawberryField:
     """Annotates a method or property as a GraphQL field.
 

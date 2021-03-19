@@ -91,7 +91,7 @@ def copy_type_with(
                     is_subscription=field.is_subscription,
                     is_union=field.is_union,
                     federation=federation,
-                    permission_classes=field.permission_classes
+                    permission_classes=field.permission_classes,
                 )
 
                 if field.is_list:
