@@ -4,8 +4,8 @@ title: ASGI
 
 # ASGI
 
-Strawberry comes with a basic ASGI integration. It provides an app that you
-can use to serve your GraphQL schema:
+Strawberry comes with a basic ASGI integration. It provides an app that you can
+use to serve your GraphQL schema:
 
 ```python
 from strawberry.asgi import GraphQL
@@ -27,7 +27,7 @@ The `GraphQL` app accepts two options at the moment:
 
 We allow to extend the base `GraphQL` app, by overriding the following methods:
 
-- `async get_context(self, request: Union[Request, WebSocket]) -> Any`
+- `async get_context(self, request: Union[Request, WebSocket], response: Optional[Response] = None) -> Any`
 - `async get_root_value(self, request: Request) -> Any`
 - `async process_result(self, request: Request, result: ExecutionResult) -> GraphQLHTTPResponse`
 
@@ -35,18 +35,18 @@ We allow to extend the base `GraphQL` app, by overriding the following methods:
 
 `get_context` allows to provide a custom context object that can be used in your
 resolver. You can return anything here, by default we return a dictionary with
-the request.
+the request and the response.
 
 ```python
 class MyGraphQL(GraphQL):
-    async def get_context(self, request: Union[Request, WebSocket]) -> Any:
+    async def get_context(self, request: Union[Request, WebSocket], response: Optional[Response]) -> Any:
         return {"example": 1}
 
 
 @strawberry.type
 class Query:
     @strawberry.field
-    def example(self, info) -> str:
+    def example(self, info: Info) -> str:
         return str(info.context["example"])
 ```
 
@@ -55,6 +55,23 @@ called "example".
 
 Then we use the context in a resolver, the resolver will return "1" in this
 case.
+
+### Setting response headers
+
+It is possible to use `get_context` to set response headers. A common use case might be cookie-based user authentication,
+where your login mutation resolver needs to set a cookie on the response.
+
+This is possible by updating the response object contained inside the context of the `Info` object.
+
+```python
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    def login(self, info: Info) -> bool:
+        token = do_login()
+        info.context["response"].set_cookie(key="token", value=token)
+        return True
+```
 
 ## get_root_value
 
@@ -104,5 +121,5 @@ class MyGraphQL(GraphQL):
         return data
 ```
 
-In this case we are doing the default processing of the result, but it can
-be tweaked based on your needs.
+In this case we are doing the default processing of the result, but it can be
+tweaked based on your needs.

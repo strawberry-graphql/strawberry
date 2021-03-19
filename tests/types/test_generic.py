@@ -642,3 +642,69 @@ def test_using_generics_with_interfaces():
     assert definition.fields[0].type._type_definition.is_generic is False
     assert definition.fields[0].type._type_definition.fields[0].graphql_name == "node"
     assert definition.fields[0].type._type_definition.fields[0].type == WithName
+
+
+def test_generic_with_arguments():
+    T = TypeVar("T")
+
+    @strawberry.type
+    class Collection(Generic[T]):
+        @strawberry.field
+        def by_id(self, ids: List[int]) -> List[T]:
+            return []
+
+    @strawberry.type
+    class Post:
+        name: str
+
+    @strawberry.type
+    class Query:
+        user: Collection[Post]
+
+    definition = Query._type_definition
+
+    assert definition.name == "Query"
+    assert len(definition.fields) == 1
+
+    assert definition.fields[0].name == "user"
+
+    type_definition = definition.fields[0].type._type_definition
+
+    assert type_definition.name == "PostCollection"
+    assert type_definition.is_generic is False
+    assert type_definition.fields[0].name == "byId"
+    assert type_definition.fields[0].is_list
+    assert type_definition.fields[0].child.type == Post
+    assert type_definition.fields[0].arguments[0].name == "ids"
+    assert type_definition.fields[0].arguments[0].is_list
+    assert type_definition.fields[0].arguments[0].child.type == int
+
+
+def test_federation():
+    @strawberry.federation.type(keys=["id"])
+    class Edge(Generic[T]):
+        id: strawberry.ID
+        node_field: T
+
+    definition = Edge._type_definition
+
+    Copy = copy_type_with(Edge, str)
+
+    definition = Copy._type_definition
+
+    assert definition.name == "StrEdge"
+    assert definition.is_generic is False
+    assert definition.type_params == {}
+
+    assert len(definition.fields) == 2
+
+    assert definition.fields[0].name == "id"
+    assert definition.fields[0].type == strawberry.ID
+    assert definition.fields[0].is_optional is False
+
+    assert definition.fields[1].name == "nodeField"
+    assert definition.fields[1].type == str
+    assert definition.fields[1].is_optional is False
+
+    assert definition.federation.keys == ["id"]
+    assert definition.federation.extend is False

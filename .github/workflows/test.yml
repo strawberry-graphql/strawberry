@@ -1,6 +1,6 @@
 name: Backend tests
 
-on: pull_request
+on: [push, pull_request]
 
 jobs:
   unit-tests:
@@ -13,35 +13,33 @@ jobs:
         django: [3.1.4, 3.0.11, 2.2.17]
 
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v2
       - uses: actions/setup-python@v2
         with:
           python-version: ${{ matrix.python-version }}
           architecture: x64
 
-      - run: pip install poetry codecov
+      - run: pip install poetry
       - name: Install dependencies
         run: poetry install
       - name: Install dependencies
         run: poetry add django==${{ matrix.django }}
 
       - name: pytest
-        run: |
-            set +e
-            OUTPUT=$(poetry run py.test --cov-report xml --cov=. --cov-fail-under 80)
-            STATUS=$?
-            echo "$OUTPUT"
-            codecov
-            exit $STATUS
-        env:
-          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
+        run: poetry run py.test --cov-report xml --cov=. --cov-fail-under 80 --showlocals -vv
+      - uses: codecov/codecov-action@v1
+        if: ${{ always() }}
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+          verbose: true
 
   flake8:
     runs-on: ubuntu-latest
     container: python:3.9
 
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v2
       - run: pip install poetry
       - name: Install dependencies
         run: poetry install
@@ -52,7 +50,7 @@ jobs:
     container: python:3.9
 
     steps:
-      - uses: actions/checkout@master
+      - uses: actions/checkout@v2
       - run: pip install poetry
       - name: Install dependencies
         run: poetry install

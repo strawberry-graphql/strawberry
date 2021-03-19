@@ -16,7 +16,7 @@ import asyncio
 import strawberry
 
 
-async def resolve_hello(root, info) -> str:
+async def resolve_hello(root) -> str:
     await asyncio.sleep(1)
 
     return "Hello world"

@@ -139,7 +139,7 @@ def field(
     >>>     field_abc: str = strawberry.field(description="ABC")
 
     >>>     @strawberry.field(description="ABC")
-    >>>     def field_with_resolver(self, info) -> str:
+    >>>     def field_with_resolver(self) -> str:
     >>>         return "abc"
 
     it can be used both as decorator and as a normal function.

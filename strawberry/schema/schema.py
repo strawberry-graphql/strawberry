@@ -14,12 +14,12 @@ from strawberry.custom_scalar import ScalarDefinition
 from strawberry.enum import EnumDefinition
 from strawberry.extensions import Extension
 from strawberry.schema.schema_converter import GraphQLCoreConverter
+from strawberry.types import ExecutionResult
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 
 from ..middleware import DirectivesMiddleware, Middleware
 from ..printer import print_schema
-from .base import ExecutionResult
 from .execute import execute, execute_sync
 
 

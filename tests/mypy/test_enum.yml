@@ -44,6 +44,27 @@
     main:19: note: Revealed type is 'Any'
     main:20: note: Revealed type is 'Any'
 
+- case: test_enum_from_cast
+  main: |
+    from enum import Enum
+    from typing import Type, cast
+
+    import strawberry
+
+    class IceCreamFlavour(Enum):
+        VANILLA = "vanilla"
+        STRAWBERRY = "strawberry"
+        CHOCOLATE = "chocolate"
+
+    Flavour = strawberry.enum(cast(Type[Enum], IceCreamFlavour))
+
+    a: Flavour
+    reveal_type(Flavour)
+    reveal_type(a)
+  out: |
+    main:14: note: Revealed type is 'builtins.object'
+    main:15: note: Revealed type is 'Type[enum.Enum]'
+
 - case: test_enum_with_decorator
   main: |
     from enum import Enum

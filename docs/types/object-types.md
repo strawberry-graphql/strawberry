@@ -15,7 +15,7 @@ type Character {
 
 ## A note on Query, Mutation and Subscription
 
-While reading about GraphQL you might have encounter 3 special object types: `Query`, `Mutation` and `Subscription`. They are defined as standard object types, with the difference that they are also used as entry point for your schema (also referred as root types).
+While reading about GraphQL you might have encountered 3 special object types: `Query`, `Mutation` and `Subscription`. They are defined as standard object types, with the difference that they are also used as entry point for your schema (also referred as root types).
 
 - `Query` is the entry point for all the query operations
 - `Mutation` is the entry point for all the mutations
@@ -39,7 +39,7 @@ class Character:
 
 type Character {
   name: String!
-  age: Age!
+  age: int!
 }
 ```
 
@@ -56,13 +56,13 @@ class Character:
 @strawberry.type
 class Book:
     title: str
-    main_character: str
+    main_character: Character
 
 ---
 
 type Character {
   name: String!
-  age: Age!
+  age: Int!
 }
 
 type Book {

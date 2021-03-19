@@ -1,22 +1,13 @@
-import dataclasses
 from abc import abstractmethod
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Optional, Union
 
 from typing_extensions import Protocol
 
-from graphql.error.graphql_error import GraphQLError
-
 from strawberry.custom_scalar import ScalarDefinition
 from strawberry.enum import EnumDefinition
+from strawberry.types import ExecutionResult
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
-
-
-@dataclasses.dataclass
-class ExecutionResult:
-    data: Optional[Dict[str, Any]]
-    errors: Optional[List[GraphQLError]]
-    extensions: Optional[Dict[str, Any]] = None
 
 
 class BaseSchema(Protocol):

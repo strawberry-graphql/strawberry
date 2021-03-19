@@ -45,6 +45,7 @@
 - [ASGI](./integrations/asgi.md)
 - [Django](./integrations/django.md)
 - [Flask](./integrations/flask.md)
+- [Sanic](./integrations/sanic.md)
 - [Pydantic **experimental**](./integrations/pydantic.md)
 
 ## Operations

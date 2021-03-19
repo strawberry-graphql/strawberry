@@ -28,11 +28,11 @@ class Query:
     hello: str = "strawberry"
 
     @strawberry.field
-    async def hello_async(self, info) -> str:
+    async def hello_async(self) -> str:
         return "async strawberry"
 
     @strawberry.field
-    async def example_async(self, info) -> str:
+    async def example_async(self) -> str:
         def _get_name():
             return Example.objects.first().name
 

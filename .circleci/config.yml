@@ -16,7 +16,6 @@ jobs:
       - run: make create-github-release
       - run: poetry publish --username $PYPI_USERNAME --password $PYPI_PASSWORD
 
-
 workflows:
   version: 2
   deploy:
@@ -24,4 +23,4 @@ workflows:
       - deploy:
           filters:
             branches:
-              only: master
+              only: main

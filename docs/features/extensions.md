@@ -59,10 +59,11 @@ this method _must_ call `_next` with all the arguments, as they will be needed
 by the resolvers:
 
 ```python
+from strawberry.types import Info
 from strawberry.extensions import Extension
 
 class MyExtension(Extension):
-    def resolve(self, _next, root, info, *args, **kwargs):
+    def resolve(self, _next, root, info: Info, *args, **kwargs):
         return _next(root, info, *args, **kwargs)
 ```
 

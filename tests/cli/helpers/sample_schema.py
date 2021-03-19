@@ -10,7 +10,7 @@ class User:
 @strawberry.type
 class Query:
     @strawberry.field
-    def user(self, info) -> User:
+    def user(self) -> User:
         return User(name="Patrick", age=100)
 
 

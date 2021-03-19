@@ -1,6 +1,108 @@
 CHANGELOG
 =========
 
+0.50.1 - 2021-03-18
+-------------------
+
+This release fixes a regression with the django sending the wrong content type.
+
+0.50.0 - 2021-03-18
+-------------------
+
+This release updates get_context in the django integration to also receive a temporal response object that can be used to set headers, cookies and status code.
+
+
+```
+@strawberry.type
+class Query:
+    @strawberry.field
+    def abc(self, info: Info) -> str:
+        info.context.response.status_code = 418
+
+        return "ABC"
+```
+
+0.49.2 - 2021-03-18
+-------------------
+
+This releases changes how we define resolvers internally, now we have one single resolver for async and sync code.
+
+0.49.1 - 2021-03-14
+-------------------
+
+Fix bug when using arguments inside a type that uses typing.Generics
+
+0.49.0 - 2021-03-12
+-------------------
+
+This releases updates the ASGI class to make it easier to override `get_http_response`.
+
+`get_http_response` has been now removed from strawberry.asgi.http and been moved to be
+a method on the ASGI class.
+
+A new `get_graphiql_response` method has been added to make it easier to provide a different GraphiQL interface.
+
+0.48.3 - 2021-03-11
+-------------------
+
+This release updates `get_context` in the asgi integration to also
+receive a temporal response object that can be used to set headers
+and cookies.
+
+0.48.2 - 2021-03-09
+-------------------
+
+This release fixes a bug when using the debug server and upload a file
+
+0.48.1 - 2021-03-03
+-------------------
+
+Fix DataLoader docs typo.
+
+0.48.0 - 2021-03-02
+-------------------
+
+# New Features
+Added support for sanic webserver.
+
+# Changelog
+`ExecutionResult` was erroneously defined twice in the repository. The entry in `strawberry.schema.base` has been removed. If you were using it, switch to using
+`strawberry.types.ExecutionResult` instead:
+
+```python
+from strawberry.types import ExecutionResult
+```
+
+0.47.1 - 2021-03-02
+-------------------
+
+Enable using .get for django context as well as for the square brackets notation.
+
+0.47.0 - 2021-02-28
+-------------------
+
+Enable dot notation for django context request
+
+0.46.0 - 2021-02-26
+-------------------
+
+Supporting multipart file uploads on Flask
+
+0.45.4 - 2021-02-16
+-------------------
+
+Expose execution info under `strawberry.types.Info`
+
+0.45.3 - 2021-02-08
+-------------------
+
+Fixes mypy failing when casting in enum decorator
+
+0.45.2 - 2021-02-08
+-------------------
+
+Suggest installing the debug server on the getting started docs, so examples can work without import errors of uvicorn
+
 0.45.1 - 2021-01-31
 -------------------
 

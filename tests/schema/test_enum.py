@@ -17,7 +17,7 @@ def test_enum_resolver():
     @strawberry.type
     class Query:
         @strawberry.field
-        def best_flavour(self, info) -> IceCreamFlavour:
+        def best_flavour(self) -> IceCreamFlavour:
             return IceCreamFlavour.STRAWBERRY
 
     schema = strawberry.Schema(query=Query)
@@ -36,7 +36,7 @@ def test_enum_resolver():
     @strawberry.type
     class Query:
         @strawberry.field
-        def cone(self, info) -> Cone:
+        def cone(self) -> Cone:
             return Cone(flavour=IceCreamFlavour.STRAWBERRY)
 
     schema = strawberry.Schema(query=Query)
@@ -59,7 +59,7 @@ def test_enum_arguments():
     @strawberry.type
     class Query:
         @strawberry.field
-        def flavour_available(self, info, flavour: IceCreamFlavour) -> bool:
+        def flavour_available(self, flavour: IceCreamFlavour) -> bool:
             return flavour == IceCreamFlavour.STRAWBERRY
 
     @strawberry.input
@@ -69,7 +69,7 @@ def test_enum_arguments():
     @strawberry.type
     class Mutation:
         @strawberry.mutation
-        def eat_cone(self, info, input: ConeInput) -> bool:
+        def eat_cone(self, input: ConeInput) -> bool:
             return input.flavour == IceCreamFlavour.STRAWBERRY
 
     schema = strawberry.Schema(query=Query, mutation=Mutation)
@@ -113,7 +113,7 @@ def test_enum_falsy_values():
     @strawberry.type
     class Query:
         @strawberry.field
-        def print_flavour(self, info, input: Input) -> str:
+        def print_flavour(self, input: Input) -> str:
             return f"{input.flavour.value}"
 
     schema = strawberry.Schema(query=Query)
@@ -142,7 +142,7 @@ def test_enum_in_list():
     @strawberry.type
     class Query:
         @strawberry.field
-        def best_flavours(self, info) -> List[IceCreamFlavour]:
+        def best_flavours(self) -> List[IceCreamFlavour]:
             return [IceCreamFlavour.STRAWBERRY, IceCreamFlavour.PISTACHIO]
 
     schema = strawberry.Schema(query=Query)
@@ -166,7 +166,7 @@ def test_enum_in_optional_list():
     @strawberry.type
     class Query:
         @strawberry.field
-        def best_flavours(self, info) -> Optional[List[IceCreamFlavour]]:
+        def best_flavours(self) -> Optional[List[IceCreamFlavour]]:
             return None
 
     schema = strawberry.Schema(query=Query)
@@ -190,7 +190,7 @@ async def test_enum_resolver_async():
     @strawberry.type
     class Query:
         @strawberry.field
-        async def best_flavour(self, info) -> IceCreamFlavour:
+        async def best_flavour(self) -> IceCreamFlavour:
             return IceCreamFlavour.STRAWBERRY
 
     schema = strawberry.Schema(query=Query)
@@ -215,7 +215,7 @@ async def test_enum_in_list_async():
     @strawberry.type
     class Query:
         @strawberry.field
-        async def best_flavours(self, info) -> List[IceCreamFlavour]:
+        async def best_flavours(self) -> List[IceCreamFlavour]:
             return [IceCreamFlavour.STRAWBERRY, IceCreamFlavour.PISTACHIO]
 
     schema = strawberry.Schema(query=Query)

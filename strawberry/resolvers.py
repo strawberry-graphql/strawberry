@@ -2,6 +2,8 @@ import enum
 from inspect import iscoroutine
 from typing import Any, Awaitable, Callable, Dict, List, Tuple, Union, cast
 
+from strawberry.types.info import Info
+
 from .arguments import convert_arguments
 from .field import StrawberryField
 from .types.fields.resolver import StrawberryResolver
@@ -76,7 +78,10 @@ def get_result_for_field(
 
 
 def get_resolver(field: StrawberryField) -> Callable:
-    def _check_permissions(source, info, **kwargs):
+    # TODO: make sure that info is of type Info, currently it
+    # is the value returned by graphql-core
+    # https://github.com/strawberry-graphql/strawberry/issues/709
+    def _check_permissions(source, info: Info, **kwargs):
         """
         Checks if the permission should be accepted and
         raises an exception if not
@@ -88,31 +93,22 @@ def get_resolver(field: StrawberryField) -> Callable:
                 message = getattr(permission, "message", None)
                 raise PermissionError(message)
 
-    async def _resolver_async(source, info, **kwargs):
+    def _resolver(source, info: Info, **kwargs):
         _check_permissions(source, info, **kwargs)
 
         result = get_result_for_field(field, kwargs=kwargs, info=info, source=source)
 
         if iscoroutine(result):  # pragma: no cover
-            result = await result
+
+            async def await_result(result):
+                result = await result
+                result = convert_enums_to_values(field, result)
+                return result
+
+            return await_result(result)
 
         result = convert_enums_to_values(field, result)
-
         return result
 
-    def _resolver(source, info, **kwargs):
-        _check_permissions(source, info, **kwargs)
-
-        result = get_result_for_field(field, kwargs=kwargs, info=info, source=source)
-        result = convert_enums_to_values(field, result)
-
-        return result
-
-    _resolver_async._is_default = not field.base_resolver  # type: ignore
     _resolver._is_default = not field.base_resolver  # type: ignore
-
-    return (
-        _resolver_async
-        if field.base_resolver and field.base_resolver.is_async
-        else _resolver
-    )
+    return _resolver

@@ -3,6 +3,8 @@ from typing import Any, Dict, List
 
 from typing_extensions import Protocol
 
+from strawberry.types.info import Info
+
 from .directive import DirectiveDefinition
 
 
@@ -11,7 +13,7 @@ SPECIFIED_DIRECTIVES = {"include", "skip"}
 
 class Middleware(Protocol):
     @abstractmethod
-    def resolve(self, next_, root, info, **kwargs):
+    def resolve(self, next_, root, info: Info, **kwargs) -> None:
         raise NotImplementedError
 
 
@@ -22,7 +24,8 @@ class DirectivesMiddleware:
             for directive in directives
         }
 
-    def resolve(self, next_, root, info, **kwargs):
+    # TODO: we might need the graphql info here
+    def resolve(self, next_, root, info, **kwargs) -> Any:
         result = next_(root, info, **kwargs)
 
         for directive in info.field_nodes[0].directives:

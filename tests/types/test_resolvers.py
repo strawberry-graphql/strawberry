@@ -51,7 +51,7 @@ def test_raises_error_when_return_annotation_missing():
         @strawberry.type
         class Query:
             @strawberry.field
-            def hello(self, info):
+            def hello(self):
                 return "I'm a resolver"
 
     assert e.value.args == (
@@ -78,7 +78,7 @@ def test_raises_error_when_argument_annotation_missing():
     with pytest.raises(MissingArgumentsAnnotationsError) as e:
 
         @strawberry.field
-        def hello(self, info, query) -> str:
+        def hello(self, query) -> str:
             return "I'm a resolver"
 
     assert e.value.args == (
@@ -89,7 +89,7 @@ def test_raises_error_when_argument_annotation_missing():
     with pytest.raises(MissingArgumentsAnnotationsError) as e:
 
         @strawberry.field
-        def hello2(self, info, query, limit) -> str:
+        def hello2(self, query, limit) -> str:
             return "I'm a resolver"
 
     assert e.value.args == (
