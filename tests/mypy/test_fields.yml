@@ -12,10 +12,8 @@
     main:8: error: Unexpected keyword argument "n" for "User"
 
 - case: test_all_field_usage
-  skip: true
   main: |
     import strawberry
-    from strawberry.types import Info
 
     def some_resolver() -> str:
         return ""
@@ -28,7 +26,7 @@
         d: str = strawberry.field(resolver=some_resolver)
 
         @strawberry.field(description="ABC")
-        def e(self, info: Info) -> str:
+        def e(self, info) -> str:
             return ""
 
         @strawberry.field(name="f")
@@ -42,12 +40,12 @@
     reveal_type(Example.e)
     reveal_type(Example.f_resolver)
   out: |
+    main:21: note: Revealed type is 'builtins.str'
     main:22: note: Revealed type is 'builtins.str'
     main:23: note: Revealed type is 'builtins.str'
     main:24: note: Revealed type is 'builtins.str'
-    main:25: note: Revealed type is 'builtins.str'
+    main:25: note: Revealed type is 'Any'
     main:26: note: Revealed type is 'Any'
-    main:27: note: Revealed type is 'Any'
 
 - case: test_private_field
   skip: true
