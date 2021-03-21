@@ -18,8 +18,7 @@ def test_basic_list():
 
     assert definition.fields[0].graphql_name == "names"
     assert definition.fields[0].is_list
-    # TODO: StrawberryList:
-    # assert definition.fields[0].type is None
+    assert definition.fields[0].type is None
     assert definition.fields[0].is_optional is False
     assert definition.fields[0].child.type == str
     assert definition.fields[0].child.is_optional is False
@@ -37,8 +36,7 @@ def test_optional_list():
 
     assert definition.fields[0].graphql_name == "names"
     assert definition.fields[0].is_list
-    # TODO: StrawberryList:
-    # assert definition.fields[0].type is None
+    assert definition.fields[0].type is None
     assert definition.fields[0].is_optional
     assert definition.fields[0].child.type == str
     assert definition.fields[0].child.is_optional is False
@@ -55,8 +53,7 @@ def test_list_of_optional():
     assert len(definition.fields) == 1
 
     assert definition.fields[0].graphql_name == "names"
-    # TODO: StrawberryList:
-    # assert definition.fields[0].type is None
+    assert definition.fields[0].type is None
     assert definition.fields[0].is_optional is False
     assert definition.fields[0].child.type == str
     assert definition.fields[0].child.is_optional
@@ -73,8 +70,7 @@ def test_optional_list_of_optional():
     assert len(definition.fields) == 1
 
     assert definition.fields[0].graphql_name == "names"
-    # TODO: StrawberryList:
-    # assert definition.fields[0].type is None
+    assert definition.fields[0].type is None
     assert definition.fields[0].is_optional
     assert definition.fields[0].child.type == str
     assert definition.fields[0].child.is_optional
@@ -92,10 +88,9 @@ def test_list_of_lists():
 
     assert definition.fields[0].graphql_name == "names"
     assert definition.fields[0].is_list
-    # TODO: StrawberryList:
-    # assert definition.fields[0].type is None
+    assert definition.fields[0].type is None
     assert definition.fields[0].is_optional is False
-    # assert definition.fields[0].child.type is None
+    assert definition.fields[0].child.type is None
     assert definition.fields[0].child.is_list
     assert definition.fields[0].child.is_optional is False
     assert definition.fields[0].child.child.type == str
@@ -118,11 +113,9 @@ def test_list_of_lists_generic_annotations():
 
     assert definition.fields[0].graphql_name == "names"
     assert definition.fields[0].is_list
-    # TODO: StrawberryList:
-    # assert definition.fields[0].type is None
+    assert definition.fields[0].type is None
     assert definition.fields[0].is_optional is False
-    # TODO: StrawberryList:
-    # assert definition.fields[0].child.type is None
+    assert definition.fields[0].child.type is None
     assert definition.fields[0].child.is_list
     assert definition.fields[0].child.is_optional is False
     assert definition.fields[0].child.child.type == str

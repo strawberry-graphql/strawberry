@@ -96,7 +96,6 @@ def test_list():
     assert len(definition.fields) == 1
 
     assert definition.fields[0].graphql_name == "friendNames"
-    # TODO: StrawberryList:
     assert definition.fields[0].type is None
     assert definition.fields[0].is_optional is False
     assert definition.fields[0].is_list is True
@@ -124,7 +123,6 @@ def test_list_of_types():
     assert len(definition.fields) == 1
 
     assert definition.fields[0].graphql_name == "friends"
-    # TODO: StrawberryList:
     assert definition.fields[0].type is None
     assert definition.fields[0].is_optional is True
     assert definition.fields[0].is_list is True

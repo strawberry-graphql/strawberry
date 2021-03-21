@@ -4,8 +4,6 @@ from __future__ import annotations
 import textwrap
 from typing import List
 
-import pytest
-
 import strawberry
 from strawberry.printer import print_schema
 
@@ -58,7 +56,7 @@ def test_with_resolver():
     assert len(definition.fields) == 1
     assert definition.fields[0].graphql_name == "users"
     assert definition.fields[0].is_list
-    # assert definition.fields[0].type is None
+    assert definition.fields[0].type is None
     assert definition.fields[0].is_optional is False
     assert definition.fields[0].child.is_optional is False
 

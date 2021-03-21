@@ -76,8 +76,7 @@ def test_arguments_lists():
     assert len(definition.fields[0].arguments) == 1
 
     assert definition.fields[0].arguments[0].name == "inputs"
-    # TODO: StrawberryList:
-    # assert definition.fields[0].arguments[0].type is None
+    assert definition.fields[0].arguments[0].type is None
     assert definition.fields[0].arguments[0].is_list
     assert definition.fields[0].arguments[0].is_optional is False
     assert definition.fields[0].arguments[0].child.type == Input
@@ -102,8 +101,7 @@ def test_arguments_lists_of_optionals():
     assert len(definition.fields[0].arguments) == 1
 
     assert definition.fields[0].arguments[0].name == "inputs"
-    # TODO: StrawberryList:
-    # assert definition.fields[0].arguments[0].type is None
+    assert definition.fields[0].arguments[0].type is None
     assert definition.fields[0].arguments[0].is_list
     assert definition.fields[0].arguments[0].is_optional is False
     assert definition.fields[0].arguments[0].child.type == Input

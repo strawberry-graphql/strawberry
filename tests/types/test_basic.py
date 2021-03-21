@@ -54,16 +54,6 @@ def test_passing_nothing_to_fields():
     assert definition.fields[1].graphql_name == "age"
     assert definition.fields[1].type == int
 
-    @property
-    def name():
-        if self.alias_name:
-            name = alias_name
-        else:
-            name = self.origin_name
-
-        if camelcase:
-            return to_camel_case(name)
-
 
 def test_can_use_types_directly():
     @strawberry.type

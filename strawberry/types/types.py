@@ -1,13 +1,11 @@
 import dataclasses
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional, Type, Union
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union
 
-from strawberry.permission import BasePermission
 from strawberry.union import StrawberryUnion
 
 
 if TYPE_CHECKING:
     from strawberry.field import StrawberryField
-    from strawberry.types.fields.resolver import StrawberryResolver
 
 undefined = object()
 

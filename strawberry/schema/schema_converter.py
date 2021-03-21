@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Type, Union, cast
+from typing import Any, Callable, Dict, Type, cast
 
 from graphql import (
     GraphQLArgument,
