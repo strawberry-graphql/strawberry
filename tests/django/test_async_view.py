@@ -97,6 +97,19 @@ async def test_fails_when_not_sending_query():
         assert e.value.args == ("No GraphQL query found in the request",)
 
 
+async def test_fails_when_request_body_has_invalid_json():
+    factory = RequestFactory()
+
+    request = factory.post(
+        "/graphql/", "definitely-not-json-string", content_type="application/json"
+    )
+
+    with pytest.raises(SuspiciousOperation) as e:
+        await AsyncGraphQLView.as_view(schema=schema, graphiql=False)(request)
+
+    assert e.value.args == ("Unable to parse request body as JSON",)
+
+
 @pytest.mark.django_db
 async def test_async_graphql_query_model():
     prepare_db = sync_to_async(
