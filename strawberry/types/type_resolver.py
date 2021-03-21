@@ -173,7 +173,7 @@ def resolve_type_field(field: StrawberryField) -> None:
 
 
 def _resolve_type(argument_definition: ArgumentDefinition) -> None:
-    # TODO: This should be removed along with FieldDefinition/ArgumentDefinition in
+    # TODO: This should be removed along with ArgumentDefinition in
     # favor of StrawberryField/StrawberryArgument
     # Convert a python type to include a strawberry definition, so for example
     # Union becomes a class with a UnionDefinition, Generics become an actual
@@ -347,10 +347,10 @@ def _resolve_types(fields: List[StrawberryField]) -> List[StrawberryField]:
 def _get_fields(cls: Type) -> List[StrawberryField]:
     """Get all the strawberry fields off a strawberry.type cls
 
-    This function returns a list of FieldDefinitions (one for each field item), while
+    This function returns a list of StrawberryFields (one for each field item), while
     also paying attention the name and typing of the field.
 
-    Strawberry fields can be defined on a strawberry.type class as either a dataclass-
+    StrawberryFields can be defined on a strawberry.type class as either a dataclass-
     style field or using strawberry.field as a decorator.
 
     >>> import strawberry
@@ -365,14 +365,14 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
     ...         ...
 
     Type #1:
-        A pure dataclass-style field. Will not have a FieldDefinition; one will
-        need to be created in this function. Type annotation is required.
+        A pure dataclass-style field. Will not have a StrawberryField; one will need to
+        be created in this function. Type annotation is required.
 
     Type #2:
-        A field defined using @strawberry.field as a decorator around the
-        resolver. The resolver must be type-annotated.
+        A field defined using @strawberry.field as a decorator around the resolver. The
+        resolver must be type-annotated.
 
-    The FieldDefinition.name value will be assigned to the field's name on the class if
+    The StrawberryField.name value will be assigned to the field's name on the class if
     one is not set by either using an explicit strawberry.field(name=...) or by passing
     a named function (i.e. not an anonymous lambda) to strawberry.field (typically as a
     decorator).
@@ -422,7 +422,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
 
             field_type = field.type
 
-            # Create a FieldDefinition, for fields of Types #1 and #2a
+            # Create a StrawberryField, for fields of Types #1 and #2a
             field = StrawberryField(
                 origin_name=field.name,
                 name=to_camel_case(field.name),
