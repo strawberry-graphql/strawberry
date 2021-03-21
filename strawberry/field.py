@@ -27,7 +27,7 @@ class StrawberryField(dataclasses.Field):
         is_union: bool = False,
         federation: FederationFieldParams = FederationFieldParams(),
         description: Optional[str] = None,
-        base_resolver: Optional["StrawberryResolver"] = None,
+        base_resolver: Optional[StrawberryResolver] = None,
         permission_classes: List[Type[BasePermission]] = (),  # type: ignore
         default_value: Any = undefined,
         deprecation_reason: Optional[str] = None,
@@ -52,7 +52,10 @@ class StrawberryField(dataclasses.Field):
 
         self.description: Optional[str] = description
         self.origin: Optional[Union[Type, Callable]] = origin
-        self.base_resolver: Optional[StrawberryResolver] = base_resolver
+
+        self._base_resolver: Optional[StrawberryResolver] = None
+        if base_resolver is not None:
+            self.base_resolver = base_resolver
 
         self.default_value = default_value
 
@@ -76,17 +79,8 @@ class StrawberryField(dataclasses.Field):
         if not isinstance(resolver, StrawberryResolver):
             resolver = StrawberryResolver(resolver)
 
-        self.origin = resolver.wrapped_func
         self.base_resolver = resolver
         self.type = resolver.type
-
-        # Don't add field to __init__ or __repr__
-        self.init = False
-        self.repr = False
-
-        # TODO: We have tests for exceptions at field creation, but using
-        #       properties defers them
-        _ = resolver.arguments
 
         return self
 
@@ -118,6 +112,23 @@ class StrawberryField(dataclasses.Field):
             return self.base_resolver.name
         else:
             return None
+
+    @property
+    def base_resolver(self) -> Optional[StrawberryResolver]:
+        return self._base_resolver
+
+    @base_resolver.setter
+    def base_resolver(self, resolver: StrawberryResolver) -> None:
+        self._base_resolver = resolver
+        self.origin = resolver.wrapped_func
+
+        # Don't add field to __init__ or __repr__ once it has a resolver
+        self.init = False
+        self.repr = False
+
+        # TODO: We have tests for exceptions at field creation, but using
+        #       properties defers them
+        _ = resolver.arguments
 
 
 def field(
