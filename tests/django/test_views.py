@@ -96,7 +96,7 @@ def test_fails_when_not_sending_query():
     with pytest.raises(SuspiciousOperation) as e:
         GraphQLView.as_view(schema=schema, graphiql=False)(request)
 
-        assert e.value.args == ("No GraphQL query found in the request",)
+    assert e.value.args == ("No GraphQL query found in the request",)
 
 
 def test_fails_when_request_body_has_invalid_json():

@@ -94,7 +94,7 @@ async def test_fails_when_not_sending_query():
     with pytest.raises(SuspiciousOperation) as e:
         await AsyncGraphQLView.as_view(schema=schema)(request)
 
-        assert e.value.args == ("No GraphQL query found in the request",)
+    assert e.value.args == ("No GraphQL query found in the request",)
 
 
 async def test_fails_when_request_body_has_invalid_json():
