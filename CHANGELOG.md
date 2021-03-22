@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.51.0 - 2021-03-22
+-------------------
+
+Expose Strawberry Info object instead of GraphQLResolveInfo in resolvers
+
 0.50.3 - 2021-03-22
 -------------------
 
