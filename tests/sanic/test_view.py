@@ -64,7 +64,7 @@ def test_graphiql_disabled_view():
 
 def test_custom_context():
     class CustomGraphQLView(BaseGraphQLView):
-        def get_context(self, request):
+        async def get_context(self, request):
             return {"request": request, "custom_value": "Hi!"}
 
     @strawberry.type

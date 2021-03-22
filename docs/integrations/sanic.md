@@ -32,7 +32,7 @@ The `GraphQLView` accepts two options at the moment:
 
 The base `GraphQLView` class can be extended by overriding the following methods:
 
-- `get_context(self) -> Any`
+- `async get_context(self) -> Any`
 - `get_root_value(self) -> Any`
 - `process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse`
 
@@ -44,7 +44,7 @@ dictionary with the request.
 
 ```python
 class MyGraphQLView(GraphQLView):
-    def get_context(self, request) -> Any:
+    async def get_context(self, request) -> Any:
         return {"example": 1}
 
 
