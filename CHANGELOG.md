@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.50.2 - 2021-03-22
+-------------------
+
+Raise exception when un-serializable payload is provided to the Django view.
+
 0.50.1 - 2021-03-18
 -------------------
 
