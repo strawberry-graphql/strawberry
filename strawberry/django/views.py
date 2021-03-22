@@ -102,7 +102,9 @@ class BaseView(View):
         self, response_data: GraphQLHTTPResponse, sub_response: HttpResponse
     ) -> JsonResponse:
         response = JsonResponse(response_data)
-        response._headers.update(sub_response._headers)
+
+        for name, value in sub_response.items():
+            response[name] = value
 
         if sub_response.status_code is not None:
             response.status_code = sub_response.status_code
