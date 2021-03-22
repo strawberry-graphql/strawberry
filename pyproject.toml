@@ -44,7 +44,7 @@ pdbpp = "^0.10.2"
 pytest-emoji = "^0.2.0"
 flake8 = "^3.9"
 black = {version = "^20.8b1", allow-prereleases = true}
-isort = "^5.7.0"
+isort = "^5.8.0"
 pytest-asyncio = "^0.14.0"
 pytest-cov = "^2.11"
 mypy = "^0.812"
