@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.51.1 - 2021-03-22
+-------------------
+
+Configures GraphiQL to attach CSRF cookies as request headers sent to the GQL server.
+
 0.51.0 - 2021-03-22
 -------------------
 
