@@ -57,7 +57,10 @@ class BaseView(View):
         return "text/html" in request.META.get("HTTP_ACCEPT", "")
 
     def get_execution_context(self, request: HttpRequest) -> ExecutionContext:
-        data = self.parse_body(request)
+        try:
+            data = self.parse_body(request)
+        except json.decoder.JSONDecodeError:
+            raise SuspiciousOperation("Unable to parse request body as JSON")
 
         try:
             query = data["query"]
