@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.52.0 - 2021-03-23
+-------------------
+
+Change `get_context` to be async for sanic integration
+
 0.51.1 - 2021-03-22
 -------------------
 
