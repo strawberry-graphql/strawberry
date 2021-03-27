@@ -37,6 +37,9 @@ def test_private_field_set_through_type_decorator():
     assert definition.fields[0].name == "name"
     assert definition.fields[0].type == str
 
+    for field in definition.fields:
+        assert field.name != "age"
+
     instance = Query(name="Luke", age=22)
     assert instance.name == "Luke"
     assert instance.age == 22
