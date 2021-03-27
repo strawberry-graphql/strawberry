@@ -97,13 +97,17 @@ def _process_type(
     is_interface: bool = False,
     description: Optional[str] = None,
     federation: Optional[FederationTypeParams] = None,
+    private_fields: Optional[List[str]] = None,
 ):
     name = name or to_camel_case(cls.__name__)
 
     wrapped = _wrap_dataclass(cls)
 
     interfaces = _get_interfaces(wrapped)
-    fields = _get_fields(cls)
+    if private_fields:
+        fields = [i for i in _get_fields(cls) if i.origin_name not in private_fields]
+    else:
+        fields = _get_fields(cls)
 
     wrapped._type_definition = TypeDefinition(
         name=name,
@@ -137,6 +141,7 @@ def type(
     is_interface: bool = False,
     description: str = None,
     federation: Optional[FederationTypeParams] = None,
+    private_fields: Optional[List[str]] = None,
 ):
     """Annotates a class as a GraphQL type.
 
@@ -155,6 +160,7 @@ def type(
             is_interface=is_interface,
             description=description,
             federation=federation,
+            private_fields=private_fields,
         )
 
     if cls is None:

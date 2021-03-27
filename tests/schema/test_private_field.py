@@ -23,6 +23,25 @@ def test_private_field():
     assert instance.age == 22
 
 
+def test_private_field_set_through_type_decorator():
+    @strawberry.type(private_fields=["age"])
+    class Query:
+        name: str
+        age: int
+
+    definition = Query._type_definition
+
+    assert definition.name == "Query"
+    assert len(definition.fields) == 1
+
+    assert definition.fields[0].name == "name"
+    assert definition.fields[0].type == str
+
+    instance = Query(name="Luke", age=22)
+    assert instance.name == "Luke"
+    assert instance.age == 22
+
+
 def test_private_field_with_strawberry_field_error():
     with pytest.raises(PrivateStrawberryFieldError) as error:
 
