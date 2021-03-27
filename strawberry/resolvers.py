@@ -120,7 +120,7 @@ def get_resolver(field: StrawberryField) -> Callable:
 
 
 def strawberry_info_from_graphql(
-    field: FieldDefinition, info: GraphQLResolveInfo
+    field: StrawberryField, info: GraphQLResolveInfo
 ) -> Info:
     return Info(
         field_name=info.field_name,
