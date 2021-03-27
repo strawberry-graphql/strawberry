@@ -2,6 +2,8 @@ import enum
 from inspect import iscoroutine
 from typing import Any, Awaitable, Callable, Dict, List, Tuple, Union, cast
 
+from graphql import GraphQLResolveInfo
+
 from strawberry.types.info import Info
 
 from .arguments import convert_arguments
@@ -93,10 +95,13 @@ def get_resolver(field: StrawberryField) -> Callable:
                 message = getattr(permission, "message", None)
                 raise PermissionError(message)
 
-    def _resolver(source, info: Info, **kwargs):
-        _check_permissions(source, info, **kwargs)
+    def _resolver(source, info: GraphQLResolveInfo, **kwargs):
+        strawberry_info = strawberry_info_from_graphql(field, info)
+        _check_permissions(source, strawberry_info, **kwargs)
 
-        result = get_result_for_field(field, kwargs=kwargs, info=info, source=source)
+        result = get_result_for_field(
+            field, kwargs=kwargs, info=strawberry_info, source=source
+        )
 
         if iscoroutine(result):  # pragma: no cover
 
@@ -112,3 +117,17 @@ def get_resolver(field: StrawberryField) -> Callable:
 
     _resolver._is_default = not field.base_resolver  # type: ignore
     return _resolver
+
+
+def strawberry_info_from_graphql(
+    field: FieldDefinition, info: GraphQLResolveInfo
+) -> Info:
+    return Info(
+        field_name=info.field_name,
+        context=info.context,
+        root_value=info.root_value,
+        variable_values=info.variable_values,
+        return_type=field.type,
+        operation=info.operation,
+        path=info.path,
+    )

@@ -57,7 +57,10 @@ class BaseView(View):
         return "text/html" in request.META.get("HTTP_ACCEPT", "")
 
     def get_execution_context(self, request: HttpRequest) -> ExecutionContext:
-        data = self.parse_body(request)
+        try:
+            data = self.parse_body(request)
+        except json.decoder.JSONDecodeError:
+            raise SuspiciousOperation("Unable to parse request body as JSON")
 
         try:
             query = data["query"]
@@ -99,7 +102,9 @@ class BaseView(View):
         self, response_data: GraphQLHTTPResponse, sub_response: HttpResponse
     ) -> JsonResponse:
         response = JsonResponse(response_data)
-        response._headers.update(sub_response._headers)
+
+        for name, value in sub_response.items():
+            response[name] = value
 
         if sub_response.status_code is not None:
             response.status_code = sub_response.status_code

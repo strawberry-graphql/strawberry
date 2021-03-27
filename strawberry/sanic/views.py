@@ -40,7 +40,7 @@ class GraphQLView(HTTPMethodView):
     def get_root_value(self):
         return None
 
-    def get_context(self, request: Request) -> Any:
+    async def get_context(self, request: Request) -> Any:
         return StrawberrySanicContext(request)
 
     def render_template(self, template=None):
@@ -70,7 +70,7 @@ class GraphQLView(HTTPMethodView):
 
         variables = data.get("variables")
         operation_name = data.get("operationName")
-        context = self.get_context(request)
+        context = await self.get_context(request)
 
         result = await self.schema.execute(
             query,

@@ -1,6 +1,31 @@
 CHANGELOG
 =========
 
+0.52.0 - 2021-03-23
+-------------------
+
+Change `get_context` to be async for sanic integration
+
+0.51.1 - 2021-03-22
+-------------------
+
+Configures GraphiQL to attach CSRF cookies as request headers sent to the GQL server.
+
+0.51.0 - 2021-03-22
+-------------------
+
+Expose Strawberry Info object instead of GraphQLResolveInfo in resolvers
+
+0.50.3 - 2021-03-22
+-------------------
+
+Django 3.2 support
+
+0.50.2 - 2021-03-22
+-------------------
+
+Raise exception when un-serializable payload is provided to the Django view.
+
 0.50.1 - 2021-03-18
 -------------------
 

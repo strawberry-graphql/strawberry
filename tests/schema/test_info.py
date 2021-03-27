@@ -14,6 +14,7 @@ def test_info_has_the_correct_shape():
         variable_values: str
         context_equal: bool
         root_equal: bool
+        return_type: str
 
     @strawberry.type
     class Query:
@@ -26,6 +27,7 @@ def test_info_has_the_correct_shape():
                 variable_values=str(info.variable_values),
                 context_equal=info.context == my_context,
                 root_equal=info.root_value == root_value,
+                return_type=str(info.return_type),
             )
 
     schema = strawberry.Schema(query=Query)
@@ -38,6 +40,7 @@ def test_info_has_the_correct_shape():
             path
             rootEqual
             variableValues
+            returnType
         }
     }"""
 
@@ -46,10 +49,11 @@ def test_info_has_the_correct_shape():
     assert not result.errors
     assert result.data["hello"] == {
         # TODO: abstract this (in future)
-        "operation": "OperationDefinitionNode at 0:168",
+        "operation": "OperationDefinitionNode at 0:191",
         "fieldName": "hello",
         "path": "hello",
         "contextEqual": True,
         "rootEqual": True,
         "variableValues": "{}",
+        "returnType": "<class 'tests.schema.test_info.test_info_has_the_correct_shape.<locals>.Result'>",  # noqa
     }

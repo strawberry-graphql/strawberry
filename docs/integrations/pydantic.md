@@ -157,7 +157,7 @@ class User(BaseModel):
     'id',
     'name',
 ])
-class User:
+class UserType:
     pass
 
 instance = User(id='123', name='Jake')
@@ -184,7 +184,7 @@ class User(BaseModel):
     'id',
     'name',
 ])
-class User:
+class UserType:
     age: int
 
 instance = User(id='123', name='Jake')
