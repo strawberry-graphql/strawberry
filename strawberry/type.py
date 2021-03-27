@@ -104,10 +104,9 @@ def _process_type(
     wrapped = _wrap_dataclass(cls)
 
     interfaces = _get_interfaces(wrapped)
+    fields = _get_fields(cls)
     if private_fields:
-        fields = [i for i in _get_fields(cls) if i.origin_name not in private_fields]
-    else:
-        fields = _get_fields(cls)
+        fields = [i for i in fields if i.origin_name not in private_fields]
 
     wrapped._type_definition = TypeDefinition(
         name=name,
