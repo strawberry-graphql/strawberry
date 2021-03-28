@@ -659,7 +659,7 @@ def test_generic_with_arguments():
     assert definition.name == "Query"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "user"
+    assert definition.fields[0].python_name == "user"
 
     type_definition = definition.fields[0].type._type_definition
 

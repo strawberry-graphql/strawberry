@@ -102,9 +102,9 @@ def resolve_type_field(field: StrawberryField) -> None:
 
     elif is_list(field.type):
         child_field = StrawberryField(
+            python_name=None,
+            graphql_name=None,
             origin=field.origin,  # type: ignore
-            name=None,
-            origin_name=None,
             type_=get_list_annotation(field.type),
         )
         resolve_type_field(child_field)
@@ -239,9 +239,9 @@ def _resolve_type(argument_definition: ArgumentDefinition) -> None:
         # TODO: maybe this should be an argument definition when it is argument
         # but doesn't matter much
         child_field = StrawberryField(
+            python_name=None,
+            graphql_name=None,
             origin=argument_definition.origin,  # type: ignore
-            name=None,
-            origin_name=None,
             type_=get_list_annotation(type),
         )
         resolve_type_field(child_field)
@@ -349,10 +349,10 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
         A field defined using @strawberry.field as a decorator around the resolver. The
         resolver must be type-annotated.
 
-    The StrawberryField.name value will be assigned to the field's name on the class if
-    one is not set by either using an explicit strawberry.field(name=...) or by passing
-    a named function (i.e. not an anonymous lambda) to strawberry.field (typically as a
-    decorator).
+    The StrawberryField.python_name value will be assigned to the field's name on the
+    class if one is not set by either using an explicit strawberry.field(name=...) or by
+    passing a named function (i.e. not an anonymous lambda) to strawberry.field
+    (typically as a decorator).
     """
     # Deferred import to avoid import cycles
     from strawberry.field import StrawberryField
@@ -378,7 +378,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
         if isinstance(field, StrawberryField):
             # Check that the field type is not Private
             if isinstance(field.type, Private):
-                raise PrivateStrawberryFieldError(field.name, cls.__name__)
+                raise PrivateStrawberryFieldError(field.python_name, cls.__name__)
 
             # we make sure that the origin is either the field's resolver when
             # called as:
@@ -401,8 +401,8 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
 
             # Create a StrawberryField, for fields of Types #1 and #2a
             field = StrawberryField(
-                origin_name=field.name,
-                name=to_camel_case(field.name),
+                python_name=field.name,
+                graphql_name=to_camel_case(field.name),
                 type_=field_type,
                 origin=cls,
                 default_value=getattr(cls, field.name, undefined),

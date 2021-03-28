@@ -79,8 +79,8 @@ def copy_type_with(
                 federation = FederationFieldParams(**field.federation.__dict__)
 
                 new_field = StrawberryField(
-                    name=field.graphql_name,
-                    origin_name=field.python_name,
+                    python_name=field.python_name,
+                    graphql_name=field.graphql_name,
                     origin=field.origin,
                     type_=field.type,
                     default_value=field.default_value,
@@ -103,9 +103,9 @@ def copy_type_with(
                     )
 
                     new_field.child = StrawberryField(
-                        name=field.child.name,
+                        python_name=field.child.python_name,
                         origin=field.child.origin,
-                        origin_name=field.child.python_name,
+                        graphql_name=field.child.graphql_name,
                         is_optional=field.child.is_optional,
                         type_=child_type,
                     )

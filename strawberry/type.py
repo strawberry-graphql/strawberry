@@ -121,8 +121,8 @@ def _process_type(
     # solution should suffice
 
     for field in fields:
-        if field.base_resolver and field.name:
-            setattr(cls, field.name, field.base_resolver.wrapped_func)
+        if field.base_resolver and field.python_name:
+            setattr(cls, field.python_name, field.base_resolver.wrapped_func)
 
     return wrapped
 

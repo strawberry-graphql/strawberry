@@ -31,7 +31,9 @@ class TypeDefinition:
     _type_params: Dict[str, Type] = dataclasses.field(default_factory=dict, init=False)
 
     def get_field(self, name: str) -> Optional["StrawberryField"]:
-        return next((field for field in self.fields if field.name == name), None)
+        return next(
+            (field for field in self.fields if field.graphql_name == name), None
+        )
 
     @property
     def fields(self) -> List["StrawberryField"]:

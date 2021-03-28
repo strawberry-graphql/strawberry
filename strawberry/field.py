@@ -23,8 +23,8 @@ _RESOLVER_TYPE = Union[StrawberryResolver, Callable]
 class StrawberryField(dataclasses.Field):
     def __init__(
         self,
-        name: Optional[str],
-        origin_name: Optional[str],
+        python_name: Optional[str],
+        graphql_name: Optional[str],
         type_: Optional[Union[Type, StrawberryUnion]],
         origin: Optional[Union[Type, Callable]] = None,
         child: Optional["StrawberryField"] = None,
@@ -51,9 +51,9 @@ class StrawberryField(dataclasses.Field):
             metadata=None,
         )
 
-        self._graphql_name = name
-        if origin_name is not None:
-            self.name = origin_name
+        self._graphql_name = graphql_name
+        if python_name is not None:
+            self.name = python_name
         if type_ is not None:
             # TODO: Clean up the typing around StrawberryField.type
             self.type = typing.cast(type, type_)
@@ -291,8 +291,8 @@ def field(
     """
 
     field_ = StrawberryField(
-        origin_name=None,  # modified by resolver in __call__
-        name=name,
+        python_name=None,
+        graphql_name=name,
         type_=None,
         description=description,
         is_subscription=is_subscription,
