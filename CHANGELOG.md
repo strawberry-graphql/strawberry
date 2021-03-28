@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.52.1 - 2021-03-28
+-------------------
+
+Include `field_nodes` in Strawberry info object.
+
 0.52.0 - 2021-03-23
 -------------------
 
