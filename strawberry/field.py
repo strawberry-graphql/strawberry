@@ -105,20 +105,13 @@ class StrawberryField(dataclasses.Field):
             return to_camel_case(self._graphql_name)
         if self.name:
             return to_camel_case(self.name)
-        if self.resolver_name:
-            return to_camel_case(self.resolver_name)
+        if self.base_resolver:
+            return to_camel_case(self.base_resolver.name)
         return None
 
     @property
     def python_name(self) -> str:
         return self.name
-
-    @property
-    def resolver_name(self) -> Optional[str]:
-        if self.base_resolver:
-            return self.base_resolver.name
-        else:
-            return None
 
     @property
     def base_resolver(self) -> Optional[StrawberryResolver]:
