@@ -1,7 +1,13 @@
 import dataclasses
+import enum
 import typing
-from typing import Any, Callable, List, Optional, Type, Union
+from inspect import iscoroutine
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
 
+from graphql import GraphQLResolveInfo
+
+from strawberry.arguments import convert_arguments
+from strawberry.types.info import Info
 from strawberry.utils.typing import get_parameters, has_type_var, is_type_var
 
 from .permission import BasePermission
@@ -152,6 +158,111 @@ class StrawberryField(dataclasses.Field):
             return get_parameters(self.type)
 
         return None
+
+    def _get_arguments(
+        self, kwargs: Dict[str, Any], source: Any, info: Any
+    ) -> Tuple[List[Any], Dict[str, Any]]:
+        assert self.base_resolver is not None
+
+        kwargs = convert_arguments(kwargs, self.arguments)
+
+        # the following code allows to omit info and root arguments
+        # by inspecting the original resolver arguments,
+        # if it asks for self, the source will be passed as first argument
+        # if it asks for root, the source it will be passed as kwarg
+        # if it asks for info, the info will be passed as kwarg
+
+        args = []
+
+        if self.base_resolver.has_self_arg:
+            args.append(source)
+
+        if self.base_resolver.has_root_arg:
+            kwargs["root"] = source
+
+        if self.base_resolver.has_info_arg:
+            kwargs["info"] = info
+
+        return args, kwargs
+
+    def get_result(
+        self, kwargs: Dict[str, Any], source: Any, info: Any
+    ) -> Union[Awaitable[Any], Any]:
+        """
+        Calls the resolver defined for the StrawberryField. If the field doesn't have a
+        resolver defined we default to using getattr on `source`.
+        """
+
+        if self.base_resolver:
+            args, kwargs = self._get_arguments(kwargs, source=source, info=info)
+
+            return self.base_resolver(*args, **kwargs)
+
+        return getattr(source, self.python_name)
+
+    def get_wrapped_resolver(self) -> Callable:
+        # TODO: This could potentially be handled by StrawberryResolver in the future
+        # TODO: make sure that info is of type Info, currently it
+        # is the value returned by graphql-core
+        # https://github.com/strawberry-graphql/strawberry/issues/709
+        def _check_permissions(source, info: Info, **kwargs):
+            """
+            Checks if the permission should be accepted and
+            raises an exception if not
+            """
+            for permission_class in self.permission_classes:
+                permission = permission_class()
+
+                if not permission.has_permission(source, info, **kwargs):
+                    message = getattr(permission, "message", None)
+                    raise PermissionError(message)
+
+        def _convert_enums_to_values(field_: StrawberryField, result: Any) -> Any:
+            # graphql-core expects a resolver for an Enum type to return
+            # the enum's *value* (not its name or an instance of the enum).
+
+            # short circuit to skip checks when result is falsy
+            if not result:
+                return result
+
+            if isinstance(result, enum.Enum):
+                return result.value
+
+            if field_.is_list:
+                assert self.child is not None
+                return [_convert_enums_to_values(self.child, item) for item in result]
+
+            return result
+
+        def _strawberry_info_from_graphql(info: GraphQLResolveInfo) -> Info:
+            return Info(
+                field_name=info.field_name,
+                context=info.context,
+                root_value=info.root_value,
+                variable_values=info.variable_values,
+                return_type=self.type,
+                operation=info.operation,
+                path=info.path,
+            )
+
+        def _resolver(source, info: GraphQLResolveInfo, **kwargs):
+            strawberry_info = _strawberry_info_from_graphql(info)
+            _check_permissions(source, strawberry_info, **kwargs)
+
+            result = self.get_result(kwargs=kwargs, info=strawberry_info, source=source)
+
+            if iscoroutine(result):  # pragma: no cover
+
+                async def await_result(result):
+                    return _convert_enums_to_values(self, await result)
+
+                return await_result(result)
+
+            result = _convert_enums_to_values(self, result)
+            return result
+
+        _resolver._is_default = not self.base_resolver  # type: ignore
+        return _resolver
 
 
 def field(

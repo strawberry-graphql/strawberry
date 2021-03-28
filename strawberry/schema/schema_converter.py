@@ -25,7 +25,6 @@ from strawberry.arguments import UNSET
 from strawberry.directive import DirectiveDefinition
 from strawberry.enum import EnumDefinition, EnumValue
 from strawberry.field import StrawberryField
-from strawberry.resolvers import get_resolver
 from strawberry.scalars import is_scalar
 from strawberry.types.types import ArgumentDefinition, TypeDefinition, undefined
 from strawberry.union import StrawberryUnion
@@ -299,7 +298,7 @@ class GraphQLCoreConverter:
         return graphql_object_type
 
     def from_resolver(self, field: StrawberryField) -> Callable:
-        return get_resolver(field)
+        return field.get_wrapped_resolver()
 
     def from_scalar(self, scalar: Type) -> GraphQLScalarType:
         return get_scalar_type(scalar, self.type_map)

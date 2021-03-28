@@ -50,6 +50,7 @@ def _resolve_generic_type(type: Type, field_name: str) -> Type:
 
 
 def resolve_type_field(field: StrawberryField) -> None:
+    # TODO: This should be handled by StrawberryType in the future
     if isinstance(field.type, str):
         module = sys.modules[field.origin.__module__]
 
@@ -171,8 +172,7 @@ def resolve_type_field(field: StrawberryField) -> None:
 
 
 def _resolve_type(argument_definition: ArgumentDefinition) -> None:
-    # TODO: This should be removed along with ArgumentDefinition in
-    # favor of StrawberryField/StrawberryArgument
+    # TODO: This should be handled by StrawberryType in the future
     # Convert a python type to include a strawberry definition, so for example
     # Union becomes a class with a UnionDefinition, Generics become an actual
     # type definition. This helps with making the code to convert the type definitions
