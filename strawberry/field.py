@@ -95,7 +95,6 @@ class StrawberryField(dataclasses.Field):
     @property
     def arguments(self) -> List[ArgumentDefinition]:
         if not self.base_resolver:
-            # TODO: Should this return None if no resolver?
             return []
 
         return self.base_resolver.arguments
@@ -202,9 +201,6 @@ class StrawberryField(dataclasses.Field):
 
     def get_wrapped_resolver(self) -> Callable:
         # TODO: This could potentially be handled by StrawberryResolver in the future
-        # TODO: make sure that info is of type Info, currently it
-        # is the value returned by graphql-core
-        # https://github.com/strawberry-graphql/strawberry/issues/709
         def _check_permissions(source, info: Info, **kwargs):
             """
             Checks if the permission should be accepted and
