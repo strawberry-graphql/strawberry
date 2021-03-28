@@ -1,7 +1,7 @@
 import dataclasses
 import sys
 import typing
-from typing import Dict, List, Optional, Type, cast
+from typing import Dict, List, Type, cast
 
 from strawberry.exceptions import (
     MissingTypesForGenericError,
@@ -17,8 +17,6 @@ from strawberry.utils.typing import (
     get_async_generator_annotation,
     get_list_annotation,
     get_optional_annotation,
-    get_parameters,
-    has_type_var,
     is_async_generator,
     is_forward_ref,
     is_list,
@@ -302,33 +300,12 @@ def _resolve_type(argument_definition: ArgumentDefinition) -> None:
         argument_definition.is_union = True
 
 
-def _get_type_params_for_field(field: StrawberryField) -> Optional[List[Type]]:
-    if field.is_list:
-        assert field.child is not None
-        return _get_type_params_for_field(field.child)
-
-    if isinstance(field.type, StrawberryUnion):
-        types = field.type.types
-        type_vars = [t for t in types if is_type_var(t)]
-
-        if type_vars:
-            return type_vars
-
-    if is_type_var(field.type):
-        return [field.type]
-
-    if has_type_var(field.type):
-        return get_parameters(field.type)
-
-    return None
-
-
 def _get_type_params(fields: List[StrawberryField]) -> Dict[str, Type]:
     type_params = {}
 
     for field in fields:
         name = field.python_name
-        params = _get_type_params_for_field(field)
+        params = field.type_params
 
         # TODO: support multiple
         if params:

@@ -2,6 +2,8 @@ import dataclasses
 import typing
 from typing import Any, Callable, List, Optional, Type, Union
 
+from strawberry.utils.typing import get_parameters, has_type_var, is_type_var
+
 from .permission import BasePermission
 from .types.fields.resolver import StrawberryResolver
 from .types.types import ArgumentDefinition, FederationFieldParams, undefined
@@ -129,6 +131,27 @@ class StrawberryField(dataclasses.Field):
         # TODO: We have tests for exceptions at field creation, but using
         #       properties defers them
         _ = resolver.arguments
+
+    @property
+    def type_params(self) -> Optional[List[Type]]:
+        if self.is_list:
+            assert self.child is not None
+            return self.child.type_params
+
+        if isinstance(self.type, StrawberryUnion):
+            types = self.type.types
+            type_vars = [t for t in types if is_type_var(t)]
+
+            if type_vars:
+                return type_vars
+
+        if is_type_var(self.type):
+            return [self.type]
+
+        if has_type_var(self.type):
+            return get_parameters(self.type)
+
+        return None
 
 
 def field(
