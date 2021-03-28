@@ -9,6 +9,7 @@ def test_info_has_the_correct_shape():
     @strawberry.type
     class Result:
         field_name: str
+        field_nodes: str
         operation: str
         path: str
         variable_values: str
@@ -24,6 +25,7 @@ def test_info_has_the_correct_shape():
                 path="".join([str(p) for p in info.path.as_list()]),
                 operation=str(info.operation),
                 field_name=info.field_name,
+                field_nodes=str(info.field_nodes),
                 variable_values=str(info.variable_values),
                 context_equal=info.context == my_context,
                 root_equal=info.root_value == root_value,
@@ -35,6 +37,7 @@ def test_info_has_the_correct_shape():
     query = """{
         hello {
             fieldName
+            fieldNodes
             contextEqual
             operation
             path
@@ -47,9 +50,11 @@ def test_info_has_the_correct_shape():
     result = schema.execute_sync(query, context_value=my_context, root_value=root_value)
 
     assert not result.errors
-    assert result.data["hello"] == {
+    info = result.data["hello"]
+    assert info.pop("operation").startswith("OperationDefinitionNode at")
+    assert info.pop("fieldNodes").startswith("[FieldNode at")
+    assert info == {
         # TODO: abstract this (in future)
-        "operation": "OperationDefinitionNode at 0:191",
         "fieldName": "hello",
         "path": "hello",
         "contextEqual": True,
