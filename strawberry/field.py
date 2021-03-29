@@ -126,8 +126,15 @@ class StrawberryField(dataclasses.Field):
         self.init = False
         self.repr = False
 
-        # TODO: We have tests for exceptions at field creation, but using
-        #       properties defers them
+        # TODO: See test_resolvers.test_raises_error_when_argument_annotation_missing
+        #       (https://github.com/strawberry-graphql/strawberry/blob/8e102d3/tests/types/test_resolvers.py#L89-L98)
+        #
+        #       Currently we expect the exception to be thrown when the StrawberryField
+        #       is constructed, but this only happens if we explicitly retrieve the
+        #       arguments.
+        #
+        #       If we want to change when the exception is thrown, this line can be
+        #       removed.
         _ = resolver.arguments
 
     @property
