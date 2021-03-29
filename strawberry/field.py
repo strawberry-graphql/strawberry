@@ -233,6 +233,7 @@ class StrawberryField(dataclasses.Field):
         def _strawberry_info_from_graphql(info: GraphQLResolveInfo) -> Info:
             return Info(
                 field_name=info.field_name,
+                field_nodes=info.field_nodes,
                 context=info.context,
                 root_value=info.root_value,
                 variable_values=info.variable_values,
