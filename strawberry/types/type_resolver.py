@@ -13,7 +13,6 @@ from strawberry.field import StrawberryField
 from strawberry.lazy_type import LazyType
 from strawberry.private import Private
 from strawberry.union import StrawberryUnion, union
-from strawberry.utils.str_converters import to_camel_case
 from strawberry.utils.typing import (
     get_args,
     get_async_generator_annotation,
@@ -419,7 +418,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
             # Create a StrawberryField, for fields of Types #1 and #2a
             field = StrawberryField(
                 python_name=field.name,
-                graphql_name=to_camel_case(field.name),
+                graphql_name=None,
                 type_=field_type,
                 origin=cls,
                 default=getattr(cls, field.name, UNSET),

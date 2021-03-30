@@ -39,10 +39,11 @@ class Schema:
         types=(),
         extensions: Sequence[Type[Extension]] = (),
         execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
+        auto_camel_case: bool = True,
     ):
         self.extensions = extensions
         self.execution_context_class = execution_context_class
-        self.schema_converter = GraphQLCoreConverter()
+        self.schema_converter = GraphQLCoreConverter(auto_camel_case=auto_camel_case)
 
         query_type = self.schema_converter.from_object_type(query)
         mutation_type = (
