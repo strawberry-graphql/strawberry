@@ -33,13 +33,14 @@ class StrawberryField(dataclasses.Field):
         is_child_optional: bool = False,
         is_list: bool = False,
         is_union: bool = False,
-        federation: FederationFieldParams = FederationFieldParams(),
+        federation: FederationFieldParams = None,
         description: Optional[str] = None,
         base_resolver: Optional[StrawberryResolver] = None,
         permission_classes: List[Type[BasePermission]] = (),  # type: ignore
         default_value: Any = undefined,
         deprecation_reason: Optional[str] = None,
     ):
+        federation = federation or FederationFieldParams()
 
         super().__init__(  # type: ignore
             default=dataclasses.MISSING,
