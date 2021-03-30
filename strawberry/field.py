@@ -54,7 +54,7 @@ class StrawberryField(dataclasses.Field):
 
         self._graphql_name = graphql_name
         if python_name is not None:
-            self.name = python_name
+            self.python_name = python_name
         if type_ is not None:
             # TODO: Clean up the typing around StrawberryField.type
             self.type = typing.cast(type, type_)
@@ -104,8 +104,8 @@ class StrawberryField(dataclasses.Field):
     def graphql_name(self) -> Optional[str]:
         if self._graphql_name:
             return to_camel_case(self._graphql_name)
-        if self.name:
-            return to_camel_case(self.name)
+        if self.python_name:
+            return to_camel_case(self.python_name)
         if self.base_resolver:
             return to_camel_case(self.base_resolver.name)
         return None
@@ -113,6 +113,10 @@ class StrawberryField(dataclasses.Field):
     @property
     def python_name(self) -> str:
         return self.name
+
+    @python_name.setter
+    def python_name(self, name: str) -> None:
+        self.name = name
 
     @property
     def base_resolver(self) -> Optional[StrawberryResolver]:
