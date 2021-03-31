@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.53.1 - 2021-03-31
+-------------------
+
+Gracefully handle user-induced subscription errors.
+
 0.53.0 - 2021-03-30
 -------------------
 
