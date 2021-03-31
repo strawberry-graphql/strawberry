@@ -24,7 +24,7 @@ def test_basic_generic():
 
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "nodeField"
+    assert definition.fields[0].graphql_name == "node_field"
     assert definition.fields[0].type == T
     assert definition.fields[0].is_optional is False
 
@@ -40,7 +40,7 @@ def test_basic_generic():
 
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "nodeField"
+    assert definition.fields[0].graphql_name == "node_field"
     assert definition.fields[0].type == str
     assert definition.fields[0].is_optional is False
 
@@ -665,7 +665,7 @@ def test_generic_with_arguments():
 
     assert type_definition.name == "PostCollection"
     assert type_definition.is_generic is False
-    assert type_definition.fields[0].graphql_name == "byId"
+    assert type_definition.fields[0].graphql_name == "by_id"
     assert type_definition.fields[0].is_list
     assert type_definition.fields[0].child.type == Post
     assert type_definition.fields[0].arguments[0].graphql_name == "ids"
@@ -695,7 +695,7 @@ def test_federation():
     assert definition.fields[0].type == strawberry.ID
     assert definition.fields[0].is_optional is False
 
-    assert definition.fields[1].graphql_name == "nodeField"
+    assert definition.fields[1].graphql_name == "node_field"
     assert definition.fields[1].type == str
     assert definition.fields[1].is_optional is False
 

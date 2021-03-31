@@ -95,7 +95,7 @@ def test_list():
     assert definition.name == "UserType"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "friendNames"
+    assert definition.fields[0].graphql_name == "friend_names"
     assert definition.fields[0].type is None
     assert definition.fields[0].is_optional is False
     assert definition.fields[0].is_list is True

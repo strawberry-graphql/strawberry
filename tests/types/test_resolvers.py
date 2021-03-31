@@ -148,7 +148,7 @@ def test_can_reuse_resolver():
     assert definition.fields[0].type == str
     assert definition.fields[0].base_resolver.wrapped_func == get_name
 
-    assert definition.fields[1].graphql_name == "name2"
+    assert definition.fields[1].graphql_name == "name_2"
     assert definition.fields[1].python_name == "name_2"
     assert definition.fields[1].type == str
     assert definition.fields[1].base_resolver.wrapped_func == get_name
