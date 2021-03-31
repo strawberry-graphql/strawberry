@@ -8,7 +8,7 @@ from starlette.responses import HTMLResponse, JSONResponse, PlainTextResponse, R
 from starlette.types import Receive, Scope, Send
 from starlette.websockets import WebSocket, WebSocketDisconnect, WebSocketState
 
-from graphql import GraphQLError
+from graphql import ExecutionResult as GraphQLExecutionResult, GraphQLError
 from graphql.error import format_error as format_graphql_error
 
 from strawberry.file_uploads.data import replace_placeholders_with_files
@@ -24,6 +24,7 @@ from .constants import (
     GQL_CONNECTION_KEEP_ALIVE,
     GQL_CONNECTION_TERMINATE,
     GQL_DATA,
+    GQL_ERROR,
     GQL_START,
     GQL_STOP,
 )
@@ -103,9 +104,32 @@ class GraphQL:
                 elif message_type == GQL_CONNECTION_TERMINATE:
                     await websocket.close()
                 elif message_type == GQL_START:
-                    async_result = await self.start_subscription(
-                        message.get("payload"), operation_id, websocket
-                    )
+                    try:
+                        async_result = await self.start_subscription(
+                            message.get("payload"), operation_id, websocket
+                        )
+                    except GraphQLError as error:
+                        # Syntax errors can cause errors early on but bubble up before
+                        # being converted to an `ExecutionResult` so we need to handle
+                        # them here.
+                        payload = format_graphql_error(error)
+                        await self._send_message(
+                            websocket, GQL_ERROR, payload, operation_id
+                        )
+                        continue
+
+                    # Errors -- such as those caused by or an invalid subscription field
+                    # being specified in the query -- can cause this to fail in a bad
+                    # way. In addition to the stack trace in the server logs, to the
+                    # client it appears as though the connection was severed for no
+                    # reason.
+                    if isinstance(async_result, GraphQLExecutionResult):
+                        assert async_result.errors is not None
+                        payload = format_graphql_error(async_result.errors[0])
+                        await self._send_message(
+                            websocket, GQL_ERROR, payload, operation_id
+                        )
+                        continue
 
                     subscriptions[operation_id] = async_result
 
