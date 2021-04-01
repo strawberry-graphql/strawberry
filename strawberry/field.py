@@ -42,13 +42,16 @@ class StrawberryField(dataclasses.Field):
     ):
         federation = federation or FederationFieldParams()
 
+        # basic fields are fields with no provided resolver
+        is_basic_field = not base_resolver
+
         super().__init__(  # type: ignore
             default=dataclasses.MISSING,
             default_factory=dataclasses.MISSING,
-            init=base_resolver is None,
-            repr=True,
+            init=is_basic_field,
+            repr=is_basic_field,
+            compare=is_basic_field,
             hash=None,
-            compare=True,
             metadata=None,
         )
 
@@ -127,8 +130,9 @@ class StrawberryField(dataclasses.Field):
         self._base_resolver = resolver
         self.origin = resolver.wrapped_func
 
-        # Don't add field to __init__ or __repr__ once it has a resolver
+        # Don't add field to __init__, __repr__ and __eq__ once it has a resolver
         self.init = False
+        self.compare = False
         self.repr = False
 
         # TODO: See test_resolvers.test_raises_error_when_argument_annotation_missing
