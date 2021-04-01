@@ -42,13 +42,16 @@ class StrawberryField(dataclasses.Field):
     ):
         federation = federation or FederationFieldParams()
 
+        # basic fields are fields with no provided resolver
+        is_basic_field = not base_resolver
+
         super().__init__(  # type: ignore
             default=dataclasses.MISSING,
             default_factory=dataclasses.MISSING,
             init=base_resolver is None,
-            repr=True,
+            repr=is_basic_field,
+            compare=is_basic_field,
             hash=None,
-            compare=True,
             metadata=None,
         )
 
@@ -90,6 +93,9 @@ class StrawberryField(dataclasses.Field):
 
         self.base_resolver = resolver
         self.type = resolver.type
+
+        self.repr = False
+        self.compare = False
 
         return self
 

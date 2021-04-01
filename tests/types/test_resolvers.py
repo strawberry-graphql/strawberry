@@ -152,3 +152,40 @@ def test_can_reuse_resolver():
     assert definition.fields[1].python_name == "name_2"
     assert definition.fields[1].type == str
     assert definition.fields[1].base_resolver.wrapped_func == get_name
+
+
+def test_eq_resolvers():
+    def get_name(self) -> str:
+        return "Name"
+
+    @strawberry.type
+    class Query:
+        a: int
+        name: str = strawberry.field(resolver=get_name)
+        name_2: str = strawberry.field(resolver=get_name)
+
+    assert Query(1) == Query(1)
+    assert Query(1) != Query(2)
+
+
+def test_eq_fields():
+    @strawberry.type
+    class Query:
+        a: int
+        name: str = strawberry.field(name="name")
+
+    assert Query(1, "name") == Query(1, "name")
+    assert Query(1, "name") != Query(1, "not a name")
+
+
+def test_with_resolver_fields():
+    @strawberry.type
+    class Query:
+        a: int
+
+        @strawberry.field
+        def name(self) -> str:
+            return "A"
+
+    assert Query(1) == Query(1)
+    assert Query(1) != Query(2)
