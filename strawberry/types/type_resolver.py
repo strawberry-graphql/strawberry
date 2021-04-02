@@ -25,8 +25,11 @@ from strawberry.utils.typing import (
     is_union,
 )
 
+from ..arguments import StrawberryArgument
 from .generics import copy_type_with, get_name_from_types
-from .types import ArgumentDefinition, undefined
+
+# TODO: why do we have undefined?
+from .types import undefined
 
 
 def _resolve_generic_type(type: Type, field_name: str) -> Type:
@@ -171,7 +174,7 @@ def resolve_type_field(field: StrawberryField) -> None:
         field.is_union = True
 
 
-def _resolve_type(argument_definition: ArgumentDefinition) -> None:
+def _resolve_type(argument_definition: StrawberryArgument) -> None:
     # TODO: This should be handled by StrawberryType in the future
     # Convert a python type to include a strawberry definition, so for example
     # Union becomes a class with a UnionDefinition, Generics become an actual
@@ -248,7 +251,7 @@ def _resolve_type(argument_definition: ArgumentDefinition) -> None:
 
         argument_definition.type = None
         argument_definition.is_list = True
-        argument_definition.child = cast(ArgumentDefinition, child_field)
+        argument_definition.child = cast(StrawberryArgument, child_field)
 
         return
 

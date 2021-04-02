@@ -5,6 +5,7 @@ from strawberry.union import StrawberryUnion
 
 
 if TYPE_CHECKING:
+    from strawberry.arguments import StrawberryArgument
     from strawberry.field import StrawberryField
 
 undefined = object()
@@ -57,7 +58,7 @@ class ArgumentDefinition:
     origin_name: Optional[str] = None
     type: Optional[Union[Type, StrawberryUnion]] = None
     origin: Optional[Type] = None
-    child: Optional["ArgumentDefinition"] = None
+    child: Optional["StrawberryArgument"] = None
     is_subscription: bool = False
     is_optional: bool = False
     is_child_optional: bool = False

@@ -4,9 +4,8 @@ from typing import Callable, Generic, List, Optional, Type, TypeVar
 
 from cached_property import cached_property  # type: ignore
 
-from strawberry.arguments import get_arguments_from_annotations
+from strawberry.arguments import StrawberryArgument, get_arguments_from_annotations
 from strawberry.exceptions import MissingArgumentsAnnotationsError
-from strawberry.types.types import ArgumentDefinition
 from strawberry.utils.inspect import get_func_args
 
 
@@ -22,11 +21,8 @@ class StrawberryResolver(Generic[T]):
     def __call__(self, *args, **kwargs) -> T:
         return self.wrapped_func(*args, **kwargs)
 
-    # TODO: Return StrawberryArguments instead. Maybe this should be a classmethod
-    #       there instead?
-    # TODO: Return a set instead
     @cached_property
-    def arguments(self) -> List[ArgumentDefinition]:
+    def arguments(self) -> List[StrawberryArgument]:
         # TODO: Move to StrawberryArgument? StrawberryResolver ClassVar?
         SPECIAL_ARGS = {"root", "self", "info"}
 

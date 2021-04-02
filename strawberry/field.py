@@ -10,9 +10,10 @@ from strawberry.arguments import convert_arguments
 from strawberry.types.info import Info
 from strawberry.utils.typing import get_parameters, has_type_var, is_type_var
 
+from .arguments import StrawberryArgument
 from .permission import BasePermission
 from .types.fields.resolver import StrawberryResolver
-from .types.types import ArgumentDefinition, FederationFieldParams, undefined
+from .types.types import FederationFieldParams, undefined
 from .union import StrawberryUnion
 from .utils.str_converters import to_camel_case
 
@@ -97,7 +98,7 @@ class StrawberryField(dataclasses.Field):
         return self
 
     @property
-    def arguments(self) -> List[ArgumentDefinition]:
+    def arguments(self) -> List[StrawberryArgument]:
         if not self.base_resolver:
             return []
 
