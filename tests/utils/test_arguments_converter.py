@@ -100,6 +100,7 @@ def test_list_of_input_types():
         StrawberryArgument(
             graphql_name="inputList",
             python_name="input_list",
+            type_=None,
             child=StrawberryArgument(
                 graphql_name=None, python_name=None, type_=MyInput
             ),
@@ -124,6 +125,7 @@ def test_optional_list_of_input_types():
             graphql_name="inputList",
             python_name="input_list",
             is_optional=True,
+            type_=None,
             child=StrawberryArgument(
                 graphql_name=None, python_name=None, type_=MyInput
             ),
