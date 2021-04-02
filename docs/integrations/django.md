@@ -235,3 +235,41 @@ class MyGraphQLView(AsyncGraphQLView):
 
 In this case we are doing the default processing of the result, but it can be
 tweaked based on your needs.
+
+## Optional logging
+
+Strawberry provides detailed logging capability for GraphQL transactions.
+All transactions are outputed at the `DEBUG` level.
+If there is an error during the transcation, then it is displayed at `ERROR` level.
+Output is pretty-printed and highlighted for better readibility.
+
+Here is how you set it up in your `settings.py`:
+
+```python
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'strawberry_formatter': {
+            'format': '[{asctime}][{levelname} - {name}] {message}',
+            'style': '{',
+            'datefmt': "%d/%b/%Y %H:%M:%S",
+        },
+    },
+    'handlers': {
+        'console': {
+            'level': 'DEBUG',
+            'class': 'logging.StreamHandler',
+            'formatter': 'strawberry_formatter',
+        }
+    },
+    'loggers': {
+        'strawberry': {
+            'handlers': ['console'],
+            'level': 'DEBUG',
+        }
+    }
+}
+```
+
+More on [configuring logging in Django](https://docs.djangoproject.com/en/3.1/topics/logging/#configuring-logging)
