@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import enum
 import inspect
 from typing import Any, Dict, List, Mapping, Optional, Type, Union, cast
@@ -55,6 +57,40 @@ class StrawberryArgument:
             return to_camel_case(self.python_name)
         return None
 
+    @classmethod
+    def from_annotated(
+        cls, python_name: str, origin: Any, annotation: Type[Annotated]  # type: ignore
+    ) -> StrawberryArgument:
+        annotated_args = get_args(annotation)
+
+        # The first argument to Annotated is always the underlying type
+        type_ = annotated_args[0]
+        argument_metadata = None
+        argument_description = None
+
+        # Find any instances of StrawberryArgumentAnnotation
+        # in the other Annotated args, raising an exception if there
+        # are multiple StrawberryArgumentAnnotations
+        for arg in annotated_args[1:]:
+            if isinstance(arg, StrawberryArgumentAnnotation):
+                if argument_metadata is not None:
+                    raise MultipleStrawberryArgumentsError(
+                        field_name=origin.__name__, argument_name=python_name
+                    )
+
+                argument_metadata = arg
+
+        if argument_metadata is not None:
+            argument_description = argument_metadata.description
+
+        return cls(
+            type_=type_,
+            description=argument_description,
+            python_name=python_name,
+            # TODO: fetch from StrawberryArgumentAnnotation
+            graphql_name=None,
+        )
+
 
 def get_arguments_from_annotations(
     annotations: Any, parameters: Mapping[str, inspect.Parameter], origin: Any
@@ -75,38 +111,19 @@ def get_arguments_from_annotations(
         argument_description = None
 
         if get_origin(annotation) is Annotated:
-            annotated_args = get_args(annotation)
-
-            # The first argument to Annotated is always the underlying type
-            argument_type = annotated_args[0]
-
-            argument_metadata = None
-            # Find any instances of StrawberryArgumentAnnotation
-            # in the other Annotated args, raising an exception if there
-            # are multiple StrawberryArgumentAnnotations
-            for arg in annotated_args[1:]:
-                if isinstance(arg, StrawberryArgumentAnnotation):
-                    if argument_metadata is not None:
-                        raise MultipleStrawberryArgumentsError(
-                            field_name=origin.__name__, argument_name=name
-                        )
-                    argument_metadata = arg
-
-            if argument_metadata is not None:
-                argument_description = argument_metadata.description
+            argument = StrawberryArgument.from_annotated(
+                python_name=name, annotation=annotation, origin=origin
+            )
         else:
-            argument_type = annotation
+            argument = StrawberryArgument(
+                type_=annotation,
+                description=argument_description,
+                python_name=name,
+                graphql_name=None,
+                origin=origin,
+            )
 
-        argument = StrawberryArgument(
-            type_=argument_type,
-            description=argument_description,
-            python_name=name,
-            # TODO: fetch from StrawberryArgumentAnnotation
-            graphql_name=None,
-            origin=origin,
-            default_value=default_value,
-        )
-
+        argument.default_value = default_value
         arguments.append(argument)
 
         _resolve_type(argument)
