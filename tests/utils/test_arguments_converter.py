@@ -31,14 +31,14 @@ def test_list():
 
     arguments = [
         StrawberryArgument(
-            name="integerList",
+            graphql_name="integerList",
             python_name="integer_list",
             type=int,
             is_list=True,
             child=StrawberryArgument(type=int),
         ),
         StrawberryArgument(
-            name="stringList",
+            graphql_name="stringList",
             python_name="string_list",
             type=str,
             is_list=True,

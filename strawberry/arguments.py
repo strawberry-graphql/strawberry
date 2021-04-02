@@ -1,4 +1,3 @@
-import dataclasses
 import enum
 import inspect
 from typing import Any, Dict, List, Mapping, Optional, Type, Union, cast
@@ -19,20 +18,38 @@ class StrawberryArgumentAnnotation:
         self.description = description
 
 
-@dataclasses.dataclass
 class StrawberryArgument:
-    graphql_name: Optional[str] = None
-    python_name: Optional[str] = None
-    type: Optional[Union[Type, StrawberryUnion]] = None
-    origin: Optional[Type] = None
-    child: Optional["StrawberryArgument"] = None
-    is_subscription: bool = False
-    is_optional: bool = False
-    is_child_optional: bool = False
-    is_list: bool = False
-    is_union: bool = False
-    description: Optional[str] = None
-    default_value: Any = undefined
+    def __init__(
+        self,
+        python_name: Optional[str] = None,
+        graphql_name: Optional[str] = None,
+        type: Optional[Union[Type, StrawberryUnion]] = None,
+        origin: Optional[Type] = None,
+        child: Optional["StrawberryArgument"] = None,
+        is_subscription: bool = False,
+        is_optional: bool = False,
+        is_child_optional: bool = False,
+        is_list: bool = False,
+        is_union: bool = False,
+        description: Optional[str] = None,
+        default_value: Any = undefined,
+    ) -> None:
+        self.python_name = python_name
+        self._graphql_name = graphql_name
+        self.type = type
+        self.origin = origin
+        self.child = child
+        self.is_subscription = is_subscription
+        self.is_optional = is_optional
+        self.is_child_optional = is_child_optional
+        self.is_list = is_list
+        self.is_union = is_union
+        self.description = description
+        self.default_value = default_value
+
+    @property
+    def graphql_name(self) -> Optional[str]:
+        return self._graphql_name
 
 
 def get_arguments_from_annotations(

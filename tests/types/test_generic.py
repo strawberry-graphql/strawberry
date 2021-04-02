@@ -668,7 +668,7 @@ def test_generic_with_arguments():
     assert type_definition.fields[0].graphql_name == "byId"
     assert type_definition.fields[0].is_list
     assert type_definition.fields[0].child.type == Post
-    assert type_definition.fields[0].arguments[0].name == "ids"
+    assert type_definition.fields[0].arguments[0].graphql_name == "ids"
     assert type_definition.fields[0].arguments[0].is_list
     assert type_definition.fields[0].arguments[0].child.type == int
 
