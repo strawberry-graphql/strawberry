@@ -1,3 +1,4 @@
+import dataclasses
 import enum
 import inspect
 from typing import Any, Dict, List, Mapping, Optional, Type, Union, cast
@@ -6,7 +7,7 @@ from typing_extensions import Annotated, get_args, get_origin
 
 from .exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError
 from .scalars import is_scalar
-from .types.types import ArgumentDefinition, undefined
+from .types.types import undefined
 from .union import StrawberryUnion
 from .utils.str_converters import to_camel_case
 
@@ -18,105 +19,20 @@ class StrawberryArgumentAnnotation:
         self.description = description
 
 
+@dataclasses.dataclass
 class StrawberryArgument:
-    def __init__(self, argument_definition: ArgumentDefinition) -> None:
-        self._argument_definition = argument_definition
-
-    @property
-    def name(self) -> Optional[str]:
-        return self._argument_definition.name
-
-    @name.setter
-    def name(self, value):
-        self._argument_definition.name = value
-
-    @property
-    def origin_name(self) -> Optional[str]:
-        return self._argument_definition.origin_name
-
-    @origin_name.setter
-    def origin_name(self, value):
-        self._argument_definition.origin_name = value
-
-    @property
-    def type(self) -> Optional[Union[Type, StrawberryUnion]]:
-        return self._argument_definition.type
-
-    @type.setter
-    def type(self, value):
-        self._argument_definition.type = value
-
-    @property
-    def origin(self) -> Optional[Type]:
-        return self._argument_definition.origin
-
-    @origin.setter
-    def origin(self, value):
-        self._argument_definition.origin = value
-
-    @property
-    def child(self) -> Optional["StrawberryArgument"]:
-        return self._argument_definition.child
-
-    @child.setter
-    def child(self, value):
-        self._argument_definition.child = value
-
-    @property
-    def is_subscription(self) -> bool:
-        return self._argument_definition.is_subscription
-
-    @is_subscription.setter
-    def is_subscription(self, value):
-        self._argument_definition.is_subscription = value
-
-    @property
-    def is_optional(self) -> bool:
-        return self._argument_definition.is_optional
-
-    @is_optional.setter
-    def is_optional(self, value):
-        self._argument_definition.is_optional = value
-
-    @property
-    def is_child_optional(self) -> bool:
-        return self._argument_definition.is_child_optional
-
-    @is_child_optional.setter
-    def is_child_optional(self, value):
-        self._argument_definition.is_child_optional = value
-
-    @property
-    def is_list(self) -> bool:
-        return self._argument_definition.is_list
-
-    @is_list.setter
-    def is_list(self, value):
-        self._argument_definition.is_list = value
-
-    @property
-    def is_union(self) -> bool:
-        return self._argument_definition.is_union
-
-    @is_union.setter
-    def is_union(self, value):
-        self._argument_definition.is_union = value
-
-    @property
-    def description(self) -> Optional[str]:
-        return self._argument_definition.description
-
-    @description.setter
-    def description(self, value):
-        self._argument_definition.description = value
-
-    @property
-    def default_value(self) -> Any:
-        return self._argument_definition.default_value
-
-    @default_value.setter
-    def default_value(self, value):
-        self._argument_definition.default_value = value
+    name: Optional[str] = None
+    origin_name: Optional[str] = None
+    type: Optional[Union[Type, StrawberryUnion]] = None
+    origin: Optional[Type] = None
+    child: Optional["StrawberryArgument"] = None
+    is_subscription: bool = False
+    is_optional: bool = False
+    is_child_optional: bool = False
+    is_list: bool = False
+    is_union: bool = False
+    description: Optional[str] = None
+    default_value: Any = undefined
 
 
 def get_arguments_from_annotations(
@@ -133,12 +49,10 @@ def get_arguments_from_annotations(
         )
 
         argument_definition = StrawberryArgument(
-            ArgumentDefinition(
-                origin_name=name,
-                name=to_camel_case(name),
-                origin=origin,
-                default_value=default_value,
-            )
+            origin_name=name,
+            name=to_camel_case(name),
+            origin=origin,
+            default_value=default_value,
         )
 
         if get_origin(annotation) is Annotated:
@@ -257,7 +171,6 @@ def argument(description: Optional[str] = None) -> StrawberryArgumentAnnotation:
 
 # TODO: check exports
 __all__ = [
-    "ArgumentDefinition",
     "StrawberryArgumentAnnotation",
     "UNSET",
     "argument",

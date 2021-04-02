@@ -1,11 +1,8 @@
 import dataclasses
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Type, Union
-
-from strawberry.union import StrawberryUnion
+from typing import TYPE_CHECKING, Dict, List, Optional, Type
 
 
 if TYPE_CHECKING:
-    from strawberry.arguments import StrawberryArgument
     from strawberry.field import StrawberryField
 
 undefined = object()
@@ -50,22 +47,6 @@ class TypeDefinition:
             self._type_params = _get_type_params(self.fields)
 
         return self._type_params
-
-
-@dataclasses.dataclass
-class ArgumentDefinition:
-    name: Optional[str] = None
-    origin_name: Optional[str] = None
-    type: Optional[Union[Type, StrawberryUnion]] = None
-    origin: Optional[Type] = None
-    child: Optional["StrawberryArgument"] = None
-    is_subscription: bool = False
-    is_optional: bool = False
-    is_child_optional: bool = False
-    is_list: bool = False
-    is_union: bool = False
-    description: Optional[str] = None
-    default_value: Any = undefined
 
 
 @dataclasses.dataclass
