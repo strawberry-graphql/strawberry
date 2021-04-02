@@ -21,9 +21,9 @@ class StrawberryArgumentAnnotation:
 class StrawberryArgument:
     def __init__(
         self,
-        python_name: Optional[str] = None,
-        graphql_name: Optional[str] = None,
-        type_: Optional[Union[Type, StrawberryUnion]] = None,
+        python_name: str,
+        graphql_name: Optional[str],
+        type_: Optional[Union[Type, StrawberryUnion]],
         origin: Optional[Type] = None,
         child: Optional["StrawberryArgument"] = None,
         is_subscription: bool = False,
@@ -59,6 +59,9 @@ class StrawberryArgument:
 def get_arguments_from_annotations(
     annotations: Any, parameters: Mapping[str, inspect.Parameter], origin: Any
 ) -> List[StrawberryArgument]:
+    # Deferred to prevent import cycles
+    from .types.type_resolver import _resolve_type
+
     arguments = []
 
     for name, annotation in annotations.items():
@@ -69,18 +72,13 @@ def get_arguments_from_annotations(
             else default_value
         )
 
-        argument = StrawberryArgument(
-            python_name=name,
-            graphql_name=to_camel_case(name),
-            origin=origin,
-            default_value=default_value,
-        )
+        argument_description = None
 
         if get_origin(annotation) is Annotated:
             annotated_args = get_args(annotation)
 
             # The first argument to Annotated is always the underlying type
-            argument.type = annotated_args[0]
+            argument_type = annotated_args[0]
 
             argument_metadata = None
             # Find any instances of StrawberryArgumentAnnotation
@@ -95,14 +93,21 @@ def get_arguments_from_annotations(
                     argument_metadata = arg
 
             if argument_metadata is not None:
-                argument.description = argument_metadata.description
+                argument_description = argument_metadata.description
         else:
-            argument.type = annotation
+            argument_type = annotation
+
+        argument = StrawberryArgument(
+            type_=argument_type,
+            description=argument_description,
+            python_name=name,
+            # TODO: fetch from StrawberryArgumentAnnotation
+            graphql_name=None,
+            origin=origin,
+            default_value=default_value,
+        )
 
         arguments.append(argument)
-
-        # Deferred to prevent import cycles
-        from .types.type_resolver import _resolve_type
 
         _resolve_type(argument)
 
