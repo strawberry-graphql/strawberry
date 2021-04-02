@@ -49,7 +49,11 @@ class StrawberryArgument:
 
     @property
     def graphql_name(self) -> Optional[str]:
-        return self._graphql_name
+        if self._graphql_name:
+            return self._graphql_name
+        if self.python_name:
+            return to_camel_case(self.python_name)
+        return None
 
 
 def get_arguments_from_annotations(
