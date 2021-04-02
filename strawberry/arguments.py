@@ -23,7 +23,8 @@ class StrawberryArgumentAnnotation:
 class StrawberryArgument:
     def __init__(
         self,
-        python_name: str,
+        # TODO: this optional will probably go away when we have StrawberryList
+        python_name: Optional[str],
         graphql_name: Optional[str],
         type_: Optional[Union[Type, StrawberryUnion]],
         origin: Optional[Type] = None,
