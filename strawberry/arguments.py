@@ -23,7 +23,7 @@ class StrawberryArgument:
         self,
         python_name: Optional[str] = None,
         graphql_name: Optional[str] = None,
-        type: Optional[Union[Type, StrawberryUnion]] = None,
+        type_: Optional[Union[Type, StrawberryUnion]] = None,
         origin: Optional[Type] = None,
         child: Optional["StrawberryArgument"] = None,
         is_subscription: bool = False,
@@ -36,7 +36,7 @@ class StrawberryArgument:
     ) -> None:
         self.python_name = python_name
         self._graphql_name = graphql_name
-        self.type = type
+        self.type = type_
         self.origin = origin
         self.child = child
         self.is_subscription = is_subscription
