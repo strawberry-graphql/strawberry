@@ -60,7 +60,11 @@ class StrawberryArgument:
 
     @classmethod
     def from_annotated(
-        cls, python_name: str, origin: Any, annotation: Type[Annotated]  # type: ignore
+        cls,
+        python_name: str,
+        annotation: Type[Annotated],  # type: ignore
+        default_value: Any,
+        origin: Any,
     ) -> StrawberryArgument:
         annotated_args = get_args(annotation)
 
@@ -90,12 +94,14 @@ class StrawberryArgument:
             python_name=python_name,
             # TODO: fetch from StrawberryArgumentAnnotation
             graphql_name=None,
+            default_value=default_value,
         )
 
 
 def get_arguments_from_annotations(
     annotations: Any, parameters: Mapping[str, inspect.Parameter], origin: Any
 ) -> List[StrawberryArgument]:
+
     # Deferred to prevent import cycles
     from .types.type_resolver import _resolve_type
 
@@ -109,25 +115,26 @@ def get_arguments_from_annotations(
             else default_value
         )
 
-        argument_description = None
-
         if get_origin(annotation) is Annotated:
             argument = StrawberryArgument.from_annotated(
-                python_name=name, annotation=annotation, origin=origin
+                python_name=name,
+                annotation=annotation,
+                default_value=default_value,
+                origin=origin,
             )
         else:
             argument = StrawberryArgument(
                 type_=annotation,
-                description=argument_description,
                 python_name=name,
                 graphql_name=None,
+                default_value=default_value,
+                description=None,
                 origin=origin,
             )
 
-        argument.default_value = default_value
-        arguments.append(argument)
-
         _resolve_type(argument)
+
+        arguments.append(argument)
 
     return arguments
 
