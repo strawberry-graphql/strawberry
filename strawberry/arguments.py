@@ -6,9 +6,19 @@ from typing_extensions import Annotated, get_args, get_origin
 
 from .exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError
 from .scalars import is_scalar
-from .types.types import undefined
 from .union import StrawberryUnion
 from .utils.str_converters import to_camel_case
+
+
+class _Unset:
+    def __str__(self):
+        return ""
+
+    def __bool__(self):
+        return False
+
+
+UNSET: Any = _Unset()
 
 
 class StrawberryArgumentAnnotation:
@@ -32,7 +42,7 @@ class StrawberryArgument:
         is_list: bool = False,
         is_union: bool = False,
         description: Optional[str] = None,
-        default_value: Any = undefined,
+        default_value: Any = UNSET,
     ) -> None:
         self.python_name = python_name
         self._graphql_name = graphql_name
@@ -64,7 +74,7 @@ def get_arguments_from_annotations(
     for name, annotation in annotations.items():
         default_value = parameters[name].default
         default_value = (
-            undefined
+            UNSET
             if default_value is inspect.Parameter.empty or is_unset(default_value)
             else default_value
         )
@@ -107,17 +117,6 @@ def get_arguments_from_annotations(
         _resolve_type(argument_definition)
 
     return arguments
-
-
-class _Unset:
-    def __str__(self):
-        return ""
-
-    def __bool__(self):
-        return False
-
-
-UNSET: Any = _Unset()
 
 
 def is_unset(value: Any) -> bool:
@@ -200,5 +199,4 @@ __all__ = [
     "convert_arguments",
     "get_arguments_from_annotations",
     "is_unset",
-    "undefined",
 ]

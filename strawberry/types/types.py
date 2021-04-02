@@ -5,8 +5,6 @@ from typing import TYPE_CHECKING, Dict, List, Optional, Type
 if TYPE_CHECKING:
     from strawberry.field import StrawberryField
 
-undefined = object()
-
 
 @dataclasses.dataclass
 class FederationTypeParams:

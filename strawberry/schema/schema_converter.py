@@ -21,12 +21,12 @@ from graphql import (
     Undefined,
 )
 
-from strawberry.arguments import UNSET, StrawberryArgument
+from strawberry.arguments import StrawberryArgument, is_unset
 from strawberry.directive import DirectiveDefinition
 from strawberry.enum import EnumDefinition, EnumValue
 from strawberry.field import StrawberryField
 from strawberry.scalars import is_scalar
-from strawberry.types.types import TypeDefinition, undefined
+from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 
 from .types.concrete_type import ConcreteType
@@ -98,7 +98,7 @@ class GraphQLCoreConverter:
 
     def from_argument(self, argument: StrawberryArgument) -> GraphQLArgument:
         default_value = (
-            Undefined if argument.default_value is undefined else argument.default_value
+            Undefined if is_unset(argument.default_value) else argument.default_value
         )
 
         argument_type = self.get_graphql_type_argument(argument)
@@ -176,7 +176,7 @@ class GraphQLCoreConverter:
         )
 
     def from_input_field(self, field: StrawberryField) -> GraphQLInputField:
-        if field.default_value in [undefined, UNSET]:
+        if is_unset(field.default_value):
             default_value = Undefined
         else:
             default_value = field.default_value

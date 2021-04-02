@@ -10,10 +10,10 @@ from strawberry.arguments import convert_arguments
 from strawberry.types.info import Info
 from strawberry.utils.typing import get_parameters, has_type_var, is_type_var
 
-from .arguments import StrawberryArgument
+from .arguments import UNSET, StrawberryArgument
 from .permission import BasePermission
 from .types.fields.resolver import StrawberryResolver
-from .types.types import FederationFieldParams, undefined
+from .types.types import FederationFieldParams
 from .union import StrawberryUnion
 from .utils.str_converters import to_camel_case
 
@@ -38,7 +38,7 @@ class StrawberryField(dataclasses.Field):
         description: Optional[str] = None,
         base_resolver: Optional[StrawberryResolver] = None,
         permission_classes: List[Type[BasePermission]] = (),  # type: ignore
-        default_value: Any = undefined,
+        default_value: Any = UNSET,
         deprecation_reason: Optional[str] = None,
     ):
         federation = federation or FederationFieldParams()
