@@ -10,7 +10,7 @@ from .types.types import ArgumentDefinition, undefined
 from .utils.str_converters import to_camel_case
 
 
-class StrawberryArgument:
+class StrawberryArgumentAnnotation:
     description: Optional[str]
 
     def __init__(self, description: Optional[str] = None):
@@ -44,10 +44,11 @@ def get_arguments_from_annotations(
             argument_definition.type = annotated_args[0]
 
             argument_metadata = None
-            # Find any instances of StrawberryArgument in the other Annotated args,
-            # raising an exception if there are multiple StrawberryArguments
+            # Find any instances of StrawberryArgumentAnnotation
+            # in the other Annotated args, raising an exception if there
+            # are multiple StrawberryArgumentAnnotations
             for arg in annotated_args[1:]:
-                if isinstance(arg, StrawberryArgument):
+                if isinstance(arg, StrawberryArgumentAnnotation):
                     if argument_metadata is not None:
                         raise MultipleStrawberryArgumentsError(
                             field_name=origin.__name__, argument_name=name
@@ -146,13 +147,13 @@ def convert_arguments(
     return kwargs
 
 
-def argument(description: Optional[str] = None) -> StrawberryArgument:
-    return StrawberryArgument(description=description)
+def argument(description: Optional[str] = None) -> StrawberryArgumentAnnotation:
+    return StrawberryArgumentAnnotation(description=description)
 
 
 __all__ = [
     "ArgumentDefinition",
-    "StrawberryArgument",
+    "StrawberryArgumentAnnotation",
     "UNSET",
     "argument",
     "convert_argument",
