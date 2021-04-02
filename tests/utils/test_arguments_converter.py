@@ -58,7 +58,7 @@ def test_input_types():
         abc: str
         say_hello_to: str
         fun: str
-        was: int = strawberry.field(graphql_name="having")
+        was: int = strawberry.field(name="having")
 
     args = {
         "input": {"abc": "example", "sayHelloTo": "Patrick", "having": 10, "fun": "yes"}
