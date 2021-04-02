@@ -182,7 +182,7 @@ def _resolve_type(argument_definition: StrawberryArgument) -> None:
     # to GraphQL types, as we only have to deal with Python's typings in one place.
 
     type = cast(Type, argument_definition.type)
-    origin_name = cast(str, argument_definition.origin_name)
+    assert argument_definition.python_name
 
     if isinstance(type, str):
         module = sys.modules[argument_definition.origin.__module__].__dict__
@@ -269,7 +269,7 @@ def _resolve_type(argument_definition: StrawberryArgument) -> None:
         # are simpler and cannot contain lists or optionals
 
         types = tuple(
-            _resolve_generic_type(t, origin_name)
+            _resolve_generic_type(t, argument_definition.python_name)
             for t in types
             if t is not None.__class__
         )
@@ -291,9 +291,9 @@ def _resolve_type(argument_definition: StrawberryArgument) -> None:
         # >>> a: X[str]
 
         if len(args) == 0:
-            name = cast(str, argument_definition.origin_name)
+            assert argument_definition.python_name
 
-            raise MissingTypesForGenericError(name, type)
+            raise MissingTypesForGenericError(argument_definition.python_name, type)
 
         # we only make a copy when all the arguments are not type vars
         if not all(is_type_var(a) for a in args):

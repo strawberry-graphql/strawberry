@@ -139,8 +139,8 @@ class GraphQLCoreConverter:
 
         graphql_arguments = {}
         for argument in directive.arguments:
-            assert argument.name is not None
-            graphql_arguments[argument.name] = self.from_argument(argument)
+            assert argument.graphql_name is not None
+            graphql_arguments[argument.graphql_name] = self.from_argument(argument)
 
         return GraphQLDirective(
             name=directive.name,
@@ -163,8 +163,8 @@ class GraphQLCoreConverter:
 
         graphql_arguments = {}
         for argument in field.arguments:
-            assert argument.name is not None
-            graphql_arguments[argument.name] = self.from_argument(argument)
+            assert argument.python_name is not None
+            graphql_arguments[argument.python_name] = self.from_argument(argument)
 
         return GraphQLField(
             type_=field_type,

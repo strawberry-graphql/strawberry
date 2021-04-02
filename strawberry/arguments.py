@@ -21,8 +21,8 @@ class StrawberryArgumentAnnotation:
 
 @dataclasses.dataclass
 class StrawberryArgument:
-    name: Optional[str] = None
-    origin_name: Optional[str] = None
+    graphql_name: Optional[str] = None
+    python_name: Optional[str] = None
     type: Optional[Union[Type, StrawberryUnion]] = None
     origin: Optional[Type] = None
     child: Optional["StrawberryArgument"] = None
@@ -49,8 +49,8 @@ def get_arguments_from_annotations(
         )
 
         argument_definition = StrawberryArgument(
-            origin_name=name,
-            name=to_camel_case(name),
+            python_name=name,
+            graphql_name=to_camel_case(name),
             origin=origin,
             default_value=default_value,
         )
@@ -156,11 +156,12 @@ def convert_arguments(
     kwargs = {}
 
     for argument in arguments:
-        if argument.name in value:
-            origin_name = cast(str, argument.origin_name)
-            current_value = value[argument.name]
+        if argument.graphql_name in value:
+            assert argument.python_name
 
-            kwargs[origin_name] = convert_argument(current_value, argument)
+            current_value = value[argument.graphql_name]
+
+            kwargs[argument.python_name] = convert_argument(current_value, argument)
 
     return kwargs
 
