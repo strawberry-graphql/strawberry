@@ -1,3 +1,8 @@
 Release type: minor
 
-Internal refactory. Renamed ArgumentDefition to StrawberryArgument
+Internal refactoring.
+
+* Renamed `StrawberryArgument` to `StrawberryArgumentAnnotation`
+* Renamed `ArgumentDefinition` to `StrawberryArgument`
+    * Renamed `ArgumentDefinition(type: ...)` argument to
+      `StrawberryArgument(type_: ...)`
