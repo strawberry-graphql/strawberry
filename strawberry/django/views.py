@@ -1,5 +1,7 @@
 import asyncio
+import io
 import json
+import logging
 import os
 from typing import Any, Dict, Optional
 
@@ -19,6 +21,7 @@ from strawberry.file_uploads.data import replace_placeholders_with_files
 from strawberry.http import GraphQLHTTPResponse, process_result
 from strawberry.types import ExecutionResult
 from strawberry.types.execution import ExecutionContext
+from strawberry.utils.debug import pretty_print_graphql
 
 from ..schema import BaseSchema
 from .context import StrawberryDjangoContext
@@ -36,6 +39,7 @@ class BaseView(View):
     schema: Optional[BaseSchema] = None
 
     def __init__(self, schema: BaseSchema, graphiql=True):
+        self.logger = logging.getLogger("strawberry")
         self.schema = schema
         self.graphiql = graphiql
 
@@ -114,6 +118,20 @@ class BaseView(View):
 
         return response
 
+    def log(
+        self, execution_context: ExecutionContext, execution_result: ExecutionResult
+    ):
+        level = logging.ERROR if execution_result.errors else logging.DEBUG
+
+        with io.StringIO() as stream:
+            pretty_print_graphql(
+                execution_context,
+                execution_result,
+                skip_introspection_queries=True,
+                stream=stream,
+            )
+            self.logger.log(level, stream.getvalue())
+
 
 class GraphQLView(BaseView):
     def get_root_value(self, request: HttpRequest) -> Any:
@@ -149,8 +167,9 @@ class GraphQLView(BaseView):
             context_value=context,
             operation_name=operation_context.operation_name,
         )
-
         response_data = self.process_result(request=request, result=result)
+
+        self.log(operation_context, result)
 
         return self._create_response(
             response_data=response_data, sub_response=sub_response
@@ -191,6 +210,8 @@ class AsyncGraphQLView(BaseView):
         )
 
         response_data = await self.process_result(request=request, result=result)
+
+        self.log(operation_context, result)
 
         return self._create_response(
             response_data=response_data, sub_response=sub_response

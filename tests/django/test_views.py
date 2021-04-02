@@ -1,4 +1,5 @@
 import json
+import logging
 from typing import Any, Optional
 
 import pytest
@@ -329,3 +330,48 @@ def test_can_change_status_code():
 
     assert response.status_code == 418
     assert data == {"data": {"abc": "ABC"}}
+
+
+def test_log(caplog):
+    factory = RequestFactory()
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def abc(self, info: Info) -> str:
+            return "ABC"
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ abc }"
+
+    with caplog.at_level(logging.DEBUG):
+
+        request = factory.post(
+            "/graphql/", {"query": query}, content_type="application/json"
+        )
+
+        response = GraphQLView.as_view(schema=schema)(request)
+
+        assert response.status_code == 200
+
+    assert query in caplog.text
+
+
+def test_log_when_we_have_errors(caplog):
+    factory = RequestFactory()
+
+    query = "{ alwaysFail }"
+
+    with caplog.at_level(logging.ERROR):
+
+        request = factory.post(
+            "/graphql/", {"query": query}, content_type="application/json"
+        )
+
+        response = GraphQLView.as_view(schema=schema)(request)
+
+        assert response.status_code == 200
+
+    assert "ERROR" in caplog.text
+    assert query in caplog.text
