@@ -106,7 +106,7 @@ class StrawberryField(dataclasses.Field):
     @property
     def graphql_name(self) -> Optional[str]:
         if self._graphql_name:
-            return to_camel_case(self._graphql_name)
+            return self._graphql_name
         if self.python_name:
             return to_camel_case(self.python_name)
         if self.base_resolver:

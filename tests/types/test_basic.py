@@ -67,3 +67,13 @@ def test_can_use_types_directly():
     user = User(username="abc")
     assert user.username == "abc"
     assert user.email() == "abc@somesite.com"
+
+
+def test_graphql_name_unchanged():
+    @strawberry.type
+    class Query:
+        the_field: int = strawberry.field(name="some_name")
+
+    definition = Query._type_definition
+
+    assert definition.fields[0].graphql_name == "some_name"
