@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.53.3 - 2021-04-02
+-------------------
+
+Fix issue where StrawberryField.graphql_name would always be camelCased
+
 0.53.2 - 2021-04-01
 -------------------
 
