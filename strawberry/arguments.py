@@ -69,7 +69,7 @@ def get_arguments_from_annotations(
             else default_value
         )
 
-        argument_definition = StrawberryArgument(
+        argument = StrawberryArgument(
             python_name=name,
             graphql_name=to_camel_case(name),
             origin=origin,
@@ -80,7 +80,7 @@ def get_arguments_from_annotations(
             annotated_args = get_args(annotation)
 
             # The first argument to Annotated is always the underlying type
-            argument_definition.type = annotated_args[0]
+            argument.type = annotated_args[0]
 
             argument_metadata = None
             # Find any instances of StrawberryArgumentAnnotation
@@ -95,16 +95,16 @@ def get_arguments_from_annotations(
                     argument_metadata = arg
 
             if argument_metadata is not None:
-                argument_definition.description = argument_metadata.description
+                argument.description = argument_metadata.description
         else:
-            argument_definition.type = annotation
+            argument.type = annotation
 
-        arguments.append(argument_definition)
+        arguments.append(argument)
 
         # Deferred to prevent import cycles
         from .types.type_resolver import _resolve_type
 
-        _resolve_type(argument_definition)
+        _resolve_type(argument)
 
     return arguments
 
@@ -124,19 +124,19 @@ def is_unset(value: Any) -> bool:
     return type(value) is _Unset
 
 
-def convert_argument(value: Any, argument_definition: StrawberryArgument) -> Any:
+def convert_argument(value: Any, argument: StrawberryArgument) -> Any:
     if value is None:
         return None
 
     if is_unset(value):
         return value
 
-    if argument_definition.is_list:
-        child_definition = cast(StrawberryArgument, argument_definition.child)
+    if argument.is_list:
+        child_definition = cast(StrawberryArgument, argument.child)
 
         return [convert_argument(x, child_definition) for x in value]
 
-    argument_type = cast(Type, argument_definition.type)
+    argument_type = cast(Type, argument.type)
 
     if is_scalar(argument_type):
         return value

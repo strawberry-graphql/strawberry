@@ -174,25 +174,25 @@ def resolve_type_field(field: StrawberryField) -> None:
         field.is_union = True
 
 
-def _resolve_type(argument_definition: StrawberryArgument) -> None:
+def _resolve_type(argument: StrawberryArgument) -> None:
     # TODO: This should be handled by StrawberryType in the future
     # Convert a python type to include a strawberry definition, so for example
     # Union becomes a class with a UnionDefinition, Generics become an actual
     # type definition. This helps with making the code to convert the type definitions
     # to GraphQL types, as we only have to deal with Python's typings in one place.
 
-    type = cast(Type, argument_definition.type)
-    assert argument_definition.python_name
+    type = cast(Type, argument.type)
+    assert argument.python_name
 
     if isinstance(type, str):
-        module = sys.modules[argument_definition.origin.__module__].__dict__
+        module = sys.modules[argument.origin.__module__].__dict__
 
         type = eval(type, module)
-        argument_definition.type = type
+        argument.type = type
 
     if isinstance(type, LazyType):
-        argument_definition.type = type.resolve_type()
-        type = cast(Type, argument_definition.type)
+        argument.type = type.resolve_type()
+        type = cast(Type, argument.type)
 
     if is_forward_ref(type):
         # if the type is a forward reference we try to resolve the type by
@@ -203,12 +203,12 @@ def _resolve_type(argument_definition: StrawberryArgument) -> None:
 
         type_name = type.__forward_arg__
 
-        module = sys.modules[argument_definition.origin.__module__]
+        module = sys.modules[argument.origin.__module__]
 
         # TODO: we should probably raise an error if we can't find the type
         type = module.__dict__[type_name]
 
-        argument_definition.type = type
+        argument.type = type
 
         return
 
@@ -217,9 +217,9 @@ def _resolve_type(argument_definition: StrawberryArgument) -> None:
 
         # async generators are used in subscription, we only need the yield type
         # https://docs.python.org/3/library/typing.html#typing.AsyncGenerator
-        argument_definition.type = get_async_generator_annotation(type)
+        argument.type = get_async_generator_annotation(type)
 
-        return _resolve_type(argument_definition)
+        return _resolve_type(argument)
 
     # check for Optional[A] which is represented as Union[A, None], we
     # have an additional check for proper unions below
@@ -230,13 +230,11 @@ def _resolve_type(argument_definition: StrawberryArgument) -> None:
         # the field is only optional if it is not a list or if it was already optional
         # since we mark the child as optional when the field is a list
 
-        argument_definition.is_optional = (
-            True and not argument_definition.is_list or argument_definition.is_optional
-        )
-        argument_definition.is_child_optional = argument_definition.is_list
-        argument_definition.type = get_optional_annotation(type)
+        argument.is_optional = True and not argument.is_list or argument.is_optional
+        argument.is_child_optional = argument.is_list
+        argument.type = get_optional_annotation(type)
 
-        return _resolve_type(argument_definition)
+        return _resolve_type(argument)
 
     elif is_list(type):
         # TODO: maybe this should be an argument definition when it is argument
@@ -244,14 +242,14 @@ def _resolve_type(argument_definition: StrawberryArgument) -> None:
         child_field = StrawberryField(
             python_name=None,
             graphql_name=None,
-            origin=argument_definition.origin,  # type: ignore
+            origin=argument.origin,  # type: ignore
             type_=get_list_annotation(type),
         )
         resolve_type_field(child_field)
 
-        argument_definition.type = None
-        argument_definition.is_list = True
-        argument_definition.child = cast(StrawberryArgument, child_field)
+        argument.type = None
+        argument.is_list = True
+        argument.child = cast(StrawberryArgument, child_field)
 
         return
 
@@ -261,7 +259,7 @@ def _resolve_type(argument_definition: StrawberryArgument) -> None:
         # Optional[Union[A, B]] is represented as Union[A, B, None] so we need
         # too check again if the field is optional as the check above only checks
         # for single Optionals
-        argument_definition.is_optional = is_optional(type)
+        argument.is_optional = is_optional(type)
 
         types = type.__args__
 
@@ -269,13 +267,13 @@ def _resolve_type(argument_definition: StrawberryArgument) -> None:
         # are simpler and cannot contain lists or optionals
 
         types = tuple(
-            _resolve_generic_type(t, argument_definition.python_name)
+            _resolve_generic_type(t, argument.python_name)
             for t in types
             if t is not None.__class__
         )
 
-        argument_definition.is_union = True
-        argument_definition.type = union(get_name_from_types(types), types)
+        argument.is_union = True
+        argument.type = union(get_name_from_types(types), types)
 
     # case for Type[A], we want to convert generics to have the concrete types
     # when we pass them, so that we don't have to deal with generics when
@@ -291,16 +289,16 @@ def _resolve_type(argument_definition: StrawberryArgument) -> None:
         # >>> a: X[str]
 
         if len(args) == 0:
-            assert argument_definition.python_name
+            assert argument.python_name
 
-            raise MissingTypesForGenericError(argument_definition.python_name, type)
+            raise MissingTypesForGenericError(argument.python_name, type)
 
         # we only make a copy when all the arguments are not type vars
         if not all(is_type_var(a) for a in args):
-            argument_definition.type = copy_type_with(type, *args)
+            argument.type = copy_type_with(type, *args)
 
     if isinstance(type, StrawberryUnion):
-        argument_definition.is_union = True
+        argument.is_union = True
 
 
 def _get_type_params(fields: List[StrawberryField]) -> Dict[str, Type]:
