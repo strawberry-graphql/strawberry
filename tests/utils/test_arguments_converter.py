@@ -2,17 +2,17 @@ from enum import Enum
 from typing import List, Optional
 
 import strawberry
-from strawberry.arguments import UNSET, ArgumentDefinition, convert_arguments
+from strawberry.arguments import UNSET, StrawberryArgument, convert_arguments
 
 
 def test_simple_types():
     args = {"integer": 1, "string": "abc", "float": 1.2, "bool": True}
 
     arguments = [
-        ArgumentDefinition(name="integer", type=int, origin_name="integer"),
-        ArgumentDefinition(name="string", type=str, origin_name="string"),
-        ArgumentDefinition(name="float", type=float, origin_name="float"),
-        ArgumentDefinition(name="bool", type=bool, origin_name="bool"),
+        StrawberryArgument(graphql_name="integer", type_=int, python_name="integer"),
+        StrawberryArgument(graphql_name="string", type_=str, python_name="string"),
+        StrawberryArgument(graphql_name="float", type_=float, python_name="float"),
+        StrawberryArgument(graphql_name="bool", type_=bool, python_name="bool"),
     ]
 
     assert convert_arguments(args, arguments) == {
@@ -30,19 +30,19 @@ def test_list():
     }
 
     arguments = [
-        ArgumentDefinition(
-            name="integerList",
-            origin_name="integer_list",
-            type=int,
+        StrawberryArgument(
+            graphql_name="integerList",
+            python_name="integer_list",
+            type_=int,
             is_list=True,
-            child=ArgumentDefinition(type=int),
+            child=StrawberryArgument(graphql_name=None, python_name=None, type_=int),
         ),
-        ArgumentDefinition(
-            name="stringList",
-            origin_name="string_list",
-            type=str,
+        StrawberryArgument(
+            graphql_name="stringList",
+            python_name="string_list",
+            type_=str,
             is_list=True,
-            child=ArgumentDefinition(type=str),
+            child=StrawberryArgument(graphql_name=None, python_name=None, type_=str),
         ),
     ]
 
@@ -64,7 +64,9 @@ def test_input_types():
         "input": {"abc": "example", "sayHelloTo": "Patrick", "having": 10, "fun": "yes"}
     }
 
-    arguments = [ArgumentDefinition(name="input", origin_name="input", type=MyInput)]
+    arguments = [
+        StrawberryArgument(graphql_name=None, python_name="input", type_=MyInput)
+    ]
 
     assert convert_arguments(args, arguments) == {
         "input": MyInput(abc="example", say_hello_to="Patrick", was=10, fun="yes")
@@ -79,8 +81,8 @@ def test_optional_input_types():
     args = {"input": {"abc": "example"}}
 
     arguments = [
-        ArgumentDefinition(
-            name="input", origin_name="input", type=MyInput, is_optional=True
+        StrawberryArgument(
+            graphql_name=None, python_name="input", type_=MyInput, is_optional=True
         )
     ]
 
@@ -95,10 +97,13 @@ def test_list_of_input_types():
     args = {"inputList": [{"abc": "example"}]}
 
     arguments = [
-        ArgumentDefinition(
-            name="inputList",
-            origin_name="input_list",
-            child=ArgumentDefinition(type=MyInput),
+        StrawberryArgument(
+            graphql_name="inputList",
+            python_name="input_list",
+            type_=None,
+            child=StrawberryArgument(
+                graphql_name=None, python_name=None, type_=MyInput
+            ),
             is_list=True,
         )
     ]
@@ -116,11 +121,14 @@ def test_optional_list_of_input_types():
     args = {"inputList": [{"abc": "example"}]}
 
     arguments = [
-        ArgumentDefinition(
-            name="inputList",
-            origin_name="input_list",
+        StrawberryArgument(
+            graphql_name="inputList",
+            python_name="input_list",
             is_optional=True,
-            child=ArgumentDefinition(type=MyInput),
+            type_=None,
+            child=StrawberryArgument(
+                graphql_name=None, python_name=None, type_=MyInput
+            ),
             is_list=True,
         )
     ]
@@ -165,8 +173,8 @@ def test_nested_input_types():
     }
 
     arguments = [
-        ArgumentDefinition(
-            name="input", origin_name="input", type=AddReleaseFileCommentInput
+        StrawberryArgument(
+            graphql_name=None, python_name="input", type_=AddReleaseFileCommentInput
         )
     ]
 
@@ -187,8 +195,8 @@ def test_nested_input_types():
     }
 
     arguments = [
-        ArgumentDefinition(
-            name="input", origin_name="input", type=AddReleaseFileCommentInput
+        StrawberryArgument(
+            graphql_name=None, python_name="input", type_=AddReleaseFileCommentInput
         )
     ]
 
@@ -210,7 +218,9 @@ def test_nested_list_of_complex_types():
 
     args = {"input": {"numbers": [{"value": 1}, {"value": 2}]}}
 
-    arguments = [ArgumentDefinition(name="input", origin_name="input", type=Input)]
+    arguments = [
+        StrawberryArgument(graphql_name=None, python_name="input", type_=Input)
+    ]
 
     assert convert_arguments(args, arguments) == {
         "input": Input(numbers=[Number(1), Number(2)])
@@ -230,14 +240,18 @@ def test_uses_default_for_optional_types_when_nothing_is_passed():
     # case 1
     args = {"input": {}}
 
-    arguments = [ArgumentDefinition(name="input", origin_name="input", type=Input)]
+    arguments = [
+        StrawberryArgument(graphql_name=None, python_name="input", type_=Input)
+    ]
 
     assert convert_arguments(args, arguments) == {"input": Input(UNSET, UNSET)}
 
     # case 2
     args = {"input": {"numbersSecond": None}}
 
-    arguments = [ArgumentDefinition(name="input", origin_name="input", type=Input)]
+    arguments = [
+        StrawberryArgument(graphql_name=None, python_name="input", type_=Input)
+    ]
 
     assert convert_arguments(args, arguments) == {"input": Input(UNSET, None)}
 
@@ -255,8 +269,8 @@ def test_when_optional():
     args = {}
 
     arguments = [
-        ArgumentDefinition(
-            name="input", origin_name="input", type=Input, is_optional=True
+        StrawberryArgument(
+            graphql_name=None, python_name="input", type_=Input, is_optional=True
         )
     ]
 

@@ -97,6 +97,6 @@ def test_resolver_fields_arguments():
     assert definition.fields[0].is_optional
 
     assert len(definition.fields[0].arguments) == 1
-    assert definition.fields[0].arguments[0].name == "argument"
+    assert definition.fields[0].arguments[0].graphql_name == "argument"
     assert definition.fields[0].arguments[0].type == str
     assert definition.fields[0].arguments[0].is_optional

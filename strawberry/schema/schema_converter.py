@@ -21,12 +21,12 @@ from graphql import (
     Undefined,
 )
 
-from strawberry.arguments import UNSET
+from strawberry.arguments import UNSET, StrawberryArgument
 from strawberry.directive import DirectiveDefinition
 from strawberry.enum import EnumDefinition, EnumValue
 from strawberry.field import StrawberryField
 from strawberry.scalars import is_scalar
-from strawberry.types.types import ArgumentDefinition, TypeDefinition, undefined
+from strawberry.types.types import TypeDefinition, undefined
 from strawberry.union import StrawberryUnion
 
 from .types.concrete_type import ConcreteType
@@ -39,7 +39,7 @@ class GraphQLCoreConverter:
     def __init__(self):
         self.type_map: Dict[str, ConcreteType] = {}
 
-    def get_graphql_type_argument(self, argument: ArgumentDefinition) -> GraphQLType:
+    def get_graphql_type_argument(self, argument: StrawberryArgument) -> GraphQLType:
         # TODO: Completely replace with get_graphql_type
 
         graphql_type: GraphQLType
@@ -96,7 +96,7 @@ class GraphQLCoreConverter:
 
         raise TypeError(f"Unexpected type '{type_}'")
 
-    def from_argument(self, argument: ArgumentDefinition) -> GraphQLArgument:
+    def from_argument(self, argument: StrawberryArgument) -> GraphQLArgument:
         default_value = (
             Undefined if argument.default_value is undefined else argument.default_value
         )
@@ -139,8 +139,8 @@ class GraphQLCoreConverter:
 
         graphql_arguments = {}
         for argument in directive.arguments:
-            assert argument.name is not None
-            graphql_arguments[argument.name] = self.from_argument(argument)
+            assert argument.graphql_name is not None
+            graphql_arguments[argument.graphql_name] = self.from_argument(argument)
 
         return GraphQLDirective(
             name=directive.name,
@@ -163,8 +163,8 @@ class GraphQLCoreConverter:
 
         graphql_arguments = {}
         for argument in field.arguments:
-            assert argument.name is not None
-            graphql_arguments[argument.name] = self.from_argument(argument)
+            assert argument.graphql_name is not None
+            graphql_arguments[argument.graphql_name] = self.from_argument(argument)
 
         return GraphQLField(
             type_=field_type,
@@ -245,7 +245,7 @@ class GraphQLCoreConverter:
 
         return graphql_interface
 
-    def from_list_argument(self, list_: ArgumentDefinition) -> GraphQLList:
+    def from_list_argument(self, list_: StrawberryArgument) -> GraphQLList:
         assert list_.child is not None
         of_type = self.get_graphql_type_argument(list_.child)
 
