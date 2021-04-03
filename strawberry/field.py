@@ -39,6 +39,7 @@ class StrawberryField(dataclasses.Field):
         permission_classes: List[Type[BasePermission]] = (),  # type: ignore
         default_value: Any = undefined,
         deprecation_reason: Optional[str] = None,
+        validators: Optional[List[Callable]] = None,
     ):
         federation = federation or FederationFieldParams()
 
@@ -83,6 +84,8 @@ class StrawberryField(dataclasses.Field):
         self.permission_classes: List[Type[BasePermission]] = list(permission_classes)
 
         self.deprecation_reason = deprecation_reason
+
+        self.validators: List[Callable] = validators or []
 
     def __call__(self, resolver: _RESOLVER_TYPE) -> "StrawberryField":
         """Add a resolver to the field"""
@@ -201,8 +204,12 @@ class StrawberryField(dataclasses.Field):
         resolver defined we default to using getattr on `source`.
         """
 
+        # avoid circular import
+        from . import validators
+
         if self.base_resolver:
             args, kwargs = self._get_arguments(kwargs, source=source, info=info)
+            validators.validate_arguments(kwargs, info)
 
             return self.base_resolver(*args, **kwargs)
 
@@ -257,18 +264,29 @@ class StrawberryField(dataclasses.Field):
 
             result = self.get_result(kwargs=kwargs, info=strawberry_info, source=source)
 
+            # avoid circular import
+            from . import validators
+
             if iscoroutine(result):  # pragma: no cover
 
                 async def await_result(result):
-                    return _convert_enums_to_values(self, await result)
+                    result = validators.validate_field(
+                        self, await result, strawberry_info
+                    )
+                    return _convert_enums_to_values(self, result)
 
                 return await_result(result)
 
+            result = validators.validate_field(self, result, strawberry_info)
             result = _convert_enums_to_values(self, result)
             return result
 
         _resolver._is_default = not self.base_resolver  # type: ignore
         return _resolver
+
+    def validator(self, validator: Callable) -> Callable:
+        self.validators.append(validator)
+        return validator
 
 
 def field(
@@ -280,6 +298,7 @@ def field(
     permission_classes: Optional[List[Type[BasePermission]]] = None,
     federation: Optional[FederationFieldParams] = None,
     deprecation_reason: Optional[str] = None,
+    validators: Optional[List[Callable]] = None,
 ) -> StrawberryField:
     """Annotates a method or property as a GraphQL field.
 
@@ -305,6 +324,7 @@ def field(
         permission_classes=permission_classes or [],
         federation=federation or FederationFieldParams(),
         deprecation_reason=deprecation_reason,
+        validators=validators,
     )
 
     if resolver:
