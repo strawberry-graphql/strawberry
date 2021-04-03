@@ -119,18 +119,32 @@ class BaseView(View):
         return response
 
     def log(
-        self, execution_context: ExecutionContext, execution_result: ExecutionResult
+        self,
+        execution_context: ExecutionContext,
+        execution_result: ExecutionResult,
+        skip_introspection_queries=True,
     ):
-        level = logging.ERROR if execution_result.errors else logging.DEBUG
+        if (
+            "query IntrospectionQuery" in execution_context.query
+            and skip_introspection_queries
+        ):
+            #  IntrospectionQuery is not always set as operation_name
+            #  ( single query, operation_name can be ommited )
+            #  So we have too look for it in the query.
+            return
 
         with io.StringIO() as stream:
+
             pretty_print_graphql(
                 execution_context,
                 execution_result,
-                skip_introspection_queries=True,
                 stream=stream,
             )
-            self.logger.log(level, stream.getvalue())
+
+            self.logger.log(
+                logging.ERROR if execution_result.errors else logging.DEBUG,
+                stream.getvalue(),
+            )
 
 
 class GraphQLView(BaseView):

@@ -94,20 +94,10 @@ def pretty_print_graphql_execution_result(
 def pretty_print_graphql(
     execution_context: ExecutionContext,
     execution_result: ExecutionResult,
-    skip_introspection_queries=False,
     stream: TextIO = None,
 ):
     if stream is None:
         stream = sys.stdout
-
-    if (
-        "query IntrospectionQuery" in execution_context.query
-        and skip_introspection_queries
-    ):
-        #  IntrospectionQuery is not always set as operation_name
-        #  ( single query, operation_name can be ommited )
-        #  So we have too look for it in the query.
-        return
 
     pretty_print_graphql_execution_context(
         execution_context.operation_name,

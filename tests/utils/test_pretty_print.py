@@ -86,25 +86,3 @@ def test_pretty_print_graphql_stream():
     )
 
     test_stream.close()
-
-
-def test_pretty_print_graphql_skipping_introspection_queries():
-
-    ec = ExecutionContext(
-        operation_name="Example",
-        query="{ query IntrospectionQuery }",
-        variables={"example": Decimal(1)},
-    )
-
-    er = ExecutionResult(
-        data=None,
-        errors=[],
-    )
-
-    test_stream = io.StringIO()
-
-    pretty_print_graphql(ec, er, skip_introspection_queries=True, stream=test_stream)
-
-    assert test_stream.getvalue() == ""
-
-    test_stream.close()
