@@ -79,6 +79,7 @@ def test_arguments_lists():
     assert definition.fields[0].arguments[0].type is None
     assert definition.fields[0].arguments[0].is_list
     assert definition.fields[0].arguments[0].is_optional is False
+    assert definition.fields[0].arguments[0].child.graphql_name is None
     assert definition.fields[0].arguments[0].child.type == Input
     assert definition.fields[0].arguments[0].child.is_optional is False
 

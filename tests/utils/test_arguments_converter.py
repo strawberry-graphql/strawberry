@@ -65,7 +65,7 @@ def test_input_types():
     }
 
     arguments = [
-        StrawberryArgument(graphql_name="input", python_name="input", type_=MyInput)
+        StrawberryArgument(graphql_name=None, python_name="input", type_=MyInput)
     ]
 
     assert convert_arguments(args, arguments) == {
@@ -82,7 +82,7 @@ def test_optional_input_types():
 
     arguments = [
         StrawberryArgument(
-            graphql_name="input", python_name="input", type_=MyInput, is_optional=True
+            graphql_name=None, python_name="input", type_=MyInput, is_optional=True
         )
     ]
 
@@ -174,7 +174,7 @@ def test_nested_input_types():
 
     arguments = [
         StrawberryArgument(
-            graphql_name="input", python_name="input", type_=AddReleaseFileCommentInput
+            graphql_name=None, python_name="input", type_=AddReleaseFileCommentInput
         )
     ]
 
@@ -196,7 +196,7 @@ def test_nested_input_types():
 
     arguments = [
         StrawberryArgument(
-            graphql_name="input", python_name="input", type_=AddReleaseFileCommentInput
+            graphql_name=None, python_name="input", type_=AddReleaseFileCommentInput
         )
     ]
 
@@ -219,7 +219,7 @@ def test_nested_list_of_complex_types():
     args = {"input": {"numbers": [{"value": 1}, {"value": 2}]}}
 
     arguments = [
-        StrawberryArgument(graphql_name="input", python_name="input", type_=Input)
+        StrawberryArgument(graphql_name=None, python_name="input", type_=Input)
     ]
 
     assert convert_arguments(args, arguments) == {
@@ -241,7 +241,7 @@ def test_uses_default_for_optional_types_when_nothing_is_passed():
     args = {"input": {}}
 
     arguments = [
-        StrawberryArgument(graphql_name="input", python_name="input", type_=Input)
+        StrawberryArgument(graphql_name=None, python_name="input", type_=Input)
     ]
 
     assert convert_arguments(args, arguments) == {"input": Input(UNSET, UNSET)}
@@ -250,7 +250,7 @@ def test_uses_default_for_optional_types_when_nothing_is_passed():
     args = {"input": {"numbersSecond": None}}
 
     arguments = [
-        StrawberryArgument(graphql_name="input", python_name="input", type_=Input)
+        StrawberryArgument(graphql_name=None, python_name="input", type_=Input)
     ]
 
     assert convert_arguments(args, arguments) == {"input": Input(UNSET, None)}
@@ -270,7 +270,7 @@ def test_when_optional():
 
     arguments = [
         StrawberryArgument(
-            graphql_name="input", python_name="input", type_=Input, is_optional=True
+            graphql_name=None, python_name="input", type_=Input, is_optional=True
         )
     ]
 
