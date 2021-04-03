@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.53.4 - 2021-04-03
+-------------------
+
+Fixed issue with django multipart/form-data uploads
+
 0.53.3 - 2021-04-02
 -------------------
 
