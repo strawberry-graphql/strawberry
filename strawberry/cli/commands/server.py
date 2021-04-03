@@ -1,5 +1,4 @@
 import importlib
-import os
 import sys
 
 import click
@@ -15,8 +14,16 @@ from strawberry.asgi import GraphQL
 @click.argument("module", type=str)
 @click.option("-h", "--host", default="0.0.0.0", type=str)
 @click.option("-p", "--port", default=8000, type=int)
-def server(module, host, port):
-    sys.path.append(os.getcwd())
+@click.option(
+    "--app-dir",
+    default=".",
+    type=str,
+    show_default=True,
+    help="Look for the module in the specified directory, by adding this to the "
+    "PYTHONPATH. Defaults to the current working directory.",
+)
+def server(module, host, port, app_dir):
+    sys.path.insert(0, app_dir)
 
     reloader = hupper.start_reloader("strawberry.cli.run", verbose=False)
 
