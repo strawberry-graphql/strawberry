@@ -40,7 +40,7 @@ class BaseView(View):
         self.graphiql = graphiql
 
     def parse_body(self, request) -> Dict[str, Any]:
-        if request.content_type == "multipart/form-data":
+        if request.content_type.startswith("multipart/form-data"):
             data = json.loads(request.POST.get("operations", "{}"))
             files_map = json.loads(request.POST.get("map", "{}"))
 
