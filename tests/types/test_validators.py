@@ -2,6 +2,8 @@ import strawberry
 
 
 def upper_validator(value, info):
+    if info.context and info.context in value:
+        raise ValueError("Invalid value")
     return value.upper()
 
 
@@ -22,6 +24,11 @@ def test_validator():
 
     assert not result.errors
     assert result.data["type"]["string"] == "HELLO"
+
+    # error case
+    result = schema.execute_sync("{ type { string } }", context_value="hello")
+
+    assert result.errors[0].message == "Invalid value"
 
 
 def test_validator_decorator():
@@ -68,3 +75,10 @@ def test_input_validation():
 
     assert not result.errors
     assert result.data["mutation"] == "HELLO"
+
+    # error case
+    result = schema.execute_sync(
+        'mutation { mutation(input: { string: "hello" }) }', context_value="hello"
+    )
+
+    assert result.errors[0].message == "Invalid value"
