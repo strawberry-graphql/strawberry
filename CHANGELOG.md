@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.54.0 - 2021-04-03
+-------------------
+
+Internal refactoring.
+
+* Renamed `StrawberryArgument` to `StrawberryArgumentAnnotation`
+* Renamed `ArgumentDefinition` to `StrawberryArgument`
+    * Renamed `ArgumentDefinition(type: ...)` argument to
+      `StrawberryArgument(type_: ...)`
+
 0.53.4 - 2021-04-03
 -------------------
 
