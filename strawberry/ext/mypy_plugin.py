@@ -214,6 +214,71 @@ def enum_hook(ctx: DynamicClassDefContext) -> None:
     )
 
 
+def scalar_hook(ctx: DynamicClassDefContext) -> None:
+    first_argument = ctx.call.args[0]
+
+    if isinstance(first_argument, NameExpr):
+        if not first_argument.node:
+            ctx.api.defer()
+
+            return
+
+        if isinstance(first_argument.node, Var):
+            var_type = first_argument.node.type or AnyType(
+                TypeOfAny.implementation_artifact
+            )
+
+            type_alias = TypeAlias(
+                var_type,
+                fullname=ctx.api.qualified_name(ctx.name),
+                line=ctx.call.line,
+                column=ctx.call.column,
+            )
+
+            ctx.api.add_symbol_table_node(
+                ctx.name, SymbolTableNode(GDEF, type_alias, plugin_generated=False)
+            )
+            return
+
+    # Scalars are usually defined as `strawberry.scalar(NewType("PostTitle", str))`
+    if (
+        isinstance(first_argument, CallExpr)
+        and isinstance(first_argument.callee, NameExpr)
+        and first_argument.callee.name == "NewType"
+    ):
+        scalar_type = _get_type_for_expr(first_argument.args[1], ctx.api)
+
+        type_alias = TypeAlias(
+            scalar_type,
+            fullname=ctx.api.qualified_name(ctx.name),
+            line=ctx.call.line,
+            column=ctx.call.column,
+        )
+
+    else:
+
+        try:
+            scalar_type = _get_type_for_expr(first_argument, ctx.api)
+
+            type_alias = TypeAlias(
+                scalar_type,
+                fullname=ctx.api.qualified_name(ctx.name),
+                line=ctx.call.line,
+                column=ctx.call.column,
+            )
+        except InvalidNodeTypeException:
+            type_alias = TypeAlias(
+                AnyType(TypeOfAny.from_error),
+                fullname=ctx.api.qualified_name(ctx.name),
+                line=ctx.call.line,
+                column=ctx.call.column,
+            )
+
+    ctx.api.add_symbol_table_node(
+        ctx.name, SymbolTableNode(GDEF, type_alias, plugin_generated=False)
+    )
+
+
 def strawberry_pydantic_class_callback(ctx: ClassDefContext):
     # in future we want to have a proper pydantic plugin, but for now
     # let's fallback to any, some resources are here:
@@ -596,6 +661,9 @@ class StrawberryPlugin(Plugin):
 
         if "strawberry.enum" in fullname:
             return enum_hook
+
+        if "strawberry.custom_scalar.scalar" in fullname:
+            return scalar_hook
 
         return None
 

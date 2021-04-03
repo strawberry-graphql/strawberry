@@ -1,0 +1,30 @@
+- case: test_scalar
+  main: |
+    import strawberry
+    from typing import NewType
+
+    PostTitle = strawberry.scalar(NewType("PostTitle", str), description="...")
+
+    @strawberry.type
+    class Post:
+        title: PostTitle
+
+    reveal_type(Post("123").title)
+  out: |
+    main:10: note: Revealed type is 'builtins.str'
+
+- case: test_scalar_new_type
+  main: |
+    import strawberry
+    from typing import NewType
+
+    Title = NewType("Title", str)
+    PostTitle = strawberry.scalar(Title, description="...")
+
+    @strawberry.type
+    class Post:
+        title: PostTitle
+
+    reveal_type(Post(Title("123")).title)
+  out: |
+    main:11: note: Revealed type is 'main.Title'
