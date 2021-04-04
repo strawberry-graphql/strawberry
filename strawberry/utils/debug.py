@@ -21,6 +21,17 @@ class StrawberryJSONEncoder(JSONEncoder):
         return repr(o)
 
 
+def is_introspection(execution_context: ExecutionContext) -> bool:
+    """Returns True if the provided execution_context is a Introspection"""
+    #  IntrospectionQuery is not always set as operation_name
+    #  ( single query, operation_name can be ommited )
+    #  So we also have too look for it in the query.
+    return (
+        "IntrospectionQuery" == execution_context.operation_name
+        or "IntrospectionQuery" in execution_context.query
+    )
+
+
 def pretty_print_graphql_operation(
     operation_name: Optional[str],
     query: str,

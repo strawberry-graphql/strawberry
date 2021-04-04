@@ -345,7 +345,7 @@ def test_log(caplog):
 
     query = "{ abc }"
 
-    with caplog.at_level(logging.DEBUG):
+    with caplog.at_level(logging.DEBUG, logger="strawberry"):
 
         request = factory.post(
             "/graphql/", {"query": query}, content_type="application/json"
@@ -377,12 +377,12 @@ def test_log_when_we_have_errors(caplog):
     assert query in caplog.text
 
 
-def test_log_skipping_inspection_queries(caplog):
+def test_log_skipping_introspection(caplog):
     factory = RequestFactory()
 
     query = "{ query IntrospectionQuery }"
 
-    with caplog.at_level(logging.DEBUG):
+    with caplog.at_level(logging.DEBUG, logger="strawberry"):
 
         request = factory.post(
             "/graphql/", {"query": query}, content_type="application/json"

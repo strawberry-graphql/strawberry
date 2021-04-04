@@ -21,7 +21,7 @@ from strawberry.file_uploads.data import replace_placeholders_with_files
 from strawberry.http import GraphQLHTTPResponse, process_result
 from strawberry.types import ExecutionResult
 from strawberry.types.execution import ExecutionContext
-from strawberry.utils.debug import pretty_print_graphql
+from strawberry.utils.debug import is_introspection, pretty_print_graphql
 
 from ..schema import BaseSchema
 from .context import StrawberryDjangoContext
@@ -35,11 +35,11 @@ class TemporalHttpResponse(JsonResponse):
 
 
 class BaseView(View):
+    logger: logging.Logger = logging.getLogger("strawberry")
     graphiql = True
     schema: Optional[BaseSchema] = None
 
     def __init__(self, schema: BaseSchema, graphiql=True):
-        self.logger = logging.getLogger("strawberry")
         self.schema = schema
         self.graphiql = graphiql
 
@@ -122,15 +122,9 @@ class BaseView(View):
         self,
         execution_context: ExecutionContext,
         execution_result: ExecutionResult,
-        skip_introspection_queries=True,
+        skip_introspection=True,
     ):
-        if (
-            "query IntrospectionQuery" in execution_context.query
-            and skip_introspection_queries
-        ):
-            #  IntrospectionQuery is not always set as operation_name
-            #  ( single query, operation_name can be ommited )
-            #  So we have too look for it in the query.
+        if skip_introspection and is_introspection(execution_context):
             return
 
         with io.StringIO() as stream:

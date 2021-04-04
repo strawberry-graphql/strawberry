@@ -3,11 +3,20 @@ from decimal import Decimal
 
 from strawberry.types.execution import ExecutionContext, ExecutionResult
 from strawberry.utils.debug import (
+    is_introspection,
     pretty_print_graphql,
     pretty_print_graphql_execution_context,
     pretty_print_graphql_execution_result,
     pretty_print_graphql_operation,
 )
+
+
+def test_is_introspection():
+    execution_context = ExecutionContext(
+        "{ query InstrospectionQuery }", operation_name="IntrospectionQuery"
+    )
+
+    assert is_introspection(execution_context)
 
 
 def test_pretty_print(mocker):
