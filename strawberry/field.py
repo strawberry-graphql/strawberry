@@ -6,14 +6,14 @@ from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, 
 
 from graphql import GraphQLResolveInfo
 
-from strawberry.arguments import convert_arguments
+from strawberry.arguments import UNSET, convert_arguments
 from strawberry.types.info import Info
 from strawberry.utils.typing import get_parameters, has_type_var, is_type_var
 
 from .arguments import StrawberryArgument
 from .permission import BasePermission
 from .types.fields.resolver import StrawberryResolver
-from .types.types import FederationFieldParams, undefined
+from .types.types import FederationFieldParams
 from .union import StrawberryUnion
 from .utils.str_converters import to_camel_case
 
@@ -38,8 +38,8 @@ class StrawberryField(dataclasses.Field):
         description: Optional[str] = None,
         base_resolver: Optional[StrawberryResolver] = None,
         permission_classes: List[Type[BasePermission]] = (),  # type: ignore
-        default_value: Any = undefined,
-        default_factory: Union[Callable, object] = undefined,
+        default_value: Any = UNSET,
+        default_factory: Union[Callable, object] = UNSET,
         deprecation_reason: Optional[str] = None,
     ):
         federation = federation or FederationFieldParams()
@@ -49,10 +49,10 @@ class StrawberryField(dataclasses.Field):
 
         super().__init__(  # type: ignore
             default=(
-                default_value if default_value != undefined else dataclasses.MISSING
+                default_value if default_value != UNSET else dataclasses.MISSING
             ),
             default_factory=(
-                default_factory if default_factory != undefined else dataclasses.MISSING
+                default_factory if default_factory != UNSET else dataclasses.MISSING
             ),
             init=is_basic_field,
             repr=is_basic_field,
@@ -286,8 +286,8 @@ def field(
     permission_classes: Optional[List[Type[BasePermission]]] = None,
     federation: Optional[FederationFieldParams] = None,
     deprecation_reason: Optional[str] = None,
-    default: Any = undefined,
-    default_factory: Union[Callable, object] = undefined,
+    default: Any = UNSET,
+    default_factory: Union[Callable, object] = UNSET,
 ) -> StrawberryField:
     """Annotates a method or property as a GraphQL field.
 
