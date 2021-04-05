@@ -48,9 +48,11 @@ class StrawberryField(dataclasses.Field):
         is_basic_field = not base_resolver
 
         super().__init__(  # type: ignore
-            default=(default_value if default_value != UNSET else dataclasses.MISSING),
+            default=(
+                default_value if default_value is not UNSET else dataclasses.MISSING
+            ),
             default_factory=(
-                default_factory if default_factory != UNSET else dataclasses.MISSING
+                default_factory if default_factory is not UNSET else dataclasses.MISSING
             ),
             init=is_basic_field,
             repr=is_basic_field,
