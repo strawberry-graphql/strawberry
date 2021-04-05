@@ -7,7 +7,10 @@ from typing import Optional
 import pytest
 
 import strawberry
-from strawberry.exceptions import FieldWithResolverAndDefaultValueError
+from strawberry.exceptions import (
+    FieldWithResolverAndDefaultFactoryError,
+    FieldWithResolverAndDefaultValueError,
+)
 
 
 def test_raises_exception_with_unsupported_types():
@@ -480,3 +483,13 @@ def test_field_with_separate_resolver_default():
         @strawberry.type
         class Query:
             c: str = strawberry.field(default="Example C", resolver=test_resolver)
+
+
+def test_field_with_resolver_default_factory():
+    with pytest.raises(FieldWithResolverAndDefaultFactoryError):
+
+        @strawberry.type
+        class Query:
+            @strawberry.field(default_factory=lambda: "Example C")
+            def c(self) -> str:
+                return "I'm a resolver"

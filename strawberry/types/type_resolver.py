@@ -4,9 +4,10 @@ import typing
 from typing import Dict, List, Type, cast
 
 from strawberry.exceptions import (
+    FieldWithResolverAndDefaultFactoryError,
+    FieldWithResolverAndDefaultValueError,
     MissingTypesForGenericError,
     PrivateStrawberryFieldError,
-    FieldWithResolverAndDefaultValueError,
 )
 from strawberry.field import StrawberryField
 from strawberry.lazy_type import LazyType
@@ -385,6 +386,17 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
             # Check that default is not set if a resolver is defined
             if field.default != dataclasses.MISSING and field.base_resolver is not None:
                 raise FieldWithResolverAndDefaultValueError(
+                    field.python_name, cls.__name__
+                )
+
+            # Check that default_factory is not set if a resolver is defined
+            # Note: using getattr because of this issue:
+            # https://github.com/python/mypy/issues/6910
+            if (
+                getattr(field, "default_factory") != dataclasses.MISSING  # noqa
+                and field.base_resolver is not None
+            ):
+                raise FieldWithResolverAndDefaultFactoryError(
                     field.python_name, cls.__name__
                 )
 

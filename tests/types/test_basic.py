@@ -86,3 +86,12 @@ def test_field_with_default():
 
     instance = Query()
     assert instance.the_field == 3
+
+
+def test_field_with_default_factory():
+    @strawberry.type
+    class Query:
+        the_field: int = strawberry.field(default_factory=lambda: 3)
+
+    instance = Query()
+    assert instance.the_field == 3
