@@ -4,6 +4,8 @@ import typing
 from typing import Dict, List, Type, cast
 
 from strawberry.exceptions import (
+    FieldWithResolverAndDefaultFactoryError,
+    FieldWithResolverAndDefaultValueError,
     MissingTypesForGenericError,
     PrivateStrawberryFieldError,
 )
@@ -25,11 +27,8 @@ from strawberry.utils.typing import (
     is_union,
 )
 
-from ..arguments import StrawberryArgument
+from ..arguments import UNSET, StrawberryArgument
 from .generics import copy_type_with, get_name_from_types
-
-# TODO: why do we have undefined?
-from .types import undefined
 
 
 def _resolve_generic_type(type: Type, field_name: str) -> Type:
@@ -381,6 +380,23 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
             if isinstance(field.type, Private):
                 raise PrivateStrawberryFieldError(field.python_name, cls.__name__)
 
+            # Check that default is not set if a resolver is defined
+            if field.default != dataclasses.MISSING and field.base_resolver is not None:
+                raise FieldWithResolverAndDefaultValueError(
+                    field.python_name, cls.__name__
+                )
+
+            # Check that default_factory is not set if a resolver is defined
+            # Note: using getattr because of this issue:
+            # https://github.com/python/mypy/issues/6910
+            if (
+                getattr(field, "default_factory") != dataclasses.MISSING  # noqa
+                and field.base_resolver is not None
+            ):
+                raise FieldWithResolverAndDefaultFactoryError(
+                    field.python_name, cls.__name__
+                )
+
             # we make sure that the origin is either the field's resolver when
             # called as:
             #
@@ -406,7 +422,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
                 graphql_name=to_camel_case(field.name),
                 type_=field_type,
                 origin=cls,
-                default_value=getattr(cls, field.name, undefined),
+                default_value=getattr(cls, field.name, UNSET),
             )
 
         field_name = field.graphql_name

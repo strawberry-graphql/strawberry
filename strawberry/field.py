@@ -6,14 +6,14 @@ from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, 
 
 from graphql import GraphQLResolveInfo
 
-from strawberry.arguments import convert_arguments
+from strawberry.arguments import UNSET, convert_arguments
 from strawberry.types.info import Info
 from strawberry.utils.typing import get_parameters, has_type_var, is_type_var
 
 from .arguments import StrawberryArgument
 from .permission import BasePermission
 from .types.fields.resolver import StrawberryResolver
-from .types.types import FederationFieldParams, undefined
+from .types.types import FederationFieldParams
 from .union import StrawberryUnion
 from .utils.str_converters import to_camel_case
 
@@ -38,7 +38,8 @@ class StrawberryField(dataclasses.Field):
         description: Optional[str] = None,
         base_resolver: Optional[StrawberryResolver] = None,
         permission_classes: List[Type[BasePermission]] = (),  # type: ignore
-        default_value: Any = undefined,
+        default_value: Any = UNSET,
+        default_factory: Union[Callable, object] = UNSET,
         deprecation_reason: Optional[str] = None,
     ):
         federation = federation or FederationFieldParams()
@@ -47,8 +48,10 @@ class StrawberryField(dataclasses.Field):
         is_basic_field = not base_resolver
 
         super().__init__(  # type: ignore
-            default=dataclasses.MISSING,
-            default_factory=dataclasses.MISSING,
+            default=(default_value if default_value != UNSET else dataclasses.MISSING),
+            default_factory=(
+                default_factory if default_factory != UNSET else dataclasses.MISSING
+            ),
             init=is_basic_field,
             repr=is_basic_field,
             compare=is_basic_field,
@@ -281,6 +284,8 @@ def field(
     permission_classes: Optional[List[Type[BasePermission]]] = None,
     federation: Optional[FederationFieldParams] = None,
     deprecation_reason: Optional[str] = None,
+    default: Any = UNSET,
+    default_factory: Union[Callable, object] = UNSET,
 ) -> StrawberryField:
     """Annotates a method or property as a GraphQL field.
 
@@ -306,6 +311,8 @@ def field(
         permission_classes=permission_classes or [],
         federation=federation or FederationFieldParams(),
         deprecation_reason=deprecation_reason,
+        default_value=default,
+        default_factory=default_factory,
     )
 
     if resolver:
