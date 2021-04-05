@@ -27,11 +27,8 @@ from strawberry.utils.typing import (
     is_union,
 )
 
-from ..arguments import StrawberryArgument
+from ..arguments import UNSET, StrawberryArgument
 from .generics import copy_type_with, get_name_from_types
-
-# TODO: why do we have undefined?
-from .types import undefined
 
 
 def _resolve_generic_type(type: Type, field_name: str) -> Type:
@@ -425,7 +422,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
                 graphql_name=to_camel_case(field.name),
                 type_=field_type,
                 origin=cls,
-                default_value=getattr(cls, field.name, undefined),
+                default_value=getattr(cls, field.name, UNSET),
             )
 
         field_name = field.graphql_name
