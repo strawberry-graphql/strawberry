@@ -19,8 +19,11 @@ from strawberry.asgi import GraphQL
     default=".",
     type=str,
     show_default=True,
-    help="Look for the module in the specified directory, by adding this to the "
-    "PYTHONPATH. Defaults to the current working directory.",
+    help=(
+        "Look for the module in the specified directory, by adding this to the "
+        "PYTHONPATH. Defaults to the current working directory. "
+        "Works the same as `--app-dir` in uvicorn."
+    ),
 )
 def server(module, host, port, app_dir):
     sys.path.insert(0, app_dir)
