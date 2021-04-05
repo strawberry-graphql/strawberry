@@ -47,7 +47,9 @@ class StrawberryField(dataclasses.Field):
         is_basic_field = not base_resolver
 
         super().__init__(  # type: ignore
-            default=dataclasses.MISSING,
+            default=(
+                default_value if default_value != undefined else dataclasses.MISSING
+            ),
             default_factory=dataclasses.MISSING,
             init=is_basic_field,
             repr=is_basic_field,
@@ -281,6 +283,7 @@ def field(
     permission_classes: Optional[List[Type[BasePermission]]] = None,
     federation: Optional[FederationFieldParams] = None,
     deprecation_reason: Optional[str] = None,
+    default: Any = undefined,
 ) -> StrawberryField:
     """Annotates a method or property as a GraphQL field.
 
@@ -306,6 +309,7 @@ def field(
         permission_classes=permission_classes or [],
         federation=federation or FederationFieldParams(),
         deprecation_reason=deprecation_reason,
+        default_value=default,
     )
 
     if resolver:

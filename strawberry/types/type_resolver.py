@@ -6,6 +6,7 @@ from typing import Dict, List, Type, cast
 from strawberry.exceptions import (
     MissingTypesForGenericError,
     PrivateStrawberryFieldError,
+    FieldWithResolverAndDefaultValueError,
 )
 from strawberry.field import StrawberryField
 from strawberry.lazy_type import LazyType
@@ -380,6 +381,12 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
             # Check that the field type is not Private
             if isinstance(field.type, Private):
                 raise PrivateStrawberryFieldError(field.python_name, cls.__name__)
+
+            # Check that default is not set if a resolver is defined
+            if field.default != dataclasses.MISSING and field.base_resolver is not None:
+                raise FieldWithResolverAndDefaultValueError(
+                    field.python_name, cls.__name__
+                )
 
             # we make sure that the origin is either the field's resolver when
             # called as:

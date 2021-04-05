@@ -7,6 +7,7 @@ from typing import Optional
 import pytest
 
 import strawberry
+from strawberry.exceptions import FieldWithResolverAndDefaultValueError
 
 
 def test_raises_exception_with_unsupported_types():
@@ -443,3 +444,39 @@ def test_str_magic_method_prints_schema_sdl():
     assert "<strawberry.schema.schema.Schema object" in repr(
         schema
     ), "Repr should not be affected"
+
+
+def test_field_with_default():
+    @strawberry.type
+    class Query:
+        a: str = strawberry.field(default="Example")
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ a }"
+
+    result = schema.execute_sync(query, root_value=Query())
+
+    assert not result.errors
+    assert result.data == {"a": "Example"}
+
+
+def test_field_with_resolver_default():
+    with pytest.raises(FieldWithResolverAndDefaultValueError):
+
+        @strawberry.type
+        class Query:
+            @strawberry.field(default="Example C")
+            def c(self) -> str:
+                return "I'm a resolver"
+
+
+def test_field_with_separate_resolver_default():
+    with pytest.raises(FieldWithResolverAndDefaultValueError):
+
+        def test_resolver() -> str:
+            return "I'm a resolver"
+
+        @strawberry.type
+        class Query:
+            c: str = strawberry.field(default="Example C", resolver=test_resolver)
