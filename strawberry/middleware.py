@@ -1,11 +1,11 @@
 from abc import abstractmethod
-from typing import Any, Dict, List
+from typing import Any, Dict, Sequence
 
 from typing_extensions import Protocol
 
 from strawberry.types.info import Info
 
-from .directive import DirectiveDefinition
+from .directive import StrawberryDirective
 
 
 SPECIFIED_DIRECTIVES = {"include", "skip"}
@@ -18,10 +18,9 @@ class Middleware(Protocol):
 
 
 class DirectivesMiddleware:
-    def __init__(self, directives: List[Any]):
-        self.directives: Dict[str, DirectiveDefinition] = {
-            directive.directive_definition.name: directive.directive_definition
-            for directive in directives
+    def __init__(self, directives: Sequence[StrawberryDirective]):
+        self.directives: Dict[str, StrawberryDirective] = {
+            directive.graphql_name: directive for directive in directives
         }
 
     # TODO: we might need the graphql info here

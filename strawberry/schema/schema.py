@@ -11,6 +11,7 @@ from graphql.subscription import subscribe
 from graphql.type.directives import specified_directives
 
 from strawberry.custom_scalar import ScalarDefinition
+from strawberry.directive import StrawberryDirective
 from strawberry.enum import EnumDefinition
 from strawberry.extensions import Extension
 from strawberry.schema.schema_converter import GraphQLCoreConverter
@@ -30,7 +31,7 @@ class Schema:
         query: Type,
         mutation: Optional[Type] = None,
         subscription: Optional[Type] = None,
-        directives=(),
+        directives: Sequence[StrawberryDirective] = (),
         types=(),
         extensions: Sequence[Type[Extension]] = (),
         execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
@@ -51,16 +52,15 @@ class Schema:
 
         self.middleware: List[Middleware] = [DirectivesMiddleware(directives)]
 
-        directives = [
-            self.schema_converter.from_directive(directive.directive_definition)
-            for directive in directives
+        graphql_directives = [
+            self.schema_converter.from_directive(directive) for directive in directives
         ]
 
         self._schema = GraphQLSchema(
             query=query_type,
             mutation=mutation_type,
             subscription=subscription_type if subscription else None,
-            directives=specified_directives + directives,
+            directives=specified_directives + graphql_directives,
             types=list(map(self.schema_converter.from_object_type, types)),
         )
 

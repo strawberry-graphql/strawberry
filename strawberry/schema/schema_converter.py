@@ -22,7 +22,7 @@ from graphql import (
 )
 
 from strawberry.arguments import UNSET, StrawberryArgument
-from strawberry.directive import DirectiveDefinition
+from strawberry.directive import StrawberryDirective
 from strawberry.enum import EnumDefinition, EnumValue
 from strawberry.field import StrawberryField
 from strawberry.scalars import is_scalar
@@ -135,15 +135,15 @@ class GraphQLCoreConverter:
     def from_enum_value(self, enum_value: EnumValue) -> GraphQLEnumValue:
         return GraphQLEnumValue(enum_value.value)
 
-    def from_directive(self, directive: DirectiveDefinition) -> GraphQLDirective:
-
+    def from_directive(self, directive: StrawberryDirective) -> GraphQLDirective:
         graphql_arguments = {}
+
         for argument in directive.arguments:
             assert argument.graphql_name is not None
             graphql_arguments[argument.graphql_name] = self.from_argument(argument)
 
         return GraphQLDirective(
-            name=directive.name,
+            name=directive.graphql_name,
             locations=directive.locations,
             args=graphql_arguments,
             description=directive.description,
