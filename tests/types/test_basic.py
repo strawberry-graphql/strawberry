@@ -77,3 +77,12 @@ def test_graphql_name_unchanged():
     definition = Query._type_definition
 
     assert definition.fields[0].graphql_name == "some_name"
+
+
+def test_field_with_default():
+    @strawberry.type
+    class Query:
+        the_field: int = strawberry.field(default=3)
+
+    instance = Query()
+    assert instance.the_field == 3
