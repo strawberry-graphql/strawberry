@@ -1,6 +1,13 @@
 CHANGELOG
 =========
 
+0.56.1 - 2021-04-06
+-------------------
+
+This release fixes the pydantic integration where you couldn't
+convert objects to pydantic instance when they didn't have a
+default value.
+
 0.56.0 - 2021-04-05
 -------------------
 
