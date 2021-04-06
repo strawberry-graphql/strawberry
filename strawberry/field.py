@@ -209,7 +209,10 @@ class StrawberryField(dataclasses.Field):
 
         if self.base_resolver:
             args, kwargs = self._get_arguments(kwargs, source=source, info=info)
-            validators.validate_arguments(kwargs, info)
+
+            error = validators.validate_arguments(kwargs, info)
+            if error:
+                return error
 
             return self.base_resolver(*args, **kwargs)
 
