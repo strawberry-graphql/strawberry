@@ -1,14 +1,15 @@
-from typing import Callable, Optional, Set, Type, TypeVar, Union
+from __future__ import annotations
 
-from strawberry.types import StrawberryArgument, StrawberryObject, \
-    StrawberryResolver, StrawberryType
+from typing import Callable, Optional, TypeVar, Union, Generic, List, Type
+
+from strawberry.types import StrawberryArgument, StrawberryResolver, StrawberryType
 
 T = TypeVar("T")
 S = TypeVar("S")
 _RESOLVER_TYPE = Union[StrawberryResolver[S], Callable[..., S]]
 
 
-class StrawberryField(StrawberryType[T]):
+class StrawberryField(Generic[T]):
     """Strawberry field
 
     >>> StrawberryField(
@@ -30,11 +31,10 @@ class StrawberryField(StrawberryType[T]):
 
     def __init__(
         self, *,
-        type_: Optional[Type[T]] = None,
-        # TODO: Should this _only_ take StrawberryResolver, and decorator would
-        #       handle conversion from Callable to StrawberryResolver?
+        type_: Optional[Union[Type[T], StrawberryType[T]]] = _NO_FIELD_TYPE,
         resolver: Optional[_RESOLVER_TYPE[T]] = None,
         name: Optional[str] = None,
+        default_value: Optional[T] = _NO_DEFAULT_VALUE,
         description: Optional[str] = None,
         permission_classes: Optional[object] = None,
     ):
@@ -44,73 +44,72 @@ class StrawberryField(StrawberryType[T]):
             # TODO: Raise Strawberry exception
             ...
 
-        self.resolver = self._convert_resolver(resolver) if resolver else None
+        self._resolver: Optional[_RESOLVER_TYPE[T]] = None
+        self.resolver = resolver
 
-        self._type = type_
-        self._name = name
-        self._description = description
+        self._type = None
+        self.type = type_
+
+        self._graphql_name = name
+        self.description = description
         # TODO: Deal with permissions
         self.permission_classes = permission_classes
-        # TODO: Default value. Maybe just use a lambda that returns static value
-        #       as resolver instead
-        self.default_value: StrawberryObject = self._NO_DEFAULT_VALUE
+        # TODO: Maybe just use a lambda that returns static value as resolver instead
+        self.default_value = default_value
 
-    def __call__(self, resolver: _RESOLVER_TYPE[T]) -> None:
-        self.resolver = self._convert_resolver(resolver)
-
-    @property
-    def arguments(self) -> Set[StrawberryArgument]:
-        if self.resolver:
-            return self.resolver.arguments
-
-        # TODO: Should we raise an exception instead?
-        return set()
+    def __call__(self, resolver: _RESOLVER_TYPE[T]) -> StrawberryField[T]:
+        """Add a resolver to the field"""
+        self.resolver = resolver
+        return self
 
     @property
-    def description(self) -> Optional[str]:
-        return self._description
+    def arguments(self) -> List[StrawberryArgument]:
+        if not self.resolver:
+            return []
+
+        return self.resolver.arguments
 
     @property
-    def name(self) -> str:
+    def graphql_name(self) -> Optional[str]:
         """The name specified explicitly, or if not set the wrapped resolver's
         name
         """
-        if self._name is not None:
-            return self._name
-
-        if self.resolver is not None:
+        if self._graphql_name:
+            return self._graphql_name
+        if self.resolver:
             return self.resolver.name
 
         # TODO: Should we raise an exception instead?
         return None
 
-    @name.setter
-    def name(self, name: str):
-        self._name = name
-
-    # TODO: Implement. What is it?
     @property
-    def origin(self):
-        ...
+    def resolver(self) -> Optional[_RESOLVER_TYPE[T]]:
+        return self._resolver
+
+    @resolver.setter
+    def resolver(self, resolver: _RESOLVER_TYPE[T]) -> None:
+        # Allow for StrawberryResolvers or bare functions to be provided
+        if not isinstance(resolver, StrawberryResolver):
+            resolver = StrawberryResolver(resolver)
+
+        self.resolver = resolver
 
     @property
-    def type(self) -> StrawberryObject:
+    def type(self) -> Optional[StrawberryType[T]]:
         if self._type is not None:
             return self._type
-
         if self.resolver is not None:
             return self.resolver.type
 
         # TODO: Should we raise an exception instead?
         return None
 
-    @staticmethod
-    def _convert_resolver(resolver: _RESOLVER_TYPE[T]) -> StrawberryResolver[T]:
-        if isinstance(resolver, StrawberryResolver):
-            return resolver
-        else:
-            # TODO: Description?
-            return StrawberryResolver(resolver, description=...)
+    @type.setter
+    def type(self, type_: Union[Type[T], StrawberryType[T]]) -> None:
+        if not isinstance(type_, StrawberryType):
+            type_ = StrawberryType(type_)
+
+        self._type = type_
 
 
 def field(

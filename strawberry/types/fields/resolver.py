@@ -1,16 +1,15 @@
 from inspect import iscoroutinefunction
-from typing import Callable, Optional, Set, Type, TypeVar
+from typing import Callable, Optional, Set, TypeVar, Generic
 
 from cached_property import cached_property  # type: ignore
 
 from strawberry.types import StrawberryArgument, StrawberryType
 from strawberry.utils.inspect import get_func_args
 
-
 T = TypeVar("T")
 
 
-class StrawberryResolver(StrawberryType[T]):
+class StrawberryResolver(Generic[T]):
     def __init__(self, func: Callable[..., T], *, description: Optional[str] = None):
         self.wrapped_func = func
         self._description = description
@@ -45,8 +44,13 @@ class StrawberryResolver(StrawberryType[T]):
         return self.wrapped_func.__name__
 
     @cached_property
-    def type(self) -> Type[T]:
-        return self.wrapped_func.__annotations__.get("return", None)
+    def type(self) -> Optional[StrawberryType[T]]:
+        type_ = self.wrapped_func.__annotations__.get("return", None)
+
+        if type_ is not None:
+            type_ = StrawberryType(type_)
+
+        return type_
 
     @cached_property
     def is_async(self) -> bool:

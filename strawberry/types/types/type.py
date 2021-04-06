@@ -1,17 +1,12 @@
-from abc import ABC, abstractmethod
 from typing import Generic, List, Optional, Type, TypeVar, Union
-
-from strawberry.types import StrawberryObject
 
 T = TypeVar("T")
 
 
-class StrawberryType(StrawberryObject, ABC, Generic[T]):
+class StrawberryType(Generic[T]):
 
-    @property
-    @abstractmethod
-    def type(self) -> Type[StrawberryObject[T]]:
-        ...
+    def __init__(self, type_: Type[T]):
+        self.type_ = type_
 
     @property
     def is_generic(self) -> bool:
