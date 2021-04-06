@@ -98,12 +98,10 @@ def _process_type(
 ):
     name = name or to_camel_case(cls.__name__)
 
-    wrapped = _wrap_dataclass(cls)
-
-    interfaces = _get_interfaces(wrapped)
+    interfaces = _get_interfaces(cls)
     fields = _get_fields(cls)
 
-    wrapped._type_definition = TypeDefinition(
+    cls._type_definition = TypeDefinition(
         name=name,
         is_input=is_input,
         is_interface=is_interface,
@@ -124,7 +122,7 @@ def _process_type(
         if field.base_resolver and field.python_name:
             setattr(cls, field.python_name, field.base_resolver.wrapped_func)
 
-    return wrapped
+    return cls
 
 
 def type(
@@ -146,8 +144,10 @@ def type(
     """
 
     def wrap(cls):
+        wrapped = _wrap_dataclass(cls)
+
         return _process_type(
-            cls,
+            wrapped,
             name=name,
             is_input=is_input,
             is_interface=is_interface,

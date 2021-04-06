@@ -324,3 +324,19 @@ def test_can_covert_pydantic_type_to_strawberry_with_missing_index_data_in_neste
         # This was None in the UserModel
         Work(name="Alternative", year=3030),
     ]
+
+
+def test_can_covert_input_types_to_pydantic():
+    class User(pydantic.BaseModel):
+        age: int
+        password: Optional[str]
+
+    @strawberry.experimental.pydantic.input(User, fields=["age", "password"])
+    class UserInput:
+        pass
+
+    data = UserInput(1, None)
+    user = data.to_pydantic()
+
+    assert user.age == 1
+    assert user.password is None

@@ -204,7 +204,7 @@ def test_type_with_nested_fields_coming_from_strawberry_and_pydantic():
     assert definition.fields[2].is_optional is False
 
 
-def test_type_with_alised_pydantic_field():
+def test_type_with_aliased_pydantic_field():
     class UserModel(pydantic.BaseModel):
         age_: int = pydantic.Field(..., alias="age")
         password: Optional[str]
