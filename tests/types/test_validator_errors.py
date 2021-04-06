@@ -5,9 +5,9 @@ from strawberry.arguments import UNSET
 from strawberry.validators import StrawberryErrorType
 
 
-def validate_email(value, info):
+def validate_email(value, info) -> Union[str, "ErrorType"]:
     if "@" not in value:
-        raise ErrorType(email="Invalid email")
+        return ErrorType(email="Invalid email")
     return value.strip()
 
 

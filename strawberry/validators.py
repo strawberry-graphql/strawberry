@@ -40,7 +40,9 @@ def validate_fields(instance: Any, info: Info, errors: List[Any]):
         try:
             value = validate_field(field, value, info)
         except StrawberryErrorType as e:
-            errors.append(e)
+            value = e
+        if isinstance(value, StrawberryErrorType):
+            errors.append(value)
             continue
         setattr(instance, field.name, value)
 
