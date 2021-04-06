@@ -5,14 +5,13 @@ from typing import Any, Dict, List, Optional, Type
 from pydantic import BaseModel
 from pydantic.fields import ModelField
 
-import strawberry
 from strawberry.experimental.pydantic.conversion import (
     convert_pydantic_model_to_strawberry_class,
 )
 from strawberry.experimental.pydantic.fields import get_basic_type
+from strawberry.field import StrawberryField
 from strawberry.type import _process_type
 from strawberry.types.types import FederationTypeParams
-from strawberry.utils.str_converters import to_camel_case
 
 from .exceptions import MissingFieldsListError, UnregisteredTypeException
 
@@ -62,8 +61,10 @@ def type(
             (
                 name,
                 get_type_for_field(field),
-                dataclasses.field(
-                    default=strawberry.field(name=to_camel_case(field.alias))
+                StrawberryField(
+                    python_name=field.name,
+                    graphql_name=field.alias if field.has_alias else None,
+                    type_=get_type_for_field(field),
                 ),
             )
             for name, field in model_fields.items()
@@ -76,9 +77,7 @@ def type(
                 (
                     name,
                     type_,
-                    dataclasses.field(
-                        default=strawberry.field(name=to_camel_case(name))
-                    ),
+                    StrawberryField(python_name=name, graphql_name=None, type_=type_),
                 )
                 for name, type_ in cls_annotations.items()
             )
