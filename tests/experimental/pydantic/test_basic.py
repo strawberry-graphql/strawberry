@@ -172,6 +172,40 @@ def test_type_with_fields_coming_from_strawberry_and_pydantic():
     assert definition.fields[2].is_optional is False
 
 
+@pytest.mark.xfail(
+    reason=(
+        "passing default values when extending types from pydantic "
+        "is not currently supported"
+    )
+)
+def test_type_with_fields_coming_from_strawberry_and_pydantic_with_default():
+    class User(pydantic.BaseModel):
+        age: int
+        password: Optional[str]
+
+    @strawberry.experimental.pydantic.type(User, fields=["age", "password"])
+    class UserType:
+        name: str = "Michael"
+
+    definition: TypeDefinition = UserType._type_definition
+
+    assert definition.name == "UserType"
+    assert len(definition.fields) == 3
+
+    assert definition.fields[0].graphql_name == "age"
+    assert definition.fields[0].type is int
+    assert definition.fields[0].is_optional is False
+
+    assert definition.fields[1].graphql_name == "password"
+    assert definition.fields[1].type is str
+    assert definition.fields[1].is_optional is True
+
+    assert definition.fields[2].graphql_name == "name"
+    assert definition.fields[2].type is str
+    assert definition.fields[2].is_optional is False
+    assert definition.fields[2].default_value == "Michael"
+
+
 def test_type_with_nested_fields_coming_from_strawberry_and_pydantic():
     @strawberry.type
     class Name:
