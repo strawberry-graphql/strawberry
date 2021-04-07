@@ -326,7 +326,7 @@ def test_can_covert_pydantic_type_to_strawberry_with_missing_index_data_in_neste
     ]
 
 
-def test_can_covert_input_types_to_pydantic():
+def test_can_convert_input_types_to_pydantic():
     class User(pydantic.BaseModel):
         age: int
         password: Optional[str]
@@ -336,6 +336,22 @@ def test_can_covert_input_types_to_pydantic():
         pass
 
     data = UserInput(1, None)
+    user = data.to_pydantic()
+
+    assert user.age == 1
+    assert user.password is None
+
+
+def test_can_convert_input_types_to_pydantic_default_values():
+    class User(pydantic.BaseModel):
+        age: int
+        password: Optional[str] = None
+
+    @strawberry.experimental.pydantic.input(User, fields=["age", "password"])
+    class UserInput:
+        pass
+
+    data = UserInput(1)
     user = data.to_pydantic()
 
     assert user.age == 1
