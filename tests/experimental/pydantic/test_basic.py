@@ -174,8 +174,8 @@ def test_type_with_fields_coming_from_strawberry_and_pydantic():
 
 @pytest.mark.xfail(
     reason=(
-        "passing default values when extending types from pydantic "
-        "is not currently supported"
+        "passing default values when extending types from pydantic is not"
+        "supported. https://github.com/strawberry-graphql/strawberry/issues/829"
     )
 )
 def test_type_with_fields_coming_from_strawberry_and_pydantic_with_default():
