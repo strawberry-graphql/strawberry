@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.56.2 - 2021-04-07
+-------------------
+
+This release improves Pydantic support to support default values and factories.
+
 0.56.1 - 2021-04-06
 -------------------
 
