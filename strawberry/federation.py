@@ -12,7 +12,7 @@ from graphql import (
 from graphql.type.definition import GraphQLArgument
 
 from strawberry.custom_scalar import ScalarDefinition
-from strawberry.enum import EnumDefinition
+from strawberry.enum import StrawberryEnum
 from strawberry.permission import BasePermission
 from strawberry.schema.types.concrete_type import TypeMap
 from strawberry.types.types import TypeDefinition
@@ -64,7 +64,7 @@ def field(
 
 
 def _has_federation_keys(
-    definition: Union[TypeDefinition, ScalarDefinition, EnumDefinition, StrawberryUnion]
+    definition: Union[TypeDefinition, ScalarDefinition, StrawberryEnum, StrawberryUnion]
 ) -> bool:
     if isinstance(definition, TypeDefinition):
         return len(definition.federation.keys) > 0

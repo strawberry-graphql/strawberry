@@ -92,6 +92,7 @@ class MissingTypesForGenericError(Exception):
 
 class UnsupportedTypeError(Exception):
     def __init__(self, annotation):
+        breakpoint()
         message = f"{annotation} conversion is not supported"
 
         super().__init__(message)

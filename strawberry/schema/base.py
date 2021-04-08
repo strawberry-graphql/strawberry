@@ -4,7 +4,7 @@ from typing import Any, Dict, Optional, Union
 from typing_extensions import Protocol
 
 from strawberry.custom_scalar import ScalarDefinition
-from strawberry.enum import EnumDefinition
+from strawberry.enum import StrawberryEnum
 from strawberry.types import ExecutionResult
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
@@ -48,7 +48,7 @@ class BaseSchema(Protocol):
     def get_type_by_name(
         self, name: str
     ) -> Optional[
-        Union[TypeDefinition, ScalarDefinition, EnumDefinition, StrawberryUnion]
+        Union[TypeDefinition, ScalarDefinition, StrawberryEnum, StrawberryUnion]
     ]:
         raise NotImplementedError
 

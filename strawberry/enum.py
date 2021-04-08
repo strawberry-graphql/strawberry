@@ -11,16 +11,27 @@ class EnumValue:
     value: Any
 
 
-@dataclasses.dataclass
-class EnumDefinition:
+@dataclasses.dataclass(frozen=True)
+class StrawberryEnum:
+    enum: EnumMeta
+    # TODO: graphql_name, python_name
     name: str
-    values: List[EnumValue]
+    values: List[EnumValue] = dataclasses.field(hash=False)
     description: Optional[str]
+
+    def __call__(self, *args: Any, **kwds: Any) -> Any:
+        return self.enum(*args, **kwds)
+
+    def __getattr__(self, attr):
+        if hasattr(self.enum, attr):
+            return self.enum[attr]
+
+        return super().__getattribute__(attr)
 
 
 def _process_enum(
     cls: EnumMeta, name: Optional[str] = None, description: Optional[str] = None
-) -> EnumMeta:
+) -> StrawberryEnum:
     if not isinstance(cls, EnumMeta):
         raise NotAnEnum()
 
@@ -31,25 +42,24 @@ def _process_enum(
 
     values = [EnumValue(item.name, item.value) for item in cls]  # type: ignore
 
-    cls._enum_definition = EnumDefinition(  # type: ignore
+    return StrawberryEnum(
+        enum=cls,
         name=name,
         values=values,
         description=description,
     )
 
-    return cls
-
 
 def enum(
     _cls: EnumMeta = None, *, name=None, description=None
-) -> Union[EnumMeta, Callable[[EnumMeta], EnumMeta]]:
+) -> Union[StrawberryEnum, Callable[[EnumMeta], StrawberryEnum]]:
     """Registers the enum in the GraphQL type system.
 
     If name is passed, the name of the GraphQL type will be
     the value passed of name instead of the Enum class name.
     """
 
-    def wrap(cls: EnumMeta) -> EnumMeta:
+    def wrap(cls: EnumMeta) -> StrawberryEnum:
         return _process_enum(cls, name, description)
 
     if not _cls:

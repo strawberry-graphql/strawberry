@@ -11,7 +11,7 @@ from graphql.subscription import subscribe
 from graphql.type.directives import specified_directives
 
 from strawberry.custom_scalar import ScalarDefinition
-from strawberry.enum import EnumDefinition
+from strawberry.enum import StrawberryEnum
 from strawberry.extensions import Extension
 from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.types import ExecutionResult
@@ -76,7 +76,7 @@ class Schema:
     def get_type_by_name(
         self, name: str
     ) -> Optional[
-        Union[TypeDefinition, ScalarDefinition, EnumDefinition, StrawberryUnion]
+        Union[TypeDefinition, ScalarDefinition, StrawberryEnum, StrawberryUnion]
     ]:
         if name in self.schema_converter.type_map:
             return self.schema_converter.type_map[name].definition

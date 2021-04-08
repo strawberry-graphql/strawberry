@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Mapping, Optional, Type, Union, cast
 
 from typing_extensions import Annotated, get_args, get_origin
 
+from .enum import StrawberryEnum
 from .exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError
 from .scalars import is_scalar
 from .types.types import undefined
@@ -173,6 +174,9 @@ def convert_argument(value: Any, argument: StrawberryArgument) -> Any:
 
     # Convert Enum fields to instances using the value. This is safe
     # because graphql-core has already validated the input.
+    if isinstance(argument_type, StrawberryEnum):
+        return argument_type(value)  # type: ignore
+
     if isinstance(argument_type, enum.EnumMeta):
         return argument_type(value)  # type: ignore
 

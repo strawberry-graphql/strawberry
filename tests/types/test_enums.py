@@ -23,7 +23,7 @@ def test_basic_enum():
         STRAWBERRY = "strawberry"
         CHOCOLATE = "chocolate"
 
-    definition = IceCreamFlavour._enum_definition
+    definition = IceCreamFlavour
 
     assert definition.name == "IceCreamFlavour"
     assert definition.description is None
@@ -45,7 +45,7 @@ def test_can_pass_name_and_description():
         STRAWBERRY = "strawberry"
         CHOCOLATE = "chocolate"
 
-    definition = IceCreamFlavour._enum_definition
+    definition = IceCreamFlavour
 
     assert definition.name == "Flavour"
     assert definition.description == "example"
@@ -66,4 +66,4 @@ def test_can_use_enum_as_arguments():
 
     field = Query._type_definition.fields[0]
 
-    assert field.arguments[0].type._enum_definition
+    assert field.arguments[0].type

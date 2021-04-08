@@ -23,7 +23,7 @@ from graphql import (
 
 from strawberry.arguments import UNSET, StrawberryArgument
 from strawberry.directive import DirectiveDefinition
-from strawberry.enum import EnumDefinition, EnumValue
+from strawberry.enum import EnumValue, StrawberryEnum
 from strawberry.field import StrawberryField
 from strawberry.scalars import is_scalar
 from strawberry.types.types import TypeDefinition, undefined
@@ -89,8 +89,8 @@ class GraphQLCoreConverter:
                 return self.from_interface(type_._type_definition)
             else:
                 return self.from_object_type(type_)
-        elif _is_enum(type_):
-            return self.from_enum(type_._enum_definition)
+        elif isinstance(type_, StrawberryEnum):
+            return self.from_enum(type_)
         elif _is_scalar(type_):
             return self.from_scalar(type_)
 
@@ -110,7 +110,7 @@ class GraphQLCoreConverter:
             description=argument.description,
         )
 
-    def from_enum(self, enum: EnumDefinition) -> GraphQLEnumType:
+    def from_enum(self, enum: StrawberryEnum) -> GraphQLEnumType:
 
         assert enum.name is not None
 
@@ -344,8 +344,3 @@ def _is_scalar(type_: Type) -> bool:
 def _is_object_type(type_: Type) -> bool:
     # isinstance(type_, StrawberryObjectType)  # noqa: E800
     return hasattr(type_, "_type_definition")
-
-
-def _is_enum(type_: Type) -> bool:
-    # isinstance(type_, StrawberryEnum)  # noqa: E800
-    return hasattr(type_, "_enum_definition")
