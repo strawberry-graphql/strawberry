@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import enum
 import inspect
 from typing import Any, Dict, List, Mapping, Optional, Type, Union, cast
 
@@ -175,10 +174,7 @@ def convert_argument(value: Any, argument: StrawberryArgument) -> Any:
     # Convert Enum fields to instances using the value. This is safe
     # because graphql-core has already validated the input.
     if isinstance(argument_type, StrawberryEnum):
-        return argument_type(value)  # type: ignore
-
-    if isinstance(argument_type, enum.EnumMeta):
-        return argument_type(value)  # type: ignore
+        return argument_type(value)
 
     if hasattr(argument_type, "_type_definition"):
         assert argument_type._type_definition.is_input
