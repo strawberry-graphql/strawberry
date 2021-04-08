@@ -25,7 +25,8 @@ def test_basic_enum():
 
     definition = IceCreamFlavour
 
-    assert definition.name == "IceCreamFlavour"
+    assert definition.python_name == "IceCreamFlavour"
+    assert definition.graphql_name == "IceCreamFlavour"
     assert definition.description is None
 
     assert definition.values[0].name == "VANILLA"
@@ -47,7 +48,8 @@ def test_can_pass_name_and_description():
 
     definition = IceCreamFlavour
 
-    assert definition.name == "Flavour"
+    assert definition.python_name == "IceCreamFlavour"
+    assert definition.graphql_name == "Flavour"
     assert definition.description == "example"
 
 

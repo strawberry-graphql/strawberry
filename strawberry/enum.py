@@ -3,6 +3,7 @@ from enum import EnumMeta
 from typing import Any, Callable, List, Optional, Union
 
 from .exceptions import NotAnEnum
+from .utils.str_converters import to_camel_case
 
 
 @dataclasses.dataclass
@@ -11,13 +12,20 @@ class EnumValue:
     value: Any
 
 
-@dataclasses.dataclass(frozen=True)
 class StrawberryEnum:
-    enum: EnumMeta
-    # TODO: graphql_name, python_name
-    name: str
-    values: List[EnumValue] = dataclasses.field(hash=False)
-    description: Optional[str]
+    def __init__(
+        self,
+        enum: EnumMeta,
+        python_name: str,
+        graphql_name: Optional[str],
+        values: List[EnumValue],
+        description: Optional[str],
+    ) -> None:
+        self.python_name = python_name
+        self._graphql_name = graphql_name
+        self.values = values
+        self.enum = enum
+        self.description = description
 
     def __call__(self, *args: Any, **kwds: Any) -> Any:
         return self.enum(*args, **kwds)
@@ -27,6 +35,13 @@ class StrawberryEnum:
             return self.enum[attr]
 
         return super().__getattribute__(attr)
+
+    @property
+    def graphql_name(self) -> str:
+        if self._graphql_name:
+            return self._graphql_name
+
+        return to_camel_case(self.python_name)
 
 
 def _process_enum(
@@ -44,7 +59,8 @@ def _process_enum(
 
     return StrawberryEnum(
         enum=cls,
-        name=name,
+        python_name=cls.__name__,
+        graphql_name=name,
         values=values,
         description=description,
     )

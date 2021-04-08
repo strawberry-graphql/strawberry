@@ -111,22 +111,19 @@ class GraphQLCoreConverter:
         )
 
     def from_enum(self, enum: StrawberryEnum) -> GraphQLEnumType:
-
-        assert enum.name is not None
-
         # Don't reevaluate known types
-        if enum.name in self.type_map:
-            graphql_enum = self.type_map[enum.name].implementation
+        if enum.graphql_name in self.type_map:
+            graphql_enum = self.type_map[enum.graphql_name].implementation
             assert isinstance(graphql_enum, GraphQLEnumType)  # For mypy
             return graphql_enum
 
         graphql_enum = GraphQLEnumType(
-            name=enum.name,
+            name=enum.graphql_name,
             values={item.name: self.from_enum_value(item) for item in enum.values},
             description=enum.description,
         )
 
-        self.type_map[enum.name] = ConcreteType(
+        self.type_map[enum.graphql_name] = ConcreteType(
             definition=enum, implementation=graphql_enum
         )
 
