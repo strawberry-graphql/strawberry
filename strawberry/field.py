@@ -24,9 +24,9 @@ _RESOLVER_TYPE = Union[StrawberryResolver, Callable]
 class StrawberryField(dataclasses.Field):
     def __init__(
         self,
-        python_name: Optional[str],
-        graphql_name: Optional[str],
-        type_: Optional[Union[Type, StrawberryUnion]],
+        python_name: Optional[str] = None,
+        graphql_name: Optional[str] = None,
+        type_: Optional[Union[Type, StrawberryUnion]] = None,
         origin: Optional[Union[Type, Callable]] = None,
         child: Optional["StrawberryField"] = None,
         is_subscription: bool = False,
@@ -38,7 +38,7 @@ class StrawberryField(dataclasses.Field):
         description: Optional[str] = None,
         base_resolver: Optional[StrawberryResolver] = None,
         permission_classes: List[Type[BasePermission]] = (),  # type: ignore
-        default_value: Any = UNSET,
+        default: Any = UNSET,
         default_factory: Union[Callable, object] = UNSET,
         deprecation_reason: Optional[str] = None,
     ):
@@ -49,7 +49,7 @@ class StrawberryField(dataclasses.Field):
 
         super().__init__(  # type: ignore
             default=(
-                default_value if default_value != UNSET else dataclasses.MISSING
+                default if default != UNSET else dataclasses.MISSING
             ),
             default_factory=(
                 default_factory if default_factory != UNSET else dataclasses.MISSING
@@ -75,7 +75,7 @@ class StrawberryField(dataclasses.Field):
         if base_resolver is not None:
             self.base_resolver = base_resolver
 
-        self.default_value = default_value
+        self.default_value = default
 
         self.child = child
         self.is_child_optional = is_child_optional
@@ -172,6 +172,9 @@ class StrawberryField(dataclasses.Field):
             return get_parameters(self.type)
 
         return None
+
+    def get_type(self) -> Type:
+        return self.type
 
     def _get_arguments(
         self, kwargs: Dict[str, Any], source: Any, info: Any
@@ -313,7 +316,7 @@ def field(
         permission_classes=permission_classes or [],
         federation=federation or FederationFieldParams(),
         deprecation_reason=deprecation_reason,
-        default_value=default,
+        default=default,
         default_factory=default_factory,
     )
 

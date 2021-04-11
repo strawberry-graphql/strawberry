@@ -64,13 +64,15 @@ class GraphQLCoreConverter:
 
         graphql_type: GraphQLType
 
+        type_ = field.get_type()
+
         if field.is_list:
             graphql_type = self.from_list_field(field)
         elif field.is_union:
-            assert isinstance(field.type, StrawberryUnion)  # For mypy
-            graphql_type = self.from_union(field.type)
+            assert isinstance(type_, StrawberryUnion)  # For mypy
+            graphql_type = self.from_union(type_)
         else:
-            graphql_type = self.get_graphql_type(field.type)
+            graphql_type = self.get_graphql_type(type_)
 
         # TODO: Abstract this somehow. Logic is tricky
         if not field.is_optional:
