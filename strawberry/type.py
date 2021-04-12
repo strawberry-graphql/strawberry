@@ -1,6 +1,6 @@
 import dataclasses
 from functools import partial
-from typing import List, Optional, Type, cast
+from typing import Callable, List, Optional, Type, cast
 
 from strawberry.utils.typing import is_generic
 
@@ -95,6 +95,7 @@ def _process_type(
     is_interface: bool = False,
     description: Optional[str] = None,
     federation: Optional[FederationTypeParams] = None,
+    default_resolver: Optional[Callable] = None,
 ):
     name = name or to_camel_case(cls.__name__)
 
@@ -109,6 +110,7 @@ def _process_type(
         interfaces=interfaces,
         description=description,
         federation=federation or FederationTypeParams(),
+        default_resolver=default_resolver,
         origin=cls,
         _fields=fields,
     )
@@ -133,6 +135,7 @@ def type(
     is_interface: bool = False,
     description: str = None,
     federation: Optional[FederationTypeParams] = None,
+    default_resolver: Optional[Callable] = None,
 ):
     """Annotates a class as a GraphQL type.
 
@@ -153,6 +156,7 @@ def type(
             is_interface=is_interface,
             description=description,
             federation=federation,
+            default_resolver=default_resolver,
         )
 
     if cls is None:

@@ -312,3 +312,32 @@ async def test_async_list_resolver():
 
     assert not result.errors
     assert result.data["bestFlavours"] == ["strawberry", "pistachio"]
+
+
+def test_default_resolver():
+    def resolver() -> str:
+        return Greetings(message="hello")
+
+    @strawberry.type(default_resolver=resolver)
+    class Greetings:
+        message: str
+
+    @strawberry.type
+    class Query:
+        greetings1: Greetings
+
+        @strawberry.field
+        def greetings2() -> Greetings:
+            return Greetings(message="hi")
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ greetings1 { message } greetings2 { message } }"
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data == {
+        "greetings1": {"message": "hello"},
+        "greetings2": {"message": "hi"},
+    }

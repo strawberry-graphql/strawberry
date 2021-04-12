@@ -72,6 +72,10 @@ class StrawberryField(dataclasses.Field):
         self._base_resolver: Optional[StrawberryResolver] = None
         if base_resolver is not None:
             self.base_resolver = base_resolver
+        elif hasattr(self.type, "_type_definition"):
+            default_resolver = self.type._type_definition.default_resolver
+            if default_resolver is not None:
+                self.base_resolver = StrawberryResolver(default_resolver)
 
         self.default_value = default_value
 

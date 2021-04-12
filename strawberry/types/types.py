@@ -1,5 +1,5 @@
 import dataclasses
-from typing import TYPE_CHECKING, Dict, List, Optional, Type
+from typing import TYPE_CHECKING, Callable, Dict, List, Optional, Type
 
 
 if TYPE_CHECKING:
@@ -27,6 +27,7 @@ class TypeDefinition:
 
     _fields: List["StrawberryField"]
     _type_params: Dict[str, Type] = dataclasses.field(default_factory=dict, init=False)
+    default_resolver: Optional[Callable] = None
 
     def get_field(self, name: str) -> Optional["StrawberryField"]:
         return next(
