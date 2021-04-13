@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.56.3 - 2021-04-13
+-------------------
+
+This release fixes the return type value from info argument of resolver.
+
 0.56.2 - 2021-04-07
 -------------------
 
