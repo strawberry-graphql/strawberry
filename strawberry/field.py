@@ -250,7 +250,7 @@ class StrawberryField(dataclasses.Field):
                 context=info.context,
                 root_value=info.root_value,
                 variable_values=info.variable_values,
-                return_type=self.type,
+                return_type=self._get_return_type(),
                 operation=info.operation,
                 path=info.path,
             )
@@ -273,6 +273,21 @@ class StrawberryField(dataclasses.Field):
 
         _resolver._is_default = not self.base_resolver  # type: ignore
         return _resolver
+
+    def _get_return_type(self):
+        # using type ignore to make mypy happy,
+        # this codepath will change in future anyway, so this is ok
+        if self.is_list:
+            assert self.child
+
+            type_ = List[self.child._get_return_type()]  # type: ignore
+        else:
+            type_ = self.type
+
+        if self.is_optional:
+            type_ = Optional[type_]  # type: ignore
+
+        return type_
 
 
 def field(
