@@ -275,12 +275,18 @@ class StrawberryField(dataclasses.Field):
         return _resolver
 
     def _get_return_type(self):
+        # using type ignore to make mypy happy,
+        # this codepath will change in future anyway, so this is ok
         if self.is_list:
-            type_ = List[self.child._get_return_type()]
+            assert self.child
+
+            type_ = List[self.child._get_return_type()]  # type: ignore
         else:
             type_ = self.type
+
         if self.is_optional:
-            type_ = Optional[type_]
+            type_ = Optional[type_]  # type: ignore
+
         return type_
 
 
