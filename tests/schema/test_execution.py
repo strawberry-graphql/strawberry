@@ -159,3 +159,37 @@ async def test_sending_wrong_variables():
             """
         ).strip()
     )
+
+
+@pytest.mark.asyncio
+async def test_logging_exceptions(caplog):
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def example(self) -> int:
+            raise ValueError("test")
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """
+        query {
+            example
+        }
+    """
+
+    result = await schema.execute(
+        query,
+        root_value=Query(),
+        validate_queries=False,
+    )
+
+    assert len(result.errors) == 1
+
+    # Exception was logged
+    assert len(caplog.records) == 1
+    record = caplog.records[0]
+
+    assert record.levelname == "ERROR"
+    assert record.message == "test"
+    assert record.name == "strawberry.execution"
+    assert record.exc_info[0] is ValueError

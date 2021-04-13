@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Dict, List, Optional, Sequence, Type, Union
 
 from graphql import (
@@ -7,6 +8,7 @@ from graphql import (
     parse,
     validate_schema,
 )
+from graphql.error import GraphQLError
 from graphql.subscription import subscribe
 from graphql.type.directives import specified_directives
 
@@ -21,6 +23,9 @@ from strawberry.union import StrawberryUnion
 from ..middleware import DirectivesMiddleware, Middleware
 from ..printer import print_schema
 from .execute import execute, execute_sync
+
+
+logger = logging.getLogger("strawberry.execution")
 
 
 class Schema:
@@ -83,6 +88,11 @@ class Schema:
 
         return None
 
+    def process_errors(self, errors: List[GraphQLError]) -> None:
+        for error in errors:
+            actual_error = error.original_error or error
+            logger.error(actual_error, exc_info=actual_error)
+
     async def execute(
         self,
         query: str,
@@ -104,6 +114,9 @@ class Schema:
             execution_context_class=self.execution_context_class,
             validate_queries=validate_queries,
         )
+
+        if result.errors:
+            self.process_errors(result.errors)
 
         return ExecutionResult(
             data=result.data,
@@ -132,6 +145,9 @@ class Schema:
             execution_context_class=self.execution_context_class,
             validate_queries=validate_queries,
         )
+
+        if result.errors:
+            self.process_errors(result.errors)
 
         return ExecutionResult(
             data=result.data,
