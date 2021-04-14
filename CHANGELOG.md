@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.57.0 - 2021-04-14
+-------------------
+
+Add a `process_errors` method to `strawberry.Schema` which logs all exceptions during execution to a `strawberry.execution` logger.
+
 0.56.3 - 2021-04-13
 -------------------
 
