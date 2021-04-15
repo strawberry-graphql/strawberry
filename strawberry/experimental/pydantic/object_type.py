@@ -11,7 +11,7 @@ from strawberry.experimental.pydantic.conversion import (
 )
 from strawberry.experimental.pydantic.fields import get_basic_type
 from strawberry.field import StrawberryField
-from strawberry.type import _process_type
+from strawberry.object_type import _process_type
 from strawberry.types.types import FederationTypeParams
 
 from .exceptions import MissingFieldsListError, UnregisteredTypeException

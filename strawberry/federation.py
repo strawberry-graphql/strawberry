@@ -19,9 +19,9 @@ from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 
 from .field import FederationFieldParams, field as base_field
+from .object_type import FederationTypeParams, type as base_type
 from .printer import print_schema
 from .schema import Schema as BaseSchema
-from .type import FederationTypeParams, type as base_type
 
 
 def type(
