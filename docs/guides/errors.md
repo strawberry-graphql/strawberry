@@ -22,16 +22,16 @@ GraphQL is strongly typed and so Strawberry validates all queries before executi
 {
   "data": null,
   "errors": [
-	{
-	  "message": "Cannot query field 'hi' on type 'Query'.",
-	  "locations": [
-		  {
-		    "line": 2,
-		    "column": 3
-		  }
-	  ],
-	  "path": null
-	}
+    {
+      "message": "Cannot query field 'hi' on type 'Query'.",
+      "locations": [
+        {
+          "line": 2,
+          "column": 3
+        }
+      ],
+      "path": null
+    }
   ]
 }
 ```
@@ -49,9 +49,9 @@ import strawberry
 
 @strawberry.type
 class Query:
-	@strawberry.field
-	def hello() -> str:
-		return None
+    @strawberry.field
+    def hello() -> str:
+        return None
 
 schema = strawberry.Schema(query=Query)
 ```
@@ -64,18 +64,18 @@ schema = strawberry.Schema(query=Query)
 {
   "data": null,
   "errors": [
-	{
-	  "message": "Cannot return null for non-nullable field Query.hello.",
-	  "locations": [
-		{
-		  "line": 2,
-		  "column": 3
-		}
-	  ],
-	  "path": [
-		  "hello"
-	  ]
-	}
+    {
+      "message": "Cannot return null for non-nullable field Query.hello.",
+      "locations": [
+        {
+          "line": 2,
+          "column": 3
+        }
+      ],
+      "path": [
+        "hello"
+      ]
+    }
   ]
 }
 ```
@@ -91,13 +91,13 @@ import strawberry
 
 @strawberry.type
 class User:
-	name: str
+    name: str
 
 @strawberry.type
 class Query:
-	@strawberry.field
-	def user() -> User:
-		raise Exception("Can't find user")
+    @strawberry.field
+    def user() -> User:
+        raise Exception("Can't find user")
 
 schema = strawberry.Schema(query=Query)
 ```
@@ -105,25 +105,25 @@ schema = strawberry.Schema(query=Query)
 ```graphql+response
 {
   user {
-	name
+    name
   }
 }
 ---
 {
   "data": null,
   "errors": [
-	{
-	  "message": "Can't find user",
-	  "locations": [
-		  {
-		    "line": 3,
-		    "column": 2
-		  }
-	  ],
-	  "path": [
-		  "user"
-	  ]
-	}
+    {
+      "message": "Can't find user",
+      "locations": [
+        {
+          "line": 3,
+          "column": 2
+        }
+      ],
+      "path": [
+        "user"
+      ]
+    }
   ]
 }
 ```
@@ -140,13 +140,13 @@ import strawberry
 
 @strawberry.type
 class Query:
-	@strawberry.field
-	def get_user(self, id: str) -> Optional[User]:
-		try:
-			user = # get a user by their ID
-			return user
-		except UserDoesNotExist:
-			return None
+    @strawberry.field
+    def get_user(self, id: str) -> Optional[User]:
+        try:
+            user = # get a user by their ID
+            return user
+        except UserDoesNotExist:
+            return None
 ```
 
 When the expected error is more complicated it’s a good pattern to instead return a union of types that either represent an error or a success response. This pattern is often adopted with mutations where it’s important to be able to return more complicated error details to the client.
@@ -158,47 +158,47 @@ import strawberry
 
 @strawberry.type
 class RegisterUserSuccess:
-	user: User
+    user: User
 
 @strawberry.type
 class UsernameAlreadyExistsError:
-	username: str
-	alternative_username: str
+    username: str
+    alternative_username: str
 
 # Create a Union type to represent the 2 results from the mutation
 Response = strawberry.union(
-	"RegisterUserResponse",
-	[RegisterUserSuccess, UsernameAlreadyExistsError]
+    "RegisterUserResponse",
+    [RegisterUserSuccess, UsernameAlreadyExistsError]
 )
 
 @strawberry.mutation
 def register_user(username: str, password: str) -> Response:
-	if username_already_exists(username):
-		return UsernameAlreadyExistsError(
-			username=username,
-			alternative_username=generate_username_suggestion(username)
-		)
+    if username_already_exists(username):
+        return UsernameAlreadyExistsError(
+            username=username,
+            alternative_username=generate_username_suggestion(username)
+        )
 
-	user = create_user(username, password)
-	return RegisterUserSuccess(
-		user=user
-	)
+    user = create_user(username, password)
+    return RegisterUserSuccess(
+        user=user
+    )
 ```
 
 Then your client can look at the `__typename` of the result to determine what to do next:
 
 ```graphql
 mutation RegisterUser($username: String!, $password: String!) {
-	registerUser(username: $username, password: $password) {
-		__typename
-		... on UsernameAlreadyExistsError {
-			alternativeUsername
-		}
-		... on RegisterUserSuccess {
-			id
-			username
-		}
-	}
+  registerUser(username: $username, password: $password) {
+    __typename
+    ... on UsernameAlreadyExistsError {
+      alternativeUsername
+    }
+    ... on RegisterUserSuccess {
+      id
+      username
+    }
+  }
 }
 ```
 
