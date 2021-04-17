@@ -27,7 +27,7 @@
 
 - [Authentication](./guides/authentication.md)
 - [DataLoaders](./guides/dataloaders.md)
-- [Errors](./guides/errors.md)
+- [Dealing with errors](./guides/errors.md)
 - [Federation](./guides/federation.md)
 - [Extensions](./guides/extensions.md)
 - [File upload](./guides/file-upload.md)
