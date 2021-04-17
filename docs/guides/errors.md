@@ -8,7 +8,7 @@ There are multiple different types of errors in GraphQL and each can be handled 
 
 In this guide we will outline the different types of errors that you will encounter when building a GraphQL server.
 
-**Note**: By default Strawberry will log all execution errors to a `strawberry.execution` logger: [https://strawberry.rocks/docs/types/schema#handling-execution-error](../types/schema#handling-execution-errors).
+**Note**: By default Strawberry will log all execution errors to a `strawberry.execution` logger: [https://strawberry.rocks/docs/types/schema#handling-execution-errors](../types/schema#handling-execution-errors).
 
 ## GraphQL validation errors
 
