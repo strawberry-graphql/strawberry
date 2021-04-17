@@ -208,9 +208,7 @@ This approach allows you to express the possible error states in the schema and 
 
 ## Additional resources:
 
-[GraphQL - Errors in GraphQL](https://graphql-ruby.org/errors/overview.html)
+[A Guide to GraphQL Errors | productionreadygraphql.com](https://productionreadygraphql.com/2020-08-01-guide-to-graphql-errors/)
 
-[A Guide to GraphQL Errors](https://productionreadygraphql.com/2020-08-01-guide-to-graphql-errors/)
-
-[200 OK! Error Handling in GraphQL](https://sachee.medium.com/200-ok-error-handling-in-graphql-7ec869aec9bc)
+[200 OK! Error Handling in GraphQL | sachee.medium.com](https://sachee.medium.com/200-ok-error-handling-in-graphql-7ec869aec9bc)
 
