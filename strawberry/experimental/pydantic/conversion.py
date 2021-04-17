@@ -7,7 +7,7 @@ from strawberry.scalars import is_scalar
 def _convert_from_pydantic_to_strawberry_field(
     field: StrawberryField, data_from_model=None, extra=None
 ):
-    data = data_from_model or extra
+    data = data_from_model if data_from_model is not None else extra
 
     if field.is_list:
         assert field.child is not None
