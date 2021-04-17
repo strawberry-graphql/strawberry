@@ -8,7 +8,7 @@ There are multiple different types of errors in GraphQL and each can be handled 
 
 In this guide we will outline the different types of errors that you will encounter when building a GraphQL server.
 
-**Note**: By default Strawberry will log all execution errors to a `strawberry.execution` logger. Read more here: [Handling execution errors](../types/schema#handling-execution-errors).
+**Note**: By default Strawberry will log all execution errors to a `strawberry.execution` logger: [https://strawberry.rocks/docs/types/schema#handling-execution-error](../types/schema#handling-execution-errors).
 
 ## GraphQL validation errors
 
@@ -38,7 +38,7 @@ GraphQL is strongly typed and so Strawberry validates all queries before executi
 
 Each error has a message, line, column and path to help you identify what part of the query caused the error.
 
-The validation rules are part of the GraphQL specification and built into Strawberry, so there’s not really a way to customize this behavior, except to pass `validate_queries=False` when executing a query, which skips validation altogether: [https://strawberry.rocks/docs/types/schema#execute-async](https://strawberry.rocks/docs/types/schema#execute-async)
+The validation rules are part of the GraphQL specification and built into Strawberry, so there’s not really a way to customize this behavior, except to pass `validate_queries=False` when executing a query, which skips validation altogether: [https://strawberry.rocks/docs/types/schema#execute-async](../types/schema#execute-async)
 
 ## GraphQL type errors
 
@@ -206,7 +206,7 @@ This approach allows you to express the possible error states in the schema and 
 
 ---
 
-Additional resources:
+## Additional resources:
 
 [GraphQL - Errors in GraphQL](https://graphql-ruby.org/errors/overview.html)
 
