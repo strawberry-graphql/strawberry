@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.57.1 - 2021-04-17
+-------------------
+
+Fix converting pydantic objects to strawberry types using `from_pydantic` when having a falsy value like 0 or ''.
+
 0.57.0 - 2021-04-14
 -------------------
 
