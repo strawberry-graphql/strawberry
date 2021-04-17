@@ -116,7 +116,7 @@ schema = strawberry.Schema(query=Query)
       "message": "Can't find user",
       "locations": [
         {
-          "line": 3,
+          "line": 2,
           "column": 2
         }
       ],
@@ -210,4 +210,4 @@ This approach allows you to express the possible error states in the schema and 
 
 [A Guide to GraphQL Errors | productionreadygraphql.com](https://productionreadygraphql.com/2020-08-01-guide-to-graphql-errors/)
 
-[200 OK! Error Handling in GraphQL | sachee.medium.com](https://sachee.medium.com/200-ok-error-handling-in-graphql-7ec869aec9bc)
+[20r OK! Error Handling in GraphQL | sachee.medium.com](https://sachee.medium.com/200-ok-error-handling-in-graphql-7ec869aec9bc)
