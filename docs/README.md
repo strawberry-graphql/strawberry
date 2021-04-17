@@ -23,17 +23,17 @@
 - [Resolvers](./types/resolvers.md)
 - [Union types](./types/union.md)
 
-## Features
+## Guides
 
-- [Authentication](./features/authentication.md)
-- [DataLoaders](./features/dataloaders.md)
-- [Errors](./features/errors.md)
-- [Federation](./features/federation.md)
-- [Extensions](./features/extensions.md)
-- [File upload](./features/file-upload.md)
-- [Pagination](./features/pagination.md)
-- [Permissions](./features/permissions.md)
-- [Builtin server](./features/server.md)
+- [Authentication](./guides/authentication.md)
+- [DataLoaders](./guides/dataloaders.md)
+- [Errors](./guides/errors.md)
+- [Federation](./guides/federation.md)
+- [Extensions](./guides/extensions.md)
+- [File upload](./guides/file-upload.md)
+- [Pagination](./guides/pagination.md)
+- [Permissions](./guides/permissions.md)
+- [Builtin server](./guides/server.md)
 
 ## Concepts
 
