@@ -253,6 +253,7 @@ class StrawberryField(dataclasses.Field):
                 return_type=self._get_return_type(),
                 operation=info.operation,
                 path=info.path,
+                fragments=info.fragments,
             )
 
         def _resolver(source, info: GraphQLResolveInfo, **kwargs):

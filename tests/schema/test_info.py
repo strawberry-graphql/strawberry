@@ -20,6 +20,7 @@ def test_info_has_the_correct_shape():
         context_equal: bool
         root_equal: bool
         return_type: str
+        fragments: str
 
     @strawberry.type
     class Query:
@@ -34,6 +35,7 @@ def test_info_has_the_correct_shape():
                 context_equal=info.context == my_context,
                 root_equal=info.root_value == root_value,
                 return_type=str(info.return_type),
+                fragments=str({k: str(v) for k, v in info.fragments.items()}),
             )
 
     schema = strawberry.Schema(query=Query)
@@ -48,6 +50,7 @@ def test_info_has_the_correct_shape():
             rootEqual
             variableValues
             returnType
+            fragments
         }
     }"""
 
@@ -65,6 +68,7 @@ def test_info_has_the_correct_shape():
         "rootEqual": True,
         "variableValues": "{}",
         "returnType": "<class 'tests.schema.test_info.test_info_has_the_correct_shape.<locals>.Result'>",  # noqa
+        "fragments": "{}",
     }
 
 

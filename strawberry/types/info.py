@@ -3,6 +3,7 @@ from typing import Any, Dict, Generic, List, Optional, Type, TypeVar, Union
 
 from graphql import OperationDefinitionNode
 from graphql.language import FieldNode
+from graphql.language.ast import FragmentDefinitionNode
 from graphql.pyutils.path import Path
 
 from strawberry.union import StrawberryUnion
@@ -25,3 +26,4 @@ class Info(Generic[ContextType, RootValueType]):
     operation: OperationDefinitionNode
     path: Path
     # TODO: parent_type as strawberry types
+    fragments: Dict[str, FragmentDefinitionNode]
