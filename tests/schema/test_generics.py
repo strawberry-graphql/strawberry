@@ -700,3 +700,43 @@ def test_generic_with_arguments():
     """
 
     assert str(schema) == textwrap.dedent(expected_schema).strip()
+
+
+def test_generic_extending_with_type_var():
+    T = typing.TypeVar("T")
+
+    @strawberry.interface
+    class Node(typing.Generic[T]):
+        id: strawberry.ID
+
+        def _resolve(self) -> typing.Optional[T]:
+            return None
+
+    @strawberry.type
+    class Book(Node[str]):
+        name: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def books(self) -> typing.List[Book]:
+            return list()
+
+    schema = strawberry.Schema(query=Query)
+
+    expected_schema = """
+    type Book implements Node {
+      id: ID!
+      name: String!
+    }
+
+    interface Node {
+      id: ID!
+    }
+
+    type Query {
+      books: [Book!]!
+    }
+    """
+
+    assert str(schema) == textwrap.dedent(expected_schema).strip()

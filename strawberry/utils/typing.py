@@ -80,7 +80,7 @@ def is_generic(annotation: Type) -> bool:
             typing.ClassVar,
             AsyncGenerator,
         )
-    )
+    ) and get_parameters(annotation)
 
 
 def is_type_var(annotation: Type) -> bool:
