@@ -16,7 +16,7 @@ app = Flask(__name__)
 
 app.add_url_rule(
     "/graphql",
-    view_func=GraphQLView.as_view("graphql_view", schema=schema),
+    view_func=GraphQLView.as_view("graphql_view", schema=Schema),
 )
 ```
 
