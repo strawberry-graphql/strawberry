@@ -740,3 +740,28 @@ def test_generic_extending_with_type_var():
     """
 
     assert str(schema) == textwrap.dedent(expected_schema).strip()
+
+
+def test_supports_generic_input_type():
+    T = typing.TypeVar("T")
+
+    @strawberry.input
+    class Input(typing.Generic[T]):
+        field: T
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def field(self, input: Input[str]) -> str:
+            return input.field
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        field(input: { field: "data" })
+    }"""
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data == {"field": "data"}
