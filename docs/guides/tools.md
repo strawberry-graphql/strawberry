@@ -13,7 +13,7 @@ server. All tools can be imported from `strawberry.tools`
 
 Creates a Strawberry type from a list of StrawberryFields.
 
-```
+```python
 def create_type(name: str, fields: List[StrawberryField]) -> Type:
     ...
 ```
