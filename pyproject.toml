@@ -40,7 +40,6 @@ sanic = {version = "^20.12.2", optional = true}
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2"
-pdbpp = "^0.10.2"
 pytest-emoji = "^0.2.0"
 flake8 = "^3.9"
 black = {version = "^21.4b0", allow-prereleases = true}
