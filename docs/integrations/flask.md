@@ -10,7 +10,7 @@ use to serve your GraphQL schema:
 ```python
 from strawberry.flask.views import GraphQLView
 
-from api.schema import Schema
+from api.schema import schema
 
 app = Flask(__name__)
 
