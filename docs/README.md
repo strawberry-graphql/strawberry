@@ -34,6 +34,7 @@
 - [Pagination](./guides/pagination.md)
 - [Permissions](./guides/permissions.md)
 - [Builtin server](./guides/server.md)
+- [Tools](./guides/tools.md)
 
 ## Concepts
 
