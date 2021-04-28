@@ -31,7 +31,7 @@ def get_user_by_username(username: str) -> User:
 
 @strawberry.mutation
 def create_user(username: str) -> User:
-    user = # create user
+    user = ...  # create user
     return User(username=user.username)
 
 Query = create_type("Query", [get_user_by_username])
