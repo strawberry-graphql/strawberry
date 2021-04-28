@@ -173,7 +173,7 @@ class StrawberryField(dataclasses.Field):
 
     def _get_arguments(
         self,
-        _source: Any,
+        source: Any,
         info: Any,
         kwargs: Dict[str, Any],
     ) -> Tuple[List[Any], Dict[str, Any]]:
@@ -183,17 +183,17 @@ class StrawberryField(dataclasses.Field):
 
         # the following code allows to omit info and root arguments
         # by inspecting the original resolver arguments,
-        # if it asks for self, the _source will be passed as first argument
-        # if it asks for root, the _source it will be passed as kwarg
+        # if it asks for self, the source will be passed as first argument
+        # if it asks for root, the source it will be passed as kwarg
         # if it asks for info, the info will be passed as kwarg
 
         args = []
 
         if self.base_resolver.has_self_arg:
-            args.append(_source)
+            args.append(source)
 
         if self.base_resolver.has_root_arg:
-            kwargs["root"] = _source
+            kwargs["root"] = source
 
         if self.base_resolver.has_info_arg:
             kwargs["info"] = info
@@ -201,23 +201,23 @@ class StrawberryField(dataclasses.Field):
         return args, kwargs
 
     def get_result(
-        self, _source: Any, info: Any, kwargs: Dict[str, Any]
+        self, source: Any, info: Any, kwargs: Dict[str, Any]
     ) -> Union[Awaitable[Any], Any]:
         """
         Calls the resolver defined for the StrawberryField. If the field doesn't have a
-        resolver defined we default to using getattr on `_source`.
+        resolver defined we default to using getattr on `source`.
         """
 
         if self.base_resolver:
-            args, kwargs = self._get_arguments(_source, info=info, kwargs=kwargs)
+            args, kwargs = self._get_arguments(source, info=info, kwargs=kwargs)
 
             return self.base_resolver(*args, **kwargs)
 
-        return getattr(_source, self.python_name)
+        return getattr(source, self.python_name)
 
     def get_wrapped_resolver(self) -> Callable:
         # TODO: This could potentially be handled by StrawberryResolver in the future
-        def _check_permissions(_source: Any, info: Info, **kwargs):
+        def _check_permissions(source: Any, info: Info, kwargs: Dict[str, Any]):
             """
             Checks if the permission should be accepted and
             raises an exception if not
@@ -225,7 +225,7 @@ class StrawberryField(dataclasses.Field):
             for permission_class in self.permission_classes:
                 permission = permission_class()
 
-                if not permission.has_permission(_source, info, **kwargs):
+                if not permission.has_permission(source, info, **kwargs):
                     message = getattr(permission, "message", None)
                     raise PermissionError(message)
 
@@ -260,7 +260,7 @@ class StrawberryField(dataclasses.Field):
 
         def _resolver(_source: Any, info: GraphQLResolveInfo, **kwargs):
             strawberry_info = _strawberry_info_from_graphql(info)
-            _check_permissions(_source, strawberry_info, **kwargs)
+            _check_permissions(_source, strawberry_info, kwargs)
 
             result = self.get_result(_source, info=strawberry_info, kwargs=kwargs)
 
