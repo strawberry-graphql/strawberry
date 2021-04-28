@@ -238,8 +238,8 @@ class StrawberryField(dataclasses.Field):
                 return result.value
 
             if field_.is_list:
-                assert self.child is not None
-                return [_convert_enums_to_values(self.child, item) for item in result]
+                assert field_.child is not None
+                return [_convert_enums_to_values(field_.child, item) for item in result]
 
             return result
 
