@@ -26,7 +26,7 @@ from strawberry.tools import create_type
 
 @strawberry.field
 def get_user_by_username(username: str) -> User:
-    user = # get user
+    user = ...  # get user
     return User(username=user.username)
 
 @strawberry.mutation
