@@ -2,9 +2,12 @@ from __future__ import annotations
 
 import enum
 import inspect
+import sys
 from typing import Any, Dict, List, Mapping, Optional, Type, Union, cast
 
 from typing_extensions import Annotated, get_args, get_origin
+
+from strawberry.annotation import StrawberryAnnotation
 
 from .exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError
 from .scalars import is_scalar
@@ -26,27 +29,17 @@ class StrawberryArgument:
         # TODO: this optional will probably go away when we have StrawberryList
         python_name: Optional[str],
         graphql_name: Optional[str],
-        type_: Optional[Union[Type, StrawberryUnion]],
+        type_annotation: Optional[StrawberryAnnotation],
         origin: Optional[Type] = None,
-        child: Optional["StrawberryArgument"] = None,
         is_subscription: bool = False,
-        is_optional: bool = False,
-        is_child_optional: bool = False,
-        is_list: bool = False,
-        is_union: bool = False,
         description: Optional[str] = None,
         default_value: Any = undefined,
     ) -> None:
         self.python_name = python_name
         self._graphql_name = graphql_name
-        self.type = type_
+        self.type_annotation = type_annotation
         self.origin = origin
-        self.child = child
         self.is_subscription = is_subscription
-        self.is_optional = is_optional
-        self.is_child_optional = is_child_optional
-        self.is_list = is_list
-        self.is_union = is_union
         self.description = description
         self.default_value = default_value
 
@@ -89,7 +82,7 @@ class StrawberryArgument:
             argument_description = argument_metadata.description
 
         return cls(
-            type_=type_,
+            type_annotation=type_,
             description=argument_description,
             python_name=python_name,
             # TODO: fetch from StrawberryArgumentAnnotation
@@ -99,11 +92,8 @@ class StrawberryArgument:
 
 
 def get_arguments_from_annotations(
-    annotations: Any, parameters: Mapping[str, inspect.Parameter], origin: Any
+    annotations: Any, parameters: Mapping[str, inspect.Parameter], origin: object
 ) -> List[StrawberryArgument]:
-
-    # Deferred to prevent import cycles
-    from .types.type_resolver import _resolve_type
 
     arguments = []
 
@@ -115,16 +105,23 @@ def get_arguments_from_annotations(
             else default_value
         )
 
+        module = sys.modules[origin.__module__]
+
+        strawberry_annotation = StrawberryAnnotation(
+            annotation=annotation,
+            namespace=module.__dict__,
+        )
+
         if get_origin(annotation) is Annotated:
             argument = StrawberryArgument.from_annotated(
                 python_name=name,
-                annotation=annotation,
+                annotation=strawberry_annotation,
                 default_value=default_value,
                 origin=origin,
             )
         else:
             argument = StrawberryArgument(
-                type_=annotation,
+                type_annotation=strawberry_annotation,
                 python_name=name,
                 graphql_name=None,
                 default_value=default_value,
@@ -132,7 +129,7 @@ def get_arguments_from_annotations(
                 origin=origin,
             )
 
-        _resolve_type(argument)
+        argument.type = argument.type_annotation.resolve()
 
         arguments.append(argument)
 
@@ -223,6 +220,7 @@ def argument(description: Optional[str] = None) -> StrawberryArgumentAnnotation:
 
 # TODO: check exports
 __all__ = [
+    "StrawberryArgument",
     "StrawberryArgumentAnnotation",
     "UNSET",
     "argument",

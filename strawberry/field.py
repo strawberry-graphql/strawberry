@@ -1,20 +1,19 @@
 import dataclasses
 import enum
-import typing
 from inspect import iscoroutine
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
 
 from graphql import GraphQLResolveInfo
 
+from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import UNSET, convert_arguments
+from strawberry.type import StrawberryList, StrawberryType
 from strawberry.types.info import Info
-from strawberry.utils.typing import get_parameters, has_type_var, is_type_var
 
 from .arguments import StrawberryArgument
 from .permission import BasePermission
 from .types.fields.resolver import StrawberryResolver
 from .types.types import FederationFieldParams
-from .union import StrawberryUnion
 from .utils.str_converters import to_camel_case
 
 
@@ -26,14 +25,9 @@ class StrawberryField(dataclasses.Field):
         self,
         python_name: Optional[str],
         graphql_name: Optional[str],
-        type_: Optional[Union[Type, StrawberryUnion]],
+        type_annotation: Optional[StrawberryAnnotation],
         origin: Optional[Union[Type, Callable]] = None,
-        child: Optional["StrawberryField"] = None,
         is_subscription: bool = False,
-        is_optional: bool = False,
-        is_child_optional: bool = False,
-        is_list: bool = False,
-        is_union: bool = False,
         federation: FederationFieldParams = None,
         description: Optional[str] = None,
         base_resolver: Optional[StrawberryResolver] = None,
@@ -62,9 +56,9 @@ class StrawberryField(dataclasses.Field):
         self._graphql_name = graphql_name
         if python_name is not None:
             self.python_name = python_name
-        if type_ is not None:
-            # TODO: Clean up the typing around StrawberryField.type
-            self.type = typing.cast(type, type_)
+
+        self.type_annotation = type_annotation
+        self._resolved_type: Optional[StrawberryType] = None
 
         self.description: Optional[str] = description
         self.origin: Optional[Union[Type, Callable]] = origin
@@ -74,14 +68,7 @@ class StrawberryField(dataclasses.Field):
             self.base_resolver = base_resolver
 
         self.default_value = default_value
-
-        self.child = child
-        self.is_child_optional = is_child_optional
-
-        self.is_list = is_list
-        self.is_optional = is_optional
         self.is_subscription = is_subscription
-        self.is_union = is_union
 
         self.federation: FederationFieldParams = federation
         self.permission_classes: List[Type[BasePermission]] = list(permission_classes)
@@ -150,26 +137,9 @@ class StrawberryField(dataclasses.Field):
         #       removed.
         _ = resolver.arguments
 
-    @property
-    def type_params(self) -> Optional[List[Type]]:
-        if self.is_list:
-            assert self.child is not None
-            return self.child.type_params
-
-        if isinstance(self.type, StrawberryUnion):
-            types = self.type.types
-            type_vars = [t for t in types if is_type_var(t)]
-
-            if type_vars:
-                return type_vars
-
-        if is_type_var(self.type):
-            return [self.type]
-
-        if has_type_var(self.type):
-            return get_parameters(self.type)
-
-        return None
+    def resolve_type(self) -> None:
+        # TODO: property?
+        self._resolved_type = self.type_annotation.resolve()
 
     def _get_arguments(
         self, kwargs: Dict[str, Any], source: Any, info: Any
@@ -226,20 +196,21 @@ class StrawberryField(dataclasses.Field):
                     message = getattr(permission, "message", None)
                     raise PermissionError(message)
 
-        def _convert_enums_to_values(field_: StrawberryField, result: Any) -> Any:
+        def _convert_enums_to_values(type_: StrawberryType, result: Any) -> Any:
             # graphql-core expects a resolver for an Enum type to return
             # the enum's *value* (not its name or an instance of the enum).
 
-            # short circuit to skip checks when result is falsy
-            if not result:
+            # short circuit to skip checks when result is None (i.e. Optional[Enum])
+            if result is None:
                 return result
 
             if isinstance(result, enum.Enum):
                 return result.value
 
-            if field_.is_list:
-                assert self.child is not None
-                return [_convert_enums_to_values(self.child, item) for item in result]
+            if isinstance(type_, StrawberryList):
+                return [
+                    _convert_enums_to_values(type_.of_type, item) for item in result
+                ]
 
             return result
 
@@ -264,30 +235,15 @@ class StrawberryField(dataclasses.Field):
             if iscoroutine(result):  # pragma: no cover
 
                 async def await_result(result):
-                    return _convert_enums_to_values(self, await result)
+                    return _convert_enums_to_values(self.type, await result)
 
                 return await_result(result)
 
-            result = _convert_enums_to_values(self, result)
+            result = _convert_enums_to_values(self.type, result)
             return result
 
         _resolver._is_default = not self.base_resolver  # type: ignore
         return _resolver
-
-    def _get_return_type(self):
-        # using type ignore to make mypy happy,
-        # this codepath will change in future anyway, so this is ok
-        if self.is_list:
-            assert self.child
-
-            type_ = List[self.child._get_return_type()]  # type: ignore
-        else:
-            type_ = self.type
-
-        if self.is_optional:
-            type_ = Optional[type_]  # type: ignore
-
-        return type_
 
 
 def field(
@@ -320,7 +276,7 @@ def field(
     field_ = StrawberryField(
         python_name=None,
         graphql_name=name,
-        type_=None,
+        type_annotation=None,
         description=description,
         is_subscription=is_subscription,
         permission_classes=permission_classes or [],

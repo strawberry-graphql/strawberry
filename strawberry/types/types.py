@@ -35,9 +35,9 @@ class TypeDefinition:
 
     @property
     def fields(self) -> List["StrawberryField"]:
-        from .type_resolver import _resolve_types
-
-        return _resolve_types(self._fields)
+        for field in self._fields:
+            field.resolve_type()
+        return self._fields
 
     @property
     def type_params(self) -> Dict[str, Type]:
