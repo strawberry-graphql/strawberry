@@ -269,7 +269,7 @@ class GraphQLCoreConverter:
         elif isinstance(type, StrawberryUnion):
             return self.from_union(type_)
 
-        raise RuntimeError(f"Unknown type {type_}")
+        raise TypeError(f"Unexpected type '{type_}'")
 
     def from_union(self, union: StrawberryUnion) -> GraphQLUnionType:
 
