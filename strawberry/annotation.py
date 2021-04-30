@@ -75,6 +75,10 @@ class StrawberryAnnotation:
 
     @classmethod
     def _is_enum(cls, annotation: type) -> bool:
+        # Type aliases are not types so we need to make sure annotation can go into
+        # issubclass
+        if not isinstance(annotation, type):
+            return False
         return issubclass(annotation, Enum)
 
     @classmethod
