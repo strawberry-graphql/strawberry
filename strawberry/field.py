@@ -141,6 +141,15 @@ class StrawberryField(dataclasses.Field):
     def resolved_type(self) -> None:
         return self.type_annotation.resolve()
 
+    @property
+    def type(self) -> StrawberryType:
+        return self.type_annotation.resolve()
+
+    @type.setter
+    def type(self, type_: object) -> None:
+        print(type_)
+        self.type_annotation = type_
+
     def _get_arguments(
         self, kwargs: Dict[str, Any], source: Any, info: Any
     ) -> Tuple[List[Any], Dict[str, Any]]:

@@ -39,12 +39,14 @@ class GraphQLCoreConverter:
         self.type_map: Dict[str, ConcreteType] = {}
 
     def from_argument(self, argument: StrawberryArgument) -> GraphQLArgument:
+        if isinstance(argument.type, StrawberryOptional):
+            argument_type = self.from_optional(argument.type)
+        else:
+            argument_type = self.from_non_optional(argument.type)
+
         default_value = (
             Undefined if argument.default_value is undefined else argument.default_value
         )
-
-        argument_type = self.get_graphql_type(argument.type)
-        argument_type = cast(GraphQLInputType, argument_type)
 
         return GraphQLArgument(
             type_=argument_type,
@@ -94,7 +96,7 @@ class GraphQLCoreConverter:
     def from_field(self, field: StrawberryField) -> GraphQLField:
 
         if isinstance(field.type, StrawberryOptional):
-            field_type = self.from_type(field.type.of_type)
+            field_type = self.from_optional(field.type)
         else:
             field_type = self.from_non_optional(field.type)
 
@@ -121,7 +123,7 @@ class GraphQLCoreConverter:
 
     def from_input_field(self, field: StrawberryField) -> GraphQLInputField:
         if isinstance(field.type, StrawberryOptional):
-            field_type = self.from_type(field.type.of_type)
+            field_type = self.from_optional(field.type)
         else:
             field_type = self.from_non_optional(field.type)
 
@@ -197,8 +199,11 @@ class GraphQLCoreConverter:
         of_type = self.from_type(type_.of_type)
         return GraphQLList(of_type)
 
+    def from_optional(self, type_: StrawberryOptional) -> GraphQLNullableType:
+        return self.from_type(type_.of_type)
+
     def from_non_optional(self, type_: StrawberryType) -> GraphQLNonNull:
-        of_type = self.from_type(type_.of_type)
+        of_type = self.from_type(type_)
         return GraphQLNonNull(of_type)
 
     def from_object(self, object_type: Type) -> GraphQLObjectType:
@@ -247,7 +252,7 @@ class GraphQLCoreConverter:
     def from_scalar(self, scalar: Type) -> GraphQLScalarType:
         return get_scalar_type(scalar, self.type_map)
 
-    def from_type(self, type_: StrawberryType) -> GraphQLType:
+    def from_type(self, type_: StrawberryType) -> GraphQLNullableType:
         if _is_enum(type_):  # TODO: Replace with StrawberryEnum
             return self.from_enum(type_)
         elif _is_input_type(type_):  # TODO: Replace with StrawberryInputObject
