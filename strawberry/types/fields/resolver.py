@@ -6,7 +6,7 @@ from typing import Callable, Generic, List, Optional, TypeVar
 from cached_property import cached_property  # type: ignore
 
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.arguments import StrawberryArgument, get_arguments_from_annotations
+from strawberry.arguments import StrawberryArgument
 from strawberry.exceptions import MissingArgumentsAnnotationsError
 from strawberry.type import StrawberryType
 from strawberry.utils.inspect import get_func_args
@@ -48,9 +48,26 @@ class StrawberryResolver(Generic[T]):
                 arguments=arguments_missing_annotations,
             )
 
-        return get_arguments_from_annotations(
-            annotations, parameters, origin=self.wrapped_func
-        )
+        module = sys.modules[self.wrapped_func.__module__]
+        annotation_namespace = module.__dict__
+        arguments = []
+        for arg_name, annotation in annotations.items():
+            parameter = parameters[arg_name]
+
+            default_value = parameter.default
+            argument = StrawberryArgument(
+                python_name=arg_name,
+                graphql_name=None,
+                type_annotation=StrawberryAnnotation(
+                    annotation=annotation,
+                    namespace=annotation_namespace
+                ),
+                default_value=default_value
+            )
+
+            arguments.append(argument)
+
+        return arguments
 
     @cached_property
     def has_info_arg(self) -> bool:

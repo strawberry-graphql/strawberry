@@ -2,9 +2,8 @@ from __future__ import annotations
 
 import enum
 import inspect
-import sys
 import typing
-from typing import Any, Dict, List, Mapping, Optional, Type, Iterable
+from typing import Any, Dict, List, Optional, Type, Iterable
 
 from typing_extensions import Annotated, get_args, get_origin
 
@@ -14,7 +13,6 @@ from strawberry.type import StrawberryType, StrawberryList, StrawberryOptional
 from .exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError
 from .scalars import is_scalar
 from .types.types import undefined
-from .union import StrawberryUnion
 from .utils.str_converters import to_camel_case
 
 
@@ -31,7 +29,7 @@ class StrawberryArgument:
         # TODO: this optional will probably go away when we have StrawberryList
         python_name: Optional[str],
         graphql_name: Optional[str],
-        type_annotation: Optional[StrawberryAnnotation],
+        type_annotation: StrawberryAnnotation,
         origin: Optional[Type] = None,
         is_subscription: bool = False,
         description: Optional[str] = None,
@@ -39,13 +37,22 @@ class StrawberryArgument:
     ) -> None:
         self.python_name = python_name
         self._graphql_name = graphql_name
-        self.type_annotation = type_annotation
         self.origin = origin
         self.is_subscription = is_subscription
         self.description = description
+        self._type: Optional[StrawberryType] = None
+        self.type_annotation = type_annotation
+
+        # TODO: Consider moving this logic to a function
+        default_value = (
+            undefined
+            if default_value is inspect.Parameter.empty or is_unset(default_value)
+            else default_value
+        )
         self.default_value = default_value
 
-        self._type: Optional[StrawberryType] = None
+        if self._annotation_is_annotated(type_annotation):
+            self._parse_annotated()
 
     @property
     def graphql_name(self) -> Optional[str]:
@@ -55,91 +62,36 @@ class StrawberryArgument:
             return to_camel_case(self.python_name)
         return None
 
-    @classmethod
-    def from_annotated(
-        cls,
-        python_name: str,
-        annotation: Type[Annotated],  # type: ignore
-        default_value: Any,
-        origin: Any,
-    ) -> StrawberryArgument:
-        annotated_args = get_args(annotation)
-
-        # The first argument to Annotated is always the underlying type
-        type_ = annotated_args[0]
-        argument_metadata = None
-        argument_description = None
-
-        # Find any instances of StrawberryArgumentAnnotation
-        # in the other Annotated args, raising an exception if there
-        # are multiple StrawberryArgumentAnnotations
-        for arg in annotated_args[1:]:
-            if isinstance(arg, StrawberryArgumentAnnotation):
-                if argument_metadata is not None:
-                    raise MultipleStrawberryArgumentsError(
-                        field_name=origin.__name__, argument_name=python_name
-                    )
-
-                argument_metadata = arg
-
-        if argument_metadata is not None:
-            argument_description = argument_metadata.description
-
-        return cls(
-            type_annotation=type_,
-            description=argument_description,
-            python_name=python_name,
-            # TODO: fetch from StrawberryArgumentAnnotation
-            graphql_name=None,
-            default_value=default_value,
-        )
-
     @property
     def type(self) -> StrawberryType:
         return self.type_annotation.resolve()
 
+    @classmethod
+    def _annotation_is_annotated(cls, annotation: StrawberryAnnotation) -> bool:
+        return get_origin(annotation.annotation) is Annotated
 
-def get_arguments_from_annotations(
-    annotations: Any, parameters: Mapping[str, inspect.Parameter], origin: object
-) -> List[StrawberryArgument]:
+    def _parse_annotated(self):
+        annotated_args = get_args(self.type_annotation.annotation)
 
-    arguments = []
+        # The first argument to Annotated is always the underlying type
+        self.type_annotation = StrawberryAnnotation(annotated_args[0])
 
-    for name, annotation in annotations.items():
-        default_value = parameters[name].default
-        default_value = (
-            undefined
-            if default_value is inspect.Parameter.empty or is_unset(default_value)
-            else default_value
-        )
+        # Find any instances of StrawberryArgumentAnnotation
+        # in the other Annotated args, raising an exception if there
+        # are multiple StrawberryArgumentAnnotations
+        argument_annotation_seen = False
+        for arg in annotated_args[1:]:
+            if isinstance(arg, StrawberryArgumentAnnotation):
+                if argument_annotation_seen:
+                    raise MultipleStrawberryArgumentsError(
+                        field_name=self.origin.__name__,
+                        argument_name=self.python_name,
+                    )
 
-        module = sys.modules[origin.__module__]
+                argument_annotation_seen = True
 
-        strawberry_annotation = StrawberryAnnotation(
-            annotation=annotation,
-            namespace=module.__dict__,
-        )
-
-        if get_origin(annotation) is Annotated:
-            argument = StrawberryArgument.from_annotated(
-                python_name=name,
-                annotation=strawberry_annotation,
-                default_value=default_value,
-                origin=origin,
-            )
-        else:
-            argument = StrawberryArgument(
-                type_annotation=strawberry_annotation,
-                python_name=name,
-                graphql_name=None,
-                default_value=default_value,
-                description=None,
-                origin=origin,
-            )
-
-        arguments.append(argument)
-
-    return arguments
+                self.description = arg.description
+                # TODO: This is where we'd pull the name out of the Annotated
 
 
 class _Unset:
