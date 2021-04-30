@@ -1,4 +1,4 @@
-from typing import Any, Callable, Dict, Type, cast
+from typing import Callable, Dict, Type
 
 from graphql import (
     GraphQLArgument,
@@ -8,13 +8,10 @@ from graphql import (
     GraphQLField,
     GraphQLInputField,
     GraphQLInputObjectType,
-    GraphQLInputType,
     GraphQLInterfaceType,
     GraphQLList,
     GraphQLObjectType,
-    GraphQLOutputType,
     GraphQLScalarType,
-    GraphQLType,
     GraphQLUnionType,
     Undefined, GraphQLNullableType, GraphQLNonNull,
 )
@@ -196,7 +193,11 @@ class GraphQLCoreConverter:
         return graphql_interface
 
     def from_list(self, type_: StrawberryList) -> GraphQLList:
-        of_type = self.from_type(type_.of_type)
+        if isinstance(type_.of_type, StrawberryOptional):
+            of_type = self.from_optional(type_.of_type)
+        else:
+            of_type = self.from_non_optional(type_.of_type)
+
         return GraphQLList(of_type)
 
     def from_optional(self, type_: StrawberryOptional) -> GraphQLNullableType:
@@ -246,7 +247,7 @@ class GraphQLCoreConverter:
 
         return graphql_object_type
 
-    def from_resolver(self, field: StrawberryField) -> Callable:
+    def from_resolver(self, field: StrawberryField) -> Callable:  # TODO: Take StrawberryResolver
         return field.get_wrapped_resolver()
 
     def from_scalar(self, scalar: Type) -> GraphQLScalarType:
