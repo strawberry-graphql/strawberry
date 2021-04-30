@@ -137,8 +137,6 @@ def get_arguments_from_annotations(
                 origin=origin,
             )
 
-        argument.type = argument.type_annotation.resolve()
-
         arguments.append(argument)
 
     return arguments
