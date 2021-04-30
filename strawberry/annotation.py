@@ -3,13 +3,16 @@ from collections.abc import AsyncGenerator as AsyncGenerator_abc
 from enum import Enum
 from typing import AsyncGenerator as AsyncGenerator_typing, \
     Dict, ForwardRef, Union, _eval_type, \
-    _SpecialGenericAlias, Optional, Type
+    _SpecialGenericAlias, Optional, Type, TYPE_CHECKING
 
 from strawberry.custom_scalar import SCALAR_REGISTRY, ScalarDefinition
 from strawberry.enum import EnumDefinition
 from strawberry.scalars import SCALAR_TYPES
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
-from strawberry.union import StrawberryUnion
+
+if TYPE_CHECKING:
+    from strawberry.union import StrawberryUnion
+
 
 ListType = _SpecialGenericAlias
 UnionType = _SpecialGenericAlias
@@ -86,7 +89,10 @@ class StrawberryAnnotation:
         # TODO: Should we ever be creating a Scalar type here?
         raise NotImplementedError
 
-    def create_union(self, evaled_type: ...) -> StrawberryUnion:
+    def create_union(self, evaled_type: ...) -> "StrawberryUnion":
+        # Prevent import cycles
+        from strawberry.union import StrawberryUnion
+
         # TODO: Deal with Forward References/origin
         if isinstance(evaled_type, StrawberryUnion):
             return evaled_type
@@ -152,6 +158,9 @@ class StrawberryAnnotation:
 
     @classmethod
     def _is_strawberry_type(cls, evaled_type: Type) -> bool:
+        # Prevent import cycles
+        from strawberry.union import StrawberryUnion
+
         if isinstance(evaled_type, EnumDefinition):
             return True
         elif _is_input_type(evaled_type):  # TODO: Replace with StrawberryInputObject

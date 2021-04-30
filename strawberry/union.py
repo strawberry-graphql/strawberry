@@ -7,6 +7,7 @@ from graphql import (
     GraphQLUnionType,
 )
 
+from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import (
     InvalidUnionType,
     UnallowedReturnTypeForUnion,
@@ -22,7 +23,6 @@ from strawberry.utils.typing import (
 )
 
 if TYPE_CHECKING:
-    from strawberry.annotation import StrawberryAnnotation
     from strawberry.schema.types.concrete_type import TypeMap
     from strawberry.types.types import TypeDefinition
 
@@ -160,6 +160,9 @@ def union(
                 f"Union type `{_type.__name__}` is not a Strawberry type"
             )
 
-    union_definition = StrawberryUnion(name=name, types=types, description=description)
+    union_definition = StrawberryUnion(
+        name=name,
+        type_annotations=tuple(StrawberryAnnotation(type_) for type_ in types),
+        description=description)
 
     return union_definition

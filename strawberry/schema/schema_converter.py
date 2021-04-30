@@ -269,7 +269,7 @@ class GraphQLCoreConverter:
             raise NotImplementedError()
         elif _is_scalar(type_):  # TODO: Replace with StrawberryScalar
             return self.from_scalar(type_)
-        elif isinstance(type, StrawberryUnion):
+        elif isinstance(type_, StrawberryUnion):
             return self.from_union(type_)
 
         raise TypeError(f"Unexpected type '{type_}'")
