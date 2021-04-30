@@ -7,19 +7,20 @@ from typing import AsyncGenerator as AsyncGenerator_typing, \
 
 from strawberry.custom_scalar import SCALAR_REGISTRY, ScalarDefinition
 from strawberry.enum import EnumDefinition
+from strawberry.lazy_type import LazyType
 from strawberry.scalars import SCALAR_TYPES
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
 
 if TYPE_CHECKING:
     from strawberry.union import StrawberryUnion
 
-
 ListType = _SpecialGenericAlias
 UnionType = _SpecialGenericAlias
 
 
 class StrawberryAnnotation:
-    def __init__(self, annotation: Union[object, str], *, namespace: Optional[Dict] = None):
+    def __init__(self, annotation: Union[object, str], *,
+                 namespace: Optional[Dict] = None):
         self.annotation = annotation
         self.namespace = namespace
 
@@ -33,6 +34,8 @@ class StrawberryAnnotation:
         evaled_type = _eval_type(annotation, self.namespace, None)
         if self._is_async_generator(evaled_type):
             evaled_type = self._strip_async_generator(evaled_type)
+        if self._is_lazy_type(evaled_type):
+            evaled_type = self._strip_lazy_type(evaled_type)
 
         # Simply return objects that are already StrawberryTypes
         if self._is_strawberry_type(evaled_type):
@@ -123,6 +126,10 @@ class StrawberryAnnotation:
         return issubclass(annotation, Enum)
 
     @classmethod
+    def _is_lazy_type(cls, annotation: type) -> bool:
+        return isinstance(annotation, LazyType)
+
+    @classmethod
     def _is_optional(cls, annotation: type) -> bool:
         """Returns True if the annotation is Optional[SomeType]"""
 
@@ -191,6 +198,10 @@ class StrawberryAnnotation:
     def _strip_async_generator(cls, annotation: ...) -> type:
         return annotation.__args__[0]
 
+    @classmethod
+    def _strip_lazy_type(cls, annotation: LazyType) -> type:
+        return annotation.resolve_type()
+
 
 ################################################################################
 # Temporary functions to be removed with new types
@@ -202,6 +213,7 @@ def _is_input_type(type_: Type) -> bool:
         return False
 
     return type_._type_definition.is_input
+
 
 def _is_object_type(type_: Type) -> bool:
     # isinstance(type_, StrawberryObjectType)  # noqa: E800
