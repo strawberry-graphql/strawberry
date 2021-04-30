@@ -2,9 +2,11 @@ from __future__ import annotations
 
 from typing import Union
 
+from strawberry.enum import EnumDefinition
+
 
 StrawberryType = Union[
-    "StrawberryEnum",
+    EnumDefinition,  # TODO: Replace with StrawberryEnum
     "StrawberryInput",
     "StrawberryInterface",
     "StrawberryList",

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import enum
 import inspect
 import typing
 from typing import Any, Dict, List, Optional, Type, Iterable
@@ -8,6 +7,7 @@ from typing import Any, Dict, List, Optional, Type, Iterable
 from typing_extensions import Annotated, get_args, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
+from strawberry.enum import EnumDefinition
 from strawberry.type import StrawberryType, StrawberryList, StrawberryOptional
 
 from .exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError
@@ -128,8 +128,8 @@ def convert_argument(value: object, type_: StrawberryType) -> object:
 
     # Convert Enum fields to instances using the value. This is safe
     # because graphql-core has already validated the input.
-    if isinstance(type_, enum.EnumMeta):
-        return type_(value)  # type: ignore
+    if isinstance(type_, EnumDefinition):
+        return type_.wrapped_cls(value)
 
     if hasattr(type_, "_type_definition"):  # TODO: Replace with StrawberryInputObject
         assert type_._type_definition.is_input
@@ -183,7 +183,6 @@ __all__ = [
     "StrawberryArgumentAnnotation",
     "UNSET",
     "argument",
-    "get_arguments_from_annotations",
     "is_unset",
     "undefined",
 ]

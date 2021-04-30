@@ -13,6 +13,7 @@ class EnumValue:
 
 @dataclasses.dataclass
 class EnumDefinition:
+    wrapped_cls: EnumMeta
     name: str
     values: List[EnumValue]
     description: Optional[str]
@@ -36,6 +37,7 @@ def _process_enum(
     values = [EnumValue(item.name, item.value) for item in cls]  # type: ignore
 
     cls._enum_definition = EnumDefinition(  # type: ignore
+        wrapped_cls=cls,
         name=name,
         values=values,
         description=description,
