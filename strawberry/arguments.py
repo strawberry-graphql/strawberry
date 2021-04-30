@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import inspect
 import typing
-from typing import Any, Dict, List, Optional, Type, Iterable
+from typing import Any, Dict, List, Optional, Iterable
 
 from typing_extensions import Annotated, get_args, get_origin
 
@@ -30,14 +30,12 @@ class StrawberryArgument:
         python_name: Optional[str],
         graphql_name: Optional[str],
         type_annotation: StrawberryAnnotation,
-        origin: Optional[Type] = None,
         is_subscription: bool = False,
         description: Optional[str] = None,
         default_value: Any = undefined,
     ) -> None:
         self.python_name = python_name
         self._graphql_name = graphql_name
-        self.origin = origin
         self.is_subscription = is_subscription
         self.description = description
         self._type: Optional[StrawberryType] = None
@@ -84,7 +82,7 @@ class StrawberryArgument:
             if isinstance(arg, StrawberryArgumentAnnotation):
                 if argument_annotation_seen:
                     raise MultipleStrawberryArgumentsError(
-                        field_name=self.origin.__name__,
+                        field_name=self.python_name,  # TODO: This isn't the field name
                         argument_name=self.python_name,
                     )
 
