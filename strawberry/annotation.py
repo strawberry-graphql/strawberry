@@ -1,7 +1,9 @@
 import typing
-from typing import Dict, ForwardRef, Union, _eval_type, _SpecialGenericAlias, Optional
+from enum import Enum
+from typing import Dict, ForwardRef, Union, _eval_type, _SpecialGenericAlias, Optional, Type
 
 from strawberry.custom_scalar import SCALAR_REGISTRY, ScalarDefinition
+from strawberry.enum import EnumDefinition
 from strawberry.scalars import SCALAR_TYPES
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
 
@@ -24,6 +26,8 @@ class StrawberryAnnotation:
 
         evaled_type = _eval_type(annotation, self.namespace, None)
 
+        if self._is_enum(evaled_type):
+            return self.create_enum(evaled_type)
         if self._is_list(evaled_type):
             return self.create_list(evaled_type)
         elif self._is_optional(evaled_type):
@@ -32,6 +36,9 @@ class StrawberryAnnotation:
             return evaled_type
 
         return evaled_type
+
+    def create_enum(self, evaled_type: Type[Enum]) -> EnumDefinition:
+        return evaled_type._enum_definition
 
     def create_list(self, evaled_type: ListType) -> StrawberryList:
         of_type = StrawberryAnnotation(
@@ -65,6 +72,10 @@ class StrawberryAnnotation:
 
         # TODO: Should we ever be creating a Scalar type here?
         raise NotImplementedError
+
+    @classmethod
+    def _is_enum(cls, annotation: type) -> bool:
+        return issubclass(annotation, Enum)
 
     @classmethod
     def _is_optional(cls, annotation: type) -> bool:

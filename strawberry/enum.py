@@ -17,6 +17,10 @@ class EnumDefinition:
     values: List[EnumValue]
     description: Optional[str]
 
+    def __hash__(self) -> int:
+        # TODO: Is this enough for unique-ness?
+        return hash(self.name)
+
 
 def _process_enum(
     cls: EnumMeta, name: Optional[str] = None, description: Optional[str] = None
