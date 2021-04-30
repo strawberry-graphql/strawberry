@@ -139,10 +139,14 @@ class StrawberryField(dataclasses.Field):
     @property
     def type(self) -> StrawberryType:
         if self.base_resolver is not None:
-            return self.base_resolver.type
+            # Handle unannotated functions (such as lambdas)
+            if self.base_resolver.type is not None:
+                return self.base_resolver.type
+
         if not isinstance(self.type_annotation, StrawberryAnnotation):
             # TODO: This is because of dataclasses
             return self.type_annotation
+
         return self.type_annotation.resolve()
 
     @type.setter

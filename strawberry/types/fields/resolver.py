@@ -102,6 +102,8 @@ class StrawberryResolver(Generic[T]):
 
     @property
     def type(self) -> StrawberryType:
+        if self.type_annotation.annotation is None:
+            return None
         return self.type_annotation.resolve()
 
     @cached_property
