@@ -1,6 +1,77 @@
 CHANGELOG
 =========
 
+0.57.4 - 2021-04-28
+-------------------
+
+This release fixes an issue when using nested lists, this now works properly:
+
+```python
+def get_polygons() -> List[List[float]]:
+    return [[2.0, 6.0]]
+
+@strawberry.type
+class Query:
+    polygons: List[List[float]] = strawberry.field(resolver=get_polygons)
+
+schema = strawberry.Schema(query=Query)
+
+query = "{ polygons }"
+
+result = schema.execute_sync(query, root_value=Query())
+```
+
+0.57.3 - 2021-04-27
+-------------------
+
+This release fixes support for generic types so that now we can also use generics for input types:
+
+```python
+T = typing.TypeVar("T")
+
+@strawberry.input
+class Input(typing.Generic[T]):
+    field: T
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def field(self, input: Input[str]) -> str:
+        return input.field
+```
+
+0.57.2 - 2021-04-19
+-------------------
+
+This release fixes a bug that prevented from extending a generic type when
+passing a type, like here:
+
+```python
+T = typing.TypeVar("T")
+
+@strawberry.interface
+class Node(typing.Generic[T]):
+    id: strawberry.ID
+
+    def _resolve(self) -> typing.Optional[T]:
+        return None
+
+@strawberry.type
+class Book(Node[str]):
+    name: str
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def books(self) -> typing.List[Book]:
+        return list()
+```
+
+0.57.1 - 2021-04-17
+-------------------
+
+Fix converting pydantic objects to strawberry types using `from_pydantic` when having a falsy value like 0 or ''.
+
 0.57.0 - 2021-04-14
 -------------------
 

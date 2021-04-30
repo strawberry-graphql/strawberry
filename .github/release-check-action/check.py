@@ -12,7 +12,12 @@ with open(GITHUB_EVENT_PATH) as f:
 
 sender = event_data["pull_request"]["user"]["login"]
 
-if sender in ["dependabot-preview[bot]", "dependabot-preview", "dependabot"]:
+if sender in [
+    "dependabot-preview[bot]",
+    "dependabot-preview",
+    "dependabot",
+    "dependabot[bot]",
+]:
     print("Skipping dependencies PRs for now.")
     sys.exit(0)
 

@@ -127,7 +127,7 @@ def copy_type_with(
 
             copied_type = builtins.type(
                 name,
-                (),
+                (base.__origin__,) if hasattr(base, "__origin__") else (),
                 {"_type_definition": type_definition},
             )
 
