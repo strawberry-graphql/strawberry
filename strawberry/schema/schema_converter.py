@@ -254,7 +254,7 @@ class GraphQLCoreConverter:
 
     def from_type(self, type_: StrawberryType) -> GraphQLNullableType:
         if _is_enum(type_):  # TODO: Replace with StrawberryEnum
-            return self.from_enum(type_)
+            return self.from_enum(type_._enum_definition)
         elif _is_input_type(type_):  # TODO: Replace with StrawberryInputObject
             return self.from_input_object(type_)
         elif isinstance(type_, StrawberryList):
