@@ -1,5 +1,5 @@
 import typing
-from typing import Dict, ForwardRef, Union, _eval_type, _SpecialGenericAlias
+from typing import Dict, ForwardRef, Union, _eval_type, _SpecialGenericAlias, Optional
 
 from strawberry.custom_scalar import SCALAR_REGISTRY, ScalarDefinition
 from strawberry.scalars import SCALAR_TYPES
@@ -11,7 +11,7 @@ UnionType = _SpecialGenericAlias
 
 
 class StrawberryAnnotation:
-    def __init__(self, *, annotation: Union[object, str], namespace: Dict):
+    def __init__(self, annotation: Union[object, str], *, namespace: Optional[Dict] = None):
         self.annotation = annotation
         self.namespace = namespace
 

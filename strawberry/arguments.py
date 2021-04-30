@@ -3,12 +3,13 @@ from __future__ import annotations
 import enum
 import inspect
 import sys
-from typing import Any, Dict, List, Mapping, Optional, Type, Union, cast
+import typing
+from typing import Any, Dict, List, Mapping, Optional, Type, Iterable
 
 from typing_extensions import Annotated, get_args, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.type import StrawberryType
+from strawberry.type import StrawberryType, StrawberryList, StrawberryOptional
 
 from .exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError
 from .scalars import is_scalar
@@ -95,18 +96,7 @@ class StrawberryArgument:
 
     @property
     def type(self) -> StrawberryType:
-        module = sys.modules[self.origin.__module__]
-
-        if self._type is None:
-            self._type = StrawberryAnnotation(
-                annotation=self.type_annotation,
-                namespace=module.__dict__
-            ).resolve()
-        return self._type
-
-    @type.setter
-    def type(self, type_: StrawberryType):
-        self._type = type_
+        return self.type_annotation.resolve()
 
 
 def get_arguments_from_annotations(
@@ -169,42 +159,43 @@ def is_unset(value: Any) -> bool:
     return type(value) is _Unset
 
 
-def convert_argument(value: Any, argument: StrawberryArgument) -> Any:
+def convert_argument(value: object, type_: StrawberryType) -> object:
     if value is None:
         return None
 
     if is_unset(value):
         return value
 
-    if argument.is_list:
-        child_definition = cast(StrawberryArgument, argument.child)
+    if isinstance(type_, StrawberryOptional):
+        return convert_argument(value, type_.of_type)
 
-        return [convert_argument(x, child_definition) for x in value]
+    if isinstance(type_, StrawberryList):
+        value_list = typing.cast(Iterable, value)
+        return [convert_argument(x, type_.of_type) for x in value_list]
 
-    argument_type = cast(Type, argument.type)
-
-    if is_scalar(argument_type):
+    if is_scalar(type_):
         return value
 
     # Convert Enum fields to instances using the value. This is safe
     # because graphql-core has already validated the input.
-    if isinstance(argument_type, enum.EnumMeta):
-        return argument_type(value)  # type: ignore
+    if isinstance(type_, enum.EnumMeta):
+        return type_(value)  # type: ignore
 
-    if hasattr(argument_type, "_type_definition"):
-        assert argument_type._type_definition.is_input
+    if hasattr(type_, "_type_definition"):  # TODO: Replace with StrawberryInputObject
+        assert type_._type_definition.is_input
 
         kwargs = {}
 
-        for field in argument_type._type_definition.fields:
+        for field in type_._type_definition.fields:
+            # TODO: cast value as a protocol that supports __getitem__
             if field.graphql_name in value:
                 kwargs[field.python_name] = convert_argument(
-                    value[field.graphql_name], field
+                    value[field.graphql_name], field.type
                 )
 
-        return argument_type(**kwargs)
+        return type_(**kwargs)
 
-    raise UnsupportedTypeError(argument_type)
+    raise UnsupportedTypeError(type_)
 
 
 def convert_arguments(
@@ -223,11 +214,11 @@ def convert_arguments(
 
     for argument in arguments:
         if argument.graphql_name in value:
-            assert argument.python_name
-
             current_value = value[argument.graphql_name]
-
-            kwargs[argument.python_name] = convert_argument(current_value, argument)
+            kwargs[argument.python_name] = convert_argument(
+                value=current_value,
+                type_=argument.type,
+            )
 
     return kwargs
 
@@ -242,8 +233,6 @@ __all__ = [
     "StrawberryArgumentAnnotation",
     "UNSET",
     "argument",
-    "convert_argument",
-    "convert_arguments",
     "get_arguments_from_annotations",
     "is_unset",
     "undefined",
