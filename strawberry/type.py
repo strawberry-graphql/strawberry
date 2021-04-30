@@ -5,18 +5,6 @@ from typing import Union
 from strawberry.enum import EnumDefinition
 
 
-StrawberryType = Union[
-    EnumDefinition,  # TODO: Replace with StrawberryEnum
-    "StrawberryInput",
-    "StrawberryInterface",
-    "StrawberryList",
-    "StrawberryObjectType",
-    "StrawberryOptional",
-    "StrawberryScalar",
-    "StrawberryUnion",
-]
-
-
 class StrawberryList:
     def __init__(self, of_type: StrawberryType):
         self.of_type = of_type
@@ -25,6 +13,18 @@ class StrawberryList:
 class StrawberryOptional:
     def __init__(self, of_type: StrawberryType):
         self.of_type = of_type
+
+
+StrawberryType = Union[
+    EnumDefinition,  # TODO: Replace with StrawberryEnum
+    "StrawberryInput",
+    "StrawberryInterface",
+    StrawberryList,
+    "StrawberryObjectType",
+    StrawberryOptional,
+    "StrawberryScalar",
+    "StrawberryUnion",
+]
 
 
 # @property

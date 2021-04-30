@@ -13,6 +13,7 @@ from strawberry.exceptions import (
     WrongReturnTypeForUnion,
 )
 from strawberry.scalars import SCALAR_TYPES
+from strawberry.type import StrawberryType
 from strawberry.utils.typing import (
     get_list_annotation,
     is_generic,
@@ -20,31 +21,26 @@ from strawberry.utils.typing import (
     is_type_var,
 )
 
-
 if TYPE_CHECKING:
+    from strawberry.annotation import StrawberryAnnotation
     from strawberry.schema.types.concrete_type import TypeMap
     from strawberry.types.types import TypeDefinition
 
 
 class StrawberryUnion:
     def __init__(
-        self, name: str, types: Tuple[Type, ...], description: Optional[str] = None
+        self,
+        name: str,
+        type_annotations: Tuple["StrawberryAnnotation", ...],
+        description: Optional[str] = None,
     ):
         self.name = name
-        self._types = types
+        self.type_annotations = type_annotations
         self.description = description
 
     @property
-    def types(self) -> Tuple[Type, ...]:
-        from .types.type_resolver import _resolve_generic_type
-
-        types = tuple(
-            _resolve_generic_type(t, self.name)
-            for t in self._types
-            if t is not None.__class__
-        )
-
-        return types
+    def types(self) -> Tuple[StrawberryType, ...]:
+        return tuple(annotation.resolve() for annotation in self.type_annotations)
 
     def __call__(self, *_args, **_kwargs) -> NoReturn:
         """Do not use.

@@ -1,12 +1,15 @@
 import typing
+from collections.abc import AsyncGenerator as AsyncGenerator_abc
 from enum import Enum
-from typing import Dict, ForwardRef, Union, _eval_type, _SpecialGenericAlias, Optional, Type
+from typing import AsyncGenerator as AsyncGenerator_typing, \
+    Dict, ForwardRef, Union, _eval_type, \
+    _SpecialGenericAlias, Optional, Type
 
 from strawberry.custom_scalar import SCALAR_REGISTRY, ScalarDefinition
 from strawberry.enum import EnumDefinition
 from strawberry.scalars import SCALAR_TYPES
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
-
+from strawberry.union import StrawberryUnion
 
 ListType = _SpecialGenericAlias
 UnionType = _SpecialGenericAlias
@@ -25,7 +28,15 @@ class StrawberryAnnotation:
             annotation = self.annotation
 
         evaled_type = _eval_type(annotation, self.namespace, None)
+        if self._is_async_generator(evaled_type):
+            evaled_type = self._strip_async_generator(evaled_type)
 
+        # Simply return objects that are already StrawberryTypes
+        if self._is_strawberry_type(evaled_type):
+            return evaled_type
+
+        # Everything remaining should be a raw annotation that needs to be turned into
+        # a StrawberryType
         if self._is_enum(evaled_type):
             return self.create_enum(evaled_type)
         if self._is_list(evaled_type):
@@ -34,8 +45,10 @@ class StrawberryAnnotation:
             return self.create_optional(evaled_type)
         elif self._is_scalar(evaled_type):
             return evaled_type
+        elif self._is_union(evaled_type):
+            return self.create_union(evaled_type)
 
-        return evaled_type
+        raise NotImplementedError(f"Unknown type {evaled_type}")
 
     def create_enum(self, evaled_type: Type[Enum]) -> EnumDefinition:
         return evaled_type._enum_definition
@@ -72,6 +85,28 @@ class StrawberryAnnotation:
 
         # TODO: Should we ever be creating a Scalar type here?
         raise NotImplementedError
+
+    def create_union(self, evaled_type: ...) -> StrawberryUnion:
+        # TODO: Deal with Forward References/origin
+        if isinstance(evaled_type, StrawberryUnion):
+            return evaled_type
+
+        types = evaled_type.__args__
+        union = StrawberryUnion(
+            name="".join(type_.__name__ for type_ in types),
+            type_annotations=tuple(StrawberryAnnotation(type_) for type_ in types),
+        )
+        return union
+
+    @classmethod
+    def _is_async_generator(cls, annotation: type) -> bool:
+        origin = getattr(annotation, "__origin__", None)
+        if origin is AsyncGenerator_abc:
+            return True
+        if origin is AsyncGenerator_typing:
+            # Deprecated in Python >= 3.9
+            return True
+        return False
 
     @classmethod
     def _is_enum(cls, annotation: type) -> bool:
@@ -116,9 +151,49 @@ class StrawberryAnnotation:
         return hasattr(annotation, "_scalar_definition")
 
     @classmethod
+    def _is_strawberry_type(cls, evaled_type: Type) -> bool:
+        if isinstance(evaled_type, EnumDefinition):
+            return True
+        elif _is_input_type(evaled_type):  # TODO: Replace with StrawberryInputObject
+            return True
+        # elif isinstance(evaled_type, StrawberryInterface):
+        #     return True
+        elif isinstance(evaled_type, StrawberryList):
+            return True
+        elif _is_object_type(evaled_type):  # TODO: Replace with StrawberryObject
+            return True
+        elif isinstance(evaled_type, StrawberryOptional):
+            return True
+        elif isinstance(evaled_type, ScalarDefinition):  # TODO: Replace with StrawberryScalar
+            return True
+        elif isinstance(evaled_type, StrawberryUnion):
+            return True
+
+        return False
+
+    @classmethod
     def _is_union(cls, annotation: type) -> bool:
         """Returns True if annotation is a Union"""
-
         annotation_origin = getattr(annotation, "__origin__", None)
 
         return annotation_origin is typing.Union
+
+    @classmethod
+    def _strip_async_generator(cls, annotation: ...) -> type:
+        return annotation.__args__[0]
+
+
+################################################################################
+# Temporary functions to be removed with new types
+################################################################################
+
+
+def _is_input_type(type_: Type) -> bool:
+    if not _is_object_type(type_):
+        return False
+
+    return type_._type_definition.is_input
+
+def _is_object_type(type_: Type) -> bool:
+    # isinstance(type_, StrawberryObjectType)  # noqa: E800
+    return hasattr(type_, "_type_definition")

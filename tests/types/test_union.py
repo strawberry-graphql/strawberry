@@ -5,6 +5,7 @@ import pytest
 
 import strawberry
 from strawberry.exceptions import InvalidUnionType
+from strawberry.type import StrawberryOptional, StrawberryList
 from strawberry.union import StrawberryUnion
 
 
@@ -53,12 +54,12 @@ def test_unions_inside_optional():
     assert len(definition.fields) == 1
 
     assert definition.fields[0].graphql_name == "user"
-    assert definition.fields[0].is_optional
+    assert isinstance(definition.fields[0].type, StrawberryOptional)
 
-    union_type_definition = definition.fields[0].type
-    assert isinstance(union_type_definition, StrawberryUnion)
-    assert union_type_definition.name == "UserError"
-    assert union_type_definition.types == (User, Error)
+    strawberry_union = definition.fields[0].type.of_type
+    assert isinstance(strawberry_union, StrawberryUnion)
+    assert strawberry_union.name == "UserError"
+    assert strawberry_union.types == (User, Error)
 
 
 def test_unions_inside_list():
@@ -80,12 +81,12 @@ def test_unions_inside_list():
     assert len(definition.fields) == 1
 
     assert definition.fields[0].graphql_name == "user"
-    assert definition.fields[0].is_list
+    assert isinstance(definition.fields[0].type, StrawberryList)
 
-    union_type_definition = definition.fields[0].child.type
-    assert isinstance(union_type_definition, StrawberryUnion)
-    assert union_type_definition.name == "UserError"
-    assert union_type_definition.types == (User, Error)
+    strawberry_union = definition.fields[0].type.of_type
+    assert isinstance(strawberry_union, StrawberryUnion)
+    assert strawberry_union.name == "UserError"
+    assert strawberry_union.types == (User, Error)
 
 
 def test_named_union():
@@ -99,10 +100,10 @@ def test_named_union():
 
     Result = strawberry.union("Result", (A, B))
 
-    union_type_definition = Result
-    assert isinstance(union_type_definition, StrawberryUnion)
-    assert union_type_definition.name == "Result"
-    assert union_type_definition.types == (A, B)
+    strawberry_union = Result
+    assert isinstance(strawberry_union, StrawberryUnion)
+    assert strawberry_union.name == "Result"
+    assert strawberry_union.types == (A, B)
 
 
 def test_union_with_generic():
@@ -118,13 +119,13 @@ def test_union_with_generic():
 
     Result = strawberry.union("Result", (Error, Edge[str]))
 
-    union_type_definition = Result
-    assert isinstance(union_type_definition, StrawberryUnion)
-    assert union_type_definition.name == "Result"
-    assert union_type_definition.types[0] == Error
+    strawberry_union = Result
+    assert isinstance(strawberry_union, StrawberryUnion)
+    assert strawberry_union.name == "Result"
+    assert strawberry_union.types[0] == Error
 
-    assert union_type_definition.types[1]._type_definition.is_generic is False
-    assert union_type_definition.types[1]._type_definition.name == "StrEdge"
+    assert strawberry_union.types[1]._type_definition.is_generic is False
+    assert strawberry_union.types[1]._type_definition.name == "StrEdge"
 
 
 def test_cannot_use_union_directly():
