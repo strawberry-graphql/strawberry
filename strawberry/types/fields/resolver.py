@@ -8,6 +8,7 @@ from cached_property import cached_property  # type: ignore
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import StrawberryArgument, get_arguments_from_annotations
 from strawberry.exceptions import MissingArgumentsAnnotationsError
+from strawberry.type import StrawberryType
 from strawberry.utils.inspect import get_func_args
 
 
@@ -81,6 +82,10 @@ class StrawberryResolver(Generic[T]):
             namespace=module.__dict__
         )
         return type_annotation
+
+    @property
+    def type(self) -> StrawberryType:
+        return self.type_annotation.resolve()
 
     @cached_property
     def is_async(self) -> bool:

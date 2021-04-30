@@ -58,7 +58,6 @@ class StrawberryField(dataclasses.Field):
             self.python_name = python_name
 
         self.type_annotation = type_annotation
-        self._resolved_type: Optional[StrawberryType] = None
 
         self.description: Optional[str] = description
         self.origin: Optional[Union[Type, Callable]] = origin
@@ -138,11 +137,9 @@ class StrawberryField(dataclasses.Field):
         _ = resolver.arguments
 
     @property
-    def resolved_type(self) -> None:
-        return self.type_annotation.resolve()
-
-    @property
     def type(self) -> StrawberryType:
+        if self.base_resolver is not None:
+            return self.base_resolver.type
         if not isinstance(self.type_annotation, StrawberryAnnotation):
             # TODO: This is because of dataclasses
             return self.type_annotation
@@ -150,7 +147,6 @@ class StrawberryField(dataclasses.Field):
 
     @type.setter
     def type(self, type_: object) -> None:
-        print(type_)
         self.type_annotation = type_
 
     def _get_arguments(

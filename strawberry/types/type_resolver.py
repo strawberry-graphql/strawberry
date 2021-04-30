@@ -102,6 +102,14 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
             # the types.
             field.origin = field.origin or cls
 
+            # Make sure types are StrawberryAnnotations
+            if not isinstance(field.type, StrawberryAnnotation):
+                module = sys.modules[field.origin.__module__]
+                field.type_annotation = StrawberryAnnotation(
+                    annotation=field.type_annotation,
+                    namespace=module.__dict__
+                )
+
         # Create a StrawberryField for fields that didn't use strawberry.field
         else:
             # Only ignore Private fields that weren't defined using StrawberryFields
