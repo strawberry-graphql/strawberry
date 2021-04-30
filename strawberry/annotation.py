@@ -31,7 +31,7 @@ class StrawberryAnnotation:
         elif self._is_scalar(evaled_type):
             return evaled_type
 
-        return StrawberryType.from_type(evaled_type)
+        return evaled_type
 
     def create_list(self, evaled_type: ListType) -> StrawberryList:
         of_type = StrawberryAnnotation(

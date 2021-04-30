@@ -35,8 +35,7 @@ class TypeDefinition:
 
     @property
     def fields(self) -> List["StrawberryField"]:
-        for field in self._fields:
-            field.resolve_type()
+        # TODO: Remove
         return self._fields
 
     @property

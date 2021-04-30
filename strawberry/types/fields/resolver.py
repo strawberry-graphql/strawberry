@@ -1,9 +1,11 @@
 import inspect
+import sys
 from inspect import isasyncgenfunction, iscoroutinefunction
-from typing import Callable, Generic, List, Optional, Type, TypeVar
+from typing import Callable, Generic, List, Optional, TypeVar
 
 from cached_property import cached_property  # type: ignore
 
+from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import StrawberryArgument, get_arguments_from_annotations
 from strawberry.exceptions import MissingArgumentsAnnotationsError
 from strawberry.utils.inspect import get_func_args
@@ -70,8 +72,15 @@ class StrawberryResolver(Generic[T]):
         return self.wrapped_func.__name__
 
     @cached_property
-    def type(self) -> Type[T]:
-        return self.wrapped_func.__annotations__.get("return", None)
+    def type_annotation(self) -> StrawberryAnnotation:
+        # TODO: PyCharm doesn't like this. Says `() -> ...` has no __module__ attribute
+        module = sys.modules[self.wrapped_func.__module__]
+
+        type_annotation = StrawberryAnnotation(
+            annotation=self.wrapped_func.__annotations__.get("return", None),
+            namespace=module.__dict__
+        )
+        return type_annotation
 
     @cached_property
     def is_async(self) -> bool:

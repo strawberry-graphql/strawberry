@@ -44,12 +44,12 @@ class Schema:
         self.execution_context_class = execution_context_class
         self.schema_converter = GraphQLCoreConverter()
 
-        query_type = self.schema_converter.from_object_type(query)
+        query_type = self.schema_converter.from_object(query)
         mutation_type = (
-            self.schema_converter.from_object_type(mutation) if mutation else None
+            self.schema_converter.from_object(mutation) if mutation else None
         )
         subscription_type = (
-            self.schema_converter.from_object_type(subscription)
+            self.schema_converter.from_object(subscription)
             if subscription
             else None
         )
@@ -66,7 +66,7 @@ class Schema:
             mutation=mutation_type,
             subscription=subscription_type if subscription else None,
             directives=specified_directives + directives,
-            types=list(map(self.schema_converter.from_object_type, types)),
+            types=list(map(self.schema_converter.from_object, types)),
         )
 
         # Validate schema early because we want developers to know about

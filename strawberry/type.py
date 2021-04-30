@@ -1,20 +1,17 @@
 from __future__ import annotations
 
-from typing import TypeVar, Union
+from typing import Union
 
-
-T = TypeVar("T")
-S = TypeVar("S")
 
 StrawberryType = Union[
-    "StrawberryScalar",
-    "StrawberryUnion",
     "StrawberryEnum",
     "StrawberryInput",
-    "StrawberryOptional",
-    "StrawberryList",
     "StrawberryInterface",
+    "StrawberryList",
     "StrawberryObjectType",
+    "StrawberryOptional",
+    "StrawberryScalar",
+    "StrawberryUnion",
 ]
 
 

@@ -83,7 +83,7 @@ class StrawberryField(dataclasses.Field):
             resolver = StrawberryResolver(resolver)
 
         self.base_resolver = resolver
-        self.type = resolver.type
+        self.type_annotation = resolver.type_annotation
 
         return self
 
@@ -137,9 +137,9 @@ class StrawberryField(dataclasses.Field):
         #       removed.
         _ = resolver.arguments
 
-    def resolve_type(self) -> None:
-        # TODO: property?
-        self._resolved_type = self.type_annotation.resolve()
+    @property
+    def resolved_type(self) -> None:
+        return self.type_annotation.resolve()
 
     def _get_arguments(
         self, kwargs: Dict[str, Any], source: Any, info: Any

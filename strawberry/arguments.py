@@ -8,6 +8,7 @@ from typing import Any, Dict, List, Mapping, Optional, Type, Union, cast
 from typing_extensions import Annotated, get_args, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
+from strawberry.type import StrawberryType
 
 from .exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError
 from .scalars import is_scalar
@@ -42,6 +43,8 @@ class StrawberryArgument:
         self.is_subscription = is_subscription
         self.description = description
         self.default_value = default_value
+
+        self._type: Optional[StrawberryType] = None
 
     @property
     def graphql_name(self) -> Optional[str]:
@@ -89,6 +92,21 @@ class StrawberryArgument:
             graphql_name=None,
             default_value=default_value,
         )
+
+    @property
+    def type(self) -> StrawberryType:
+        module = sys.modules[self.origin.__module__]
+
+        if self._type is None:
+            self._type = StrawberryAnnotation(
+                annotation=self.type_annotation,
+                namespace=module.__dict__
+            ).resolve()
+        return self._type
+
+    @type.setter
+    def type(self, type_: StrawberryType):
+        self._type = type_
 
 
 def get_arguments_from_annotations(

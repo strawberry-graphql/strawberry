@@ -59,10 +59,10 @@ def _check_field_annotations(cls: Type):
                 # The resolver _must_ have a return type annotation
                 # TODO: Maybe check this immediately when adding resolver to
                 #       field
-                if field.base_resolver.type is None:
+                if field.base_resolver.type_annotation is None:
                     raise MissingReturnAnnotationError(field_name)
 
-                cls_annotations[field_name] = field.base_resolver.type
+                cls_annotations[field_name] = field.base_resolver.type_annotation
 
             # TODO: Make sure the cls annotation agrees with the field's type
             # >>> if cls_annotations[field_name] != field.base_resolver.type:
