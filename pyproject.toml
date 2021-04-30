@@ -50,7 +50,7 @@ mypy = "^0.812"
 flake8-bugbear = "^21.4"
 flake8-eradicate = "^1.0.0"
 pytest-mypy-plugins = "^1.6"
-pytest-mock = "^3.5"
+pytest-mock = "^3.6"
 pytest-django = {version = "^4.2"}
 asgiref = "^3.2"
 pytest-flask = {version = "^1.2.0"}
