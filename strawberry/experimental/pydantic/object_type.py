@@ -69,7 +69,7 @@ def type(
                     default_factory=(
                         field.default_factory if field.default_factory else UNSET
                     ),
-                    type_=get_type_for_field(field),
+                    type_annotation=get_type_for_field(field),
                 ),
             )
             for name, field in model_fields.items()
@@ -85,7 +85,7 @@ def type(
                     StrawberryField(
                         python_name=name,
                         graphql_name=None,
-                        type_=type_,
+                        type_annotation=type_,
                         # we need a default value when adding additional fields
                         # on top of a type generated from Pydantic, this is because
                         # Pydantic Optional fields always have None as default value
