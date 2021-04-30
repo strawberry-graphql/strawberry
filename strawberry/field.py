@@ -143,6 +143,9 @@ class StrawberryField(dataclasses.Field):
 
     @property
     def type(self) -> StrawberryType:
+        if not isinstance(self.type_annotation, StrawberryAnnotation):
+            # TODO: This is because of dataclasses
+            return self.type_annotation
         return self.type_annotation.resolve()
 
     @type.setter
