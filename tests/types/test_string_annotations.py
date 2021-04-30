@@ -1,8 +1,7 @@
-# type: ignore
-
 from typing import List, Optional
 
 import strawberry
+from strawberry.type import StrawberryOptional, StrawberryList
 
 
 def test_basic_types():
@@ -12,15 +11,15 @@ def test_basic_types():
         age: "int"
 
     definition = Query._type_definition
-
     assert definition.name == "Query"
-    assert len(definition.fields) == 2
 
-    assert definition.fields[0].graphql_name == "name"
-    assert definition.fields[0].type == str
+    [field1, field2] = definition.fields
 
-    assert definition.fields[1].graphql_name == "age"
-    assert definition.fields[1].type == int
+    assert field1.graphql_name == "name"
+    assert field1.type is str
+
+    assert field2.graphql_name == "age"
+    assert field2.type is int
 
 
 def test_optional():
@@ -30,17 +29,17 @@ def test_optional():
         age: "Optional[int]"
 
     definition = Query._type_definition
-
     assert definition.name == "Query"
-    assert len(definition.fields) == 2
 
-    assert definition.fields[0].graphql_name == "name"
-    assert definition.fields[0].type == str
-    assert definition.fields[0].is_optional
+    [field1, field2] = definition.fields
 
-    assert definition.fields[1].graphql_name == "age"
-    assert definition.fields[1].type == int
-    assert definition.fields[1].is_optional
+    assert field1.graphql_name == "name"
+    assert isinstance(field1.type, StrawberryOptional)
+    assert field1.type.of_type is str
+
+    assert field2.graphql_name == "age"
+    assert isinstance(field2.type, StrawberryOptional)
+    assert field2.type.of_type is int
 
 
 def test_basic_list():
@@ -49,16 +48,13 @@ def test_basic_list():
         names: "List[str]"
 
     definition = Query._type_definition
-
     assert definition.name == "Query"
-    assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "names"
-    assert definition.fields[0].is_list
-    assert definition.fields[0].type is None
-    assert definition.fields[0].is_optional is False
-    assert definition.fields[0].child.type == str
-    assert definition.fields[0].child.is_optional is False
+    [field] = definition.fields
+
+    assert field.graphql_name == "names"
+    assert isinstance(field.type, StrawberryList)
+    assert field.type.of_type is str
 
 
 def test_list_of_types():
@@ -73,15 +69,12 @@ def test_list_of_types():
         users: "List[User]"
 
     definition = Query._type_definition
-
     assert definition.name == "Query"
-    assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "users"
-    assert definition.fields[0].is_list
-    assert definition.fields[0].type is None
-    assert definition.fields[0].is_optional is False
-    assert definition.fields[0].child.type == User
-    assert definition.fields[0].child.is_optional is False
+    [field] = definition.fields
+
+    assert field.graphql_name == "users"
+    assert isinstance(field.type, StrawberryList)
+    assert field.type.of_type is User
 
     del User
