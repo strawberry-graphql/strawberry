@@ -3,6 +3,7 @@ from enum import Enum
 import pytest
 
 import strawberry
+from strawberry.enum import EnumDefinition
 from strawberry.exceptions import NotAnEnum
 
 
@@ -66,4 +67,4 @@ def test_can_use_enum_as_arguments():
 
     field = Query._type_definition.fields[0]
 
-    assert field.arguments[0].type._enum_definition
+    assert isinstance(field.arguments[0].type, EnumDefinition)
