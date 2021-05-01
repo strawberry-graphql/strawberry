@@ -1,7 +1,7 @@
 import json
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Optional, Type
+from typing import Type
 
 import aiohttp.web
 from strawberry.file_uploads.data import replace_placeholders_with_files
@@ -12,12 +12,12 @@ from strawberry.types import ExecutionContext, ExecutionResult
 
 class GraphQLView(aiohttp.web.View):
     graphiql = True
-    schema: Optional[BaseSchema] = None
+    schema: BaseSchema
 
-    async def get_root_value(self) -> Any:
+    async def get_root_value(self) -> object:
         return None
 
-    async def get_context(self) -> Any:
+    async def get_context(self) -> object:
         return {"request": self.request}
 
     async def process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse:
@@ -54,12 +54,13 @@ class GraphQLView(aiohttp.web.View):
 
         try:
             query = data["query"]
-            variables = data.get("variables")
-            operation_name = data.get("operationName")
         except KeyError:
             raise aiohttp.web.HTTPBadRequest(
                 reason="No GraphQL query found in the request"
             )
+
+        variables = data.get("variables")
+        operation_name = data.get("operationName")
 
         return ExecutionContext(
             query=query,
@@ -84,8 +85,7 @@ class GraphQLView(aiohttp.web.View):
         return await self.request.json()
 
     def render_graphiql(self) -> aiohttp.web.Response:
-        with open(self.graphiql_html_file_path, "r") as f:
-            html_string = f.read()
+        html_string = self.graphiql_html_file_path.read_text()
         html_string = html_string.replace("{{ SUBSCRIPTION_ENABLED }}", "false")
         return aiohttp.web.Response(text=html_string, content_type="text/html")
 
