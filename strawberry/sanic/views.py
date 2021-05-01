@@ -89,10 +89,11 @@ class GraphQLView(HTTPMethodView):
 
         try:
             query = data["query"]
-            variables = data.get("variables")
-            operation_name = data.get("operationName")
         except KeyError:
             raise ServerError("No GraphQL query found in the request", status_code=400)
+
+        variables = data.get("variables")
+        operation_name = data.get("operationName")
 
         return ExecutionContext(
             query=query, variables=variables, operation_name=operation_name

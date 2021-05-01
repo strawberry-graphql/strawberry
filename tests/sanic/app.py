@@ -23,7 +23,7 @@ def create_app(**kwargs):
         def get_root_value(self):
             return Query()
 
-    app = Sanic("test-app-" + str(random()))
+    app = Sanic(f"test-app-{random()}")
 
     app.add_route(
         GraphQLView.as_view(schema=schema, graphiql=kwargs.get("graphiql", True)),
