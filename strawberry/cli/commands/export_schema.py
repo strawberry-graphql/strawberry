@@ -5,9 +5,10 @@ import click
 from strawberry.printer import print_schema
 
 
-@click.command("export_schema", short_help="Exports the schema")
-@click.argument("module", type=str)
-def export_schema(module: str):
-    schema_module = importlib.import_module(module)
-    schema = getattr(schema_module, "schema")
-    print(print_schema(schema))
+@click.command(short_help="Exports the schema")
+@click.argument("selector", type=str)
+def export_schema(selector: str):
+    module_name, symbol_name = selector.rsplit(":", 1)
+    schema_module = importlib.import_module(module_name)
+    schema_symbol = getattr(schema_module, symbol_name)
+    print(print_schema(schema_symbol))

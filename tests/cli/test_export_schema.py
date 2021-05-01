@@ -5,7 +5,9 @@ from strawberry.cli.commands.export_schema import export_schema as cmd_export_sc
 
 def test_cli_cmd_export_schema():
     cli_runner = CliRunner()
-    result = cli_runner.invoke(cmd_export_schema, ["tests.cli.helpers.sample_schema"])
+    result = cli_runner.invoke(
+        cmd_export_schema, ["tests.cli.helpers.sample_schema:schema"]
+    )
     assert result.exit_code == 0
 
     assert result.output == (
