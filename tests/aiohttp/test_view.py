@@ -96,7 +96,10 @@ async def test_malformed_query(aiohttp_app_client):
     }
 
     response = await aiohttp_app_client.post("/graphql", json=query)
+    reason = await response.text()
+
     assert response.status == 400
+    assert reason == "400: No GraphQL query found in the request"
 
 
 async def test_sending_invalid_json_body(aiohttp_app_client):

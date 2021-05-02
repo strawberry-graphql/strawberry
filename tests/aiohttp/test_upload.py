@@ -54,3 +54,37 @@ async def test_sending_invalid_form_data(aiohttp_app_client):
 
     assert response.status == 400
     assert reason == "400: Unable to parse the multipart body"
+
+
+async def test_malformed_query(aiohttp_app_client):
+    f = BytesIO(b"strawberry")
+    operations = json.dumps({"qwary": "", "variables": {"textFile": None}})
+    file_map = json.dumps({"textFile": ["variables.textFile"]})
+
+    form_data = aiohttp.FormData()
+    form_data.add_field("textFile", f, filename="textFile.txt")
+    form_data.add_field("operations", operations)
+    form_data.add_field("map", file_map)
+
+    response = await aiohttp_app_client.post("/graphql", data=form_data)
+    reason = await response.text()
+
+    assert response.status == 400
+    assert reason == "400: No GraphQL query found in the request"
+
+
+async def test_sending_invalid_json_body(aiohttp_app_client):
+    f = BytesIO(b"strawberry")
+    operations = "}"
+    file_map = json.dumps({"textFile": ["variables.textFile"]})
+
+    form_data = aiohttp.FormData()
+    form_data.add_field("textFile", f, filename="textFile.txt")
+    form_data.add_field("operations", operations)
+    form_data.add_field("map", file_map)
+
+    response = await aiohttp_app_client.post("/graphql", data=form_data)
+    reason = await response.text()
+
+    assert response.status == 400
+    assert reason == "400: Unable to parse the multipart body"
