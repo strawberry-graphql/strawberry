@@ -12,10 +12,11 @@ The exported schema will be described in the GraphQL schema definition language 
 
 You can export your schema using the following command:
 
-    strawberry export-schema app:schema
+    strawberry export-schema package.module:schema
 
-where `schema` is the name of a Strawberry schema symbol and `app` the name of the
-module containing the symbol.
+where `schema` is the name of a Strawberry schema symbol and `package.module` the
+qualified name of the module containing the symbol. The symbol name defaults to
+`schema` if not specified.
 
 In order to store the exported schema in a file, pipes or redirection can be utilized:
 
