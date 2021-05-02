@@ -54,18 +54,14 @@ class GraphQLView:
         return web.json_response(response_data)
 
     async def get_execution_context(self, request: web.Request) -> ExecutionContext:
-        try:
-            data = await self.parse_body(request)
-        except json.JSONDecodeError:
-            raise web.HTTPBadRequest(reason="Unable to parse request body as JSON")
+        data = await self.parse_body(request)
+        variables = data.get("variables")
+        operation_name = data.get("operationName")
 
         try:
             query = data["query"]
         except KeyError:
             raise web.HTTPBadRequest(reason="No GraphQL query found in the request")
-
-        variables = data.get("variables")
-        operation_name = data.get("operationName")
 
         return ExecutionContext(
             query=query,
@@ -75,10 +71,18 @@ class GraphQLView:
 
     async def parse_body(self, request: web.Request) -> dict:
         if request.content_type.startswith("multipart/form-data"):
-            reader = await request.multipart()
-            operations = {}
-            files_map = {}
-            files = {}
+            return await self.parse_multipart_body(request)
+        try:
+            return await request.json()
+        except json.JSONDecodeError:
+            raise web.HTTPBadRequest(reason="Unable to parse request body as JSON")
+
+    async def parse_multipart_body(self, request: web.Request) -> dict:
+        reader = await request.multipart()
+        operations = {}
+        files_map = {}
+        files = {}
+        try:
             async for field in reader:
                 if field.name == "operations":
                     operations = await field.json()
@@ -86,8 +90,9 @@ class GraphQLView:
                     files_map = await field.json()
                 elif field.filename:
                     files[field.name] = BytesIO(await field.read(decode=False))
-            return replace_placeholders_with_files(operations, files_map, files)
-        return await request.json()
+        except ValueError:
+            raise web.HTTPBadRequest(reason="Unable to parse the multipart body")
+        return replace_placeholders_with_files(operations, files_map, files)
 
     def render_graphiql(self) -> web.Response:
         html_string = self.graphiql_html_file_path.read_text()

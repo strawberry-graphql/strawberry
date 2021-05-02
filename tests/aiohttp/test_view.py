@@ -1,5 +1,5 @@
 import strawberry
-from aiohttp import web
+from aiohttp import hdrs, web
 from strawberry.aiohttp.views import GraphQLView as BaseGraphQLView
 from strawberry.types import ExecutionResult, Info
 
@@ -97,3 +97,26 @@ async def test_malformed_query(aiohttp_app_client):
 
     response = await aiohttp_app_client.post("/graphql", json=query)
     assert response.status == 400
+
+
+async def test_sending_invalid_json_body(aiohttp_app_client):
+    query = "}"
+
+    response = await aiohttp_app_client.post(
+        "/graphql", data=query, headers={"content-type": "application/json"}
+    )
+    reason = await response.text()
+
+    assert response.status == 400
+    assert reason == "400: Unable to parse request body as JSON"
+
+
+async def test_not_allowed_methods(aiohttp_app_client):
+    # The CONNECT method is not allowed, but would require SSL to be tested.
+    not_allowed_methods = hdrs.METH_ALL.difference(
+        {hdrs.METH_GET, hdrs.METH_POST, hdrs.METH_CONNECT}
+    )
+
+    for method in not_allowed_methods:
+        response = await aiohttp_app_client.request(method, "/graphql")
+        assert response.status == 405, method
