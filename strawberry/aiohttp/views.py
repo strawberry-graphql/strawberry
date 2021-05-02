@@ -95,7 +95,10 @@ class GraphQLView:
                     files[field.name] = BytesIO(await field.read(decode=False))
         except ValueError:
             raise web.HTTPBadRequest(reason="Unable to parse the multipart body")
-        return replace_placeholders_with_files(operations, files_map, files)
+        try:
+            return replace_placeholders_with_files(operations, files_map, files)
+        except KeyError:
+            raise web.HTTPBadRequest(reason="File(s) missing in form data")
 
     def render_graphiql(self) -> web.StreamResponse:
         html_string = self.graphiql_html_file_path.read_text()

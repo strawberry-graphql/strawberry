@@ -88,3 +88,29 @@ async def test_sending_invalid_json_body(aiohttp_app_client):
 
     assert response.status == 400
     assert reason == "400: Unable to parse the multipart body"
+
+
+async def test_upload_with_missing_file(aiohttp_app_client):
+    # The aiohttp test client prevents us from sending invalid aiohttp.FormData.
+    # To test invalid data anyway we construct it manually.
+    data = (
+        "------Boundary\r\n"
+        'Content-Disposition: form-data; name="operations"\r\n'
+        "\r\n"
+        "{"
+        '"query": "mutation($textFile: Upload!){readText(textFile: $textFile)}",'
+        '"variables": {"textFile": null}'
+        "}\r\n"
+        "------Boundary\r\n"
+        'Content-Disposition: form-data; name="map"\r\n'
+        "\r\n"
+        '{"textFile": ["variables.textFile"]}\r\n'
+        "------Boundary--"
+    )
+    headers = {"content-type": "multipart/form-data; boundary=----Boundary"}
+
+    response = await aiohttp_app_client.post("/graphql", data=data, headers=headers)
+    reason = await response.text()
+
+    assert response.status == 400
+    assert reason == "400: File(s) missing in form data"
