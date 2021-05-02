@@ -1,10 +1,12 @@
 from textwrap import dedent
 
+import pytest
+
 import strawberry
 from strawberry.tools import create_type
 
 
-def test_create_basic_type():
+def test_create_decorator_type():
     @strawberry.field
     def name() -> str:
         return "foo"
@@ -16,6 +18,33 @@ def test_create_basic_type():
 
     assert definition.fields[0].graphql_name == "name"
     assert definition.fields[0].type == str
+
+
+def test_create_variable_type():
+    def get_name() -> str:
+        return "foo"
+
+    name = strawberry.field(name="name", resolver=get_name)
+
+    MyType = create_type("MyType", [name])
+    definition = MyType._type_definition
+
+    assert len(definition.fields) == 1
+
+    assert definition.fields[0].graphql_name == "name"
+    assert definition.fields[0].type == str
+
+
+def test_create_type_field_no_name():
+    name = strawberry.field()
+
+    with pytest.raises(ValueError):
+        create_type("MyType", [name])
+
+
+def test_create_type_field_invalid():
+    with pytest.raises(TypeError):
+        create_type("MyType", [strawberry.type()])
 
 
 def test_create_mutation_type():
