@@ -93,7 +93,9 @@ class GraphQLView:
                 elif field.name == "map":
                     files_map = (await field.json()) or {}
                 elif field.filename:
-                    files[field.filename] = BytesIO(await field.read(decode=False))
+                    assert field.name
+
+                    files[field.name] = BytesIO(await field.read(decode=False))
         except ValueError:
             raise web.HTTPBadRequest(reason="Unable to parse the multipart body")
         try:
