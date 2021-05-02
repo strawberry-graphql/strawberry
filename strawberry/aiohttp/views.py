@@ -1,6 +1,7 @@
 import json
 from io import BytesIO
 from pathlib import Path
+from typing import Any, Dict
 
 from aiohttp import web
 from strawberry.file_uploads.data import replace_placeholders_with_files
@@ -82,17 +83,17 @@ class GraphQLView:
 
     async def parse_multipart_body(self, request: web.Request) -> dict:
         reader = await request.multipart()
-        operations = {}
-        files_map = {}
-        files = {}
+        operations: Dict[str, Any] = {}
+        files_map: Dict[str, Any] = {}
+        files: Dict[str, Any] = {}
         try:
             async for field in reader:
                 if field.name == "operations":
-                    operations = await field.json()
+                    operations = (await field.json()) or {}
                 elif field.name == "map":
-                    files_map = await field.json()
+                    files_map = (await field.json()) or {}
                 elif field.filename:
-                    files[field.name] = BytesIO(await field.read(decode=False))
+                    files[field.filename] = BytesIO(await field.read(decode=False))
         except ValueError:
             raise web.HTTPBadRequest(reason="Unable to parse the multipart body")
         try:
