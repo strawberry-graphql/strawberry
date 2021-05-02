@@ -36,6 +36,25 @@ def test_create_mutation_type():
     assert definition.fields[0].type == User
 
 
+def test_create_mutation_type_with_params():
+    @strawberry.type
+    class User:
+        username: str
+
+    @strawberry.mutation(name="makeNewUser", description="Make a new user")
+    def make_user(info, username: str) -> User:
+        return User(username=username)
+
+    Mutation = create_type("Mutation", [make_user])
+    definition = Mutation._type_definition
+
+    assert len(definition.fields) == 1
+
+    assert definition.fields[0].graphql_name == "makeNewUser"
+    assert definition.fields[0].type == User
+    assert definition.fields[0].description == "Make a new user"
+
+
 def test_create_schema():
     @strawberry.type
     class User:
