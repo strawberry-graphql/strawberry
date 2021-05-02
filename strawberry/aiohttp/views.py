@@ -32,12 +32,12 @@ class GraphQLView:
     ) -> GraphQLHTTPResponse:
         return process_result(result)
 
-    async def get(self, request: web.Request) -> web.Response:
+    async def get(self, request: web.Request) -> web.StreamResponse:
         if self.should_render_graphiql(request):
             return self.render_graphiql()
         return web.HTTPNotFound()
 
-    async def post(self, request: web.Request) -> web.Response:
+    async def post(self, request: web.Request) -> web.StreamResponse:
         operation_context = await self.get_execution_context(request)
         context = await self.get_context(request)
         root_value = await self.get_root_value(request)
@@ -94,7 +94,7 @@ class GraphQLView:
             raise web.HTTPBadRequest(reason="Unable to parse the multipart body")
         return replace_placeholders_with_files(operations, files_map, files)
 
-    def render_graphiql(self) -> web.Response:
+    def render_graphiql(self) -> web.StreamResponse:
         html_string = self.graphiql_html_file_path.read_text()
         html_string = html_string.replace("{{ SUBSCRIPTION_ENABLED }}", "false")
         return web.Response(text=html_string, content_type="text/html")
