@@ -24,8 +24,8 @@ class GraphQLView:
     async def get_root_value(self, request: web.Request) -> object:
         return None
 
-    async def get_context(self, request: web.Request) -> object:
-        return {"request": request}
+    async def get_context(self, request: web.Request, response: web.Response) -> object:
+        return {"request": request, "response": response}
 
     async def process_result(
         self, request: web.Request, result: ExecutionResult
@@ -39,7 +39,8 @@ class GraphQLView:
 
     async def post(self, request: web.Request) -> web.StreamResponse:
         operation_context = await self.get_execution_context(request)
-        context = await self.get_context(request)
+        response = web.Response()
+        context = await self.get_context(request, response)
         root_value = await self.get_root_value(request)
 
         result = await self.schema.execute(
@@ -51,7 +52,9 @@ class GraphQLView:
         )
 
         response_data = await self.process_result(request, result)
-        return web.json_response(response_data)
+        response.text = json.dumps(response_data)
+        response.content_type = "application/json"
+        return response
 
     async def get_execution_context(self, request: web.Request) -> ExecutionContext:
         data = await self.parse_body(request)

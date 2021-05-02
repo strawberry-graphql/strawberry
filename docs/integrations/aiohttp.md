@@ -36,7 +36,7 @@ The `GraphQLView` accepts two options at the moment:
 
 The base `GraphQLView` class can be extended by overriding the following methods:
 
-- `async get_context(self, request: aiohttp.web.Request) -> object`
+- `async get_context(self, request: aiohttp.web.Request, response: aiohttp.web.StreamResponse) -> object`
 - `async get_root_value(self, request: aiohttp.web.Request) -> object`
 - `async process_result(self, request: aiohttp.web.Request, result: ExecutionResult) -> GraphQLHTTPResponse`
 
@@ -54,8 +54,8 @@ from strawberry.aiohttp.views import GraphQLView
 
 
 class MyGraphQLView(GraphQLView):
-    async def get_context(self, request: web.Request):
-        return {"example": 1}
+    async def get_context(self, request: web.Request, response: web.StreamResponse):
+        return {"request": request, "response": response, "example": 1}
 
 
 @strawberry.type

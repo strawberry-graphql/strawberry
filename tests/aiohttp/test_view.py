@@ -1,6 +1,6 @@
 import strawberry
 from aiohttp import hdrs, web
-from strawberry.aiohttp.views import GraphQLView as BaseGraphQLView
+from strawberry.aiohttp.views import GraphQLView
 from strawberry.types import ExecutionResult, Info
 
 from .app import create_app
@@ -37,9 +37,9 @@ async def test_graphiql_disabled_view(aiohttp_client):
 
 
 async def test_custom_context(aiohttp_client):
-    class CustomGraphQLView(BaseGraphQLView):
-        async def get_context(self, request: web.Request):
-            return {"request": request, "custom_value": "Hi!"}
+    class CustomGraphQLView(GraphQLView):
+        async def get_context(self, request: web.Request, response: web.StreamResponse):
+            return {"request": request, "response": response, "custom_value": "Hi!"}
 
     @strawberry.type
     class Query:
@@ -54,15 +54,15 @@ async def test_custom_context(aiohttp_client):
     client = await aiohttp_client(app)
 
     query = "{ customContextValue }"
-    response = await client.post("/graphql", json={"query": query})
-    data = await response.json()
+    resp = await client.post("/graphql", json={"query": query})
+    data = await resp.json()
 
-    assert response.status == 200
+    assert resp.status == 200
     assert data["data"] == {"customContextValue": "Hi!"}
 
 
 async def test_custom_process_result(aiohttp_client):
-    class CustomGraphQLView(BaseGraphQLView):
+    class CustomGraphQLView(GraphQLView):
         async def process_result(self, request: web.Request, result: ExecutionResult):
             return {}
 
@@ -84,6 +84,27 @@ async def test_custom_process_result(aiohttp_client):
 
     assert response.status == 200
     assert data == {}
+
+
+async def test_setting_cookies_via_context(aiohttp_client):
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def abc(self, info) -> str:
+            info.context["response"].set_cookie("TEST_COOKIE", "TEST_VALUE")
+            return "ABC"
+
+    schema = strawberry.Schema(query=Query)
+
+    app = web.Application()
+    app.router.add_route("*", "/graphql", GraphQLView(schema=schema))
+    client = await aiohttp_client(app)
+
+    query = "{ abc }"
+    response = await client.post("/graphql", json={"query": query})
+
+    assert response.status == 200
+    assert response.cookies.get("TEST_COOKIE").value == "TEST_VALUE"
 
 
 async def test_malformed_query(aiohttp_app_client):
