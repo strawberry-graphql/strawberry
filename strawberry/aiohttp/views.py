@@ -1,37 +1,46 @@
 import json
 from io import BytesIO
 from pathlib import Path
-from typing import Type
 
-import aiohttp.web
+from aiohttp import web
 from strawberry.file_uploads.data import replace_placeholders_with_files
 from strawberry.http import GraphQLHTTPResponse, process_result
 from strawberry.schema import BaseSchema
 from strawberry.types import ExecutionContext, ExecutionResult
 
 
-class GraphQLView(aiohttp.web.View):
-    graphiql = True
-    schema: BaseSchema
+class GraphQLView:
+    def __init__(self, schema: BaseSchema, graphiql: bool = True):
+        self.schema = schema
+        self.graphiql = graphiql
 
-    async def get_root_value(self) -> object:
+    async def __call__(self, request: web.Request) -> web.StreamResponse:
+        if request.method == "GET":
+            return await self.get(request)
+        if request.method == "POST":
+            return await self.post(request)
+        raise web.HTTPMethodNotAllowed(request.method, ["GET", "POST"])
+
+    async def get_root_value(self, request: web.Request) -> object:
         return None
 
-    async def get_context(self) -> object:
-        return {"request": self.request}
+    async def get_context(self, request: web.Request) -> object:
+        return {"request": request}
 
-    async def process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse:
+    async def process_result(
+        self, request: web.Request, result: ExecutionResult
+    ) -> GraphQLHTTPResponse:
         return process_result(result)
 
-    async def get(self) -> aiohttp.web.Response:
-        if self.should_render_graphiql:
+    async def get(self, request: web.Request) -> web.Response:
+        if self.should_render_graphiql(request):
             return self.render_graphiql()
-        return aiohttp.web.HTTPNotFound()
+        return web.HTTPNotFound()
 
-    async def post(self) -> aiohttp.web.Response:
-        operation_context = await self.get_execution_context()
-        context = await self.get_context()
-        root_value = await self.get_root_value()
+    async def post(self, request: web.Request) -> web.Response:
+        operation_context = await self.get_execution_context(request)
+        context = await self.get_context(request)
+        root_value = await self.get_root_value(request)
 
         result = await self.schema.execute(
             query=operation_context.query,
@@ -41,23 +50,19 @@ class GraphQLView(aiohttp.web.View):
             operation_name=operation_context.operation_name,
         )
 
-        response_data = await self.process_result(result)
-        return aiohttp.web.json_response(response_data)
+        response_data = await self.process_result(request, result)
+        return web.json_response(response_data)
 
-    async def get_execution_context(self) -> ExecutionContext:
+    async def get_execution_context(self, request: web.Request) -> ExecutionContext:
         try:
-            data = await self.parse_body()
+            data = await self.parse_body(request)
         except json.JSONDecodeError:
-            raise aiohttp.web.HTTPBadRequest(
-                reason="Unable to parse request body as JSON"
-            )
+            raise web.HTTPBadRequest(reason="Unable to parse request body as JSON")
 
         try:
             query = data["query"]
         except KeyError:
-            raise aiohttp.web.HTTPBadRequest(
-                reason="No GraphQL query found in the request"
-            )
+            raise web.HTTPBadRequest(reason="No GraphQL query found in the request")
 
         variables = data.get("variables")
         operation_name = data.get("operationName")
@@ -68,9 +73,9 @@ class GraphQLView(aiohttp.web.View):
             operation_name=operation_name,
         )
 
-    async def parse_body(self) -> dict:
-        if self.request.content_type.startswith("multipart/form-data"):
-            reader = await self.request.multipart()
+    async def parse_body(self, request: web.Request) -> dict:
+        if request.content_type.startswith("multipart/form-data"):
+            reader = await request.multipart()
             operations = {}
             files_map = {}
             files = {}
@@ -82,25 +87,18 @@ class GraphQLView(aiohttp.web.View):
                 elif field.filename:
                     files[field.name] = BytesIO(await field.read(decode=False))
             return replace_placeholders_with_files(operations, files_map, files)
-        return await self.request.json()
+        return await request.json()
 
-    def render_graphiql(self) -> aiohttp.web.Response:
+    def render_graphiql(self) -> web.Response:
         html_string = self.graphiql_html_file_path.read_text()
         html_string = html_string.replace("{{ SUBSCRIPTION_ENABLED }}", "false")
-        return aiohttp.web.Response(text=html_string, content_type="text/html")
+        return web.Response(text=html_string, content_type="text/html")
+
+    def should_render_graphiql(self, request: web.Request) -> bool:
+        if not self.graphiql:
+            return False
+        return "text/html" in request.headers.get("Accept", "")
 
     @property
     def graphiql_html_file_path(self) -> Path:
         return Path(__file__).parent.parent / "static" / "graphiql.html"
-
-    @property
-    def should_render_graphiql(self) -> bool:
-        if not self.graphiql:
-            return False
-        return "text/html" in self.request.headers.get("Accept", "")
-
-    @classmethod
-    def as_view(cls, schema: BaseSchema, graphiql=True) -> Type["GraphQLView"]:
-        cls.schema = schema
-        cls.graphiql = graphiql
-        return cls

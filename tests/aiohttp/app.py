@@ -1,5 +1,5 @@
-import aiohttp.web
 import strawberry
+from aiohttp import web
 from strawberry.aiohttp.views import GraphQLView as BaseGraphQLView
 from strawberry.file_uploads import Upload
 
@@ -18,10 +18,10 @@ def create_app(**kwargs):
     schema = strawberry.Schema(query=Query, mutation=Mutation)
 
     class GraphQLView(BaseGraphQLView):
-        async def get_root_value(self):
+        async def get_root_value(self, request: web.Request):
             return Query()
 
-    app = aiohttp.web.Application()
-    app.router.add_view("/graphql", GraphQLView.as_view(schema=schema, **kwargs))
+    app = web.Application()
+    app.router.add_route("*", "/graphql", GraphQLView(schema=schema, **kwargs))
 
     return app

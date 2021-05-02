@@ -8,13 +8,21 @@ Strawberry comes with a basic AIOHTTP integration. It provides a view that you c
 use to serve your GraphQL schema:
 
 ```python
+import strawberry
+from aiohttp import web
 from strawberry.aiohttp.views import GraphQLView
 
-from api.schema import Schema
 
-app = aiohttp.web.Application()
+@strawberry.type
+class Query:
+    pass
 
-app.router.add_view("/graphql", GraphQLView.as_view(schema=schema))
+
+schema = strawberry.Schema(query=Query)
+
+app = web.Application()
+
+app.router.add_route("*", "/graphql", GraphQLView(schema=schema))
 ```
 
 ## Options
@@ -28,9 +36,9 @@ The `GraphQLView` accepts two options at the moment:
 
 The base `GraphQLView` class can be extended by overriding the following methods:
 
-- `async get_context(self) -> Any`
-- `async get_root_value(self) -> Any`
-- `async process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse`
+- `async get_context(self, request: aiohttp.web.Request) -> object`
+- `async get_root_value(self, request: aiohttp.web.Request) -> object`
+- `async process_result(self, request: aiohttp.web.Request, result: ExecutionResult) -> GraphQLHTTPResponse`
 
 ## get_context
 
@@ -39,8 +47,14 @@ your resolvers. You can return anything here; by default GraphQLView returns a
 dictionary with the request.
 
 ```python
+import strawberry
+from aiohttp import web
+from strawberry.types import Info
+from strawberry.aiohttp.views import GraphQLView
+
+
 class MyGraphQLView(GraphQLView):
-    async def get_context(self, request) -> Any:
+    async def get_context(self, request: web.Request):
         return {"example": 1}
 
 
@@ -64,8 +78,13 @@ schema. This is probably not used a lot but it might be useful in certain situat
 Here's an example:
 
 ```python
+import strawberry
+from aiohttp import web
+from strawberry.aiohttp.views import GraphQLView
+
+
 class MyGraphQLView(GraphQLView):
-    async def get_root_value(self) -> Any:
+    async def get_root_value(self, request: web.Request):
         return Query(name="Patrick")
 
 
@@ -83,17 +102,21 @@ By overriding `GraphQLView.process_result` you can customize and/or process resu
 before they are sent to a client. This can be useful for logging errors, or even hiding
 them (for example to hide internal exceptions).
 
-It needs to return an object of `GraphQLHTTPResponse` and accepts the execution result.
+It needs to return an object of `GraphQLHTTPResponse` and accepts the request and
+execution result.
 
 ```python
+from aiohttp import web
+from strawberry.aiohttp.views import GraphQLView
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
 
 from graphql.error import format_error as format_graphql_error
 
+
 class MyGraphQLView(GraphQLView):
     async def process_result(
-        self, result: ExecutionResult
+        self, request: web.Request, result: ExecutionResult
     ) -> GraphQLHTTPResponse:
         data: GraphQLHTTPResponse = {"data": result.data}
 

@@ -1,5 +1,5 @@
-import aiohttp.web
 import strawberry
+from aiohttp import web
 from strawberry.aiohttp.views import GraphQLView as BaseGraphQLView
 from strawberry.types import ExecutionResult, Info
 
@@ -38,8 +38,8 @@ async def test_graphiql_disabled_view(aiohttp_client):
 
 async def test_custom_context(aiohttp_client):
     class CustomGraphQLView(BaseGraphQLView):
-        async def get_context(self):
-            return {"request": self.request, "custom_value": "Hi!"}
+        async def get_context(self, request: web.Request):
+            return {"request": request, "custom_value": "Hi!"}
 
     @strawberry.type
     class Query:
@@ -49,8 +49,8 @@ async def test_custom_context(aiohttp_client):
 
     schema = strawberry.Schema(query=Query)
 
-    app = aiohttp.web.Application()
-    app.router.add_view("/graphql", CustomGraphQLView.as_view(schema=schema))
+    app = web.Application()
+    app.router.add_route("*", "/graphql", CustomGraphQLView(schema=schema))
     client = await aiohttp_client(app)
 
     query = "{ customContextValue }"
@@ -63,7 +63,7 @@ async def test_custom_context(aiohttp_client):
 
 async def test_custom_process_result(aiohttp_client):
     class CustomGraphQLView(BaseGraphQLView):
-        async def process_result(self, result: ExecutionResult):
+        async def process_result(self, request: web.Request, result: ExecutionResult):
             return {}
 
     @strawberry.type
@@ -74,8 +74,8 @@ async def test_custom_process_result(aiohttp_client):
 
     schema = strawberry.Schema(query=Query)
 
-    app = aiohttp.web.Application()
-    app.router.add_view("/graphql", CustomGraphQLView.as_view(schema=schema))
+    app = web.Application()
+    app.router.add_route("*", "/graphql", CustomGraphQLView(schema=schema))
     client = await aiohttp_client(app)
 
     query = "{ abc }"
