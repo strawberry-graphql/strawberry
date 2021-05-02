@@ -20,4 +20,4 @@ qualified name of the module containing the symbol. The symbol name defaults to
 
 In order to store the exported schema in a file, pipes or redirection can be utilized:
 
-    strawberry export-schema app:schema > schema.graphql
+    strawberry export-schema package.module:schema > schema.graphql
