@@ -104,7 +104,10 @@ class GraphQLView(HTTPMethodView):
             files = convert_request_to_files_dict(request)
             operations = json.loads(request.form.get("operations", "{}"))
             files_map = json.loads(request.form.get("map", "{}"))
-            return replace_placeholders_with_files(operations, files_map, files)
+            try:
+                return replace_placeholders_with_files(operations, files_map, files)
+            except KeyError:
+                abort(400, "File(s) missing in form data")
         return request.json
 
     def should_display_graphiql(self, request):
