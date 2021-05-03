@@ -24,9 +24,9 @@ _RESOLVER_TYPE = Union[StrawberryResolver, Callable]
 class StrawberryField(dataclasses.Field):
     def __init__(
         self,
-        python_name: Optional[str],
-        graphql_name: Optional[str],
-        type_: Optional[Union[Type, StrawberryUnion]],
+        python_name: Optional[str] = None,
+        graphql_name: Optional[str] = None,
+        type_: Optional[Union[Type, StrawberryUnion]] = None,
         origin: Optional[Union[Type, Callable]] = None,
         child: Optional["StrawberryField"] = None,
         is_subscription: bool = False,
