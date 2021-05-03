@@ -422,7 +422,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
                 graphql_name=to_camel_case(field.name),
                 type_=field_type,
                 origin=cls,
-                default_value=getattr(cls, field.name, UNSET),
+                default=getattr(cls, field.name, UNSET),
             )
 
         field_name = field.graphql_name

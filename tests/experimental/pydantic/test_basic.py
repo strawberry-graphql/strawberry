@@ -203,7 +203,7 @@ def test_type_with_fields_coming_from_strawberry_and_pydantic_with_default():
     assert definition.fields[2].graphql_name == "name"
     assert definition.fields[2].type is str
     assert definition.fields[2].is_optional is False
-    assert definition.fields[2].default_value == "Michael"
+    assert definition.fields[2].default == "Michael"
 
 
 def test_type_with_nested_fields_coming_from_strawberry_and_pydantic():
