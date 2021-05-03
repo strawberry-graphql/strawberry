@@ -43,6 +43,7 @@
 
 ## Integrations
 
+- [AIOHTTP](./integrations/aiohttp.md)
 - [ASGI](./integrations/asgi.md)
 - [Django](./integrations/django.md)
 - [Flask](./integrations/flask.md)

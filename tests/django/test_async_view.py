@@ -38,7 +38,7 @@ class Query:
 
         get_name = sync_to_async(_get_name)
 
-        return await get_name()
+        return await get_name()  # type: ignore
 
 
 schema = strawberry.Schema(query=Query)
