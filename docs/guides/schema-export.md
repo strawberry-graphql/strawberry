@@ -14,9 +14,9 @@ You can export your schema using the following command:
 
     strawberry export-schema package.module:schema
 
-where `schema` is the name of a Strawberry schema symbol and `package.module` the
-qualified name of the module containing the symbol. The symbol name defaults to
-`schema` if not specified.
+where `schema` is the name of a Strawberry schema symbol and `package.module` is
+the qualified name of the module containing the symbol. The symbol name defaults
+to `schema` if not specified.
 
 In order to store the exported schema in a file, pipes or redirection can be utilized:
 
