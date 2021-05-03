@@ -1,6 +1,6 @@
 Release type: minor
 
-Add function `create_type` to create a Strawberry type from a list of fields.
+This release adds a function called `create_type` to create a Strawberry type from a list of fields.
 
 ```python
 import strawberry
