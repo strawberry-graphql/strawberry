@@ -35,6 +35,11 @@ def test_create_variable_type():
     assert definition.fields[0].type == str
 
 
+def test_create_type_empty_list():
+    with pytest.raises(ValueError):
+        create_type("MyType", [])
+
+
 def test_create_type_field_no_name():
     name = strawberry.field()
 
