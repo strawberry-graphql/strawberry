@@ -13,6 +13,21 @@ from .union import StrawberryUnion
 from .utils.str_converters import to_camel_case
 
 
+class _Unset:
+    def __str__(self):
+        return ""
+
+    def __bool__(self):
+        return False
+
+
+UNSET: Any = _Unset()
+
+
+def is_unset(value: Any) -> bool:
+    return type(value) is _Unset
+
+
 class StrawberryArgumentAnnotation:
     description: Optional[str]
 
@@ -35,7 +50,7 @@ class StrawberryArgument:
         is_list: bool = False,
         is_union: bool = False,
         description: Optional[str] = None,
-        default_value: Any = undefined,
+        default: Any = UNSET,
     ) -> None:
         self.python_name = python_name
         self._graphql_name = graphql_name
@@ -48,7 +63,7 @@ class StrawberryArgument:
         self.is_list = is_list
         self.is_union = is_union
         self.description = description
-        self.default_value = default_value
+        self.default = default
 
     @property
     def graphql_name(self) -> Optional[str]:
@@ -63,7 +78,7 @@ class StrawberryArgument:
         cls,
         python_name: str,
         annotation: Type[Annotated],  # type: ignore
-        default_value: Any,
+        default: Any,
         origin: Any,
     ) -> StrawberryArgument:
         annotated_args = get_args(annotation)
@@ -94,7 +109,7 @@ class StrawberryArgument:
             python_name=python_name,
             # TODO: fetch from StrawberryArgumentAnnotation
             graphql_name=None,
-            default_value=default_value,
+            default=default,
         )
 
 
@@ -110,7 +125,7 @@ def get_arguments_from_annotations(
     for name, annotation in annotations.items():
         default_value = parameters[name].default
         default_value = (
-            undefined
+            UNSET
             if default_value is inspect.Parameter.empty or is_unset(default_value)
             else default_value
         )
@@ -119,7 +134,7 @@ def get_arguments_from_annotations(
             argument = StrawberryArgument.from_annotated(
                 python_name=name,
                 annotation=annotation,
-                default_value=default_value,
+                default=default_value,
                 origin=origin,
             )
         else:
@@ -127,7 +142,7 @@ def get_arguments_from_annotations(
                 type_=annotation,
                 python_name=name,
                 graphql_name=None,
-                default_value=default_value,
+                default=default_value,
                 description=None,
                 origin=origin,
             )
@@ -137,21 +152,6 @@ def get_arguments_from_annotations(
         arguments.append(argument)
 
     return arguments
-
-
-class _Unset:
-    def __str__(self):
-        return ""
-
-    def __bool__(self):
-        return False
-
-
-UNSET: Any = _Unset()
-
-
-def is_unset(value: Any) -> bool:
-    return type(value) is _Unset
 
 
 def convert_argument(value: Any, argument: StrawberryArgument) -> Any:

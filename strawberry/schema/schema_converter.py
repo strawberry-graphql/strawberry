@@ -97,9 +97,7 @@ class GraphQLCoreConverter:
         raise TypeError(f"Unexpected type '{type_}'")
 
     def from_argument(self, argument: StrawberryArgument) -> GraphQLArgument:
-        default_value = (
-            Undefined if argument.default_value is undefined else argument.default_value
-        )
+        default_value = Undefined if argument.default is UNSET else argument.default
 
         argument_type = self.get_graphql_type_argument(argument)
         argument_type = cast(GraphQLInputType, argument_type)
