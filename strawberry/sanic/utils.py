@@ -27,7 +27,7 @@ def convert_request_to_files_dict(request: Request) -> dict:
         if len(file_list) == 1:
             # Turn single item file lists into a single file object
             files_dict[field_name] = BytesIO(file_list[0].body)
-        else:
+        else:  # pragma: no cover
             # TODO: Test this branch once file list uploads are supported (see #766).
             # https://github.com/strawberry-graphql/strawberry/issues/766
 
