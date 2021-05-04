@@ -7,5 +7,5 @@ Pipes and redirection can be used to store the schema in a file.
 Example usage:
 
 ```sh
-strawberyy export-schema mypackage.mymodule:myschema > schema.graphql
+strawberry export-schema mypackage.mymodule:myschema > schema.graphql
 ```
