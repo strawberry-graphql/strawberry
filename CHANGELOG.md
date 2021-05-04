@@ -1,6 +1,11 @@
 CHANGELOG
 =========
 
+0.59.1 - 2021-05-04
+-------------------
+
+This release fixes an issue that prevented using `source` as name of an argument
+
 0.59.0 - 2021-05-03
 -------------------
 
