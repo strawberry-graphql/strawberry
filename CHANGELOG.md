@@ -1,6 +1,19 @@
 CHANGELOG
 =========
 
+0.60.0 - 2021-05-04
+-------------------
+
+This release adds an `export-schema` command to the Strawberry CLI.
+Using the command you can print your schema definition to your console.
+Pipes and redirection can be used to store the schema in a file.
+
+Example usage:
+
+```sh
+strawberry export-schema mypackage.mymodule:myschema > schema.graphql
+```
+
 0.59.1 - 2021-05-04
 -------------------
 
