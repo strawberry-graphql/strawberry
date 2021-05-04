@@ -35,6 +35,7 @@
 - [Permissions](./guides/permissions.md)
 - [Builtin server](./guides/server.md)
 - [Tools](./guides/tools.md)
+- [Schema export](./guides/schema-export.md)
 
 ## Concepts
 
