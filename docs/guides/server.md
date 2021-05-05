@@ -10,9 +10,18 @@ framework like Flask or Django.
 Strawberry’s built in server helps with this use case. It allows to quickly have
 a development server by running the following command:
 
-    strawberry server app
+    strawberry server package.module:schema
 
-where `app` is the path to a file containing a Strawberry schema.
+where `schema` is the name of a Strawberry schema symbol and `package.module` is
+the qualified name of the module containing the symbol. The symbol name defaults
+to `schema` if not specified.
 
-When running that command you should be able to see the GraphQL playground at
+When running that command you should be able to see a GraphiQL playground at
 this url [http://localhost:8000/graphql](http://localhost:8000/graphql).
+
+## Automatic reloading
+
+Strawberry's built in server automatically reloads when changes to the module
+containing the `schema` are detected.
+This way you can spend more time prototyping your API rather than restarting
+development servers.
