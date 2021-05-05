@@ -1,7 +1,7 @@
 Release type: patch
 
 This release extends the `strawberry server` command to allow the specification
-of a schema symbols name within a module:
+of a schema symbol name within a module:
 
 ```sh
 strawberry server mypackage.mymodule:myschema
