@@ -7,4 +7,4 @@ of a schema symbol name within a module:
 strawberry server mypackage.mymodule:myschema
 ```
 
-The schema symbols name defaults to `schema` making this change backwards compatible.
+The schema symbol name defaults to `schema` making this change backwards compatible.
