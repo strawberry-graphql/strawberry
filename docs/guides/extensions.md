@@ -98,7 +98,7 @@ class MyExtension(Extension):
 
 ### Parsing
 
-`on_validation_start` and `on_validation_end` can be used to run code on the
+`on_parsing_start` and `on_parsing_end` can be used to run code on the
 parsing step of the GraphQL execution.
 
 ```python
