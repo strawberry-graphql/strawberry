@@ -50,7 +50,7 @@ class StrawberryArgument:
         is_list: bool = False,
         is_union: bool = False,
         description: Optional[str] = None,
-        default: Any = UNSET,
+        default: object = UNSET,
     ) -> None:
         self.python_name = python_name
         self._graphql_name = graphql_name
@@ -78,7 +78,7 @@ class StrawberryArgument:
         cls,
         python_name: str,
         annotation: Type[Annotated],  # type: ignore
-        default: Any,
+        default: object,
         origin: Any,
     ) -> StrawberryArgument:
         annotated_args = get_args(annotation)
@@ -123,18 +123,18 @@ def get_arguments_from_annotations(
     arguments = []
 
     for name, annotation in annotations.items():
-        default_value = parameters[name].default
-        default_value = (
+        default = parameters[name].default
+        default = (
             UNSET
-            if default_value is inspect.Parameter.empty or is_unset(default_value)
-            else default_value
+            if default is inspect.Parameter.empty or is_unset(default)
+            else default
         )
 
         if get_origin(annotation) is Annotated:
             argument = StrawberryArgument.from_annotated(
                 python_name=name,
                 annotation=annotation,
-                default=default_value,
+                default=default,
                 origin=origin,
             )
         else:
@@ -142,7 +142,7 @@ def get_arguments_from_annotations(
                 type_=annotation,
                 python_name=name,
                 graphql_name=None,
-                default=default_value,
+                default=default,
                 description=None,
                 origin=origin,
             )

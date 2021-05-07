@@ -38,7 +38,7 @@ class StrawberryField(dataclasses.Field):
         description: Optional[str] = None,
         base_resolver: Optional[StrawberryResolver] = None,
         permission_classes: List[Type[BasePermission]] = (),  # type: ignore
-        default: Any = UNSET,
+        default: object = UNSET,
         default_factory: Union[Callable, object] = UNSET,
         deprecation_reason: Optional[str] = None,
     ):
@@ -48,9 +48,9 @@ class StrawberryField(dataclasses.Field):
         is_basic_field = not base_resolver
 
         super().__init__(  # type: ignore
-            default=(default if default != UNSET else dataclasses.MISSING),
+            default=(default if default is not UNSET else dataclasses.MISSING),
             default_factory=(
-                default_factory if default_factory != UNSET else dataclasses.MISSING
+                default_factory if default_factory is not UNSET else dataclasses.MISSING
             ),
             init=is_basic_field,
             repr=is_basic_field,
