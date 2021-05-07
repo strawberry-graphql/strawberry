@@ -174,6 +174,7 @@ class GraphQLCoreConverter:
         )
 
     def from_input_field(self, field: StrawberryField) -> GraphQLInputField:
+        default_value: object
         if field.default_value in [undefined, UNSET]:
             default_value = Undefined
         else:
