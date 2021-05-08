@@ -1,4 +1,9 @@
+<<<<<<< HEAD
 from __future__ import annotations
+=======
+import dataclasses
+from typing import List, Optional, Type, cast
+>>>>>>> c8d5848 (Update inteface definition)
 
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, List, Mapping, TypeVar, Union
