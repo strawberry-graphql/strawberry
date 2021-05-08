@@ -122,6 +122,7 @@ def _process_type(
 
     return cls
 
+
 @__dataclass_transform__(order_default=True)
 def type(
     cls: Type = None,
