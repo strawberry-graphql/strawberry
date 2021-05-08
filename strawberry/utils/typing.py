@@ -1,6 +1,6 @@
 import typing
-from collections.abc import AsyncGenerator
-from typing import Type, TypeVar
+from collections.abc import AsyncGenerator, Callable
+from typing import Any, Tuple, Type, TypeVar, Union
 
 
 def is_list(annotation: Type) -> bool:
@@ -92,3 +92,16 @@ def get_parameters(annotation: Type):
         return annotation.__parameters__
     else:
         return ()  # pragma: no cover
+
+
+_T = TypeVar("_T")
+
+
+def __dataclass_transform__(
+    *,
+    eq_default: bool = True,
+    order_default: bool = False,
+    kw_only_default: bool = False,
+    field_descriptors: Tuple[Union[type, typing.Callable[..., Any]], ...] = (()),
+) -> typing.Callable[[_T], _T]:
+    return lambda a: a

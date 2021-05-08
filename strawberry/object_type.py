@@ -7,6 +7,7 @@ from .field import StrawberryField
 from .types.type_resolver import _get_fields
 from .types.types import FederationTypeParams, TypeDefinition
 from .utils.str_converters import to_camel_case
+from .utils.typing import __dataclass_transform__
 
 
 def _get_interfaces(cls: Type) -> List[TypeDefinition]:
@@ -121,7 +122,7 @@ def _process_type(
 
     return cls
 
-
+@__dataclass_transform__(order_default=True)
 def type(
     cls: Type = None,
     *,
