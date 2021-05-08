@@ -22,7 +22,10 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           architecture: x64
-
+      - uses: actions/setup-node@v2
+        with:
+          node-version: '14'
+      - run: npm install -g --no-package-lock --no-save pyright
       - run: pip install poetry
       - name: Install dependencies
         run: poetry install
