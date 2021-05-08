@@ -1,4 +1,11 @@
-from .utils import Result, run_pyright
+import pytest
+
+from .utils import Result, pyright_exist, run_pyright
+
+
+pytestmark = pytest.mark.skipif(
+    not pyright_exist(), reason="These tests require pyright"
+)
 
 
 CODE = """

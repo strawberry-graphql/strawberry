@@ -1,4 +1,5 @@
 import os
+import shutil
 import subprocess
 import tempfile
 from dataclasses import dataclass
@@ -47,3 +48,7 @@ def run_pyright(code: str) -> List[Result]:
             results.append(Result.from_output_line(line))
 
     return results
+
+
+def pyright_exist() -> bool:
+    return shutil.which("pyright") is not None
