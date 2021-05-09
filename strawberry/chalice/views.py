@@ -115,9 +115,10 @@ class GraphQLView:
             A chalice response
         """
         if self.graphiql:
-            if self.has_html_been_asked_for(
-                headers=request.headers
-            ) and self.method_is_get(request.method):
+            if (
+                self.has_html_been_asked_for(request.headers)
+                and self.method_is_get(request.method)
+            ):
                 graphiql_page: str = self.render_graphiql()
                 return Response(
                     body=graphiql_page,
