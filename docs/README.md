@@ -24,6 +24,12 @@
 - [Resolvers](./types/resolvers.md)
 - [Union types](./types/union.md)
 
+## Editor integration
+
+- [Visual Studio Code](./editors/vscode.md)
+- [PyCharm](./editors/vscode.md)
+- [MyPy](./editors/mypy.md)
+
 ## Guides
 
 - [Authentication](./guides/authentication.md)
