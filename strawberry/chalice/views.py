@@ -9,9 +9,9 @@ from strawberry.types import ExecutionResult
 
 
 class GraphQLView:
-    def __init__(self, schema: BaseSchema, render_graphiql=True):
-        self._schema: BaseSchema = schema
-        self.graphiql: bool = render_graphiql
+    def __init__(self, schema: BaseSchema, render_graphiql: bool = True):
+        self._schema = schema
+        self.graphiql = render_graphiql
 
     @staticmethod
     @functools.lru_cache()
