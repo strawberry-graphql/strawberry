@@ -20,7 +20,7 @@ class GraphQLView:
         Returns a string containing the html for the graphiql webpage. It also caches the
         result using lru cache. This saves loading from disk each time it is invoked.
         Returns:
-
+            The graphiql html page as a string
         """
         result = render_graphiql_page()
         return result
@@ -37,7 +37,7 @@ class GraphQLView:
         """
         try:
             accept_headers = headers.get("accept")
-        except (KeyError, TypeError):
+        except TypeError:
             return False
 
         if accept_headers is None:
@@ -61,10 +61,7 @@ class GraphQLView:
         Returns:
             True if the method is post
         """
-        if method == "POST":
-            return True
-
-        return False
+        return method == "POST"
 
     @staticmethod
     def method_is_get(method: str) -> bool:
@@ -76,10 +73,7 @@ class GraphQLView:
         Returns:
             True if the method is get
         """
-        if method == "GET":
-            return True
-
-        return False
+        return method == "GET"
 
     @staticmethod
     def invalid_query_response() -> Response:
