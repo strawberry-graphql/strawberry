@@ -1,5 +1,5 @@
 import functools
-from os.path import abspath, dirname, join
+from pathlib import Path
 
 
 @functools.lru_cache()
@@ -12,12 +12,7 @@ def render_graphiql_page() -> str:
     Returns:
         A cached string containing a static graphiql page.
     """
-    dir_path = abspath(join(dirname(__file__), ".."))
-    graphiql_html_file = f"{dir_path}/static/graphiql.html"
-
-    html_string = None
-
-    with open(graphiql_html_file, "r") as f:
-        html_string = f.read()
+    graphiql_path = Path(__file__).parent.parent / "static/graphiql.html"
+    html_string = graphiql_path.read_text()
 
     return html_string.replace("{{ SUBSCRIPTION_ENABLED }}", "false")
