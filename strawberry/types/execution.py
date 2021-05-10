@@ -1,7 +1,9 @@
 import dataclasses
 from typing import Any, Dict, List, Optional
 
+from graphql import ExecutionResult as GraphQLExecutionResult
 from graphql.error.graphql_error import GraphQLError
+from graphql.language import DocumentNode
 
 
 @dataclasses.dataclass
@@ -10,6 +12,12 @@ class ExecutionContext:
     context: Any = None
     variables: Optional[Dict[str, Any]] = None
     operation_name: Optional[str] = None
+
+    # Values that get populated during the GraphQL execution so that they can be
+    # accessed by extensions
+    graphql_document: Optional[DocumentNode] = None
+    errors: Optional[List[GraphQLError]] = None
+    result: Optional[GraphQLExecutionResult] = None
 
 
 @dataclasses.dataclass
