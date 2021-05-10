@@ -21,6 +21,7 @@ async def execute(
     schema: GraphQLSchema,
     query: str,
     extensions: Sequence[Type[Extension]],
+    execution_context: ExecutionContext,
     root_value: Any = None,
     context_value: Any = None,
     variable_values: Dict[str, Any] = None,
@@ -29,13 +30,6 @@ async def execute(
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
     validate_queries: bool = True,
 ) -> ExecutionResult:
-    execution_context = ExecutionContext(
-        query=query,
-        context=context_value,
-        variables=variable_values,
-        operation_name=operation_name,
-    )
-
     extensions_runner = ExtensionsRunner(
         execution_context=execution_context,
         extensions=[extension() for extension in extensions],
@@ -106,6 +100,7 @@ def execute_sync(
     schema: GraphQLSchema,
     query: str,
     extensions: Sequence[Type[Extension]],
+    execution_context: ExecutionContext,
     root_value: Any = None,
     context_value: Any = None,
     variable_values: Dict[str, Any] = None,
@@ -114,12 +109,6 @@ def execute_sync(
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
     validate_queries: bool = True,
 ) -> ExecutionResult:
-    execution_context = ExecutionContext(
-        query=query,
-        context=context_value,
-        variables=variable_values,
-        operation_name=operation_name,
-    )
     extensions_runner = ExtensionsRunner(
         execution_context=execution_context,
         extensions=[extension() for extension in extensions],
