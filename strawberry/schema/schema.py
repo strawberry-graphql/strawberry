@@ -88,7 +88,9 @@ class Schema:
 
         return None
 
-    def process_errors(self, errors: List[GraphQLError]) -> None:
+    def process_errors(
+        self, errors: List[GraphQLError], execution_context: ExecutionContext
+    ) -> None:
         for error in errors:
             actual_error = error.original_error or error
             logger.error(actual_error, exc_info=actual_error)
@@ -125,7 +127,7 @@ class Schema:
         )
 
         if result.errors:
-            self.process_errors(result.errors)
+            self.process_errors(result.errors, execution_context=execution_context)
 
         return ExecutionResult(
             data=result.data,
@@ -164,7 +166,7 @@ class Schema:
         )
 
         if result.errors:
-            self.process_errors(result.errors)
+            self.process_errors(result.errors, execution_context=execution_context)
 
         return ExecutionResult(
             data=result.data,
