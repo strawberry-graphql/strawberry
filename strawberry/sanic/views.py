@@ -5,9 +5,15 @@ from sanic.exceptions import ServerError, abort
 from sanic.request import Request
 from sanic.response import HTTPResponse, html
 from sanic.views import HTTPMethodView
+from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.data import replace_placeholders_with_files
-from strawberry.http import GraphQLHTTPResponse, process_result
-from strawberry.types import ExecutionContext, ExecutionResult
+from strawberry.http import (
+    GraphQLHTTPResponse,
+    GraphQLRequestData,
+    parse_request_data,
+    process_result,
+)
+from strawberry.types import ExecutionResult
 
 from ..schema import BaseSchema
 from .context import StrawberrySanicContext
@@ -64,16 +70,16 @@ class GraphQLView(HTTPMethodView):
             template = render_graphiql_page()
             return self.render_template(template=template)
 
-        operation_context = self.get_execution_context(request)
+        request_data = self.get_request_data(request)
         context = await self.get_context(request)
         root_value = self.get_root_value()
 
         result = await self.schema.execute(
-            query=operation_context.query,
-            variable_values=operation_context.variables,
+            query=request_data["query"],
+            variable_values=request_data["variables"],
             context_value=context,
             root_value=root_value,
-            operation_name=operation_context.operation_name,
+            operation_name=request_data["operation_name"],
         )
         response_data = self.process_result(result)
 
@@ -81,23 +87,18 @@ class GraphQLView(HTTPMethodView):
             json.dumps(response_data), status=200, content_type="application/json"
         )
 
-    def get_execution_context(self, request: Request) -> ExecutionContext:
+    def get_request_data(self, request: Request) -> GraphQLRequestData:
         try:
             data = self.parse_body(request)
         except json.JSONDecodeError:
             raise ServerError("Unable to parse request body as JSON", status_code=400)
 
         try:
-            query = data["query"]
-        except KeyError:
+            request_data = parse_request_data(data)
+        except MissingQueryError:
             raise ServerError("No GraphQL query found in the request", status_code=400)
 
-        variables = data.get("variables")
-        operation_name = data.get("operationName")
-
-        return ExecutionContext(
-            query=query, variables=variables, operation_name=operation_name
-        )
+        return request_data
 
     def parse_body(self, request: Request) -> dict:
         if request.content_type.startswith("multipart/form-data"):

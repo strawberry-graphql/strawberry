@@ -11,8 +11,9 @@ from starlette.websockets import WebSocket, WebSocketDisconnect, WebSocketState
 from graphql import ExecutionResult as GraphQLExecutionResult, GraphQLError
 from graphql.error import format_error as format_graphql_error
 
+from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.data import replace_placeholders_with_files
-from strawberry.http import GraphQLHTTPResponse, process_result
+from strawberry.http import GraphQLHTTPResponse, parse_request_data, process_result
 from strawberry.types import ExecutionResult
 
 from ..schema import BaseSchema
@@ -263,20 +264,18 @@ class GraphQL:
             )
 
         try:
-            query = data["query"]
-            variables = data.get("variables")
-            operation_name = data.get("operationName")
-        except KeyError:
+            request_data = parse_request_data(data)
+        except MissingQueryError:
             return PlainTextResponse(
                 "No GraphQL query found in the request",
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
 
         result = await execute(
-            query,
-            variables=variables,
+            request_data["query"],
+            variables=request_data["variables"],
             context=context,
-            operation_name=operation_name,
+            operation_name=request_data["operation_name"],
             root_value=root_value,
         )
 
