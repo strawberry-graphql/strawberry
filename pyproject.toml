@@ -43,7 +43,7 @@ aiohttp = {version = "^3.7.4.post0", optional = true}
 pytest = "^6.2"
 pytest-emoji = "^0.2.0"
 flake8 = "^3.9"
-black = {version = "^21.5b0", allow-prereleases = true}
+black = {version = "^21.5b1", allow-prereleases = true}
 isort = "^5.8.0"
 pytest-asyncio = "^0.15.1"
 pytest-cov = "^2.11"
