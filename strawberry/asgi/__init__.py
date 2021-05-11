@@ -1,12 +1,13 @@
 import asyncio
 import json
 import typing
-from websockets.exceptions import ConnectionClosedError
+
 from starlette import status
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, JSONResponse, PlainTextResponse, Response
 from starlette.types import Receive, Scope, Send
 from starlette.websockets import WebSocket, WebSocketDisconnect, WebSocketState
+from websockets.exceptions import ConnectionClosedError
 
 from graphql import ExecutionResult as GraphQLExecutionResult, GraphQLError
 from graphql.error import format_error as format_graphql_error
@@ -186,6 +187,14 @@ class GraphQL:
                     ]
 
                 await self._send_message(websocket, GQL_DATA, payload, operation_id)
+        except asyncio.CancelledError:
+            # CancelError will be received when the client disconnects
+            # and the `handle_async_results` task gets cancelled
+
+            # Suppress the error and prevent sending any message, since the
+            # client was disconnected now
+            return
+
         except Exception as error:
             if not isinstance(error, GraphQLError):
                 error = GraphQLError(str(error), original_error=error)
@@ -196,10 +205,6 @@ class GraphQL:
                 {"data": None, "errors": [format_graphql_error(error)]},
                 operation_id,
             )
-        except asyncio.CancelledError:
-            # CancelError will be received when the client disconnects and the handle_async_results task being cancelled
-            # Suppress the error and prevent contining to the sending completion message stage
-            return
 
         if (
             websocket.client_state != WebSocketState.DISCONNECTED
