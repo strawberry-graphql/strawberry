@@ -4,6 +4,9 @@ from strawberry.types import ExecutionContext, Info
 
 
 class Extension:
+    def __init__(self, execution_context: ExecutionContext):
+        self.execution_context = execution_context
+
     def on_request_start(self, *, execution_context: ExecutionContext):
         ...
 
