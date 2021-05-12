@@ -131,3 +131,37 @@ def test_extension_access_to_parsed_document():
 
     assert not result.errors
     assert query_name == "TestQuery"
+
+
+def test_extension_access_to_errors():
+    execution_errors = []
+
+    class MyExtension(Extension):
+        def on_request_end(self):
+            nonlocal execution_errors
+            execution_errors = self.execution_context.errors
+
+    @strawberry.type
+    class Person:
+        name: str = "Jess"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def person(self) -> Person:
+            return None  # type: ignore
+
+    schema = strawberry.Schema(query=Query, extensions=[MyExtension])
+
+    query = """
+        query TestQuery {
+            person {
+                name
+            }
+        }
+    """
+
+    result = schema.execute_sync(query)
+
+    assert len(result.errors) == 1
+    assert execution_errors == result.errors
