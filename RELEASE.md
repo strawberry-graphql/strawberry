@@ -1,8 +1,8 @@
 Release type: patch
 
-Fix `@requires(fields: ["email"])` usage on a Federation field
+Fix `@requires(fields: ["email"])` and `@provides(fields: ["name"])` usage on a Federation field
 
-You can use `@requires` to specify which field your resolver needs
+You can use `@requires` to specify which fields you need to resolve a field
 
 ```python
 import strawberry
@@ -20,3 +20,7 @@ class Product:
     def my_code(self) -> str:
         return self.code
 ```
+
+`@provides` can be used to specify what fields are going to be resolved
+by the service itself without having the Gateway to contact the external service
+to resolve them.
