@@ -32,7 +32,9 @@ async def execute(
 ) -> ExecutionResult:
     extensions_runner = ExtensionsRunner(
         execution_context=execution_context,
-        extensions=[extension(execution_context) for extension in extensions],
+        extensions=[
+            extension(execution_context=execution_context) for extension in extensions
+        ],
     )
 
     additional_middlewares = additional_middlewares or []
@@ -111,7 +113,9 @@ def execute_sync(
 ) -> ExecutionResult:
     extensions_runner = ExtensionsRunner(
         execution_context=execution_context,
-        extensions=[extension(execution_context) for extension in extensions],
+        extensions=[
+            extension(execution_context=execution_context) for extension in extensions
+        ],
     )
 
     additional_middlewares = additional_middlewares or []
