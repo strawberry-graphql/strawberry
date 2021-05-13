@@ -2,7 +2,7 @@ name: Release file check
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened]
+    types: [synchronize, reopened, ready_for_review]
     branches:
     - main
 
