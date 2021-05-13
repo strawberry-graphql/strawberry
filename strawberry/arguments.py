@@ -128,10 +128,10 @@ def get_arguments_from_annotations(
             can_be_unset = False
             if annotation_origin is Union and UNSET in annotation.__args__:
                 # TODO: check that the type can also be None
+                # TODO: check that default_value is UNSET otherwise log warning
                 # Create new Union without the UNSET type
                 new_args = tuple(arg for arg in annotation.__args__ if arg is not UNSET)
                 annotation = Union[new_args]
-                default_value = UNSET
                 can_be_unset = True
 
             argument = StrawberryArgument(
@@ -217,13 +217,14 @@ def convert_arguments(
             current_value = value[argument.graphql_name]
 
             kwargs[argument.python_name] = convert_argument(current_value, argument)
-        elif argument.can_be_unset is True:
+        elif argument.can_be_unset is True and argument.default_value is UNSET:
             assert argument.python_name
 
             kwargs[argument.python_name] = UNSET
-        else:
-            # Raise exception here?
-            raise Exception("Missing value for argument")
+        elif argument.is_optional and argument.default_value is UNSET:
+            assert argument.python_name
+
+            kwargs[argument.python_name] = None
 
     return kwargs
 

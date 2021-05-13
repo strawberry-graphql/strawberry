@@ -53,9 +53,9 @@ def test_optional_argument_without_default_value():
     class Query:
         @strawberry.field
         def hello(self, name: Optional[str]) -> str:
-            if name:
-                return f"Hi {name}"
-            return "Hi"
+            if name is None:
+                return "Hi"
+            return f"Hi {name}"
 
     schema = strawberry.Schema(query=Query)
 
@@ -106,6 +106,16 @@ def test_optional_argument_unset():
     )
     assert not result.errors
     assert result.data == {"hello": "Hi there"}
+
+    result = schema.execute_sync(
+        """
+        query {
+            hello(name: "jkimbo")
+        }
+    """
+    )
+    assert not result.errors
+    assert result.data == {"hello": "Hi jkimbo"}
 
 
 def test_optional_input_field_unset():
