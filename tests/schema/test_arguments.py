@@ -1,10 +1,13 @@
 from textwrap import dedent
 from typing import Optional, Union
 
+import pytest
+
 from typing_extensions import Annotated
 
 import strawberry
 from strawberry.arguments import UNSET, is_unset
+from strawberry.exceptions import UnsetRequiredArgumentError
 
 
 def test_argument_descriptions():
@@ -116,6 +119,18 @@ def test_optional_argument_unset():
     )
     assert not result.errors
     assert result.data == {"hello": "Hi jkimbo"}
+
+
+def test_dont_allow_required_unset_argument():
+    with pytest.raises(
+        UnsetRequiredArgumentError, match=r'Argument "name" for resolver "hello" .*'
+    ):
+
+        @strawberry.type
+        class Query:
+            @strawberry.field
+            def hello(self, name: Union[str, UNSET]) -> str:
+                return "Hi"
 
 
 def test_optional_input_field_unset():

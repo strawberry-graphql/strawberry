@@ -6,7 +6,11 @@ from typing import Any, Dict, List, Mapping, NewType, Optional, Type, Union, cas
 
 from typing_extensions import Annotated, get_args, get_origin
 
-from .exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError
+from .exceptions import (
+    MultipleStrawberryArgumentsError,
+    UnsetRequiredArgumentError,
+    UnsupportedTypeError,
+)
 from .scalars import is_scalar
 from .types.types import undefined
 from .union import StrawberryUnion
@@ -127,10 +131,17 @@ def get_arguments_from_annotations(
             # Check if argument could be unset
             can_be_unset = False
             if annotation_origin is Union and UNSET in annotation.__args__:
-                # TODO: check that the type can also be None
                 # TODO: check that default_value is UNSET otherwise log warning
                 # Create new Union without the UNSET type
                 new_args = tuple(arg for arg in annotation.__args__ if arg is not UNSET)
+
+                # Raise an exception if the type is not marked as Optional
+                if type(None) not in new_args:
+                    raise UnsetRequiredArgumentError(
+                        argument_name=name,
+                        resolver_name=origin.__name__,
+                    )
+
                 annotation = Union[new_args]
                 can_be_unset = True
 
