@@ -1,5 +1,5 @@
 from textwrap import dedent
-from typing import Optional
+from typing import Optional, Union
 
 from typing_extensions import Annotated
 
@@ -48,12 +48,43 @@ def test_argument_with_default_value_none():
     )
 
 
+def test_optional_argument_without_default_value():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(self, name: Optional[str]) -> str:
+            if name:
+                return f"Hi {name}"
+            return "Hi"
+
+    schema = strawberry.Schema(query=Query)
+
+    assert str(schema) == dedent(
+        """\
+        type Query {
+          hello(name: String): String!
+        }"""
+    )
+
+    result = schema.execute_sync(
+        """
+        query {
+            hello
+        }
+    """
+    )
+    assert not result.errors
+    assert result.data == {"hello": "Hi"}
+
+
 def test_optional_argument_unset():
     @strawberry.type
     class Query:
         @strawberry.field
-        def hello(self, name: Optional[str] = UNSET, age: Optional[int] = UNSET) -> str:
-            if is_unset(name):
+        def hello(
+            self, name: Union[Optional[str], UNSET], age: Union[UNSET, Optional[int]]
+        ) -> str:
+            if name is UNSET:
                 return "Hi there"
             return f"Hi {name}"
 

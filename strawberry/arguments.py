@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import enum
 import inspect
-from typing import Any, Dict, List, Mapping, Optional, Type, Union, cast
+from typing import Any, Dict, List, Mapping, NewType, Optional, Type, Union, cast
 
 from typing_extensions import Annotated, get_args, get_origin
 
@@ -11,21 +11,6 @@ from .scalars import is_scalar
 from .types.types import undefined
 from .union import StrawberryUnion
 from .utils.str_converters import to_camel_case
-
-
-class _Unset:
-    def __str__(self):
-        return ""
-
-    def __bool__(self):
-        return False
-
-
-UNSET: Any = _Unset()
-
-
-def is_unset(value: Any) -> bool:
-    return type(value) is _Unset
 
 
 class StrawberryArgumentAnnotation:
@@ -51,6 +36,7 @@ class StrawberryArgument:
         is_union: bool = False,
         description: Optional[str] = None,
         default: object = UNSET,
+        can_be_unset: bool = False,
     ) -> None:
         self.python_name = python_name
         self._graphql_name = graphql_name
@@ -64,6 +50,7 @@ class StrawberryArgument:
         self.is_union = is_union
         self.description = description
         self.default = default
+        self.can_be_unset = can_be_unset
 
     @property
     def graphql_name(self) -> Optional[str]:
@@ -125,12 +112,11 @@ def get_arguments_from_annotations(
     for name, annotation in annotations.items():
         default = parameters[name].default
         default = (
-            UNSET
-            if default is inspect.Parameter.empty or is_unset(default)
-            else default
+            UNSET if default is inspect.Parameter.empty else default
         )
 
-        if get_origin(annotation) is Annotated:
+        annotation_origin = get_origin(annotation)
+        if annotation_origin is Annotated:
             argument = StrawberryArgument.from_annotated(
                 python_name=name,
                 annotation=annotation,
@@ -138,6 +124,16 @@ def get_arguments_from_annotations(
                 origin=origin,
             )
         else:
+            # Check if argument could be unset
+            can_be_unset = False
+            if annotation_origin is Union and UNSET in annotation.__args__:
+                # TODO: check that the type can also be None
+                # Create new Union without the UNSET type
+                new_args = tuple(arg for arg in annotation.__args__ if arg is not UNSET)
+                annotation = Union[new_args]
+                default_value = UNSET
+                can_be_unset = True
+
             argument = StrawberryArgument(
                 type_=annotation,
                 python_name=name,
@@ -145,6 +141,7 @@ def get_arguments_from_annotations(
                 default=default,
                 description=None,
                 origin=origin,
+                can_be_unset=can_be_unset,
             )
 
         _resolve_type(argument)
@@ -154,11 +151,18 @@ def get_arguments_from_annotations(
     return arguments
 
 
+UNSET = NewType("UNSET", object)
+
+
+def is_unset(value: Any) -> bool:
+    return value is UNSET
+
+
 def convert_argument(value: Any, argument: StrawberryArgument) -> Any:
     if value is None:
         return None
 
-    if is_unset(value):
+    if value is UNSET:
         return value
 
     if argument.is_list:
@@ -213,6 +217,13 @@ def convert_arguments(
             current_value = value[argument.graphql_name]
 
             kwargs[argument.python_name] = convert_argument(current_value, argument)
+        elif argument.can_be_unset is True:
+            assert argument.python_name
+
+            kwargs[argument.python_name] = UNSET
+        else:
+            # Raise exception here?
+            raise Exception("Missing value for argument")
 
     return kwargs
 
