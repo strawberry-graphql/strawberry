@@ -17,6 +17,13 @@ from .union import StrawberryUnion
 from .utils.str_converters import to_camel_case
 
 
+UNSET = NewType("UNSET", object)
+
+
+def is_unset(value: Any) -> bool:
+    return value is UNSET
+
+
 class StrawberryArgumentAnnotation:
     description: Optional[str]
 
@@ -115,9 +122,7 @@ def get_arguments_from_annotations(
 
     for name, annotation in annotations.items():
         default = parameters[name].default
-        default = (
-            UNSET if default is inspect.Parameter.empty else default
-        )
+        default = UNSET if default is inspect.Parameter.empty else default
 
         annotation_origin = get_origin(annotation)
         if annotation_origin is Annotated:
@@ -160,13 +165,6 @@ def get_arguments_from_annotations(
         arguments.append(argument)
 
     return arguments
-
-
-UNSET = NewType("UNSET", object)
-
-
-def is_unset(value: Any) -> bool:
-    return value is UNSET
 
 
 def convert_argument(value: Any, argument: StrawberryArgument) -> Any:
@@ -228,14 +226,13 @@ def convert_arguments(
             current_value = value[argument.graphql_name]
 
             kwargs[argument.python_name] = convert_argument(current_value, argument)
-        elif argument.can_be_unset is True and argument.default_value is UNSET:
+        elif argument.default is UNSET:
             assert argument.python_name
 
-            kwargs[argument.python_name] = UNSET
-        elif argument.is_optional and argument.default_value is UNSET:
-            assert argument.python_name
-
-            kwargs[argument.python_name] = None
+            if argument.can_be_unset is True:
+                kwargs[argument.python_name] = UNSET
+            elif argument.is_optional:
+                kwargs[argument.python_name] = None
 
     return kwargs
 
