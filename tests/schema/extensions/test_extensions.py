@@ -104,8 +104,8 @@ def test_extension_access_to_parsed_document():
     class MyExtension(Extension):
         def on_parsing_end(self):
             nonlocal query_name
-            query_defintion = self.execution_context.graphql_document.definitions[0]
-            query_name = query_defintion.name.value
+            query_definition = self.execution_context.graphql_document.definitions[0]
+            query_name = query_definition.name.value
 
     @strawberry.type
     class Person:
