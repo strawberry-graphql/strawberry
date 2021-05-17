@@ -1,6 +1,6 @@
 import pytest
 
-from .app import create_app
+from tests.aiohttp.app import create_app
 
 
 @pytest.fixture
