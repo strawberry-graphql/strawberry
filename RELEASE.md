@@ -39,6 +39,6 @@ schema = strawberry.Schema(query=Query, extensions=[MyExtension])
 
 Note: This release also removes the creation of an ExecutionContext object in the web
 framework views. If you were relying on overriding the `get_execution_context`
-function then you should change it to `get_request_data` and use the 
+function then you should change it to `get_request_data` and use the
 `strawberry.http.parse_request_data` function to extract the pieces of data
 needed from the incoming request.
