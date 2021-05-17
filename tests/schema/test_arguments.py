@@ -69,56 +69,48 @@ def test_optional_argument_without_default_value():
         }"""
     )
 
-    result = schema.execute_sync(
-        """
-        query {
-            hello
-        }
-    """
-    )
+    result = schema.execute_sync("{ hello }")
     assert not result.errors
     assert result.data == {"hello": "Hi"}
+
+    result = schema.execute_sync('{ hello(name: "jkimbo") }')
+    assert not result.errors
+    assert result.data == {"hello": "Hi jkimbo"}
 
 
 def test_optional_argument_unset():
     @strawberry.type
     class Query:
         @strawberry.field
-        def hello(
-            self, name: Union[Optional[str], UNSET], age: Union[UNSET, Optional[int]]
-        ) -> str:
+        def hello(self, name: Union[Optional[str], UNSET]) -> str:
             if name is UNSET:
-                return "Hi there"
-            return f"Hi {name}"
+                return "Hello stranger"
+
+            if name is None:
+                return "Hello anonymous"
+
+            return f"Hello {name}"
 
     schema = strawberry.Schema(query=Query)
 
     assert str(schema) == dedent(
         """\
         type Query {
-          hello(name: String, age: Int): String!
+          hello(name: String): String!
         }"""
     )
 
-    result = schema.execute_sync(
-        """
-        query {
-            hello
-        }
-    """
-    )
+    result = schema.execute_sync("{ hello }")
     assert not result.errors
-    assert result.data == {"hello": "Hi there"}
+    assert result.data == {"hello": "Hello stranger"}
 
-    result = schema.execute_sync(
-        """
-        query {
-            hello(name: "jkimbo")
-        }
-    """
-    )
+    result = schema.execute_sync("{ hello(name: null) }")
     assert not result.errors
-    assert result.data == {"hello": "Hi jkimbo"}
+    assert result.data == {"hello": "Hello anonymous"}
+
+    result = schema.execute_sync('{ hello(name: "jkimbo") }')
+    assert not result.errors
+    assert result.data == {"hello": "Hello jkimbo"}
 
 
 def test_dont_allow_required_unset_argument():
