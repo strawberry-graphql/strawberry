@@ -145,6 +145,7 @@ class WebSocketHandler(BaseGraphQLView, ABC):
             return
 
         if isinstance(result_source, GraphQLExecutionResult):
+            assert result_source.errors
             payload = format_graphql_error(result_source.errors[0])
             await self.send_message(ws, GQL_ERROR, operation_id, payload)
             return

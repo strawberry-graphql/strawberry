@@ -40,7 +40,7 @@ class Subscription:
 
     @strawberry.subscription
     async def error(self, message: str) -> typing.AsyncGenerator[str, None]:
-        yield GraphQLError(message)
+        yield GraphQLError(message)  # type: ignore
 
     @strawberry.subscription
     async def exception(self, message: str) -> typing.AsyncGenerator[str, None]:
