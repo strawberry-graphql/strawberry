@@ -26,8 +26,8 @@ class Subscription:
 @strawberry.type
 class Query:
     @strawberry.field
-    def _unused(self) -> None:
-        pass
+    def _unused(self) -> str:
+        return ""
 
 
 schema = strawberry.Schema(subscription=Subscription, query=Query)
