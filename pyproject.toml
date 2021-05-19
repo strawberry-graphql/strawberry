@@ -38,6 +38,7 @@ pydantic = {version = "^1.6.1", optional = true}
 python-multipart = "^0.0.5"
 sanic = {version = "^20.12.2", optional = true}
 aiohttp = {version = "^3.7.4.post0", optional = true}
+autopub = "^0.2.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2"
@@ -104,3 +105,9 @@ testpaths = ["tests/"]
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
+
+
+[tool.autopub]
+git-username = "Marcotte"
+git-email = "marcotte@marcotte.house"
+project-name = "🐻"
