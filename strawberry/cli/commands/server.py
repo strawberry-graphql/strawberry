@@ -57,4 +57,4 @@ def server(schema, host, port, app_dir):
         app.add_websocket_route(path, graphql_app)
 
     print(f"Running strawberry on http://{host}:{port}/ 🍓")
-    uvicorn.run(app, host=host, port=port, log_level="error")
+    uvicorn.run(app, loop="none", host=host, port=port, log_level="error")
