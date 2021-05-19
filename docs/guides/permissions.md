@@ -22,7 +22,7 @@ class Query:
     user: str = strawberry.field(permission_classes=[IsAuthenticated])
 ```
 
-If the `has_permission` method fails then an error will be raised using the `message` class attribute. See [Dealing with Errors](/docs/guides/errors) for more information.
+If the `has_permission` method fails then an error will be raised using the `message` class attribute. See [Dealing with Errors](/docs/guides/errors) for more information on how errors are handled.
 
 ```json
 {
