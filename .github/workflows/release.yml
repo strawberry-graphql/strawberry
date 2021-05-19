@@ -25,6 +25,8 @@ jobs:
         id: check_release
         run: autopub check
       - name: Publish
+        env:
+          GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
         run: |
           git remote set-url origin https://${{ secrets.BOT_TOKEN }}@github.com/${{ github.repository }}
           autopub prepare
