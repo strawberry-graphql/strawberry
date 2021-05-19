@@ -4,7 +4,7 @@ import pytest
 
 import starlette
 
-from strawberry.asgi.constants import (
+from strawberry.subscriptions.constants import (
     GQL_COMPLETE,
     GQL_CONNECTION_ACK,
     GQL_CONNECTION_INIT,
@@ -14,15 +14,15 @@ from strawberry.asgi.constants import (
     GQL_ERROR,
     GQL_START,
     GQL_STOP,
+    GRAPHQL_WS,
 )
-
-from .utils import TickEventLoopPolicy
+from tests.fixtures.utils import TickEventLoopPolicy
 
 
 def test_simple_subscription(test_client):
     asyncio.set_event_loop_policy(TickEventLoopPolicy())
 
-    with test_client.websocket_connect("/", "graphql-ws") as ws:
+    with test_client.websocket_connect("/", GRAPHQL_WS) as ws:
         ws.send_json({"type": GQL_CONNECTION_INIT})
         ws.send_json(
             {
@@ -55,7 +55,7 @@ def test_simple_subscription(test_client):
 def test_sends_keep_alive(test_client_keep_alive):
     asyncio.set_event_loop_policy(TickEventLoopPolicy())
 
-    with test_client_keep_alive.websocket_connect("/", "graphql-ws") as ws:
+    with test_client_keep_alive.websocket_connect("/", GRAPHQL_WS) as ws:
         ws.send_json({"type": GQL_CONNECTION_INIT})
         ws.send_json(
             {
@@ -98,7 +98,7 @@ def test_sends_keep_alive(test_client_keep_alive):
 
 
 def test_subscription_errors(test_client):
-    with test_client.websocket_connect("/", "graphql-ws") as ws:
+    with test_client.websocket_connect("/", GRAPHQL_WS) as ws:
         ws.send_json({"type": GQL_CONNECTION_INIT})
         ws.send_json(
             {
@@ -132,7 +132,7 @@ def test_subscription_errors(test_client):
 
 
 def test_subscription_field_error(test_client):
-    with test_client.websocket_connect("/", "graphql-ws") as ws:
+    with test_client.websocket_connect("/", GRAPHQL_WS) as ws:
         ws.send_json({"type": GQL_CONNECTION_INIT})
         ws.send_json(
             {
@@ -164,7 +164,7 @@ def test_subscription_field_error(test_client):
 
 
 def test_subscription_syntax_error(test_client):
-    with test_client.websocket_connect("/", "graphql-ws") as ws:
+    with test_client.websocket_connect("/", GRAPHQL_WS) as ws:
         ws.send_json({"type": GQL_CONNECTION_INIT})
         ws.send_json(
             {
