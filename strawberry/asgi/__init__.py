@@ -14,11 +14,7 @@ from graphql.error import format_error as format_graphql_error
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.data import replace_placeholders_with_files
 from strawberry.http import GraphQLHTTPResponse, parse_request_data, process_result
-from strawberry.types import ExecutionResult
-
-from ..schema import BaseSchema
-from ..utils.debug import pretty_print_graphql_operation
-from .constants import (
+from strawberry.subscriptions.constants import (
     GQL_COMPLETE,
     GQL_CONNECTION_ACK,
     GQL_CONNECTION_INIT,
@@ -28,7 +24,12 @@ from .constants import (
     GQL_ERROR,
     GQL_START,
     GQL_STOP,
+    GRAPHQL_WS,
 )
+from strawberry.types import ExecutionResult
+
+from ..schema import BaseSchema
+from ..utils.debug import pretty_print_graphql_operation
 from .utils import get_graphiql_html
 
 
@@ -83,7 +84,7 @@ class GraphQL:
         subscriptions: typing.Dict[str, typing.AsyncGenerator] = {}
         tasks = {}
 
-        await websocket.accept(subprotocol="graphql-ws")
+        await websocket.accept(subprotocol=GRAPHQL_WS)
 
         try:
             while (

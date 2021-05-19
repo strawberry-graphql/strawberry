@@ -1,6 +1,76 @@
 CHANGELOG
 =========
 
+0.62.1 - 2021-05-19
+-------------------
+
+This releases fixes an issue with the debug server that prevented the
+usage of dataloaders, see: https://github.com/strawberry-graphql/strawberry/issues/940
+
+0.62.0 - 2021-05-19
+-------------------
+
+This release adds support for GraphQL subscriptions to the AIOHTTP integration.
+Subscription support works out of the box and does not require any additional
+configuration.
+
+Here is an example how to get started with subscriptions in general. Note that by
+specification GraphQL schemas must always define a query, even if only subscriptions
+are used.
+
+```python
+import asyncio
+import typing
+import strawberry
+
+
+@strawberry.type
+class Subscription:
+    @strawberry.subscription
+    async def count(self, target: int = 100) -> typing.AsyncGenerator[int, None]:
+        for i in range(target):
+            yield i
+            await asyncio.sleep(0.5)
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def _unused(self) -> str:
+        return ""
+
+
+schema = strawberry.Schema(subscription=Subscription, query=Query)
+```
+
+0.61.3 - 2021-05-13
+-------------------
+
+Fix `@requires(fields: ["email"])` and `@provides(fields: ["name"])` usage on a Federation field
+
+You can use `@requires` to specify which fields you need to resolve a field
+
+```python
+import strawberry
+
+@strawberry.federation.type(keys=["id"], extend=True)
+class Product:
+    id: strawberry.ID = strawberry.federation.field(external=True)
+    code: str = strawberry.federation.field(external=True)
+
+    @classmethod
+    def resolve_reference(cls, id: strawberry.ID, code: str):
+        return cls(id=id, code=code)
+
+    @strawberry.federation.field(requires=["code"])
+    def my_code(self) -> str:
+        return self.code
+```
+
+`@provides` can be used to specify what fields are going to be resolved
+by the service itself without having the Gateway to contact the external service
+to resolve them.
+
 0.61.2 - 2021-05-08
 -------------------
 
