@@ -27,7 +27,7 @@ jobs:
         run: |
           set +e
           OUTPUT=$(autopub check)
-          echo '::set-output name=release::$OUTPUT'
+          echo ::set-output name=release::$OUTPUT
       - name: print
         run: echo ${{steps.check_release.outputs.release}}
       - name: Publish
