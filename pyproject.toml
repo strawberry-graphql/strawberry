@@ -111,3 +111,4 @@ build-backend = "poetry.masonry.api"
 git-username = "Marcotte"
 git-email = "marcotte@marcotte.house"
 project-name = "🐻"
+append-github-contributor = true
