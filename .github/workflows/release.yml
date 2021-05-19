@@ -25,7 +25,7 @@ jobs:
       - name: Check if we should release
         id: check_release
         run: |
-          $OUTPUT=$(autopub check)
+          OUTPUT=$(autopub check)
           echo '::set-output name=release::$OUTPUT'
       - name: print
         run: echo ${{steps.check_release.outputs.release}}
