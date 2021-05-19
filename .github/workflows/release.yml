@@ -35,3 +35,5 @@ jobs:
           autopub commit
           autopub githubrelease
           poetry publish --username __token__ --password ${{ secrets.PYPI_TOKEN }}
+
+# empty release
