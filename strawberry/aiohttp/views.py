@@ -10,8 +10,14 @@ from graphql import ExecutionResult as GraphQLExecutionResult, GraphQLError
 from graphql.error import format_error as format_graphql_error
 
 from aiohttp import http, web
+from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.data import replace_placeholders_with_files
-from strawberry.http import GraphQLHTTPResponse, process_result
+from strawberry.http import (
+    GraphQLHTTPResponse,
+    GraphQLRequestData,
+    parse_request_data,
+    process_result,
+)
 from strawberry.schema import BaseSchema
 from strawberry.subscriptions.constants import (
     GQL_COMPLETE,
@@ -25,7 +31,7 @@ from strawberry.subscriptions.constants import (
     GQL_STOP,
     GRAPHQL_WS,
 )
-from strawberry.types import ExecutionContext, ExecutionResult
+from strawberry.types import ExecutionResult
 
 
 class BaseGraphQLView(ABC):
@@ -236,17 +242,17 @@ class HTTPHandler(BaseGraphQLView, ABC):
         return web.HTTPNotFound()
 
     async def post(self, request: web.Request) -> web.StreamResponse:
-        operation_context = await self.get_execution_context(request)
+        request_data = await self.get_request_data(request)
         response = web.Response()
         context = await self.get_context(request, response)
         root_value = await self.get_root_value(request)
 
         result = await self.schema.execute(
-            query=operation_context.query,
+            query=request_data.query,
             root_value=root_value,
-            variable_values=operation_context.variables,
+            variable_values=request_data.variables,
             context_value=context,
-            operation_name=operation_context.operation_name,
+            operation_name=request_data.operation_name,
         )
 
         response_data = await self.process_result(request, result)
@@ -254,21 +260,15 @@ class HTTPHandler(BaseGraphQLView, ABC):
         response.content_type = "application/json"
         return response
 
-    async def get_execution_context(self, request: web.Request) -> ExecutionContext:
+    async def get_request_data(self, request: web.Request) -> GraphQLRequestData:
         data = await self.parse_body(request)
-        variables = data.get("variables")
-        operation_name = data.get("operationName")
 
         try:
-            query = data["query"]
-        except KeyError:
+            request_data = parse_request_data(data)
+        except MissingQueryError:
             raise web.HTTPBadRequest(reason="No GraphQL query found in the request")
 
-        return ExecutionContext(
-            query=query,
-            variables=variables,
-            operation_name=operation_name,
-        )
+        return request_data
 
     async def parse_body(self, request: web.Request) -> dict:
         if request.content_type.startswith("multipart/form-data"):

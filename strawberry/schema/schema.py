@@ -16,7 +16,7 @@ from strawberry.custom_scalar import ScalarDefinition
 from strawberry.enum import EnumDefinition
 from strawberry.extensions import Extension
 from strawberry.schema.schema_converter import GraphQLCoreConverter
-from strawberry.types import ExecutionResult
+from strawberry.types import ExecutionContext, ExecutionResult
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 
@@ -88,7 +88,9 @@ class Schema:
 
         return None
 
-    def process_errors(self, errors: List[GraphQLError]) -> None:
+    def process_errors(
+        self, errors: List[GraphQLError], execution_context: ExecutionContext
+    ) -> None:
         for error in errors:
             actual_error = error.original_error or error
             logger.error(actual_error, exc_info=actual_error)
@@ -102,6 +104,14 @@ class Schema:
         operation_name: Optional[str] = None,
         validate_queries: bool = True,
     ) -> ExecutionResult:
+        # Create execution context
+        execution_context = ExecutionContext(
+            query=query,
+            context=context_value,
+            variables=variable_values,
+            operation_name=operation_name,
+        )
+
         result = await execute(
             self._schema,
             query,
@@ -113,10 +123,11 @@ class Schema:
             extensions=self.extensions,
             execution_context_class=self.execution_context_class,
             validate_queries=validate_queries,
+            execution_context=execution_context,
         )
 
         if result.errors:
-            self.process_errors(result.errors)
+            self.process_errors(result.errors, execution_context=execution_context)
 
         return ExecutionResult(
             data=result.data,
@@ -133,6 +144,13 @@ class Schema:
         operation_name: Optional[str] = None,
         validate_queries: bool = True,
     ) -> ExecutionResult:
+        execution_context = ExecutionContext(
+            query=query,
+            context=context_value,
+            variables=variable_values,
+            operation_name=operation_name,
+        )
+
         result = execute_sync(
             self._schema,
             query,
@@ -144,10 +162,11 @@ class Schema:
             extensions=self.extensions,
             execution_context_class=self.execution_context_class,
             validate_queries=validate_queries,
+            execution_context=execution_context,
         )
 
         if result.errors:
-            self.process_errors(result.errors)
+            self.process_errors(result.errors, execution_context=execution_context)
 
         return ExecutionResult(
             data=result.data,

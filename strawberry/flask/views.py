@@ -2,8 +2,9 @@ import json
 
 from flask import Response, abort, render_template_string, request
 from flask.views import View
+from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.data import replace_placeholders_with_files
-from strawberry.http import GraphQLHTTPResponse, process_result
+from strawberry.http import GraphQLHTTPResponse, parse_request_data, process_result
 from strawberry.types import ExecutionResult
 
 from ..schema import BaseSchema
@@ -51,20 +52,17 @@ class GraphQLView(View):
             data = request.json
 
         try:
-            query = data["query"]
-            variables = data.get("variables")
-            operation_name = data.get("operationName")
-
-        except KeyError:
+            request_data = parse_request_data(data)
+        except MissingQueryError:
             return Response("No valid query was provided for the request", 400)
 
         context = self.get_context()
 
         result = self.schema.execute_sync(
-            query,
-            variable_values=variables,
+            request_data.query,
+            variable_values=request_data.variables,
             context_value=context,
-            operation_name=operation_name,
+            operation_name=request_data.operation_name,
             root_value=self.get_root_value(),
         )
 
