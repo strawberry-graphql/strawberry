@@ -27,8 +27,6 @@ jobs:
         run: |
           set +e
           echo ::set-output name=release::$(autopub check)
-      - name: print
-        run: echo ${{steps.check_release.outputs.release}}
       - name: Publish
         if: steps.check_release.outputs.release == ''
         env:
