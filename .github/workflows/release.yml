@@ -21,6 +21,7 @@ jobs:
           pip install poetry
           pip install githubrelease
           pip install autopub
+          pip install httpx
       - name: Check if we should release
         id: check_release
         run: autopub check
