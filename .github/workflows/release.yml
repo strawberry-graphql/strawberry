@@ -24,12 +24,9 @@ jobs:
           pip install httpx
       - name: Check if we should release
         id: check_release
-        run: |
-          set +e
-          $(autopub check)
-          echo '::set-output name=release::$?'
+        run: echo '::set-output name=release::$(autopub check)'
       - name: Publish
-        if: steps.check_release.outputs.release == 0
+        if: steps.check_release.outputs.release == ''
         env:
           GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
         run: |
