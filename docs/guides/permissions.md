@@ -4,7 +4,7 @@ title: Permissions
 
 # Permissions
 
-Permissions can be managed using `Permission` classes. A `Permission` class extends `BasePermission` and has a `has_permission` method. It can be hooked up to a field using the `permission_classes` keyword argument. A simple example looks like this:
+Permissions can be managed using `Permission` classes. A `Permission` class extends `BasePermission` and has a `has_permission` method. It can be added to a field using the `permission_classes` keyword argument. A simple example looks like this:
 
 ```python
 import strawberry
