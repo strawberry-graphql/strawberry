@@ -25,6 +25,7 @@ jobs:
       - name: Check if we should release
         id: check_release
         run: |
+          set +e
           OUTPUT=$(autopub check)
           echo '::set-output name=release::$OUTPUT'
       - name: print
