@@ -24,8 +24,12 @@ jobs:
           pip install httpx
       - name: Check if we should release
         id: check_release
-        run: autopub check
+        run: |
+          set +e
+          $(autopub check)
+          echo '::set-output name=release::$?'
       - name: Publish
+        if: steps.check_release.outputs.release == 0
         env:
           GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
         run: |
@@ -35,5 +39,3 @@ jobs:
           autopub commit
           autopub githubrelease
           poetry publish --username __token__ --password ${{ secrets.PYPI_TOKEN }}
-
-# empty release
