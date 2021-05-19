@@ -1,6 +1,12 @@
 CHANGELOG
 =========
 
+0.62.1 - 2021-05-19
+-------------------
+
+This releases fixes an issue with the debug server that prevented the
+usage of dataloaders, see: https://github.com/strawberry-graphql/strawberry/issues/940
+
 0.62.0 - 2021-05-19
 -------------------
 
