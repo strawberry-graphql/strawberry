@@ -46,7 +46,7 @@ flake8 = "^3.9"
 black = {version = "^21.5b1", allow-prereleases = true}
 isort = "^5.8.0"
 pytest-asyncio = "^0.15.1"
-pytest-cov = "^2.11"
+pytest-cov = "^2.12"
 mypy = "^0.812"
 flake8-bugbear = "^21.4"
 flake8-eradicate = "^1.0.0"
