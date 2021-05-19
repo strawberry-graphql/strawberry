@@ -24,7 +24,9 @@ jobs:
           pip install httpx
       - name: Check if we should release
         id: check_release
-        run: echo '::set-output name=release::$(autopub check)'
+        run: |
+          $OUTPUT=$(autopub check)
+          echo '::set-output name=release::$OUTPUT'
       - name: print
         run: echo ${{steps.check_release.outputs.release}}
       - name: Publish
