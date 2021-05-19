@@ -400,7 +400,7 @@ http2 = ["h2 (>=3.0.0,<4.0.0)"]
 
 [[package]]
 name = "hupper"
-version = "1.10.2"
+version = "1.10.3"
 description = "Integrated process monitor for developing and reloading daemons."
 category = "main"
 optional = false
@@ -1366,8 +1366,8 @@ httpx = [
     {file = "httpx-0.15.4.tar.gz", hash = "sha256:4c81dbf98a29cb4f51f415140df56542f9d4860798d713e336642e953cddd1db"},
 ]
 hupper = [
-    {file = "hupper-1.10.2-py2.py3-none-any.whl", hash = "sha256:5de835f3b58324af2a8a16f52270c4d1a3d1734c45eed94b77fd622aea737f29"},
-    {file = "hupper-1.10.2.tar.gz", hash = "sha256:3818f53dabc24da66f65cf4878c1c7a9b5df0c46b813e014abdd7c569eb9a02a"},
+    {file = "hupper-1.10.3-py2.py3-none-any.whl", hash = "sha256:f683850d62598c02faf3c7cdaaa727d8cbe3c5a2497a5737a8358386903b2601"},
+    {file = "hupper-1.10.3.tar.gz", hash = "sha256:cd6f51b72c7587bc9bce8a65ecd025a1e95f1b03284519bfe91284d010316cd9"},
 ]
 identify = [
     {file = "identify-2.2.4-py2.py3-none-any.whl", hash = "sha256:ad9f3fa0c2316618dc4d840f627d474ab6de106392a4f00221820200f490f5a8"},
