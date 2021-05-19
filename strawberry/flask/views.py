@@ -59,10 +59,10 @@ class GraphQLView(View):
         context = self.get_context()
 
         result = self.schema.execute_sync(
-            request_data["query"],
-            variable_values=request_data["variables"],
+            request_data.query,
+            variable_values=request_data.variables,
             context_value=context,
-            operation_name=request_data["operation_name"],
+            operation_name=request_data.operation_name,
             root_value=self.get_root_value(),
         )
 

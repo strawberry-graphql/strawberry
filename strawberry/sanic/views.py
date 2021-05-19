@@ -75,11 +75,11 @@ class GraphQLView(HTTPMethodView):
         root_value = self.get_root_value()
 
         result = await self.schema.execute(
-            query=request_data["query"],
-            variable_values=request_data["variables"],
+            query=request_data.query,
+            variable_values=request_data.variables,
             context_value=context,
             root_value=root_value,
-            operation_name=request_data["operation_name"],
+            operation_name=request_data.operation_name,
         )
         response_data = self.process_result(result)
 

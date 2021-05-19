@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
 from typing_extensions import TypedDict
@@ -22,20 +23,21 @@ def process_result(result: ExecutionResult) -> GraphQLHTTPResponse:
     return data
 
 
-class GraphQLRequestData(TypedDict, total=False):
+@dataclass
+class GraphQLRequestData:
     query: str
     variables: Optional[Dict[str, Any]]
     operation_name: Optional[str]
 
 
 def parse_request_data(data: Dict) -> GraphQLRequestData:
-    result: GraphQLRequestData = {}
-
     if "query" not in data:
         raise MissingQueryError()
 
-    result["query"] = data["query"]
-    result["variables"] = data.get("variables")
-    result["operation_name"] = data.get("operationName")
+    result = GraphQLRequestData(
+        query=data["query"],
+        variables=data.get("variables"),
+        operation_name=data.get("operationName"),
+    )
 
     return result

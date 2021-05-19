@@ -144,11 +144,11 @@ class GraphQLView(BaseView):
         context = self.get_context(request, response=sub_response)
 
         result = self.schema.execute_sync(
-            request_data["query"],
+            request_data.query,
             root_value=self.get_root_value(request),
-            variable_values=request_data.get("variables"),
+            variable_values=request_data.variables,
             context_value=context,
-            operation_name=request_data.get("operation_name"),
+            operation_name=request_data.operation_name,
         )
 
         response_data = self.process_result(request=request, result=result)
@@ -185,11 +185,11 @@ class AsyncGraphQLView(BaseView):
         root_value = await self.get_root_value(request)
 
         result = await self.schema.execute(
-            request_data["query"],
+            request_data.query,
             root_value=root_value,
-            variable_values=request_data["variables"],
+            variable_values=request_data.variables,
             context_value=context,
-            operation_name=request_data["operation_name"],
+            operation_name=request_data.operation_name,
         )
 
         response_data = await self.process_result(request=request, result=result)

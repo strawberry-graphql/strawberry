@@ -272,10 +272,10 @@ class GraphQL:
             )
 
         result = await execute(
-            request_data["query"],
-            variables=request_data["variables"],
+            request_data.query,
+            variables=request_data.variables,
             context=context,
-            operation_name=request_data["operation_name"],
+            operation_name=request_data.operation_name,
             root_value=root_value,
         )
 

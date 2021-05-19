@@ -51,11 +51,11 @@ class GraphQLView:
         root_value = await self.get_root_value(request)
 
         result = await self.schema.execute(
-            query=request_data["query"],
+            query=request_data.query,
             root_value=root_value,
-            variable_values=request_data["variables"],
+            variable_values=request_data.variables,
             context_value=context,
-            operation_name=request_data["operation_name"],
+            operation_name=request_data.operation_name,
         )
 
         response_data = await self.process_result(request, result)
