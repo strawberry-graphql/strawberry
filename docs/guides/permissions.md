@@ -35,7 +35,12 @@ If the `has_permission` method fails then an error will be raised using the `mes
 }
 ```
 
-In most use cases you can obtain all the information you need to execute the `has_permission` check from the `source` and `info` objects. For example the `info` object contains a `context` dictionary, which includes the Request object. The Request object can be used to retrieve headers, query parameters, or cookies that can be used for auth like so:
+
+## Accessing user information
+
+Accessing the current user information to implement your permission checks depends on the web framework you are using. Most frameworks will have a Request object where you can either access the current user directly or access headers/cookies/query parameters to authenticate the user. All the Strawberry integrations will provide this Request object in the `info.context` object that is accessible in every resolver and in the `has_permission` function. You can find more details about a specific framework integration under the "Integrations" heading in the navigation. 
+
+In this example we are using `starlette` which uses the [ASGI](/docs/integrations/asgi) integration:
 
 ```python
 from myauth import authenticate_header, authenticate_query_param
