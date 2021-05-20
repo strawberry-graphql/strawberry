@@ -49,9 +49,9 @@ class IsAuthenticated(BasePermission):
     def has_permission(self, source: Any, info: Info, **kwargs) -> bool:
         request: Union[Request, Websocket] = info.context["request"]
         if "Authorization" in request.headers:
-          return authenticate_header(request)
+            return authenticate_header(request)
         if "auth" in request.query_params:
-          return authenticate_query_params(request)
+            return authenticate_query_params(request)
         return False
 ```
 
