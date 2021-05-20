@@ -21,6 +21,7 @@ async def execute(
     schema: GraphQLSchema,
     query: str,
     extensions: Sequence[Type[Extension]],
+    execution_context: ExecutionContext,
     root_value: Any = None,
     context_value: Any = None,
     variable_values: Dict[str, Any] = None,
@@ -29,16 +30,11 @@ async def execute(
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
     validate_queries: bool = True,
 ) -> ExecutionResult:
-    execution_context = ExecutionContext(
-        query=query,
-        context=context_value,
-        variables=variable_values,
-        operation_name=operation_name,
-    )
-
     extensions_runner = ExtensionsRunner(
         execution_context=execution_context,
-        extensions=[extension() for extension in extensions],
+        extensions=[
+            extension(execution_context=execution_context) for extension in extensions
+        ],
     )
 
     additional_middlewares = additional_middlewares or []
@@ -50,7 +46,9 @@ async def execute(
         try:
             with extensions_runner.parsing():
                 document = parse(query)
+                execution_context.graphql_document = document
         except GraphQLError as error:
+            execution_context.errors = [error]
             return ExecutionResult(
                 data=None,
                 errors=[error],
@@ -60,6 +58,7 @@ async def execute(
         except Exception as error:  # pragma: no cover
             error = GraphQLError(str(error), original_error=error)
 
+            execution_context.errors = [error]
             return ExecutionResult(
                 data=None,
                 errors=[error],
@@ -71,6 +70,7 @@ async def execute(
                 validation_errors = validate(schema, document)
 
             if validation_errors:
+                execution_context.errors = validation_errors
                 return ExecutionResult(data=None, errors=validation_errors)
 
         result = original_execute(
@@ -87,6 +87,8 @@ async def execute(
         if isawaitable(result):
             result = await cast(Awaitable[GraphQLExecutionResult], result)
 
+        execution_context.result = cast(GraphQLExecutionResult, result)
+
     result = cast(GraphQLExecutionResult, result)
 
     return ExecutionResult(
@@ -100,6 +102,7 @@ def execute_sync(
     schema: GraphQLSchema,
     query: str,
     extensions: Sequence[Type[Extension]],
+    execution_context: ExecutionContext,
     root_value: Any = None,
     context_value: Any = None,
     variable_values: Dict[str, Any] = None,
@@ -108,15 +111,11 @@ def execute_sync(
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
     validate_queries: bool = True,
 ) -> ExecutionResult:
-    execution_context = ExecutionContext(
-        query=query,
-        context=context_value,
-        variables=variable_values,
-        operation_name=operation_name,
-    )
     extensions_runner = ExtensionsRunner(
         execution_context=execution_context,
-        extensions=[extension() for extension in extensions],
+        extensions=[
+            extension(execution_context=execution_context) for extension in extensions
+        ],
     )
 
     additional_middlewares = additional_middlewares or []
@@ -128,7 +127,9 @@ def execute_sync(
         try:
             with extensions_runner.parsing():
                 document = parse(query)
+                execution_context.graphql_document = document
         except GraphQLError as error:
+            execution_context.errors = [error]
             return ExecutionResult(
                 data=None,
                 errors=[error],
@@ -138,6 +139,7 @@ def execute_sync(
         except Exception as error:  # pragma: no cover
             error = GraphQLError(str(error), original_error=error)
 
+            execution_context.errors = [error]
             return ExecutionResult(
                 data=None,
                 errors=[error],
@@ -149,6 +151,7 @@ def execute_sync(
                 validation_errors = validate(schema, document)
 
             if validation_errors:
+                execution_context.errors = validation_errors
                 return ExecutionResult(data=None, errors=validation_errors)
 
         result = original_execute(
@@ -166,7 +169,10 @@ def execute_sync(
             ensure_future(cast(Awaitable[GraphQLExecutionResult], result)).cancel()
             raise RuntimeError("GraphQL execution failed to complete synchronously.")
 
-    result = cast(GraphQLExecutionResult, result)
+        result = cast(GraphQLExecutionResult, result)
+        execution_context.result = result
+        if result.errors:
+            execution_context.errors = result.errors
 
     return ExecutionResult(
         data=result.data,

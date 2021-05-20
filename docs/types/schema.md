@@ -97,13 +97,14 @@ The default functionality looks like this:
 
 ```python
 # strawberry/schema/schema.py
+from strawberry.types import ExecutionContext
 
 logger = logging.getLogger("strawberry.execution")
 
 class Schema:
     ...
 
-    def process_errors(self, errors: List[GraphQLError]) -> None:
+    def process_errors(self, errors: List[GraphQLError], execution_context: ExecutionContext) -> None:
         for error in errors:
             # A GraphQLError wraps the underlying error so we have to access it
             # through the `original_error` property

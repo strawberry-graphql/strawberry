@@ -224,3 +224,38 @@ async def test_logging_graphql_exceptions(caplog):
     assert record.levelname == "ERROR"
     assert record.name == "strawberry.execution"
     assert record.exc_info[0] is TypeError
+
+
+def test_overriding_process_errors(caplog):
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def example(self) -> int:
+            return None  # type: ignore
+
+    execution_errors = []
+
+    class CustomSchema(strawberry.Schema):
+        def process_errors(self, errors, execution_context):
+            nonlocal execution_errors
+            execution_errors = errors
+
+    schema = CustomSchema(query=Query)
+
+    query = """
+        query {
+            example
+        }
+    """
+
+    result = schema.execute_sync(
+        query,
+        root_value=Query(),
+    )
+
+    assert len(result.errors) == 1
+    assert len(execution_errors) == 1
+    assert result.errors == execution_errors
+
+    # Exception wasn't logged
+    assert len(caplog.records) == 0

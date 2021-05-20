@@ -1,6 +1,246 @@
 CHANGELOG
 =========
 
+0.63.1 - 2021-05-20
+-------------------
+
+New deployment process to release new Strawberry releases
+
+[Marco Acierno](https://github.com/marcoacierno) [PR #957](https://github.com/strawberry-graphql/strawberry/pull/957/)
+
+
+0.63.0 - 2021-05-19
+-------------------
+
+This release adds extra values to the ExecutionContext object so that it can be
+used by extensions and the `Schema.process_errors` function.
+
+The full ExecutionContext object now looks like this:
+
+```python
+from graphql import ExecutionResult as GraphQLExecutionResult
+from graphql.error.graphql_error import GraphQLError
+from graphql.language import DocumentNode as GraphQLDocumentNode
+
+@dataclasses.dataclass
+class ExecutionContext:
+    query: str
+    context: Any = None
+    variables: Optional[Dict[str, Any]] = None
+    operation_name: Optional[str] = None
+
+    graphql_document: Optional[GraphQLDocumentNode] = None
+    errors: Optional[List[GraphQLError]] = None
+    result: Optional[GraphQLExecutionResult] = None
+```
+
+and can be accessed in any of the extension hooks:
+
+```python
+from strawberry.extensions import Extension
+
+class MyExtension(Extension):
+    def on_request_end(self):
+        result = self.execution_context.result
+        # Do something with the result
+
+schema = strawberry.Schema(query=Query, extensions=[MyExtension])
+```
+
+---
+
+Note: This release also removes the creation of an ExecutionContext object in the web
+framework views. If you were relying on overriding the `get_execution_context`
+function then you should change it to `get_request_data` and use the
+`strawberry.http.parse_request_data` function to extract the pieces of data
+needed from the incoming request.
+
+0.62.1 - 2021-05-19
+-------------------
+
+This releases fixes an issue with the debug server that prevented the
+usage of dataloaders, see: https://github.com/strawberry-graphql/strawberry/issues/940
+
+0.62.0 - 2021-05-19
+-------------------
+
+This release adds support for GraphQL subscriptions to the AIOHTTP integration.
+Subscription support works out of the box and does not require any additional
+configuration.
+
+Here is an example how to get started with subscriptions in general. Note that by
+specification GraphQL schemas must always define a query, even if only subscriptions
+are used.
+
+```python
+import asyncio
+import typing
+import strawberry
+
+
+@strawberry.type
+class Subscription:
+    @strawberry.subscription
+    async def count(self, target: int = 100) -> typing.AsyncGenerator[int, None]:
+        for i in range(target):
+            yield i
+            await asyncio.sleep(0.5)
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def _unused(self) -> str:
+        return ""
+
+
+schema = strawberry.Schema(subscription=Subscription, query=Query)
+```
+
+0.61.3 - 2021-05-13
+-------------------
+
+Fix `@requires(fields: ["email"])` and `@provides(fields: ["name"])` usage on a Federation field
+
+You can use `@requires` to specify which fields you need to resolve a field
+
+```python
+import strawberry
+
+@strawberry.federation.type(keys=["id"], extend=True)
+class Product:
+    id: strawberry.ID = strawberry.federation.field(external=True)
+    code: str = strawberry.federation.field(external=True)
+
+    @classmethod
+    def resolve_reference(cls, id: strawberry.ID, code: str):
+        return cls(id=id, code=code)
+
+    @strawberry.federation.field(requires=["code"])
+    def my_code(self) -> str:
+        return self.code
+```
+
+`@provides` can be used to specify what fields are going to be resolved
+by the service itself without having the Gateway to contact the external service
+to resolve them.
+
+0.61.2 - 2021-05-08
+-------------------
+
+This release adds support for the info param in resolve_reference:
+
+```python
+@strawberry.federation.type(keys=["upc"])
+class Product:
+    upc: str
+    info: str
+
+    @classmethod
+    def resolve_reference(cls, info, upc):
+        return Product(upc, info)
+```
+
+> Note: resolver reference is used when using Federation, similar to [Apollo server's __resolveReference](https://apollographql.com/docs/federation/api/apollo-federation/#__resolvereference)
+
+0.61.1 - 2021-05-05
+-------------------
+
+This release extends the `strawberry server` command to allow the specification
+of a schema symbol name within a module:
+
+```sh
+strawberry server mypackage.mymodule:myschema
+```
+
+The schema symbol name defaults to `schema` making this change backwards compatible.
+
+0.61.0 - 2021-05-04
+-------------------
+
+This release adds file upload support to the [Sanic](https://sanicframework.org)
+integration. No additional configuration is required to enable file upload support.
+
+The following example shows how a file upload based mutation could look like:
+
+```python
+import strawberry
+from strawberry.file_uploads import Upload
+
+
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    def read_text(self, text_file: Upload) -> str:
+        return text_file.read().decode()
+```
+
+0.60.0 - 2021-05-04
+-------------------
+
+This release adds an `export-schema` command to the Strawberry CLI.
+Using the command you can print your schema definition to your console.
+Pipes and redirection can be used to store the schema in a file.
+
+Example usage:
+
+```sh
+strawberry export-schema mypackage.mymodule:myschema > schema.graphql
+```
+
+0.59.1 - 2021-05-04
+-------------------
+
+This release fixes an issue that prevented using `source` as name of an argument
+
+0.59.0 - 2021-05-03
+-------------------
+
+This release adds an [aiohttp](https://github.com/aio-libs/aiohttp) integration for
+Strawberry. The integration provides a `GraphQLView` class which can be used to
+integrate Strawberry with aiohttp:
+
+```python
+import strawberry
+from aiohttp import web
+from strawberry.aiohttp.views import GraphQLView
+
+
+@strawberry.type
+class Query:
+    pass
+
+
+schema = strawberry.Schema(query=Query)
+
+app = web.Application()
+
+app.router.add_route("*", "/graphql", GraphQLView(schema=schema))
+```
+
+0.58.0 - 2021-05-03
+-------------------
+
+This release adds a function called `create_type` to create a Strawberry type from a list of fields.
+
+```python
+import strawberry
+from strawberry.tools import create_type
+
+@strawberry.field
+def hello(info) -> str:
+    return "World"
+
+def get_name(info) -> str:
+    return info.context.user.name
+
+my_name = strawberry.field(name="myName", resolver=get_name)
+
+Query = create_type("Query", [hello, my_name])
+
+schema = strawberry.Schema(query=Query)
+```
+
 0.57.4 - 2021-04-28
 -------------------
 

@@ -1,6 +1,11 @@
 import strawberry
 
 
+class SampleClass:
+    def __init__(self, schema):
+        self.schema = schema
+
+
 @strawberry.type
 class User:
     name: str
@@ -15,3 +20,5 @@ class Query:
 
 
 schema = strawberry.Schema(query=Query)
+sample_instance = SampleClass(schema)
+not_a_schema = 42

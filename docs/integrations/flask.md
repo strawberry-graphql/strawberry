@@ -88,8 +88,7 @@ the field name we'll return "Patrick" in this case.
 to the clients. This can be useful logging errors or hiding them (for example to
 hide internal exceptions).
 
-It needs to return an object of `GraphQLHTTPResponse` and accepts the request
-and the execution results.
+It needs to return an object of `GraphQLHTTPResponse` and accepts the execution result.
 
 ```python
 from strawberry.http import GraphQLHTTPResponse

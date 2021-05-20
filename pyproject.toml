@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "strawberry-graphql"
 packages = [ { include = "strawberry" } ]
-version = "0.57.4"
+version = "0.63.1"
 description = "A library for creating GraphQL APIs"
 authors = ["Patrick Arminio <patrick.arminio@gmail.com>"]
 license = "MIT"
@@ -37,21 +37,22 @@ cached-property = "^1.5.2"
 pydantic = {version = "^1.6.1", optional = true}
 python-multipart = "^0.0.5"
 sanic = {version = "^20.12.2", optional = true}
+aiohttp = {version = "^3.7.4.post0", optional = true}
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2"
 pytest-emoji = "^0.2.0"
 flake8 = "^3.9"
-black = {version = "^21.4b2", allow-prereleases = true}
+black = {version = "^21.5b1", allow-prereleases = true}
 isort = "^5.8.0"
 pytest-asyncio = "^0.15.1"
-pytest-cov = "^2.11"
+pytest-cov = "^2.12"
 mypy = "^0.812"
 flake8-bugbear = "^21.4"
 flake8-eradicate = "^1.0.0"
 pytest-mypy-plugins = "^1.6"
-pytest-mock = "^3.5"
-pytest-django = {version = "^4.2"}
+pytest-mock = "^3.6"
+pytest-django = {version = "^4.3"}
 asgiref = "^3.2"
 pytest-flask = {version = "^1.2.0"}
 flask = {version = "^1.1"}
@@ -68,8 +69,11 @@ pydantic = {version = "^1.6.1", optional = false}
 email-validator = {version = "^1.1.2", optional = false}
 uvicorn = ">=0.11.6,<0.14.0"
 sanic = "^20.12.2"
+aiohttp = "^3.7.4.post0"
+pytest-aiohttp = "^0.3.0"
 
 [tool.poetry.extras]
+aiohttp = ["aiohttp", "pytest-aiohttp"]
 debug-server = ["uvicorn"]
 django = ["django", "pytest-django", "asgiref"]
 flask = ["flask", "pytest-flask"]
@@ -100,3 +104,9 @@ testpaths = ["tests/"]
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
+
+[tool.autopub]
+git-username = "Botberry"
+git-email = "bot@strawberry.rocks"
+project-name = "🍓"
+append-github-contributor = true

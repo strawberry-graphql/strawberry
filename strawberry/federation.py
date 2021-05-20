@@ -17,6 +17,7 @@ from strawberry.permission import BasePermission
 from strawberry.schema.types.concrete_type import TypeMap
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
+from strawberry.utils.inspect import get_func_args
 
 from .field import FederationFieldParams, field as base_field
 from .object_type import FederationTypeParams, type as base_type
@@ -115,8 +116,15 @@ class Schema(BaseSchema):
             type = self.schema_converter.type_map[type_name]
 
             definition = cast(TypeDefinition, type.definition)
+            resolve_reference = definition.origin.resolve_reference
 
-            results.append(definition.origin.resolve_reference(**representation))
+            func_args = get_func_args(resolve_reference)
+            kwargs = representation
+
+            if "info" in func_args:
+                kwargs["info"] = info
+
+            results.append(resolve_reference(**kwargs))
 
         return results
 

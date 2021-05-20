@@ -154,7 +154,10 @@ class StrawberryField(dataclasses.Field):
         self.type_annotation = type_
 
     def _get_arguments(
-        self, kwargs: Dict[str, Any], source: Any, info: Any
+        self,
+        source: Any,
+        info: Any,
+        kwargs: Dict[str, Any],
     ) -> Tuple[List[Any], Dict[str, Any]]:
         assert self.base_resolver is not None
 
@@ -180,7 +183,7 @@ class StrawberryField(dataclasses.Field):
         return args, kwargs
 
     def get_result(
-        self, kwargs: Dict[str, Any], source: Any, info: Any
+        self, source: Any, info: Any, kwargs: Dict[str, Any]
     ) -> Union[Awaitable[Any], Any]:
         """
         Calls the resolver defined for the StrawberryField. If the field doesn't have a
@@ -188,7 +191,7 @@ class StrawberryField(dataclasses.Field):
         """
 
         if self.base_resolver:
-            args, kwargs = self._get_arguments(kwargs, source=source, info=info)
+            args, kwargs = self._get_arguments(source, info=info, kwargs=kwargs)
 
             return self.base_resolver(*args, **kwargs)
 
@@ -196,7 +199,7 @@ class StrawberryField(dataclasses.Field):
 
     def get_wrapped_resolver(self) -> Callable:
         # TODO: This could potentially be handled by StrawberryResolver in the future
-        def _check_permissions(source, info: Info, **kwargs):
+        def _check_permissions(source: Any, info: Info, kwargs: Dict[str, Any]):
             """
             Checks if the permission should be accepted and
             raises an exception if not
@@ -238,11 +241,11 @@ class StrawberryField(dataclasses.Field):
                 path=info.path,
             )
 
-        def _resolver(source, info: GraphQLResolveInfo, **kwargs):
+        def _resolver(_source: Any, info: GraphQLResolveInfo, **kwargs):
             strawberry_info = _strawberry_info_from_graphql(info)
-            _check_permissions(source, strawberry_info, **kwargs)
+            _check_permissions(_source, strawberry_info, kwargs)
 
-            result = self.get_result(kwargs=kwargs, info=strawberry_info, source=source)
+            result = self.get_result(_source, info=strawberry_info, kwargs=kwargs)
 
             if iscoroutine(result):  # pragma: no cover
 
