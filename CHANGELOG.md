@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.63.1 - 2021-05-20
+-------------------
+
+New deployment process to release new Strawberry releases
+
+[Marco Acierno](https://github.com/marcoacierno) [PR #957](https://github.com/strawberry-graphql/strawberry/pull/957/)
+
+
 0.63.0 - 2021-05-19
 -------------------
 
