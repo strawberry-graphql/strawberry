@@ -35,41 +35,29 @@ If the `has_permission` method fails then an error will be raised using the `mes
 }
 ```
 
-In a simple use case you could obtain all the information you need to execute the `has_permission` check from the `source` and `info` objects.
-
-For more complex cases it might need more information from the Request. This can be provided by extending the `GraphQL` class to provide more context. The `Permission` class can then use that context from the `Info` object.
+In most use cases you can obtain all the information you need to execute the `has_permission` check from the `source` and `info` objects. For example the `info` object contains a `context` dictionary, which includes the Request object. The Request object can be used to retrieve headers, query parameters, or cookies that can be used for auth like so:
 
 ```python
-from strawberry.asgi import GraphQL
+from myauth import authenticate_header, authenticate_query_param
 
 from starlette.requests import Request
 from starlette.websockets import WebSocket
-
-
-class MyGraphQL(GraphQL):
-    async def get_context(self, request: typing.Union[Request, WebSocket]) -> Any:
-        return {
-            "auth": request.headers["Authorization"] or request.query_params["auth"]
-        }
-```
-
-In this example the `MyGraphQL` class extends the Strawberry `GraphQL` class to provide a `get_context` helper. This helper is used to fill the `Info` object. You should be aware that `Request` and `WebSocket` objects have different attributes and methods, and you may need to handle retrieving authorization details from them differently.
-
-*For more information on using context see the [Data Loaders](/docs/guides/dataloaders) docs.*
-
-The `Info` object can then be accessed in a `Permission` class like:
-
-```python
-from myauth import authenticate
 
 class IsAuthenticated(BasePermission):
     message = "User is not authenticated"
 
     def has_permission(self, source: Any, info: Info, **kwargs) -> bool:
-        return authenticate(info.context["auth"])
+        request: Union[Request, Websocket] = info.context["request"]
+        if "Authorization" in request.headers:
+          return authenticate_header(request)
+        if "auth" in request.query_params:
+          return authenticate_query_params(request)
+        return False
 ```
 
-Here we are taking the `auth` key out of the `info.context` dictionary and passing it to an `authenticate` method we have implemented somewhere else in our codebase.
+Here we retrieve the `request` object from the `context` provided by `info`. This object will be either a `Request` or `Websocket` instance from `starlette` (see: [Request docs](https://www.starlette.io/requests/) and [Websocket docs](https://www.starlette.io/websockets/)).
+
+In the next step we take either the `Authorization` header or the `auth` query parameter out of the `request` object, depending on which is available. We then pass those on to some authenticate methods we've implemented ourselves.
 
 Beyond providing hooks, Authentication is not currently Strawberry's responsibility. You should provide your own helpers to figure out if a request has the permissions you expect.
 
