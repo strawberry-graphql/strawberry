@@ -124,7 +124,7 @@ from mydb import get_db_session
 class MyExtension(Extension):
     def on_request_start(self):
         self.execution_context.context["db"] = get_db_session()
-    
+
     def on_request_end(self):
         self.execution_context.context["db"].close()
 ```
