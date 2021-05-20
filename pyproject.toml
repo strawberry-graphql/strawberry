@@ -104,3 +104,9 @@ testpaths = ["tests/"]
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
+
+[tool.autopub]
+git-username = "Botberry"
+git-email = "bot@strawberry.rocks"
+project-name = "🍓"
+append-github-contributor = true
