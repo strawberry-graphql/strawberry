@@ -1,6 +1,16 @@
 from asyncio import ensure_future
 from inspect import isawaitable
-from typing import Any, Awaitable, List, Optional, Sequence, Type, cast
+from typing import (
+    Any,
+    Awaitable,
+    Collection,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Type,
+    cast,
+)
 
 from graphql import (
     ExecutionContext as GraphQLExecutionContext,
@@ -10,7 +20,7 @@ from graphql import (
     execute as original_execute,
     parse,
 )
-from graphql.validation import validate
+from graphql.validation import ASTValidationRule, validate
 
 from strawberry.extensions import Extension
 from strawberry.extensions.runner import ExtensionsRunner
@@ -25,6 +35,7 @@ async def execute(
     additional_middlewares: List[Any] = None,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
     validate_queries: bool = True,
+    validation_rules: Optional[Collection[Type[ASTValidationRule]]] = None,
 ) -> ExecutionResult:
     extensions_runner = ExtensionsRunner(
         execution_context=execution_context,
@@ -63,7 +74,7 @@ async def execute(
 
         if validate_queries:
             with extensions_runner.validation():
-                validation_errors = validate(schema, document)
+                validation_errors = validate(schema, document, rules=validation_rules)
 
             if validation_errors:
                 execution_context.errors = validation_errors
@@ -102,6 +113,7 @@ def execute_sync(
     additional_middlewares: List[Any] = None,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
     validate_queries: bool = True,
+    validation_rules: Optional[Collection[Type[ASTValidationRule]]] = None,
 ) -> ExecutionResult:
     extensions_runner = ExtensionsRunner(
         execution_context=execution_context,
