@@ -62,5 +62,6 @@ response = httpx.post(
 )
 response.raise_for_status()
 
+print(response.json())
 print(f"Status is {status}")
 sys.exit(exit_code)
