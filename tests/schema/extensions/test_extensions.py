@@ -165,3 +165,27 @@ def test_extension_access_to_errors():
 
     assert len(result.errors) == 1
     assert execution_errors == result.errors
+
+
+def test_extension_access_to_root_value():
+    root_value = None
+
+    class MyExtension(Extension):
+        def on_request_end(self):
+            nonlocal root_value
+            root_value = self.execution_context.root_value
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hi(self) -> str:
+            return "👋"
+
+    schema = strawberry.Schema(query=Query, extensions=[MyExtension])
+
+    query = "{ hi }"
+
+    result = schema.execute_sync(query, root_value="ROOT")
+
+    assert not result.errors
+    assert root_value == "ROOT"
