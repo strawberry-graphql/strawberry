@@ -54,6 +54,7 @@ mutation_input = {
     "releaseInfo": release_info,
 }
 
+print(f"Status is {status}")
 
 response = httpx.post(
     API_URL,
@@ -62,6 +63,9 @@ response = httpx.post(
 )
 response.raise_for_status()
 
-print(response.json())
-print(f"Status is {status}")
+response_data = response.json()
+
+if response_data["errors"]:
+    raise RuntimeError(f"Response contained errors: {response_data['errors']}")
+
 sys.exit(exit_code)
