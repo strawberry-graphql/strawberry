@@ -12,6 +12,7 @@ from strawberry.types import ExecutionResult
 class GraphQLHTTPResponse(TypedDict, total=False):
     data: Optional[Dict[str, Any]]
     errors: Optional[List[Any]]
+    extensions: Optional[Dict[str, Any]]
 
 
 def process_result(result: ExecutionResult) -> GraphQLHTTPResponse:
@@ -19,6 +20,8 @@ def process_result(result: ExecutionResult) -> GraphQLHTTPResponse:
 
     if result.errors:
         data["errors"] = [format_graphql_error(err) for err in result.errors]
+    if result.extensions:
+        data["extensions"] = result.extensions
 
     return data
 
