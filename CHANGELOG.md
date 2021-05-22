@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.64.0 - 2021-05-22
+-------------------
+
+This release adds an extensions field to the `GraphQLHTTPResponse` type and also exposes it in the view's response.
+
+This field gets populated by Strawberry extensions: https://strawberry.rocks/docs/guides/extensions#get-results
+
+Contributed by [lijok](https://github.com/lijok) [PR #903](https://github.com/strawberry-graphql/strawberry/pull/903/)
+
+
 0.63.2 - 2021-05-22
 -------------------
 
