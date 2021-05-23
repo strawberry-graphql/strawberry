@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.64.1 - 2021-05-23
+-------------------
+
+This release fixes a max recursion depth error in the AIOHTTP subscription
+implementation.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) [PR #966](https://github.com/strawberry-graphql/strawberry/pull/966/)
+
+
 0.64.0 - 2021-05-22
 -------------------
 
