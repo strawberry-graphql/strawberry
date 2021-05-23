@@ -1,15 +1,31 @@
 import typing
 from collections.abc import AsyncGenerator as AsyncGenerator_abc
 from enum import Enum
-from typing import AsyncGenerator as AsyncGenerator_typing, \
-    Dict, ForwardRef, Union, _eval_type, \
-    _SpecialGenericAlias, Optional, Type, TYPE_CHECKING
+from typing import (
+    TYPE_CHECKING,
+    AsyncGenerator as AsyncGenerator_typing,
+    Dict,
+    ForwardRef,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+    _eval_type,
+    _SpecialGenericAlias,
+)
 
 from strawberry.custom_scalar import SCALAR_REGISTRY, ScalarDefinition
 from strawberry.enum import EnumDefinition
 from strawberry.lazy_type import LazyType
 from strawberry.scalars import SCALAR_TYPES
-from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
+from strawberry.type import (
+    StrawberryList,
+    StrawberryOptional,
+    StrawberryType,
+    StrawberryTypeVar,
+)
+from strawberry.utils.typing import is_type_var
+
 
 if TYPE_CHECKING:
     from strawberry.union import StrawberryUnion
@@ -19,8 +35,9 @@ UnionType = _SpecialGenericAlias
 
 
 class StrawberryAnnotation:
-    def __init__(self, annotation: Union[object, str], *,
-                 namespace: Optional[Dict] = None):
+    def __init__(
+        self, annotation: Union[object, str], *, namespace: Optional[Dict] = None
+    ):
         self.annotation = annotation
         self.namespace = namespace
 
@@ -53,6 +70,8 @@ class StrawberryAnnotation:
             return evaled_type
         elif self._is_union(evaled_type):
             return self.create_union(evaled_type)
+        elif is_type_var(evaled_type):
+            return self.create_type_var(evaled_type)
 
         raise NotImplementedError(f"Unknown type {evaled_type}")
 
@@ -91,6 +110,9 @@ class StrawberryAnnotation:
 
         # TODO: Should we ever be creating a Scalar type here?
         raise NotImplementedError
+
+    def create_type_var(self, evaled_type: TypeVar) -> StrawberryTypeVar:
+        return StrawberryTypeVar(evaled_type)
 
     def create_union(self, evaled_type: ...) -> "StrawberryUnion":
         # Prevent import cycles
@@ -180,7 +202,9 @@ class StrawberryAnnotation:
             return True
         elif isinstance(evaled_type, StrawberryOptional):
             return True
-        elif isinstance(evaled_type, ScalarDefinition):  # TODO: Replace with StrawberryScalar
+        elif isinstance(
+            evaled_type, ScalarDefinition
+        ):  # TODO: Replace with StrawberryScalar
             return True
         elif isinstance(evaled_type, StrawberryUnion):
             return True

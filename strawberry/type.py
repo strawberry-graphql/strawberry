@@ -1,30 +1,43 @@
 from __future__ import annotations
 
-from typing import Union
-
-from strawberry.enum import EnumDefinition
+from typing import List, TypeVar
 
 
-class StrawberryList:
+class StrawberryType:
+    @property
+    def type_params(self) -> List[TypeVar]:
+        return []
+
+
+class StrawberryContainer(StrawberryType):
     def __init__(self, of_type: StrawberryType):
         self.of_type = of_type
 
+    @property
+    def type_params(self) -> List[TypeVar]:
+        if hasattr(self.of_type, "_type_definition"):
+            parameters = getattr(self.of_type, "__parameters__", None)
 
-class StrawberryOptional:
-    def __init__(self, of_type: StrawberryType):
-        self.of_type = of_type
+            return list(parameters) if parameters else []
+
+        return self.of_type.type_params
 
 
-StrawberryType = Union[
-    EnumDefinition,  # TODO: Replace with StrawberryEnum
-    "StrawberryInput",
-    "StrawberryInterface",
-    StrawberryList,
-    "StrawberryObjectType",
-    StrawberryOptional,
-    "StrawberryScalar",
-    "StrawberryUnion",
-]
+class StrawberryList(StrawberryContainer):
+    ...
+
+
+class StrawberryOptional(StrawberryContainer):
+    ...
+
+
+class StrawberryTypeVar(StrawberryType):
+    def __init__(self, type_var: TypeVar):
+        self.type_var = type_var
+
+    @property
+    def type_params(self) -> List[TypeVar]:
+        return [self.type_var]
 
 
 # @property

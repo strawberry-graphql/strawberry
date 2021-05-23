@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Callable, Dict, Optional, Type
 
+from strawberry.type import StrawberryType
+
 from .exceptions import ScalarAlreadyRegisteredError
 from .utils.str_converters import to_camel_case
 
@@ -10,7 +12,7 @@ def identity(x):
 
 
 @dataclass
-class ScalarDefinition:
+class ScalarDefinition(StrawberryType):
     name: str
     description: Optional[str]
     serialize: Optional[Callable]

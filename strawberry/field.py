@@ -1,7 +1,19 @@
 import dataclasses
 import enum
+from hashlib import pbkdf2_hmac
 from inspect import iscoroutine
-from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
 from graphql import GraphQLResolveInfo
 
@@ -138,6 +150,7 @@ class StrawberryField(dataclasses.Field):
 
     @property
     def type(self) -> StrawberryType:
+        breakpoint()
         if self.base_resolver is not None:
             # Handle unannotated functions (such as lambdas)
             if self.base_resolver.type is not None:
@@ -152,6 +165,16 @@ class StrawberryField(dataclasses.Field):
     @type.setter
     def type(self, type_: object) -> None:
         self.type_annotation = type_
+
+    # TODO: add this to arguments (and/or move it to StrawberryType)
+    @property
+    def type_params(self) -> List[TypeVar]:
+        if hasattr(self.type, "_type_definition"):
+            parameters = getattr(self.type, "__parameters__", None)
+
+            return list(parameters) if parameters else []
+
+        return self.type.type_params
 
     def _get_arguments(
         self,

@@ -1,6 +1,8 @@
 import dataclasses
 from typing import TYPE_CHECKING, Dict, List, Optional, Type
 
+from strawberry.type import StrawberryType
+
 
 if TYPE_CHECKING:
     from strawberry.field import StrawberryField
@@ -15,7 +17,7 @@ class FederationTypeParams:
 
 
 @dataclasses.dataclass
-class TypeDefinition:
+class TypeDefinition(StrawberryType):
     name: str
     is_input: bool
     is_interface: bool

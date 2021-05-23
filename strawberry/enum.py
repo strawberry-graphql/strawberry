@@ -2,6 +2,8 @@ import dataclasses
 from enum import EnumMeta
 from typing import Any, Callable, List, Optional, Union
 
+from strawberry.type import StrawberryType
+
 from .exceptions import NotAnEnum
 
 
@@ -12,7 +14,7 @@ class EnumValue:
 
 
 @dataclasses.dataclass
-class EnumDefinition:
+class EnumDefinition(StrawberryType):
     wrapped_cls: EnumMeta
     name: str
     values: List[EnumValue]

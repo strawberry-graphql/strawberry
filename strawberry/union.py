@@ -22,12 +22,13 @@ from strawberry.utils.typing import (
     is_type_var,
 )
 
+
 if TYPE_CHECKING:
     from strawberry.schema.types.concrete_type import TypeMap
     from strawberry.types.types import TypeDefinition
 
 
-class StrawberryUnion:
+class StrawberryUnion(StrawberryType):
     def __init__(
         self,
         name: str,
@@ -163,6 +164,7 @@ def union(
     union_definition = StrawberryUnion(
         name=name,
         type_annotations=tuple(StrawberryAnnotation(type_) for type_ in types),
-        description=description)
+        description=description,
+    )
 
     return union_definition
