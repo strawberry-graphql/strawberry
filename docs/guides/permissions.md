@@ -38,7 +38,7 @@ If the `has_permission` method fails then an error will be raised using the `mes
 
 ## Accessing user information
 
-Accessing the current user information to implement your permission checks depends on the web framework you are using. Most frameworks will have a Request object where you can either access the current user directly or access headers/cookies/query parameters to authenticate the user. All the Strawberry integrations will provide this Request object in the `info.context` object that is accessible in every resolver and in the `has_permission` function. You can find more details about a specific framework integration under the "Integrations" heading in the navigation. 
+Accessing the current user information to implement your permission checks depends on the web framework you are using. Most frameworks will have a `Request` object where you can either access the current user directly or access headers/cookies/query parameters to authenticate the user. All the Strawberry integrations provide this Request object in the `info.context` object that is accessible in every resolver and in the `has_permission` function. You can find more details about a specific framework integration under the "Integrations" heading in the navigation. 
 
 In this example we are using `starlette` which uses the [ASGI](/docs/integrations/asgi) integration:
 
