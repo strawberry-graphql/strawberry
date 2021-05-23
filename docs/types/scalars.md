@@ -140,7 +140,7 @@ Usage
 @strawberry.type
 class Query:
     @strawberry.field
-    def data(self, info) -> GenericScalar:
+    def data(self, info) -> JSONScalar:
         return {"hello": {"a": 1}, "someNumbers": [1, 2, 3]}
 
 ```
