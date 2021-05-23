@@ -145,21 +145,16 @@ class Query:
 
 ```
 
-Query
-```
+```graphql+response
 query ExampleDataQuery {
   data
 }
-```
-
-Returns
-```
+---
 {
   "data": {
     "hello": {
       "a": 1
     },
-    "someNumbers": [1,2, 3]
+    "someNumbers": [1, 2, 3]
   }
 }
-```
