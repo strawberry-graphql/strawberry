@@ -199,6 +199,13 @@ def convert_argument(value: Any, argument: StrawberryArgument) -> Any:
                 kwargs[field.python_name] = convert_argument(
                     value[field.graphql_name], field
                 )
+            elif field.default_value is UNSET:
+                assert field.python_name
+
+                if field.can_be_unset is True:
+                    kwargs[field.python_name] = UNSET
+                elif field.is_optional:
+                    kwargs[field.python_name] = None
 
         return argument_type(**kwargs)
 

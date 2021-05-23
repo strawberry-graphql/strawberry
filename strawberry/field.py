@@ -59,6 +59,7 @@ class StrawberryField(dataclasses.Field):
         is_basic_field = not base_resolver
 
         # Check if field can be UNSET
+        self.can_be_unset = False
         type_origin = get_origin(type_)
         if type_origin is Union and UNSET in cast(Type, type_).__args__:
             # TODO: check that default_value is UNSET otherwise log warning
@@ -67,6 +68,7 @@ class StrawberryField(dataclasses.Field):
                 arg for arg in cast(Type, type_).__args__ if arg is not UNSET
             )
 
+            self.can_be_unset = True
             # Raise an exception if the type is not marked as Optional
             # if type(None) not in new_args:
             #     raise UnsetRequiredFieldError(

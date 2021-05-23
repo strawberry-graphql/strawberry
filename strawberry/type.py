@@ -88,9 +88,9 @@ def _wrap_dataclass(cls: Type):
     # HACK: modify any annotated fields that are marked as UNSET
     # TODO: only do this for input types. Raise an exception if a field is
     # marked as UNSET in a regular type.
-    for field_name, field in cls.__annotations__.items():
-        if hasattr(field, "__args__") and UNSET in field.__args__:
-            setattr(cls, field_name, dataclasses.field(default=UNSET))
+    # for field_name, field in cls.__annotations__.items():
+    #     if hasattr(field, "__args__") and UNSET in field.__args__:
+    #         setattr(cls, field_name, dataclasses.field(default=UNSET))
 
     return dataclasses.dataclass(cls)
 
@@ -127,6 +127,7 @@ def _process_type(
     # solution should suffice
 
     for field in fields:
+        # TODO Validate fields
         if field.base_resolver and field.python_name:
             setattr(cls, field.python_name, field.base_resolver.wrapped_func)
 

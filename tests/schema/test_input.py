@@ -77,7 +77,7 @@ def test_optional_value():
 
     result = schema.execute_sync("{ hello(data: {}) }")
     assert not result.errors
-    assert result.data == {"hello": "Hello stranger"}
+    assert result.data == {"hello": "Hello anonymous"}
 
     result = schema.execute_sync("{ hello(data: { name: null }) }")
     assert not result.errors
