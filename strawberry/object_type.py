@@ -105,7 +105,6 @@ def _process_type(
         name=name,
         is_input=is_input,
         is_interface=is_interface,
-        is_generic=is_generic(cls),
         interfaces=interfaces,
         description=description,
         federation=federation or FederationTypeParams(),

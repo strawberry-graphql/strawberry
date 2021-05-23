@@ -15,6 +15,12 @@ class StrawberryType(ABC):
     ) -> StrawberryType:
         raise NotImplementedError()
 
+    # TODO: make this abstract
+    @property
+    def is_generic(self) -> bool:
+        breakpoint()
+        return False
+
 
 class StrawberryContainer(StrawberryType):
     def __init__(self, of_type: StrawberryType):
@@ -53,8 +59,13 @@ class StrawberryTypeVar(StrawberryType):
         return super().copy_with(typevar_map)
 
     @property
+    def is_generic(self) -> bool:
+        return True
+
+    @property
     def type_params(self) -> List[TypeVar]:
         return [self.type_var]
+
 
 
 # @property

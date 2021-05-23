@@ -1,4 +1,5 @@
 import dataclasses
+from strawberry.utils.typing import is_generic, is_type_var
 from strawberry.utils.str_converters import capitalize_first
 from typing import TYPE_CHECKING, Dict, List, Mapping, Optional, Type, TypeVar, Union
 
@@ -22,7 +23,6 @@ class TypeDefinition(StrawberryType):
     name: str
     is_input: bool
     is_interface: bool
-    is_generic: bool
     origin: Type
     description: Optional[str]
     federation: FederationTypeParams
@@ -35,6 +35,11 @@ class TypeDefinition(StrawberryType):
     def resolve_generic(self, wrapped_cls: type) -> type:
         passed_types = wrapped_cls.__args__
         params = wrapped_cls.__origin__.__parameters__
+
+        if any(is_type_var(type_) for type_ in passed_types):
+            breakpoint()
+            raise ValueError("...")
+
         typevar_map = dict(zip(params, passed_types))
         type_definition = self.copy_with(typevar_map)
 
@@ -45,24 +50,28 @@ class TypeDefinition(StrawberryType):
         )
 
     def copy_with(
-        self, typevar_map: Optional[Mapping[TypeVar, Union[StrawberryType, type]]]
+        self, typevar_map: Mapping[TypeVar, Union[StrawberryType, type]]
     ) -> "TypeDefinition":
         name = self.get_name_from_types(typevar_map.values())
+
+        if name == "TNested":
+            breakpoint()
 
         fields = []
 
         for field in self.fields:
-            if isinstance(field.type, StrawberryTypeVar):
-                field.type = typevar_map[field.type.type_var]
-
-            fields.append(field)
+            if (
+                hasattr(field.type, "_type_definition") and is_generic(field.type)
+            ) or field.type.is_generic:
+                fields.append(field.copy_with(typevar_map))
+            else:
+                fields.append(field)
 
         return TypeDefinition(
             name=name,
             is_input=self.is_input,
             origin=self.origin,
             is_interface=self.is_interface,
-            is_generic=False,
             federation=self.federation,
             interfaces=self.interfaces,
             description=self.description,

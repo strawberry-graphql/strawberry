@@ -56,6 +56,8 @@ class StrawberryAnnotation:
             evaled_type = self._strip_lazy_type(evaled_type)
 
         if self._is_generic(evaled_type):
+            if any(is_type_var(type_) for type_ in evaled_type.__args__):
+                return evaled_type
             return self.create_concrete_type(evaled_type)
 
         # Simply return objects that are already StrawberryTypes

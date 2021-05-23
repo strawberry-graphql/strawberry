@@ -1,13 +1,15 @@
+import builtins
 import dataclasses
 import enum
-from hashlib import pbkdf2_hmac
 from inspect import iscoroutine
+from strawberry.utils.typing import is_generic
 from typing import (
     Any,
     Awaitable,
     Callable,
     Dict,
     List,
+    Mapping,
     Optional,
     Tuple,
     Type,
@@ -17,9 +19,9 @@ from typing import (
 
 from graphql import GraphQLResolveInfo
 
-from strawberry.annotation import StrawberryAnnotation
+from strawberry.annotation import StrawberryAnnotation, _is_object_type
 from strawberry.arguments import UNSET, convert_arguments
-from strawberry.type import StrawberryList, StrawberryType
+from strawberry.type import StrawberryList, StrawberryType, StrawberryTypeVar
 from strawberry.types.info import Info
 
 from .arguments import StrawberryArgument
@@ -205,6 +207,37 @@ class StrawberryField(dataclasses.Field):
             kwargs["info"] = info
 
         return args, kwargs
+
+    def copy_with(
+        self, typevar_map: Mapping[TypeVar, Union[StrawberryType, builtins.type]]
+    ) -> "StrawberryField":
+        if isinstance(self.type, StrawberryTypeVar):
+            new_type = typevar_map[self.type.type_var]
+        elif _is_object_type(self.type):
+            type_definition = self.type._type_definition.copy_with(typevar_map)
+
+            new_type = type(
+                type_definition.name,
+                (),
+                {"_type_definition": type_definition},
+            )
+
+        return StrawberryField(
+            python_name=self.python_name,
+            graphql_name=self.graphql_name,
+            # TODO: do we need to wrap this in `StrawberryAnnotation`?
+            # see comment related to dataclasses above
+            type_annotation=StrawberryAnnotation(new_type),
+            origin=self.origin,
+            is_subscription=self.is_subscription,
+            federation=self.federation,
+            description=self.description,
+            base_resolver=self.base_resolver,
+            permission_classes=self.permission_classes,
+            default_value=self.default_value,
+            default_factory=self.default_factory,
+            deprecation_reason=self.deprecation_reason,
+        )
 
     def get_result(
         self, source: Any, info: Any, kwargs: Dict[str, Any]

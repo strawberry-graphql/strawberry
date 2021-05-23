@@ -68,7 +68,7 @@ def get_async_generator_annotation(annotation: Type) -> Type:
 
 def is_generic(annotation: Type) -> bool:
     """Returns True if the annotation is or extends a generic."""
-    return (
+    return bool((
         isinstance(annotation, type)
         and issubclass(annotation, typing.Generic)  # type:ignore
         or isinstance(annotation, typing._GenericAlias)  # type:ignore
@@ -80,7 +80,7 @@ def is_generic(annotation: Type) -> bool:
             typing.ClassVar,
             AsyncGenerator,
         )
-    ) and get_parameters(annotation)
+    ) and get_parameters(annotation))
 
 
 def is_type_var(annotation: Type) -> bool:
