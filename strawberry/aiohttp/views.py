@@ -166,9 +166,9 @@ class WebSocketHandler(BaseGraphQLView, ABC):
         await self.cleanup_operation(operation_id)
 
     async def handle_keep_alive(self, ws: web.WebSocketResponse) -> None:
-        await asyncio.sleep(self.keep_alive_interval)
-        await ws.send_json({"type": GQL_CONNECTION_KEEP_ALIVE})
-        await self.handle_keep_alive(ws)
+        while True:
+            await asyncio.sleep(self.keep_alive_interval)
+            await ws.send_json({"type": GQL_CONNECTION_KEEP_ALIVE})
 
     async def handle_async_results(
         self,
