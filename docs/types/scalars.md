@@ -135,7 +135,8 @@ JSONScalar = strawberry.scalar(
 
 ```
 
-Usage
+Usage:
+
 ```python
 @strawberry.type
 class Query:
