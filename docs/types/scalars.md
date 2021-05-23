@@ -120,7 +120,7 @@ assert results.data  == {"base64": "aGk="}
 
 ## Example JSONScalar
 
-```
+```python
 import json
 from typing import Any, NewType
 
