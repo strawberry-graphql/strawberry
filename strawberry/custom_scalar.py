@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Callable, Dict, Optional, Type
+from typing import Callable, Dict, Mapping, Optional, Type, TypeVar, Union
 
 from strawberry.type import StrawberryType
 
@@ -18,6 +18,11 @@ class ScalarDefinition(StrawberryType):
     serialize: Optional[Callable]
     parse_value: Optional[Callable]
     parse_literal: Optional[Callable]
+
+    def copy_with(
+        self, typevar_map: Mapping[TypeVar, Union[StrawberryType, type]]
+    ) -> StrawberryType:
+        return super().copy_with(typevar_map)
 
 
 SCALAR_REGISTRY: Dict[Type, ScalarDefinition] = {}

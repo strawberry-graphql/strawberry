@@ -26,8 +26,6 @@ from strawberry.type import (
     StrawberryType,
     StrawberryTypeVar,
 )
-from strawberry.types.types import TypeDefinition
-from strawberry.utils.str_converters import capitalize_first
 from strawberry.utils.typing import is_generic, is_type_var
 
 
@@ -36,60 +34,6 @@ if TYPE_CHECKING:
 
 ListType = _SpecialGenericAlias
 UnionType = _SpecialGenericAlias
-
-
-def get_name_from_types(types: ...) -> str:
-    from strawberry.union import StrawberryUnion
-
-    names = []
-
-    for type_ in types:
-        if isinstance(type_, StrawberryUnion):
-            return type_.name
-        elif hasattr(type_, "_type_definition"):
-            name = capitalize_first(type_._type_definition.name)
-        else:
-            name = capitalize_first(type_.__name__)
-
-        names.append(name)
-
-    return "".join(names)
-
-
-def copy_type_with(
-    base: Type,
-    types: Tuple[Type],
-    params_to_type: Dict[Type, Union[Type, "StrawberryUnion"]] = None,
-) -> Type:
-    fields = []
-    definition = cast(TypeDefinition, base._type_definition)
-    name = get_name_from_types(params_to_type.values()) + definition.name
-
-    for field in definition.fields:
-        if isinstance(field.type, StrawberryTypeVar):
-            field.type = params_to_type[field.type.type_var]
-
-        fields.append(field)
-
-    type_definition = TypeDefinition(
-        name=name,
-        is_input=definition.is_input,
-        origin=definition.origin,
-        is_interface=definition.is_interface,
-        is_generic=False,
-        federation=definition.federation,
-        interfaces=definition.interfaces,
-        description=definition.description,
-        _fields=fields,
-    )
-
-    copied_type = type(
-        name,
-        (),
-        {"_type_definition": type_definition},
-    )
-
-    return copied_type
 
 
 class StrawberryAnnotation:
@@ -137,10 +81,7 @@ class StrawberryAnnotation:
 
     def create_concrete_type(self, evaled_type: StrawberryType) -> StrawberryType:
         if _is_object_type(evaled_type):
-            passed_types = evaled_type.__args__
-            params = evaled_type.__origin__.__parameters__
-            params_to_types = dict(zip(params, passed_types))
-            return copy_type_with(evaled_type.__origin__, passed_types, params_to_types)
+            return evaled_type._type_definition.resolve_generic(evaled_type)
 
         raise ValueError(f"Not supported {evaled_type}")
 

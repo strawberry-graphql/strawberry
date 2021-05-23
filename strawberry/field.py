@@ -48,6 +48,8 @@ class StrawberryField(dataclasses.Field):
         default_factory: Union[Callable, object] = UNSET,
         deprecation_reason: Optional[str] = None,
     ):
+        # breakpoint()
+
         federation = federation or FederationFieldParams()
 
         # basic fields are fields with no provided resolver

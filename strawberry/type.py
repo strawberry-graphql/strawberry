@@ -1,12 +1,19 @@
 from __future__ import annotations
 
-from typing import List, TypeVar
+from abc import ABC, abstractmethod
+from typing import List, Mapping, TypeVar, Union
 
 
-class StrawberryType:
+class StrawberryType(ABC):
     @property
     def type_params(self) -> List[TypeVar]:
         return []
+
+    @abstractmethod
+    def copy_with(
+        self, typevar_map: Mapping[TypeVar, Union[StrawberryType, type]]
+    ) -> StrawberryType:
+        raise NotImplementedError()
 
 
 class StrawberryContainer(StrawberryType):
@@ -22,6 +29,11 @@ class StrawberryContainer(StrawberryType):
 
         return self.of_type.type_params
 
+    def copy_with(
+        self, typevar_map: Mapping[TypeVar, Union[StrawberryType, type]]
+    ) -> StrawberryType:
+        return super().copy_with(typevar_map)
+
 
 class StrawberryList(StrawberryContainer):
     ...
@@ -34,6 +46,11 @@ class StrawberryOptional(StrawberryContainer):
 class StrawberryTypeVar(StrawberryType):
     def __init__(self, type_var: TypeVar):
         self.type_var = type_var
+
+    def copy_with(
+        self, typevar_map: Mapping[TypeVar, Union[StrawberryType, type]]
+    ) -> StrawberryType:
+        return super().copy_with(typevar_map)
 
     @property
     def type_params(self) -> List[TypeVar]:
