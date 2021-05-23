@@ -1,4 +1,15 @@
-from typing import TYPE_CHECKING, Any, Dict, NoReturn, Optional, Tuple, Type, TypeVar
+import itertools
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    NoReturn,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+)
 
 from graphql import (
     GraphQLAbstractType,
@@ -31,17 +42,37 @@ if TYPE_CHECKING:
 class StrawberryUnion(StrawberryType):
     def __init__(
         self,
-        name: str,
-        type_annotations: Tuple["StrawberryAnnotation", ...],
+        name: Optional[str] = None,
+        type_annotations: Tuple["StrawberryAnnotation", ...] = tuple(),
         description: Optional[str] = None,
     ):
-        self.name = name
+        self._name = name
         self.type_annotations = type_annotations
         self.description = description
 
     @property
+    def name(self) -> str:
+        return ""
+
+    @property
     def types(self) -> Tuple[StrawberryType, ...]:
         return tuple(annotation.resolve() for annotation in self.type_annotations)
+
+    @property
+    def type_params(self) -> List[TypeVar]:
+        def _get_type_params(type_: StrawberryType):
+            if hasattr(type_, "_type_definition"):
+                parameters = getattr(type_, "__parameters__", None)
+
+                return list(parameters) if parameters else []
+
+            return type_.type_params
+
+        # TODO: check if order is important:
+        # https://github.com/strawberry-graphql/strawberry/issues/445
+        return list(
+            set(itertools.chain(*(_get_type_params(type_) for type_ in self.types)))
+        )
 
     def __call__(self, *_args, **_kwargs) -> NoReturn:
         """Do not use.

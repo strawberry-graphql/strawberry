@@ -150,7 +150,6 @@ class StrawberryField(dataclasses.Field):
 
     @property
     def type(self) -> StrawberryType:
-        breakpoint()
         if self.base_resolver is not None:
             # Handle unannotated functions (such as lambdas)
             if self.base_resolver.type is not None:

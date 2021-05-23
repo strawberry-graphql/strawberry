@@ -124,7 +124,6 @@ class StrawberryAnnotation:
 
         types = evaled_type.__args__
         union = StrawberryUnion(
-            name="".join(type_.__name__ for type_ in types),
             type_annotations=tuple(StrawberryAnnotation(type_) for type_ in types),
         )
         return union
