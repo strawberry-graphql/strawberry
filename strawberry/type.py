@@ -18,7 +18,6 @@ class StrawberryType(ABC):
     # TODO: make this abstract
     @property
     def is_generic(self) -> bool:
-        breakpoint()
         return False
 
 

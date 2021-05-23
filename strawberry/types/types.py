@@ -1,4 +1,5 @@
 import dataclasses
+from strawberry.scalars import is_scalar
 from strawberry.utils.typing import is_generic, is_type_var
 from strawberry.utils.str_converters import capitalize_first
 from typing import TYPE_CHECKING, Dict, List, Mapping, Optional, Type, TypeVar, Union
@@ -54,15 +55,14 @@ class TypeDefinition(StrawberryType):
     ) -> "TypeDefinition":
         name = self.get_name_from_types(typevar_map.values())
 
-        if name == "TNested":
-            breakpoint()
-
         fields = []
 
         for field in self.fields:
-            if (
-                hasattr(field.type, "_type_definition") and is_generic(field.type)
-            ) or field.type.is_generic:
+            if hasattr(field.type, "_type_definition") and is_generic(field.type):
+                fields.append(field.copy_with(typevar_map))
+            elif is_scalar(field.type):
+                fields.append(field)
+            elif field.type.is_generic:
                 fields.append(field.copy_with(typevar_map))
             else:
                 fields.append(field)
