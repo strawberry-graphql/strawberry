@@ -7,11 +7,13 @@ from typing import (
     Dict,
     ForwardRef,
     Optional,
+    Tuple,
     Type,
     TypeVar,
     Union,
     _eval_type,
     _SpecialGenericAlias,
+    cast,
 )
 
 from strawberry.custom_scalar import SCALAR_REGISTRY, ScalarDefinition
@@ -24,7 +26,9 @@ from strawberry.type import (
     StrawberryType,
     StrawberryTypeVar,
 )
-from strawberry.utils.typing import is_type_var
+from strawberry.types.types import TypeDefinition
+from strawberry.utils.str_converters import capitalize_first
+from strawberry.utils.typing import is_generic, is_type_var
 
 
 if TYPE_CHECKING:
@@ -32,6 +36,60 @@ if TYPE_CHECKING:
 
 ListType = _SpecialGenericAlias
 UnionType = _SpecialGenericAlias
+
+
+def get_name_from_types(types: ...) -> str:
+    from strawberry.union import StrawberryUnion
+
+    names = []
+
+    for type_ in types:
+        if isinstance(type_, StrawberryUnion):
+            return type_.name
+        elif hasattr(type_, "_type_definition"):
+            name = capitalize_first(type_._type_definition.name)
+        else:
+            name = capitalize_first(type_.__name__)
+
+        names.append(name)
+
+    return "".join(names)
+
+
+def copy_type_with(
+    base: Type,
+    types: Tuple[Type],
+    params_to_type: Dict[Type, Union[Type, "StrawberryUnion"]] = None,
+) -> Type:
+    fields = []
+    definition = cast(TypeDefinition, base._type_definition)
+    name = get_name_from_types(params_to_type.values()) + definition.name
+
+    for field in definition.fields:
+        if isinstance(field.type, StrawberryTypeVar):
+            field.type = params_to_type[field.type.type_var]
+
+        fields.append(field)
+
+    type_definition = TypeDefinition(
+        name=name,
+        is_input=definition.is_input,
+        origin=definition.origin,
+        is_interface=definition.is_interface,
+        is_generic=False,
+        federation=definition.federation,
+        interfaces=definition.interfaces,
+        description=definition.description,
+        _fields=fields,
+    )
+
+    copied_type = type(
+        name,
+        (),
+        {"_type_definition": type_definition},
+    )
+
+    return copied_type
 
 
 class StrawberryAnnotation:
@@ -42,7 +100,6 @@ class StrawberryAnnotation:
         self.namespace = namespace
 
     def resolve(self) -> Union[StrawberryType, type]:
-
         if isinstance(self.annotation, str):
             annotation = ForwardRef(self.annotation)
         else:
@@ -53,6 +110,9 @@ class StrawberryAnnotation:
             evaled_type = self._strip_async_generator(evaled_type)
         if self._is_lazy_type(evaled_type):
             evaled_type = self._strip_lazy_type(evaled_type)
+
+        if self._is_generic(evaled_type):
+            return self.create_concrete_type(evaled_type)
 
         # Simply return objects that are already StrawberryTypes
         if self._is_strawberry_type(evaled_type):
@@ -74,6 +134,15 @@ class StrawberryAnnotation:
             return self.create_type_var(evaled_type)
 
         raise NotImplementedError(f"Unknown type {evaled_type}")
+
+    def create_concrete_type(self, evaled_type: StrawberryType) -> StrawberryType:
+        if _is_object_type(evaled_type):
+            passed_types = evaled_type.__args__
+            params = evaled_type.__origin__.__parameters__
+            params_to_types = dict(zip(params, passed_types))
+            return copy_type_with(evaled_type.__origin__, passed_types, params_to_types)
+
+        raise ValueError(f"Not supported {evaled_type}")
 
     def create_enum(self, evaled_type: Type[Enum]) -> EnumDefinition:
         return evaled_type._enum_definition
@@ -145,6 +214,13 @@ class StrawberryAnnotation:
         if not isinstance(annotation, type):
             return False
         return issubclass(annotation, Enum)
+
+    @classmethod
+    def _is_generic(cls, annotation: type) -> bool:
+        if hasattr(annotation, "__origin__"):
+            return is_generic(annotation.__origin__)
+
+        return False
 
     @classmethod
     def _is_lazy_type(cls, annotation: type) -> bool:
