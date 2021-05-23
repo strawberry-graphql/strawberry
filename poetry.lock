@@ -822,7 +822,7 @@ dev = ["pre-commit", "tox", "pytest-asyncio"]
 
 [[package]]
 name = "pytest-mypy-plugins"
-version = "1.6.1"
+version = "1.7.0"
 description = "pytest plugin for writing tests for mypy plugins"
 category = "dev"
 optional = false
@@ -1129,7 +1129,7 @@ sanic = ["sanic"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "bae93677b88ba101d593f70fba551480fd2155e8f8d94209b73397a66ca7ac9d"
+content-hash = "761e13d545e572ad5da7ad938c3360c335da6d9bcb00bfe55c62468763d96e4f"
 
 [metadata.files]
 aiofiles = [
@@ -1619,8 +1619,8 @@ pytest-mock = [
     {file = "pytest_mock-3.6.1-py3-none-any.whl", hash = "sha256:30c2f2cc9759e76eee674b81ea28c9f0b94f8f0445a1b87762cadf774f0df7e3"},
 ]
 pytest-mypy-plugins = [
-    {file = "pytest-mypy-plugins-1.6.1.tar.gz", hash = "sha256:f73986d4d78057f259518b81b019896985b19a698ce41deb6996ec73c3d7fcc6"},
-    {file = "pytest_mypy_plugins-1.6.1-py3-none-any.whl", hash = "sha256:b7f9c736f498a520c42ab393069b6e272036c2e4409d777403566e353743d603"},
+    {file = "pytest-mypy-plugins-1.7.0.tar.gz", hash = "sha256:55bd91add26adeb00a72112655b0e0e9f092745adff07a6c47a16b67c99e9b8d"},
+    {file = "pytest_mypy_plugins-1.7.0-py3-none-any.whl", hash = "sha256:922abd4ba66e73174aadc89c6f9f2f53ebfe2087d9ab211ef1f47983b040f082"},
 ]
 python-dateutil = [
     {file = "python-dateutil-2.8.1.tar.gz", hash = "sha256:73ebfe9dbf22e832286dafa60473e4cd239f8592f699aa5adaf10050e6e1823c"},
