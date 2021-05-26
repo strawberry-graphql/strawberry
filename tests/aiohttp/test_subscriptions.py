@@ -397,3 +397,49 @@ async def test_custom_context(aiohttp_client):
         # make sure the WebSocket is disconnected now
         await ws.receive(timeout=2)  # receive close
         assert ws.closed
+
+
+async def test_resolving_enums(aiohttp_client):
+    app = create_app(keep_alive=False)
+    aiohttp_app_client = await aiohttp_client(app)
+
+    async with aiohttp_app_client.ws_connect("/graphql", protocols=[GRAPHQL_WS]) as ws:
+        await ws.send_json({"type": GQL_CONNECTION_INIT})
+        await ws.send_json(
+            {
+                "type": GQL_START,
+                "id": "demo",
+                "payload": {
+                    "query": "subscription { flavors }",
+                },
+            }
+        )
+
+        response = await ws.receive_json()
+        assert response["type"] == GQL_CONNECTION_ACK
+
+        response = await ws.receive_json()
+        assert response["type"] == GQL_DATA
+        assert response["id"] == "demo"
+        assert response["payload"]["data"] == {"flavors": "VANILLA"}
+
+        response = await ws.receive_json()
+        assert response["type"] == GQL_DATA
+        assert response["id"] == "demo"
+        assert response["payload"]["data"] == {"flavors": "STRAWBERRY"}
+
+        response = await ws.receive_json()
+        assert response["type"] == GQL_DATA
+        assert response["id"] == "demo"
+        assert response["payload"]["data"] == {"flavors": "CHOCOLATE"}
+
+        await ws.send_json({"type": GQL_STOP, "id": "demo"})
+        response = await ws.receive_json()
+        assert response["type"] == GQL_COMPLETE
+        assert response["id"] == "demo"
+
+        await ws.send_json({"type": GQL_CONNECTION_TERMINATE})
+
+        # make sure the WebSocket is disconnected now
+        await ws.receive(timeout=2)  # receive close
+        assert ws.closed

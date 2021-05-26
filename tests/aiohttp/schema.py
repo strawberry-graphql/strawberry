@@ -1,10 +1,18 @@
 import asyncio
 import typing
+from enum import Enum
 
 from graphql import GraphQLError
 
 import strawberry
 from strawberry.file_uploads import Upload
+
+
+@strawberry.enum
+class Flavor(Enum):
+    VANILLA = "vanilla"
+    STRAWBERRY = "strawberry"
+    CHOCOLATE = "chocolate"
 
 
 @strawberry.type
@@ -48,6 +56,12 @@ class Subscription:
 
         # Without this yield, the method is not recognised as an async generator
         yield "Hi"  # noqa
+
+    @strawberry.subscription
+    async def flavors(self) -> typing.AsyncGenerator[Flavor, None]:
+        yield Flavor.VANILLA
+        yield Flavor.STRAWBERRY
+        yield Flavor.CHOCOLATE
 
 
 schema = strawberry.Schema(query=Query, mutation=Mutation, subscription=Subscription)
