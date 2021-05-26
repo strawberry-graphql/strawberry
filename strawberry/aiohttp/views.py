@@ -66,27 +66,25 @@ class BaseGraphQLView(ABC):
 
 
 class WebSocketHandler(BaseGraphQLView, ABC):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.subscriptions: Dict[str, AsyncGenerator] = {}
-        self.tasks: Dict[str, asyncio.Task] = {}
-        self.keep_alive_task: Optional[asyncio.Task] = None
-
     async def handle_web_socket(self, request: web.Request) -> web.StreamResponse:
         ws = web.WebSocketResponse(protocols=[GRAPHQL_WS])
         await ws.prepare(request)
+
+        request["subscriptions"] = {}
+        request["tasks"] = {}
+        request["keep_alive_task"] = None
 
         try:
             async for message in ws:
                 await self.handle_ws_message(request, ws, message)  # type: ignore
         finally:
-            if self.keep_alive_task:
-                self.keep_alive_task.cancel()
+            if request["keep_alive_task"]:
+                request["keep_alive_task"].cancel()
                 with suppress(Exception):
-                    await self.keep_alive_task
+                    await request["keep_alive_task"]
 
-            for operation_id in list(self.subscriptions.keys()):
-                await self.cleanup_operation(operation_id)
+            for operation_id in list(request["subscriptions"].keys()):
+                await self.cleanup_operation(request, operation_id)
 
         return ws
 
@@ -109,19 +107,21 @@ class WebSocketHandler(BaseGraphQLView, ABC):
         message_type: str = message["type"]
 
         if message_type == GQL_CONNECTION_INIT:
-            await self.handle_connection_init(ws)
+            await self.handle_connection_init(request, ws)
         elif message_type == GQL_CONNECTION_TERMINATE:
             await self.handle_connection_terminate(ws)
         elif message_type == GQL_START:
             await self.handle_start(request, ws, message)
         elif message_type == GQL_STOP:
-            await self.handle_stop(message)
+            await self.handle_stop(request, message)
 
-    async def handle_connection_init(self, ws: web.WebSocketResponse) -> None:
+    async def handle_connection_init(
+        self, request: web.Request, ws: web.WebSocketResponse
+    ) -> None:
         await ws.send_json({"type": GQL_CONNECTION_ACK})
 
         if self.keep_alive:
-            self.keep_alive_task = asyncio.create_task(self.handle_keep_alive(ws))
+            request["keep_alive_task"] = asyncio.create_task(self.handle_keep_alive(ws))
 
     async def handle_connection_terminate(self, ws: web.WebSocketResponse) -> None:
         await ws.close()
@@ -156,14 +156,14 @@ class WebSocketHandler(BaseGraphQLView, ABC):
             await self.send_message(ws, GQL_ERROR, operation_id, payload)
             return
 
-        self.subscriptions[operation_id] = result_source
-        self.tasks[operation_id] = asyncio.create_task(
+        request["subscriptions"][operation_id] = result_source
+        request["tasks"][operation_id] = asyncio.create_task(
             self.handle_async_results(result_source, operation_id, ws)
         )
 
-    async def handle_stop(self, message: dict) -> None:
+    async def handle_stop(self, request: web.Request, message: dict) -> None:
         operation_id = message["id"]
-        await self.cleanup_operation(operation_id)
+        await self.cleanup_operation(request, operation_id)
 
     async def handle_keep_alive(self, ws: web.WebSocketResponse) -> None:
         while True:
@@ -200,14 +200,14 @@ class WebSocketHandler(BaseGraphQLView, ABC):
 
         await self.send_message(ws, GQL_COMPLETE, operation_id, None)
 
-    async def cleanup_operation(self, operation_id: str) -> None:
-        await self.subscriptions[operation_id].aclose()
-        del self.subscriptions[operation_id]
+    async def cleanup_operation(self, request: web.Request, operation_id: str) -> None:
+        await request["subscriptions"][operation_id].aclose()
+        del request["subscriptions"][operation_id]
 
-        self.tasks[operation_id].cancel()
+        request["tasks"][operation_id].cancel()
         with suppress(Exception):
-            await self.tasks[operation_id]
-        del self.tasks[operation_id]
+            await request["tasks"][operation_id]
+        del request["tasks"][operation_id]
 
     @classmethod
     async def send_message(

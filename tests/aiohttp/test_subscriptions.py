@@ -120,8 +120,9 @@ async def test_subscription_cancellation(aiohttp_client):
         assert response["id"] == "demo"
         assert response["payload"]["data"] == {"infinity": "Hi"}
 
-        assert "demo" in view.tasks.keys()
-        assert "demo" in view.subscriptions.keys()
+        # Assert that a handle_async_results task is running
+        coroutine_name = "WebSocketHandler.handle_async_results"
+        assert any([coroutine_name in repr(t) for t in asyncio.all_tasks()])
 
         await ws.send_json({"type": GQL_STOP, "id": "demo"})
         response = await ws.receive_json()
@@ -134,8 +135,8 @@ async def test_subscription_cancellation(aiohttp_client):
         await ws.receive(timeout=2)  # receive close
         assert ws.closed
 
-        assert "demo" not in view.tasks.keys()
-        assert "demo" not in view.subscriptions.keys()
+        # Assert that the handle_async_results task is not running anymore
+        assert not any([coroutine_name in repr(t) for t in asyncio.all_tasks()])
 
 
 async def test_subscription_errors(aiohttp_client):
