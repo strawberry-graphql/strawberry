@@ -1,6 +1,21 @@
 CHANGELOG
 =========
 
+0.64.3 - 2021-05-26
+-------------------
+
+This release integrates the `strawberry-graphql-django` package into Strawberry
+core so that it's possible to use the Django extension package directly via the
+`strawberry.django` namespace.
+
+You still need to install `strawberry-graphql-django` if you want to use the
+extended Django support.
+
+See: https://github.com/strawberry-graphql/strawberry-graphql-django
+
+Contributed by [Lauri Hintsala](https://github.com/la4de) [PR #949](https://github.com/strawberry-graphql/strawberry/pull/949/)
+
+
 0.64.2 - 2021-05-26
 -------------------
 
