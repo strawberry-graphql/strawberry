@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.64.2 - 2021-05-26
+-------------------
+
+This release fixes that enum values yielded from async generators were not resolved
+properly.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) [PR #969](https://github.com/strawberry-graphql/strawberry/pull/969/)
+
+
 0.64.1 - 2021-05-23
 -------------------
 
