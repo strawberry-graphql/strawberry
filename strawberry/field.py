@@ -1,7 +1,7 @@
 import dataclasses
 import enum
 import typing
-from inspect import iscoroutine
+from inspect import isasyncgen, iscoroutine
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
 
 from graphql import GraphQLResolveInfo
@@ -263,6 +263,14 @@ class StrawberryField(dataclasses.Field):
             _check_permissions(_source, strawberry_info, kwargs)
 
             result = self.get_result(_source, info=strawberry_info, kwargs=kwargs)
+
+            if isasyncgen(result):
+
+                async def yield_results(results):
+                    async for value in results:
+                        yield _convert_enums_to_values(self, value)
+
+                return yield_results(result)
 
             if iscoroutine(result):  # pragma: no cover
 
