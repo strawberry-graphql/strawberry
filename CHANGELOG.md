@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.64.5 - 2021-05-28
+-------------------
+
+This release fixes that AIOHTTP subscription requests were not properly separated.
+This could lead to subscriptions terminating each other.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) [PR #970](https://github.com/strawberry-graphql/strawberry/pull/970/)
+
+
 0.64.4 - 2021-05-28
 -------------------
 
