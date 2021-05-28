@@ -6,8 +6,8 @@ import pytest
 from typing_extensions import Annotated
 
 import strawberry
+from strawberry.arguments import UNSET
 from strawberry.exceptions import MultipleStrawberryArgumentsError
-from strawberry.types.types import undefined
 
 
 def test_basic_arguments():
@@ -229,7 +229,7 @@ def test_argument_with_default_value_none():
     assert argument.type == str
     assert argument.is_optional is True
     assert argument.description is None
-    assert argument.default_value is None
+    assert argument.default is None
 
 
 def test_argument_with_default_value_undefined():
@@ -251,7 +251,7 @@ def test_argument_with_default_value_undefined():
     assert argument.type == str
     assert argument.is_optional is True
     assert argument.description is None
-    assert argument.default_value == undefined
+    assert argument.default is UNSET
 
 
 def test_annotated_argument_on_resolver():
@@ -330,7 +330,7 @@ def test_annotated_argument_with_default_value():
     assert argument.type == str
     assert argument.is_optional is False
     assert argument.description == "This is a description"
-    assert argument.default_value == "Patrick"
+    assert argument.default == "Patrick"
 
 
 def test_multiple_annotated_arguments_exception():
