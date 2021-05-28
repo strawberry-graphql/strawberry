@@ -1,6 +1,17 @@
 CHANGELOG
 =========
 
+0.64.4 - 2021-05-28
+-------------------
+
+* Remove usages of `undefined` in favour of `UNSET`
+* Change the signature of `StrawberryField` to make it easier to instantiate
+directly. Also change `default_value` argument to `default`
+* Rename `default_value` to `default` in `StrawberryArgument`
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) [PR #916](https://github.com/strawberry-graphql/strawberry/pull/916/)
+
+
 0.64.3 - 2021-05-26
 -------------------
 
