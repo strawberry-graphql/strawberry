@@ -102,6 +102,15 @@ async def test_subscription_cancellation(aiohttp_client):
     app.router.add_route("*", "/graphql", view)
     aiohttp_app_client = await aiohttp_client(app)
 
+    # Note Python 3.7 does not support Task.get_name/get_coro so we have to use
+    # repr(Task) to check whether expected tasks are running.
+    def get_result_handler_tasks():
+        return [
+            task
+            for task in asyncio.all_tasks()
+            if "WebSocketHandler.handle_async_results" in repr(task)
+        ]
+
     async with aiohttp_app_client.ws_connect("/graphql", protocols=[GRAPHQL_WS]) as ws:
         await ws.send_json({"type": GQL_CONNECTION_INIT})
         await ws.send_json(
@@ -120,8 +129,8 @@ async def test_subscription_cancellation(aiohttp_client):
         assert response["id"] == "demo"
         assert response["payload"]["data"] == {"infinity": "Hi"}
 
-        assert "demo" in view.tasks.keys()
-        assert "demo" in view.subscriptions.keys()
+        # Assert that a handle_async_results task is running
+        assert len(get_result_handler_tasks()) == 1
 
         await ws.send_json({"type": GQL_STOP, "id": "demo"})
         response = await ws.receive_json()
@@ -134,8 +143,8 @@ async def test_subscription_cancellation(aiohttp_client):
         await ws.receive(timeout=2)  # receive close
         assert ws.closed
 
-        assert "demo" not in view.tasks.keys()
-        assert "demo" not in view.subscriptions.keys()
+        # Assert that the handle_async_results task is not running anymore
+        assert len(get_result_handler_tasks()) == 0
 
 
 async def test_subscription_errors(aiohttp_client):
@@ -443,3 +452,61 @@ async def test_resolving_enums(aiohttp_client):
         # make sure the WebSocket is disconnected now
         await ws.receive(timeout=2)  # receive close
         assert ws.closed
+
+
+async def test_task_cancellation_separation(aiohttp_client):
+    view = GraphQLView(schema=schema, keep_alive=False)
+    app = web.Application()
+    app.router.add_route("*", "/graphql", view)
+    aiohttp_app_client = await aiohttp_client(app)
+
+    # Note Python 3.7 does not support Task.get_name/get_coro so we have to use
+    # repr(Task) to check whether expected tasks are running.
+    def get_result_handler_tasks():
+        return [
+            task
+            for task in asyncio.all_tasks()
+            if "WebSocketHandler.handle_async_results" in repr(task)
+        ]
+
+    connection1 = aiohttp_app_client.ws_connect("/graphql", protocols=[GRAPHQL_WS])
+    connection2 = aiohttp_app_client.ws_connect("/graphql", protocols=[GRAPHQL_WS])
+
+    async with connection1 as ws1, connection2 as ws2:
+        start_payload = {
+            "type": GQL_START,
+            "id": "demo",
+            "payload": {"query": 'subscription { infinity(message: "Hi") }'},
+        }
+
+        assert len(get_result_handler_tasks()) == 0
+
+        await ws1.send_json({"type": GQL_CONNECTION_INIT})
+        await ws1.send_json(start_payload)
+        await ws1.receive_json()
+
+        assert len(get_result_handler_tasks()) == 1
+
+        await ws2.send_json({"type": GQL_CONNECTION_INIT})
+        await ws2.send_json(start_payload)
+        await ws2.receive_json()
+
+        assert len(get_result_handler_tasks()) == 2
+
+        await ws1.send_json({"type": GQL_STOP, "id": "demo"})
+        await ws1.send_json({"type": GQL_CONNECTION_TERMINATE})
+
+        async for msg in ws1:
+            # Receive all outstanding messages including the final close message
+            pass
+
+        assert len(get_result_handler_tasks()) == 1
+
+        await ws2.send_json({"type": GQL_STOP, "id": "demo"})
+        await ws2.send_json({"type": GQL_CONNECTION_TERMINATE})
+
+        async for msg in ws2:
+            # Receive all outstanding messages including the final close message
+            pass
+
+        assert len(get_result_handler_tasks()) == 0
