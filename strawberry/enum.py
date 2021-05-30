@@ -1,6 +1,6 @@
 import dataclasses
 from enum import EnumMeta
-from typing import Any, Callable, List, Optional, Union
+from typing import Any, Callable, List, Optional, Union, Mapping, TypeVar
 
 from strawberry.type import StrawberryType
 
@@ -23,6 +23,11 @@ class EnumDefinition(StrawberryType):
     def __hash__(self) -> int:
         # TODO: Is this enough for unique-ness?
         return hash(self.name)
+
+    def copy_with(
+        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
+    ) -> StrawberryType:
+        return super().copy_with(type_var_map)
 
 
 def _process_enum(
