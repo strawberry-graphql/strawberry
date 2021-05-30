@@ -79,7 +79,9 @@ class StrawberryAnnotation:
         elif is_type_var(evaled_type):
             return self.create_type_var(evaled_type)
 
-        raise NotImplementedError(f"Unknown type {evaled_type}")
+        # TODO: Raise exception now, or later?
+        # raise NotImplementedError(f"Unknown type {evaled_type}")
+        return evaled_type
 
     def create_concrete_type(self, evaled_type: StrawberryType) -> StrawberryType:
         if _is_object_type(evaled_type):
