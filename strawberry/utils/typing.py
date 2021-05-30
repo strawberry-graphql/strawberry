@@ -66,21 +66,27 @@ def get_async_generator_annotation(annotation: Type) -> Type:
     return annotation.__args__[0]
 
 
-def is_generic(annotation: Type) -> bool:
+def is_concrete_generic(annotation: type) -> bool:
+    ignored_generics = (list, tuple, typing.Union, typing.ClassVar, AsyncGenerator)
+    return (
+        isinstance(annotation, typing._GenericAlias)
+        and annotation.__origin__ not in ignored_generics
+    )
+
+
+def is_generic_subclass(annotation: type) -> bool:
+    return isinstance(annotation, type) and issubclass(annotation, typing.Generic)
+
+
+def is_generic(annotation: type) -> bool:
     """Returns True if the annotation is or extends a generic."""
-    return bool((
-        isinstance(annotation, type)
-        and issubclass(annotation, typing.Generic)  # type:ignore
-        or isinstance(annotation, typing._GenericAlias)  # type:ignore
-        and annotation.__origin__
-        not in (
-            list,
-            typing.Union,
-            tuple,
-            typing.ClassVar,
-            AsyncGenerator,
-        )
-    ) and get_parameters(annotation))
+
+    return (
+        # TODO: These two lines appear to have the same effect. When will an
+        #       annotation have parameters but not satisfy the first condition?
+        (is_generic_subclass(annotation) or is_concrete_generic(annotation))
+        and bool(get_parameters(annotation))
+    )
 
 
 def is_type_var(annotation: Type) -> bool:
