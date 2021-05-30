@@ -2,29 +2,35 @@ from typing import cast
 
 from strawberry.field import StrawberryField
 from strawberry.scalars import is_scalar
-from strawberry.type import StrawberryList
+from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
 
 
-def _convert_from_pydantic_to_strawberry_field(
-    field: StrawberryField, data_from_model=None, extra=None
+def _convert_from_pydantic_to_strawberry_type(
+    type_: StrawberryType, data_from_model=None, extra=None
 ):
     data = data_from_model if data_from_model is not None else extra
 
-    if isinstance(field.type, StrawberryList):
+    if isinstance(type_, StrawberryOptional):
+        return _convert_from_pydantic_to_strawberry_type(
+            type_.of_type,
+            data_from_model=data,
+            extra=extra
+        )
+    if isinstance(type_, StrawberryList):
         items = []
         for index, item in enumerate(data):
-            items.append(_convert_from_pydantic_to_strawberry_field(
-                field.type.of_type,
+            items.append(_convert_from_pydantic_to_strawberry_type(
+                type_.of_type,
                 data_from_model=item,
                 extra=extra[index] if extra else None,
             ))
 
         return items
-    elif is_scalar(field.type):  # type: ignore
+    elif is_scalar(type_):  # type: ignore
         return data
     else:
         return convert_pydantic_model_to_strawberry_class(
-            field.type, model_instance=data_from_model, extra=extra
+            type_, model_instance=data_from_model, extra=extra
         )
 
 
@@ -40,8 +46,8 @@ def convert_pydantic_model_to_strawberry_class(cls, *, model_instance=None, extr
         data_from_model = (
             getattr(model_instance, python_name, None) if model_instance else None
         )
-        kwargs[python_name] = _convert_from_pydantic_to_strawberry_field(
-            field, data_from_model, extra=data_from_extra
+        kwargs[python_name] = _convert_from_pydantic_to_strawberry_type(
+            field.type, data_from_model, extra=data_from_extra
         )
 
     return cls(**kwargs)
