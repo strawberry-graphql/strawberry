@@ -51,19 +51,19 @@ class TypeDefinition(StrawberryType):
         )
 
     def copy_with(
-        self, typevar_map: Mapping[TypeVar, Union[StrawberryType, type]]
+        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
     ) -> "TypeDefinition":
-        name = self.get_name_from_types(typevar_map.values())
+        name = self.get_name_from_types(type_var_map.values())
 
         fields = []
 
         for field in self.fields:
             if hasattr(field.type, "_type_definition") and is_generic(field.type):
-                fields.append(field.copy_with(typevar_map))
+                fields.append(field.copy_with(type_var_map))
             elif is_scalar(field.type):
                 fields.append(field)
             elif field.type.is_generic:
-                fields.append(field.copy_with(typevar_map))
+                fields.append(field.copy_with(type_var_map))
             else:
                 fields.append(field)
 

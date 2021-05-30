@@ -20,9 +20,9 @@ class ScalarDefinition(StrawberryType):
     parse_literal: Optional[Callable]
 
     def copy_with(
-        self, typevar_map: Mapping[TypeVar, Union[StrawberryType, type]]
+        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
     ) -> StrawberryType:
-        return super().copy_with(typevar_map)
+        return super().copy_with(type_var_map)
 
 
 SCALAR_REGISTRY: Dict[Type, ScalarDefinition] = {}

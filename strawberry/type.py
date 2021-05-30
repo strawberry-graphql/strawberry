@@ -11,7 +11,7 @@ class StrawberryType(ABC):
 
     @abstractmethod
     def copy_with(
-        self, typevar_map: Mapping[TypeVar, Union[StrawberryType, type]]
+        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
     ) -> StrawberryType:
         raise NotImplementedError()
 
@@ -35,9 +35,9 @@ class StrawberryContainer(StrawberryType):
         return self.of_type.type_params
 
     def copy_with(
-        self, typevar_map: Mapping[TypeVar, Union[StrawberryType, type]]
+        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
     ) -> StrawberryType:
-        return super().copy_with(typevar_map)
+        return super().copy_with(type_var_map)
 
 
 class StrawberryList(StrawberryContainer):
@@ -53,9 +53,9 @@ class StrawberryTypeVar(StrawberryType):
         self.type_var = type_var
 
     def copy_with(
-        self, typevar_map: Mapping[TypeVar, Union[StrawberryType, type]]
+        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
     ) -> StrawberryType:
-        return super().copy_with(typevar_map)
+        return super().copy_with(type_var_map)
 
     @property
     def is_generic(self) -> bool:
