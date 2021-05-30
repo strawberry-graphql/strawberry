@@ -11,14 +11,13 @@ def _convert_from_pydantic_to_strawberry_field(
     data = data_from_model if data_from_model is not None else extra
 
     if isinstance(field.type, StrawberryList):
-        items = [None for _ in data]
-
+        items = []
         for index, item in enumerate(data):
-            items[index] = _convert_from_pydantic_to_strawberry_field(
+            items.append(_convert_from_pydantic_to_strawberry_field(
                 field.type.of_type,
                 data_from_model=item,
                 extra=extra[index] if extra else None,
-            )
+            ))
 
         return items
     elif is_scalar(field.type):  # type: ignore
