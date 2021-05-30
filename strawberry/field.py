@@ -215,10 +215,12 @@ class StrawberryField(dataclasses.Field):
             type_definition = self.type._type_definition.copy_with(typevar_map)
 
             new_type = type(
-                type_definition.name,
-                (),
-                {"_type_definition": type_definition},
+                name=type_definition.name,
+                bases=(),
+                dict={"_type_definition": type_definition},
             )
+        else:
+            new_type = self.type.copy_with(typevar_map)
 
         return StrawberryField(
             python_name=self.python_name,

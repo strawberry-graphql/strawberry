@@ -37,7 +37,17 @@ class StrawberryContainer(StrawberryType):
     def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
     ) -> StrawberryType:
-        return super().copy_with(type_var_map)
+        # TODO: Only make copy if of_type is generic
+
+        of_type_copy = self.of_type.copy_with(type_var_map)
+
+        return type(self)(of_type_copy)
+
+    @property
+    def is_generic(self) -> bool:
+        if isinstance(self.of_type, StrawberryType):
+            return self.of_type.is_generic
+        return False
 
 
 class StrawberryList(StrawberryContainer):
@@ -55,7 +65,7 @@ class StrawberryTypeVar(StrawberryType):
     def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
     ) -> StrawberryType:
-        return super().copy_with(type_var_map)
+        return type_var_map[self.type_var]
 
     @property
     def is_generic(self) -> bool:
