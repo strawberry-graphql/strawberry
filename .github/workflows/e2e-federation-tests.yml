@@ -1,0 +1,37 @@
+name: e2e Federation tests
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'e2e-federation-tests/**/*'
+      - 'strawberry/federation.py'
+      - 'strawberry/printer.py'
+      - 'tests/federation/**/*'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@master
+      - uses: actions/setup-python@v2
+        with:
+          python-version: "3.7"
+      - name: Install poetry
+        run: pip install poetry
+      - name: Start products service
+        uses: strawberry-graphql/e2e-federation/.github/start-services@main
+        with:
+          service: products
+      - name: Start orders service
+        uses: strawberry-graphql/e2e-federation/.github/start-services@main
+        with:
+          service: orders
+      - name: Start gateway service
+        uses: strawberry-graphql/e2e-federation/.github/start-services@main
+        with:
+          service: gateway
+      - name: Install project dependencies
+        run: poetry install
+      - name: Run e2e federation tests
+        run: poetry run pytest e2e-federation-tests/
