@@ -1,3 +1,4 @@
+import typing
 from random import random
 
 import strawberry
@@ -16,6 +17,13 @@ def create_app(**kwargs):
         @strawberry.mutation
         def read_text(self, text_file: Upload) -> str:
             return text_file.read().decode()
+
+        @strawberry.mutation
+        def read_files(self, files: typing.List[Upload]) -> typing.List[str]:
+            contents = []
+            for file in files:
+                contents.append(file.read().decode())
+            return contents
 
     schema = strawberry.Schema(query=Query, mutation=Mutation)
 

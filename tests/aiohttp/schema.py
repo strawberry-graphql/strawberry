@@ -26,6 +26,13 @@ class Mutation:
     def read_text(self, text_file: Upload) -> str:
         return text_file.read().decode()
 
+    @strawberry.mutation
+    def read_files(self, files: typing.List[Upload]) -> typing.List[str]:
+        contents = []
+        for file in files:
+            contents.append(file.read().decode())
+        return contents
+
 
 @strawberry.type
 class Subscription:
