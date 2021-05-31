@@ -1,10 +1,8 @@
 import dataclasses
-from strawberry.scalars import is_scalar
-from strawberry.utils.typing import is_generic, is_type_var
-from strawberry.utils.str_converters import capitalize_first
 from typing import TYPE_CHECKING, Dict, List, Mapping, Optional, Type, TypeVar, Union
 
-from strawberry.type import StrawberryType, StrawberryTypeVar
+from strawberry.type import StrawberryType
+from strawberry.utils.str_converters import capitalize_first
 
 
 if TYPE_CHECKING:
@@ -36,10 +34,6 @@ class TypeDefinition(StrawberryType):
     def resolve_generic(self, wrapped_cls: type) -> type:
         passed_types = wrapped_cls.__args__
         params = wrapped_cls.__origin__.__parameters__
-
-        if any(is_type_var(type_) for type_ in passed_types):
-            breakpoint()
-            raise ValueError("...")
 
         typevar_map = dict(zip(params, passed_types))
         type_definition = self.copy_with(typevar_map)
