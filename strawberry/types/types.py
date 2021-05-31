@@ -56,7 +56,10 @@ class TypeDefinition(StrawberryType):
             if hasattr(field_type, "_type_definition"):
                 field_type = field_type._type_definition
 
-            if field_type.is_generic:
+            # TODO: All types should end up being StrawberryTypes
+            #       The first check is here as a symptom of strawberry.ID being a
+            #       Scalar, but not a StrawberryType
+            if isinstance(field_type, StrawberryType) and field_type.is_generic:
                 field = field.copy_with(type_var_map)
 
             fields.append(field)
