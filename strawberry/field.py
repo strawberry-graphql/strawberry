@@ -2,7 +2,6 @@ import builtins
 import dataclasses
 import enum
 from inspect import iscoroutine
-from strawberry.utils.typing import is_generic
 from typing import (
     Any,
     Awaitable,
@@ -21,7 +20,7 @@ from graphql import GraphQLResolveInfo
 
 from strawberry.annotation import StrawberryAnnotation, _is_object_type
 from strawberry.arguments import UNSET, convert_arguments
-from strawberry.type import StrawberryList, StrawberryType, StrawberryTypeVar
+from strawberry.type import StrawberryList, StrawberryType
 from strawberry.types.info import Info
 
 from .arguments import StrawberryArgument
@@ -96,7 +95,6 @@ class StrawberryField(dataclasses.Field):
             resolver = StrawberryResolver(resolver)
 
         self.base_resolver = resolver
-        self.type_annotation = resolver.type_annotation
 
         return self
 
@@ -222,6 +220,11 @@ class StrawberryField(dataclasses.Field):
         else:
             new_type = self.type.copy_with(typevar_map)
 
+        if self.base_resolver is not None:
+            new_resolver = self.base_resolver.copy_with(typevar_map)
+        else:
+            new_resolver = None
+
         return StrawberryField(
             python_name=self.python_name,
             graphql_name=self.graphql_name,
@@ -232,7 +235,7 @@ class StrawberryField(dataclasses.Field):
             is_subscription=self.is_subscription,
             federation=self.federation,
             description=self.description,
-            base_resolver=self.base_resolver,
+            base_resolver=new_resolver,
             permission_classes=self.permission_classes,
             default_value=self.default_value,
             default_factory=self.default_factory,

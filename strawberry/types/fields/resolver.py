@@ -1,7 +1,10 @@
+from __future__ import annotations
+
+import builtins
 import inspect
 import sys
 from inspect import isasyncgenfunction, iscoroutinefunction
-from typing import Callable, Generic, List, Optional, TypeVar
+from typing import Callable, Generic, List, Optional, TypeVar, Mapping, Union
 
 from cached_property import cached_property  # type: ignore
 
@@ -16,9 +19,19 @@ T = TypeVar("T")
 
 
 class StrawberryResolver(Generic[T]):
-    def __init__(self, func: Callable[..., T], *, description: Optional[str] = None):
+    def __init__(
+        self,
+        func: Callable[..., T],
+        *, description: Optional[str] = None,
+        type_override: Optional[StrawberryType] = None,
+    ):
         self.wrapped_func = func
         self._description = description
+        self._type_override = type_override
+        """Specify the type manually instead of calculating from wrapped func
+        
+        This is used when creating copies of types w/ generics
+        """
 
     # TODO: Use this when doing the actual resolving? How to deal with async resolvers?
     def __call__(self, *args, **kwargs) -> T:
@@ -90,19 +103,27 @@ class StrawberryResolver(Generic[T]):
         return self.wrapped_func.__name__
 
     @cached_property
-    def type_annotation(self) -> StrawberryAnnotation:
+    def type_annotation(self) -> Optional[StrawberryAnnotation]:
+        try:
+            return_annotation = self.wrapped_func.__annotations__["return"]
+        except KeyError:
+            # No return annotation at all (as opposed to `-> None`)
+            return None
+
         # TODO: PyCharm doesn't like this. Says `() -> ...` has no __module__ attribute
         module = sys.modules[self.wrapped_func.__module__]
-
         type_annotation = StrawberryAnnotation(
-            annotation=self.wrapped_func.__annotations__.get("return", None),
+            annotation=return_annotation,
             namespace=module.__dict__
         )
+
         return type_annotation
 
     @property
-    def type(self) -> StrawberryType:
-        if self.type_annotation.annotation is None:
+    def type(self) -> Optional[StrawberryType]:
+        if self._type_override:
+            return self._type_override
+        if self.type_annotation is None:
             return None
         return self.type_annotation.resolve()
 
@@ -110,6 +131,15 @@ class StrawberryResolver(Generic[T]):
     def is_async(self) -> bool:
         return iscoroutinefunction(self.wrapped_func) or isasyncgenfunction(
             self.wrapped_func
+        )
+
+    def copy_with(
+        self, typevar_map: Mapping[TypeVar, Union[StrawberryType, builtins.type]]
+    ) -> StrawberryResolver:
+        return type(self)(
+            func=self.wrapped_func,
+            description=self._description,
+            type_override=self.type.copy_with(typevar_map)
         )
 
 
