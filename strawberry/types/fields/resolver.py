@@ -134,12 +134,12 @@ class StrawberryResolver(Generic[T]):
         )
 
     def copy_with(
-        self, typevar_map: Mapping[TypeVar, Union[StrawberryType, builtins.type]]
+        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, builtins.type]]
     ) -> StrawberryResolver:
         return type(self)(
             func=self.wrapped_func,
             description=self._description,
-            type_override=self.type.copy_with(typevar_map)
+            type_override=self.type.copy_with(type_var_map)
         )
 
 

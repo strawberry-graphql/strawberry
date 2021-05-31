@@ -35,8 +35,8 @@ class TypeDefinition(StrawberryType):
         passed_types = wrapped_cls.__args__
         params = wrapped_cls.__origin__.__parameters__
 
-        typevar_map = dict(zip(params, passed_types))
-        type_definition = self.copy_with(typevar_map)
+        type_var_map = dict(zip(params, passed_types))
+        type_definition = self.copy_with(type_var_map)
 
         return type(
             type_definition.name,

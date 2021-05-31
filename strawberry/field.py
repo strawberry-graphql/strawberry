@@ -205,12 +205,12 @@ class StrawberryField(dataclasses.Field):
         return args, kwargs
 
     def copy_with(
-        self, typevar_map: Mapping[TypeVar, Union[StrawberryType, builtins.type]]
+        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, builtins.type]]
     ) -> "StrawberryField":
         # TODO: Remove with creation of StrawberryObject. Will act same as other
         #       StrawberryTypes
         if _is_object_type(self.type):
-            type_definition = self.type._type_definition.copy_with(typevar_map)
+            type_definition = self.type._type_definition.copy_with(type_var_map)
 
             new_type = type(
                 name=type_definition.name,
@@ -218,10 +218,10 @@ class StrawberryField(dataclasses.Field):
                 dict={"_type_definition": type_definition},
             )
         else:
-            new_type = self.type.copy_with(typevar_map)
+            new_type = self.type.copy_with(type_var_map)
 
         if self.base_resolver is not None:
-            new_resolver = self.base_resolver.copy_with(typevar_map)
+            new_resolver = self.base_resolver.copy_with(type_var_map)
         else:
             new_resolver = None
 
