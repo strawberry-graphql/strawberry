@@ -209,9 +209,9 @@ class StrawberryField(dataclasses.Field):
     def copy_with(
         self, typevar_map: Mapping[TypeVar, Union[StrawberryType, builtins.type]]
     ) -> "StrawberryField":
-        if isinstance(self.type, StrawberryTypeVar):
-            new_type = typevar_map[self.type.type_var]
-        elif _is_object_type(self.type):
+        # TODO: Remove with creation of StrawberryObject. Will act same as other
+        #       StrawberryTypes
+        if _is_object_type(self.type):
             type_definition = self.type._type_definition.copy_with(typevar_map)
 
             new_type = type(

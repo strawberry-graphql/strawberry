@@ -56,19 +56,16 @@ class TypeDefinition(StrawberryType):
         name = self.get_name_from_types(type_var_map.values())
 
         fields = []
-
         for field in self.fields:
-            # TODO: field.type causes evaluation. If field is non-concrete generic, we
-            #       need to make a copy, but instead is_generic will return False. This
-            #       affects test_schema.test_using_generics
-            if hasattr(field.type, "_type_definition") and field.type.is_generic:
-                fields.append(field.copy_with(type_var_map))
-            elif is_scalar(field.type):
-                fields.append(field)
-            elif field.type.is_generic:
-                fields.append(field.copy_with(type_var_map))
-            else:
-                fields.append(field)
+            # TODO: Logic unnecessary with StrawberryObject
+            field_type = field.type
+            if hasattr(field_type, "_type_definition"):
+                field_type = field_type._type_definition
+
+            if field_type.is_generic:
+                field = field.copy_with(type_var_map)
+
+            fields.append(field)
 
         return TypeDefinition(
             name=name,
