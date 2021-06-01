@@ -12,7 +12,7 @@ from graphql import ExecutionResult as GraphQLExecutionResult, GraphQLError
 from graphql.error import format_error as format_graphql_error
 
 from strawberry.exceptions import MissingQueryError
-from strawberry.file_uploads.data import replace_placeholders_with_files
+from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import GraphQLHTTPResponse, parse_request_data, process_result
 from strawberry.subscriptions.constants import (
     GQL_COMPLETE,

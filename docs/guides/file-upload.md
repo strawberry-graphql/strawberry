@@ -4,9 +4,11 @@ title: File Upload
 
 # File Upload
 
-Strawberry supports multipart uploads as described here: https://github.com/jaydenseric/graphql-multipart-request-spec for ASGI and Django.
+All Strawberry integrations support multipart uploads as described in the
+[GraphQL multipart request specification](https://github.com/jaydenseric/graphql-multipart-request-spec).
+This includes support for uploading single files as well as lists of files.
 
-Uploads can be used in mutations via the `Upload` type.
+Uploads can be used in mutations via the `Upload` scalar.
 
 ## ASGI
 
@@ -15,22 +17,7 @@ Since ASGI uses asyncio for communication the resolver _must_ be async as well.
 Example:
 
 ```python
-from strawberry.file_uploads import Upload
-...
-@strawberry.type
-class Mutation:
-    @strawberry.mutation
-    async def read_text(self, text_file: Upload) -> str:
-        file_contents = await text_file.read()
-        # do something awesome
-        return "a string"
-```
-
-## Flask
-
-Example:
-
-```python
+import typing
 import strawberry
 from strawberry.file_uploads import Upload
 
@@ -38,12 +25,39 @@ from strawberry.file_uploads import Upload
 @strawberry.type
 class Mutation:
     @strawberry.mutation
-    def read_text(self, text_file: Upload) -> str:
-        return text_file.read().decode()
+    async def read_file(self, file: Upload) -> str:
+        return await file.read()
 
-
+    @strawberry.mutation
+    async def read_files(self, files: typing.List[Upload]) -> typing.List[str]:
+        contents = []
+        for file in files:
+            content = (await file.read()).decode()
+            contents.append(content)
+        return contents
 ```
 
-## Django
+## Sanic / Flask / Django / AIOHTTP
 
-Documentation coming soon
+Example:
+
+```python
+import typing
+import strawberry
+from strawberry.file_uploads import Upload
+
+
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    def read_file(self, file: Upload) -> str:
+        return file.read().decode()
+
+    @strawberry.mutation
+    def read_files(self, files: typing.List[Upload]) -> typing.List[str]:
+        contents = []
+        for file in files:
+            content = file.read().decode()
+            contents.append(content)
+        return contents
+```

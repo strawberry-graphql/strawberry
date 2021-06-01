@@ -6,7 +6,7 @@ from sanic.request import Request
 from sanic.response import HTTPResponse, html
 from sanic.views import HTTPMethodView
 from strawberry.exceptions import MissingQueryError
-from strawberry.file_uploads.data import replace_placeholders_with_files
+from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import (
     GraphQLHTTPResponse,
     GraphQLRequestData,

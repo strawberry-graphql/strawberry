@@ -3,7 +3,7 @@ import json
 from flask import Response, abort, render_template_string, request
 from flask.views import View
 from strawberry.exceptions import MissingQueryError
-from strawberry.file_uploads.data import replace_placeholders_with_files
+from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import GraphQLHTTPResponse, parse_request_data, process_result
 from strawberry.types import ExecutionResult
 
