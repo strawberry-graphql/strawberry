@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Mapping
 
 def replace_placeholders_with_files(
     operations_with_placeholders: Dict[str, Any],
-    files_map: Dict[str, List[str]],
+    files_map: Mapping[str, List[str]],
     files: Mapping[str, Any],
 ) -> Dict[str, Any]:
     operations = copy.deepcopy(operations_with_placeholders)
