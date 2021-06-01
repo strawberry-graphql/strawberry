@@ -1,6 +1,36 @@
 CHANGELOG
 =========
 
+0.65.0 - 2021-06-01
+-------------------
+
+This release extends the file upload support of all integrations to support the upload
+of file lists.
+
+Here is an example how this would work with the ASGI integration.
+
+```python
+import typing
+import strawberry
+from strawberry.file_uploads import Upload
+
+
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    async def read_files(self, files: typing.List[Upload]) -> typing.List[str]:
+        contents = []
+        for file in files:
+            content = (await file.read()).decode()
+            contents.append(content)
+        return contents
+```
+
+Check out the documentation to learn how the same can be done with other integrations.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) [PR #979](https://github.com/strawberry-graphql/strawberry/pull/979/)
+
+
 0.64.5 - 2021-05-28
 -------------------
 
