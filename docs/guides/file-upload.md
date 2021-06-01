@@ -4,7 +4,7 @@ title: File Upload
 
 # File Upload
 
-All Strawberry strawberry integrations support multipart uploads as described in the
+All Strawberry integrations support multipart uploads as described in the
 [GraphQL multipart request specification](https://github.com/jaydenseric/graphql-multipart-request-spec).
 This includes support for uploading single files as well as lists of files.
 
