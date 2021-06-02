@@ -54,6 +54,35 @@ async def test_file_list_upload(aiohttp_app_client):
     assert data["data"]["readFiles"][1] == "strawberry2"
 
 
+async def test_nested_file_list(aiohttp_app_client):
+    query = "mutation($folder: FolderInput!) { readFolder(folder: $folder) }"
+    operations = json.dumps(
+        {"query": query, "variables": {"folder": {"files": [None, None]}}}
+    )
+    file_map = json.dumps(
+        {"file1": ["variables.folder.files.0"], "file2": ["variables.folder.files.1"]}
+    )
+
+    file1 = BytesIO(b"strawberry1")
+    file2 = BytesIO(b"strawberry2")
+
+    form_data = aiohttp.FormData()
+    form_data.add_field("file1", file1, filename="file1.txt")
+    form_data.add_field("file2", file2, filename="file2.txt")
+    form_data.add_field("operations", operations)
+    form_data.add_field("map", file_map)
+
+    response = await aiohttp_app_client.post("/graphql", data=form_data)
+    assert response.status == 200
+
+    data = await response.json()
+
+    assert not data.get("errors")
+    assert len(data["data"]["readFolder"]) == 2
+    assert data["data"]["readFolder"][0] == "strawberry1"
+    assert data["data"]["readFolder"][1] == "strawberry2"
+
+
 async def test_extra_form_data_fields_are_ignored(aiohttp_app_client):
     query = """mutation($textFile: Upload!) {
         readText(textFile: $textFile)

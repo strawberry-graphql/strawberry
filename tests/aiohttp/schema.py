@@ -15,6 +15,11 @@ class Flavor(Enum):
     CHOCOLATE = "chocolate"
 
 
+@strawberry.input
+class FolderInput:
+    files: typing.List[Upload]
+
+
 @strawberry.type
 class Query:
     hello: str = "strawberry"
@@ -30,6 +35,13 @@ class Mutation:
     def read_files(self, files: typing.List[Upload]) -> typing.List[str]:
         contents = []
         for file in files:
+            contents.append(file.read().decode())
+        return contents
+
+    @strawberry.mutation
+    def read_folder(self, folder: FolderInput) -> typing.List[str]:
+        contents = []
+        for file in folder.files:
             contents.append(file.read().decode())
         return contents
 

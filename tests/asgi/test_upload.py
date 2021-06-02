@@ -10,6 +10,11 @@ import strawberry
 from strawberry.file_uploads import Upload
 
 
+@strawberry.input
+class FolderInput:
+    files: typing.List[Upload]
+
+
 @strawberry.type
 class Query:
     hello: str = "strawberry"
@@ -25,6 +30,14 @@ class Mutation:
     async def read_files(self, files: typing.List[Upload]) -> typing.List[str]:
         contents = []
         for file in files:
+            content = (await file.read()).decode()
+            contents.append(content)
+        return contents
+
+    @strawberry.mutation
+    async def read_folder(self, folder: FolderInput) -> typing.List[str]:
+        contents = []
+        for file in folder.files:
             content = (await file.read()).decode()
             contents.append(content)
         return contents
@@ -84,3 +97,33 @@ def test_file_list_upload(schema, test_client):
     assert len(data["data"]["readFiles"]) == 2
     assert data["data"]["readFiles"][0] == "strawberry1"
     assert data["data"]["readFiles"][1] == "strawberry2"
+
+
+def test_nested_file_list(schema, test_client):
+    query = "mutation($folder: FolderInput!) { readFolder(folder: $folder) }"
+    operations = json.dumps(
+        {"query": query, "variables": {"folder": {"files": [None, None]}}}
+    )
+    file_map = json.dumps(
+        {"file1": ["variables.folder.files.0"], "file2": ["variables.folder.files.1"]}
+    )
+
+    file1 = BytesIO(b"strawberry1")
+    file2 = BytesIO(b"strawberry2")
+
+    response = test_client.post(
+        "/graphql/",
+        data={
+            "operations": operations,
+            "map": file_map,
+        },
+        files={"file1": file1, "file2": file2},
+    )
+
+    assert response.status_code == status.HTTP_200_OK
+    data = response.json()
+
+    assert not data.get("errors")
+    assert len(data["data"]["readFolder"]) == 2
+    assert data["data"]["readFolder"][0] == "strawberry1"
+    assert data["data"]["readFolder"][1] == "strawberry2"
