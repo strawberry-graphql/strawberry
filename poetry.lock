@@ -157,9 +157,6 @@ category = "dev"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*, <4"
 
-[package.dependencies]
-toml = {version = "*", optional = true, markers = "extra == \"toml\""}
-
 [package.extras]
 toml = ["toml"]
 
@@ -752,18 +749,19 @@ histogram = ["pygal", "pygaljs"]
 
 [[package]]
 name = "pytest-cov"
-version = "2.12.0"
+version = "2.12.1"
 description = "Pytest plugin for measuring coverage."
 category = "dev"
 optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 
 [package.dependencies]
-coverage = {version = ">=5.2.1", extras = ["toml"]}
+coverage = ">=5.2.1"
 pytest = ">=4.6"
+toml = "*"
 
 [package.extras]
-testing = ["fields", "hunter", "process-tests (==2.0.2)", "six", "pytest-xdist", "virtualenv"]
+testing = ["fields", "hunter", "process-tests", "six", "pytest-xdist", "virtualenv"]
 
 [[package]]
 name = "pytest-django"
@@ -1600,8 +1598,8 @@ pytest-benchmark = [
     {file = "pytest_benchmark-3.4.1-py2.py3-none-any.whl", hash = "sha256:36d2b08c4882f6f997fd3126a3d6dfd70f3249cde178ed8bbc0b73db7c20f809"},
 ]
 pytest-cov = [
-    {file = "pytest-cov-2.12.0.tar.gz", hash = "sha256:8535764137fecce504a49c2b742288e3d34bc09eed298ad65963616cc98fd45e"},
-    {file = "pytest_cov-2.12.0-py2.py3-none-any.whl", hash = "sha256:95d4933dcbbacfa377bb60b29801daa30d90c33981ab2a79e9ab4452c165066e"},
+    {file = "pytest-cov-2.12.1.tar.gz", hash = "sha256:261ceeb8c227b726249b376b8526b600f38667ee314f910353fa318caa01f4d7"},
+    {file = "pytest_cov-2.12.1-py2.py3-none-any.whl", hash = "sha256:261bb9e47e65bd099c89c3edf92972865210c36813f80ede5277dceb77a4a62a"},
 ]
 pytest-django = [
     {file = "pytest-django-4.3.0.tar.gz", hash = "sha256:d1c6758a592fb0ef8abaa2fe12dd28858c1dcfc3d466102ffe52aa8934733dca"},
