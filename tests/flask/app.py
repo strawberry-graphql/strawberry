@@ -7,6 +7,10 @@ from strawberry.flask.views import GraphQLView as BaseGraphQLView
 
 
 def create_app(**kwargs):
+    @strawberry.input
+    class FolderInput:
+        files: typing.List[Upload]
+
     @strawberry.type
     class Query:
         hello: str = "strawberry"
@@ -21,6 +25,13 @@ def create_app(**kwargs):
         def read_files(self, files: typing.List[Upload]) -> typing.List[str]:
             contents = []
             for file in files:
+                contents.append(file.read().decode())
+            return contents
+
+        @strawberry.mutation
+        def read_folder(self, folder: FolderInput) -> typing.List[str]:
+            contents = []
+            for file in folder.files:
                 contents.append(file.read().decode())
             return contents
 

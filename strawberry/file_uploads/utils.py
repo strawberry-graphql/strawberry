@@ -18,7 +18,10 @@ def replace_placeholders_with_files(
 
             target_object = operations
             for key in operations_path_keys:
-                target_object = target_object[key]
+                if isinstance(target_object, list):
+                    target_object = target_object[int(key)]
+                else:
+                    target_object = target_object[key]
 
             if isinstance(target_object, list):
                 target_object[int(value_key)] = file_object

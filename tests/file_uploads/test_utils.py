@@ -115,3 +115,19 @@ def test_using_single_file_multiple_times_in_same_list():
     assert result["query"] == operations["query"]
     assert result["variables"]["files"][0] == file0
     assert result["variables"]["files"][1] == file0
+
+
+def test_deep_nesting():
+    operations = {
+        "query": "mutation($list: [ComplexInput!]!) { mutate(list: $list) { id } }",
+        "variables": {"a": [{"files": [None, None]}]},
+    }
+    files_map = {"0": ["variables.a.0.files.0"], "1": ["variables.a.0.files.1"]}
+    file0 = BytesIO()
+    file1 = BytesIO()
+    files = {"0": file0, "1": file1}
+
+    result = replace_placeholders_with_files(operations, files_map, files)
+    assert result["query"] == operations["query"]
+    assert result["variables"]["a"][0]["files"][0] == file0
+    assert result["variables"]["a"][0]["files"][1] == file1
