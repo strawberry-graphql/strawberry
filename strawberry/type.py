@@ -37,14 +37,14 @@ class StrawberryContainer(StrawberryType):
     def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
     ) -> StrawberryType:
-        # TODO: Only make copy if of_type is generic
-
         # TODO: Obsolete with StrawberryObject
         type_ = self.of_type
         if hasattr(self.of_type, "_type_definition"):
             type_ = self.of_type._type_definition
 
-        of_type_copy = type_.copy_with(type_var_map)
+        of_type_copy = type_
+        if isinstance(type_, StrawberryType) and type_.is_generic:
+            of_type_copy = type_.copy_with(type_var_map)
 
         return type(self)(of_type_copy)
 
