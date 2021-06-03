@@ -5,7 +5,8 @@ on:
     types: [pre-release-command]
 
 jobs:
-  test:
+  pre-release:
+    name: Pre-release
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -24,9 +25,7 @@ jobs:
           pip install httpx
       - name: Check if release exists
         id: check_release
-        run: |
-          set +e
-          echo ::set-output name=release::$(autopub check)
+        run: echo "::set-output name=release::$(autopub check)"
       - name: Metadata
         id: metadata
         if: steps.check_release.outputs.release == ''
@@ -50,6 +49,7 @@ jobs:
           body: |
             # Pre-release
             :wave:
+
             Releasing commit [${{ steps.metadata.outputs.commit }}] to PyPi as pre-release! :package:
           edit-mode: replace
       - name: Publish pre-release version
@@ -57,11 +57,12 @@ jobs:
         id: release
         env:
           GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
+          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
         run: |
           autopub prepare
           poetry version $(poetry version -s)-dev.$(date '+%s')
           poetry build
-          poetry publish --username __token__ --password ${{ secrets.PYPI_TOKEN }}
+          poetry publish --username __token__
           echo "::set-output name=version::$(poetry version -s)"
       - name: Create or update comment
         uses: peter-evans/create-or-update-comment@v1
