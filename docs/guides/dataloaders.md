@@ -85,7 +85,7 @@ async def load_users(keys) -> List[User]:
     return [User(id=key) for key in keys]
 
 
-loader = DataLoader(load_fn=load_user)
+loader = DataLoader(load_fn=load_users)
 
 @strawberry.type
 class Query:
@@ -160,7 +160,7 @@ async def load_users(keys) -> List[User]:
 class MyGraphQL(GraphQL):
     async def get_context(self, request: Union[Request, WebSocket]) -> Any:
         return {
-            "user_loader": DataLoader(load_fn=load_user)
+            "user_loader": DataLoader(load_fn=load_users)
         }
 
 
