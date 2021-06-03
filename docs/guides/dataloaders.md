@@ -75,6 +75,8 @@ Will result in only one call to `load_users`.
 Let's see an example of how you can use DataLoaders with GraphQL:
 
 ```python
+from typing import List
+
 import strawberry
 
 @strawberry.type
@@ -139,6 +141,8 @@ context so that it only caches results with a single request. Let's see an
 example of this using our ASGI view:
 
 ```python
+from typing import List, Union, Any
+
 import strawberry
 from strawberry.types import Info
 from strawberry.asgi import GraphQL
