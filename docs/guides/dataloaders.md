@@ -75,6 +75,8 @@ Will result in only one call to `load_users`.
 Let's see an example of how you can use DataLoaders with GraphQL:
 
 ```python
+from typing import List
+
 import strawberry
 
 @strawberry.type
@@ -85,7 +87,7 @@ async def load_users(keys) -> List[User]:
     return [User(id=key) for key in keys]
 
 
-loader = DataLoader(load_fn=load_user)
+loader = DataLoader(load_fn=load_users)
 
 @strawberry.type
 class Query:
@@ -139,6 +141,8 @@ context so that it only caches results with a single request. Let's see an
 example of this using our ASGI view:
 
 ```python
+from typing import List, Union, Any
+
 import strawberry
 from strawberry.types import Info
 from strawberry.asgi import GraphQL
@@ -160,7 +164,7 @@ async def load_users(keys) -> List[User]:
 class MyGraphQL(GraphQL):
     async def get_context(self, request: Union[Request, WebSocket]) -> Any:
         return {
-            "user_loader": DataLoader(load_fn=load_user)
+            "user_loader": DataLoader(load_fn=load_users)
         }
 
 
