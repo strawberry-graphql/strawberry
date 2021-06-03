@@ -18,7 +18,7 @@ from typing import (
 
 from graphql import GraphQLResolveInfo
 
-from strawberry.annotation import StrawberryAnnotation, _is_object_type
+from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import UNSET, convert_arguments
 from strawberry.type import StrawberryList, StrawberryType
 from strawberry.types.info import Info
@@ -213,16 +213,11 @@ class StrawberryField(dataclasses.Field):
     ) -> "StrawberryField":
         # TODO: Remove with creation of StrawberryObject. Will act same as other
         #       StrawberryTypes
-        if _is_object_type(self.type):
-            type_definition = self.type._type_definition.copy_with(type_var_map)
+        type_ = self.type
+        if hasattr(self.type, "_type_definition"):
+            type_ = self.type._type_definition
 
-            new_type = type(
-                type_definition.name,
-                (),
-                {"_type_definition": type_definition},
-            )
-        else:
-            new_type = self.type.copy_with(type_var_map)
+        new_type = type_.copy_with(type_var_map)
 
         if self.base_resolver is not None:
             new_resolver = self.base_resolver.copy_with(type_var_map)

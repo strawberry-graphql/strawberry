@@ -30,23 +30,20 @@ class TypeDefinition(StrawberryType):
     _fields: List["StrawberryField"]
     _type_params: Dict[str, Type] = dataclasses.field(default_factory=dict, init=False)
 
-    # TODO: remove wrapped cls when we "merge" this with `StrawberryObjectType`
+    # TODO: remove wrapped cls when we "merge" this with `StrawberryObject`
     def resolve_generic(self, wrapped_cls: type) -> type:
         passed_types = wrapped_cls.__args__
         params = wrapped_cls.__origin__.__parameters__
 
         type_var_map = dict(zip(params, passed_types))
-        type_definition = self.copy_with(type_var_map)
+        new_type = self.copy_with(type_var_map)
 
-        return type(
-            type_definition.name,
-            (),
-            {"_type_definition": type_definition},
-        )
+        return new_type
 
+    # TODO: Return a StrawberryObject
     def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
-    ) -> "TypeDefinition":
+    ) -> Type:
         name = self.get_name_from_types(type_var_map.values())
 
         fields = []
@@ -64,7 +61,7 @@ class TypeDefinition(StrawberryType):
 
             fields.append(field)
 
-        return TypeDefinition(
+        type_definition = TypeDefinition(
             name=name,
             is_input=self.is_input,
             origin=self.origin,
@@ -74,6 +71,14 @@ class TypeDefinition(StrawberryType):
             description=self.description,
             _fields=fields,
         )
+
+        new_type = type(
+            type_definition.name,
+            (),
+            {"_type_definition": type_definition},
+        )
+
+        return new_type
 
     def get_field(self, name: str) -> Optional["StrawberryField"]:
         return next(
@@ -103,13 +108,30 @@ class TypeDefinition(StrawberryType):
         return self._fields
 
     @property
-    def type_params(self) -> Dict[str, Type]:
-        if not self._type_params:
-            from .type_resolver import _get_type_params
+    def is_generic(self) -> bool:
+        for field in self.fields:
+            # TODO: Obsolete with StrawberryObject
+            if hasattr(field.type, "_type_definition"):
+                type_ = field.type._type_definition
+            else:
+                type_ = field.type
 
-            self._type_params = _get_type_params(self.fields)
+            if isinstance(type_, StrawberryType):
+                if type_.is_generic:
+                    return True
+        return False
 
-        return self._type_params
+        # TODO: Consider making leaf types always StrawberryTypes, maybe a
+        #       StrawberryBaseType or something
+        # return any(field.type.is_generic for field in self.fields)
+
+    @property
+    def type_params(self) -> List[TypeVar]:
+        type_params: List[TypeVar] = []
+        for field in self.fields:
+            type_params.extend(field.type_params)
+
+        return type_params
 
 
 @dataclasses.dataclass

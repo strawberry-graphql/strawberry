@@ -4,8 +4,7 @@ import pytest
 
 import strawberry
 from strawberry.exceptions import MissingTypesForGenericError
-from strawberry.type import StrawberryList, StrawberryOptional
-from strawberry.types.generics import copy_type_with
+from strawberry.type import StrawberryList, StrawberryOptional, StrawberryTypeVar
 from strawberry.union import StrawberryUnion
 
 
@@ -20,20 +19,19 @@ def test_basic_generic():
     definition = Edge._type_definition
     assert definition.name == "Edge"
     assert definition.is_generic
-    assert definition.type_params == {"node_field": T}
+    assert definition.type_params == [T]
 
     [field] = definition.fields
     assert field.graphql_name == "nodeField"
-    assert field.type is T
+    assert isinstance(field.type, StrawberryTypeVar)
+    assert field.type.type_var is T
 
     # let's make a copy of this generic type
+    definition_copy = Edge._type_definition.copy_with({T: str})
 
-    Copy = copy_type_with(Edge, str)
-
-    definition_copy = Copy._type_definition
     assert definition_copy.name == "StrEdge"
     assert not definition_copy.is_generic
-    assert definition_copy.type_params == {}
+    assert definition_copy.type_params == []
 
     [field_copy] = definition_copy.fields
     assert field_copy.graphql_name == "nodeField"
@@ -52,19 +50,18 @@ def test_generics_nested():
     definition = Connection._type_definition
     assert definition.name == "Connection"
     assert definition.is_generic
-    assert definition.type_params == {"edge": T}
+    assert definition.type_params == [T]
 
     [field] = definition.fields
     assert field.graphql_name == "edge"
-    assert field.type._type_definition.type_params == {"node": T}
+    assert field.type._type_definition.type_params == [T]
 
     # let's make a copy of this generic type
-    Copy = copy_type_with(Connection, str)
+    definition_copy = Connection._type_definition.copy_with({T: str})
 
-    definition_copy = Copy._type_definition
     assert definition_copy.name == "StrConnection"
     assert not definition_copy.is_generic
-    assert definition_copy.type_params == {}
+    assert definition_copy.type_params == []
 
     [field_copy] = definition_copy.fields
     assert field_copy.graphql_name == "edge"
@@ -80,12 +77,11 @@ def test_generics_name():
     class Connection(Generic[T]):
         edge: T
 
-    Copy = copy_type_with(Connection, EdgeName)
+    definition_copy = Connection._type_definition.copy_with({T: EdgeName})
 
-    definition_copy = Copy._type_definition
     assert definition_copy.name == "AnotherNameConnection"
     assert not definition_copy.is_generic
-    assert definition_copy.type_params == {}
+    assert definition_copy.type_params == []
 
     [field_copy] = definition_copy.fields
     assert field_copy.graphql_name == "edge"
@@ -104,21 +100,19 @@ def test_generics_nested_in_list():
     definition = Connection._type_definition
     assert definition.name == "Connection"
     assert definition.is_generic
-    assert definition.type_params == {"edges": T}
+    assert definition.type_params == [T]
 
     [field] = definition.fields
     assert field.graphql_name == "edges"
     assert isinstance(field.type, StrawberryList)
-    assert field.type.of_type._type_definition.type_params == {"node": T}
+    assert field.type.of_type._type_definition.type_params == [T]
 
     # let's make a copy of this generic type
+    definition_copy = Connection._type_definition.copy_with({T: str})
 
-    Copy = copy_type_with(Connection, str)
-
-    definition_copy = Copy._type_definition
     assert definition_copy.name == "StrConnection"
     assert not definition_copy.is_generic
-    assert definition_copy.type_params == {}
+    assert definition_copy.type_params == []
 
     [field_copy] = definition_copy.fields
     assert field_copy.graphql_name == "edges"
@@ -134,21 +128,20 @@ def test_generic_with_optional():
     definition = Edge._type_definition
     assert definition.name == "Edge"
     assert definition.is_generic
-    assert definition.type_params == {"node": T}
+    assert definition.type_params == [T]
 
     [field] = definition.fields
     assert field.graphql_name == "node"
     assert isinstance(field.type, StrawberryOptional)
-    assert field.type.of_type is T
+    assert isinstance(field.type.of_type, StrawberryTypeVar)
+    assert field.type.of_type.type_var is T
 
     # let's make a copy of this generic type
+    definition_copy = Edge._type_definition.copy_with({T: str})
 
-    Copy = copy_type_with(Edge, str)
-
-    definition_copy = Copy._type_definition
     assert definition_copy.name == "StrEdge"
     assert not definition_copy.is_generic
-    assert definition_copy.type_params == {}
+    assert definition_copy.type_params == []
 
     [field_copy] = definition_copy.fields
     assert field_copy.graphql_name == "node"
@@ -164,21 +157,20 @@ def test_generic_with_list():
     definition = Connection._type_definition
     assert definition.name == "Connection"
     assert definition.is_generic
-    assert definition.type_params == {"edges": T}
+    assert definition.type_params == [T]
 
     [field] = definition.fields
     assert field.graphql_name == "edges"
     assert isinstance(field.type, StrawberryList)
-    assert field.type.of_type is T
+    assert isinstance(field.type.of_type, StrawberryTypeVar)
+    assert field.type.of_type.type_var is T
 
     # let's make a copy of this generic type
+    definition_copy = Connection._type_definition.copy_with({T: str})
 
-    Copy = copy_type_with(Connection, str)
-
-    definition_copy = Copy._type_definition
     assert definition_copy.name == "StrConnection"
     assert not definition_copy.is_generic
-    assert definition_copy.type_params == {}
+    assert definition_copy.type_params == [T]
 
     [field_copy] = definition_copy
     assert field_copy.graphql_name == "edges"
@@ -194,21 +186,21 @@ def test_generic_with_list_of_optionals():
     definition = Connection._type_definition
     assert definition.name == "Connection"
     assert definition.is_generic
-    assert definition.type_params == {"edges": T}
+    assert definition.type_params == [T]
 
     [field] = definition.fields
     assert field.graphql_name == "edges"
     assert isinstance(field.type, StrawberryList)
     assert isinstance(field.type.of_type, StrawberryOptional)
-    assert field.type.of_type.of_type is T
+    assert isinstance(field.type.of_type.of_type, StrawberryTypeVar)
+    assert field.type.of_type.of_type.type_var is T
 
     # let's make a copy of this generic type
-    Copy = copy_type_with(Connection, str)
+    definition_copy = Connection._type_definition.copy_with({T: str})
 
-    definition_copy = Copy._type_definition
     assert definition_copy.name == "StrConnection"
     assert not definition_copy.is_generic
-    assert definition_copy.type_params == {}
+    assert definition_copy.type_params == []
 
     [field_copy] = definition_copy.fields
     assert field_copy.graphql_name == "edges"
@@ -228,7 +220,7 @@ def test_generics_with_unions():
 
     definition = Edge._type_definition
     assert definition.name == "Edge"
-    assert definition.type_params == {"node": T}
+    assert definition.type_params == [T]
 
     [field] = definition.fields
     assert field.graphql_name == "node"
@@ -240,12 +232,11 @@ def test_generics_with_unions():
     class Node:
         name: str
 
-    Copy = copy_type_with(Edge, Node)
+    definition_copy = Edge._type_definition.copy_with({T: Node})
 
-    definition_copy = Copy._type_definition
     assert definition_copy.name == "NodeEdge"
     assert not definition_copy.is_generic
-    assert definition_copy.type_params == {}
+    assert definition_copy.type_params == []
 
     [field_copy] = definition_copy.fields
     assert field_copy.graphql_name == "node"
@@ -301,7 +292,7 @@ def test_using_generics_nested():
 
     connection_definition = Connection._type_definition
     assert connection_definition.is_generic
-    assert connection_definition.type_params == {"edges": T}
+    assert connection_definition.type_params == [T]
 
     query_definition = Query._type_definitio
     assert query_definition.name == "Query"
@@ -382,7 +373,7 @@ def test_generics_inside_optional():
 
     query_definition = Query._type_definition
     assert query_definition.name == "Query"
-    assert query_definition.type_params == {}
+    assert query_definition.type_params == []
 
     [field] = query_definition.fields
     assert field.graphql_name == "user"
@@ -408,7 +399,7 @@ def test_generics_inside_list():
 
     query_definition = Query._type_definition
     assert query_definition.name == "Query"
-    assert query_definition.type_params == {}
+    assert query_definition.type_params == []
 
     [field] = query_definition.fields
     assert field.graphql_name == "user"
@@ -434,7 +425,7 @@ def test_generics_inside_unions():
 
     query_definition = Query._type_definition
     assert query_definition.name == "Query"
-    assert query_definition.type_params == {}
+    assert query_definition.type_params == []
 
     [field] = query_definition.fields
     assert field.graphql_name == "user"
@@ -458,7 +449,7 @@ def test_multiple_generics_inside_unions():
 
     query_definition = Query._type_definition
     assert query_definition.name == "Query"
-    assert query_definition.type_params == {}
+    assert query_definition.type_params == []
 
     [user_field] = query_definition.fields
     assert user_field.graphql_name == "user"
@@ -500,7 +491,7 @@ def test_union_inside_generics():
 
     query_definition = Query._type_definition
     assert query_definition.name == "Query"
-    assert query_definition.type_params == {}
+    assert query_definition.type_params == []
 
     [connection_field] = query_definition.fields
     assert connection_field.graphql_name == "connection"
@@ -537,7 +528,7 @@ def test_anonymous_union_inside_generics():
 
     definition = Query._type_definition
     assert definition.name == "Query"
-    assert definition.type_params == {}
+    assert definition.type_params == []
 
     [connection_field] = definition.fields
     assert connection_field.graphql_name == "connection"
@@ -628,12 +619,11 @@ def test_federation():
 
     definition = Edge._type_definition
 
-    EdgeCopy = copy_type_with(Edge, str)
+    definition_copy = Edge._type_definition.copy_with({T: str})
 
-    definition_copy = EdgeCopy._type_definition
     assert definition_copy.name == "StrEdge"
     assert not definition_copy.is_generic
-    assert definition_copy.type_params == {}
+    assert definition_copy.type_params == []
     assert definition_copy.federation.keys == ["id"]
     assert not definition_copy.federation.extend
 

@@ -29,6 +29,10 @@ class EnumDefinition(StrawberryType):
     ) -> StrawberryType:
         return super().copy_with(type_var_map)
 
+    @property
+    def is_generic(self) -> bool:
+        return False
+
 
 def _process_enum(
     cls: EnumMeta, name: Optional[str] = None, description: Optional[str] = None

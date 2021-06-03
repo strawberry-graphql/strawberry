@@ -59,11 +59,7 @@ def copy_type_with(
         definition = cast(TypeDefinition, base._type_definition)
 
         if definition.type_params:
-            fields = []
-
-            type_params = definition.type_params.values()
-
-            for param, type_ in zip(type_params, types):
+            for param, type_ in zip(definition.type_params, types):
                 if is_union(type_):
                     params_to_type[param] = copy_union_with(
                         type_.__args__, params_to_type=params_to_type
@@ -73,6 +69,7 @@ def copy_type_with(
 
             name = get_name_from_types(params_to_type.values()) + definition.name
 
+            fields = []
             for field in definition.fields:
 
                 # Copy federation information

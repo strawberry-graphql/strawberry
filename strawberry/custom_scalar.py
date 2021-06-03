@@ -24,6 +24,10 @@ class ScalarDefinition(StrawberryType):
     ) -> StrawberryType:
         return super().copy_with(type_var_map)
 
+    @property
+    def is_generic(self) -> bool:
+        return False
+
 
 SCALAR_REGISTRY: Dict[Type, ScalarDefinition] = {}
 

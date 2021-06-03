@@ -15,10 +15,10 @@ class StrawberryType(ABC):
     ) -> StrawberryType:
         raise NotImplementedError()
 
-    # TODO: make this abstract
     @property
+    @abstractmethod
     def is_generic(self) -> bool:
-        return False
+        raise NotImplementedError()
 
 
 class StrawberryContainer(StrawberryType):
@@ -45,8 +45,15 @@ class StrawberryContainer(StrawberryType):
 
     @property
     def is_generic(self) -> bool:
-        if isinstance(self.of_type, StrawberryType):
-            return self.of_type.is_generic
+        # TODO: Obsolete with StrawberryObject
+        if hasattr(self.of_type, "_type_definition"):
+            type_ = self.of_type._type_definition
+        else:
+            type_ = self.of_type
+
+        if isinstance(type_, StrawberryType):
+            return type_.is_generic
+
         return False
 
 
