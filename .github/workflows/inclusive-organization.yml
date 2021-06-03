@@ -18,4 +18,4 @@ jobs:
             Also, feel free to request a sticker by filling this form 👉
             https://forms.gle/dmnfQUPoY5gZbVT67
         env:
-          ACCESS_TOKEN: ${{ secrets.BOT_TOKEN }}
+          ACCESS_TOKEN: ${{ secrets.INCLUSIVE_ORGANIZATION_TOKEN }}
