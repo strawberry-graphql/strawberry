@@ -173,7 +173,11 @@ class StrawberryField(dataclasses.Field):
 
             return list(parameters) if parameters else []
 
-        return self.type.type_params
+        # TODO: Consider making leaf types always StrawberryTypes, maybe a
+        #       StrawberryBaseType or something
+        if isinstance(self.type, StrawberryType):
+            return self.type.type_params
+        return []
 
     def _get_arguments(
         self,
@@ -213,9 +217,9 @@ class StrawberryField(dataclasses.Field):
             type_definition = self.type._type_definition.copy_with(type_var_map)
 
             new_type = type(
-                name=type_definition.name,
-                bases=(),
-                dict={"_type_definition": type_definition},
+                type_definition.name,
+                (),
+                {"_type_definition": type_definition},
             )
         else:
             new_type = self.type.copy_with(type_var_map)
