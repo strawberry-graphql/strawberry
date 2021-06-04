@@ -25,10 +25,12 @@ class Query:
     user: str = strawberry.field(permission_classes=[IsAuthenticated])
 ```
 
-If the `has_permission` method returns `False` or a falsy value then an error
-will be raised using the `message` class attribute. See
-[Dealing with Errors](/docs/guides/errors) for more information on how errors
-are handled.
+Your `has_permission` method should do the work to check if this request
+has permission to the field. If the `has_permission` method returns `True` or
+a truthy value then the field access will go ahead. If the `has_permission`
+method returns `False` or a falsy value then an error will be raised using
+the `message` class attribute. See [Dealing with Errors](/docs/guides/errors)
+for more information on how errors are handled.
 
 ```json
 {
@@ -40,6 +42,7 @@ are handled.
   ]
 }
 ```
+
 
 ## Accessing user information
 
