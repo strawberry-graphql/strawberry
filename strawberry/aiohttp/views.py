@@ -132,7 +132,7 @@ class WebSocketHandler(BaseGraphQLView, ABC):
         operation_id = message["id"]
         payload: dict = message["payload"]
         query = payload["query"]
-        operation_name = payload.get("operation_name")
+        operation_name = payload.get("operationName")
         variables = payload.get("variables")
         context = await self.get_context(request, ws)
         root_value = await self.get_root_value(request)

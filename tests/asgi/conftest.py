@@ -48,6 +48,13 @@ class Subscription:
 
         yield "Hi"
 
+    @strawberry.subscription
+    async def echo(
+        self, message: str, delay: float = 0
+    ) -> typing.AsyncGenerator[str, None]:
+        await asyncio.sleep(delay)
+        yield message
+
 
 class GraphQL(BaseGraphQL):
     async def get_root_value(self, request):

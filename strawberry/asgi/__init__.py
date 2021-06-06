@@ -159,7 +159,7 @@ class GraphQL:
     async def start_subscription(self, data, operation_id: str, websocket: WebSocket):
         query = data["query"]
         variables = data.get("variables")
-        operation_name = data.get("operation_name")
+        operation_name = data.get("operationName")
 
         if self.debug:
             pretty_print_graphql_operation(operation_name, query, variables)
