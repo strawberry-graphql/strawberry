@@ -1,6 +1,27 @@
 CHANGELOG
 =========
 
+0.65.2 - 2021-06-06
+-------------------
+
+This release fixes a bug in the subscription implementations that prevented clients
+from selecting one of multiple subscription operations from a query. Client sent
+messages like the following one are now handled as expected.
+
+```json
+{
+  "type": "GQL_START",
+  "id": "DEMO",
+  "payload": {
+    "query": "subscription Sub1 { sub1 } subscription Sub2 { sub2 }",
+    "operationName": "Sub2"
+  }
+}
+```
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) [PR #1000](https://github.com/strawberry-graphql/strawberry/pull/1000/)
+
+
 0.65.1 - 2021-06-02
 -------------------
 
