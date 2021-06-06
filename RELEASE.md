@@ -1,4 +1,4 @@
-Release type: minor
+Release type: patch
 
 This release fixes a bug in the subscription implementations that prevented clients
 from selecting one of multiple subscription operations from a query. Client sent
