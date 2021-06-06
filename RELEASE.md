@@ -1,8 +1,8 @@
 Release type: minor
 
-This release fixes that the subscription implementations did not respect when clients
-specified a GraphQL subscription operation name when starting a subscription. Now client
-sent messages like the following are handled as expected.
+This release fixes a bug in the subscription implementations that prevented clients
+from selecting one of multiple subscription operations from a query. Client sent
+messages like the following one are now handled as expected.
 
 ```json
 {
