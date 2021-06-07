@@ -78,7 +78,7 @@ class WebSocketHandler(BaseGraphQLApp, ABC):
 
         ws.state.subscriptions = {}
         ws.state.tasks = {}
-        ws.keep_alive_task = None
+        ws.state.keep_alive_task = None
 
         try:
             while ws.application_state != WebSocketState.DISCONNECTED:
@@ -92,7 +92,7 @@ class WebSocketHandler(BaseGraphQLApp, ABC):
         except WebSocketDisconnect:  # pragma: no cover
             pass
         finally:
-            if hasattr(ws.state, "keep_alive_task"):
+            if ws.state.keep_alive_task:
                 ws.state.keep_alive_task.cancel()
                 with suppress(Exception):
                     await ws.state.keep_alive_task
