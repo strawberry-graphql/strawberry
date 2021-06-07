@@ -78,7 +78,7 @@ class WebSocketHandler(BaseGraphQLView, ABC):
         request["keep_alive_task"] = None
 
         try:
-            async for ws_message in ws:  # type: http.WSMsgType
+            async for ws_message in ws:  # type: http.WSMessage
                 if ws_message.type == http.WSMsgType.TEXT:
                     message: dict = ws_message.json()
                     await self.handle_ws_message(request, ws, message)
