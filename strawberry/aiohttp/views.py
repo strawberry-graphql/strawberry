@@ -85,7 +85,7 @@ class WebSocketHandler(BaseGraphQLView, ABC):
         finally:
             if request["keep_alive_task"]:
                 request["keep_alive_task"].cancel()
-                with suppress(Exception):
+                with suppress(BaseException):
                     await request["keep_alive_task"]
 
             for operation_id in list(request["subscriptions"].keys()):
@@ -204,7 +204,7 @@ class WebSocketHandler(BaseGraphQLView, ABC):
         del request["subscriptions"][operation_id]
 
         request["tasks"][operation_id].cancel()
-        with suppress(Exception):
+        with suppress(BaseException):
             await request["tasks"][operation_id]
         del request["tasks"][operation_id]
 
