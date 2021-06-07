@@ -21,6 +21,11 @@ class FolderInput:
 
 
 @strawberry.type
+class DebugInfo:
+    num_active_result_handlers: int
+
+
+@strawberry.type
 class Query:
     hello: str = "strawberry"
 
@@ -81,6 +86,14 @@ class Subscription:
         yield Flavor.VANILLA
         yield Flavor.STRAWBERRY
         yield Flavor.CHOCOLATE
+
+    @strawberry.subscription
+    async def debug(self, info) -> typing.AsyncGenerator[DebugInfo, None]:
+        request = info.context["request"]
+        active_result_handlers = [
+            task for task in request["tasks"].values() if not task.done()
+        ]
+        yield DebugInfo(num_active_result_handlers=len(active_result_handlers))
 
 
 schema = strawberry.Schema(query=Query, mutation=Mutation, subscription=Subscription)
