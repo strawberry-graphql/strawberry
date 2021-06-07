@@ -119,6 +119,10 @@ def test_sends_keep_alive(test_client_keep_alive):
 
         ws.send_json({"type": GQL_CONNECTION_TERMINATE})
 
+        # make sure the websocket is disconnected now
+        with pytest.raises(WebSocketDisconnect):
+            ws.receive_json()
+
 
 def test_subscription_cancellation(schema, test_client):
     with test_client.websocket_connect("/", GRAPHQL_WS) as ws:
