@@ -222,7 +222,7 @@ class WebSocketHandler(BaseGraphQLView, ABC):
         await ws.send_json(data)
 
     @classmethod
-    def is_web_socket_request(cls, request: web.Request) -> bool:
+    def is_websocket_request(cls, request: web.Request) -> bool:
         ws = web.WebSocketResponse(protocols=[GRAPHQL_WS])
         return ws.can_prepare(request).ok
 
@@ -316,7 +316,7 @@ class HTTPHandler(BaseGraphQLView, ABC):
 
 class GraphQLView(HTTPHandler, WebSocketHandler, BaseGraphQLView):
     async def __call__(self, request: web.Request) -> web.StreamResponse:
-        if self.is_web_socket_request(request):
+        if self.is_websocket_request(request):
             return await self.handle_websocket(request)
         else:
             return await self.handle_http(request)
