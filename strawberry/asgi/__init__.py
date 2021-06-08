@@ -2,7 +2,7 @@ import asyncio
 import json
 from abc import ABC, abstractmethod
 from contextlib import suppress
-from typing import Any, AsyncGenerator, Callable, Dict, Optional, Union
+from typing import Any, AsyncGenerator, Callable, Optional, Union
 
 from starlette import status
 from starlette.requests import Request
@@ -29,6 +29,11 @@ from strawberry.subscriptions.constants import (
     GQL_START,
     GQL_STOP,
     GRAPHQL_WS,
+)
+from strawberry.subscriptions.types import (
+    OperationMessage,
+    OperationMessagePayload,
+    StartPayload,
 )
 from strawberry.types import ExecutionResult
 from strawberry.utils.debug import pretty_print_graphql_operation
@@ -83,7 +88,7 @@ class WebSocketHandler(BaseGraphQLApp, ABC):
         try:
             while ws.application_state != WebSocketState.DISCONNECTED:
                 try:
-                    message = await ws.receive_json()
+                    message: OperationMessage = await ws.receive_json()
                 except KeyError:
                     # Ignore non-text/json for consistency with the aiohttp impl. and
                     # to make this impl. more robust.
@@ -100,7 +105,7 @@ class WebSocketHandler(BaseGraphQLApp, ABC):
             for operation_id in list(ws.state.subscriptions.keys()):
                 await self.cleanup_operation(ws, operation_id)
 
-    async def handle_ws_message(self, ws: WebSocket, message: dict) -> None:
+    async def handle_ws_message(self, ws: WebSocket, message: OperationMessage) -> None:
         message_type = message.get("type")
 
         if message_type == GQL_CONNECTION_INIT:
@@ -121,12 +126,12 @@ class WebSocketHandler(BaseGraphQLApp, ABC):
     async def handle_connection_terminate(self, ws: WebSocket) -> None:
         await ws.close()
 
-    async def handle_start(self, ws: WebSocket, message: dict) -> None:
-        operation_id: str = message["id"]
-        payload: dict = message["payload"]
-        query: str = payload["query"]
-        operation_name: Optional[str] = payload.get("operationName")
-        variables: Optional[dict] = payload.get("variables")
+    async def handle_start(self, ws: WebSocket, message: OperationMessage) -> None:
+        operation_id = message["id"]
+        payload: StartPayload = message["payload"]  # type: ignore
+        query = payload["query"]
+        operation_name = payload.get("operationName")
+        variables = payload.get("variables")
         context = await self.get_context(ws)
         root_value = await self.get_root_value(ws)
 
@@ -142,14 +147,14 @@ class WebSocketHandler(BaseGraphQLApp, ABC):
                 root_value=root_value,
             )
         except GraphQLError as error:
-            payload = format_graphql_error(error)
-            await self.send_message(ws, GQL_ERROR, operation_id, payload)
+            error_payload = format_graphql_error(error)
+            await self.send_message(ws, GQL_ERROR, operation_id, error_payload)
             return
 
         if isinstance(result_source, GraphQLExecutionResult):
             assert result_source.errors
-            payload = format_graphql_error(result_source.errors[0])
-            await self.send_message(ws, GQL_ERROR, operation_id, payload)
+            error_payload = format_graphql_error(result_source.errors[0])
+            await self.send_message(ws, GQL_ERROR, operation_id, error_payload)
             return
 
         ws.state.subscriptions[operation_id] = result_source
@@ -157,7 +162,7 @@ class WebSocketHandler(BaseGraphQLApp, ABC):
             self.handle_async_results(result_source, operation_id, ws)
         )
 
-    async def handle_stop(self, ws: WebSocket, message: dict) -> None:
+    async def handle_stop(self, ws: WebSocket, message: OperationMessage) -> None:
         operation_id = message["id"]
         await self.cleanup_operation(ws, operation_id)
 
@@ -209,9 +214,9 @@ class WebSocketHandler(BaseGraphQLApp, ABC):
         ws: WebSocket,
         type_: str,
         operation_id: str,
-        payload: Optional[dict] = None,
+        payload: Optional[OperationMessagePayload] = None,
     ) -> None:
-        data: Dict[str, Any] = {"type": type_, "id": operation_id}
+        data: OperationMessage = {"type": type_, "id": operation_id}
         if payload:
             data["payload"] = payload
         await ws.send_json(data)

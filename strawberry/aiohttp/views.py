@@ -31,6 +31,11 @@ from strawberry.subscriptions.constants import (
     GQL_STOP,
     GRAPHQL_WS,
 )
+from strawberry.subscriptions.types import (
+    OperationMessage,
+    OperationMessagePayload,
+    StartPayload,
+)
 from strawberry.types import ExecutionResult
 from strawberry.utils.debug import pretty_print_graphql_operation
 
@@ -80,7 +85,7 @@ class WebSocketHandler(BaseGraphQLView, ABC):
         try:
             async for ws_message in ws:  # type: http.WSMessage
                 if ws_message.type == http.WSMsgType.TEXT:
-                    message: dict = ws_message.json()
+                    message: OperationMessage = ws_message.json()
                     await self.handle_ws_message(request, ws, message)
         finally:
             if request["keep_alive_task"]:
@@ -97,9 +102,9 @@ class WebSocketHandler(BaseGraphQLView, ABC):
         self,
         request: web.Request,
         ws: web.WebSocketResponse,
-        message: dict,
+        message: OperationMessage,
     ) -> None:
-        message_type: str = message["type"]
+        message_type = message["type"]
 
         if message_type == GQL_CONNECTION_INIT:
             await self.handle_connection_init(request, ws)
@@ -122,13 +127,13 @@ class WebSocketHandler(BaseGraphQLView, ABC):
         await ws.close()
 
     async def handle_start(
-        self, request: web.Request, ws: web.WebSocketResponse, message: dict
+        self, request: web.Request, ws: web.WebSocketResponse, message: OperationMessage
     ) -> None:
-        operation_id: str = message["id"]
-        payload: dict = message["payload"]
-        query: str = payload["query"]
-        operation_name: Optional[str] = payload.get("operationName")
-        variables: Optional[dict] = payload.get("variables")
+        operation_id = message["id"]
+        payload: StartPayload = message["payload"]  # type: ignore
+        query = payload["query"]
+        operation_name = payload.get("operationName")
+        variables = payload.get("variables")
         context = await self.get_context(request, ws)
         root_value = await self.get_root_value(request)
 
@@ -144,14 +149,14 @@ class WebSocketHandler(BaseGraphQLView, ABC):
                 root_value=root_value,
             )
         except GraphQLError as error:
-            payload = format_graphql_error(error)
-            await self.send_message(ws, GQL_ERROR, operation_id, payload)
+            error_payload = format_graphql_error(error)
+            await self.send_message(ws, GQL_ERROR, operation_id, error_payload)
             return
 
         if isinstance(result_source, GraphQLExecutionResult):
             assert result_source.errors
-            payload = format_graphql_error(result_source.errors[0])
-            await self.send_message(ws, GQL_ERROR, operation_id, payload)
+            error_payload = format_graphql_error(result_source.errors[0])
+            await self.send_message(ws, GQL_ERROR, operation_id, error_payload)
             return
 
         request["subscriptions"][operation_id] = result_source
@@ -159,7 +164,9 @@ class WebSocketHandler(BaseGraphQLView, ABC):
             self.handle_async_results(result_source, operation_id, ws)
         )
 
-    async def handle_stop(self, request: web.Request, message: dict) -> None:
+    async def handle_stop(
+        self, request: web.Request, message: OperationMessage
+    ) -> None:
         operation_id = message["id"]
         await self.cleanup_operation(request, operation_id)
 
@@ -214,9 +221,9 @@ class WebSocketHandler(BaseGraphQLView, ABC):
         ws: web.WebSocketResponse,
         type_: str,
         operation_id: str,
-        payload: Optional[dict] = None,
+        payload: Optional[OperationMessagePayload] = None,
     ) -> None:
-        data: Dict[str, Any] = {"type": type_, "id": operation_id}
+        data: OperationMessage = {"type": type_, "id": operation_id}
         if payload is not None:
             data["payload"] = payload
         await ws.send_json(data)
