@@ -4,7 +4,7 @@ from abc import ABC, abstractmethod
 from contextlib import suppress
 from io import BytesIO
 from pathlib import Path
-from typing import Any, AsyncGenerator, Dict, Optional
+from typing import Any, AsyncGenerator, Dict, Optional, cast
 
 from graphql import ExecutionResult as GraphQLExecutionResult, GraphQLError
 from graphql.error import format_error as format_graphql_error
@@ -130,7 +130,7 @@ class WebSocketHandler(BaseGraphQLView, ABC):
         self, request: web.Request, ws: web.WebSocketResponse, message: OperationMessage
     ) -> None:
         operation_id = message["id"]
-        payload: StartPayload = message["payload"]  # type: ignore
+        payload = cast(StartPayload, message["payload"])
         query = payload["query"]
         operation_name = payload.get("operationName")
         variables = payload.get("variables")

@@ -2,7 +2,7 @@ import asyncio
 import json
 from abc import ABC, abstractmethod
 from contextlib import suppress
-from typing import Any, AsyncGenerator, Callable, Optional, Union
+from typing import Any, AsyncGenerator, Callable, Optional, Union, cast
 
 from starlette import status
 from starlette.requests import Request
@@ -128,7 +128,7 @@ class WebSocketHandler(BaseGraphQLApp, ABC):
 
     async def handle_start(self, ws: WebSocket, message: OperationMessage) -> None:
         operation_id = message["id"]
-        payload: StartPayload = message["payload"]  # type: ignore
+        payload = cast(StartPayload, message["payload"])
         query = payload["query"]
         operation_name = payload.get("operationName")
         variables = payload.get("variables")
