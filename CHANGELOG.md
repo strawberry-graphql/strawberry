@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.65.3 - 2021-06-09
+-------------------
+
+This release fixes the ASGI subscription implementation by handling disconnecting clients properly.
+
+Additionally, the ASGI implementation has been internally refactored to match the AIOHTTP implementation.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) [PR #1002](https://github.com/strawberry-graphql/strawberry/pull/1002/)
+
+
 0.65.2 - 2021-06-06
 -------------------
 
