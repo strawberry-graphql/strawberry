@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import Any, Callable, Dict, Type, cast
 
 from graphql import (
@@ -31,6 +32,13 @@ from strawberry.union import StrawberryUnion
 
 from .types.concrete_type import ConcreteType
 from .types.scalar import get_scalar_type
+
+
+class CustomGraphQLEnumType(GraphQLEnumType):
+    def serialize(self, output_value: Any) -> str:
+        if isinstance(output_value, Enum):
+            return output_value.name
+        return super().serialize(output_value)
 
 
 class GraphQLCoreConverter:
@@ -108,17 +116,17 @@ class GraphQLCoreConverter:
             description=argument.description,
         )
 
-    def from_enum(self, enum: EnumDefinition) -> GraphQLEnumType:
+    def from_enum(self, enum: EnumDefinition) -> CustomGraphQLEnumType:
 
         assert enum.name is not None
 
         # Don't reevaluate known types
         if enum.name in self.type_map:
             graphql_enum = self.type_map[enum.name].implementation
-            assert isinstance(graphql_enum, GraphQLEnumType)  # For mypy
+            assert isinstance(graphql_enum, CustomGraphQLEnumType)  # For mypy
             return graphql_enum
 
-        graphql_enum = GraphQLEnumType(
+        graphql_enum = CustomGraphQLEnumType(
             name=enum.name,
             values={item.name: self.from_enum_value(item) for item in enum.values},
             description=enum.description,
