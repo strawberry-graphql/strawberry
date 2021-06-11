@@ -65,6 +65,17 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
             # Add base's fields to cls' fields
             fields = {**fields, **base_fields}
 
+    # Find the class the each field was originally defined on so we can use
+    # that scope later when resolving the type, as it may have different names
+    # available to it.
+    origins: Dict[str, type] = {field_name: cls for field_name in cls.__annotations__}
+
+    for base in cls.__mro__:
+        if hasattr(base, "_type_definition"):
+            for field in base._type_definition._fields:  # type: ignore
+                if field.python_name in base.__annotations__:
+                    origins.setdefault(field.name, base)
+
     # then we can proceed with finding the fields for the current class
     for field in dataclasses.fields(cls):
 
@@ -119,7 +130,8 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
 
             field_type = field.type
 
-            module = sys.modules[cls.__module__]
+            origin = origins.get(field.name, cls)
+            module = sys.modules[origin.__module__]
 
             # Create a StrawberryField, for fields of Types #1 and #2a
             field = StrawberryField(
@@ -129,7 +141,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
                     annotation=field_type,
                     namespace=module.__dict__,
                 ),
-                origin=cls,
+                origin=origin,
                 default=getattr(cls, field.name, UNSET),
             )
 
