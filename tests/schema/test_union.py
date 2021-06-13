@@ -231,7 +231,7 @@ def test_named_union_description():
     assert result.data["__type"] == {"kind": "UNION", "description": "Example Result"}
 
 
-def test_can_use_union_in_generics():
+def test_can_use_union_in_optional():
     @strawberry.type
     class A:
         a: int
