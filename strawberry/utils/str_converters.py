@@ -1,9 +1,7 @@
-# from .ctx import auto_camelcase
-
 class Converter:
     # Adapted from this response in Stackoverflow
     # http://stackoverflow.com/a/19053800/1072990
-    def __call__(self, snake_str: str) -> str:
+    def __call__(self, snake_str: str) -> str: # hack
         components = snake_str.split("_")
         # We capitalize the first letter of each component except the first one
         # with the 'capitalize' method and join them together.
