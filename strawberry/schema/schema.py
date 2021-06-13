@@ -19,6 +19,7 @@ from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.types import ExecutionContext, ExecutionResult
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
+from strawberry.utils.str_converters import to_camel_case
 
 from ..middleware import DirectivesMiddleware, Middleware
 from ..printer import print_schema
@@ -39,7 +40,10 @@ class Schema:
         types=(),
         extensions: Sequence[Type[Extension]] = (),
         execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
+        auto_camelcase: bool = True
     ):
+        if not auto_camelcase:
+            to_camel_case.__call__ = to_camel_case.default_call
         self.extensions = extensions
         self.execution_context_class = execution_context_class
         self.schema_converter = GraphQLCoreConverter()
