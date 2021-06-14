@@ -34,6 +34,10 @@ from .types.concrete_type import ConcreteType
 from .types.scalar import get_scalar_type
 
 
+# graphql-core expects a resolver for an Enum type to return
+# the enum's *value* (not its name or an instance of the enum). We have to
+# subclass the GraphQLEnumType class to enable returning Enum members from
+# resolvers.
 class CustomGraphQLEnumType(GraphQLEnumType):
     def serialize(self, output_value: Any) -> str:
         if isinstance(output_value, Enum):
