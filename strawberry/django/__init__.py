@@ -1,7 +1,7 @@
 try:
     # import modules and objects from external strawberry-graphql-django
     # package so that it can be used through strawberry.django namespace
-    from strawberry_django import *  # noqa: F401, F403
+    from strawberry_django import *  # type: ignore # noqa: F401, F403
 except ModuleNotFoundError:
     import importlib
 
