@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.65.4 - 2021-06-14
+-------------------
+
+This release fixes the IDE integration where package `strawberry.django` could not be find by some editors like vscode.
+
+Contributed by [Lauri Hintsala](https://github.com/la4de) [PR #994](https://github.com/strawberry-graphql/strawberry/pull/994/)
+
+
 0.65.3 - 2021-06-09
 -------------------
 
