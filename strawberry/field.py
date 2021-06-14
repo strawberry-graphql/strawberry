@@ -1,5 +1,4 @@
 import dataclasses
-import enum
 import typing
 from inspect import isasyncgen, iscoroutine
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
@@ -233,23 +232,6 @@ class StrawberryField(dataclasses.Field):
                     message = getattr(permission, "message", None)
                     raise PermissionError(message)
 
-        def _convert_enums_to_values(field_: StrawberryField, result: Any) -> Any:
-            # graphql-core expects a resolver for an Enum type to return
-            # the enum's *value* (not its name or an instance of the enum).
-
-            # short circuit to skip checks when result is falsy
-            if not result:
-                return result
-
-            if isinstance(result, enum.Enum):
-                return result.value
-
-            if field_.is_list:
-                assert field_.child is not None
-                return [_convert_enums_to_values(field_.child, item) for item in result]
-
-            return result
-
         def _strawberry_info_from_graphql(info: GraphQLResolveInfo) -> Info:
             return Info(
                 field_name=info.field_name,
@@ -272,18 +254,17 @@ class StrawberryField(dataclasses.Field):
 
                 async def yield_results(results):
                     async for value in results:
-                        yield _convert_enums_to_values(self, value)
+                        yield value
 
                 return yield_results(result)
 
             if iscoroutine(result):  # pragma: no cover
 
                 async def await_result(result):
-                    return _convert_enums_to_values(self, await result)
+                    return await result
 
                 return await_result(result)
 
-            result = _convert_enums_to_values(self, result)
             return result
 
         _resolver._is_default = not self.base_resolver  # type: ignore
