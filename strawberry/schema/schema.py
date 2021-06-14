@@ -19,6 +19,7 @@ from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.types import ExecutionContext, ExecutionResult
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
+from strawberry.config import StrawberryConfig
 
 from ..middleware import DirectivesMiddleware, Middleware
 from ..printer import print_schema
@@ -39,7 +40,13 @@ class Schema:
         types=(),
         extensions: Sequence[Type[Extension]] = (),
         execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
+        config: Optional[StrawberryConfig] = None
     ):
+        if config is None:
+            self.config = StrawberryConfig()
+        else:
+            self.config = config
+
         self.extensions = extensions
         self.execution_context_class = execution_context_class
         self.schema_converter = GraphQLCoreConverter()
