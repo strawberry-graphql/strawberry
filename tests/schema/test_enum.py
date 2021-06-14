@@ -311,3 +311,26 @@ def test_enum_as_default_argument():
 
     assert not result.errors
     assert result.data["createFlavour"] == "STRAWBERRY"
+
+
+def test_enum_resolver_plain_value():
+    @strawberry.enum
+    class IceCreamFlavour(Enum):
+        VANILLA = "vanilla"
+        STRAWBERRY = "strawberry"
+        CHOCOLATE = "chocolate"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def best_flavour(self) -> IceCreamFlavour:
+            return "strawberry"  # type: ignore
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ bestFlavour }"
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data["bestFlavour"] == "STRAWBERRY"
