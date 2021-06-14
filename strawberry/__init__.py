@@ -1,4 +1,6 @@
-from . import django, experimental, federation
+from typing import TYPE_CHECKING
+
+from . import experimental, federation
 from .arguments import argument
 from .custom_scalar import scalar
 from .directive import directive
@@ -12,6 +14,10 @@ from .scalars import ID
 from .schema import Schema
 from .type import input, interface, type
 from .union import union
+
+
+if TYPE_CHECKING:
+    from . import django
 
 
 __all__ = [
