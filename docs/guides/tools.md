@@ -47,19 +47,29 @@ type Query {
 
 ### `depth_limit_validator`
 
-Limit the complexity of queries by their depth.
+Limit the complexity of queries by their depth to protect against malicious
+queries.
 
 ```python
+from graphql import ValidationRule
+
 class DepthLimitOptions(TypedDict):
-    ignore: Union[str, re.Pattern, Callable[[str], bool]]
+    ignore: List[Union[str, re.Pattern, Callable[[str], bool]]]
 
 def depth_limit_validator(
-  max_depth: int,  # The maximum allowed depth for any operation in a GraphQL document
-  options: DepthLimitOptions = None,
-  callback: Callable[Dict[str, int]] = None  # Called each time validation runs.  Receives an Object which is a map of the depths for each operation
+    max_depth: int,
+    options: Optional[DepthLimitOptions] = None,
+    callback: Optional[Callable[Dict[str, int]]] = None
 ) -> ValidationRule:
     ...
 ```
+
+| Parameter name   | Type                       | Default | Description                                                                                            |
+| ---------------- | -------------------------- | ------- | ------------------------------------------------------------------------------------------------------ |
+| max_depth        | `int`                      | N/A     | The maximum allowed depth for any operation in a GraphQL document                                      |
+| options   | `Optional[DepthLimitOptions]` | `None` |                                                                                                             |
+| options.ignore   | `List[Union[str, re.Pattern, Callable[[str], bool]]]` | `None` | Stops recursive depth checking based on a field name. Either a string or regexp to match the name, or a function that reaturns a boolean. |
+| callback         | `Optional[Callable[[Dict[str, int]], None]]` | `None` | Called each time validation runs.  Receives an Object which is a map of the depths for each operation |
 
 Example:
 
@@ -69,10 +79,15 @@ from strawberry.schema import default_validation_rules
 from strawberry.tools import depth_limit_validator
 
 
+# Add the depth limit validator to the list of default validation rules
+validation_rules = (
+  default_validation_rules + [depth_limit_validator(3)]
+)
+
 # assuming you already have a schema
 result = schema.execute_sync(
-  """
-    query {
+    """
+    query MyQuery {
       user {
         pets {
           owner {
@@ -83,11 +98,10 @@ result = schema.execute_sync(
         }
       }
     }
-  """,
-  validation_rules=(
-    default_validation_rules
-    + [depth_limit_validator(2)]
-    )
+    """,
+    validation_rules=validation_rules,
+  )
 )
-assert result.errors
+assert len(result.errors) == 1
+assert result.errors[0].message == "'MyQuery' exceeds maximum operation depth of 3"
 ```
