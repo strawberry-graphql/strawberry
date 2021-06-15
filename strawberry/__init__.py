@@ -1,4 +1,4 @@
-from . import django, experimental, federation
+from . import experimental, federation
 from .arguments import argument
 from .custom_scalar import scalar
 from .directive import directive
@@ -23,7 +23,6 @@ __all__ = [
     "Schema",
     "argument",
     "directive",
-    "django",
     "enum",
     "federation",
     "field",
