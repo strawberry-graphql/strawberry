@@ -1,9 +1,10 @@
 import re
 from typing import List, Optional
 
-from graphql import get_introspection_query, parse, specified_rules, validate
+from graphql import get_introspection_query, parse, validate
 
 import strawberry
+from strawberry.schema import default_validation_rules
 from strawberry.tools import depth_limit_validator
 
 
@@ -66,7 +67,10 @@ def run_query(query: str, max_depth: int, options=None):
     errors = validate(
         schema._schema,
         document,
-        rules=(specified_rules + [depth_limit_validator(max_depth, options, callback)]),
+        rules=(
+            default_validation_rules
+            + [depth_limit_validator(max_depth, options, callback)]
+        ),
     )
 
     return errors, result

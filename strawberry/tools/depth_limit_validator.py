@@ -17,6 +17,8 @@ def depth_limit_validator(max_depth: int, options=None, callback=None):
     """
     Creates a validator for the GraphQL query depth
 
+    This is a Python port of https://github.com/stems/graphql-depth-limit
+
     - max_depth - The maximum allowed depth for any operation in a GraphQL document.
     - options
         - options.ignore - Stops recursive depth checking based on a field name.
