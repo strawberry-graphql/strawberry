@@ -47,7 +47,7 @@ type Query {
 
 ### `depth_limit_validator`
 
-Limit the complexity of queries by their depth to protect against malicious
+Create a validator to limit the complexity of queries by their depth to protect against malicious
 queries.
 
 ```python
