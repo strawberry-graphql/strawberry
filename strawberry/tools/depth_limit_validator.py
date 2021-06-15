@@ -13,7 +13,7 @@ from graphql.language import (
 from graphql.validation import ValidationContext, ValidationRule
 
 
-def depth_limit(max_depth: int, options=None, callback=None):
+def depth_limit_validator(max_depth: int, options=None, callback=None):
     """
     Creates a validator for the GraphQL query depth
 
