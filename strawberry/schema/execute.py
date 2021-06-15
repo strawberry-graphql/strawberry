@@ -10,7 +10,7 @@ from graphql import (
     execute as original_execute,
     parse,
 )
-from graphql.validation import ASTValidationRule, validate
+from graphql.validation import ValidationRule, validate
 
 from strawberry.extensions import Extension
 from strawberry.extensions.runner import ExtensionsRunner
@@ -25,7 +25,7 @@ async def execute(
     additional_middlewares: List[Any] = None,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
     validate_queries: bool = True,
-    validation_rules: Optional[Collection[Type[ASTValidationRule]]] = None,
+    validation_rules: Optional[Collection[Type[ValidationRule]]] = None,
 ) -> ExecutionResult:
     extensions_runner = ExtensionsRunner(
         execution_context=execution_context,
@@ -103,7 +103,7 @@ def execute_sync(
     additional_middlewares: List[Any] = None,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
     validate_queries: bool = True,
-    validation_rules: Optional[Collection[Type[ASTValidationRule]]] = None,
+    validation_rules: Optional[Collection[Type[ValidationRule]]] = None,
 ) -> ExecutionResult:
     extensions_runner = ExtensionsRunner(
         execution_context=execution_context,
@@ -142,7 +142,7 @@ def execute_sync(
 
         if validate_queries:
             with extensions_runner.validation():
-                validation_errors = validate(schema, document)
+                validation_errors = validate(schema, document, rules=validation_rules)
 
             if validation_errors:
                 execution_context.errors = validation_errors

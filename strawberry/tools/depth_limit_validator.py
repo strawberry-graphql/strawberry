@@ -50,7 +50,8 @@ def depth_limit_validator(max_depth: int, options=None, callback=None):
                     options,
                 )
 
-            callback(query_depths)
+            if callable(callback):
+                callback(query_depths)
             super().__init__(validation_context)
 
     return DepthLimitValidator
@@ -72,7 +73,9 @@ def get_queries_and_mutations(definitions: List[DefinitionNode]):
 
     for definition in definitions:
         if isinstance(definition, OperationDefinitionNode):
-            operations[definition.name.value if definition.name else ""] = definition
+            operations[
+                definition.name.value if definition.name else "anonymous"
+            ] = definition
 
     return operations
 

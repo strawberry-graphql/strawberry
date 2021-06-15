@@ -11,7 +11,7 @@ from graphql import (
 from graphql.error import GraphQLError
 from graphql.subscription import subscribe
 from graphql.type.directives import specified_directives
-from graphql.validation import ASTValidationRule
+from graphql.validation import ValidationRule
 
 from strawberry.custom_scalar import ScalarDefinition
 from strawberry.enum import EnumDefinition
@@ -114,7 +114,7 @@ class Schema:
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
         validate_queries: bool = True,
-        validation_rules: Optional[Collection[Type[ASTValidationRule]]] = None,
+        validation_rules: Optional[Collection[Type[ValidationRule]]] = None,
     ) -> ExecutionResult:
         # Create execution context
         execution_context = ExecutionContext(
@@ -153,7 +153,7 @@ class Schema:
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
         validate_queries: bool = True,
-        validation_rules: Optional[Collection[Type[ASTValidationRule]]] = None,
+        validation_rules: Optional[Collection[Type[ValidationRule]]] = None,
     ) -> ExecutionResult:
         execution_context = ExecutionContext(
             query=query,
