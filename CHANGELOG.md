@@ -1,6 +1,32 @@
 CHANGELOG
 =========
 
+0.66.0 - 2021-06-15
+-------------------
+
+This release fixes a bug that was preventing the use of an enum member as the
+default value for an argument.
+
+For example:
+
+```python
+@strawberry.enum
+class IceCreamFlavour(Enum):
+    VANILLA = "vanilla"
+    STRAWBERRY = "strawberry"
+    CHOCOLATE = "chocolate"
+    PISTACHIO = "pistachio"
+
+@strawberry.mutation
+def create_flavour(
+    self, flavour: IceCreamFlavour = IceCreamFlavour.STRAWBERRY
+) -> str:
+    return f"{flavour.name}"
+```
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) [PR #1015](https://github.com/strawberry-graphql/strawberry/pull/1015/)
+
+
 0.65.5 - 2021-06-15
 -------------------
 
