@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.65.5 - 2021-06-15
+-------------------
+
+This release reverts the changes made in v0.65.4 that caused an issue leading to
+circular imports when using the `strawberry-graphql-django` extension package.
+
+Contributed by [Lauri Hintsala](https://github.com/la4de) [PR #1019](https://github.com/strawberry-graphql/strawberry/pull/1019/)
+
+
 0.65.4 - 2021-06-14
 -------------------
 
