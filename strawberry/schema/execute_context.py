@@ -7,6 +7,7 @@ from graphql import (
     GraphQLOutputType,
     GraphQLResolveInfo,
 )
+from graphql.error import located_error
 from graphql.language import FieldNode, OperationDefinitionNode
 from graphql.pyutils import (
     AwaitableOrValue,
@@ -86,7 +87,7 @@ class ExecutionContextWithPromise(ExecutionContext):
         data = cast(AwaitableOrValue[Optional[Dict[str, Any]]], data)
         return super().build_response(data)
 
-    def complete_value_catching_error(
+    def complete_value(
         self,
         return_type: GraphQLOutputType,
         field_nodes: List[FieldNode],
@@ -94,31 +95,22 @@ class ExecutionContextWithPromise(ExecutionContext):
         path: Path,
         result: Any,
     ) -> AwaitableOrValue[Any]:
-        """Complete a value while catching an error.
-        This is a small wrapper around completeValue which detects and logs errors in
-        the execution context.
-        """
-        completed: AwaitableOrValue[Any]
-        try:
-            if is_thenable(result):
+        if is_thenable(result):
 
-                def handle_resolve(resolved: Any):
-                    return self.complete_value(
-                        return_type, field_nodes, info, path, resolved
-                    )
-
-                def handle_error(error: Exception):
-                    self.handle_field_error(error, field_nodes, path, return_type)
-
-                completed = Promise.resolve(result).then(handle_resolve, handle_error)
-            else:
-                completed = self.complete_value(
-                    return_type, field_nodes, info, path, result
+            def handle_resolve(resolved: Any):
+                return self.complete_value(
+                    return_type, field_nodes, info, path, resolved
                 )
+
+            def handle_error(raw_error: Exception):
+                error = located_error(raw_error, field_nodes, path.as_list())
+                self.handle_field_error(error, return_type)
+                return None
+
+            completed = Promise.resolve(result).then(handle_resolve, handle_error)
             return completed
-        except Exception as error:
-            self.handle_field_error(error, field_nodes, path, return_type)
-            return None
+
+        return super().complete_value(return_type, field_nodes, info, path, result)
 
     def execute_fields(
         self,
@@ -134,7 +126,7 @@ class ExecutionContextWithPromise(ExecutionContext):
         contains_promise = False
         results: Dict[Hashable, Union[Promise[Any], Any]] = {}
         for response_name, field_nodes in fields.items():
-            field_path = Path(path, response_name)
+            field_path = Path(path, response_name, parent_type.name)
             result = self.resolve_field(
                 parent_type, source_value, field_nodes, field_path
             )
@@ -147,12 +139,3 @@ class ExecutionContextWithPromise(ExecutionContext):
             return promise_for_dict(results)
 
         return results
-
-    def handle_field_error(
-        self, raw_error: Exception, field_nodes, path, return_type,
-    ) -> None:
-        import traceback
-        traceback.print_exception(
-            type(raw_error), raw_error, raw_error.__traceback__
-        )
-        return super().handle_field_error(raw_error, field_nodes, path, return_type)

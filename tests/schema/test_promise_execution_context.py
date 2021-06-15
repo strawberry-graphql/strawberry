@@ -311,6 +311,8 @@ def test_lists(mocker):
         """,
         context_value={"dataloader": PromiseDataLoader(mock_loader)},
     )
-    import pdb; pdb.set_trace()
     assert not result.errors
-    import pdb; pdb.set_trace()
+    assert result.data == {
+        "getIds": ["1", "2"],
+    }
+    mock_loader.assert_called_once_with(["1", "2"])
