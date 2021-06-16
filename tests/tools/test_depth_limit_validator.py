@@ -210,7 +210,7 @@ def test_should_catch_query_thats_too_deep():
     errors, result = run_query(query, 4)
 
     assert len(errors) == 1
-    assert errors[0].message == "'' exceeds maximum operation depth of 4"
+    assert errors[0].message == "'anonymous' exceeds maximum operation depth of 4"
 
 
 def test_should_ignore_field():
