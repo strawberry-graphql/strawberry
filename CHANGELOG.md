@@ -1,6 +1,34 @@
 CHANGELOG
 =========
 
+0.67.0 - 2021-06-17
+-------------------
+
+Add ability to specific the graphql name for a resolver argument. E.g.,
+
+```python
+from typing import Annotated
+import strawberry
+
+
+@strawberry.input
+class HelloInput:
+    name: str = "world"
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(
+        self,
+        input_: Annotated[HelloInput, strawberry.argument(name="input")]
+    ) -> str:
+        return f"Hi {input_.name}"
+```
+
+Contributed by [Daniel Bowring](https://github.com/dbowring) [PR #1024](https://github.com/strawberry-graphql/strawberry/pull/1024/)
+
+
 0.66.0 - 2021-06-15
 -------------------
 
