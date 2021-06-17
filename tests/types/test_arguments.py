@@ -333,6 +333,34 @@ def test_annotated_argument_with_default_value():
     assert argument.default == "Patrick"
 
 
+def test_annotated_argument_with_rename():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def name(  # type: ignore
+            arg: Annotated[
+                str,
+                strawberry.argument(name="argument"),  # noqa: F722
+            ] = "Patrick"
+        ) -> str:
+            return "Name"
+
+    definition = Query._type_definition
+
+    assert definition.name == "Query"
+
+    assert len(definition.fields[0].arguments) == 1
+
+    argument = definition.fields[0].arguments[0]
+
+    assert argument.graphql_name == "argument"
+    assert argument.python_name == "arg"
+    assert argument.type == str
+    assert argument.is_optional is False
+    assert argument.description is None
+    assert argument.default == "Patrick"
+
+
 def test_multiple_annotated_arguments_exception():
     with pytest.raises(MultipleStrawberryArgumentsError) as error:
 

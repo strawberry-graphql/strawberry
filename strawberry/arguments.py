@@ -30,9 +30,11 @@ def is_unset(value: Any) -> bool:
 
 class StrawberryArgumentAnnotation:
     description: Optional[str]
+    name: Optional[str]
 
-    def __init__(self, description: Optional[str] = None):
+    def __init__(self, description: Optional[str] = None, name: Optional[str] = None):
         self.description = description
+        self.name = name
 
 
 class StrawberryArgument:
@@ -87,6 +89,7 @@ class StrawberryArgument:
         type_ = annotated_args[0]
         argument_metadata = None
         argument_description = None
+        argument_graphql_name = None
 
         # Find any instances of StrawberryArgumentAnnotation
         # in the other Annotated args, raising an exception if there
@@ -102,13 +105,13 @@ class StrawberryArgument:
 
         if argument_metadata is not None:
             argument_description = argument_metadata.description
+            argument_graphql_name = argument_metadata.name
 
         return cls(
             type_=type_,
             description=argument_description,
             python_name=python_name,
-            # TODO: fetch from StrawberryArgumentAnnotation
-            graphql_name=None,
+            graphql_name=argument_graphql_name,
             default=default,
         )
 
@@ -217,8 +220,10 @@ def convert_arguments(
     return kwargs
 
 
-def argument(description: Optional[str] = None) -> StrawberryArgumentAnnotation:
-    return StrawberryArgumentAnnotation(description=description)
+def argument(
+    description: Optional[str] = None, name: Optional[str] = None
+) -> StrawberryArgumentAnnotation:
+    return StrawberryArgumentAnnotation(description=description, name=name)
 
 
 # TODO: check exports
