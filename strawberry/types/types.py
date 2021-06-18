@@ -1,7 +1,7 @@
 import dataclasses
-from typing import TYPE_CHECKING, Dict, List, Mapping, Optional, Type, TypeVar, Union
+from typing import TYPE_CHECKING, List, Mapping, Optional, Type, TypeVar, Union
 
-from strawberry.type import StrawberryType
+from strawberry.type import StrawberryType, StrawberryTypeVar
 from strawberry.utils.str_converters import capitalize_first
 
 
@@ -28,7 +28,12 @@ class TypeDefinition(StrawberryType):
     interfaces: List["TypeDefinition"]
 
     _fields: List["StrawberryField"]
-    _type_params: Dict[str, Type] = dataclasses.field(default_factory=dict, init=False)
+
+    concrete_of: Optional["TypeDefinition"] = None
+    """Concrete implementations of Generic TypeDefinitions fill this in"""
+    type_var_map: Mapping[TypeVar, Union[StrawberryType, type]] = dataclasses.field(
+        default_factory=dict
+    )
 
     # TODO: remove wrapped cls when we "merge" this with `StrawberryObject`
     def resolve_generic(self, wrapped_cls: type) -> type:
@@ -70,6 +75,8 @@ class TypeDefinition(StrawberryType):
             interfaces=self.interfaces,
             description=self.description,
             _fields=fields,
+            concrete_of=self,
+            type_var_map=type_var_map,
         )
 
         new_type = type(
@@ -132,6 +139,42 @@ class TypeDefinition(StrawberryType):
             type_params.extend(field.type_params)
 
         return type_params
+
+    def is_implemented_by(self, root: Union[type, dict]) -> bool:
+        # TODO: Accept StrawberryObject instead
+        # TODO: Support dicts
+        if isinstance(root, dict):
+            raise NotImplementedError()
+
+        type_definition = root._type_definition
+
+        if type_definition is self:
+            # No generics involved. Exact type match
+            return True
+
+        if type_definition is not self.concrete_of:
+            # Either completely different type, or concrete type of a different generic
+            return False
+
+        # Check the mapping of all fields' TypeVars
+        for generic_field in type_definition.fields:
+            generic_field_type = generic_field.type
+            if not isinstance(generic_field_type, StrawberryTypeVar):
+                continue
+
+            # For each TypeVar found, get the expected type from the copy's type map
+            expected_concrete_type = self.type_var_map.get(generic_field_type.type_var)
+            if expected_concrete_type is None:
+                # TODO: Should this return False?
+                continue
+
+            # Check if the expected type matches the type found on the type_map
+            real_concrete_type = type(getattr(root, generic_field.name))
+            if real_concrete_type is not expected_concrete_type:
+                return False
+
+        # All field mappings succeeded. This is a match
+        return True
 
 
 @dataclasses.dataclass

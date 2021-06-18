@@ -34,6 +34,36 @@ def test_union_as_field():
     assert result.data["ab"] == {"__typename": "A", "a": 5}
 
 
+def test_union_as_field_inverse():
+    @strawberry.type
+    class A:
+        a: int
+
+    @strawberry.type
+    class B:
+        b: int
+
+    @strawberry.type
+    class Query:
+        ab: Union[A, B] = B(b=5)
+
+    schema = strawberry.Schema(query=Query)
+    query = """{
+        ab {
+            __typename,
+
+            ... on B {
+                b
+            }
+        }
+    }"""
+
+    result = schema.execute_sync(query, root_value=Query())
+
+    assert not result.errors
+    assert result.data["ab"] == {"__typename": "B", "b": 5}
+
+
 def test_cannot_use_non_strawberry_fields_for_the_union():
     @strawberry.type
     class A:

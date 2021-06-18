@@ -120,7 +120,6 @@ def copy_type_with(
                 description=definition.description,
                 _fields=fields,
             )
-            type_definition._type_params = {}
 
             copied_type = builtins.type(
                 name,
