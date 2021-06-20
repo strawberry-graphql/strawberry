@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import List, Mapping, TypeVar, Union
+from typing import List, Mapping, TypeVar, Union, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from strawberry.annotation import StrawberryAnnotation
 
 
 class StrawberryType(ABC):
@@ -20,10 +23,41 @@ class StrawberryType(ABC):
     def is_generic(self) -> bool:
         raise NotImplementedError()
 
+    def __eq__(self, other: object) -> bool:
+        from strawberry.annotation import StrawberryAnnotation
+
+        if isinstance(other, StrawberryType):
+            return self is other
+
+        elif isinstance(other, StrawberryAnnotation):
+            return self == other.resolve()
+
+        else:
+            # This could be simplified if StrawberryAnnotation.resolve() always returned
+            # a StrawberryType
+            resolved = StrawberryAnnotation(other).resolve()
+            if isinstance(resolved, StrawberryType):
+                return self == resolved
+            else:
+                return False
+
+    def __hash__(self) -> int:
+        # TODO: Is this a bad idea? __eq__ objects are supposed to have the same hash
+        return id(self)
+
 
 class StrawberryContainer(StrawberryType):
     def __init__(self, of_type: StrawberryType):
         self.of_type = of_type
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, StrawberryType):
+            if isinstance(other, StrawberryContainer):
+                return self.of_type == other.of_type
+            else:
+                return False
+
+        return super().__eq__(other)
 
     @property
     def type_params(self) -> List[TypeVar]:

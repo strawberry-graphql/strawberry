@@ -295,7 +295,7 @@ class StrawberryField(dataclasses.Field):
                 context=info.context,
                 root_value=info.root_value,
                 variable_values=info.variable_values,
-                return_type=self.type_annotation,
+                return_type=self.type,
                 operation=info.operation,
                 path=info.path,
             )
