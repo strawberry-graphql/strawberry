@@ -7,13 +7,11 @@ from typing import (
     Dict,
     ForwardRef,
     Optional,
-    Tuple,
     Type,
     TypeVar,
     Union,
     _eval_type,
     _SpecialGenericAlias,
-    cast,
 )
 
 from strawberry.custom_scalar import SCALAR_REGISTRY, ScalarDefinition
@@ -26,6 +24,7 @@ from strawberry.type import (
     StrawberryType,
     StrawberryTypeVar,
 )
+from strawberry.types.types import TypeDefinition
 from strawberry.utils.typing import is_generic, is_type_var
 
 
@@ -219,6 +218,8 @@ class StrawberryAnnotation:
         elif isinstance(evaled_type, StrawberryList):
             return True
         elif _is_object_type(evaled_type):  # TODO: Replace with StrawberryObject
+            return True
+        elif isinstance(evaled_type, TypeDefinition):
             return True
         elif isinstance(evaled_type, StrawberryOptional):
             return True

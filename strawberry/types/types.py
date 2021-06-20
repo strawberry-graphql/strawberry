@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import dataclasses
 from typing import TYPE_CHECKING, List, Mapping, Optional, Type, TypeVar, Union
 
@@ -17,7 +19,7 @@ class FederationTypeParams:
     extend: bool = False
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass(eq=False)
 class TypeDefinition(StrawberryType):
     name: str
     is_input: bool
@@ -41,14 +43,20 @@ class TypeDefinition(StrawberryType):
         params = wrapped_cls.__origin__.__parameters__
 
         type_var_map = dict(zip(params, passed_types))
-        new_type = self.copy_with(type_var_map)
+        new_type_definition = self.copy_with(type_var_map)
+
+        new_type = type(
+            new_type_definition.name,
+            (),
+            {"_type_definition": new_type_definition},
+        )
 
         return new_type
 
     # TODO: Return a StrawberryObject
     def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
-    ) -> Type:
+    ) -> TypeDefinition:
         name = self.get_name_from_types(type_var_map.values())
 
         fields = []
@@ -66,7 +74,7 @@ class TypeDefinition(StrawberryType):
 
             fields.append(field)
 
-        type_definition = TypeDefinition(
+        new_type_definition = TypeDefinition(
             name=name,
             is_input=self.is_input,
             origin=self.origin,
@@ -79,13 +87,7 @@ class TypeDefinition(StrawberryType):
             type_var_map=type_var_map,
         )
 
-        new_type = type(
-            type_definition.name,
-            (),
-            {"_type_definition": type_definition},
-        )
-
-        return new_type
+        return new_type_definition
 
     def get_field(self, name: str) -> Optional["StrawberryField"]:
         return next(
