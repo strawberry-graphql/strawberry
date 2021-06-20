@@ -207,42 +207,40 @@ class GraphQLCoreConverter:
         of_type = self.from_type(type_)
         return GraphQLNonNull(of_type)
 
-    def from_object(self, object_type: Type) -> GraphQLObjectType:
+    def from_object(self, object_type: TypeDefinition) -> GraphQLObjectType:
         # TODO: Use StrawberryObjectType when it's implemented in another PR
 
-        type_definition = object_type._type_definition
-
         # Don't reevaluate known types
-        if type_definition.name in self.type_map:
-            graphql_object_type = self.type_map[type_definition.name].implementation
+        if object_type.name in self.type_map:
+            graphql_object_type = self.type_map[object_type.name].implementation
             assert isinstance(graphql_object_type, GraphQLObjectType)  # For mypy
             return graphql_object_type
 
         # Only define an is_type_of function for Types that implement an interface.
         # Otherwise, leave it to the default implementation
         is_type_of = (
-            (lambda obj, _: isinstance(obj, type_definition.origin))
-            if type_definition.interfaces
+            (lambda obj, _: isinstance(obj, object_type.origin))
+            if object_type.interfaces
             else None
         )
 
         def get_graphql_fields() -> Dict[str, GraphQLField]:
             graphql_fields = {}
-            for field in type_definition.fields:
+            for field in object_type.fields:
                 assert field.graphql_name is not None
                 graphql_fields[field.graphql_name] = self.from_field(field)
             return graphql_fields
 
         graphql_object_type = GraphQLObjectType(
-            name=type_definition.name,
+            name=object_type.name,
             fields=get_graphql_fields,
-            interfaces=list(map(self.from_interface, type_definition.interfaces)),
+            interfaces=list(map(self.from_interface, object_type.interfaces)),
             is_type_of=is_type_of,
-            description=type_definition.description,
+            description=object_type.description,
         )
 
-        self.type_map[type_definition.name] = ConcreteType(
-            definition=type_definition, implementation=graphql_object_type
+        self.type_map[object_type.name] = ConcreteType(
+            definition=object_type, implementation=graphql_object_type
         )
 
         return graphql_object_type
@@ -265,7 +263,7 @@ class GraphQLCoreConverter:
         elif _is_interface_type(type_):  # TODO: Replace with StrawberryInterface
             return self.from_interface(type_._type_definition)
         elif _is_object_type(type_):  # TODO: Replace with StrawberryObject
-            return self.from_object(type_)
+            return self.from_object(type_._type_definition)
         elif isinstance(type_, StrawberryOptional):
             # TODO: Not sure how to handle just yet
             raise NotImplementedError()
