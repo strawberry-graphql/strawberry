@@ -262,6 +262,8 @@ class GraphQLCoreConverter:
             return self.from_input_object(type_)
         elif isinstance(type_, StrawberryList):
             return self.from_list(type_)
+        elif _is_interface_type(type_):  # TODO: Replace with StrawberryInterface
+            return self.from_interface(type_._type_definition)
         elif _is_object_type(type_):  # TODO: Replace with StrawberryObject
             return self.from_object(type_)
         elif isinstance(type_, StrawberryOptional):
@@ -311,6 +313,13 @@ def _is_input_type(type_: Type) -> bool:
         return False
 
     return type_._type_definition.is_input
+
+
+def _is_interface_type(type_: type) -> bool:
+    if not _is_object_type(type_):
+        return False
+
+    return type_._type_definition.is_interface
 
 
 def _is_scalar(type_: Type) -> bool:
