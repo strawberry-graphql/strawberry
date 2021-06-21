@@ -1118,7 +1118,7 @@ testing = ["pytest (>=4.6)", "pytest-checkdocs (>=1.2.3)", "pytest-flake8", "pyt
 
 [extras]
 aiohttp = ["aiohttp"]
-debug-server = ["uvicorn"]
+debug-server = ["starlette", "uvicorn"]
 django = ["django", "asgiref"]
 flask = ["flask"]
 opentelemetry = ["opentelemetry-api", "opentelemetry-sdk"]
@@ -1128,7 +1128,7 @@ sanic = ["sanic"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "8886d78ed4620ce672371643a3626e21eaea360b12b995b141ceb73741f4ca59"
+content-hash = "f423c286fcb8fed372f0da15ccf50dd04ca00c38ebb7f500c396799fb08aa82d"
 
 [metadata.files]
 aiofiles = [
