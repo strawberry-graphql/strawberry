@@ -115,7 +115,7 @@ class GraphQLCoreConverter:
         return graphql_enum
 
     def from_enum_value(self, enum_value: EnumValue) -> GraphQLEnumValue:
-        return GraphQLEnumValue(enum_value.value)
+        return GraphQLEnumValue(enum_value.value, description=enum_value.description)
 
     def from_directive(self, directive: DirectiveDefinition) -> GraphQLDirective:
 

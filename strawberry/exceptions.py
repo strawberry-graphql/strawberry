@@ -14,6 +14,16 @@ class NotAnEnum(Exception):
         super().__init__(message)
 
 
+class MultipleStrawberryEnumValuesError(Exception):
+    def __init__(self, enum_class_name: str, enum_value_name: str):
+        message = (
+            f"Annotation for enum value `{enum_value_name}` on enum "
+            f"`{enum_class_name}` cannot have multiple `strawberry.enum_values`s"
+        )
+
+        super().__init__(message)
+
+
 class MissingReturnAnnotationError(Exception):
     """The field is missing the return annotation"""
 

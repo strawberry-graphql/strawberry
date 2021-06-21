@@ -1,16 +1,45 @@
 import dataclasses
-from enum import EnumMeta
+from enum import Enum, EnumMeta
 from typing import Any, Callable, List, Mapping, Optional, TypeVar, Union
+
+from typing_extensions import Annotated, get_args, get_origin
 
 from strawberry.type import StrawberryType
 
-from .exceptions import NotAnEnum
+from .exceptions import MultipleStrawberryEnumValuesError, NotAnEnum
+
+
+@dataclasses.dataclass
+class EnumValueAnnotation:
+    description: Optional[str]
 
 
 @dataclasses.dataclass
 class EnumValue:
     name: str
     value: Any
+    description: Optional[str]
+
+    @classmethod
+    def from_enum_item(cls, enum_cls: EnumMeta, item: Enum) -> "EnumValue":
+        description = None
+        try:
+            annotation = enum_cls.__annotations__[item.name]
+        except (AttributeError, KeyError):
+            annotation = None
+
+        if annotation is not None and get_origin(annotation) is Annotated:
+            annotated_args = get_args(annotation)
+            for arg in annotated_args[1:]:
+                if isinstance(arg, EnumValueAnnotation):
+                    if description is not None:
+                        raise MultipleStrawberryEnumValuesError(
+                            enum_class_name=enum_cls.__name__, enum_value_name=item.name
+                        )
+
+                    description = arg.description
+
+        return cls(item.name, item.value, description)
 
 
 @dataclasses.dataclass
@@ -45,7 +74,7 @@ def _process_enum(
 
     description = description
 
-    values = [EnumValue(item.name, item.value) for item in cls]  # type: ignore
+    values = [EnumValue.from_enum_item(cls, item) for item in cls]  # type: ignore
 
     cls._enum_definition = EnumDefinition(  # type: ignore
         wrapped_cls=cls,
@@ -73,3 +102,7 @@ def enum(
         return wrap
 
     return wrap(_cls)
+
+
+def enum_value(description: Optional[str] = None):
+    return EnumValueAnnotation(description=description)

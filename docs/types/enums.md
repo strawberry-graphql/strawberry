@@ -40,6 +40,24 @@ class IceCreamFlavour(Enum):
     CHOCOLATE = "chocolate"
 ```
 
+Optionally, we can add descriptions for the enum values:
+
+```python
+from typing_extensions import Annotated
+
+@strawberry.enum
+class IceCreamFlavour(Enum):
+    VANILLA: Annotated[
+        str, strawberry.enum_value(description="Classic Vanilla")
+    ] = "vanilla"
+    STRAWBERRY: Annotated[
+        str, strawberry.enum_value(description="Sweet Strawberry")
+    ] = "strawberry"
+    CHOCOLATE: Annotated[
+        str, strawberry.enum_value(description="Rich Chocolate")
+    ] = "chocolate"
+```
+
 Let's see how we can use Enums in our schema.
 
 ```python
@@ -54,8 +72,19 @@ Defining the enum type above would produce this schema in GraphQL:
 
 ```graphql
 enum IceCreamFlavour {
+  """
+  Classic Vanilla
+  """
   VANILLA
+
+  """
+  Sweet Strawberry
+  """
   STRAWBERRY
+
+  """
+  Rich Chocolate
+  """
   CHOCOLATE
 }
 ```

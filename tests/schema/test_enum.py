@@ -5,6 +5,8 @@ from typing import List, Optional
 
 import pytest
 
+from typing_extensions import Annotated
+
 import strawberry
 
 
@@ -311,6 +313,43 @@ def test_enum_as_default_argument():
 
     assert not result.errors
     assert result.data["createFlavour"] == "STRAWBERRY"
+
+
+def test_enum_value_description():
+    @strawberry.enum
+    class IceCreamFlavour(Enum):
+        VANILLA: Annotated[
+            str, strawberry.enum_value(description="Classic Vanilla")
+        ] = "vanilla"
+        STRAWBERRY: Annotated[
+            str, strawberry.enum_value(description="Sweet Strawberry")
+        ] = "strawberry"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def create_flavour(self, flavour: IceCreamFlavour) -> str:
+            return f"{flavour.name}"
+
+    schema = strawberry.Schema(query=Query)
+
+    expected = dedent(
+        '''
+        enum IceCreamFlavour {
+          """Classic Vanilla"""
+          VANILLA
+
+          """Sweet Strawberry"""
+          STRAWBERRY
+        }
+
+        type Query {
+          createFlavour(flavour: IceCreamFlavour!): String!
+        }
+        '''
+    ).strip()
+
+    assert str(schema) == expected
 
 
 def test_enum_resolver_plain_value():
