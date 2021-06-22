@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.67.1 - 2021-06-22
+-------------------
+
+Fixes [#1022](https://github.com/strawberry-graphql/strawberry/issues/1022) by making starlette an optional dependency.
+
+Contributed by [Marcel Wiegand](https://github.com/mawiegand) [PR #1027](https://github.com/strawberry-graphql/strawberry/pull/1027/)
+
+
 0.67.0 - 2021-06-17
 -------------------
 
