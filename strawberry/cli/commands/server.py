@@ -16,6 +16,7 @@ from strawberry.utils.importer import import_module_symbol
 @click.argument("schema", type=str)
 @click.option("-h", "--host", default="0.0.0.0", type=str)
 @click.option("-p", "--port", default=8000, type=int)
+@click.option("-r", "--reload", default=True, type=bool)
 @click.option(
     "--app-dir",
     default=".",
@@ -27,7 +28,7 @@ from strawberry.utils.importer import import_module_symbol
         "Works the same as `--app-dir` in uvicorn."
     ),
 )
-def server(schema, host, port, app_dir):
+def server(schema, host, port, reload, app_dir):
     sys.path.insert(0, app_dir)
 
     try:
@@ -40,9 +41,10 @@ def server(schema, host, port, app_dir):
         message = "The `schema` must be an instance of strawberry.Schema"
         raise click.BadArgumentUsage(message)
 
-    reloader = hupper.start_reloader("strawberry.cli.run", verbose=False)
     schema_module = importlib.import_module(schema_symbol.__module__)
-    reloader.watch_files([schema_module.__file__])
+    if reload:
+        reloader = hupper.start_reloader("strawberry.cli.run", verbose=False)
+        reloader.watch_files([schema_module.__file__])
 
     app = Starlette(debug=True)
     app.add_middleware(
