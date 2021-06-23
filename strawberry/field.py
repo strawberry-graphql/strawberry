@@ -38,7 +38,7 @@ class StrawberryField(dataclasses.Field):
         base_resolver: Optional[StrawberryResolver] = None,
         permission_classes: List[Type[BasePermission]] = (),  # type: ignore
         default: object = UNSET,
-        default_factory: Union[Callable, object] = UNSET,
+        default_factory: Union[Callable[[], Any], object] = UNSET,
         deprecation_reason: Optional[str] = None,
     ):
         federation = federation or FederationFieldParams()
@@ -49,13 +49,17 @@ class StrawberryField(dataclasses.Field):
         super().__init__(  # type: ignore
             default=(default if default is not UNSET else dataclasses.MISSING),
             default_factory=(
-                default_factory if default_factory is not UNSET else dataclasses.MISSING
+                # mypy is not able to understand that default factory
+                # is a callable so we do a type ignore
+                default_factory
+                if default_factory is callable
+                else dataclasses.MISSING  # type: ignore
             ),
             init=is_basic_field,
             repr=is_basic_field,
             compare=is_basic_field,
             hash=None,
-            metadata=None,
+            metadata={},
         )
 
         self._graphql_name = graphql_name
