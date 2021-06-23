@@ -29,7 +29,6 @@ jobs:
       - name: Install dependencies
         run: poetry add django==${{ matrix.django }}
 
-      - run: poetry run mypy --install-types --non-interactive .
       - name: pytest
         run: poetry run py.test --cov-report xml --cov=. --cov-fail-under 80 --showlocals -vv
       - uses: codecov/codecov-action@v1
