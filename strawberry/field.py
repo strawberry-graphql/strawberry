@@ -51,9 +51,9 @@ class StrawberryField(dataclasses.Field):
             default_factory=(
                 # mypy is not able to understand that default factory
                 # is a callable so we do a type ignore
-                default_factory
+                default_factory  # type: ignore
                 if default_factory is callable
-                else dataclasses.MISSING  # type: ignore
+                else dataclasses.MISSING
             ),
             init=is_basic_field,
             repr=is_basic_field,
