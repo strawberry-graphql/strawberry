@@ -10,4 +10,4 @@
 
     reveal_type(User().name)
   out: |
-    main:9: note: Revealed type is 'Union[builtins.str, None]'
+    main:9: note: Revealed type is "Union[builtins.str, None]"
