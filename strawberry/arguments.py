@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import enum
 import inspect
+import sys
 from typing import Any, Dict, List, Mapping, Optional, Type, Union, cast
 
 from typing_extensions import Annotated, get_args, get_origin
@@ -132,6 +133,10 @@ def get_arguments_from_annotations(
             if default is inspect.Parameter.empty or is_unset(default)
             else default
         )
+
+        if isinstance(annotation, str):
+            module = sys.modules[origin.__module__]
+            annotation = eval(annotation, module.__dict__)
 
         if get_origin(annotation) is Annotated:
             argument = StrawberryArgument.from_annotated(
