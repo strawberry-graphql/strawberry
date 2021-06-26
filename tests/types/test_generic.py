@@ -264,7 +264,7 @@ def test_using_generics():
     [field] = definition.fields
     assert field.graphql_name == "user"
 
-    [user_edge_definition] = field.type._type_definition
+    user_edge_definition = field.type._type_definition
     assert user_edge_definition.name == "UserEdge"
     assert not user_edge_definition.is_generic
 
