@@ -294,13 +294,13 @@ def test_using_generics_nested():
     assert connection_definition.is_generic
     assert connection_definition.type_params == [T]
 
-    query_definition = Query._type_definitio
+    query_definition = Query._type_definition
     assert query_definition.name == "Query"
 
     [user_field] = query_definition.fields
     assert user_field.graphql_name == "users"
 
-    [user_connection_definition] = user_field.type._type_definition
+    user_connection_definition = user_field.type._type_definition
     assert user_connection_definition.name == "UserConnection"
     assert not user_connection_definition.is_generic
 
