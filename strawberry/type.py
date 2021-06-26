@@ -39,7 +39,7 @@ class StrawberryType(ABC):
             if isinstance(resolved, StrawberryType):
                 return self == resolved
             else:
-                return False
+                return NotImplemented
 
     def __hash__(self) -> int:
         # TODO: Is this a bad idea? __eq__ objects are supposed to have the same hash
@@ -135,6 +135,13 @@ class StrawberryTypeVar(StrawberryType):
     def type_params(self) -> List[TypeVar]:
         return [self.type_var]
 
+    def __eq__(self, other) -> bool:
+        if isinstance(other, StrawberryTypeVar):
+            return self.type_var == other.type_var
+        if isinstance(other, TypeVar):
+            return self.type_var == other
+
+        return super().__eq__(other)
 
 
 # @property
