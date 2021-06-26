@@ -617,8 +617,6 @@ def test_federation():
         id: strawberry.ID
         node_field: T
 
-    definition = Edge._type_definition
-
     definition_copy = Edge._type_definition.copy_with({T: str})
 
     assert definition_copy.name == "StrEdge"
