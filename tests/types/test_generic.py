@@ -627,7 +627,7 @@ def test_federation():
     assert definition_copy.federation.keys == ["id"]
     assert not definition_copy.federation.extend
 
-    [field1_copy, field2_copy] = definition.fields
+    [field1_copy, field2_copy] = definition_copy.fields
 
     assert field1_copy.graphql_name == "id"
     assert field1_copy.type is strawberry.ID
