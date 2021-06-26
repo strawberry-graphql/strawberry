@@ -216,8 +216,16 @@ class StrawberryField(dataclasses.Field):
         type_ = self.type
         if hasattr(self.type, "_type_definition"):
             type_ = self.type._type_definition
+            type_copy = type_.copy_with(type_var_map)
 
-        new_type = type_.copy_with(type_var_map)
+            new_type = builtins.type(
+                type_copy.name,
+                (),
+                {"_type_definition": type_copy},
+            )
+
+        else:
+            new_type = type_.copy_with(type_var_map)
 
         if self.base_resolver is not None:
             new_resolver = self.base_resolver.copy_with(type_var_map)
