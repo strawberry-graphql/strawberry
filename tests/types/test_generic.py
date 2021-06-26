@@ -170,9 +170,9 @@ def test_generic_with_list():
 
     assert definition_copy.name == "StrConnection"
     assert not definition_copy.is_generic
-    assert definition_copy.type_params == [T]
+    assert definition_copy.type_params == []
 
-    [field_copy] = definition_copy
+    [field_copy] = definition_copy.fields
     assert field_copy.graphql_name == "edges"
     assert isinstance(field_copy.type, StrawberryList)
     assert field_copy.type.of_type is str
