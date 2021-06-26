@@ -533,7 +533,7 @@ def test_anonymous_union_inside_generics():
     [connection_field] = definition.fields
     assert connection_field.graphql_name == "connection"
 
-    [dog_cat_connection_definition] = connection_field.type._type_definition
+    dog_cat_connection_definition = connection_field.type._type_definition
     assert dog_cat_connection_definition.name == "DogCatConnection"
 
     [node_field] = dog_cat_connection_definition.fields

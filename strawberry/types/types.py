@@ -40,10 +40,18 @@ class TypeDefinition(StrawberryType):
 
     # TODO: remove wrapped cls when we "merge" this with `StrawberryObject`
     def resolve_generic(self, wrapped_cls: type) -> type:
+        from strawberry.annotation import StrawberryAnnotation
+
         passed_types = wrapped_cls.__args__
         params = wrapped_cls.__origin__.__parameters__
 
-        type_var_map = dict(zip(params, passed_types))
+        # Make sure all passed_types are turned into StrawberryTypes
+        resolved_types = []
+        for passed_type in passed_types:
+            resolved_type = StrawberryAnnotation(passed_type).resolve()
+            resolved_types.append(resolved_type)
+
+        type_var_map = dict(zip(params, resolved_types))
         new_type_definition = self.copy_with(type_var_map)
 
         new_type = type(
