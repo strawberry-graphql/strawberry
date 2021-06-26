@@ -213,8 +213,10 @@ class StrawberryField(dataclasses.Field):
     ) -> "StrawberryField":
         # TODO: Remove with creation of StrawberryObject. Will act same as other
         #       StrawberryTypes
-        type_ = self.type
-        if hasattr(self.type, "_type_definition"):
+        if (
+            hasattr(self.type, "_type_definition")
+            and self.type._type_definition.is_generic
+        ):
             type_ = self.type._type_definition
             type_copy = type_.copy_with(type_var_map)
 
@@ -225,7 +227,7 @@ class StrawberryField(dataclasses.Field):
             )
 
         else:
-            new_type = type_.copy_with(type_var_map)
+            new_type = self.type.copy_with(type_var_map)
 
         if self.base_resolver is not None:
             new_resolver = self.base_resolver.copy_with(type_var_map)
