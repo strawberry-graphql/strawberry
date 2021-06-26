@@ -75,13 +75,36 @@ class StrawberryUnion(StrawberryType):
             set(itertools.chain(*(_get_type_params(type_) for type_ in self.types)))
         )
 
+    @property
     def is_generic(self) -> bool:
         return len(self.type_params) > 0
 
     def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
     ) -> StrawberryType:
-        return self
+        if not self.is_generic:
+            return self
+
+        new_types = []
+        for type_ in self.types:
+            if hasattr(type_, "_type_definition") and type_._type_definition.is_generic:
+                new_type_definition = type_._type_definition.copy_with(type_var_map)
+                new_type = type(
+                    new_type_definition.name,
+                    (),
+                    {"_type_definition": new_type_definition},
+                )
+            elif isinstance(type_, StrawberryType) and type_.is_generic:
+                new_type = type_.copy_with(type_var_map)
+            else:
+                new_type = type_
+
+            new_types.append(new_type)
+
+        return StrawberryUnion(
+            type_annotations=tuple(map(StrawberryAnnotation, new_types)),
+            description=self.description
+        )
 
     def __call__(self, *_args, **_kwargs) -> NoReturn:
         """Do not use.
