@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import TYPE_CHECKING, List, Mapping, Optional, Type, TypeVar, Union
+from typing import TYPE_CHECKING, List, Mapping, Optional, Type, TypeVar, Union, \
+    Iterable
 
 from strawberry.type import StrawberryType, StrawberryTypeVar
 from strawberry.utils.str_converters import capitalize_first
@@ -94,14 +95,14 @@ class TypeDefinition(StrawberryType):
             (field for field in self.fields if field.graphql_name == name), None
         )
 
-    def get_name_from_types(self, types: Union[StrawberryType, type]) -> str:
+    def get_name_from_types(self, types: Iterable[Union[StrawberryType, type]]) -> str:
         from strawberry.union import StrawberryUnion
 
-        names = []
+        names: List[str] = []
 
         for type_ in types:
             if isinstance(type_, StrawberryUnion):
-                return type_.name
+                name = type_.name
             elif hasattr(type_, "_type_definition"):
                 name = capitalize_first(type_._type_definition.name)
             else:

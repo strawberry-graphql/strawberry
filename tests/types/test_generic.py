@@ -503,7 +503,7 @@ def test_union_inside_generics():
     [node_field] = dog_cat_connection_definition.fields
     assert isinstance(node_field.type, StrawberryList)
 
-    union = dog_cat_connection_definition.fields[0].child.type
+    union = dog_cat_connection_definition.fields[0].type.of_type
     assert isinstance(union, StrawberryUnion)
     assert union.types[0]._type_definition.name == "Dog"
     assert union.types[1]._type_definition.name == "Cat"
