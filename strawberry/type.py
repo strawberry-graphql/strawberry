@@ -66,7 +66,11 @@ class StrawberryContainer(StrawberryType):
 
             return list(parameters) if parameters else []
 
-        return self.of_type.type_params
+        elif isinstance(self.of_type, StrawberryType):
+            return self.of_type.type_params
+
+        else:
+            return []
 
     def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
