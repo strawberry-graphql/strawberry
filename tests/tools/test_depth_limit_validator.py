@@ -1,6 +1,8 @@
 import re
 from typing import List, Optional
 
+import pytest
+
 from graphql import get_introspection_query, parse, validate
 
 import strawberry
@@ -238,3 +240,17 @@ def test_should_ignore_field():
     expected = {"read1": 2, "read2": 0}
     assert not errors
     assert result == expected
+
+
+def test_should_raise_invalid_ignore():
+    query = """
+    query read1 {
+      user { address { city } }
+    }
+    """
+    with pytest.raises(Exception, match="Invalid ignore option:"):
+        run_query(
+            query,
+            10,
+            ignore=[True],
+        )
