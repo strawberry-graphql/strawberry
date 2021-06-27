@@ -60,6 +60,11 @@ class InvalidNodeTypeException(Exception):
 
 
 def lazy_type_analyze_callback(ctx: AnalyzeTypeContext) -> Type:
+    if len(ctx.type.args) == 0:
+        # TODO: maybe this should throw an error
+
+        return AnyType(TypeOfAny.special_form)
+
     type_name = ctx.type.args[0]
     type_ = ctx.api.analyze_type(type_name)
 
@@ -591,7 +596,7 @@ class StrawberryPlugin(Plugin):
     ) -> Optional[Callable[[DynamicClassDefContext], None]]:
         # TODO: investigate why we need this instead of `strawberry.union.union` on CI
         # we have the same issue in the other hooks
-        if "strawberry.union" in fullname:
+        if fullname == "strawberry.union.union":
             return union_hook
 
         if "strawberry.enum" in fullname:
