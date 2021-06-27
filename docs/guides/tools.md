@@ -53,23 +53,19 @@ queries.
 ```python
 from graphql import ValidationRule
 
-class DepthLimitOptions(TypedDict):
-    ignore: List[Union[str, re.Pattern, Callable[[str], bool]]]
-
 def depth_limit_validator(
     max_depth: int,
-    options: Optional[DepthLimitOptions] = None,
+    ignore: Optional[List[Union[str, re.Pattern, Callable[[str], bool]]]] = None,
     callback: Optional[Callable[Dict[str, int]]] = None
 ) -> ValidationRule:
     ...
 ```
 
-| Parameter name | Type                                                  | Default | Description                                                                                                                               |
-| -------------- | ----------------------------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| max_depth      | `int`                                                 | N/A     | The maximum allowed depth for any operation in a GraphQL document                                                                         |
-| options        | `Optional[DepthLimitOptions]`                         | `None`  |                                                                                                                                           |
-| options.ignore | `List[Union[str, re.Pattern, Callable[[str], bool]]]` | `None`  | Stops recursive depth checking based on a field name. Either a string or regexp to match the name, or a function that reaturns a boolean. |
-| callback       | `Optional[Callable[[Dict[str, int]], None]]`          | `None`  | Called each time validation runs. Receives an Object which is a map of the depths for each operation                                      |
+| Parameter name | Type                                                            | Default | Description                                                                                                                               |
+| -------------- | --------------------------------------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| max_depth      | `int`                                                           | N/A     | The maximum allowed depth for any operation in a GraphQL document                                                                         |
+| ignore         | `Optional[List[Union[str, re.Pattern, Callable[[str], bool]]]]` | `None`  | Stops recursive depth checking based on a field name. Either a string or regexp to match the name, or a function that reaturns a boolean. |
+| callback       | `Optional[Callable[[Dict[str, int]], None]]`                    | `None`  | Called each time validation runs. Receives an Object which is a map of the depths for each operation                                      |
 
 Example:
 
