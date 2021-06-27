@@ -55,7 +55,7 @@ class Query:
 schema = strawberry.Schema(Query)
 
 
-def run_query(query: str, max_depth: int, options=None):
+def run_query(query: str, max_depth: int, ignore=None):
     document = parse(query)
 
     result = None
@@ -69,7 +69,7 @@ def run_query(query: str, max_depth: int, options=None):
         document,
         rules=(
             default_validation_rules
-            + [depth_limit_validator(max_depth, options, callback)]
+            + [depth_limit_validator(max_depth, ignore, callback)]
         ),
     )
 
@@ -228,13 +228,11 @@ def test_should_ignore_field():
     errors, result = run_query(
         query,
         10,
-        {
-            "ignore": [
-                "user1",
-                re.compile("user2"),
-                lambda field_name: field_name == "user3",
-            ]
-        },
+        ignore=[
+            "user1",
+            re.compile("user2"),
+            lambda field_name: field_name == "user3",
+        ],
     )
 
     expected = {"read1": 2, "read2": 0}

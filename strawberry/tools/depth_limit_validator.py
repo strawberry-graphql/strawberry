@@ -1,5 +1,5 @@
 import re
-from typing import Callable, List, Union
+from typing import Callable, Dict, List, Optional, Union
 
 from graphql import GraphQLError
 from graphql.language import (
@@ -8,27 +8,34 @@ from graphql.language import (
     FragmentDefinitionNode,
     FragmentSpreadNode,
     InlineFragmentNode,
+    Node,
     OperationDefinitionNode,
 )
 from graphql.validation import ValidationContext, ValidationRule
 
+from strawberry.extensions.tracing.utils import is_instrospection_key
 
-def depth_limit_validator(max_depth: int, options=None, callback=None):
+
+IgnoreType = Union[Callable[[str], bool], re.Pattern, str]
+
+
+def depth_limit_validator(
+    max_depth: int,
+    ignore: Optional[List[IgnoreType]] = None,
+    callback: Callable[[Dict[str, int]], None] = None,
+):
     """
     Creates a validator for the GraphQL query depth
 
     This is a Python port of https://github.com/stems/graphql-depth-limit
 
     - max_depth - The maximum allowed depth for any operation in a GraphQL document.
-    - options
-        - options.ignore - Stops recursive depth checking based on a field name.
+    - ignore - Stops recursive depth checking based on a field name.
         Either a string or regexp to match the name, or a function that returns
         a boolean.
     - callback - Called each time validation runs. Receives an Object which is a
     map of the depths for each operation.
     """
-    if not options:
-        options = {}
 
     class DepthLimitValidator(ValidationRule):
         def __init__(self, validation_context: ValidationContext):
@@ -47,7 +54,7 @@ def depth_limit_validator(max_depth: int, options=None, callback=None):
                     max_depth,
                     validation_context,
                     name,
-                    options,
+                    ignore,
                 )
 
             if callable(callback):
@@ -57,7 +64,9 @@ def depth_limit_validator(max_depth: int, options=None, callback=None):
     return DepthLimitValidator
 
 
-def get_fragments(definitions: List[DefinitionNode]):
+def get_fragments(
+    definitions: List[DefinitionNode],
+) -> Dict[str, FragmentDefinitionNode]:
     fragments = {}
     for definition in definitions:
         if isinstance(definition, FragmentDefinitionNode):
@@ -68,7 +77,9 @@ def get_fragments(definitions: List[DefinitionNode]):
 
 # This will actually get both queries and mutations.
 # We can basically treat those the same
-def get_queries_and_mutations(definitions: List[DefinitionNode]):
+def get_queries_and_mutations(
+    definitions: List[DefinitionNode],
+) -> Dict[str, OperationDefinitionNode]:
     operations = {}
 
     for definition in definitions:
@@ -80,11 +91,14 @@ def get_queries_and_mutations(definitions: List[DefinitionNode]):
     return operations
 
 
-introspection_regex = re.compile(r"^__")
-
-
 def determine_depth(
-    node, fragments, depth_so_far, max_depth, context, operation_name, options
+    node: Node,
+    fragments: Dict[str, FragmentDefinitionNode],
+    depth_so_far: int,
+    max_depth: int,
+    context: ValidationContext,
+    operation_name: str,
+    ignore: Optional[List[IgnoreType]] = None,
 ) -> int:
     if depth_so_far > max_depth:
         context.report_error(
@@ -97,8 +111,8 @@ def determine_depth(
 
     if isinstance(node, FieldNode):
         # by default, ignore the introspection fields which begin with double underscores
-        should_ignore = introspection_regex.match(node.name.value) or see_if_ignored(
-            node, options.get("ignore", [])
+        should_ignore = is_instrospection_key(node.name.value) or see_if_ignored(
+            node, ignore
         )
 
         if should_ignore or not node.selection_set:
@@ -113,7 +127,7 @@ def determine_depth(
                     max_depth,
                     context,
                     operation_name,
-                    options,
+                    ignore,
                 ),
                 node.selection_set.selections,
             )
@@ -126,7 +140,7 @@ def determine_depth(
             max_depth,
             context,
             operation_name,
-            options,
+            ignore,
         )
     elif (
         isinstance(node, InlineFragmentNode)
@@ -142,7 +156,7 @@ def determine_depth(
                     max_depth,
                     context,
                     operation_name,
-                    options,
+                    ignore,
                 ),
                 node.selection_set.selections,
             )
@@ -151,9 +165,10 @@ def determine_depth(
         raise Exception(f"uh oh! depth crawler cannot handle: {node.kind}")
 
 
-def see_if_ignored(
-    node, ignore: List[Union[Callable[[str], bool], re.Pattern, str]]
-) -> bool:
+def see_if_ignored(node: FieldNode, ignore: Optional[List[IgnoreType]] = None) -> bool:
+    if ignore is None:
+        return False
+
     for rule in ignore:
         field_name = node.name.value
         if isinstance(rule, str):
