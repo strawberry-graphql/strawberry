@@ -4,6 +4,8 @@ import pytest
 
 import dateutil.tz
 
+from graphql import GraphQLError
+
 import strawberry
 
 
@@ -105,3 +107,71 @@ def test_deserialization_with_parse_literal(typing, instance, serialized):
 
     assert not result.errors
     assert Query.deserialized == instance
+
+
+@pytest.fixture
+def execute_mutation():
+    @strawberry.type
+    class Query:
+        ok: bool
+
+    @strawberry.type
+    class Mutation:
+        @strawberry.mutation
+        def datetime_input(
+            self, datetime_input: datetime.datetime
+        ) -> datetime.datetime:
+            assert isinstance(datetime_input, datetime.datetime)
+            return datetime_input
+
+    schema = strawberry.Schema(query=Query, mutation=Mutation)
+
+    def execute(value):
+        return schema.execute_sync(
+            f"""
+                mutation {{
+                    datetimeInput(datetimeInput: "{value}")
+                }}
+            """
+        )
+
+    return execute
+
+
+@pytest.mark.parametrize(
+    "value",
+    (
+        "2012-13-01",
+        "2012-04-9",
+        "20120411T03:30+",
+        "20120411T03:30+1234567",
+        "20120411T03:30-25:40",
+        "20120411T03:30+00:60",
+        "20120411T03:30+00:61",
+        "20120411T033030.123456012:00" "2014-03-12Т12:30:14",
+        "2014-04-21T24:00:01",
+    ),
+)
+def test_serialization_of_incorrect_datetime_strings(value, execute_mutation):
+    """
+    Test GraphQLError is raised for incorrect datetime.
+    The error should exclude "original_error".
+    """
+
+    result = execute_mutation(value)
+    assert result.errors
+    assert isinstance(result.errors[0], GraphQLError)
+    assert result.errors[0].original_error is None
+
+
+def test_serialization_error_message_for_incorrect_datetime_string(execute_mutation):
+    """
+    Test if error message is using original error message from datetime lib, and is properly formatted
+    """
+
+    result = execute_mutation("2021-13-01T09:00:00")
+    assert result.errors
+    assert result.errors[0].message == (
+        'Expected ISO formatted string, received "2021-13-01T09:00:00". month must be in 1..12'
+    )
+

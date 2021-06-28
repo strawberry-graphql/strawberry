@@ -2,10 +2,23 @@ import datetime
 import decimal
 import uuid
 from operator import methodcaller
-
+from typing import Callable
 import dateutil.parser
+from graphql import GraphQLError
 
 from strawberry.custom_scalar import scalar
+
+
+def wrap_iso_parser(parser: Callable) -> Callable:
+    def inner(value: str):
+        try:
+            return parser(value)
+        except ValueError as e:
+            raise GraphQLError(
+                f'Expected ISO formatted string, received "{value}". {e}'
+            )
+
+    return inner
 
 
 isoformat = methodcaller("isoformat")
@@ -23,7 +36,7 @@ DateTime = scalar(
     name="DateTime",
     description="Date with time (isoformat)",
     serialize=isoformat,
-    parse_value=dateutil.parser.isoparse,
+    parse_value=wrap_iso_parser(dateutil.parser.isoparse),
 )
 Time = scalar(
     datetime.time,
