@@ -148,7 +148,7 @@ def execute_mutation(value):
         "2014-04-21T24:00:01",
     ),
 )
-def test_serialization_of_incorrect_datetime_strings(value):
+def test_serialization_of_incorrect_datetime_string(value):
     """
     Test GraphQLError is raised for incorrect datetime.
     The error should exclude "original_error".
