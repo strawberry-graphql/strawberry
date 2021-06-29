@@ -3,7 +3,9 @@ import decimal
 import uuid
 from operator import methodcaller
 from typing import Callable
+
 import dateutil.parser
+
 from graphql import GraphQLError
 
 from strawberry.custom_scalar import scalar
@@ -27,7 +29,7 @@ Date = scalar(
     name="Date",
     description="Date (isoformat)",
     serialize=isoformat,
-    parse_value=datetime.date.fromisoformat,
+    parse_value=wrap_iso_parser(datetime.date.fromisoformat, "Date"),
 )
 DateTime = scalar(
     datetime.datetime,
@@ -41,7 +43,7 @@ Time = scalar(
     name="Time",
     description="Time (isoformat)",
     serialize=isoformat,
-    parse_value=datetime.time.fromisoformat,
+    parse_value=wrap_iso_parser(datetime.time.fromisoformat, "Time"),
 )
 
 Decimal = scalar(
