@@ -109,8 +109,7 @@ def test_deserialization_with_parse_literal(typing, instance, serialized):
     assert Query.deserialized == instance
 
 
-@pytest.fixture
-def execute_mutation():
+def execute_mutation(value):
     @strawberry.type
     class Query:
         ok: bool
@@ -126,16 +125,13 @@ def execute_mutation():
 
     schema = strawberry.Schema(query=Query, mutation=Mutation)
 
-    def execute(value):
-        return schema.execute_sync(
-            f"""
-                mutation {{
-                    datetimeInput(datetimeInput: "{value}")
-                }}
-            """
-        )
-
-    return execute
+    return schema.execute_sync(
+        f"""
+            mutation {{
+                datetimeInput(datetimeInput: "{value}")
+            }}
+        """
+    )
 
 
 @pytest.mark.parametrize(
@@ -152,7 +148,7 @@ def execute_mutation():
         "2014-04-21T24:00:01",
     ),
 )
-def test_serialization_of_incorrect_datetime_strings(value, execute_mutation):
+def test_serialization_of_incorrect_datetime_strings(value):
     """
     Test GraphQLError is raised for incorrect datetime.
     The error should exclude "original_error".
@@ -164,7 +160,7 @@ def test_serialization_of_incorrect_datetime_strings(value, execute_mutation):
     assert result.errors[0].original_error is None
 
 
-def test_serialization_error_message_for_incorrect_datetime_string(execute_mutation):
+def test_serialization_error_message_for_incorrect_datetime_string():
     """
     Test if error message is using original error message from datetime lib, and is properly formatted
     """
@@ -174,4 +170,3 @@ def test_serialization_error_message_for_incorrect_datetime_string(execute_mutat
     assert result.errors[0].message == (
         'Value cannot represent a DateTime: "2021-13-01T09:00:00". month must be in 1..12'
     )
-
