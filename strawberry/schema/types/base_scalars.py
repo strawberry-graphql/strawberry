@@ -9,14 +9,12 @@ from graphql import GraphQLError
 from strawberry.custom_scalar import scalar
 
 
-def wrap_iso_parser(parser: Callable) -> Callable:
+def wrap_iso_parser(parser: Callable, _type) -> Callable:
     def inner(value: str):
         try:
             return parser(value)
         except ValueError as e:
-            raise GraphQLError(
-                f'Expected ISO formatted string, received "{value}". {e}'
-            )
+            raise GraphQLError(f'Value cannot represent a {_type}: "{value}". {e}')
 
     return inner
 
@@ -36,7 +34,7 @@ DateTime = scalar(
     name="DateTime",
     description="Date with time (isoformat)",
     serialize=isoformat,
-    parse_value=wrap_iso_parser(dateutil.parser.isoparse),
+    parse_value=wrap_iso_parser(dateutil.parser.isoparse, "DateTime"),
 )
 Time = scalar(
     datetime.time,
