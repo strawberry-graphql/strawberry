@@ -11,7 +11,7 @@ from graphql import GraphQLError
 from strawberry.custom_scalar import scalar
 
 
-def wrap_iso_parser(parser: Callable, _type) -> Callable:
+def wrap_iso_parser(parser: Callable, _type: str) -> Callable:
     def inner(value: str):
         try:
             return parser(value)
