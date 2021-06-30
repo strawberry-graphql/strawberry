@@ -11,12 +11,12 @@ from graphql import GraphQLError
 from strawberry.custom_scalar import scalar
 
 
-def wrap_iso_parser(parser: Callable, _type: str) -> Callable:
+def wrap_iso_parser(parser: Callable, type_: str) -> Callable:
     def inner(value: str):
         try:
             return parser(value)
         except ValueError as e:
-            raise GraphQLError(f'Value cannot represent a {_type}: "{value}". {e}')
+            raise GraphQLError(f'Value cannot represent a {type_}: "{value}". {e}')
 
     return inner
 
