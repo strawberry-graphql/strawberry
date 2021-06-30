@@ -162,7 +162,7 @@ def determine_depth(
             )
         )
     else:
-        raise Exception(f"uh oh! depth crawler cannot handle: {node.kind}")
+        raise Exception(f"Depth crawler cannot handle: {node.kind}")  # pragma: no cover
 
 
 def see_if_ignored(node: FieldNode, ignore: Optional[List[IgnoreType]] = None) -> bool:
