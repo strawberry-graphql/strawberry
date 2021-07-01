@@ -126,11 +126,12 @@ def execute_mutation(value):
     schema = strawberry.Schema(query=Query, mutation=Mutation)
 
     return schema.execute_sync(
-        f"""
-            mutation {{
-                datetimeInput(datetimeInput: "{value}")
-            }}
         """
+            mutation datetimeInput($value: DateTime!) {
+                datetimeInput(datetimeInput: $value)
+            }
+        """,
+        variable_values={"value": value},
     )
 
 
@@ -168,5 +169,6 @@ def test_serialization_error_message_for_incorrect_datetime_string():
     result = execute_mutation("2021-13-01T09:00:00")
     assert result.errors
     assert result.errors[0].message == (
-        'Value cannot represent a DateTime: "2021-13-01T09:00:00". month must be in 1..12'
+        "Variable '$value' got invalid value '2021-13-01T09:00:00'; Value cannot "
+        "represent a DateTime: \"2021-13-01T09:00:00\". month must be in 1..12"
     )

@@ -97,11 +97,12 @@ def execute_mutation(value):
     schema = strawberry.Schema(query=Query, mutation=Mutation)
 
     return schema.execute_sync(
-        f"""
-            mutation {{
-                timeInput(timeInput: "{value}")
-            }}
         """
+            mutation timeInput($value: Time!) {
+                timeInput(timeInput: $value)
+            }
+        """,
+        variable_values={"value": value},
     )
 
 
@@ -134,5 +135,6 @@ def test_serialization_error_message_for_incorrect_time_string():
     result = execute_mutation("25:00")
     assert result.errors
     assert result.errors[0].message == (
-        'Value cannot represent a Time: "25:00". hour must be in 0..23'
+        "Variable '$value' got invalid value '25:00'; Value cannot represent a "
+        "Time: \"25:00\". hour must be in 0..23"
     )
