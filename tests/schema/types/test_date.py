@@ -7,79 +7,61 @@ from graphql import GraphQLError
 import strawberry
 
 
-@pytest.mark.parametrize(
-    "typing,instance,serialized",
-    [
-        (datetime.date, datetime.date(2019, 10, 25), "2019-10-25"),
-    ],
-)
-def test_serialization(typing, instance, serialized):
+def test_serialization():
     @strawberry.type
     class Query:
         @strawberry.field
-        def serialize(self) -> typing:
-            return instance
+        def serialize(self) -> datetime.date:
+            return datetime.date(2019, 10, 25)
 
     schema = strawberry.Schema(Query)
 
     result = schema.execute_sync("{ serialize }")
 
     assert not result.errors
-    assert result.data["serialize"] == serialized
+    assert result.data["serialize"] == "2019-10-25"
 
 
-@pytest.mark.parametrize(
-    "typing,name,instance,serialized",
-    [
-        (datetime.date, "Date", datetime.date(2019, 10, 25), "2019-10-25"),
-    ],
-)
-def test_deserialization(typing, name, instance, serialized):
+def test_deserialization():
     @strawberry.type
     class Query:
         deserialized = None
 
         @strawberry.field
-        def deserialize(self, arg: typing) -> bool:
+        def deserialize(self, arg: datetime.date) -> bool:
             Query.deserialized = arg
             return True
 
     schema = strawberry.Schema(Query)
 
-    query = f"""query Deserialize($value: {name}!) {{
+    query = """query Deserialize($value: Date!) {
         deserialize(arg: $value)
-    }}"""
-    result = schema.execute_sync(query, variable_values={"value": serialized})
+    }"""
+    result = schema.execute_sync(query, variable_values={"value": "2019-10-25"})
 
     assert not result.errors
-    assert Query.deserialized == instance
+    assert Query.deserialized == datetime.date(2019, 10, 25)
 
 
-@pytest.mark.parametrize(
-    "typing,instance,serialized",
-    [
-        (datetime.date, datetime.date(2019, 10, 25), "2019-10-25"),
-    ],
-)
-def test_deserialization_with_parse_literal(typing, instance, serialized):
+def test_deserialization_with_parse_literal():
     @strawberry.type
     class Query:
         deserialized = None
 
         @strawberry.field
-        def deserialize(self, arg: typing) -> bool:
+        def deserialize(self, arg: datetime.date) -> bool:
             Query.deserialized = arg
             return True
 
     schema = strawberry.Schema(Query)
 
-    query = f"""query Deserialize {{
-        deserialize(arg: "{serialized}")
-    }}"""
+    query = """query Deserialize {
+        deserialize(arg: "2019-10-25")
+    }"""
     result = schema.execute_sync(query)
 
     assert not result.errors
-    assert Query.deserialized == instance
+    assert Query.deserialized == datetime.date(2019, 10, 25)
 
 
 def execute_mutation(value):
