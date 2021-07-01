@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import inspect
 import typing
-from typing import Any, Dict, List, Optional, Iterable
+from typing import Any, Dict, List, Optional, Iterable, Union
 
 from typing_extensions import Annotated, get_args, get_origin
 
@@ -12,7 +12,7 @@ from strawberry.type import StrawberryType, StrawberryList, StrawberryOptional
 
 from .exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError
 from .scalars import is_scalar
-from .types.types import undefined
+from .types.types import undefined, TypeDefinition
 from .utils.str_converters import to_camel_case
 
 
@@ -61,7 +61,7 @@ class StrawberryArgument:
         return None
 
     @property
-    def type(self) -> StrawberryType:
+    def type(self) -> Union[StrawberryType, type]:
         return self.type_annotation.resolve()
 
     @classmethod
@@ -107,7 +107,7 @@ def is_unset(value: Any) -> bool:
     return type(value) is _Unset
 
 
-def convert_argument(value: object, type_: StrawberryType) -> object:
+def convert_argument(value: object, type_: Union[StrawberryType, type]) -> object:
     if value is None:
         return None
 
@@ -130,11 +130,13 @@ def convert_argument(value: object, type_: StrawberryType) -> object:
         return type_.wrapped_cls(value)
 
     if hasattr(type_, "_type_definition"):  # TODO: Replace with StrawberryInputObject
-        assert type_._type_definition.is_input
+        type_definition: TypeDefinition = type_._type_definition  # type: ignore
+
+        assert type_definition.is_input
 
         kwargs = {}
 
-        for field in type_._type_definition.fields:
+        for field in type_definition.fields:
             # TODO: cast value as a protocol that supports __getitem__
             if field.graphql_name in value:
                 kwargs[field.python_name] = convert_argument(
