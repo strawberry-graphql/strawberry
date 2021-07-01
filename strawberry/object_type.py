@@ -2,8 +2,6 @@ import dataclasses
 from functools import partial
 from typing import List, Optional, Type, cast
 
-from strawberry.utils.typing import is_generic
-
 from .exceptions import MissingFieldAnnotationError, MissingReturnAnnotationError
 from .field import StrawberryField
 from .types.type_resolver import _get_fields

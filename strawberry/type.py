@@ -47,7 +47,7 @@ class StrawberryType(ABC):
 
 
 class StrawberryContainer(StrawberryType):
-    def __init__(self, of_type: StrawberryType):
+    def __init__(self, of_type: Union[StrawberryType, type]):
         self.of_type = of_type
 
     def __eq__(self, other: object) -> bool:

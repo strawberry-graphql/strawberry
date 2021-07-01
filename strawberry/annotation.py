@@ -2,6 +2,7 @@ import typing
 from collections.abc import AsyncGenerator as AsyncGenerator_abc
 from enum import Enum
 from typing import (
+    Any,
     TYPE_CHECKING,
     AsyncGenerator as AsyncGenerator_typing,
     Dict,
@@ -10,8 +11,8 @@ from typing import (
     Type,
     TypeVar,
     Union,
-    _eval_type,
-    _SpecialGenericAlias,
+    _eval_type,  # type: ignore
+    _SpecialGenericAlias, # type: ignore
 )
 
 from strawberry.custom_scalar import SCALAR_REGISTRY, ScalarDefinition
@@ -31,9 +32,6 @@ from strawberry.utils.typing import is_generic, is_type_var
 if TYPE_CHECKING:
     from strawberry.union import StrawberryUnion
 
-ListType = _SpecialGenericAlias
-UnionType = _SpecialGenericAlias
-
 
 class StrawberryAnnotation:
     def __init__(
@@ -43,6 +41,7 @@ class StrawberryAnnotation:
         self.namespace = namespace
 
     def resolve(self) -> Union[StrawberryType, type]:
+        annotation: object
         if isinstance(self.annotation, str):
             annotation = ForwardRef(self.annotation)
         else:
@@ -52,7 +51,7 @@ class StrawberryAnnotation:
         if self._is_async_generator(evaled_type):
             evaled_type = self._strip_async_generator(evaled_type)
         if self._is_lazy_type(evaled_type):
-            evaled_type = self._strip_lazy_type(evaled_type)
+            return evaled_type
 
         if self._is_generic(evaled_type):
             if any(is_type_var(type_) for type_ in evaled_type.__args__):
@@ -82,16 +81,18 @@ class StrawberryAnnotation:
         # raise NotImplementedError(f"Unknown type {evaled_type}")
         return evaled_type
 
-    def create_concrete_type(self, evaled_type: StrawberryType) -> StrawberryType:
+    def create_concrete_type(self, evaled_type: type) -> type:
         if _is_object_type(evaled_type):
-            return evaled_type._type_definition.resolve_generic(evaled_type)
+            type_definition: TypeDefinition
+            type_definition = evaled_type._type_definition  # type: ignore
+            return type_definition.resolve_generic(evaled_type)
 
         raise ValueError(f"Not supported {evaled_type}")
 
-    def create_enum(self, evaled_type: Type[Enum]) -> EnumDefinition:
+    def create_enum(self, evaled_type: Any) -> EnumDefinition:
         return evaled_type._enum_definition
 
-    def create_list(self, evaled_type: ListType) -> StrawberryList:
+    def create_list(self, evaled_type: Any) -> StrawberryList:
         of_type = StrawberryAnnotation(
             annotation=evaled_type.__args__[0],
             namespace=self.namespace,
@@ -99,12 +100,12 @@ class StrawberryAnnotation:
 
         return StrawberryList(of_type)
 
-    def create_optional(self, evaled_type: UnionType) -> StrawberryOptional:
+    def create_optional(self, evaled_type: Any) -> StrawberryOptional:
         types = evaled_type.__args__
         non_optional_types = tuple(filter(lambda x: x is not type(None), types))
 
         # Note that this returns _not_ a Union if len(non_optional_types) == 1
-        child_type = Union[non_optional_types]
+        child_type = Union[non_optional_types]  # type: ignore
 
         of_type = StrawberryAnnotation(
             annotation=child_type,
@@ -113,21 +114,10 @@ class StrawberryAnnotation:
 
         return StrawberryOptional(of_type)
 
-    def create_scalar(self, evaled_type: ...):
-        if evaled_type in SCALAR_REGISTRY:
-            # TODO: What is stored here? Would evaled_type ever be in the registry?
-            return SCALAR_REGISTRY[evaled_type]
-
-        if evaled_type in SCALAR_TYPES:
-            return StrawberryType.from_type(evaled_type)
-
-        # TODO: Should we ever be creating a Scalar type here?
-        raise NotImplementedError
-
     def create_type_var(self, evaled_type: TypeVar) -> StrawberryTypeVar:
         return StrawberryTypeVar(evaled_type)
 
-    def create_union(self, evaled_type: ...) -> "StrawberryUnion":
+    def create_union(self, evaled_type) -> "StrawberryUnion":
         # Prevent import cycles
         from strawberry.union import StrawberryUnion
 
@@ -152,7 +142,7 @@ class StrawberryAnnotation:
         return False
 
     @classmethod
-    def _is_enum(cls, annotation: type) -> bool:
+    def _is_enum(cls, annotation: Any) -> bool:
         # Type aliases are not types so we need to make sure annotation can go into
         # issubclass
         if not isinstance(annotation, type):
@@ -160,32 +150,32 @@ class StrawberryAnnotation:
         return issubclass(annotation, Enum)
 
     @classmethod
-    def _is_generic(cls, annotation: type) -> bool:
+    def _is_generic(cls, annotation: Any) -> bool:
         if hasattr(annotation, "__origin__"):
             return is_generic(annotation.__origin__)
 
         return False
 
     @classmethod
-    def _is_lazy_type(cls, annotation: type) -> bool:
+    def _is_lazy_type(cls, annotation: Any) -> bool:
         return isinstance(annotation, LazyType)
 
     @classmethod
-    def _is_optional(cls, annotation: type) -> bool:
+    def _is_optional(cls, annotation: Any) -> bool:
         """Returns True if the annotation is Optional[SomeType]"""
 
         # Optionals are represented as unions
         if not cls._is_union(annotation):
             return False
 
-        annotation = typing.cast(UnionType, annotation)
+        annotation = typing.cast(_SpecialGenericAlias, annotation)
         types = annotation.__args__
 
         # A Union to be optional needs to have at least one None type
         return any(x is type(None) for x in types)
 
     @classmethod
-    def _is_list(cls, annotation: type) -> bool:
+    def _is_list(cls, annotation: Any) -> bool:
         """Returns True if annotation is a List"""
 
         annotation_origin = getattr(annotation, "__origin__", None)
@@ -193,7 +183,7 @@ class StrawberryAnnotation:
         return annotation_origin == list
 
     @classmethod
-    def _is_scalar(cls, annotation: type) -> bool:
+    def _is_scalar(cls, annotation: Any) -> bool:
         type_ = getattr(annotation, "__supertype__", annotation)
 
         if type_ in SCALAR_REGISTRY:
@@ -205,7 +195,7 @@ class StrawberryAnnotation:
         return hasattr(annotation, "_scalar_definition")
 
     @classmethod
-    def _is_strawberry_type(cls, evaled_type: Type) -> bool:
+    def _is_strawberry_type(cls, evaled_type: Any) -> bool:
         # Prevent import cycles
         from strawberry.union import StrawberryUnion
 
@@ -233,14 +223,14 @@ class StrawberryAnnotation:
         return False
 
     @classmethod
-    def _is_union(cls, annotation: type) -> bool:
+    def _is_union(cls, annotation: Any) -> bool:
         """Returns True if annotation is a Union"""
         annotation_origin = getattr(annotation, "__origin__", None)
 
         return annotation_origin is typing.Union
 
     @classmethod
-    def _strip_async_generator(cls, annotation: ...) -> type:
+    def _strip_async_generator(cls, annotation) -> type:
         return annotation.__args__[0]
 
     @classmethod
@@ -253,13 +243,13 @@ class StrawberryAnnotation:
 ################################################################################
 
 
-def _is_input_type(type_: Type) -> bool:
+def _is_input_type(type_: Any) -> bool:
     if not _is_object_type(type_):
         return False
 
     return type_._type_definition.is_input
 
 
-def _is_object_type(type_: Type) -> bool:
+def _is_object_type(type_: Any) -> bool:
     # isinstance(type_, StrawberryObjectType)  # noqa: E800
     return hasattr(type_, "_type_definition")
