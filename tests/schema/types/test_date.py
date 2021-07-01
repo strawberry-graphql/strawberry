@@ -78,7 +78,6 @@ def execute_mutation(value):
 
     schema = strawberry.Schema(query=Query, mutation=Mutation)
 
-
     return schema.execute_sync(
         """
             mutation dateInput($value: Date!) {
@@ -112,12 +111,13 @@ def test_serialization_of_incorrect_date_string(value):
 
 def test_serialization_error_message_for_incorrect_date_string():
     """
-    Test if error message is using original error message from date lib, and is properly formatted
+    Test if error message is using original error message from
+    date lib, and is properly formatted
     """
 
     result = execute_mutation("2021-13-01")
     assert result.errors
     assert result.errors[0].message == (
         "Variable '$value' got invalid value '2021-13-01'; Value cannot represent a "
-        "Date: \"2021-13-01\". month must be in 1..12"
+        'Date: "2021-13-01". month must be in 1..12'
     )

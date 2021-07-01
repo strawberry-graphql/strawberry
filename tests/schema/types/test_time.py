@@ -111,12 +111,13 @@ def test_serialization_of_incorrect_time_string(value):
 
 def test_serialization_error_message_for_incorrect_time_string():
     """
-    Test if error message is using original error message from time lib, and is properly formatted
+    Test if error message is using original error message
+    from time lib, and is properly formatted
     """
 
     result = execute_mutation("25:00")
     assert result.errors
     assert result.errors[0].message == (
         "Variable '$value' got invalid value '25:00'; Value cannot represent a "
-        "Time: \"25:00\". hour must be in 0..23"
+        'Time: "25:00". hour must be in 0..23'
     )
