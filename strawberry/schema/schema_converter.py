@@ -20,6 +20,7 @@ from strawberry.arguments import UNSET, StrawberryArgument
 from strawberry.directive import DirectiveDefinition
 from strawberry.enum import EnumDefinition, EnumValue
 from strawberry.field import StrawberryField
+from strawberry.lazy_type import LazyType
 from strawberry.scalars import is_scalar
 from strawberry.type import StrawberryOptional, StrawberryType, StrawberryList
 from strawberry.types.types import TypeDefinition, undefined
@@ -271,6 +272,8 @@ class GraphQLCoreConverter:
             return self.from_scalar(type_)
         elif isinstance(type_, StrawberryUnion):
             return self.from_union(type_)
+        elif isinstance(type_, LazyType):
+            return self.from_type(type_.resolve_type())
 
         raise TypeError(f"Unexpected type '{type_}'")
 
