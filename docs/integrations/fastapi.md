@@ -4,8 +4,9 @@ title: FastAPI
 
 # FastAPI
 
-Since FastAPI is ASGI compliant, you can plug the `GraphQL` ASGI app on a route:
+Strawberry provides support for [FastAPI](https://fastapi.tiangolo.com/) with the ASGI integration.
 
+See below example for integrating FastAPI with Strawberry:
 ```python
 from fastapi import FastAPI
 from strawberry.asgi import GraphQL
@@ -18,5 +19,5 @@ app = FastAPI()
 app.add_route("/graphql", gqlapp)
 ```
 
-For more information about strawberry ASGI refer to [asgi.md](asgi.md)
+For more information about Strawberry ASGI refer to [asgi.md](./asgi.md)
 
