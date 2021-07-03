@@ -1,4 +1,4 @@
-from typing import cast
+from typing import Union, cast
 
 from strawberry.field import StrawberryField
 from strawberry.scalars import is_scalar
@@ -6,27 +6,27 @@ from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
 
 
 def _convert_from_pydantic_to_strawberry_type(
-    type_: StrawberryType, data_from_model=None, extra=None
+    type_: Union[StrawberryType, type], data_from_model=None, extra=None
 ):
     data = data_from_model if data_from_model is not None else extra
 
     if isinstance(type_, StrawberryOptional):
         return _convert_from_pydantic_to_strawberry_type(
-            type_.of_type,
-            data_from_model=data,
-            extra=extra
+            type_.of_type, data_from_model=data, extra=extra
         )
     if isinstance(type_, StrawberryList):
         items = []
         for index, item in enumerate(data):
-            items.append(_convert_from_pydantic_to_strawberry_type(
-                type_.of_type,
-                data_from_model=item,
-                extra=extra[index] if extra else None,
-            ))
+            items.append(
+                _convert_from_pydantic_to_strawberry_type(
+                    type_.of_type,
+                    data_from_model=item,
+                    extra=extra[index] if extra else None,
+                )
+            )
 
         return items
-    elif is_scalar(type_):  # type: ignore
+    elif is_scalar(type_):
         return data
     else:
         return convert_pydantic_model_to_strawberry_class(

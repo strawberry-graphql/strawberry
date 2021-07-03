@@ -2,17 +2,17 @@ from __future__ import annotations
 
 import inspect
 import typing
-from typing import Any, Dict, List, Optional, Iterable, Union
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Union, cast
 
 from typing_extensions import Annotated, get_args, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.enum import EnumDefinition
-from strawberry.type import StrawberryType, StrawberryList, StrawberryOptional
+from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
 
 from .exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError
 from .scalars import is_scalar
-from .types.types import undefined, TypeDefinition
+from .types.types import TypeDefinition, undefined
 from .utils.str_converters import to_camel_case
 
 
@@ -26,8 +26,7 @@ class StrawberryArgumentAnnotation:
 class StrawberryArgument:
     def __init__(
         self,
-        # TODO: this optional will probably go away when we have StrawberryList
-        python_name: Optional[str],
+        python_name: str,
         graphql_name: Optional[str],
         type_annotation: StrawberryAnnotation,
         is_subscription: bool = False,
@@ -137,12 +136,14 @@ def convert_argument(value: object, type_: Union[StrawberryType, type]) -> objec
         kwargs = {}
 
         for field in type_definition.fields:
-            # TODO: cast value as a protocol that supports __getitem__
+            value = cast(Mapping, value)
+
             if field.graphql_name in value:
                 kwargs[field.python_name] = convert_argument(
                     value[field.graphql_name], field.type
                 )
 
+        type_ = cast(type, type_)
         return type_(**kwargs)
 
     raise UnsupportedTypeError(type_)
@@ -165,6 +166,7 @@ def convert_arguments(
     for argument in arguments:
         if argument.graphql_name in value:
             current_value = value[argument.graphql_name]
+
             kwargs[argument.python_name] = convert_argument(
                 value=current_value,
                 type_=argument.type,

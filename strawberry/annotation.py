@@ -1,18 +1,17 @@
 import typing
 from collections.abc import AsyncGenerator as AsyncGenerator_abc
 from enum import Enum
-from typing import (
-    Any,
+from typing import (  # type: ignore
     TYPE_CHECKING,
+    Any,
     AsyncGenerator as AsyncGenerator_typing,
     Dict,
     ForwardRef,
     Optional,
-    Type,
     TypeVar,
     Union,
-    _eval_type,  # type: ignore
-    _SpecialGenericAlias, # type: ignore
+    _eval_type,
+    _SpecialGenericAlias,
 )
 
 from strawberry.custom_scalar import SCALAR_REGISTRY, ScalarDefinition

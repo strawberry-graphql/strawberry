@@ -26,7 +26,7 @@ from strawberry.types.info import Info
 from .arguments import StrawberryArgument
 from .permission import BasePermission
 from .types.fields.resolver import StrawberryResolver
-from .types.types import FederationFieldParams
+from .types.types import FederationFieldParams, TypeDefinition
 from .utils.str_converters import to_camel_case
 
 
@@ -221,28 +221,33 @@ class StrawberryField(dataclasses.Field):
     def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, builtins.type]]
     ) -> "StrawberryField":
+        new_type: Union[StrawberryType, type]
+
         # TODO: Remove with creation of StrawberryObject. Will act same as other
         #       StrawberryTypes
-        if (
-            hasattr(self.type, "_type_definition")
-            and self.type._type_definition.is_generic
-        ):
-            type_ = self.type._type_definition
-            type_copy = type_.copy_with(type_var_map)
+        if hasattr(self.type, "_type_definition"):
+            type_definition: TypeDefinition = self.type._type_definition  # type: ignore
 
-            new_type = builtins.type(
-                type_copy.name,
-                (),
-                {"_type_definition": type_copy},
-            )
+            if type_definition.is_generic:
+                type_ = type_definition
+                type_copy = type_.copy_with(type_var_map)
+
+                new_type = builtins.type(
+                    type_copy.name,
+                    (),
+                    {"_type_definition": type_copy},
+                )
 
         else:
+            assert isinstance(self.type, StrawberryType)
+
             new_type = self.type.copy_with(type_var_map)
 
-        if self.base_resolver is not None:
-            new_resolver = self.base_resolver.copy_with(type_var_map)
-        else:
-            new_resolver = None
+        new_resolver = (
+            self.base_resolver.copy_with(type_var_map)
+            if self.base_resolver is not None
+            else None
+        )
 
         return StrawberryField(
             python_name=self.python_name,
@@ -257,7 +262,8 @@ class StrawberryField(dataclasses.Field):
             base_resolver=new_resolver,
             permission_classes=self.permission_classes,
             default_value=self.default_value,
-            default_factory=self.default_factory,
+            # ignored because of https://github.com/python/mypy/issues/6910
+            default_factory=self.default_factory,  # type: ignore[misc]
             deprecation_reason=self.deprecation_reason,
         )
 
