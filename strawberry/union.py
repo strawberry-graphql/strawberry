@@ -3,22 +3,22 @@ from typing import (
     TYPE_CHECKING,
     Any,
     List,
+    Mapping,
     NoReturn,
     Optional,
     Tuple,
     Type,
     TypeVar,
     Union,
-    Mapping,
     cast,
 )
 
 from graphql import (
     GraphQLAbstractType,
+    GraphQLNamedType,
     GraphQLResolveInfo,
     GraphQLType,
     GraphQLTypeResolver,
-    GraphQLNamedType,
     GraphQLUnionType,
 )
 
@@ -109,7 +109,7 @@ class StrawberryUnion(StrawberryType):
                         (),
                         {"_type_definition": new_type_definition},
                     )
-            elif isinstance(type_, StrawberryType) and type_.is_generic:
+            if isinstance(type_, StrawberryType) and type_.is_generic:
                 new_type = type_.copy_with(type_var_map)
             else:
                 new_type = type_
