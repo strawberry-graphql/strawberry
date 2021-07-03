@@ -148,21 +148,31 @@ class StrawberryField(dataclasses.Field):
         #       removed.
         _ = resolver.arguments
 
-    @property
-    def type(self) -> StrawberryType:
-        if self.base_resolver is not None:
-            # Handle unannotated functions (such as lambdas)
-            if self.base_resolver.type is not None:
-                return self.base_resolver.type
+    @property  # type: ignore
+    def type(self) -> Union[StrawberryType, type]:  # type: ignore
+        # We are catching NameError because dataclasses tries to fetch the type
+        # of the field from the class before the class is fully defined.
+        # This triggers a NameError error when using forward references because
+        # our `type` property tries to find the field type from the global namespace
+        # but it is not yet defined.
+        try:
+            if self.base_resolver is not None:
+                # Handle unannotated functions (such as lambdas)
+                if self.base_resolver.type is not None:
+                    return self.base_resolver.type
 
-        if not isinstance(self.type_annotation, StrawberryAnnotation):
-            # TODO: This is because of dataclasses
-            return self.type_annotation
+            assert self.type_annotation is not None
 
-        return self.type_annotation.resolve()
+            if not isinstance(self.type_annotation, StrawberryAnnotation):
+                # TODO: This is because of dataclasses
+                return self.type_annotation
+
+            return self.type_annotation.resolve()
+        except NameError:
+            return None  # type: ignore
 
     @type.setter
-    def type(self, type_: object) -> None:
+    def type(self, type_: Any) -> None:
         self.type_annotation = type_
 
     # TODO: add this to arguments (and/or move it to StrawberryType)
