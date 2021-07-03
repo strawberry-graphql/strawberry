@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import List, Mapping, TypeVar, Union, TYPE_CHECKING
+from typing import List, Mapping, TYPE_CHECKING, TypeVar, Union
 
 if TYPE_CHECKING:
-    from strawberry.annotation import StrawberryAnnotation
+    from .types.types import TypeDefinition
 
 
 class StrawberryType(ABC):
@@ -75,19 +75,20 @@ class StrawberryContainer(StrawberryType):
     def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
     ) -> StrawberryType:
-        # TODO: Obsolete with StrawberryObject
-        if (
-            hasattr(self.of_type, "_type_definition")
-            and self.of_type._type_definition.is_generic
-        ):
-            type_ = self.of_type._type_definition
-            of_type_copy = type_.copy_with(type_var_map)
+        of_type_copy: Union[StrawberryType, type]
 
-            of_type_copy = type(
-                of_type_copy.name,
-                (),
-                {"_type_definition": of_type_copy},
-            )
+        # TODO: Obsolete with StrawberryObject
+        if hasattr(self.of_type, "_type_definition"):
+            type_definition: TypeDefinition = self.of_type._type_definition  # type: ignore
+
+            if type_definition.is_generic:
+                type_definition_copy = type_definition.copy_with(type_var_map)
+
+                of_type_copy = type(
+                    type_definition_copy.name,
+                    (),
+                    {"_type_definition": type_definition_copy},
+                )
 
         elif isinstance(self.of_type, StrawberryType) and self.of_type.is_generic:
             of_type_copy = self.of_type.copy_with(type_var_map)
@@ -102,7 +103,7 @@ class StrawberryContainer(StrawberryType):
         # TODO: Obsolete with StrawberryObject
         type_ = self.of_type
         if hasattr(self.of_type, "_type_definition"):
-            type_ = self.of_type._type_definition
+            type_ = self.of_type._type_definition  # type: ignore
 
         if isinstance(type_, StrawberryType):
             return type_.is_generic
@@ -122,9 +123,9 @@ class StrawberryTypeVar(StrawberryType):
     def __init__(self, type_var: TypeVar):
         self.type_var = type_var
 
-    def copy_with(
+    def copy_with(  # type: ignore[override]
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
-    ) -> StrawberryType:
+    ) -> Union[StrawberryType, type]:
         return type_var_map[self.type_var]
 
     @property
@@ -142,25 +143,3 @@ class StrawberryTypeVar(StrawberryType):
             return self.type_var == other
 
         return super().__eq__(other)
-
-
-# @property
-# def type_params(self) -> Optional[List[Type]]:
-#     if isinstance(self.type, StrawberryList):
-#         assert self.child is not None
-#         return self.child.type_params
-#
-#     if isinstance(self.type, StrawberryUnion):
-#         types = self.type.types
-#         type_vars = [t for t in types if is_type_var(t)]
-#
-#         if type_vars:
-#             return type_vars
-#
-#     if is_type_var(self.type):
-#         return [self.type]
-#
-#     if has_type_var(self.type):
-#         return get_parameters(self.type)
-#
-#     return None

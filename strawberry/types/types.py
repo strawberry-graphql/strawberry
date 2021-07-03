@@ -48,8 +48,8 @@ class TypeDefinition(StrawberryType):
     def resolve_generic(self, wrapped_cls: type) -> type:
         from strawberry.annotation import StrawberryAnnotation
 
-        passed_types = wrapped_cls.__args__
-        params = wrapped_cls.__origin__.__parameters__
+        passed_types = wrapped_cls.__args__  # type: ignore
+        params = wrapped_cls.__origin__.__parameters__  # type: ignore
 
         # Make sure all passed_types are turned into StrawberryTypes
         resolved_types = []
@@ -79,7 +79,7 @@ class TypeDefinition(StrawberryType):
             # TODO: Logic unnecessary with StrawberryObject
             field_type = field.type
             if hasattr(field_type, "_type_definition"):
-                field_type = field_type._type_definition
+                field_type = field_type._type_definition  # type: ignore
 
             # TODO: All types should end up being StrawberryTypes
             #       The first check is here as a symptom of strawberry.ID being a
@@ -118,9 +118,11 @@ class TypeDefinition(StrawberryType):
             if isinstance(type_, StrawberryUnion):
                 name = type_.name
             elif hasattr(type_, "_type_definition"):
-                name = capitalize_first(type_._type_definition.name)
+                field_type = type_._type_definition  # type: ignore
+
+                name = capitalize_first(field_type.name)
             else:
-                name = capitalize_first(type_.__name__)
+                name = capitalize_first(type_.__name__)  # type: ignore
 
             names.append(name)
 
@@ -136,7 +138,7 @@ class TypeDefinition(StrawberryType):
         for field in self.fields:
             # TODO: Obsolete with StrawberryObject
             if hasattr(field.type, "_type_definition"):
-                type_ = field.type._type_definition
+                type_ = field.type._type_definition  # type: ignore
             else:
                 type_ = field.type
 
@@ -147,7 +149,7 @@ class TypeDefinition(StrawberryType):
 
         # TODO: Consider making leaf types always StrawberryTypes, maybe a
         #       StrawberryBaseType or something
-        # return any(field.type.is_generic for field in self.fields)
+        # - return any(field.type.is_generic for field in self.fields)
 
     @property
     def type_params(self) -> List[TypeVar]:
@@ -163,7 +165,7 @@ class TypeDefinition(StrawberryType):
         if isinstance(root, dict):
             raise NotImplementedError()
 
-        type_definition = root._type_definition
+        type_definition = root._type_definition  # type: ignore
 
         if type_definition is self:
             # No generics involved. Exact type match

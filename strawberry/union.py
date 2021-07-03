@@ -10,10 +10,17 @@ from typing import (
     TypeVar,
     Union,
     Mapping,
+    cast,
 )
 
-from graphql import GraphQLAbstractType, GraphQLResolveInfo, GraphQLTypeResolver, \
-    GraphQLNamedType
+from graphql import (
+    GraphQLAbstractType,
+    GraphQLResolveInfo,
+    GraphQLType,
+    GraphQLTypeResolver,
+    GraphQLNamedType,
+    GraphQLUnionType,
+)
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import (
@@ -49,7 +56,7 @@ class StrawberryUnion(StrawberryType):
         name = ""
         for type_ in self.types:
             if hasattr(type_, "_type_definition"):
-                name += type_._type_definition.name
+                name += type_._type_definition.name  # type: ignore
             else:
                 name += type.__name__
 
@@ -57,7 +64,10 @@ class StrawberryUnion(StrawberryType):
 
     @property
     def types(self) -> Tuple[StrawberryType, ...]:
-        return tuple(annotation.resolve() for annotation in self.type_annotations)
+        return tuple(
+            cast(StrawberryType, annotation.resolve())
+            for annotation in self.type_annotations
+        )
 
     @property
     def type_params(self) -> List[TypeVar]:
@@ -87,13 +97,18 @@ class StrawberryUnion(StrawberryType):
 
         new_types = []
         for type_ in self.types:
-            if hasattr(type_, "_type_definition") and type_._type_definition.is_generic:
-                new_type_definition = type_._type_definition.copy_with(type_var_map)
-                new_type = type(
-                    new_type_definition.name,
-                    (),
-                    {"_type_definition": new_type_definition},
-                )
+            new_type: Union[StrawberryType, type]
+
+            if hasattr(type_, "_type_definition"):
+                type_definition: TypeDefinition = type_._type_definition  # type: ignore
+
+                if type_definition.is_generic:
+                    new_type_definition = type_definition.copy_with(type_var_map)
+                    new_type = type(
+                        new_type_definition.name,
+                        (),
+                        {"_type_definition": new_type_definition},
+                    )
             elif isinstance(type_, StrawberryType) and type_.is_generic:
                 new_type = type_.copy_with(type_var_map)
             else:
@@ -103,7 +118,7 @@ class StrawberryUnion(StrawberryType):
 
         return StrawberryUnion(
             type_annotations=tuple(map(StrawberryAnnotation, new_types)),
-            description=self.description
+            description=self.description,
         )
 
     def __call__(self, *_args, **_kwargs) -> NoReturn:
@@ -120,6 +135,7 @@ class StrawberryUnion(StrawberryType):
         def _resolve_union_type(
             root: Any, info: GraphQLResolveInfo, type_: GraphQLAbstractType
         ) -> str:
+            assert isinstance(type_, GraphQLUnionType)
 
             from strawberry.types.types import TypeDefinition
 
@@ -127,6 +143,8 @@ class StrawberryUnion(StrawberryType):
             if not hasattr(root, "_type_definition"):
                 # TODO: If root=python dict, this won't work
                 raise WrongReturnTypeForUnion(info.field_name, str(type(root)))
+
+            return_type: Optional[GraphQLType]
 
             # Iterate over all of our known types and find the first concrete type that
             # implements the type
@@ -151,7 +169,8 @@ class StrawberryUnion(StrawberryType):
                 # TODO: Can return_type ever _not_ be a GraphQLNamedType?
                 return return_type.name
             else:
-                return return_type.__name__
+                # todo: check if this is correct
+                return return_type.__name__  # type: ignore
 
         return _resolve_union_type
 

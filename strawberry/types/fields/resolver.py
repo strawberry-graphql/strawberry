@@ -137,7 +137,7 @@ class StrawberryResolver(Generic[T]):
         return type(self)(
             func=self.wrapped_func,
             description=self._description,
-            type_override=self.type.copy_with(type_var_map),
+            type_override=self.type.copy_with(type_var_map) if self.type else None,
         )
 
 
