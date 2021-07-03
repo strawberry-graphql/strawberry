@@ -1,5 +1,6 @@
 from enum import Enum
-from typing import Any, Callable, Dict, List, Type, Union
+from strawberry.exceptions import MissingTypesForGenericError
+from typing import Any, Callable, Dict, List, Type, Union, cast
 
 from typing_extensions import TypeGuard
 
@@ -279,6 +280,9 @@ class GraphQLCoreConverter:
         return get_scalar_type(scalar, self.type_map)
 
     def from_type(self, type_: Union[StrawberryType, type]) -> GraphQLNullableType:
+        if _is_generic(type_):
+            raise MissingTypesForGenericError(type_)
+
         if isinstance(type_, EnumDefinition):  # TODO: Replace with StrawberryEnum
             return self.from_enum(type_)
         elif _is_input_type(type_):  # TODO: Replace with StrawberryInputObject
@@ -361,3 +365,15 @@ def _is_scalar(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
 def _is_object_type(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
     # isinstance(type_, StrawberryObjectType)  # noqa: E800
     return hasattr(type_, "_type_definition")
+
+
+def _is_generic(type_: Union[StrawberryType, type]) -> bool:
+    if hasattr(type_, "_type_definition"):
+
+        type_definition: TypeDefinition = type_._type_definition  # type: ignore
+        return type_definition.is_generic
+
+    if isinstance(type_, StrawberryType):
+        return type_.is_generic
+
+    return False

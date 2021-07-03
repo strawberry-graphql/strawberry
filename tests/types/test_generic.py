@@ -321,15 +321,15 @@ def test_using_generics_raises_when_missing_annotation():
         name: str
 
     error_message = (
-        'The type "Edge" of the field "user" is generic, but no type has been passed'
+        'Query fields cannot be resolved. The type "Edge" is generic, but no type has been passed'
     )
 
     @strawberry.type
     class Query:
         user: Edge
 
-    with pytest.raises(MissingTypesForGenericError, match=error_message):
-        Query._type_definition.fields
+    with pytest.raises(TypeError, match=error_message):
+        strawberry.Schema(Query)
 
 
 def test_using_generics_raises_when_missing_annotation_nested():
@@ -346,16 +346,16 @@ def test_using_generics_raises_when_missing_annotation_nested():
         name: str
 
     error_message = (
-        'The type "Connection" of the field "users" is generic, but no type has been '
-        "passed"
+        'Query fields cannot be resolved. The type "Connection" '
+        'is generic, but no type has been passed'
     )
 
     @strawberry.type
     class Query:
         users: Connection
 
-    with pytest.raises(MissingTypesForGenericError, match=error_message):
-        Query._type_definition.fields
+    with pytest.raises(TypeError, match=error_message):
+        strawberry.Schema(Query)
 
 
 def test_generics_inside_optional():
