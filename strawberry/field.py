@@ -66,7 +66,7 @@ class StrawberryField(dataclasses.Field):
             repr=is_basic_field,
             compare=is_basic_field,
             hash=None,
-            metadata=None,
+            metadata={},
         )
 
         self._graphql_name = graphql_name

@@ -1,5 +1,7 @@
 from enum import Enum
-from typing import Any, Callable, Dict, Type, cast
+from typing import Any, Callable, Dict, List, Type, Union
+
+from typing_extensions import TypeGuard
 
 from graphql import (
     GraphQLArgument,
@@ -15,6 +17,7 @@ from graphql import (
     GraphQLNullableType,
     GraphQLObjectType,
     GraphQLScalarType,
+    GraphQLType,
     GraphQLUnionType,
     Undefined,
 )
@@ -51,6 +54,8 @@ class GraphQLCoreConverter:
         self.type_map: Dict[str, ConcreteType] = {}
 
     def from_argument(self, argument: StrawberryArgument) -> GraphQLArgument:
+        argument_type: GraphQLType
+
         if isinstance(argument.type, StrawberryOptional):
             argument_type = self.from_optional(argument.type)
         else:
@@ -104,6 +109,7 @@ class GraphQLCoreConverter:
         )
 
     def from_field(self, field: StrawberryField) -> GraphQLField:
+        field_type: GraphQLType
 
         if isinstance(field.type, StrawberryOptional):
             field_type = self.from_optional(field.type)
@@ -132,6 +138,8 @@ class GraphQLCoreConverter:
         )
 
     def from_input_field(self, field: StrawberryField) -> GraphQLInputField:
+        field_type: GraphQLType
+
         if isinstance(field.type, StrawberryOptional):
             field_type = self.from_optional(field.type)
         else:
@@ -208,6 +216,8 @@ class GraphQLCoreConverter:
         return graphql_interface
 
     def from_list(self, type_: StrawberryList) -> GraphQLList:
+        of_type: GraphQLType
+
         if isinstance(type_.of_type, StrawberryOptional):
             of_type = self.from_optional(type_.of_type)
         else:
@@ -218,7 +228,7 @@ class GraphQLCoreConverter:
     def from_optional(self, type_: StrawberryOptional) -> GraphQLNullableType:
         return self.from_type(type_.of_type)
 
-    def from_non_optional(self, type_: StrawberryType) -> GraphQLNonNull:
+    def from_non_optional(self, type_: Union[StrawberryType, type]) -> GraphQLNonNull:
         of_type = self.from_type(type_)
         return GraphQLNonNull(of_type)
 
@@ -268,7 +278,7 @@ class GraphQLCoreConverter:
     def from_scalar(self, scalar: Type) -> GraphQLScalarType:
         return get_scalar_type(scalar, self.type_map)
 
-    def from_type(self, type_: StrawberryType) -> GraphQLNullableType:
+    def from_type(self, type_: Union[StrawberryType, type]) -> GraphQLNullableType:
         if isinstance(type_, EnumDefinition):  # TODO: Replace with StrawberryEnum
             return self.from_enum(type_)
         elif _is_input_type(type_):  # TODO: Replace with StrawberryInputObject
@@ -276,14 +286,13 @@ class GraphQLCoreConverter:
         elif isinstance(type_, StrawberryList):
             return self.from_list(type_)
         elif _is_interface_type(type_):  # TODO: Replace with StrawberryInterface
-            return self.from_interface(type_._type_definition)
+            type_definition: TypeDefinition = type_._type_definition  # type: ignore
+            return self.from_interface(type_definition)
         elif _is_object_type(type_):  # TODO: Replace with StrawberryObject
-            return self.from_object(type_._type_definition)
+            type_definition: TypeDefinition = type_._type_definition  # type: ignore
+            return self.from_object(type_definition)
         elif isinstance(type_, TypeDefinition):  # TODO: Replace with StrawberryObject
             return self.from_object(type_)
-        elif isinstance(type_, StrawberryOptional):
-            # TODO: Not sure how to handle just yet
-            raise NotImplementedError()
         elif _is_scalar(type_):  # TODO: Replace with StrawberryScalar
             return self.from_scalar(type_)
         elif isinstance(type_, StrawberryUnion):
@@ -301,9 +310,12 @@ class GraphQLCoreConverter:
             assert isinstance(graphql_union, GraphQLUnionType)  # For mypy
             return graphql_union
 
-        graphql_types = []
+        graphql_types: List[GraphQLObjectType] = []
         for type_ in union.types:
             graphql_type = self.from_type(type_)
+
+            assert isinstance(graphql_type, GraphQLObjectType)
+
             graphql_types.append(graphql_type)
 
         graphql_union = GraphQLUnionType(
@@ -325,25 +337,27 @@ class GraphQLCoreConverter:
 ################################################################################
 
 
-def _is_input_type(type_: Type) -> bool:
+def _is_input_type(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
     if not _is_object_type(type_):
         return False
 
-    return type_._type_definition.is_input
+    type_definition: TypeDefinition = type_._type_definition  # type: ignore
+    return type_definition.is_input
 
 
-def _is_interface_type(type_: type) -> bool:
+def _is_interface_type(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
     if not _is_object_type(type_):
         return False
 
-    return type_._type_definition.is_interface
+    type_definition: TypeDefinition = type_._type_definition  # type: ignore
+    return type_definition.is_interface
 
 
-def _is_scalar(type_: Type) -> bool:
+def _is_scalar(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
     # isinstance(type_, StrawberryScalar)  # noqa: E800
     return is_scalar(type_)
 
 
-def _is_object_type(type_: Type) -> bool:
+def _is_object_type(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
     # isinstance(type_, StrawberryObjectType)  # noqa: E800
     return hasattr(type_, "_type_definition")
