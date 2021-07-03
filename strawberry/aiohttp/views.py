@@ -4,14 +4,14 @@ from abc import ABC, abstractmethod
 from contextlib import suppress
 from io import BytesIO
 from pathlib import Path
-from typing import Any, AsyncGenerator, Dict, Optional
+from typing import Any, AsyncGenerator, Dict, Optional, cast
 
 from graphql import ExecutionResult as GraphQLExecutionResult, GraphQLError
 from graphql.error import format_error as format_graphql_error
 
 from aiohttp import http, web
 from strawberry.exceptions import MissingQueryError
-from strawberry.file_uploads.data import replace_placeholders_with_files
+from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import (
     GraphQLHTTPResponse,
     GraphQLRequestData,
@@ -31,7 +31,13 @@ from strawberry.subscriptions.constants import (
     GQL_STOP,
     GRAPHQL_WS,
 )
+from strawberry.subscriptions.types import (
+    OperationMessage,
+    OperationMessagePayload,
+    StartPayload,
+)
 from strawberry.types import ExecutionResult
+from strawberry.utils.debug import pretty_print_graphql_operation
 
 
 class BaseGraphQLView(ABC):
@@ -41,11 +47,13 @@ class BaseGraphQLView(ABC):
         graphiql: bool = True,
         keep_alive: bool = True,
         keep_alive_interval: float = 1,
+        debug: bool = False,
     ):
         self.schema = schema
         self.graphiql = graphiql
         self.keep_alive = keep_alive
         self.keep_alive_interval = keep_alive_interval
+        self.debug = debug
 
     @abstractmethod
     async def __call__(self, request: web.Request) -> web.StreamResponse:
@@ -66,27 +74,27 @@ class BaseGraphQLView(ABC):
 
 
 class WebSocketHandler(BaseGraphQLView, ABC):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.subscriptions: Dict[str, AsyncGenerator] = {}
-        self.tasks: Dict[str, asyncio.Task] = {}
-        self.keep_alive_task: Optional[asyncio.Task] = None
-
-    async def handle_web_socket(self, request: web.Request) -> web.StreamResponse:
+    async def handle_websocket(self, request: web.Request) -> web.StreamResponse:
         ws = web.WebSocketResponse(protocols=[GRAPHQL_WS])
         await ws.prepare(request)
 
-        try:
-            async for message in ws:
-                await self.handle_ws_message(request, ws, message)  # type: ignore
-        finally:
-            if self.keep_alive_task:
-                self.keep_alive_task.cancel()
-                with suppress(Exception):
-                    await self.keep_alive_task
+        request["subscriptions"] = {}
+        request["tasks"] = {}
+        request["keep_alive_task"] = None
 
-            for operation_id in list(self.subscriptions.keys()):
-                await self.cleanup_operation(operation_id)
+        try:
+            async for ws_message in ws:  # type: http.WSMessage
+                if ws_message.type == http.WSMsgType.TEXT:
+                    message: OperationMessage = ws_message.json()
+                    await self.handle_ws_message(request, ws, message)
+        finally:
+            if request["keep_alive_task"]:
+                request["keep_alive_task"].cancel()
+                with suppress(BaseException):
+                    await request["keep_alive_task"]
+
+            for operation_id in list(request["subscriptions"].keys()):
+                await self.cleanup_operation(request, operation_id)
 
         return ws
 
@@ -94,90 +102,87 @@ class WebSocketHandler(BaseGraphQLView, ABC):
         self,
         request: web.Request,
         ws: web.WebSocketResponse,
-        ws_message: http.WSMessage,
+        message: OperationMessage,
     ) -> None:
-        if ws_message.type == http.WSMsgType.TEXT:
-            await self.handle_ws_text_message(request, ws, ws_message)
-
-    async def handle_ws_text_message(
-        self,
-        request: web.Request,
-        ws: web.WebSocketResponse,
-        ws_text_message: http.WSMessage,
-    ) -> None:
-        message: dict = ws_text_message.json()
-        message_type: str = message["type"]
+        message_type = message["type"]
 
         if message_type == GQL_CONNECTION_INIT:
-            await self.handle_connection_init(ws)
+            await self.handle_connection_init(request, ws)
         elif message_type == GQL_CONNECTION_TERMINATE:
             await self.handle_connection_terminate(ws)
         elif message_type == GQL_START:
             await self.handle_start(request, ws, message)
         elif message_type == GQL_STOP:
-            await self.handle_stop(message)
+            await self.handle_stop(request, message)
 
-    async def handle_connection_init(self, ws: web.WebSocketResponse) -> None:
+    async def handle_connection_init(
+        self, request: web.Request, ws: web.WebSocketResponse
+    ) -> None:
         await ws.send_json({"type": GQL_CONNECTION_ACK})
 
         if self.keep_alive:
-            self.keep_alive_task = asyncio.create_task(self.handle_keep_alive(ws))
+            request["keep_alive_task"] = asyncio.create_task(self.handle_keep_alive(ws))
 
     async def handle_connection_terminate(self, ws: web.WebSocketResponse) -> None:
         await ws.close()
 
     async def handle_start(
-        self, request: web.Request, ws: web.WebSocketResponse, message: dict
+        self, request: web.Request, ws: web.WebSocketResponse, message: OperationMessage
     ) -> None:
         operation_id = message["id"]
-        payload: dict = message["payload"]
+        payload = cast(StartPayload, message["payload"])
         query = payload["query"]
-        operation_name = payload.get("operation_name")
+        operation_name = payload.get("operationName")
         variables = payload.get("variables")
         context = await self.get_context(request, ws)
         root_value = await self.get_root_value(request)
 
+        if self.debug:
+            pretty_print_graphql_operation(operation_name, query, variables)
+
         try:
             result_source = await self.schema.subscribe(
-                query,
+                query=query,
                 variable_values=variables,
                 operation_name=operation_name,
                 context_value=context,
                 root_value=root_value,
             )
         except GraphQLError as error:
-            payload = format_graphql_error(error)
-            await self.send_message(ws, GQL_ERROR, operation_id, payload)
+            error_payload = format_graphql_error(error)
+            await self.send_message(ws, GQL_ERROR, operation_id, error_payload)
             return
 
         if isinstance(result_source, GraphQLExecutionResult):
             assert result_source.errors
-            payload = format_graphql_error(result_source.errors[0])
-            await self.send_message(ws, GQL_ERROR, operation_id, payload)
+            error_payload = format_graphql_error(result_source.errors[0])
+            await self.send_message(ws, GQL_ERROR, operation_id, error_payload)
             return
 
-        self.subscriptions[operation_id] = result_source
-        self.tasks[operation_id] = asyncio.create_task(
+        request["subscriptions"][operation_id] = result_source
+        request["tasks"][operation_id] = asyncio.create_task(
             self.handle_async_results(result_source, operation_id, ws)
         )
 
-    async def handle_stop(self, message: dict) -> None:
+    async def handle_stop(
+        self, request: web.Request, message: OperationMessage
+    ) -> None:
         operation_id = message["id"]
-        await self.cleanup_operation(operation_id)
+        await self.cleanup_operation(request, operation_id)
 
     async def handle_keep_alive(self, ws: web.WebSocketResponse) -> None:
-        await asyncio.sleep(self.keep_alive_interval)
-        await ws.send_json({"type": GQL_CONNECTION_KEEP_ALIVE})
-        await self.handle_keep_alive(ws)
+        while True:
+            await ws.send_json({"type": GQL_CONNECTION_KEEP_ALIVE})
+            await asyncio.sleep(self.keep_alive_interval)
 
     async def handle_async_results(
         self,
-        result_generator: AsyncGenerator,
+        result_source: AsyncGenerator,
         operation_id: str,
         ws: web.WebSocketResponse,
     ) -> None:
         try:
-            async for result in result_generator:
+            async for result in result_source:
                 payload = {"data": result.data}
                 if result.errors:
                     payload["errors"] = [
@@ -200,14 +205,15 @@ class WebSocketHandler(BaseGraphQLView, ABC):
 
         await self.send_message(ws, GQL_COMPLETE, operation_id, None)
 
-    async def cleanup_operation(self, operation_id: str) -> None:
-        await self.subscriptions[operation_id].aclose()
-        del self.subscriptions[operation_id]
+    @classmethod
+    async def cleanup_operation(cls, request: web.Request, operation_id: str) -> None:
+        await request["subscriptions"][operation_id].aclose()
+        del request["subscriptions"][operation_id]
 
-        self.tasks[operation_id].cancel()
-        with suppress(Exception):
-            await self.tasks[operation_id]
-        del self.tasks[operation_id]
+        request["tasks"][operation_id].cancel()
+        with suppress(BaseException):
+            await request["tasks"][operation_id]
+        del request["tasks"][operation_id]
 
     @classmethod
     async def send_message(
@@ -215,15 +221,15 @@ class WebSocketHandler(BaseGraphQLView, ABC):
         ws: web.WebSocketResponse,
         type_: str,
         operation_id: str,
-        payload: Optional[dict] = None,
+        payload: Optional[OperationMessagePayload] = None,
     ) -> None:
-        data: Dict[Any, Any] = {"type": type_, "id": operation_id}
+        data: OperationMessage = {"type": type_, "id": operation_id}
         if payload is not None:
             data["payload"] = payload
-        return await ws.send_json(data)
+        await ws.send_json(data)
 
     @classmethod
-    def is_web_socket_request(cls, request: web.Request) -> bool:
+    def is_websocket_request(cls, request: web.Request) -> bool:
         ws = web.WebSocketResponse(protocols=[GRAPHQL_WS])
         return ws.can_prepare(request).ok
 
@@ -317,7 +323,7 @@ class HTTPHandler(BaseGraphQLView, ABC):
 
 class GraphQLView(HTTPHandler, WebSocketHandler, BaseGraphQLView):
     async def __call__(self, request: web.Request) -> web.StreamResponse:
-        if self.is_web_socket_request(request):
-            return await self.handle_web_socket(request)
+        if self.is_websocket_request(request):
+            return await self.handle_websocket(request)
         else:
             return await self.handle_http(request)

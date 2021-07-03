@@ -80,7 +80,7 @@ def copy_type_with(
                     graphql_name=field.graphql_name,
                     origin=field.origin,
                     type_annotation=field.type,
-                    default_value=field.default_value,
+                    default=field.default_value,
                     base_resolver=field.base_resolver,
                     is_subscription=field.is_subscription,
                     federation=federation,

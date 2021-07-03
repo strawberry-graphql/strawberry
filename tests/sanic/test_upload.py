@@ -23,6 +23,56 @@ TEXT_FILE_FIELD = (
     "strawberry\r\n"
 )
 
+MULTI_UPLOAD_OPERATIONS_FIELD = (
+    "------sanic\r\n"
+    'Content-Disposition: form-data; name="operations"\r\n'
+    "\r\n"
+    "{"
+    '"query": "mutation($files: [Upload!]!){readFiles(files: $files)}",'
+    '"variables": {"files": [null, null]}'
+    "}\r\n"
+)
+
+MULTI_UPLOAD_MAP_FIELD = (
+    "------sanic\r\n"
+    'Content-Disposition: form-data; name="map"\r\n'
+    "\r\n"
+    '{"file1": ["variables.files.0"], "file2": ["variables.files.1"]}\r\n'
+)
+
+MULTI_UPLOAD_TEXT_FILE1_FIELD = (
+    "------sanic\r\n"
+    'Content-Disposition: form-data; name="file1"; filename="file1.txt"\r\n'
+    "Content-Type: text/plain\r\n"
+    "\r\n"
+    "strawberry1\r\n"
+)
+
+MULTI_UPLOAD_TEXT_FILE2_FIELD = (
+    "------sanic\r\n"
+    'Content-Disposition: form-data; name="file2"; filename="file2.txt"\r\n'
+    "Content-Type: text/plain\r\n"
+    "\r\n"
+    "strawberry2\r\n"
+)
+
+COMPLEX_UPLOAD_OPERATIONS_FIELD = (
+    "------sanic\r\n"
+    'Content-Disposition: form-data; name="operations"\r\n'
+    "\r\n"
+    "{"
+    '"query": "mutation($folder: FolderInput!){readFolder(folder: $folder)}",'
+    '"variables": {"folder": {"files": [null, null]}}'
+    "}\r\n"
+)
+
+COMPLEX_UPLOAD_MAP_FIELD = (
+    "------sanic\r\n"
+    'Content-Disposition: form-data; name="map"\r\n'
+    "\r\n"
+    '{"file1": ["variables.folder.files.0"], "file2": ["variables.folder.files.1"]}\r\n'
+)
+
 END = "------sanic--"
 
 
@@ -39,6 +89,54 @@ def test_single_file_upload(sanic_client):
     assert response.status_code == 200
     assert not response.json.get("errors")
     assert response.json["data"]["readText"] == "strawberry"
+
+
+def test_file_list_upload(sanic_client):
+    data = (
+        MULTI_UPLOAD_OPERATIONS_FIELD
+        + MULTI_UPLOAD_MAP_FIELD
+        + MULTI_UPLOAD_TEXT_FILE1_FIELD
+        + MULTI_UPLOAD_TEXT_FILE2_FIELD
+        + END
+    )
+    headers = {"content-type": "multipart/form-data; boundary=----sanic"}
+
+    request, response = sanic_client.test_client.post(
+        "/graphql",
+        data=data,
+        headers=headers,
+    )
+
+    assert response.status_code == 200
+    assert not response.json.get("errors")
+
+    assert len(response.json["data"]["readFiles"]) == 2
+    assert response.json["data"]["readFiles"][0] == "strawberry1"
+    assert response.json["data"]["readFiles"][1] == "strawberry2"
+
+
+def test_nested_file_list(sanic_client):
+    data = (
+        COMPLEX_UPLOAD_OPERATIONS_FIELD
+        + COMPLEX_UPLOAD_MAP_FIELD
+        + MULTI_UPLOAD_TEXT_FILE1_FIELD
+        + MULTI_UPLOAD_TEXT_FILE2_FIELD
+        + END
+    )
+    headers = {"content-type": "multipart/form-data; boundary=----sanic"}
+
+    request, response = sanic_client.test_client.post(
+        "/graphql",
+        data=data,
+        headers=headers,
+    )
+
+    assert response.status_code == 200
+    assert not response.json.get("errors")
+
+    assert len(response.json["data"]["readFolder"]) == 2
+    assert response.json["data"]["readFolder"][0] == "strawberry1"
+    assert response.json["data"]["readFolder"][1] == "strawberry2"
 
 
 def test_extra_form_data_fields_are_ignored(sanic_client):

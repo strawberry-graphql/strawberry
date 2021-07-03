@@ -6,9 +6,9 @@ import pytest
 from typing_extensions import Annotated
 
 import strawberry
+from strawberry.arguments import UNSET
 from strawberry.exceptions import MultipleStrawberryArgumentsError
-from strawberry.type import StrawberryOptional, StrawberryList
-from strawberry.types.types import undefined
+from strawberry.type import StrawberryList, StrawberryOptional
 
 
 def test_basic_arguments():
@@ -213,7 +213,7 @@ def test_argument_with_default_value_none():
     [argument] = definition.fields[0].arguments
 
     assert argument.graphql_name == "argument"
-    assert argument.default_value is None
+    assert argument.default is None
     assert argument.description is None
     assert isinstance(argument.type, StrawberryOptional)
     assert argument.type.of_type is str
@@ -233,7 +233,7 @@ def test_argument_with_default_value_undefined():
     [argument] = definition.fields[0].arguments
 
     assert argument.graphql_name == "argument"
-    assert argument.default_value is undefined
+    assert argument.default is UNSET
     assert argument.description is None
     assert isinstance(argument.type, StrawberryOptional)
     assert argument.type.of_type is str
@@ -305,9 +305,36 @@ def test_annotated_argument_with_default_value():
     [argument] = definition.fields[0].arguments
 
     assert argument.graphql_name == "argument"
-    assert argument.default_value == "Patrick"
     assert argument.description == "This is a description"
     assert argument.type is str
+    assert argument.default == "Patrick"
+
+
+def test_annotated_argument_with_rename():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def name(  # type: ignore
+            arg: Annotated[
+                str,
+                strawberry.argument(name="argument"),  # noqa: F722
+            ] = "Patrick"
+        ) -> str:
+            return "Name"
+
+    definition = Query._type_definition
+
+    assert definition.name == "Query"
+
+    assert len(definition.fields[0].arguments) == 1
+
+    argument = definition.fields[0].arguments[0]
+
+    assert argument.graphql_name == "argument"
+    assert argument.python_name == "arg"
+    assert argument.type is str
+    assert argument.description is None
+    assert argument.default == "Patrick"
 
 
 @pytest.mark.xfail(reason="Can't get field name from argument")

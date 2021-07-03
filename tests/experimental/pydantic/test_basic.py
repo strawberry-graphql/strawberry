@@ -6,7 +6,7 @@ import pydantic
 
 import strawberry
 from strawberry.experimental.pydantic.exceptions import MissingFieldsListError
-from strawberry.type import StrawberryOptional, StrawberryList
+from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.types.types import TypeDefinition
 
 
@@ -195,6 +195,7 @@ def test_type_with_fields_coming_from_strawberry_and_pydantic_with_default():
 
     assert field3.graphql_name == "name"
     assert field3.type is str
+    assert field3.default == "Michael"
 
 
 def test_type_with_nested_fields_coming_from_strawberry_and_pydantic():

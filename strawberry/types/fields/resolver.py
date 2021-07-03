@@ -4,7 +4,7 @@ import builtins
 import inspect
 import sys
 from inspect import isasyncgenfunction, iscoroutinefunction
-from typing import Callable, Generic, List, Optional, TypeVar, Mapping, Union
+from typing import Callable, Generic, List, Mapping, Optional, TypeVar, Union
 
 from cached_property import cached_property  # type: ignore
 
@@ -22,14 +22,15 @@ class StrawberryResolver(Generic[T]):
     def __init__(
         self,
         func: Callable[..., T],
-        *, description: Optional[str] = None,
+        *,
+        description: Optional[str] = None,
         type_override: Optional[StrawberryType] = None,
     ):
         self.wrapped_func = func
         self._description = description
         self._type_override = type_override
         """Specify the type manually instead of calculating from wrapped func
-        
+
         This is used when creating copies of types w/ generics
         """
 
@@ -67,15 +68,13 @@ class StrawberryResolver(Generic[T]):
         for arg_name, annotation in annotations.items():
             parameter = parameters[arg_name]
 
-            default_value = parameter.default
             argument = StrawberryArgument(
                 python_name=arg_name,
                 graphql_name=None,
                 type_annotation=StrawberryAnnotation(
-                    annotation=annotation,
-                    namespace=annotation_namespace
+                    annotation=annotation, namespace=annotation_namespace
                 ),
-                default_value=default_value
+                default=parameter.default,
             )
 
             arguments.append(argument)
@@ -113,8 +112,7 @@ class StrawberryResolver(Generic[T]):
         # TODO: PyCharm doesn't like this. Says `() -> ...` has no __module__ attribute
         module = sys.modules[self.wrapped_func.__module__]
         type_annotation = StrawberryAnnotation(
-            annotation=return_annotation,
-            namespace=module.__dict__
+            annotation=return_annotation, namespace=module.__dict__
         )
 
         return type_annotation
@@ -139,7 +137,7 @@ class StrawberryResolver(Generic[T]):
         return type(self)(
             func=self.wrapped_func,
             description=self._description,
-            type_override=self.type.copy_with(type_var_map)
+            type_override=self.type.copy_with(type_var_map),
         )
 
 

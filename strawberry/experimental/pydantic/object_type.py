@@ -80,7 +80,7 @@ def type(
                 StrawberryField(
                     python_name=field.name,
                     graphql_name=field.alias if field.has_alias else None,
-                    default_value=field.default if not field.required else UNSET,
+                    default=field.default if not field.required else UNSET,
                     default_factory=(
                         field.default_factory if field.default_factory else UNSET
                     ),
@@ -109,7 +109,7 @@ def type(
                         # adding fields at the beginning won't work as we will also
                         # support default values on them (so the problem will be just
                         # shifted around)
-                        default_value=None,
+                        default=None,
                     ),
                 )
                 for name, type_ in cls_annotations.items()

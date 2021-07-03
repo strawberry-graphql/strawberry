@@ -32,15 +32,13 @@ class DirectiveDefinition:
         for arg_name, annotation in annotations.items():
             parameter = parameters[arg_name]
 
-            default_value = parameter.default
             argument = StrawberryArgument(
                 python_name=arg_name,
                 graphql_name=None,
                 type_annotation=StrawberryAnnotation(
-                    annotation=annotation,
-                    namespace=annotation_namespace
+                    annotation=annotation, namespace=annotation_namespace
                 ),
-                default_value=default_value
+                default=parameter.default,
             )
 
             arguments.append(argument)

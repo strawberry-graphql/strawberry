@@ -1,6 +1,6 @@
 from asyncio import ensure_future
 from inspect import isawaitable
-from typing import Any, Awaitable, Dict, List, Optional, Sequence, Type, cast
+from typing import Any, Awaitable, List, Optional, Sequence, Type, cast
 
 from graphql import (
     ExecutionContext as GraphQLExecutionContext,
@@ -22,11 +22,7 @@ async def execute(
     query: str,
     extensions: Sequence[Type[Extension]],
     execution_context: ExecutionContext,
-    root_value: Any = None,
-    context_value: Any = None,
-    variable_values: Dict[str, Any] = None,
     additional_middlewares: List[Any] = None,
-    operation_name: str = None,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
     validate_queries: bool = True,
 ) -> ExecutionResult:
@@ -76,11 +72,11 @@ async def execute(
         result = original_execute(
             schema,
             document,
-            root_value=root_value,
+            root_value=execution_context.root_value,
             middleware=extensions_runner.as_middleware_manager(*additional_middlewares),
-            variable_values=variable_values,
-            operation_name=operation_name,
-            context_value=context_value,
+            variable_values=execution_context.variables,
+            operation_name=execution_context.operation_name,
+            context_value=execution_context.context,
             execution_context_class=execution_context_class,
         )
 
@@ -103,11 +99,7 @@ def execute_sync(
     query: str,
     extensions: Sequence[Type[Extension]],
     execution_context: ExecutionContext,
-    root_value: Any = None,
-    context_value: Any = None,
-    variable_values: Dict[str, Any] = None,
     additional_middlewares: List[Any] = None,
-    operation_name: str = None,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
     validate_queries: bool = True,
 ) -> ExecutionResult:
@@ -157,11 +149,11 @@ def execute_sync(
         result = original_execute(
             schema,
             document,
-            root_value=root_value,
+            root_value=execution_context.root_value,
             middleware=extensions_runner.as_middleware_manager(*additional_middlewares),
-            variable_values=variable_values,
-            operation_name=operation_name,
-            context_value=context_value,
+            variable_values=execution_context.variables,
+            operation_name=execution_context.operation_name,
+            context_value=execution_context.context,
             execution_context_class=execution_context_class,
         )
 

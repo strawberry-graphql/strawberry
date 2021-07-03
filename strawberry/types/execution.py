@@ -12,6 +12,7 @@ class ExecutionContext:
     context: Any = None
     variables: Optional[Dict[str, Any]] = None
     operation_name: Optional[str] = None
+    root_value: Optional[Any] = None
 
     # Values that get populated during the GraphQL execution so that they can be
     # accessed by extensions

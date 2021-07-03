@@ -4,8 +4,8 @@ title: Django
 
 # Django
 
-Strawberry comes with a basic Django integration. It provides a view that you
-can use to serve your GraphQL schema:
+Strawberry comes with a basic [Django integration](https://github.com/strawberry-graphql/strawberry-graphql-django).
+It provides a view that you can use to serve your GraphQL schema:
 
 ```python
 from django.urls import path

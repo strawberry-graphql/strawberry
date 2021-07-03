@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import inspect
-import typing
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Union, cast
 
 from typing_extensions import Annotated, get_args, get_origin
@@ -12,15 +11,32 @@ from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
 
 from .exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError
 from .scalars import is_scalar
-from .types.types import TypeDefinition, undefined
+from .types.types import TypeDefinition
 from .utils.str_converters import to_camel_case
+
+
+class _Unset:
+    def __str__(self):
+        return ""
+
+    def __bool__(self):
+        return False
+
+
+UNSET: Any = _Unset()
+
+
+def is_unset(value: Any) -> bool:
+    return type(value) is _Unset
 
 
 class StrawberryArgumentAnnotation:
     description: Optional[str]
+    name: Optional[str]
 
-    def __init__(self, description: Optional[str] = None):
+    def __init__(self, description: Optional[str] = None, name: Optional[str] = None):
         self.description = description
+        self.name = name
 
 
 class StrawberryArgument:
@@ -31,7 +47,7 @@ class StrawberryArgument:
         type_annotation: StrawberryAnnotation,
         is_subscription: bool = False,
         description: Optional[str] = None,
-        default_value: Any = undefined,
+        default: object = UNSET,
     ) -> None:
         self.python_name = python_name
         self._graphql_name = graphql_name
@@ -41,12 +57,7 @@ class StrawberryArgument:
         self.type_annotation = type_annotation
 
         # TODO: Consider moving this logic to a function
-        default_value = (
-            undefined
-            if default_value is inspect.Parameter.empty or is_unset(default_value)
-            else default_value
-        )
-        self.default_value = default_value
+        self.default = UNSET if default is inspect.Parameter.empty else default
 
         if self._annotation_is_annotated(type_annotation):
             self._parse_annotated()
@@ -88,22 +99,7 @@ class StrawberryArgument:
                 argument_annotation_seen = True
 
                 self.description = arg.description
-                # TODO: This is where we'd pull the name out of the Annotated
-
-
-class _Unset:
-    def __str__(self):
-        return ""
-
-    def __bool__(self):
-        return False
-
-
-UNSET: Any = _Unset()
-
-
-def is_unset(value: Any) -> bool:
-    return type(value) is _Unset
+                self._graphql_name = arg.name
 
 
 def convert_argument(value: object, type_: Union[StrawberryType, type]) -> object:
@@ -117,7 +113,7 @@ def convert_argument(value: object, type_: Union[StrawberryType, type]) -> objec
         return convert_argument(value, type_.of_type)
 
     if isinstance(type_, StrawberryList):
-        value_list = typing.cast(Iterable, value)
+        value_list = cast(Iterable, value)
         return [convert_argument(x, type_.of_type) for x in value_list]
 
     if is_scalar(type_):
@@ -175,8 +171,10 @@ def convert_arguments(
     return kwargs
 
 
-def argument(description: Optional[str] = None) -> StrawberryArgumentAnnotation:
-    return StrawberryArgumentAnnotation(description=description)
+def argument(
+    description: Optional[str] = None, name: Optional[str] = None
+) -> StrawberryArgumentAnnotation:
+    return StrawberryArgumentAnnotation(description=description, name=name)
 
 
 # TODO: check exports
@@ -186,5 +184,4 @@ __all__ = [
     "UNSET",
     "argument",
     "is_unset",
-    "undefined",
 ]

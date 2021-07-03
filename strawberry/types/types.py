@@ -1,8 +1,16 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import TYPE_CHECKING, List, Mapping, Optional, Type, TypeVar, Union, \
-    Iterable
+from typing import (
+    TYPE_CHECKING,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+)
 
 from strawberry.type import StrawberryType, StrawberryTypeVar
 from strawberry.utils.str_converters import capitalize_first
@@ -10,8 +18,6 @@ from strawberry.utils.str_converters import capitalize_first
 
 if TYPE_CHECKING:
     from strawberry.field import StrawberryField
-
-undefined = object()
 
 
 @dataclasses.dataclass

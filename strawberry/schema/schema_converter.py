@@ -1,4 +1,5 @@
-from typing import Callable, Dict, Type
+from enum import Enum
+from typing import Any, Callable, Dict, Type, cast
 
 from graphql import (
     GraphQLArgument,
@@ -10,24 +11,37 @@ from graphql import (
     GraphQLInputObjectType,
     GraphQLInterfaceType,
     GraphQLList,
+    GraphQLNonNull,
+    GraphQLNullableType,
     GraphQLObjectType,
     GraphQLScalarType,
     GraphQLUnionType,
-    Undefined, GraphQLNullableType, GraphQLNonNull,
+    Undefined,
 )
 
-from strawberry.arguments import UNSET, StrawberryArgument
+from strawberry.arguments import UNSET, StrawberryArgument, is_unset
 from strawberry.directive import DirectiveDefinition
 from strawberry.enum import EnumDefinition, EnumValue
 from strawberry.field import StrawberryField
 from strawberry.lazy_type import LazyType
 from strawberry.scalars import is_scalar
-from strawberry.type import StrawberryOptional, StrawberryType, StrawberryList
-from strawberry.types.types import TypeDefinition, undefined
+from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
+from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 
 from .types.concrete_type import ConcreteType
 from .types.scalar import get_scalar_type
+
+
+# graphql-core expects a resolver for an Enum type to return
+# the enum's *value* (not its name or an instance of the enum). We have to
+# subclass the GraphQLEnumType class to enable returning Enum members from
+# resolvers.
+class CustomGraphQLEnumType(GraphQLEnumType):
+    def serialize(self, output_value: Any) -> str:
+        if isinstance(output_value, Enum):
+            return output_value.name
+        return super().serialize(output_value)
 
 
 class GraphQLCoreConverter:
@@ -42,9 +56,7 @@ class GraphQLCoreConverter:
         else:
             argument_type = self.from_non_optional(argument.type)
 
-        default_value = (
-            Undefined if argument.default_value is undefined else argument.default_value
-        )
+        default_value = Undefined if argument.default is UNSET else argument.default
 
         return GraphQLArgument(
             type_=argument_type,
@@ -52,17 +64,17 @@ class GraphQLCoreConverter:
             description=argument.description,
         )
 
-    def from_enum(self, enum: EnumDefinition) -> GraphQLEnumType:
+    def from_enum(self, enum: EnumDefinition) -> CustomGraphQLEnumType:
 
         assert enum.name is not None
 
         # Don't reevaluate known types
         if enum.name in self.type_map:
             graphql_enum = self.type_map[enum.name].implementation
-            assert isinstance(graphql_enum, GraphQLEnumType)  # For mypy
+            assert isinstance(graphql_enum, CustomGraphQLEnumType)  # For mypy
             return graphql_enum
 
-        graphql_enum = GraphQLEnumType(
+        graphql_enum = CustomGraphQLEnumType(
             name=enum.name,
             values={item.name: self.from_enum_value(item) for item in enum.values},
             description=enum.description,
@@ -125,7 +137,9 @@ class GraphQLCoreConverter:
         else:
             field_type = self.from_non_optional(field.type)
 
-        if field.default_value in [undefined, UNSET]:
+        default_value: object
+
+        if is_unset(field.default_value):
             default_value = Undefined
         else:
             default_value = field.default_value
@@ -246,7 +260,9 @@ class GraphQLCoreConverter:
 
         return graphql_object_type
 
-    def from_resolver(self, field: StrawberryField) -> Callable:  # TODO: Take StrawberryResolver
+    def from_resolver(
+        self, field: StrawberryField
+    ) -> Callable:  # TODO: Take StrawberryResolver
         return field.get_wrapped_resolver()
 
     def from_scalar(self, scalar: Type) -> GraphQLScalarType:

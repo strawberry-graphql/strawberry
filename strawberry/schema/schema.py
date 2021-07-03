@@ -115,6 +115,7 @@ class Schema:
         execution_context = ExecutionContext(
             query=query,
             context=context_value,
+            root_value=root_value,
             variables=variable_values,
             operation_name=operation_name,
         )
@@ -122,10 +123,6 @@ class Schema:
         result = await execute(
             self._schema,
             query,
-            variable_values=variable_values,
-            root_value=root_value,
-            context_value=context_value,
-            operation_name=operation_name,
             additional_middlewares=self.middleware,
             extensions=self.extensions,
             execution_context_class=self.execution_context_class,
@@ -154,6 +151,7 @@ class Schema:
         execution_context = ExecutionContext(
             query=query,
             context=context_value,
+            root_value=root_value,
             variables=variable_values,
             operation_name=operation_name,
         )
@@ -161,10 +159,6 @@ class Schema:
         result = execute_sync(
             self._schema,
             query,
-            variable_values=variable_values,
-            root_value=root_value,
-            context_value=context_value,
-            operation_name=operation_name,
             additional_middlewares=self.middleware,
             extensions=self.extensions,
             execution_context_class=self.execution_context_class,

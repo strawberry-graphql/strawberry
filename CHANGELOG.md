@@ -1,6 +1,257 @@
 CHANGELOG
 =========
 
+0.68.0 - 2021-07-03
+-------------------
+
+Matching the behaviour of `graphql-core`, passing an incorrect ISO string value for a Time, Date or DateTime scalar now raises a `GraphQLError` instead of the original parsing error.
+
+The `GraphQLError` will include the error message raised by the string parser, e.g. `Value cannot represent a DateTime: "2021-13-01T09:00:00". month must be in 1..12`
+
+0.67.1 - 2021-06-22
+-------------------
+
+Fixes [#1022](https://github.com/strawberry-graphql/strawberry/issues/1022) by making starlette an optional dependency.
+
+Contributed by [Marcel Wiegand](https://github.com/mawiegand) [PR #1027](https://github.com/strawberry-graphql/strawberry/pull/1027/)
+
+
+0.67.0 - 2021-06-17
+-------------------
+
+Add ability to specific the graphql name for a resolver argument. E.g.,
+
+```python
+from typing import Annotated
+import strawberry
+
+
+@strawberry.input
+class HelloInput:
+    name: str = "world"
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(
+        self,
+        input_: Annotated[HelloInput, strawberry.argument(name="input")]
+    ) -> str:
+        return f"Hi {input_.name}"
+```
+
+Contributed by [Daniel Bowring](https://github.com/dbowring) [PR #1024](https://github.com/strawberry-graphql/strawberry/pull/1024/)
+
+
+0.66.0 - 2021-06-15
+-------------------
+
+This release fixes a bug that was preventing the use of an enum member as the
+default value for an argument.
+
+For example:
+
+```python
+@strawberry.enum
+class IceCreamFlavour(Enum):
+    VANILLA = "vanilla"
+    STRAWBERRY = "strawberry"
+    CHOCOLATE = "chocolate"
+    PISTACHIO = "pistachio"
+
+@strawberry.mutation
+def create_flavour(
+    self, flavour: IceCreamFlavour = IceCreamFlavour.STRAWBERRY
+) -> str:
+    return f"{flavour.name}"
+```
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) [PR #1015](https://github.com/strawberry-graphql/strawberry/pull/1015/)
+
+
+0.65.5 - 2021-06-15
+-------------------
+
+This release reverts the changes made in v0.65.4 that caused an issue leading to
+circular imports when using the `strawberry-graphql-django` extension package.
+
+Contributed by [Lauri Hintsala](https://github.com/la4de) [PR #1019](https://github.com/strawberry-graphql/strawberry/pull/1019/)
+
+
+0.65.4 - 2021-06-14
+-------------------
+
+This release fixes the IDE integration where package `strawberry.django` could not be find by some editors like vscode.
+
+Contributed by [Lauri Hintsala](https://github.com/la4de) [PR #994](https://github.com/strawberry-graphql/strawberry/pull/994/)
+
+
+0.65.3 - 2021-06-09
+-------------------
+
+This release fixes the ASGI subscription implementation by handling disconnecting clients properly.
+
+Additionally, the ASGI implementation has been internally refactored to match the AIOHTTP implementation.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) [PR #1002](https://github.com/strawberry-graphql/strawberry/pull/1002/)
+
+
+0.65.2 - 2021-06-06
+-------------------
+
+This release fixes a bug in the subscription implementations that prevented clients
+from selecting one of multiple subscription operations from a query. Client sent
+messages like the following one are now handled as expected.
+
+```json
+{
+  "type": "GQL_START",
+  "id": "DEMO",
+  "payload": {
+    "query": "subscription Sub1 { sub1 } subscription Sub2 { sub2 }",
+    "operationName": "Sub2"
+  }
+}
+```
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) [PR #1000](https://github.com/strawberry-graphql/strawberry/pull/1000/)
+
+
+0.65.1 - 2021-06-02
+-------------------
+
+This release fixes the upload of nested file lists. Among other use cases, having an
+input type like shown below is now working properly.
+
+```python
+import typing
+import strawberry
+from strawberry.file_uploads import Upload
+
+
+@strawberry.input
+class FolderInput:
+    files: typing.List[Upload]
+```
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) [PR #989](https://github.com/strawberry-graphql/strawberry/pull/989/)
+
+
+0.65.0 - 2021-06-01
+-------------------
+
+This release extends the file upload support of all integrations to support the upload
+of file lists.
+
+Here is an example how this would work with the ASGI integration.
+
+```python
+import typing
+import strawberry
+from strawberry.file_uploads import Upload
+
+
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    async def read_files(self, files: typing.List[Upload]) -> typing.List[str]:
+        contents = []
+        for file in files:
+            content = (await file.read()).decode()
+            contents.append(content)
+        return contents
+```
+
+Check out the documentation to learn how the same can be done with other integrations.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) [PR #979](https://github.com/strawberry-graphql/strawberry/pull/979/)
+
+
+0.64.5 - 2021-05-28
+-------------------
+
+This release fixes that AIOHTTP subscription requests were not properly separated.
+This could lead to subscriptions terminating each other.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) [PR #970](https://github.com/strawberry-graphql/strawberry/pull/970/)
+
+
+0.64.4 - 2021-05-28
+-------------------
+
+* Remove usages of `undefined` in favour of `UNSET`
+* Change the signature of `StrawberryField` to make it easier to instantiate
+directly. Also change `default_value` argument to `default`
+* Rename `default_value` to `default` in `StrawberryArgument`
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) [PR #916](https://github.com/strawberry-graphql/strawberry/pull/916/)
+
+
+0.64.3 - 2021-05-26
+-------------------
+
+This release integrates the `strawberry-graphql-django` package into Strawberry
+core so that it's possible to use the Django extension package directly via the
+`strawberry.django` namespace.
+
+You still need to install `strawberry-graphql-django` if you want to use the
+extended Django support.
+
+See: https://github.com/strawberry-graphql/strawberry-graphql-django
+
+Contributed by [Lauri Hintsala](https://github.com/la4de) [PR #949](https://github.com/strawberry-graphql/strawberry/pull/949/)
+
+
+0.64.2 - 2021-05-26
+-------------------
+
+This release fixes that enum values yielded from async generators were not resolved
+properly.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) [PR #969](https://github.com/strawberry-graphql/strawberry/pull/969/)
+
+
+0.64.1 - 2021-05-23
+-------------------
+
+This release fixes a max recursion depth error in the AIOHTTP subscription
+implementation.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) [PR #966](https://github.com/strawberry-graphql/strawberry/pull/966/)
+
+
+0.64.0 - 2021-05-22
+-------------------
+
+This release adds an extensions field to the `GraphQLHTTPResponse` type and also exposes it in the view's response.
+
+This field gets populated by Strawberry extensions: https://strawberry.rocks/docs/guides/extensions#get-results
+
+Contributed by [lijok](https://github.com/lijok) [PR #903](https://github.com/strawberry-graphql/strawberry/pull/903/)
+
+
+0.63.2 - 2021-05-22
+-------------------
+
+Add `root_value` to `ExecutionContext` type so that it can be accessed in
+extensions.
+
+Example:
+
+```python
+import strawberry
+from strawberry.extensions import Extension
+
+class MyExtension(Extension):
+    def on_request_end(self):
+        root_value = self.execution_context.root_value
+        # do something with the root_value
+```
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) [PR #959](https://github.com/strawberry-graphql/strawberry/pull/959/)
+
+
 0.63.1 - 2021-05-20
 -------------------
 

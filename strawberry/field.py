@@ -1,7 +1,6 @@
 import builtins
 import dataclasses
-import enum
-from inspect import iscoroutine
+from inspect import isasyncgen, iscoroutine
 from typing import (
     Any,
     Awaitable,
@@ -20,7 +19,7 @@ from graphql import GraphQLResolveInfo
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import UNSET, convert_arguments
-from strawberry.type import StrawberryList, StrawberryType
+from strawberry.type import StrawberryType
 from strawberry.types.info import Info
 
 from .arguments import StrawberryArgument
@@ -36,17 +35,17 @@ _RESOLVER_TYPE = Union[StrawberryResolver, Callable]
 class StrawberryField(dataclasses.Field):
     def __init__(
         self,
-        python_name: Optional[str],
-        graphql_name: Optional[str],
-        type_annotation: Optional[StrawberryAnnotation],
+        python_name: Optional[str] = None,
+        graphql_name: Optional[str] = None,
+        type_annotation: Optional[StrawberryAnnotation] = None,
         origin: Optional[Union[Type, Callable]] = None,
         is_subscription: bool = False,
         federation: FederationFieldParams = None,
         description: Optional[str] = None,
         base_resolver: Optional[StrawberryResolver] = None,
         permission_classes: List[Type[BasePermission]] = (),  # type: ignore
-        default_value: Any = UNSET,
-        default_factory: Union[Callable, object] = UNSET,
+        default: object = UNSET,
+        default_factory: Union[Callable[[], Any], object] = UNSET,
         deprecation_reason: Optional[str] = None,
     ):
         federation = federation or FederationFieldParams()
@@ -55,9 +54,13 @@ class StrawberryField(dataclasses.Field):
         is_basic_field = not base_resolver
 
         super().__init__(  # type: ignore
-            default=(default_value if default_value != UNSET else dataclasses.MISSING),
+            default=(default if default is not UNSET else dataclasses.MISSING),
             default_factory=(
-                default_factory if default_factory != UNSET else dataclasses.MISSING
+                # mypy is not able to understand that default factory
+                # is a callable so we do a type ignore
+                default_factory  # type: ignore
+                if default_factory is not UNSET
+                else dataclasses.MISSING
             ),
             init=is_basic_field,
             repr=is_basic_field,
@@ -79,7 +82,12 @@ class StrawberryField(dataclasses.Field):
         if base_resolver is not None:
             self.base_resolver = base_resolver
 
-        self.default_value = default_value
+        # Note: StrawberryField.default is the same as
+        # StrawberryField.default_value except that `.default` uses
+        # `dataclasses.MISSING` to represent an "undefined" value and
+        # `.default_value` uses `UNSET`
+        self.default_value = default
+
         self.is_subscription = is_subscription
 
         self.federation: FederationFieldParams = federation
@@ -261,7 +269,7 @@ class StrawberryField(dataclasses.Field):
             description=self.description,
             base_resolver=new_resolver,
             permission_classes=self.permission_classes,
-            default_value=self.default_value,
+            default=self.default_value,
             # ignored because of https://github.com/python/mypy/issues/6910
             default_factory=self.default_factory,  # type: ignore[misc]
             deprecation_reason=self.deprecation_reason,
@@ -296,24 +304,6 @@ class StrawberryField(dataclasses.Field):
                     message = getattr(permission, "message", None)
                     raise PermissionError(message)
 
-        def _convert_enums_to_values(type_: StrawberryType, result: Any) -> Any:
-            # graphql-core expects a resolver for an Enum type to return
-            # the enum's *value* (not its name or an instance of the enum).
-
-            # short circuit to skip checks when result is None (i.e. Optional[Enum])
-            if result is None:
-                return result
-
-            if isinstance(result, enum.Enum):
-                return result.value
-
-            if isinstance(type_, StrawberryList):
-                return [
-                    _convert_enums_to_values(type_.of_type, item) for item in result
-                ]
-
-            return result
-
         def _strawberry_info_from_graphql(info: GraphQLResolveInfo) -> Info:
             return Info(
                 field_name=info.field_name,
@@ -332,14 +322,21 @@ class StrawberryField(dataclasses.Field):
 
             result = self.get_result(_source, info=strawberry_info, kwargs=kwargs)
 
+            if isasyncgen(result):
+
+                async def yield_results(results):
+                    async for value in results:
+                        yield value
+
+                return yield_results(result)
+
             if iscoroutine(result):  # pragma: no cover
 
                 async def await_result(result):
-                    return _convert_enums_to_values(self.type, await result)
+                    return await result
 
                 return await_result(result)
 
-            result = _convert_enums_to_values(self.type, result)
             return result
 
         _resolver._is_default = not self.base_resolver  # type: ignore
@@ -382,7 +379,7 @@ def field(
         permission_classes=permission_classes or [],
         federation=federation or FederationFieldParams(),
         deprecation_reason=deprecation_reason,
-        default_value=default,
+        default=default,
         default_factory=default_factory,
     )
 

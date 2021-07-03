@@ -106,8 +106,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
             if not isinstance(field.type, StrawberryAnnotation):
                 module = sys.modules[field.origin.__module__]
                 field.type_annotation = StrawberryAnnotation(
-                    annotation=field.type_annotation,
-                    namespace=module.__dict__
+                    annotation=field.type_annotation, namespace=module.__dict__
                 )
 
         # Create a StrawberryField for fields that didn't use strawberry.field
@@ -129,7 +128,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
                     namespace=module.__dict__,
                 ),
                 origin=cls,
-                default_value=getattr(cls, field.name, UNSET),
+                default=getattr(cls, field.name, UNSET),
             )
 
         field_name = field.graphql_name
