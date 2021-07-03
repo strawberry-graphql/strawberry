@@ -290,6 +290,7 @@ class StrawberryField(dataclasses.Field):
 
         return getattr(source, self.python_name)
 
+
     def get_wrapped_resolver(self) -> Callable:
         # TODO: This could potentially be handled by StrawberryResolver in the future
         def _check_permissions(source: Any, info: Info, kwargs: Dict[str, Any]):

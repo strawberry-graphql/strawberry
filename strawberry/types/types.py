@@ -62,7 +62,7 @@ class TypeDefinition(StrawberryType):
 
         new_type = type(
             new_type_definition.name,
-            (),
+            (wrapped_cls.__origin__,) if hasattr(wrapped_cls, "__origin__") else (),  # type: ignore
             {"_type_definition": new_type_definition},
         )
 
