@@ -55,7 +55,7 @@ class StrawberryArgument:
         default: object = UNSET,
     ) -> None:
         self.python_name = python_name
-        self._graphql_name = graphql_name
+        self.graphql_name = graphql_name
         self.type = type_
         self.origin = origin
         self.child = child
@@ -66,14 +66,6 @@ class StrawberryArgument:
         self.is_union = is_union
         self.description = description
         self.default = default
-
-    @property
-    def graphql_name(self) -> Optional[str]:
-        if self._graphql_name:
-            return self._graphql_name
-        if self.python_name:
-            return to_camel_case(self.python_name)
-        return None
 
     @classmethod
     def from_annotated(
@@ -185,9 +177,11 @@ def convert_argument(value: Any, argument: StrawberryArgument) -> Any:
         kwargs = {}
 
         for field in argument_type._type_definition.fields:
-            if field.graphql_name in value:
+            if field.python_name in value:
                 kwargs[field.python_name] = convert_argument(
-                    value[field.graphql_name], field
+                    # TODO: this should be handled by the schema converter
+                    value[field.python_name],
+                    field,
                 )
 
         return argument_type(**kwargs)

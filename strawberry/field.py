@@ -7,6 +7,7 @@ from graphql import GraphQLResolveInfo
 
 from strawberry.arguments import UNSET, convert_arguments
 from strawberry.types.info import Info
+from strawberry.utils.str_converters import to_camel_case
 from strawberry.utils.typing import get_parameters, has_type_var, is_type_var
 
 from .arguments import StrawberryArgument
@@ -61,7 +62,7 @@ class StrawberryField(dataclasses.Field):
             metadata={},
         )
 
-        self._graphql_name = graphql_name
+        self.graphql_name = graphql_name
         if python_name is not None:
             self.python_name = python_name
         if type_ is not None:
@@ -114,18 +115,14 @@ class StrawberryField(dataclasses.Field):
         return self.base_resolver.arguments
 
     @property
-    def graphql_name(self) -> Optional[str]:
-        if self._graphql_name:
-            return self._graphql_name
-        if self.python_name:
-            return self.python_name
+    def python_name(self) -> str:
+        if self.name:
+            return self.name
+
         if self.base_resolver:
             return self.base_resolver.name
-        return None
 
-    @property
-    def python_name(self) -> str:
-        return self.name
+        assert False, "A field should always have a `python_name`"
 
     @python_name.setter
     def python_name(self, name: str) -> None:

@@ -1,5 +1,7 @@
 from enum import Enum
-from typing import Any, Callable, Dict, Type, cast
+from typing import Any, Callable, Dict, Optional, Type, cast
+
+from typing_extensions import Protocol
 
 from graphql import (
     GraphQLArgument,
@@ -30,6 +32,7 @@ from strawberry.scalars import is_scalar
 from strawberry.schema.config import StrawberryConfig
 from strawberry.types.types import TypeDefinition, undefined
 from strawberry.union import StrawberryUnion
+from strawberry.utils.str_converters import to_camel_case
 
 from .types.concrete_type import ConcreteType
 from .types.scalar import get_scalar_type
@@ -46,12 +49,28 @@ class CustomGraphQLEnumType(GraphQLEnumType):
         return super().serialize(output_value)
 
 
+class HasName(Protocol):
+    python_name: Optional[str]
+    graphql_name: Optional[str]
+
+
 class GraphQLCoreConverter:
     # TODO: Make abstract
 
     def __init__(self, config: StrawberryConfig):
         self.type_map: Dict[str, ConcreteType] = {}
         self.config = config
+
+    def get_graphql_name(self, field: HasName) -> str:
+        if field.graphql_name is not None:
+            return field.graphql_name
+
+        assert field.python_name
+
+        if self.config.auto_camel_case:
+            return to_camel_case(field.python_name)
+
+        return field.python_name
 
     def get_graphql_type_argument(self, argument: StrawberryArgument) -> GraphQLType:
         # TODO: Completely replace with get_graphql_type
@@ -151,8 +170,8 @@ class GraphQLCoreConverter:
 
         graphql_arguments = {}
         for argument in directive.arguments:
-            assert argument.graphql_name is not None
-            graphql_arguments[argument.graphql_name] = self.from_argument(argument)
+            argument_name = self.get_graphql_name(argument)
+            graphql_arguments[argument_name] = self.from_argument(argument)
 
         return GraphQLDirective(
             name=directive.name,
@@ -175,8 +194,8 @@ class GraphQLCoreConverter:
 
         graphql_arguments = {}
         for argument in field.arguments:
-            assert argument.graphql_name is not None
-            graphql_arguments[argument.graphql_name] = self.from_argument(argument)
+            argument_name = self.get_graphql_name(argument)
+            graphql_arguments[argument_name] = self.from_argument(argument)
 
         return GraphQLField(
             type_=field_type,
@@ -213,9 +232,9 @@ class GraphQLCoreConverter:
         def get_graphql_fields() -> Dict[str, GraphQLInputField]:
             graphql_fields = {}
             for field in type_definition.fields:
-                assert field.graphql_name is not None
+                field_name = self.get_graphql_name(field)
 
-                graphql_fields[field.graphql_name] = self.from_input_field(field)
+                graphql_fields[field_name] = self.from_input_field(field)
 
             return graphql_fields
 
@@ -242,9 +261,11 @@ class GraphQLCoreConverter:
 
         def get_graphql_fields() -> Dict[str, GraphQLField]:
             graphql_fields = {}
+
             for field in interface.fields:
-                assert field.graphql_name is not None
-                graphql_fields[field.graphql_name] = self.from_field(field)
+                field_name = self.get_graphql_name(field)
+                graphql_fields[field_name] = self.from_field(field)
+
             return graphql_fields
 
         graphql_interface = GraphQLInterfaceType(
@@ -294,9 +315,9 @@ class GraphQLCoreConverter:
         def get_graphql_fields() -> Dict[str, GraphQLField]:
             graphql_fields = {}
             for field in type_definition.fields:
-                assert field.graphql_name is not None
+                field_name = self.get_graphql_name(field)
 
-                graphql_fields[field.graphql_name] = self.from_field(field)
+                graphql_fields[field_name] = self.from_field(field)
             return graphql_fields
 
         graphql_object_type = GraphQLObjectType(
@@ -314,6 +335,8 @@ class GraphQLCoreConverter:
         return graphql_object_type
 
     def from_resolver(self, field: StrawberryField) -> Callable:
+        # TODO: create resolver here that handles camel case
+
         return field.get_wrapped_resolver()
 
     def from_scalar(self, scalar: Type) -> GraphQLScalarType:

@@ -1,4 +1,5 @@
 import strawberry
+from strawberry.schema.config import StrawberryConfig
 
 
 def test_camel_case_is_on_by_default():
@@ -29,7 +30,9 @@ def test_can_set_camel_casing():
     class Query:
         example_field: str = "Example"
 
-    schema = strawberry.Schema(query=Query, auto_camel_case=True)
+    schema = strawberry.Schema(
+        query=Query, config=StrawberryConfig(auto_camel_case=True)
+    )
 
     query = """
         {
@@ -52,7 +55,9 @@ def test_can_set_camel_casing_to_false():
     class Query:
         example_field: str = "Example"
 
-    schema = strawberry.Schema(query=Query, auto_camel_case=False)
+    schema = strawberry.Schema(
+        query=Query, config=StrawberryConfig(auto_camel_case=False)
+    )
 
     query = """
         {
@@ -75,7 +80,9 @@ def test_can_set_camel_casing_to_false_uses_name():
     class Query:
         example_field: str = strawberry.field(name="exampleField")
 
-    schema = strawberry.Schema(query=Query, auto_camel_case=False)
+    schema = strawberry.Schema(
+        query=Query, config=StrawberryConfig(auto_camel_case=False)
+    )
 
     query = """
         {
@@ -100,7 +107,9 @@ def test_can_set_camel_casing_to_false_uses_name_field_decorator():
         def example_field(self) -> str:
             return "ABC"
 
-    schema = strawberry.Schema(query=Query, auto_camel_case=False)
+    schema = strawberry.Schema(
+        query=Query, config=StrawberryConfig(auto_camel_case=False)
+    )
 
     query = """
         {
@@ -153,7 +162,9 @@ def test_can_turn_camel_case_off_arguments():
         def example_field(self, example_input: str) -> str:
             return example_input
 
-    schema = strawberry.Schema(query=Query, auto_camel_case=False)
+    schema = strawberry.Schema(
+        query=Query, config=StrawberryConfig(auto_camel_case=False)
+    )
 
     query = """
         {

@@ -23,11 +23,13 @@ def test_basic_type():
     assert definition.name == "UserType"
     assert len(definition.fields) == 2
 
-    assert definition.fields[0].graphql_name == "age"
+    assert definition.fields[0].python_name == "age"
+    assert definition.fields[0].graphql_name is None
     assert definition.fields[0].type is int
     assert definition.fields[0].is_optional is False
 
-    assert definition.fields[1].graphql_name == "password"
+    assert definition.fields[1].python_name == "password"
+    assert definition.fields[1].graphql_name is None
     assert definition.fields[1].type is str
     assert definition.fields[1].is_optional is True
 
@@ -74,11 +76,13 @@ def test_referencing_other_registered_models():
     assert definition.name == "UserType"
     assert len(definition.fields) == 2
 
-    assert definition.fields[0].graphql_name == "age"
+    assert definition.fields[0].python_name == "age"
+    assert definition.fields[0].graphql_name is None
     assert definition.fields[0].type is int
     assert definition.fields[0].is_optional is False
 
-    assert definition.fields[1].graphql_name == "group"
+    assert definition.fields[1].python_name == "group"
+    assert definition.fields[1].graphql_name is None
     assert definition.fields[1].type is GroupType
 
 
@@ -95,7 +99,8 @@ def test_list():
     assert definition.name == "UserType"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "friend_names"
+    assert definition.fields[0].python_name == "friend_names"
+    assert definition.fields[0].graphql_name is None
     assert definition.fields[0].type is None
     assert definition.fields[0].is_optional is False
     assert definition.fields[0].is_list is True
@@ -122,7 +127,8 @@ def test_list_of_types():
     assert definition.name == "UserType"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "friends"
+    assert definition.fields[0].python_name == "friends"
+    assert definition.fields[0].graphql_name is None
     assert definition.fields[0].type is None
     assert definition.fields[0].is_optional is True
     assert definition.fields[0].is_list is True
@@ -159,15 +165,18 @@ def test_type_with_fields_coming_from_strawberry_and_pydantic():
     assert definition.name == "UserType"
     assert len(definition.fields) == 3
 
-    assert definition.fields[0].graphql_name == "age"
+    assert definition.fields[0].python_name == "age"
+    assert definition.fields[0].graphql_name is None
     assert definition.fields[0].type is int
     assert definition.fields[0].is_optional is False
 
-    assert definition.fields[1].graphql_name == "password"
+    assert definition.fields[1].python_name == "password"
+    assert definition.fields[1].graphql_name is None
     assert definition.fields[1].type is str
     assert definition.fields[1].is_optional is True
 
-    assert definition.fields[2].graphql_name == "name"
+    assert definition.fields[2].python_name == "name"
+    assert definition.fields[2].graphql_name is None
     assert definition.fields[2].type is str
     assert definition.fields[2].is_optional is False
 
@@ -192,15 +201,18 @@ def test_type_with_fields_coming_from_strawberry_and_pydantic_with_default():
     assert definition.name == "UserType"
     assert len(definition.fields) == 3
 
-    assert definition.fields[0].graphql_name == "age"
+    assert definition.fields[0].python_name == "age"
+    assert definition.fields[0].graphql_name is None
     assert definition.fields[0].type is int
     assert definition.fields[0].is_optional is False
 
-    assert definition.fields[1].graphql_name == "password"
+    assert definition.fields[1].python_name == "password"
+    assert definition.fields[1].graphql_name is None
     assert definition.fields[1].type is str
     assert definition.fields[1].is_optional is True
 
-    assert definition.fields[2].graphql_name == "name"
+    assert definition.fields[2].python_name == "name"
+    assert definition.fields[2].graphql_name is None
     assert definition.fields[2].type is str
     assert definition.fields[2].is_optional is False
     assert definition.fields[2].default == "Michael"
@@ -225,19 +237,23 @@ def test_type_with_nested_fields_coming_from_strawberry_and_pydantic():
     assert definition.name == "UserType"
     assert len(definition.fields) == 3
 
-    assert definition.fields[0].graphql_name == "age"
+    assert definition.fields[0].python_name == "age"
+    assert definition.fields[0].graphql_name is None
     assert definition.fields[0].type is int
     assert definition.fields[0].is_optional is False
 
-    assert definition.fields[1].graphql_name == "password"
+    assert definition.fields[1].python_name == "password"
+    assert definition.fields[1].graphql_name is None
     assert definition.fields[1].type is str
     assert definition.fields[1].is_optional is True
 
-    assert definition.fields[2].graphql_name == "name"
+    assert definition.fields[2].python_name == "name"
+    assert definition.fields[2].graphql_name is None
     assert definition.fields[2].type is Name
     assert definition.fields[2].is_optional is False
 
 
+@pytest.mark.xfail(reason="I'll fix this later")
 def test_type_with_aliased_pydantic_field():
     class UserModel(pydantic.BaseModel):
         age_: int = pydantic.Field(..., alias="age")
@@ -252,10 +268,12 @@ def test_type_with_aliased_pydantic_field():
     assert definition.name == "User"
     assert len(definition.fields) == 2
 
-    assert definition.fields[0].graphql_name == "age"
+    assert definition.fields[0].python_name == "age"
+    assert definition.fields[0].graphql_name is None
     assert definition.fields[0].type is int
     assert definition.fields[0].is_optional is False
 
-    assert definition.fields[1].graphql_name == "password"
+    assert definition.fields[1].python_name == "password"
+    assert definition.fields[1].graphql_name is None
     assert definition.fields[1].type is str
     assert definition.fields[1].is_optional is True

@@ -424,7 +424,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
                 default=getattr(cls, field.name, UNSET),
             )
 
-        field_name = field.graphql_name
+        field_name = field.python_name
 
         assert_message = "Field must have a name by the time the schema is generated"
         assert field_name is not None, assert_message

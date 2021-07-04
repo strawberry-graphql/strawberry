@@ -19,6 +19,7 @@ class StrawberryResolver(Generic[T]):
 
     # TODO: Use this when doing the actual resolving? How to deal with async resolvers?
     def __call__(self, *args, **kwargs) -> T:
+        breakpoint()
         return self.wrapped_func(*args, **kwargs)
 
     @cached_property

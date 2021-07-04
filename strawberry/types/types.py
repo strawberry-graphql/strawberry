@@ -29,9 +29,9 @@ class TypeDefinition:
     _type_params: Dict[str, Type] = dataclasses.field(default_factory=dict, init=False)
 
     def get_field(self, name: str) -> Optional["StrawberryField"]:
-        return next(
-            (field for field in self.fields if field.graphql_name == name), None
-        )
+        # TODO: check if python name is ok for field name or if we should check
+        # the graphql name
+        return next((field for field in self.fields if field.python_name == name), None)
 
     @property
     def fields(self) -> List["StrawberryField"]:
