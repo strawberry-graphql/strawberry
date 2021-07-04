@@ -30,7 +30,6 @@ from strawberry.scalars import is_scalar
 from strawberry.schema.config import StrawberryConfig
 from strawberry.types.types import TypeDefinition, undefined
 from strawberry.union import StrawberryUnion
-from strawberry.utils.str_converters import to_camel_case
 
 from .types.concrete_type import ConcreteType
 from .types.scalar import get_scalar_type
@@ -216,13 +215,7 @@ class GraphQLCoreConverter:
             for field in type_definition.fields:
                 assert field.graphql_name is not None
 
-                graphql_name = (
-                    to_camel_case(field.graphql_name)
-                    if self.auto_camel_case
-                    else field.graphql_name
-                )
-
-                graphql_fields[graphql_name] = self.from_input_field(field)
+                graphql_fields[field.graphql_name] = self.from_input_field(field)
 
             return graphql_fields
 
@@ -303,13 +296,7 @@ class GraphQLCoreConverter:
             for field in type_definition.fields:
                 assert field.graphql_name is not None
 
-                graphql_name = (
-                    to_camel_case(field.graphql_name)
-                    if self.auto_camel_case
-                    else field.graphql_name
-                )
-
-                graphql_fields[graphql_name] = self.from_field(field)
+                graphql_fields[field.graphql_name] = self.from_field(field)
             return graphql_fields
 
         graphql_object_type = GraphQLObjectType(

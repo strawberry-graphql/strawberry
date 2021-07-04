@@ -45,7 +45,7 @@ class Schema:
         self.extensions = extensions
         self.execution_context_class = execution_context_class
         self.config = config or StrawberryConfig()
-        self.schema_converter = GraphQLCoreConverter(config)
+        self.schema_converter = GraphQLCoreConverter(self.config)
 
         query_type = self.schema_converter.from_object_type(query)
         mutation_type = (

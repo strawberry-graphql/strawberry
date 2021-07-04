@@ -8,7 +8,7 @@ from typing_extensions import Annotated, get_args, get_origin
 
 from .exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError
 from .scalars import is_scalar
-from .types.types import ArgumentDefinition, undefined
+from .types.types import undefined
 from .union import StrawberryUnion
 from .utils.str_converters import to_camel_case
 
@@ -157,9 +157,7 @@ def get_arguments_from_annotations(
     return arguments
 
 
-def convert_argument(
-    value: Any, argument_definition: ArgumentDefinition, auto_camel_case: bool = True
-) -> Any:
+def convert_argument(value: Any, argument: StrawberryArgument) -> Any:
     if value is None:
         return None
 
@@ -187,15 +185,9 @@ def convert_argument(
         kwargs = {}
 
         for field in argument_type._type_definition.fields:
-            name = (
-                to_camel_case(field.graphql_name)
-                if auto_camel_case
-                else field.graphql_name
-            )
-
-            if name in value:
+            if field.graphql_name in value:
                 kwargs[field.python_name] = convert_argument(
-                    value[name], field, auto_camel_case
+                    value[field.graphql_name], field
                 )
 
         return argument_type(**kwargs)
