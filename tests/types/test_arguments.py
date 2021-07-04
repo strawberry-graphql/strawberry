@@ -232,7 +232,7 @@ def test_argument_with_default_value_none():
     assert argument.default is None
 
 
-def test_argument_with_default_value_undefined():
+def test_optional_argument_without_default_value():
     @strawberry.type
     class Query:
         @strawberry.field

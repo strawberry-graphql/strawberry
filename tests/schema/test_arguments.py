@@ -1,10 +1,13 @@
 from textwrap import dedent
-from typing import Optional
+from typing import Optional, Union
+
+import pytest
 
 from typing_extensions import Annotated
 
 import strawberry
 from strawberry.arguments import UNSET, is_unset
+from strawberry.exceptions import UnsetRequiredArgumentError
 
 
 def test_argument_descriptions():
@@ -76,13 +79,13 @@ def test_argument_with_default_value_none():
     )
 
 
-def test_optional_argument_unset():
+def test_optional_argument_without_default_value():
     @strawberry.type
     class Query:
         @strawberry.field
-        def hello(self, name: Optional[str] = UNSET, age: Optional[int] = UNSET) -> str:
-            if is_unset(name):
-                return "Hi there"
+        def hello(self, name: Optional[str]) -> str:
+            if name is None:
+                return "Hi"
             return f"Hi {name}"
 
     schema = strawberry.Schema(query=Query)
@@ -90,19 +93,64 @@ def test_optional_argument_unset():
     assert str(schema) == dedent(
         """\
         type Query {
-          hello(name: String, age: Int): String!
+          hello(name: String): String!
         }"""
     )
 
-    result = schema.execute_sync(
-        """
-        query {
-            hello
-        }
-    """
-    )
+    result = schema.execute_sync("{ hello }")
     assert not result.errors
-    assert result.data == {"hello": "Hi there"}
+    assert result.data == {"hello": "Hi"}
+
+    result = schema.execute_sync('{ hello(name: "jkimbo") }')
+    assert not result.errors
+    assert result.data == {"hello": "Hi jkimbo"}
+
+
+def test_optional_argument_unset():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(self, name: Union[Optional[str], UNSET]) -> str:
+            if name is UNSET:
+                return "Hello stranger"
+
+            if name is None:
+                return "Hello anonymous"
+
+            return f"Hello {name}"
+
+    schema = strawberry.Schema(query=Query)
+
+    assert str(schema) == dedent(
+        """\
+        type Query {
+          hello(name: String): String!
+        }"""
+    )
+
+    result = schema.execute_sync("{ hello }")
+    assert not result.errors
+    assert result.data == {"hello": "Hello stranger"}
+
+    result = schema.execute_sync("{ hello(name: null) }")
+    assert not result.errors
+    assert result.data == {"hello": "Hello anonymous"}
+
+    result = schema.execute_sync('{ hello(name: "jkimbo") }')
+    assert not result.errors
+    assert result.data == {"hello": "Hello jkimbo"}
+
+
+def test_dont_allow_required_unset_argument():
+    with pytest.raises(
+        UnsetRequiredArgumentError, match=r'Argument "name" for resolver "hello" .*'
+    ):
+
+        @strawberry.type
+        class Query:
+            @strawberry.field
+            def hello(self, name: Union[str, UNSET]) -> str:
+                return "Hi"
 
 
 def test_optional_input_field_unset():

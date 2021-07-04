@@ -1,12 +1,12 @@
 - case: test_unset
   main: |
     import strawberry
-    from typing import Optional
+    from typing import Optional, Union
     from strawberry.arguments import UNSET
 
     @strawberry.type
     class User:
-        name: Optional[str] = UNSET
+        name: Union[Optional[str], UNSET]
 
     reveal_type(User().name)
   out: |
