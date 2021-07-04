@@ -1,8 +1,8 @@
 import dataclasses
 import typing
-from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Type, Union
 
-from strawberry.arguments import UNSET, convert_arguments
+from strawberry.arguments import UNSET
 from strawberry.utils.typing import get_parameters, has_type_var, is_type_var
 
 from .arguments import StrawberryArgument
@@ -174,37 +174,8 @@ class StrawberryField(dataclasses.Field):
 
         return None
 
-    def _get_arguments(
-        self,
-        source: Any,
-        info: Any,
-        kwargs: Dict[str, Any],
-    ) -> Tuple[List[Any], Dict[str, Any]]:
-        assert self.base_resolver is not None
-
-        kwargs = convert_arguments(kwargs, self.arguments)
-
-        # the following code allows to omit info and root arguments
-        # by inspecting the original resolver arguments,
-        # if it asks for self, the source will be passed as first argument
-        # if it asks for root, the source it will be passed as kwarg
-        # if it asks for info, the info will be passed as kwarg
-
-        args = []
-
-        if self.base_resolver.has_self_arg:
-            args.append(source)
-
-        if self.base_resolver.has_root_arg:
-            kwargs["root"] = source
-
-        if self.base_resolver.has_info_arg:
-            kwargs["info"] = info
-
-        return args, kwargs
-
     def get_result(
-        self, source: Any, info: Any, kwargs: Dict[str, Any]
+        self, source: Any, args: List[Any], kwargs: Dict[str, Any]
     ) -> Union[Awaitable[Any], Any]:
         """
         Calls the resolver defined for the StrawberryField. If the field doesn't have a
@@ -212,8 +183,6 @@ class StrawberryField(dataclasses.Field):
         """
 
         if self.base_resolver:
-            args, kwargs = self._get_arguments(source, info=info, kwargs=kwargs)
-
             return self.base_resolver(*args, **kwargs)
 
         return getattr(source, self.python_name)
