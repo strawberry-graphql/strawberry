@@ -22,6 +22,7 @@ from strawberry.union import StrawberryUnion
 
 from ..middleware import DirectivesMiddleware, Middleware
 from ..printer import print_schema
+from .config import StrawberryConfig
 from .execute import execute, execute_sync
 
 
@@ -39,11 +40,12 @@ class Schema:
         types=(),
         extensions: Sequence[Type[Extension]] = (),
         execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
-        auto_camel_case: bool = True,
+        config: StrawberryConfig = None,
     ):
         self.extensions = extensions
         self.execution_context_class = execution_context_class
-        self.schema_converter = GraphQLCoreConverter(auto_camel_case=auto_camel_case)
+        self.config = config or StrawberryConfig()
+        self.schema_converter = GraphQLCoreConverter(config)
 
         query_type = self.schema_converter.from_object_type(query)
         mutation_type = (

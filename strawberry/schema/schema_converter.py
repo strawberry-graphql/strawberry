@@ -27,6 +27,7 @@ from strawberry.directive import DirectiveDefinition
 from strawberry.enum import EnumDefinition, EnumValue
 from strawberry.field import StrawberryField
 from strawberry.scalars import is_scalar
+from strawberry.schema.config import StrawberryConfig
 from strawberry.types.types import TypeDefinition, undefined
 from strawberry.union import StrawberryUnion
 from strawberry.utils.str_converters import to_camel_case
@@ -49,9 +50,9 @@ class CustomGraphQLEnumType(GraphQLEnumType):
 class GraphQLCoreConverter:
     # TODO: Make abstract
 
-    def __init__(self, auto_camel_case: bool = True):
+    def __init__(self, config: StrawberryConfig):
         self.type_map: Dict[str, ConcreteType] = {}
-        self.auto_camel_case = auto_camel_case
+        self.config = config
 
     def get_graphql_type_argument(self, argument: StrawberryArgument) -> GraphQLType:
         # TODO: Completely replace with get_graphql_type
