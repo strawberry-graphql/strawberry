@@ -311,38 +311,36 @@ class GraphQLCoreConverter:
 
         return graphql_object_type
 
-    def _get_arguments(
-        self,
-        field: StrawberryField,
-        source: Any,
-        info: Any,
-        kwargs: Dict[str, Any],
-    ) -> Tuple[List[Any], Dict[str, Any]]:
-        if field.base_resolver is None:
-            return [], {}
-
-        kwargs = convert_arguments(kwargs, field.arguments)
-
-        # the following code allows to omit info and root arguments
-        # by inspecting the original resolver arguments,
-        # if it asks for self, the source will be passed as first argument
-        # if it asks for root, the source it will be passed as kwarg
-        # if it asks for info, the info will be passed as kwarg
-
-        args = []
-
-        if field.base_resolver.has_self_arg:
-            args.append(source)
-
-        if field.base_resolver.has_root_arg:
-            kwargs["root"] = source
-
-        if field.base_resolver.has_info_arg:
-            kwargs["info"] = info
-
-        return args, kwargs
-
     def from_resolver(self, field: StrawberryField) -> Callable:
+        def _get_arguments(
+            source: Any,
+            info: Any,
+            kwargs: Dict[str, Any],
+        ) -> Tuple[List[Any], Dict[str, Any]]:
+            if field.base_resolver is None:
+                return [], {}
+
+            kwargs = convert_arguments(kwargs, field.arguments)
+
+            # the following code allows to omit info and root arguments
+            # by inspecting the original resolver arguments,
+            # if it asks for self, the source will be passed as first argument
+            # if it asks for root, the source it will be passed as kwarg
+            # if it asks for info, the info will be passed as kwarg
+
+            args = []
+
+            if field.base_resolver.has_self_arg:
+                args.append(source)
+
+            if field.base_resolver.has_root_arg:
+                kwargs["root"] = source
+
+            if field.base_resolver.has_info_arg:
+                kwargs["info"] = info
+
+            return args, kwargs
+
         def _check_permissions(source: Any, info: Info, kwargs: Dict[str, Any]):
             """
             Checks if the permission should be accepted and
@@ -371,8 +369,8 @@ class GraphQLCoreConverter:
             strawberry_info = _strawberry_info_from_graphql(info)
             _check_permissions(_source, strawberry_info, kwargs)
 
-            args, kwargs = self._get_arguments(
-                field, source=_source, info=strawberry_info, kwargs=kwargs
+            args, kwargs = _get_arguments(
+                source=_source, info=strawberry_info, kwargs=kwargs
             )
 
             result = field.get_result(_source, args=args, kwargs=kwargs)
