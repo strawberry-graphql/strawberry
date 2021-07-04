@@ -1,12 +1,8 @@
 import dataclasses
 import typing
-from inspect import isasyncgen, iscoroutine
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
 
-from graphql import GraphQLResolveInfo
-
 from strawberry.arguments import UNSET, convert_arguments
-from strawberry.types.info import Info
 from strawberry.utils.typing import get_parameters, has_type_var, is_type_var
 
 from .arguments import StrawberryArgument
@@ -221,58 +217,6 @@ class StrawberryField(dataclasses.Field):
             return self.base_resolver(*args, **kwargs)
 
         return getattr(source, self.python_name)
-
-    def get_wrapped_resolver(self) -> Callable:
-        # TODO: This could potentially be handled by StrawberryResolver in the future
-        def _check_permissions(source: Any, info: Info, kwargs: Dict[str, Any]):
-            """
-            Checks if the permission should be accepted and
-            raises an exception if not
-            """
-            for permission_class in self.permission_classes:
-                permission = permission_class()
-
-                if not permission.has_permission(source, info, **kwargs):
-                    message = getattr(permission, "message", None)
-                    raise PermissionError(message)
-
-        def _strawberry_info_from_graphql(info: GraphQLResolveInfo) -> Info:
-            return Info(
-                field_name=info.field_name,
-                field_nodes=info.field_nodes,
-                context=info.context,
-                root_value=info.root_value,
-                variable_values=info.variable_values,
-                return_type=self._get_return_type(),
-                operation=info.operation,
-                path=info.path,
-            )
-
-        def _resolver(_source: Any, info: GraphQLResolveInfo, **kwargs):
-            strawberry_info = _strawberry_info_from_graphql(info)
-            _check_permissions(_source, strawberry_info, kwargs)
-
-            result = self.get_result(_source, info=strawberry_info, kwargs=kwargs)
-
-            if isasyncgen(result):
-
-                async def yield_results(results):
-                    async for value in results:
-                        yield value
-
-                return yield_results(result)
-
-            if iscoroutine(result):  # pragma: no cover
-
-                async def await_result(result):
-                    return await result
-
-                return await_result(result)
-
-            return result
-
-        _resolver._is_default = not self.base_resolver  # type: ignore
-        return _resolver
 
     def _get_return_type(self):
         # using type ignore to make mypy happy,
