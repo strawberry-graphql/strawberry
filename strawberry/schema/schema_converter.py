@@ -314,7 +314,7 @@ class GraphQLCoreConverter:
     def from_resolver(self, field: StrawberryField) -> Callable:
         def _get_arguments(
             source: Any,
-            info: Any,
+            info: Info,
             kwargs: Dict[str, Any],
         ) -> Tuple[List[Any], Dict[str, Any]]:
             if field.base_resolver is None:
