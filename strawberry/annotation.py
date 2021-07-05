@@ -11,7 +11,6 @@ from typing import (  # type: ignore
     TypeVar,
     Union,
     _eval_type,
-    _SpecialGenericAlias,
 )
 
 from strawberry.custom_scalar import SCALAR_REGISTRY, ScalarDefinition
@@ -167,7 +166,6 @@ class StrawberryAnnotation:
         if not cls._is_union(annotation):
             return False
 
-        annotation = typing.cast(_SpecialGenericAlias, annotation)
         types = annotation.__args__
 
         # A Union to be optional needs to have at least one None type
