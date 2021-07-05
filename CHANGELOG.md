@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.68.1 - 2021-07-05
+-------------------
+
+This release only changes some internal code to make future improvements
+easier.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1044](https://github.com/strawberry-graphql/strawberry/pull/1044/)
+
+
 0.68.0 - 2021-07-03
 -------------------
 
