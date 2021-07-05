@@ -1,4 +1,5 @@
-from typing import Any, Callable, Dict, Type, Union, cast
+from enum import Enum
+from typing import Any, Callable, Dict, Type, cast
 
 from graphql import (
     GraphQLArgument,
@@ -21,20 +22,27 @@ from graphql import (
     Undefined,
 )
 
-from strawberry.arguments import UNSET
+from strawberry.arguments import UNSET, StrawberryArgument
 from strawberry.directive import DirectiveDefinition
 from strawberry.enum import EnumDefinition, EnumValue
-from strawberry.field import FieldDefinition
-from strawberry.resolvers import get_resolver
+from strawberry.field import StrawberryField
 from strawberry.scalars import is_scalar
-from strawberry.types.types import ArgumentDefinition, TypeDefinition, undefined
+from strawberry.types.types import TypeDefinition, undefined
 from strawberry.union import StrawberryUnion
 
 from .types.concrete_type import ConcreteType
 from .types.scalar import get_scalar_type
 
 
-FIELD_ARGUMENT_TYPE = Union[FieldDefinition, ArgumentDefinition]
+# graphql-core expects a resolver for an Enum type to return
+# the enum's *value* (not its name or an instance of the enum). We have to
+# subclass the GraphQLEnumType class to enable returning Enum members from
+# resolvers.
+class CustomGraphQLEnumType(GraphQLEnumType):
+    def serialize(self, output_value: Any) -> str:
+        if isinstance(output_value, Enum):
+            return output_value.name
+        return super().serialize(output_value)
 
 
 class GraphQLCoreConverter:
@@ -43,21 +51,41 @@ class GraphQLCoreConverter:
     def __init__(self):
         self.type_map: Dict[str, ConcreteType] = {}
 
-    def get_graphql_type_field(self, field: FIELD_ARGUMENT_TYPE) -> GraphQLType:
+    def get_graphql_type_argument(self, argument: StrawberryArgument) -> GraphQLType:
         # TODO: Completely replace with get_graphql_type
 
         graphql_type: GraphQLType
 
-        if _is_list(field):
-            graphql_type = self.from_list(field)
-        elif _is_union(field):
+        if argument.is_list:
+            graphql_type = self.from_list_argument(argument)
+        elif argument.is_union:
+            assert isinstance(argument.type, StrawberryUnion)  # For mypy
+            graphql_type = self.from_union(argument.type)
+        else:
+            graphql_type = self.get_graphql_type(argument.type)
+
+        # TODO: Abstract this somehow. Logic is tricky
+        if not argument.is_optional:
+            graphql_type = cast(GraphQLNullableType, graphql_type)
+            graphql_type = GraphQLNonNull(graphql_type)
+
+        return graphql_type
+
+    def get_graphql_type_field(self, field: StrawberryField) -> GraphQLType:
+        # TODO: Completely replace with get_graphql_type
+
+        graphql_type: GraphQLType
+
+        if field.is_list:
+            graphql_type = self.from_list_field(field)
+        elif field.is_union:
             assert isinstance(field.type, StrawberryUnion)  # For mypy
             graphql_type = self.from_union(field.type)
         else:
             graphql_type = self.get_graphql_type(field.type)
 
         # TODO: Abstract this somehow. Logic is tricky
-        if not _is_optional(field):
+        if not field.is_optional:
             graphql_type = cast(GraphQLNullableType, graphql_type)
             graphql_type = GraphQLNonNull(graphql_type)
 
@@ -80,12 +108,10 @@ class GraphQLCoreConverter:
 
         raise TypeError(f"Unexpected type '{type_}'")
 
-    def from_argument(self, argument: ArgumentDefinition) -> GraphQLArgument:
-        default_value = (
-            Undefined if argument.default_value is undefined else argument.default_value
-        )
+    def from_argument(self, argument: StrawberryArgument) -> GraphQLArgument:
+        default_value = Undefined if argument.default is UNSET else argument.default
 
-        argument_type = self.get_graphql_type_field(argument)
+        argument_type = self.get_graphql_type_argument(argument)
         argument_type = cast(GraphQLInputType, argument_type)
 
         return GraphQLArgument(
@@ -94,17 +120,17 @@ class GraphQLCoreConverter:
             description=argument.description,
         )
 
-    def from_enum(self, enum: EnumDefinition) -> GraphQLEnumType:
+    def from_enum(self, enum: EnumDefinition) -> CustomGraphQLEnumType:
 
         assert enum.name is not None
 
         # Don't reevaluate known types
         if enum.name in self.type_map:
             graphql_enum = self.type_map[enum.name].implementation
-            assert isinstance(graphql_enum, GraphQLEnumType)  # For mypy
+            assert isinstance(graphql_enum, CustomGraphQLEnumType)  # For mypy
             return graphql_enum
 
-        graphql_enum = GraphQLEnumType(
+        graphql_enum = CustomGraphQLEnumType(
             name=enum.name,
             values={item.name: self.from_enum_value(item) for item in enum.values},
             description=enum.description,
@@ -123,8 +149,8 @@ class GraphQLCoreConverter:
 
         graphql_arguments = {}
         for argument in directive.arguments:
-            assert argument.name is not None
-            graphql_arguments[argument.name] = self.from_argument(argument)
+            assert argument.graphql_name is not None
+            graphql_arguments[argument.graphql_name] = self.from_argument(argument)
 
         return GraphQLDirective(
             name=directive.name,
@@ -133,7 +159,7 @@ class GraphQLCoreConverter:
             description=directive.description,
         )
 
-    def from_field(self, field: FieldDefinition) -> GraphQLField:
+    def from_field(self, field: StrawberryField) -> GraphQLField:
 
         field_type = self.get_graphql_type_field(field)
         field_type = cast(GraphQLOutputType, field_type)
@@ -147,8 +173,8 @@ class GraphQLCoreConverter:
 
         graphql_arguments = {}
         for argument in field.arguments:
-            assert argument.name is not None
-            graphql_arguments[argument.name] = self.from_argument(argument)
+            assert argument.graphql_name is not None
+            graphql_arguments[argument.graphql_name] = self.from_argument(argument)
 
         return GraphQLField(
             type_=field_type,
@@ -159,7 +185,8 @@ class GraphQLCoreConverter:
             deprecation_reason=field.deprecation_reason,
         )
 
-    def from_input_field(self, field: FieldDefinition) -> GraphQLInputField:
+    def from_input_field(self, field: StrawberryField) -> GraphQLInputField:
+        default_value: object
         if field.default_value in [undefined, UNSET]:
             default_value = Undefined
         else:
@@ -184,8 +211,8 @@ class GraphQLCoreConverter:
         def get_graphql_fields() -> Dict[str, GraphQLInputField]:
             graphql_fields = {}
             for field in type_definition.fields:
-                assert field.name is not None
-                graphql_fields[field.name] = self.from_input_field(field)
+                assert field.graphql_name is not None
+                graphql_fields[field.graphql_name] = self.from_input_field(field)
             return graphql_fields
 
         graphql_object_type = GraphQLInputObjectType(
@@ -212,8 +239,8 @@ class GraphQLCoreConverter:
         def get_graphql_fields() -> Dict[str, GraphQLField]:
             graphql_fields = {}
             for field in interface.fields:
-                assert field.name is not None
-                graphql_fields[field.name] = self.from_field(field)
+                assert field.graphql_name is not None
+                graphql_fields[field.graphql_name] = self.from_field(field)
             return graphql_fields
 
         graphql_interface = GraphQLInterfaceType(
@@ -229,7 +256,13 @@ class GraphQLCoreConverter:
 
         return graphql_interface
 
-    def from_list(self, list_: FIELD_ARGUMENT_TYPE) -> GraphQLList:
+    def from_list_argument(self, list_: StrawberryArgument) -> GraphQLList:
+        assert list_.child is not None
+        of_type = self.get_graphql_type_argument(list_.child)
+
+        return GraphQLList(of_type)
+
+    def from_list_field(self, list_: StrawberryField) -> GraphQLList:
         assert list_.child is not None
         of_type = self.get_graphql_type_field(list_.child)
 
@@ -257,8 +290,8 @@ class GraphQLCoreConverter:
         def get_graphql_fields() -> Dict[str, GraphQLField]:
             graphql_fields = {}
             for field in type_definition.fields:
-                assert field.name is not None
-                graphql_fields[field.name] = self.from_field(field)
+                assert field.graphql_name is not None
+                graphql_fields[field.graphql_name] = self.from_field(field)
             return graphql_fields
 
         graphql_object_type = GraphQLObjectType(
@@ -275,8 +308,8 @@ class GraphQLCoreConverter:
 
         return graphql_object_type
 
-    def from_resolver(self, field: FieldDefinition) -> Callable:
-        return get_resolver(field)
+    def from_resolver(self, field: StrawberryField) -> Callable:
+        return field.get_wrapped_resolver()
 
     def from_scalar(self, scalar: Type) -> GraphQLScalarType:
         return get_scalar_type(scalar, self.type_map)
@@ -312,21 +345,6 @@ class GraphQLCoreConverter:
 ################################################################################
 # Temporary functions to be removed with new types
 ################################################################################
-
-
-def _is_list(field: FIELD_ARGUMENT_TYPE) -> bool:
-    # isinstance(type_, StrawberryList)  # noqa: E800
-    return field.is_list
-
-
-def _is_optional(field: FIELD_ARGUMENT_TYPE) -> bool:
-    # isinstance(type_, StrawberryOptional)  # noqa: E800
-    return field.is_optional
-
-
-def _is_union(field: FIELD_ARGUMENT_TYPE) -> bool:
-    # isinstance(type_, StrawberryUnion)  # noqa: E800
-    return field.is_union
 
 
 def _is_scalar(type_: Type) -> bool:

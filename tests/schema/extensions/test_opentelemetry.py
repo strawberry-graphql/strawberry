@@ -22,7 +22,7 @@ class Person:
 @strawberry.type
 class Query:
     @strawberry.field
-    async def person(self, info) -> Person:
+    async def person(self) -> Person:
         return Person()
 
 
@@ -35,7 +35,7 @@ async def test_opentelemetry_uses_global_tracer(global_tracer_mock):
     @strawberry.type
     class Query:
         @strawberry.field
-        async def person(self, info) -> Person:
+        async def person(self) -> Person:
             return Person()
 
     schema = strawberry.Schema(query=Query, extensions=[OpenTelemetryExtension])
@@ -62,7 +62,7 @@ async def test_opentelemetry_Sync_uses_global_tracer(global_tracer_mock):
     @strawberry.type
     class Query:
         @strawberry.field
-        async def person(self, info) -> Person:
+        async def person(self) -> Person:
             return Person()
 
     schema = strawberry.Schema(query=Query, extensions=[OpenTelemetryExtensionSync])
@@ -170,8 +170,8 @@ async def test_tracing_filter_kwargs(global_tracer_mock, mocker):
     def arg_filter(kwargs, info):
         return {"name": "[...]"}
 
-    def extension():
-        return OpenTelemetryExtension(arg_filter=arg_filter)
+    def extension(**kwargs):
+        return OpenTelemetryExtension(arg_filter=arg_filter, **kwargs)
 
     @strawberry.type
     class Query:

@@ -193,5 +193,6 @@ $RECYCLE.BIN/
 # End of https://www.gitignore.io/api/macos,linux,python,windows
 
 .vscode/
+.idea/
 node_modules/
 **/output

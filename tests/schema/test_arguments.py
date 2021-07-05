@@ -31,6 +31,34 @@ def test_argument_descriptions():
     )
 
 
+def test_argument_names():
+    @strawberry.input
+    class HelloInput:
+        name: str = strawberry.field(default="Patrick", description="Your name")
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(
+            self, input_: Annotated[HelloInput, strawberry.argument(name="input")]
+        ) -> str:
+            return f"Hi {input_.name}"
+
+    schema = strawberry.Schema(query=Query)
+
+    assert str(schema) == dedent(
+        '''\
+        input HelloInput {
+          """Your name"""
+          name: String! = "Patrick"
+        }
+
+        type Query {
+          hello(input: HelloInput!): String!
+        }'''
+    )
+
+
 def test_argument_with_default_value_none():
     @strawberry.type
     class Query:

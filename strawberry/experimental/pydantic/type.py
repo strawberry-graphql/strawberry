@@ -5,14 +5,14 @@ from typing import Any, Dict, List, Optional, Type
 from pydantic import BaseModel
 from pydantic.fields import ModelField
 
-import strawberry
+from strawberry.arguments import UNSET
 from strawberry.experimental.pydantic.conversion import (
     convert_pydantic_model_to_strawberry_class,
 )
 from strawberry.experimental.pydantic.fields import get_basic_type
+from strawberry.field import StrawberryField
 from strawberry.type import _process_type
 from strawberry.types.types import FederationTypeParams
-from strawberry.utils.str_converters import to_camel_case
 
 from .exceptions import MissingFieldsListError, UnregisteredTypeException
 
@@ -62,8 +62,14 @@ def type(
             (
                 name,
                 get_type_for_field(field),
-                dataclasses.field(
-                    default=strawberry.field(name=to_camel_case(field.alias))
+                StrawberryField(
+                    python_name=field.name,
+                    graphql_name=field.alias if field.has_alias else None,
+                    default=field.default if not field.required else UNSET,
+                    default_factory=(
+                        field.default_factory if field.default_factory else UNSET
+                    ),
+                    type_=get_type_for_field(field),
                 ),
             )
             for name, field in model_fields.items()
@@ -76,8 +82,19 @@ def type(
                 (
                     name,
                     type_,
-                    dataclasses.field(
-                        default=strawberry.field(name=to_camel_case(name))
+                    StrawberryField(
+                        python_name=name,
+                        graphql_name=None,
+                        type_=type_,
+                        # we need a default value when adding additional fields
+                        # on top of a type generated from Pydantic, this is because
+                        # Pydantic Optional fields always have None as default value
+                        # which breaks dataclasses generation; as we can't define
+                        # a field without a default value after one with a default value
+                        # adding fields at the beginning won't work as we will also
+                        # support default values on them (so the problem will be just
+                        # shifted around)
+                        default=None,
                     ),
                 )
                 for name, type_ in cls_annotations.items()

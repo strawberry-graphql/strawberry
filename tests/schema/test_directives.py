@@ -16,7 +16,7 @@ def test_supports_default_directives():
     @strawberry.type
     class Query:
         @strawberry.field
-        def person(self, info) -> Person:
+        def person(self) -> Person:
             return Person()
 
     query = """query ($includePoints: Boolean!){
@@ -79,7 +79,7 @@ def test_runs_directives():
     @strawberry.type
     class Query:
         @strawberry.field
-        def person(self, info) -> Person:
+        def person(self) -> Person:
             return Person()
 
     @strawberry.directive(
@@ -123,7 +123,7 @@ def test_runs_directives_with_list_params():
     @strawberry.type
     class Query:
         @strawberry.field
-        def person(self, info) -> Person:
+        def person(self) -> Person:
             return Person()
 
     @strawberry.directive(locations=[DirectiveLocation.FIELD])

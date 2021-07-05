@@ -12,10 +12,10 @@ def test_type_add_type_definition_with_fields():
     assert definition.name == "Query"
     assert len(definition.fields) == 2
 
-    assert definition.fields[0].name == "name"
+    assert definition.fields[0].graphql_name == "name"
     assert definition.fields[0].type == str
 
-    assert definition.fields[1].name == "age"
+    assert definition.fields[1].graphql_name == "age"
     assert definition.fields[1].type == int
 
 
@@ -30,10 +30,10 @@ def test_passing_custom_names_to_fields():
     assert definition.name == "Query"
     assert len(definition.fields) == 2
 
-    assert definition.fields[0].name == "name"
+    assert definition.fields[0].graphql_name == "name"
     assert definition.fields[0].type == str
 
-    assert definition.fields[1].name == "age"
+    assert definition.fields[1].graphql_name == "age"
     assert definition.fields[1].type == int
 
 
@@ -48,10 +48,10 @@ def test_passing_nothing_to_fields():
     assert definition.name == "Query"
     assert len(definition.fields) == 2
 
-    assert definition.fields[0].name == "name"
+    assert definition.fields[0].graphql_name == "name"
     assert definition.fields[0].type == str
 
-    assert definition.fields[1].name == "age"
+    assert definition.fields[1].graphql_name == "age"
     assert definition.fields[1].type == int
 
 
@@ -67,3 +67,31 @@ def test_can_use_types_directly():
     user = User(username="abc")
     assert user.username == "abc"
     assert user.email() == "abc@somesite.com"
+
+
+def test_graphql_name_unchanged():
+    @strawberry.type
+    class Query:
+        the_field: int = strawberry.field(name="some_name")
+
+    definition = Query._type_definition
+
+    assert definition.fields[0].graphql_name == "some_name"
+
+
+def test_field_with_default():
+    @strawberry.type
+    class Query:
+        the_field: int = strawberry.field(default=3)
+
+    instance = Query()
+    assert instance.the_field == 3
+
+
+def test_field_with_default_factory():
+    @strawberry.type
+    class Query:
+        the_field: int = strawberry.field(default_factory=lambda: 3)
+
+    instance = Query()
+    assert instance.the_field == 3

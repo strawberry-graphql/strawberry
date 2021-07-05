@@ -10,7 +10,7 @@ use to serve your GraphQL schema:
 ```python
 from strawberry.flask.views import GraphQLView
 
-from api.schema import Schema
+from api.schema import schema
 
 app = Flask(__name__)
 
@@ -51,7 +51,7 @@ class MyGraphQLView(GraphQLView):
 @strawberry.type
 class Query:
     @strawberry.field
-    def example(self, info) -> str:
+    def example(self, info: Info) -> str:
         return str(info.context["example"])
 ```
 
@@ -88,8 +88,7 @@ the field name we'll return "Patrick" in this case.
 to the clients. This can be useful logging errors or hiding them (for example to
 hide internal exceptions).
 
-It needs to return an object of `GraphQLHTTPResponse` and accepts the request
-and the execution results.
+It needs to return an object of `GraphQLHTTPResponse` and accepts the execution result.
 
 ```python
 from strawberry.http import GraphQLHTTPResponse
@@ -109,5 +108,5 @@ class MyGraphQLView(GraphQLView):
         return data
 ```
 
-In this case we are doing the default processing of the result, but it can
-be tweaked based on your needs.
+In this case we are doing the default processing of the result, but it can be
+tweaked based on your needs.

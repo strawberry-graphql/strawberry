@@ -23,7 +23,7 @@ def test_resolver_as_argument():
     assert definition.name == "Query"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "name"
+    assert definition.fields[0].graphql_name == "name"
     assert definition.fields[0].type == str
     assert definition.fields[0].base_resolver.wrapped_func == get_name
 
@@ -40,7 +40,7 @@ def test_resolver_fields():
     assert definition.name == "Query"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "name"
+    assert definition.fields[0].graphql_name == "name"
     assert definition.fields[0].type == str
     assert definition.fields[0].base_resolver(None) == Query().name()
 
@@ -51,7 +51,7 @@ def test_raises_error_when_return_annotation_missing():
         @strawberry.type
         class Query:
             @strawberry.field
-            def hello(self, info):
+            def hello(self):
                 return "I'm a resolver"
 
     assert e.value.args == (
@@ -78,7 +78,7 @@ def test_raises_error_when_argument_annotation_missing():
     with pytest.raises(MissingArgumentsAnnotationsError) as e:
 
         @strawberry.field
-        def hello(self, info, query) -> str:
+        def hello(self, query) -> str:
             return "I'm a resolver"
 
     assert e.value.args == (
@@ -89,7 +89,7 @@ def test_raises_error_when_argument_annotation_missing():
     with pytest.raises(MissingArgumentsAnnotationsError) as e:
 
         @strawberry.field
-        def hello2(self, info, query, limit) -> str:
+        def hello2(self, query, limit) -> str:
             return "I'm a resolver"
 
     assert e.value.args == (
@@ -143,12 +143,49 @@ def test_can_reuse_resolver():
     assert definition.name == "Query"
     assert len(definition.fields) == 2
 
-    assert definition.fields[0].name == "name"
-    assert definition.fields[0].origin_name == "name"
+    assert definition.fields[0].graphql_name == "name"
+    assert definition.fields[0].python_name == "name"
     assert definition.fields[0].type == str
     assert definition.fields[0].base_resolver.wrapped_func == get_name
 
-    assert definition.fields[1].name == "name2"
-    assert definition.fields[1].origin_name == "name_2"
+    assert definition.fields[1].graphql_name == "name2"
+    assert definition.fields[1].python_name == "name_2"
     assert definition.fields[1].type == str
     assert definition.fields[1].base_resolver.wrapped_func == get_name
+
+
+def test_eq_resolvers():
+    def get_name(self) -> str:
+        return "Name"
+
+    @strawberry.type
+    class Query:
+        a: int
+        name: str = strawberry.field(resolver=get_name)
+        name_2: str = strawberry.field(resolver=get_name)
+
+    assert Query(1) == Query(1)
+    assert Query(1) != Query(2)
+
+
+def test_eq_fields():
+    @strawberry.type
+    class Query:
+        a: int
+        name: str = strawberry.field(name="name")
+
+    assert Query(1, "name") == Query(1, "name")
+    assert Query(1, "name") != Query(1, "not a name")
+
+
+def test_with_resolver_fields():
+    @strawberry.type
+    class Query:
+        a: int
+
+        @strawberry.field
+        def name(self) -> str:
+            return "A"
+
+    assert Query(1) == Query(1)
+    assert Query(1) != Query(2)

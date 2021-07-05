@@ -40,7 +40,7 @@ def test_types(pydantic_type, field_type):
     assert definition.name == "Type"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "field"
+    assert definition.fields[0].graphql_name == "field"
     assert definition.fields[0].type is field_type
     assert definition.fields[0].is_optional is False
 
@@ -62,7 +62,7 @@ def test_types_optional(pydantic_type, field_type):
     assert definition.name == "Type"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "field"
+    assert definition.fields[0].graphql_name == "field"
     assert definition.fields[0].type is field_type
     assert definition.fields[0].is_optional is True
 
@@ -80,7 +80,7 @@ def test_conint():
     assert definition.name == "Type"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "field"
+    assert definition.fields[0].graphql_name == "field"
     assert definition.fields[0].type is int
     assert definition.fields[0].is_optional is False
 
@@ -98,7 +98,7 @@ def test_constr():
     assert definition.name == "Type"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "field"
+    assert definition.fields[0].graphql_name == "field"
     assert definition.fields[0].type is str
     assert definition.fields[0].is_optional is False
 

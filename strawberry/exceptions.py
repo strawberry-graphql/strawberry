@@ -143,3 +143,30 @@ class WrongNumberOfResultsReturned(Exception):
         )
 
         super().__init__(message)
+
+
+class FieldWithResolverAndDefaultValueError(Exception):
+    def __init__(self, field_name: str, type_name: str):
+        message = (
+            f'Field "{field_name}" on type "{type_name}" cannot define a default '
+            "value and a resolver."
+        )
+
+        super().__init__(message)
+
+
+class FieldWithResolverAndDefaultFactoryError(Exception):
+    def __init__(self, field_name: str, type_name: str):
+        message = (
+            f'Field "{field_name}" on type "{type_name}" cannot define a '
+            "default_factory and a resolver."
+        )
+
+        super().__init__(message)
+
+
+class MissingQueryError(Exception):
+    def __init__(self):
+        message = 'Request data is missing a "query" value'
+
+        super().__init__(message)

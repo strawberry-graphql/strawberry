@@ -24,7 +24,7 @@ def test_tracing_sync(mocker):
     @strawberry.type
     class Query:
         @strawberry.field
-        def person(self, info) -> Person:
+        def person(self) -> Person:
             return Person()
 
     schema = strawberry.Schema(query=Query, extensions=[ApolloTracingExtensionSync])
@@ -79,11 +79,11 @@ async def test_tracing_async(mocker):
     @strawberry.type
     class Query:
         @strawberry.field
-        def example(self, info) -> str:
+        def example(self) -> str:
             return "Hi"
 
         @strawberry.field
-        async def person(self, info) -> Person:
+        async def person(self) -> Person:
             return Person()
 
     schema = strawberry.Schema(query=Query, extensions=[ApolloTracingExtension])
@@ -146,7 +146,7 @@ def test_should_not_trace_introspection_sync_queries(mocker):
     @strawberry.type
     class Query:
         @strawberry.field
-        def person(self, info) -> Person:
+        def person(self) -> Person:
             return Person()
 
     schema = strawberry.Schema(query=Query, extensions=[ApolloTracingExtensionSync])
@@ -181,7 +181,7 @@ async def test_should_not_trace_introspection_async_queries(mocker):
     @strawberry.type
     class Query:
         @strawberry.field
-        async def person(self, info) -> Person:
+        async def person(self) -> Person:
             return Person()
 
     schema = strawberry.Schema(query=Query, extensions=[ApolloTracingExtension])

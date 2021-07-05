@@ -28,17 +28,17 @@ class Query:
     hello: str = "strawberry"
 
     @strawberry.field
-    async def hello_async(self, info) -> str:
+    async def hello_async(self) -> str:
         return "async strawberry"
 
     @strawberry.field
-    async def example_async(self, info) -> str:
+    async def example_async(self) -> str:
         def _get_name():
             return Example.objects.first().name
 
         get_name = sync_to_async(_get_name)
 
-        return await get_name()
+        return await get_name()  # type: ignore
 
 
 schema = strawberry.Schema(query=Query)
@@ -94,7 +94,20 @@ async def test_fails_when_not_sending_query():
     with pytest.raises(SuspiciousOperation) as e:
         await AsyncGraphQLView.as_view(schema=schema)(request)
 
-        assert e.value.args == ("No GraphQL query found in the request",)
+    assert e.value.args == ("No GraphQL query found in the request",)
+
+
+async def test_fails_when_request_body_has_invalid_json():
+    factory = RequestFactory()
+
+    request = factory.post(
+        "/graphql/", "definitely-not-json-string", content_type="application/json"
+    )
+
+    with pytest.raises(SuspiciousOperation) as e:
+        await AsyncGraphQLView.as_view(schema=schema, graphiql=False)(request)
+
+    assert e.value.args == ("Unable to parse request body as JSON",)
 
 
 @pytest.mark.django_db

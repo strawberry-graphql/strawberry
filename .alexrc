@@ -10,6 +10,7 @@
     "executes",
     "execution",
     "special",
-    "primitive"
+    "primitive",
+    "invalid"
   ]
 }

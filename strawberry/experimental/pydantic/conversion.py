@@ -1,21 +1,22 @@
 from typing import cast
 
+from strawberry.field import StrawberryField
 from strawberry.scalars import is_scalar
-from strawberry.types.types import FieldDefinition
 
 
 def _convert_from_pydantic_to_strawberry_field(
-    field: FieldDefinition, data_from_model=None, extra=None
+    field: StrawberryField, data_from_model=None, extra=None
 ):
-    data = data_from_model or extra
+    data = data_from_model if data_from_model is not None else extra
 
     if field.is_list:
-        child = field.child
+        assert field.child is not None
+
         items = [None for _ in data]
 
         for index, item in enumerate(data):
             items[index] = _convert_from_pydantic_to_strawberry_field(
-                cast(FieldDefinition, child),
+                field.child,
                 data_from_model=item,
                 extra=extra[index] if extra else None,
             )
@@ -34,14 +35,14 @@ def convert_pydantic_model_to_strawberry_class(cls, *, model_instance=None, extr
     kwargs = {}
 
     for field in cls._type_definition.fields:
-        field = cast(FieldDefinition, field)
-        origin_name = field.origin_name
+        field = cast(StrawberryField, field)
+        python_name = field.python_name
 
-        data_from_extra = extra.get(origin_name, None)
+        data_from_extra = extra.get(python_name, None)
         data_from_model = (
-            getattr(model_instance, origin_name, None) if model_instance else None
+            getattr(model_instance, python_name, None) if model_instance else None
         )
-        kwargs[origin_name] = _convert_from_pydantic_to_strawberry_field(
+        kwargs[python_name] = _convert_from_pydantic_to_strawberry_field(
             field, data_from_model, extra=data_from_extra
         )
 

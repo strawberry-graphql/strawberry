@@ -16,7 +16,7 @@ def test_basic_list():
     assert definition.name == "Query"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "names"
+    assert definition.fields[0].graphql_name == "names"
     assert definition.fields[0].is_list
     assert definition.fields[0].type is None
     assert definition.fields[0].is_optional is False
@@ -34,7 +34,7 @@ def test_optional_list():
     assert definition.name == "Query"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "names"
+    assert definition.fields[0].graphql_name == "names"
     assert definition.fields[0].is_list
     assert definition.fields[0].type is None
     assert definition.fields[0].is_optional
@@ -52,7 +52,7 @@ def test_list_of_optional():
     assert definition.name == "Query"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "names"
+    assert definition.fields[0].graphql_name == "names"
     assert definition.fields[0].type is None
     assert definition.fields[0].is_optional is False
     assert definition.fields[0].child.type == str
@@ -69,7 +69,7 @@ def test_optional_list_of_optional():
     assert definition.name == "Query"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "names"
+    assert definition.fields[0].graphql_name == "names"
     assert definition.fields[0].type is None
     assert definition.fields[0].is_optional
     assert definition.fields[0].child.type == str
@@ -86,7 +86,7 @@ def test_list_of_lists():
     assert definition.name == "Query"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "names"
+    assert definition.fields[0].graphql_name == "names"
     assert definition.fields[0].is_list
     assert definition.fields[0].type is None
     assert definition.fields[0].is_optional is False
@@ -111,7 +111,7 @@ def test_list_of_lists_generic_annotations():
     assert definition.name == "Query"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].name == "names"
+    assert definition.fields[0].graphql_name == "names"
     assert definition.fields[0].is_list
     assert definition.fields[0].type is None
     assert definition.fields[0].is_optional is False

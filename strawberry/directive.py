@@ -5,8 +5,7 @@ from typing import Callable, List, Optional
 
 from graphql import DirectiveLocation
 
-from strawberry.arguments import get_arguments_from_annotations
-from strawberry.types.types import ArgumentDefinition
+from strawberry.arguments import StrawberryArgument, get_arguments_from_annotations
 from strawberry.utils.str_converters import to_camel_case
 
 
@@ -18,7 +17,7 @@ class DirectiveDefinition:
     description: Optional[str] = None
 
     @property
-    def arguments(self) -> List[ArgumentDefinition]:
+    def arguments(self) -> List[StrawberryArgument]:
         annotations = self.resolver.__annotations__
         annotations = dict(islice(annotations.items(), 1, None))
         annotations.pop("return", None)

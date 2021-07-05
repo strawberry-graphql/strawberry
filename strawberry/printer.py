@@ -14,22 +14,23 @@ from graphql.utilities.print_schema import (
     print_type as original_print_type,
 )
 
-from strawberry.types.types import FieldDefinition, TypeDefinition
+from strawberry.field import StrawberryField
+from strawberry.types.types import TypeDefinition
 
 from .schema import BaseSchema
 
 
-def print_federation_field_directive(field: Optional[FieldDefinition]) -> str:
+def print_federation_field_directive(field: Optional[StrawberryField]) -> str:
     if not field:
         return ""
 
     out = ""
 
     if field.federation.provides:
-        out += f' @provides(fields: "{field.federation.provides}")'
+        out += f' @provides(fields: "{" ".join(field.federation.provides)}")'
 
     if field.federation.requires:
-        out += f' @requires(fields: "{field.federation.requires}")'
+        out += f' @requires(fields: "{" ".join(field.federation.requires)}")'
 
     if field.federation.external:
         out += " @external"
@@ -43,15 +44,15 @@ def print_fields(type_, schema: BaseSchema) -> str:
     fields = []
 
     for i, (name, field) in enumerate(type_.fields.items()):
-        field_definition = strawberry_type.get_field(name) if strawberry_type else None
+        strawberry_field = strawberry_type.get_field(name) if strawberry_type else None
 
         fields.append(
             print_description(field, "  ", not i)
             + f"  {name}"
             + print_args(field.args, "  ")
             + f": {field.type}"
-            + print_federation_field_directive(field_definition)
-            + print_deprecated(field)
+            + print_federation_field_directive(strawberry_field)
+            + print_deprecated(field.deprecation_reason)
         )
 
     return print_block(fields)

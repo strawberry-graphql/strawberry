@@ -49,22 +49,20 @@ def _check_field_annotations(cls: Type):
         # to make sure dataclasses.dataclass is ready for it
         if isinstance(field, StrawberryField):
 
-            field_definition = field._field_definition
-
             # Make sure the cls has an annotation
             if field_name not in cls_annotations:
                 # If the field uses the default resolver, the field _must_ be
                 # annotated
-                if not field_definition.base_resolver:
+                if not field.base_resolver:
                     raise MissingFieldAnnotationError(field_name)
 
                 # The resolver _must_ have a return type annotation
                 # TODO: Maybe check this immediately when adding resolver to
                 #       field
-                if field_definition.base_resolver.type is None:
+                if field.base_resolver.type is None:
                     raise MissingReturnAnnotationError(field_name)
 
-                cls_annotations[field_name] = field_definition.base_resolver.type
+                cls_annotations[field_name] = field.base_resolver.type
 
             # TODO: Make sure the cls annotation agrees with the field's type
             # >>> if cls_annotations[field_name] != field.base_resolver.type:
@@ -100,12 +98,10 @@ def _process_type(
 ):
     name = name or to_camel_case(cls.__name__)
 
-    wrapped = _wrap_dataclass(cls)
-
-    interfaces = _get_interfaces(wrapped)
+    interfaces = _get_interfaces(cls)
     fields = _get_fields(cls)
 
-    wrapped._type_definition = TypeDefinition(
+    cls._type_definition = TypeDefinition(
         name=name,
         is_input=is_input,
         is_interface=is_interface,
@@ -123,10 +119,10 @@ def _process_type(
     # solution should suffice
 
     for field in fields:
-        if field.base_resolver and field.origin_name:
-            setattr(cls, field.origin_name, field.base_resolver.wrapped_func)
+        if field.base_resolver and field.python_name:
+            setattr(cls, field.python_name, field.base_resolver.wrapped_func)
 
-    return wrapped
+    return cls
 
 
 def type(
@@ -148,8 +144,10 @@ def type(
     """
 
     def wrap(cls):
+        wrapped = _wrap_dataclass(cls)
+
         return _process_type(
-            cls,
+            wrapped,
             name=name,
             is_input=is_input,
             is_interface=is_interface,

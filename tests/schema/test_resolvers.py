@@ -11,7 +11,7 @@ def test_resolver():
     @strawberry.type
     class Query:
         @strawberry.field
-        def hello(self, info) -> str:
+        def hello(self) -> str:
             return "I'm a resolver"
 
     schema = strawberry.Schema(query=Query)
@@ -26,16 +26,16 @@ def test_resolver():
 
 @pytest.mark.asyncio
 async def test_resolver_function():
-    def function_resolver(root, info) -> str:
+    def function_resolver(root) -> str:
         return "I'm a function resolver"
 
-    async def async_resolver(root, info) -> str:
+    async def async_resolver(root) -> str:
         return "I'm an async resolver"
 
-    def resolve_name(root, info) -> str:
+    def resolve_name(root) -> str:
         return root.name
 
-    def resolve_say_hello(root, info, name: str) -> str:
+    def resolve_say_hello(root, name: str) -> str:
         return f"Hello {name}"
 
     @strawberry.type
@@ -66,10 +66,10 @@ async def test_resolver_function():
 
 
 def test_resolvers_on_types():
-    def function_resolver(root, info) -> str:
+    def function_resolver(root) -> str:
         return "I'm a function resolver"
 
-    def function_resolver_with_params(root, info, x: str) -> str:
+    def function_resolver_with_params(root, x: str) -> str:
         return f"I'm {x}"
 
     @strawberry.type
@@ -82,7 +82,7 @@ def test_resolvers_on_types():
     @strawberry.type
     class Query:
         @strawberry.field
-        def example(self, info) -> Example:
+        def example(self) -> Example:
             return Example()
 
     schema = strawberry.Schema(query=Query)
@@ -301,7 +301,7 @@ async def test_async_list_resolver():
     @strawberry.type
     class Query:
         @strawberry.field
-        async def best_flavours(self, info) -> List[str]:
+        async def best_flavours(self) -> List[str]:
             return ["strawberry", "pistachio"]
 
     schema = strawberry.Schema(query=Query)
@@ -312,3 +312,20 @@ async def test_async_list_resolver():
 
     assert not result.errors
     assert result.data["bestFlavours"] == ["strawberry", "pistachio"]
+
+
+def test_can_use_source_as_argument_name():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(self, source: str) -> str:
+            return f"I'm a resolver for {source}"
+
+    schema = strawberry.Schema(query=Query)
+
+    query = '{ hello(source: "🍓") }'
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data["hello"] == "I'm a resolver for 🍓"

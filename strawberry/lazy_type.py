@@ -33,5 +33,5 @@ class LazyType(Generic[TypeName, Module]):
     # this empty call method allows LazyTypes to be used in generic types
     # for example: List[LazyType["A", "module"]]
 
-    def __call__(self):
+    def __call__(self):  # pragma: no cover
         return None
