@@ -1,7 +1,7 @@
 import click
 
-from .commands.schema_importer.import_schema import import_schema as cmd_import_schema
 from .commands.export_schema import export_schema as cmd_export_schema
+from .commands.schema_importer.import_schema import import_schema as cmd_import_schema
 from .commands.server import server as cmd_server
 
 

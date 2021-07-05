@@ -113,7 +113,7 @@ def test_import_optional_bool_field():
 
 # Int
 def test_import_int_field():
-    """ Test for a required Int field type with multiline description """
+    """Test for a required Int field type with multiline description here"""
     s = '''
     type HolyHandGrenade {
         """

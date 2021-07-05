@@ -10,7 +10,7 @@ from strawberry.cli.commands.schema_importer import sdl_importer
 )
 @click.argument("schema", type=str, required=True, nargs=-1)
 def import_schema(schema):
-    """ Parses SDL to strawberry types and prints to console """
+    """Parses SDL to strawberry types and prints to console"""
     strawberries = ""
     for s in schema:
         try:

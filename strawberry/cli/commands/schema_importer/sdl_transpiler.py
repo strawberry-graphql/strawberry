@@ -75,7 +75,7 @@ def get_class_name(ast):
 
 
 def get_decorator(ast):
-    """ Creates and returns decorator string """
+    """Creates and returns decorator string"""
     return DECORATOR_KINDS[ast.kind]
 
 
