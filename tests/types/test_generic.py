@@ -3,7 +3,6 @@ from typing import Generic, List, Optional, TypeVar, Union
 import pytest
 
 import strawberry
-from strawberry.exceptions import MissingTypesForGenericError
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryTypeVar
 from strawberry.union import StrawberryUnion
 
@@ -321,7 +320,8 @@ def test_using_generics_raises_when_missing_annotation():
         name: str
 
     error_message = (
-        'Query fields cannot be resolved. The type "Edge" is generic, but no type has been passed'
+        f'Query fields cannot be resolved. The type "{repr(Edge)}" '
+        "is generic, but no type has been passed"
     )
 
     @strawberry.type
@@ -346,8 +346,8 @@ def test_using_generics_raises_when_missing_annotation_nested():
         name: str
 
     error_message = (
-        'Query fields cannot be resolved. The type "Connection" '
-        'is generic, but no type has been passed'
+        f'Query fields cannot be resolved. The type "{repr(Connection)}" '
+        "is generic, but no type has been passed"
     )
 
     @strawberry.type

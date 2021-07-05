@@ -1,8 +1,10 @@
 # TODO: add links to docs
 
-from typing import List, Set
+from typing import List, Set, Union
 
 from graphql import GraphQLObjectType
+
+from strawberry.type import StrawberryType
 
 
 class NotAnEnum(Exception):
@@ -81,9 +83,9 @@ class InvalidUnionType(Exception):
 class MissingTypesForGenericError(Exception):
     """Raised when a generic types was used without passing any type."""
 
-    def __init__(self, annotation: type):
+    def __init__(self, annotation: Union[StrawberryType, type]):
         message = (
-            f'The type "{annotation.__name__}" is generic, but no type has been passed'
+            f'The type "{repr(annotation)}" is generic, but no type has been passed'
         )
 
         super().__init__(message)
