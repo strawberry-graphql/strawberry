@@ -6,7 +6,7 @@ from strawberry.cli.commands.schema_importer import sdl_importer
 
 
 @click.command(
-    "import_schema", short_help="Transpiles SDL from a path to strawberry types"
+    "import-schema", short_help="Transpiles SDL from a path to strawberry types"
 )
 @click.argument("schema", type=str, required=True, nargs=-1)
 def import_schema(schema):
