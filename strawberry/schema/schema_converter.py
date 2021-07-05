@@ -162,8 +162,8 @@ class GraphQLCoreConverter:
             description=field.description,
         )
 
-    def from_input_object(self, object_type: Type) -> GraphQLInputObjectType:
-        type_definition = object_type._type_definition
+    def from_input_object(self, object_type: type) -> GraphQLInputObjectType:
+        type_definition = object_type._type_definition  # type: ignore
 
         # Don't reevaluate known types
         if type_definition.name in self.type_map:

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import List, Mapping, TYPE_CHECKING, TypeVar, Union
+from typing import TYPE_CHECKING, List, Mapping, TypeVar, Union, cast
+
 
 if TYPE_CHECKING:
     from .types.types import TypeDefinition
@@ -79,7 +80,10 @@ class StrawberryContainer(StrawberryType):
 
         # TODO: Obsolete with StrawberryObject
         if hasattr(self.of_type, "_type_definition"):
-            type_definition: TypeDefinition = self.of_type._type_definition  # type: ignore
+            type_definition = cast(
+                TypeDefinition,
+                self.of_type._type_definition,  # type: ignore
+            )
 
             if type_definition.is_generic:
                 of_type_copy = type_definition.copy_with(type_var_map)

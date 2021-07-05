@@ -1,7 +1,9 @@
+# type: ignore
+
 from typing import List, Optional
 
 import strawberry
-from strawberry.type import StrawberryOptional, StrawberryList
+from strawberry.type import StrawberryList, StrawberryOptional
 
 
 def test_basic_types():

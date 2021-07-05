@@ -18,7 +18,8 @@ def test_simple_types():
         StrawberryArgument(
             graphql_name="string",
             type_annotation=StrawberryAnnotation(str),
-            python_name="string"),
+            python_name="string",
+        ),
         StrawberryArgument(
             graphql_name="float",
             type_annotation=StrawberryAnnotation(float),

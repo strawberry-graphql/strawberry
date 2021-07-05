@@ -1,6 +1,6 @@
 import dataclasses
 from enum import EnumMeta
-from typing import Any, Callable, List, Optional, Union, Mapping, TypeVar
+from typing import Any, Callable, List, Mapping, Optional, TypeVar, Union
 
 from strawberry.type import StrawberryType
 

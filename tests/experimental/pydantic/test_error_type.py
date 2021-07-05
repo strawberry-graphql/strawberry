@@ -3,7 +3,7 @@ from typing import List, Optional
 import pydantic
 
 import strawberry
-from strawberry.type import StrawberryOptional, StrawberryList
+from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.types.types import TypeDefinition
 
 
@@ -235,7 +235,8 @@ def test_error_type_with_matrix_list_of_scalar():
     assert isinstance(field.type.of_type.of_type.of_type, StrawberryList)
 
     assert isinstance(field.type.of_type.of_type.of_type.of_type, StrawberryOptional)
-    assert isinstance(field.type.of_type.of_type.of_type.of_type.of_type,
-                      StrawberryList)
+    assert isinstance(
+        field.type.of_type.of_type.of_type.of_type.of_type, StrawberryList
+    )
 
     assert field.type.of_type.of_type.of_type.of_type.of_type.of_type is str

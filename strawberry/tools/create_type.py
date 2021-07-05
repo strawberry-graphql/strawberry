@@ -41,6 +41,6 @@ def create_type(name: str, fields: List[StrawberryField]) -> Type:
             )
         )
 
-    cls = make_dataclass(name, fields=dataclass_fields)
+    cls = make_dataclass(name, fields=dataclass_fields)  # type:ignore
 
     return strawberry.type(cls)

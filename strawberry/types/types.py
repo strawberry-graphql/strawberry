@@ -132,7 +132,7 @@ class TypeDefinition(StrawberryType):
 
     @property
     def fields(self) -> List["StrawberryField"]:
-        # TODO: Remove
+        # TODO: rename _fields to fields and remove this property
         return self._fields
 
     @property

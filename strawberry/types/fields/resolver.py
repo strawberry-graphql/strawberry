@@ -140,7 +140,9 @@ class StrawberryResolver(Generic[T]):
             if isinstance(self.type, StrawberryType):
                 type_override = self.type.copy_with(type_var_map)
             else:
-                type_override = self.type._type_definition.copy_with(type_var_map)  # type: ignore
+                type_override = self.type._type_definition.copy_with(  # type: ignore
+                    type_var_map,
+                )
 
         return type(self)(
             func=self.wrapped_func,

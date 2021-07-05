@@ -76,7 +76,7 @@ class StrawberryAnnotation:
             return self.create_type_var(evaled_type)
 
         # TODO: Raise exception now, or later?
-        # raise NotImplementedError(f"Unknown type {evaled_type}")
+        # ... raise NotImplementedError(f"Unknown type {evaled_type}")
         return evaled_type
 
     def create_concrete_type(self, evaled_type: type) -> type:
@@ -100,7 +100,9 @@ class StrawberryAnnotation:
 
     def create_optional(self, evaled_type: Any) -> StrawberryOptional:
         types = evaled_type.__args__
-        non_optional_types = tuple(filter(lambda x: x is not type(None), types))
+        non_optional_types = tuple(
+            filter(lambda x: x is not type(None), types)  # noqa: E721
+        )
 
         # Note that this returns _not_ a Union if len(non_optional_types) == 1
         child_type = Union[non_optional_types]  # type: ignore
@@ -135,7 +137,7 @@ class StrawberryAnnotation:
         if origin is AsyncGenerator_abc:
             return True
         if origin is AsyncGenerator_typing:
-            # Deprecated in Python >= 3.9
+            # deprecated in Python 3.9 and above
             return True
         return False
 
@@ -169,7 +171,7 @@ class StrawberryAnnotation:
         types = annotation.__args__
 
         # A Union to be optional needs to have at least one None type
-        return any(x is type(None) for x in types)
+        return any(x is type(None) for x in types)  # noqa: E721
 
     @classmethod
     def _is_list(cls, annotation: Any) -> bool:
@@ -200,8 +202,7 @@ class StrawberryAnnotation:
             return True
         elif _is_input_type(evaled_type):  # TODO: Replace with StrawberryInputObject
             return True
-        # elif isinstance(evaled_type, StrawberryInterface):
-        #     return True
+        # TODO: add support for StrawberryInterface when implemented
         elif isinstance(evaled_type, StrawberryList):
             return True
         elif _is_object_type(evaled_type):  # TODO: Replace with StrawberryObject

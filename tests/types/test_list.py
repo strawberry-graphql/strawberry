@@ -14,7 +14,7 @@ def test_basic_list():
 
     definition = Query._type_definition
     assert definition.name == "Query"
-    
+
     [field] = definition.fields
 
     assert field.graphql_name == "names"

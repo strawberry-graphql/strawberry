@@ -5,7 +5,7 @@ import pytest
 
 import strawberry
 from strawberry.exceptions import InvalidUnionType
-from strawberry.type import StrawberryOptional, StrawberryList
+from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.union import StrawberryUnion
 
 
