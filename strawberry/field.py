@@ -204,14 +204,7 @@ class StrawberryField(dataclasses.Field):
 
             if type_definition.is_generic:
                 type_ = type_definition
-                type_copy = type_.copy_with(type_var_map)
-
-                new_type = builtins.type(
-                    type_copy.name,
-                    (),
-                    {"_type_definition": type_copy},
-                )
-
+                new_type = type_.copy_with(type_var_map)
         else:
             assert isinstance(self.type, StrawberryType)
 

@@ -15,7 +15,7 @@ class StrawberryType(ABC):
     @abstractmethod
     def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
-    ) -> StrawberryType:
+    ) -> Union[StrawberryType, type]:
         raise NotImplementedError()
 
     @property
@@ -82,19 +82,12 @@ class StrawberryContainer(StrawberryType):
             type_definition: TypeDefinition = self.of_type._type_definition  # type: ignore
 
             if type_definition.is_generic:
-                type_definition_copy = type_definition.copy_with(type_var_map)
-
-                of_type_copy = type(
-                    type_definition_copy.name,
-                    (),
-                    {"_type_definition": type_definition_copy},
-                )
+                of_type_copy = type_definition.copy_with(type_var_map)
 
         elif isinstance(self.of_type, StrawberryType) and self.of_type.is_generic:
             of_type_copy = self.of_type.copy_with(type_var_map)
 
-        else:
-            return type(self)(self.of_type)
+        assert of_type_copy
 
         return type(self)(of_type_copy)
 

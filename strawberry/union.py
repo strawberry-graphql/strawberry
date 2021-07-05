@@ -103,12 +103,7 @@ class StrawberryUnion(StrawberryType):
                 type_definition: TypeDefinition = type_._type_definition  # type: ignore
 
                 if type_definition.is_generic:
-                    new_type_definition = type_definition.copy_with(type_var_map)
-                    new_type = type(
-                        new_type_definition.name,
-                        (),
-                        {"_type_definition": new_type_definition},
-                    )
+                    new_type = type_definition.copy_with(type_var_map)
             if isinstance(type_, StrawberryType) and type_.is_generic:
                 new_type = type_.copy_with(type_var_map)
             else:

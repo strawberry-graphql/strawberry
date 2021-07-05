@@ -24,7 +24,7 @@ class StrawberryResolver(Generic[T]):
         func: Callable[..., T],
         *,
         description: Optional[str] = None,
-        type_override: Optional[StrawberryType] = None,
+        type_override: Optional[Union[StrawberryType, type]] = None,
     ):
         self.wrapped_func = func
         self._description = description
@@ -118,7 +118,7 @@ class StrawberryResolver(Generic[T]):
         return type_annotation
 
     @property
-    def type(self) -> Optional[StrawberryType]:
+    def type(self) -> Optional[Union[StrawberryType, type]]:
         if self._type_override:
             return self._type_override
         if self.type_annotation is None:
@@ -134,10 +134,18 @@ class StrawberryResolver(Generic[T]):
     def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, builtins.type]]
     ) -> StrawberryResolver:
+        type_override = None
+
+        if self.type:
+            if isinstance(self.type, StrawberryType):
+                type_override = self.type.copy_with(type_var_map)
+            else:
+                type_override = self.type._type_definition.copy_with(type_var_map)  # type: ignore
+
         return type(self)(
             func=self.wrapped_func,
             description=self._description,
-            type_override=self.type.copy_with(type_var_map) if self.type else None,
+            type_override=type_override,
         )
 
 

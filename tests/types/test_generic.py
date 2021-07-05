@@ -26,7 +26,9 @@ def test_basic_generic():
     assert field.type.type_var is T
 
     # let's make a copy of this generic type
-    definition_copy = Edge._type_definition.copy_with({T: str})
+    copy = Edge._type_definition.copy_with({T: str})
+
+    definition_copy = copy._type_definition
 
     assert definition_copy.name == "StrEdge"
     assert not definition_copy.is_generic
@@ -56,7 +58,7 @@ def test_generics_nested():
     assert field.type._type_definition.type_params == [T]
 
     # let's make a copy of this generic type
-    definition_copy = Connection._type_definition.copy_with({T: str})
+    definition_copy = Connection._type_definition.copy_with({T: str})._type_definition
 
     assert definition_copy.name == "StrConnection"
     assert not definition_copy.is_generic
@@ -76,7 +78,9 @@ def test_generics_name():
     class Connection(Generic[T]):
         edge: T
 
-    definition_copy = Connection._type_definition.copy_with({T: EdgeName})
+    definition_copy = Connection._type_definition.copy_with(
+        {T: EdgeName}
+    )._type_definition
 
     assert definition_copy.name == "AnotherNameConnection"
     assert not definition_copy.is_generic
@@ -107,7 +111,7 @@ def test_generics_nested_in_list():
     assert field.type.of_type._type_definition.type_params == [T]
 
     # let's make a copy of this generic type
-    definition_copy = Connection._type_definition.copy_with({T: str})
+    definition_copy = Connection._type_definition.copy_with({T: str})._type_definition
 
     assert definition_copy.name == "StrConnection"
     assert not definition_copy.is_generic
@@ -136,7 +140,7 @@ def test_generic_with_optional():
     assert field.type.of_type.type_var is T
 
     # let's make a copy of this generic type
-    definition_copy = Edge._type_definition.copy_with({T: str})
+    definition_copy = Edge._type_definition.copy_with({T: str})._type_definition
 
     assert definition_copy.name == "StrEdge"
     assert not definition_copy.is_generic
@@ -165,7 +169,7 @@ def test_generic_with_list():
     assert field.type.of_type.type_var is T
 
     # let's make a copy of this generic type
-    definition_copy = Connection._type_definition.copy_with({T: str})
+    definition_copy = Connection._type_definition.copy_with({T: str})._type_definition
 
     assert definition_copy.name == "StrConnection"
     assert not definition_copy.is_generic
@@ -195,7 +199,7 @@ def test_generic_with_list_of_optionals():
     assert field.type.of_type.of_type.type_var is T
 
     # let's make a copy of this generic type
-    definition_copy = Connection._type_definition.copy_with({T: str})
+    definition_copy = Connection._type_definition.copy_with({T: str})._type_definition
 
     assert definition_copy.name == "StrConnection"
     assert not definition_copy.is_generic
@@ -231,7 +235,7 @@ def test_generics_with_unions():
     class Node:
         name: str
 
-    definition_copy = Edge._type_definition.copy_with({T: Node})
+    definition_copy = Edge._type_definition.copy_with({T: Node})._type_definition
 
     assert definition_copy.name == "NodeEdge"
     assert not definition_copy.is_generic
@@ -617,7 +621,7 @@ def test_federation():
         id: strawberry.ID
         node_field: T
 
-    definition_copy = Edge._type_definition.copy_with({T: str})
+    definition_copy = Edge._type_definition.copy_with({T: str})._type_definition
 
     assert definition_copy.name == "StrEdge"
     assert not definition_copy.is_generic

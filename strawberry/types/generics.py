@@ -25,119 +25,119 @@ def get_name_from_types(types: Iterable[Union[Type, StrawberryUnion]]):
     return "".join(names)
 
 
-def copy_union_with(
-    types: Tuple[Type, ...],
-    params_to_type: Dict[Type, Union[Type, StrawberryUnion]] = None,
-    description=None,
-) -> StrawberryUnion:
-    types = cast(
-        Tuple[Type, ...],
-        tuple(copy_type_with(t, params_to_type=params_to_type) for t in types),
-    )
+# def copy_union_with(
+#     types: Tuple[Type, ...],
+#     params_to_type: Dict[Type, Union[Type, StrawberryUnion]] = None,
+#     description=None,
+# ) -> StrawberryUnion:
+#     types = cast(
+#         Tuple[Type, ...],
+#         tuple(copy_type_with(t, params_to_type=params_to_type) for t in types),
+#     )
 
-    return union(
-        name=get_name_from_types(types),
-        types=types,
-        description=description,
-    )
+#     return union(
+#         name=get_name_from_types(types),
+#         types=types,
+#         description=description,
+#     )
 
 
-def copy_type_with(
-    base: Type,
-    *types: Type,
-    params_to_type: Dict[Type, Union[Type, StrawberryUnion]] = None
-) -> Type:
-    if params_to_type is None:
-        params_to_type = {}
+# def copy_type_with(
+#     base: Type,
+#     *types: Type,
+#     params_to_type: Dict[Type, Union[Type, StrawberryUnion]] = None
+# ) -> Type:
+#     if params_to_type is None:
+#         params_to_type = {}
 
-    if isinstance(base, StrawberryUnion):
-        return copy_union_with(
-            base.types, params_to_type=params_to_type, description=base.description
-        )
+#     if isinstance(base, StrawberryUnion):
+#         return copy_union_with(
+#             base.types, params_to_type=params_to_type, description=base.description
+#         )
 
-    if hasattr(base, "_type_definition"):
-        definition = cast(TypeDefinition, base._type_definition)
+#     if hasattr(base, "_type_definition"):
+#         definition = cast(TypeDefinition, base._type_definition)
 
-        if definition.type_params:
-            for param, type_ in zip(definition.type_params, types):
-                if is_union(type_):
-                    params_to_type[param] = copy_union_with(
-                        type_.__args__, params_to_type=params_to_type
-                    )
-                else:
-                    params_to_type[param] = type_
+#         if definition.type_params:
+#             for param, type_ in zip(definition.type_params, types):
+#                 if is_union(type_):
+#                     params_to_type[param] = copy_union_with(
+#                         type_.__args__, params_to_type=params_to_type
+#                     )
+#                 else:
+#                     params_to_type[param] = type_
 
-            name = get_name_from_types(params_to_type.values()) + definition.name
+#             name = get_name_from_types(params_to_type.values()) + definition.name
 
-            fields = []
-            for field in definition.fields:
+#             fields = []
+#             for field in definition.fields:
 
-                # Copy federation information
-                federation = FederationFieldParams(**field.federation.__dict__)
+#                 # Copy federation information
+#                 federation = FederationFieldParams(**field.federation.__dict__)
 
-                new_field = StrawberryField(
-                    python_name=field.python_name,
-                    graphql_name=field.graphql_name,
-                    origin=field.origin,
-                    type_annotation=field.type,
-                    default=field.default_value,
-                    base_resolver=field.base_resolver,
-                    is_subscription=field.is_subscription,
-                    federation=federation,
-                    permission_classes=field.permission_classes,
-                )
+#                 new_field = StrawberryField(
+#                     python_name=field.python_name,
+#                     graphql_name=field.graphql_name,
+#                     origin=field.origin,
+#                     type_annotation=field.type,
+#                     default=field.default_value,
+#                     base_resolver=field.base_resolver,
+#                     is_subscription=field.is_subscription,
+#                     federation=federation,
+#                     permission_classes=field.permission_classes,
+#                 )
 
-                if field.is_list:
-                    assert field.child is not None
+#                 if field.is_list:
+#                     assert field.child is not None
 
-                    child_type = copy_type_with(
-                        field.child.type, params_to_type=params_to_type
-                    )
+#                     child_type = copy_type_with(
+#                         field.child.type, params_to_type=params_to_type
+#                     )
 
-                    new_field.child = StrawberryField(
-                        python_name=field.child.python_name,
-                        origin=field.child.origin,
-                        graphql_name=field.child.graphql_name,
-                        is_optional=field.child.is_optional,
-                        type_=child_type,
-                    )
+#                     new_field.child = StrawberryField(
+#                         python_name=field.child.python_name,
+#                         origin=field.child.origin,
+#                         graphql_name=field.child.graphql_name,
+#                         is_optional=field.child.is_optional,
+#                         type_=child_type,
+#                     )
 
-                else:
-                    new_field.type = copy_type_with(
-                        field.type, params_to_type=params_to_type
-                    )
+#                 else:
+#                     new_field.type = copy_type_with(
+#                         field.type, params_to_type=params_to_type
+#                     )
 
-                fields.append(new_field)
+#                 fields.append(new_field)
 
-            type_definition = TypeDefinition(
-                name=name,
-                is_input=definition.is_input,
-                origin=definition.origin,
-                is_interface=definition.is_interface,
-                is_generic=False,
-                federation=definition.federation,
-                interfaces=definition.interfaces,
-                description=definition.description,
-                _fields=fields,
-            )
+#             type_definition = TypeDefinition(
+#                 name=name,
+#                 is_input=definition.is_input,
+#                 origin=definition.origin,
+#                 is_interface=definition.is_interface,
+#                 is_generic=False,
+#                 federation=definition.federation,
+#                 interfaces=definition.interfaces,
+#                 description=definition.description,
+#                 _fields=fields,
+#             )
 
-            copied_type = builtins.type(
-                name,
-                (base.__origin__,) if hasattr(base, "__origin__") else (),
-                {"_type_definition": type_definition},
-            )
+#             copied_type = builtins.type(
+#                 name,
+#                 (base.__origin__,) if hasattr(base, "__origin__") else (),
+#                 {"_type_definition": type_definition},
+#             )
 
-            if not hasattr(base, "_copies"):
-                base._copies = {}
+#             if not hasattr(base, "_copies"):
+#                 base._copies = {}
 
-            base._copies[types] = copied_type
+#             base._copies[types] = copied_type
 
-            return copied_type
+#             return copied_type
 
-    if is_type_var(base):
-        # TODO: we ignore the type issue here as we'll improve how types
-        # are represented internally (using StrawberryTypes) so we can improve
-        # typings later
-        return params_to_type[base]  # type: ignore
+#     if is_type_var(base):
+#         # TODO: we ignore the type issue here as we'll improve how types
+#         # are represented internally (using StrawberryTypes) so we can improve
+#         # typings later
+#         return params_to_type[base]  # type: ignore
 
-    return base
+#     return base

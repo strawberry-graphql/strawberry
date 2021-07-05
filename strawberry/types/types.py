@@ -14,6 +14,7 @@ from typing import (
 
 from strawberry.type import StrawberryType, StrawberryTypeVar
 from strawberry.utils.str_converters import capitalize_first
+from strawberry.utils.typing import is_generic as is_type_generic
 
 
 if TYPE_CHECKING:
@@ -58,20 +59,13 @@ class TypeDefinition(StrawberryType):
             resolved_types.append(resolved_type)
 
         type_var_map = dict(zip(params, resolved_types))
-        new_type_definition = self.copy_with(type_var_map)
 
-        new_type = type(
-            new_type_definition.name,
-            (wrapped_cls.__origin__,) if hasattr(wrapped_cls, "__origin__") else (),  # type: ignore
-            {"_type_definition": new_type_definition},
-        )
-
-        return new_type
+        return self.copy_with(type_var_map)
 
     # TODO: Return a StrawberryObject
     def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
-    ) -> TypeDefinition:
+    ) -> type:
         name = self.get_name_from_types(type_var_map.values())
 
         fields = []
@@ -102,7 +96,15 @@ class TypeDefinition(StrawberryType):
             type_var_map=type_var_map,
         )
 
-        return new_type_definition
+        new_type = type(
+            new_type_definition.name,
+            (self.origin.__origin__,) if hasattr(self.origin, "__origin__") else (),
+            {"_type_definition": new_type_definition},
+        )
+
+        new_type_definition.origin = new_type
+
+        return new_type
 
     def get_field(self, name: str) -> Optional["StrawberryField"]:
         return next(
@@ -135,21 +137,7 @@ class TypeDefinition(StrawberryType):
 
     @property
     def is_generic(self) -> bool:
-        for field in self.fields:
-            # TODO: Obsolete with StrawberryObject
-            if hasattr(field.type, "_type_definition"):
-                type_ = field.type._type_definition  # type: ignore
-            else:
-                type_ = field.type
-
-            if isinstance(type_, StrawberryType):
-                if type_.is_generic:
-                    return True
-        return False
-
-        # TODO: Consider making leaf types always StrawberryTypes, maybe a
-        #       StrawberryBaseType or something
-        # - return any(field.type.is_generic for field in self.fields)
+        return is_type_generic(self.origin)
 
     @property
     def type_params(self) -> List[TypeVar]:

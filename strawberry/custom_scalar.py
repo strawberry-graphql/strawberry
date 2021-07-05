@@ -21,7 +21,7 @@ class ScalarDefinition(StrawberryType):
 
     def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
-    ) -> StrawberryType:
+    ) -> Union[StrawberryType, type]:
         return super().copy_with(type_var_map)
 
     @property
