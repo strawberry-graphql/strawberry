@@ -3,6 +3,7 @@ import typing
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Type, Union
 
 from strawberry.arguments import UNSET
+from strawberry.utils.mixins import GraphQLNameMixin
 from strawberry.utils.typing import get_parameters, has_type_var, is_type_var
 
 from .arguments import StrawberryArgument
@@ -15,7 +16,9 @@ from .union import StrawberryUnion
 _RESOLVER_TYPE = Union[StrawberryResolver, Callable]
 
 
-class StrawberryField(dataclasses.Field):
+class StrawberryField(dataclasses.Field, GraphQLNameMixin):
+    python_name: str
+
     def __init__(
         self,
         python_name: Optional[str] = None,
@@ -109,8 +112,7 @@ class StrawberryField(dataclasses.Field):
 
         return self.base_resolver.arguments
 
-    @property
-    def python_name(self) -> str:
+    def _python_name(self) -> str:
         if self.name:
             return self.name
 
@@ -119,9 +121,13 @@ class StrawberryField(dataclasses.Field):
 
         assert False, "A field should always have a `python_name`"
 
-    @python_name.setter
-    def python_name(self, name: str) -> None:
+    def _set_python_name(self, name: str) -> None:
         self.name = name
+
+    # using the function syntax for property here in order to make it easier
+    # to ignore this mypy error:
+    # https://github.com/python/mypy/issues/4125
+    python_name = property(_python_name, _set_python_name)  # type: ignore
 
     @property
     def base_resolver(self) -> Optional[StrawberryResolver]:

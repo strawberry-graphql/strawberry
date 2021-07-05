@@ -183,3 +183,26 @@ def test_can_turn_camel_case_off_arguments():
     assert result.data["__type"]["fields"] == [
         {"args": [{"name": "example_input"}], "name": "example_field"}
     ]
+
+
+def test_can_turn_camel_case_off_arguments_conversion_works():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def example_field(self, example_input: str) -> str:
+            return example_input
+
+    schema = strawberry.Schema(
+        query=Query, config=StrawberryConfig(auto_camel_case=False)
+    )
+
+    query = """
+        {
+            example_field(example_input: "Hello world")
+        }
+    """
+
+    result = schema.execute_sync(query, root_value=Query())
+
+    assert not result.errors
+    assert result.data["example_field"] == "Hello world"

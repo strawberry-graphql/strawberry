@@ -1,8 +1,6 @@
 from enum import Enum
 from inspect import isasyncgen, iscoroutine
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, cast
-
-from typing_extensions import Protocol
+from typing import Any, Callable, Dict, List, Tuple, Type, cast
 
 from graphql import (
     GraphQLArgument,
@@ -35,7 +33,6 @@ from strawberry.schema.config import StrawberryConfig
 from strawberry.types.info import Info
 from strawberry.types.types import TypeDefinition, undefined
 from strawberry.union import StrawberryUnion
-from strawberry.utils.str_converters import to_camel_case
 
 from .types.concrete_type import ConcreteType
 from .types.scalar import get_scalar_type
@@ -52,28 +49,12 @@ class CustomGraphQLEnumType(GraphQLEnumType):
         return super().serialize(output_value)
 
 
-class HasName(Protocol):
-    python_name: Optional[str]
-    graphql_name: Optional[str]
-
-
 class GraphQLCoreConverter:
     # TODO: Make abstract
 
     def __init__(self, config: StrawberryConfig):
         self.type_map: Dict[str, ConcreteType] = {}
         self.config = config
-
-    def get_graphql_name(self, field: HasName) -> str:
-        if field.graphql_name is not None:
-            return field.graphql_name
-
-        assert field.python_name
-
-        if self.config.auto_camel_case:
-            return to_camel_case(field.python_name)
-
-        return field.python_name
 
     def get_graphql_type_argument(self, argument: StrawberryArgument) -> GraphQLType:
         # TODO: Completely replace with get_graphql_type
@@ -173,7 +154,7 @@ class GraphQLCoreConverter:
 
         graphql_arguments = {}
         for argument in directive.arguments:
-            argument_name = self.get_graphql_name(argument)
+            argument_name = argument.get_graphql_name(self.config.auto_camel_case)
             graphql_arguments[argument_name] = self.from_argument(argument)
 
         return GraphQLDirective(
@@ -197,7 +178,7 @@ class GraphQLCoreConverter:
 
         graphql_arguments = {}
         for argument in field.arguments:
-            argument_name = self.get_graphql_name(argument)
+            argument_name = argument.get_graphql_name(self.config.auto_camel_case)
             graphql_arguments[argument_name] = self.from_argument(argument)
 
         return GraphQLField(
@@ -235,7 +216,7 @@ class GraphQLCoreConverter:
         def get_graphql_fields() -> Dict[str, GraphQLInputField]:
             graphql_fields = {}
             for field in type_definition.fields:
-                field_name = self.get_graphql_name(field)
+                field_name = field.get_graphql_name(self.config.auto_camel_case)
 
                 graphql_fields[field_name] = self.from_input_field(field)
 
@@ -266,7 +247,7 @@ class GraphQLCoreConverter:
             graphql_fields = {}
 
             for field in interface.fields:
-                field_name = self.get_graphql_name(field)
+                field_name = field.get_graphql_name(self.config.auto_camel_case)
                 graphql_fields[field_name] = self.from_field(field)
 
             return graphql_fields
@@ -318,7 +299,7 @@ class GraphQLCoreConverter:
         def get_graphql_fields() -> Dict[str, GraphQLField]:
             graphql_fields = {}
             for field in type_definition.fields:
-                field_name = self.get_graphql_name(field)
+                field_name = field.get_graphql_name(self.config.auto_camel_case)
 
                 graphql_fields[field_name] = self.from_field(field)
             return graphql_fields
@@ -347,7 +328,9 @@ class GraphQLCoreConverter:
             if field.base_resolver is None:
                 return [], {}
 
-            kwargs = convert_arguments(kwargs, field.arguments)
+            kwargs = convert_arguments(
+                kwargs, field.arguments, auto_camel_case=self.config.auto_camel_case
+            )
 
             # the following code allows to omit info and root arguments
             # by inspecting the original resolver arguments,

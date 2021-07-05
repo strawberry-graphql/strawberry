@@ -6,11 +6,12 @@ from typing import Any, Dict, List, Mapping, Optional, Type, Union, cast
 
 from typing_extensions import Annotated, get_args, get_origin
 
+from strawberry.utils.mixins import GraphQLNameMixin
+
 from .exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError
 from .scalars import is_scalar
 from .types.types import undefined
 from .union import StrawberryUnion
-from .utils.str_converters import to_camel_case
 
 
 class _Unset:
@@ -37,7 +38,7 @@ class StrawberryArgumentAnnotation:
         self.name = name
 
 
-class StrawberryArgument:
+class StrawberryArgument(GraphQLNameMixin):
     def __init__(
         self,
         # TODO: this optional will probably go away when we have StrawberryList
@@ -54,7 +55,7 @@ class StrawberryArgument:
         description: Optional[str] = None,
         default: object = UNSET,
     ) -> None:
-        self.python_name = python_name
+        self.python_name = python_name  # type: ignore
         self.graphql_name = graphql_name
         self.type = type_
         self.origin = origin
@@ -192,6 +193,7 @@ def convert_argument(value: Any, argument: StrawberryArgument) -> Any:
 def convert_arguments(
     value: Dict[str, Any],
     arguments: List[StrawberryArgument],
+    auto_camel_case: bool = True,
 ) -> Dict[str, Any]:
     """Converts a nested dictionary to a dictionary of actual types.
 
@@ -204,10 +206,12 @@ def convert_arguments(
     kwargs = {}
 
     for argument in arguments:
-        if argument.graphql_name in value:
-            assert argument.python_name
+        assert argument.python_name
 
-            current_value = value[argument.graphql_name]
+        name = argument.get_graphql_name(auto_camel_case)
+
+        if name in value:
+            current_value = value[name]
 
             kwargs[argument.python_name] = convert_argument(current_value, argument)
 
