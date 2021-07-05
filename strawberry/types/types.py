@@ -98,7 +98,7 @@ class TypeDefinition(StrawberryType):
 
         new_type = type(
             new_type_definition.name,
-            (self.origin.__origin__,) if hasattr(self.origin, "__origin__") else (),
+            (self.origin,),
             {"_type_definition": new_type_definition},
         )
 
