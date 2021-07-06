@@ -150,7 +150,9 @@ def get_arguments_from_annotations(
     return arguments
 
 
-def convert_argument(value: Any, argument: StrawberryArgument) -> Any:
+def convert_argument(
+    value: Any, argument: StrawberryArgument, auto_camel_case: bool = True
+) -> Any:
     if value is None:
         return None
 
@@ -178,11 +180,11 @@ def convert_argument(value: Any, argument: StrawberryArgument) -> Any:
         kwargs = {}
 
         for field in argument_type._type_definition.fields:
-            if field.python_name in value:
+            graphql_name = field.get_graphql_name(auto_camel_case)
+
+            if graphql_name in value:
                 kwargs[field.python_name] = convert_argument(
-                    # TODO: this should be handled by the schema converter
-                    value[field.python_name],
-                    field,
+                    value[graphql_name], field, auto_camel_case
                 )
 
         return argument_type(**kwargs)
@@ -213,7 +215,9 @@ def convert_arguments(
         if name in value:
             current_value = value[name]
 
-            kwargs[argument.python_name] = convert_argument(current_value, argument)
+            kwargs[argument.python_name] = convert_argument(
+                current_value, argument, auto_camel_case
+            )
 
     return kwargs
 

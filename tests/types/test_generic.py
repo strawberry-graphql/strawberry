@@ -24,7 +24,8 @@ def test_basic_generic():
 
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "node_field"
+    assert definition.fields[0].python_name == "node_field"
+    assert definition.fields[0].graphql_name is None
     assert definition.fields[0].type == T
     assert definition.fields[0].is_optional is False
 
@@ -40,7 +41,8 @@ def test_basic_generic():
 
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "node_field"
+    assert definition.fields[0].python_name == "node_field"
+    assert definition.fields[0].graphql_name is None
     assert definition.fields[0].type == str
     assert definition.fields[0].is_optional is False
 
@@ -62,7 +64,8 @@ def test_generics_nested():
 
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "edge"
+    assert definition.fields[0].python_name == "edge"
+    assert definition.fields[0].graphql_name is None
     assert definition.fields[0].type._type_definition.type_params == {"node": T}
     assert definition.fields[0].is_optional is False
 
@@ -78,7 +81,8 @@ def test_generics_nested():
 
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "edge"
+    assert definition.fields[0].python_name == "edge"
+    assert definition.fields[0].graphql_name is None
     assert definition.fields[0].type._type_definition.name == "StrEdge"
     assert definition.fields[0].is_optional is False
 
@@ -102,7 +106,8 @@ def test_generics_name():
 
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "edge"
+    assert definition.fields[0].python_name == "edge"
+    assert definition.fields[0].graphql_name is None
     assert definition.fields[0].type._type_definition.name == "AnotherName"
     assert definition.fields[0].is_optional is False
 
@@ -124,7 +129,8 @@ def test_generics_nested_in_list():
 
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "edges"
+    assert definition.fields[0].python_name == "edges"
+    assert definition.fields[0].graphql_name is None
     assert definition.fields[0].is_list
     assert definition.fields[0].type is None
     assert definition.fields[0].is_optional is False
@@ -142,7 +148,8 @@ def test_generics_nested_in_list():
 
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "edges"
+    assert definition.fields[0].python_name == "edges"
+    assert definition.fields[0].graphql_name is None
     assert definition.fields[0].type is None
     assert definition.fields[0].is_list
     assert definition.fields[0].is_optional is False
@@ -162,7 +169,8 @@ def test_generic_with_optional():
 
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "node"
+    assert definition.fields[0].python_name == "node"
+    assert definition.fields[0].graphql_name is None
     assert definition.fields[0].type == T
     assert definition.fields[0].is_optional is True
 
@@ -178,7 +186,8 @@ def test_generic_with_optional():
 
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "node"
+    assert definition.fields[0].python_name == "node"
+    assert definition.fields[0].graphql_name is None
     assert definition.fields[0].type == str
     assert definition.fields[0].is_optional is True
 
@@ -196,7 +205,8 @@ def test_generic_with_list():
 
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "edges"
+    assert definition.fields[0].python_name == "edges"
+    assert definition.fields[0].graphql_name is None
     assert definition.fields[0].type is None
     assert definition.fields[0].is_list
     assert definition.fields[0].is_optional is False
@@ -214,7 +224,8 @@ def test_generic_with_list():
 
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "edges"
+    assert definition.fields[0].python_name == "edges"
+    assert definition.fields[0].graphql_name is None
     assert definition.fields[0].type is None
     assert definition.fields[0].is_list
     assert definition.fields[0].is_optional is False
@@ -234,7 +245,8 @@ def test_generic_with_list_of_optionals():
 
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "edges"
+    assert definition.fields[0].python_name == "edges"
+    assert definition.fields[0].graphql_name is None
     assert definition.fields[0].type is None
     assert definition.fields[0].is_list
     assert definition.fields[0].is_optional is False
@@ -253,7 +265,8 @@ def test_generic_with_list_of_optionals():
 
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "edges"
+    assert definition.fields[0].python_name == "edges"
+    assert definition.fields[0].graphql_name is None
     assert definition.fields[0].type is None
     assert definition.fields[0].is_list
     assert definition.fields[0].is_optional is False
@@ -275,7 +288,8 @@ def test_generics_with_unions():
     assert definition.name == "Edge"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "node"
+    assert definition.fields[0].python_name == "node"
+    assert definition.fields[0].graphql_name is None
     assert isinstance(definition.fields[0].type, StrawberryUnion)
     assert definition.fields[0].type.types == (Error, T)
 
@@ -297,7 +311,8 @@ def test_generics_with_unions():
 
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "node"
+    assert definition.fields[0].python_name == "node"
+    assert definition.fields[0].graphql_name is None
 
     union_definition = definition.fields[0].type
     assert isinstance(union_definition, StrawberryUnion)
@@ -325,10 +340,12 @@ def test_using_generics():
     assert definition.name == "Query"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "user"
+    assert definition.fields[0].python_name == "user"
+    assert definition.fields[0].graphql_name is None
     assert definition.fields[0].type._type_definition.name == "UserEdge"
     assert definition.fields[0].type._type_definition.is_generic is False
-    assert definition.fields[0].type._type_definition.fields[0].graphql_name == "node"
+    assert definition.fields[0].type._type_definition.fields[0].python_name == "node"
+    assert definition.fields[0].type._type_definition.fields[0].graphql_name is None
     assert definition.fields[0].type._type_definition.fields[0].type == User
 
 
@@ -359,10 +376,12 @@ def test_using_generics_nested():
     assert definition.name == "Query"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "users"
+    assert definition.fields[0].python_name == "users"
+    assert definition.fields[0].graphql_name is None
     assert definition.fields[0].type._type_definition.name == "UserConnection"
     assert definition.fields[0].type._type_definition.is_generic is False
-    assert definition.fields[0].type._type_definition.fields[0].graphql_name == "edges"
+    assert definition.fields[0].type._type_definition.fields[0].python_name == "edges"
+    assert definition.fields[0].type._type_definition.fields[0].graphql_name is None
     assert (
         definition.fields[0].type._type_definition.fields[0].type._type_definition.name
         == "UserEdge"
@@ -435,7 +454,8 @@ def test_generics_inside_optional():
     assert definition.name == "Query"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "user"
+    assert definition.fields[0].python_name == "user"
+    assert definition.fields[0].graphql_name is None
     assert definition.fields[0].type._type_definition.name == "StrEdge"
     assert definition.fields[0].type._type_definition.is_generic is False
     assert definition.fields[0].is_optional
@@ -461,7 +481,8 @@ def test_generics_inside_list():
     assert definition.name == "Query"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "user"
+    assert definition.fields[0].python_name == "user"
+    assert definition.fields[0].graphql_name is None
     assert definition.fields[0].type is None
     assert definition.fields[0].is_optional is False
     assert definition.fields[0].is_list
@@ -490,7 +511,8 @@ def test_generics_inside_unions():
     assert len(definition.fields) == 1
 
     assert definition.type_params == {}
-    assert definition.fields[0].graphql_name == "user"
+    assert definition.fields[0].python_name == "user"
+    assert definition.fields[0].graphql_name is None
     assert definition.fields[0].is_optional is False
 
     union_definition = definition.fields[0].type
@@ -516,7 +538,8 @@ def test_multiple_generics_inside_unions():
     assert len(definition.fields) == 1
 
     assert definition.type_params == {}
-    assert definition.fields[0].graphql_name == "user"
+    assert definition.fields[0].python_name == "user"
+    assert definition.fields[0].graphql_name is None
     assert definition.fields[0].is_optional is False
 
     union_definition = definition.fields[0].type
@@ -557,7 +580,8 @@ def test_union_inside_generics():
     assert len(definition.fields) == 1
 
     assert definition.type_params == {}
-    assert definition.fields[0].graphql_name == "connection"
+    assert definition.fields[0].python_name == "connection"
+    assert definition.fields[0].graphql_name is None
     assert definition.fields[0].is_optional is False
 
     type_definition = definition.fields[0].type._type_definition
@@ -596,7 +620,8 @@ def test_anonymous_union_inside_generics():
     assert len(definition.fields) == 1
 
     assert definition.type_params == {}
-    assert definition.fields[0].graphql_name == "connection"
+    assert definition.fields[0].python_name == "connection"
+    assert definition.fields[0].graphql_name is None
     assert definition.fields[0].is_optional is False
 
     type_definition = definition.fields[0].type._type_definition
@@ -630,10 +655,12 @@ def test_using_generics_with_interfaces():
     assert definition.name == "Query"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "user"
+    assert definition.fields[0].python_name == "user"
+    assert definition.fields[0].graphql_name is None
     assert definition.fields[0].type._type_definition.name == "WithNameEdge"
     assert definition.fields[0].type._type_definition.is_generic is False
-    assert definition.fields[0].type._type_definition.fields[0].graphql_name == "node"
+    assert definition.fields[0].type._type_definition.fields[0].python_name == "node"
+    assert definition.fields[0].type._type_definition.fields[0].graphql_name is None
     assert definition.fields[0].type._type_definition.fields[0].type == WithName
 
 
@@ -665,10 +692,12 @@ def test_generic_with_arguments():
 
     assert type_definition.name == "PostCollection"
     assert type_definition.is_generic is False
-    assert type_definition.fields[0].graphql_name == "by_id"
+    assert type_definition.fields[0].python_name == "by_id"
+    assert type_definition.fields[0].graphql_name is None
     assert type_definition.fields[0].is_list
     assert type_definition.fields[0].child.type == Post
-    assert type_definition.fields[0].arguments[0].graphql_name == "ids"
+    assert type_definition.fields[0].arguments[0].python_name == "ids"
+    assert type_definition.fields[0].arguments[0].graphql_name is None
     assert type_definition.fields[0].arguments[0].is_list
     assert type_definition.fields[0].arguments[0].child.type == int
 
@@ -691,11 +720,13 @@ def test_federation():
 
     assert len(definition.fields) == 2
 
-    assert definition.fields[0].graphql_name == "id"
+    assert definition.fields[0].python_name == "id"
+    assert definition.fields[0].graphql_name is None
     assert definition.fields[0].type == strawberry.ID
     assert definition.fields[0].is_optional is False
 
-    assert definition.fields[1].graphql_name == "node_field"
+    assert definition.fields[1].python_name == "node_field"
+    assert definition.fields[1].graphql_name is None
     assert definition.fields[1].type == str
     assert definition.fields[1].is_optional is False
 

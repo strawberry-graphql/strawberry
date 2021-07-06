@@ -14,11 +14,13 @@ def test_type_add_type_definition_with_fields():
     assert definition.name == "Query"
     assert len(definition.fields) == 2
 
-    assert definition.fields[0].graphql_name == "name"
+    assert definition.fields[0].python_name == "name"
+    assert definition.fields[0].graphql_name is None
     assert definition.fields[0].type == str
     assert definition.fields[0].is_optional
 
-    assert definition.fields[1].graphql_name == "age"
+    assert definition.fields[1].python_name == "age"
+    assert definition.fields[1].graphql_name is None
     assert definition.fields[1].type == int
     assert definition.fields[1].is_optional
 
@@ -34,11 +36,13 @@ def test_passing_custom_names_to_fields():
     assert definition.name == "Query"
     assert len(definition.fields) == 2
 
-    assert definition.fields[0].graphql_name == "name"
+    assert definition.fields[0].python_name == "name"
+    assert definition.fields[0].graphql_name is None
     assert definition.fields[0].type == str
     assert definition.fields[0].is_optional
 
-    assert definition.fields[1].graphql_name == "age"
+    assert definition.fields[1].python_name == "age"
+    assert definition.fields[1].graphql_name is None
     assert definition.fields[1].type == int
     assert definition.fields[1].is_optional
 
@@ -54,11 +58,13 @@ def test_passing_nothing_to_fields():
     assert definition.name == "Query"
     assert len(definition.fields) == 2
 
-    assert definition.fields[0].graphql_name == "name"
+    assert definition.fields[0].python_name == "name"
+    assert definition.fields[0].graphql_name is None
     assert definition.fields[0].type == str
     assert definition.fields[0].is_optional
 
-    assert definition.fields[1].graphql_name == "age"
+    assert definition.fields[1].python_name == "age"
+    assert definition.fields[1].graphql_name is None
     assert definition.fields[1].type == int
     assert definition.fields[1].is_optional
 
@@ -75,7 +81,8 @@ def test_resolver_fields():
     assert definition.name == "Query"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "name"
+    assert definition.fields[0].python_name == "name"
+    assert definition.fields[0].graphql_name is None
     assert definition.fields[0].type == str
     assert definition.fields[0].is_optional
 
@@ -92,11 +99,13 @@ def test_resolver_fields_arguments():
     assert definition.name == "Query"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "name"
+    assert definition.fields[0].python_name == "name"
+    assert definition.fields[0].graphql_name is None
     assert definition.fields[0].type == str
     assert definition.fields[0].is_optional
 
     assert len(definition.fields[0].arguments) == 1
-    assert definition.fields[0].arguments[0].graphql_name == "argument"
+    assert definition.fields[0].arguments[0].python_name == "argument"
+    assert definition.fields[0].arguments[0].graphql_name is None
     assert definition.fields[0].arguments[0].type == str
     assert definition.fields[0].arguments[0].is_optional

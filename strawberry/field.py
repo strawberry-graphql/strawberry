@@ -112,14 +112,14 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
 
         return self.base_resolver.arguments
 
-    def _python_name(self) -> str:
+    def _python_name(self) -> Optional[str]:
         if self.name:
             return self.name
 
         if self.base_resolver:
             return self.base_resolver.name
 
-        assert False, "A field should always have a `python_name`"
+        return None
 
     def _set_python_name(self, name: str) -> None:
         self.name = name

@@ -1,4 +1,4 @@
-from dataclasses import field as dataclasses_field, make_dataclass
+from dataclasses import make_dataclass
 from typing import List, Type
 
 import strawberry
@@ -24,7 +24,7 @@ def create_type(name: str, fields: List[StrawberryField]) -> Type:
         if not isinstance(field, StrawberryField):
             raise TypeError("Field is not an instance of StrawberryField")
 
-        if field.graphql_name is None:
+        if field.python_name is None:
             raise ValueError(
                 (
                     "Field doesn't have a name. Fields passed to "
@@ -35,9 +35,9 @@ def create_type(name: str, fields: List[StrawberryField]) -> Type:
 
         dataclass_fields.append(
             (
-                field.graphql_name,
+                field.python_name,
                 field.type,
-                dataclasses_field(default=field),
+                field,
             )
         )
 
