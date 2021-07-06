@@ -253,7 +253,6 @@ def test_type_with_nested_fields_coming_from_strawberry_and_pydantic():
     assert definition.fields[2].is_optional is False
 
 
-@pytest.mark.xfail(reason="I'll fix this later")
 def test_type_with_aliased_pydantic_field():
     class UserModel(pydantic.BaseModel):
         age_: int = pydantic.Field(..., alias="age")
@@ -268,8 +267,8 @@ def test_type_with_aliased_pydantic_field():
     assert definition.name == "User"
     assert len(definition.fields) == 2
 
-    assert definition.fields[0].python_name == "age"
-    assert definition.fields[0].graphql_name is None
+    assert definition.fields[0].python_name == "age_"
+    assert definition.fields[0].graphql_name == "age"
     assert definition.fields[0].type is int
     assert definition.fields[0].is_optional is False
 

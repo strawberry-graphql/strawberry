@@ -295,7 +295,6 @@ def test_enum_description():
     assert result.data["pizzas"]["description"] is None
 
 
-@pytest.mark.xfail(reason="this might be due to us not wrapping existing dataclasses")
 def test_parent_class_fields_are_inherited():
     @strawberry.type
     class Parent:
