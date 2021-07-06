@@ -148,7 +148,6 @@ def test_basic_arguments_on_resolver():
     assert definition.fields[0].arguments[2].is_optional
 
 
-@pytest.mark.xfail(reason="extend broken will fix")
 def test_arguments_when_extending_a_type():
     def name_resolver(
         id: strawberry.ID, argument: str, optional_argument: Optional[str]

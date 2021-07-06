@@ -84,9 +84,6 @@ def _wrap_dataclass(cls: Type):
     # Ensure all Fields have been properly type-annotated
     _check_field_annotations(cls)
 
-    if dataclasses.is_dataclass(cls):
-        return cls
-
     return dataclasses.dataclass(cls)
 
 
