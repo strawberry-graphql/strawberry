@@ -363,7 +363,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
     for base in cls.__bases__:
         if hasattr(base, "_type_definition"):
             base_fields = {
-                field.graphql_name: field
+                field.python_name: field
                 # TODO: we need to rename _fields to something else
                 for field in base._type_definition._fields  # type: ignore
             }

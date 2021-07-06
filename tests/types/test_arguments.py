@@ -218,7 +218,7 @@ def test_arguments_when_extending_multiple_types():
 
     assert len(definition.fields[1].arguments) == 1
 
-    assert definition.fields[1].python_name == "name"
+    assert definition.fields[1].python_name == "name_2"
     assert definition.fields[1].graphql_name is None
     assert definition.fields[1].arguments[0].python_name == "id"
     assert definition.fields[1].arguments[0].graphql_name is None
