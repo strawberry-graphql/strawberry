@@ -11,7 +11,7 @@ from django.template import RequestContext, Template
 from django.template.exceptions import TemplateDoesNotExist
 from django.template.loader import render_to_string
 from django.template.response import TemplateResponse
-from django.utils.decorators import classonlymethod, method_decorator
+from django.utils.decorators import classonlymethod
 from django.views.generic import View
 
 import strawberry
