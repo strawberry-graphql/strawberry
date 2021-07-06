@@ -16,10 +16,12 @@ def test_basic_types():
     assert definition.name == "Query"
     assert len(definition.fields) == 2
 
-    assert definition.fields[0].graphql_name == "name"
+    assert definition.fields[0].python_name == "name"
+    assert definition.fields[0].graphql_name is None
     assert definition.fields[0].type == str
 
-    assert definition.fields[1].graphql_name == "age"
+    assert definition.fields[1].python_name == "age"
+    assert definition.fields[1].graphql_name is None
     assert definition.fields[1].type == int
 
 
@@ -34,11 +36,13 @@ def test_optional():
     assert definition.name == "Query"
     assert len(definition.fields) == 2
 
-    assert definition.fields[0].graphql_name == "name"
+    assert definition.fields[0].python_name == "name"
+    assert definition.fields[0].graphql_name is None
     assert definition.fields[0].type == str
     assert definition.fields[0].is_optional
 
-    assert definition.fields[1].graphql_name == "age"
+    assert definition.fields[1].python_name == "age"
+    assert definition.fields[1].graphql_name is None
     assert definition.fields[1].type == int
     assert definition.fields[1].is_optional
 
@@ -53,7 +57,8 @@ def test_basic_list():
     assert definition.name == "Query"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "names"
+    assert definition.fields[0].python_name == "names"
+    assert definition.fields[0].graphql_name is None
     assert definition.fields[0].is_list
     assert definition.fields[0].type is None
     assert definition.fields[0].is_optional is False
@@ -77,7 +82,8 @@ def test_list_of_types():
     assert definition.name == "Query"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "users"
+    assert definition.fields[0].python_name == "users"
+    assert definition.fields[0].graphql_name is None
     assert definition.fields[0].is_list
     assert definition.fields[0].type is None
     assert definition.fields[0].is_optional is False
