@@ -317,9 +317,6 @@ class GraphQLCoreConverter:
             info: Info,
             kwargs: Dict[str, Any],
         ) -> Tuple[List[Any], Dict[str, Any]]:
-            if field.base_resolver is None:
-                return [], {}
-
             kwargs = convert_arguments(kwargs, field.arguments)
 
             # the following code allows to omit info and root arguments
@@ -330,14 +327,15 @@ class GraphQLCoreConverter:
 
             args = []
 
-            if field.base_resolver.has_self_arg:
-                args.append(source)
+            if field.base_resolver:
+                if field.base_resolver.has_self_arg:
+                    args.append(source)
 
-            if field.base_resolver.has_root_arg:
-                kwargs["root"] = source
+                if field.base_resolver.has_root_arg:
+                    kwargs["root"] = source
 
-            if field.base_resolver.has_info_arg:
-                kwargs["info"] = info
+                if field.base_resolver.has_info_arg:
+                    kwargs["info"] = info
 
             return args, kwargs
 
@@ -373,7 +371,9 @@ class GraphQLCoreConverter:
                 source=_source, info=strawberry_info, kwargs=kwargs
             )
 
-            result = field.get_result(_source, args=args, kwargs=kwargs)
+            result = field.get_result(
+                _source, info=strawberry_info, args=args, kwargs=kwargs
+            )
 
             if isasyncgen(result):
 
