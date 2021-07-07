@@ -119,34 +119,34 @@ def test_input_defaults():
     assert print_schema(schema) == textwrap.dedent(expected_type).strip()
 
 
-# def test_interface():
-#     @strawberry.interface
-#     class Node:
-#         id: strawberry.ID
+def test_interface():
+    @strawberry.interface
+    class Node:
+        id: strawberry.ID
 
-#     @strawberry.type
-#     class User(Node):
-#         name: str
+    @strawberry.type
+    class User(Node):
+        name: str
 
-#     @strawberry.type
-#     class Query:
-#         user: User
+    @strawberry.type
+    class Query:
+        user: User
 
-#     expected_type = """
-#     interface Node {
-#       id: ID!
-#     }
+    expected_type = """
+    interface Node {
+      id: ID!
+    }
 
-#     type Query {
-#       user: User!
-#     }
+    type Query {
+      user: User!
+    }
 
-#     type User implements Node {
-#       id: ID!
-#       name: String!
-#     }
-#     """
+    type User implements Node {
+      id: ID!
+      name: String!
+    }
+    """
 
-#     schema = strawberry.Schema(query=Query)
+    schema = strawberry.Schema(query=Query)
 
-#     assert print_schema(schema) == textwrap.dedent(expected_type).strip()
+    assert print_schema(schema) == textwrap.dedent(expected_type).strip()
