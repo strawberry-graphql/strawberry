@@ -2,11 +2,11 @@ import dataclasses
 import typing
 from typing import Any, Awaitable, Callable, Dict, List, Optional, Type, Union
 
-from strawberry.arguments import UNSET
+from strawberry.arguments import UNSET, StrawberryArgument
+from strawberry.types.info import Info
 from strawberry.utils.mixins import GraphQLNameMixin
 from strawberry.utils.typing import get_parameters, has_type_var, is_type_var
 
-from .arguments import StrawberryArgument
 from .permission import BasePermission
 from .types.fields.resolver import StrawberryResolver
 from .types.types import FederationFieldParams
@@ -176,7 +176,7 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
         return None
 
     def get_result(
-        self, source: Any, args: List[Any], kwargs: Dict[str, Any]
+        self, source: Any, info: Info, args: List[Any], kwargs: Dict[str, Any]
     ) -> Union[Awaitable[Any], Any]:
         """
         Calls the resolver defined for the StrawberryField. If the field doesn't have a
