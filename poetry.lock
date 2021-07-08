@@ -26,6 +26,24 @@ yarl = ">=1.0,<2.0"
 speedups = ["aiodns", "brotlipy", "cchardet"]
 
 [[package]]
+name = "anyio"
+version = "3.2.1"
+description = "High level compatibility layer for multiple asynchronous event loop implementations"
+category = "main"
+optional = false
+python-versions = ">=3.6.2"
+
+[package.dependencies]
+idna = ">=2.8"
+sniffio = ">=1.1"
+typing-extensions = {version = "*", markers = "python_version < \"3.8\""}
+
+[package.extras]
+doc = ["sphinx-rtd-theme", "sphinx-autodoc-typehints (>=1.2.0)"]
+test = ["coverage[toml] (>=4.5)", "hypothesis (>=4.0)", "pytest (>=6.0)", "pytest-mock (>=3.6.1)", "trustme", "uvloop (<0.15)", "mock (>=4)", "uvloop (>=0.15)"]
+trio = ["trio (>=0.16)"]
+
+[[package]]
 name = "appdirs"
 version = "1.4.4"
 description = "A small Python module for determining appropriate platform-specific dirs, e.g. a \"user data dir\"."
@@ -965,14 +983,17 @@ python-versions = ">=3.5"
 
 [[package]]
 name = "starlette"
-version = "0.14.2"
+version = "0.15.0"
 description = "The little ASGI library that shines."
 category = "main"
 optional = false
 python-versions = ">=3.6"
 
+[package.dependencies]
+anyio = ">=3.0.0,<4"
+
 [package.extras]
-full = ["aiofiles", "graphene", "itsdangerous", "jinja2", "python-multipart", "pyyaml", "requests"]
+full = ["itsdangerous", "jinja2", "python-multipart", "pyyaml", "requests", "graphene"]
 
 [[package]]
 name = "testfixtures"
@@ -1212,7 +1233,7 @@ sanic = ["sanic"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "e8fb82b0590ac7aff6d70990041ee9b49181f62aaada974244a829dc7157951f"
+content-hash = "66c10562ed3e561c35a8323a26ccd5a18a0baefefde18da02d29d462b124ca66"
 
 [metadata.files]
 aiofiles = [
@@ -1257,6 +1278,10 @@ aiohttp = [
     {file = "aiohttp-3.7.4.post0-cp39-cp39-win32.whl", hash = "sha256:932bb1ea39a54e9ea27fc9232163059a0b8855256f4052e776357ad9add6f1c9"},
     {file = "aiohttp-3.7.4.post0-cp39-cp39-win_amd64.whl", hash = "sha256:02f46fc0e3c5ac58b80d4d56eb0a7c7d97fcef69ace9326289fb9f1955e65cfe"},
     {file = "aiohttp-3.7.4.post0.tar.gz", hash = "sha256:493d3299ebe5f5a7c66b9819eacdcfbbaaf1a8e84911ddffcdc48888497afecf"},
+]
+anyio = [
+    {file = "anyio-3.2.1-py3-none-any.whl", hash = "sha256:442678a3c7e1cdcdbc37dcfe4527aa851b1b0c9162653b516e9f509821691d50"},
+    {file = "anyio-3.2.1.tar.gz", hash = "sha256:07968db9fa7c1ca5435a133dc62f988d84ef78e1d9b22814a59d1c62618afbc5"},
 ]
 appdirs = [
     {file = "appdirs-1.4.4-py2.py3-none-any.whl", hash = "sha256:a841dacd6b99318a741b166adb07e19ee71a274450e68237b4650ca1055ab128"},
@@ -1816,8 +1841,8 @@ sqlparse = [
     {file = "sqlparse-0.4.1.tar.gz", hash = "sha256:0f91fd2e829c44362cbcfab3e9ae12e22badaa8a29ad5ff599f9ec109f0454e8"},
 ]
 starlette = [
-    {file = "starlette-0.14.2-py3-none-any.whl", hash = "sha256:3c8e48e52736b3161e34c9f0e8153b4f32ec5d8995a3ee1d59410d92f75162ed"},
-    {file = "starlette-0.14.2.tar.gz", hash = "sha256:7d49f4a27f8742262ef1470608c59ddbc66baf37c148e938c7038e6bc7a998aa"},
+    {file = "starlette-0.15.0-py3-none-any.whl", hash = "sha256:66dc8464dc4380f591f33248d23913830f501027ac26839329c99177cf119128"},
+    {file = "starlette-0.15.0.tar.gz", hash = "sha256:5c6e71fe8a11f690f78ab13363b0993eb7e5446986d3549902a81505afdaa08b"},
 ]
 testfixtures = [
     {file = "testfixtures-6.17.1-py2.py3-none-any.whl", hash = "sha256:9ed31e83f59619e2fa17df053b241e16e0608f4580f7b5a9333a0c9bdcc99137"},
