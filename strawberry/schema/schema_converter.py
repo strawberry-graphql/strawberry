@@ -319,7 +319,6 @@ class GraphQLCoreConverter:
         return graphql_object_type
 
     def from_resolver(self, field: StrawberryField) -> Callable:
-        # TODO: convert things from graphql name to python name
         def _get_arguments(
             source: Any,
             info: Info,
