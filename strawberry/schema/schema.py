@@ -40,7 +40,7 @@ class Schema:
         types=(),
         extensions: Sequence[Type[Extension]] = (),
         execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
-        config: StrawberryConfig = None,
+        config: Optional[StrawberryConfig] = None,
     ):
         self.extensions = extensions
         self.execution_context_class = execution_context_class
