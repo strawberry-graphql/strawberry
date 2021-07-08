@@ -83,7 +83,7 @@ def copy_type_with(
                     graphql_name=field.graphql_name,
                     origin=field.origin,
                     type_=field.type,
-                    default_value=field.default_value,
+                    default=field.default_value,
                     base_resolver=field.base_resolver,
                     child=field.child,
                     is_child_optional=field.is_child_optional,
@@ -132,7 +132,7 @@ def copy_type_with(
 
             copied_type = builtins.type(
                 name,
-                (),
+                (base.__origin__,) if hasattr(base, "__origin__") else (),
                 {"_type_definition": type_definition},
             )
 

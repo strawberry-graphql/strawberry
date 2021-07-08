@@ -170,8 +170,8 @@ async def test_tracing_filter_kwargs(global_tracer_mock, mocker):
     def arg_filter(kwargs, info):
         return {"name": "[...]"}
 
-    def extension():
-        return OpenTelemetryExtension(arg_filter=arg_filter)
+    def extension(**kwargs):
+        return OpenTelemetryExtension(arg_filter=arg_filter, **kwargs)
 
     @strawberry.type
     class Query:

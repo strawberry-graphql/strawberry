@@ -23,22 +23,28 @@ class OpenTelemetryExtension(Extension):
     _root_span: Span
     _tracer: Tracer
 
-    def __init__(self, *, arg_filter: Optional[ArgFilter] = None):
+    def __init__(
+        self,
+        *,
+        execution_context: ExecutionContext,
+        arg_filter: Optional[ArgFilter] = None,
+    ):
         self._arg_filter = arg_filter
         self._tracer = trace.get_tracer("strawberry")
+        self.execution_context = execution_context
 
-    def on_request_start(self, *, execution_context: ExecutionContext):
+    def on_request_start(self):
         span_name = (
-            f"GraphQL Query: {execution_context.operation_name}"
-            if execution_context.operation_name
+            f"GraphQL Query: {self.execution_context.operation_name}"
+            if self.execution_context.operation_name
             else "GraphQL Query"
         )
 
         self._root_span = self._tracer.start_span(span_name, kind=SpanKind.SERVER)
         self._root_span.set_attribute("component", "graphql")
-        self._root_span.set_attribute("query", execution_context.query)
+        self._root_span.set_attribute("query", self.execution_context.query)
 
-    def on_request_end(self, *, execution_context: ExecutionContext):
+    def on_request_end(self):
         self._root_span.end()
 
     def filter_resolver_args(

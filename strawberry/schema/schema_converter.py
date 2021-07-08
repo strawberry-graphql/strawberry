@@ -1,4 +1,6 @@
-from typing import Any, Callable, Dict, Type, cast
+from enum import Enum
+from inspect import isasyncgen, iscoroutine
+from typing import Any, Callable, Dict, List, Tuple, Type, cast
 
 from graphql import (
     GraphQLArgument,
@@ -15,22 +17,35 @@ from graphql import (
     GraphQLNullableType,
     GraphQLObjectType,
     GraphQLOutputType,
+    GraphQLResolveInfo,
     GraphQLScalarType,
     GraphQLType,
     GraphQLUnionType,
     Undefined,
 )
 
-from strawberry.arguments import UNSET, StrawberryArgument
+from strawberry.arguments import UNSET, StrawberryArgument, convert_arguments
 from strawberry.directive import DirectiveDefinition
 from strawberry.enum import EnumDefinition, EnumValue
 from strawberry.field import StrawberryField
 from strawberry.scalars import is_scalar
+from strawberry.types.info import Info
 from strawberry.types.types import TypeDefinition, undefined
 from strawberry.union import StrawberryUnion
 
 from .types.concrete_type import ConcreteType
 from .types.scalar import get_scalar_type
+
+
+# graphql-core expects a resolver for an Enum type to return
+# the enum's *value* (not its name or an instance of the enum). We have to
+# subclass the GraphQLEnumType class to enable returning Enum members from
+# resolvers.
+class CustomGraphQLEnumType(GraphQLEnumType):
+    def serialize(self, output_value: Any) -> str:
+        if isinstance(output_value, Enum):
+            return output_value.name
+        return super().serialize(output_value)
 
 
 class GraphQLCoreConverter:
@@ -97,9 +112,7 @@ class GraphQLCoreConverter:
         raise TypeError(f"Unexpected type '{type_}'")
 
     def from_argument(self, argument: StrawberryArgument) -> GraphQLArgument:
-        default_value = (
-            Undefined if argument.default_value is undefined else argument.default_value
-        )
+        default_value = Undefined if argument.default is UNSET else argument.default
 
         argument_type = self.get_graphql_type_argument(argument)
         argument_type = cast(GraphQLInputType, argument_type)
@@ -110,17 +123,17 @@ class GraphQLCoreConverter:
             description=argument.description,
         )
 
-    def from_enum(self, enum: EnumDefinition) -> GraphQLEnumType:
+    def from_enum(self, enum: EnumDefinition) -> CustomGraphQLEnumType:
 
         assert enum.name is not None
 
         # Don't reevaluate known types
         if enum.name in self.type_map:
             graphql_enum = self.type_map[enum.name].implementation
-            assert isinstance(graphql_enum, GraphQLEnumType)  # For mypy
+            assert isinstance(graphql_enum, CustomGraphQLEnumType)  # For mypy
             return graphql_enum
 
-        graphql_enum = GraphQLEnumType(
+        graphql_enum = CustomGraphQLEnumType(
             name=enum.name,
             values={item.name: self.from_enum_value(item) for item in enum.values},
             description=enum.description,
@@ -176,6 +189,7 @@ class GraphQLCoreConverter:
         )
 
     def from_input_field(self, field: StrawberryField) -> GraphQLInputField:
+        default_value: object
         if field.default_value in [undefined, UNSET]:
             default_value = Undefined
         else:
@@ -298,7 +312,88 @@ class GraphQLCoreConverter:
         return graphql_object_type
 
     def from_resolver(self, field: StrawberryField) -> Callable:
-        return field.get_wrapped_resolver()
+        def _get_arguments(
+            source: Any,
+            info: Info,
+            kwargs: Dict[str, Any],
+        ) -> Tuple[List[Any], Dict[str, Any]]:
+            kwargs = convert_arguments(kwargs, field.arguments)
+
+            # the following code allows to omit info and root arguments
+            # by inspecting the original resolver arguments,
+            # if it asks for self, the source will be passed as first argument
+            # if it asks for root, the source it will be passed as kwarg
+            # if it asks for info, the info will be passed as kwarg
+
+            args = []
+
+            if field.base_resolver:
+                if field.base_resolver.has_self_arg:
+                    args.append(source)
+
+                if field.base_resolver.has_root_arg:
+                    kwargs["root"] = source
+
+                if field.base_resolver.has_info_arg:
+                    kwargs["info"] = info
+
+            return args, kwargs
+
+        def _check_permissions(source: Any, info: Info, kwargs: Dict[str, Any]):
+            """
+            Checks if the permission should be accepted and
+            raises an exception if not
+            """
+            for permission_class in field.permission_classes:
+                permission = permission_class()
+
+                if not permission.has_permission(source, info, **kwargs):
+                    message = getattr(permission, "message", None)
+                    raise PermissionError(message)
+
+        def _strawberry_info_from_graphql(info: GraphQLResolveInfo) -> Info:
+            return Info(
+                field_name=info.field_name,
+                field_nodes=info.field_nodes,
+                context=info.context,
+                root_value=info.root_value,
+                variable_values=info.variable_values,
+                return_type=field._get_return_type(),
+                operation=info.operation,
+                path=info.path,
+            )
+
+        def _resolver(_source: Any, info: GraphQLResolveInfo, **kwargs):
+            strawberry_info = _strawberry_info_from_graphql(info)
+            _check_permissions(_source, strawberry_info, kwargs)
+
+            args, kwargs = _get_arguments(
+                source=_source, info=strawberry_info, kwargs=kwargs
+            )
+
+            result = field.get_result(
+                _source, info=strawberry_info, args=args, kwargs=kwargs
+            )
+
+            if isasyncgen(result):
+
+                async def yield_results(results):
+                    async for value in results:
+                        yield value
+
+                return yield_results(result)
+
+            if iscoroutine(result):  # pragma: no cover
+
+                async def await_result(result):
+                    return await result
+
+                return await_result(result)
+
+            return result
+
+        _resolver._is_default = not field.base_resolver  # type: ignore
+        return _resolver
 
     def from_scalar(self, scalar: Type) -> GraphQLScalarType:
         return get_scalar_type(scalar, self.type_map)

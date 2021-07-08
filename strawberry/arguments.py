@@ -13,11 +13,28 @@ from .union import StrawberryUnion
 from .utils.str_converters import to_camel_case
 
 
+class _Unset:
+    def __str__(self):
+        return ""
+
+    def __bool__(self):
+        return False
+
+
+UNSET: Any = _Unset()
+
+
+def is_unset(value: Any) -> bool:
+    return type(value) is _Unset
+
+
 class StrawberryArgumentAnnotation:
     description: Optional[str]
+    name: Optional[str]
 
-    def __init__(self, description: Optional[str] = None):
+    def __init__(self, description: Optional[str] = None, name: Optional[str] = None):
         self.description = description
+        self.name = name
 
 
 class StrawberryArgument:
@@ -35,7 +52,7 @@ class StrawberryArgument:
         is_list: bool = False,
         is_union: bool = False,
         description: Optional[str] = None,
-        default_value: Any = undefined,
+        default: object = UNSET,
     ) -> None:
         self.python_name = python_name
         self._graphql_name = graphql_name
@@ -48,7 +65,7 @@ class StrawberryArgument:
         self.is_list = is_list
         self.is_union = is_union
         self.description = description
-        self.default_value = default_value
+        self.default = default
 
     @property
     def graphql_name(self) -> Optional[str]:
@@ -63,7 +80,7 @@ class StrawberryArgument:
         cls,
         python_name: str,
         annotation: Type[Annotated],  # type: ignore
-        default_value: Any,
+        default: object,
         origin: Any,
     ) -> StrawberryArgument:
         annotated_args = get_args(annotation)
@@ -72,6 +89,7 @@ class StrawberryArgument:
         type_ = annotated_args[0]
         argument_metadata = None
         argument_description = None
+        argument_graphql_name = None
 
         # Find any instances of StrawberryArgumentAnnotation
         # in the other Annotated args, raising an exception if there
@@ -87,14 +105,14 @@ class StrawberryArgument:
 
         if argument_metadata is not None:
             argument_description = argument_metadata.description
+            argument_graphql_name = argument_metadata.name
 
         return cls(
             type_=type_,
             description=argument_description,
             python_name=python_name,
-            # TODO: fetch from StrawberryArgumentAnnotation
-            graphql_name=None,
-            default_value=default_value,
+            graphql_name=argument_graphql_name,
+            default=default,
         )
 
 
@@ -108,18 +126,18 @@ def get_arguments_from_annotations(
     arguments = []
 
     for name, annotation in annotations.items():
-        default_value = parameters[name].default
-        default_value = (
-            undefined
-            if default_value is inspect.Parameter.empty or is_unset(default_value)
-            else default_value
+        default = parameters[name].default
+        default = (
+            UNSET
+            if default is inspect.Parameter.empty or is_unset(default)
+            else default
         )
 
         if get_origin(annotation) is Annotated:
             argument = StrawberryArgument.from_annotated(
                 python_name=name,
                 annotation=annotation,
-                default_value=default_value,
+                default=default,
                 origin=origin,
             )
         else:
@@ -127,7 +145,7 @@ def get_arguments_from_annotations(
                 type_=annotation,
                 python_name=name,
                 graphql_name=None,
-                default_value=default_value,
+                default=default,
                 description=None,
                 origin=origin,
             )
@@ -137,21 +155,6 @@ def get_arguments_from_annotations(
         arguments.append(argument)
 
     return arguments
-
-
-class _Unset:
-    def __str__(self):
-        return ""
-
-    def __bool__(self):
-        return False
-
-
-UNSET: Any = _Unset()
-
-
-def is_unset(value: Any) -> bool:
-    return type(value) is _Unset
 
 
 def convert_argument(value: Any, argument: StrawberryArgument) -> Any:
@@ -217,8 +220,10 @@ def convert_arguments(
     return kwargs
 
 
-def argument(description: Optional[str] = None) -> StrawberryArgumentAnnotation:
-    return StrawberryArgumentAnnotation(description=description)
+def argument(
+    description: Optional[str] = None, name: Optional[str] = None
+) -> StrawberryArgumentAnnotation:
+    return StrawberryArgumentAnnotation(description=description, name=name)
 
 
 # TODO: check exports

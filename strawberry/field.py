@@ -1,12 +1,8 @@
 import dataclasses
-import enum
 import typing
-from inspect import iscoroutine
-from typing import Any, Awaitable, Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Awaitable, Callable, Dict, List, Optional, Type, Union
 
-from graphql import GraphQLResolveInfo
-
-from strawberry.arguments import UNSET, convert_arguments
+from strawberry.arguments import UNSET
 from strawberry.types.info import Info
 from strawberry.utils.typing import get_parameters, has_type_var, is_type_var
 
@@ -24,9 +20,9 @@ _RESOLVER_TYPE = Union[StrawberryResolver, Callable]
 class StrawberryField(dataclasses.Field):
     def __init__(
         self,
-        python_name: Optional[str],
-        graphql_name: Optional[str],
-        type_: Optional[Union[Type, StrawberryUnion]],
+        python_name: Optional[str] = None,
+        graphql_name: Optional[str] = None,
+        type_: Optional[Union[Type, StrawberryUnion]] = None,
         origin: Optional[Union[Type, Callable]] = None,
         child: Optional["StrawberryField"] = None,
         is_subscription: bool = False,
@@ -38,8 +34,8 @@ class StrawberryField(dataclasses.Field):
         description: Optional[str] = None,
         base_resolver: Optional[StrawberryResolver] = None,
         permission_classes: List[Type[BasePermission]] = (),  # type: ignore
-        default_value: Any = UNSET,
-        default_factory: Union[Callable, object] = UNSET,
+        default: object = UNSET,
+        default_factory: Union[Callable[[], Any], object] = UNSET,
         deprecation_reason: Optional[str] = None,
     ):
         federation = federation or FederationFieldParams()
@@ -48,15 +44,19 @@ class StrawberryField(dataclasses.Field):
         is_basic_field = not base_resolver
 
         super().__init__(  # type: ignore
-            default=(default_value if default_value != UNSET else dataclasses.MISSING),
+            default=(default if default is not UNSET else dataclasses.MISSING),
             default_factory=(
-                default_factory if default_factory != UNSET else dataclasses.MISSING
+                # mypy is not able to understand that default factory
+                # is a callable so we do a type ignore
+                default_factory  # type: ignore
+                if default_factory is not UNSET
+                else dataclasses.MISSING
             ),
             init=is_basic_field,
             repr=is_basic_field,
             compare=is_basic_field,
             hash=None,
-            metadata=None,
+            metadata={},
         )
 
         self._graphql_name = graphql_name
@@ -73,7 +73,11 @@ class StrawberryField(dataclasses.Field):
         if base_resolver is not None:
             self.base_resolver = base_resolver
 
-        self.default_value = default_value
+        # Note: StrawberryField.default is the same as
+        # StrawberryField.default_value except that `.default` uses
+        # `dataclasses.MISSING` to represent an "undefined" value and
+        # `.default_value` uses `UNSET`
+        self.default_value = default
 
         self.child = child
         self.is_child_optional = is_child_optional
@@ -171,34 +175,8 @@ class StrawberryField(dataclasses.Field):
 
         return None
 
-    def _get_arguments(
-        self, kwargs: Dict[str, Any], source: Any, info: Any
-    ) -> Tuple[List[Any], Dict[str, Any]]:
-        assert self.base_resolver is not None
-
-        kwargs = convert_arguments(kwargs, self.arguments)
-
-        # the following code allows to omit info and root arguments
-        # by inspecting the original resolver arguments,
-        # if it asks for self, the source will be passed as first argument
-        # if it asks for root, the source it will be passed as kwarg
-        # if it asks for info, the info will be passed as kwarg
-
-        args = []
-
-        if self.base_resolver.has_self_arg:
-            args.append(source)
-
-        if self.base_resolver.has_root_arg:
-            kwargs["root"] = source
-
-        if self.base_resolver.has_info_arg:
-            kwargs["info"] = info
-
-        return args, kwargs
-
     def get_result(
-        self, kwargs: Dict[str, Any], source: Any, info: Any
+        self, source: Any, info: Info, args: List[Any], kwargs: Dict[str, Any]
     ) -> Union[Awaitable[Any], Any]:
         """
         Calls the resolver defined for the StrawberryField. If the field doesn't have a
@@ -206,73 +184,9 @@ class StrawberryField(dataclasses.Field):
         """
 
         if self.base_resolver:
-            args, kwargs = self._get_arguments(kwargs, source=source, info=info)
-
             return self.base_resolver(*args, **kwargs)
 
         return getattr(source, self.python_name)
-
-    def get_wrapped_resolver(self) -> Callable:
-        # TODO: This could potentially be handled by StrawberryResolver in the future
-        def _check_permissions(source, info: Info, **kwargs):
-            """
-            Checks if the permission should be accepted and
-            raises an exception if not
-            """
-            for permission_class in self.permission_classes:
-                permission = permission_class()
-
-                if not permission.has_permission(source, info, **kwargs):
-                    message = getattr(permission, "message", None)
-                    raise PermissionError(message)
-
-        def _convert_enums_to_values(field_: StrawberryField, result: Any) -> Any:
-            # graphql-core expects a resolver for an Enum type to return
-            # the enum's *value* (not its name or an instance of the enum).
-
-            # short circuit to skip checks when result is falsy
-            if not result:
-                return result
-
-            if isinstance(result, enum.Enum):
-                return result.value
-
-            if field_.is_list:
-                assert self.child is not None
-                return [_convert_enums_to_values(self.child, item) for item in result]
-
-            return result
-
-        def _strawberry_info_from_graphql(info: GraphQLResolveInfo) -> Info:
-            return Info(
-                field_name=info.field_name,
-                field_nodes=info.field_nodes,
-                context=info.context,
-                root_value=info.root_value,
-                variable_values=info.variable_values,
-                return_type=self._get_return_type(),
-                operation=info.operation,
-                path=info.path,
-            )
-
-        def _resolver(source, info: GraphQLResolveInfo, **kwargs):
-            strawberry_info = _strawberry_info_from_graphql(info)
-            _check_permissions(source, strawberry_info, **kwargs)
-
-            result = self.get_result(kwargs=kwargs, info=strawberry_info, source=source)
-
-            if iscoroutine(result):  # pragma: no cover
-
-                async def await_result(result):
-                    return _convert_enums_to_values(self, await result)
-
-                return await_result(result)
-
-            result = _convert_enums_to_values(self, result)
-            return result
-
-        _resolver._is_default = not self.base_resolver  # type: ignore
-        return _resolver
 
     def _get_return_type(self):
         # using type ignore to make mypy happy,
@@ -326,7 +240,7 @@ def field(
         permission_classes=permission_classes or [],
         federation=federation or FederationFieldParams(),
         deprecation_reason=deprecation_reason,
-        default_value=default,
+        default=default,
         default_factory=default_factory,
     )
 

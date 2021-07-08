@@ -12,7 +12,12 @@ with open(GITHUB_EVENT_PATH) as f:
 
 sender = event_data["pull_request"]["user"]["login"]
 
-if sender in ["dependabot-preview[bot]", "dependabot-preview", "dependabot"]:
+if sender in [
+    "dependabot-preview[bot]",
+    "dependabot-preview",
+    "dependabot",
+    "dependabot[bot]",
+]:
     print("Skipping dependencies PRs for now.")
     sys.exit(0)
 
@@ -49,6 +54,7 @@ mutation_input = {
     "releaseInfo": release_info,
 }
 
+print(f"Status is {status}")
 
 response = httpx.post(
     API_URL,
@@ -57,5 +63,9 @@ response = httpx.post(
 )
 response.raise_for_status()
 
-print(f"Status is {status}")
+response_data = response.json()
+
+if "errors" in response_data:
+    raise RuntimeError(f"Response contained errors: {response_data['errors']}")
+
 sys.exit(exit_code)

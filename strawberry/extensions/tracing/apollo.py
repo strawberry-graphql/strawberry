@@ -73,14 +73,15 @@ class ApolloTracingStats:
 
 
 class ApolloTracingExtension(Extension):
-    def __init__(self):
+    def __init__(self, execution_context: ExecutionContext):
         self._resolver_stats: typing.List[ApolloResolverStats] = []
+        self.execution_context = execution_context
 
-    def on_request_start(self, *, execution_context: ExecutionContext):
+    def on_request_start(self):
         self.start_timestamp = self.now()
         self.start_time = datetime.utcnow()
 
-    def on_request_end(self, *, execution_context: ExecutionContext):
+    def on_request_end(self):
         self.end_timestamp = self.now()
         self.end_time = datetime.utcnow()
 

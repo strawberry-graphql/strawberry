@@ -163,3 +163,10 @@ class FieldWithResolverAndDefaultFactoryError(Exception):
         )
 
         super().__init__(message)
+
+
+class MissingQueryError(Exception):
+    def __init__(self):
+        message = 'Request data is missing a "query" value'
+
+        super().__init__(message)

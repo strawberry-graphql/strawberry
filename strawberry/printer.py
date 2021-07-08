@@ -27,10 +27,10 @@ def print_federation_field_directive(field: Optional[StrawberryField]) -> str:
     out = ""
 
     if field.federation.provides:
-        out += f' @provides(fields: "{field.federation.provides}")'
+        out += f' @provides(fields: "{" ".join(field.federation.provides)}")'
 
     if field.federation.requires:
-        out += f' @requires(fields: "{field.federation.requires}")'
+        out += f' @requires(fields: "{" ".join(field.federation.requires)}")'
 
     if field.federation.external:
         out += " @external"
@@ -52,7 +52,7 @@ def print_fields(type_, schema: BaseSchema) -> str:
             + print_args(field.args, "  ")
             + f": {field.type}"
             + print_federation_field_directive(strawberry_field)
-            + print_deprecated(field)
+            + print_deprecated(field.deprecation_reason)
         )
 
     return print_block(fields)

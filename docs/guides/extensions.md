@@ -45,10 +45,10 @@ request starts and end, it also allows you to get the execution context
 from strawberry.extensions import Extension
 
 class MyExtension(Extension):
-    def on_request_start(self, *, execution_context: ExecutionContext):
+    def on_request_start(self):
         print('GraphQL request start')
 
-    def on_request_end(self, *, execution_context: ExecutionContext):
+    def on_request_end(self):
         print('GraphQL request end')
 ```
 
@@ -98,7 +98,7 @@ class MyExtension(Extension):
 
 ### Parsing
 
-`on_validation_start` and `on_validation_end` can be used to run code on the
+`on_parsing_start` and `on_parsing_end` can be used to run code on the
 parsing step of the GraphQL execution.
 
 ```python
@@ -110,4 +110,21 @@ class MyExtension(Extension):
 
     def on_parsing_end(self):
         print('GraphQL parsing end')
+```
+
+### Execution Context
+
+The `Extension` object has a `execution_context` property on `self` of type `ExecutionContext`. This object can be used to gain access to additional graphql context, or request context. See the [`ExecutionContext` type](https://github.com/strawberry-graphql/strawberry/blob/main/strawberry/types/execution.py) for available data.
+
+```python
+from strawberry.extensions import Extension
+
+from mydb import get_db_session
+
+class MyExtension(Extension):
+    def on_request_start(self):
+        self.execution_context.context["db"] = get_db_session()
+
+    def on_request_end(self):
+        self.execution_context.context["db"].close()
 ```

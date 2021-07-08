@@ -52,6 +52,22 @@ def test_can_covert_alias_pydantic_field_to_strawberry():
     assert user.password == "abc"
 
 
+def test_can_covert_falsy_values_to_strawberry():
+    class UserModel(pydantic.BaseModel):
+        age: int
+        password: str
+
+    @strawberry.experimental.pydantic.type(UserModel, fields=["age", "password"])
+    class User:
+        pass
+
+    origin_user = UserModel(age=0, password="")
+    user = User.from_pydantic(origin_user)
+
+    assert user.age == 0
+    assert user.password == ""
+
+
 def test_can_covert_pydantic_type_with_nested_data_to_strawberry():
     class WorkModel(pydantic.BaseModel):
         name: str

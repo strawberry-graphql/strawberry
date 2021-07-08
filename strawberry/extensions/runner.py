@@ -25,15 +25,11 @@ class ExtensionsRunner:
 
     @contextmanager
     def request(self):
-        self._run_on_all_extensions(
-            "on_request_start", execution_context=self.execution_context
-        )
+        self._run_on_all_extensions("on_request_start")
 
         yield
 
-        self._run_on_all_extensions(
-            "on_request_end", execution_context=self.execution_context
-        )
+        self._run_on_all_extensions("on_request_end")
 
     @contextmanager
     def validation(self):
