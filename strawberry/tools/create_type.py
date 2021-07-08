@@ -34,10 +34,6 @@ def create_type(name: str, fields: List[StrawberryField]) -> Type:
                 )
             )
 
-    for field in fields:
-        if not isinstance(field, StrawberryField):
-            raise TypeError("Field is not an instance of StrawberryField")
-
         namespace[field.python_name] = field
         annotations[field.python_name] = field.type
 
