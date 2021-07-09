@@ -188,6 +188,7 @@ class GraphQLCoreConverter:
             subscribe=subscribe,
             description=field.description,
             deprecation_reason=field.deprecation_reason,
+            extensions={"python_name": field.python_name},
         )
 
     def from_input_field(self, field: StrawberryField) -> GraphQLInputField:
