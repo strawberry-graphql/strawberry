@@ -49,6 +49,7 @@
 - [Django](./integrations/django.md)
 - [Flask](./integrations/flask.md)
 - [Sanic](./integrations/sanic.md)
+- [Chalice](./integrations/chalice.md)
 - [Pydantic **experimental**](./integrations/pydantic.md)
 
 ## Operations

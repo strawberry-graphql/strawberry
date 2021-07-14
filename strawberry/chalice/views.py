@@ -20,7 +20,7 @@ class GraphQLView:
         Returns a string containing the html for the graphiql webpage. It also caches the
         result using lru cache. This saves loading from disk each time it is invoked.
         Returns:
-            The graphiql html page as a string
+            The GraphiQL html page as a string
         """
         result = render_graphiql_page()
         return result
@@ -50,30 +50,6 @@ class GraphQLView:
             return True
 
         return False
-
-    @staticmethod
-    def method_is_post(method: str) -> bool:
-        """
-        If the get method has been called this is True
-        Args:
-            method: A request verb such as GET, POST, PUT etc.
-
-        Returns:
-            True if the method is post
-        """
-        return method == "POST"
-
-    @staticmethod
-    def method_is_get(method: str) -> bool:
-        """
-        If the get method has been called this is True
-        Args:
-            method: A request verb such as GET, POST, PUT etc.
-
-        Returns:
-            True if the method is get
-        """
-        return method == "GET"
 
     @staticmethod
     def invalid_query_response() -> Response:
@@ -111,7 +87,7 @@ class GraphQLView:
         if self.graphiql:
             if (
                 self.has_html_been_asked_for(request.headers)
-                and self.method_is_get(request.method)
+                and request.method == "GET"
             ):
                 graphiql_page: str = self.render_graphiql()
                 return Response(
@@ -120,10 +96,13 @@ class GraphQLView:
                     status_code=200,
                 )
 
-        if not self.method_is_post(request.method):
+        if not request.method == "POST":
             return self.invalid_rest_verb_response()
 
-        request_data = request.json_body
+        try:
+            request_data = request.json_body
+        except ValueError:
+            return self.invalid_query_response()
 
         if request_data is None:
             return self.invalid_query_response()

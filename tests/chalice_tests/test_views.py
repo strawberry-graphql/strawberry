@@ -1,7 +1,7 @@
 import json
 from http import HTTPStatus
 
-from app import app
+from .app import app
 
 from chalice.test import Client, HTTPResponse
 
