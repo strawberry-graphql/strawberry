@@ -52,6 +52,8 @@ class StrawberryAnnotation:
             annotation = self.annotation
 
         evaled_type = _eval_type(annotation, self.namespace, None)
+        if evaled_type is None:
+            raise ValueError("Annotation cannot be plain None type")
         if self._is_async_generator(evaled_type):
             evaled_type = self._strip_async_generator(evaled_type)
         if self._is_lazy_type(evaled_type):
