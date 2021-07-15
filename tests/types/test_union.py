@@ -110,7 +110,7 @@ def test_cannot_use_union_directly():
 
 def test_error_with_empty_type_list():
     with pytest.raises(TypeError, match="No types passed to `union`"):
-        strawberry.union("Result", [])
+        strawberry.union("Result", ())
 
 
 def test_error_with_scalar_types():
