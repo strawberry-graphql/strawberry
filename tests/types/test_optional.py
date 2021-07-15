@@ -1,9 +1,35 @@
-from typing import Optional
+from typing import Optional, List
 
 import strawberry
+from strawberry.annotation import StrawberryAnnotation
 from strawberry.type import StrawberryOptional
 
 
+def test_optional_list():
+    annotation = StrawberryAnnotation(Optional[List[bool]])
+    resolved = annotation.resolve()
+
+    assert isinstance(resolved, StrawberryOptional)
+    assert resolved.of_type == List[bool]
+
+    assert resolved == StrawberryOptional(of_type=List[bool])
+    assert resolved == Optional[List[bool]]
+
+
+def test_optional_optional():
+    """Optional[Optional[...]] is squashed by Python to just Optional[..]"""
+    annotation = StrawberryAnnotation(Optional[Optional[bool]])
+    resolved = annotation.resolve()
+
+    assert isinstance(resolved, StrawberryOptional)
+    assert resolved.of_type == bool
+
+    assert resolved == StrawberryOptional(of_type=bool)
+    assert resolved == Optional[Optional[bool]]
+    assert resolved == Optional[bool]
+
+
+# TODO: move to a field test file
 def test_type_add_type_definition_with_fields():
     @strawberry.type
     class Query:
@@ -24,6 +50,7 @@ def test_type_add_type_definition_with_fields():
     assert field2.type.of_type is int
 
 
+# TODO: move to a field test file
 def test_passing_custom_names_to_fields():
     @strawberry.type
     class Query:
@@ -44,6 +71,7 @@ def test_passing_custom_names_to_fields():
     assert field2.type.of_type is int
 
 
+# TODO: move to a field test file
 def test_passing_nothing_to_fields():
     @strawberry.type
     class Query:
@@ -64,6 +92,7 @@ def test_passing_nothing_to_fields():
     assert field2.type.of_type is int
 
 
+# TODO: move to a resolver test file
 def test_resolver_fields():
     @strawberry.type
     class Query:
@@ -81,6 +110,7 @@ def test_resolver_fields():
     assert field.type.of_type is str
 
 
+# TODO: move to a resolver test file
 def test_resolver_fields_arguments():
     @strawberry.type
     class Query:
