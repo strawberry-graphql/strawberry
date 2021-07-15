@@ -5,6 +5,17 @@ from strawberry.annotation import StrawberryAnnotation
 from strawberry.type import StrawberryOptional
 
 
+def test_basic_optional():
+    annotation = StrawberryAnnotation(Optional[str])
+    resolved = annotation.resolve()
+
+    assert isinstance(resolved, StrawberryOptional)
+    assert resolved.of_type is str
+
+    assert resolved == StrawberryOptional(of_type=str)
+    assert resolved == Optional[str]
+
+
 def test_optional_list():
     annotation = StrawberryAnnotation(Optional[List[bool]])
     resolved = annotation.resolve()
@@ -17,12 +28,12 @@ def test_optional_list():
 
 
 def test_optional_optional():
-    """Optional[Optional[...]] is squashed by Python to just Optional[..]"""
+    """Optional[Optional[...]] is squashed by Python to just Optional[...]"""
     annotation = StrawberryAnnotation(Optional[Optional[bool]])
     resolved = annotation.resolve()
 
     assert isinstance(resolved, StrawberryOptional)
-    assert resolved.of_type == bool
+    assert resolved.of_type is bool
 
     assert resolved == StrawberryOptional(of_type=bool)
     assert resolved == Optional[Optional[bool]]
