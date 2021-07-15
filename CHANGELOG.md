@@ -1,6 +1,25 @@
 CHANGELOG
 =========
 
+0.68.2 - 2021-07-07
+-------------------
+
+This release fixes a regression that broke strawberry-graphql-django.
+
+`Field.get_results` now always receives the `info` argument.
+
+Contributed by [Lauri Hintsala](https://github.com/la4de) [PR #1047](https://github.com/strawberry-graphql/strawberry/pull/1047/)
+
+
+0.68.1 - 2021-07-05
+-------------------
+
+This release only changes some internal code to make future improvements
+easier.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1044](https://github.com/strawberry-graphql/strawberry/pull/1044/)
+
+
 0.68.0 - 2021-07-03
 -------------------
 

@@ -16,6 +16,7 @@ from typing import (
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import UNSET
 from strawberry.type import StrawberryType
+from strawberry.types.info import Info
 
 from .arguments import StrawberryArgument
 from .permission import BasePermission
@@ -235,7 +236,7 @@ class StrawberryField(dataclasses.Field):
         )
 
     def get_result(
-        self, source: Any, args: List[Any], kwargs: Dict[str, Any]
+        self, source: Any, info: Info, args: List[Any], kwargs: Dict[str, Any]
     ) -> Union[Awaitable[Any], Any]:
         """
         Calls the resolver defined for the StrawberryField. If the field doesn't have a
