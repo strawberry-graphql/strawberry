@@ -4,12 +4,13 @@ from typing import Generic, List, Optional, TypeVar, Union
 import pytest
 
 import strawberry
+from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import InvalidUnionType
 from strawberry.type import StrawberryList, StrawberryOptional
-from strawberry.union import StrawberryUnion
+from strawberry.union import StrawberryUnion, union
 
 
-def test_unions():
+def test_python_union():
     @strawberry.type
     class User:
         name: str
@@ -18,23 +19,43 @@ def test_unions():
     class Error:
         name: str
 
+    annotation = StrawberryAnnotation(Union[User, Error])
+    resolved = annotation.resolve()
+
+    assert isinstance(resolved, StrawberryUnion)
+    assert resolved.types == (User, Error)
+
+    assert resolved == StrawberryUnion(
+        name="UserError",
+        type_annotations=(StrawberryAnnotation(User), StrawberryAnnotation(Error))
+    )
+    assert resolved == Union[User, Error]
+
+
+def test_strawberry_union():
     @strawberry.type
-    class Query:
-        user: Union[User, Error]
+    class User:
+        name: str
 
-    definition = Query._type_definition
+    @strawberry.type
+    class Error:
+        name: str
 
-    assert definition.name == "Query"
-    assert len(definition.fields) == 1
+    cool_union = union(name="CoolUnion", types=(User, Error))
+    annotation = StrawberryAnnotation(cool_union)
+    resolved = annotation.resolve()
 
-    assert definition.fields[0].graphql_name == "user"
+    assert isinstance(resolved, StrawberryUnion)
+    assert resolved.types == (User, Error)
 
-    union_type_definition = definition.fields[0].type
-    assert isinstance(union_type_definition, StrawberryUnion)
-    assert union_type_definition.name == "UserError"
-    assert union_type_definition.types == (User, Error)
+    assert resolved == StrawberryUnion(
+        name="CoolUnion",
+        type_annotations=(StrawberryAnnotation(User), StrawberryAnnotation(Error))
+    )
+    assert resolved != Union[User, Error]  # Name will be different
 
 
+# TODO: Move to test_optional.py
 def test_unions_inside_optional():
     @strawberry.type
     class User:
@@ -62,6 +83,7 @@ def test_unions_inside_optional():
     assert strawberry_union.types == (User, Error)
 
 
+# TODO: Move to test_list.py
 def test_unions_inside_list():
     @strawberry.type
     class User:
