@@ -1,12 +1,12 @@
 from dataclasses import dataclass
-from typing import Generic, List, Optional, TypeVar, Union
+from typing import Generic, List, TypeVar, Union
 
 import pytest
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import InvalidUnionType
-from strawberry.type import StrawberryList, StrawberryOptional
+from strawberry.type import StrawberryList
 from strawberry.union import StrawberryUnion, union
 
 
@@ -53,34 +53,6 @@ def test_strawberry_union():
         type_annotations=(StrawberryAnnotation(User), StrawberryAnnotation(Error))
     )
     assert resolved != Union[User, Error]  # Name will be different
-
-
-# TODO: Move to test_optional.py
-def test_unions_inside_optional():
-    @strawberry.type
-    class User:
-        name: str
-
-    @strawberry.type
-    class Error:
-        name: str
-
-    @strawberry.type
-    class Query:
-        user: Optional[Union[User, Error]]
-
-    definition = Query._type_definition
-
-    assert definition.name == "Query"
-    assert len(definition.fields) == 1
-
-    assert definition.fields[0].graphql_name == "user"
-    assert isinstance(definition.fields[0].type, StrawberryOptional)
-
-    strawberry_union = definition.fields[0].type.of_type
-    assert isinstance(strawberry_union, StrawberryUnion)
-    assert strawberry_union.name == "UserError"
-    assert strawberry_union.types == (User, Error)
 
 
 # TODO: Move to test_list.py

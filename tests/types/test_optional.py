@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional, List, Union
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
@@ -38,6 +38,25 @@ def test_optional_optional():
     assert resolved == StrawberryOptional(of_type=bool)
     assert resolved == Optional[Optional[bool]]
     assert resolved == Optional[bool]
+
+
+def test_optional_union():
+    @strawberry.type
+    class CoolType:
+        foo: float
+
+    @strawberry.type
+    class UncoolType:
+        bar: bool
+
+    annotation = StrawberryAnnotation(Optional[Union[CoolType, UncoolType]])
+    resolved = annotation.resolve()
+
+    assert isinstance(resolved, StrawberryOptional)
+    assert resolved.of_type == Union[CoolType, UncoolType]
+
+    assert resolved == StrawberryOptional(of_type=Union[CoolType, UncoolType])
+    assert resolved == Optional[Union[CoolType, UncoolType]]
 
 
 # TODO: move to a field test file
