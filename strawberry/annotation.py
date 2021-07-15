@@ -38,6 +38,12 @@ class StrawberryAnnotation:
         self.annotation = annotation
         self.namespace = namespace
 
+    def __eq__(self, other: object) -> bool:
+        if not isinstance(other, StrawberryAnnotation):
+            return NotImplemented
+
+        return self.resolve() == other.resolve()
+
     def resolve(self) -> Union[StrawberryType, type]:
         annotation: object
         if isinstance(self.annotation, str):

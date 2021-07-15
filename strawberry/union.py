@@ -48,6 +48,22 @@ class StrawberryUnion(StrawberryType):
         self.type_annotations = type_annotations
         self.description = description
 
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, StrawberryType):
+            if isinstance(other, StrawberryUnion):
+                return (
+                    self.name == other.name
+                    and self.type_annotations == other.type_annotations
+                    and self.description == other.description
+                )
+            return False
+
+        return super().__eq__(other)
+
+    def __hash__(self) -> int:
+        # TODO: Is this a bad idea? __eq__ objects are supposed to have the same hash
+        return id(self)
+
     @property
     def name(self) -> str:
         if self._name is not None:
