@@ -1,6 +1,17 @@
 CHANGELOG
 =========
 
+0.68.3 - 2021-07-15
+-------------------
+
+This release changes our `graphiql.html` template to use a specific version of `js-cookie`
+to prevent a JavaScript error, see:
+
+https://github.com/js-cookie/js-cookie/issues/698
+
+Contributed by [星](https://github.com/star2000) [PR #1062](https://github.com/strawberry-graphql/strawberry/pull/1062/)
+
+
 0.68.2 - 2021-07-07
 -------------------
 
