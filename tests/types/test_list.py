@@ -9,7 +9,6 @@ from strawberry.type import StrawberryList
 
 
 def test_basic_list():
-
     annotation = StrawberryAnnotation(List[str])
     resolved = annotation.resolve()
 
@@ -61,23 +60,17 @@ def test_list_of_union():
     assert resolved == List[Union[Animal, Fungus]]
 
 
-# TODO: Move to new test_builtin_annotations.py
 @pytest.mark.skipif(
     sys.version_info < (3, 9),
     reason="built-in generic annotations where added in python 3.9",
 )
-def test_list_of_lists_generic_annotations():
-    @strawberry.type
-    class Query:
-        names: list[list[str]]
+def test_list_builtin():
+    annotation = StrawberryAnnotation(list[str])
+    resolved = annotation.resolve()
 
-    definition = Query._type_definition
+    assert isinstance(resolved, StrawberryList)
+    assert resolved.of_type is str
 
-    assert definition.name == "Query"
-
-    [field] = definition.fields
-
-    assert field.graphql_name == "names"
-    assert isinstance(field.type, StrawberryList)
-    assert isinstance(field.type.of_type, StrawberryList)
-    assert field.type.of_type.of_type is str
+    assert resolved == StrawberryList(of_type=str)
+    assert resolved == List[str]
+    assert resolved == list[str]
