@@ -1,12 +1,11 @@
 from dataclasses import dataclass
-from typing import Generic, List, TypeVar, Union
+from typing import Generic, TypeVar, Union
 
 import pytest
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import InvalidUnionType
-from strawberry.type import StrawberryList
 from strawberry.union import StrawberryUnion, union
 
 
