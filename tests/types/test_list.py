@@ -1,5 +1,5 @@
 import sys
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import pytest
 
@@ -40,6 +40,25 @@ def test_list_of_lists():
 
     assert resolved == StrawberryList(of_type=List[float])
     assert resolved == List[List[float]]
+
+
+def test_list_of_union():
+    @strawberry.type
+    class Animal:
+        feet: bool
+
+    @strawberry.type
+    class Fungus:
+        spore: bool
+
+    annotation = StrawberryAnnotation(List[Union[Animal, Fungus]])
+    resolved = annotation.resolve()
+
+    assert isinstance(resolved, StrawberryList)
+    assert resolved.of_type == Union[Animal, Fungus]
+
+    assert resolved == StrawberryList(of_type=Union[Animal, Fungus])
+    assert resolved == List[Union[Animal, Fungus]]
 
 
 # TODO: Move to new test_builtin_annotations.py

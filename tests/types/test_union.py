@@ -55,34 +55,6 @@ def test_strawberry_union():
     assert resolved != Union[User, Error]  # Name will be different
 
 
-# TODO: Move to test_list.py
-def test_unions_inside_list():
-    @strawberry.type
-    class User:
-        name: str
-
-    @strawberry.type
-    class Error:
-        name: str
-
-    @strawberry.type
-    class Query:
-        user: List[Union[User, Error]]
-
-    definition = Query._type_definition
-
-    assert definition.name == "Query"
-    assert len(definition.fields) == 1
-
-    assert definition.fields[0].graphql_name == "user"
-    assert isinstance(definition.fields[0].type, StrawberryList)
-
-    strawberry_union = definition.fields[0].type.of_type
-    assert isinstance(strawberry_union, StrawberryUnion)
-    assert strawberry_union.name == "UserError"
-    assert strawberry_union.types == (User, Error)
-
-
 def test_named_union():
     @strawberry.type
     class A:
