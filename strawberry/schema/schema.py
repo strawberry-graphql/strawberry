@@ -4,6 +4,7 @@ from typing import Any, Collection, Dict, List, Optional, Sequence, Type, Union
 
 from graphql import (
     ExecutionContext as GraphQLExecutionContext,
+    GraphQLScalarType,
     GraphQLSchema,
     get_introspection_query,
     parse,
@@ -18,6 +19,7 @@ from strawberry.custom_scalar import ScalarDefinition
 from strawberry.enum import EnumDefinition
 from strawberry.extensions import Extension
 from strawberry.schema.schema_converter import GraphQLCoreConverter
+from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
 from strawberry.types import ExecutionContext, ExecutionResult
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
@@ -46,7 +48,7 @@ class Schema:
         self.extensions = extensions
         self.execution_context_class = execution_context_class
         self.config = config or StrawberryConfig()
-        self.schema_converter = GraphQLCoreConverter(self.config)
+        self.schema_converter = GraphQLCoreConverter(self)
         self.directives = directives
 
         query_type = self.schema_converter.from_object(query._type_definition)
@@ -216,3 +218,12 @@ class Schema:
             raise ValueError(f"Invalid Schema. Errors {introspection.errors!r}")
 
         return introspection.data
+
+    def get_scalar_definition(
+        self, scalar: Type
+    ) -> Union[ScalarDefinition, GraphQLScalarType]:
+        if scalar in DEFAULT_SCALAR_REGISTRY:
+            return DEFAULT_SCALAR_REGISTRY[scalar]
+
+        scalar_definition = scalar._scalar_definition
+        return scalar_definition
