@@ -34,7 +34,7 @@ def depth_limit_validator(
         Either a string or regexp to match the name, or a function that returns
         a boolean.
     - callback - Called each time validation runs. Receives an Object which is a
-    map of the depths for each operation.
+        map of the depths for each operation.
     """
 
     class DepthLimitValidator(ValidationRule):
@@ -48,13 +48,13 @@ def depth_limit_validator(
 
             for name in queries:
                 query_depths[name] = determine_depth(
-                    queries[name],
-                    fragments,
-                    0,
-                    max_depth,
-                    validation_context,
-                    name,
-                    ignore,
+                    node=queries[name],
+                    fragments=fragments,
+                    depth_so_far=0,
+                    max_depth=max_depth,
+                    context=validation_context,
+                    operation_name=name,
+                    ignore=ignore,
                 )
 
             if callable(callback):
@@ -84,9 +84,8 @@ def get_queries_and_mutations(
 
     for definition in definitions:
         if isinstance(definition, OperationDefinitionNode):
-            operations[
-                definition.name.value if definition.name else "anonymous"
-            ] = definition
+            operation = definition.name.value if definition.name else "anonymous"
+            operations[operation] = definition
 
     return operations
 
@@ -111,7 +110,7 @@ def determine_depth(
 
     if isinstance(node, FieldNode):
         # by default, ignore the introspection fields which begin with double underscores
-        should_ignore = is_instrospection_key(node.name.value) or see_if_ignored(
+        should_ignore = is_instrospection_key(node.name.value) or is_ignored(
             node, ignore
         )
 
@@ -121,42 +120,40 @@ def determine_depth(
         return 1 + max(
             map(
                 lambda selection: determine_depth(
-                    selection,
-                    fragments,
-                    depth_so_far + 1,
-                    max_depth,
-                    context,
-                    operation_name,
-                    ignore,
+                    node=selection,
+                    fragments=fragments,
+                    depth_so_far=depth_so_far + 1,
+                    max_depth=max_depth,
+                    context=context,
+                    operation_name=operation_name,
+                    ignore=ignore,
                 ),
                 node.selection_set.selections,
             )
         )
     elif isinstance(node, FragmentSpreadNode):
         return determine_depth(
-            fragments[node.name.value],
-            fragments,
-            depth_so_far,
-            max_depth,
-            context,
-            operation_name,
-            ignore,
+            node=fragments[node.name.value],
+            fragments=fragments,
+            depth_so_far=depth_so_far,
+            max_depth=max_depth,
+            context=context,
+            operation_name=operation_name,
+            ignore=ignore,
         )
-    elif (
-        isinstance(node, InlineFragmentNode)
-        or isinstance(node, FragmentDefinitionNode)
-        or isinstance(node, OperationDefinitionNode)
+    elif isinstance(
+        node, (InlineFragmentNode, FragmentDefinitionNode, OperationDefinitionNode)
     ):
         return max(
             map(
                 lambda selection: determine_depth(
-                    selection,
-                    fragments,
-                    depth_so_far,
-                    max_depth,
-                    context,
-                    operation_name,
-                    ignore,
+                    node=selection,
+                    fragments=fragments,
+                    depth_so_far=depth_so_far,
+                    max_depth=max_depth,
+                    context=context,
+                    operation_name=operation_name,
+                    ignore=ignore,
                 ),
                 node.selection_set.selections,
             )
@@ -165,7 +162,7 @@ def determine_depth(
         raise Exception(f"Depth crawler cannot handle: {node.kind}")  # pragma: no cover
 
 
-def see_if_ignored(node: FieldNode, ignore: Optional[List[IgnoreType]] = None) -> bool:
+def is_ignored(node: FieldNode, ignore: Optional[List[IgnoreType]] = None) -> bool:
     if ignore is None:
         return False
 
@@ -181,6 +178,6 @@ def see_if_ignored(node: FieldNode, ignore: Optional[List[IgnoreType]] = None) -
             if rule(field_name):
                 return True
         else:
-            raise Exception(f"Invalid ignore option: {rule}")
+            raise ValueError(f"Invalid ignore option: {rule}")
 
     return False

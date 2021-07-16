@@ -60,7 +60,7 @@ Executes a GraphQL operation against a schema (async)
 | context_value    | `Optional[Any]`                        | `None`  | The value of the context that will be passed down to resolvers                                         |
 | root_value       | `Optional[Any]`                        | `None`  | The value for the root type that will passed down to root resolvers                                    |
 | operation_name   | `Optional[str]`                        | `None`  | The name of the operation you want to execute, useful when sending a document with multiple operations |
-| validate_queries | `bool`                                 | `True`  | This flag allows to disable query validation                                                           |
+| validate_queries | `bool`                                 | `True`  | This flag enables/disables query validation                                                            |
 | validation_rules | `Optional[List[Type[ValidationRule]]]` | `None`  | List of GraphQL core validation rules                                                                  |
 
 ---

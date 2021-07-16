@@ -248,7 +248,7 @@ def test_should_raise_invalid_ignore():
       user { address { city } }
     }
     """
-    with pytest.raises(Exception, match="Invalid ignore option:"):
+    with pytest.raises(ValueError, match="Invalid ignore option:"):
         run_query(
             query,
             10,
