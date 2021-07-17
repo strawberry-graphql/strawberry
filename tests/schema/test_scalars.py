@@ -1,3 +1,4 @@
+import datetime
 from textwrap import dedent
 from uuid import UUID
 
@@ -94,3 +95,32 @@ def test_uuid_input():
     assert result.data == {
         "uuidInput": "e350746c-33b6-4469-86b0-5f16e1e12232",
     }
+
+
+def test_override_built_in_scalars():
+    Jan1st = strawberry.scalar(
+        datetime.date,
+        serialize=lambda value: (
+            datetime.date(2020, 1, 1).isoformat()  # Always return a fixed date
+        ),
+        parse_value=lambda value: datetime.date(2020, 1, 1),
+    )
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def today(self) -> datetime.date:
+            return datetime.date.today()
+
+    class CustomSchema(strawberry.Schema):
+        def get_scalar(self, scalar):
+            if scalar == datetime.date:
+                return Jan1st
+            return super().get_scalar(scalar)
+
+    schema = CustomSchema(Query)
+
+    result = schema.execute_sync("{ today }")
+
+    assert not result.errors
+    assert result.data["today"] == "2020-01-01"

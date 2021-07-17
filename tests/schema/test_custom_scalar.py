@@ -1,11 +1,7 @@
 import base64
-import uuid
 from typing import NewType
 
-import pytest
-
 import strawberry
-from strawberry.exceptions import ScalarAlreadyRegisteredError
 
 
 Base64Encoded = strawberry.scalar(

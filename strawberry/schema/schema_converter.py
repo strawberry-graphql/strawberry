@@ -32,7 +32,7 @@ from graphql import (
 )
 
 from strawberry.arguments import UNSET, StrawberryArgument, convert_arguments, is_unset
-from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
+from strawberry.custom_scalar import ScalarWrapper
 from strawberry.directive import DirectiveDefinition
 from strawberry.enum import EnumDefinition, EnumValue
 from strawberry.exceptions import MissingTypesForGenericError
@@ -41,7 +41,7 @@ from strawberry.lazy_type import LazyType
 from strawberry.scalars import is_scalar
 from strawberry.schema.config import StrawberryConfig
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
-from strawberry.schema.types.scalar import _make_scalar_type
+from strawberry.schema.types.scalar import _make_scalar_definition, _make_scalar_type
 from strawberry.types.info import Info
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
@@ -414,13 +414,7 @@ class GraphQLCoreConverter:
                 # Reverse create the ScalarDefinition from the GraphQLScalarType
                 # This is a bit pointless but it's mainly to avoid the type
                 # signature of ConcreteType having to rely on GraphQLScalarType
-                scalar_definition = ScalarDefinition(
-                    name=scalar_definition.name,
-                    description=scalar_definition.name,
-                    serialize=scalar_definition.serialize,
-                    parse_literal=scalar_definition.parse_literal,
-                    parse_value=scalar_definition.parse_value,
-                )
+                scalar_definition = _make_scalar_definition(scalar_definition)
             else:
                 implementation = _make_scalar_type(scalar_definition)
 

@@ -28,6 +28,16 @@ def _make_scalar_type(definition: ScalarDefinition) -> GraphQLScalarType:
     )
 
 
+def _make_scalar_definition(scalar_type: GraphQLScalarType) -> ScalarDefinition:
+    return ScalarDefinition(
+        name=scalar_type.name,
+        description=scalar_type.name,
+        serialize=scalar_type.serialize,
+        parse_literal=scalar_type.parse_literal,
+        parse_value=scalar_type.parse_value,
+    )
+
+
 DEFAULT_SCALAR_REGISTRY: Dict[Type, GraphQLScalarType] = {
     str: GraphQLString,
     int: GraphQLInt,
