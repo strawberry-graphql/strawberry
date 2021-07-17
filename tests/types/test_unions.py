@@ -26,7 +26,7 @@ def test_python_union():
 
     assert resolved == StrawberryUnion(
         name="UserError",
-        type_annotations=(StrawberryAnnotation(User), StrawberryAnnotation(Error))
+        type_annotations=(StrawberryAnnotation(User), StrawberryAnnotation(Error)),
     )
     assert resolved == Union[User, Error]
 
@@ -49,7 +49,7 @@ def test_strawberry_union():
 
     assert resolved == StrawberryUnion(
         name="CoolUnion",
-        type_annotations=(StrawberryAnnotation(User), StrawberryAnnotation(Error))
+        type_annotations=(StrawberryAnnotation(User), StrawberryAnnotation(Error)),
     )
     assert resolved != Union[User, Error]  # Name will be different
 

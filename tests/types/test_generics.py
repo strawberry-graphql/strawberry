@@ -1,9 +1,9 @@
-from typing import TypeVar, List, Optional, Union, Generic
+from typing import Generic, List, Optional, TypeVar, Union
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.field import StrawberryField
-from strawberry.type import StrawberryTypeVar, StrawberryList, StrawberryOptional
+from strawberry.type import StrawberryList, StrawberryOptional, StrawberryTypeVar
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 
