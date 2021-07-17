@@ -16,7 +16,7 @@ def test_enum():
     annotation = StrawberryAnnotation(Egnum)
     field = StrawberryField(type_annotation=annotation)
 
-    # TODO: Remove reference to .enum_definition with StrawberryEnum
+    # TODO: Remove reference to ._enum_definition with StrawberryEnum
     assert field.type is Egnum._enum_definition
 
 
@@ -31,6 +31,8 @@ def test_forward_reference():
         ref: int
 
     assert field.type is RefForward
+
+    del RefForward
 
 
 def test_list():
