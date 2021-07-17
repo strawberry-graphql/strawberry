@@ -15,7 +15,7 @@ from graphql.subscription import subscribe
 from graphql.type.directives import specified_directives
 from graphql.validation import ValidationRule
 
-from strawberry.custom_scalar import ScalarDefinition
+from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.enum import EnumDefinition
 from strawberry.extensions import Extension
 from strawberry.schema.schema_converter import GraphQLCoreConverter
@@ -219,9 +219,9 @@ class Schema:
 
         return introspection.data
 
-    def get_scalar_definition(
+    def get_scalar(
         self, scalar: Type
-    ) -> Union[ScalarDefinition, GraphQLScalarType]:
+    ) -> Union[ScalarWrapper, ScalarDefinition, GraphQLScalarType]:
         if scalar in DEFAULT_SCALAR_REGISTRY:
             return DEFAULT_SCALAR_REGISTRY[scalar]
 

@@ -32,7 +32,7 @@ from graphql import (
 )
 
 from strawberry.arguments import UNSET, StrawberryArgument, convert_arguments, is_unset
-from strawberry.custom_scalar import ScalarDefinition
+from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.directive import DirectiveDefinition
 from strawberry.enum import EnumDefinition, EnumValue
 from strawberry.exceptions import MissingTypesForGenericError
@@ -72,6 +72,7 @@ class GraphQLCoreConverter:
         self.type_map: Dict[str, ConcreteType] = {}
         self.config = schema.config
         self.schema = schema
+        self.scalar_registry: Dict[object, GraphQLScalarType] = {}
 
     def from_argument(self, argument: StrawberryArgument) -> GraphQLArgument:
         argument_type: GraphQLType
@@ -399,7 +400,13 @@ class GraphQLCoreConverter:
             return _resolver
 
     def from_scalar(self, scalar: Type) -> GraphQLScalarType:
-        scalar_definition = self.schema.get_scalar_definition(scalar)
+        if scalar in self.scalar_registry:
+            return self.scalar_registry[scalar]
+
+        scalar_definition = self.schema.get_scalar(scalar)
+
+        if isinstance(scalar_definition, ScalarWrapper):
+            scalar_definition = scalar_definition._scalar_definition
 
         if scalar_definition.name not in self.type_map:
             if isinstance(scalar_definition, GraphQLScalarType):
@@ -424,6 +431,8 @@ class GraphQLCoreConverter:
             implementation = cast(
                 GraphQLScalarType, self.type_map[scalar_definition.name].implementation
             )
+
+        self.scalar_registry[scalar] = implementation
 
         return implementation
 
