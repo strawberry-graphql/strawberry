@@ -1,6 +1,5 @@
 import asyncio
 import json
-import os
 from typing import Any, Dict, Optional
 
 from django.core.exceptions import SuspiciousOperation
@@ -14,7 +13,6 @@ from django.utils.decorators import classonlymethod, method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
 
-import strawberry
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import (
@@ -24,6 +22,7 @@ from strawberry.http import (
     process_result,
 )
 from strawberry.types import ExecutionResult
+from strawberry.utils.get_graphiql_html import get_graphiql_html
 
 from ..schema import BaseSchema
 from .context import StrawberryDjangoContext
@@ -78,21 +77,17 @@ class BaseView(View):
         if not self.graphiql:
             raise Http404()
 
-        try:
-            template = Template(render_to_string("graphql/graphiql.html"))
-        except TemplateDoesNotExist:
-            template = Template(
-                open(
-                    os.path.join(
-                        os.path.dirname(os.path.abspath(strawberry.__file__)),
-                        "static/graphiql.html",
-                    ),
-                    "r",
-                ).read()
-            )
-
         context = context or {}
-        context.update({"SUBSCRIPTION_ENABLED": "false"})
+        context.update(
+            {"SUBSCRIPTION_ENABLED": "false", "SUBSCRIPTION_GRAPHQL_WS": "false"}
+        )
+
+        try:
+            template = Template(
+                render_to_string("graphql/graphiql.html", context=context)
+            )
+        except TemplateDoesNotExist:
+            template = Template(get_graphiql_html(raw=True))
 
         response = TemplateResponse(request=request, template=None, context=context)
         response.content = template.render(RequestContext(request, context))
