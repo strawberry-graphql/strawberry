@@ -35,11 +35,6 @@ def test_forward_reference():
     del RefForward
 
 
-def test_lazy_type():
-    # TODO: Implement this test
-    ...
-
-
 def test_list():
     annotation = StrawberryAnnotation(List[int])
     field = StrawberryField(type_annotation=annotation)

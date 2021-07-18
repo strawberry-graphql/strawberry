@@ -39,11 +39,6 @@ def test_forward_reference():
     del SearchInput
 
 
-def test_lazy_type():
-    # TODO: Implement this test
-    ...
-
-
 def test_list():
     @strawberry.field
     def get_longest_word(words: List[str]) -> str:

@@ -36,11 +36,6 @@ def test_forward_references():
     del FutureUmpire
 
 
-def test_lazy_type():
-    # TODO: Implement this test
-    ...
-
-
 def test_list():
     def get_collection_types() -> List[str]:
         return ["list", "tuple", "dict", "set"]
