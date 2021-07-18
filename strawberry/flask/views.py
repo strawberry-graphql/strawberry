@@ -6,9 +6,9 @@ from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import GraphQLHTTPResponse, parse_request_data, process_result
 from strawberry.types import ExecutionResult
+from strawberry.utils.get_graphiql_html import get_graphiql_html
 
 from ..schema import BaseSchema
-from .graphiql import render_graphiql_page
 
 
 class GraphQLView(View):
@@ -39,7 +39,7 @@ class GraphQLView(View):
             if not self.graphiql:
                 abort(404)
 
-            template = render_graphiql_page()
+            template = get_graphiql_html(subscription_enabled=False)
             return self.render_template(template=template)
 
         if request.content_type.startswith("multipart/form-data"):
