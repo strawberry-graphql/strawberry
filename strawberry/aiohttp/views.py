@@ -38,6 +38,7 @@ from strawberry.subscriptions.types import (
 )
 from strawberry.types import ExecutionResult
 from strawberry.utils.debug import pretty_print_graphql_operation
+from strawberry.utils.get_graphiql_html import get_graphiql_html
 
 
 class BaseGraphQLView(ABC):
@@ -307,8 +308,10 @@ class HTTPHandler(BaseGraphQLView, ABC):
             raise web.HTTPBadRequest(reason="File(s) missing in form data")
 
     def render_graphiql(self) -> web.StreamResponse:
-        html_string = self.graphiql_html_file_path.read_text()
-        html_string = html_string.replace("{{ SUBSCRIPTION_ENABLED }}", "true")
+        html_string = get_graphiql_html(
+            subscription_enabled=True,
+            graphiql_html_file_path=self.graphiql_html_file_path,
+        )
         return web.Response(text=html_string, content_type="text/html")
 
     def should_render_graphiql(self, request: web.Request) -> bool:
