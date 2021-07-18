@@ -14,10 +14,10 @@ from strawberry.http import (
     process_result,
 )
 from strawberry.types import ExecutionResult
+from strawberry.utils.get_graphiql_html import get_graphiql_html
 
 from ..schema import BaseSchema
 from .context import StrawberrySanicContext
-from .graphiql import render_graphiql_page
 from .utils import convert_request_to_files_dict
 
 
@@ -67,7 +67,7 @@ class GraphQLView(HTTPMethodView):
         )
 
         if show_graphiql:
-            template = render_graphiql_page()
+            template = get_graphiql_html(subscription_enabled=False)
             return self.render_template(template=template)
 
         request_data = self.get_request_data(request)
