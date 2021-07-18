@@ -10,7 +10,7 @@ class LazierType:
 
 def test_lazy_type():
     # This type is in the same file but should adequately test the logic
-    LaziestType = LazyType["LazierType", "tests.types.test_lazy_type"]
+    LaziestType = LazyType["LazierType", "tests.types.resolving.test_lazy_type"]
 
     annotation = StrawberryAnnotation(LaziestType)
     resolved = annotation.resolve()
