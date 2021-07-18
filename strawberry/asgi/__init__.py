@@ -13,7 +13,6 @@ from starlette.websockets import WebSocket, WebSocketDisconnect, WebSocketState
 from graphql import ExecutionResult as GraphQLExecutionResult, GraphQLError
 from graphql.error import format_error as format_graphql_error
 
-from strawberry.asgi.utils import get_graphiql_html
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import GraphQLHTTPResponse, parse_request_data, process_result
@@ -37,6 +36,7 @@ from strawberry.subscriptions.types import (
 )
 from strawberry.types import ExecutionResult
 from strawberry.utils.debug import pretty_print_graphql_operation
+from strawberry.utils.get_graphiql_html import get_graphiql_html
 
 
 class BaseGraphQLApp(ABC):
@@ -313,7 +313,7 @@ class HTTPHandler(BaseGraphQLApp, ABC):
         return JSONResponse(response_data, status_code=status.HTTP_200_OK)
 
     def get_graphiql_response(self) -> HTMLResponse:
-        html = get_graphiql_html()
+        html = get_graphiql_html(subscription_enabled=True)
 
         return HTMLResponse(html)
 
