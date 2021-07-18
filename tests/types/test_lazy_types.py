@@ -9,9 +9,9 @@ class LaziestType:
 
 
 def test_lazy_type():
-    # This type is in the same file but should adequately test the logic
+    # This type is in the same file but should adequately test the logic.
     # Module path is short and relative because of the way pytest runs the file
-    LazierType = LazyType["LaziestType", "test_lazy_type"]
+    LazierType = LazyType["LaziestType", "test_lazy_types"]
 
     annotation = StrawberryAnnotation(LazierType)
     resolved = annotation.resolve()
