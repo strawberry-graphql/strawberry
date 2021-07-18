@@ -4,12 +4,11 @@
 <head>
     <title>Strawberry GraphiQL</title>
     <style>
-        html,
         body {
             height: 100%;
             margin: 0;
-            overflow: hidden;
             width: 100%;
+            overflow: hidden;
         }
 
         #graphiql {
@@ -17,85 +16,95 @@
         }
     </style>
 
-    <link rel="stylesheet"
-        href="https://cdn.jsdelivr.net/npm/graphiql-with-extensions@0.14.3/graphiqlWithExtensions.css"
-        integrity="sha384-GBqwox+q8UtVEyBLBKloN5QDlBDsQnuoSUfMeJH1ZtDiCrrk103D7Bg/WjIvl4ya" crossorigin="anonymous" />
-    <script src="https://cdn.jsdelivr.net/npm/whatwg-fetch@2.0.3/fetch.min.js"
-        integrity="sha384-dcF7KoWRaRpjcNbVPUFgatYgAijf8DqW6NWuqLdfB5Sb4Cdbb8iHX7bHsl9YhpKa"
-        crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/react@16.8.6/umd/react.production.min.js"
-        integrity="sha384-qn+ML/QkkJxqn4LLs1zjaKxlTg2Bl/6yU/xBTJAgxkmNGc6kMZyeskAG0a7eJBR1"
-        crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/react-dom@16.8.6/umd/react-dom.production.min.js"
-        integrity="sha384-85IMG5rvmoDsmMeWK/qUU4kwnYXVpC+o9hoHMLi4bpNR+gMEiPLrvkZCgsr7WWgV"
-        crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/graphiql-with-extensions@0.14.3/graphiqlWithExtensions.min.js"
-        integrity="sha384-TqI6gT2PjmSrnEOTvGHLad1U4Vm5VoyzMmcKK0C/PLCWTnwPyXhCJY6NYhC/tp19"
-        crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/js-cookie@3.0.0-rc.2/dist/js.cookie.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/react@16.14.0/umd/react.production.min.js"
+        integrity="sha256-XO+TZ9K8q6JbdNIODhOdLPkA6RI+X94mEBruf0D2tc8=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/react-dom@16.14.0/umd/react-dom.production.min.js"
+        integrity="sha256-SUn04c/56KlgtEyai+cLxLsQIW600BI8phdT4JCKD4c=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/js-cookie@3.0.0-rc.4/dist/js.cookie.min.js"
+        integrity="sha256-srkrqNQxQ5PTxynPlMErZaHbKkH7Z2slLwYPjq/dLv0=" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/whatwg-fetch@3.6.2/dist/fetch.umd.min.js"
+        integrity="sha256-NwlBZzcvDr64kitietWUu0FLYbdgiE+YkGP5ANJJkD0=" crossorigin="anonymous"></script>
 
+    <!-- For new subscriptions protocol -->
+    <script src="https://cdn.jsdelivr.net/npm/graphql-ws@5.3.0/umd/graphql-ws.min.js"
+        integrity="sha256-+Wr1pJE2beD7JgRoUsruBAqugBG/pwqdsmpaFvFzkI8=" crossorigin="anonymous"></script>
+
+    <!-- For legacy subscriptions protocol -->
     <!-- breaking changes in subscriptions-transport-ws since 0.9.0 -->
-    <script src="https://cdn.jsdelivr.net/npm/subscriptions-transport-ws@0.8.3/browser/client.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/graphiql-subscriptions-fetcher@0.0.2/browser/client.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/subscriptions-transport-ws@0.8.3/browser/client.js"
+        integrity="sha256-BKMbTbqUpeRuFBA9qYWYe8TGy2uBpCoxnJPX1n8Vxo4=" crossorigin="anonymous"></script>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/graphiql@1.4.2/graphiql.min.css"
+        integrity="sha256-Md3vdR7PDzWyo/aGfsFVF4tvS5/eAUWuIsg9QHUusCY=" crossorigin="anonymous">
 </head>
 
 <body>
-    <div id="graphiql"></div>
+    <div id="graphiql">Loading...</div>netlify
+    <script src="https://cdn.jsdelivr.net/npm/graphiql@1.4.2/graphiql.min.js"
+        integrity="sha256-zSBU/wK/odOl/StUaKnjM+ziX9NAyJOyXI0fxvb3LVo=" crossorigin="anonymous"></script>
+
     <script>
         var fetchURL = window.location.href;
 
         function httpUrlToWebSockeUrl(url) {
             return url.replace(/(http)(s)?\:\/\//, "ws$2://");
         }
+        var subscriptionsEndpoint = httpUrlToWebSockeUrl(fetchURL);
 
-        function graphQLFetcher(graphQLParams) {
+        function fetcherSubscriptionParams() {
+            var subscriptionsEnabled = JSON.parse('{{ SUBSCRIPTION_ENABLED }}');
+            if (!subscriptionsEnabled) { return {} }
+
+            var useGraphqlWsClient;
+            try {
+                useGraphqlWsClient = JSON.parse('{{ SUBSCRIPTION_GRAPHQL_WS }}');
+            }
+            catch {
+                useGraphqlWsClient = false;
+            }
+
+            if (useGraphqlWsClient) {
+                return {
+                    wsClient: graphqlWs.createClient(
+                        {
+                            url: subscriptionsEndpoint,
+                        }
+                    )
+                }
+            } else {
+                return {
+                    legacyClient: new SubscriptionsTransportWs.SubscriptionClient(
+                        subscriptionsEndpoint,
+                        {
+                            reconnect: true
+                        }
+                    )
+                };
+            }
+        }
+
+        function fetcherHeaders() {
             var headers = {
                 Accept: 'application/json',
                 'Content-Type': 'application/json',
             };
-
             var csrfToken = Cookies.get('csrftoken');
             if (csrfToken) {
-              headers['x-csrftoken'] = csrfToken;
+                headers['x-csrftoken'] = csrfToken;
             }
 
-            return fetch(fetchURL, {
-                method: 'post',
-                headers: headers,
-                body: JSON.stringify(graphQLParams),
-            })
-                .then(function (response) {
-                    return response.text();
-                })
-                .then(function (responseBody) {
-                    try {
-                        return JSON.parse(responseBody);
-                    } catch (error) {
-                        return responseBody;
-                    }
-                });
+            return headers;
         }
 
-        var subscriptionsEndpoint = httpUrlToWebSockeUrl(fetchURL);
-        var subscriptionsEnabled = JSON.parse('{{ SUBSCRIPTION_ENABLED }}')
 
-        const subscriptionsClient =
-            subscriptionsEnabled ? new window.SubscriptionsTransportWs.SubscriptionClient(
-                subscriptionsEndpoint,
-                {
-                    reconnect: true
-                }
-            ) : null;
-
-        const graphQLFetcherWithSubscriptions =
-            window.GraphiQLSubscriptionsFetcher.graphQLFetcher(
-                subscriptionsClient,
-                graphQLFetcher
-            );
-
+        var fetcher = GraphiQL.createFetcher({
+            url: fetchURL,
+            headers: fetcherHeaders(),
+            ...fetcherSubscriptionParams(),
+        });
         ReactDOM.render(
-            React.createElement(GraphiQLWithExtensions.GraphiQLWithExtensions, {
-                fetcher: graphQLFetcherWithSubscriptions,
+            React.createElement(GraphiQL, {
+                fetcher: fetcher,
             }),
             document.getElementById('graphiql'),
         );
