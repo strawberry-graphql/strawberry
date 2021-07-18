@@ -41,6 +41,11 @@ def test_forward_reference():
     del FromTheFuture
 
 
+def test_lazy_type():
+    # TODO: Implement this test
+    ...
+
+
 def test_list():
     @strawberry.type
     class Santa:

@@ -17,6 +17,7 @@ def test_enum():
         return True
 
     argument = set_locale.arguments[0]
+    # TODO: Remove reference to ._enum_definition with StrawberryEnum
     assert argument.type is Locale._enum_definition
 
 
@@ -36,6 +37,11 @@ def test_forward_reference():
     assert argument.type is SearchInput
 
     del SearchInput
+
+
+def test_lazy_type():
+    # TODO: Implement this test
+    ...
 
 
 def test_list():
