@@ -6,7 +6,7 @@ from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import GraphQLHTTPResponse, parse_request_data, process_result
 from strawberry.types import ExecutionResult
-from strawberry.utils.get_graphiql_html import get_graphiql_html
+from strawberry.utils.graphiql import get_graphiql_html
 
 from ..schema import BaseSchema
 

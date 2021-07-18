@@ -22,7 +22,7 @@ from strawberry.http import (
     process_result,
 )
 from strawberry.types import ExecutionResult
-from strawberry.utils.get_graphiql_html import get_graphiql_html
+from strawberry.utils.graphiql import get_graphiql_html
 
 from ..schema import BaseSchema
 from .context import StrawberryDjangoContext

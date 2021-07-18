@@ -36,7 +36,7 @@ from strawberry.subscriptions.types import (
 )
 from strawberry.types import ExecutionResult
 from strawberry.utils.debug import pretty_print_graphql_operation
-from strawberry.utils.get_graphiql_html import get_graphiql_html
+from strawberry.utils.graphiql import get_graphiql_html
 
 
 class BaseGraphQLApp(ABC):
