@@ -92,9 +92,7 @@ class StrawberryArgument:
             if isinstance(arg, StrawberryArgumentAnnotation):
                 if argument_annotation_seen:
                     raise MultipleStrawberryArgumentsError(
-                        # TODO: This isn't the field name, it is the argument name
-                        field_name=self.python_name,
-                        argument_name=self.python_name,
+                        argument_name=self.python_name
                     )
 
                 argument_annotation_seen = True
