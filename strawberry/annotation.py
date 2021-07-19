@@ -112,7 +112,11 @@ class StrawberryAnnotation:
             filter(lambda x: x is not type(None), types)  # noqa: E721
         )
 
-        # Note that this returns _not_ a Union if len(non_optional_types) == 1
+        # Note that passing a single type to `Union` is equivalent to not using `Union`
+        # at all. This allows us to not di any checks for how many types have been
+        # passed as we can safely use `Union` for both optional types
+        # (e.g. `Optional[str]`) and optional unions (e.g.
+        # `Optional[Union[TypeA, TypeB]]`)
         child_type = Union[non_optional_types]  # type: ignore
 
         of_type = StrawberryAnnotation(
