@@ -34,7 +34,7 @@ opentelemetry-api = {version = "^0.17b0", optional = true}
 opentelemetry-sdk = {version = "^0.17b0", optional = true}
 python-dateutil = "^2.7.0"
 cached-property = "^1.5.2"
-pydantic = {version = "^1.6.1", optional = true}
+pydantic = {version = "<2", optional = true}
 python-multipart = "^0.0.5"
 sanic = {version = "^20.12.2", optional = true}
 aiohttp = {version = "^3.7.4.post0", optional = true}
@@ -65,7 +65,7 @@ opentelemetry-sdk = "^0.17b0"
 flake8-isort = "^4.0.0"
 flake8-black = "^0.2.1"
 django = {version = ">=2,<4", optional = false}
-pydantic = {version = "^1.6.1", optional = false}
+pydantic = {version = "<2", optional = false}
 email-validator = {version = "^1.1.3", optional = false}
 starlette = ">=0.13.6,<0.17.0"
 uvicorn = ">=0.11.6,<0.14.0"
