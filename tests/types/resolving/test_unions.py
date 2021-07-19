@@ -1,15 +1,15 @@
 from dataclasses import dataclass
-from typing import Generic, List, Optional, TypeVar, Union
+from typing import Generic, TypeVar, Union
 
 import pytest
 
 import strawberry
+from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import InvalidUnionType
-from strawberry.type import StrawberryList, StrawberryOptional
-from strawberry.union import StrawberryUnion
+from strawberry.union import StrawberryUnion, union
 
 
-def test_unions():
+def test_python_union():
     @strawberry.type
     class User:
         name: str
@@ -18,24 +18,20 @@ def test_unions():
     class Error:
         name: str
 
-    @strawberry.type
-    class Query:
-        user: Union[User, Error]
+    annotation = StrawberryAnnotation(Union[User, Error])
+    resolved = annotation.resolve()
 
-    definition = Query._type_definition
+    assert isinstance(resolved, StrawberryUnion)
+    assert resolved.types == (User, Error)
 
-    assert definition.name == "Query"
-    assert len(definition.fields) == 1
-
-    assert definition.fields[0].graphql_name == "user"
-
-    union_type_definition = definition.fields[0].type
-    assert isinstance(union_type_definition, StrawberryUnion)
-    assert union_type_definition.name == "UserError"
-    assert union_type_definition.types == (User, Error)
+    assert resolved == StrawberryUnion(
+        name="UserError",
+        type_annotations=(StrawberryAnnotation(User), StrawberryAnnotation(Error)),
+    )
+    assert resolved == Union[User, Error]
 
 
-def test_unions_inside_optional():
+def test_strawberry_union():
     @strawberry.type
     class User:
         name: str
@@ -44,49 +40,18 @@ def test_unions_inside_optional():
     class Error:
         name: str
 
-    @strawberry.type
-    class Query:
-        user: Optional[Union[User, Error]]
+    cool_union = union(name="CoolUnion", types=(User, Error))
+    annotation = StrawberryAnnotation(cool_union)
+    resolved = annotation.resolve()
 
-    definition = Query._type_definition
+    assert isinstance(resolved, StrawberryUnion)
+    assert resolved.types == (User, Error)
 
-    assert definition.name == "Query"
-    assert len(definition.fields) == 1
-
-    assert definition.fields[0].graphql_name == "user"
-    assert isinstance(definition.fields[0].type, StrawberryOptional)
-
-    strawberry_union = definition.fields[0].type.of_type
-    assert isinstance(strawberry_union, StrawberryUnion)
-    assert strawberry_union.name == "UserError"
-    assert strawberry_union.types == (User, Error)
-
-
-def test_unions_inside_list():
-    @strawberry.type
-    class User:
-        name: str
-
-    @strawberry.type
-    class Error:
-        name: str
-
-    @strawberry.type
-    class Query:
-        user: List[Union[User, Error]]
-
-    definition = Query._type_definition
-
-    assert definition.name == "Query"
-    assert len(definition.fields) == 1
-
-    assert definition.fields[0].graphql_name == "user"
-    assert isinstance(definition.fields[0].type, StrawberryList)
-
-    strawberry_union = definition.fields[0].type.of_type
-    assert isinstance(strawberry_union, StrawberryUnion)
-    assert strawberry_union.name == "UserError"
-    assert strawberry_union.types == (User, Error)
+    assert resolved == StrawberryUnion(
+        name="CoolUnion",
+        type_annotations=(StrawberryAnnotation(User), StrawberryAnnotation(Error)),
+    )
+    assert resolved != Union[User, Error]  # Name will be different
 
 
 def test_named_union():
@@ -145,7 +110,7 @@ def test_cannot_use_union_directly():
 
 def test_error_with_empty_type_list():
     with pytest.raises(TypeError, match="No types passed to `union`"):
-        strawberry.union("Result", [])
+        strawberry.union("Result", ())
 
 
 def test_error_with_scalar_types():
