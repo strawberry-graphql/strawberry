@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.69.1 - 2021-07-20
+-------------------
+
+This release removes a `TypeGuard` import to prevent errors
+when using older versions of `typing_extensions`.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1074](https://github.com/strawberry-graphql/strawberry/pull/1074/)
+
+
 0.69.0 - 2021-07-20
 -------------------
 
