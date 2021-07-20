@@ -1,16 +1,27 @@
+import builtins
 import dataclasses
-import typing
-from typing import Any, Awaitable, Callable, Dict, List, Optional, Type, Union
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    List,
+    Mapping,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+)
 
+from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import UNSET
+from strawberry.type import StrawberryType
 from strawberry.types.info import Info
-from strawberry.utils.typing import get_parameters, has_type_var, is_type_var
 
 from .arguments import StrawberryArgument
 from .permission import BasePermission
 from .types.fields.resolver import StrawberryResolver
-from .types.types import FederationFieldParams
-from .union import StrawberryUnion
+from .types.types import FederationFieldParams, TypeDefinition
 from .utils.str_converters import to_camel_case
 
 
@@ -22,14 +33,9 @@ class StrawberryField(dataclasses.Field):
         self,
         python_name: Optional[str] = None,
         graphql_name: Optional[str] = None,
-        type_: Optional[Union[Type, StrawberryUnion]] = None,
+        type_annotation: Optional[StrawberryAnnotation] = None,
         origin: Optional[Union[Type, Callable]] = None,
-        child: Optional["StrawberryField"] = None,
         is_subscription: bool = False,
-        is_optional: bool = False,
-        is_child_optional: bool = False,
-        is_list: bool = False,
-        is_union: bool = False,
         federation: FederationFieldParams = None,
         description: Optional[str] = None,
         base_resolver: Optional[StrawberryResolver] = None,
@@ -62,9 +68,8 @@ class StrawberryField(dataclasses.Field):
         self._graphql_name = graphql_name
         if python_name is not None:
             self.python_name = python_name
-        if type_ is not None:
-            # TODO: Clean up the typing around StrawberryField.type
-            self.type = typing.cast(type, type_)
+
+        self.type_annotation = type_annotation
 
         self.description: Optional[str] = description
         self.origin: Optional[Union[Type, Callable]] = origin
@@ -79,13 +84,7 @@ class StrawberryField(dataclasses.Field):
         # `.default_value` uses `UNSET`
         self.default_value = default
 
-        self.child = child
-        self.is_child_optional = is_child_optional
-
-        self.is_list = is_list
-        self.is_optional = is_optional
         self.is_subscription = is_subscription
-        self.is_union = is_union
 
         self.federation: FederationFieldParams = federation
         self.permission_classes: List[Type[BasePermission]] = list(permission_classes)
@@ -100,7 +99,6 @@ class StrawberryField(dataclasses.Field):
             resolver = StrawberryResolver(resolver)
 
         self.base_resolver = resolver
-        self.type = resolver.type
 
         return self
 
@@ -154,26 +152,88 @@ class StrawberryField(dataclasses.Field):
         #       removed.
         _ = resolver.arguments
 
+    @property  # type: ignore
+    def type(self) -> Union[StrawberryType, type]:  # type: ignore
+        # We are catching NameError because dataclasses tries to fetch the type
+        # of the field from the class before the class is fully defined.
+        # This triggers a NameError error when using forward references because
+        # our `type` property tries to find the field type from the global namespace
+        # but it is not yet defined.
+        try:
+            if self.base_resolver is not None:
+                # Handle unannotated functions (such as lambdas)
+                if self.base_resolver.type is not None:
+                    return self.base_resolver.type
+
+            assert self.type_annotation is not None
+
+            if not isinstance(self.type_annotation, StrawberryAnnotation):
+                # TODO: This is because of dataclasses
+                return self.type_annotation
+
+            return self.type_annotation.resolve()
+        except NameError:
+            return None  # type: ignore
+
+    @type.setter
+    def type(self, type_: Any) -> None:
+        self.type_annotation = type_
+
+    # TODO: add this to arguments (and/or move it to StrawberryType)
     @property
-    def type_params(self) -> Optional[List[Type]]:
-        if self.is_list:
-            assert self.child is not None
-            return self.child.type_params
+    def type_params(self) -> List[TypeVar]:
+        if hasattr(self.type, "_type_definition"):
+            parameters = getattr(self.type, "__parameters__", None)
 
-        if isinstance(self.type, StrawberryUnion):
-            types = self.type.types
-            type_vars = [t for t in types if is_type_var(t)]
+            return list(parameters) if parameters else []
 
-            if type_vars:
-                return type_vars
+        # TODO: Consider making leaf types always StrawberryTypes, maybe a
+        #       StrawberryBaseType or something
+        if isinstance(self.type, StrawberryType):
+            return self.type.type_params
+        return []
 
-        if is_type_var(self.type):
-            return [self.type]
+    def copy_with(
+        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, builtins.type]]
+    ) -> "StrawberryField":
+        new_type: Union[StrawberryType, type]
 
-        if has_type_var(self.type):
-            return get_parameters(self.type)
+        # TODO: Remove with creation of StrawberryObject. Will act same as other
+        #       StrawberryTypes
+        if hasattr(self.type, "_type_definition"):
+            type_definition: TypeDefinition = self.type._type_definition  # type: ignore
 
-        return None
+            if type_definition.is_generic:
+                type_ = type_definition
+                new_type = type_.copy_with(type_var_map)
+        else:
+            assert isinstance(self.type, StrawberryType)
+
+            new_type = self.type.copy_with(type_var_map)
+
+        new_resolver = (
+            self.base_resolver.copy_with(type_var_map)
+            if self.base_resolver is not None
+            else None
+        )
+
+        return StrawberryField(
+            python_name=self.python_name,
+            graphql_name=self.graphql_name,
+            # TODO: do we need to wrap this in `StrawberryAnnotation`?
+            # see comment related to dataclasses above
+            type_annotation=StrawberryAnnotation(new_type),
+            origin=self.origin,
+            is_subscription=self.is_subscription,
+            federation=self.federation,
+            description=self.description,
+            base_resolver=new_resolver,
+            permission_classes=self.permission_classes,
+            default=self.default_value,
+            # ignored because of https://github.com/python/mypy/issues/6910
+            default_factory=self.default_factory,  # type: ignore[misc]
+            deprecation_reason=self.deprecation_reason,
+        )
 
     def get_result(
         self, source: Any, info: Info, args: List[Any], kwargs: Dict[str, Any]
@@ -187,21 +247,6 @@ class StrawberryField(dataclasses.Field):
             return self.base_resolver(*args, **kwargs)
 
         return getattr(source, self.python_name)
-
-    def _get_return_type(self):
-        # using type ignore to make mypy happy,
-        # this codepath will change in future anyway, so this is ok
-        if self.is_list:
-            assert self.child
-
-            type_ = List[self.child._get_return_type()]  # type: ignore
-        else:
-            type_ = self.type
-
-        if self.is_optional:
-            type_ = Optional[type_]  # type: ignore
-
-        return type_
 
 
 def field(
@@ -234,7 +279,7 @@ def field(
     field_ = StrawberryField(
         python_name=None,
         graphql_name=name,
-        type_=None,
+        type_annotation=None,
         description=description,
         is_subscription=is_subscription,
         permission_classes=permission_classes or [],

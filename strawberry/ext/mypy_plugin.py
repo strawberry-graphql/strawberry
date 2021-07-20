@@ -60,6 +60,11 @@ class InvalidNodeTypeException(Exception):
 
 
 def lazy_type_analyze_callback(ctx: AnalyzeTypeContext) -> Type:
+    if len(ctx.type.args) == 0:
+        # TODO: maybe this should throw an error
+
+        return AnyType(TypeOfAny.special_form)
+
     type_name = ctx.type.args[0]
     type_ = ctx.api.analyze_type(type_name)
 
@@ -591,7 +596,7 @@ class StrawberryPlugin(Plugin):
     ) -> Optional[Callable[[DynamicClassDefContext], None]]:
         # TODO: investigate why we need this instead of `strawberry.union.union` on CI
         # we have the same issue in the other hooks
-        if "strawberry.union" in fullname:
+        if fullname == "strawberry.union.union":
             return union_hook
 
         if "strawberry.enum" in fullname:
@@ -625,13 +630,14 @@ class StrawberryPlugin(Plugin):
     def get_class_decorator_hook(
         self, fullname: str
     ) -> Optional[Callable[[ClassDefContext], None]]:
+
         if any(
             strawberry_decorator in fullname
             for strawberry_decorator in {
-                "strawberry.type",
+                "strawberry.object_type.type",
                 "strawberry.federation.type",
-                "strawberry.input",
-                "strawberry.interface",
+                "strawberry.object_type.input",
+                "strawberry.object_type.interface",
             }
         ):
             return custom_dataclass_class_maker_callback
@@ -639,8 +645,8 @@ class StrawberryPlugin(Plugin):
         if any(
             strawberry_decorator in fullname
             for strawberry_decorator in {
-                "strawberry.experimental.pydantic.type",
-                "strawberry.experimental.pydantic.input",
+                "strawberry.experimental.pydantic.object_type.type",
+                "strawberry.experimental.pydantic.object_type.input",
                 "strawberry.experimental.pydantic.error_type",
             }
         ):

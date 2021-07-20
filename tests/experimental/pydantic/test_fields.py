@@ -3,6 +3,7 @@ import pytest
 import pydantic
 
 import strawberry
+from strawberry.type import StrawberryOptional
 from strawberry.types.types import TypeDefinition
 
 
@@ -36,13 +37,12 @@ def test_types(pydantic_type, field_type):
         pass
 
     definition: TypeDefinition = Type._type_definition
-
     assert definition.name == "Type"
-    assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "field"
-    assert definition.fields[0].type is field_type
-    assert definition.fields[0].is_optional is False
+    [field] = definition.fields
+
+    assert field.graphql_name == "field"
+    assert field.type is field_type
 
 
 @pytest.mark.parametrize(
@@ -58,13 +58,13 @@ def test_types_optional(pydantic_type, field_type):
         pass
 
     definition: TypeDefinition = Type._type_definition
-
     assert definition.name == "Type"
-    assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "field"
-    assert definition.fields[0].type is field_type
-    assert definition.fields[0].is_optional is True
+    [field] = definition.fields
+
+    assert field.graphql_name == "field"
+    assert isinstance(field.type, StrawberryOptional)
+    assert field.type.of_type is field_type
 
 
 def test_conint():
@@ -76,13 +76,12 @@ def test_conint():
         pass
 
     definition: TypeDefinition = Type._type_definition
-
     assert definition.name == "Type"
-    assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "field"
-    assert definition.fields[0].type is int
-    assert definition.fields[0].is_optional is False
+    [field] = definition.fields
+
+    assert field.graphql_name == "field"
+    assert field.type is int
 
 
 def test_constr():
@@ -94,13 +93,12 @@ def test_constr():
         pass
 
     definition: TypeDefinition = Type._type_definition
-
     assert definition.name == "Type"
-    assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "field"
-    assert definition.fields[0].type is str
-    assert definition.fields[0].is_optional is False
+    [field] = definition.fields
+
+    assert field.graphql_name == "field"
+    assert field.type is str
 
 
 @pytest.mark.parametrize(
