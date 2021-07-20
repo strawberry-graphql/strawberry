@@ -1,13 +1,6 @@
 import typing
-from collections.abc import AsyncGenerator, Callable
+from collections.abc import AsyncGenerator
 from typing import Type, TypeVar
-
-
-try:
-    from typing import ForwardRef  # type: ignore
-except ImportError:  # pragma: no cover
-    # ForwardRef is private in python 3.6 and 3.7
-    from typing import _ForwardRef as ForwardRef  # type: ignore
 
 
 def is_list(annotation: Type) -> bool:
@@ -58,14 +51,6 @@ def get_list_annotation(annotation: Type) -> Type:
     return annotation.__args__[0]
 
 
-def is_async_generator(annotation: Type) -> bool:
-    return getattr(annotation, "__origin__", None) == AsyncGenerator
-
-
-def get_async_generator_annotation(annotation: Type) -> Type:
-    return annotation.__args__[0]
-
-
 def is_concrete_generic(annotation: type) -> bool:
     ignored_generics = (list, tuple, typing.Union, typing.ClassVar, AsyncGenerator)
     return (
@@ -97,17 +82,6 @@ def is_type_var(annotation: Type) -> bool:
     return isinstance(annotation, TypeVar)  # type:ignore
 
 
-def has_type_var(annotation: Type) -> bool:
-    """
-    Returns True if the annotation or any of
-    its argument have a TypeVar as argument.
-    """
-    return any(
-        is_type_var(arg) or has_type_var(arg)
-        for arg in getattr(annotation, "__args__", [])
-    )
-
-
 def get_parameters(annotation: Type):
     if (
         isinstance(annotation, typing._GenericAlias)  # type:ignore
@@ -118,35 +92,3 @@ def get_parameters(annotation: Type):
         return annotation.__parameters__
     else:
         return ()  # pragma: no cover
-
-
-def get_origin(annotation: Type):
-    if isinstance(annotation, typing._GenericAlias):  # type:ignore
-        return (
-            annotation.__origin__
-            if annotation.__origin__ is not typing.ClassVar
-            else None
-        )
-
-    if annotation is typing.Generic:  # pragma: no cover
-        return typing.Generic
-
-    return None  # pragma: no cover
-
-
-def get_args(annotation: Type):
-    if isinstance(annotation, typing._GenericAlias):  # type:ignore
-        res = annotation.__args__
-
-        if (
-            get_origin(annotation) is Callable and res[0] is not Ellipsis
-        ):  # pragma: no cover
-            res = (list(res[:-1]), res[-1])
-
-        return res
-
-    return ()
-
-
-def is_forward_ref(annotation: Type) -> bool:
-    return isinstance(annotation, ForwardRef)

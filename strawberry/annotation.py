@@ -6,12 +6,18 @@ from typing import (  # type: ignore
     Any,
     AsyncGenerator as AsyncGenerator_typing,
     Dict,
-    ForwardRef,
     Optional,
     TypeVar,
     Union,
     _eval_type,
 )
+
+
+try:
+    from typing import ForwardRef  # type: ignore
+except ImportError:  # pragma: no cover
+    # ForwardRef is private in python 3.6 and 3.7
+    from typing import _ForwardRef as ForwardRef  # type: ignore
 
 from strawberry.custom_scalar import SCALAR_REGISTRY, ScalarDefinition
 from strawberry.enum import EnumDefinition
