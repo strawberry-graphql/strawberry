@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from enum import Enum
 from inspect import isasyncgen, iscoroutine
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Tuple, Type, Union
