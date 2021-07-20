@@ -1,8 +1,16 @@
+from __future__ import annotations
+
 from enum import Enum
 from inspect import isasyncgen, iscoroutine
-from typing import Any, Callable, Dict, List, Tuple, Type, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Tuple, Type, Union
 
-from typing_extensions import TypeGuard
+
+# TypeGuard is only available in typing_extensions => 3.10, we don't want
+# to force updates to the typing_extensions package so we only use it when
+# TYPE_CHECKING is enabled.
+
+if TYPE_CHECKING:
+    from typing_extensions import TypeGuard
 
 from graphql import (
     GraphQLArgument,
