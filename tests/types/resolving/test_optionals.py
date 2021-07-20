@@ -1,9 +1,65 @@
-from typing import Optional
+from typing import List, Optional, Union
 
 import strawberry
+from strawberry.annotation import StrawberryAnnotation
 from strawberry.type import StrawberryOptional
 
 
+def test_basic_optional():
+    annotation = StrawberryAnnotation(Optional[str])
+    resolved = annotation.resolve()
+
+    assert isinstance(resolved, StrawberryOptional)
+    assert resolved.of_type is str
+
+    assert resolved == StrawberryOptional(of_type=str)
+    assert resolved == Optional[str]
+
+
+def test_optional_list():
+    annotation = StrawberryAnnotation(Optional[List[bool]])
+    resolved = annotation.resolve()
+
+    assert isinstance(resolved, StrawberryOptional)
+    assert resolved.of_type == List[bool]
+
+    assert resolved == StrawberryOptional(of_type=List[bool])
+    assert resolved == Optional[List[bool]]
+
+
+def test_optional_optional():
+    """Optional[Optional[...]] is squashed by Python to just Optional[...]"""
+    annotation = StrawberryAnnotation(Optional[Optional[bool]])
+    resolved = annotation.resolve()
+
+    assert isinstance(resolved, StrawberryOptional)
+    assert resolved.of_type is bool
+
+    assert resolved == StrawberryOptional(of_type=bool)
+    assert resolved == Optional[Optional[bool]]
+    assert resolved == Optional[bool]
+
+
+def test_optional_union():
+    @strawberry.type
+    class CoolType:
+        foo: float
+
+    @strawberry.type
+    class UncoolType:
+        bar: bool
+
+    annotation = StrawberryAnnotation(Optional[Union[CoolType, UncoolType]])
+    resolved = annotation.resolve()
+
+    assert isinstance(resolved, StrawberryOptional)
+    assert resolved.of_type == Union[CoolType, UncoolType]
+
+    assert resolved == StrawberryOptional(of_type=Union[CoolType, UncoolType])
+    assert resolved == Optional[Union[CoolType, UncoolType]]
+
+
+# TODO: move to a field test file
 def test_type_add_type_definition_with_fields():
     @strawberry.type
     class Query:
@@ -24,6 +80,7 @@ def test_type_add_type_definition_with_fields():
     assert field2.type.of_type is int
 
 
+# TODO: move to a field test file
 def test_passing_custom_names_to_fields():
     @strawberry.type
     class Query:
@@ -44,6 +101,7 @@ def test_passing_custom_names_to_fields():
     assert field2.type.of_type is int
 
 
+# TODO: move to a field test file
 def test_passing_nothing_to_fields():
     @strawberry.type
     class Query:
@@ -64,6 +122,7 @@ def test_passing_nothing_to_fields():
     assert field2.type.of_type is int
 
 
+# TODO: move to a resolver test file
 def test_resolver_fields():
     @strawberry.type
     class Query:
@@ -81,6 +140,7 @@ def test_resolver_fields():
     assert field.type.of_type is str
 
 
+# TODO: move to a resolver test file
 def test_resolver_fields_arguments():
     @strawberry.type
     class Query:

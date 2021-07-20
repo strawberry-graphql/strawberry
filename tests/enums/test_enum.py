@@ -7,16 +7,6 @@ from strawberry.enum import EnumDefinition
 from strawberry.exceptions import NotAnEnum
 
 
-def test_raises_error_when_using_enum_with_a_not_enum_class():
-    with pytest.raises(NotAnEnum) as e:
-
-        @strawberry.enum
-        class NormalClass:
-            hello = "world"
-
-    assert ("strawberry.enum can only be used with subclasses of Enum",) == e.value.args
-
-
 def test_basic_enum():
     @strawberry.enum
     class IceCreamFlavour(Enum):
@@ -68,3 +58,12 @@ def test_can_use_enum_as_arguments():
     field = Query._type_definition.fields[0]
 
     assert isinstance(field.arguments[0].type, EnumDefinition)
+
+
+def test_raises_error_when_using_enum_with_a_not_enum_class():
+    expected_error = "strawberry.enum can only be used with subclasses of Enum"
+    with pytest.raises(NotAnEnum, match=expected_error):
+
+        @strawberry.enum
+        class NormalClass:
+            hello = "world"
