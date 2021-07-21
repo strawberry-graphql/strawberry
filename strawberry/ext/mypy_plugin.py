@@ -627,7 +627,7 @@ class StrawberryPlugin(Plugin):
         if self._is_strawberry_decorator(fullname):
             return custom_dataclass_class_maker_callback
 
-        if self._is_strawbery_pydantic_decorator(fullname):
+        if self._is_strawberry_pydantic_decorator(fullname):
             return strawberry_pydantic_class_callback
 
         return None
@@ -653,7 +653,9 @@ class StrawberryPlugin(Plugin):
         )
 
     def _is_strawberry_enum(self, fullname: str) -> bool:
-        return fullname == "strawberry.enum" or fullname.endswith("strawberry.enum")
+        return fullname == "strawberry.enum.enum" or fullname.endswith(
+            "strawberry.enum"
+        )
 
     def _is_strawberry_lazy_type(self, fullname: str) -> bool:
         return fullname == "strawberry.lazy_type.LazyType"
@@ -689,7 +691,7 @@ class StrawberryPlugin(Plugin):
             }
         )
 
-    def _is_strawbery_pydantic_decorator(self, fullname: str) -> bool:
+    def _is_strawberry_pydantic_decorator(self, fullname: str) -> bool:
         if any(
             strawberry_decorator in fullname
             for strawberry_decorator in {
