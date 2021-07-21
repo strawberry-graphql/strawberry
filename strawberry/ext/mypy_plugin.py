@@ -627,10 +627,7 @@ class StrawberryPlugin(Plugin):
 
         return None
 
-    def get_class_decorator_hook(
-        self, fullname: str
-    ) -> Optional[Callable[[ClassDefContext], None]]:
-
+    def _is_strawberry_decorator(self, fullname: str) -> bool:
         if any(
             strawberry_decorator in fullname
             for strawberry_decorator in {
@@ -640,8 +637,23 @@ class StrawberryPlugin(Plugin):
                 "strawberry.object_type.interface",
             }
         ):
-            return custom_dataclass_class_maker_callback
+            return True
 
+        # in some cases `fullpath` is not what we would expect, this usually
+        # happens when `follow_imports` are disabled in mypy when you get a path
+        # that looks likes `some_module.types.strawberry.type`
+
+        return any(
+            fullname.endswith(decorator)
+            for decorator in {
+                "strawberry.type",
+                "strawberry.federation.type",
+                "strawberry.input",
+                "strawberry.interface",
+            }
+        )
+
+    def _is_strawbery_pydantic_decorator(self, fullname: str) -> bool:
         if any(
             strawberry_decorator in fullname
             for strawberry_decorator in {
@@ -650,6 +662,28 @@ class StrawberryPlugin(Plugin):
                 "strawberry.experimental.pydantic.error_type",
             }
         ):
+            return True
+
+        # in some cases `fullpath` is not what we would expect, this usually
+        # happens when `follow_imports` are disabled in mypy when you get a path
+        # that looks likes `some_module.types.strawberry.type`
+
+        return any(
+            fullname.endswith(decorator)
+            for decorator in {
+                "strawberry.experimental.pydantic.type",
+                "strawberry.experimental.pydantic.input",
+                "strawberry.experimental.pydantic.error_type",
+            }
+        )
+
+    def get_class_decorator_hook(
+        self, fullname: str
+    ) -> Optional[Callable[[ClassDefContext], None]]:
+        if self._is_strawberry_decorator(fullname):
+            return custom_dataclass_class_maker_callback
+
+        if self._is_strawbery_pydantic_decorator(fullname):
             return strawberry_pydantic_class_callback
 
         return None
