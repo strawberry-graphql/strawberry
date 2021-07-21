@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.69.2 - 2021-07-21
+-------------------
+
+This releases improves the MyPy plugin to be more forgiving of
+settings like `follow_imports = skip` which would break the
+type checking.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1077](https://github.com/strawberry-graphql/strawberry/pull/1077/)
+
+
 0.69.1 - 2021-07-20
 -------------------
 
