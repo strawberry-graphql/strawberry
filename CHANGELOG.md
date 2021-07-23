@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.69.4 - 2021-07-23
+-------------------
+
+Fix for regression when defining inherited types with explicit fields.
+
+Contributed by [A. Coady](https://github.com/coady) [PR #1076](https://github.com/strawberry-graphql/strawberry/pull/1076/)
+
+
 0.69.3 - 2021-07-21
 -------------------
 
