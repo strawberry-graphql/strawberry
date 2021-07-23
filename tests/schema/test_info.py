@@ -80,8 +80,8 @@ def test_return_type_from_resolver(return_type, return_value):
     @strawberry.type
     class Query:
         @strawberry.field
-        def field(info) -> return_type:
-            assert info.return_type == return_type  # type: ignore
+        def field(self, info: Info) -> return_type:
+            assert info.return_type == return_type
             return return_value
 
     schema = strawberry.Schema(query=Query)

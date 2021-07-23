@@ -1,17 +1,18 @@
 from __future__ import annotations
 
-import enum
 import inspect
-from typing import Any, Dict, List, Mapping, Optional, Type, Union, cast
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Union, cast
 
 from typing_extensions import Annotated, get_args, get_origin
 
+from strawberry.annotation import StrawberryAnnotation
+from strawberry.enum import EnumDefinition
+from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
 from strawberry.utils.mixins import GraphQLNameMixin
 
 from .exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError
 from .scalars import is_scalar
-from .types.types import undefined
-from .union import StrawberryUnion
+from .types.types import TypeDefinition
 
 
 class _Unset:
@@ -41,155 +42,101 @@ class StrawberryArgumentAnnotation:
 class StrawberryArgument(GraphQLNameMixin):
     def __init__(
         self,
-        # TODO: this optional will probably go away when we have StrawberryList
-        python_name: Optional[str],
+        python_name: str,
         graphql_name: Optional[str],
-        type_: Optional[Union[Type, StrawberryUnion]],
-        origin: Optional[Type] = None,
-        child: Optional["StrawberryArgument"] = None,
+        type_annotation: StrawberryAnnotation,
         is_subscription: bool = False,
-        is_optional: bool = False,
-        is_child_optional: bool = False,
-        is_list: bool = False,
-        is_union: bool = False,
         description: Optional[str] = None,
         default: object = UNSET,
     ) -> None:
         self.python_name = python_name  # type: ignore
         self.graphql_name = graphql_name
-        self.type = type_
-        self.origin = origin
-        self.child = child
         self.is_subscription = is_subscription
-        self.is_optional = is_optional
-        self.is_child_optional = is_child_optional
-        self.is_list = is_list
-        self.is_union = is_union
         self.description = description
-        self.default = default
+        self._type: Optional[StrawberryType] = None
+        self.type_annotation = type_annotation
+
+        # TODO: Consider moving this logic to a function
+        self.default = UNSET if default is inspect.Parameter.empty else default
+
+        if self._annotation_is_annotated(type_annotation):
+            self._parse_annotated()
+
+    @property
+    def type(self) -> Union[StrawberryType, type]:
+        return self.type_annotation.resolve()
 
     @classmethod
-    def from_annotated(
-        cls,
-        python_name: str,
-        annotation: Type[Annotated],  # type: ignore
-        default: object,
-        origin: Any,
-    ) -> StrawberryArgument:
-        annotated_args = get_args(annotation)
+    def _annotation_is_annotated(cls, annotation: StrawberryAnnotation) -> bool:
+        return get_origin(annotation.annotation) is Annotated
+
+    def _parse_annotated(self):
+        annotated_args = get_args(self.type_annotation.annotation)
 
         # The first argument to Annotated is always the underlying type
-        type_ = annotated_args[0]
-        argument_metadata = None
-        argument_description = None
-        argument_graphql_name = None
+        self.type_annotation = StrawberryAnnotation(annotated_args[0])
 
         # Find any instances of StrawberryArgumentAnnotation
         # in the other Annotated args, raising an exception if there
         # are multiple StrawberryArgumentAnnotations
+        argument_annotation_seen = False
         for arg in annotated_args[1:]:
             if isinstance(arg, StrawberryArgumentAnnotation):
-                if argument_metadata is not None:
+                if argument_annotation_seen:
                     raise MultipleStrawberryArgumentsError(
-                        field_name=origin.__name__, argument_name=python_name
+                        argument_name=self.python_name
                     )
 
-                argument_metadata = arg
+                argument_annotation_seen = True
 
-        if argument_metadata is not None:
-            argument_description = argument_metadata.description
-            argument_graphql_name = argument_metadata.name
-
-        return cls(
-            type_=type_,
-            description=argument_description,
-            python_name=python_name,
-            graphql_name=argument_graphql_name,
-            default=default,
-        )
-
-
-def get_arguments_from_annotations(
-    annotations: Any, parameters: Mapping[str, inspect.Parameter], origin: Any
-) -> List[StrawberryArgument]:
-
-    # Deferred to prevent import cycles
-    from .types.type_resolver import _resolve_type
-
-    arguments = []
-
-    for name, annotation in annotations.items():
-        default = parameters[name].default
-        default = (
-            UNSET
-            if default is inspect.Parameter.empty or is_unset(default)
-            else default
-        )
-
-        if get_origin(annotation) is Annotated:
-            argument = StrawberryArgument.from_annotated(
-                python_name=name,
-                annotation=annotation,
-                default=default,
-                origin=origin,
-            )
-        else:
-            argument = StrawberryArgument(
-                type_=annotation,
-                python_name=name,
-                graphql_name=None,
-                default=default,
-                description=None,
-                origin=origin,
-            )
-
-        _resolve_type(argument)
-
-        arguments.append(argument)
-
-    return arguments
+                self.description = arg.description
+                self.graphql_name = arg.name
 
 
 def convert_argument(
-    value: Any, argument: StrawberryArgument, auto_camel_case: bool = True
-) -> Any:
+    value: object, type_: Union[StrawberryType, type], auto_camel_case: bool = True
+) -> object:
     if value is None:
         return None
 
     if is_unset(value):
         return value
 
-    if argument.is_list:
-        child_definition = cast(StrawberryArgument, argument.child)
+    if isinstance(type_, StrawberryOptional):
+        return convert_argument(value, type_.of_type)
 
-        return [convert_argument(x, child_definition) for x in value]
+    if isinstance(type_, StrawberryList):
+        value_list = cast(Iterable, value)
+        return [convert_argument(x, type_.of_type) for x in value_list]
 
-    argument_type = cast(Type, argument.type)
-
-    if is_scalar(argument_type):
+    if is_scalar(type_):
         return value
 
     # Convert Enum fields to instances using the value. This is safe
     # because graphql-core has already validated the input.
-    if isinstance(argument_type, enum.EnumMeta):
-        return argument_type(value)  # type: ignore
+    if isinstance(type_, EnumDefinition):
+        return type_.wrapped_cls(value)
 
-    if hasattr(argument_type, "_type_definition"):
-        assert argument_type._type_definition.is_input
+    if hasattr(type_, "_type_definition"):  # TODO: Replace with StrawberryInputObject
+        type_definition: TypeDefinition = type_._type_definition  # type: ignore
+
+        assert type_definition.is_input
 
         kwargs = {}
 
-        for field in argument_type._type_definition.fields:
+        for field in type_definition.fields:
+            value = cast(Mapping, value)
             graphql_name = field.get_graphql_name(auto_camel_case)
 
             if graphql_name in value:
                 kwargs[field.python_name] = convert_argument(
-                    value[graphql_name], field, auto_camel_case
+                    value[graphql_name], field.type, auto_camel_case
                 )
 
-        return argument_type(**kwargs)
+        type_ = cast(type, type_)
+        return type_(**kwargs)
 
-    raise UnsupportedTypeError(argument_type)
+    raise UnsupportedTypeError(type_)
 
 
 def convert_arguments(
@@ -216,7 +163,9 @@ def convert_arguments(
             current_value = value[name]
 
             kwargs[argument.python_name] = convert_argument(
-                current_value, argument, auto_camel_case
+                value=current_value,
+                type_=argument.type,
+                auto_camel_case=auto_camel_case,
             )
 
     return kwargs
@@ -230,12 +179,9 @@ def argument(
 
 # TODO: check exports
 __all__ = [
+    "StrawberryArgument",
     "StrawberryArgumentAnnotation",
     "UNSET",
     "argument",
-    "convert_argument",
-    "convert_arguments",
-    "get_arguments_from_annotations",
     "is_unset",
-    "undefined",
 ]

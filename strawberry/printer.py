@@ -97,8 +97,8 @@ def _print_object(type_, schema: BaseSchema) -> str:
         print_description(type_)
         + print_extends(type_, schema)
         + f"type {type_.name}"
-        + print_federation_key_directive(type_, schema)
         + print_implemented_interfaces(type_)
+        + print_federation_key_directive(type_, schema)
         + print_fields(type_, schema)
     )
 

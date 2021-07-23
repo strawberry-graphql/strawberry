@@ -69,6 +69,51 @@ def test_entities_type_when_no_type_has_keys():
     del Review
 
 
+def test_entities_extending_interface():
+    @strawberry.interface
+    class SomeInterface:
+        id: strawberry.ID
+
+    @strawberry.federation.type(keys=["upc"], extend=True)
+    class Product(SomeInterface):
+        upc: str = strawberry.federation.field(external=True)
+
+    @strawberry.federation.type
+    class Query:
+        @strawberry.field
+        def top_products(self, first: int) -> List[Product]:
+            return []
+
+    schema = strawberry.federation.Schema(query=Query)
+
+    expected = """
+        extend type Product implements SomeInterface @key(fields: "upc") {
+          id: ID!
+          upc: String! @external
+        }
+
+        type Query {
+          _service: _Service!
+          _entities(representations: [_Any!]!): [_Entity]!
+          topProducts(first: Int!): [Product!]!
+        }
+
+        interface SomeInterface {
+          id: ID!
+        }
+
+        scalar _Any
+
+        union _Entity = Product
+
+        type _Service {
+          sdl: String!
+        }
+    """
+
+    assert schema.as_str() == textwrap.dedent(expected).strip()
+
+
 def test_fields_requires_are_printed_correctly():
     global Review
 

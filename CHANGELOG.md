@@ -1,6 +1,100 @@
 CHANGELOG
 =========
 
+0.69.4 - 2021-07-23
+-------------------
+
+Fix for regression when defining inherited types with explicit fields.
+
+Contributed by [A. Coady](https://github.com/coady) [PR #1076](https://github.com/strawberry-graphql/strawberry/pull/1076/)
+
+
+0.69.3 - 2021-07-21
+-------------------
+
+This releases improves the MyPy plugin to be more forgiving of
+settings like follow_imports = skip which would break the type checking.
+
+This is a continuation of the previous release and fixes for type checking issues.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1078](https://github.com/strawberry-graphql/strawberry/pull/1078/)
+
+
+0.69.2 - 2021-07-21
+-------------------
+
+This releases improves the MyPy plugin to be more forgiving of
+settings like `follow_imports = skip` which would break the
+type checking.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1077](https://github.com/strawberry-graphql/strawberry/pull/1077/)
+
+
+0.69.1 - 2021-07-20
+-------------------
+
+This release removes a `TypeGuard` import to prevent errors
+when using older versions of `typing_extensions`.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1074](https://github.com/strawberry-graphql/strawberry/pull/1074/)
+
+
+0.69.0 - 2021-07-20
+-------------------
+
+Refactor of the library's typing internals. Previously, typing was handled
+individually by fields, arguments, and objects with a hodgepodge of functions to tie it
+together. This change creates a unified typing system that the object, fields, and
+arguments each hook into.
+
+Mainly replaces the attributes that were stored on StrawberryArgument and
+StrawberryField with a hierarchy of StrawberryTypes.
+
+Introduces `StrawberryAnnotation`, as well as `StrawberryType` and some subclasses,
+including `StrawberryList`, `StrawberryOptional`, and `StrawberryTypeVar`.
+
+This is a breaking change if you were calling the constructor for `StrawberryField`,
+`StrawberryArgument`, etc. and using arguments such as `is_optional` or `child`.
+
+`@strawberry.field` no longer takes an argument called `type_`. It instead takes a
+`StrawberryAnnotation` called `type_annotation`.
+
+Contributed by [ignormies](https://github.com/BryceBeagle) [PR #906](https://github.com/strawberry-graphql/strawberry/pull/906/)
+
+
+0.68.4 - 2021-07-19
+-------------------
+
+This release fixes an issue with the federation printer that
+prevented using federation directives with types that were
+implementing interfaces.
+
+This is now allowed:
+
+```python
+@strawberry.interface
+class SomeInterface:
+    id: strawberry.ID
+
+@strawberry.federation.type(keys=["upc"], extend=True)
+class Product(SomeInterface):
+    upc: str = strawberry.federation.field(external=True)
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1068](https://github.com/strawberry-graphql/strawberry/pull/1068/)
+
+
+0.68.3 - 2021-07-15
+-------------------
+
+This release changes our `graphiql.html` template to use a specific version of `js-cookie`
+to prevent a JavaScript error, see:
+
+https://github.com/js-cookie/js-cookie/issues/698
+
+Contributed by [星](https://github.com/star2000) [PR #1062](https://github.com/strawberry-graphql/strawberry/pull/1062/)
+
+
 0.68.2 - 2021-07-07
 -------------------
 

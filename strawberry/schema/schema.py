@@ -47,12 +47,14 @@ class Schema:
         self.config = config or StrawberryConfig()
         self.schema_converter = GraphQLCoreConverter(self.config)
 
-        query_type = self.schema_converter.from_object_type(query)
+        query_type = self.schema_converter.from_object(query._type_definition)
         mutation_type = (
-            self.schema_converter.from_object_type(mutation) if mutation else None
+            self.schema_converter.from_object(mutation._type_definition)
+            if mutation
+            else None
         )
         subscription_type = (
-            self.schema_converter.from_object_type(subscription)
+            self.schema_converter.from_object(subscription._type_definition)
             if subscription
             else None
         )
@@ -64,12 +66,17 @@ class Schema:
             for directive in directives
         ]
 
+        graphql_types = []
+        for type_ in types:
+            graphql_type = self.schema_converter.from_object(type_._type_definition)
+            graphql_types.append(graphql_type)
+
         self._schema = GraphQLSchema(
             query=query_type,
             mutation=mutation_type,
             subscription=subscription_type if subscription else None,
             directives=specified_directives + directives,
-            types=list(map(self.schema_converter.from_object_type, types)),
+            types=graphql_types,
         )
 
         # Validate schema early because we want developers to know about

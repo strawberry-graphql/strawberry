@@ -1,4 +1,5 @@
 # type: ignore
+
 from __future__ import annotations
 
 import textwrap
@@ -6,6 +7,7 @@ from typing import List
 
 import strawberry
 from strawberry.printer import print_schema
+from strawberry.type import StrawberryList
 
 
 def test_forward_reference():
@@ -51,14 +53,12 @@ def test_with_resolver():
         users: List[User] = strawberry.field(resolver=get_users)
 
     definition = Query._type_definition
-
     assert definition.name == "Query"
-    assert len(definition.fields) == 1
-    assert definition.fields[0].python_name == "users"
-    assert definition.fields[0].graphql_name is None
-    assert definition.fields[0].is_list
-    assert definition.fields[0].type is None
-    assert definition.fields[0].is_optional is False
-    assert definition.fields[0].child.is_optional is False
+
+    [field] = definition.fields
+
+    assert field.python_name == "users"
+    assert isinstance(field.type, StrawberryList)
+    assert field.type.of_type is User
 
     del User

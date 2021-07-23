@@ -60,6 +60,11 @@ class InvalidNodeTypeException(Exception):
 
 
 def lazy_type_analyze_callback(ctx: AnalyzeTypeContext) -> Type:
+    if len(ctx.type.args) == 0:
+        # TODO: maybe this should throw an error
+
+        return AnyType(TypeOfAny.special_form)
+
     type_name = ctx.type.args[0]
     type_ = ctx.api.analyze_type(type_name)
 
@@ -591,10 +596,10 @@ class StrawberryPlugin(Plugin):
     ) -> Optional[Callable[[DynamicClassDefContext], None]]:
         # TODO: investigate why we need this instead of `strawberry.union.union` on CI
         # we have the same issue in the other hooks
-        if "strawberry.union" in fullname:
+        if self._is_strawberry_union(fullname):
             return union_hook
 
-        if "strawberry.enum" in fullname:
+        if self._is_strawberry_enum(fullname):
             return enum_hook
 
         return None
@@ -602,22 +607,16 @@ class StrawberryPlugin(Plugin):
     def get_function_hook(
         self, fullname: str
     ) -> Optional[Callable[[FunctionContext], Type]]:
-        if fullname == "strawberry.field.field":
-            return strawberry_field_hook
-
-        if fullname == "strawberry.federation.field":
+        if self._is_strawberry_field(fullname):
             return strawberry_field_hook
 
         return None
 
     def get_type_analyze_hook(self, fullname: str):
-        if fullname == "strawberry.lazy_type.LazyType":
+        if self._is_strawberry_lazy_type(fullname):
             return lazy_type_analyze_callback
 
-        if any(
-            name in fullname
-            for name in {"strawberry.private.Private", "strawberry.Private"}
-        ):
+        if self._is_strawberry_private(fullname):
             return private_type_analyze_callback
 
         return None
@@ -625,28 +624,96 @@ class StrawberryPlugin(Plugin):
     def get_class_decorator_hook(
         self, fullname: str
     ) -> Optional[Callable[[ClassDefContext], None]]:
+        if self._is_strawberry_decorator(fullname):
+            return custom_dataclass_class_maker_callback
+
+        if self._is_strawberry_pydantic_decorator(fullname):
+            return strawberry_pydantic_class_callback
+
+        return None
+
+    def _is_strawberry_union(self, fullname: str) -> bool:
+        return fullname == "strawberry.union.union" or fullname.endswith(
+            "strawberry.union"
+        )
+
+    def _is_strawberry_field(self, fullname: str) -> bool:
+        if fullname in {
+            "strawberry.field.field",
+            "strawberry.federation.field",
+        }:
+            return True
+
+        return any(
+            fullname.endswith(decorator)
+            for decorator in {
+                "strawberry.field",
+                "strawberry.federation.field",
+            }
+        )
+
+    def _is_strawberry_enum(self, fullname: str) -> bool:
+        return fullname == "strawberry.enum.enum" or fullname.endswith(
+            "strawberry.enum"
+        )
+
+    def _is_strawberry_lazy_type(self, fullname: str) -> bool:
+        return fullname == "strawberry.lazy_type.LazyType"
+
+    def _is_strawberry_private(self, fullname: str) -> bool:
+        return fullname == "strawberry.private.Private" or fullname.endswith(
+            "strawberry.Private"
+        )
+
+    def _is_strawberry_decorator(self, fullname: str) -> bool:
         if any(
             strawberry_decorator in fullname
             for strawberry_decorator in {
+                "strawberry.object_type.type",
+                "strawberry.federation.type",
+                "strawberry.object_type.input",
+                "strawberry.object_type.interface",
+            }
+        ):
+            return True
+
+        # in some cases `fullpath` is not what we would expect, this usually
+        # happens when `follow_imports` are disabled in mypy when you get a path
+        # that looks likes `some_module.types.strawberry.type`
+
+        return any(
+            fullname.endswith(decorator)
+            for decorator in {
                 "strawberry.type",
                 "strawberry.federation.type",
                 "strawberry.input",
                 "strawberry.interface",
             }
-        ):
-            return custom_dataclass_class_maker_callback
+        )
 
+    def _is_strawberry_pydantic_decorator(self, fullname: str) -> bool:
         if any(
             strawberry_decorator in fullname
             for strawberry_decorator in {
+                "strawberry.experimental.pydantic.object_type.type",
+                "strawberry.experimental.pydantic.object_type.input",
+                "strawberry.experimental.pydantic.error_type",
+            }
+        ):
+            return True
+
+        # in some cases `fullpath` is not what we would expect, this usually
+        # happens when `follow_imports` are disabled in mypy when you get a path
+        # that looks likes `some_module.types.strawberry.type`
+
+        return any(
+            fullname.endswith(decorator)
+            for decorator in {
                 "strawberry.experimental.pydantic.type",
                 "strawberry.experimental.pydantic.input",
                 "strawberry.experimental.pydantic.error_type",
             }
-        ):
-            return strawberry_pydantic_class_callback
-
-        return None
+        )
 
 
 def plugin(version: str):
