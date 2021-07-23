@@ -41,7 +41,7 @@ def test_types(pydantic_type, field_type):
 
     [field] = definition.fields
 
-    assert field.graphql_name == "field"
+    assert field.python_name == "field"
     assert field.type is field_type
 
 
@@ -62,7 +62,7 @@ def test_types_optional(pydantic_type, field_type):
 
     [field] = definition.fields
 
-    assert field.graphql_name == "field"
+    assert field.python_name == "field"
     assert isinstance(field.type, StrawberryOptional)
     assert field.type.of_type is field_type
 
@@ -80,7 +80,7 @@ def test_conint():
 
     [field] = definition.fields
 
-    assert field.graphql_name == "field"
+    assert field.python_name == "field"
     assert field.type is int
 
 
@@ -97,7 +97,7 @@ def test_constr():
 
     [field] = definition.fields
 
-    assert field.graphql_name == "field"
+    assert field.python_name == "field"
     assert field.type is str
 
 

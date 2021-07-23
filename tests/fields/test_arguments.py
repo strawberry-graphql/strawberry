@@ -24,10 +24,12 @@ def test_basic_arguments():
 
     [argument1, argument2] = definition.fields[0].arguments
 
-    assert argument1.graphql_name == "argument"
+    assert argument1.python_name == "argument"
+    assert argument1.graphql_name is None
     assert argument1.type is str
 
-    assert argument2.graphql_name == "optionalArgument"
+    assert argument2.python_name == "optional_argument"
+    assert argument2.graphql_name is None
     assert isinstance(argument2.type, StrawberryOptional)
     assert argument2.type.of_type is str
 
@@ -49,10 +51,12 @@ def test_input_type_as_argument():
 
     [argument1, argument2] = definition.fields[0].arguments
 
-    assert argument1.graphql_name == "input"
+    assert argument1.python_name == "input"
+    assert argument1.graphql_name is None
     assert argument1.type is Input
 
-    assert argument2.graphql_name == "optionalInput"
+    assert argument2.python_name == "optional_input"
+    assert argument2.graphql_name is None
     assert isinstance(argument2.type, StrawberryOptional)
     assert argument2.type.of_type is Input
 
@@ -74,7 +78,8 @@ def test_arguments_lists():
 
     [argument] = definition.fields[0].arguments
 
-    assert argument.graphql_name == "inputs"
+    assert argument.python_name == "inputs"
+    assert argument.graphql_name is None
     assert isinstance(argument.type, StrawberryList)
     assert argument.type.of_type is Input
 
@@ -96,7 +101,8 @@ def test_arguments_lists_of_optionals():
 
     [argument] = definition.fields[0].arguments
 
-    assert argument.graphql_name == "inputs"
+    assert argument.python_name == "inputs"
+    assert argument.graphql_name is None
     assert isinstance(argument.type, StrawberryList)
     assert isinstance(argument.type.of_type, StrawberryOptional)
     assert argument.type.of_type.of_type is Input
@@ -118,13 +124,13 @@ def test_basic_arguments_on_resolver():
 
     [argument1, argument2, argument3] = definition.fields[0].arguments
 
-    assert argument1.graphql_name == "id"
+    assert argument1.python_name == "id"
     assert argument1.type is strawberry.ID
 
-    assert argument2.graphql_name == "argument"
+    assert argument2.python_name == "argument"
     assert argument2.type is str
 
-    assert argument3.graphql_name == "optionalArgument"
+    assert argument3.python_name == "optional_argument"
     assert isinstance(argument3.type, StrawberryOptional)
     assert argument3.type.of_type is str
 
@@ -151,13 +157,13 @@ def test_arguments_when_extending_a_type():
 
     [argument1, argument2, argument3] = definition.fields[0].arguments
 
-    assert argument1.graphql_name == "id"
+    assert argument1.python_name == "id"
     assert argument1.type is strawberry.ID
 
-    assert argument2.graphql_name == "argument"
+    assert argument2.python_name == "argument"
     assert argument2.type is str
 
-    assert argument3.graphql_name == "optionalArgument"
+    assert argument3.python_name == "optional_argument"
     assert isinstance(argument3.type, StrawberryOptional)
     assert argument3.type.of_type is str
 
@@ -189,13 +195,14 @@ def test_arguments_when_extending_multiple_types():
 
     [argument1] = definition.fields[0].arguments
 
-    assert argument1.graphql_name == "id"
+    assert argument1.python_name == "id"
+    assert argument1.graphql_name is None
     assert argument1.type is strawberry.ID
 
     [argument2] = definition.fields[1].arguments
 
-    assert definition.fields[1].graphql_name == "name2"
-    assert argument2.graphql_name == "id"
+    assert argument2.python_name == "id"
+    assert argument2.graphql_name is None
     assert argument2.type is strawberry.ID
 
 
@@ -212,7 +219,8 @@ def test_argument_with_default_value_none():
 
     [argument] = definition.fields[0].arguments
 
-    assert argument.graphql_name == "argument"
+    assert argument.python_name == "argument"
+    assert argument.graphql_name is None
     assert argument.default is None
     assert argument.description is None
     assert isinstance(argument.type, StrawberryOptional)
@@ -232,7 +240,8 @@ def test_argument_with_default_value_undefined():
 
     [argument] = definition.fields[0].arguments
 
-    assert argument.graphql_name == "argument"
+    assert argument.python_name == "argument"
+    assert argument.graphql_name is None
     assert argument.default is UNSET
     assert argument.description is None
     assert isinstance(argument.type, StrawberryOptional)
@@ -257,7 +266,8 @@ def test_annotated_argument_on_resolver():
 
     [argument] = definition.fields[0].arguments
 
-    assert argument.graphql_name == "argument"
+    assert argument.python_name == "argument"
+    assert argument.graphql_name is None
     assert argument.description == "This is a description"
     assert argument.type is str
 
@@ -280,7 +290,8 @@ def test_annotated_optional_arguments_on_resolver():
 
     [argument] = definition.fields[0].arguments
 
-    assert argument.graphql_name == "argument"
+    assert argument.python_name == "argument"
+    assert argument.graphql_name is None
     assert argument.description == "This is a description"
     assert isinstance(argument.type, StrawberryOptional)
     assert argument.type.of_type is str
@@ -304,7 +315,8 @@ def test_annotated_argument_with_default_value():
 
     [argument] = definition.fields[0].arguments
 
-    assert argument.graphql_name == "argument"
+    assert argument.python_name == "argument"
+    assert argument.graphql_name is None
     assert argument.description == "This is a description"
     assert argument.type is str
     assert argument.default == "Patrick"
@@ -330,8 +342,8 @@ def test_annotated_argument_with_rename():
 
     argument = definition.fields[0].arguments[0]
 
-    assert argument.graphql_name == "argument"
     assert argument.python_name == "arg"
+    assert argument.graphql_name == "argument"
     assert argument.type is str
     assert argument.description is None
     assert argument.default == "Patrick"
@@ -373,7 +385,8 @@ def test_annotated_with_other_information():
 
     [argument] = definition.fields[0].arguments
 
-    assert argument.graphql_name == "argument"
+    assert argument.python_name == "argument"
+    assert argument.graphql_name is None
     assert argument.description is None
     assert argument.type is str
 
@@ -402,6 +415,8 @@ def test_annotated_python_39():
 
     [argument] = definition.fields[0].arguments
 
-    assert argument.graphql_name == "argument"
+    assert argument.python_name == "argument"
+    assert argument.graphql_name is None
+    assert argument.type == str
     assert argument.description == "This is a description"
     assert argument.type is str

@@ -44,7 +44,13 @@ def print_fields(type_, schema: BaseSchema) -> str:
     fields = []
 
     for i, (name, field) in enumerate(type_.fields.items()):
-        strawberry_field = strawberry_type.get_field(name) if strawberry_type else None
+        python_name = field.extensions and field.extensions.get("python_name")
+
+        strawberry_field = (
+            strawberry_type.get_field(python_name)
+            if strawberry_type and python_name
+            else None
+        )
 
         fields.append(
             print_description(field, "  ", not i)

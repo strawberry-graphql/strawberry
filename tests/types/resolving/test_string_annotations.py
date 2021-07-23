@@ -127,10 +127,10 @@ def test_basic_types():
 
     [field1, field2] = definition.fields
 
-    assert field1.graphql_name == "name"
+    assert field1.python_name == "name"
     assert field1.type is str
 
-    assert field2.graphql_name == "age"
+    assert field2.python_name == "age"
     assert field2.type is int
 
 
@@ -146,11 +146,11 @@ def test_optional():
 
     [field1, field2] = definition.fields
 
-    assert field1.graphql_name == "name"
+    assert field1.python_name == "name"
     assert isinstance(field1.type, StrawberryOptional)
     assert field1.type.of_type is str
 
-    assert field2.graphql_name == "age"
+    assert field2.python_name == "age"
     assert isinstance(field2.type, StrawberryOptional)
     assert field2.type.of_type is int
 
@@ -166,7 +166,7 @@ def test_basic_list():
 
     [field] = definition.fields
 
-    assert field.graphql_name == "names"
+    assert field.python_name == "names"
     assert isinstance(field.type, StrawberryList)
     assert field.type.of_type is str
 
@@ -188,7 +188,7 @@ def test_list_of_types():
 
     [field] = definition.fields
 
-    assert field.graphql_name == "users"
+    assert field.python_name == "users"
     assert isinstance(field.type, StrawberryList)
     assert field.type.of_type is User
 

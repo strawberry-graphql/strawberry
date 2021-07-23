@@ -14,21 +14,22 @@ from typing import (
 )
 
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.arguments import UNSET
+from strawberry.arguments import UNSET, StrawberryArgument
 from strawberry.type import StrawberryType
 from strawberry.types.info import Info
+from strawberry.utils.mixins import GraphQLNameMixin
 
-from .arguments import StrawberryArgument
 from .permission import BasePermission
 from .types.fields.resolver import StrawberryResolver
 from .types.types import FederationFieldParams, TypeDefinition
-from .utils.str_converters import to_camel_case
 
 
 _RESOLVER_TYPE = Union[StrawberryResolver, Callable]
 
 
-class StrawberryField(dataclasses.Field):
+class StrawberryField(dataclasses.Field, GraphQLNameMixin):
+    python_name: str
+
     def __init__(
         self,
         python_name: Optional[str] = None,
@@ -65,7 +66,7 @@ class StrawberryField(dataclasses.Field):
             metadata={},
         )
 
-        self._graphql_name = graphql_name
+        self.graphql_name = graphql_name
         if python_name is not None:
             self.python_name = python_name
 
@@ -109,23 +110,22 @@ class StrawberryField(dataclasses.Field):
 
         return self.base_resolver.arguments
 
-    @property
-    def graphql_name(self) -> Optional[str]:
-        if self._graphql_name:
-            return self._graphql_name
-        if self.python_name:
-            return to_camel_case(self.python_name)
+    def _python_name(self) -> Optional[str]:
+        if self.name:
+            return self.name
+
         if self.base_resolver:
-            return to_camel_case(self.base_resolver.name)
+            return self.base_resolver.name
+
         return None
 
-    @property
-    def python_name(self) -> str:
-        return self.name
-
-    @python_name.setter
-    def python_name(self, name: str) -> None:
+    def _set_python_name(self, name: str) -> None:
         self.name = name
+
+    # using the function syntax for property here in order to make it easier
+    # to ignore this mypy error:
+    # https://github.com/python/mypy/issues/4125
+    python_name = property(_python_name, _set_python_name)  # type: ignore
 
     @property
     def base_resolver(self) -> Optional[StrawberryResolver]:

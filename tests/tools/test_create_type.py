@@ -16,7 +16,8 @@ def test_create_decorator_type():
 
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "name"
+    assert definition.fields[0].python_name == "name"
+    assert definition.fields[0].graphql_name is None
     assert definition.fields[0].type == str
 
 
@@ -31,6 +32,7 @@ def test_create_variable_type():
 
     assert len(definition.fields) == 1
 
+    assert definition.fields[0].python_name == "get_name"
     assert definition.fields[0].graphql_name == "name"
     assert definition.fields[0].type == str
 
@@ -66,7 +68,8 @@ def test_create_mutation_type():
 
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "makeUser"
+    assert definition.fields[0].python_name == "make_user"
+    assert definition.fields[0].graphql_name is None
     assert definition.fields[0].type == User
 
 
@@ -84,6 +87,7 @@ def test_create_mutation_type_with_params():
 
     assert len(definition.fields) == 1
 
+    assert definition.fields[0].python_name == "make_user"
     assert definition.fields[0].graphql_name == "makeNewUser"
     assert definition.fields[0].type == User
     assert definition.fields[0].description == "Make a new user"

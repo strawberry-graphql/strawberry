@@ -57,7 +57,7 @@ def test_with_resolver():
 
     [field] = definition.fields
 
-    assert field.graphql_name == "users"
+    assert field.python_name == "users"
     assert isinstance(field.type, StrawberryList)
     assert field.type.of_type is User
 

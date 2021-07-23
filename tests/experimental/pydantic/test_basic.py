@@ -24,10 +24,12 @@ def test_basic_type():
 
     [field1, field2] = definition.fields
 
-    assert field1.graphql_name == "age"
+    assert field1.python_name == "age"
+    assert field1.graphql_name is None
     assert field1.type is int
 
-    assert field2.graphql_name == "password"
+    assert field2.python_name == "password"
+    assert field2.graphql_name is None
     assert isinstance(field2.type, StrawberryOptional)
     assert field2.type.of_type is str
 
@@ -74,10 +76,10 @@ def test_referencing_other_registered_models():
 
     [field1, field2] = definition.fields
 
-    assert field1.graphql_name == "age"
+    assert field1.python_name == "age"
     assert field1.type is int
 
-    assert field2.graphql_name == "group"
+    assert field2.python_name == "group"
     assert field2.type is GroupType
 
 
@@ -94,7 +96,7 @@ def test_list():
 
     [field] = definition.fields
 
-    assert field.graphql_name == "friendNames"
+    assert field.python_name == "friend_names"
     assert isinstance(field.type, StrawberryList)
     assert field.type.of_type is str
 
@@ -119,7 +121,7 @@ def test_list_of_types():
 
     [field] = definition.fields
 
-    assert field.graphql_name == "friends"
+    assert field.python_name == "friends"
     assert isinstance(field.type, StrawberryOptional)
     assert isinstance(field.type.of_type, StrawberryList)
     assert isinstance(field.type.of_type.of_type, StrawberryOptional)
@@ -155,14 +157,14 @@ def test_type_with_fields_coming_from_strawberry_and_pydantic():
 
     [field1, field2, field3] = definition.fields
 
-    assert field1.graphql_name == "age"
+    assert field1.python_name == "age"
     assert field1.type is int
 
-    assert field2.graphql_name == "password"
+    assert field2.python_name == "password"
     assert isinstance(field2.type, StrawberryOptional)
     assert field2.type.of_type is str
 
-    assert field3.graphql_name == "name"
+    assert field3.python_name == "name"
     assert field3.type is str
 
 
@@ -186,14 +188,14 @@ def test_type_with_fields_coming_from_strawberry_and_pydantic_with_default():
 
     [field1, field2, field3] = definition.fields
 
-    assert field1.graphql_name == "age"
+    assert field1.python_name == "age"
     assert field1.type is int
 
-    assert field2.graphql_name == "password"
+    assert field2.python_name == "password"
     assert isinstance(field2.type, StrawberryOptional)
     assert field2.type.of_type is str
 
-    assert field3.graphql_name == "name"
+    assert field3.python_name == "name"
     assert field3.type is str
     assert field3.default == "Michael"
 
@@ -217,14 +219,14 @@ def test_type_with_nested_fields_coming_from_strawberry_and_pydantic():
 
     [field1, field2, field3] = definition.fields
 
-    assert field1.graphql_name == "age"
+    assert field1.python_name == "age"
     assert field1.type is int
 
-    assert field2.graphql_name == "password"
+    assert field2.python_name == "password"
     assert isinstance(field2.type, StrawberryOptional)
     assert field2.type.of_type is str
 
-    assert field3.graphql_name == "name"
+    assert field3.python_name == "name"
     assert field3.type is Name
 
 
@@ -242,9 +244,9 @@ def test_type_with_aliased_pydantic_field():
 
     [field1, field2] = definition.fields
 
-    assert field1.graphql_name == "age"
+    assert field1.python_name == "age_"
     assert field1.type is int
 
-    assert field2.graphql_name == "password"
+    assert field2.python_name == "password"
     assert isinstance(field2.type, StrawberryOptional)
     assert field2.type.of_type is str

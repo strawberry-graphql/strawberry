@@ -11,7 +11,8 @@ def test_defining_interface():
     assert definition.name == "Node"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "id"
+    assert definition.fields[0].python_name == "id"
+    assert definition.fields[0].graphql_name is None
     assert definition.fields[0].type == strawberry.ID
 
     assert definition.is_interface
@@ -31,10 +32,12 @@ def test_implementing_interfaces():
     assert definition.name == "User"
     assert len(definition.fields) == 2
 
-    assert definition.fields[0].graphql_name == "id"
+    assert definition.fields[0].python_name == "id"
+    assert definition.fields[0].graphql_name is None
     assert definition.fields[0].type == strawberry.ID
 
-    assert definition.fields[1].graphql_name == "name"
+    assert definition.fields[1].python_name == "name"
+    assert definition.fields[1].graphql_name is None
     assert definition.fields[1].type == str
 
     assert definition.is_interface is False
@@ -59,10 +62,12 @@ def test_implementing_interface_twice():
     assert definition.name == "User"
     assert len(definition.fields) == 2
 
-    assert definition.fields[0].graphql_name == "id"
+    assert definition.fields[0].python_name == "id"
+    assert definition.fields[0].graphql_name is None
     assert definition.fields[0].type == strawberry.ID
 
-    assert definition.fields[1].graphql_name == "name"
+    assert definition.fields[1].python_name == "name"
+    assert definition.fields[1].graphql_name is None
     assert definition.fields[1].type == str
 
     assert definition.is_interface is False
@@ -73,10 +78,12 @@ def test_implementing_interface_twice():
     assert definition.name == "Person"
     assert len(definition.fields) == 2
 
-    assert definition.fields[0].graphql_name == "id"
+    assert definition.fields[0].python_name == "id"
+    assert definition.fields[0].graphql_name is None
     assert definition.fields[0].type == strawberry.ID
 
-    assert definition.fields[1].graphql_name == "name"
+    assert definition.fields[1].python_name == "name"
+    assert definition.fields[1].graphql_name is None
     assert definition.fields[1].type == str
 
     assert definition.is_interface is False

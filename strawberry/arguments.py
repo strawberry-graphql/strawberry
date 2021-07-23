@@ -8,11 +8,11 @@ from typing_extensions import Annotated, get_args, get_origin
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.enum import EnumDefinition
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
+from strawberry.utils.mixins import GraphQLNameMixin
 
 from .exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError
 from .scalars import is_scalar
 from .types.types import TypeDefinition
-from .utils.str_converters import to_camel_case
 
 
 class _Unset:
@@ -39,7 +39,7 @@ class StrawberryArgumentAnnotation:
         self.name = name
 
 
-class StrawberryArgument:
+class StrawberryArgument(GraphQLNameMixin):
     def __init__(
         self,
         python_name: str,
@@ -49,8 +49,8 @@ class StrawberryArgument:
         description: Optional[str] = None,
         default: object = UNSET,
     ) -> None:
-        self.python_name = python_name
-        self._graphql_name = graphql_name
+        self.python_name = python_name  # type: ignore
+        self.graphql_name = graphql_name
         self.is_subscription = is_subscription
         self.description = description
         self._type: Optional[StrawberryType] = None
@@ -61,14 +61,6 @@ class StrawberryArgument:
 
         if self._annotation_is_annotated(type_annotation):
             self._parse_annotated()
-
-    @property
-    def graphql_name(self) -> Optional[str]:
-        if self._graphql_name:
-            return self._graphql_name
-        if self.python_name:
-            return to_camel_case(self.python_name)
-        return None
 
     @property
     def type(self) -> Union[StrawberryType, type]:
@@ -98,10 +90,12 @@ class StrawberryArgument:
                 argument_annotation_seen = True
 
                 self.description = arg.description
-                self._graphql_name = arg.name
+                self.graphql_name = arg.name
 
 
-def convert_argument(value: object, type_: Union[StrawberryType, type]) -> object:
+def convert_argument(
+    value: object, type_: Union[StrawberryType, type], auto_camel_case: bool = True
+) -> object:
     if value is None:
         return None
 
@@ -132,10 +126,11 @@ def convert_argument(value: object, type_: Union[StrawberryType, type]) -> objec
 
         for field in type_definition.fields:
             value = cast(Mapping, value)
+            graphql_name = field.get_graphql_name(auto_camel_case)
 
-            if field.graphql_name in value:
+            if graphql_name in value:
                 kwargs[field.python_name] = convert_argument(
-                    value[field.graphql_name], field.type
+                    value[graphql_name], field.type, auto_camel_case
                 )
 
         type_ = cast(type, type_)
@@ -147,6 +142,7 @@ def convert_argument(value: object, type_: Union[StrawberryType, type]) -> objec
 def convert_arguments(
     value: Dict[str, Any],
     arguments: List[StrawberryArgument],
+    auto_camel_case: bool = True,
 ) -> Dict[str, Any]:
     """Converts a nested dictionary to a dictionary of actual types.
 
@@ -159,12 +155,17 @@ def convert_arguments(
     kwargs = {}
 
     for argument in arguments:
-        if argument.graphql_name in value:
-            current_value = value[argument.graphql_name]
+        assert argument.python_name
+
+        name = argument.get_graphql_name(auto_camel_case)
+
+        if name in value:
+            current_value = value[name]
 
             kwargs[argument.python_name] = convert_argument(
                 value=current_value,
                 type_=argument.type,
+                auto_camel_case=auto_camel_case,
             )
 
     return kwargs

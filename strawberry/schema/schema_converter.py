@@ -39,6 +39,7 @@ from strawberry.exceptions import MissingTypesForGenericError
 from strawberry.field import StrawberryField
 from strawberry.lazy_type import LazyType
 from strawberry.scalars import is_scalar
+from strawberry.schema.config import StrawberryConfig
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
 from strawberry.types.info import Info
 from strawberry.types.types import TypeDefinition
@@ -62,8 +63,9 @@ class CustomGraphQLEnumType(GraphQLEnumType):
 class GraphQLCoreConverter:
     # TODO: Make abstract
 
-    def __init__(self):
+    def __init__(self, config: StrawberryConfig):
         self.type_map: Dict[str, ConcreteType] = {}
+        self.config = config
 
     def from_argument(self, argument: StrawberryArgument) -> GraphQLArgument:
         argument_type: GraphQLType
@@ -110,8 +112,8 @@ class GraphQLCoreConverter:
 
         graphql_arguments = {}
         for argument in directive.arguments:
-            assert argument.graphql_name is not None
-            graphql_arguments[argument.graphql_name] = self.from_argument(argument)
+            argument_name = argument.get_graphql_name(self.config.auto_camel_case)
+            graphql_arguments[argument_name] = self.from_argument(argument)
 
         return GraphQLDirective(
             name=directive.name,
@@ -137,8 +139,8 @@ class GraphQLCoreConverter:
 
         graphql_arguments = {}
         for argument in field.arguments:
-            assert argument.graphql_name is not None
-            graphql_arguments[argument.graphql_name] = self.from_argument(argument)
+            argument_name = argument.get_graphql_name(self.config.auto_camel_case)
+            graphql_arguments[argument_name] = self.from_argument(argument)
 
         return GraphQLField(
             type_=field_type,
@@ -147,6 +149,7 @@ class GraphQLCoreConverter:
             subscribe=subscribe,
             description=field.description,
             deprecation_reason=field.deprecation_reason,
+            extensions={"python_name": field.python_name},
         )
 
     def from_input_field(self, field: StrawberryField) -> GraphQLInputField:
@@ -182,8 +185,10 @@ class GraphQLCoreConverter:
         def get_graphql_fields() -> Dict[str, GraphQLInputField]:
             graphql_fields = {}
             for field in type_definition.fields:
-                assert field.graphql_name is not None
-                graphql_fields[field.graphql_name] = self.from_input_field(field)
+                field_name = field.get_graphql_name(self.config.auto_camel_case)
+
+                graphql_fields[field_name] = self.from_input_field(field)
+
             return graphql_fields
 
         graphql_object_type = GraphQLInputObjectType(
@@ -209,9 +214,11 @@ class GraphQLCoreConverter:
 
         def get_graphql_fields() -> Dict[str, GraphQLField]:
             graphql_fields = {}
+
             for field in interface.fields:
-                assert field.graphql_name is not None
-                graphql_fields[field.graphql_name] = self.from_field(field)
+                field_name = field.get_graphql_name(self.config.auto_camel_case)
+                graphql_fields[field_name] = self.from_field(field)
+
             return graphql_fields
 
         graphql_interface = GraphQLInterfaceType(
@@ -263,9 +270,12 @@ class GraphQLCoreConverter:
 
         def get_graphql_fields() -> Dict[str, GraphQLField]:
             graphql_fields = {}
+
             for field in object_type.fields:
-                assert field.graphql_name is not None
-                graphql_fields[field.graphql_name] = self.from_field(field)
+                field_name = field.get_graphql_name(self.config.auto_camel_case)
+
+                graphql_fields[field_name] = self.from_field(field)
+
             return graphql_fields
 
         graphql_object_type = GraphQLObjectType(
@@ -290,7 +300,9 @@ class GraphQLCoreConverter:
             info: Info,
             kwargs: Dict[str, Any],
         ) -> Tuple[List[Any], Dict[str, Any]]:
-            kwargs = convert_arguments(kwargs, field.arguments)
+            kwargs = convert_arguments(
+                kwargs, field.arguments, auto_camel_case=self.config.auto_camel_case
+            )
 
             # the following code allows to omit info and root arguments
             # by inspecting the original resolver arguments,

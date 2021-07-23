@@ -106,9 +106,9 @@ class TypeDefinition(StrawberryType):
 
         return new_type
 
-    def get_field(self, name: str) -> Optional["StrawberryField"]:
+    def get_field(self, python_name: str) -> Optional["StrawberryField"]:
         return next(
-            (field for field in self.fields if field.graphql_name == name), None
+            (field for field in self.fields if field.python_name == python_name), None
         )
 
     def get_name_from_types(self, types: Iterable[Union[StrawberryType, type]]) -> str:

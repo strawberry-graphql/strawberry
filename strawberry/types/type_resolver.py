@@ -10,7 +10,6 @@ from strawberry.exceptions import (
 )
 from strawberry.field import StrawberryField
 from strawberry.private import Private
-from strawberry.utils.str_converters import to_camel_case
 
 from ..arguments import UNSET
 
@@ -58,7 +57,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
     for base in cls.__bases__:
         if hasattr(base, "_type_definition"):
             base_fields = {
-                field.graphql_name: field
+                field.python_name: field
                 # TODO: we need to rename _fields to something else
                 for field in base._type_definition._fields  # type: ignore
             }
@@ -122,7 +121,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
             # Create a StrawberryField, for fields of Types #1 and #2a
             field = StrawberryField(
                 python_name=field.name,
-                graphql_name=to_camel_case(field.name),
+                graphql_name=None,
                 type_annotation=StrawberryAnnotation(
                     annotation=field_type,
                     namespace=module.__dict__,
@@ -131,7 +130,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
                 default=getattr(cls, field.name, UNSET),
             )
 
-        field_name = field.graphql_name
+        field_name = field.python_name
 
         assert_message = "Field must have a name by the time the schema is generated"
         assert field_name is not None, assert_message
