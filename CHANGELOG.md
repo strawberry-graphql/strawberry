@@ -1,6 +1,27 @@
 CHANGELOG
 =========
 
+0.70.0 - 2021-07-23
+-------------------
+
+This release adds support for disabling auto camel casing. It
+does so by introducing a new configuration parameter to the schema.
+
+You can use it like so:
+
+```python
+@strawberry.type
+class Query:
+    example_field: str = "Example"
+
+schema = strawberry.Schema(
+    query=Query, config=StrawberryConfig(auto_camel_case=False)
+)
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #798](https://github.com/strawberry-graphql/strawberry/pull/798/)
+
+
 0.69.4 - 2021-07-23
 -------------------
 
