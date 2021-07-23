@@ -103,7 +103,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
             field.origin = field.origin or cls
 
             # Make sure types are StrawberryAnnotations
-            if not isinstance(field.type, StrawberryAnnotation):
+            if not isinstance(field.type_annotation, StrawberryAnnotation):
                 module = sys.modules[field.origin.__module__]
                 field.type_annotation = StrawberryAnnotation(
                     annotation=field.type_annotation, namespace=module.__dict__
