@@ -1,4 +1,5 @@
 import json
+import os
 import pathlib
 import sys
 
@@ -55,6 +56,8 @@ mutation_input = {
 }
 
 print(f"Status is {status}")
+print(f"::set-output name=release_status::{status}")
+print(os.environ.get("GITHUB_ENV"))
 
 response = httpx.post(
     API_URL,
