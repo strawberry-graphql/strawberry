@@ -59,7 +59,7 @@ print(f"Status is {status}")
 print(f"::set-output name=release_status::{status}")
 
 if "GITHUB_ENV" in os.environ and release_info:
-    with open(os.environ["GITHUB_ENV"], "r") as f:
+    with open(os.environ["GITHUB_ENV"], "w") as f:
         value = f"""
 CHANGELOG<<EOF
 {release_info['changelog']}
