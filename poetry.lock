@@ -296,7 +296,7 @@ pyflakes = ">=2.3.0,<2.4.0"
 
 [[package]]
 name = "flake8-black"
-version = "0.2.1"
+version = "0.2.3"
 description = "flake8 plugin to call black as a code style validator"
 category = "dev"
 optional = false
@@ -305,6 +305,7 @@ python-versions = "*"
 [package.dependencies]
 black = "*"
 flake8 = ">=3.0.0"
+toml = "*"
 
 [[package]]
 name = "flake8-bugbear"
@@ -1281,7 +1282,7 @@ sanic = ["sanic"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "8f56286286a57b153fa0a20a4af11aecce72f0c33fc1d75bff9cabebbded61fa"
+content-hash = "575eed0cc6034297ec7804e774ac0811ceb2fcbc841fce20c20885fcd94567f9"
 
 [metadata.files]
 aiofiles = [
@@ -1473,8 +1474,8 @@ flake8 = [
     {file = "flake8-3.9.2.tar.gz", hash = "sha256:07528381786f2a6237b061f6e96610a4167b226cb926e2aa2b6b1d78057c576b"},
 ]
 flake8-black = [
-    {file = "flake8-black-0.2.1.tar.gz", hash = "sha256:f26651bc10db786c03f4093414f7c9ea982ed8a244cec323c984feeffdf4c118"},
-    {file = "flake8_black-0.2.1-py3-none-any.whl", hash = "sha256:941514149cb8b489cb17a4bb1cf18d84375db3b34381bb018de83509437931a0"},
+    {file = "flake8-black-0.2.3.tar.gz", hash = "sha256:c199844bc1b559d91195ebe8620216f21ed67f2cc1ff6884294c91a0d2492684"},
+    {file = "flake8_black-0.2.3-py3-none-any.whl", hash = "sha256:cc080ba5b3773b69ba102b6617a00cc4ecbad8914109690cfda4d565ea435d96"},
 ]
 flake8-bugbear = [
     {file = "flake8-bugbear-21.4.3.tar.gz", hash = "sha256:2346c81f889955b39e4a368eb7d508de723d9de05716c287dc860a4073dc57e7"},
