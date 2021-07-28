@@ -57,7 +57,16 @@ mutation_input = {
 
 print(f"Status is {status}")
 print(f"::set-output name=release_status::{status}")
-print(os.environ.get("GITHUB_ENV"))
+
+if "GITHUB_ENV" in os.environ and release_info:
+    with open(os.environ["GITHUB_ENV"], "r") as f:
+        value = f"""
+CHANGELOG<<EOF
+{release_info['changelog']}
+EOF
+"""
+        f.write(value)
+
 
 response = httpx.post(
     API_URL,
