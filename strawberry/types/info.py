@@ -7,6 +7,8 @@ from graphql.pyutils.path import Path
 
 from strawberry.type import StrawberryType
 
+from .nodes import SelectedField
+
 
 ContextType = TypeVar("ContextType")
 RootValueType = TypeVar("RootValueType")
@@ -15,7 +17,8 @@ RootValueType = TypeVar("RootValueType")
 @dataclasses.dataclass
 class Info(Generic[ContextType, RootValueType]):
     field_name: str
-    field_nodes: List[FieldNode]
+    field_nodes: List[FieldNode]  # deprecated
+    selected_fields: List[SelectedField]
     context: ContextType
     root_value: RootValueType
     variable_values: Dict[str, Any]
