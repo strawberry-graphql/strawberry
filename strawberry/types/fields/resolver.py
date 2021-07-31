@@ -4,12 +4,12 @@ import builtins
 import inspect
 import sys
 from inspect import isasyncgenfunction, iscoroutinefunction
-from typing import Callable, Generic, List, Mapping, Optional, TypeVar, Union
+from typing import Any, Callable, Generic, Mapping, Optional, Type, TypeVar, Union
 
 from cached_property import cached_property  # type: ignore
 
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.arguments import StrawberryArgument
+from strawberry.arguments import UNSET
 from strawberry.exceptions import MissingArgumentsAnnotationsError
 from strawberry.type import StrawberryType
 from strawberry.utils.inspect import get_func_args
@@ -39,12 +39,16 @@ class StrawberryResolver(Generic[T]):
         return self.wrapped_func(*args, **kwargs)
 
     @cached_property
-    def arguments(self) -> List[StrawberryArgument]:
+    def function_parameters(self) -> Mapping[str, inspect.Parameter]:
+        return inspect.signature(self.wrapped_func).parameters
+
+    @cached_property
+    def arguments(self) -> Mapping[str, Type]:
         # TODO: Move to StrawberryArgument? StrawberryResolver ClassVar?
         SPECIAL_ARGS = {"root", "self", "info"}
 
         annotations = self.wrapped_func.__annotations__
-        parameters = inspect.signature(self.wrapped_func).parameters
+        parameters = self.function_parameters
         function_arguments = set(parameters) - SPECIAL_ARGS
 
         annotations = {
@@ -62,24 +66,22 @@ class StrawberryResolver(Generic[T]):
                 arguments=arguments_missing_annotations,
             )
 
+        return annotations
+
+    @property
+    def annotation_namespace(self):
         module = sys.modules[self.wrapped_func.__module__]
         annotation_namespace = module.__dict__
-        arguments = []
-        for arg_name, annotation in annotations.items():
-            parameter = parameters[arg_name]
 
-            argument = StrawberryArgument(
-                python_name=arg_name,
-                graphql_name=None,
-                type_annotation=StrawberryAnnotation(
-                    annotation=annotation, namespace=annotation_namespace
-                ),
-                default=parameter.default,
-            )
+        return annotation_namespace
 
-            arguments.append(argument)
+    def get_argument_default(self, arg_name: str) -> Any:
+        func_parameters = self.function_parameters
+        if arg_name not in func_parameters:
+            return UNSET
 
-        return arguments
+        parameter = func_parameters[arg_name]
+        return parameter.default
 
     @cached_property
     def has_info_arg(self) -> bool:

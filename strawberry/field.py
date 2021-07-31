@@ -108,10 +108,52 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
 
     @property
     def arguments(self) -> List[StrawberryArgument]:
+        arguments_as_annotations = self.get_arguments()
+
         if not self.base_resolver:
             return []
 
+        # Convert the arguments to StrawberryArgument types
+        arguments = []
+        for arg_name, annotation in arguments_as_annotations.items():
+            if isinstance(annotation, StrawberryArgument):
+                argument = annotation
+            else:
+                default = self.base_resolver.get_argument_default(arg_name)
+                argument = self.create_argument(arg_name, annotation, default)
+
+            arguments.append(argument)
+
+        return arguments
+
+    def get_arguments(self) -> Dict[str, object]:
+        """
+        Hook to modify the GraphQL arguments for the field
+        """
+        if not self.base_resolver:
+            return {}
+
         return self.base_resolver.arguments
+
+    def create_argument(
+        self, arg_name: str, type_annotation: object, default: Any = UNSET
+    ) -> StrawberryArgument:
+        """
+        Helper function to create StrawberryArgument
+        """
+        annotation_namespace = None
+        if self.base_resolver:
+            annotation_namespace = self.base_resolver.annotation_namespace
+
+        return StrawberryArgument(
+            python_name=arg_name,
+            graphql_name=None,
+            type_annotation=StrawberryAnnotation(
+                annotation=type_annotation,
+                namespace=annotation_namespace,
+            ),
+            default=default,
+        )
 
     def _python_name(self) -> Optional[str]:
         if self.name:
@@ -239,7 +281,7 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
         )
 
     def get_result(
-        self, source: Any, info: Info, args: List[Any], kwargs: Dict[str, Any]
+        self, source: Any, info: Info, arguments: Dict[str, Any]
     ) -> Union[Awaitable[Any], Any]:
         """
         Calls the resolver defined for the StrawberryField. If the field doesn't have a
@@ -247,7 +289,10 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
         """
 
         if self.base_resolver:
-            return self.base_resolver(*args, **kwargs)
+            args = []
+            if self.base_resolver.has_self_arg:
+                args = [source]
+            return self.base_resolver(*args, **arguments)
 
         return getattr(source, self.python_name)
 

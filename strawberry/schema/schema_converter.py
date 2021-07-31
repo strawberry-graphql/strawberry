@@ -1,7 +1,15 @@
 from __future__ import annotations
 
 from enum import Enum
+<<<<<<< HEAD
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Tuple, Type, Union
+||||||| parent of 76b95bf (Rework field and resolver to create a nicer public api)
+from inspect import isasyncgen, iscoroutine
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Tuple, Type, Union
+=======
+from inspect import isasyncgen, iscoroutine
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Type, Union
+>>>>>>> 76b95bf (Rework field and resolver to create a nicer public api)
 
 
 # TypeGuard is only available in typing_extensions => 3.10, we don't want
@@ -306,7 +314,7 @@ class GraphQLCoreConverter:
             source: Any,
             info: Info,
             kwargs: Dict[str, Any],
-        ) -> Tuple[List[Any], Dict[str, Any]]:
+        ) -> Dict[str, Any]:
             kwargs = convert_arguments(
                 kwargs, field.arguments, auto_camel_case=self.config.auto_camel_case
             )
@@ -317,19 +325,14 @@ class GraphQLCoreConverter:
             # if it asks for root, the source it will be passed as kwarg
             # if it asks for info, the info will be passed as kwarg
 
-            args = []
-
             if field.base_resolver:
-                if field.base_resolver.has_self_arg:
-                    args.append(source)
-
                 if field.base_resolver.has_root_arg:
                     kwargs["root"] = source
 
                 if field.base_resolver.has_info_arg:
                     kwargs["info"] = info
 
-            return args, kwargs
+            return kwargs
 
         def _check_permissions(source: Any, info: Info, kwargs: Dict[str, Any]):
             """
@@ -365,12 +368,12 @@ class GraphQLCoreConverter:
             )
 
         def _get_result(_source: Any, info: Info, **kwargs):
-            field_args, field_kwargs = _get_arguments(
+            field_kwargs = _get_arguments(
                 source=_source, info=info, kwargs=kwargs
             )
 
             return field.get_result(
-                _source, info=info, args=field_args, kwargs=field_kwargs
+                _source, info=info, arguments=field_kwargs
             )
 
         def _resolver(_source: Any, info: GraphQLResolveInfo, **kwargs):
