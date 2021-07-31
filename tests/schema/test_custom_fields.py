@@ -97,9 +97,7 @@ def test_modify_arguments_with_default():
 
         def get_arguments(self) -> Dict[str, object]:
             arguments = super().get_arguments()
-            arguments["first"] = self.create_argument(
-                "first", type_annotation=int, default=2
-            )
+            arguments["first"] = self.create_argument(type_annotation=int, default=2)
 
             return arguments
 

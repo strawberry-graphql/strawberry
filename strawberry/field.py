@@ -30,6 +30,25 @@ from .types.types import FederationFieldParams, TypeDefinition
 _RESOLVER_TYPE = Union[StrawberryResolver, Callable]
 
 
+@dataclasses.dataclass
+class BareStrawberryArgument:
+    """
+    Container for a StrawberryArgument where we don't know the argument name
+    yet. This lets us create arguments and then bind them to a name later.
+    """
+
+    type_annotation: StrawberryAnnotation
+    default: Any
+
+    def as_argument(self, arg_name):
+        return StrawberryArgument(
+            python_name=arg_name,
+            graphql_name=None,
+            type_annotation=self.type_annotation,
+            default=self.default,
+        )
+
+
 class StrawberryField(dataclasses.Field, GraphQLNameMixin):
     python_name: str
 
@@ -116,13 +135,13 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
         # Convert the arguments to StrawberryArgument types
         arguments = []
         for arg_name, annotation in arguments_as_annotations.items():
-            if isinstance(annotation, StrawberryArgument):
+            if isinstance(annotation, BareStrawberryArgument):
                 argument = annotation
             else:
                 default = self.base_resolver.get_argument_default(arg_name)
-                argument = self.create_argument(arg_name, annotation, default)
+                argument = self.create_argument(annotation, default)
 
-            arguments.append(argument)
+            arguments.append(argument.as_argument(arg_name))
 
         return arguments
 
@@ -136,8 +155,8 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
         return self.base_resolver.arguments
 
     def create_argument(
-        self, arg_name: str, type_annotation: object, default: Any = UNSET
-    ) -> StrawberryArgument:
+        self, type_annotation: object, default: Any = UNSET
+    ) -> BareStrawberryArgument:
         """
         Helper function to create StrawberryArgument
         """
@@ -145,9 +164,7 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
         if self.base_resolver:
             annotation_namespace = self.base_resolver.annotation_namespace
 
-        return StrawberryArgument(
-            python_name=arg_name,
-            graphql_name=None,
+        return BareStrawberryArgument(
             type_annotation=StrawberryAnnotation(
                 annotation=type_annotation,
                 namespace=annotation_namespace,
