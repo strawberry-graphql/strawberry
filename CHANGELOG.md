@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.70.1 - 2021-08-01
+-------------------
+
+Switch CDN used to load GraphQLi dependencies from jsdelivr.com to unpkg.com
+
+Contributed by [Tim Savage](https://github.com/timsavage) [PR #1096](https://github.com/strawberry-graphql/strawberry/pull/1096/)
+
+
 0.70.0 - 2021-07-23
 -------------------
 
