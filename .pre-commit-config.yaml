@@ -25,6 +25,7 @@ repos:
     rev: aa5da9e54b92ab7284feddeaf52edf14b1690de3
     hooks:
       - id: alex
+        exclude: CHANGELOG.md
 
   - repo: https://github.com/prettier/pre-commit
     rev: 57f39166b5a5a504d6808b87ab98d41ebf095b46
