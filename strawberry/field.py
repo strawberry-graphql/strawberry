@@ -212,7 +212,7 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
         #       removed.
         _ = resolver.arguments
 
-    def get_type(self) -> Optional[Union[StrawberryType, object]]:
+    def get_type(self) -> Union[StrawberryType, object]:
         if self.base_resolver is not None:
             # Handle unannotated functions (such as lambdas)
             if self.base_resolver.type is not None:
@@ -238,15 +238,15 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
     # TODO: add this to arguments (and/or move it to StrawberryType)
     @property
     def type_params(self) -> List[TypeVar]:
-        if hasattr(self.resolved_type, "_type_definition"):
+        if hasattr(self.type, "_type_definition"):
             parameters = getattr(self.type, "__parameters__", None)
 
             return list(parameters) if parameters else []
 
         # TODO: Consider making leaf types always StrawberryTypes, maybe a
         #       StrawberryBaseType or something
-        if isinstance(self.resolved_type, StrawberryType):
-            return self.resolved_type.type_params
+        if isinstance(self.type, StrawberryType):
+            return self.type.type_params
         return []
 
     def copy_with(
