@@ -71,7 +71,7 @@ class TypeDefinition(StrawberryType):
         fields = []
         for field in self.fields:
             # TODO: Logic unnecessary with StrawberryObject
-            field_type = field.type
+            field_type = field.resolved_type
             if hasattr(field_type, "_type_definition"):
                 field_type = field_type._type_definition  # type: ignore
 
@@ -165,7 +165,7 @@ class TypeDefinition(StrawberryType):
 
         # Check the mapping of all fields' TypeVars
         for generic_field in type_definition.fields:
-            generic_field_type = generic_field.type
+            generic_field_type = generic_field.resolved_type
             if not isinstance(generic_field_type, StrawberryTypeVar):
                 continue
 

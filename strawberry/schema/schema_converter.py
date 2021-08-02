@@ -1,15 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-<<<<<<< HEAD
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Tuple, Type, Union
-||||||| parent of 76b95bf (Rework field and resolver to create a nicer public api)
-from inspect import isasyncgen, iscoroutine
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Tuple, Type, Union
-=======
-from inspect import isasyncgen, iscoroutine
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Type, Union
->>>>>>> 76b95bf (Rework field and resolver to create a nicer public api)
 
 
 # TypeGuard is only available in typing_extensions => 3.10, we don't want
@@ -133,12 +125,14 @@ class GraphQLCoreConverter:
     def from_field(self, field: StrawberryField) -> GraphQLField:
         field_type: GraphQLType
 
-        if isinstance(field.type, StrawberryOptional):
-            field_type = self.from_optional(field.type)
-        else:
-            field_type = self.from_non_optional(field.type)
+        resolved_type = field.resolved_type
 
-        resolver = self.from_resolver(field)
+        if isinstance(resolved_type, StrawberryOptional):
+            field_type = self.from_optional(resolved_type)
+        else:
+            field_type = self.from_non_optional(resolved_type)
+
+        resolver = self.from_resolver(field, resolved_type)
         subscribe = None
 
         if field.is_subscription:
@@ -163,10 +157,12 @@ class GraphQLCoreConverter:
     def from_input_field(self, field: StrawberryField) -> GraphQLInputField:
         field_type: GraphQLType
 
-        if isinstance(field.type, StrawberryOptional):
-            field_type = self.from_optional(field.type)
+        resolved_type = field.resolved_type
+
+        if isinstance(resolved_type, StrawberryOptional):
+            field_type = self.from_optional(resolved_type)
         else:
-            field_type = self.from_non_optional(field.type)
+            field_type = self.from_non_optional(resolved_type)
 
         default_value: object
 
@@ -308,7 +304,7 @@ class GraphQLCoreConverter:
         return graphql_object_type
 
     def from_resolver(
-        self, field: StrawberryField
+        self, field: StrawberryField, return_type: object
     ) -> Callable:  # TODO: Take StrawberryResolver
         def _get_arguments(
             source: Any,

@@ -130,7 +130,7 @@ def convert_argument(
 
             if graphql_name in value:
                 kwargs[field.python_name] = convert_argument(
-                    value[graphql_name], field.type, auto_camel_case
+                    value[graphql_name], field.resolved_type, auto_camel_case
                 )
 
         type_ = cast(type, type_)

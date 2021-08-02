@@ -128,3 +128,50 @@ def test_modify_arguments_with_default():
 
     assert not result.errors
     assert result.data["books"] == ["Pride and Prejudice", "Sense and Sensibility"]
+
+
+def test_modify_return_type():
+    class AuthenticationRequired(StrawberryField):
+        def get_type(self) -> object:
+            type_ = super().get_type()
+            return Optional[type_]
+
+        def get_result(self, source, info, arguments):
+            if not info.context["is_authenticated"]:
+                return None
+
+            return super().get_result(source, info, arguments)
+
+    @strawberry.type
+    class Query:
+        name: str = AuthenticationRequired(default="Patrick")
+
+    schema = strawberry.Schema(query=Query)
+
+    expected = textwrap.dedent(
+        """
+        type Query {
+          name: String
+        }
+        """
+    ).strip()
+
+    assert str(schema) == expected
+
+    result = schema.execute_sync(
+        "{ name }",
+        root_value=Query(),
+        context_value={"is_authenticated": False},
+    )
+
+    assert not result.errors
+    assert result.data["name"] is None
+
+    result = schema.execute_sync(
+        "{ name }",
+        root_value=Query(),
+        context_value={"is_authenticated": True},
+    )
+
+    assert not result.errors
+    assert result.data["name"] == "Patrick"

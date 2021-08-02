@@ -1,6 +1,7 @@
 import builtins
 import dataclasses
 import inspect
+import sys
 from typing import (
     Any,
     Awaitable,
@@ -40,7 +41,7 @@ class BareStrawberryArgument:
     type_annotation: StrawberryAnnotation
     default: Any
 
-    def as_argument(self, arg_name):
+    def as_argument(self, arg_name: str) -> StrawberryArgument:
         return StrawberryArgument(
             python_name=arg_name,
             graphql_name=None,
@@ -56,7 +57,6 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
         self,
         python_name: Optional[str] = None,
         graphql_name: Optional[str] = None,
-        type_annotation: Optional[StrawberryAnnotation] = None,
         origin: Optional[Union[Type, Callable]] = None,
         is_subscription: bool = False,
         federation: FederationFieldParams = None,
@@ -91,8 +91,6 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
         self.graphql_name = graphql_name
         if python_name is not None:
             self.python_name = python_name
-
-        self.type_annotation = type_annotation
 
         self.description: Optional[str] = description
         self.origin: Optional[Union[Type, Callable]] = origin
@@ -214,64 +212,61 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
         #       removed.
         _ = resolver.arguments
 
-    @property  # type: ignore
-    def type(self) -> Union[StrawberryType, type]:  # type: ignore
-        # We are catching NameError because dataclasses tries to fetch the type
-        # of the field from the class before the class is fully defined.
-        # This triggers a NameError error when using forward references because
-        # our `type` property tries to find the field type from the global namespace
-        # but it is not yet defined.
-        try:
-            if self.base_resolver is not None:
-                # Handle unannotated functions (such as lambdas)
-                if self.base_resolver.type is not None:
-                    return self.base_resolver.type
+    def get_type(self) -> Optional[Union[StrawberryType, object]]:
+        if self.base_resolver is not None:
+            # Handle unannotated functions (such as lambdas)
+            if self.base_resolver.type is not None:
+                return self.base_resolver.type
 
-            assert self.type_annotation is not None
+        assert self.type is not None
 
-            if not isinstance(self.type_annotation, StrawberryAnnotation):
-                # TODO: This is because of dataclasses
-                return self.type_annotation
+        return self.type
 
-            return self.type_annotation.resolve()
-        except NameError:
-            return None  # type: ignore
+    def get_type_annotation(self) -> StrawberryAnnotation:
+        type_ = self.get_type()
+        module = sys.modules[self.origin.__module__]
+        type_annotation = StrawberryAnnotation(
+            annotation=type_, namespace=module.__dict__
+        )
+        return type_annotation
 
-    @type.setter
-    def type(self, type_: Any) -> None:
-        self.type_annotation = type_
+    @property
+    def resolved_type(self) -> Union[StrawberryType, type]:
+        type_annotation = self.get_type_annotation()
+        return type_annotation.resolve()
 
     # TODO: add this to arguments (and/or move it to StrawberryType)
     @property
     def type_params(self) -> List[TypeVar]:
-        if hasattr(self.type, "_type_definition"):
+        if hasattr(self.resolved_type, "_type_definition"):
             parameters = getattr(self.type, "__parameters__", None)
 
             return list(parameters) if parameters else []
 
         # TODO: Consider making leaf types always StrawberryTypes, maybe a
         #       StrawberryBaseType or something
-        if isinstance(self.type, StrawberryType):
-            return self.type.type_params
+        if isinstance(self.resolved_type, StrawberryType):
+            return self.resolved_type.type_params
         return []
 
     def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, builtins.type]]
     ) -> "StrawberryField":
         new_type: Union[StrawberryType, type]
+        resolved_type = self.resolved_type
 
         # TODO: Remove with creation of StrawberryObject. Will act same as other
         #       StrawberryTypes
-        if hasattr(self.type, "_type_definition"):
-            type_definition: TypeDefinition = self.type._type_definition  # type: ignore
+        if hasattr(resolved_type, "_type_definition"):
+            type_definition: TypeDefinition = resolved_type._type_definition  # type: ignore
 
             if type_definition.is_generic:
                 type_ = type_definition
                 new_type = type_.copy_with(type_var_map)
         else:
-            assert isinstance(self.type, StrawberryType)
+            assert isinstance(resolved_type, StrawberryType)
 
-            new_type = self.type.copy_with(type_var_map)
+            new_type = resolved_type.copy_with(type_var_map)
 
         new_resolver = (
             self.base_resolver.copy_with(type_var_map)
@@ -279,12 +274,11 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
             else None
         )
 
-        return StrawberryField(
+        field = StrawberryField(
             python_name=self.python_name,
             graphql_name=self.graphql_name,
             # TODO: do we need to wrap this in `StrawberryAnnotation`?
             # see comment related to dataclasses above
-            type_annotation=StrawberryAnnotation(new_type),
             origin=self.origin,
             is_subscription=self.is_subscription,
             federation=self.federation,
@@ -296,6 +290,8 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
             default_factory=self.default_factory,  # type: ignore[misc]
             deprecation_reason=self.deprecation_reason,
         )
+        field.type = new_type
+        return field
 
     def get_result(
         self, source: Any, info: Info, arguments: Dict[str, Any]
@@ -359,7 +355,6 @@ def field(
     field_ = StrawberryField(
         python_name=None,
         graphql_name=name,
-        type_annotation=None,
         description=description,
         is_subscription=is_subscription,
         permission_classes=permission_classes or [],

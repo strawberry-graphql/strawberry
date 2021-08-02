@@ -111,10 +111,9 @@ class StrawberryResolver(Generic[T]):
             # No return annotation at all (as opposed to `-> None`)
             return None
 
-        # TODO: PyCharm doesn't like this. Says `() -> ...` has no __module__ attribute
-        module = sys.modules[self.wrapped_func.__module__]
+        annotation_namespace = self.annotation_namespace
         type_annotation = StrawberryAnnotation(
-            annotation=return_annotation, namespace=module.__dict__
+            annotation=return_annotation, namespace=annotation_namespace
         )
 
         return type_annotation

@@ -104,13 +104,6 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
             # the types.
             field.origin = field.origin or cls
 
-            # Make sure types are StrawberryAnnotations
-            if not isinstance(field.type_annotation, StrawberryAnnotation):
-                module = sys.modules[field.origin.__module__]
-                field.type_annotation = StrawberryAnnotation(
-                    annotation=field.type_annotation, namespace=module.__dict__
-                )
-
         # Create a StrawberryField for fields that didn't use strawberry.field
         else:
             # Only ignore Private fields that weren't defined using StrawberryFields
@@ -119,19 +112,14 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
 
             field_type = field.type
 
-            module = sys.modules[cls.__module__]
-
             # Create a StrawberryField, for fields of Types #1 and #2a
             field = StrawberryField(
                 python_name=field.name,
                 graphql_name=None,
-                type_annotation=StrawberryAnnotation(
-                    annotation=field_type,
-                    namespace=module.__dict__,
-                ),
                 origin=cls,
                 default=getattr(cls, field.name, UNSET),
             )
+            field.type = field_type
 
         field_name = field.python_name
 

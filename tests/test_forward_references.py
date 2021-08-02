@@ -58,7 +58,7 @@ def test_with_resolver():
     [field] = definition.fields
 
     assert field.python_name == "users"
-    assert isinstance(field.type, StrawberryList)
-    assert field.type.of_type is User
+    assert isinstance(field.resolved_type, StrawberryList)
+    assert field.resolved_type.of_type is User
 
     del User
