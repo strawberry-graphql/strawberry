@@ -304,7 +304,7 @@ class GraphQLCoreConverter:
         return graphql_object_type
 
     def from_resolver(
-        self, field: StrawberryField, return_type: object
+        self, field: StrawberryField, return_type: Union[StrawberryType, type]
     ) -> Callable:  # TODO: Take StrawberryResolver
         def _get_arguments(
             source: Any,
