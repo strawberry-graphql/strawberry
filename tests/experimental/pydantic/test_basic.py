@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Union, get_args, get_origin
 
 import pytest
 
@@ -30,7 +30,7 @@ def test_basic_type():
 
     assert field2.python_name == "password"
     assert field2.graphql_name is None
-    assert isinstance(field2.type, StrawberryOptional)
+    assert isinstance(field2.resolved_type, StrawberryOptional)
     assert field2.type.of_type is str
 
 
@@ -97,7 +97,7 @@ def test_list():
     [field] = definition.fields
 
     assert field.python_name == "friend_names"
-    assert isinstance(field.type, StrawberryList)
+    assert isinstance(field.resolved_type, StrawberryList)
     assert field.type.of_type is str
 
 
@@ -122,10 +122,10 @@ def test_list_of_types():
     [field] = definition.fields
 
     assert field.python_name == "friends"
-    assert isinstance(field.type, StrawberryOptional)
-    assert isinstance(field.type.of_type, StrawberryList)
-    assert isinstance(field.type.of_type.of_type, StrawberryOptional)
-    assert field.type.of_type.of_type.of_type is FriendType
+    assert isinstance(field.resolved_type, StrawberryOptional)
+    assert isinstance(field.resolved_type.of_type, StrawberryList)
+    assert isinstance(field.resolved_type.of_type.of_type, StrawberryOptional)
+    assert field.resolved_type.of_type.of_type.of_type is FriendType
 
 
 def test_basic_type_without_fields_throws_an_error():
@@ -164,8 +164,8 @@ def test_type_with_fields_coming_from_strawberry_and_pydantic():
     assert field2.type is str
 
     assert field3.python_name == "password"
-    assert isinstance(field3.type, StrawberryOptional)
-    assert field3.type.of_type is str
+    assert isinstance(field3.resolved_type, StrawberryOptional)
+    assert field3.resolved_type.of_type is str
 
 
 @pytest.mark.xfail(
@@ -192,8 +192,8 @@ def test_type_with_fields_coming_from_strawberry_and_pydantic_with_default():
     assert field1.type is int
 
     assert field2.python_name == "password"
-    assert isinstance(field2.type, StrawberryOptional)
-    assert field2.type.of_type is str
+    assert isinstance(field2.resolved_type, StrawberryOptional)
+    assert field2.resolved_type.of_type is str
 
     assert field3.python_name == "name"
     assert field3.type is str
@@ -226,8 +226,8 @@ def test_type_with_nested_fields_coming_from_strawberry_and_pydantic():
     assert field2.type is Name
 
     assert field3.python_name == "password"
-    assert isinstance(field3.type, StrawberryOptional)
-    assert field3.type.of_type is str
+    assert isinstance(field3.resolved_type, StrawberryOptional)
+    assert field3.resolved_type.of_type is str
 
 
 def test_type_with_aliased_pydantic_field():
@@ -248,5 +248,5 @@ def test_type_with_aliased_pydantic_field():
     assert field1.type is int
 
     assert field2.python_name == "password"
-    assert isinstance(field2.type, StrawberryOptional)
-    assert field2.type.of_type is str
+    assert isinstance(field2.resolved_type, StrawberryOptional)
+    assert field2.resolved_type.of_type is str

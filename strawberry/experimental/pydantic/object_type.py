@@ -83,38 +83,55 @@ def type(
         model_fields = model.__fields__
         fields_set = set(fields)
 
-        all_fields: List[Tuple[str, Any, dataclasses.Field]] = [
-            (
-                name,
-                get_type_for_field(field),
-                StrawberryField(
-                    python_name=field.name,
-                    graphql_name=field.alias if field.has_alias else None,
-                    default=field.default if not field.required else UNSET,
-                    default_factory=(
-                        field.default_factory if field.default_factory else UNSET
-                    ),
-                    type_annotation=get_type_for_field(field),
+        all_fields = []
+        for field_name, field in model_fields.items():
+            if field_name not in fields_set:
+                continue
+
+            type_ = get_type_for_field(field)
+            strawberry_field = StrawberryField(
+                python_name=field.name,
+                graphql_name=field.alias if field.has_alias else None,
+                default=field.default if not field.required else UNSET,
+                default_factory=(
+                    field.default_factory if field.default_factory else UNSET
                 ),
             )
-            for name, field in model_fields.items()
-            if name in fields_set
-        ]
+            strawberry_field.type = type_
+            all_fields.append(
+                (
+                    field_name,
+                    type_,
+                    strawberry_field,
+                )
+            )
 
         wrapped = _wrap_dataclass(cls)
         extra_fields = cast(List[dataclasses.Field], _get_fields(wrapped))
         private_fields = _get_private_fields(wrapped)
 
-        all_fields.extend(
-            (
-                (
-                    field.name,
-                    field.type,
-                    field,
-                )
-                for field in extra_fields + private_fields
+        for extra_field in extra_fields + private_fields:
+            strawberry_field = StrawberryField(
+                python_name=annotation_name,
+                graphql_name=None,
+                # we need a default value when adding additional fields
+                # on top of a type generated from Pydantic, this is because
+                # Pydantic Optional fields always have None as default value
+                # which breaks dataclasses generation; as we can't define
+                # a field without a default value after one with a default value
+                # adding fields at the beginning won't work as we will also
+                # support default values on them (so the problem will be just
+                # shifted around)
+                default=None,
             )
-        )
+            strawberry_field.type = type_
+            all_fields.append(
+                (
+                    extra_field.name,
+                    extra_field.type,
+                    strawberry_field,
+                )
+            )
 
         # Sort fields so that fields with missing defaults go first
         # because dataclasses require that fields with no defaults are defined

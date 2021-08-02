@@ -22,14 +22,14 @@ def test_basic_error_type():
     [field1, field2] = definition.fields
 
     assert field1.python_name == "name"
-    assert isinstance(field1.type, StrawberryOptional)
-    assert isinstance(field1.type.of_type, StrawberryList)
-    assert field1.type.of_type.of_type is str
+    assert isinstance(field1.resolved_type, StrawberryOptional)
+    assert isinstance(field1.resolved_type.of_type, StrawberryList)
+    assert field1.resolved_type.of_type.of_type is str
 
     assert definition.fields[1].python_name == "age"
-    assert isinstance(field2.type, StrawberryOptional)
-    assert isinstance(field2.type.of_type, StrawberryList)
-    assert field1.type.of_type.of_type is str
+    assert isinstance(field2.resolved_type, StrawberryOptional)
+    assert isinstance(field2.resolved_type.of_type, StrawberryList)
+    assert field1.resolved_type.of_type.of_type is str
 
 
 def test_error_type_with_nested_model():
