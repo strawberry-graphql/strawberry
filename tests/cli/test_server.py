@@ -17,7 +17,7 @@ def test_cli_cmd_server(cli_runner):
     assert hupper.start_reloader.call_count == 1
     assert uvicorn.run.call_count == 1
 
-    assert result.output == "Running strawberry on http://0.0.0.0:8000/ 🍓\n"
+    assert result.output == "Running strawberry on http://0.0.0.0:8000/graphql 🍓\n"
 
 
 def test_cli_cmd_server_app_dir_option(cli_runner):
@@ -30,7 +30,7 @@ def test_cli_cmd_server_app_dir_option(cli_runner):
     assert hupper.start_reloader.call_count == 1
     assert uvicorn.run.call_count == 1
 
-    assert result.output == "Running strawberry on http://0.0.0.0:8000/ 🍓\n"
+    assert result.output == "Running strawberry on http://0.0.0.0:8000/graphql 🍓\n"
 
 
 def test_default_schema_symbol_name(cli_runner):
