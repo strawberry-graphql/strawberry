@@ -1,3 +1,7 @@
+import sys
+
+import pytest
+
 import hupper
 import uvicorn
 
@@ -67,3 +71,18 @@ def test_invalid_schema_instance(cli_runner):
 
     assert result.exit_code == 2
     assert expected_error in result.output
+
+
+@pytest.mark.parametrize("dependency", ["hupper", "uvicorn", "starlette.applications"])
+def test_missing_debug_server_dependencies(cli_runner, mocker, dependency):
+    mocker.patch.dict(sys.modules, {dependency: None})
+
+    schema = "tests.fixtures.sample_package.sample_module"
+    result = cli_runner.invoke(cmd_server, [schema])
+
+    assert result.exit_code == 1
+    assert result.output == (
+        "Error: "
+        "The debug server requires additional packages, install them by running:\n"
+        "pip install strawberry-graphql[debug-server]\n"
+    )
