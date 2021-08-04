@@ -10,6 +10,9 @@ jobs:
   release-file-check:
     runs-on: ubuntu-latest
 
+    outputs:
+      changelog: ${{ steps.release-check.outputs.changelog }}
+
     steps:
     - uses: actions/checkout@v1
 
@@ -18,12 +21,17 @@ jobs:
       id: release-check
         # if: github.event.pull_request.draft == false
 
+  generate-preview:
+    runs-on: ubuntu-latest
+    needs: release-file-check
+
+    steps:
     - name: Generate Twitter card preview
       uses: strawberry-graphql/release-cards@main
       with:
         version: "(next)"
         contributor: ${{ github.event.pull_request.user.login }}
-        description: ${{ fromJSON(steps.release-check.outputs.changelog) }}
+        description: ${{ fromJSON(needs.release-file-check.outputs.changelog) }}
 
     - name: Uploads preview to imgur
       run: |
