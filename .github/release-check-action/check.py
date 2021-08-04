@@ -59,8 +59,8 @@ print(f"::set-output name=release_status::{status}")
 
 if release_info:
     changelog = release_info["changelog"]
-    changelog = changelog.replace("\n", "\\n")
     changelog = changelog.replace("`", r"\`")
+    changelog = json.dumps(changelog)
 
     print(f"::set-output name=changelog::{changelog}")
 

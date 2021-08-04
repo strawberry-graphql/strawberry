@@ -23,7 +23,7 @@ jobs:
       with:
         version: "(next)"
         contributor: ${{ github.event.pull_request.user.login }}
-        description: ${{ steps.release-check.outputs.changelog }}
+        description: ${{ fromJSON(steps.release-check.outputs.changelog) }}
 
     - name: Uploads preview to imgur
       run: |
