@@ -1,0 +1,13 @@
+name: 'Strawberry Bot Action'
+inputs:
+  pr_number:
+    required: true
+  status:
+    required: true
+  change_type:
+    required: true
+  changelog:
+    required: true
+runs:
+  using: 'docker'
+  image: 'Dockerfile'

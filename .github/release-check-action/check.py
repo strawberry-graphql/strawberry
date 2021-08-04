@@ -2,8 +2,7 @@ import json
 import pathlib
 import sys
 
-import httpx
-from config import API_URL, GITHUB_EVENT_PATH, GITHUB_WORKSPACE, RELEASE_FILE_PATH
+from config import GITHUB_EVENT_PATH, GITHUB_WORKSPACE, RELEASE_FILE_PATH
 from release import InvalidReleaseFileError, get_release_info
 
 
@@ -44,15 +43,6 @@ else:
         exit_code = 2
         status = "INVALID"
 
-mutation = """mutation AddReleaseComment($input: AddReleaseFileCommentInput!) {
-  addReleaseFileComment(input: $input)
-}"""
-
-mutation_input = {
-    "prNumber": event_data["number"],
-    "status": status,
-    "releaseInfo": release_info,
-}
 
 print(f"Status is {status}")
 print(f"::set-output name=release_status::{status}")
@@ -63,18 +53,7 @@ if release_info:
     changelog = json.dumps(changelog)
 
     print(f"::set-output name=changelog::{changelog}")
+    print(f"::set-output name=change_type::{info.change_type.name}")
 
-
-response = httpx.post(
-    API_URL,
-    json={"query": mutation, "variables": {"input": mutation_input}},
-    timeout=120,
-)
-response.raise_for_status()
-
-response_data = response.json()
-
-if "errors" in response_data:
-    raise RuntimeError(f"Response contained errors: {response_data['errors']}")
 
 sys.exit(exit_code)

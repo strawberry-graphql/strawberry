@@ -35,10 +35,24 @@ jobs:
 
     - name: Uploads preview to imgur
       run: |
-        echo IMAGE_URL=$(curl --location --request POST "https://api.imgur.com/3/image" \
+        echo 'set-output::release_card_url=$(curl --location --request POST "https://api.imgur.com/3/image" \
           --fail \
           --header "Authorization: Client-ID $IMGUR_CLIENT_ID" \
           --form "image=@screenshot.png;filename=screenshot.png;type=image/png" \
-          | jq  --raw-output '.data.link')
+          | jq  --raw-output '.data.link')'
       env:
         IMGUR_CLIENT_ID: ${{ secrets.IMGUR_CLIENT_ID }}
+
+  send-comment:
+    runs-on: ubuntu-latest
+    needs: [release-file-check, generate-preview]
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Send comment
+      uses: ./.github/bot-action
+      with:
+        pr_number: ${{ github.event.number }}
+        status: "OK"
+        change_type: "PATCH"
+        changelog: "demo"
