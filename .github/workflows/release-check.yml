@@ -15,6 +15,7 @@ jobs:
 
     - name: Release file check
       uses: ./.github/release-check-action
+      id: release-check
         # if: github.event.pull_request.draft == false
 
     - name: Generate Twitter card preview
@@ -22,7 +23,7 @@ jobs:
       with:
         version: "(next)"
         contributor: ${{ github.event.pull_request.user.login }}
-        description: ${{ env.CHANGELOG }}
+        description: ${{ steps.release-check.outputs.changelog }}
 
     - name: Uploads preview to imgur
       run: |
@@ -33,11 +34,3 @@ jobs:
           | jq  --raw-output '.data.link') >> $GITHUB_ENV
       env:
         IMGUR_CLIENT_ID: ${{ secrets.IMGUR_CLIENT_ID }}
-    - uses: mshick/add-pr-comment@v1
-      with:
-        message: |
-          ![](${{ env.IMAGE_URL }})
-        repo-token: ${{ secrets.BOT_TOKEN}}
-        repo-token-user-login: 'botberry'
-        proxy-url: ${{ secrets.COMMENTS_PROXY_URL }}
-        allow-repeats: false

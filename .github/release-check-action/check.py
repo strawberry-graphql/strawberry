@@ -1,5 +1,4 @@
 import json
-import os
 import pathlib
 import sys
 
@@ -58,17 +57,11 @@ mutation_input = {
 print(f"Status is {status}")
 print(f"::set-output name=release_status::{status}")
 
-if "GITHUB_ENV" in os.environ and release_info:
+if release_info:
     changelog = release_info["changelog"]
     changelog = changelog.replace("`", r"\`")
 
-    with open(os.environ["GITHUB_ENV"], "w") as f:
-        value = f"""
-CHANGELOG<<EOF
-{changelog}
-EOF
-"""
-        f.write(value)
+    print(f"::set-output name=changelog::{changelog}")
 
 
 response = httpx.post(
