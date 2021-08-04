@@ -1,6 +1,17 @@
 CHANGELOG
 =========
 
+0.70.2 - 2021-08-04
+-------------------
+
+This release makes the `strawberry server` command inform the user about missing
+dependencies required by the builtin debug server.
+
+Also `hupper` a package only used by said command has been made optional.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) [PR #1107](https://github.com/strawberry-graphql/strawberry/pull/1107/)
+
+
 0.70.1 - 2021-08-01
 -------------------
 
