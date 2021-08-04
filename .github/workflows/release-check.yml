@@ -27,6 +27,7 @@ jobs:
     - name: Uploads preview to imgur
       run: |
         echo IMAGE_URL=$(curl --location --request POST "https://api.imgur.com/3/image" \
+          --fail \
           --header 'Authorization: Client-ID $IMGUR_CLIENT_ID' \
           --form "image=@screenshot.png;filename=screenshot.png;type=image/png" \
           | jq  --raw-output '.data.link') >> $GITHUB_ENV
