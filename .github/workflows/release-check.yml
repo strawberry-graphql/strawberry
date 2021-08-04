@@ -20,7 +20,7 @@ jobs:
     - name: Generate Twitter card preview
       uses: strawberry-graphql/release-cards@main
       with:
-        version: "Next"
+        version: "(next)"
         contributor: ${{ github.event.pull_request.user.login }}
         description: ${{ env.CHANGELOG }}
 
@@ -36,10 +36,8 @@ jobs:
     - uses: mshick/add-pr-comment@v1
       with:
         message: |
-          **Hello**
-          🌏
           ![](${{ env.IMAGE_URL }})
-          !
         repo-token: ${{ secrets.BOT_TOKEN}}
         repo-token-user-login: 'botberry'
+        proxy-url: ${{ secrets.COMMENTS_PROXY_URL }}
         allow-repeats: false
