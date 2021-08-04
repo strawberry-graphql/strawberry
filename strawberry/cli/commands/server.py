@@ -2,10 +2,6 @@ import importlib
 import sys
 
 import click
-import hupper
-import uvicorn
-from starlette.applications import Starlette
-from starlette.middleware.cors import CORSMiddleware
 
 from strawberry import Schema
 from strawberry.asgi import GraphQL
@@ -29,6 +25,18 @@ from strawberry.utils.importer import import_module_symbol
 )
 def server(schema, host, port, app_dir):
     sys.path.insert(0, app_dir)
+
+    try:
+        import hupper
+        import uvicorn
+        from starlette.applications import Starlette
+        from starlette.middleware.cors import CORSMiddleware
+    except ImportError:
+        message = (
+            "The debug server requires additional packages, install them by running:\n"
+            "pip install strawberry-graphql[debug-server]"
+        )
+        raise click.ClickException(message)
 
     try:
         schema_symbol = import_module_symbol(schema, default_symbol_name="schema")
@@ -56,5 +64,5 @@ def server(schema, host, port, app_dir):
         app.add_route(path, graphql_app)
         app.add_websocket_route(path, graphql_app)
 
-    print(f"Running strawberry on http://{host}:{port}/ 🍓")
+    print(f"Running strawberry on http://{host}:{port}/graphql 🍓")
     uvicorn.run(app, loop="none", host=host, port=port, log_level="error")
