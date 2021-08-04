@@ -2,7 +2,6 @@ import sys
 
 import pytest
 
-import hupper
 import uvicorn
 
 from strawberry.cli.commands.server import server as cmd_server
@@ -11,12 +10,9 @@ from strawberry.cli.commands.server import server as cmd_server
 def test_cli_cmd_server(cli_runner):
     schema = "tests.fixtures.sample_package.sample_module"
     result = cli_runner.invoke(cmd_server, [schema])
+
     assert result.exit_code == 0
-
-    # We started the reloader
-    assert hupper.start_reloader.call_count == 1
     assert uvicorn.run.call_count == 1
-
     assert result.output == "Running strawberry on http://0.0.0.0:8000/graphql 🍓\n"
 
 
@@ -24,12 +20,9 @@ def test_cli_cmd_server_app_dir_option(cli_runner):
     result = cli_runner.invoke(
         cmd_server, ["--app-dir=./tests/fixtures/sample_package", "sample_module"]
     )
+
     assert result.exit_code == 0
-
-    # We started the reloader
-    assert hupper.start_reloader.call_count == 1
     assert uvicorn.run.call_count == 1
-
     assert result.output == "Running strawberry on http://0.0.0.0:8000/graphql 🍓\n"
 
 
@@ -73,7 +66,7 @@ def test_invalid_schema_instance(cli_runner):
     assert expected_error in result.output
 
 
-@pytest.mark.parametrize("dependency", ["hupper", "uvicorn", "starlette.applications"])
+@pytest.mark.parametrize("dependency", ["uvicorn", "starlette"])
 def test_missing_debug_server_dependencies(cli_runner, mocker, dependency):
     mocker.patch.dict(sys.modules, {dependency: None})
 
