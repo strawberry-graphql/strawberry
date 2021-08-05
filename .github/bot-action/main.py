@@ -11,6 +11,7 @@ mutation = """mutation AddReleaseComment($input: AddReleaseFileCommentInput!) {
   addReleaseFileComment(input: $input)
 }"""
 
+print(os.environ["INPUT_RELEASE_CARD_URL"])
 
 mutation_input = {
     "prNumber": int(os.environ["INPUT_PR_NUMBER"]),
