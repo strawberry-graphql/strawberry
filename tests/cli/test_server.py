@@ -79,3 +79,9 @@ def test_missing_debug_server_dependencies(cli_runner, mocker, dependency):
         "The debug server requires additional packages, install them by running:\n"
         "pip install strawberry-graphql[debug-server]\n"
     )
+
+
+def test_debug_server_routes(debug_server_client):
+    for path in ["/", "/graphql"]:
+        response = debug_server_client.get(path)
+        assert response.status_code == 200
