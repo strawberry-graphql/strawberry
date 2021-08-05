@@ -21,7 +21,7 @@ jobs:
     - name: Release file check
       uses: ./.github/release-check-action
       id: release-check
-        # if: github.event.pull_request.draft == false
+      if: github.event.pull_request.draft == false
 
   generate-preview:
     runs-on: ubuntu-latest
