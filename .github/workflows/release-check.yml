@@ -33,13 +33,15 @@ jobs:
     steps:
     - name: Generate Twitter card preview
       uses: strawberry-graphql/release-cards@main
+      if: ${{ needs.release-file-check.outputs.status == 'OK' }}
       with:
         version: "(next)"
         contributor: ${{ github.event.pull_request.user.login }}
         description: ${{ fromJSON(needs.release-file-check.outputs.changelog) }}
 
-    - name: Uploads preview to imgur
+    - name: Uploads preview
       id: upload
+      if: ${{ needs.release-file-check.outputs.status == 'OK' }}
       run: |
         echo ::set-output name=url::$(curl --location --request POST "https://api.imgur.com/3/image" \
           --fail \
