@@ -54,6 +54,8 @@ if release_info:
 
     print(f"::set-output name=changelog::{changelog}")
     print(f"::set-output name=change_type::{info.change_type.name}")
+else:
+    print('::set-output name=changelog::""')
 
 
 sys.exit(exit_code)
