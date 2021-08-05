@@ -26,6 +26,7 @@ jobs:
   generate-preview:
     runs-on: ubuntu-latest
     needs: release-file-check
+    if: always()
 
     outputs:
       url: ${{ steps.upload.outputs.url }}
@@ -54,6 +55,7 @@ jobs:
   send-comment:
     runs-on: ubuntu-latest
     needs: [release-file-check, generate-preview]
+    if: always()
 
     steps:
     - uses: actions/checkout@v1
