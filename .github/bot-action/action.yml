@@ -8,6 +8,8 @@ inputs:
     required: true
   changelog:
     required: true
+  release_card_url:
+    required: false
 runs:
   using: 'docker'
   image: 'Dockerfile'
