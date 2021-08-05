@@ -18,7 +18,7 @@ mutation_input = {
     "releaseCardUrl": os.environ["INPUT_RELEASE_CARD_URL"],
     "releaseInfo": {
         "changeType": os.environ["INPUT_CHANGE_TYPE"],
-        "changelog": os.environ["INPUT_CHANGELOG"],
+        "changelog": os.environ["INPUT_CHANGELOG"].replace(r"\`", "`"),
     },
 }
 
