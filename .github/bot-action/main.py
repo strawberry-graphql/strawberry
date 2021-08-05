@@ -34,3 +34,5 @@ response_data = response.json()
 
 if "errors" in response_data:
     raise RuntimeError(f"Response contained errors: {response_data['errors']}")
+
+print(response_data)
