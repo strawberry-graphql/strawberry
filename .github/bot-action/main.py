@@ -1,4 +1,5 @@
 # TODO: improve this to support multiple commands
+import base64
 import os
 
 import httpx
@@ -16,9 +17,11 @@ mutation = """mutation AddReleaseComment($input: AddReleaseFileCommentInput!) {
 release_info = None
 
 if os.environ["INPUT_STATUS"] == "OK":
+    changelog = base64.b64decode(os.environ["INPUT_CHANGELOG_BASE64"]).decode("utf-8")
+
     release_info = {
         "changeType": os.environ["INPUT_CHANGE_TYPE"],
-        "changelog": os.environ["INPUT_CHANGELOG"].replace(r"\`", "`"),
+        "changelog": changelog,
     }
 
 mutation_input = {

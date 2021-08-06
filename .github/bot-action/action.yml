@@ -6,7 +6,7 @@ inputs:
     required: true
   change_type:
     required: true
-  changelog:
+  changelog_base64:
     required: true
   release_card_url:
     required: false

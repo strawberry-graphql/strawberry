@@ -68,5 +68,5 @@ jobs:
         pr_number: ${{ github.event.number }}
         status: ${{ needs.release-file-check.outputs.status }}
         change_type: ${{ needs.release-file-check.outputs.change_type }}
-        changelog: ${{ needs.release-file-check.outputs.changelog }}
+        changelog_base64: ${{ needs.release-file-check.outputs.changelog }}
         release_card_url: ${{ needs.generate-preview.outputs.url }}
