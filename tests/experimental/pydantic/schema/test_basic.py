@@ -205,3 +205,31 @@ def test_basic_type_with_extended_fields():
     assert not result.errors
     assert result.data["user"]["name"] == "Marco"
     assert result.data["user"]["age"] == 100
+
+
+def test_type_with_custom_resolver():
+    class UserModel(pydantic.BaseModel):
+        age: int
+
+    def get_age_in_months(root):
+        return root.age * 12
+
+    @strawberry.experimental.pydantic.type(UserModel, fields=["age"])
+    class User:
+        age_in_months: int = strawberry.field(resolver=get_age_in_months)
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self) -> User:
+            return User(age=20)
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ user { age ageInMonths } }"
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data["user"]["age"] == 20
+    assert result.data["user"]["ageInMonths"] == 240
