@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.70.3 - 2021-08-06
+-------------------
+
+This release changes how we map Pydantic fields to types
+to allow using older version of Pydantic.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1071](https://github.com/strawberry-graphql/strawberry/pull/1071/)
+
+
 0.70.2 - 2021-08-04
 -------------------
 
