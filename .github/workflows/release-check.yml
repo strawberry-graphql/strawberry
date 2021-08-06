@@ -61,6 +61,9 @@ jobs:
     - uses: actions/checkout@v1
     - name: Send comment
       uses: ./.github/bot-action
+      env:
+        BOT_API_URL: ${{ secrets.BOT_API_URL }}
+        API_SECRET: ${{ secrets.API_SECRET }}
       with:
         pr_number: ${{ github.event.number }}
         status: ${{ needs.release-file-check.outputs.status }}

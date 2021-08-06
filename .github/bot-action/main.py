@@ -4,7 +4,8 @@ import os
 import httpx
 
 
-API_URL = "https://strawberry-bot-r3o3etjz6a-ew.a.run.app/graphql"
+API_URL = os.environ["BOT_API_URL"]
+API_TOKEN = os.environ["API_SECRET"]
 
 
 mutation = """mutation AddReleaseComment($input: AddReleaseFileCommentInput!) {
@@ -30,6 +31,7 @@ mutation_input = {
 response = httpx.post(
     API_URL,
     json={"query": mutation, "variables": {"input": mutation_input}},
+    headers={"Authorization": f"Bearer {API_TOKEN}"},
     timeout=120,
 )
 response.raise_for_status()
