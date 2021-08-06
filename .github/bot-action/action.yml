@@ -1,0 +1,15 @@
+name: 'Strawberry Bot Action'
+inputs:
+  pr_number:
+    required: true
+  status:
+    required: true
+  change_type:
+    required: true
+  changelog_base64:
+    required: true
+  release_card_url:
+    required: false
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
