@@ -33,7 +33,7 @@ jobs:
 
     steps:
     - name: Generate Twitter card preview
-      uses: docker://patrick91/strawberry-release-cards:main
+      uses: strawberry-graphql/release-cards@main
       if: ${{ needs.release-file-check.outputs.status == 'OK' }}
       with:
         version: "(next)"
