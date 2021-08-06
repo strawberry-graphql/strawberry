@@ -1,3 +1,4 @@
+import base64
 import json
 import pathlib
 import sys
@@ -49,10 +50,9 @@ print(f"::set-output name=release_status::{status}")
 
 if release_info:
     changelog = release_info["changelog"]
-    changelog = changelog.replace("`", r"\`")
-    changelog = json.dumps(changelog)
+    encoded_changelog = base64.b64encode(changelog.encode("utf-8")).decode("ascii")
 
-    print(f"::set-output name=changelog::{changelog}")
+    print(f"::set-output name=changelog::{encoded_changelog}")
     print(f"::set-output name=change_type::{info.change_type.name}")
 else:
     print('::set-output name=changelog::""')
