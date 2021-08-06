@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 from enum import Enum
 from inspect import isasyncgen, iscoroutine
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Tuple, Type, Union
@@ -336,6 +337,32 @@ class GraphQLCoreConverter:
                     message = getattr(permission, "message", None)
                     raise PermissionError(message)
 
+        async def _check_permissions_async(
+            source: Any, info: Info, kwargs: Dict[str, Any]
+        ):
+            for permission_class in field.permission_classes:
+                permission = permission_class()
+                has_permission: bool
+
+                if inspect.iscoroutinefunction(permission.has_permission):
+                    has_permission = await permission.has_permission(  # type: ignore
+                        source, info, **kwargs
+                    )
+                else:
+                    has_permission = permission.has_permission(  # type: ignore
+                        source, info, **kwargs
+                    )
+
+                if not has_permission:
+                    message = getattr(permission, "message", None)
+                    raise PermissionError(message)
+
+        def _has_async_permission_classes() -> bool:
+            for permission_class in field.permission_classes:
+                if inspect.iscoroutinefunction(permission_class.has_permission):
+                    return True
+            return False
+
         def _strawberry_info_from_graphql(info: GraphQLResolveInfo) -> Info:
             return Info(
                 field_name=info.field_name,
@@ -348,32 +375,46 @@ class GraphQLCoreConverter:
                 path=info.path,
             )
 
+        # TODO: have a async variant of this function. graphql-core handles them
+        # TODO: out of the box and way better than our "async resolving hacks" below.
         def _resolver(_source: Any, info: GraphQLResolveInfo, **kwargs):
             strawberry_info = _strawberry_info_from_graphql(info)
-            _check_permissions(_source, strawberry_info, kwargs)
 
-            args, kwargs = _get_arguments(
+            field_args, field_kwargs = _get_arguments(
                 source=_source, info=strawberry_info, kwargs=kwargs
             )
 
+            # This makes sure we always check permissions before resolving the field
+            if not _has_async_permission_classes():
+                _check_permissions(_source, strawberry_info, kwargs)
+
             result = field.get_result(
-                _source, info=strawberry_info, args=args, kwargs=kwargs
+                _source, info=strawberry_info, args=field_args, kwargs=field_kwargs
             )
-
-            if isasyncgen(result):
-
-                async def yield_results(results):
-                    async for value in results:
-                        yield value
-
-                return yield_results(result)
 
             if iscoroutine(result):  # pragma: no cover
 
-                async def await_result(result):
+                async def await_result():
+                    await _check_permissions_async(_source, strawberry_info, kwargs)
                     return await result
 
-                return await_result(result)
+                return await_result()
+
+            if isasyncgen(result):
+
+                async def yield_results():
+                    await _check_permissions_async(_source, strawberry_info, kwargs)
+                    return result
+
+                return yield_results()
+
+            if _has_async_permission_classes():
+
+                async def wrapper():
+                    await _check_permissions_async(_source, strawberry_info, kwargs)
+                    return result
+
+                return wrapper()
 
             return result
 
