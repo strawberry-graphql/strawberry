@@ -38,7 +38,7 @@ jobs:
       with:
         version: "(next)"
         contributor: ${{ github.event.pull_request.user.login }}
-        description: ${{ fromJSON(needs.release-file-check.outputs.changelog) }}
+        description_base64: ${{ needs.release-file-check.outputs.changelog }}
 
     - name: Uploads preview
       id: upload
@@ -68,5 +68,5 @@ jobs:
         pr_number: ${{ github.event.number }}
         status: ${{ needs.release-file-check.outputs.status }}
         change_type: ${{ needs.release-file-check.outputs.change_type }}
-        changelog: ${{ fromJSON(needs.release-file-check.outputs.changelog) }}
+        changelog: ${{ needs.release-file-check.outputs.changelog }}
         release_card_url: ${{ needs.generate-preview.outputs.url }}
