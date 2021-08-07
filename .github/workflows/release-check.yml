@@ -42,7 +42,7 @@ jobs:
   validate-tweet:
     runs-on: ubuntu-latest
     needs: read-tweet-md
-    # TODO: skip if no tweet
+    if: ${{ needs.read-tweet-md.outputs.tweet != '' }}
     steps:
       - uses: actions/checkout@v1
       - name: Validate tweet
