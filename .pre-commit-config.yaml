@@ -14,7 +14,7 @@ repos:
     rev: v0.910
     hooks:
       - id: mypy
-        args: [--non-interactive, --install-types, --ignore-missing-imports]
+        args: [--non-interactive, --ignore-missing-imports]
 
   - repo: https://github.com/pycqa/isort
     rev: 5.9.3
