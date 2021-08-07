@@ -27,28 +27,48 @@ jobs:
     runs-on: ubuntu-latest
     needs: release-file-check
 
+    outputs:
+      tweet: ${{ steps.extract.outputs.tweet }}
+      card_text: ${{ steps.extract.outputs.card_text }}
+
     steps:
     - uses: actions/checkout@v1
     - name: Extract tweet message and changelog
+      id: extract
       shell: python
       env:
         CHANGELOG: ${{ needs.release-file-check.outputs.changelog }}
       run: |
+        import base64
         import os
         from pathlib import Path
 
         changelog = os.environ["CHANGELOG"]
+        card_text = ""
         tweet = ""
 
-        tweet_path = Path('./TWEET.md')
+        tweet_path = Path("./TWEET.md")
 
         if tweet_path.exists():
-          with tweet_path.open(mode='r') as f:
-            print(f.read())
+          with tweet_path.open(mode="r") as f:
+            contents = f.read()
+
+            tweet, _, card_text = [part.strip() for part in contents.partition("---")]
+
+        if not card_text:
+          card_text = changelog
+        else:
+          card_text = base64.b64encode(card_text.encode("utf-8")).decode("ascii")
+
+        tweet = base64.b64encode(tweet.encode("utf-8")).decode("ascii")
+
+        print(f"::set-output name=tweet::{tweet}")
+        print(f"::set-output name=card_text::{card_text}")
+
 
   generate-preview:
     runs-on: ubuntu-latest
-    needs: release-file-check
+    needs: [release-file-check, read-tweet-md]
     if: always() && github.event.pull_request.draft == false
 
     outputs:
@@ -61,7 +81,7 @@ jobs:
       with:
         version: "(next)"
         contributor: ${{ github.event.pull_request.user.login }}
-        description_base64: ${{ needs.release-file-check.outputs.changelog }}
+        description_base64: ${{ needs.read-tweet-md.outputs.release_card }}
 
     - name: Uploads preview
       id: upload
