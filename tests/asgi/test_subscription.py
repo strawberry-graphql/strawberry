@@ -1,10 +1,8 @@
-import asyncio
-
 import pytest
 
-import starlette
+from starlette.websockets import WebSocketDisconnect
 
-from strawberry.asgi.constants import (
+from strawberry.subscriptions.constants import (
     GQL_COMPLETE,
     GQL_CONNECTION_ACK,
     GQL_CONNECTION_INIT,
@@ -14,21 +12,20 @@ from strawberry.asgi.constants import (
     GQL_ERROR,
     GQL_START,
     GQL_STOP,
+    GRAPHQL_WS,
 )
-
-from .utils import TickEventLoopPolicy
 
 
 def test_simple_subscription(test_client):
-    asyncio.set_event_loop_policy(TickEventLoopPolicy())
-
-    with test_client.websocket_connect("/", "graphql-ws") as ws:
+    with test_client.websocket_connect("/", GRAPHQL_WS) as ws:
         ws.send_json({"type": GQL_CONNECTION_INIT})
         ws.send_json(
             {
                 "type": GQL_START,
                 "id": "demo",
-                "payload": {"query": "subscription { example }"},
+                "payload": {
+                    "query": 'subscription { echo(message: "Hi") }',
+                },
             }
         )
 
@@ -38,7 +35,7 @@ def test_simple_subscription(test_client):
         response = ws.receive_json()
         assert response["type"] == GQL_DATA
         assert response["id"] == "demo"
-        assert response["payload"]["data"] == {"example": "Hi"}
+        assert response["payload"]["data"] == {"echo": "Hi"}
 
         ws.send_json({"type": GQL_STOP, "id": "demo"})
         response = ws.receive_json()
@@ -48,36 +45,65 @@ def test_simple_subscription(test_client):
         ws.send_json({"type": GQL_CONNECTION_TERMINATE})
 
         # make sure the websocket is disconnected now
-        with pytest.raises(starlette.websockets.WebSocketDisconnect):
+        with pytest.raises(WebSocketDisconnect):
             ws.receive_json()
 
 
-def test_sends_keep_alive(test_client_keep_alive):
-    asyncio.set_event_loop_policy(TickEventLoopPolicy())
-
-    with test_client_keep_alive.websocket_connect("/", "graphql-ws") as ws:
+def test_operation_selection(test_client):
+    with test_client.websocket_connect("/", GRAPHQL_WS) as ws:
         ws.send_json({"type": GQL_CONNECTION_INIT})
         ws.send_json(
             {
                 "type": GQL_START,
                 "id": "demo",
-                "payload": {"query": "subscription { example }"},
+                "payload": {
+                    "query": """
+                        subscription Subscription1 { echo(message: "Hi1") }
+                        subscription Subscription2 { echo(message: "Hi2") }
+                    """,
+                    "operationName": "Subscription2",
+                },
             }
         )
 
         response = ws.receive_json()
         assert response["type"] == GQL_CONNECTION_ACK
 
-        # the example subscription has a delay of 1.5 seconds
-        # the keep alive is set to run as soon as the subscription starts
-        # and then every 2 seconds, so we should get this sequence of messages:
-        # +------+---------+
-        # | Time | Message |
-        # +------+---------+
-        # |    0 | ka      |
-        # |  1.5 | data    |
-        # |    2 | ka      |
-        # +------+---------+
+        response = ws.receive_json()
+        assert response["type"] == GQL_DATA
+        assert response["id"] == "demo"
+        assert response["payload"]["data"] == {"echo": "Hi2"}
+
+        ws.send_json({"type": GQL_STOP, "id": "demo"})
+        response = ws.receive_json()
+        assert response["type"] == GQL_COMPLETE
+        assert response["id"] == "demo"
+
+        ws.send_json({"type": GQL_CONNECTION_TERMINATE})
+
+        # make sure the websocket is disconnected now
+        with pytest.raises(WebSocketDisconnect):
+            ws.receive_json()
+
+
+def test_sends_keep_alive(test_client_keep_alive):
+    with test_client_keep_alive.websocket_connect("/", GRAPHQL_WS) as ws:
+        ws.send_json({"type": GQL_CONNECTION_INIT})
+        ws.send_json(
+            {
+                "type": GQL_START,
+                "id": "demo",
+                "payload": {
+                    "query": 'subscription { echo(message: "Hi", delay: 0.15) }'
+                },
+            }
+        )
+
+        response = ws.receive_json()
+        assert response["type"] == GQL_CONNECTION_ACK
+
+        response = ws.receive_json()
+        assert response["type"] == GQL_CONNECTION_KEEP_ALIVE
 
         response = ws.receive_json()
         assert response["type"] == GQL_CONNECTION_KEEP_ALIVE
@@ -85,10 +111,7 @@ def test_sends_keep_alive(test_client_keep_alive):
         response = ws.receive_json()
         assert response["type"] == GQL_DATA
         assert response["id"] == "demo"
-        assert response["payload"]["data"] == {"example": "Hi"}
-
-        response = ws.receive_json()
-        assert response["type"] == GQL_CONNECTION_KEEP_ALIVE
+        assert response["payload"]["data"] == {"echo": "Hi"}
 
         response = ws.receive_json()
         assert response["type"] == GQL_COMPLETE
@@ -97,14 +120,110 @@ def test_sends_keep_alive(test_client_keep_alive):
         ws.send_json({"type": GQL_CONNECTION_TERMINATE})
 
 
+def test_subscription_cancellation(schema, test_client):
+    with test_client.websocket_connect("/", GRAPHQL_WS) as ws:
+        ws.send_json({"type": GQL_CONNECTION_INIT})
+        response = ws.receive_json()
+        assert response["type"] == GQL_CONNECTION_ACK
+
+        ws.send_json(
+            {
+                "type": GQL_START,
+                "id": "demo",
+                "payload": {"query": 'subscription { echo(message: "Hi", delay: 99) }'},
+            }
+        )
+
+        ws.send_json(
+            {
+                "type": GQL_START,
+                "id": "debug1",
+                "payload": {
+                    "query": "subscription { debug { numActiveResultHandlers } }",
+                },
+            }
+        )
+
+        response = ws.receive_json()
+        assert response["type"] == GQL_DATA
+        assert response["id"] == "debug1"
+        assert response["payload"]["data"] == {"debug": {"numActiveResultHandlers": 2}}
+
+        response = ws.receive_json()
+        assert response["type"] == GQL_COMPLETE
+        assert response["id"] == "debug1"
+
+        ws.send_json({"type": GQL_STOP, "id": "demo"})
+        response = ws.receive_json()
+        assert response["type"] == GQL_COMPLETE
+        assert response["id"] == "demo"
+
+        ws.send_json(
+            {
+                "type": GQL_START,
+                "id": "debug2",
+                "payload": {
+                    "query": "subscription { debug { numActiveResultHandlers} }",
+                },
+            }
+        )
+
+        response = ws.receive_json()
+        assert response["type"] == GQL_DATA
+        assert response["id"] == "debug2"
+        assert response["payload"]["data"] == {"debug": {"numActiveResultHandlers": 1}}
+
+        response = ws.receive_json()
+        assert response["type"] == GQL_COMPLETE
+        assert response["id"] == "debug2"
+
+        ws.send_json({"type": GQL_CONNECTION_TERMINATE})
+
+        # make sure the websocket is disconnected now
+        with pytest.raises(WebSocketDisconnect):
+            ws.receive_json()
+
+
 def test_subscription_errors(test_client):
-    with test_client.websocket_connect("/", "graphql-ws") as ws:
+    with test_client.websocket_connect("/", GRAPHQL_WS) as ws:
         ws.send_json({"type": GQL_CONNECTION_INIT})
         ws.send_json(
             {
                 "type": GQL_START,
                 "id": "demo",
-                "payload": {"query": "subscription { exampleError }"},
+                "payload": {"query": 'subscription { error(message: "TEST ERR") }'},
+            }
+        )
+
+        response = ws.receive_json()
+        assert response["type"] == GQL_CONNECTION_ACK
+
+        response = ws.receive_json()
+        assert response["type"] == GQL_DATA
+        assert response["id"] == "demo"
+        assert response["payload"]["data"] is None
+        assert response["payload"]["errors"][0]["path"] == ["error"]
+        assert response["payload"]["errors"][0]["message"] == "TEST ERR"
+
+        response = ws.receive_json()
+        assert response["type"] == GQL_COMPLETE
+        assert response["id"] == "demo"
+
+        ws.send_json({"type": GQL_CONNECTION_TERMINATE})
+
+        # make sure the websocket is disconnected now
+        with pytest.raises(WebSocketDisconnect):
+            ws.receive_json()
+
+
+def test_subscription_exceptions(schema, test_client):
+    with test_client.websocket_connect("/", GRAPHQL_WS) as ws:
+        ws.send_json({"type": GQL_CONNECTION_INIT})
+        ws.send_json(
+            {
+                "type": GQL_START,
+                "id": "demo",
+                "payload": {"query": 'subscription { exception(message: "TEST EXC") }'},
             }
         )
 
@@ -116,7 +235,7 @@ def test_subscription_errors(test_client):
         assert response["id"] == "demo"
         assert response["payload"]["data"] is None
         assert response["payload"]["errors"] == [
-            {"locations": None, "message": "This is an example", "path": None}
+            {"locations": None, "message": "TEST EXC", "path": None}
         ]
 
         ws.send_json({"type": GQL_STOP, "id": "demo"})
@@ -127,12 +246,12 @@ def test_subscription_errors(test_client):
         ws.send_json({"type": GQL_CONNECTION_TERMINATE})
 
         # make sure the websocket is disconnected now
-        with pytest.raises(starlette.websockets.WebSocketDisconnect):
+        with pytest.raises(WebSocketDisconnect):
             ws.receive_json()
 
 
 def test_subscription_field_error(test_client):
-    with test_client.websocket_connect("/", "graphql-ws") as ws:
+    with test_client.websocket_connect("/", GRAPHQL_WS) as ws:
         ws.send_json({"type": GQL_CONNECTION_INIT})
         ws.send_json(
             {
@@ -159,12 +278,12 @@ def test_subscription_field_error(test_client):
         ws.send_json({"type": GQL_CONNECTION_TERMINATE})
 
         # make sure the websocket is disconnected now
-        with pytest.raises(starlette.websockets.WebSocketDisconnect):
+        with pytest.raises(WebSocketDisconnect):
             ws.receive_json()
 
 
 def test_subscription_syntax_error(test_client):
-    with test_client.websocket_connect("/", "graphql-ws") as ws:
+    with test_client.websocket_connect("/", GRAPHQL_WS) as ws:
         ws.send_json({"type": GQL_CONNECTION_INIT})
         ws.send_json(
             {
@@ -189,5 +308,214 @@ def test_subscription_syntax_error(test_client):
         ws.send_json({"type": GQL_CONNECTION_TERMINATE})
 
         # make sure the websocket is disconnected now
-        with pytest.raises(starlette.websockets.WebSocketDisconnect):
+        with pytest.raises(WebSocketDisconnect):
             ws.receive_json()
+
+
+def test_non_text_ws_messages_are_ignored(schema, test_client):
+    with test_client.websocket_connect("/", GRAPHQL_WS) as ws:
+        ws.send_bytes(b"")
+        ws.send_json({"type": GQL_CONNECTION_INIT})
+
+        ws.send_bytes(b"")
+        ws.send_json(
+            {
+                "type": GQL_START,
+                "id": "demo",
+                "payload": {
+                    "query": 'subscription { echo(message: "Hi") }',
+                },
+            }
+        )
+
+        response = ws.receive_json()
+        assert response["type"] == GQL_CONNECTION_ACK
+
+        response = ws.receive_json()
+        assert response["type"] == GQL_DATA
+        assert response["id"] == "demo"
+        assert response["payload"]["data"] == {"echo": "Hi"}
+
+        ws.send_bytes(b"")
+        ws.send_json({"type": GQL_STOP, "id": "demo"})
+        response = ws.receive_json()
+        assert response["type"] == GQL_COMPLETE
+        assert response["id"] == "demo"
+
+        ws.send_bytes(b"")
+        ws.send_json({"type": GQL_CONNECTION_TERMINATE})
+
+        # make sure the websocket is disconnected now
+        with pytest.raises(WebSocketDisconnect):
+            ws.receive_json()
+
+
+def test_unknown_protocol_messages_are_ignored(schema, test_client):
+    with test_client.websocket_connect("/", GRAPHQL_WS) as ws:
+        ws.send_json({"type": "NotAProtocolMessage"})
+        ws.send_json({"type": GQL_CONNECTION_INIT})
+
+        ws.send_json({"type": "NotAProtocolMessage"})
+        ws.send_json(
+            {
+                "type": GQL_START,
+                "id": "demo",
+                "payload": {
+                    "query": 'subscription { echo(message: "Hi") }',
+                },
+            }
+        )
+
+        response = ws.receive_json()
+        assert response["type"] == GQL_CONNECTION_ACK
+
+        response = ws.receive_json()
+        assert response["type"] == GQL_DATA
+        assert response["id"] == "demo"
+        assert response["payload"]["data"] == {"echo": "Hi"}
+
+        ws.send_json({"type": "NotAProtocolMessage"})
+        ws.send_json({"type": GQL_STOP, "id": "demo"})
+        response = ws.receive_json()
+        assert response["type"] == GQL_COMPLETE
+        assert response["id"] == "demo"
+
+        ws.send_json({"type": "NotAProtocolMessage"})
+        ws.send_json({"type": GQL_CONNECTION_TERMINATE})
+
+        # make sure the websocket is disconnected now
+        with pytest.raises(WebSocketDisconnect):
+            ws.receive_json()
+
+
+def test_custom_context(schema, test_client):
+    with test_client.websocket_connect("/", GRAPHQL_WS) as ws:
+        ws.send_json({"type": GQL_CONNECTION_INIT})
+        ws.send_json(
+            {
+                "type": GQL_START,
+                "id": "demo",
+                "payload": {
+                    "query": "subscription { context }",
+                },
+            }
+        )
+
+        response = ws.receive_json()
+        assert response["type"] == GQL_CONNECTION_ACK
+
+        response = ws.receive_json()
+        assert response["type"] == GQL_DATA
+        assert response["id"] == "demo"
+        assert response["payload"]["data"] == {"context": "Hi"}
+
+        ws.send_json({"type": GQL_STOP, "id": "demo"})
+        response = ws.receive_json()
+        assert response["type"] == GQL_COMPLETE
+        assert response["id"] == "demo"
+
+        ws.send_json({"type": GQL_CONNECTION_TERMINATE})
+
+        # make sure the websocket is disconnected now
+        with pytest.raises(WebSocketDisconnect):
+            ws.receive_json()
+
+
+def test_resolving_enums(schema, test_client):
+    with test_client.websocket_connect("/", GRAPHQL_WS) as ws:
+        ws.send_json({"type": GQL_CONNECTION_INIT})
+        ws.send_json(
+            {
+                "type": GQL_START,
+                "id": "demo",
+                "payload": {
+                    "query": "subscription { flavors }",
+                },
+            }
+        )
+
+        response = ws.receive_json()
+        assert response["type"] == GQL_CONNECTION_ACK
+
+        response = ws.receive_json()
+        assert response["type"] == GQL_DATA
+        assert response["id"] == "demo"
+        assert response["payload"]["data"] == {"flavors": "VANILLA"}
+
+        response = ws.receive_json()
+        assert response["type"] == GQL_DATA
+        assert response["id"] == "demo"
+        assert response["payload"]["data"] == {"flavors": "STRAWBERRY"}
+
+        response = ws.receive_json()
+        assert response["type"] == GQL_DATA
+        assert response["id"] == "demo"
+        assert response["payload"]["data"] == {"flavors": "CHOCOLATE"}
+
+        ws.send_json({"type": GQL_STOP, "id": "demo"})
+        response = ws.receive_json()
+        assert response["type"] == GQL_COMPLETE
+        assert response["id"] == "demo"
+
+        ws.send_json({"type": GQL_CONNECTION_TERMINATE})
+
+        # make sure the websocket is disconnected now
+        with pytest.raises(WebSocketDisconnect):
+            ws.receive_json()
+
+
+def test_task_cancellation_separation(schema, test_client):
+    connection1 = test_client.websocket_connect("/", GRAPHQL_WS)
+    connection2 = test_client.websocket_connect("/", GRAPHQL_WS)
+
+    with connection1 as ws1, connection2 as ws2:
+        start_payload = {
+            "type": GQL_START,
+            "id": "demo",
+            "payload": {"query": 'subscription { echo(message: "Hi", delay: 99) }'},
+        }
+
+        # 0 active result handler tasks
+
+        ws1.send_json({"type": GQL_CONNECTION_INIT})
+        ws1.send_json(start_payload)
+        ws1.receive_json()
+
+        # 1 active result handler tasks
+
+        ws2.send_json({"type": GQL_CONNECTION_INIT})
+        ws2.send_json(start_payload)
+        ws2.receive_json()
+
+        # 2 active result handler tasks
+
+        ws1.send_json({"type": GQL_STOP, "id": "demo"})
+        ws1.receive_json()  # complete
+
+        # 1 active result handler tasks
+
+        ws2.send_json({"type": GQL_STOP, "id": "demo"})
+        ws2.receive_json()  # complete
+
+        # 1 active result handler tasks
+
+        ws1.send_json(
+            {
+                "type": GQL_START,
+                "id": "debug1",
+                "payload": {
+                    "query": "subscription { debug { numActiveResultHandlers } }",
+                },
+            }
+        )
+
+        response = ws1.receive_json()
+        assert response["type"] == GQL_DATA
+        assert response["id"] == "debug1"
+
+        # The one active result handler is the one for this debug subscription
+        assert response["payload"]["data"] == {"debug": {"numActiveResultHandlers": 1}}
+
+        response = ws1.receive_json()
+        assert response["type"] == GQL_COMPLETE
+        assert response["id"] == "debug1"

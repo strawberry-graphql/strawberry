@@ -1,9 +1,9 @@
+import base64
 import json
 import pathlib
 import sys
 
-import httpx
-from config import API_URL, GITHUB_EVENT_PATH, GITHUB_WORKSPACE, RELEASE_FILE_PATH
+from config import GITHUB_EVENT_PATH, GITHUB_WORKSPACE, RELEASE_FILE_PATH
 from release import InvalidReleaseFileError, get_release_info
 
 
@@ -12,7 +12,12 @@ with open(GITHUB_EVENT_PATH) as f:
 
 sender = event_data["pull_request"]["user"]["login"]
 
-if sender in ["dependabot-preview[bot]", "dependabot-preview", "dependabot"]:
+if sender in [
+    "dependabot-preview[bot]",
+    "dependabot-preview",
+    "dependabot",
+    "dependabot[bot]",
+]:
     print("Skipping dependencies PRs for now.")
     sys.exit(0)
 
@@ -39,23 +44,18 @@ else:
         exit_code = 2
         status = "INVALID"
 
-mutation = """mutation AddReleaseComment($input: AddReleaseFileCommentInput!) {
-  addReleaseFileComment(input: $input)
-}"""
-
-mutation_input = {
-    "prNumber": event_data["number"],
-    "status": status,
-    "releaseInfo": release_info,
-}
-
-
-response = httpx.post(
-    API_URL,
-    json={"query": mutation, "variables": {"input": mutation_input}},
-    timeout=120,
-)
-response.raise_for_status()
 
 print(f"Status is {status}")
+print(f"::set-output name=release_status::{status}")
+
+if release_info:
+    changelog = release_info["changelog"]
+    encoded_changelog = base64.b64encode(changelog.encode("utf-8")).decode("ascii")
+
+    print(f"::set-output name=changelog::{encoded_changelog}")
+    print(f"::set-output name=change_type::{info.change_type.name}")
+else:
+    print('::set-output name=changelog::""')
+
+
 sys.exit(exit_code)

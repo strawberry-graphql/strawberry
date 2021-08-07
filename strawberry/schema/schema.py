@@ -1,3 +1,4 @@
+import logging
 from typing import Any, Dict, List, Optional, Sequence, Type, Union
 
 from graphql import (
@@ -7,6 +8,7 @@ from graphql import (
     parse,
     validate_schema,
 )
+from graphql.error import GraphQLError
 from graphql.subscription import subscribe
 from graphql.type.directives import specified_directives
 
@@ -14,13 +16,17 @@ from strawberry.custom_scalar import ScalarDefinition
 from strawberry.enum import EnumDefinition
 from strawberry.extensions import Extension
 from strawberry.schema.schema_converter import GraphQLCoreConverter
-from strawberry.types import ExecutionResult
+from strawberry.types import ExecutionContext, ExecutionResult
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 
 from ..middleware import DirectivesMiddleware, Middleware
 from ..printer import print_schema
+from .config import StrawberryConfig
 from .execute import execute, execute_sync
+
+
+logger = logging.getLogger("strawberry.execution")
 
 
 class Schema:
@@ -34,17 +40,21 @@ class Schema:
         types=(),
         extensions: Sequence[Type[Extension]] = (),
         execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
+        config: Optional[StrawberryConfig] = None,
     ):
         self.extensions = extensions
         self.execution_context_class = execution_context_class
-        self.schema_converter = GraphQLCoreConverter()
+        self.config = config or StrawberryConfig()
+        self.schema_converter = GraphQLCoreConverter(self.config)
 
-        query_type = self.schema_converter.from_object_type(query)
+        query_type = self.schema_converter.from_object(query._type_definition)
         mutation_type = (
-            self.schema_converter.from_object_type(mutation) if mutation else None
+            self.schema_converter.from_object(mutation._type_definition)
+            if mutation
+            else None
         )
         subscription_type = (
-            self.schema_converter.from_object_type(subscription)
+            self.schema_converter.from_object(subscription._type_definition)
             if subscription
             else None
         )
@@ -56,12 +66,17 @@ class Schema:
             for directive in directives
         ]
 
+        graphql_types = []
+        for type_ in types:
+            graphql_type = self.schema_converter.from_object(type_._type_definition)
+            graphql_types.append(graphql_type)
+
         self._schema = GraphQLSchema(
             query=query_type,
             mutation=mutation_type,
             subscription=subscription_type if subscription else None,
             directives=specified_directives + directives,
-            types=list(map(self.schema_converter.from_object_type, types)),
+            types=graphql_types,
         )
 
         # Validate schema early because we want developers to know about
@@ -83,6 +98,13 @@ class Schema:
 
         return None
 
+    def process_errors(
+        self, errors: List[GraphQLError], execution_context: ExecutionContext
+    ) -> None:
+        for error in errors:
+            actual_error = error.original_error or error
+            logger.error(actual_error, exc_info=actual_error)
+
     async def execute(
         self,
         query: str,
@@ -92,18 +114,27 @@ class Schema:
         operation_name: Optional[str] = None,
         validate_queries: bool = True,
     ) -> ExecutionResult:
+        # Create execution context
+        execution_context = ExecutionContext(
+            query=query,
+            context=context_value,
+            root_value=root_value,
+            variables=variable_values,
+            operation_name=operation_name,
+        )
+
         result = await execute(
             self._schema,
             query,
-            variable_values=variable_values,
-            root_value=root_value,
-            context_value=context_value,
-            operation_name=operation_name,
             additional_middlewares=self.middleware,
             extensions=self.extensions,
             execution_context_class=self.execution_context_class,
             validate_queries=validate_queries,
+            execution_context=execution_context,
         )
+
+        if result.errors:
+            self.process_errors(result.errors, execution_context=execution_context)
 
         return ExecutionResult(
             data=result.data,
@@ -120,18 +151,26 @@ class Schema:
         operation_name: Optional[str] = None,
         validate_queries: bool = True,
     ) -> ExecutionResult:
+        execution_context = ExecutionContext(
+            query=query,
+            context=context_value,
+            root_value=root_value,
+            variables=variable_values,
+            operation_name=operation_name,
+        )
+
         result = execute_sync(
             self._schema,
             query,
-            variable_values=variable_values,
-            root_value=root_value,
-            context_value=context_value,
-            operation_name=operation_name,
             additional_middlewares=self.middleware,
             extensions=self.extensions,
             execution_context_class=self.execution_context_class,
             validate_queries=validate_queries,
+            execution_context=execution_context,
         )
+
+        if result.errors:
+            self.process_errors(result.errors, execution_context=execution_context)
 
         return ExecutionResult(
             data=result.data,

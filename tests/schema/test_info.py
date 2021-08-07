@@ -1,3 +1,7 @@
+from typing import List, Optional
+
+import pytest
+
 import strawberry
 from strawberry.types import Info
 
@@ -62,3 +66,44 @@ def test_info_has_the_correct_shape():
         "variableValues": "{}",
         "returnType": "<class 'tests.schema.test_info.test_info_has_the_correct_shape.<locals>.Result'>",  # noqa
     }
+
+
+@pytest.mark.parametrize(
+    "return_type,return_value",
+    [
+        (str, "text"),
+        (List[str], ["text"]),
+        (Optional[List[int]], None),
+    ],
+)
+def test_return_type_from_resolver(return_type, return_value):
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def field(self, info: Info) -> return_type:
+            assert info.return_type == return_type
+            return return_value
+
+    schema = strawberry.Schema(query=Query)
+
+    result = schema.execute_sync("{ field }")
+
+    assert not result.errors
+    assert result.data["field"] == return_value
+
+
+def test_return_type_from_field():
+    def resolver(info):
+        assert info.return_type == int
+        return 0
+
+    @strawberry.type
+    class Query:
+        field: int = strawberry.field(resolver=resolver)
+
+    schema = strawberry.Schema(query=Query)
+
+    result = schema.execute_sync("{ field }")
+
+    assert not result.errors
+    assert result.data["field"] == 0

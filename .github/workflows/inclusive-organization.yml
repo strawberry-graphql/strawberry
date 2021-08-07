@@ -1,0 +1,24 @@
+name: Inclusive Organization
+on:
+  push:
+    branches: [main]
+
+jobs:
+  invite:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Invite contributor to the organization
+        uses: lekterable/inclusive-organization-action@v1.1.0
+        with:
+          organization: strawberry-graphql
+          team: strawberry-contributors
+          comment: Thanks for your first contribution to Strawberry! You've been
+            invited to our organization, check your emails for the invite 😊
+
+            Also, feel free to request a sticker by filling this form 👉
+            https://forms.gle/dmnfQUPoY5gZbVT67
+
+            Oh, also check out or discord server if you haven't seen it yet 👉
+            https://strawberry.rocks/discord
+        env:
+          ACCESS_TOKEN: ${{ secrets.INCLUSIVE_ORGANIZATION_TOKEN }}

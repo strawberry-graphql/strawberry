@@ -1,5 +1,7 @@
 from dataclasses import dataclass
-from typing import Callable, Dict, Optional, Type
+from typing import Callable, Dict, Mapping, Optional, Type, TypeVar, Union
+
+from strawberry.type import StrawberryType
 
 from .exceptions import ScalarAlreadyRegisteredError
 from .utils.str_converters import to_camel_case
@@ -10,12 +12,21 @@ def identity(x):
 
 
 @dataclass
-class ScalarDefinition:
+class ScalarDefinition(StrawberryType):
     name: str
     description: Optional[str]
     serialize: Optional[Callable]
     parse_value: Optional[Callable]
     parse_literal: Optional[Callable]
+
+    def copy_with(
+        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
+    ) -> Union[StrawberryType, type]:
+        return super().copy_with(type_var_map)
+
+    @property
+    def is_generic(self) -> bool:
+        return False
 
 
 SCALAR_REGISTRY: Dict[Type, ScalarDefinition] = {}
