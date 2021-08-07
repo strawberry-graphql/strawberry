@@ -1,0 +1,7 @@
+name: 'Strawberry Read Tweet Action'
+inputs:
+  changelog:
+    required: true
+runs:
+  using: 'docker'
+  image: 'Dockerfile'
