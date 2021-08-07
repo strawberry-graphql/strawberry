@@ -2,7 +2,7 @@ FROM node:14-alpine
 
 RUN npm i -g @vercel/ncc
 
-COPY package-lock.json package.json .
+COPY package-lock.json package.json /
 
 RUN npm install
 
