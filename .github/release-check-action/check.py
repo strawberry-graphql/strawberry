@@ -1,9 +1,11 @@
 import base64
 import json
+import os
 import pathlib
 import sys
 
 from config import GITHUB_EVENT_PATH, GITHUB_WORKSPACE, RELEASE_FILE_PATH
+from github import get_changed_files
 from release import InvalidReleaseFileError, get_release_info
 
 
@@ -19,6 +21,23 @@ if sender in [
     "dependabot[bot]",
 ]:
     print("Skipping dependencies PRs for now.")
+    print("::set-output name=skip::true")
+    sys.exit(0)
+
+
+# Check the file that have changed
+changed_files = get_changed_files(
+    base=os.environ["GITHUB_BASE_REF"], head=os.environ["GITHUB_SHA"]
+)
+lib_has_changed = False
+
+for filename in changed_files:
+    if filename.startswith("strawberry"):
+        lib_has_changed = True
+        break
+
+if not lib_has_changed:
+    print("No library files have changed so skipping...")
     print("::set-output name=skip::true")
     sys.exit(0)
 
