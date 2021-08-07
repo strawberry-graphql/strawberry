@@ -1,7 +1,13 @@
 FROM node:14-alpine
 
-RUN npm install -g twitter-text
+RUN npm i -g @vercel/ncc
 
-COPY ./main.js /
+COPY package-lock.json package.json .
 
-ENTRYPOINT ["node", "/main.js"]
+RUN npm install
+
+COPY main.js .
+
+RUN ncc build main.js -o dist
+
+ENTRYPOINT ["node", "/dist/index.js"]
