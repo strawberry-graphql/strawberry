@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.70.4 - 2021-08-07
+-------------------
+
+Addition of `app.add_websocket_route("/subscriptions", graphql_app)` to FastAPI example docs
+
+Contributed by [Anton Melser](https://github.com/AntonOfTheWoods) [PR #1103](https://github.com/strawberry-graphql/strawberry/pull/1103/)
+
+
 0.70.3 - 2021-08-06
 -------------------
 
