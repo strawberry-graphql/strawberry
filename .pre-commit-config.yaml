@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/ambv/black
-    rev: 21.6b0
+    rev: 21.7b0
     hooks:
       - id: black
 
@@ -17,7 +17,7 @@ repos:
         args: [--non-interactive, --install-types, --ignore-missing-imports]
 
   - repo: https://github.com/pycqa/isort
-    rev: 5.9.1
+    rev: 5.9.3
     hooks:
       - id: isort
 
