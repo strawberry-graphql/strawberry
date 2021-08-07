@@ -47,6 +47,8 @@ jobs:
       - uses: actions/checkout@v1
       - name: Validate tweet
         uses: ./.github/validate-tweet-action
+        with:
+          tweet: ${{ needs.read-tweet-md.outputs.tweet }}
 
   generate-preview:
     runs-on: ubuntu-latest
