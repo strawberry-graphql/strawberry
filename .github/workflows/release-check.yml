@@ -23,6 +23,27 @@ jobs:
       id: release-check
       if: github.event.pull_request.draft == false
 
+  read-tweet-md:
+    runs-on: ubuntu-latest
+    needs: release-file-check
+
+    steps:
+    - uses: actions/checkout@v1
+    - name: Extract tweet message and changelog
+      shell: python
+      run: |
+        import os
+        from pathlib import Path
+
+        changelog = os.environ["CHANGELOG"]
+        tweet = ""
+
+        tweet_path = Path('./TWEET.md')
+
+        if tweet_path.exists():
+          with tweet_path.open(mode='r') as f:
+            print(f.read())
+
   generate-preview:
     runs-on: ubuntu-latest
     needs: release-file-check
