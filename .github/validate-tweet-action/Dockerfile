@@ -1,7 +1,7 @@
 FROM node:14-alpine
 
-RUN npm install twitter-text
+RUN npm install -g twitter-text
 
-COPY ./main.js .
+COPY ./main.js /
 
-ENTRYPOINT ["node", "main.js"]
+ENTRYPOINT ["node", "/main.js"]
