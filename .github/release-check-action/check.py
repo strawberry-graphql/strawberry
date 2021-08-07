@@ -19,6 +19,7 @@ if sender in [
     "dependabot[bot]",
 ]:
     print("Skipping dependencies PRs for now.")
+    print("::set-output name=skip::true")
     sys.exit(0)
 
 release_file = pathlib.Path(GITHUB_WORKSPACE) / RELEASE_FILE_PATH
