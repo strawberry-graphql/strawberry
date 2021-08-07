@@ -34,6 +34,7 @@ jobs:
     steps:
     - uses: actions/checkout@v1
     - name: Extract tweet message and changelog
+      id: extract
       uses: ./.github/read-tweet-action
       with:
         changelog: ${{ needs.release-file-check.outputs.changelog }}
