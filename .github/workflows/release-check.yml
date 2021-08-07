@@ -54,7 +54,7 @@ jobs:
   generate-preview:
     runs-on: ubuntu-latest
     needs: [release-file-check, read-tweet-md]
-    if: always() && needs.release-file-check.outputs.skip != "true" && github.event.pull_request.draft == false
+    if: always() && needs.release-file-check.outputs.skip != 'true' && github.event.pull_request.draft == false
 
     outputs:
       url: ${{ steps.upload.outputs.url }}
@@ -83,7 +83,7 @@ jobs:
   send-comment:
     runs-on: ubuntu-latest
     needs: [release-file-check, generate-preview]
-    if: always() && needs.release-file-check.outputs.skip != "true" && github.event.pull_request.draft == false
+    if: always() && needs.release-file-check.outputs.skip != 'true' && github.event.pull_request.draft == false
 
     steps:
     - uses: actions/checkout@v1
