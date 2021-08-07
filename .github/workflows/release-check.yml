@@ -81,7 +81,7 @@ jobs:
       with:
         version: "(next)"
         contributor: ${{ github.event.pull_request.user.login }}
-        description_base64: ${{ needs.read-tweet-md.outputs.release_card }}
+        description_base64: ${{ needs.read-tweet-md.outputs.card_text }}
 
     - name: Uploads preview
       id: upload
