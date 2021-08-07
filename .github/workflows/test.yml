@@ -38,7 +38,7 @@ jobs:
           fail_ci_if_error: true
           verbose: true
 
-  flake8:
+  mypy:
     runs-on: ubuntu-latest
     container: python:3.9
 
@@ -47,7 +47,7 @@ jobs:
       - run: pip install poetry
       - name: Install dependencies
         run: poetry install
-      - run: poetry run flake8
+      - run: poetry run mypy --ignore-missing-imports .
 
   mypy:
     runs-on: ubuntu-latest
