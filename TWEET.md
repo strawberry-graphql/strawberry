@@ -10,22 +10,18 @@ This release adds a query depth limit validation rule so that you can guard
 against malicious queries:
 
 ```python
-validation_rules = [depth_limit_validator(3)]
-
+validation_rules = [depth_limit_validator(2)]
 result = schema.execute_sync("""
-    query {
+    query MyQuery {
       user {
         pets {
           owner {
-            pets {
               name
-            }
           }
         }
       }
     } """,
     validation_rules=validation_rules,
 )
-
-assert result.errors[0].message == "'MyQuery' exceeds maximum operation depth of 3"
+assert result.errors[0].message == "'MyQuery' exceeds maximum operation depth of 2"
 ```
