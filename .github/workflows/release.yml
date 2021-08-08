@@ -55,11 +55,11 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
         run: |
           git remote set-url origin https://${{ secrets.BOT_TOKEN }}@github.com/${{ github.repository }}
-          # autopub prepare
-          # poetry build
-          # autopub commit
-          # autopub githubrelease
-          # poetry publish --username __token__ --password ${{ secrets.PYPI_TOKEN }}
+          autopub prepare
+          poetry build
+          autopub commit
+          autopub githubrelease
+          poetry publish --username __token__ --password ${{ secrets.PYPI_TOKEN }}
       - name: Get project version
         id: get-version
         shell: python
