@@ -14,7 +14,7 @@ const run = async () => {
   const octokit = github.getOctokit(ACCESS_TOKEN);
 
   if (eventName === "pull_request") {
-    username = github.context.payload.sender.login;
+    username = github.context.payload.pull_request.user.login;
   } else {
     const { repository } = payload;
 
