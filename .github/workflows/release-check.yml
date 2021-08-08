@@ -4,7 +4,10 @@ on:
   pull_request:
     types: [synchronize, reopened, opened, ready_for_review]
     branches:
-    - main
+      - main
+    paths:
+      - "strawberry/**"
+      - "pyproject.toml"
 
 jobs:
   release-file-check:
