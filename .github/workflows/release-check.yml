@@ -103,7 +103,7 @@ jobs:
 
   send-comment:
     runs-on: ubuntu-latest
-    needs: [release-file-check, generate-preview]
+    needs: [release-file-check, generate-preview, read-tweet-md]
     if: always() && github.event.pull_request.draft == false
 
     steps:
@@ -119,3 +119,4 @@ jobs:
         change_type: ${{ needs.release-file-check.outputs.change_type }}
         changelog_base64: ${{ needs.release-file-check.outputs.changelog }}
         release_card_url: ${{ needs.generate-preview.outputs.url }}
+        tweet: ${{ needs.read-tweet-md.outputs.tweet }}

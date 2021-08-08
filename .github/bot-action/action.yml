@@ -8,6 +8,8 @@ inputs:
     required: true
   changelog_base64:
     required: true
+  tweet:
+    required: false
   release_card_url:
     required: false
 runs:
