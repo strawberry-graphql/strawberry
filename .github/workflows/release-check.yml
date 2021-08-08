@@ -24,10 +24,8 @@ jobs:
       if: github.event.pull_request.draft == false
 
     - name: Fail if status is not ok
-      run: |
-        if [${{ steps.release-check.outputs.release_status }} != "OK"]; then
-          exit 1
-        fi
+      if: ${{ steps.release-check.outputs.release_status != 'OK' }}
+      run: exit 1
 
   get-contributor-name:
     name: Get PR info
