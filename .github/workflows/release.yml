@@ -182,6 +182,7 @@ jobs:
       run: |
         git config --global user.name 'Strawberry GraphQL Bot'
         git config --global user.email 'bot@strawberry.rocks'
+        git pull
         git rm TWEET.md
         git commit -m "Remove TWEET.md"
         git push
