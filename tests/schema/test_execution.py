@@ -3,7 +3,10 @@ from typing import Optional
 
 import pytest
 
+from graphql import GraphQLError, ValidationRule
+
 import strawberry
+from strawberry.schema import default_validation_rules
 
 
 @pytest.mark.parametrize("validate_queries", (True, False))
@@ -259,3 +262,32 @@ def test_overriding_process_errors(caplog):
 
     # Exception wasn't logged
     assert len(caplog.records) == 0
+
+
+def test_adding_custom_validation_rules():
+    @strawberry.type
+    class Query:
+        example: Optional[str] = None
+        another_example: Optional[str] = None
+
+    schema = strawberry.Schema(query=Query)
+
+    class CustomRule(ValidationRule):
+        def enter_field(self, node, *args) -> None:
+            if node.name.value == "example":
+                self.report_error(GraphQLError("Can't query field 'example'"))
+
+    result = schema.execute_sync(
+        "{ example }",
+        validation_rules=(default_validation_rules + [CustomRule]),
+        root_value=Query(),
+    )
+
+    assert str(result.errors[0]) == "Can't query field 'example'"
+
+    result = schema.execute_sync(
+        "{ anotherExample }",
+        validation_rules=(default_validation_rules + [CustomRule]),
+        root_value=Query(),
+    )
+    assert not result.errors
