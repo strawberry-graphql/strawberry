@@ -1,7 +1,6 @@
 import base64
 import json
 import pathlib
-import sys
 
 from config import GITHUB_EVENT_PATH, GITHUB_WORKSPACE, RELEASE_FILE_PATH
 from release import InvalidReleaseFileError, get_release_info
@@ -10,27 +9,13 @@ from release import InvalidReleaseFileError, get_release_info
 with open(GITHUB_EVENT_PATH) as f:
     event_data = json.load(f)
 
-sender = event_data["pull_request"]["user"]["login"]
-
-if sender in [
-    "dependabot-preview[bot]",
-    "dependabot-preview",
-    "dependabot",
-    "dependabot[bot]",
-]:
-    print("Skipping dependencies PRs for now.")
-    sys.exit(0)
-
 release_file = pathlib.Path(GITHUB_WORKSPACE) / RELEASE_FILE_PATH
 
-exit_code = 0
 release_info = None
 status = "MISSING"
 
 if not release_file.exists():
     status = "MISSING"
-
-    exit_code = 1
 else:
     try:
         info = get_release_info(release_file)
@@ -41,7 +26,6 @@ else:
 
         status = "OK"
     except InvalidReleaseFileError:
-        exit_code = 2
         status = "INVALID"
 
 
@@ -56,6 +40,3 @@ if release_info:
     print(f"::set-output name=change_type::{info.change_type.name}")
 else:
     print('::set-output name=changelog::""')
-
-
-sys.exit(exit_code)

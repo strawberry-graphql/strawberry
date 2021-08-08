@@ -24,10 +24,15 @@ if os.environ["INPUT_STATUS"] == "OK":
         "changelog": changelog,
     }
 
+if tweet := os.environ.get("INPUT_TWEET"):
+    tweet = base64.b64decode(tweet).decode("utf-8")
+
+
 mutation_input = {
     "prNumber": int(os.environ["INPUT_PR_NUMBER"]),
     "status": os.environ["INPUT_STATUS"],
     "releaseCardUrl": os.environ["INPUT_RELEASE_CARD_URL"],
+    "tweet": tweet,
     "releaseInfo": release_info,
 }
 
