@@ -49,7 +49,7 @@ jobs:
 
     outputs:
       tweet: ${{ steps.extract.outputs.tweet }}
-      card_text: ${{ steps.extract.outputs.card_text }}
+      card-text: ${{ steps.extract.outputs.card-text }}
 
     steps:
     - uses: actions/checkout@v1
@@ -87,7 +87,7 @@ jobs:
       with:
         version: "(next)"
         contributor: ${{ needs.get-contributor-name.outputs.contributor-name }}
-        description_base64: ${{ needs.read-tweet-md.outputs.card_text }}
+        description_base64: ${{ needs.read-tweet-md.outputs.card-text }}
 
     - name: Uploads preview
       id: upload
