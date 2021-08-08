@@ -25,7 +25,7 @@ jobs:
 
     - name: Fail if status is not ok
       run: |
-        if [${{ steps.release-check.outputs.status }} != "OK"]; then
+        if [${{ steps.release-check.outputs.release_status }} != "OK"]; then
           exit 1
         fi
 
