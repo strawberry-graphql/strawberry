@@ -235,7 +235,7 @@ async def test_dataclass_field_with_async_permission_class():
         message = "Cannot see email for this user"
 
         async def has_permission(self, source, info, **kwargs) -> bool:
-            return False
+            return source.name.lower() == "patrick"
 
     @strawberry.type
     class User:
@@ -251,7 +251,9 @@ async def test_dataclass_field_with_async_permission_class():
     schema = strawberry.Schema(query=Query)
 
     query = '{ user(name: "patrick") { email } }'
-
     result = await schema.execute(query)
-    print(result)
+    assert result.data["user"]["email"] == "patrick.arminio@gmail.com"
+
+    query = '{ user(name: "marco") { email } }'
+    result = await schema.execute(query)
     assert result.errors[0].message == "Cannot see email for this user"

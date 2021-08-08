@@ -375,8 +375,8 @@ class GraphQLCoreConverter:
                 path=info.path,
             )
 
-        # TODO: have a async variant of this function. graphql-core handles them
-        # TODO: out of the box and way better than our "async resolving hacks" below.
+        # TODO: maybe having an async resolver function (graphql-core can handle those)
+        # TODO: could simplify the code below.
         def _resolver(_source: Any, info: GraphQLResolveInfo, **kwargs):
             strawberry_info = _strawberry_info_from_graphql(info)
 
@@ -384,7 +384,8 @@ class GraphQLCoreConverter:
                 source=_source, info=strawberry_info, kwargs=kwargs
             )
 
-            # This makes sure we always check permissions before resolving the field
+            # Make sure we always check permissions before resolving the field
+            # TODO: what if the permission class is async but get_result is sync
             if not _has_async_permission_classes():
                 _check_permissions(_source, strawberry_info, kwargs)
 
