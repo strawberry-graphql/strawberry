@@ -23,6 +23,12 @@ jobs:
       id: release-check
       if: github.event.pull_request.draft == false
 
+    - name: Fail if status is not ok
+      run: |
+        if [${{ steps.release-check.outputs.status }} != "OK"]; then
+          exit 1
+        fi
+
   get-contributor-name:
     name: Get PR info
     runs-on: ubuntu-latest
