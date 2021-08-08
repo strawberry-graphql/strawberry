@@ -1,5 +1,6 @@
 import builtins
 import dataclasses
+import inspect
 from typing import (
     Any,
     Awaitable,
@@ -245,6 +246,13 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
 
         if self.base_resolver:
             return self.base_resolver(*args, **kwargs)
+
+        if inspect.isawaitable(source):
+
+            async def wrapper():
+                return getattr(await source, self.python_name)
+
+            return wrapper()
 
         return getattr(source, self.python_name)
 
