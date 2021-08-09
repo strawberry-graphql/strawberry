@@ -4,7 +4,7 @@ on:
   pull_request_target:
     types: [synchronize, reopened, opened, ready_for_review]
     branches:
-    - main
+    - feature/action-forks
 
 jobs:
   release-file-check:
