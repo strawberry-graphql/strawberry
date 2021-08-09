@@ -72,6 +72,8 @@ jobs:
     if: ${{ needs.read-tweet-md.outputs.tweet != '' }}
     steps:
       - uses: actions/checkout@v2
+        with:
+          ref: "refs/pull/${{ github.event.number }}/merge"
       - name: Validate tweet
         uses: ./.github/validate-tweet-action
         with:
