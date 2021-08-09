@@ -42,6 +42,7 @@ from strawberry.scalars import is_scalar
 from strawberry.schema.config import StrawberryConfig
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
 from strawberry.types.info import Info
+from strawberry.types.nodes import SelectedField
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 
@@ -339,7 +340,8 @@ class GraphQLCoreConverter:
         def _strawberry_info_from_graphql(info: GraphQLResolveInfo) -> Info:
             return Info(
                 field_name=info.field_name,
-                field_nodes=info.field_nodes,
+                field_nodes=info.field_nodes,  # deprecated
+                selected_fields=list(map(SelectedField, info.field_nodes)),
                 context=info.context,
                 root_value=info.root_value,
                 variable_values=info.variable_values,
