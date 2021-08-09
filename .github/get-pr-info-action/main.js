@@ -13,6 +13,7 @@ const run = async () => {
   const { payload, sha, eventName } = github.context;
   const octokit = github.getOctokit(ACCESS_TOKEN);
 
+  console.log(eventName);
   if (eventName === "pull_request") {
     username = github.context.payload.pull_request.user.login;
   } else {
