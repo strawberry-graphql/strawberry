@@ -1,7 +1,7 @@
 name: Release file check
 
 on:
-  pull_request:
+  pull_request_target:
     types: [synchronize, reopened, opened, ready_for_review]
     branches:
     - main
@@ -16,7 +16,10 @@ jobs:
       change_type: ${{ steps.release-check.outputs.change_type }}
 
     steps:
-    - uses: actions/checkout@v1
+    - name: Checkout code
+      uses: actions/checkout@v2
+      with:
+        ref: "refs/pull/${{ github.event.number }}/merge"
 
     - name: Release file check
       uses: ./.github/release-check-action
@@ -35,7 +38,9 @@ jobs:
       contributor-name: ${{ steps.get-info.outputs.contributor-name }}
 
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
+        with:
+          ref: "refs/pull/${{ github.event.number }}/merge"
       - name: Get PR info
         id: get-info
         uses: ./.github/get-pr-info-action
@@ -52,7 +57,9 @@ jobs:
       card-text: ${{ steps.extract.outputs.card-text }}
 
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
+      with:
+        ref: "refs/pull/${{ github.event.number }}/merge"
     - name: Extract tweet message and changelog
       id: extract
       uses: ./.github/read-tweet-action
@@ -66,7 +73,7 @@ jobs:
     needs: read-tweet-md
     if: ${{ needs.read-tweet-md.outputs.tweet != '' }}
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Validate tweet
         uses: ./.github/validate-tweet-action
         with:
@@ -107,7 +114,7 @@ jobs:
     if: always() && github.event.pull_request.draft == false
 
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Send comment
       uses: ./.github/bot-action
       env:
