@@ -1,6 +1,18 @@
 CHANGELOG
 =========
 
+0.71.1 - 2021-08-09
+-------------------
+
+This releases adds `selected_fields` on the `info` objects and it
+allows to introspect the fields that have been selected in a GraphQL
+operation.
+
+This can become useful to run optimisation based on the queried fields.
+
+Contributed by [A. Coady](https://github.com/coady) [PR #874](https://github.com/strawberry-graphql/strawberry/pull/874/)
+
+
 0.71.0 - 2021-08-08
 -------------------
 
