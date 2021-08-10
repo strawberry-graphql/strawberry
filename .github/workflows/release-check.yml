@@ -150,4 +150,3 @@ jobs:
     - name: Fail if status is not ok
       if: ${{ needs.release-file-check.outputs.release_status != 'OK' }}
       run: exit 1
-
