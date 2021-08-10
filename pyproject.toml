@@ -86,6 +86,7 @@ types-aiofiles = "^0.1.7"
 
 [tool.poetry.extras]
 aiohttp = ["aiohttp", "pytest-aiohttp"]
+asgi = ["starlette"]
 debug-server = ["starlette", "uvicorn", "hupper"]
 django = ["django", "pytest-django", "asgiref"]
 flask = ["flask", "pytest-flask"]
