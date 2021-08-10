@@ -7,8 +7,42 @@ on:
     - main
 
 jobs:
+  get-contributor-info:
+    name: Get PR info
+    runs-on: ubuntu-latest
+
+    outputs:
+      contributor-name: ${{ steps.get-info.outputs.contributor-name }}
+      contributor-username: ${{ steps.get-info.outputs.contributor-username }}
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: "refs/pull/${{ github.event.number }}/merge"
+      - name: Get PR info
+        id: get-info
+        uses: ./.github/get-pr-info-action
+        env:
+          ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  skip-if-bot:
+    name: Set skip if PR is from a bot
+    runs-on: ubuntu-latest
+    needs: get-contributor-info
+
+    outputs:
+      skip: ${{ steps.skip.outputs.skip }}
+
+    steps:
+      - name: Set skip to true
+        id: skip
+        # TODO: if based on username
+        run: echo ::set-output name=skip::true
+
   release-file-check:
     runs-on: ubuntu-latest
+    needs: skip-if-bot
+    if: needs.skip-if-bot.outputs.skip == 'false'
 
     outputs:
       changelog: ${{ steps.release-check.outputs.changelog }}
@@ -26,26 +60,6 @@ jobs:
       id: release-check
       if: github.event.pull_request.draft == false
 
-    - name: Fail if status is not ok
-      if: ${{ steps.release-check.outputs.release_status != 'OK' }}
-      run: exit 1
-
-  get-contributor-name:
-    name: Get PR info
-    runs-on: ubuntu-latest
-
-    outputs:
-      contributor-name: ${{ steps.get-info.outputs.contributor-name }}
-
-    steps:
-      - uses: actions/checkout@v2
-        with:
-          ref: "refs/pull/${{ github.event.number }}/merge"
-      - name: Get PR info
-        id: get-info
-        uses: ./.github/get-pr-info-action
-        env:
-          ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
   read-tweet-md:
     name: Read TWEET.md
@@ -82,7 +96,7 @@ jobs:
   generate-preview:
     runs-on: ubuntu-latest
     needs: [release-file-check, read-tweet-md, get-contributor-name]
-    if: always() && github.event.pull_request.draft == false
+    if: github.event.pull_request.draft == false
 
     outputs:
       url: ${{ steps.upload.outputs.url }}
@@ -111,7 +125,7 @@ jobs:
   send-comment:
     runs-on: ubuntu-latest
     needs: [release-file-check, generate-preview, read-tweet-md]
-    if: always() && github.event.pull_request.draft == false
+    if: github.event.pull_request.draft == false
 
     steps:
     - uses: actions/checkout@v2
@@ -127,3 +141,13 @@ jobs:
         changelog_base64: ${{ needs.release-file-check.outputs.changelog }}
         release_card_url: ${{ needs.generate-preview.outputs.url }}
         tweet: ${{ needs.read-tweet-md.outputs.tweet }}
+
+  fail-if-status-is-no-ok:
+    runs-on: ubuntu-latest
+    needs: [release-file-check, send-comment]
+
+    steps:
+    - name: Fail if status is not ok
+      if: ${{ needs.release-file-check.outputs.release_status != 'OK' }}
+      run: exit 1
+

@@ -40,7 +40,10 @@ const run = async () => {
 
   const name = author.name || author.login;
 
+  console.log(author);
+
   core.setOutput("contributor-name", name);
+  core.setOutput("contributor-username", username);
 };
 
 run();
