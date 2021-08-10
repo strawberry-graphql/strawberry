@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "strawberry-graphql"
 packages = [ { include = "strawberry" } ]
-version = "0.70.4"
+version = "0.71.2"
 description = "A library for creating GraphQL APIs"
 authors = ["Patrick Arminio <patrick.arminio@gmail.com>"]
 license = "MIT"
@@ -86,6 +86,7 @@ types-aiofiles = "^0.1.7"
 
 [tool.poetry.extras]
 aiohttp = ["aiohttp", "pytest-aiohttp"]
+asgi = ["starlette"]
 debug-server = ["starlette", "uvicorn", "hupper"]
 django = ["django", "pytest-django", "asgiref"]
 flask = ["flask", "pytest-flask"]

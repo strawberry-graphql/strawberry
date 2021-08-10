@@ -1,13 +1,10 @@
 name: Release file check
 
 on:
-  pull_request:
+  pull_request_target:
     types: [synchronize, reopened, opened, ready_for_review]
     branches:
-      - main
-    paths:
-      - "strawberry/**"
-      - "pyproject.toml"
+    - main
 
 jobs:
   release-file-check:
@@ -17,38 +14,66 @@ jobs:
       changelog: ${{ steps.release-check.outputs.changelog }}
       status: ${{ steps.release-check.outputs.release_status }}
       change_type: ${{ steps.release-check.outputs.change_type }}
-      skip: ${{ steps.release-check.outputs.skip }}
 
     steps:
-    - uses: actions/checkout@v1
+    - name: Checkout code
+      uses: actions/checkout@v2
+      with:
+        ref: "refs/pull/${{ github.event.number }}/merge"
 
     - name: Release file check
       uses: ./.github/release-check-action
       id: release-check
       if: github.event.pull_request.draft == false
 
-  read-tweet-md:
+    - name: Fail if status is not ok
+      if: ${{ steps.release-check.outputs.release_status != 'OK' }}
+      run: exit 1
+
+  get-contributor-name:
+    name: Get PR info
     runs-on: ubuntu-latest
-    needs: release-file-check
+
+    outputs:
+      contributor-name: ${{ steps.get-info.outputs.contributor-name }}
+
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: "refs/pull/${{ github.event.number }}/merge"
+      - name: Get PR info
+        id: get-info
+        uses: ./.github/get-pr-info-action
+        env:
+          ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  read-tweet-md:
+    name: Read TWEET.md
+    runs-on: ubuntu-latest
+    needs: [get-contributor-name, release-file-check]
 
     outputs:
       tweet: ${{ steps.extract.outputs.tweet }}
-      card_text: ${{ steps.extract.outputs.card_text }}
+      card-text: ${{ steps.extract.outputs.card-text }}
 
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
+      with:
+        ref: "refs/pull/${{ github.event.number }}/merge"
     - name: Extract tweet message and changelog
       id: extract
       uses: ./.github/read-tweet-action
       with:
         changelog: ${{ needs.release-file-check.outputs.changelog }}
+        version: "(next)"
+        contributor_name: ${{ needs.get-contributor-name.outputs.contributor-name }}
 
   validate-tweet:
     runs-on: ubuntu-latest
     needs: read-tweet-md
     if: ${{ needs.read-tweet-md.outputs.tweet != '' }}
     steps:
-      - uses: actions/checkout@v1
+      - uses: actions/checkout@v2
       - name: Validate tweet
         uses: ./.github/validate-tweet-action
         with:
@@ -56,8 +81,8 @@ jobs:
 
   generate-preview:
     runs-on: ubuntu-latest
-    needs: [release-file-check, read-tweet-md]
-    if: always() && needs.release-file-check.outputs.skip != 'true' && github.event.pull_request.draft == false
+    needs: [release-file-check, read-tweet-md, get-contributor-name]
+    if: always() && github.event.pull_request.draft == false
 
     outputs:
       url: ${{ steps.upload.outputs.url }}
@@ -68,8 +93,8 @@ jobs:
       if: ${{ needs.release-file-check.outputs.status == 'OK' }}
       with:
         version: "(next)"
-        contributor: ${{ github.event.pull_request.user.login }}
-        description_base64: ${{ needs.read-tweet-md.outputs.card_text }}
+        contributor: ${{ needs.get-contributor-name.outputs.contributor-name }}
+        description_base64: ${{ needs.read-tweet-md.outputs.card-text }}
 
     - name: Uploads preview
       id: upload
@@ -85,11 +110,11 @@ jobs:
 
   send-comment:
     runs-on: ubuntu-latest
-    needs: [release-file-check, generate-preview]
-    if: always() && needs.release-file-check.outputs.skip != 'true' && github.event.pull_request.draft == false
+    needs: [release-file-check, generate-preview, read-tweet-md]
+    if: always() && github.event.pull_request.draft == false
 
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
     - name: Send comment
       uses: ./.github/bot-action
       env:
@@ -101,3 +126,4 @@ jobs:
         change_type: ${{ needs.release-file-check.outputs.change_type }}
         changelog_base64: ${{ needs.release-file-check.outputs.changelog }}
         release_card_url: ${{ needs.generate-preview.outputs.url }}
+        tweet: ${{ needs.read-tweet-md.outputs.tweet }}

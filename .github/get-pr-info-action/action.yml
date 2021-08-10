@@ -1,0 +1,4 @@
+name: 'Get PR info Action'
+runs:
+  using: 'docker'
+  image: 'Dockerfile'

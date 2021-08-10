@@ -1,6 +1,73 @@
 CHANGELOG
 =========
 
+0.71.2 - 2021-08-10
+-------------------
+
+This release adds `asgi` as an extra dependencies group for Strawberry. Now
+you can install the required dependencies needed to use Strawberry with
+ASGI by running:
+
+```
+pip install strawberry[asgi]
+```
+
+Contributed by [A. Coady](https://github.com/coady) [PR #1036](https://github.com/strawberry-graphql/strawberry/pull/1036/)
+
+
+0.71.1 - 2021-08-09
+-------------------
+
+This releases adds `selected_fields` on the `info` objects and it
+allows to introspect the fields that have been selected in a GraphQL
+operation.
+
+This can become useful to run optimisation based on the queried fields.
+
+Contributed by [A. Coady](https://github.com/coady) [PR #874](https://github.com/strawberry-graphql/strawberry/pull/874/)
+
+
+0.71.0 - 2021-08-08
+-------------------
+
+This release adds a query depth limit validation rule so that you can guard
+against malicious queries:
+
+```python
+import strawberry
+from strawberry.schema import default_validation_rules
+from strawberry.tools import depth_limit_validator
+
+
+# Add the depth limit validator to the list of default validation rules
+validation_rules = (
+  default_validation_rules + [depth_limit_validator(3)]
+)
+
+result = schema.execute_sync(
+    """
+    query MyQuery {
+      user {
+        pets {
+          owner {
+            pets {
+              name
+            }
+          }
+        }
+      }
+    }
+    """,
+    validation_rules=validation_rules,
+  )
+)
+assert len(result.errors) == 1
+assert result.errors[0].message == "'MyQuery' exceeds maximum operation depth of 3"
+```
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) [PR #1021](https://github.com/strawberry-graphql/strawberry/pull/1021/)
+
+
 0.70.4 - 2021-08-07
 -------------------
 
