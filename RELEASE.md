@@ -1,6 +1,8 @@
 Release type: patch
 
-Follow-up to [#1022](https://github.com/strawberry-graphql/strawberry/issues/1022), by adding `asgi` as an extra this releases allows to install Strawberry with ASGI support by doing:
+This release adds `asgi` as an extra dependencies group for Strawberry. Now
+you can easily install the required dependencies needed to use Strawberry with
+ASGI by running:
 
 ```
 pip install strawberry[asgi]
