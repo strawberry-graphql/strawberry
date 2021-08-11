@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.71.3 - 2021-08-11
+-------------------
+
+Get a field resolver correctly when extending from a pydantic model
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) [PR #1116](https://github.com/strawberry-graphql/strawberry/pull/1116/)
+
+
 0.71.2 - 2021-08-10
 -------------------
 
