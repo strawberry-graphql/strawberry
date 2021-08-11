@@ -35,10 +35,20 @@ jobs:
       skip: ${{ steps.skip.outputs.skip }}
 
     steps:
-      - name: Set skip to true
+      - name: Set skip to true if contributor is a bot
         id: skip
-        # TODO: if based on username
-        run: echo ::set-output name=skip::true
+        shell: python
+        run: |
+          bots = [
+            "patrick91",
+          ]
+
+          username = "${{ needs.get-contributor-info.outputs.contributor-username }}"
+
+          if username in bots:
+            print(f"Skipping {username} because it is a bot")
+
+          print("::set-output name=skip::true")
 
   release-file-check:
     runs-on: ubuntu-latest
