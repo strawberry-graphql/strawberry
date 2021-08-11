@@ -9,7 +9,7 @@ SCALAR_TYPES = [int, str, float, bytes, bool, ID, UUID, datetime, date, time, De
 
 
 def is_scalar(annotation: Any) -> bool:
-    type = getattr(annotation, "__supertype__", annotation)
+    type_ = getattr(annotation, "__supertype__", annotation)
 
     if type_ in SCALAR_TYPES:
         return True
