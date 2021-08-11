@@ -54,8 +54,11 @@ jobs:
           if username in bots:
             print(f"Skipping {username} because it is a bot")
             print("::set-output name=skip::true")
+          else:
+            print("::set-output name=skip::false")
 
   release-file-check:
+    name: Release check
     runs-on: ubuntu-latest
     needs: skip-if-bot
     if: needs.skip-if-bot.outputs.skip == 'false'
