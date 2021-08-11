@@ -6,6 +6,9 @@ on:
     branches:
     # TODO: revert
     - skip-release-check-sometimes
+    paths:
+    - "strawberry/**"
+    - "pyproject.toml"
 
 jobs:
   get-contributor-info:
@@ -40,15 +43,17 @@ jobs:
         shell: python
         run: |
           bots = [
-            "patrick91",
-          ]
+             "dependabot-preview[bot]",
+             "dependabot-preview",
+             "dependabot",
+             "dependabot[bot]",
+           ]
 
           username = "${{ needs.get-contributor-info.outputs.contributor-username }}"
 
           if username in bots:
             print(f"Skipping {username} because it is a bot")
-
-          print("::set-output name=skip::true")
+            print("::set-output name=skip::true")
 
   release-file-check:
     runs-on: ubuntu-latest
