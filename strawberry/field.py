@@ -236,7 +236,7 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
         return evaled_type
 
     @property
-    def resolved_type(self) -> Optional[Union[StrawberryType, type]]:
+    def resolved_type(self) -> Union[StrawberryType, type]:
         if self._resolved_type:
             return self._resolved_type
 
