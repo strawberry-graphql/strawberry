@@ -1,8 +1,13 @@
-from contextlib import contextmanager
+import inspect
 from typing import Any, Dict, List
 
 from graphql import MiddlewareManager
 
+from strawberry.extensions.context import (
+    ParsingContextManager,
+    RequestContextManger,
+    ValidationContextManager,
+)
 from strawberry.types import ExecutionContext
 
 from . import Extension
@@ -23,35 +28,49 @@ class ExtensionsRunner:
         for extension in self.extensions:
             getattr(extension, method_name)(*args, **kwargs)
 
-    @contextmanager
-    def request(self):
-        self._run_on_all_extensions("on_request_start")
+    async def _run_on_all_extensions_async(self, method_name: str, *args, **kwargs):
+        for extension in self.extensions:
+            result = getattr(extension, method_name)(*args, **kwargs)
 
-        yield
+            if inspect.isawaitable(result):
+                await result
 
-        self._run_on_all_extensions("on_request_end")
+    def request(self) -> RequestContextManger:
+        return RequestContextManger(
+            run_on_all_extensions=self._run_on_all_extensions,
+            run_on_all_extensions_async=self._run_on_all_extensions_async,
+        )
 
-    @contextmanager
-    def validation(self):
-        self._run_on_all_extensions("on_validation_start")
+    def validation(self) -> ValidationContextManager:
+        return ValidationContextManager(
+            run_on_all_extensions=self._run_on_all_extensions,
+            run_on_all_extensions_async=self._run_on_all_extensions_async,
+        )
 
-        yield
-
-        self._run_on_all_extensions("on_validation_end")
-
-    @contextmanager
-    def parsing(self):
-        self._run_on_all_extensions("on_parsing_start")
-
-        yield
-
-        self._run_on_all_extensions("on_parsing_end")
+    def parsing(self) -> ParsingContextManager:
+        return ParsingContextManager(
+            run_on_all_extensions=self._run_on_all_extensions,
+            run_on_all_extensions_async=self._run_on_all_extensions_async,
+        )
 
     def get_extensions_results(self) -> Dict[str, Any]:
         data = {}
 
         for extension in self.extensions:
             data.update(extension.get_results())
+
+        return data
+
+    async def get_extensions_results_async(self) -> Dict[str, Any]:
+        data = {}
+
+        for extension in self.extensions:
+            results = extension.get_results()
+
+            if inspect.isawaitable(results):
+                results = await results
+
+            data.update(results)
 
         return data
 

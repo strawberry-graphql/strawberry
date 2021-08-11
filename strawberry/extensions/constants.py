@@ -1,0 +1,8 @@
+ON_REQUEST_START = "on_request_start"
+ON_REQUEST_END = "on_request_end"
+ON_VALIDATION_START = "on_validation_start"
+ON_VALIDATION_END = "on_validation_end"
+ON_PARSING_START = "on_parsing_start"
+ON_PARSING_END = "on_parsing_end"
+GET_RESULTS = "GET_RESULTS"
+RESOLVE = "RESOLVE"

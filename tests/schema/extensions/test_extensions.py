@@ -2,11 +2,16 @@ import pytest
 
 import strawberry
 from strawberry.extensions import Extension
-
-
-class MyExtension(Extension):
-    def get_results(self):
-        return {"example": "example"}
+from strawberry.extensions.constants import (
+    GET_RESULTS,
+    ON_PARSING_END,
+    ON_PARSING_START,
+    ON_REQUEST_END,
+    ON_REQUEST_START,
+    ON_VALIDATION_END,
+    ON_VALIDATION_START,
+    RESOLVE,
+)
 
 
 def test_base_extension():
@@ -38,6 +43,10 @@ def test_base_extension():
 
 
 def test_extension():
+    class MyExtension(Extension):
+        def get_results(self):
+            return {"example": "example"}
+
     @strawberry.type
     class Person:
         name: str = "Jess"
@@ -69,6 +78,10 @@ def test_extension():
 
 @pytest.mark.asyncio
 async def test_extension_async():
+    class MyExtension(Extension):
+        def get_results(self):
+            return {"example": "example"}
+
     @strawberry.type
     class Person:
         name: str = "Jess"
@@ -189,3 +202,92 @@ def test_extension_access_to_root_value():
 
     assert not result.errors
     assert root_value == "ROOT"
+
+
+@pytest.mark.asyncio
+async def test_async_extension_hooks():
+    called_hooks = set()
+
+    class MyExtension(Extension):
+        async def on_request_start(self):
+            called_hooks.add(ON_REQUEST_START)
+
+        async def on_request_end(self):
+            called_hooks.add(ON_REQUEST_END)
+
+        async def on_validation_start(self):
+            called_hooks.add(ON_VALIDATION_START)
+
+        async def on_validation_end(self):
+            called_hooks.add(ON_VALIDATION_END)
+
+        async def on_parsing_start(self):
+            called_hooks.add(ON_PARSING_START)
+
+        async def on_parsing_end(self):
+            called_hooks.add(ON_PARSING_END)
+
+        async def get_results(self):
+            called_hooks.add(GET_RESULTS)
+            return {"example": "example"}
+
+        async def resolve(self, _next, root, info, *args, **kwargs):
+            called_hooks.add(RESOLVE)
+            return _next(root, info, *args, **kwargs)
+
+    @strawberry.type
+    class Person:
+        name: str = "Jess"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def person(self) -> Person:
+            return Person()
+
+    schema = strawberry.Schema(query=Query, extensions=[MyExtension])
+    query = "query TestQuery { person { name } }"
+
+    result = await schema.execute(query)
+    assert result.errors is None
+
+    assert called_hooks == {
+        ON_REQUEST_END,
+        ON_REQUEST_START,
+        ON_VALIDATION_END,
+        ON_VALIDATION_START,
+        ON_PARSING_END,
+        ON_PARSING_START,
+        GET_RESULTS,
+        RESOLVE,
+    }
+
+
+@pytest.mark.asyncio
+async def test_mixed_sync_and_async_extension_hooks():
+    called_hooks = set()
+
+    class MyExtension(Extension):
+        def on_request_start(self):
+            called_hooks.add(ON_REQUEST_START)
+
+        async def on_request_end(self):
+            called_hooks.add(ON_REQUEST_END)
+
+    @strawberry.type
+    class Person:
+        name: str = "Jess"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def person(self) -> Person:
+            return Person()
+
+    schema = strawberry.Schema(query=Query, extensions=[MyExtension])
+    query = "query TestQuery { person { name } }"
+
+    result = await schema.execute(query)
+    assert result.errors is None
+
+    assert called_hooks == {ON_REQUEST_END, ON_REQUEST_START}
