@@ -76,6 +76,36 @@ async def test_raises_permission_error_for_subscription():
     assert result.errors[0].message == "You are not authorized"
 
 
+@pytest.mark.asyncio
+async def test_sync_permissions_work_with_async_resolvers():
+    class IsAuthorized(BasePermission):
+        message = "User is not authorized"
+
+        def has_permission(self, source, info, **kwargs) -> bool:
+            return info.context["user"] == "Patrick"
+
+    @strawberry.type
+    class User:
+        name: str
+        email: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field(permission_classes=[IsAuthorized])
+        async def user(self, name: str) -> User:
+            return User(name=name, email="patrick.arminio@gmail.com")
+
+    schema = strawberry.Schema(query=Query)
+
+    query = '{ user(name: "patrick") { email } }'
+    result = await schema.execute(query, context_value={"user": "Patrick"})
+    assert result.data["user"]["email"] == "patrick.arminio@gmail.com"
+
+    query = '{ user(name: "marco") { email } }'
+    result = await schema.execute(query, context_value={"user": "Marco"})
+    assert result.errors[0].message == "User is not authorized"
+
+
 def test_can_use_source_when_testing_permission():
     class CanSeeEmail(BasePermission):
         message = "Cannot see email for this user"
@@ -176,60 +206,6 @@ def test_can_use_on_simple_fields():
 
 
 @pytest.mark.asyncio
-async def test_async_resolver_with_async_permission_class():
-    class CanSeeEmail(BasePermission):
-        message = "Cannot see email for this user"
-
-        async def has_permission(self, source, info, **kwargs) -> bool:
-            return False
-
-    @strawberry.type
-    class User:
-        name: str
-        email: str
-
-    @strawberry.type
-    class Query:
-        @strawberry.field(permission_classes=[CanSeeEmail])
-        async def user(self, name: str) -> User:
-            return User(name=name, email="patrick.arminio@gmail.com")
-
-    schema = strawberry.Schema(query=Query)
-
-    query = '{ user(name: "patrick") { email } }'
-
-    result = await schema.execute(query)
-    assert result.errors[0].message == "Cannot see email for this user"
-
-
-@pytest.mark.asyncio
-async def test_sync_resolver_with_async_permission_class():
-    class CanSeeEmail(BasePermission):
-        message = "Cannot see email for this user"
-
-        async def has_permission(self, source, info, **kwargs) -> bool:
-            return False
-
-    @strawberry.type
-    class User:
-        name: str
-        email: str
-
-    @strawberry.type
-    class Query:
-        @strawberry.field(permission_classes=[CanSeeEmail])
-        def user(self, name: str) -> User:
-            return User(name=name, email="patrick.arminio@gmail.com")
-
-    schema = strawberry.Schema(query=Query)
-
-    query = '{ user(name: "patrick") { email } }'
-
-    result = await schema.execute(query)
-    assert result.errors[0].message == "Cannot see email for this user"
-
-
-@pytest.mark.asyncio
 async def test_dataclass_field_with_async_permission_class():
     class CanSeeEmail(BasePermission):
         message = "Cannot see email for this user"
@@ -257,3 +233,63 @@ async def test_dataclass_field_with_async_permission_class():
     query = '{ user(name: "marco") { email } }'
     result = await schema.execute(query)
     assert result.errors[0].message == "Cannot see email for this user"
+
+
+@pytest.mark.asyncio
+async def test_async_resolver_with_async_permission_class():
+    class IsAuthorized(BasePermission):
+        message = "User is not authorized"
+
+        async def has_permission(self, source, info, **kwargs) -> bool:
+            return info.context["user"] == "Patrick"
+
+    @strawberry.type
+    class User:
+        name: str
+        email: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field(permission_classes=[IsAuthorized])
+        async def user(self, name: str) -> User:
+            return User(name=name, email="patrick.arminio@gmail.com")
+
+    schema = strawberry.Schema(query=Query)
+
+    query = '{ user(name: "patrick") { email } }'
+    result = await schema.execute(query, context_value={"user": "Patrick"})
+    assert result.data["user"]["email"] == "patrick.arminio@gmail.com"
+
+    query = '{ user(name: "marco") { email } }'
+    result = await schema.execute(query, context_value={"user": "Marco"})
+    assert result.errors[0].message == "User is not authorized"
+
+
+@pytest.mark.asyncio
+async def test_sync_resolver_with_async_permission_class():
+    class IsAuthorized(BasePermission):
+        message = "User is not authorized"
+
+        async def has_permission(self, source, info, **kwargs) -> bool:
+            return info.context["user"] == "Patrick"
+
+    @strawberry.type
+    class User:
+        name: str
+        email: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field(permission_classes=[IsAuthorized])
+        def user(self, name: str) -> User:
+            return User(name=name, email="patrick.arminio@gmail.com")
+
+    schema = strawberry.Schema(query=Query)
+
+    query = '{ user(name: "patrick") { email } }'
+    result = await schema.execute(query, context_value={"user": "Patrick"})
+    assert result.data["user"]["email"] == "patrick.arminio@gmail.com"
+
+    query = '{ user(name: "marco") { email } }'
+    result = await schema.execute(query, context_value={"user": "Marco"})
+    assert result.errors[0].message == "User is not authorized"
