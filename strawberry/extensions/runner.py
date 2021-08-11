@@ -3,6 +3,7 @@ from typing import Any, Dict, List
 
 from graphql import MiddlewareManager
 
+from strawberry.extensions.constants import SYNC_CONTEXT_WARNING
 from strawberry.extensions.context import (
     ParsingContextManager,
     RequestContextManger,
@@ -26,7 +27,12 @@ class ExtensionsRunner:
 
     def _run_on_all_extensions(self, method_name: str, *args, **kwargs):
         for extension in self.extensions:
-            getattr(extension, method_name)(*args, **kwargs)
+            method = getattr(extension, method_name)
+
+            if inspect.iscoroutinefunction(method):
+                raise RuntimeError(SYNC_CONTEXT_WARNING)
+
+            method(*args, **kwargs)
 
     async def _run_on_all_extensions_async(self, method_name: str, *args, **kwargs):
         for extension in self.extensions:
@@ -57,9 +63,10 @@ class ExtensionsRunner:
         data: Dict[str, Any] = {}
 
         for extension in self.extensions:
-            results = extension.get_results()
-            assert not inspect.isawaitable(results)
-            data.update(results)  # type: ignore
+            if inspect.iscoroutinefunction(extension.get_results):
+                raise RuntimeError(SYNC_CONTEXT_WARNING)
+
+            data.update(extension.get_results())  # type: ignore
 
         return data
 

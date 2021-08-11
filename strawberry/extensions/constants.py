@@ -6,3 +6,5 @@ ON_PARSING_START = "on_parsing_start"
 ON_PARSING_END = "on_parsing_end"
 GET_RESULTS = "GET_RESULTS"
 RESOLVE = "RESOLVE"
+
+SYNC_CONTEXT_WARNING = "Cannot use async extension hook during sync execution"

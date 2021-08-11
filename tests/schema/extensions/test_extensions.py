@@ -11,6 +11,7 @@ from strawberry.extensions.constants import (
     ON_VALIDATION_END,
     ON_VALIDATION_START,
     RESOLVE,
+    SYNC_CONTEXT_WARNING,
 )
 
 
@@ -291,3 +292,41 @@ async def test_mixed_sync_and_async_extension_hooks():
     assert result.errors is None
 
     assert called_hooks == {ON_REQUEST_END, ON_REQUEST_START}
+
+
+def test_warning_about_async_context_hooks_in_sync_context():
+    class MyExtension(Extension):
+        async def on_request_start(self):
+            pass
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def string(self) -> str:
+            return str()
+
+    schema = strawberry.Schema(query=Query, extensions=[MyExtension])
+    query = "query { string }"
+
+    with pytest.raises(RuntimeError) as exc_info:
+        schema.execute_sync(query)
+        assert str(exc_info.value) == SYNC_CONTEXT_WARNING
+
+
+def test_warning_about_async_get_results_hooks_in_sync_context():
+    class MyExtension(Extension):
+        async def get_results(self):
+            pass
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def string(self) -> str:
+            return str()
+
+    schema = strawberry.Schema(query=Query, extensions=[MyExtension])
+    query = "query { string }"
+
+    with pytest.raises(RuntimeError) as exc_info:
+        schema.execute_sync(query)
+        assert str(exc_info.value) == SYNC_CONTEXT_WARNING
