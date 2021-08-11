@@ -293,3 +293,39 @@ async def test_sync_resolver_with_async_permission_class():
     query = '{ user(name: "marco") { email } }'
     result = await schema.execute(query, context_value={"user": "Marco"})
     assert result.errors[0].message == "User is not authorized"
+
+
+@pytest.mark.asyncio
+async def test_mixed_sync_and_async_permission_classes():
+    class IsAuthorizedAsync(BasePermission):
+        message = "User is not authorized (async)"
+
+        async def has_permission(self, source, info, **kwargs) -> bool:
+            return info.context["user"] == "Patrick"
+
+    class IsAuthorizedSync(BasePermission):
+        message = "User is not authorized (sync)"
+
+        async def has_permission(self, source, info, **kwargs) -> bool:
+            return info.context["user"] == "Patrick"
+
+    @strawberry.type
+    class User:
+        name: str
+        email: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field(permission_classes=[IsAuthorizedAsync, IsAuthorizedSync])
+        def user(self, name: str) -> User:
+            return User(name=name, email="patrick.arminio@gmail.com")
+
+    schema = strawberry.Schema(query=Query)
+
+    query = '{ user(name: "patrick") { email } }'
+    result = await schema.execute(query, context_value={"user": "Patrick"})
+    assert result.data["user"]["email"] == "patrick.arminio@gmail.com"
+
+    query = '{ user(name: "marco") { email } }'
+    result = await schema.execute(query, context_value={"user": "Marco"})
+    assert result.errors[0].message == "User is not authorized (async)"
