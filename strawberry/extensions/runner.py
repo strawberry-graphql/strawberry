@@ -54,23 +54,25 @@ class ExtensionsRunner:
         )
 
     def get_extensions_results(self) -> Dict[str, Any]:
-        data = {}
+        data: Dict[str, Any] = {}
 
         for extension in self.extensions:
-            data.update(extension.get_results())
+            results = extension.get_results()
+            assert not inspect.isawaitable(results)
+            data.update(results)  # type: ignore
 
         return data
 
     async def get_extensions_results_async(self) -> Dict[str, Any]:
-        data = {}
+        data: Dict[str, Any] = {}
 
         for extension in self.extensions:
             results = extension.get_results()
 
             if inspect.isawaitable(results):
-                results = await results
+                results = await results  # type: ignore
 
-            data.update(results)
+            data.update(results)  # type: ignore
 
         return data
 
