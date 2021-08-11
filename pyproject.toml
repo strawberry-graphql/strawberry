@@ -12,6 +12,7 @@ homepage = "https://strawberry.rocks/"
 repository = "https://github.com/strawberry-graphql/strawberry"
 documentation = "https://strawberry.rocks/"
 
+test = "hello"
 classifiers = [
     "Topic :: Software Development :: Libraries",
     "Topic :: Software Development :: Libraries :: Python Modules"
