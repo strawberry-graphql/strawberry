@@ -1,5 +1,6 @@
 import builtins
 import dataclasses
+import inspect
 from typing import (
     Any,
     Awaitable,
@@ -12,6 +13,8 @@ from typing import (
     TypeVar,
     Union,
 )
+
+from cached_property import cached_property
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import UNSET, StrawberryArgument
@@ -247,6 +250,13 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
             return self.base_resolver(*args, **kwargs)
 
         return getattr(source, self.python_name)
+
+    @cached_property
+    def has_async_permission_classes(self) -> bool:
+        for permission_class in self.permission_classes:
+            if inspect.iscoroutinefunction(permission_class.has_permission):
+                return True
+        return False
 
 
 def field(

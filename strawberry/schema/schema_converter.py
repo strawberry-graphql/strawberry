@@ -356,12 +356,6 @@ class GraphQLCoreConverter:
                     message = getattr(permission, "message", None)
                     raise PermissionError(message)
 
-        def _has_async_permission_classes() -> bool:
-            for permission_class in field.permission_classes:
-                if inspect.iscoroutinefunction(permission_class.has_permission):
-                    return True
-            return False
-
         def _strawberry_info_from_graphql(info: GraphQLResolveInfo) -> Info:
             return Info(
                 field_name=info.field_name,
@@ -383,9 +377,6 @@ class GraphQLCoreConverter:
                 _source, info=info, args=field_args, kwargs=field_kwargs
             )
 
-        has_async_base_resolver = inspect.iscoroutinefunction(field.base_resolver)
-        has_async_perms = _has_async_permission_classes()
-
         def _resolver(_source: Any, info: GraphQLResolveInfo, **kwargs):
             strawberry_info = _strawberry_info_from_graphql(info)
             _check_permissions(_source, strawberry_info, kwargs)
@@ -403,7 +394,7 @@ class GraphQLCoreConverter:
 
             return result
 
-        if has_async_perms or has_async_base_resolver:
+        if field.has_async_permission_classes:
             _async_resolver._is_default = not field.base_resolver  # type: ignore
             return _async_resolver
         else:
