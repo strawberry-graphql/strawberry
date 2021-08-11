@@ -1,7 +1,7 @@
 Release type: minor
 
 This release adds support for asynchronous permission classes. The only difference to
-the synchronous variant is that the `has_permission` method is asynchronous.
+their synchronous counterpart is that the `has_permission` method is asynchronous.
 
 ```python
 from strawberry.permission import BasePermission
