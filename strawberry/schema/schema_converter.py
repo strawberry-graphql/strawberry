@@ -374,32 +374,34 @@ class GraphQLCoreConverter:
                 path=info.path,
             )
 
+        def _get_result(_source: Any, info: Info, **kwargs):
+            field_args, field_kwargs = _get_arguments(
+                source=_source, info=info, kwargs=kwargs
+            )
+
+            return field.get_result(
+                _source, info=info, args=field_args, kwargs=field_kwargs
+            )
+
+        has_async_base_resolver = inspect.iscoroutinefunction(field.base_resolver)
+        has_async_perms = _has_async_permission_classes()
+
         def _resolver(_source: Any, info: GraphQLResolveInfo, **kwargs):
             strawberry_info = _strawberry_info_from_graphql(info)
             _check_permissions(_source, strawberry_info, kwargs)
 
-            field_args, field_kwargs = _get_arguments(
-                source=_source, info=strawberry_info, kwargs=kwargs
-            )
-
-            return field.get_result(
-                _source, info=strawberry_info, args=field_args, kwargs=field_kwargs
-            )
+            return _get_result(_source, strawberry_info, **kwargs)
 
         async def _async_resolver(_source: Any, info: GraphQLResolveInfo, **kwargs):
             strawberry_info = _strawberry_info_from_graphql(info)
             await _check_permissions_async(_source, strawberry_info, kwargs)
 
-            field_args, field_kwargs = _get_arguments(
-                source=_source, info=strawberry_info, kwargs=kwargs
-            )
+            result = _get_result(_source, strawberry_info, **kwargs)
 
-            return field.get_result(
-                _source, info=strawberry_info, args=field_args, kwargs=field_kwargs
-            )
+            if inspect.isawaitable(result):
+                return await result
 
-        has_async_base_resolver = inspect.iscoroutinefunction(field.base_resolver)
-        has_async_perms = _has_async_permission_classes()
+            return result
 
         if has_async_perms or has_async_base_resolver:
             _async_resolver._is_default = not field.base_resolver  # type: ignore
