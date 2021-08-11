@@ -160,12 +160,12 @@ def test_type_with_fields_coming_from_strawberry_and_pydantic():
     assert field1.python_name == "age"
     assert field1.type is int
 
-    assert field2.python_name == "password"
-    assert isinstance(field2.type, StrawberryOptional)
-    assert field2.type.of_type is str
+    assert field2.python_name == "name"
+    assert field2.type is str
 
-    assert field3.python_name == "name"
-    assert field3.type is str
+    assert field3.python_name == "password"
+    assert isinstance(field3.type, StrawberryOptional)
+    assert field3.type.of_type is str
 
 
 @pytest.mark.xfail(
@@ -222,12 +222,12 @@ def test_type_with_nested_fields_coming_from_strawberry_and_pydantic():
     assert field1.python_name == "age"
     assert field1.type is int
 
-    assert field2.python_name == "password"
-    assert isinstance(field2.type, StrawberryOptional)
-    assert field2.type.of_type is str
+    assert field2.python_name == "name"
+    assert field2.type is Name
 
-    assert field3.python_name == "name"
-    assert field3.type is Name
+    assert field3.python_name == "password"
+    assert isinstance(field3.type, StrawberryOptional)
+    assert field3.type.of_type is str
 
 
 def test_type_with_aliased_pydantic_field():

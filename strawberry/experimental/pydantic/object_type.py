@@ -12,7 +12,8 @@ from strawberry.experimental.pydantic.conversion import (
 )
 from strawberry.experimental.pydantic.fields import get_basic_type
 from strawberry.field import StrawberryField
-from strawberry.object_type import _process_type
+from strawberry.object_type import _process_type, _wrap_dataclass
+from strawberry.types.type_resolver import _get_fields
 from strawberry.types.types import FederationTypeParams, TypeDefinition
 
 from .exceptions import MissingFieldsListError, UnregisteredTypeException
@@ -91,34 +92,36 @@ def type(
             if name in fields_set
         ]
 
-        cls_annotations = getattr(cls, "__annotations__", {})
+        wrapped = _wrap_dataclass(cls)
+        extra_fields = _get_fields(wrapped)
+
         all_fields.extend(
             (
                 (
-                    name,
-                    type_,
-                    StrawberryField(
-                        python_name=name,
-                        graphql_name=None,
-                        type_annotation=type_,
-                        # we need a default value when adding additional fields
-                        # on top of a type generated from Pydantic, this is because
-                        # Pydantic Optional fields always have None as default value
-                        # which breaks dataclasses generation; as we can't define
-                        # a field without a default value after one with a default value
-                        # adding fields at the beginning won't work as we will also
-                        # support default values on them (so the problem will be just
-                        # shifted around)
-                        default=None,
-                    ),
+                    field.name,
+                    field.type,
+                    field,
                 )
-                for name, type_ in cls_annotations.items()
+                for field in extra_fields
             )
         )
 
+        # Sort fields so that fields with missing defaults go first
+        # because dataclasses require that fields with no defaults are defined
+        # first
+        missing_default = []
+        has_default = []
+        for field in all_fields:
+            if field[2].default is dataclasses.MISSING:
+                missing_default.append(field)
+            else:
+                has_default.append(field)
+
+        sorted_fields = missing_default + has_default
+
         cls = dataclasses.make_dataclass(
             cls.__name__,
-            all_fields,
+            sorted_fields,
         )
 
         _process_type(
