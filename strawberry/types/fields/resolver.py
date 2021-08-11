@@ -105,10 +105,8 @@ class StrawberryResolver(Generic[T]):
 
     @cached_property
     def type_annotation(self) -> Optional[StrawberryAnnotation]:
-        try:
-            return_annotation = self.wrapped_func.__annotations__["return"]
-        except KeyError:
-            # No return annotation at all (as opposed to `-> None`)
+        return_annotation = self.type
+        if not return_annotation:
             return None
 
         annotation_namespace = self.annotation_namespace
@@ -119,12 +117,22 @@ class StrawberryResolver(Generic[T]):
         return type_annotation
 
     @property
-    def type(self) -> Optional[Union[StrawberryType, type]]:
-        if self._type_override:
-            return self._type_override
+    def resolved_type(self) -> Optional[Union[StrawberryType, type]]:
         if self.type_annotation is None:
             return None
         return self.type_annotation.resolve()
+
+    @property
+    def type(self) -> Optional[Union[object, str]]:
+        if self._type_override:
+            return self._type_override
+        try:
+            return_annotation = self.wrapped_func.__annotations__["return"]
+        except KeyError:
+            # No return annotation at all (as opposed to `-> None`)
+            return None
+
+        return return_annotation
 
     @cached_property
     def is_async(self) -> bool:
@@ -137,11 +145,12 @@ class StrawberryResolver(Generic[T]):
     ) -> StrawberryResolver:
         type_override = None
 
-        if self.type:
-            if isinstance(self.type, StrawberryType):
-                type_override = self.type.copy_with(type_var_map)
+        resolved_type = self.resolved_type
+        if resolved_type:
+            if isinstance(resolved_type, StrawberryType):
+                type_override = resolved_type.copy_with(type_var_map)
             else:
-                type_override = self.type._type_definition.copy_with(  # type: ignore
+                type_override = resolved_type._type_definition.copy_with(  # type: ignore
                     type_var_map,
                 )
 

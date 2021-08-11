@@ -1,4 +1,4 @@
-from typing import List, Optional, Union, get_args, get_origin
+from typing import List, Optional
 
 import pytest
 

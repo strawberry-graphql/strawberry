@@ -17,7 +17,7 @@ from typing import (
 
 from cached_property import cached_property  # type: ignore
 
-from strawberry.annotation import StrawberryAnnotation
+from strawberry.annotation import StrawberryAnnotation, resolve_annotation
 from strawberry.arguments import UNSET, StrawberryArgument
 from strawberry.type import StrawberryType
 from strawberry.types.info import Info
@@ -111,6 +111,9 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
         self.permission_classes: List[Type[BasePermission]] = list(permission_classes)
 
         self.deprecation_reason = deprecation_reason
+
+        self._type: Optional[Union[StrawberryType, type]] = None
+        self._resolved_type: Optional[Union[StrawberryType, type]] = None
 
     def __call__(self, resolver: _RESOLVER_TYPE) -> "StrawberryField":
         """Add a resolver to the field"""
@@ -212,28 +215,57 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
         #       removed.
         _ = resolver.arguments
 
-    def get_type(self) -> Union[StrawberryType, object]:
+    @property
+    def origin_namespace(self) -> Dict[str, Any]:
+        module = sys.modules[self.origin.__module__]
+        namespace = module.__dict__
+        return namespace
+
+    def get_type(self) -> Union[object, str]:
+        """
+        Hook to allow custom fields to modify the return type of a field. This
+        hook should only be called once at schema creation time.
+
+        Note: the return value of this function is always the resolved type if
+        it's a forward reference. This is so it's easier to manipulate.
+        """
+
+        type_ = self.type
+        evaled_type = resolve_annotation(type_, self.origin_namespace)
+
+        return evaled_type
+
+    @property
+    def resolved_type(self) -> Optional[Union[StrawberryType, type]]:
+        if self._resolved_type:
+            return self._resolved_type
+
+        # We should have an origin set by now
+        assert self.origin
+
+        type_ = self.get_type()
+
+        type_annotation = StrawberryAnnotation(
+            annotation=type_, namespace=self.origin_namespace
+        )
+
+        resolved_type = type_annotation.resolve()
+
+        self._resolved_type = resolved_type
+        return self._resolved_type
+
+    @property  # type: ignore
+    def type(self) -> Optional[Union[object, str]]:  # type: ignore
         if self.base_resolver is not None:
             # Handle unannotated functions (such as lambdas)
             if self.base_resolver.type is not None:
                 return self.base_resolver.type
 
-        assert self.type is not None
+        return self._type
 
-        return self.type
-
-    def get_type_annotation(self) -> StrawberryAnnotation:
-        type_ = self.get_type()
-        module = sys.modules[self.origin.__module__]
-        type_annotation = StrawberryAnnotation(
-            annotation=type_, namespace=module.__dict__
-        )
-        return type_annotation
-
-    @property
-    def resolved_type(self) -> Union[StrawberryType, type]:
-        type_annotation = self.get_type_annotation()
-        return type_annotation.resolve()
+    @type.setter
+    def type(self, type_: Any) -> None:
+        self._type = type_
 
     # TODO: add this to arguments (and/or move it to StrawberryType)
     @property

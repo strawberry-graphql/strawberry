@@ -1,8 +1,6 @@
 import dataclasses
-import sys
 from typing import Dict, List, Type
 
-from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import (
     FieldWithResolverAndDefaultFactoryError,
     FieldWithResolverAndDefaultValueError,
@@ -106,11 +104,11 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
 
         # Create a StrawberryField for fields that didn't use strawberry.field
         else:
-            # Only ignore Private fields that weren't defined using StrawberryFields
-            if isinstance(field.type, Private):
-                continue
-
             field_type = field.type
+
+            # Only ignore Private fields that weren't defined using StrawberryFields
+            if isinstance(field_type, Private):
+                continue
 
             # Create a StrawberryField, for fields of Types #1 and #2a
             field = StrawberryField(

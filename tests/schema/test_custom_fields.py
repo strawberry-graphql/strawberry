@@ -28,7 +28,7 @@ def test_simple_custom_field():
     assert result.data["altName"] == "PATRICK91"
 
 
-def test_modify_arguments():
+def test_modify_arguments_simple():
     class PageNumberPagination(StrawberryField):
         def get_result(
             self, source: Any, info: Any, arguments: Dict[str, Any]

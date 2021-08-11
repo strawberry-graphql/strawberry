@@ -63,8 +63,12 @@ class StrawberryArgument(GraphQLNameMixin):
             self._parse_annotated()
 
     @property
-    def type(self) -> Union[StrawberryType, type]:
+    def resolved_type(self) -> Union[StrawberryType, type]:
         return self.type_annotation.resolve()
+
+    @property
+    def type(self) -> Union[object, str]:
+        return self.type_annotation.annotation
 
     @classmethod
     def _annotation_is_annotated(cls, annotation: StrawberryAnnotation) -> bool:
@@ -94,7 +98,7 @@ class StrawberryArgument(GraphQLNameMixin):
 
 
 def convert_argument(
-    value: object, type_: Union[StrawberryType, type], auto_camel_case: bool = True
+    value: object, type_: Union[object, str], auto_camel_case: bool = True
 ) -> object:
     if value is None:
         return None
@@ -164,7 +168,7 @@ def convert_arguments(
 
             kwargs[argument.python_name] = convert_argument(
                 value=current_value,
-                type_=argument.type,
+                type_=argument.resolved_type,
                 auto_camel_case=auto_camel_case,
             )
 
