@@ -14,7 +14,7 @@ from typing import (
     Union,
 )
 
-from cached_property import cached_property
+from cached_property import cached_property  # type: ignore
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import UNSET, StrawberryArgument
