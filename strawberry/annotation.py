@@ -37,6 +37,19 @@ if TYPE_CHECKING:
     from strawberry.union import StrawberryUnion
 
 
+def resolve_annotation(
+    raw_annotation: Union[object, str], namespace: Optional[Dict] = None
+):
+    annotation: object
+    if isinstance(raw_annotation, str):
+        annotation = ForwardRef(raw_annotation)
+    else:
+        annotation = raw_annotation
+
+    value = _eval_type(annotation, namespace, None)
+    return value
+
+
 class StrawberryAnnotation:
     def __init__(
         self, annotation: Union[object, str], *, namespace: Optional[Dict] = None
@@ -51,13 +64,8 @@ class StrawberryAnnotation:
         return self.resolve() == other.resolve()
 
     def resolve(self) -> Union[StrawberryType, type]:
-        annotation: object
-        if isinstance(self.annotation, str):
-            annotation = ForwardRef(self.annotation)
-        else:
-            annotation = self.annotation
+        evaled_type = resolve_annotation(self.annotation, self.namespace)
 
-        evaled_type = _eval_type(annotation, self.namespace, None)
         if evaled_type is None:
             raise ValueError("Annotation cannot be plain None type")
         if self._is_async_generator(evaled_type):
