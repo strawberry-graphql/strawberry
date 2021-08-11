@@ -301,13 +301,13 @@ async def test_mixed_sync_and_async_permission_classes():
         message = "User is not authorized (async)"
 
         async def has_permission(self, source, info, **kwargs) -> bool:
-            return info.context["user"] == "Patrick"
+            return info.context.get("passAsync", False)
 
     class IsAuthorizedSync(BasePermission):
         message = "User is not authorized (sync)"
 
         async def has_permission(self, source, info, **kwargs) -> bool:
-            return info.context["user"] == "Patrick"
+            return info.context.get("passSync", False)
 
     @strawberry.type
     class User:
@@ -321,11 +321,20 @@ async def test_mixed_sync_and_async_permission_classes():
             return User(name=name, email="patrick.arminio@gmail.com")
 
     schema = strawberry.Schema(query=Query)
-
     query = '{ user(name: "patrick") { email } }'
-    result = await schema.execute(query, context_value={"user": "Patrick"})
-    assert result.data["user"]["email"] == "patrick.arminio@gmail.com"
 
-    query = '{ user(name: "marco") { email } }'
-    result = await schema.execute(query, context_value={"user": "Marco"})
+    context = {"passAsync": False, "passSync": False}
+    result = await schema.execute(query, context_value=context)
     assert result.errors[0].message == "User is not authorized (async)"
+
+    context = {"passAsync": True, "passSync": False}
+    result = await schema.execute(query, context_value=context)
+    assert result.errors[0].message == "User is not authorized (sync)"
+
+    context = {"passAsync": False, "passSync": True}
+    result = await schema.execute(query, context_value=context)
+    assert result.errors[0].message == "User is not authorized (async)"
+
+    context = {"passAsync": True, "passSync": True}
+    result = await schema.execute(query, context_value=context)
+    assert result.data["user"]["email"] == "patrick.arminio@gmail.com"
