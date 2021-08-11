@@ -306,7 +306,7 @@ async def test_mixed_sync_and_async_permission_classes():
     class IsAuthorizedSync(BasePermission):
         message = "User is not authorized (sync)"
 
-        async def has_permission(self, source, info, **kwargs) -> bool:
+        def has_permission(self, source, info, **kwargs) -> bool:
             return info.context.get("passSync", False)
 
     @strawberry.type
