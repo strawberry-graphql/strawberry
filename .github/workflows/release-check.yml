@@ -4,8 +4,7 @@ on:
   pull_request_target:
     types: [synchronize, reopened, opened, ready_for_review]
     branches:
-    # TODO: revert
-    - skip-release-check-sometimes
+    - main
     paths:
     - "strawberry/**"
     - "pyproject.toml"
