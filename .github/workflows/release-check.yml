@@ -167,5 +167,5 @@ jobs:
 
     steps:
     - name: Fail if status is not ok
-      if: ${{ needs.release-file-check.outputs.release_status != 'OK' }}
+      if: ${{ needs.release-file-check.outputs.status != 'OK' }}
       run: exit 1
