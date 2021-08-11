@@ -10,6 +10,7 @@ field using the `permission_classes` keyword argument. A basic example looks
 like this:
 
 ```python
+import typing
 import strawberry
 from strawberry.permission import BasePermission
 from strawberry.types import Info
@@ -17,7 +18,8 @@ from strawberry.types import Info
 class IsAuthenticated(BasePermission):
     message = "User is not authenticated"
 
-    def has_permission(self, source: Any, info: Info, **kwargs) -> bool:
+    # This method can also be async!
+    def has_permission(self, source: typing.Any, info: Info, **kwargs) -> bool:
         return False
 
 @strawberry.type
@@ -26,11 +28,16 @@ class Query:
 ```
 
 Your `has_permission` method should do the work to check if this request
-has permission to the field. If the `has_permission` method returns `True` or
-a truthy value then the field access will go ahead. If the `has_permission`
-method returns `False` or a falsy value then an error will be raised using
-the `message` class attribute. See [Dealing with Errors](/docs/guides/errors)
-for more information on how errors are handled.
+has permission to the field.
+
+If the `has_permission` method returns a truthy value or an awaitable resolving to a
+truthy value then the field access will go ahead.
+
+If the `has_permission` method returns a falsy value or an awaitable resolving to a
+falsy value then an error will be raised using the `message` class attribute.
+
+Take a look at our [Dealing with Errors Guide](/docs/guides/errors) for more information
+on how errors are handled.
 
 ```json
 {
@@ -46,32 +53,41 @@ for more information on how errors are handled.
 ## Accessing user information
 
 Accessing the current user information to implement your permission checks
-depends on the web framework you are using. Most frameworks will have a
-`Request` object where you can either access the current user directly or access
-headers/cookies/query parameters to authenticate the user. All the Strawberry
-integrations provide this Request object in the `info.context` object that is
-accessible in every resolver and in the `has_permission` function. You can find
-more details about a specific framework integration under the "Integrations"
-heading in the navigation.
+depends on the web framework you are using.
+
+Most frameworks will have a `Request` object where you can either access the current
+user directly or access headers/cookies/query parameters to authenticate the user.
+
+All the Strawberry integrations provide this Request object in the `info.context` object
+that is accessible in every resolver and in the `has_permission` function.
+
+You can find more details about a specific framework integration under the
+"Integrations" heading in the navigation.
 
 In this example we are using `starlette` which uses the
 [ASGI](/docs/integrations/asgi) integration:
 
 ```python
+import typing
 from myauth import authenticate_header, authenticate_query_param
 
 from starlette.requests import Request
 from starlette.websockets import WebSocket
+from strawberry.permission import BasePermission
+from strawberry.types import Info
 
 class IsAuthenticated(BasePermission):
     message = "User is not authenticated"
 
-    def has_permission(self, source: Any, info: Info, **kwargs) -> bool:
-        request: Union[Request, Websocket] = info.context["request"]
+    def has_permission(self, source: typing.Any, info: Info, **kwargs) -> bool:
+        request: typing.Union[Request, WebSocket] = info.context["request"]
+
         if "Authorization" in request.headers:
             return authenticate_header(request)
+
         if "auth" in request.query_params:
             return authenticate_query_params(request)
+
         return False
 ```
 
