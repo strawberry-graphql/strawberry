@@ -39,9 +39,8 @@ from strawberry.exceptions import MissingTypesForGenericError
 from strawberry.field import StrawberryField
 from strawberry.lazy_type import LazyType
 from strawberry.scalars import is_scalar
-from strawberry.schema.config import StrawberryConfig
-from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
 from strawberry.schema.types.scalar import _make_scalar_definition, _make_scalar_type
+from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
 from strawberry.types.info import Info
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
