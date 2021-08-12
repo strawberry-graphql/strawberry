@@ -8,22 +8,22 @@ class Extension:
         self.execution_context = execution_context
 
     def on_request_start(self) -> Union[None, Awaitable[None]]:
-        pass
+        """This method is called when a GraphQL request starts"""
 
     def on_request_end(self) -> Union[None, Awaitable[None]]:
-        pass
+        """This method is called when a GraphQL request ends"""
 
     def on_validation_start(self) -> Union[None, Awaitable[None]]:
-        pass
+        """This method is called before the validation step"""
 
     def on_validation_end(self) -> Union[None, Awaitable[None]]:
-        pass
+        """This method is called after the validation step"""
 
     def on_parsing_start(self) -> Union[None, Awaitable[None]]:
-        pass
+        """This method is called before the parsing step"""
 
     def on_parsing_end(self) -> Union[None, Awaitable[None]]:
-        pass
+        """This method is called after the parsing step"""
 
     def resolve(
         self, _next, root, info: Info, *args, **kwargs
