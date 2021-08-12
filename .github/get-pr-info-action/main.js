@@ -41,6 +41,7 @@ const run = async () => {
   const name = author.name || author.login;
 
   core.setOutput("contributor-name", name);
+  core.setOutput("contributor-username", author.login);
 };
 
 run();

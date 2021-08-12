@@ -1,13 +1,9 @@
 import base64
-import json
 import pathlib
 
-from config import GITHUB_EVENT_PATH, GITHUB_WORKSPACE, RELEASE_FILE_PATH
+from config import GITHUB_WORKSPACE, RELEASE_FILE_PATH
 from release import InvalidReleaseFileError, get_release_info
 
-
-with open(GITHUB_EVENT_PATH) as f:
-    event_data = json.load(f)
 
 release_file = pathlib.Path(GITHUB_WORKSPACE) / RELEASE_FILE_PATH
 
