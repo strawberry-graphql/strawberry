@@ -6,7 +6,7 @@ from graphql import MiddlewareManager
 from strawberry.extensions.constants import SYNC_CONTEXT_WARNING
 from strawberry.extensions.context import (
     ParsingContextManager,
-    RequestContextManger,
+    RequestContextManager,
     ValidationContextManager,
 )
 from strawberry.types import ExecutionContext
@@ -25,7 +25,16 @@ class ExtensionsRunner:
         self.execution_context = execution_context
         self.extensions = extensions or []
 
-    def _run_on_all_extensions(self, method_name: str, *args, **kwargs):
+    def request(self) -> RequestContextManager:
+        return RequestContextManager(self)
+
+    def validation(self) -> ValidationContextManager:
+        return ValidationContextManager(self)
+
+    def parsing(self) -> ParsingContextManager:
+        return ParsingContextManager(self)
+
+    def run_on_all_extensions(self, method_name: str, *args, **kwargs):
         for extension in self.extensions:
             method = getattr(extension, method_name)
 
@@ -34,30 +43,12 @@ class ExtensionsRunner:
 
             method(*args, **kwargs)
 
-    async def _run_on_all_extensions_async(self, method_name: str, *args, **kwargs):
+    async def run_on_all_extensions_async(self, method_name: str, *args, **kwargs):
         for extension in self.extensions:
             result = getattr(extension, method_name)(*args, **kwargs)
 
             if inspect.isawaitable(result):
                 await result
-
-    def request(self) -> RequestContextManger:
-        return RequestContextManger(
-            run_on_all_extensions=self._run_on_all_extensions,
-            run_on_all_extensions_async=self._run_on_all_extensions_async,
-        )
-
-    def validation(self) -> ValidationContextManager:
-        return ValidationContextManager(
-            run_on_all_extensions=self._run_on_all_extensions,
-            run_on_all_extensions_async=self._run_on_all_extensions_async,
-        )
-
-    def parsing(self) -> ParsingContextManager:
-        return ParsingContextManager(
-            run_on_all_extensions=self._run_on_all_extensions,
-            run_on_all_extensions_async=self._run_on_all_extensions_async,
-        )
 
     def get_extensions_results(self) -> Dict[str, Any]:
         data: Dict[str, Any] = {}
