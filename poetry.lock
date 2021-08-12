@@ -1130,7 +1130,7 @@ python-versions = "*"
 
 [[package]]
 name = "types-toml"
-version = "0.1.3"
+version = "0.1.5"
 description = "Typing stubs for toml"
 category = "dev"
 optional = false
@@ -1283,7 +1283,7 @@ sanic = ["sanic"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "b03000cd0debf0eed01903f3375a4e65cbbd8066c9162d50a29750f1c4591910"
+content-hash = "ae0e52744b3de888585af842b98b8d5770f1483e55b5894df529ed17d0d275f5"
 
 [metadata.files]
 aiofiles = [
@@ -1991,8 +1991,8 @@ types-setuptools = [
     {file = "types_setuptools-57.0.0-py3-none-any.whl", hash = "sha256:71ed0f4c71d8fb5f3026a90ae82d163c13749b110e157d82126725ac8f714360"},
 ]
 types-toml = [
-    {file = "types-toml-0.1.3.tar.gz", hash = "sha256:33ebe67bebaec55a123ecbaa2bd98fe588335d8d8dda2c7ac53502ef5a81a79a"},
-    {file = "types_toml-0.1.3-py2.py3-none-any.whl", hash = "sha256:d4add39a90993173d49ff0b069edd122c66ad4cf5c01082b590e380ca670ee1a"},
+    {file = "types-toml-0.1.5.tar.gz", hash = "sha256:fc5e1df92c245404e4360c63568e9f0e732b0cabea7a220a4788d52b78f5dc59"},
+    {file = "types_toml-0.1.5-py3-none-any.whl", hash = "sha256:dd00526680595aad0eade682bd8a9e9513e9b4b8932daed159925fe446fc90a9"},
 ]
 types-typed-ast = [
     {file = "types-typed-ast-1.4.2.tar.gz", hash = "sha256:6a47165760321835d160da20a6ac5b9065f23d6dc246162508cad1ef1238afc3"},
