@@ -24,7 +24,7 @@ starlette = {version = ">=0.13.6,<0.17.0", optional = true}
 click = {version = "^7.0", optional = true}
 hupper = {version = "^1.5", optional = true}
 pygments = "^2.3"
-uvicorn = {version = ">=0.11.6,<0.14.0", optional = true}
+uvicorn = {version = ">=0.11.6,<0.15.0", optional = true}
 django = {version = ">=2,<4", optional = true}
 graphql-core = {version = "^3.1.0"}
 asgiref = {version = "^3.2", optional = true}
@@ -68,7 +68,7 @@ django = {version = ">=2,<4", optional = false}
 pydantic = {version = "<2", optional = false}
 email-validator = {version = "^1.1.3", optional = false}
 starlette = ">=0.13.6,<0.17.0"
-uvicorn = ">=0.11.6,<0.14.0"
+uvicorn = ">=0.11.6,<0.15.0"
 hupper = "^1.5"
 sanic = "^20.12.2"
 aiohttp = "^3.7.4.post0"
