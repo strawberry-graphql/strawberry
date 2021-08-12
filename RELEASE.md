@@ -1,4 +1,4 @@
-Release type: major
+Release type: minor
 
 This release adds support for asynchronous hooks to the Strawberry extension-system.
 All available hooks can now be implemented either synchronously or asynchronously.
