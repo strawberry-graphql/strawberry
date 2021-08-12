@@ -82,7 +82,7 @@ types-python-dateutil = "^0.1.4"
 types-freezegun = "^1.1.0"
 types-chardet = "^0.1.5"
 types-certifi = "^0.1.4"
-types-aiofiles = "^0.1.7"
+types-aiofiles = "^0.1.9"
 
 [tool.poetry.extras]
 aiohttp = ["aiohttp", "pytest-aiohttp"]
