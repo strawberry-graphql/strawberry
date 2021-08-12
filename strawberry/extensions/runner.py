@@ -3,13 +3,13 @@ from typing import Any, Dict, List
 
 from graphql import MiddlewareManager
 
-from strawberry.extensions.constants import SYNC_CONTEXT_WARNING
 from strawberry.extensions.context import (
     ParsingContextManager,
     RequestContextManager,
     ValidationContextManager,
 )
 from strawberry.types import ExecutionContext
+from strawberry.utils.await_maybe import await_maybe
 
 from . import Extension
 
@@ -26,36 +26,21 @@ class ExtensionsRunner:
         self.extensions = extensions or []
 
     def request(self) -> RequestContextManager:
-        return RequestContextManager(self)
+        return RequestContextManager(self.extensions)
 
     def validation(self) -> ValidationContextManager:
-        return ValidationContextManager(self)
+        return ValidationContextManager(self.extensions)
 
     def parsing(self) -> ParsingContextManager:
-        return ParsingContextManager(self)
-
-    def run_on_all_extensions(self, method_name: str, *args, **kwargs):
-        for extension in self.extensions:
-            method = getattr(extension, method_name)
-
-            if inspect.iscoroutinefunction(method):
-                raise RuntimeError(SYNC_CONTEXT_WARNING)
-
-            method(*args, **kwargs)
-
-    async def run_on_all_extensions_async(self, method_name: str, *args, **kwargs):
-        for extension in self.extensions:
-            result = getattr(extension, method_name)(*args, **kwargs)
-
-            if inspect.isawaitable(result):
-                await result
+        return ParsingContextManager(self.extensions)
 
     def get_extensions_results(self) -> Dict[str, Any]:
         data: Dict[str, Any] = {}
 
         for extension in self.extensions:
             if inspect.iscoroutinefunction(extension.get_results):
-                raise RuntimeError(SYNC_CONTEXT_WARNING)
+                msg = "Cannot use async extension hook during sync execution"
+                raise RuntimeError(msg)
 
             data.update(extension.get_results())  # type: ignore
 
@@ -65,11 +50,7 @@ class ExtensionsRunner:
         data: Dict[str, Any] = {}
 
         for extension in self.extensions:
-            results = extension.get_results()
-
-            if inspect.isawaitable(results):
-                results = await results  # type: ignore
-
+            results = await await_maybe(extension.get_results)
             data.update(results)  # type: ignore
 
         return data
