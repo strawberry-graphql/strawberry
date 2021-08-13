@@ -160,3 +160,38 @@ query ExampleDataQuery {
   }
 }
 ```
+
+## Overriding built in scalars
+
+To override the behaviour of the built in scalars you can create a custom Schema
+and implement a custom `get_scalar` function.
+
+Here is a full example of replacing the built in `DateTime` scalar with one that
+serializes all datetimes as unix timestamps:
+
+```python
+from datetime import datetime, timezone
+import strawberry
+
+EpocDateTime = strawberry.scalar(
+    datetime,
+    serialize=lambda value: int(value.timestamp()),
+    parse_value=lambda value: datetime.fromtimestamp(int(value), timezone.utc),
+)
+
+class MySchema(strawberry.Schema):
+    def get_scalar(self, scalar):
+        if scalar == datetime:
+            return EpocDateTime
+        return super().get_scalar(scalar)
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def current_time(self) -> datetime:
+        return datetime.now()
+
+schema = MySchema(Query)
+result = schema.execute_sync("{ currentTime }")
+assert result.data == {"currentTime": 1628683200}
+```
