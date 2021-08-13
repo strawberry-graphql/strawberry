@@ -173,12 +173,14 @@ serializes all datetimes as unix timestamps:
 from datetime import datetime, timezone
 import strawberry
 
+# Define your custom scalar
 EpocDateTime = strawberry.scalar(
     datetime,
     serialize=lambda value: int(value.timestamp()),
     parse_value=lambda value: datetime.fromtimestamp(int(value), timezone.utc),
 )
 
+# Create a custom schema
 class MySchema(strawberry.Schema):
     def get_scalar(self, scalar):
         if scalar == datetime:

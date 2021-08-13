@@ -110,6 +110,10 @@ def test_override_built_in_scalars():
         def current_time(self) -> datetime:
             return datetime(2021, 8, 11, 12, 0, tzinfo=timezone.utc)
 
+        @strawberry.field
+        def isoformat(self, input_datetime: datetime) -> str:
+            return input_datetime.isoformat()
+
     class CustomSchema(strawberry.Schema):
         def get_scalar(self, scalar):
             if scalar == datetime:
@@ -118,7 +122,15 @@ def test_override_built_in_scalars():
 
     schema = CustomSchema(Query)
 
-    result = schema.execute_sync("{ currentTime }")
+    result = schema.execute_sync(
+        """
+        {
+            currentTime
+            isoformat(inputDatetime: 1628683200)
+        }
+        """
+    )
 
     assert not result.errors
     assert result.data["currentTime"] == 1628683200
+    assert result.data["isoformat"] == "2021-08-11T12:00:00+00:00"
