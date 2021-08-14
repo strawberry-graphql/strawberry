@@ -24,7 +24,7 @@ class CoolType:
 ---
 type CoolType {
   myField: Int!
-  myOtherField: Float! = 1.2
+  myOtherField: Float!
 }
 ```
 
