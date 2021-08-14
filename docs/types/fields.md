@@ -180,6 +180,28 @@ class CoolType:
     my_field: int = strawberry.field(resolver=float_resolver)
 ```
 
+## Private fields
+
+`strawberry.Private` allows you to pass data to a Strawberry type without it
+being exposed in the GraphQL schema. Sometimes this is useful so that a resolver
+on the type can return the correct value.
+
+```python
+@strawberry.type
+class CoolType:
+    private_stuff: strawberry.Private[dict]
+
+    @strawberry.field
+    def my_field(self) -> str:
+        return self.private_stuff["my_field"]
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def get_my_cool_type(self) -> CoolType:
+        return CoolType(private_stuff={"my_field": "Hi"})
+```
+
 <!--
 ## Exceptions
 
