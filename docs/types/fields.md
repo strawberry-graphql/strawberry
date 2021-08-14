@@ -74,7 +74,7 @@ functionality:
 
 ### `resolver`
 
-> type: `Optional[Callable]`  
+> type: `Optional[Callable]`
 > default: `None`
 
 The most commonly used parameter, it allows for a resolver to be added to a
@@ -83,7 +83,7 @@ decorator.
 
 ### `name`
 
-> type: `Optional[str]`  
+> type: `Optional[str]`
 > default: `None`
 
 By default the GraphQL schema gets its field name from either the Python field,
@@ -106,7 +106,7 @@ type Query {
 
 ### `description`
 
-> type: `Optional[str]`  
+> type: `Optional[str]`
 > default: `None`
 
 Add a description to the GraphQL field.
@@ -131,7 +131,7 @@ type Query {
 
 ### `permission_classes`
 
-> type: `Optional[List[Type[BasePermission]]]`  
+> type: `Optional[List[Type[BasePermission]]]`
 > default: `None`
 
 Add permission classes to the field. See [Permissions][permission_docs] for
