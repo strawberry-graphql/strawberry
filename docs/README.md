@@ -16,6 +16,7 @@
 - [Schema configurations](./types/schema-configurations.md)
 - [Scalars](./types/scalars.md)
 - [Object types](./types/object-types.md)
+- [Fields](./types/fields.md)
 - [Interfaces](./types/interfaces.md)
 - [Input types](./types/input-types.md)
 - [Directives](./types/directives.md)

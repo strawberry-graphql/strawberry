@@ -1,6 +1,5 @@
 ---
 title: Fields
-path: /docs/types/fields
 ---
 
 # Fields
@@ -17,34 +16,47 @@ argument.
 
 ### Dataclass-style fields:
 
-```python
+```python+schema
 @strawberry.type
 class CoolType:
     my_field: int
     my_other_field: float = 1.2
+---
+type CoolType {
+  myField: Int!
+  myOtherField: Float! = 1.2
+}
 ```
 
 ### `strawberry.field` as a function:
 
-```python
+```python+schema
 def my_resolver() -> int:
     return 4
 
 @strawberry.type
 class CoolType:
-
     my_field = strawberry.field(resolver=my_resolver)
     my_other_field: int = strawberry.field(resolver=my_resolver)
+---
+type CoolType {
+  myField: Int!
+  myOtherField: Int!
+}
 ```
 
 ### `strawberry.field` as a decorator
 
-```python
+```python+schema
 @strawberry.type
 class CoolType:
     @strawberry.field
-    def my_field(self):
+    def my_field(self) -> int:
         return 4
+---
+type CoolType {
+  myField: Int!
+}
 ```
 
 ## `strawberry.field` parameters
@@ -54,11 +66,11 @@ functionality:
 
 - [`resolver`](#resolver): `Optional[Callable]`
 - [`name`:](#name) `Optional[str]`
-- [`is_subscription`](#is_subscription): `bool`
 - [`description`](#description): `Optional[str]`
 - [`permission_classes`](#permission_classes):
   `Optional[List[Type[BasePermission]]]`
-- [`federation`](#federation): `Optional[FederationFieldParams]`
+- [`deprecation_reason`](#deprecation_reason): `Optional[str]`
+- [`default`](#default): `Optional[Any]`
 
 ### `resolver`
 
@@ -82,18 +94,15 @@ Note that Strawberry will typically camel-case the field name when creating the
 field on the schema. If the `name` argument is supplied, it is left as-is and
 not camel-cased.
 
-### `is_subscription`
-
-> type: `bool`  
-> default: `False`
-
-> **NOTE:** It's not recommended to use this argument directly. Use
-> `strawberry.subscription` instead.
-
-Mark a field as a subscription field. See [Subscriptions][subscription_docs] for
-more information.
-
-[subscription_docs]: /docs/subscriptions/
+```python+schema
+@strawberry.type
+class Query:
+    a: str = strawberry.field(name="alpha")
+---
+type Query {
+  alpha: String!
+}
+```
 
 ### `description`
 
@@ -102,47 +111,21 @@ more information.
 
 Add a description to the GraphQL field.
 
-```python
+```python+schema
 @strawberry.type
 class Query:
     a: str = strawberry.field(description="Example")
 
-    @strawberry.field
+    @strawberry.field(description="Example B")
     def b(self) -> str:
         return "I'm a resolver"
-
-    @strawberry.field(description="Example C")
-    def c(self) -> str:
-        return "I'm another resolver"
-```
-
-```graphql+response
-__type(name: "Query") {
-    fields {
-        name
-        description
-    }
-}
 ---
-{
-  "data": {
-    "__type": {
-      "fields": [
-        {
-          "name": "a",
-          "description": "Example"
-        },
-        {
-          "name": "b",
-          "description": null
-        },
-        {
-          "name": "c",
-          "description": "Example C"
-        }
-      ]
-    }
-  }
+type Query {
+  """Example"""
+  a: String!
+
+  """Example B"""
+  b: String!
 }
 ```
 
@@ -156,14 +139,23 @@ more information.
 
 [permission_docs]: /docs/features/permissions
 
-### `federation`
+### `deprecation_reason`
 
-> type: `Optional[FederationFieldParams]`  
+> type: `Optional[str]`
 > default: `None`
 
-See [Federation][federation_docs].
+Add a deprecation reason to a field to indicate to the client that it should no
+longer be used.
 
-[federation_docs]: /docs/features/federation
+```python+schema
+@strawberry.type
+class Query:
+    a: str = strawberry.field(deprecation_reason="Don't use me anymore. Use 'b'")
+---
+type Query {
+  a: String! @deprecated(reason: "Don't use me anymore. Use 'b'")
+}
+```
 
 ## Typing
 
@@ -173,7 +165,7 @@ itself, or from the return type of the resolver.
 ```python
 @strawberry.type
 class CoolType:
-    my_field: int = strawberry.field
+    my_field: int = strawberry.field()
 ```
 
 If these two sources of typing differ, an exception is thrown.
@@ -188,11 +180,9 @@ class CoolType:
     my_field: int = strawberry.field(resolver=float_resolver)
 ```
 
+<!--
 ## Exceptions
 
 TODO
-
----
-
-TODO: Describe how queries and fields are the same; link here from query docs
 TODO: What happens when the field has no resolver or default value
+-->
