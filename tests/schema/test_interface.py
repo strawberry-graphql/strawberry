@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import List
 
 import strawberry
@@ -93,3 +94,34 @@ def test_interfaces_can_implement_other_interfaces():
         "field": "Password",
         "fix": "Choose more characters",
     }
+
+
+def test_interface_duck_typing():
+    @strawberry.interface
+    class Entity:
+        id: int
+
+    @strawberry.type
+    class Anime(Entity):
+        name: str
+
+    @dataclass
+    class AnimeORM:
+        id: int
+        name: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def anime(self) -> Anime:
+            return AnimeORM(id=1, name="One Piece")
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        anime { name }
+    }"""
+
+    result = schema.execute_sync(query)
+
+    assert not result.get("errors")
