@@ -124,4 +124,5 @@ def test_interface_duck_typing():
 
     result = schema.execute_sync(query)
 
-    assert not result.get("errors")
+    assert not result.errors
+    assert result.data == {"anime": {"name": "One Piece"}}

@@ -222,11 +222,17 @@ class GraphQLCoreConverter:
 
             return graphql_fields
 
+        def resolve_type(obj, info, type_):
+            # TODO: this will probably break when passing dicts
+            # or even non strawberry types
+            return self.type_map[obj.__class__._type_definition.name].implementation
+
         graphql_interface = GraphQLInterfaceType(
             name=interface.name,
             fields=get_graphql_fields,
             interfaces=list(map(self.from_interface, interface.interfaces)),
             description=interface.description,
+            resolve_type=resolve_type,
         )
 
         self.type_map[interface.name] = ConcreteType(
@@ -261,14 +267,6 @@ class GraphQLCoreConverter:
             assert isinstance(graphql_object_type, GraphQLObjectType)  # For mypy
             return graphql_object_type
 
-        # Only define an is_type_of function for Types that implement an interface.
-        # Otherwise, leave it to the default implementation
-        is_type_of = (
-            (lambda obj, _: isinstance(obj, object_type.origin))
-            if object_type.interfaces
-            else None
-        )
-
         def get_graphql_fields() -> Dict[str, GraphQLField]:
             graphql_fields = {}
 
@@ -283,7 +281,6 @@ class GraphQLCoreConverter:
             name=object_type.name,
             fields=get_graphql_fields,
             interfaces=list(map(self.from_interface, object_type.interfaces)),
-            is_type_of=is_type_of,
             description=object_type.description,
         )
 
