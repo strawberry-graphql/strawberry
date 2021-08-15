@@ -114,7 +114,7 @@ def test_interface_duck_typing():
     class Query:
         @strawberry.field
         def anime(self) -> Anime:
-            return AnimeORM(id=1, name="One Piece")
+            return AnimeORM(id=1, name="One Piece")  # type: ignore
 
     schema = strawberry.Schema(query=Query)
 
