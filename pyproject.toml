@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "strawberry-graphql"
 packages = [ { include = "strawberry" } ]
-version = "0.68.2"
+version = "0.71.3"
 description = "A library for creating GraphQL APIs"
 authors = ["Patrick Arminio <patrick.arminio@gmail.com>"]
 license = "MIT"
@@ -20,11 +20,11 @@ include = ["strawberry/py.typed"]
 
 [tool.poetry.dependencies]
 python = "^3.7"
-starlette = {version = ">=0.13.6,<0.15.0", optional = true}
+starlette = {version = ">=0.13.6,<0.17.0", optional = true}
 click = {version = "^7.0", optional = true}
-hupper = "^1.5"
+hupper = {version = "^1.5", optional = true}
 pygments = "^2.3"
-uvicorn = {version = ">=0.11.6,<0.14.0", optional = true}
+uvicorn = {version = ">=0.11.6,<0.15.0", optional = true}
 django = {version = ">=2,<4", optional = true}
 graphql-core = {version = "^3.1.0"}
 asgiref = {version = "^3.2", optional = true}
@@ -35,7 +35,7 @@ opentelemetry-api = {version = "^0.17b0", optional = true}
 opentelemetry-sdk = {version = "^0.17b0", optional = true}
 python-dateutil = "^2.7.0"
 cached-property = "^1.5.2"
-pydantic = {version = "^1.6.1", optional = true}
+pydantic = {version = "<2", optional = true}
 python-multipart = "^0.0.5"
 sanic = {version = "^20.12.2", optional = true}
 aiohttp = {version = "^3.7.4.post0", optional = true}
@@ -44,8 +44,8 @@ aiohttp = {version = "^3.7.4.post0", optional = true}
 pytest = "^6.2"
 pytest-emoji = "^0.2.0"
 flake8 = "^3.9"
-black = {version = "^21.6b0", allow-prereleases = true}
-isort = "^5.9.1"
+black = {version = "^21.7b0", allow-prereleases = true}
+isort = "^5.9.2"
 pytest-asyncio = "^0.15.1"
 pytest-cov = "^2.12"
 mypy = "^0.910"
@@ -58,8 +58,8 @@ asgiref = "^3.2"
 pytest-flask = {version = "^1.2.0"}
 flask = {version = "^1.1"}
 chalice = {version = "^1.22"}
-requests = "^2.25.1"
-pre-commit = "^2.13.0"
+requests = "^2.26.0"
+pre-commit = "^2.14.0"
 pytest-benchmark = "^3.4.1"
 freezegun = "^1.1.0"
 opentelemetry-api = "^0.17b0"
@@ -67,27 +67,29 @@ opentelemetry-sdk = "^0.17b0"
 flake8-isort = "^4.0.0"
 flake8-black = "^0.2.1"
 django = {version = ">=2,<4", optional = false}
-pydantic = {version = "^1.6.1", optional = false}
+pydantic = {version = "<2", optional = false}
 email-validator = {version = "^1.1.3", optional = false}
-starlette = ">=0.13.6,<0.15.0"
-uvicorn = ">=0.11.6,<0.14.0"
+starlette = ">=0.13.6,<0.17.0"
+uvicorn = ">=0.11.6,<0.15.0"
+hupper = "^1.5"
 sanic = "^20.12.2"
 aiohttp = "^3.7.4.post0"
 pytest-aiohttp = "^0.3.0"
 types-ujson = "^0.1.1"
-types-typed-ast = "^1.4.2"
-types-toml = "^0.1.3"
-types-setuptools = "^57.0.0"
-types-requests = "^2.25.0"
-types-python-dateutil = "^0.1.4"
-types-freezegun = "^0.1.4"
-types-chardet = "^0.1.3"
+types-typed-ast = "^1.4.4"
+types-toml = "^0.1.5"
+types-setuptools = "^57.0.2"
+types-requests = "^2.25.6"
+types-python-dateutil = "^0.1.6"
+types-freezegun = "^1.1.0"
+types-chardet = "^0.1.5"
 types-certifi = "^0.1.4"
-types-aiofiles = "^0.1.5"
+types-aiofiles = "^0.1.9"
 
 [tool.poetry.extras]
 aiohttp = ["aiohttp", "pytest-aiohttp"]
-debug-server = ["starlette", "uvicorn"]
+asgi = ["starlette"]
+debug-server = ["starlette", "uvicorn", "hupper"]
 django = ["django", "pytest-django", "asgiref"]
 flask = ["flask", "pytest-flask"]
 opentelemetry = ["opentelemetry-api", "opentelemetry-sdk"]

@@ -1,5 +1,5 @@
 import logging
-from typing import Any, Dict, List, Optional, Sequence, Type, Union
+from typing import Any, Collection, Dict, List, Optional, Sequence, Type, Union
 
 from graphql import (
     ExecutionContext as GraphQLExecutionContext,
@@ -11,6 +11,7 @@ from graphql import (
 from graphql.error import GraphQLError
 from graphql.subscription import subscribe
 from graphql.type.directives import specified_directives
+from graphql.validation import ValidationRule
 
 from strawberry.custom_scalar import ScalarDefinition
 from strawberry.enum import EnumDefinition
@@ -22,6 +23,7 @@ from strawberry.union import StrawberryUnion
 
 from ..middleware import DirectivesMiddleware, Middleware
 from ..printer import print_schema
+from .config import StrawberryConfig
 from .execute import execute, execute_sync
 
 
@@ -39,17 +41,21 @@ class Schema:
         types=(),
         extensions: Sequence[Type[Extension]] = (),
         execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
+        config: Optional[StrawberryConfig] = None,
     ):
         self.extensions = extensions
         self.execution_context_class = execution_context_class
-        self.schema_converter = GraphQLCoreConverter()
+        self.config = config or StrawberryConfig()
+        self.schema_converter = GraphQLCoreConverter(self.config)
 
-        query_type = self.schema_converter.from_object_type(query)
+        query_type = self.schema_converter.from_object(query._type_definition)
         mutation_type = (
-            self.schema_converter.from_object_type(mutation) if mutation else None
+            self.schema_converter.from_object(mutation._type_definition)
+            if mutation
+            else None
         )
         subscription_type = (
-            self.schema_converter.from_object_type(subscription)
+            self.schema_converter.from_object(subscription._type_definition)
             if subscription
             else None
         )
@@ -61,12 +67,17 @@ class Schema:
             for directive in directives
         ]
 
+        graphql_types = []
+        for type_ in types:
+            graphql_type = self.schema_converter.from_object(type_._type_definition)
+            graphql_types.append(graphql_type)
+
         self._schema = GraphQLSchema(
             query=query_type,
             mutation=mutation_type,
             subscription=subscription_type if subscription else None,
             directives=specified_directives + directives,
-            types=list(map(self.schema_converter.from_object_type, types)),
+            types=graphql_types,
         )
 
         # Validate schema early because we want developers to know about
@@ -103,6 +114,7 @@ class Schema:
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
         validate_queries: bool = True,
+        validation_rules: Optional[Collection[Type[ValidationRule]]] = None,
     ) -> ExecutionResult:
         # Create execution context
         execution_context = ExecutionContext(
@@ -121,6 +133,7 @@ class Schema:
             execution_context_class=self.execution_context_class,
             validate_queries=validate_queries,
             execution_context=execution_context,
+            validation_rules=validation_rules,
         )
 
         if result.errors:
@@ -140,6 +153,7 @@ class Schema:
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
         validate_queries: bool = True,
+        validation_rules: Optional[Collection[Type[ValidationRule]]] = None,
     ) -> ExecutionResult:
         execution_context = ExecutionContext(
             query=query,
@@ -157,6 +171,7 @@ class Schema:
             execution_context_class=self.execution_context_class,
             validate_queries=validate_queries,
             execution_context=execution_context,
+            validation_rules=validation_rules,
         )
 
         if result.errors:

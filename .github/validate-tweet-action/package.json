@@ -1,0 +1,16 @@
+{
+  "name": "validate-tweet-action",
+  "version": "1.0.0",
+  "description": "",
+  "main": "main.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@actions/core": "^1.4.0",
+    "twitter-text": "^3.1.0"
+  }
+}

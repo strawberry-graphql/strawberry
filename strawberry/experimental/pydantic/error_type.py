@@ -8,7 +8,7 @@ from strawberry.experimental.pydantic.utils import (
     get_strawberry_type_from_model,
     normalize_type,
 )
-from strawberry.type import _process_type
+from strawberry.object_type import _process_type
 from strawberry.types.types import FederationTypeParams
 from strawberry.utils.typing import get_list_annotation, is_list
 

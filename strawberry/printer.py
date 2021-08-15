@@ -44,7 +44,13 @@ def print_fields(type_, schema: BaseSchema) -> str:
     fields = []
 
     for i, (name, field) in enumerate(type_.fields.items()):
-        strawberry_field = strawberry_type.get_field(name) if strawberry_type else None
+        python_name = field.extensions and field.extensions.get("python_name")
+
+        strawberry_field = (
+            strawberry_type.get_field(python_name)
+            if strawberry_type and python_name
+            else None
+        )
 
         fields.append(
             print_description(field, "  ", not i)
@@ -91,8 +97,8 @@ def _print_object(type_, schema: BaseSchema) -> str:
         print_description(type_)
         + print_extends(type_, schema)
         + f"type {type_.name}"
-        + print_federation_key_directive(type_, schema)
         + print_implemented_interfaces(type_)
+        + print_federation_key_directive(type_, schema)
         + print_fields(type_, schema)
     )
 

@@ -5,6 +5,7 @@ from uuid import UUID
 import strawberry
 from strawberry.arguments import UNSET
 from strawberry.printer import print_schema
+from strawberry.schema.config import StrawberryConfig
 
 
 def test_simple_required_types():
@@ -31,6 +32,42 @@ def test_simple_required_types():
     """
 
     schema = strawberry.Schema(query=Query)
+
+    assert print_schema(schema) == textwrap.dedent(expected_type).strip()
+
+
+def test_printer_with_camel_case_on():
+    @strawberry.type
+    class Query:
+        hello_world: str
+
+    expected_type = """
+    type Query {
+      helloWorld: String!
+    }
+    """
+
+    schema = strawberry.Schema(
+        query=Query, config=StrawberryConfig(auto_camel_case=True)
+    )
+
+    assert print_schema(schema) == textwrap.dedent(expected_type).strip()
+
+
+def test_printer_with_camel_case_off():
+    @strawberry.type
+    class Query:
+        hello_world: str
+
+    expected_type = """
+    type Query {
+      hello_world: String!
+    }
+    """
+
+    schema = strawberry.Schema(
+        query=Query, config=StrawberryConfig(auto_camel_case=False)
+    )
 
     assert print_schema(schema) == textwrap.dedent(expected_type).strip()
 

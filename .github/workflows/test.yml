@@ -38,17 +38,6 @@ jobs:
           fail_ci_if_error: true
           verbose: true
 
-  flake8:
-    runs-on: ubuntu-latest
-    container: python:3.9
-
-    steps:
-      - uses: actions/checkout@v2
-      - run: pip install poetry
-      - name: Install dependencies
-        run: poetry install
-      - run: poetry run flake8
-
   mypy:
     runs-on: ubuntu-latest
     container: python:3.9
