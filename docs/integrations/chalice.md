@@ -8,6 +8,7 @@ Strawberry comes with an AWS Chalice integration. It provides a view that you ca
 use to serve your GraphQL schema:
 
 Use the Chalice CLI to create a new project
+
 ```shell
 chalice new-project badger-project
 cd badger-project
@@ -51,12 +52,12 @@ def handle_graphql() -> Response:
 ```
 
 And then run `chalice local` to start the localhost
+
 ```shell
 chalice local
 ```
- 
-GraphiQL will be hosted on localhost:8000/graphql
 
+GraphiQL will be hosted on localhost:8000/graphql
 
 ## Options
 

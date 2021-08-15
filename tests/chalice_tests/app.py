@@ -1,7 +1,6 @@
 import strawberry
 from chalice import Chalice
 from chalice.app import Request
-
 from strawberry.chalice.views import GraphQLView
 
 

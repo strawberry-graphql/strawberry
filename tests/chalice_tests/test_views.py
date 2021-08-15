@@ -1,9 +1,9 @@
 import json
 from http import HTTPStatus
 
-from .app import app
-
 from chalice.test import Client, HTTPResponse
+
+from .app import app
 
 
 def test_chalice_server_index_route_returns():
