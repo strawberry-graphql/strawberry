@@ -103,8 +103,9 @@ class Schema:
         self, errors: List[GraphQLError], execution_context: ExecutionContext
     ) -> None:
         for error in errors:
-            actual_error = error.original_error or error
-            logger.error(actual_error, exc_info=actual_error)
+            logger.error(
+                error, exc_info=error.original_error, stack_info=True, stacklevel=3
+            )
 
     async def execute(
         self,
