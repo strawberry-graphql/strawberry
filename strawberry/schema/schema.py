@@ -140,11 +140,7 @@ class Schema:
         if result.errors:
             self.process_errors(result.errors, execution_context=execution_context)
 
-        return ExecutionResult(
-            data=result.data,
-            errors=result.errors,
-            extensions=result.extensions,
-        )
+        return result
 
     def execute_sync(
         self,
