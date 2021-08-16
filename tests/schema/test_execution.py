@@ -1,6 +1,6 @@
 import textwrap
-from typing import Optional
 from textwrap import dedent
+from typing import Optional
 
 import pytest
 
@@ -175,11 +175,13 @@ async def test_logging_exceptions(caplog):
 
     schema = strawberry.Schema(query=Query)
 
-    query = dedent("""
+    query = dedent(
+        """
         query {
             example
         }
-    """).strip()
+    """
+    ).strip()
 
     result = await schema.execute(
         query,
@@ -193,8 +195,10 @@ async def test_logging_exceptions(caplog):
     record = caplog.records[0]
 
     assert record.levelname == "ERROR"
-    assert record.message == dedent(
-        """
+    assert (
+        record.message
+        == dedent(
+            """
         test
 
         GraphQL request:2:5
@@ -203,7 +207,8 @@ async def test_logging_exceptions(caplog):
           |     ^
         3 | }
     """
-    ).strip()
+        ).strip()
+    )
     assert record.name == "strawberry.execution"
     assert record.exc_info[0] is ValueError
 
