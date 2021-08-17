@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import inspect
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Tuple, Type, Union
 
@@ -44,6 +43,7 @@ from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
 from strawberry.types.info import Info
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
+from strawberry.utils.await_maybe import await_maybe
 
 from .types.concrete_type import ConcreteType
 from .types.scalar import get_scalar_type
@@ -343,14 +343,9 @@ class GraphQLCoreConverter:
                 permission = permission_class()
                 has_permission: bool
 
-                if inspect.iscoroutinefunction(permission.has_permission):
-                    has_permission = await permission.has_permission(  # type: ignore
-                        source, info, **kwargs
-                    )
-                else:
-                    has_permission = permission.has_permission(  # type: ignore
-                        source, info, **kwargs
-                    )
+                has_permission = await await_maybe(
+                    permission.has_permission(source, info, **kwargs)
+                )
 
                 if not has_permission:
                     message = getattr(permission, "message", None)
@@ -387,12 +382,7 @@ class GraphQLCoreConverter:
             strawberry_info = _strawberry_info_from_graphql(info)
             await _check_permissions_async(_source, strawberry_info, kwargs)
 
-            result = _get_result(_source, strawberry_info, **kwargs)
-
-            if inspect.isawaitable(result):
-                return await result
-
-            return result
+            return await await_maybe(_get_result(_source, strawberry_info, **kwargs))
 
         if field.is_async:
             _async_resolver._is_default = not field.base_resolver  # type: ignore
