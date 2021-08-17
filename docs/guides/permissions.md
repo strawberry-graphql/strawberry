@@ -28,7 +28,7 @@ class Query:
 ```
 
 Your `has_permission` method should do the work to check if this request
-has permission to the field.
+has permission to access the field.
 
 If the `has_permission` method returns a truthy value or an awaitable resolving to a
 truthy value then the field access will go ahead.
