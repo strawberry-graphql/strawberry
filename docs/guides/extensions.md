@@ -124,8 +124,8 @@ class MyExtension(Extension):
 The `Extension` object has an `execution_context` property on `self` of type
 `ExecutionContext`.
 
-This object can be used to gain access to additional graphql context, or request
-context. Take a look at the [ExecutionContext type](https://github.com/strawberry-graphql/strawberry/blob/main/strawberry/types/execution.py)
+This object can be used to gain access to additional GraphQL context, or the request
+context. Take a look at the [`ExecutionContext` type](https://github.com/strawberry-graphql/strawberry/blob/main/strawberry/types/execution.py)
 for available data.
 
 ```python
