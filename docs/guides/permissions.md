@@ -27,14 +27,11 @@ class Query:
     user: str = strawberry.field(permission_classes=[IsAuthenticated])
 ```
 
-Your `has_permission` method should do the work to check if this request
-has permission to access the field.
+Your `has_permission` method should check if this request has permission to access the
+field. Note that the `has_permission` method can also be asynchronous.
 
-If the `has_permission` method returns a truthy value or an awaitable resolving to a
-truthy value then the field access will go ahead.
-
-If the `has_permission` method returns a falsy value or an awaitable resolving to a
-falsy value then an error will be raised using the `message` class attribute.
+If the `has_permission` method returns a truthy value then the field access will go
+ahead. Otherwise, an error will be raised using the `message` class attribute.
 
 Take a look at our [Dealing with Errors Guide](/docs/guides/errors) for more information
 on how errors are handled.
