@@ -394,7 +394,7 @@ class GraphQLCoreConverter:
 
             return result
 
-        if field.has_async_permission_classes:
+        if field.is_async:
             _async_resolver._is_default = not field.base_resolver  # type: ignore
             return _async_resolver
         else:

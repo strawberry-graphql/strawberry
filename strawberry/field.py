@@ -251,12 +251,20 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
 
         return getattr(source, self.python_name)
 
-    @cached_property
-    def has_async_permission_classes(self) -> bool:
+    @property
+    def _has_async_permission_classes(self) -> bool:
         for permission_class in self.permission_classes:
             if inspect.iscoroutinefunction(permission_class.has_permission):
                 return True
         return False
+
+    @property
+    def _has_async_base_resolver(self) -> bool:
+        return self.base_resolver is not None and self.base_resolver.is_async
+
+    @cached_property
+    def is_async(self) -> bool:
+        return self._has_async_permission_classes or self._has_async_base_resolver
 
 
 def field(
