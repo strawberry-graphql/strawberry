@@ -121,7 +121,7 @@ class MyExtension(Extension):
 
 ### Execution Context
 
-The `Extension` object has a `execution_context` property on `self` of type
+The `Extension` object has an `execution_context` property on `self` of type
 `ExecutionContext`.
 
 This object can be used to gain access to additional graphql context, or request
