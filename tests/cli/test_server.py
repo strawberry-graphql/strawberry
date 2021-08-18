@@ -1,7 +1,12 @@
+import os
+import signal
+import subprocess
 import sys
+import time
 
 import pytest
 
+import requests
 import uvicorn
 
 from strawberry.cli.commands.server import server as cmd_server
@@ -85,3 +90,55 @@ def test_debug_server_routes(debug_server_client):
     for path in ["/", "/graphql"]:
         response = debug_server_client.get(path)
         assert response.status_code == 200
+
+
+def test_automatic_reloading():
+    source = (
+        "import strawberry\n"
+        "@strawberry.type\n"
+        "class Query:\n"
+        "    @strawberry.field\n"
+        "    def number(self) -> int:\n"
+        "        return {}\n"
+        "schema = strawberry.Schema(query=Query)\n"
+    )
+
+    from pathlib import Path
+
+    tmp_path = Path("/tmp")
+
+    schema_file_path = tmp_path / "schema.py"
+    schema_file_path.touch()
+    schema_file_path.write_text(source.format(42))
+
+    args = ["poetry", "run", "strawberry", "server", "--app-dir", tmp_path, "schema"]
+
+    with subprocess.Popen(
+        args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, preexec_fn=os.setsid
+    ) as proc:
+
+        url = "http://127.0.0.1:8000/graphql"
+        query = {"query": "{ number }"}
+
+        # It takes uvicorn some time to initially start the server
+        for i in range(5):
+            try:
+                response = requests.post(url, json=query)
+                assert response.status_code == 200
+                assert response.json() == {"data": {"number": 42}}
+            except requests.RequestException:
+                time.sleep(0.5)
+
+        schema_file_path.write_text(source.format(1234))
+
+        # It takes uvicorn some time to detect file changes
+        for _ in range(5):
+            try:
+                response = requests.post(url, json=query)
+                assert response.status_code == 200
+                assert response.json() == {"data": {"number": 1234}}
+            except AssertionError:
+                time.sleep(0.5)
+
+        os.killpg(proc.pid, signal.SIGKILL)
+        proc.communicate(timeout=10)
