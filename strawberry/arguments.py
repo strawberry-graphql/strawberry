@@ -53,8 +53,8 @@ class StrawberryArgument(GraphQLNameMixin):
         self.graphql_name = graphql_name
         self.is_subscription = is_subscription
         self.description = description
-        self._type: Optional[StrawberryType] = None
         self.type_annotation = type_annotation
+        self._resolved_type: Optional[Union[StrawberryType, type]] = None
 
         # TODO: Consider moving this logic to a function
         self.default = UNSET if default is inspect.Parameter.empty else default
@@ -64,7 +64,12 @@ class StrawberryArgument(GraphQLNameMixin):
 
     @property
     def resolved_type(self) -> Union[StrawberryType, type]:
-        return self.type_annotation.resolve()
+        if self._resolved_type:
+            return self._resolved_type
+
+        resolved_type = self.type_annotation.resolve()
+        self._resolved_type = resolved_type
+        return self._resolved_type
 
     @property
     def type(self) -> Union[object, str]:
