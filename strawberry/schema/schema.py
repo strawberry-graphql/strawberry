@@ -1,5 +1,5 @@
-import sys
 import logging
+import sys
 from typing import Any, Collection, Dict, List, Optional, Sequence, Type, Union
 
 from graphql import (
