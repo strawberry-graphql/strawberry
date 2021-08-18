@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from enum import Enum
-from inspect import isasyncgen, iscoroutine
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Tuple, Type, Union
 
 
@@ -45,6 +44,7 @@ from strawberry.types.info import Info
 from strawberry.types.nodes import SelectedField
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
+from strawberry.utils.await_maybe import await_maybe
 
 from .types.concrete_type import ConcreteType
 from .types.scalar import get_scalar_type
@@ -337,6 +337,21 @@ class GraphQLCoreConverter:
                     message = getattr(permission, "message", None)
                     raise PermissionError(message)
 
+        async def _check_permissions_async(
+            source: Any, info: Info, kwargs: Dict[str, Any]
+        ):
+            for permission_class in field.permission_classes:
+                permission = permission_class()
+                has_permission: bool
+
+                has_permission = await await_maybe(
+                    permission.has_permission(source, info, **kwargs)
+                )
+
+                if not has_permission:
+                    message = getattr(permission, "message", None)
+                    raise PermissionError(message)
+
         def _strawberry_info_from_graphql(info: GraphQLResolveInfo) -> Info:
             return Info(
                 field_name=info.field_name,
@@ -350,37 +365,33 @@ class GraphQLCoreConverter:
                 path=info.path,
             )
 
+        def _get_result(_source: Any, info: Info, **kwargs):
+            field_args, field_kwargs = _get_arguments(
+                source=_source, info=info, kwargs=kwargs
+            )
+
+            return field.get_result(
+                _source, info=info, args=field_args, kwargs=field_kwargs
+            )
+
         def _resolver(_source: Any, info: GraphQLResolveInfo, **kwargs):
             strawberry_info = _strawberry_info_from_graphql(info)
             _check_permissions(_source, strawberry_info, kwargs)
 
-            args, kwargs = _get_arguments(
-                source=_source, info=strawberry_info, kwargs=kwargs
-            )
+            return _get_result(_source, strawberry_info, **kwargs)
 
-            result = field.get_result(
-                _source, info=strawberry_info, args=args, kwargs=kwargs
-            )
+        async def _async_resolver(_source: Any, info: GraphQLResolveInfo, **kwargs):
+            strawberry_info = _strawberry_info_from_graphql(info)
+            await _check_permissions_async(_source, strawberry_info, kwargs)
 
-            if isasyncgen(result):
+            return await await_maybe(_get_result(_source, strawberry_info, **kwargs))
 
-                async def yield_results(results):
-                    async for value in results:
-                        yield value
-
-                return yield_results(result)
-
-            if iscoroutine(result):  # pragma: no cover
-
-                async def await_result(result):
-                    return await result
-
-                return await_result(result)
-
-            return result
-
-        _resolver._is_default = not field.base_resolver  # type: ignore
-        return _resolver
+        if field.is_async:
+            _async_resolver._is_default = not field.base_resolver  # type: ignore
+            return _async_resolver
+        else:
+            _resolver._is_default = not field.base_resolver  # type: ignore
+            return _resolver
 
     def from_scalar(self, scalar: Type) -> GraphQLScalarType:
         return get_scalar_type(scalar, self.type_map)
