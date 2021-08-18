@@ -50,4 +50,6 @@ def server(schema, host, port, app_dir):
     app = "strawberry.cli.debug_server:app"
 
     print(f"Running strawberry on http://{host}:{port}/graphql 🍓")
-    uvicorn.run(app, host=host, port=port, log_level="error", reload=True)
+    uvicorn.run(
+        app, host=host, port=port, log_level="error", reload=True, reload_dirs=[app_dir]
+    )
