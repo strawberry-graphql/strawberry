@@ -4,7 +4,7 @@ import builtins
 import inspect
 import sys
 from inspect import isasyncgenfunction, iscoroutinefunction
-from typing import Any, Callable, Generic, Mapping, Optional, Type, TypeVar, Union
+from typing import Any, Callable, Dict, Generic, Mapping, Optional, TypeVar, Union
 
 from cached_property import cached_property  # type: ignore
 
@@ -43,7 +43,7 @@ class StrawberryResolver(Generic[T]):
         return inspect.signature(self.wrapped_func).parameters
 
     @cached_property
-    def arguments(self) -> Mapping[str, Type]:
+    def arguments(self) -> Dict[str, object]:
         # TODO: Move to StrawberryArgument? StrawberryResolver ClassVar?
         SPECIAL_ARGS = {"root", "self", "info"}
 
