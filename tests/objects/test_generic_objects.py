@@ -22,8 +22,8 @@ def test_basic_generic():
 
     [field] = definition.fields
     assert field.python_name == "node_field"
-    assert isinstance(field.type, StrawberryTypeVar)
-    assert field.type.type_var is T
+    assert isinstance(field.resolved_type, StrawberryTypeVar)
+    assert field.resolved_type.type_var is T
 
     # let's make a copy of this generic type
     copy = Edge._type_definition.copy_with({T: str})
@@ -107,8 +107,8 @@ def test_generics_nested_in_list():
 
     [field] = definition.fields
     assert field.python_name == "edges"
-    assert isinstance(field.type, StrawberryList)
-    assert field.type.of_type._type_definition.type_params == [T]
+    assert isinstance(field.resolved_type, StrawberryList)
+    assert field.resolved_type.of_type._type_definition.type_params == [T]
 
     # let's make a copy of this generic type
     definition_copy = Connection._type_definition.copy_with({T: str})._type_definition
@@ -119,8 +119,8 @@ def test_generics_nested_in_list():
 
     [field_copy] = definition_copy.fields
     assert field_copy.python_name == "edges"
-    assert isinstance(field_copy.type, StrawberryList)
-    assert field_copy.type.of_type._type_definition.name == "StrEdge"
+    assert isinstance(field_copy.resolved_type, StrawberryList)
+    assert field_copy.resolved_type.of_type._type_definition.name == "StrEdge"
 
 
 def test_generic_with_optional():
@@ -135,9 +135,9 @@ def test_generic_with_optional():
 
     [field] = definition.fields
     assert field.python_name == "node"
-    assert isinstance(field.type, StrawberryOptional)
-    assert isinstance(field.type.of_type, StrawberryTypeVar)
-    assert field.type.of_type.type_var is T
+    assert isinstance(field.resolved_type, StrawberryOptional)
+    assert isinstance(field.resolved_type.of_type, StrawberryTypeVar)
+    assert field.resolved_type.of_type.type_var is T
 
     # let's make a copy of this generic type
     definition_copy = Edge._type_definition.copy_with({T: str})._type_definition
@@ -148,8 +148,8 @@ def test_generic_with_optional():
 
     [field_copy] = definition_copy.fields
     assert field_copy.python_name == "node"
-    assert isinstance(field_copy.type, StrawberryOptional)
-    assert field_copy.type.of_type is str
+    assert isinstance(field_copy.resolved_type, StrawberryOptional)
+    assert field_copy.resolved_type.of_type is str
 
 
 def test_generic_with_list():
@@ -164,9 +164,9 @@ def test_generic_with_list():
 
     [field] = definition.fields
     assert field.python_name == "edges"
-    assert isinstance(field.type, StrawberryList)
-    assert isinstance(field.type.of_type, StrawberryTypeVar)
-    assert field.type.of_type.type_var is T
+    assert isinstance(field.resolved_type, StrawberryList)
+    assert isinstance(field.resolved_type.of_type, StrawberryTypeVar)
+    assert field.resolved_type.of_type.type_var is T
 
     # let's make a copy of this generic type
     definition_copy = Connection._type_definition.copy_with({T: str})._type_definition
@@ -177,8 +177,8 @@ def test_generic_with_list():
 
     [field_copy] = definition_copy.fields
     assert field_copy.python_name == "edges"
-    assert isinstance(field_copy.type, StrawberryList)
-    assert field_copy.type.of_type is str
+    assert isinstance(field_copy.resolved_type, StrawberryList)
+    assert field_copy.resolved_type.of_type is str
 
 
 def test_generic_with_list_of_optionals():
@@ -193,10 +193,10 @@ def test_generic_with_list_of_optionals():
 
     [field] = definition.fields
     assert field.python_name == "edges"
-    assert isinstance(field.type, StrawberryList)
-    assert isinstance(field.type.of_type, StrawberryOptional)
-    assert isinstance(field.type.of_type.of_type, StrawberryTypeVar)
-    assert field.type.of_type.of_type.type_var is T
+    assert isinstance(field.resolved_type, StrawberryList)
+    assert isinstance(field.resolved_type.of_type, StrawberryOptional)
+    assert isinstance(field.resolved_type.of_type.of_type, StrawberryTypeVar)
+    assert field.resolved_type.of_type.of_type.type_var is T
 
     # let's make a copy of this generic type
     definition_copy = Connection._type_definition.copy_with({T: str})._type_definition
@@ -207,9 +207,9 @@ def test_generic_with_list_of_optionals():
 
     [field_copy] = definition_copy.fields
     assert field_copy.python_name == "edges"
-    assert isinstance(field_copy.type, StrawberryList)
-    assert isinstance(field_copy.type.of_type, StrawberryOptional)
-    assert field_copy.type.of_type.of_type is str
+    assert isinstance(field_copy.resolved_type, StrawberryList)
+    assert isinstance(field_copy.resolved_type.of_type, StrawberryOptional)
+    assert field_copy.resolved_type.of_type.of_type is str
 
 
 def test_generics_with_unions():
@@ -227,8 +227,8 @@ def test_generics_with_unions():
 
     [field] = definition.fields
     assert field.python_name == "node"
-    assert isinstance(field.type, StrawberryUnion)
-    assert field.type.types == (Error, T)
+    assert isinstance(field.resolved_type, StrawberryUnion)
+    assert field.resolved_type.types == (Error, T)
 
     # let's make a copy of this generic type
     @strawberry.type
@@ -243,9 +243,9 @@ def test_generics_with_unions():
 
     [field_copy] = definition_copy.fields
     assert field_copy.python_name == "node"
-    assert isinstance(field_copy.type, StrawberryUnion)
-    assert field_copy.type.name == "ErrorNode"
-    assert field_copy.type.types == (Error, Node)
+    assert isinstance(field_copy.resolved_type, StrawberryUnion)
+    assert field_copy.resolved_type.name == "ErrorNode"
+    assert field_copy.resolved_type.types == (Error, Node)
 
 
 def test_using_generics():
@@ -267,7 +267,7 @@ def test_using_generics():
     [field] = definition.fields
     assert field.python_name == "user"
 
-    user_edge_definition = field.type._type_definition
+    user_edge_definition = field.resolved_type._type_definition
     assert user_edge_definition.name == "UserEdge"
     assert not user_edge_definition.is_generic
 
@@ -303,14 +303,14 @@ def test_using_generics_nested():
     [user_field] = query_definition.fields
     assert user_field.python_name == "users"
 
-    user_connection_definition = user_field.type._type_definition
+    user_connection_definition = user_field.resolved_type._type_definition
     assert user_connection_definition.name == "UserConnection"
     assert not user_connection_definition.is_generic
 
     [edges_field] = user_connection_definition.fields
     assert edges_field.python_name == "edges"
 
-    user_edge_definition = edges_field.type._type_definition
+    user_edge_definition = edges_field.resolved_type._type_definition
     assert user_edge_definition.name == "UserEdge"
 
 
@@ -381,9 +381,9 @@ def test_generics_inside_optional():
 
     [field] = query_definition.fields
     assert field.python_name == "user"
-    assert isinstance(field.type, StrawberryOptional)
+    assert isinstance(field.resolved_type, StrawberryOptional)
 
-    str_edge_definition = field.type.of_type._type_definition
+    str_edge_definition = field.resolved_type.of_type._type_definition
     assert str_edge_definition.name == "StrEdge"
     assert not str_edge_definition.is_generic
 
@@ -407,9 +407,9 @@ def test_generics_inside_list():
 
     [field] = query_definition.fields
     assert field.python_name == "user"
-    assert isinstance(field.type, StrawberryList)
+    assert isinstance(field.resolved_type, StrawberryList)
 
-    str_edge_definition = field.type.of_type._type_definition
+    str_edge_definition = field.resolved_type.of_type._type_definition
     assert str_edge_definition.name == "StrEdge"
     assert not str_edge_definition.is_generic
 
@@ -433,9 +433,9 @@ def test_generics_inside_unions():
 
     [field] = query_definition.fields
     assert field.python_name == "user"
-    assert not isinstance(field.type, StrawberryOptional)
+    assert not isinstance(field.resolved_type, StrawberryOptional)
 
-    union = field.type
+    union = field.resolved_type
     assert isinstance(union, StrawberryUnion)
     assert union.name == "StrEdgeError"
     assert union.types[0]._type_definition.name == "StrEdge"
@@ -457,9 +457,9 @@ def test_multiple_generics_inside_unions():
 
     [user_field] = query_definition.fields
     assert user_field.python_name == "user"
-    assert not isinstance(user_field.type, StrawberryOptional)
+    assert not isinstance(user_field.resolved_type, StrawberryOptional)
 
-    union = user_field.type
+    union = user_field.resolved_type
     assert isinstance(union, StrawberryUnion)
     assert union.name == "IntEdgeStrEdge"
 
@@ -501,13 +501,13 @@ def test_union_inside_generics():
     assert connection_field.python_name == "connection"
     assert not isinstance(connection_field, StrawberryOptional)
 
-    dog_cat_connection_definition = connection_field.type._type_definition
+    dog_cat_connection_definition = connection_field.resolved_type._type_definition
     assert dog_cat_connection_definition.name == "DogCatConnection"
 
     [node_field] = dog_cat_connection_definition.fields
-    assert isinstance(node_field.type, StrawberryList)
+    assert isinstance(node_field.resolved_type, StrawberryList)
 
-    union = dog_cat_connection_definition.fields[0].type.of_type
+    union = dog_cat_connection_definition.fields[0].resolved_type.of_type
     assert isinstance(union, StrawberryUnion)
     assert union.types[0]._type_definition.name == "Dog"
     assert union.types[1]._type_definition.name == "Cat"
@@ -537,13 +537,13 @@ def test_anonymous_union_inside_generics():
     [connection_field] = definition.fields
     assert connection_field.python_name == "connection"
 
-    dog_cat_connection_definition = connection_field.type._type_definition
+    dog_cat_connection_definition = connection_field.resolved_type._type_definition
     assert dog_cat_connection_definition.name == "DogCatConnection"
 
     [node_field] = dog_cat_connection_definition.fields
-    assert isinstance(node_field.type, StrawberryList)
+    assert isinstance(node_field.resolved_type, StrawberryList)
 
-    union = node_field.type.of_type
+    union = node_field.resolved_type.of_type
     assert isinstance(union, StrawberryUnion)
     assert union.types[0]._type_definition.name == "Dog"
     assert union.types[1]._type_definition.name == "Cat"
@@ -568,7 +568,7 @@ def test_using_generics_with_interfaces():
     [user_field] = query_definition.fields
     assert user_field.python_name == "user"
 
-    with_name_definition = user_field.type._type_definition
+    with_name_definition = user_field.resolved_type._type_definition
     assert with_name_definition.name == "WithNameEdge"
     assert not with_name_definition.is_generic
 
@@ -600,19 +600,19 @@ def test_generic_with_arguments():
     [user_field] = query_definition.fields
     assert user_field.python_name == "user"
 
-    post_collection_definition = user_field.type._type_definition
+    post_collection_definition = user_field.resolved_type._type_definition
     assert post_collection_definition.name == "PostCollection"
     assert not post_collection_definition.is_generic
 
     [by_id_field] = post_collection_definition.fields
     assert by_id_field.python_name == "by_id"
-    assert isinstance(by_id_field.type, StrawberryList)
-    assert by_id_field.type.of_type is Post
+    assert isinstance(by_id_field.resolved_type, StrawberryList)
+    assert by_id_field.resolved_type.of_type is Post
 
     [ids_argument] = by_id_field.arguments
     assert ids_argument.python_name == "ids"
-    assert isinstance(ids_argument.type, StrawberryList)
-    assert ids_argument.type.of_type is int
+    assert isinstance(ids_argument.resolved_type, StrawberryList)
+    assert ids_argument.resolved_type.of_type is int
 
 
 def test_federation():

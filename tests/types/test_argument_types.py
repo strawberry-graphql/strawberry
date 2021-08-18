@@ -18,7 +18,7 @@ def test_enum():
 
     argument = set_locale.arguments[0]
     # TODO: Remove reference to ._enum_definition with StrawberryEnum
-    assert argument.type is Locale._enum_definition
+    assert argument.resolved_type is Locale._enum_definition
 
 
 def test_forward_reference():
@@ -34,7 +34,7 @@ def test_forward_reference():
         query: str
 
     argument = search.arguments[0]
-    assert argument.type is SearchInput
+    assert argument.resolved_type is SearchInput
 
     del SearchInput
 

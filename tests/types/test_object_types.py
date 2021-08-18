@@ -19,7 +19,7 @@ def test_enum():
     field: StrawberryField = Animal._type_definition.fields[0]
 
     # TODO: Remove reference to ._enum_definition with StrawberryEnum
-    assert field.type is Count._enum_definition
+    assert field.resolved_type is Count._enum_definition
 
 
 def test_forward_reference():
@@ -36,7 +36,7 @@ def test_forward_reference():
     # TODO: Remove reference to ._type_definition with StrawberryObject
     field: StrawberryField = TimeTraveler._type_definition.fields[0]
 
-    assert field.type is FromTheFuture
+    assert field.resolved_type is FromTheFuture
 
     del FromTheFuture
 

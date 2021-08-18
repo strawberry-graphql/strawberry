@@ -17,7 +17,7 @@ def test_enum():
 
     resolver = StrawberryResolver(get_spoken_language)
     # TODO: Remove reference to ._enum_definition with StrawberryEnum
-    assert resolver.type is Language._enum_definition
+    assert resolver.resolved_type is Language._enum_definition
 
 
 def test_forward_references():
@@ -31,7 +31,7 @@ def test_forward_references():
         name: str
 
     resolver = StrawberryResolver(get_sportsball_official)
-    assert resolver.type is FutureUmpire
+    assert resolver.resolved_type is FutureUmpire
 
     del FutureUmpire
 

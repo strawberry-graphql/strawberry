@@ -4,6 +4,7 @@ from typing import List, Optional, TypeVar
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.field import StrawberryField
+from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.union import StrawberryUnion
 
 
@@ -13,40 +14,47 @@ def test_enum():
         a = "A"
         b = "B"
 
-    annotation = StrawberryAnnotation(Egnum)
-    field = StrawberryField(type_annotation=annotation)
+    field = StrawberryField()
+    field.type = Egnum
+    field.origin = test_enum
 
     # TODO: Remove reference to ._enum_definition with StrawberryEnum
-    assert field.type is Egnum._enum_definition
+    assert field.resolved_type is Egnum._enum_definition
 
 
 def test_forward_reference():
     global RefForward
 
-    annotation = StrawberryAnnotation("RefForward", namespace=globals())
-    field = StrawberryField(type_annotation=annotation)
+    field = StrawberryField()
+    field.type = "RefForward"
+    field.origin = test_forward_reference
 
     @strawberry.type
     class RefForward:
         ref: int
 
-    assert field.type is RefForward
+    assert field.resolved_type is RefForward
 
     del RefForward
 
 
 def test_list():
-    annotation = StrawberryAnnotation(List[int])
-    field = StrawberryField(type_annotation=annotation)
+    field = StrawberryField()
+    field.type = List[int]
+    field.origin = test_list
 
     assert field.type == List[int]
+    assert isinstance(field.resolved_type, StrawberryList)
+    assert field.resolved_type.of_type == int
 
 
 def test_literal():
-    annotation = StrawberryAnnotation(bool)
-    field = StrawberryField(type_annotation=annotation)
+    field = StrawberryField()
+    field.type = bool
+    field.origin = test_literal
 
-    assert field.type is bool
+    assert field.type == bool
+    assert field.resolved_type is bool
 
 
 def test_object():
@@ -54,24 +62,29 @@ def test_object():
     class TypeyType:
         value: str
 
-    annotation = StrawberryAnnotation(TypeyType)
-    field = StrawberryField(type_annotation=annotation)
+    field = StrawberryField()
+    field.type = TypeyType
+    field.origin = test_object
 
-    assert field.type is TypeyType
+    assert field.type == TypeyType
+    assert field.resolved_type is TypeyType
 
 
 def test_optional():
-    annotation = StrawberryAnnotation(Optional[float])
-    field = StrawberryField(type_annotation=annotation)
+    field = StrawberryField()
+    field.type = Optional[float]
+    field.origin = test_optional
 
     assert field.type == Optional[float]
+    assert isinstance(field.resolved_type, StrawberryOptional)
+    assert field.resolved_type.of_type == float
 
 
 def test_type_var():
     T = TypeVar("T")
 
-    annotation = StrawberryAnnotation(T)
-    field = StrawberryField(type_annotation=annotation)
+    field = StrawberryField()
+    field.type = T
 
     assert field.type == T
 
@@ -89,7 +102,7 @@ def test_union():
         name="UnionName",
         type_annotations=(StrawberryAnnotation(Un), StrawberryAnnotation(Ion)),
     )
-    annotation = StrawberryAnnotation(union)
-    field = StrawberryField(type_annotation=annotation)
+    field = StrawberryField()
+    field.type = union
 
     assert field.type is union

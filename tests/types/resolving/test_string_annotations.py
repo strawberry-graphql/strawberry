@@ -128,10 +128,10 @@ def test_basic_types():
     [field1, field2] = definition.fields
 
     assert field1.python_name == "name"
-    assert field1.type is str
+    assert field1.resolved_type is str
 
     assert field2.python_name == "age"
-    assert field2.type is int
+    assert field2.resolved_type is int
 
 
 # TODO: Move to object tests to test namespace logic
@@ -147,12 +147,12 @@ def test_optional():
     [field1, field2] = definition.fields
 
     assert field1.python_name == "name"
-    assert isinstance(field1.type, StrawberryOptional)
-    assert field1.type.of_type is str
+    assert isinstance(field1.resolved_type, StrawberryOptional)
+    assert field1.resolved_type.of_type is str
 
     assert field2.python_name == "age"
-    assert isinstance(field2.type, StrawberryOptional)
-    assert field2.type.of_type is int
+    assert isinstance(field2.resolved_type, StrawberryOptional)
+    assert field2.resolved_type.of_type is int
 
 
 # TODO: Move to object tests to test namespace logic
@@ -167,8 +167,8 @@ def test_basic_list():
     [field] = definition.fields
 
     assert field.python_name == "names"
-    assert isinstance(field.type, StrawberryList)
-    assert field.type.of_type is str
+    assert isinstance(field.resolved_type, StrawberryList)
+    assert field.resolved_type.of_type is str
 
 
 # TODO: Move to object tests to test namespace logic
@@ -189,7 +189,7 @@ def test_list_of_types():
     [field] = definition.fields
 
     assert field.python_name == "users"
-    assert isinstance(field.type, StrawberryList)
-    assert field.type.of_type is User
+    assert isinstance(field.resolved_type, StrawberryList)
+    assert field.resolved_type.of_type is User
 
     del User

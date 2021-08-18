@@ -73,13 +73,13 @@ def test_type_add_type_definition_with_fields():
 
     assert field1.python_name == "name"
     assert field1.graphql_name is None
-    assert isinstance(field1.type, StrawberryOptional)
-    assert field1.type.of_type is str
+    assert isinstance(field1.resolved_type, StrawberryOptional)
+    assert field1.resolved_type.of_type is str
 
     assert field2.python_name == "age"
     assert field2.graphql_name is None
-    assert isinstance(field2.type, StrawberryOptional)
-    assert field2.type.of_type is int
+    assert isinstance(field2.resolved_type, StrawberryOptional)
+    assert field2.resolved_type.of_type is int
 
 
 # TODO: move to a field test file
@@ -96,13 +96,13 @@ def test_passing_custom_names_to_fields():
 
     assert field1.python_name == "x"
     assert field1.graphql_name == "name"
-    assert isinstance(field1.type, StrawberryOptional)
-    assert field1.type.of_type is str
+    assert isinstance(field1.resolved_type, StrawberryOptional)
+    assert field1.resolved_type.of_type is str
 
     assert field2.python_name == "y"
     assert field2.graphql_name == "age"
-    assert isinstance(field2.type, StrawberryOptional)
-    assert field2.type.of_type is int
+    assert isinstance(field2.resolved_type, StrawberryOptional)
+    assert field2.resolved_type.of_type is int
 
 
 # TODO: move to a field test file
@@ -119,13 +119,13 @@ def test_passing_nothing_to_fields():
 
     assert field1.python_name == "name"
     assert field1.graphql_name is None
-    assert isinstance(field1.type, StrawberryOptional)
-    assert field1.type.of_type is str
+    assert isinstance(field1.resolved_type, StrawberryOptional)
+    assert field1.resolved_type.of_type is str
 
     assert field2.python_name == "age"
     assert field2.graphql_name is None
-    assert isinstance(field2.type, StrawberryOptional)
-    assert field2.type.of_type is int
+    assert isinstance(field2.resolved_type, StrawberryOptional)
+    assert field2.resolved_type.of_type is int
 
 
 # TODO: move to a resolver test file
@@ -143,8 +143,8 @@ def test_resolver_fields():
 
     assert field.python_name == "name"
     assert field.graphql_name is None
-    assert isinstance(field.type, StrawberryOptional)
-    assert field.type.of_type is str
+    assert isinstance(field.resolved_type, StrawberryOptional)
+    assert field.resolved_type.of_type is str
 
 
 # TODO: move to a resolver test file
@@ -163,12 +163,12 @@ def test_resolver_fields_arguments():
 
     assert field.python_name == "name"
     assert field.graphql_name is None
-    assert isinstance(field.type, StrawberryOptional)
-    assert field.type.of_type is str
+    assert isinstance(field.resolved_type, StrawberryOptional)
+    assert field.resolved_type.of_type is str
 
     [argument] = field.arguments
 
     assert argument.python_name == "argument"
     assert argument.graphql_name is None
-    assert isinstance(argument.type, StrawberryOptional)
-    assert argument.type.of_type is str
+    assert isinstance(argument.resolved_type, StrawberryOptional)
+    assert argument.resolved_type.of_type is str

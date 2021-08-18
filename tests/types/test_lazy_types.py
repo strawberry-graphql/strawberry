@@ -45,8 +45,8 @@ def test_lazy_type_field():
     # Module path is short and relative because of the way pytest runs the file
     LazierType = LazyType["LaziestType", "test_lazy_types"]
 
-    annotation = StrawberryAnnotation(LazierType)
-    field = StrawberryField(type_annotation=annotation)
+    field = StrawberryField()
+    field.type = LazierType
 
     assert isinstance(field.type, LazyType)
     assert field.type is LazierType

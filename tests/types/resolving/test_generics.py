@@ -51,7 +51,7 @@ def test_generic_objects():
     assert resolved._type_definition.is_generic
 
     field: StrawberryField = resolved._type_definition.fields[0]
-    assert isinstance(field.type, StrawberryTypeVar)
+    assert isinstance(field.resolved_type, StrawberryTypeVar)
     assert field.type == T
 
 

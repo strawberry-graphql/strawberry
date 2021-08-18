@@ -217,6 +217,10 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
 
     @property
     def origin_namespace(self) -> Dict[str, Any]:
+        # An origin should be set by now, either from the resolver function or
+        # when the type is constructed
+        assert self.origin
+
         module = sys.modules[self.origin.__module__]
         namespace = module.__dict__
         return namespace
@@ -239,9 +243,6 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
     def resolved_type(self) -> Union[StrawberryType, type]:
         if self._resolved_type:
             return self._resolved_type
-
-        # We should have an origin set by now
-        assert self.origin
 
         type_ = self.get_return_type()
 
@@ -277,8 +278,8 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
 
         # TODO: Consider making leaf types always StrawberryTypes, maybe a
         #       StrawberryBaseType or something
-        if isinstance(self.type, StrawberryType):
-            return self.type.type_params
+        if isinstance(self.resolved_type, StrawberryType):
+            return self.resolved_type.type_params
         return []
 
     def copy_with(
