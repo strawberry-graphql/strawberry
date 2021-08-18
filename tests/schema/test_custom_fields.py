@@ -132,8 +132,8 @@ def test_modify_arguments_with_default():
 
 def test_modify_return_type():
     class AuthenticationRequired(StrawberryField):
-        def get_type(self) -> object:
-            type_ = super().get_type()
+        def get_return_type(self) -> object:
+            type_ = super().get_return_type()
             return Optional[type_]
 
         def get_result(self, source, info, arguments):

@@ -221,7 +221,7 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
         namespace = module.__dict__
         return namespace
 
-    def get_type(self) -> Union[object, str]:
+    def get_return_type(self) -> Union[object, str]:
         """
         Hook to allow custom fields to modify the return type of a field. This
         hook should only be called once at schema creation time.
@@ -243,7 +243,7 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
         # We should have an origin set by now
         assert self.origin
 
-        type_ = self.get_type()
+        type_ = self.get_return_type()
 
         type_annotation = StrawberryAnnotation(
             annotation=type_, namespace=self.origin_namespace
