@@ -1,3 +1,4 @@
+import sys
 import logging
 from typing import Any, Collection, Dict, List, Optional, Sequence, Type, Union
 
@@ -102,10 +103,18 @@ class Schema:
     def process_errors(
         self, errors: List[GraphQLError], execution_context: ExecutionContext
     ) -> None:
+        kwargs: Dict[str, Any] = {
+            "stack_info": True,
+        }
+
+        # stacklevel was added in version 3.8
+        # https://docs.python.org/3/library/logging.html#logging.Logger.debug
+
+        if sys.version_info >= (3, 8):
+            kwargs["stacklevel"] = 3
+
         for error in errors:
-            logger.error(
-                error, exc_info=error.original_error, stack_info=True, stacklevel=3
-            )
+            logger.error(error, exc_info=error.original_error, **kwargs)
 
     async def execute(
         self,
