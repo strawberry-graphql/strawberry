@@ -1,6 +1,22 @@
 CHANGELOG
 =========
 
+0.72.1 - 2021-08-18
+-------------------
+
+This release improves the default logging format for errors to include more information about the errors. For example it will show were an error was originated in a request:
+
+```
+GraphQL request:2:5
+1 | query {
+2 |     example
+  |     ^
+3 | }
+```
+
+Contributed by [Ivan Gonzalez](https://github.com/scratchmex) [PR #1152](https://github.com/strawberry-graphql/strawberry/pull/1152/)
+
+
 0.72.0 - 2021-08-18
 -------------------
 
