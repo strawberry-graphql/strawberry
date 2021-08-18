@@ -366,13 +366,9 @@ class GraphQLCoreConverter:
             )
 
         def _get_result(_source: Any, info: Info, **kwargs):
-            field_kwargs = _get_arguments(
-                source=_source, info=info, kwargs=kwargs
-            )
+            field_kwargs = _get_arguments(source=_source, info=info, kwargs=kwargs)
 
-            return field.get_result(
-                _source, info=info, arguments=field_kwargs
-            )
+            return field.get_result(_source, info=info, arguments=field_kwargs)
 
         def _resolver(_source: Any, info: GraphQLResolveInfo, **kwargs):
             strawberry_info = _strawberry_info_from_graphql(info)

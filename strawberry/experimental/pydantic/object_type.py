@@ -127,22 +127,23 @@ def type(
             strawberry_field.type = type_
             all_fields.append(
                 (
-                    extra_field.name,
-                    extra_field.type,
-                    strawberry_field,
+                    field.name,
+                    field.type,
+                    field,
                 )
             )
+        )
 
         # Sort fields so that fields with missing defaults go first
         # because dataclasses require that fields with no defaults are defined
         # first
         missing_default = []
         has_default = []
-        for field in all_fields:
-            if field[2].default is dataclasses.MISSING:
-                missing_default.append(field)
+        for dataclass_field in all_fields:
+            if dataclass_field[2].default is dataclasses.MISSING:
+                missing_default.append(dataclass_field)
             else:
-                has_default.append(field)
+                has_default.append(dataclass_field)
 
         sorted_fields = missing_default + has_default
 
