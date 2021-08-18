@@ -92,7 +92,7 @@ def test_debug_server_routes(debug_server_client):
         assert response.status_code == 200
 
 
-def test_automatic_reloading():
+def test_automatic_reloading(tmp_path):
     source = (
         "import strawberry\n"
         "@strawberry.type\n"
@@ -102,10 +102,6 @@ def test_automatic_reloading():
         "        return {}\n"
         "schema = strawberry.Schema(query=Query)\n"
     )
-
-    from pathlib import Path
-
-    tmp_path = Path("/tmp")
 
     schema_file_path = tmp_path / "schema.py"
     schema_file_path.touch()
