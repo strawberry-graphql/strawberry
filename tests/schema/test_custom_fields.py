@@ -175,3 +175,26 @@ def test_modify_return_type():
 
     assert not result.errors
     assert result.data["name"] == "Patrick"
+
+
+def test_modify_return_type_forward_reference():
+    global FakeType
+
+    class ModifyType(StrawberryField):
+        def get_return_type(self) -> object:
+            type_ = super().get_return_type()
+            assert hasattr(type_, "_real_type")
+            return "str"
+
+    class FakeType:
+        _real_type: str = "foo"
+
+    @strawberry.type
+    class Query:
+        @ModifyType()
+        def my_field(self) -> "FakeType":
+            return FakeType()
+
+    strawberry.Schema(query=Query)
+
+    del FakeType

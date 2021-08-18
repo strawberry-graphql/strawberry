@@ -5,6 +5,8 @@ from __future__ import annotations
 import textwrap
 from typing import List
 
+import pytest
+
 import strawberry
 from strawberry.printer import print_schema
 from strawberry.type import StrawberryList
@@ -62,3 +64,17 @@ def test_with_resolver():
     assert field.resolved_type.of_type is User
 
     del User
+
+
+def test_unknown_type():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def users(self) -> "List[User]":
+            return None
+
+    with pytest.raises(
+        TypeError,
+        match="Field \"users\" returns an unknown type: name 'User' is not defined",
+    ):
+        strawberry.Schema(Query)

@@ -19,6 +19,7 @@ from cached_property import cached_property  # type: ignore
 
 from strawberry.annotation import StrawberryAnnotation, resolve_annotation
 from strawberry.arguments import UNSET, StrawberryArgument
+from strawberry.exceptions import UnknownTypeError
 from strawberry.type import StrawberryType
 from strawberry.types.info import Info
 from strawberry.utils.mixins import GraphQLNameMixin
@@ -40,6 +41,7 @@ class BareStrawberryArgument:
 
     type_annotation: StrawberryAnnotation
     default: Any
+    description: Optional[str]
 
     def as_argument(self, arg_name: str) -> StrawberryArgument:
         return StrawberryArgument(
@@ -47,6 +49,7 @@ class BareStrawberryArgument:
             graphql_name=None,
             type_annotation=self.type_annotation,
             default=self.default,
+            description=self.description,
         )
 
 
@@ -128,19 +131,19 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
 
     @property
     def arguments(self) -> List[StrawberryArgument]:
-        arguments_as_annotations = self.get_arguments()
+        arguments_as_types = self.get_arguments()
 
         if not self.base_resolver:
             return []
 
         # Convert the arguments to StrawberryArgument types
         arguments = []
-        for arg_name, annotation in arguments_as_annotations.items():
-            if isinstance(annotation, BareStrawberryArgument):
-                argument = annotation
+        for arg_name, type_ in arguments_as_types.items():
+            if isinstance(type_, BareStrawberryArgument):
+                argument = type_
             else:
                 default = self.base_resolver.get_argument_default(arg_name)
-                argument = self.create_argument(annotation, default)
+                argument = self.create_argument(type_, default)
 
             arguments.append(argument.as_argument(arg_name))
 
@@ -156,11 +159,12 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
         return self.base_resolver.arguments
 
     def create_argument(
-        self, type_annotation: object, default: Any = UNSET
+        self,
+        type_annotation: object,
+        default: Any = UNSET,
+        description: Optional[str] = None,
     ) -> BareStrawberryArgument:
-        """
-        Helper function to create StrawberryArgument
-        """
+        """Helper function to create StrawberryArgument"""
         annotation_namespace = None
         if self.base_resolver:
             annotation_namespace = self.base_resolver.annotation_namespace
@@ -171,6 +175,7 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
                 namespace=annotation_namespace,
             ),
             default=default,
+            description=description,
         )
 
     def _python_name(self) -> Optional[str]:
@@ -230,12 +235,29 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
         Hook to allow custom fields to modify the return type of a field. This
         hook should only be called once at schema creation time.
 
-        Note: the return value of this function is always the resolved type if
-        it's a forward reference. This is so it's easier to manipulate.
+        Note: we make sure that the type is resolved so that it's easier to deal
+        with in custom fields.
+
+        For example:
+
+        class MyCustomField(StrawberryField):
+            def get_return_type(self):
+                type_ = super().get_return_type()
+                assert type_ == Optional[str]
+                return str
+
+        @strawberry.type
+        class Query:
+            @MyCustomField()
+            def my_field(self) -> "Optional[str]":
+                return "foo"
         """
 
         type_ = self.type
-        evaled_type = resolve_annotation(type_, self.origin_namespace)
+        try:
+            evaled_type = resolve_annotation(type_, self.origin_namespace)
+        except NameError as error:
+            raise UnknownTypeError(self, str(error))
 
         return evaled_type
 
@@ -291,7 +313,9 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
         # TODO: Remove with creation of StrawberryObject. Will act same as other
         #       StrawberryTypes
         if hasattr(resolved_type, "_type_definition"):
-            type_definition: TypeDefinition = resolved_type._type_definition  # type: ignore
+            type_definition: TypeDefinition = (
+                resolved_type._type_definition  # type: ignore
+            )
 
             if type_definition.is_generic:
                 type_ = type_definition

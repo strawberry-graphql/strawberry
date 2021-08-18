@@ -169,3 +169,10 @@ class MissingQueryError(Exception):
         message = 'Request data is missing a "query" value'
 
         super().__init__(message)
+
+
+class UnknownTypeError(Exception):
+    def __init__(self, field, message):
+        message = f'\nField "{field.name}" returns an unknown type: {message}'
+
+        super().__init__(message)
