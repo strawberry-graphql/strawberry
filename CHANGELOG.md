@@ -1,6 +1,25 @@
 CHANGELOG
 =========
 
+0.72.0 - 2021-08-18
+-------------------
+
+This release adds support for asynchronous permission classes. The only difference to
+their synchronous counterpart is that the `has_permission` method is asynchronous.
+
+```python
+from strawberry.permission import BasePermission
+
+class IsAuthenticated(BasePermission):
+    message = "User is not authenticated"
+
+    async def has_permission(self, source, info, **kwargs):
+        return True
+```
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) [PR #1125](https://github.com/strawberry-graphql/strawberry/pull/1125/)
+
+
 0.71.3 - 2021-08-11
 -------------------
 
