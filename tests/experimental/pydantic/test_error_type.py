@@ -53,8 +53,8 @@ def test_error_type_with_nested_model():
     [field] = definition.fields
 
     assert field.python_name == "friend"
-    assert isinstance(field.type, StrawberryOptional)
-    assert field.type.of_type is FriendError
+    assert isinstance(field.resolved_type, StrawberryOptional)
+    assert field.resolved_type.of_type is FriendError
 
 
 def test_error_type_with_list_nested_model():
@@ -78,10 +78,10 @@ def test_error_type_with_list_nested_model():
     [field] = definition.fields
 
     assert field.python_name == "friends"
-    assert isinstance(field.type, StrawberryOptional)
-    assert isinstance(field.type.of_type, StrawberryList)
-    assert isinstance(field.type.of_type.of_type, StrawberryOptional)
-    assert field.type.of_type.of_type.of_type is FriendError
+    assert isinstance(field.resolved_type, StrawberryOptional)
+    assert isinstance(field.resolved_type.of_type, StrawberryList)
+    assert isinstance(field.resolved_type.of_type.of_type, StrawberryOptional)
+    assert field.resolved_type.of_type.of_type.of_type is FriendError
 
 
 def test_error_type_with_list_of_scalar():
@@ -98,11 +98,11 @@ def test_error_type_with_list_of_scalar():
     [field] = definition.fields
 
     assert field.python_name == "friends"
-    assert isinstance(field.type, StrawberryOptional)
-    assert isinstance(field.type.of_type, StrawberryList)
-    assert isinstance(field.type.of_type.of_type, StrawberryOptional)
-    assert isinstance(field.type.of_type.of_type.of_type, StrawberryList)
-    assert field.type.of_type.of_type.of_type.of_type is str
+    assert isinstance(field.resolved_type, StrawberryOptional)
+    assert isinstance(field.resolved_type.of_type, StrawberryList)
+    assert isinstance(field.resolved_type.of_type.of_type, StrawberryOptional)
+    assert isinstance(field.resolved_type.of_type.of_type.of_type, StrawberryList)
+    assert field.resolved_type.of_type.of_type.of_type.of_type is str
 
 
 def test_error_type_with_optional_field():
@@ -119,9 +119,9 @@ def test_error_type_with_optional_field():
     [field] = definition.fields
 
     assert field.python_name == "age"
-    assert isinstance(field.type, StrawberryOptional)
-    assert isinstance(field.type.of_type, StrawberryList)
-    assert field.type.of_type.of_type is str
+    assert isinstance(field.resolved_type, StrawberryOptional)
+    assert isinstance(field.resolved_type.of_type, StrawberryList)
+    assert field.resolved_type.of_type.of_type is str
 
 
 def test_error_type_with_list_of_optional_scalar():
@@ -138,11 +138,11 @@ def test_error_type_with_list_of_optional_scalar():
     [field] = definition.fields
 
     assert field.python_name == "age"
-    assert isinstance(field.type, StrawberryOptional)
-    assert isinstance(field.type.of_type, StrawberryList)
-    assert isinstance(field.type.of_type.of_type, StrawberryOptional)
-    assert isinstance(field.type.of_type.of_type.of_type, StrawberryList)
-    assert field.type.of_type.of_type.of_type.of_type is str
+    assert isinstance(field.resolved_type, StrawberryOptional)
+    assert isinstance(field.resolved_type.of_type, StrawberryList)
+    assert isinstance(field.resolved_type.of_type.of_type, StrawberryOptional)
+    assert isinstance(field.resolved_type.of_type.of_type.of_type, StrawberryList)
+    assert field.resolved_type.of_type.of_type.of_type.of_type is str
 
 
 def test_error_type_with_optional_list_scalar():
@@ -159,11 +159,11 @@ def test_error_type_with_optional_list_scalar():
     [field] = definition.fields
 
     assert field.python_name == "age"
-    assert isinstance(field.type, StrawberryOptional)
-    assert isinstance(field.type.of_type, StrawberryList)
-    assert isinstance(field.type.of_type.of_type, StrawberryOptional)
-    assert isinstance(field.type.of_type.of_type.of_type, StrawberryList)
-    assert field.type.of_type.of_type.of_type.of_type is str
+    assert isinstance(field.resolved_type, StrawberryOptional)
+    assert isinstance(field.resolved_type.of_type, StrawberryList)
+    assert isinstance(field.resolved_type.of_type.of_type, StrawberryOptional)
+    assert isinstance(field.resolved_type.of_type.of_type.of_type, StrawberryList)
+    assert field.resolved_type.of_type.of_type.of_type.of_type is str
 
 
 def test_error_type_with_optional_list_of_optional_scalar():
@@ -180,11 +180,11 @@ def test_error_type_with_optional_list_of_optional_scalar():
     [field] = definition.fields
 
     assert field.python_name == "age"
-    assert isinstance(field.type, StrawberryOptional)
-    assert isinstance(field.type.of_type, StrawberryList)
-    assert isinstance(field.type.of_type.of_type, StrawberryOptional)
-    assert isinstance(field.type.of_type.of_type.of_type, StrawberryList)
-    assert field.type.of_type.of_type.of_type.of_type is str
+    assert isinstance(field.resolved_type, StrawberryOptional)
+    assert isinstance(field.resolved_type.of_type, StrawberryList)
+    assert isinstance(field.resolved_type.of_type.of_type, StrawberryOptional)
+    assert isinstance(field.resolved_type.of_type.of_type.of_type, StrawberryList)
+    assert field.resolved_type.of_type.of_type.of_type.of_type is str
 
 
 def test_error_type_with_optional_list_of_nested_model():
@@ -208,10 +208,10 @@ def test_error_type_with_optional_list_of_nested_model():
     [field] = definition.fields
 
     assert field.python_name == "friends"
-    assert isinstance(field.type, StrawberryOptional)
-    assert isinstance(field.type.of_type, StrawberryList)
-    assert isinstance(field.type.of_type.of_type, StrawberryOptional)
-    assert field.type.of_type.of_type.of_type is FriendError
+    assert isinstance(field.resolved_type, StrawberryOptional)
+    assert isinstance(field.resolved_type.of_type, StrawberryList)
+    assert isinstance(field.resolved_type.of_type.of_type, StrawberryOptional)
+    assert field.resolved_type.of_type.of_type.of_type is FriendError
 
 
 def test_error_type_with_matrix_list_of_scalar():
@@ -228,15 +228,17 @@ def test_error_type_with_matrix_list_of_scalar():
     [field] = definition.fields
 
     assert field.python_name == "age"
-    assert isinstance(field.type, StrawberryOptional)
-    assert isinstance(field.type.of_type, StrawberryList)
+    assert isinstance(field.resolved_type, StrawberryOptional)
+    assert isinstance(field.resolved_type.of_type, StrawberryList)
 
-    assert isinstance(field.type.of_type.of_type, StrawberryOptional)
-    assert isinstance(field.type.of_type.of_type.of_type, StrawberryList)
+    assert isinstance(field.resolved_type.of_type.of_type, StrawberryOptional)
+    assert isinstance(field.resolved_type.of_type.of_type.of_type, StrawberryList)
 
-    assert isinstance(field.type.of_type.of_type.of_type.of_type, StrawberryOptional)
     assert isinstance(
-        field.type.of_type.of_type.of_type.of_type.of_type, StrawberryList
+        field.resolved_type.of_type.of_type.of_type.of_type, StrawberryOptional
+    )
+    assert isinstance(
+        field.resolved_type.of_type.of_type.of_type.of_type.of_type, StrawberryList
     )
 
-    assert field.type.of_type.of_type.of_type.of_type.of_type.of_type is str
+    assert field.resolved_type.of_type.of_type.of_type.of_type.of_type.of_type is str

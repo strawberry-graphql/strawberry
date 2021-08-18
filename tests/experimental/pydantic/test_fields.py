@@ -63,8 +63,8 @@ def test_types_optional(pydantic_type, field_type):
     [field] = definition.fields
 
     assert field.python_name == "field"
-    assert isinstance(field.type, StrawberryOptional)
-    assert field.type.of_type is field_type
+    assert isinstance(field.resolved_type, StrawberryOptional)
+    assert field.resolved_type.of_type is field_type
 
 
 def test_conint():

@@ -31,7 +31,7 @@ def test_basic_type():
     assert field2.python_name == "password"
     assert field2.graphql_name is None
     assert isinstance(field2.resolved_type, StrawberryOptional)
-    assert field2.type.of_type is str
+    assert field2.resolved_type.of_type is str
 
 
 def test_referencing_other_models_fails_when_not_registered():
@@ -98,7 +98,7 @@ def test_list():
 
     assert field.python_name == "friend_names"
     assert isinstance(field.resolved_type, StrawberryList)
-    assert field.type.of_type is str
+    assert field.resolved_type.of_type is str
 
 
 def test_list_of_types():

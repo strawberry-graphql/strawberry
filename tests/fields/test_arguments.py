@@ -30,8 +30,8 @@ def test_basic_arguments():
 
     assert argument2.python_name == "optional_argument"
     assert argument2.graphql_name is None
-    assert isinstance(argument2.type, StrawberryOptional)
-    assert argument2.type.of_type is str
+    assert isinstance(argument2.resolved_type, StrawberryOptional)
+    assert argument2.resolved_type.of_type is str
 
 
 def test_input_type_as_argument():
@@ -57,8 +57,8 @@ def test_input_type_as_argument():
 
     assert argument2.python_name == "optional_input"
     assert argument2.graphql_name is None
-    assert isinstance(argument2.type, StrawberryOptional)
-    assert argument2.type.of_type is Input
+    assert isinstance(argument2.resolved_type, StrawberryOptional)
+    assert argument2.resolved_type.of_type is Input
 
 
 def test_arguments_lists():
@@ -80,8 +80,8 @@ def test_arguments_lists():
 
     assert argument.python_name == "inputs"
     assert argument.graphql_name is None
-    assert isinstance(argument.type, StrawberryList)
-    assert argument.type.of_type is Input
+    assert isinstance(argument.resolved_type, StrawberryList)
+    assert argument.resolved_type.of_type is Input
 
 
 def test_arguments_lists_of_optionals():
@@ -103,9 +103,9 @@ def test_arguments_lists_of_optionals():
 
     assert argument.python_name == "inputs"
     assert argument.graphql_name is None
-    assert isinstance(argument.type, StrawberryList)
-    assert isinstance(argument.type.of_type, StrawberryOptional)
-    assert argument.type.of_type.of_type is Input
+    assert isinstance(argument.resolved_type, StrawberryList)
+    assert isinstance(argument.resolved_type.of_type, StrawberryOptional)
+    assert argument.resolved_type.of_type.of_type is Input
 
 
 def test_basic_arguments_on_resolver():
@@ -131,8 +131,8 @@ def test_basic_arguments_on_resolver():
     assert argument2.type is str
 
     assert argument3.python_name == "optional_argument"
-    assert isinstance(argument3.type, StrawberryOptional)
-    assert argument3.type.of_type is str
+    assert isinstance(argument3.resolved_type, StrawberryOptional)
+    assert argument3.resolved_type.of_type is str
 
 
 def test_arguments_when_extending_a_type():
@@ -164,8 +164,8 @@ def test_arguments_when_extending_a_type():
     assert argument2.type is str
 
     assert argument3.python_name == "optional_argument"
-    assert isinstance(argument3.type, StrawberryOptional)
-    assert argument3.type.of_type is str
+    assert isinstance(argument3.resolved_type, StrawberryOptional)
+    assert argument3.resolved_type.of_type is str
 
 
 def test_arguments_when_extending_multiple_types():
@@ -223,8 +223,8 @@ def test_argument_with_default_value_none():
     assert argument.graphql_name is None
     assert argument.default is None
     assert argument.description is None
-    assert isinstance(argument.type, StrawberryOptional)
-    assert argument.type.of_type is str
+    assert isinstance(argument.resolved_type, StrawberryOptional)
+    assert argument.resolved_type.of_type is str
 
 
 def test_argument_with_default_value_undefined():
@@ -244,8 +244,8 @@ def test_argument_with_default_value_undefined():
     assert argument.graphql_name is None
     assert argument.default is UNSET
     assert argument.description is None
-    assert isinstance(argument.type, StrawberryOptional)
-    assert argument.type.of_type is str
+    assert isinstance(argument.resolved_type, StrawberryOptional)
+    assert argument.resolved_type.of_type is str
 
 
 def test_annotated_argument_on_resolver():
@@ -293,8 +293,8 @@ def test_annotated_optional_arguments_on_resolver():
     assert argument.python_name == "argument"
     assert argument.graphql_name is None
     assert argument.description == "This is a description"
-    assert isinstance(argument.type, StrawberryOptional)
-    assert argument.type.of_type is str
+    assert isinstance(argument.resolved_type, StrawberryOptional)
+    assert argument.resolved_type.of_type is str
 
 
 def test_annotated_argument_with_default_value():

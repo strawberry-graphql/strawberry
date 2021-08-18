@@ -57,7 +57,7 @@ def test_can_use_enum_as_arguments():
 
     field = Query._type_definition.fields[0]
 
-    assert isinstance(field.arguments[0].type, EnumDefinition)
+    assert isinstance(field.arguments[0].resolved_type, EnumDefinition)
 
 
 def test_raises_error_when_using_enum_with_a_not_enum_class():
