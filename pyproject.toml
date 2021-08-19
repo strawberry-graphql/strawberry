@@ -38,6 +38,7 @@ pydantic = {version = "<2", optional = true}
 python-multipart = "^0.0.5"
 sanic = {version = "^20.12.2", optional = true}
 aiohttp = {version = "^3.7.4.post0", optional = true}
+fastapi = {version = "^0.68.0", optional = true}
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2"
@@ -83,6 +84,7 @@ types-freezegun = "^1.1.0"
 types-chardet = "^0.1.5"
 types-certifi = "^0.1.4"
 types-aiofiles = "^0.1.9"
+fastapi = {version = "^0.68.0"}
 
 [tool.poetry.extras]
 aiohttp = ["aiohttp", "pytest-aiohttp"]
@@ -93,6 +95,7 @@ flask = ["flask", "pytest-flask"]
 opentelemetry = ["opentelemetry-api", "opentelemetry-sdk"]
 pydantic = ["pydantic"]
 sanic = ["sanic"]
+fastapi = ["fastapi", "pydantic"]
 
 [tool.poetry.scripts]
 strawberry = "strawberry.cli:run"

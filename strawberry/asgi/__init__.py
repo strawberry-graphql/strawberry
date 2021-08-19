@@ -75,10 +75,13 @@ class BaseGraphQLApp(ABC):
 
 
 class WebSocketHandler(BaseGraphQLApp, ABC):
-    async def handle_websocket(
+    async def handle_websocket_raw(
         self, scope: Scope, receive: Receive, send: Send
     ) -> None:
         ws = WebSocket(scope=scope, receive=receive, send=send)
+        await self.handle_websocket(ws)
+
+    async def handle_websocket(self, ws: WebSocket) -> None:
         await ws.accept(subprotocol=GRAPHQL_WS)
 
         ws.state.subscriptions = {}
@@ -337,6 +340,6 @@ class GraphQL(HTTPHandler, WebSocketHandler, BaseGraphQLApp):
         if scope["type"] == "http":
             await self.handle_http(scope=scope, receive=receive, send=send)
         elif scope["type"] == "websocket":
-            await self.handle_websocket(scope=scope, receive=receive, send=send)
+            await self.handle_websocket_raw(scope=scope, receive=receive, send=send)
         else:  # pragma: no cover
             raise ValueError("Unknown scope type: %r" % (scope["type"],))
