@@ -1,6 +1,49 @@
 CHANGELOG
 =========
 
+0.72.2 - 2021-08-22
+-------------------
+
+This releases pins graphql-core to only accept patch versions in order to prevent breaking changes since graphql-core doesn't properly follow semantic versioning.
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) [PR #1162](https://github.com/strawberry-graphql/strawberry/pull/1162/)
+
+
+0.72.1 - 2021-08-18
+-------------------
+
+This release improves the default logging format for errors to include more information about the errors. For example it will show were an error was originated in a request:
+
+```
+GraphQL request:2:5
+1 | query {
+2 |     example
+  |     ^
+3 | }
+```
+
+Contributed by [Ivan Gonzalez](https://github.com/scratchmex) [PR #1152](https://github.com/strawberry-graphql/strawberry/pull/1152/)
+
+
+0.72.0 - 2021-08-18
+-------------------
+
+This release adds support for asynchronous permission classes. The only difference to
+their synchronous counterpart is that the `has_permission` method is asynchronous.
+
+```python
+from strawberry.permission import BasePermission
+
+class IsAuthenticated(BasePermission):
+    message = "User is not authenticated"
+
+    async def has_permission(self, source, info, **kwargs):
+        return True
+```
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) [PR #1125](https://github.com/strawberry-graphql/strawberry/pull/1125/)
+
+
 0.71.3 - 2021-08-11
 -------------------
 

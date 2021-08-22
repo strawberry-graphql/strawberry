@@ -1,4 +1,5 @@
 import logging
+import sys
 from typing import Any, Collection, Dict, List, Optional, Sequence, Type, Union
 
 from graphql import (
@@ -102,9 +103,18 @@ class Schema:
     def process_errors(
         self, errors: List[GraphQLError], execution_context: ExecutionContext
     ) -> None:
+        kwargs: Dict[str, Any] = {
+            "stack_info": True,
+        }
+
+        # stacklevel was added in version 3.8
+        # https://docs.python.org/3/library/logging.html#logging.Logger.debug
+
+        if sys.version_info >= (3, 8):
+            kwargs["stacklevel"] = 3
+
         for error in errors:
-            actual_error = error.original_error or error
-            logger.error(actual_error, exc_info=actual_error)
+            logger.error(error, exc_info=error.original_error, **kwargs)
 
     async def execute(
         self,
@@ -139,11 +149,7 @@ class Schema:
         if result.errors:
             self.process_errors(result.errors, execution_context=execution_context)
 
-        return ExecutionResult(
-            data=result.data,
-            errors=result.errors,
-            extensions=result.extensions,
-        )
+        return result
 
     def execute_sync(
         self,
@@ -177,11 +183,7 @@ class Schema:
         if result.errors:
             self.process_errors(result.errors, execution_context=execution_context)
 
-        return ExecutionResult(
-            data=result.data,
-            errors=result.errors,
-            extensions=result.extensions,
-        )
+        return result
 
     async def subscribe(
         self,
