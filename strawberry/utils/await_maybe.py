@@ -1,9 +1,14 @@
 import inspect
-from typing import Callable
+from typing import Union, Awaitable, TypeVar
 
 
-async def await_maybe(function: Callable):
-    if inspect.iscoroutinefunction(function):
-        return await function()
+T = TypeVar("T")
 
-    return function()
+AwaitableOrValue = Union[Awaitable[T], T]
+
+
+async def await_maybe(value: AwaitableOrValue):
+    if inspect.iscoroutine(value):
+        return await value
+
+    return value
