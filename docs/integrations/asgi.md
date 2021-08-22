@@ -46,7 +46,7 @@ the request and the response.
 
 ```python
 class MyGraphQL(GraphQL):
-    async def get_context(self, request: Union[Request, WebSocket], response: Optional[Response]) -> Any:
+    async def get_context(self, request: Union[Request, WebSocket], response: Optional[Response] = None) -> Any:
         return {"example": 1}
 
 
