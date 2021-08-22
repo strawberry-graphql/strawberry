@@ -1,10 +1,10 @@
-import importlib
+import os
 import sys
 
 import click
 
 from strawberry import Schema
-from strawberry.asgi import GraphQL
+from strawberry.cli.constants import DEBUG_SERVER_SCHEMA_ENV_VAR_KEY
 from strawberry.utils.importer import import_module_symbol
 
 
@@ -27,10 +27,8 @@ def server(schema, host, port, app_dir):
     sys.path.insert(0, app_dir)
 
     try:
-        import hupper
+        import starlette  # noqa: F401
         import uvicorn
-        from starlette.applications import Starlette
-        from starlette.middleware.cors import CORSMiddleware
     except ImportError:
         message = (
             "The debug server requires additional packages, install them by running:\n"
@@ -48,21 +46,10 @@ def server(schema, host, port, app_dir):
         message = "The `schema` must be an instance of strawberry.Schema"
         raise click.BadArgumentUsage(message)
 
-    reloader = hupper.start_reloader("strawberry.cli.run", verbose=False)
-    schema_module = importlib.import_module(schema_symbol.__module__)
-    reloader.watch_files([schema_module.__file__])
-
-    app = Starlette(debug=True)
-    app.add_middleware(
-        CORSMiddleware, allow_headers=["*"], allow_origins=["*"], allow_methods=["*"]
-    )
-
-    graphql_app = GraphQL(schema_symbol, debug=True)
-
-    paths = ["/", "/graphql"]
-    for path in paths:
-        app.add_route(path, graphql_app)
-        app.add_websocket_route(path, graphql_app)
+    os.environ[DEBUG_SERVER_SCHEMA_ENV_VAR_KEY] = schema
+    app = "strawberry.cli.debug_server:app"
 
     print(f"Running strawberry on http://{host}:{port}/graphql 🍓")
-    uvicorn.run(app, loop="none", host=host, port=port, log_level="error")
+    uvicorn.run(
+        app, host=host, port=port, log_level="error", reload=True, reload_dirs=[app_dir]
+    )
