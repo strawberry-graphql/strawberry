@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.72.3 - 2021-08-22
+-------------------
+
+This release refactors the reload feature of the built-in debug server. The refactor
+made the debug server more responsive and allowed us to remove `hupper` from the
+dependencies.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) [PR #1114](https://github.com/strawberry-graphql/strawberry/pull/1114/)
+
+
 0.72.2 - 2021-08-22
 -------------------
 
