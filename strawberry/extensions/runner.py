@@ -50,7 +50,7 @@ class ExtensionsRunner:
         data: Dict[str, Any] = {}
 
         for extension in self.extensions:
-            results = await await_maybe(extension.get_results)
+            results = await await_maybe(extension.get_results())
             data.update(results)  # type: ignore
 
         return data

@@ -24,11 +24,11 @@ class RequestContextManager(ExtensionContextManager):
 
     async def __aenter__(self):
         for extension in self.extensions:
-            await await_maybe(extension.on_request_start)
+            await await_maybe(extension.on_request_start())
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         for extension in self.extensions:
-            await await_maybe(extension.on_request_end)
+            await await_maybe(extension.on_request_end())
 
 
 class ValidationContextManager(ExtensionContextManager):
@@ -42,11 +42,11 @@ class ValidationContextManager(ExtensionContextManager):
 
     async def __aenter__(self):
         for extension in self.extensions:
-            await await_maybe(extension.on_validation_start)
+            await await_maybe(extension.on_validation_start())
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         for extension in self.extensions:
-            await await_maybe(extension.on_validation_end)
+            await await_maybe(extension.on_validation_end())
 
 
 class ParsingContextManager(ExtensionContextManager):
@@ -60,8 +60,8 @@ class ParsingContextManager(ExtensionContextManager):
 
     async def __aenter__(self):
         for extension in self.extensions:
-            await await_maybe(extension.on_parsing_start)
+            await await_maybe(extension.on_parsing_start())
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         for extension in self.extensions:
-            await await_maybe(extension.on_parsing_end)
+            await await_maybe(extension.on_parsing_end())

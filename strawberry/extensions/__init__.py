@@ -1,5 +1,5 @@
 from strawberry.utils.await_maybe import AwaitableOrValue
-from typing import Any, Awaitable, Dict, Union
+from typing import Any, Dict
 
 from strawberry.types import ExecutionContext, Info
 

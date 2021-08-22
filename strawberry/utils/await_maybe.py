@@ -1,5 +1,5 @@
 import inspect
-from typing import Union, Awaitable, TypeVar
+from typing import Awaitable, TypeVar, Union
 
 
 T = TypeVar("T")
