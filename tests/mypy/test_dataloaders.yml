@@ -14,8 +14,8 @@
 
       reveal_type(user)
   out: |
-    main:8: note: Revealed type is 'strawberry.dataloader.DataLoader[Any, Any]'
-    main:13: note: Revealed type is 'Any'
+    main:8: note: Revealed type is "strawberry.dataloader.DataLoader[Any, Any]"
+    main:13: note: Revealed type is "Any"
 
 - case: test_dataloader
   main: |
@@ -35,5 +35,5 @@
 
       reveal_type(user)
   out: |
-    main:10: note: Revealed type is 'strawberry.dataloader.DataLoader[builtins.int*, builtins.str*]'
-    main:15: note: Revealed type is 'builtins.str*'
+    main:10: note: Revealed type is "strawberry.dataloader.DataLoader[builtins.int*, builtins.str*]"
+    main:15: note: Revealed type is "builtins.str*"

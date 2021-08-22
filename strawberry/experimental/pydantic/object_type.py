@@ -1,3 +1,4 @@
+import builtins
 import dataclasses
 from functools import partial
 from typing import Any, Dict, List, Optional, Type
@@ -11,15 +12,30 @@ from strawberry.experimental.pydantic.conversion import (
 )
 from strawberry.experimental.pydantic.fields import get_basic_type
 from strawberry.field import StrawberryField
-from strawberry.type import _process_type
-from strawberry.types.types import FederationTypeParams
+from strawberry.object_type import _process_type, _wrap_dataclass
+from strawberry.types.type_resolver import _get_fields
+from strawberry.types.types import FederationTypeParams, TypeDefinition
 
 from .exceptions import MissingFieldsListError, UnregisteredTypeException
 
 
 def replace_pydantic_types(type_: Any):
     if hasattr(type_, "__args__"):
-        return type_.copy_with(tuple(replace_pydantic_types(t) for t in type_.__args__))
+        new_type = type_.copy_with(
+            tuple(replace_pydantic_types(t) for t in type_.__args__)
+        )
+
+        if isinstance(new_type, TypeDefinition):
+            # TODO: Not sure if this is necessary. No coverage in tests
+            # TODO: Unnecessary with StrawberryObject
+
+            new_type = builtins.type(
+                new_type.name,
+                (),
+                {"_type_definition": new_type},
+            )
+
+        return new_type
 
     if issubclass(type_, BaseModel):
         if hasattr(type_, "_strawberry_type"):
@@ -69,41 +85,43 @@ def type(
                     default_factory=(
                         field.default_factory if field.default_factory else UNSET
                     ),
-                    type_=get_type_for_field(field),
+                    type_annotation=get_type_for_field(field),
                 ),
             )
             for name, field in model_fields.items()
             if name in fields_set
         ]
 
-        cls_annotations = getattr(cls, "__annotations__", {})
+        wrapped = _wrap_dataclass(cls)
+        extra_fields = _get_fields(wrapped)
+
         all_fields.extend(
             (
                 (
-                    name,
-                    type_,
-                    StrawberryField(
-                        python_name=name,
-                        graphql_name=None,
-                        type_=type_,
-                        # we need a default value when adding additional fields
-                        # on top of a type generated from Pydantic, this is because
-                        # Pydantic Optional fields always have None as default value
-                        # which breaks dataclasses generation; as we can't define
-                        # a field without a default value after one with a default value
-                        # adding fields at the beginning won't work as we will also
-                        # support default values on them (so the problem will be just
-                        # shifted around)
-                        default=None,
-                    ),
+                    field.name,
+                    field.type,
+                    field,
                 )
-                for name, type_ in cls_annotations.items()
+                for field in extra_fields
             )
         )
 
+        # Sort fields so that fields with missing defaults go first
+        # because dataclasses require that fields with no defaults are defined
+        # first
+        missing_default = []
+        has_default = []
+        for field in all_fields:
+            if field[2].default is dataclasses.MISSING:
+                missing_default.append(field)
+            else:
+                has_default.append(field)
+
+        sorted_fields = missing_default + has_default
+
         cls = dataclasses.make_dataclass(
             cls.__name__,
-            all_fields,
+            sorted_fields,
         )
 
         _process_type(

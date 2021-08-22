@@ -1,9 +1,13 @@
 import textwrap
+from textwrap import dedent
 from typing import Optional
 
 import pytest
 
+from graphql import GraphQLError, ValidationRule
+
 import strawberry
+from strawberry.schema import default_validation_rules
 
 
 @pytest.mark.parametrize("validate_queries", (True, False))
@@ -171,11 +175,13 @@ async def test_logging_exceptions(caplog):
 
     schema = strawberry.Schema(query=Query)
 
-    query = """
+    query = dedent(
+        """
         query {
             example
         }
     """
+    ).strip()
 
     result = await schema.execute(
         query,
@@ -189,7 +195,20 @@ async def test_logging_exceptions(caplog):
     record = caplog.records[0]
 
     assert record.levelname == "ERROR"
-    assert record.message == "test"
+    assert (
+        record.message
+        == dedent(
+            """
+        test
+
+        GraphQL request:2:5
+        1 | query {
+        2 |     example
+          |     ^
+        3 | }
+    """
+        ).strip()
+    )
     assert record.name == "strawberry.execution"
     assert record.exc_info[0] is ValueError
 
@@ -259,3 +278,32 @@ def test_overriding_process_errors(caplog):
 
     # Exception wasn't logged
     assert len(caplog.records) == 0
+
+
+def test_adding_custom_validation_rules():
+    @strawberry.type
+    class Query:
+        example: Optional[str] = None
+        another_example: Optional[str] = None
+
+    schema = strawberry.Schema(query=Query)
+
+    class CustomRule(ValidationRule):
+        def enter_field(self, node, *args) -> None:
+            if node.name.value == "example":
+                self.report_error(GraphQLError("Can't query field 'example'"))
+
+    result = schema.execute_sync(
+        "{ example }",
+        validation_rules=(default_validation_rules + [CustomRule]),
+        root_value=Query(),
+    )
+
+    assert str(result.errors[0]) == "Can't query field 'example'"
+
+    result = schema.execute_sync(
+        "{ anotherExample }",
+        validation_rules=(default_validation_rules + [CustomRule]),
+        root_value=Query(),
+    )
+    assert not result.errors

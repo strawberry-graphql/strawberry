@@ -57,6 +57,46 @@ async def test_simple_subscription(aiohttp_client):
         assert ws.closed
 
 
+async def test_operation_selection(aiohttp_client):
+    app = create_app(keep_alive=False)
+    aiohttp_app_client = await aiohttp_client(app)
+
+    async with aiohttp_app_client.ws_connect("/graphql", protocols=[GRAPHQL_WS]) as ws:
+        await ws.send_json({"type": GQL_CONNECTION_INIT})
+        await ws.send_json(
+            {
+                "type": GQL_START,
+                "id": "demo",
+                "payload": {
+                    "query": """
+                        subscription Subscription1 { echo(message: "Hi1") }
+                        subscription Subscription2 { echo(message: "Hi2") }
+                    """,
+                    "operationName": "Subscription2",
+                },
+            }
+        )
+
+        response = await ws.receive_json()
+        assert response["type"] == GQL_CONNECTION_ACK
+
+        response = await ws.receive_json()
+        assert response["type"] == GQL_DATA
+        assert response["id"] == "demo"
+        assert response["payload"]["data"] == {"echo": "Hi2"}
+
+        await ws.send_json({"type": GQL_STOP, "id": "demo"})
+        response = await ws.receive_json()
+        assert response["type"] == GQL_COMPLETE
+        assert response["id"] == "demo"
+
+        await ws.send_json({"type": GQL_CONNECTION_TERMINATE})
+
+        # make sure the WebSocket is disconnected now
+        await ws.receive(timeout=2)  # receive close
+        assert ws.closed
+
+
 async def test_sends_keep_alive(aiohttp_client):
     asyncio.set_event_loop_policy(TickEventLoopPolicy())
 
@@ -70,7 +110,7 @@ async def test_sends_keep_alive(aiohttp_client):
                 "type": GQL_START,
                 "id": "demo",
                 "payload": {
-                    "query": 'subscription { echo(message: "Hi", delay: 0.25) }',
+                    "query": 'subscription { echo(message: "Hi", delay: 0.15) }',
                 },
             }
         )
@@ -102,49 +142,67 @@ async def test_subscription_cancellation(aiohttp_client):
     app.router.add_route("*", "/graphql", view)
     aiohttp_app_client = await aiohttp_client(app)
 
-    # Note Python 3.7 does not support Task.get_name/get_coro so we have to use
-    # repr(Task) to check whether expected tasks are running.
-    def get_result_handler_tasks():
-        return [
-            task
-            for task in asyncio.all_tasks()
-            if "WebSocketHandler.handle_async_results" in repr(task)
-        ]
-
     async with aiohttp_app_client.ws_connect("/graphql", protocols=[GRAPHQL_WS]) as ws:
         await ws.send_json({"type": GQL_CONNECTION_INIT})
+        response = await ws.receive_json()
+        assert response["type"] == GQL_CONNECTION_ACK
+
         await ws.send_json(
             {
                 "type": GQL_START,
                 "id": "demo",
-                "payload": {"query": 'subscription { infinity(message: "Hi") }'},
+                "payload": {"query": 'subscription { echo(message: "Hi", delay: 99) }'},
+            }
+        )
+
+        await ws.send_json(
+            {
+                "type": GQL_START,
+                "id": "debug1",
+                "payload": {
+                    "query": "subscription { debug { numActiveResultHandlers } }",
+                },
             }
         )
 
         response = await ws.receive_json()
-        assert response["type"] == GQL_CONNECTION_ACK
+        assert response["type"] == GQL_DATA
+        assert response["id"] == "debug1"
+        assert response["payload"]["data"] == {"debug": {"numActiveResultHandlers": 2}}
 
         response = await ws.receive_json()
-        assert response["type"] == GQL_DATA
-        assert response["id"] == "demo"
-        assert response["payload"]["data"] == {"infinity": "Hi"}
-
-        # Assert that a handle_async_results task is running
-        assert len(get_result_handler_tasks()) == 1
+        assert response["type"] == GQL_COMPLETE
+        assert response["id"] == "debug1"
 
         await ws.send_json({"type": GQL_STOP, "id": "demo"})
         response = await ws.receive_json()
         assert response["type"] == GQL_COMPLETE
         assert response["id"] == "demo"
 
+        await ws.send_json(
+            {
+                "type": GQL_START,
+                "id": "debug2",
+                "payload": {
+                    "query": "subscription { debug { numActiveResultHandlers} }",
+                },
+            }
+        )
+
+        response = await ws.receive_json()
+        assert response["type"] == GQL_DATA
+        assert response["id"] == "debug2"
+        assert response["payload"]["data"] == {"debug": {"numActiveResultHandlers": 1}}
+
+        response = await ws.receive_json()
+        assert response["type"] == GQL_COMPLETE
+        assert response["id"] == "debug2"
+
         await ws.send_json({"type": GQL_CONNECTION_TERMINATE})
 
         # make sure the WebSocket is disconnected now
         await ws.receive(timeout=2)  # receive close
         assert ws.closed
-
-        # Assert that the handle_async_results task is not running anymore
-        assert len(get_result_handler_tasks()) == 0
 
 
 async def test_subscription_errors(aiohttp_client):

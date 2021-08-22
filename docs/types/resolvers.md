@@ -192,14 +192,15 @@ Info objects contain information for the current execution context:
 
 `class Info(Generic[ContextType, RootValueType])`
 
-| Parameter name  | Type                      | Description                                                           |
-| --------------- | ------------------------- | --------------------------------------------------------------------- |
-| field_name      | `str`                     | The name of the current field                                         |
-| context         | `ContextType`             | The value of the context                                              |
-| root_value      | `RootValueType`           | The value for the root type                                           |
-| variable_values | `Dict[str, Any]`          | The variables for this operation                                      |
-| operation       | `OperationDefinitionNode` | The ast for the current operation (public API might change in future) |
-| path            | `Path`                    | The path for the current field                                        |
+| Parameter name  | Type                      | Description                                                                             |
+| --------------- | ------------------------- | --------------------------------------------------------------------------------------- |
+| field_name      | `str`                     | The name of the current field                                                           |
+| context         | `ContextType`             | The value of the context                                                                |
+| root_value      | `RootValueType`           | The value for the root type                                                             |
+| variable_values | `Dict[str, Any]`          | The variables for this operation                                                        |
+| operation       | `OperationDefinitionNode` | The ast for the current operation (public API might change in future)                   |
+| path            | `Path`                    | The path for the current field                                                          |
+| selected_fields | `List[SelectedField]`     | Additional information related to the current field (public API might change in future) |
 
 [^1]:
     see
