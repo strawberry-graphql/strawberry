@@ -1,6 +1,29 @@
 CHANGELOG
 =========
 
+0.73.0 - 2021-08-22
+-------------------
+
+This release adds support for asynchronous hooks to the Strawberry extension-system.
+All available hooks can now be implemented either synchronously or asynchronously.
+
+It's also possible to mix both synchronous and asynchronous hooks within one extension.
+
+
+```python
+from strawberry.extensions import Extension
+
+class MyExtension(Extension):
+    async def on_request_start(self):
+        print("GraphQL request start")
+
+    def on_request_end(self):
+        print("GraphQL request end")
+```
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) [PR #1142](https://github.com/strawberry-graphql/strawberry/pull/1142/)
+
+
 0.72.3 - 2021-08-22
 -------------------
 
