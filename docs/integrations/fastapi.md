@@ -5,8 +5,12 @@ title: FastAPI
 # FastAPI
 
 Strawberry comes with a [FastAPI](https://fastapi.tiangolo.com/) integration.
-It provides a router that you can use to serve your GraphQL schema:
+Install it using:
+```console
+pip install strawberry-graphql[fastapi]
+```
 
+It integrates with your FastAPI application using an APIRouter:
 ```python
 from fastapi import FastAPI
 from strawberry.fastapi import GraphQLRouter
@@ -20,6 +24,7 @@ app.include_router(
     tags=["GraphQL"],
 )
 ```
+After which your GraphQL schema is exposed on the given `prefix`.
 
 The integration is built as a shell around the Strawberry ASGI integration.
 For more information about Strawberry ASGI refer to [asgi.md](./asgi.md)
