@@ -3,6 +3,9 @@ import os
 from pathlib import Path
 from string import Template
 
+import markdown
+from bs4 import BeautifulSoup
+
 
 changelog = os.environ["INPUT_CHANGELOG"]
 version = os.environ.get("INPUT_VERSION", "(next)")
@@ -38,6 +41,18 @@ tweet = tweet_template.substitute(
     version=version,
     release_url=release_url,
 )
+
+
+def convert_markdown_to_text(md: str) -> str:
+    """Converts a markdown string to text to handle new lines in a nice way."""
+    html = markdown.markdown(md)
+
+    soup = BeautifulSoup(html, features="html.parser")
+
+    for tag in soup.find_all():
+        tag.replace_with(tag.text.replace("\n", " "))
+
+    return soup.get_text(separator="\n\n", strip=True)
 
 
 tweet = base64.b64encode(tweet.encode("utf-8")).decode("ascii")
