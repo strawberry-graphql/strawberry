@@ -1,7 +1,7 @@
-from strawberry.utils.await_maybe import AwaitableOrValue
 from typing import Any, Dict
 
 from strawberry.types import ExecutionContext, Info
+from strawberry.utils.await_maybe import AwaitableOrValue
 
 
 class Extension:
