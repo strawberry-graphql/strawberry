@@ -1,12 +1,5 @@
-FROM python:3.10-rc-buster
+ARG VARIANT=3.8
+FROM mcr.microsoft.com/vscode/devcontainers/python:${VARIANT}
 
-RUN useradd -ms /bin/bash vscode
-USER vscode
-
-ENV PATH="/home/vscode/.local/bin:/home/vscode/.poetry/bin:$PATH"
-
-RUN pip install --upgrade pip
-RUN pip install pre-commit
-
-RUN pip install poetry
+RUN pip3 install poetry pre-commit
 RUN poetry config virtualenvs.in-project true
