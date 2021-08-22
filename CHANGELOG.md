@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.72.2 - 2021-08-22
+-------------------
+
+This releases pins graphql-core to only accept patch versions in order to prevent breaking changes since graphql-core doesn't properly follow semantic versioning.
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) [PR #1162](https://github.com/strawberry-graphql/strawberry/pull/1162/)
+
+
 0.72.1 - 2021-08-18
 -------------------
 
