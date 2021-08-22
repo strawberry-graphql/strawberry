@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import List
 
+import pytest
+
 import strawberry
 
 
@@ -115,6 +117,39 @@ def test_interface_duck_typing():
         @strawberry.field
         def anime(self) -> Anime:
             return AnimeORM(id=1, name="One Piece")  # type: ignore
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        anime { name }
+    }"""
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data == {"anime": {"name": "One Piece"}}
+
+
+@pytest.mark.xfail(reason="We don't support returning dictionaries yet")
+def test_interface_duck_typing_returning_dict():
+    @strawberry.interface
+    class Entity:
+        id: int
+
+    @strawberry.type
+    class Anime(Entity):
+        name: str
+
+    @dataclass
+    class AnimeORM:
+        id: int
+        name: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def anime(self) -> Anime:
+            return dict(id=1, name="One Piece")  # type: ignore
 
     schema = strawberry.Schema(query=Query)
 
