@@ -23,7 +23,7 @@ jobs:
           python-version: ${{ matrix.python-version }}
           architecture: x64
 
-      - run: pip install poetry==1.2.0a1
+      - run: pip install poetry
       - name: Install dependencies
         run: poetry install
       - name: Install dependencies
@@ -44,7 +44,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - run: pip install poetry==1.2.0a1
+      - run: pip install poetry
       - name: Install dependencies
         run: poetry install
       - run: poetry run mypy --ignore-missing-imports --config-file mypy.ini --install-types --non-interactive .
