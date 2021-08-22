@@ -49,7 +49,7 @@ async def execute(
             return ExecutionResult(
                 data=None,
                 errors=[error],
-                extensions=await extensions_runner.get_extensions_results_async(),
+                extensions=await extensions_runner.get_extensions_results(),
             )
 
         except Exception as error:  # pragma: no cover
@@ -59,7 +59,7 @@ async def execute(
             return ExecutionResult(
                 data=None,
                 errors=[error],
-                extensions=await extensions_runner.get_extensions_results_async(),
+                extensions=await extensions_runner.get_extensions_results(),
             )
 
         if validate_queries:
@@ -91,7 +91,7 @@ async def execute(
     return ExecutionResult(
         data=result.data,
         errors=result.errors,
-        extensions=await extensions_runner.get_extensions_results_async(),
+        extensions=await extensions_runner.get_extensions_results(),
     )
 
 
@@ -127,7 +127,7 @@ def execute_sync(
             return ExecutionResult(
                 data=None,
                 errors=[error],
-                extensions=extensions_runner.get_extensions_results(),
+                extensions=extensions_runner.get_extensions_results_sync(),
             )
 
         except Exception as error:  # pragma: no cover
@@ -137,7 +137,7 @@ def execute_sync(
             return ExecutionResult(
                 data=None,
                 errors=[error],
-                extensions=extensions_runner.get_extensions_results(),
+                extensions=extensions_runner.get_extensions_results_sync(),
             )
 
         if validate_queries:
@@ -171,5 +171,5 @@ def execute_sync(
     return ExecutionResult(
         data=result.data,
         errors=result.errors,
-        extensions=extensions_runner.get_extensions_results(),
+        extensions=extensions_runner.get_extensions_results_sync(),
     )

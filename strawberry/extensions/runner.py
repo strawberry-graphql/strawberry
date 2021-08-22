@@ -34,7 +34,7 @@ class ExtensionsRunner:
     def parsing(self) -> ParsingContextManager:
         return ParsingContextManager(self.extensions)
 
-    def get_extensions_results(self) -> Dict[str, Any]:
+    def get_extensions_results_sync(self) -> Dict[str, Any]:
         data: Dict[str, Any] = {}
 
         for extension in self.extensions:
@@ -46,7 +46,7 @@ class ExtensionsRunner:
 
         return data
 
-    async def get_extensions_results_async(self) -> Dict[str, Any]:
+    async def get_extensions_results(self) -> Dict[str, Any]:
         data: Dict[str, Any] = {}
 
         for extension in self.extensions:
