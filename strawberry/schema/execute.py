@@ -36,12 +36,12 @@ async def execute(
 
     additional_middlewares = additional_middlewares or []
 
-    with extensions_runner.request():
+    async with extensions_runner.request():
         # Note: In graphql-core the schema would be validated here but in
         # Strawberry we are validating it at initialisation time instead
 
         try:
-            with extensions_runner.parsing():
+            async with extensions_runner.parsing():
                 document = parse(query)
                 execution_context.graphql_document = document
         except GraphQLError as error:
@@ -49,7 +49,7 @@ async def execute(
             return ExecutionResult(
                 data=None,
                 errors=[error],
-                extensions=extensions_runner.get_extensions_results(),
+                extensions=await extensions_runner.get_extensions_results(),
             )
 
         except Exception as error:  # pragma: no cover
@@ -59,11 +59,11 @@ async def execute(
             return ExecutionResult(
                 data=None,
                 errors=[error],
-                extensions=extensions_runner.get_extensions_results(),
+                extensions=await extensions_runner.get_extensions_results(),
             )
 
         if validate_queries:
-            with extensions_runner.validation():
+            async with extensions_runner.validation():
                 validation_errors = validate(schema, document, rules=validation_rules)
 
             if validation_errors:
@@ -91,7 +91,7 @@ async def execute(
     return ExecutionResult(
         data=result.data,
         errors=result.errors,
-        extensions=extensions_runner.get_extensions_results(),
+        extensions=await extensions_runner.get_extensions_results(),
     )
 
 
@@ -127,7 +127,7 @@ def execute_sync(
             return ExecutionResult(
                 data=None,
                 errors=[error],
-                extensions=extensions_runner.get_extensions_results(),
+                extensions=extensions_runner.get_extensions_results_sync(),
             )
 
         except Exception as error:  # pragma: no cover
@@ -137,7 +137,7 @@ def execute_sync(
             return ExecutionResult(
                 data=None,
                 errors=[error],
-                extensions=extensions_runner.get_extensions_results(),
+                extensions=extensions_runner.get_extensions_results_sync(),
             )
 
         if validate_queries:
@@ -171,5 +171,5 @@ def execute_sync(
     return ExecutionResult(
         data=result.data,
         errors=result.errors,
-        extensions=extensions_runner.get_extensions_results(),
+        extensions=extensions_runner.get_extensions_results_sync(),
     )

@@ -12,7 +12,10 @@ To enable extensions you can pass them when creating a schema, here's an example
 that enables the Apollo tracing extension:
 
 ```python
+import strawberry
 from strawberry.extensions.tracing import ApolloTracingExtension
+
+# Your Query definition goes here
 
 schema = strawberry.Schema(query=Query, extensions=[ApolloTracingExtension])
 ```
@@ -23,6 +26,7 @@ To create a custom extensions you can use extend from our `Extension` base
 class:
 
 ```python
+import strawberry
 from strawberry.extensions import Extension
 
 class MyExtension(Extension):
@@ -38,8 +42,8 @@ schema = strawberry.Schema(query=Query, extensions=[MyExtension])
 
 ### Request
 
-`on_request_start` and `on_request_end` can be used to run code when a GraphQL
-request starts and end, it also allows you to get the execution context
+`on_request_start` and `on_request_end` can be used to run code when a GraphQL request
+starts and ends. Both methods can alternatively be implemented asynchronously.
 
 ```python
 from strawberry.extensions import Extension
@@ -54,9 +58,11 @@ class MyExtension(Extension):
 
 ### Resolve
 
-`resolve` can be used to run code before or after the execution of resolvers,
-this method _must_ call `_next` with all the arguments, as they will be needed
-by the resolvers:
+`resolve` can be used to run code before or after the execution of resolvers, this
+method _must_ call `_next` with all the arguments, as they will be needed by the
+resolvers.
+
+Note that `resolve` can also be implemented asynchronously.
 
 ```python
 from strawberry.types import Info
@@ -69,10 +75,11 @@ class MyExtension(Extension):
 
 ### Get results
 
-`get_results` allows to return a dictionary of data that will be included in the
-GraphQL response.
+`get_results` allows to return a dictionary of data or alternatively an awaitable
+resolving to a dictionary of data that will be included in the GraphQL response.
 
 ```python
+from typing import Any, Dict
 from strawberry.extensions import Extension
 
 class MyExtension(Extension):
@@ -82,8 +89,8 @@ class MyExtension(Extension):
 
 ### Validation
 
-`on_validation_start` and `on_validation_end` can be used to run code on the
-validation step of the GraphQL execution.
+`on_validation_start` and `on_validation_end` can be used to run code on the validation
+step of the GraphQL execution. Both methods can be implemented asynchronously.
 
 ```python
 from strawberry.extensions import Extension
@@ -98,8 +105,8 @@ class MyExtension(Extension):
 
 ### Parsing
 
-`on_parsing_start` and `on_parsing_end` can be used to run code on the
-parsing step of the GraphQL execution.
+`on_parsing_start` and `on_parsing_end` can be used to run code on the parsing step of
+the GraphQL execution. Both methods can be implemented asynchronously.
 
 ```python
 from strawberry.extensions import Extension
@@ -114,7 +121,12 @@ class MyExtension(Extension):
 
 ### Execution Context
 
-The `Extension` object has a `execution_context` property on `self` of type `ExecutionContext`. This object can be used to gain access to additional graphql context, or request context. See the [`ExecutionContext` type](https://github.com/strawberry-graphql/strawberry/blob/main/strawberry/types/execution.py) for available data.
+The `Extension` object has an `execution_context` property on `self` of type
+`ExecutionContext`.
+
+This object can be used to gain access to additional GraphQL context, or the request
+context. Take a look at the [`ExecutionContext` type](https://github.com/strawberry-graphql/strawberry/blob/main/strawberry/types/execution.py)
+for available data.
 
 ```python
 from strawberry.extensions import Extension
