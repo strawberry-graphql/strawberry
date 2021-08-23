@@ -147,15 +147,13 @@ def execute_sync(
 
         if validate_queries:
             with extensions_runner.validation():
-                if not execution_context.is_validated:
+                # If errors is None (instead of an empty list) then we haven't
+                # run validation yet
+                if execution_context.errors is not None:
                     validation_errors = validate(
                         schema, document, rules=validation_rules
                     )
-
-                    if validation_errors:
-                        execution_context.errors = validation_errors
-
-                    execution_context.is_validated = True
+                    execution_context.errors = validation_errors
 
                 if execution_context.errors:
                     return ExecutionResult(data=None, errors=execution_context.errors)

@@ -15,8 +15,6 @@ class ExecutionContext:
     root_value: Optional[Any] = None
     graphql_schema: Optional[GraphQLSchema] = None
 
-    is_validated: bool = False
-
     # Values that get populated during the GraphQL execution so that they can be
     # accessed by extensions
     graphql_document: Optional[DocumentNode] = None

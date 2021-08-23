@@ -5,6 +5,8 @@ from strawberry.utils.await_maybe import AwaitableOrValue
 
 
 class Extension:
+    execution_context: ExecutionContext
+
     def __init__(self, *, execution_context: ExecutionContext):
         self.execution_context = execution_context
 
