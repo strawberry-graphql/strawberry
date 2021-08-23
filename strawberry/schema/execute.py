@@ -43,8 +43,9 @@ async def execute(
 
         try:
             async with extensions_runner.parsing():
-                document = parse(query)
-                execution_context.graphql_document = document
+                if not execution_context.graphql_document:
+                    document = parse(query)
+                    execution_context.graphql_document = document
         except GraphQLError as error:
             execution_context.errors = [error]
             return ExecutionResult(
@@ -121,8 +122,11 @@ def execute_sync(
 
         try:
             with extensions_runner.parsing():
-                document = parse(query)
-                execution_context.graphql_document = document
+                if not execution_context.graphql_document:
+                    document = parse(query)
+                    execution_context.graphql_document = document
+                else:
+                    document = execution_context.graphql_document
         except GraphQLError as error:
             execution_context.errors = [error]
             return ExecutionResult(
@@ -143,11 +147,18 @@ def execute_sync(
 
         if validate_queries:
             with extensions_runner.validation():
-                validation_errors = validate(schema, document, rules=validation_rules)
+                if not execution_context.is_validated:
+                    validation_errors = validate(
+                        schema, document, rules=validation_rules
+                    )
 
-            if validation_errors:
-                execution_context.errors = validation_errors
-                return ExecutionResult(data=None, errors=validation_errors)
+                    if validation_errors:
+                        execution_context.errors = validation_errors
+
+                    execution_context.is_validated = True
+
+                if execution_context.errors:
+                    return ExecutionResult(data=None, errors=execution_context.errors)
 
         result = original_execute(
             schema,

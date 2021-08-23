@@ -1,7 +1,7 @@
 import dataclasses
 from typing import Any, Dict, List, Optional
 
-from graphql import ExecutionResult as GraphQLExecutionResult
+from graphql import ExecutionResult as GraphQLExecutionResult, GraphQLSchema
 from graphql.error.graphql_error import GraphQLError
 from graphql.language import DocumentNode
 
@@ -13,6 +13,9 @@ class ExecutionContext:
     variables: Optional[Dict[str, Any]] = None
     operation_name: Optional[str] = None
     root_value: Optional[Any] = None
+    graphql_schema: Optional[GraphQLSchema] = None
+
+    is_validated: bool = False
 
     # Values that get populated during the GraphQL execution so that they can be
     # accessed by extensions

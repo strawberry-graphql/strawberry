@@ -142,6 +142,7 @@ class Schema:
             root_value=root_value,
             variables=variable_values,
             operation_name=operation_name,
+            graphql_schema=self._schema,
         )
 
         result = await execute(
@@ -176,6 +177,7 @@ class Schema:
             root_value=root_value,
             variables=variable_values,
             operation_name=operation_name,
+            graphql_schema=self._schema,
         )
 
         result = execute_sync(
