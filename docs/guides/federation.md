@@ -2,21 +2,24 @@
 title: Federation
 ---
 
-# Federation
+# Apollo Federation Guide
 
 Strawberry supports [Apollo Federation][1] out of the box, that means that you
 can create services using Strawberry and federate them via Apollo Gateway.
 
-> _NOTE_: we don’t have a gateway server, you’d need to always use Apollo
-> Federation for this.
+> _NOTE_: we don’t have a gateway server, you’d need to always use the Apollo
+> Gateway for this.
+
+Apollo Federation allows to combine multiple GraphQL APIs into one. This can be
+extremely useful when working with micro-services.
 
 ## Federated schema example
 
-Let’s look at an example. We’ll define define a books application with two
-federated services.
+Let’s look at an example on how to implement Apollo Federation using Strawberry,
+We’ll have an application with two federated services.
 
-- book: a service with all the books we have
-- reviews: a service with book reviews.
+1. book: a service with all the books we have
+2. reviews: a service with book reviews.
 
 ### Books service
 
@@ -26,6 +29,8 @@ class Book:
     id: strawberry.ID
     title: str
 
+def get_all_books() -> List[Book]:
+    return [Book(id=1, title="The Dark Tower")]
 
 @strawberry.type
 class Query:
@@ -54,6 +59,8 @@ review but also extend the book to have a list of review.
 class Review:
     body: str
 
+def get_reviews() -> List[Review]:
+    return [Review(body="This is a review")]
 
 @strawberry.federation.type(extend=True, keys=["id"])
 class Book:
@@ -65,20 +72,67 @@ class Book:
         return Book(id)
 ```
 
-Now things are looking more interesting, the `Review` type is a normal type that
-holds the content of the review.
+Now things are looking more interesting, the `Review` type is a GraphQL type
+that holds the content of the review.
 
 Meanwhile we are able to extend the `Book` type by using
 `strawberry.federation.type` again and passing `extend=True` as a parameter.
 This tells federation that we are extending an already existing type.
 
-In addition to that we are also declaring two fields on `Book`, one is the `id`
-which is marked as external with `strawberry.federation.field(external=True)`,
-this tells federation that this field is not available in this service, but
+We are also declaring two fields on `Book`, one is the `id` which is marked as
+external with `strawberry.federation.field(external=True)`, this tells
+federation that this field is not available in this service, and **that** it
 comes from another service.
 
 The other field is `reviews` which results in a list of `Reviews` for this book.
 
-> TODO: explain resolver reference
+Finally we also have a class method called `resolve_reference` that allows us to
+resolve references to types. The `resolve_reference` method is called when a
+GraphQL operation references an entities across multiple services. For example
+when doing this query:
 
-[1]: https://www.apollographql.com/docs/apollo-server/federation/introduction/ "Apollo Federation Introduction"
+```graphql
+{
+  # query defined in the books service
+  books {
+    title
+    # field defined in the reviews service
+    reviews {
+      body
+    }
+  }
+}
+```
+
+The `resolve_reference` method is called with the `id` of the book for each book
+returned by the books service. This allows to our review service to fetch data
+for the book. In our case we only need the book id so we instantiate a `Book`
+object with the id and return it.
+
+## The gateway
+
+Now we have our services up and running, we need to configure a gateway to
+consume our services. Apollo Gateway is the official gateway server for Apollo
+Federation. Here's an example on how to configure the gateway:
+
+```js
+const { ApolloServer } = require("apollo-server");
+const { ApolloGateway } = require("@apollo/gateway");
+
+const gateway = new ApolloGateway({
+  serviceList: [
+    { name: "books", url: "http://localhost:6000" },
+    { name: "reviews", url: "http://localhost:7000" },
+  ],
+});
+
+const server = new ApolloServer({ gateway });
+
+server.listen().then(({ url }) => {
+  console.log(`🚀 Server ready at ${url}`);
+});
+```
+
+[1]:
+  https://www.apollographql.com/docs/apollo-server/federation/introduction/
+  "Apollo Federation Introduction"
