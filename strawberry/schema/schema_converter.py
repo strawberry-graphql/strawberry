@@ -229,7 +229,9 @@ class GraphQLCoreConverter:
         ) -> GraphQLObjectType:
             # TODO: this will probably break when passing dicts
             # or even non strawberry types
-            resolved_type = self.type_map[obj.__class__._type_definition.name].implementation
+            resolved_type = self.type_map[
+                obj.__class__._type_definition.name
+            ].implementation
 
             assert isinstance(resolved_type, GraphQLObjectType)
 
