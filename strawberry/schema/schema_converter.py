@@ -222,10 +222,18 @@ class GraphQLCoreConverter:
 
             return graphql_fields
 
-        def resolve_type(obj, info, type_):
+        def resolve_type(
+            obj: Any,
+            info: GraphQLResolveInfo,
+            type_: Union[GraphQLInterfaceType, GraphQLUnionType],
+        ) -> GraphQLObjectType:
             # TODO: this will probably break when passing dicts
             # or even non strawberry types
-            return self.type_map[obj.__class__._type_definition.name].implementation
+            resolved_type = self.type_map[obj.__class__._type_definition.name].implementation
+
+            assert isinstance(resolved_type, GraphQLObjectType)
+
+            return resolved_type
 
         graphql_interface = GraphQLInterfaceType(
             name=interface.name,
