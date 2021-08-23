@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.73.1 - 2021-08-23
+-------------------
+
+This release improves execution performance significantly by lazy loading
+attributes on the `Info` type 🏎
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) [PR #1165](https://github.com/strawberry-graphql/strawberry/pull/1165/)
+
+
 0.73.0 - 2021-08-22
 -------------------
 
