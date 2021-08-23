@@ -2,6 +2,8 @@ import dataclasses
 import warnings
 from typing import TYPE_CHECKING, Any, Dict, Generic, List, Optional, TypeVar, Union
 
+from cached_property import cached_property  # type: ignore
+
 from graphql import GraphQLResolveInfo, OperationDefinitionNode
 from graphql.language import FieldNode
 from graphql.pyutils.path import Path
@@ -36,7 +38,7 @@ class Info(Generic[ContextType, RootValueType]):
         )
         return self._raw_info.field_nodes
 
-    @property
+    @cached_property
     def selected_fields(self) -> List[SelectedField]:
         info = self._raw_info
         return list(map(SelectedField, info.field_nodes))
