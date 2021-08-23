@@ -179,9 +179,10 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Remove TWEET.md and commit
+      env:
+        GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
       run: |
-        git config --global user.name 'Strawberry GraphQL Bot'
-        git config --global user.email 'bot@strawberry.rocks'
+        git remote set-url origin https://${{ secrets.BOT_TOKEN }}@github.com/${{ github.repository }}
         git pull
         git rm TWEET.md
         git commit -m "Remove TWEET.md"
