@@ -16,3 +16,9 @@ class StrawberryDjangoContext:
     def get(self, key):
         """Enable .get notation for accessing the request"""
         return super().__getattribute__(key)
+
+    def __repr__(self):
+        # Calling the built-in dataclass __repr__ will throw an
+        # exception if we don't have a response instantiated,
+        # so just return the __class__ property.
+        return f"{self.__class__}"

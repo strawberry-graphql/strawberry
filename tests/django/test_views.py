@@ -8,6 +8,7 @@ from django.http import Http404
 from django.test.client import RequestFactory
 
 import strawberry
+from strawberry.django.context import StrawberryDjangoContext
 from strawberry.django.views import GraphQLView as BaseGraphQLView
 from strawberry.permission import BasePermission
 from strawberry.types import ExecutionResult, Info
@@ -328,4 +329,33 @@ def test_can_change_status_code():
     data = json.loads(response.content.decode())
 
     assert response.status_code == 418
+    assert data == {"data": {"abc": "ABC"}}
+
+
+def test_print_context(mocker):
+    mock = mocker.patch("builtins.print")
+    factory = RequestFactory()
+    test_context = StrawberryDjangoContext(request=None, response=None)
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def abc(self, info) -> str:
+            info.context = test_context
+            print(info.context)
+            return "ABC"
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ abc }"
+    request = factory.post(
+        "/graphql/", {"query": query}, content_type="application/json"
+    )
+
+    response = GraphQLView.as_view(schema=schema)(request)
+    data = json.loads(response.content.decode())
+
+    mock.assert_called_once_with(test_context)
+    assert response.status_code == 200
+    assert not data.get("errors")
     assert data == {"data": {"abc": "ABC"}}
