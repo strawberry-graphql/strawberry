@@ -1,6 +1,18 @@
 CHANGELOG
 =========
 
+0.73.2 - 2021-08-23
+-------------------
+
+This releases fixes an issue where you were not allowed
+to use duck typing and return a different type that the
+type declared on the field when the type was implementing
+an interface. Now this works as long as you return a type
+that has the same shape as the field type.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1150](https://github.com/strawberry-graphql/strawberry/pull/1150/)
+
+
 0.73.1 - 2021-08-23
 -------------------
 
