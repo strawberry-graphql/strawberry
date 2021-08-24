@@ -2,7 +2,7 @@ import dataclasses
 import warnings
 from typing import TYPE_CHECKING, Any, Dict, Generic, List, Optional, TypeVar, Union
 
-from cached_property import cached_property  # type: ignore
+from cached_property import cached_property
 
 from graphql import GraphQLResolveInfo, OperationDefinitionNode
 from graphql.language import FieldNode
