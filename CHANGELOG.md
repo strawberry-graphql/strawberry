@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.73.5 - 2021-08-24
+-------------------
+
+This release adds support for the latest version of the optional opentelemetry dependency.
+
+Contributed by [Joe Freeman](https://github.com/joefreeman) [PR #1169](https://github.com/strawberry-graphql/strawberry/pull/1169/)
+
+
 0.73.4 - 2021-08-24
 -------------------
 
