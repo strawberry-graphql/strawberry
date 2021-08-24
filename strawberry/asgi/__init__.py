@@ -248,6 +248,9 @@ class HTTPHandler(BaseGraphQLApp, ABC):
 
         response.headers.raw.extend(sub_response.headers.raw)
 
+        if sub_response.background:
+            response.background = sub_response.background
+
         if sub_response.status_code:
             response.status_code = sub_response.status_code
 
