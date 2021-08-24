@@ -213,20 +213,6 @@ optional = false
 python-versions = ">=3.5"
 
 [[package]]
-name = "deprecated"
-version = "1.2.12"
-description = "Python @deprecated decorator to deprecate old python classes, functions or methods."
-category = "main"
-optional = false
-python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
-
-[package.dependencies]
-wrapt = ">=1.10,<2"
-
-[package.extras]
-dev = ["tox", "bump2version (<1)", "sphinx (<2)", "importlib-metadata (<3)", "importlib-resources (<4)", "configparser (<5)", "sphinxcontrib-websupport (<2)", "zipp (<2)", "PyTest (<5)", "PyTest-Cov (<2.6)", "pytest", "pytest-cov"]
-
-[[package]]
 name = "distlib"
 version = "0.3.2"
 description = "Distribution utilities"
@@ -595,47 +581,22 @@ python-versions = "*"
 
 [[package]]
 name = "opentelemetry-api"
-version = "1.4.1"
+version = "1.10a0"
 description = "OpenTelemetry Python API"
 category = "main"
 optional = false
 python-versions = ">=3.6"
 
-[package.dependencies]
-Deprecated = ">=1.2.6"
-
-[[package]]
-name = "opentelemetry-instrumentation"
-version = "0.23b2"
-description = "Instrumentation Tools & Auto Instrumentation for OpenTelemetry Python"
-category = "main"
-optional = false
-python-versions = ">=3.6"
-
-[package.dependencies]
-opentelemetry-api = "1.4.1"
-wrapt = ">=1.0.0,<2.0.0"
-
 [[package]]
 name = "opentelemetry-sdk"
-version = "1.4.1"
+version = "1.10a0"
 description = "OpenTelemetry Python SDK"
 category = "main"
 optional = false
 python-versions = ">=3.6"
 
 [package.dependencies]
-opentelemetry-api = "1.4.1"
-opentelemetry-instrumentation = "0.23b2"
-opentelemetry-semantic-conventions = "0.23b2"
-
-[[package]]
-name = "opentelemetry-semantic-conventions"
-version = "0.23b2"
-description = "OpenTelemetry Semantic Conventions"
-category = "main"
-optional = false
-python-versions = ">=3.6"
+opentelemetry-api = "1.10a0"
 
 [[package]]
 name = "packaging"
@@ -1274,14 +1235,6 @@ dev = ["pytest", "pytest-timeout", "coverage", "tox", "sphinx", "pallets-sphinx-
 watchdog = ["watchdog"]
 
 [[package]]
-name = "wrapt"
-version = "1.12.1"
-description = "Module for decorators, wrappers and monkey patching."
-category = "main"
-optional = false
-python-versions = "*"
-
-[[package]]
 name = "yarl"
 version = "1.6.3"
 description = "Yet another URL library"
@@ -1319,7 +1272,7 @@ sanic = ["sanic"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "4ca763a32eb744a57cbc90ea2896e3be116aa5252e33fe480f63fb243bc082c4"
+content-hash = "3cbe3b577d24aa18755574e8ec3a90ea7c41514f4a334aba314686c38ff9b651"
 
 [metadata.files]
 aiofiles = [
@@ -1482,10 +1435,6 @@ coverage = [
 decorator = [
     {file = "decorator-5.0.9-py3-none-any.whl", hash = "sha256:6e5c199c16f7a9f0e3a61a4a54b3d27e7dad0dbdde92b944426cb20914376323"},
     {file = "decorator-5.0.9.tar.gz", hash = "sha256:72ecfba4320a893c53f9706bebb2d55c270c1e51a28789361aa93e4a21319ed5"},
-]
-deprecated = [
-    {file = "Deprecated-1.2.12-py2.py3-none-any.whl", hash = "sha256:08452d69b6b5bc66e8330adde0a4f8642e969b9e1702904d137eeb29c8ffc771"},
-    {file = "Deprecated-1.2.12.tar.gz", hash = "sha256:6d2de2de7931a968874481ef30208fd4e08da39177d61d3d4ebdf4366e7dbca1"},
 ]
 distlib = [
     {file = "distlib-0.3.2-py2.py3-none-any.whl", hash = "sha256:23e223426b28491b1ced97dc3bbe183027419dfc7982b4fa2f05d5f3ff10711c"},
@@ -1741,20 +1690,12 @@ nodeenv = [
     {file = "nodeenv-1.6.0.tar.gz", hash = "sha256:3ef13ff90291ba2a4a7a4ff9a979b63ffdd00a464dbe04acf0ea6471517a4c2b"},
 ]
 opentelemetry-api = [
-    {file = "opentelemetry-api-1.4.1.tar.gz", hash = "sha256:4043fe4d2e4368e1d4bb91142fad83f6621127066e2c788a2a2e953c09d3ed09"},
-    {file = "opentelemetry_api-1.4.1-py3-none-any.whl", hash = "sha256:1da19082c05f30c362012e71d494e2a3c6be36d5a6340af12fe2273647681855"},
-]
-opentelemetry-instrumentation = [
-    {file = "opentelemetry-instrumentation-0.23b2.tar.gz", hash = "sha256:03f47469f47970e96d69ae65a231c3e3510b160ac19c90b09ab33893876e2b89"},
-    {file = "opentelemetry_instrumentation-0.23b2-py3-none-any.whl", hash = "sha256:71878bf774fb4c501d994a9389f5de75915fd2450e4cc4a9898c1b1faf3690ac"},
+    {file = "opentelemetry-api-1.10a0.tar.gz", hash = "sha256:b8c0926e4e24b50074c96aa7fa944ddb67b391414ea532f74ecf82a6a0da0243"},
+    {file = "opentelemetry_api-1.10a0-py3-none-any.whl", hash = "sha256:b5296506c0e7e172f0520dfbe887281a619c6fa30fa94ef13f95a23aed3033e4"},
 ]
 opentelemetry-sdk = [
-    {file = "opentelemetry-sdk-1.4.1.tar.gz", hash = "sha256:ef0d6fe69c0e6dffe24114af5dc87f8155347a59e8feba6da81cf96837623b6a"},
-    {file = "opentelemetry_sdk-1.4.1-py3-none-any.whl", hash = "sha256:17f3dd6b7dc9015d7ef59f00ad20d78b500d64ae047c11c33fac23359a4a9af9"},
-]
-opentelemetry-semantic-conventions = [
-    {file = "opentelemetry-semantic-conventions-0.23b2.tar.gz", hash = "sha256:f3f1a26afde671e0a80a9bb6e6f2826a034105482e8465497ab798fc72547b5c"},
-    {file = "opentelemetry_semantic_conventions-0.23b2-py3-none-any.whl", hash = "sha256:76e65b9b7ec20894fed84c49b40bf1f9a26c7d605c44481ead503dc91876ae94"},
+    {file = "opentelemetry-sdk-1.10a0.tar.gz", hash = "sha256:89e6f59c944081c28d8539b29120d7e0ee33b5214f4459c267d1a6a963c9c252"},
+    {file = "opentelemetry_sdk-1.10a0-py3-none-any.whl", hash = "sha256:261ed640fafbd0afafc0b890ea82ac6672bfabf5b2837d852d7532dfe3550060"},
 ]
 packaging = [
     {file = "packaging-21.0-py3-none-any.whl", hash = "sha256:c86254f9220d55e31cc94d69bade760f0847da8000def4dfe1c6b872fd14ff14"},
@@ -2141,9 +2082,6 @@ websockets = [
 werkzeug = [
     {file = "Werkzeug-1.0.1-py2.py3-none-any.whl", hash = "sha256:2de2a5db0baeae7b2d2664949077c2ac63fbd16d98da0ff71837f7d1dea3fd43"},
     {file = "Werkzeug-1.0.1.tar.gz", hash = "sha256:6c80b1e5ad3665290ea39320b91e1be1e0d5f60652b964a3070216de83d2e47c"},
-]
-wrapt = [
-    {file = "wrapt-1.12.1.tar.gz", hash = "sha256:b62ffa81fb85f4332a4f609cab4ac40709470da05643a082ec1eb88e6d9b97d7"},
 ]
 yarl = [
     {file = "yarl-1.6.3-cp36-cp36m-macosx_10_14_x86_64.whl", hash = "sha256:0355a701b3998dcd832d0dc47cc5dedf3874f966ac7f870e0f3a6788d802d434"},
