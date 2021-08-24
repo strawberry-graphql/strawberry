@@ -80,6 +80,24 @@ class Mutation:
         return True
 ```
 
+### Setting background tasks
+
+Similarly, [background tasks](https://www.starlette.io/background/) can be set on the response via the context:
+
+```python
+from starlette.background import BackgroundTask
+
+async def notify_new_flavour(name: str):
+    # ...
+
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    def create_flavour(self, name: str, info: Info) -> bool:
+        info.context["response"].background = BackgroundTask(notify_new_flavour, name)
+        # ...
+```
+
 ## get_root_value
 
 `get_root_value` allows to provide a custom root value for your schema, this is
