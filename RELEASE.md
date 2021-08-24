@@ -1,3 +1,3 @@
 Release type: patch
 
-This release updates the optional opentelemetry dependency from 0.17b0 to 1.4.1.
+This release adds support for the latest version of the optional opentelemetry dependency.
