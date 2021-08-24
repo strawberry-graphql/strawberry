@@ -3,7 +3,7 @@ from inspect import isawaitable
 from typing import Any, Callable, Dict, Optional
 
 from opentelemetry import trace
-from opentelemetry.trace import Span, SpanKind, Tracer
+from opentelemetry.trace import Span, SpanKind, Tracer, use_span
 
 from graphql import GraphQLResolveInfo
 
@@ -76,7 +76,7 @@ class OpenTelemetryExtension(Extension):
 
             return result
 
-        with self._tracer.use_span(self._root_span):
+        with use_span(self._root_span):
             with self._tracer.start_span(info.field_name, kind=SpanKind.SERVER) as span:
                 self.add_tags(span, info, kwargs)
                 result = _next(root, info, *args, **kwargs)
@@ -94,7 +94,7 @@ class OpenTelemetryExtensionSync(OpenTelemetryExtension):
 
             return result
 
-        with self._tracer.use_span(self._root_span):
+        with use_span(self._root_span):
             with self._tracer.start_span(info.field_name, kind=SpanKind.SERVER) as span:
                 self.add_tags(span, info, kwargs)
                 result = _next(root, info, *args, **kwargs)
