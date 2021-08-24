@@ -35,6 +35,8 @@ def get_all_books() -> List[Book]:
 @strawberry.type
 class Query:
     all_books: List[Book] = strawberry.field(resolver=get_all_books)
+
+schema = strawberry.federation.Schema(query=Query)
 ```
 
 We defined two types, `Book` and `Query`, `Query` has only one field that allows
@@ -109,6 +111,22 @@ returned by the books service. This allows to our review service to fetch data
 for the book. In our case we only need the book id so we instantiate a `Book`
 object with the id and return it.
 
+The last thing we need to do is to define a `Query` type, even if our service
+only has one type that is not used directly in any GraphQL query. This is
+because any GraphQL server requires the Query type to be defined.
+
+In addition to that we also need to let Strawberry know about our Book and
+Review types. Since they are not being used anywhere, Strawberry won't be able
+to find them by default.
+
+```python
+@strawberry.type
+class Query:
+    _service: Optional[str]
+
+schema = strawberry.federation.Schema(query=Query, types=[Book, Review])
+```
+
 ## The gateway
 
 Now we have our services up and running, we need to configure a gateway to
@@ -121,8 +139,8 @@ const { ApolloGateway } = require("@apollo/gateway");
 
 const gateway = new ApolloGateway({
   serviceList: [
-    { name: "books", url: "http://localhost:6000" },
-    { name: "reviews", url: "http://localhost:7000" },
+    { name: "books", url: "http://localhost:8000" },
+    { name: "reviews", url: "http://localhost:8080" },
   ],
 });
 
@@ -133,4 +151,6 @@ server.listen().then(({ url }) => {
 });
 ```
 
-[1]: https://www.apollographql.com/docs/apollo-server/federation/introduction/ "Apollo Federation Introduction"
+[1]:
+  https://www.apollographql.com/docs/apollo-server/federation/introduction/
+  "Apollo Federation Introduction"
