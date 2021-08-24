@@ -1,5 +1,6 @@
+from collections import Callable
 import typing
-from collections.abc import AsyncGenerator, Callable
+from collections.abc import AsyncGenerator
 from typing import Any, Tuple, Type, TypeVar, Union
 
 
@@ -102,6 +103,6 @@ def __dataclass_transform__(
     eq_default: bool = True,
     order_default: bool = False,
     kw_only_default: bool = False,
-    field_descriptors: Tuple[Union[type, typing.Callable[..., Any]], ...] = (()),
-) -> typing.Callable[[_T], _T]:
+    field_descriptors: Tuple[Union[type, Callable[..., Any]], ...] = (()),
+) -> Callable[[_T], _T]:
     return lambda a: a

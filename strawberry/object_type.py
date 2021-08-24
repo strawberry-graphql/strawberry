@@ -1,9 +1,8 @@
 import dataclasses
-from functools import partial
 from typing import List, Optional, Type, cast
 
 from .exceptions import MissingFieldAnnotationError, MissingReturnAnnotationError
-from .field import StrawberryField
+from .field import StrawberryField, field
 from .types.type_resolver import _get_fields
 from .types.types import FederationTypeParams, TypeDefinition
 from .utils.str_converters import to_camel_case
@@ -123,7 +122,7 @@ def _process_type(
     return cls
 
 
-@__dataclass_transform__(order_default=True)
+@__dataclass_transform__(order_default=True, field_descriptors=(field, StrawberryField))
 def type(
     cls: Type = None,
     *,
@@ -160,7 +159,7 @@ def type(
     return wrap(cls)
 
 
-@__dataclass_transform__(order_default=True)
+@__dataclass_transform__(order_default=True, field_descriptors=(field, StrawberryField))
 def input(
     cls: Type = None,
     *,
@@ -180,7 +179,7 @@ def input(
     )
 
 
-@__dataclass_transform__(order_default=True)
+@__dataclass_transform__(order_default=True, field_descriptors=(field, StrawberryField))
 def interface(
     cls: Type = None,
     *,

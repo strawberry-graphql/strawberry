@@ -17,4 +17,35 @@ The first thing we need to do is to install
 this is the extension that enables type checking and intellisense for Visual
 Studio Code.
 
-...
+Once the extension is installed, we need to configure it to enable type
+checking. To do so we need to change or add the following two settings:
+
+```json
+{
+  "python.languageServer": "Pylance",
+  "python.analysis.typeCheckingMode": "basic"
+}
+```
+
+The first settings tells the editor to use Pylance as the language server. The
+second setting tells the editor to enable type checking by using the basic type
+checking mode. At the moment strict mode is not supported.
+
+Once you have configured the settings, you can restart VS Code and you should be
+getting type checking errors in vscode.
+
+![Pylance showing a type error](./pylance.png)
+
+## Notes
+
+Unfortunately Pylance doesn't fully support `strawberry.field`, so for example
+using this code will result in an error from Pylance:
+
+```python
+@strawberry.type
+class User:
+    id: int
+    name: str = strawberry.field(resolver=a)
+```
+
+We will update Strawberry to support this when and if Pylance allows it.

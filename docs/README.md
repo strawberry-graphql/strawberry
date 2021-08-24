@@ -27,8 +27,6 @@
 ## Editor integration
 
 - [Visual Studio Code](./editors/vscode.md)
-- [PyCharm](./editors/vscode.md)
-- [MyPy](./editors/mypy.md)
 
 ## Guides
 
