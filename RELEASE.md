@@ -8,5 +8,4 @@ from starlette.background import BackgroundTask
 @strawberry.mutation
 def create_flavour(self, info: Info) -> str:
     info.context["response"].background = BackgroundTask(...)
-    # ...
 ```
