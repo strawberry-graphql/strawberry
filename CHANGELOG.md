@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.73.3 - 2021-08-24
+-------------------
+
+This release caches attributes on the `Info` type which aren't delegated to the core info object.
+
+Contributed by [A. Coady](https://github.com/coady) [PR #1167](https://github.com/strawberry-graphql/strawberry/pull/1167/)
+
+
 0.73.2 - 2021-08-23
 -------------------
 
