@@ -20,7 +20,7 @@ ArgFilter = Callable[[Dict[str, Any], GraphQLResolveInfo], Dict[str, Any]]
 
 if hasattr(trace, "use_span"):
 
-    def _use_span(span: Span, _tracer: Tracer):
+    def _use_span(span: Span, tracer: Tracer):
         return trace.use_span(span)
 
 
