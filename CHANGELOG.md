@@ -1,6 +1,30 @@
 CHANGELOG
 =========
 
+0.73.4 - 2021-08-24
+-------------------
+
+This release allows background tasks to be set with the ASGI integration. Tasks can be set on the response in the context, and will then get run after the query result is returned.
+
+```python
+from starlette.background import BackgroundTask
+
+@strawberry.mutation
+def create_flavour(self, info: Info) -> str:
+    info.context["response"].background = BackgroundTask(...)
+```
+
+Contributed by [Joe Freeman](https://github.com/joefreeman) [PR #1168](https://github.com/strawberry-graphql/strawberry/pull/1168/)
+
+
+0.73.3 - 2021-08-24
+-------------------
+
+This release caches attributes on the `Info` type which aren't delegated to the core info object.
+
+Contributed by [A. Coady](https://github.com/coady) [PR #1167](https://github.com/strawberry-graphql/strawberry/pull/1167/)
+
+
 0.73.2 - 2021-08-23
 -------------------
 
