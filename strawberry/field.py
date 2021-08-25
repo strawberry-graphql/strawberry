@@ -12,6 +12,7 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    overload,
 )
 
 from cached_property import cached_property  # type: ignore
@@ -267,6 +268,56 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
         return self._has_async_permission_classes or self._has_async_base_resolver
 
 
+T = TypeVar("T")
+
+
+@overload
+def field(
+    *,
+    resolver: Callable[[], T],
+    name: Optional[str] = None,
+    is_subscription: bool = False,
+    description: Optional[str] = None,
+    permission_classes: Optional[List[Type[BasePermission]]] = None,
+    federation: Optional[FederationFieldParams] = None,
+    deprecation_reason: Optional[str] = None,
+    default: Any = UNSET,
+    default_factory: Union[Callable, object] = UNSET,
+) -> T:
+    ...
+
+
+@overload
+def field(
+    *,
+    name: Optional[str] = None,
+    is_subscription: bool = False,
+    description: Optional[str] = None,
+    permission_classes: Optional[List[Type[BasePermission]]] = None,
+    federation: Optional[FederationFieldParams] = None,
+    deprecation_reason: Optional[str] = None,
+    default: Any = UNSET,
+    default_factory: Union[Callable, object] = UNSET,
+) -> Any:
+    ...
+
+
+@overload
+def field(
+    resolver: _RESOLVER_TYPE,
+    *,
+    name: Optional[str] = None,
+    is_subscription: bool = False,
+    description: Optional[str] = None,
+    permission_classes: Optional[List[Type[BasePermission]]] = None,
+    federation: Optional[FederationFieldParams] = None,
+    deprecation_reason: Optional[str] = None,
+    default: Any = UNSET,
+    default_factory: Union[Callable, object] = UNSET,
+) -> StrawberryField:
+    ...
+
+
 def field(
     resolver: Optional[_RESOLVER_TYPE] = None,
     *,
@@ -278,7 +329,7 @@ def field(
     deprecation_reason: Optional[str] = None,
     default: Any = UNSET,
     default_factory: Union[Callable, object] = UNSET,
-) -> StrawberryField:
+) -> Any:
     """Annotates a method or property as a GraphQL field.
 
     This is normally used inside a type declaration:
