@@ -6,7 +6,7 @@ import strawberry
 from strawberry.extensions import ValidationCacheExtension
 
 
-@patch("strawberry.extensions.caching.validation.validate", wraps=validate)
+@patch("strawberry.schema.execute.validate", wraps=validate)
 def test_validation_cache_extension(mock_validate):
     @strawberry.type
     class Query:
@@ -48,7 +48,7 @@ def test_validation_cache_extension(mock_validate):
     assert mock_validate.call_count == 2
 
 
-@patch("strawberry.extensions.caching.validation.validate", wraps=validate)
+@patch("strawberry.schema.execute.validate", wraps=validate)
 def test_validation_cache_extension_max_size(mock_validate):
     @strawberry.type
     class Query:
@@ -85,3 +85,45 @@ def test_validation_cache_extension_max_size(mock_validate):
 
     # validate is still only called once
     assert mock_validate.call_count == 3
+
+
+@patch("strawberry.schema.execute.validate", wraps=validate)
+async def test_validation_cache_extension_async(mock_validate):
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(self) -> str:
+            return "world"
+
+        @strawberry.field
+        def ping(self) -> str:
+            return "pong"
+
+    schema = strawberry.Schema(query=Query, extensions=[ValidationCacheExtension()])
+
+    query = "query { hello }"
+
+    result = await schema.execute(query)
+
+    assert not result.errors
+    assert result.data == {"hello": "world"}
+
+    assert mock_validate.call_count == 1
+
+    # Run query multiple times
+    for _ in range(3):
+        result = await schema.execute(query)
+        assert not result.errors
+        assert result.data == {"hello": "world"}
+
+    # validate is still only called once
+    assert mock_validate.call_count == 1
+
+    # Running a second query doesn't cache
+    query2 = "query { ping }"
+    result = await schema.execute(query2)
+
+    assert not result.errors
+    assert result.data == {"ping": "pong"}
+
+    assert mock_validate.call_count == 2

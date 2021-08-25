@@ -1,26 +1,27 @@
 from functools import lru_cache
-from typing import Collection, Type
+from typing import List, Tuple, Type
 
-from graphql import GraphQLSchema, ValidationRule, validate
+from graphql import ASTValidationRule, GraphQLError, GraphQLSchema
 from graphql.language import DocumentNode
 
 from strawberry.extensions.base_extension import Extension
+from strawberry.schema.execute import validate_document
 
 
 def ValidationCacheExtension(maxsize: int = None):
     @lru_cache(maxsize=maxsize)
-    def validate_query(
+    def cached_validate_document(
         schema: GraphQLSchema,
         document: DocumentNode,
-        validation_rules: Collection[Type[ValidationRule]],
-    ):
-        return validate(schema, document, rules=validation_rules)
+        validation_rules: Tuple[Type[ASTValidationRule], ...],
+    ) -> List[GraphQLError]:
+        return validate_document(schema, document, validation_rules)
 
     class _ValidationCacheExtension(Extension):
         def on_validation_start(self):
             execution_context = self.execution_context
 
-            errors = validate_query(
+            errors = cached_validate_document(
                 execution_context.graphql_schema,
                 execution_context.graphql_document,
                 execution_context.validation_rules,
