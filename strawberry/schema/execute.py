@@ -149,7 +149,7 @@ def execute_sync(
             with extensions_runner.validation():
                 # If errors is None (instead of an empty list) then we haven't
                 # run validation yet
-                if execution_context.errors is not None:
+                if execution_context.errors is None:
                     validation_errors = validate(
                         schema, document, rules=validation_rules
                     )
