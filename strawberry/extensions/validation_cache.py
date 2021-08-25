@@ -8,7 +8,7 @@ from strawberry.extensions.base_extension import Extension
 from strawberry.schema.execute import validate_document
 
 
-def ValidationCacheExtension(maxsize: int = None):
+def UseValidationCache(maxsize: int = None):
     @lru_cache(maxsize=maxsize)
     def cached_validate_document(
         schema: GraphQLSchema,
@@ -17,7 +17,7 @@ def ValidationCacheExtension(maxsize: int = None):
     ) -> List[GraphQLError]:
         return validate_document(schema, document, validation_rules)
 
-    class _ValidationCacheExtension(Extension):
+    class _UseValidationCache(Extension):
         def on_validation_start(self):
             execution_context = self.execution_context
 
@@ -28,4 +28,4 @@ def ValidationCacheExtension(maxsize: int = None):
             )
             execution_context.errors = errors
 
-    return _ValidationCacheExtension
+    return _UseValidationCache

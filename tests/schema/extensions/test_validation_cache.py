@@ -3,7 +3,7 @@ from unittest.mock import patch
 from graphql import validate
 
 import strawberry
-from strawberry.extensions import ValidationCacheExtension
+from strawberry.extensions import UseValidationCache
 
 
 @patch("strawberry.schema.execute.validate", wraps=validate)
@@ -18,7 +18,7 @@ def test_validation_cache_extension(mock_validate):
         def ping(self) -> str:
             return "pong"
 
-    schema = strawberry.Schema(query=Query, extensions=[ValidationCacheExtension()])
+    schema = strawberry.Schema(query=Query, extensions=[UseValidationCache()])
 
     query = "query { hello }"
 
@@ -60,9 +60,7 @@ def test_validation_cache_extension_max_size(mock_validate):
         def ping(self) -> str:
             return "pong"
 
-    schema = strawberry.Schema(
-        query=Query, extensions=[ValidationCacheExtension(maxsize=1)]
-    )
+    schema = strawberry.Schema(query=Query, extensions=[UseValidationCache(maxsize=1)])
 
     query = "query { hello }"
 
@@ -99,7 +97,7 @@ async def test_validation_cache_extension_async(mock_validate):
         def ping(self) -> str:
             return "pong"
 
-    schema = strawberry.Schema(query=Query, extensions=[ValidationCacheExtension()])
+    schema = strawberry.Schema(query=Query, extensions=[UseValidationCache()])
 
     query = "query { hello }"
 

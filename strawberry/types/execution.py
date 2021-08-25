@@ -1,5 +1,5 @@
 import dataclasses
-from typing import Any, Dict, List, Tuple, Optional, Type, Union
+from typing import Any, Dict, List, Optional, Tuple, Type, Union
 
 from graphql import (
     ASTValidationRule,

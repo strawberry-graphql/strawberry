@@ -7,7 +7,7 @@ import pytest
 from graphql import GraphQLError, ValidationRule
 
 import strawberry
-from strawberry.schema import default_validation_rules
+from strawberry.extensions import AddValidationRule
 
 
 @pytest.mark.parametrize("validate_queries", (True, False))
@@ -286,16 +286,20 @@ def test_adding_custom_validation_rules():
         example: Optional[str] = None
         another_example: Optional[str] = None
 
-    schema = strawberry.Schema(query=Query)
-
     class CustomRule(ValidationRule):
         def enter_field(self, node, *args) -> None:
             if node.name.value == "example":
                 self.report_error(GraphQLError("Can't query field 'example'"))
 
+    schema = strawberry.Schema(
+        query=Query,
+        extensions=[
+            AddValidationRule(CustomRule),
+        ],
+    )
+
     result = schema.execute_sync(
         "{ example }",
-        validation_rules=(default_validation_rules + [CustomRule]),
         root_value=Query(),
     )
 
@@ -303,7 +307,6 @@ def test_adding_custom_validation_rules():
 
     result = schema.execute_sync(
         "{ anotherExample }",
-        validation_rules=(default_validation_rules + [CustomRule]),
         root_value=Query(),
     )
     assert not result.errors
