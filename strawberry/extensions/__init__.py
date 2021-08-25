@@ -1,5 +1,5 @@
 from .base_extension import Extension
-from .caching.validation import ValidationCacheExtension
+from .validation_cache import ValidationCacheExtension
 
 
 __all__ = [
