@@ -40,7 +40,7 @@ from graphql.language import (
 )
 from graphql.validation import ValidationContext, ValidationRule
 
-from strawberry.extensions.tracing.utils import is_instrospection_key
+from strawberry.extensions.utils import is_introspection_key
 
 
 IgnoreType = Union[Callable[[str], bool], re.Pattern, str]
@@ -135,7 +135,7 @@ def determine_depth(
 
     if isinstance(node, FieldNode):
         # by default, ignore the introspection fields which begin with double underscores
-        should_ignore = is_instrospection_key(node.name.value) or is_ignored(
+        should_ignore = is_introspection_key(node.name.value) or is_ignored(
             node, ignore
         )
 
