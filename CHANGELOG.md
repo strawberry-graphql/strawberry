@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.73.7 - 2021-08-25
+-------------------
+
+This release fixes an import error when trying to import `create_type` without having `opentelemetry` installed.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1171](https://github.com/strawberry-graphql/strawberry/pull/1171/)
+
+
 0.73.6 - 2021-08-24
 -------------------
 
