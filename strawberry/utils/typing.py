@@ -1,4 +1,5 @@
 from collections.abc import AsyncGenerator
+from typing import _GenericAlias  # type: ignore
 from typing import (  # type: ignore
     Any,
     Callable,
@@ -8,7 +9,6 @@ from typing import (  # type: ignore
     Type,
     TypeVar,
     Union,
-    _GenericAlias,  # type: ignore
 )
 
 
