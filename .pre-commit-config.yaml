@@ -35,7 +35,7 @@ repos:
       - id: end-of-file-fixer
       - id: check-toml
 
-  - repo: git@github.com:humitos/mirrors-autoflake.git
+  - repo: https://github.com/humitos/mirrors-autoflake.git
     rev: v1.1
     hooks:
       - id: autoflake
