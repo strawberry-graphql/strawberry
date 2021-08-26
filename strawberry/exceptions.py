@@ -78,7 +78,6 @@ class InvalidUnionType(Exception):
     """The union is constructed with an invalid type"""
 
 
-
 class MissingTypesForGenericError(Exception):
     """Raised when a generic types was used without passing any type."""
 
