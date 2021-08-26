@@ -19,12 +19,8 @@ from strawberry.middleware import DirectivesMiddleware, DirectivesMiddlewareSync
 from strawberry.types import ExecutionContext, ExecutionResult
 
 
-def parse_document(execution_context: ExecutionContext, query: str) -> DocumentNode:
-    if execution_context.graphql_document:
-        return execution_context.graphql_document
-
+def parse_document(query: str) -> DocumentNode:
     document = parse(query)
-    execution_context.graphql_document = document
     return document
 
 
@@ -65,7 +61,8 @@ async def execute(
 
         try:
             async with extensions_runner.parsing():
-                document = parse_document(execution_context, query)
+                if not execution_context.graphql_document:
+                    execution_context.graphql_document = parse_document(query)
         except GraphQLError as error:
             execution_context.errors = [error]
             return ExecutionResult(
@@ -101,7 +98,7 @@ async def execute(
 
         result = original_execute(
             schema,
-            document,
+            execution_context.graphql_document,
             root_value=execution_context.root_value,
             middleware=extensions_runner.as_middleware_manager(*additional_middlewares),
             variable_values=execution_context.variables,
@@ -148,7 +145,8 @@ def execute_sync(
 
         try:
             with extensions_runner.parsing():
-                document = parse_document(execution_context, query)
+                if not execution_context.graphql_document:
+                    execution_context.graphql_document = parse_document(query)
         except GraphQLError as error:
             execution_context.errors = [error]
             return ExecutionResult(
@@ -184,7 +182,7 @@ def execute_sync(
 
         result = original_execute(
             schema,
-            document,
+            execution_context.graphql_document,
             root_value=execution_context.root_value,
             middleware=extensions_runner.as_middleware_manager(*additional_middlewares),
             variable_values=execution_context.variables,
