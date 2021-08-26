@@ -1,6 +1,29 @@
 CHANGELOG
 =========
 
+0.73.8 - 2021-08-26
+-------------------
+
+This releases fixes a MyPy issue that prevented from using types created with
+`create_type` as base classes. This is now allowed and doesn't throw any error:
+
+```python
+import strawberry
+from strawberry.tools import create_type
+
+@strawberry.field
+def name() -> str:
+    return "foo"
+
+MyType = create_type("MyType", [name])
+
+class Query(MyType):
+    ...
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1175](https://github.com/strawberry-graphql/strawberry/pull/1175/)
+
+
 0.73.7 - 2021-08-25
 -------------------
 
