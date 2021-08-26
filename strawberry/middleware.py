@@ -1,5 +1,4 @@
 from abc import abstractmethod
-from inspect import isawaitable
 from typing import Any, Dict, Sequence
 
 from typing_extensions import Protocol
