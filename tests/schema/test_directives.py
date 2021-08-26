@@ -48,6 +48,46 @@ def test_supports_default_directives():
     assert result.data["person"] == {"name": "Jess", "points": 2000}
 
 
+@pytest.mark.asyncio
+async def test_supports_default_directives_async():
+    @strawberry.type
+    class Person:
+        name: str = "Jess"
+        points: int = 2000
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def person(self) -> Person:
+            return Person()
+
+    query = """query ($includePoints: Boolean!){
+        person {
+            name
+            points @include(if: $includePoints)
+        }
+    }"""
+
+    schema = strawberry.Schema(query=Query)
+    result = await schema.execute(query, variable_values={"includePoints": False})
+
+    assert not result.errors
+    assert result.data["person"] == {"name": "Jess"}
+
+    query = """query ($skipPoints: Boolean!){
+        person {
+            name
+            points @skip(if: $skipPoints)
+        }
+    }"""
+
+    schema = strawberry.Schema(query=Query)
+    result = await schema.execute(query, variable_values={"skipPoints": False})
+
+    assert not result.errors
+    assert result.data["person"] == {"name": "Jess", "points": 2000}
+
+
 def test_can_declare_directives():
     @strawberry.type
     class Query:
