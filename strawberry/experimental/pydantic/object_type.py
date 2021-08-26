@@ -1,7 +1,7 @@
 import builtins
 import dataclasses
 from functools import partial
-from typing import Any, Dict, List, Optional, Type, cast
+from typing import Any, Dict, List, Optional, Tuple, Type, cast
 
 from pydantic import BaseModel
 from pydantic.fields import ModelField
@@ -83,7 +83,7 @@ def type(
         model_fields = model.__fields__
         fields_set = set(fields)
 
-        all_fields = [
+        all_fields: List[Tuple[str, Any, dataclasses.Field]] = [
             (
                 name,
                 get_type_for_field(field),
@@ -102,8 +102,8 @@ def type(
         ]
 
         wrapped = _wrap_dataclass(cls)
-        extra_fields = _get_fields(wrapped)
-        private_fields = cast(List[Any], _get_private_fields(wrapped))
+        extra_fields = cast(List[dataclasses.Field], _get_fields(wrapped))
+        private_fields = _get_private_fields(wrapped)
 
         all_fields.extend(
             (

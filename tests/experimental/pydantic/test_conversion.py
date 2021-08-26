@@ -87,19 +87,6 @@ def test_can_convert_pydantic_type_to_strawberry_with_private_field():
     assert definition.fields[0].type == int
 
 
-def test_get_private_fields():
-    class UserModel(pydantic.BaseModel):
-        age: int
-
-    @strawberry.experimental.pydantic.type(model=UserModel, fields=["age"])
-    class User:
-        password: strawberry.Private[str]
-
-    result = strawberry.experimental.pydantic.object_type._get_private_fields(User)
-    assert len(result) == 1
-    assert result[0].name == "password"
-
-
 def test_can_covert_pydantic_type_with_nested_data_to_strawberry():
     class WorkModel(pydantic.BaseModel):
         name: str
