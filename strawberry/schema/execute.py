@@ -1,7 +1,5 @@
 from asyncio import ensure_future
 from inspect import isawaitable
-from strawberry.directive import DirectiveDefinition
-from strawberry.middleware import DirectivesMiddleware, DirectivesMiddlewareSync
 from typing import Any, Awaitable, Collection, List, Optional, Sequence, Type, cast
 
 from graphql import (
@@ -14,8 +12,10 @@ from graphql import (
 )
 from graphql.validation import ValidationRule, validate
 
+from strawberry.directive import DirectiveDefinition
 from strawberry.extensions import Extension
 from strawberry.extensions.runner import ExtensionsRunner
+from strawberry.middleware import DirectivesMiddleware, DirectivesMiddlewareSync
 from strawberry.types import ExecutionContext, ExecutionResult
 
 

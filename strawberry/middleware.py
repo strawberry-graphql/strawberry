@@ -1,11 +1,11 @@
 from abc import abstractmethod
 from inspect import isawaitable
-from strawberry.utils.await_maybe import await_maybe
 from typing import Any, Dict, Sequence
 
 from typing_extensions import Protocol
 
 from strawberry.types.info import Info
+from strawberry.utils.await_maybe import await_maybe
 
 from .directive import DirectiveDefinition
 
