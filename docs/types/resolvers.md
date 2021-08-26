@@ -174,7 +174,7 @@ context. To do so you can provide the `info` parameter to resolvers, like this:
 
 ```python
 import strawberry
-from strawberry.types import info
+from strawberry.types import Info
 
 def full_name(root: User, info: Info) -> str:
     return f"{root.first_name} {root.last_name} {info.field_name}"
