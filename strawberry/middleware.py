@@ -57,11 +57,6 @@ class DirectivesMiddlewareSync(DirectivesMiddlewareBase):
     def resolve(self, next_, root, info, **kwargs) -> Any:
         result = next_(root, info, **kwargs)
 
-        if isawaitable(result):
-            raise RuntimeError(
-                "Cannot use async resolvers with DirectivesMiddlewareSync"
-            )
-
         for directive in info.field_nodes[0].directives:
             directive_name = directive.name.value
 

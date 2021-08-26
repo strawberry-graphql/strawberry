@@ -1,19 +1,12 @@
 Release type: minor
 
-This release add full support for async directives and fixes
-and issue when using directives and async extensions.
-
+This release add full support for async directives and fixes and issue when
+using directives and async extensions.
 
 ```python
 @strawberry.type
-class Person:
-    name: str = "Jess"
-
-@strawberry.type
 class Query:
-    @strawberry.field
-    def person(self) -> Person:
-        return Person()
+    name: str = "Banana"
 
 @strawberry.directive(
     locations=[DirectiveLocation.FIELD], description="Make string uppercase"
