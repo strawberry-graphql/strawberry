@@ -68,6 +68,38 @@ def test_can_covert_falsy_values_to_strawberry():
     assert user.password == ""
 
 
+def test_can_convert_pydantic_type_to_strawberry_with_private_field():
+    class UserModel(pydantic.BaseModel):
+        age: int
+
+    @strawberry.experimental.pydantic.type(model=UserModel, fields=["age"])
+    class User:
+        password: strawberry.Private[str]
+
+    user = User(age=30, password="qwerty")
+    assert user.age == 30
+    assert user.password == "qwerty"
+
+    definition = User._type_definition
+    assert len(definition.fields) == 1
+    assert definition.fields[0].python_name == "age"
+    assert definition.fields[0].graphql_name is None
+    assert definition.fields[0].type == int
+
+
+def test_get_private_fields():
+    class UserModel(pydantic.BaseModel):
+        age: int
+
+    @strawberry.experimental.pydantic.type(model=UserModel, fields=["age"])
+    class User:
+        password: strawberry.Private[str]
+
+    result = strawberry.experimental.pydantic.object_type._get_private_fields(User)
+    assert len(result) == 1
+    assert result[0].name == "password"
+
+
 def test_can_covert_pydantic_type_with_nested_data_to_strawberry():
     class WorkModel(pydantic.BaseModel):
         name: str
