@@ -22,7 +22,6 @@ from strawberry.types import ExecutionContext, ExecutionResult
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 
-from ..middleware import DirectivesMiddleware, Middleware
 from ..printer import print_schema
 from .config import StrawberryConfig
 from .execute import execute, execute_sync
@@ -48,6 +47,7 @@ class Schema:
         self.execution_context_class = execution_context_class
         self.config = config or StrawberryConfig()
         self.schema_converter = GraphQLCoreConverter(self.config)
+        self.directives = directives
 
         query_type = self.schema_converter.from_object(query._type_definition)
         mutation_type = (
@@ -60,8 +60,6 @@ class Schema:
             if subscription
             else None
         )
-
-        self.middleware: List[Middleware] = [DirectivesMiddleware(directives)]
 
         directives = [
             self.schema_converter.from_directive(directive.directive_definition)
@@ -138,8 +136,8 @@ class Schema:
         result = await execute(
             self._schema,
             query,
-            additional_middlewares=self.middleware,
             extensions=self.extensions,
+            directives=self.directives,
             execution_context_class=self.execution_context_class,
             validate_queries=validate_queries,
             execution_context=execution_context,
@@ -172,8 +170,8 @@ class Schema:
         result = execute_sync(
             self._schema,
             query,
-            additional_middlewares=self.middleware,
             extensions=self.extensions,
+            directives=self.directives,
             execution_context_class=self.execution_context_class,
             validate_queries=validate_queries,
             execution_context=execution_context,
