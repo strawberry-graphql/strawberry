@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.73.9 - 2021-08-26
+-------------------
+
+Fix issue where `strawberry.Private` fields on converted Pydantic types were not added to the resulting dataclass.
+
+Contributed by [Paul Sud](https://github.com/paul-sud) [PR #1173](https://github.com/strawberry-graphql/strawberry/pull/1173/)
+
+
 0.73.8 - 2021-08-26
 -------------------
 
