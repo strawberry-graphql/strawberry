@@ -69,4 +69,8 @@ class Info(Generic[ContextType, RootValueType]):
     def path(self) -> Path:
         return self._raw_info.path
 
+    @property
+    def query(self) -> str:
+        return (self._raw_info.context["request"]._body).decode("utf-8")
+
     # TODO: parent_type as strawberry types

@@ -329,3 +329,26 @@ def test_can_change_status_code():
 
     assert response.status_code == 418
     assert data == {"data": {"abc": "ABC"}}
+
+
+def test_query_string_in_info():
+    factory = RequestFactory()
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def abc(self, info: Info) -> str:
+            return info.query
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ abc }"
+    request = factory.post(
+        "/graphql/", {"query": query}, content_type="application/json"
+    )
+
+    response = GraphQLView.as_view(schema=schema)(request)
+    data = json.loads(response.content.decode())
+
+    assert response.status_code == 200
+    assert data == {"data": {"abc": '{"query": "{ abc }"}'}}
