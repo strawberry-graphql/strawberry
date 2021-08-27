@@ -1,6 +1,6 @@
 from asyncio import ensure_future
 from inspect import isawaitable
-from typing import Any, Awaitable, Collection, List, Optional, Sequence, Type, cast
+from typing import Any, Awaitable, Collection, Optional, Sequence, Type, cast
 
 from graphql import (
     ExecutionContext as GraphQLExecutionContext,
@@ -14,6 +14,7 @@ from graphql.validation import ValidationRule, validate
 
 from strawberry.extensions import Extension
 from strawberry.extensions.runner import ExtensionsRunner
+from strawberry.middleware import DirectivesMiddleware, DirectivesMiddlewareSync
 from strawberry.types import ExecutionContext, ExecutionResult
 
 
@@ -21,8 +22,8 @@ async def execute(
     schema: GraphQLSchema,
     query: str,
     extensions: Sequence[Type[Extension]],
+    directives: Sequence[Any],
     execution_context: ExecutionContext,
-    additional_middlewares: List[Any] = None,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
     validate_queries: bool = True,
     validation_rules: Optional[Collection[Type[ValidationRule]]] = None,
@@ -34,7 +35,7 @@ async def execute(
         ],
     )
 
-    additional_middlewares = additional_middlewares or []
+    additional_middlewares = [DirectivesMiddleware(directives)]
 
     async with extensions_runner.request():
         # Note: In graphql-core the schema would be validated here but in
@@ -99,8 +100,8 @@ def execute_sync(
     schema: GraphQLSchema,
     query: str,
     extensions: Sequence[Type[Extension]],
+    directives: Sequence[Any],
     execution_context: ExecutionContext,
-    additional_middlewares: List[Any] = None,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
     validate_queries: bool = True,
     validation_rules: Optional[Collection[Type[ValidationRule]]] = None,
@@ -112,7 +113,7 @@ def execute_sync(
         ],
     )
 
-    additional_middlewares = additional_middlewares or []
+    additional_middlewares = [DirectivesMiddlewareSync(directives)]
 
     with extensions_runner.request():
         # Note: In graphql-core the schema would be validated here but in

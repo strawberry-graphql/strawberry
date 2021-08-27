@@ -77,8 +77,6 @@ class UnallowedReturnTypeForUnion(Exception):
 class InvalidUnionType(Exception):
     """The union is constructed with an invalid type"""
 
-    pass
-
 
 class MissingTypesForGenericError(Exception):
     """Raised when a generic types was used without passing any type."""
