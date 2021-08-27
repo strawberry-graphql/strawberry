@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.74.1 - 2021-08-27
+-------------------
+
+This release allows to install Strawberry along side `click` version 8.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1181](https://github.com/strawberry-graphql/strawberry/pull/1181/)
+
+
 0.74.0 - 2021-08-27
 -------------------
 
