@@ -1,6 +1,29 @@
 CHANGELOG
 =========
 
+0.74.0 - 2021-08-27
+-------------------
+
+This release add full support for async directives and fixes and issue when
+using directives and async extensions.
+
+```python
+@strawberry.type
+class Query:
+    name: str = "Banana"
+
+@strawberry.directive(
+    locations=[DirectiveLocation.FIELD], description="Make string uppercase"
+)
+async def uppercase(value: str):
+    return value.upper()
+
+schema = strawberry.Schema(query=Query, directives=[uppercase])
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1179](https://github.com/strawberry-graphql/strawberry/pull/1179/)
+
+
 0.73.9 - 2021-08-26
 -------------------
 
