@@ -46,10 +46,10 @@ Meanwhile `Book` used the `strawberry.federation.type` decorator, as opposed to
 the normal `strawberry.type`, this new decorator extend the base one and allows
 to define federation specific attributes to the type.
 
-In this case we are telling federation that our key is the `id` field.
+In this case we are telling federation that the key to uniquely identify a book is the `id` field.
 
-> Keys are types’ primary keys. They are used by the gateway to query types
-> between multiple services.
+> Federation keys can be thought primary keys. They are used by the gateway to query types
+> between multiple services and then joining them into the augmented type.
 
 ### Reviews service
 
@@ -151,4 +151,4 @@ server.listen().then(({ url }) => {
 });
 ```
 
-[1]: https://www.apollographql.com/docs/apollo-server/federation/introduction/ "Apollo Federation Introduction"
+[1]: https://www.apollographql.com/docs/federation "hApollo Federation Introduction"
