@@ -10,13 +10,14 @@ can create services using Strawberry and federate them via Apollo Gateway.
 > _NOTE_: we don’t have a gateway server, you’d need to always use the Apollo
 > Gateway for this.
 
-Apollo Federation allows you to combine multiple GraphQL APIs into one. This can be
-extremely useful when working with a service oriented architecture.
+Apollo Federation allows you to combine multiple GraphQL APIs into one. This can
+be extremely useful when working with a service oriented architecture.
 
 ## Federated schema example
 
 Let’s look at an example on how to implement Apollo Federation using Strawberry.
-Let's assume we have an application with two services that both expose a GraphQL API:
+Let's assume we have an application with two services that both expose a GraphQL
+API:
 
 1. `book`: a service to manage all the books we have
 2. `reviews`: a service to manage book reviews
@@ -41,12 +42,12 @@ class Query:
 schema = strawberry.federation.Schema(query=Query)
 ```
 
-We defined two types: `Book` and `Query`, where `Query` has only one field that allows us
-to fetch all the books.
+We defined two types: `Book` and `Query`, where `Query` has only one field that
+allows us to fetch all the books.
 
-Notice that the `Book` type used the `strawberry.federation.type` decorator, as opposed to
-the normal `strawberry.type`, this new decorator extends the base one and allows us
-to define federation specific attributes on the type.
+Notice that the `Book` type used the `strawberry.federation.type` decorator, as
+opposed to the normal `strawberry.type`, this new decorator extends the base one
+and allows us to define federation specific attributes on the type.
 
 In this case we are telling federation that the key to uniquely identify a book
 is the `id` field.
@@ -65,17 +66,21 @@ review but also extend the book to have a list of reviews.
 class Review:
     body: str
 
-def get_reviews() -> List[Review]:
-    return [Review(body="This is a review")]
+def get_reviews(book: "Book") -> List[Review]:
+    return [
+      Review(body=f"This is review number {index} for {book.id}")
+      for index in range(book.reviews_count)
+    ]
 
 @strawberry.federation.type(extend=True, keys=["id"])
 class Book:
     id: strawberry.ID = strawberry.federation.field(external=True)
+    reviews_count: int
     reviews: List[Review] = strawberry.field(resolver=get_reviews)
 
     @classmethod
     def resolve_reference(cls, id: strawberry.ID):
-        return Book(id)
+        return Book(id, reviews_count=3)
 ```
 
 Now things are looking more interesting, the `Review` type is a GraphQL type
@@ -85,17 +90,18 @@ Meanwhile we are able to extend the `Book` type by using
 `strawberry.federation.type` again and passing `extend=True` as a parameter.
 This tells federation that we are extending an already existing type.
 
-We are also declaring two fields on `Book`, one is the `id` which is marked as
+We are also declaring three fields on `Book`, one is the `id` which is marked as
 external with `strawberry.federation.field(external=True)`, this tells
 federation that this field is not available in this service, and **that** it
 comes from another service.
 
-The other field is `reviews` which results in a list of `Reviews` for this book.
+The other field are `reviews` which results in a list of `Reviews` for this book
+and `reviews_count` which holds the number of reviews for this book.
 
 Finally we also have a class method called `resolve_reference` that allows us to
-instantiate types when they are referred to from other services. The `resolve_reference` method is called when a
-GraphQL operation references an entity across multiple services. For example
-when doing this query:
+instantiate types when they are referred to from other services. The
+`resolve_reference` method is called when a GraphQL operation references an
+entity across multiple services. For example when doing this query:
 
 ```graphql
 {
@@ -112,8 +118,8 @@ when doing this query:
 
 The `resolve_reference` method is called with the `id` of the book for each book
 returned by the books service. The `id` is the field that has been defined as
-the key for the `Book` type. In our example we don't need to fetch additional
-data for the book so we create an instance of the Book type and return it.
+the key for the `Book` type. In this example we are creating instance an instance
+of `Book` with the requested id and a fixed number of reviews.
 
 If we added more fields to book in a database this would be the place where we
 could query our database for the additional fields.
