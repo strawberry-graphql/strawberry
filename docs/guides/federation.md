@@ -151,4 +151,4 @@ server.listen().then(({ url }) => {
 });
 ```
 
-[1]: https://www.apollographql.com/docs/federation "hApollo Federation Introduction"
+[1]: https://www.apollographql.com/docs/federation "Apollo Federation Introduction"
