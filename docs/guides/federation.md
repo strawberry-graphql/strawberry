@@ -10,18 +10,20 @@ can create services using Strawberry and federate them via Apollo Gateway.
 > _NOTE_: we don’t have a gateway server, you’d need to always use the Apollo
 > Gateway for this.
 
-Apollo Federation allows to combine multiple GraphQL APIs into one. This can be
-extremely useful when working with micro-services.
+Apollo Federation allows you to combine multiple GraphQL APIs into one. This can be
+extremely useful when working with a service oriented architecture.
 
 ## Federated schema example
 
-Let’s look at an example on how to implement Apollo Federation using Strawberry,
-We’ll have an application with two federated services.
+Let’s look at an example on how to implement Apollo Federation using Strawberry.
+Let's assume we have an application with two services that both expose a GraphQL API:
 
-1. book: a service with all the books we have
-2. reviews: a service with book reviews.
+1. `book`: a service to manage all the books we have
+2. `reviews`: a service to manage book reviews
 
 ### Books service
+
+Our `book` service might look something like this:
 
 ```python
 @strawberry.federation.type(keys=["id"])
@@ -39,24 +41,24 @@ class Query:
 schema = strawberry.federation.Schema(query=Query)
 ```
 
-We defined two types, `Book` and `Query`, `Query` has only one field that allows
+We defined two types: `Book` and `Query`, where `Query` has only one field that allows us
 to fetch all the books.
 
-Meanwhile `Book` used the `strawberry.federation.type` decorator, as opposed to
-the normal `strawberry.type`, this new decorator extend the base one and allows
-to define federation specific attributes to the type.
+Notice that the `Book` type used the `strawberry.federation.type` decorator, as opposed to
+the normal `strawberry.type`, this new decorator extends the base one and allows us
+to define federation specific attributes on the type.
 
 In this case we are telling federation that the key to uniquely identify a book
 is the `id` field.
 
 > Federation keys can be thought primary keys. They are used by the gateway to
-> query types between multiple services and then joining them into the augmented
+> query types between multiple services and then join them into the augmented
 > type.
 
 ### Reviews service
 
-Let’s look at how our review service looks like, we want to define a type for a
-review but also extend the book to have a list of review.
+Let’s look at how our review service looks like: we want to define a type for a
+review but also extend the book to have a list of reviews.
 
 ```python
 @strawberry.type
@@ -91,8 +93,8 @@ comes from another service.
 The other field is `reviews` which results in a list of `Reviews` for this book.
 
 Finally we also have a class method called `resolve_reference` that allows us to
-resolve references to types. The `resolve_reference` method is called when a
-GraphQL operation references an entities across multiple services. For example
+instantiate types when they are referred to from other services. The `resolve_reference` method is called when a
+GraphQL operation references an entity across multiple services. For example
 when doing this query:
 
 ```graphql
