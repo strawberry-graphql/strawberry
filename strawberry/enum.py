@@ -1,6 +1,8 @@
 import dataclasses
 from enum import EnumMeta
-from typing import Any, Callable, List, Optional, Union
+from typing import Any, Callable, List, Mapping, Optional, TypeVar, Union
+
+from strawberry.type import StrawberryType
 
 from .exceptions import NotAnEnum
 
@@ -12,10 +14,24 @@ class EnumValue:
 
 
 @dataclasses.dataclass
-class EnumDefinition:
+class EnumDefinition(StrawberryType):
+    wrapped_cls: EnumMeta
     name: str
     values: List[EnumValue]
     description: Optional[str]
+
+    def __hash__(self) -> int:
+        # TODO: Is this enough for unique-ness?
+        return hash(self.name)
+
+    def copy_with(
+        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
+    ) -> Union[StrawberryType, type]:
+        return super().copy_with(type_var_map)
+
+    @property
+    def is_generic(self) -> bool:
+        return False
 
 
 def _process_enum(
@@ -32,6 +48,7 @@ def _process_enum(
     values = [EnumValue(item.name, item.value) for item in cls]  # type: ignore
 
     cls._enum_definition = EnumDefinition(  # type: ignore
+        wrapped_cls=cls,
         name=name,
         values=values,
         description=description,

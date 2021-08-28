@@ -1,6 +1,9 @@
+import sys
+
 import pytest
 
 from click.testing import CliRunner
+from starlette.testclient import TestClient
 
 
 @pytest.fixture
@@ -8,13 +11,14 @@ def cli_runner(mocker):
     # Mock of uvicorn.run
     uvicorn_run_patch = mocker.patch("uvicorn.run")
     uvicorn_run_patch.return_value = True
-    # Mock to prevent the reloader from kicking in
-    hupper_reloader_patch = mocker.patch("hupper.start_reloader")
-    hupper_reloader_patch.return_value = MockReloader()
     return CliRunner()
 
 
-class MockReloader:
-    @staticmethod
-    def watch_files(*args, **kwargs):
-        return True
+@pytest.fixture
+def debug_server_client(mocker):
+    schema_import_path = "tests.fixtures.sample_package.sample_module"
+    mocker.patch.object(sys, "argv", ["strawberry", "server", schema_import_path])
+
+    from strawberry.cli.debug_server import app
+
+    return TestClient(app)

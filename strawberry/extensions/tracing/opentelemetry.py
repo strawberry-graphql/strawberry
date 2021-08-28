@@ -8,14 +8,27 @@ from opentelemetry.trace import Span, SpanKind, Tracer
 from graphql import GraphQLResolveInfo
 
 from strawberry.extensions import Extension
+from strawberry.extensions.utils import get_path_from_info
 from strawberry.types.execution import ExecutionContext
 
-from .utils import get_path_from_info, should_skip_tracing
+from .utils import should_skip_tracing
 
 
 DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 
 ArgFilter = Callable[[Dict[str, Any], GraphQLResolveInfo], Dict[str, Any]]
+
+
+if hasattr(trace, "use_span"):
+
+    def _use_span(span: Span, tracer: Tracer):
+        return trace.use_span(span)
+
+
+else:
+
+    def _use_span(span: Span, tracer: Tracer):
+        return tracer.use_span(span)
 
 
 class OpenTelemetryExtension(Extension):
@@ -76,7 +89,7 @@ class OpenTelemetryExtension(Extension):
 
             return result
 
-        with self._tracer.use_span(self._root_span):
+        with _use_span(self._root_span, self._tracer):
             with self._tracer.start_span(info.field_name, kind=SpanKind.SERVER) as span:
                 self.add_tags(span, info, kwargs)
                 result = _next(root, info, *args, **kwargs)
@@ -94,7 +107,7 @@ class OpenTelemetryExtensionSync(OpenTelemetryExtension):
 
             return result
 
-        with self._tracer.use_span(self._root_span):
+        with _use_span(self._root_span, self._tracer):
             with self._tracer.start_span(info.field_name, kind=SpanKind.SERVER) as span:
                 self.add_tags(span, info, kwargs)
                 result = _next(root, info, *args, **kwargs)
