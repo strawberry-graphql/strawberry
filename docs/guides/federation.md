@@ -46,10 +46,12 @@ Meanwhile `Book` used the `strawberry.federation.type` decorator, as opposed to
 the normal `strawberry.type`, this new decorator extend the base one and allows
 to define federation specific attributes to the type.
 
-In this case we are telling federation that the key to uniquely identify a book is the `id` field.
+In this case we are telling federation that the key to uniquely identify a book
+is the `id` field.
 
-> Federation keys can be thought primary keys. They are used by the gateway to query types
-> between multiple services and then joining them into the augmented type.
+> Federation keys can be thought primary keys. They are used by the gateway to
+> query types between multiple services and then joining them into the augmented
+> type.
 
 ### Reviews service
 
@@ -107,9 +109,12 @@ when doing this query:
 ```
 
 The `resolve_reference` method is called with the `id` of the book for each book
-returned by the books service. This allows to our review service to fetch data
-for the book. In our case we only need the book id so we instantiate a `Book`
-object with the id and return it.
+returned by the books service. The `id` is the field that has been defined as
+the key for the `Book` type. In our example we don't need to fetch additional
+data for the book so we create an instance of the Book type and return it.
+
+If we added more fields to book in a database this would be the place where we
+could query our database for the additional fields.
 
 The last thing we need to do is to define a `Query` type, even if our service
 only has one type that is not used directly in any GraphQL query. This is
@@ -150,5 +155,22 @@ server.listen().then(({ url }) => {
   console.log(`🚀 Server ready at ${url}`);
 });
 ```
+
+When running this example you'll be able to run query like the following:
+
+```graphql
+{
+  books {
+    id
+    reviews {
+      body
+    }
+  }
+}
+```
+
+We have provided a full example that you can run and tweak to play with
+Strawberry and Federation, the repo is available here:
+https://github.com/strawberry-graphql/federation-demo
 
 [1]: https://www.apollographql.com/docs/federation "Apollo Federation Introduction"
