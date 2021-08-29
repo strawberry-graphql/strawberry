@@ -2,7 +2,7 @@ Release type: minor
 
 This release improves how we deal with custom scalars. Instead of being global
 they are now scoped to the schema. This allows you to have multiple schemas in
-the same project with differnet scalars.
+the same project with different scalars.
 
 Also you can now override the built in scalars with your own custom
 implementation. Out of the box Strawberry provides you with custom scalars for
