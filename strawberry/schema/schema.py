@@ -44,11 +44,21 @@ class Schema:
         extensions: Sequence[Type[Extension]] = (),
         execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
         config: Optional[StrawberryConfig] = None,
+        scalar_overrides: Optional[
+            Dict[object, Union[ScalarWrapper, ScalarDefinition]]
+        ] = None,
     ):
         self.extensions = extensions
         self.execution_context_class = execution_context_class
         self.config = config or StrawberryConfig()
-        self.schema_converter = GraphQLCoreConverter(self)
+
+        scalar_registry: Dict[object, Union[ScalarWrapper, ScalarDefinition]] = {
+            **DEFAULT_SCALAR_REGISTRY
+        }
+        if scalar_overrides:
+            scalar_registry.update(scalar_overrides)
+
+        self.schema_converter = GraphQLCoreConverter(self.config, scalar_registry)
         self.directives = directives
 
         query_type = self.schema_converter.from_object(query._type_definition)
@@ -218,12 +228,3 @@ class Schema:
             raise ValueError(f"Invalid Schema. Errors {introspection.errors!r}")
 
         return introspection.data
-
-    def get_scalar(
-        self, scalar: Type
-    ) -> Union[ScalarWrapper, ScalarDefinition, GraphQLScalarType]:
-        if scalar in DEFAULT_SCALAR_REGISTRY:
-            return DEFAULT_SCALAR_REGISTRY[scalar]
-
-        scalar_definition = scalar._scalar_definition
-        return scalar_definition

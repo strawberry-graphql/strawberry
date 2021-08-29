@@ -2,6 +2,8 @@ from datetime import datetime, timezone
 from textwrap import dedent
 from uuid import UUID
 
+import pytest
+
 import strawberry
 
 
@@ -114,13 +116,12 @@ def test_override_built_in_scalars():
         def isoformat(self, input_datetime: datetime) -> str:
             return input_datetime.isoformat()
 
-    class CustomSchema(strawberry.Schema):
-        def get_scalar(self, scalar):
-            if scalar == datetime:
-                return EpocDateTime
-            return super().get_scalar(scalar)
-
-    schema = CustomSchema(Query)
+    schema = strawberry.Schema(
+        Query,
+        scalar_overrides={
+            datetime: EpocDateTime,
+        },
+    )
 
     result = schema.execute_sync(
         """
@@ -134,3 +135,25 @@ def test_override_built_in_scalars():
     assert not result.errors
     assert result.data["currentTime"] == 1628683200
     assert result.data["isoformat"] == "2021-08-11T12:00:00+00:00"
+
+
+def test_duplicate_scalars():
+    MyCustomScalar = strawberry.scalar(
+        str,
+        name="MyCustomScalar",
+    )
+
+    MyCustomScalar2 = strawberry.scalar(
+        int,
+        name="MyCustomScalar",
+    )
+
+    @strawberry.type
+    class Query:
+        scalar_1: MyCustomScalar
+        scalar_2: MyCustomScalar2
+
+    with pytest.raises(
+        TypeError, match="Scalar `MyCustomScalar` has already been registered"
+    ):
+        strawberry.Schema(Query)

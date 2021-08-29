@@ -32,14 +32,18 @@ from graphql import (
 )
 
 from strawberry.arguments import UNSET, StrawberryArgument, convert_arguments, is_unset
-from strawberry.custom_scalar import ScalarWrapper
+from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.directive import DirectiveDefinition
 from strawberry.enum import EnumDefinition, EnumValue
-from strawberry.exceptions import MissingTypesForGenericError
+from strawberry.exceptions import (
+    MissingTypesForGenericError,
+    ScalarAlreadyRegisteredError,
+)
 from strawberry.field import StrawberryField
 from strawberry.lazy_type import LazyType
 from strawberry.scalars import is_scalar
-from strawberry.schema.types.scalar import _make_scalar_definition, _make_scalar_type
+from strawberry.schema.config import StrawberryConfig
+from strawberry.schema.types.scalar import _make_scalar_type
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
 from strawberry.types.info import Info
 from strawberry.types.types import TypeDefinition
@@ -47,10 +51,6 @@ from strawberry.union import StrawberryUnion
 from strawberry.utils.await_maybe import await_maybe
 
 from .types.concrete_type import ConcreteType
-
-
-if TYPE_CHECKING:
-    from strawberry.schema.schema import Schema
 
 
 # graphql-core expects a resolver for an Enum type to return
@@ -67,11 +67,14 @@ class CustomGraphQLEnumType(GraphQLEnumType):
 class GraphQLCoreConverter:
     # TODO: Make abstract
 
-    def __init__(self, schema: "Schema"):
+    def __init__(
+        self,
+        config: StrawberryConfig,
+        scalar_registry: Dict[object, Union[ScalarWrapper, ScalarDefinition]],
+    ):
         self.type_map: Dict[str, ConcreteType] = {}
-        self.config = schema.config
-        self.schema = schema
-        self.scalar_registry: Dict[object, GraphQLScalarType] = {}
+        self.config = config
+        self.scalar_registry = scalar_registry
 
     def from_argument(self, argument: StrawberryArgument) -> GraphQLArgument:
         argument_type: GraphQLType
@@ -399,33 +402,30 @@ class GraphQLCoreConverter:
             return _resolver
 
     def from_scalar(self, scalar: Type) -> GraphQLScalarType:
+        scalar_definition: ScalarDefinition
+
         if scalar in self.scalar_registry:
-            return self.scalar_registry[scalar]
-
-        scalar_definition = self.schema.get_scalar(scalar)
-
-        if isinstance(scalar_definition, ScalarWrapper):
-            scalar_definition = scalar_definition._scalar_definition
+            _scalar_definition = self.scalar_registry[scalar]
+            if isinstance(_scalar_definition, ScalarWrapper):
+                scalar_definition = _scalar_definition._scalar_definition
+            else:
+                scalar_definition = _scalar_definition
+        else:
+            scalar_definition = scalar._scalar_definition
 
         if scalar_definition.name not in self.type_map:
-            if isinstance(scalar_definition, GraphQLScalarType):
-                implementation = scalar_definition
-                # Reverse create the ScalarDefinition from the GraphQLScalarType
-                # This is a bit pointless but it's mainly to avoid the type
-                # signature of ConcreteType having to rely on GraphQLScalarType
-                scalar_definition = _make_scalar_definition(scalar_definition)
-            else:
-                implementation = _make_scalar_type(scalar_definition)
+            implementation = _make_scalar_type(scalar_definition)
 
             self.type_map[scalar_definition.name] = ConcreteType(
                 definition=scalar_definition, implementation=implementation
             )
         else:
+            if self.type_map[scalar_definition.name].definition != scalar_definition:
+                raise ScalarAlreadyRegisteredError(scalar_definition.name)
+
             implementation = cast(
                 GraphQLScalarType, self.type_map[scalar_definition.name].implementation
             )
-
-        self.scalar_registry[scalar] = implementation
 
         return implementation
 
