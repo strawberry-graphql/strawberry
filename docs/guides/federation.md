@@ -91,18 +91,18 @@ We've also been able to extend the `Book` type by using again
 This is important because we need to tell federation that we are extending a
 type that already exists, not creating a new one.
 
-We are also declaring three fields on `Book`, one is the `id` which is marked as
-external with `strawberry.federation.field(external=True)`, this tells
+We have also declared three fields on `Book`, one of which is `id` which is marked as
+`external` with `strawberry.federation.field(external=True)`. This tells
 federation that this field is not available in this service, and **that** it
 comes from another service.
 
 The other field are `reviews` which results in a list of `Reviews` for this book
 and `reviews_count` which holds the number of reviews for this book.
 
-Finally we also have a class method called `resolve_reference` that allows us to
-instantiate types when they are referred to from other services. The
+Finally, we also have a class method, `resolve_reference`, that allows us to
+instantiate types when they are referred to by other services. The
 `resolve_reference` method is called when a GraphQL operation references an
-entity across multiple services. For example when doing this query:
+entity across multiple services. For example, when making this query:
 
 ```graphql
 {
@@ -117,10 +117,10 @@ entity across multiple services. For example when doing this query:
 }
 ```
 
-The `resolve_reference` method is called with the `id` of the book for each book
-returned by the books service. The `id` is the field that has been defined as
-the key for the `Book` type. In this example we are creating instance an instance
-of `Book` with the requested id and a fixed number of reviews.
+`resolve_reference` is called with the `id` of the book for each book returned
+by the books service. Recall that above we defined the `id` field as the `key`
+for the `Book` type. In this example we are creating an instance of `Book` with
+the requested `id` and a fixed number of reviews.
 
 If we added more fields to book in a database this would be the place where we
 could query our database for the additional fields.
