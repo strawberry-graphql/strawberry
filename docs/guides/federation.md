@@ -96,8 +96,8 @@ We have also declared three fields on `Book`, one of which is `id` which is mark
 federation that this field is not available in this service, and **that** it
 comes from another service.
 
-The other field are `reviews` which results in a list of `Reviews` for this book
-and `reviews_count` which holds the number of reviews for this book.
+The other fields are `reviews` (the list of `Reviews` for this book) and
+`reviews_count` (the number of reviews for this book).
 
 Finally, we also have a class method, `resolve_reference`, that allows us to
 instantiate types when they are referred to by other services. The
@@ -122,8 +122,8 @@ by the books service. Recall that above we defined the `id` field as the `key`
 for the `Book` type. In this example we are creating an instance of `Book` with
 the requested `id` and a fixed number of reviews.
 
-If we added more fields to book in a database this would be the place where we
-could query our database for the additional fields.
+If we were to add more fields to `Book` that were stored in a database, this would
+be where we could perform queries for these fields' values.
 
 The last thing we need to do is to define a `Query` type, even if our service
 only has one type that is not used directly in any GraphQL query. This is
