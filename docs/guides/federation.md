@@ -127,10 +127,10 @@ could query our database for the additional fields.
 
 The last thing we need to do is to define a `Query` type, even if our service
 only has one type that is not used directly in any GraphQL query. This is
-because any GraphQL server requires the Query type to be defined.
-
+because the GraphQL spec mandates that a GraphQL server defines a Query type, even
+if it ends up being empty/unused.
 In addition to that we also need to let Strawberry know about our Book and
-Review types. Since they are not being used anywhere, Strawberry won't be able
+Review types. Since they are not reachable from the `Query` field itself, Strawberry won't be able
 to find them by default.
 
 ```python
@@ -179,7 +179,7 @@ When running this example you'll be able to run query like the following:
 ```
 
 We have provided a full example that you can run and tweak to play with
-Strawberry and Federation, the repo is available here:
+Strawberry and Federation. The repo is available here:
 https://github.com/strawberry-graphql/federation-demo
 
 [1]: https://www.apollographql.com/docs/federation "Apollo Federation Introduction"
