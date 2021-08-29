@@ -7,7 +7,7 @@ title: Federation
 Strawberry supports [Apollo Federation][1] out of the box, that means that you
 can create services using Strawberry and federate them via Apollo Gateway.
 
-> _NOTE_: we don’t have a gateway server, you’d need to always use the Apollo
+> _NOTE_: we don’t have a gateway server, you’ll still need to use the Apollo
 > Gateway for this.
 
 Apollo Federation allows you to combine multiple GraphQL APIs into one. This can
@@ -16,10 +16,10 @@ be extremely useful when working with a service oriented architecture.
 ## Federated schema example
 
 Let’s look at an example on how to implement Apollo Federation using Strawberry.
-Let's assume we have an application with two services that both expose a GraphQL
+Let's assume we have an application with two services that each expose a GraphQL
 API:
 
-1. `book`: a service to manage all the books we have
+1. `books`: a service to manage all the books we have
 2. `reviews`: a service to manage book reviews
 
 ### Books service
@@ -45,21 +45,21 @@ schema = strawberry.federation.Schema(query=Query)
 We defined two types: `Book` and `Query`, where `Query` has only one field that
 allows us to fetch all the books.
 
-Notice that the `Book` type used the `strawberry.federation.type` decorator, as
-opposed to the normal `strawberry.type`, this new decorator extends the base one
-and allows us to define federation specific attributes on the type.
+Notice that the `Book` type is used the `strawberry.federation.type` decorator,
+as opposed to the normal `strawberry.type`, this new decorator extends the base
+one and allows us to define federation-specific attributes on the type.
 
-In this case we are telling federation that the key to uniquely identify a book
-is the `id` field.
+Here, we are telling the federation system that the `Book`'s `id` field is its
+uniquely-identifying key.
 
-> Federation keys can be thought primary keys. They are used by the gateway to
-> query types between multiple services and then join them into the augmented
+> Federation keys can be thought of as primary keys. They are used by the gateway
+> to query types between multiple services and then join them into the augmented
 > type.
 
 ### Reviews service
 
-Let’s look at how our review service looks like: we want to define a type for a
-review but also extend the book to have a list of reviews.
+Now, let’s take a look at our review service: we want to define a type for a
+review but also extend the `Book` type to have a list of reviews.
 
 ```python
 @strawberry.type
@@ -83,12 +83,13 @@ class Book:
         return Book(id, reviews_count=3)
 ```
 
-Now things are looking more interesting, the `Review` type is a GraphQL type
-that holds the content of the review.
+Now things are looking more interesting; the `Review` type is a GraphQL type
+that holds the contents of the review.
 
-Meanwhile we are able to extend the `Book` type by using
-`strawberry.federation.type` again and passing `extend=True` as a parameter.
-This tells federation that we are extending an already existing type.
+We've also been able to extend the `Book` type by using again
+`strawberry.federation.type`, this time passing `extend=True` as an argument.
+This is important because we need to tell federation that we are extending a
+type that already exists, not creating a new one.
 
 We are also declaring three fields on `Book`, one is the `id` which is marked as
 external with `strawberry.federation.field(external=True)`, this tells
