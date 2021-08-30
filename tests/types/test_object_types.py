@@ -1,6 +1,9 @@
 # type: ignore
+import re
 from enum import Enum
 from typing import List, Optional, TypeVar
+
+import pytest
 
 import strawberry
 from strawberry.field import StrawberryField
@@ -122,3 +125,30 @@ def test_union():
     field: StrawberryField = WishfulThinking._type_definition.fields[0]
 
     assert field.type is EU
+
+
+def test_fields_with_defaults():
+    @strawberry.type
+    class Country:
+        name: str = "United Kingdom"
+        currency_code: str
+
+    country = Country(currency_code="GBP")
+    assert country.name == "United Kingdom"
+    assert country.currency_code == "GBP"
+
+    country = Country(name="United States of America", currency_code="USD")
+    assert country.name == "United States of America"
+    assert country.currency_code == "USD"
+
+
+def test_positional_args_not_allowed():
+    @strawberry.type
+    class Thing:
+        name: str
+
+    with pytest.raises(
+        TypeError,
+        match=re.escape("__init__() takes 1 positional argument but 2 were given"),
+    ):
+        Thing("something")
