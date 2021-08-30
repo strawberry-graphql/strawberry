@@ -133,7 +133,7 @@ def test_support_nested_generics():
     class Query:
         @strawberry.field
         def users(self) -> Connection[User]:
-            return Connection(edge=Edge(node=User("Patrick")))
+            return Connection(edge=Edge(node=User(name="Patrick")))
 
     schema = strawberry.Schema(query=Query)
 
@@ -285,7 +285,9 @@ def test_can_extend_generics():
     class Query:
         @strawberry.field
         def users(self) -> ConnectionWithMeta[User]:
-            return ConnectionWithMeta(meta="123", edges=[Edge(node=User("Patrick"))])
+            return ConnectionWithMeta(
+                meta="123", edges=[Edge(node=User(name="Patrick"))]
+            )
 
     schema = strawberry.Schema(query=Query)
 
@@ -455,7 +457,7 @@ def test_supports_generic_in_unions_with_nesting():
     class Query:
         @strawberry.field
         def users(self) -> typing.Union[Connection[User], Fallback]:
-            return Connection(edge=Edge(node=User("Patrick")))
+            return Connection(edge=Edge(node=User(name="Patrick")))
 
     schema = strawberry.Schema(query=Query)
 
@@ -609,7 +611,7 @@ def test_supports_lists_within_unions():
     class Query:
         @strawberry.field
         def user(self) -> typing.Union[User, Edge[User]]:
-            return Edge(nodes=[User("P")])
+            return Edge(nodes=[User(name="P")])
 
     schema = strawberry.Schema(query=Query)
 

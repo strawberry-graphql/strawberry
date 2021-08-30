@@ -104,7 +104,7 @@ def test_can_rename_fields():
     class Query:
         @strawberry.field
         def hello(self) -> Hello:
-            return Hello("hi")
+            return Hello(value="hi")
 
         @strawberry.field(name="example1")
         def example(self, query_param: str) -> str:
