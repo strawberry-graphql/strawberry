@@ -69,10 +69,10 @@ class Review:
     id: int
     body: str
 
-def get_reviews(book: "Book") -> List[Review]:
+def get_reviews(root: "Book") -> List[Review]:
     return [
-      Review(id=id_, body=f"A review for {book.id}")
-      for id_ in range(book.reviews_count)
+      Review(id=id_, body=f"A review for {root.id}")
+      for id_ in range(root.reviews_count)
     ]
 
 @strawberry.federation.type(extend=True, keys=["id"])
