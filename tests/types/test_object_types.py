@@ -1,4 +1,5 @@
 # type: ignore
+import dataclasses
 import re
 from enum import Enum
 from typing import List, Optional, TypeVar
@@ -140,6 +141,38 @@ def test_fields_with_defaults():
     country = Country(name="United States of America", currency_code="USD")
     assert country.name == "United States of America"
     assert country.currency_code == "USD"
+
+
+def test_fields_with_defaults_inheritance():
+    @strawberry.interface
+    class A:
+        text: str
+        delay: Optional[int] = None
+
+    @strawberry.type
+    class B(A):
+        attachments: Optional[List[A]] = None
+
+    @strawberry.type
+    class C(A):
+        fields: List[B]
+
+    c_inst = C(
+        text="some text",
+        fields=[B(text="more text")],
+    )
+
+    assert dataclasses.asdict(c_inst) == {
+        "text": "some text",
+        "delay": None,
+        "fields": [
+            {
+                "text": "more text",
+                "attachments": None,
+                "delay": None,
+            }
+        ],
+    }
 
 
 def test_positional_args_not_allowed():

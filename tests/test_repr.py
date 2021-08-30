@@ -13,7 +13,7 @@ def test_repr_type():
         id: strawberry.ID
 
     assert (
-        repr(MyType("a", 1, True, 3.2, "123"))
+        repr(MyType(s="a", i=1, b=True, f=3.2, id="123"))
         == "test_repr_type.<locals>.MyType(s='a', i=1, b=True, f=3.2, id='123')"
     )
 

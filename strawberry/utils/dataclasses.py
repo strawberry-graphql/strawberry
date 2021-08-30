@@ -56,7 +56,9 @@ def dataclass_init_fn(fields, frozen, has_post_init, self_name, globals):
     if not body_lines:
         body_lines = ["pass"]
 
-    _init_params = ["*"] + [_init_param(f) for f in fields if f.init]
+    _init_params = [_init_param(f) for f in fields if f.init]
+    if len(_init_params) > 0:
+        _init_params = ["*"] + _init_params
 
     return _create_fn(
         "__init__",
