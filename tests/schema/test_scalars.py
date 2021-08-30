@@ -100,7 +100,7 @@ def test_uuid_input():
 
 
 def test_override_built_in_scalars():
-    EpocDateTime = strawberry.scalar(
+    EpochDateTime = strawberry.scalar(
         datetime,
         serialize=lambda value: int(value.timestamp()),
         parse_value=lambda value: datetime.fromtimestamp(int(value), timezone.utc),
@@ -119,7 +119,7 @@ def test_override_built_in_scalars():
     schema = strawberry.Schema(
         Query,
         scalar_overrides={
-            datetime: EpocDateTime,
+            datetime: EpochDateTime,
         },
     )
 
