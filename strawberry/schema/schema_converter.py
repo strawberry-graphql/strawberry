@@ -414,7 +414,11 @@ class GraphQLCoreConverter:
             scalar_definition = scalar._scalar_definition
 
         if scalar_definition.name not in self.type_map:
-            implementation = _make_scalar_type(scalar_definition)
+            implementation = (
+                scalar_definition.implementation
+                if scalar_definition.implementation is not None
+                else _make_scalar_type(scalar_definition)
+            )
 
             self.type_map[scalar_definition.name] = ConcreteType(
                 definition=scalar_definition, implementation=implementation

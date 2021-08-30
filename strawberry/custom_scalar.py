@@ -1,6 +1,8 @@
 from dataclasses import dataclass
 from typing import Callable, Mapping, Optional, TypeVar, Union
 
+from graphql import GraphQLScalarType
+
 from strawberry.type import StrawberryType
 
 from .utils.str_converters import to_camel_case
@@ -17,6 +19,10 @@ class ScalarDefinition(StrawberryType):
     serialize: Optional[Callable]
     parse_value: Optional[Callable]
     parse_literal: Optional[Callable]
+
+    # Optionally store the GraphQLScalarType instance so that we don't get
+    # duplicates
+    implementation: Optional[GraphQLScalarType] = None
 
     def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
