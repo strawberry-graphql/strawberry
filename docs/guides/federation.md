@@ -4,14 +4,16 @@ title: Federation
 
 # Apollo Federation Guide
 
-Strawberry supports [Apollo Federation][1] out of the box, that means that you
-can create services using Strawberry and federate them via Apollo Gateway.
+Apollo Federation allows you to combine multiple GraphQL APIs into one. This can
+be extremely useful when working with a service oriented architecture.
+
+Strawberry supports [Apollo
+Federation][https://www.apollographql.com/docs/federation] out of the box, that
+means that you can create services using Strawberry and federate them via Apollo
+Gateway.
 
 > _NOTE_: we don’t have a gateway server, you’ll still need to use the Apollo
 > Gateway for this.
-
-Apollo Federation allows you to combine multiple GraphQL APIs into one. This can
-be extremely useful when working with a service oriented architecture.
 
 ## Federated schema example
 
@@ -52,9 +54,9 @@ one and allows us to define federation-specific attributes on the type.
 Here, we are telling the federation system that the `Book`'s `id` field is its
 uniquely-identifying key.
 
-> Federation keys can be thought of as primary keys. They are used by the gateway
-> to query types between multiple services and then join them into the augmented
-> type.
+> Federation keys can be thought of as primary keys. They are used by the
+> gateway to query types between multiple services and then join them into the
+> augmented type.
 
 ### Reviews service
 
@@ -64,12 +66,13 @@ review but also extend the `Book` type to have a list of reviews.
 ```python
 @strawberry.type
 class Review:
+    id: int
     body: str
 
 def get_reviews(book: "Book") -> List[Review]:
     return [
-      Review(body=f"This is review number {index} for {book.id}")
-      for index in range(book.reviews_count)
+      Review(id=id_, body=f"A review for {book.id}")
+      for id_ in range(book.reviews_count)
     ]
 
 @strawberry.federation.type(extend=True, keys=["id"])
@@ -80,7 +83,9 @@ class Book:
 
     @classmethod
     def resolve_reference(cls, id: strawberry.ID):
-        return Book(id, reviews_count=3)
+        # here we could fetch the book from the database
+        # or even from an API
+        return Book(id=id, reviews_count=3)
 ```
 
 Now things are looking more interesting; the `Review` type is a GraphQL type
@@ -91,9 +96,9 @@ We've also been able to extend the `Book` type by using again
 This is important because we need to tell federation that we are extending a
 type that already exists, not creating a new one.
 
-We have also declared three fields on `Book`, one of which is `id` which is marked as
-`external` with `strawberry.federation.field(external=True)`. This tells
-federation that this field is not available in this service, and **that** it
+We have also declared three fields on `Book`, one of which is `id` which is
+marked as `external` with `strawberry.federation.field(external=True)`. This
+tells federation that this field is not available in this service, and that it
 comes from another service.
 
 The other fields are `reviews` (the list of `Reviews` for this book) and
@@ -122,16 +127,15 @@ by the books service. Recall that above we defined the `id` field as the `key`
 for the `Book` type. In this example we are creating an instance of `Book` with
 the requested `id` and a fixed number of reviews.
 
-If we were to add more fields to `Book` that were stored in a database, this would
-be where we could perform queries for these fields' values.
+If we were to add more fields to `Book` that were stored in a database, this
+would be where we could perform queries for these fields' values.
 
-The last thing we need to do is to define a `Query` type, even if our service
-only has one type that is not used directly in any GraphQL query. This is
-because the GraphQL spec mandates that a GraphQL server defines a Query type, even
-if it ends up being empty/unused.
-In addition to that we also need to let Strawberry know about our Book and
-Review types. Since they are not reachable from the `Query` field itself, Strawberry won't be able
-to find them by default.
+Now we need to do is to define a `Query` type, even if our service only has one
+type that is not used directly in any GraphQL query. This is because the GraphQL
+spec mandates that a GraphQL server defines a Query type, even if it ends up
+being empty/unused. Finally we also need to let Strawberry know about our Book
+and Review types. Since they are not reachable from the `Query` field itself,
+Strawberry won't be able to find them by default.
 
 ```python
 @strawberry.type
@@ -171,6 +175,7 @@ When running this example you'll be able to run query like the following:
 {
   books {
     id
+    reviewsCount
     reviews {
       body
     }
@@ -181,5 +186,3 @@ When running this example you'll be able to run query like the following:
 We have provided a full example that you can run and tweak to play with
 Strawberry and Federation. The repo is available here:
 https://github.com/strawberry-graphql/federation-demo
-
-[1]: https://www.apollographql.com/docs/federation "Apollo Federation Introduction"
