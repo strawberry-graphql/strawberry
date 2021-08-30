@@ -7,10 +7,10 @@ title: Federation
 Apollo Federation allows you to combine multiple GraphQL APIs into one. This can
 be extremely useful when working with a service oriented architecture.
 
-Strawberry supports [Apollo
-Federation][https://www.apollographql.com/docs/federation] out of the box, that
-means that you can create services using Strawberry and federate them via Apollo
-Gateway.
+Strawberry supports
+[Apollo Federation](https://www.apollographql.com/docs/federation) out of the
+box, that means that you can create services using Strawberry and federate them
+via Apollo Gateway.
 
 > _NOTE_: we don’t have a gateway server, you’ll still need to use the Apollo
 > Gateway for this.
@@ -185,4 +185,4 @@ When running this example you'll be able to run query like the following:
 
 We have provided a full example that you can run and tweak to play with
 Strawberry and Federation. The repo is available here:
-https://github.com/strawberry-graphql/federation-demo
+[https://github.com/strawberry-graphql/federation-demo](https://github.com/strawberry-graphql/federation-demo)
