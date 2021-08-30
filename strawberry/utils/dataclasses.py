@@ -25,6 +25,9 @@ def dataclass_init_fn(fields, frozen, has_post_init, self_name, globals):
 
     Code is adapted from:
     https://github.com/python/cpython/blob/v3.9.6/Lib/dataclasses.py#L489-L536
+
+    Note: in Python 3.10 and above we use the `kw_only` argument to achieve the
+    same result.
     """
     # fields contains both real fields and InitVar pseudo-fields.
 
