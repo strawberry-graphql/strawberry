@@ -16,6 +16,7 @@ from typing import (
 )
 
 from cached_property import cached_property  # type: ignore
+from typing_extensions import Literal
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import UNSET, StrawberryArgument
@@ -278,6 +279,7 @@ def field(
     name: Optional[str] = None,
     is_subscription: bool = False,
     description: Optional[str] = None,
+    init: Optional[Literal[False]] = False,
     permission_classes: Optional[List[Type[BasePermission]]] = None,
     federation: Optional[FederationFieldParams] = None,
     deprecation_reason: Optional[str] = None,
@@ -324,6 +326,7 @@ def field(
     name: Optional[str] = None,
     is_subscription: bool = False,
     description: Optional[str] = None,
+    init: Optional[bool] = False,
     permission_classes: Optional[List[Type[BasePermission]]] = None,
     federation: Optional[FederationFieldParams] = None,
     deprecation_reason: Optional[str] = None,
@@ -359,6 +362,7 @@ def field(
     )
 
     if resolver:
+        assert init is False, "Can't set init as True when passing a resolver."
         return field_(resolver)
     return field_
 

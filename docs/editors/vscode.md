@@ -48,4 +48,13 @@ class User:
     name: str = strawberry.field(resolver=a)
 ```
 
-We will update Strawberry to support this when and if Pylance allows it.
+To prevent pylance from erroring you can provide `init=False` to the field
+function, this won't change any behavior in the code but will prevent pylance
+from erroring, like so:
+
+```python
+@strawberry.type
+class User:
+    id: int
+    name: str = strawberry.field(resolver=a, init=False)
+```
