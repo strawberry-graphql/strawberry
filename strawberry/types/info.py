@@ -58,7 +58,7 @@ class Info(Generic[ContextType, RootValueType]):
     # TODO: merge type with StrawberryType when StrawberryObject is implemented
     @property
     def return_type(self) -> Optional[Union[type, StrawberryType]]:
-        return self._field.type
+        return self._field.resolved_type
 
     # TODO: create an abstraction on these fields
     @property

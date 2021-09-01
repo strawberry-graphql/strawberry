@@ -129,7 +129,7 @@ def type(
                 (
                     extra_field.name,
                     extra_field.type,
-                    extra_field,
+                    strawberry_field,
                 )
             )
 
