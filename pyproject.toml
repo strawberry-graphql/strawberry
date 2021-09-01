@@ -79,7 +79,7 @@ types-requests = "^2.25.6"
 types-python-dateutil = "^0.1.6"
 types-freezegun = "^1.1.0"
 types-chardet = "^0.1.5"
-types-certifi = "^0.1.4"
+types-certifi = "^2020.4.0"
 types-aiofiles = "^0.1.9"
 
 [tool.poetry.extras]
