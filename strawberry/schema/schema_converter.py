@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Tuple, Type, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Tuple, Type, Union, cast
 
 
 # TypeGuard is only available in typing_extensions => 3.10, we don't want
@@ -32,13 +32,18 @@ from graphql import (
 )
 
 from strawberry.arguments import UNSET, StrawberryArgument, convert_arguments, is_unset
+from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.directive import DirectiveDefinition
 from strawberry.enum import EnumDefinition, EnumValue
-from strawberry.exceptions import MissingTypesForGenericError
+from strawberry.exceptions import (
+    MissingTypesForGenericError,
+    ScalarAlreadyRegisteredError,
+)
 from strawberry.field import StrawberryField
 from strawberry.lazy_type import LazyType
 from strawberry.scalars import is_scalar
 from strawberry.schema.config import StrawberryConfig
+from strawberry.schema.types.scalar import _make_scalar_type
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
 from strawberry.types.info import Info
 from strawberry.types.types import TypeDefinition
@@ -46,7 +51,6 @@ from strawberry.union import StrawberryUnion
 from strawberry.utils.await_maybe import await_maybe
 
 from .types.concrete_type import ConcreteType
-from .types.scalar import get_scalar_type
 
 
 # graphql-core expects a resolver for an Enum type to return
@@ -63,9 +67,14 @@ class CustomGraphQLEnumType(GraphQLEnumType):
 class GraphQLCoreConverter:
     # TODO: Make abstract
 
-    def __init__(self, config: StrawberryConfig):
+    def __init__(
+        self,
+        config: StrawberryConfig,
+        scalar_registry: Dict[object, Union[ScalarWrapper, ScalarDefinition]],
+    ):
         self.type_map: Dict[str, ConcreteType] = {}
         self.config = config
+        self.scalar_registry = scalar_registry
 
     def from_argument(self, argument: StrawberryArgument) -> GraphQLArgument:
         argument_type: GraphQLType
@@ -393,7 +402,36 @@ class GraphQLCoreConverter:
             return _resolver
 
     def from_scalar(self, scalar: Type) -> GraphQLScalarType:
-        return get_scalar_type(scalar, self.type_map)
+        scalar_definition: ScalarDefinition
+
+        if scalar in self.scalar_registry:
+            _scalar_definition = self.scalar_registry[scalar]
+            if isinstance(_scalar_definition, ScalarWrapper):
+                scalar_definition = _scalar_definition._scalar_definition
+            else:
+                scalar_definition = _scalar_definition
+        else:
+            scalar_definition = scalar._scalar_definition
+
+        if scalar_definition.name not in self.type_map:
+            implementation = (
+                scalar_definition.implementation
+                if scalar_definition.implementation is not None
+                else _make_scalar_type(scalar_definition)
+            )
+
+            self.type_map[scalar_definition.name] = ConcreteType(
+                definition=scalar_definition, implementation=implementation
+            )
+        else:
+            if self.type_map[scalar_definition.name].definition != scalar_definition:
+                raise ScalarAlreadyRegisteredError(scalar_definition.name)
+
+            implementation = cast(
+                GraphQLScalarType, self.type_map[scalar_definition.name].implementation
+            )
+
+        return implementation
 
     def from_type(self, type_: Union[StrawberryType, type]) -> GraphQLNullableType:
         if _is_generic(type_):

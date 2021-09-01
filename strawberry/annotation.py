@@ -19,7 +19,7 @@ except ImportError:  # pragma: no cover
     # ForwardRef is private in python 3.6 and 3.7
     from typing import _ForwardRef as ForwardRef  # type: ignore
 
-from strawberry.custom_scalar import SCALAR_REGISTRY, ScalarDefinition
+from strawberry.custom_scalar import ScalarDefinition
 from strawberry.enum import EnumDefinition
 from strawberry.lazy_type import LazyType
 from strawberry.scalars import SCALAR_TYPES
@@ -202,9 +202,6 @@ class StrawberryAnnotation:
     @classmethod
     def _is_scalar(cls, annotation: Any) -> bool:
         type_ = getattr(annotation, "__supertype__", annotation)
-
-        if type_ in SCALAR_REGISTRY:
-            return True
 
         if type_ in SCALAR_TYPES:
             return True
