@@ -4,7 +4,6 @@ from typing import Any, Collection, Dict, List, Optional, Sequence, Type, Union
 
 from graphql import (
     ExecutionContext as GraphQLExecutionContext,
-    GraphQLScalarType,
     GraphQLSchema,
     get_introspection_query,
     parse,
