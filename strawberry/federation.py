@@ -1,4 +1,6 @@
-from typing import Callable, List, Optional, Type, Union, cast
+from typing import Any, Callable, List, Optional, Type, TypeVar, Union, cast, overload
+
+from typing_extensions import Literal
 
 from graphql import (
     GraphQLField,
@@ -11,6 +13,7 @@ from graphql import (
 )
 from graphql.type.definition import GraphQLArgument
 
+from strawberry.arguments import UNSET
 from strawberry.custom_scalar import ScalarDefinition
 from strawberry.enum import EnumDefinition
 from strawberry.permission import BasePermission
@@ -19,10 +22,18 @@ from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 from strawberry.utils.inspect import get_func_args
 
-from .field import FederationFieldParams, field as base_field
+from .field import (
+    _RESOLVER_TYPE,
+    FederationFieldParams,
+    StrawberryField,
+    field as base_field,
+)
 from .object_type import FederationTypeParams, type as base_type
 from .printer import print_schema
 from .schema import Schema as BaseSchema
+
+
+T = TypeVar("T")
 
 
 def type(
@@ -31,7 +42,7 @@ def type(
     name: str = None,
     description: str = None,
     keys: List[str] = None,
-    extend: bool = False
+    extend: bool = False,
 ):
     return base_type(
         cls,
@@ -41,27 +52,89 @@ def type(
     )
 
 
+@overload
 def field(
-    resolver: Optional[Callable] = None,
     *,
+    resolver: Callable[[], T],
     name: Optional[str] = None,
+    is_subscription: bool = False,
+    description: Optional[str] = None,
     provides: Optional[List[str]] = None,
     requires: Optional[List[str]] = None,
     external: bool = False,
+    init: Optional[Literal[False]] = False,
+    permission_classes: Optional[List[Type[BasePermission]]] = None,
+    deprecation_reason: Optional[str] = None,
+    default: Any = UNSET,
+    default_factory: Union[Callable, object] = UNSET,
+) -> T:
+    ...
+
+
+@overload
+def field(
+    *,
+    name: Optional[str] = None,
     is_subscription: bool = False,
     description: Optional[str] = None,
-    permission_classes: Optional[List[Type[BasePermission]]] = None
-):
+    provides: Optional[List[str]] = None,
+    requires: Optional[List[str]] = None,
+    external: bool = False,
+    permission_classes: Optional[List[Type[BasePermission]]] = None,
+    deprecation_reason: Optional[str] = None,
+    default: Any = UNSET,
+    default_factory: Union[Callable, object] = UNSET,
+) -> Any:
+    ...
+
+
+@overload
+def field(
+    resolver: _RESOLVER_TYPE,
+    *,
+    name: Optional[str] = None,
+    is_subscription: bool = False,
+    description: Optional[str] = None,
+    provides: Optional[List[str]] = None,
+    requires: Optional[List[str]] = None,
+    external: bool = False,
+    permission_classes: Optional[List[Type[BasePermission]]] = None,
+    deprecation_reason: Optional[str] = None,
+    default: Any = UNSET,
+    default_factory: Union[Callable, object] = UNSET,
+) -> StrawberryField:
+    ...
+
+
+def field(
+    resolver: Optional[_RESOLVER_TYPE] = None,
+    *,
+    name: Optional[str] = None,
+    is_subscription: bool = False,
+    description: Optional[str] = None,
+    provides: Optional[List[str]] = None,
+    requires: Optional[List[str]] = None,
+    external: bool = False,
+    init: Optional[bool] = False,
+    permission_classes: Optional[List[Type[BasePermission]]] = None,
+    deprecation_reason: Optional[str] = None,
+    default: Any = UNSET,
+    default_factory: Union[Callable, object] = UNSET,
+) -> Any:
     return base_field(
-        resolver=resolver,
+        resolver=resolver,  # type: ignore
         name=name,
         is_subscription=is_subscription,
         description=description,
         permission_classes=permission_classes,
+        deprecation_reason=deprecation_reason,
+        default=default,
+        default_factory=default_factory,
+        init=init,  # type: ignore
         federation=FederationFieldParams(
             provides=provides or [], requires=requires or [], external=external
         ),
-    )
+    )  # type: ignore
 
 
 def _has_federation_keys(
