@@ -1,7 +1,7 @@
 import builtins
 import dataclasses
 from functools import partial
-from typing import Any, Dict, List, Optional, Tuple, Type, cast
+from typing import Any, Dict, List, Optional, Type, cast
 
 from pydantic import BaseModel
 from pydantic.fields import ModelField
@@ -112,7 +112,7 @@ def type(
 
         for extra_field in extra_fields + private_fields:
             strawberry_field = StrawberryField(
-                python_name=annotation_name,
+                python_name=extra_field.name,
                 graphql_name=None,
                 # we need a default value when adding additional fields
                 # on top of a type generated from Pydantic, this is because
@@ -127,12 +127,11 @@ def type(
             strawberry_field.type = type_
             all_fields.append(
                 (
-                    field.name,
-                    field.type,
-                    field,
+                    extra_field.name,
+                    extra_field.type,
+                    extra_field,
                 )
             )
-        )
 
         # Sort fields so that fields with missing defaults go first
         # because dataclasses require that fields with no defaults are defined
