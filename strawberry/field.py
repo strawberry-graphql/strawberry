@@ -121,6 +121,25 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
     def __call__(self, resolver: _RESOLVER_TYPE) -> "StrawberryField":
         """Add a resolver to the field"""
 
+        # If we are stacking fields on top of each other
+        if isinstance(resolver, StrawberryField):
+            base_field = resolver
+            # Create a new field type that merges the 2 types together
+            NewFieldType = type(
+                f"{self.__class__.__name__}{resolver.__class__.__name__}",
+                (self.__class__, resolver.__class__),
+                {},
+            )
+            new_field = NewFieldType(
+                graphql_name=base_field.graphql_name,
+                description=base_field.description,
+                permission_classes=base_field.permission_classes,
+                deprecation_reason=base_field.deprecation_reason,
+                base_resolver=base_field.base_resolver,
+            )
+
+            return new_field
+
         # Allow for StrawberryResolvers or bare functions to be provided
         if not isinstance(resolver, StrawberryResolver):
             resolver = StrawberryResolver(resolver)
@@ -408,7 +427,6 @@ def field(
 
     it can be used both as decorator and as a normal function.
     """
-
     field_ = StrawberryField(
         python_name=None,
         graphql_name=name,

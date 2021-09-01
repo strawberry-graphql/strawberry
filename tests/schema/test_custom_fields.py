@@ -198,3 +198,84 @@ def test_modify_return_type_forward_reference():
     strawberry.Schema(query=Query)
 
     del FakeType
+
+
+def test_stacked_custom_fields():
+    def upper_case_field():
+        class UpperCaseField(StrawberryField):
+            def get_result(
+                self, source: Any, info: Any, arguments: Dict[str, Any]
+            ) -> str:
+                result = super().get_result(source, info, arguments)
+                return cast(str, result).upper()
+
+        return UpperCaseField()
+
+    def append_text_field(text: str):
+        class AppendTextField(StrawberryField):
+            def get_result(
+                self, source: Any, info: Any, arguments: Dict[str, Any]
+            ) -> str:
+                result = super().get_result(source, info, arguments)
+                return cast(str, result) + text
+
+        return AppendTextField()
+
+    def reverse_string():
+        class ReverseStringField(StrawberryField):
+            def get_result(
+                self, source: Any, info: Any, arguments: Dict[str, Any]
+            ) -> str:
+                result = super().get_result(source, info, arguments)
+                return cast(str, result)[::-1]
+
+        return ReverseStringField()
+
+    @strawberry.type
+    class Query:
+        @reverse_string()
+        @append_text_field(" world")
+        @upper_case_field()
+        def hi(self) -> str:
+            return "hello"
+
+    schema = strawberry.Schema(query=Query)
+
+    result = schema.execute_sync("{ hi }")
+
+    assert not result.errors
+    assert result.data["hi"] == "dlrow OLLEH"
+
+
+def test_stacking_custom_fields_preserves_attributes():
+    def upper_case_field():
+        class UpperCaseField(StrawberryField):
+            def get_result(
+                self, source: Any, info: Any, arguments: Dict[str, Any]
+            ) -> str:
+                result = super().get_result(source, info, arguments)
+                return cast(str, result).upper()
+
+        return UpperCaseField()
+
+    @strawberry.type
+    class Query:
+        @upper_case_field()
+        @strawberry.field(description="My field")
+        def hi(self) -> str:
+            return "hello"
+
+    schema = strawberry.Schema(query=Query)
+
+    expected_schema = '''
+        type Query {
+          """My field"""
+          hi: String!
+        }
+    '''
+    assert str(schema) == textwrap.dedent(expected_schema).strip()
+
+    result = schema.execute_sync("{ hi }")
+
+    assert not result.errors
+    assert result.data["hi"] == "HELLO"
