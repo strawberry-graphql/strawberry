@@ -327,7 +327,7 @@ def test_nested_list_of_complex_types():
             scalar_registry=DEFAULT_SCALAR_REGISTRY,
             config=StrawberryConfig(),
         )
-        == {"input": Input(numbers=[Number(1), Number(2)])}
+        == {"input": Input(numbers=[Number(value=1), Number(value=2)])}
     )
 
 
