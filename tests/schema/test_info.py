@@ -6,6 +6,7 @@ import pytest
 
 import strawberry
 from strawberry.types import Info
+from strawberry.types.nodes import SelectedField, InlineFragment, FragmentSpread
 
 
 def test_info_has_the_correct_shape():
@@ -84,55 +85,75 @@ def test_info_has_the_correct_shape():
 def test_info_field_fragments():
     @strawberry.type
     class Result:
-        field: str
+        ok: bool
+
+    selected_fields = None
 
     @strawberry.type
     class Query:
         @strawberry.field
         def hello(self, info: Info[str, str]) -> Result:
-            return Result(field=json.dumps(dataclasses.asdict(*info.selected_fields)))
+            nonlocal selected_fields
+            selected_fields = info.selected_fields
+            return Result(ok=True)
 
     schema = strawberry.Schema(query=Query)
     query = """{
         hello {
             ... on Result {
-                f: field @include(if: true)
+                k: ok @include(if: true)
             }
             ...frag
         }
     }
 
     fragment frag on Result {
-        field
+        ok
     }
     """
     result = schema.execute_sync(query)
 
     assert not result.errors
-    info = result.data["hello"]
-    field = json.loads(info.pop("f"))
-    assert field == {
-        "name": "hello",
-        "directives": {},
-        "alias": None,
-        "arguments": {},
-        "selections": [
-            {
-                "type_condition": "Result",
-                "selections": [
-                    {
-                        "name": "field",
-                        "directives": {"include": {"if": True}},
-                        "alias": "f",
-                        "arguments": {},
-                        "selections": [],
-                    }
-                ],
-                "directives": {},
-            },
-            {"name": "frag", "directives": {}},
-        ],
-    }
+    assert selected_fields == [
+        SelectedField(
+            name="hello",
+            directives={},
+            alias=None,
+            arguments={},
+            selections=[
+                InlineFragment(
+                    type_condition="Result",
+                    directives={},
+                    selections=[
+                        SelectedField(
+                            name="ok",
+                            alias="k",
+                            arguments={},
+                            directives={
+                                "include": {
+                                    "if": True,
+                                },
+                            },
+                            selections=[],
+                        )
+                    ]
+                ),
+                FragmentSpread(
+                    name="frag",
+                    directives={},
+                    type_condition="Result",
+                    selections=[
+                        SelectedField(
+                            name="ok",
+                            directives={},
+                            arguments={},
+                            selections=[],
+                        )
+                    ],
+                )
+            ],
+        )
+    ]
 
 
 @pytest.mark.parametrize(

@@ -14,7 +14,7 @@ from strawberry.type import StrawberryType
 if TYPE_CHECKING:
     from strawberry.field import StrawberryField
 
-from .nodes import SelectedField
+from .nodes import Selection, convert_selections
 
 
 ContextType = TypeVar("ContextType")
@@ -39,9 +39,10 @@ class Info(Generic[ContextType, RootValueType]):
         return self._raw_info.field_nodes
 
     @cached_property
-    def selected_fields(self) -> List[SelectedField]:
+    def selected_fields(self) -> List[Selection]:
         info = self._raw_info
-        return list(map(SelectedField, info.field_nodes))
+        fragments = info.fragments
+        return convert_selections(fragments, info.field_nodes)
 
     @property
     def context(self) -> ContextType:
