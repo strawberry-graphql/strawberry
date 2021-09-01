@@ -131,7 +131,6 @@ class Schema:
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
-        validate_queries: bool = True,
     ) -> ExecutionResult:
         # Create execution context
         execution_context = ExecutionContext(
@@ -149,7 +148,6 @@ class Schema:
             extensions=self.extensions,
             directives=self.directives,
             execution_context_class=self.execution_context_class,
-            validate_queries=validate_queries,
             execution_context=execution_context,
         )
 
@@ -165,7 +163,6 @@ class Schema:
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
-        validate_queries: bool = True,
     ) -> ExecutionResult:
         execution_context = ExecutionContext(
             query=query,
@@ -182,7 +179,6 @@ class Schema:
             extensions=self.extensions,
             directives=self.directives,
             execution_context_class=self.execution_context_class,
-            validate_queries=validate_queries,
             execution_context=execution_context,
         )
 

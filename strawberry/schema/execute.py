@@ -44,7 +44,6 @@ async def execute(
     directives: Sequence[Any],
     execution_context: ExecutionContext,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
-    validate_queries: bool = True,
 ) -> ExecutionResult:
     extensions_runner = ExtensionsRunner(
         execution_context=execution_context,
@@ -81,20 +80,23 @@ async def execute(
                 extensions=await extensions_runner.get_extensions_results(),
             )
 
-        if validate_queries:
-            async with extensions_runner.validation():
-                # Validation has already been run
-                if execution_context.errors is None:
-                    assert execution_context.graphql_schema
-                    assert execution_context.graphql_document
-                    execution_context.errors = validate_document(
-                        execution_context.graphql_schema,
-                        execution_context.graphql_document,
-                        execution_context.validation_rules,
-                    )
+        async with extensions_runner.validation():
+            # Check if there are any validation rules or if validation has
+            # already been run by an extension
+            if (
+                len(execution_context.validation_rules) > 0
+                and execution_context.errors is None
+            ):
+                assert execution_context.graphql_schema
+                assert execution_context.graphql_document
+                execution_context.errors = validate_document(
+                    execution_context.graphql_schema,
+                    execution_context.graphql_document,
+                    execution_context.validation_rules,
+                )
 
-                if execution_context.errors:
-                    return ExecutionResult(data=None, errors=execution_context.errors)
+            if execution_context.errors:
+                return ExecutionResult(data=None, errors=execution_context.errors)
 
         result = original_execute(
             schema,
@@ -128,7 +130,6 @@ def execute_sync(
     directives: Sequence[Any],
     execution_context: ExecutionContext,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
-    validate_queries: bool = True,
 ) -> ExecutionResult:
     extensions_runner = ExtensionsRunner(
         execution_context=execution_context,
@@ -165,20 +166,23 @@ def execute_sync(
                 extensions=extensions_runner.get_extensions_results_sync(),
             )
 
-        if validate_queries:
-            with extensions_runner.validation():
-                # Validation has already been run
-                if execution_context.errors is None:
-                    assert execution_context.graphql_schema
-                    assert execution_context.graphql_document
-                    execution_context.errors = validate_document(
-                        execution_context.graphql_schema,
-                        execution_context.graphql_document,
-                        execution_context.validation_rules,
-                    )
+        with extensions_runner.validation():
+            # Check if there are any validation rules or if validation has
+            # already been run by an extension
+            if (
+                len(execution_context.validation_rules) > 0
+                and execution_context.errors is None
+            ):
+                assert execution_context.graphql_schema
+                assert execution_context.graphql_document
+                execution_context.errors = validate_document(
+                    execution_context.graphql_schema,
+                    execution_context.graphql_document,
+                    execution_context.validation_rules,
+                )
 
-                if execution_context.errors:
-                    return ExecutionResult(data=None, errors=execution_context.errors)
+            if execution_context.errors:
+                return ExecutionResult(data=None, errors=execution_context.errors)
 
         result = original_execute(
             schema,
