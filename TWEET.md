@@ -1,4 +1,4 @@
-🆕 Release $version is out! Thanks to @jkimbo for this great new feature! 
+🆕 Release $version is out! Thanks to @jkimbo for this great new feature!
 We are now able to override the default scalars, so you don't have to stick
 with the defaults provided by us 😊
 
