@@ -131,7 +131,7 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
 
     @property
     def arguments(self) -> List[StrawberryArgument]:
-        arguments_as_types = self.get_arguments()
+        arguments_as_types = self.get_field_arguments()
 
         if not self.base_resolver:
             return []
@@ -149,7 +149,7 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
 
         return arguments
 
-    def get_arguments(self) -> Dict[str, object]:
+    def get_field_arguments(self) -> Dict[str, object]:
         """
         Hook to modify the GraphQL arguments for the field
         """

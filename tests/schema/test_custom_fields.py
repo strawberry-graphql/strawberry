@@ -44,8 +44,8 @@ def test_modify_arguments_simple():
                 return result[:first]
             return result
 
-        def get_arguments(self) -> Dict[str, object]:
-            arguments = super().get_arguments()
+        def get_field_arguments(self) -> Dict[str, object]:
+            arguments = super().get_field_arguments()
             arguments["first"] = Optional[int]
 
             return arguments
@@ -95,8 +95,8 @@ def test_modify_arguments_with_default():
                 return result[:first]
             return result
 
-        def get_arguments(self) -> Dict[str, object]:
-            arguments = super().get_arguments()
+        def get_field_arguments(self) -> Dict[str, object]:
+            arguments = super().get_field_arguments()
             arguments["first"] = self.create_argument(type_annotation=int, default=2)
 
             return arguments
