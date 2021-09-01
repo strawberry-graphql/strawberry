@@ -26,7 +26,7 @@
 # SOFTWARE.
 
 import re
-from typing import Callable, Dict, List, Optional, Union
+from typing import Callable, Dict, List, Optional, Type, Union
 
 from graphql import GraphQLError
 from graphql.language import (
@@ -40,13 +40,14 @@ from graphql.language import (
 )
 from graphql.validation import ValidationContext, ValidationRule
 
+from strawberry.extensions import AddValidationRule
 from strawberry.extensions.utils import is_introspection_key
 
 
 IgnoreType = Union[Callable[[str], bool], re.Pattern, str]
 
 
-def depth_limit_validator(
+def WithQueryDepthLimiter(
     max_depth: int,
     ignore: Optional[List[IgnoreType]] = None,
     callback: Callable[[Dict[str, int]], None] = None,
@@ -62,6 +63,16 @@ def depth_limit_validator(
         map of the depths for each operation.
     """
 
+    validator = create_validator(max_depth, ignore, callback)
+
+    return AddValidationRule(validator)
+
+
+def create_validator(
+    max_depth: int,
+    ignore: Optional[List[IgnoreType]] = None,
+    callback: Callable[[Dict[str, int]], None] = None,
+) -> Type[ValidationRule]:
     class DepthLimitValidator(ValidationRule):
         def __init__(self, validation_context: ValidationContext):
             document = validation_context.document

@@ -1,9 +1,11 @@
+from typing import Type
+
 from graphql import ASTValidationRule
 
 from strawberry.extensions.base_extension import Extension
 
 
-def AddValidationRule(validation_rule: ASTValidationRule):
+def AddValidationRule(validation_rule: Type[ASTValidationRule]):
     class _AddValidationRule(Extension):
         def on_request_start(self):
             self.execution_context.validation_rules = (
