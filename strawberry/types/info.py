@@ -41,8 +41,7 @@ class Info(Generic[ContextType, RootValueType]):
     @cached_property
     def selected_fields(self) -> List[Selection]:
         info = self._raw_info
-        fragments = info.fragments
-        return convert_selections(fragments, info.field_nodes)
+        return convert_selections(info, info.field_nodes)
 
     @property
     def context(self) -> ContextType:

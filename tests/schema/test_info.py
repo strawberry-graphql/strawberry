@@ -5,8 +5,9 @@ from typing import List, Optional
 import pytest
 
 import strawberry
+from strawberry.arguments import UNSET
 from strawberry.types import Info
-from strawberry.types.nodes import SelectedField, InlineFragment, FragmentSpread
+from strawberry.types.nodes import FragmentSpread, InlineFragment, SelectedField
 
 
 def test_info_has_the_correct_shape():
@@ -136,7 +137,7 @@ def test_info_field_fragments():
                             },
                             selections=[],
                         )
-                    ]
+                    ],
                 ),
                 FragmentSpread(
                     name="frag",
@@ -150,8 +151,77 @@ def test_info_field_fragments():
                             selections=[],
                         )
                     ],
-                )
+                ),
             ],
+        )
+    ]
+
+
+def test_info_arguments():
+    @strawberry.input
+    class TestInput:
+        name: str
+        age: Optional[int] = UNSET
+
+    selected_fields = None
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def test_arg(
+            self, info: Info[str, str], input: TestInput, another_arg: bool = True
+        ) -> str:
+            nonlocal selected_fields
+            selected_fields = info.selected_fields
+            return "Hi"
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        testArg(input: {name: "hi"})
+    }
+    """
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert selected_fields == [
+        SelectedField(
+            name="testArg",
+            directives={},
+            arguments={
+                "input": {
+                    "name": "hi",
+                },
+            },
+            selections=[],
+        )
+    ]
+
+    query = """query TestQuery($input: TestInput!) {
+        testArg(input: $input)
+    }
+    """
+    result = schema.execute_sync(
+        query,
+        variable_values={
+            "input": {
+                "name": "hi",
+                "age": 10,
+            },
+        },
+    )
+    assert not result.errors
+    assert selected_fields == [
+        SelectedField(
+            name="testArg",
+            directives={},
+            arguments={
+                "input": {
+                    "name": "hi",
+                    "age": 10,
+                },
+            },
+            selections=[],
         )
     ]
 
