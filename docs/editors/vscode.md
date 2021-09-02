@@ -7,7 +7,7 @@ title: Visual studio code
 Strawberry comes with support for both MyPy and Pylance, Microsoft's own
 language server for Python.
 
-This guide will illustrate how to configure Visual Studio Code and Pylance to
+This guide will explain how to configure Visual Studio Code and Pylance to
 work with Strawberry.
 
 ## Install Pylance
