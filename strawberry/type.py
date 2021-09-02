@@ -1,174 +1,141 @@
-import dataclasses
-from functools import partial
-from typing import List, Optional, Type, cast
+from __future__ import annotations
 
-from strawberry.utils.typing import is_generic
-
-from .exceptions import MissingFieldAnnotationError, MissingReturnAnnotationError
-from .field import StrawberryField
-from .types.type_resolver import _get_fields
-from .types.types import FederationTypeParams, TypeDefinition
-from .utils.str_converters import to_camel_case
+from abc import ABC, abstractmethod
+from typing import TYPE_CHECKING, List, Mapping, TypeVar, Union
 
 
-def _get_interfaces(cls: Type) -> List[TypeDefinition]:
-    interfaces = []
-
-    for base in cls.__bases__:
-        type_definition = cast(
-            Optional[TypeDefinition], getattr(base, "_type_definition", None)
-        )
-
-        if type_definition and type_definition.is_interface:
-            interfaces.append(type_definition)
-
-        for inherited_interface in _get_interfaces(base):
-            interfaces.append(inherited_interface)
-
-    return interfaces
+if TYPE_CHECKING:
+    from .types.types import TypeDefinition
 
 
-def _check_field_annotations(cls: Type):
-    """Are any of the dataclass Fields missing type annotations?
+class StrawberryType(ABC):
+    @property
+    def type_params(self) -> List[TypeVar]:
+        return []
 
-    This is similar to the check that dataclasses do during creation, but allows us to
-    manually add fields to cls' __annotations__ or raise proper Strawberry exceptions if
-    necessary
+    @abstractmethod
+    def copy_with(
+        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
+    ) -> Union[StrawberryType, type]:
+        raise NotImplementedError()
 
-    https://github.com/python/cpython/blob/6fed3c85402c5ca704eb3f3189ca3f5c67a08d19/Lib/dataclasses.py#L881-L884
-    """
-    cls_annotations = cls.__dict__.get("__annotations__", {})
-    cls.__annotations__ = cls_annotations
+    @property
+    @abstractmethod
+    def is_generic(self) -> bool:
+        raise NotImplementedError()
 
-    for field_name, field in cls.__dict__.items():
-        if not isinstance(field, (StrawberryField, dataclasses.Field)):
-            # Not a dataclasses.Field, nor a StrawberryField. Ignore
-            continue
+    def __eq__(self, other: object) -> bool:
+        from strawberry.annotation import StrawberryAnnotation
 
-        # If the field is a StrawberryField we need to do a bit of extra work
-        # to make sure dataclasses.dataclass is ready for it
-        if isinstance(field, StrawberryField):
+        if isinstance(other, StrawberryType):
+            return self is other
 
-            # Make sure the cls has an annotation
-            if field_name not in cls_annotations:
-                # If the field uses the default resolver, the field _must_ be
-                # annotated
-                if not field.base_resolver:
-                    raise MissingFieldAnnotationError(field_name)
+        elif isinstance(other, StrawberryAnnotation):
+            return self == other.resolve()
 
-                # The resolver _must_ have a return type annotation
-                # TODO: Maybe check this immediately when adding resolver to
-                #       field
-                if field.base_resolver.type is None:
-                    raise MissingReturnAnnotationError(field_name)
+        else:
+            # This could be simplified if StrawberryAnnotation.resolve() always returned
+            # a StrawberryType
+            resolved = StrawberryAnnotation(other).resolve()
+            if isinstance(resolved, StrawberryType):
+                return self == resolved
+            else:
+                return NotImplemented
 
-                cls_annotations[field_name] = field.base_resolver.type
-
-            # TODO: Make sure the cls annotation agrees with the field's type
-            # >>> if cls_annotations[field_name] != field.base_resolver.type:
-            # >>>     # TODO: Proper error
-            # >>>    raise Exception
-
-        # If somehow a non-StrawberryField field is added to the cls without annotations
-        # it raises an exception. This would occur if someone manually uses
-        # dataclasses.field
-        if field_name not in cls_annotations:
-            # Field object exists but did not get an annotation
-            raise MissingFieldAnnotationError(field_name)
+    def __hash__(self) -> int:
+        # TODO: Is this a bad idea? __eq__ objects are supposed to have the same hash
+        return id(self)
 
 
-def _wrap_dataclass(cls: Type):
-    """Wrap a strawberry.type class with a dataclass and check for any issues
-    before doing so"""
+class StrawberryContainer(StrawberryType):
+    def __init__(self, of_type: Union[StrawberryType, type]):
+        self.of_type = of_type
 
-    # Ensure all Fields have been properly type-annotated
-    _check_field_annotations(cls)
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, StrawberryType):
+            if isinstance(other, StrawberryContainer):
+                return self.of_type == other.of_type
+            else:
+                return False
 
-    return dataclasses.dataclass(cls)
+        return super().__eq__(other)
 
+    @property
+    def type_params(self) -> List[TypeVar]:
+        if hasattr(self.of_type, "_type_definition"):
+            parameters = getattr(self.of_type, "__parameters__", None)
 
-def _process_type(
-    cls,
-    *,
-    name: Optional[str] = None,
-    is_input: bool = False,
-    is_interface: bool = False,
-    description: Optional[str] = None,
-    federation: Optional[FederationTypeParams] = None,
-):
-    name = name or to_camel_case(cls.__name__)
+            return list(parameters) if parameters else []
 
-    wrapped = _wrap_dataclass(cls)
+        elif isinstance(self.of_type, StrawberryType):
+            return self.of_type.type_params
 
-    interfaces = _get_interfaces(wrapped)
-    fields = _get_fields(cls)
+        else:
+            return []
 
-    wrapped._type_definition = TypeDefinition(
-        name=name,
-        is_input=is_input,
-        is_interface=is_interface,
-        is_generic=is_generic(cls),
-        interfaces=interfaces,
-        description=description,
-        federation=federation or FederationTypeParams(),
-        origin=cls,
-        _fields=fields,
-    )
+    def copy_with(
+        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
+    ) -> StrawberryType:
+        of_type_copy: Union[StrawberryType, type]
 
-    # dataclasses removes attributes from the class here:
-    # https://github.com/python/cpython/blob/577d7c4e/Lib/dataclasses.py#L873-L880
-    # so we need to restore them, this will change in future, but for now this
-    # solution should suffice
+        # TODO: Obsolete with StrawberryObject
+        if hasattr(self.of_type, "_type_definition"):
+            type_definition: TypeDefinition = (
+                self.of_type._type_definition  # type: ignore
+            )
 
-    for field in fields:
-        if field.base_resolver and field.python_name:
-            setattr(cls, field.python_name, field.base_resolver.wrapped_func)
+            if type_definition.is_generic:
+                of_type_copy = type_definition.copy_with(type_var_map)
 
-    return wrapped
+        elif isinstance(self.of_type, StrawberryType) and self.of_type.is_generic:
+            of_type_copy = self.of_type.copy_with(type_var_map)
 
+        assert of_type_copy
 
-def type(
-    cls: Type = None,
-    *,
-    name: str = None,
-    is_input: bool = False,
-    is_interface: bool = False,
-    description: str = None,
-    federation: Optional[FederationTypeParams] = None,
-):
-    """Annotates a class as a GraphQL type.
+        return type(self)(of_type_copy)
 
-    Example usage:
+    @property
+    def is_generic(self) -> bool:
+        # TODO: Obsolete with StrawberryObject
+        type_ = self.of_type
+        if hasattr(self.of_type, "_type_definition"):
+            type_ = self.of_type._type_definition  # type: ignore
 
-    >>> @strawberry.type:
-    >>> class X:
-    >>>     field_abc: str = "ABC"
-    """
+        if isinstance(type_, StrawberryType):
+            return type_.is_generic
 
-    def wrap(cls):
-        return _process_type(
-            cls,
-            name=name,
-            is_input=is_input,
-            is_interface=is_interface,
-            description=description,
-            federation=federation,
-        )
-
-    if cls is None:
-        return wrap
-
-    return wrap(cls)
+        return False
 
 
-input = partial(type, is_input=True)
-interface = partial(type, is_interface=True)
+class StrawberryList(StrawberryContainer):
+    ...
 
 
-__all__ = [
-    "FederationTypeParams",
-    "TypeDefinition",
-    "input",
-    "interface",
-    "type",
-]
+class StrawberryOptional(StrawberryContainer):
+    ...
+
+
+class StrawberryTypeVar(StrawberryType):
+    def __init__(self, type_var: TypeVar):
+        self.type_var = type_var
+
+    def copy_with(  # type: ignore[override]
+        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
+    ) -> Union[StrawberryType, type]:
+        return type_var_map[self.type_var]
+
+    @property
+    def is_generic(self) -> bool:
+        return True
+
+    @property
+    def type_params(self) -> List[TypeVar]:
+        return [self.type_var]
+
+    def __eq__(self, other) -> bool:
+        if isinstance(other, StrawberryTypeVar):
+            return self.type_var == other.type_var
+        if isinstance(other, TypeVar):
+            return self.type_var == other
+
+        return super().__eq__(other)

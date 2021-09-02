@@ -5,12 +5,19 @@ title: ASGI
 # ASGI
 
 Strawberry comes with a basic ASGI integration. It provides an app that you can
-use to serve your GraphQL schema:
+use to serve your GraphQL schema. Before using Strawberry's ASGI support make sure
+you install all the required dependencies by running:
+
+```
+pip install strawberry-graphql[asgi]
+```
+
+Once that's done you can use Strawberry with ASGI like so:
 
 ```python
 from strawberry.asgi import GraphQL
 
-from api.schema import Schema
+from api.schema import schema
 
 app = GraphQL(schema)
 ```
@@ -39,7 +46,7 @@ the request and the response.
 
 ```python
 class MyGraphQL(GraphQL):
-    async def get_context(self, request: Union[Request, WebSocket], response: Optional[Response]) -> Any:
+    async def get_context(self, request: Union[Request, WebSocket], response: Optional[Response] = None) -> Any:
         return {"example": 1}
 
 
@@ -71,6 +78,23 @@ class Mutation:
         token = do_login()
         info.context["response"].set_cookie(key="token", value=token)
         return True
+```
+
+### Setting background tasks
+
+Similarly, [background tasks](https://www.starlette.io/background/) can be set on the response via the context:
+
+```python
+from starlette.background import BackgroundTask
+
+async def notify_new_flavour(name: str):
+    ...
+
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    def create_flavour(self, name: str, info: Info) -> bool:
+        info.context["response"].background = BackgroundTask(notify_new_flavour, name)
 ```
 
 ## get_root_value

@@ -5,9 +5,10 @@ from datetime import datetime
 from inspect import isawaitable
 
 from strawberry.extensions import Extension
+from strawberry.extensions.utils import get_path_from_info
 from strawberry.types.execution import ExecutionContext
 
-from .utils import get_path_from_info, should_skip_tracing
+from .utils import should_skip_tracing
 
 
 DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
@@ -73,14 +74,15 @@ class ApolloTracingStats:
 
 
 class ApolloTracingExtension(Extension):
-    def __init__(self):
+    def __init__(self, execution_context: ExecutionContext):
         self._resolver_stats: typing.List[ApolloResolverStats] = []
+        self.execution_context = execution_context
 
-    def on_request_start(self, *, execution_context: ExecutionContext):
+    def on_request_start(self):
         self.start_timestamp = self.now()
         self.start_time = datetime.utcnow()
 
-    def on_request_end(self, *, execution_context: ExecutionContext):
+    def on_request_end(self):
         self.end_timestamp = self.now()
         self.end_time = datetime.utcnow()
 

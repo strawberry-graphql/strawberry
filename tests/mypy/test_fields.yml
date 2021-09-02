@@ -4,7 +4,7 @@
 
     @strawberry.type
     class User:
-        name: str = strawberry.field(description='Example')
+        name: str = strawberry.field(description="Example")
 
     User(name="Patrick")
     User(n="Patrick")
@@ -41,12 +41,12 @@
     reveal_type(Example.e)
     reveal_type(Example.f_resolver)
   out: |
-    main:22: note: Revealed type is 'builtins.str'
-    main:23: note: Revealed type is 'builtins.str'
-    main:24: note: Revealed type is 'builtins.str'
-    main:25: note: Revealed type is 'builtins.str'
-    main:26: note: Revealed type is 'Any'
-    main:27: note: Revealed type is 'Any'
+    main:22: note: Revealed type is "builtins.str"
+    main:23: note: Revealed type is "builtins.str"
+    main:24: note: Revealed type is "builtins.str"
+    main:25: note: Revealed type is "builtins.str"
+    main:26: note: Revealed type is "Any"
+    main:27: note: Revealed type is "Any"
 
 - case: test_private_field
   main: |
@@ -65,7 +65,7 @@
             reveal_type(self.age)
             return self.age.trim()
   out: |
-    main:13: note: Revealed type is 'builtins.int'
+    main:13: note: Revealed type is "builtins.int"
     main:14: error: "int" has no attribute "trim"
 
 - case: test_field_with_default_cannot_be_before_non_default
@@ -86,12 +86,12 @@
 
     @strawberry.type
     class Example:
-        a: str = strawberry.field(description='Example')
+        a: str = strawberry.field(description="Example")
         b: str
 
     reveal_type(Example.a)
   out: |
-    main:8: note: Revealed type is 'builtins.str'
+    main:8: note: Revealed type is "builtins.str"
 
 - case: test_does_not_put_fields_with_resolver_in_init
   main: |
@@ -102,15 +102,15 @@
 
     @strawberry.type
     class Example:
-        a: str = strawberry.field(description='Example')
+        a: str = strawberry.field(description="Example")
         b: str = strawberry.field(resolver=resolver)
         c: str
 
-    i = Example(a='a', c='c')
+    i = Example(a="a", c="c")
 
     reveal_type(i.a)
   out: |
-    main:14: note: Revealed type is 'builtins.str'
+    main:14: note: Revealed type is "builtins.str"
 
 - case: test_using_strawberry_federation_field_does_not_break
   main: |
@@ -118,9 +118,9 @@
 
     @strawberry.type
     class Example:
-        a: str = strawberry.federation.field(description='Example')
+        a: str = strawberry.federation.field(description="Example")
         b: str
 
     reveal_type(Example.a)
   out: |
-    main:8: note: Revealed type is 'builtins.str'
+    main:8: note: Revealed type is "builtins.str"

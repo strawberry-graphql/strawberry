@@ -52,6 +52,41 @@ def test_can_covert_alias_pydantic_field_to_strawberry():
     assert user.password == "abc"
 
 
+def test_can_covert_falsy_values_to_strawberry():
+    class UserModel(pydantic.BaseModel):
+        age: int
+        password: str
+
+    @strawberry.experimental.pydantic.type(UserModel, fields=["age", "password"])
+    class User:
+        pass
+
+    origin_user = UserModel(age=0, password="")
+    user = User.from_pydantic(origin_user)
+
+    assert user.age == 0
+    assert user.password == ""
+
+
+def test_can_convert_pydantic_type_to_strawberry_with_private_field():
+    class UserModel(pydantic.BaseModel):
+        age: int
+
+    @strawberry.experimental.pydantic.type(model=UserModel, fields=["age"])
+    class User:
+        password: strawberry.Private[str]
+
+    user = User(age=30, password="qwerty")
+    assert user.age == 30
+    assert user.password == "qwerty"
+
+    definition = User._type_definition
+    assert len(definition.fields) == 1
+    assert definition.fields[0].python_name == "age"
+    assert definition.fields[0].graphql_name is None
+    assert definition.fields[0].type == int
+
+
 def test_can_covert_pydantic_type_with_nested_data_to_strawberry():
     class WorkModel(pydantic.BaseModel):
         name: str
@@ -324,3 +359,35 @@ def test_can_covert_pydantic_type_to_strawberry_with_missing_index_data_in_neste
         # This was None in the UserModel
         Work(name="Alternative", year=3030),
     ]
+
+
+def test_can_convert_input_types_to_pydantic():
+    class User(pydantic.BaseModel):
+        age: int
+        password: Optional[str]
+
+    @strawberry.experimental.pydantic.input(User, fields=["age", "password"])
+    class UserInput:
+        pass
+
+    data = UserInput(1, None)
+    user = data.to_pydantic()
+
+    assert user.age == 1
+    assert user.password is None
+
+
+def test_can_convert_input_types_to_pydantic_default_values():
+    class User(pydantic.BaseModel):
+        age: int
+        password: Optional[str] = None
+
+    @strawberry.experimental.pydantic.input(User, fields=["age", "password"])
+    class UserInput:
+        pass
+
+    data = UserInput(1)
+    user = data.to_pydantic()
+
+    assert user.age == 1
+    assert user.password is None

@@ -1,8 +1,10 @@
 # TODO: add links to docs
 
-from typing import List, Set
+from typing import List, Set, Union
 
 from graphql import GraphQLObjectType
+
+from strawberry.type import StrawberryType
 
 
 class NotAnEnum(Exception):
@@ -75,16 +77,13 @@ class UnallowedReturnTypeForUnion(Exception):
 class InvalidUnionType(Exception):
     """The union is constructed with an invalid type"""
 
-    pass
-
 
 class MissingTypesForGenericError(Exception):
     """Raised when a generic types was used without passing any type."""
 
-    def __init__(self, field_name: str, annotation):
+    def __init__(self, annotation: Union[StrawberryType, type]):
         message = (
-            f'The type "{annotation.__name__}" of the field "{field_name}" '
-            f"is generic, but no type has been passed"
+            f'The type "{repr(annotation)}" is generic, but no type has been passed'
         )
 
         super().__init__(message)
@@ -119,10 +118,10 @@ class PrivateStrawberryFieldError(Exception):
 
 
 class MultipleStrawberryArgumentsError(Exception):
-    def __init__(self, field_name: str, argument_name: str):
+    def __init__(self, argument_name: str):
         message = (
-            f"Annotation for argument `{argument_name}` on field "
-            f"`{field_name}` cannot have multiple `strawberry.argument`s"
+            f"Annotation for argument `{argument_name}` cannot have multiple "
+            f"`strawberry.argument`s"
         )
 
         super().__init__(message)
@@ -141,5 +140,32 @@ class WrongNumberOfResultsReturned(Exception):
             "Received wrong number of results in dataloader, "
             f"expected: {expected}, received: {received}"
         )
+
+        super().__init__(message)
+
+
+class FieldWithResolverAndDefaultValueError(Exception):
+    def __init__(self, field_name: str, type_name: str):
+        message = (
+            f'Field "{field_name}" on type "{type_name}" cannot define a default '
+            "value and a resolver."
+        )
+
+        super().__init__(message)
+
+
+class FieldWithResolverAndDefaultFactoryError(Exception):
+    def __init__(self, field_name: str, type_name: str):
+        message = (
+            f'Field "{field_name}" on type "{type_name}" cannot define a '
+            "default_factory and a resolver."
+        )
+
+        super().__init__(message)
+
+
+class MissingQueryError(Exception):
+    def __init__(self):
+        message = 'Request data is missing a "query" value'
 
         super().__init__(message)

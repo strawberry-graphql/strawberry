@@ -71,7 +71,7 @@ query {
 
 Interfaces are a good choice whenever you have a set of objects that are used
 interchangeably, and they have several significant fields in common. When they
-don’t have fields in common, use a [Union](/docs/types/unions) instead.
+don’t have fields in common, use a [Union](/docs/types/union) instead.
 
 ## Defining interfaces
 

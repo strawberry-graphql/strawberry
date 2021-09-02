@@ -15,8 +15,8 @@
     reveal_type(Flavour)
     reveal_type(a)
   out: |
-    main:13: note: Revealed type is 'def (value: builtins.object) -> main.IceCreamFlavour'
-    main:14: note: Revealed type is 'main.IceCreamFlavour'
+    main:13: note: Revealed type is "def (value: builtins.object) -> main.IceCreamFlavour"
+    main:14: note: Revealed type is "main.IceCreamFlavour"
 
 - case: test_enum_from_var
   main: |
@@ -41,8 +41,8 @@
     reveal_type(Flavour)
     reveal_type(a)
   out: |
-    main:19: note: Revealed type is 'Any'
-    main:20: note: Revealed type is 'Any'
+    main:19: note: Revealed type is "Any"
+    main:20: note: Revealed type is "Any"
 
 - case: test_enum_from_cast
   main: |
@@ -62,8 +62,8 @@
     reveal_type(Flavour)
     reveal_type(a)
   out: |
-    main:14: note: Revealed type is 'builtins.object'
-    main:15: note: Revealed type is 'Type[enum.Enum]'
+    main:14: note: Revealed type is "builtins.object"
+    main:15: note: Revealed type is "Type[enum.Enum]"
 
 - case: test_enum_with_decorator
   main: |
@@ -81,8 +81,8 @@
     reveal_type(IceCreamFlavour)
     reveal_type(a)
   out: |
-    main:12: note: Revealed type is 'def (value: builtins.object) -> main.IceCreamFlavour*'
-    main:13: note: Revealed type is 'main.IceCreamFlavour'
+    main:12: note: Revealed type is "def (value: builtins.object) -> main.IceCreamFlavour*"
+    main:13: note: Revealed type is "main.IceCreamFlavour"
 
 - case: test_enum_with_decorator_and_name
   main: |
@@ -100,5 +100,5 @@
     reveal_type(Flavour)
     reveal_type(a)
   out: |
-    main:12: note: Revealed type is 'def (value: builtins.object) -> main.Flavour*'
-    main:13: note: Revealed type is 'main.Flavour'
+    main:12: note: Revealed type is "def (value: builtins.object) -> main.Flavour*"
+    main:13: note: Revealed type is "main.Flavour"

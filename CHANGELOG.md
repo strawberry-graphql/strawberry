@@ -1,6 +1,1109 @@
 CHANGELOG
 =========
 
+0.75.0 - 2021-09-01
+-------------------
+
+This release improves how we deal with custom scalars. Instead of being global
+they are now scoped to the schema. This allows you to have multiple schemas in
+the same project with different scalars.
+
+Also you can now override the built in scalars with your own custom
+implementation. Out of the box Strawberry provides you with custom scalars for
+common Python types like `datetime` and `Decimal`. If you require a custom
+implementation of one of these built in scalars you can now pass a map of
+overrides to your schema:
+
+```python
+from datetime import datetime, timezone
+import strawberry
+
+EpochDateTime = strawberry.scalar(
+    datetime,
+    serialize=lambda value: int(value.timestamp()),
+    parse_value=lambda value: datetime.fromtimestamp(int(value), timezone.utc),
+)
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def current_time(self) -> datetime:
+        return datetime.now()
+
+schema = strawberry.Schema(
+  Query,
+  scalar_overrides={
+    datetime: EpochDateTime,
+  }
+)
+result = schema.execute_sync("{ currentTime }")
+assert result.data == {"currentTime": 1628683200}
+```
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) [PR #1147](https://github.com/strawberry-graphql/strawberry/pull/1147/)
+
+
+0.74.1 - 2021-08-27
+-------------------
+
+This release allows to install Strawberry along side `click` version 8.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1181](https://github.com/strawberry-graphql/strawberry/pull/1181/)
+
+
+0.74.0 - 2021-08-27
+-------------------
+
+This release add full support for async directives and fixes and issue when
+using directives and async extensions.
+
+```python
+@strawberry.type
+class Query:
+    name: str = "Banana"
+
+@strawberry.directive(
+    locations=[DirectiveLocation.FIELD], description="Make string uppercase"
+)
+async def uppercase(value: str):
+    return value.upper()
+
+schema = strawberry.Schema(query=Query, directives=[uppercase])
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1179](https://github.com/strawberry-graphql/strawberry/pull/1179/)
+
+
+0.73.9 - 2021-08-26
+-------------------
+
+Fix issue where `strawberry.Private` fields on converted Pydantic types were not added to the resulting dataclass.
+
+Contributed by [Paul Sud](https://github.com/paul-sud) [PR #1173](https://github.com/strawberry-graphql/strawberry/pull/1173/)
+
+
+0.73.8 - 2021-08-26
+-------------------
+
+This releases fixes a MyPy issue that prevented from using types created with
+`create_type` as base classes. This is now allowed and doesn't throw any error:
+
+```python
+import strawberry
+from strawberry.tools import create_type
+
+@strawberry.field
+def name() -> str:
+    return "foo"
+
+MyType = create_type("MyType", [name])
+
+class Query(MyType):
+    ...
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1175](https://github.com/strawberry-graphql/strawberry/pull/1175/)
+
+
+0.73.7 - 2021-08-25
+-------------------
+
+This release fixes an import error when trying to import `create_type` without having `opentelemetry` installed.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1171](https://github.com/strawberry-graphql/strawberry/pull/1171/)
+
+
+0.73.6 - 2021-08-24
+-------------------
+
+This release adds support for the latest version of the optional opentelemetry dependency.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1170](https://github.com/strawberry-graphql/strawberry/pull/1170/)
+
+
+0.73.5 - 2021-08-24
+-------------------
+
+This release adds support for the latest version of the optional opentelemetry dependency.
+
+Contributed by [Joe Freeman](https://github.com/joefreeman) [PR #1169](https://github.com/strawberry-graphql/strawberry/pull/1169/)
+
+
+0.73.4 - 2021-08-24
+-------------------
+
+This release allows background tasks to be set with the ASGI integration. Tasks can be set on the response in the context, and will then get run after the query result is returned.
+
+```python
+from starlette.background import BackgroundTask
+
+@strawberry.mutation
+def create_flavour(self, info: Info) -> str:
+    info.context["response"].background = BackgroundTask(...)
+```
+
+Contributed by [Joe Freeman](https://github.com/joefreeman) [PR #1168](https://github.com/strawberry-graphql/strawberry/pull/1168/)
+
+
+0.73.3 - 2021-08-24
+-------------------
+
+This release caches attributes on the `Info` type which aren't delegated to the core info object.
+
+Contributed by [A. Coady](https://github.com/coady) [PR #1167](https://github.com/strawberry-graphql/strawberry/pull/1167/)
+
+
+0.73.2 - 2021-08-23
+-------------------
+
+This releases fixes an issue where you were not allowed
+to use duck typing and return a different type that the
+type declared on the field when the type was implementing
+an interface. Now this works as long as you return a type
+that has the same shape as the field type.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1150](https://github.com/strawberry-graphql/strawberry/pull/1150/)
+
+
+0.73.1 - 2021-08-23
+-------------------
+
+This release improves execution performance significantly by lazy loading
+attributes on the `Info` type 🏎
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) [PR #1165](https://github.com/strawberry-graphql/strawberry/pull/1165/)
+
+
+0.73.0 - 2021-08-22
+-------------------
+
+This release adds support for asynchronous hooks to the Strawberry extension-system.
+All available hooks can now be implemented either synchronously or asynchronously.
+
+It's also possible to mix both synchronous and asynchronous hooks within one extension.
+
+
+```python
+from strawberry.extensions import Extension
+
+class MyExtension(Extension):
+    async def on_request_start(self):
+        print("GraphQL request start")
+
+    def on_request_end(self):
+        print("GraphQL request end")
+```
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) [PR #1142](https://github.com/strawberry-graphql/strawberry/pull/1142/)
+
+
+0.72.3 - 2021-08-22
+-------------------
+
+This release refactors the reload feature of the built-in debug server. The refactor
+made the debug server more responsive and allowed us to remove `hupper` from the
+dependencies.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) [PR #1114](https://github.com/strawberry-graphql/strawberry/pull/1114/)
+
+
+0.72.2 - 2021-08-22
+-------------------
+
+This releases pins graphql-core to only accept patch versions in order to prevent breaking changes since graphql-core doesn't properly follow semantic versioning.
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) [PR #1162](https://github.com/strawberry-graphql/strawberry/pull/1162/)
+
+
+0.72.1 - 2021-08-18
+-------------------
+
+This release improves the default logging format for errors to include more information about the errors. For example it will show were an error was originated in a request:
+
+```
+GraphQL request:2:5
+1 | query {
+2 |     example
+  |     ^
+3 | }
+```
+
+Contributed by [Ivan Gonzalez](https://github.com/scratchmex) [PR #1152](https://github.com/strawberry-graphql/strawberry/pull/1152/)
+
+
+0.72.0 - 2021-08-18
+-------------------
+
+This release adds support for asynchronous permission classes. The only difference to
+their synchronous counterpart is that the `has_permission` method is asynchronous.
+
+```python
+from strawberry.permission import BasePermission
+
+class IsAuthenticated(BasePermission):
+    message = "User is not authenticated"
+
+    async def has_permission(self, source, info, **kwargs):
+        return True
+```
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) [PR #1125](https://github.com/strawberry-graphql/strawberry/pull/1125/)
+
+
+0.71.3 - 2021-08-11
+-------------------
+
+Get a field resolver correctly when extending from a pydantic model
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) [PR #1116](https://github.com/strawberry-graphql/strawberry/pull/1116/)
+
+
+0.71.2 - 2021-08-10
+-------------------
+
+This release adds `asgi` as an extra dependencies group for Strawberry. Now
+you can install the required dependencies needed to use Strawberry with
+ASGI by running:
+
+```
+pip install strawberry[asgi]
+```
+
+Contributed by [A. Coady](https://github.com/coady) [PR #1036](https://github.com/strawberry-graphql/strawberry/pull/1036/)
+
+
+0.71.1 - 2021-08-09
+-------------------
+
+This releases adds `selected_fields` on the `info` objects and it
+allows to introspect the fields that have been selected in a GraphQL
+operation.
+
+This can become useful to run optimisation based on the queried fields.
+
+Contributed by [A. Coady](https://github.com/coady) [PR #874](https://github.com/strawberry-graphql/strawberry/pull/874/)
+
+
+0.71.0 - 2021-08-08
+-------------------
+
+This release adds a query depth limit validation rule so that you can guard
+against malicious queries:
+
+```python
+import strawberry
+from strawberry.schema import default_validation_rules
+from strawberry.tools import depth_limit_validator
+
+
+# Add the depth limit validator to the list of default validation rules
+validation_rules = (
+  default_validation_rules + [depth_limit_validator(3)]
+)
+
+result = schema.execute_sync(
+    """
+    query MyQuery {
+      user {
+        pets {
+          owner {
+            pets {
+              name
+            }
+          }
+        }
+      }
+    }
+    """,
+    validation_rules=validation_rules,
+  )
+)
+assert len(result.errors) == 1
+assert result.errors[0].message == "'MyQuery' exceeds maximum operation depth of 3"
+```
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) [PR #1021](https://github.com/strawberry-graphql/strawberry/pull/1021/)
+
+
+0.70.4 - 2021-08-07
+-------------------
+
+Addition of `app.add_websocket_route("/subscriptions", graphql_app)` to FastAPI example docs
+
+Contributed by [Anton Melser](https://github.com/AntonOfTheWoods) [PR #1103](https://github.com/strawberry-graphql/strawberry/pull/1103/)
+
+
+0.70.3 - 2021-08-06
+-------------------
+
+This release changes how we map Pydantic fields to types
+to allow using older version of Pydantic.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1071](https://github.com/strawberry-graphql/strawberry/pull/1071/)
+
+
+0.70.2 - 2021-08-04
+-------------------
+
+This release makes the `strawberry server` command inform the user about missing
+dependencies required by the builtin debug server.
+
+Also `hupper` a package only used by said command has been made optional.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) [PR #1107](https://github.com/strawberry-graphql/strawberry/pull/1107/)
+
+
+0.70.1 - 2021-08-01
+-------------------
+
+Switch CDN used to load GraphQLi dependencies from jsdelivr.com to unpkg.com
+
+Contributed by [Tim Savage](https://github.com/timsavage) [PR #1096](https://github.com/strawberry-graphql/strawberry/pull/1096/)
+
+
+0.70.0 - 2021-07-23
+-------------------
+
+This release adds support for disabling auto camel casing. It
+does so by introducing a new configuration parameter to the schema.
+
+You can use it like so:
+
+```python
+@strawberry.type
+class Query:
+    example_field: str = "Example"
+
+schema = strawberry.Schema(
+    query=Query, config=StrawberryConfig(auto_camel_case=False)
+)
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #798](https://github.com/strawberry-graphql/strawberry/pull/798/)
+
+
+0.69.4 - 2021-07-23
+-------------------
+
+Fix for regression when defining inherited types with explicit fields.
+
+Contributed by [A. Coady](https://github.com/coady) [PR #1076](https://github.com/strawberry-graphql/strawberry/pull/1076/)
+
+
+0.69.3 - 2021-07-21
+-------------------
+
+This releases improves the MyPy plugin to be more forgiving of
+settings like follow_imports = skip which would break the type checking.
+
+This is a continuation of the previous release and fixes for type checking issues.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1078](https://github.com/strawberry-graphql/strawberry/pull/1078/)
+
+
+0.69.2 - 2021-07-21
+-------------------
+
+This releases improves the MyPy plugin to be more forgiving of
+settings like `follow_imports = skip` which would break the
+type checking.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1077](https://github.com/strawberry-graphql/strawberry/pull/1077/)
+
+
+0.69.1 - 2021-07-20
+-------------------
+
+This release removes a `TypeGuard` import to prevent errors
+when using older versions of `typing_extensions`.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1074](https://github.com/strawberry-graphql/strawberry/pull/1074/)
+
+
+0.69.0 - 2021-07-20
+-------------------
+
+Refactor of the library's typing internals. Previously, typing was handled
+individually by fields, arguments, and objects with a hodgepodge of functions to tie it
+together. This change creates a unified typing system that the object, fields, and
+arguments each hook into.
+
+Mainly replaces the attributes that were stored on StrawberryArgument and
+StrawberryField with a hierarchy of StrawberryTypes.
+
+Introduces `StrawberryAnnotation`, as well as `StrawberryType` and some subclasses,
+including `StrawberryList`, `StrawberryOptional`, and `StrawberryTypeVar`.
+
+This is a breaking change if you were calling the constructor for `StrawberryField`,
+`StrawberryArgument`, etc. and using arguments such as `is_optional` or `child`.
+
+`@strawberry.field` no longer takes an argument called `type_`. It instead takes a
+`StrawberryAnnotation` called `type_annotation`.
+
+Contributed by [ignormies](https://github.com/BryceBeagle) [PR #906](https://github.com/strawberry-graphql/strawberry/pull/906/)
+
+
+0.68.4 - 2021-07-19
+-------------------
+
+This release fixes an issue with the federation printer that
+prevented using federation directives with types that were
+implementing interfaces.
+
+This is now allowed:
+
+```python
+@strawberry.interface
+class SomeInterface:
+    id: strawberry.ID
+
+@strawberry.federation.type(keys=["upc"], extend=True)
+class Product(SomeInterface):
+    upc: str = strawberry.federation.field(external=True)
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1068](https://github.com/strawberry-graphql/strawberry/pull/1068/)
+
+
+0.68.3 - 2021-07-15
+-------------------
+
+This release changes our `graphiql.html` template to use a specific version of `js-cookie`
+to prevent a JavaScript error, see:
+
+https://github.com/js-cookie/js-cookie/issues/698
+
+Contributed by [星](https://github.com/star2000) [PR #1062](https://github.com/strawberry-graphql/strawberry/pull/1062/)
+
+
+0.68.2 - 2021-07-07
+-------------------
+
+This release fixes a regression that broke strawberry-graphql-django.
+
+`Field.get_results` now always receives the `info` argument.
+
+Contributed by [Lauri Hintsala](https://github.com/la4de) [PR #1047](https://github.com/strawberry-graphql/strawberry/pull/1047/)
+
+
+0.68.1 - 2021-07-05
+-------------------
+
+This release only changes some internal code to make future improvements
+easier.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1044](https://github.com/strawberry-graphql/strawberry/pull/1044/)
+
+
+0.68.0 - 2021-07-03
+-------------------
+
+Matching the behaviour of `graphql-core`, passing an incorrect ISO string value for a Time, Date or DateTime scalar now raises a `GraphQLError` instead of the original parsing error.
+
+The `GraphQLError` will include the error message raised by the string parser, e.g. `Value cannot represent a DateTime: "2021-13-01T09:00:00". month must be in 1..12`
+
+0.67.1 - 2021-06-22
+-------------------
+
+Fixes [#1022](https://github.com/strawberry-graphql/strawberry/issues/1022) by making starlette an optional dependency.
+
+Contributed by [Marcel Wiegand](https://github.com/mawiegand) [PR #1027](https://github.com/strawberry-graphql/strawberry/pull/1027/)
+
+
+0.67.0 - 2021-06-17
+-------------------
+
+Add ability to specific the graphql name for a resolver argument. E.g.,
+
+```python
+from typing import Annotated
+import strawberry
+
+
+@strawberry.input
+class HelloInput:
+    name: str = "world"
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(
+        self,
+        input_: Annotated[HelloInput, strawberry.argument(name="input")]
+    ) -> str:
+        return f"Hi {input_.name}"
+```
+
+Contributed by [Daniel Bowring](https://github.com/dbowring) [PR #1024](https://github.com/strawberry-graphql/strawberry/pull/1024/)
+
+
+0.66.0 - 2021-06-15
+-------------------
+
+This release fixes a bug that was preventing the use of an enum member as the
+default value for an argument.
+
+For example:
+
+```python
+@strawberry.enum
+class IceCreamFlavour(Enum):
+    VANILLA = "vanilla"
+    STRAWBERRY = "strawberry"
+    CHOCOLATE = "chocolate"
+    PISTACHIO = "pistachio"
+
+@strawberry.mutation
+def create_flavour(
+    self, flavour: IceCreamFlavour = IceCreamFlavour.STRAWBERRY
+) -> str:
+    return f"{flavour.name}"
+```
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) [PR #1015](https://github.com/strawberry-graphql/strawberry/pull/1015/)
+
+
+0.65.5 - 2021-06-15
+-------------------
+
+This release reverts the changes made in v0.65.4 that caused an issue leading to
+circular imports when using the `strawberry-graphql-django` extension package.
+
+Contributed by [Lauri Hintsala](https://github.com/la4de) [PR #1019](https://github.com/strawberry-graphql/strawberry/pull/1019/)
+
+
+0.65.4 - 2021-06-14
+-------------------
+
+This release fixes the IDE integration where package `strawberry.django` could not be find by some editors like vscode.
+
+Contributed by [Lauri Hintsala](https://github.com/la4de) [PR #994](https://github.com/strawberry-graphql/strawberry/pull/994/)
+
+
+0.65.3 - 2021-06-09
+-------------------
+
+This release fixes the ASGI subscription implementation by handling disconnecting clients properly.
+
+Additionally, the ASGI implementation has been internally refactored to match the AIOHTTP implementation.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) [PR #1002](https://github.com/strawberry-graphql/strawberry/pull/1002/)
+
+
+0.65.2 - 2021-06-06
+-------------------
+
+This release fixes a bug in the subscription implementations that prevented clients
+from selecting one of multiple subscription operations from a query. Client sent
+messages like the following one are now handled as expected.
+
+```json
+{
+  "type": "GQL_START",
+  "id": "DEMO",
+  "payload": {
+    "query": "subscription Sub1 { sub1 } subscription Sub2 { sub2 }",
+    "operationName": "Sub2"
+  }
+}
+```
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) [PR #1000](https://github.com/strawberry-graphql/strawberry/pull/1000/)
+
+
+0.65.1 - 2021-06-02
+-------------------
+
+This release fixes the upload of nested file lists. Among other use cases, having an
+input type like shown below is now working properly.
+
+```python
+import typing
+import strawberry
+from strawberry.file_uploads import Upload
+
+
+@strawberry.input
+class FolderInput:
+    files: typing.List[Upload]
+```
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) [PR #989](https://github.com/strawberry-graphql/strawberry/pull/989/)
+
+
+0.65.0 - 2021-06-01
+-------------------
+
+This release extends the file upload support of all integrations to support the upload
+of file lists.
+
+Here is an example how this would work with the ASGI integration.
+
+```python
+import typing
+import strawberry
+from strawberry.file_uploads import Upload
+
+
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    async def read_files(self, files: typing.List[Upload]) -> typing.List[str]:
+        contents = []
+        for file in files:
+            content = (await file.read()).decode()
+            contents.append(content)
+        return contents
+```
+
+Check out the documentation to learn how the same can be done with other integrations.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) [PR #979](https://github.com/strawberry-graphql/strawberry/pull/979/)
+
+
+0.64.5 - 2021-05-28
+-------------------
+
+This release fixes that AIOHTTP subscription requests were not properly separated.
+This could lead to subscriptions terminating each other.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) [PR #970](https://github.com/strawberry-graphql/strawberry/pull/970/)
+
+
+0.64.4 - 2021-05-28
+-------------------
+
+* Remove usages of `undefined` in favour of `UNSET`
+* Change the signature of `StrawberryField` to make it easier to instantiate
+directly. Also change `default_value` argument to `default`
+* Rename `default_value` to `default` in `StrawberryArgument`
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) [PR #916](https://github.com/strawberry-graphql/strawberry/pull/916/)
+
+
+0.64.3 - 2021-05-26
+-------------------
+
+This release integrates the `strawberry-graphql-django` package into Strawberry
+core so that it's possible to use the Django extension package directly via the
+`strawberry.django` namespace.
+
+You still need to install `strawberry-graphql-django` if you want to use the
+extended Django support.
+
+See: https://github.com/strawberry-graphql/strawberry-graphql-django
+
+Contributed by [Lauri Hintsala](https://github.com/la4de) [PR #949](https://github.com/strawberry-graphql/strawberry/pull/949/)
+
+
+0.64.2 - 2021-05-26
+-------------------
+
+This release fixes that enum values yielded from async generators were not resolved
+properly.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) [PR #969](https://github.com/strawberry-graphql/strawberry/pull/969/)
+
+
+0.64.1 - 2021-05-23
+-------------------
+
+This release fixes a max recursion depth error in the AIOHTTP subscription
+implementation.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) [PR #966](https://github.com/strawberry-graphql/strawberry/pull/966/)
+
+
+0.64.0 - 2021-05-22
+-------------------
+
+This release adds an extensions field to the `GraphQLHTTPResponse` type and also exposes it in the view's response.
+
+This field gets populated by Strawberry extensions: https://strawberry.rocks/docs/guides/extensions#get-results
+
+Contributed by [lijok](https://github.com/lijok) [PR #903](https://github.com/strawberry-graphql/strawberry/pull/903/)
+
+
+0.63.2 - 2021-05-22
+-------------------
+
+Add `root_value` to `ExecutionContext` type so that it can be accessed in
+extensions.
+
+Example:
+
+```python
+import strawberry
+from strawberry.extensions import Extension
+
+class MyExtension(Extension):
+    def on_request_end(self):
+        root_value = self.execution_context.root_value
+        # do something with the root_value
+```
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) [PR #959](https://github.com/strawberry-graphql/strawberry/pull/959/)
+
+
+0.63.1 - 2021-05-20
+-------------------
+
+New deployment process to release new Strawberry releases
+
+[Marco Acierno](https://github.com/marcoacierno) [PR #957](https://github.com/strawberry-graphql/strawberry/pull/957/)
+
+
+0.63.0 - 2021-05-19
+-------------------
+
+This release adds extra values to the ExecutionContext object so that it can be
+used by extensions and the `Schema.process_errors` function.
+
+The full ExecutionContext object now looks like this:
+
+```python
+from graphql import ExecutionResult as GraphQLExecutionResult
+from graphql.error.graphql_error import GraphQLError
+from graphql.language import DocumentNode as GraphQLDocumentNode
+
+@dataclasses.dataclass
+class ExecutionContext:
+    query: str
+    context: Any = None
+    variables: Optional[Dict[str, Any]] = None
+    operation_name: Optional[str] = None
+
+    graphql_document: Optional[GraphQLDocumentNode] = None
+    errors: Optional[List[GraphQLError]] = None
+    result: Optional[GraphQLExecutionResult] = None
+```
+
+and can be accessed in any of the extension hooks:
+
+```python
+from strawberry.extensions import Extension
+
+class MyExtension(Extension):
+    def on_request_end(self):
+        result = self.execution_context.result
+        # Do something with the result
+
+schema = strawberry.Schema(query=Query, extensions=[MyExtension])
+```
+
+---
+
+Note: This release also removes the creation of an ExecutionContext object in the web
+framework views. If you were relying on overriding the `get_execution_context`
+function then you should change it to `get_request_data` and use the
+`strawberry.http.parse_request_data` function to extract the pieces of data
+needed from the incoming request.
+
+0.62.1 - 2021-05-19
+-------------------
+
+This releases fixes an issue with the debug server that prevented the
+usage of dataloaders, see: https://github.com/strawberry-graphql/strawberry/issues/940
+
+0.62.0 - 2021-05-19
+-------------------
+
+This release adds support for GraphQL subscriptions to the AIOHTTP integration.
+Subscription support works out of the box and does not require any additional
+configuration.
+
+Here is an example how to get started with subscriptions in general. Note that by
+specification GraphQL schemas must always define a query, even if only subscriptions
+are used.
+
+```python
+import asyncio
+import typing
+import strawberry
+
+
+@strawberry.type
+class Subscription:
+    @strawberry.subscription
+    async def count(self, target: int = 100) -> typing.AsyncGenerator[int, None]:
+        for i in range(target):
+            yield i
+            await asyncio.sleep(0.5)
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def _unused(self) -> str:
+        return ""
+
+
+schema = strawberry.Schema(subscription=Subscription, query=Query)
+```
+
+0.61.3 - 2021-05-13
+-------------------
+
+Fix `@requires(fields: ["email"])` and `@provides(fields: ["name"])` usage on a Federation field
+
+You can use `@requires` to specify which fields you need to resolve a field
+
+```python
+import strawberry
+
+@strawberry.federation.type(keys=["id"], extend=True)
+class Product:
+    id: strawberry.ID = strawberry.federation.field(external=True)
+    code: str = strawberry.federation.field(external=True)
+
+    @classmethod
+    def resolve_reference(cls, id: strawberry.ID, code: str):
+        return cls(id=id, code=code)
+
+    @strawberry.federation.field(requires=["code"])
+    def my_code(self) -> str:
+        return self.code
+```
+
+`@provides` can be used to specify what fields are going to be resolved
+by the service itself without having the Gateway to contact the external service
+to resolve them.
+
+0.61.2 - 2021-05-08
+-------------------
+
+This release adds support for the info param in resolve_reference:
+
+```python
+@strawberry.federation.type(keys=["upc"])
+class Product:
+    upc: str
+    info: str
+
+    @classmethod
+    def resolve_reference(cls, info, upc):
+        return Product(upc, info)
+```
+
+> Note: resolver reference is used when using Federation, similar to [Apollo server's __resolveReference](https://apollographql.com/docs/federation/api/apollo-federation/#__resolvereference)
+
+0.61.1 - 2021-05-05
+-------------------
+
+This release extends the `strawberry server` command to allow the specification
+of a schema symbol name within a module:
+
+```sh
+strawberry server mypackage.mymodule:myschema
+```
+
+The schema symbol name defaults to `schema` making this change backwards compatible.
+
+0.61.0 - 2021-05-04
+-------------------
+
+This release adds file upload support to the [Sanic](https://sanicframework.org)
+integration. No additional configuration is required to enable file upload support.
+
+The following example shows how a file upload based mutation could look like:
+
+```python
+import strawberry
+from strawberry.file_uploads import Upload
+
+
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    def read_text(self, text_file: Upload) -> str:
+        return text_file.read().decode()
+```
+
+0.60.0 - 2021-05-04
+-------------------
+
+This release adds an `export-schema` command to the Strawberry CLI.
+Using the command you can print your schema definition to your console.
+Pipes and redirection can be used to store the schema in a file.
+
+Example usage:
+
+```sh
+strawberry export-schema mypackage.mymodule:myschema > schema.graphql
+```
+
+0.59.1 - 2021-05-04
+-------------------
+
+This release fixes an issue that prevented using `source` as name of an argument
+
+0.59.0 - 2021-05-03
+-------------------
+
+This release adds an [aiohttp](https://github.com/aio-libs/aiohttp) integration for
+Strawberry. The integration provides a `GraphQLView` class which can be used to
+integrate Strawberry with aiohttp:
+
+```python
+import strawberry
+from aiohttp import web
+from strawberry.aiohttp.views import GraphQLView
+
+
+@strawberry.type
+class Query:
+    pass
+
+
+schema = strawberry.Schema(query=Query)
+
+app = web.Application()
+
+app.router.add_route("*", "/graphql", GraphQLView(schema=schema))
+```
+
+0.58.0 - 2021-05-03
+-------------------
+
+This release adds a function called `create_type` to create a Strawberry type from a list of fields.
+
+```python
+import strawberry
+from strawberry.tools import create_type
+
+@strawberry.field
+def hello(info) -> str:
+    return "World"
+
+def get_name(info) -> str:
+    return info.context.user.name
+
+my_name = strawberry.field(name="myName", resolver=get_name)
+
+Query = create_type("Query", [hello, my_name])
+
+schema = strawberry.Schema(query=Query)
+```
+
+0.57.4 - 2021-04-28
+-------------------
+
+This release fixes an issue when using nested lists, this now works properly:
+
+```python
+def get_polygons() -> List[List[float]]:
+    return [[2.0, 6.0]]
+
+@strawberry.type
+class Query:
+    polygons: List[List[float]] = strawberry.field(resolver=get_polygons)
+
+schema = strawberry.Schema(query=Query)
+
+query = "{ polygons }"
+
+result = schema.execute_sync(query, root_value=Query())
+```
+
+0.57.3 - 2021-04-27
+-------------------
+
+This release fixes support for generic types so that now we can also use generics for input types:
+
+```python
+T = typing.TypeVar("T")
+
+@strawberry.input
+class Input(typing.Generic[T]):
+    field: T
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def field(self, input: Input[str]) -> str:
+        return input.field
+```
+
+0.57.2 - 2021-04-19
+-------------------
+
+This release fixes a bug that prevented from extending a generic type when
+passing a type, like here:
+
+```python
+T = typing.TypeVar("T")
+
+@strawberry.interface
+class Node(typing.Generic[T]):
+    id: strawberry.ID
+
+    def _resolve(self) -> typing.Optional[T]:
+        return None
+
+@strawberry.type
+class Book(Node[str]):
+    name: str
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def books(self) -> typing.List[Book]:
+        return list()
+```
+
+0.57.1 - 2021-04-17
+-------------------
+
+Fix converting pydantic objects to strawberry types using `from_pydantic` when having a falsy value like 0 or ''.
+
+0.57.0 - 2021-04-14
+-------------------
+
+Add a `process_errors` method to `strawberry.Schema` which logs all exceptions during execution to a `strawberry.execution` logger.
+
+0.56.3 - 2021-04-13
+-------------------
+
+This release fixes the return type value from info argument of resolver.
+
+0.56.2 - 2021-04-07
+-------------------
+
+This release improves Pydantic support to support default values and factories.
+
+0.56.1 - 2021-04-06
+-------------------
+
+This release fixes the pydantic integration where you couldn't
+convert objects to pydantic instance when they didn't have a
+default value.
+
+0.56.0 - 2021-04-05
+-------------------
+
+Add --app-dir CLI option to specify where to find the schema module to load when using
+the debug server.
+
+For example if you have a _schema_ module in a _my_app_ package under ./src, then you
+can run the debug server with it using:
+
+```bash
+strawberry server --app-dir src my_app.schema
+```
+
+0.55.0 - 2021-04-05
+-------------------
+
+Add support for `default` and `default_factory` arguments in `strawberry.field`
+
+```python
+@strawberry.type
+class Droid:
+    name: str = strawberry.field(default="R2D2")
+    aka: List[str] = strawberry.field(default_factory=lambda: ["Artoo"])
+```
+
 0.54.0 - 2021-04-03
 -------------------
 

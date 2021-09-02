@@ -5,7 +5,8 @@ title: Subscriptions
 # Subscriptions
 
 In GraphQL you can use subscriptions to stream data from a server. To enable
-this with Strawberry your server must support ASGI and websockets.
+this with Strawberry your server must support ASGI and websockets or use the AIOHTTP
+integration.
 
 This is how you define a subscription-capable resolver:
 

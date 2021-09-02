@@ -312,3 +312,20 @@ async def test_async_list_resolver():
 
     assert not result.errors
     assert result.data["bestFlavours"] == ["strawberry", "pistachio"]
+
+
+def test_can_use_source_as_argument_name():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(self, source: str) -> str:
+            return f"I'm a resolver for {source}"
+
+    schema = strawberry.Schema(query=Query)
+
+    query = '{ hello(source: "🍓") }'
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data["hello"] == "I'm a resolver for 🍓"

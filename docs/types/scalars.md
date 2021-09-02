@@ -117,3 +117,81 @@ result = schema.execute_sync("{ base64 }")
 
 assert results.data  == {"base64": "aGk="}
 ```
+
+## Example JSONScalar
+
+```python
+import json
+from typing import Any, NewType
+
+import strawberry
+
+JSONScalar = strawberry.scalar(
+    NewType("JSONScalar", Any),
+    serialize=lambda v: v,
+    parse_value=lambda v: json.loads(v),
+    description="The GenericScalar scalar type represents a generic GraphQL scalar value that could be: List or Object."
+)
+
+```
+
+Usage:
+
+```python
+@strawberry.type
+class Query:
+    @strawberry.field
+    def data(self, info) -> JSONScalar:
+        return {"hello": {"a": 1}, "someNumbers": [1, 2, 3]}
+
+```
+
+```graphql+response
+query ExampleDataQuery {
+  data
+}
+---
+{
+  "data": {
+    "hello": {
+      "a": 1
+    },
+    "someNumbers": [1, 2, 3]
+  }
+}
+```
+
+## Overriding built in scalars
+
+To override the behaviour of the built in scalars you can pass a map of
+overrides to your schema.
+
+Here is a full example of replacing the built in `DateTime` scalar with one that
+serializes all datetimes as unix timestamps:
+
+```python
+from datetime import datetime, timezone
+import strawberry
+
+# Define your custom scalar
+EpochDateTime = strawberry.scalar(
+    datetime,
+    serialize=lambda value: int(value.timestamp()),
+    parse_value=lambda value: datetime.fromtimestamp(int(value), timezone.utc),
+)
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def current_time(self) -> datetime:
+        return datetime.now()
+
+schema = strawberry.Schema(
+  Query,
+  scalar_overrides={
+    datetime: EpochDateTime,
+  }
+)
+result = schema.execute_sync("{ currentTime }")
+assert result.data == {"currentTime": 1628683200}
+```

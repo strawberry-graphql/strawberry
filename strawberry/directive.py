@@ -1,11 +1,13 @@
 import dataclasses
 import inspect
+import sys
 from itertools import islice
 from typing import Callable, List, Optional
 
 from graphql import DirectiveLocation
 
-from strawberry.arguments import StrawberryArgument, get_arguments_from_annotations
+from strawberry.annotation import StrawberryAnnotation
+from strawberry.arguments import StrawberryArgument
 from strawberry.utils.str_converters import to_camel_case
 
 
@@ -24,9 +26,24 @@ class StrawberryDirective:
 
         parameters = inspect.signature(self.resolver).parameters
 
-        return get_arguments_from_annotations(
-            annotations, parameters, origin=self.resolver
-        )
+        module = sys.modules[self.resolver.__module__]
+        annotation_namespace = module.__dict__
+        arguments = []
+        for arg_name, annotation in annotations.items():
+            parameter = parameters[arg_name]
+
+            argument = StrawberryArgument(
+                python_name=arg_name,
+                graphql_name=None,
+                type_annotation=StrawberryAnnotation(
+                    annotation=annotation, namespace=annotation_namespace
+                ),
+                default=parameter.default,
+            )
+
+            arguments.append(argument)
+
+        return arguments
 
 
 def directive(*, locations: List[DirectiveLocation], description=None, name=None):
