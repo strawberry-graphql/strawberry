@@ -49,4 +49,23 @@ type User @keys(fields: "id") {
 }
 ```
 
+## Locations
+
+Schema directives can be applied to many different parts of a schema, here's the
+list of all the allowed locations:
+
+| Name                   |                         | Description                                              |
+| ---------------------- | ----------------------- | -------------------------------------------------------- |
+| SCHEMA                 | `strawberry.Schema`     | The definition of a schema                               |
+| SCALAR                 | `strawberry.scalar`     | The definition of a scalar                               |
+| OBJECT                 | `strawberry.type`       | The definition of an object type                         |
+| FIELD_DEFINITION       | `strawberry.field`      | The definition of a field on an object type or interface |
+| ARGUMENT_DEFINITION    | `strawberry.argument`   | The definition of an argument                            |
+| INTERFACE              | `strawberry.interface`  | The definition of an interface                           |
+| UNION                  | `strawberry.union`      | The definition of an union                               |
+| ENUM                   | `strawberry.enum`       | The definition of a enum                                 |
+| ENUM_VALUE             | `strawberry.enum_value` | The definition of a enum value                           |
+| INPUT_OBJECT           | `strawberry.input`      | The definition of an input object type                   |
+| INPUT_FIELD_DEFINITION | `strawberry.field`      | The definition of a field on an input type               |
+
 # TODO: explain why these can be useful!
