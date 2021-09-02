@@ -24,10 +24,6 @@
 - [Resolvers](./types/resolvers.md)
 - [Union types](./types/union.md)
 
-## Editor integration
-
-- [Visual Studio Code](./editors/vscode.md)
-
 ## Guides
 
 - [Authentication](./guides/authentication.md)
@@ -41,6 +37,10 @@
 - [Builtin server](./guides/server.md)
 - [Tools](./guides/tools.md)
 - [Schema export](./guides/schema-export.md)
+
+## Editor integration
+
+- [Visual Studio Code](./editors/vscode.md)
 
 ## Concepts
 
