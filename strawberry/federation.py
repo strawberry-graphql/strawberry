@@ -121,8 +121,14 @@ def field(
     default: Any = UNSET,
     default_factory: Union[Callable, object] = UNSET,
 ) -> Any:
-    return base_field(
-        resolver=resolver,  # type: ignore
+    # hack to prevent mypy from complaining about:
+    # `Not all union combinations were tried because there are too many unions`
+    # without using # type: ignore on multiple lines
+    def _inner(**kwargs):
+        return base_field(**kwargs)
+
+    return _inner(
+        resolver=resolver,
         name=name,
         is_subscription=is_subscription,
         description=description,
@@ -130,11 +136,11 @@ def field(
         deprecation_reason=deprecation_reason,
         default=default,
         default_factory=default_factory,
-        init=init,  # type: ignore
+        init=init,
         federation=FederationFieldParams(
             provides=provides or [], requires=requires or [], external=external
         ),
-    )  # type: ignore
+    )
 
 
 def _has_federation_keys(
