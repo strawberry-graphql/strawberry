@@ -4,12 +4,13 @@ title: Mutations
 
 # Mutations
 
-As opposed to queries, mutation in GraphQL represent operation that cause writes
-and/or side effects on the server. For example you can have a mutation that
-sends an email or a mutation that creates a user.
+As opposed to queries, mutations in GraphQL represent operations that modify
+server-side data and/or cause side effects on the server. For example, you can have a
+mutation that creates a user or a mutation that sends an email. Like in queries, they
+accept parameters, can return data or include nested fields as well.
+This can be useful for fetching the new state of an object after an update.
 
-Like queries mutation can return data, and they also accept parameters. Let's
-implement a mutation that is supposed to send an email:
+Let's implement a mutation that is supposed to send an email:
 
 ```python
 import strawberry
@@ -44,5 +45,7 @@ mutation:
 sendEmail(email: "patrick@example.org")
 ```
 
-This is basic example, normally you'd return more complex data and also accept
-more complex data as input.
+The `sendEmail` mutation is a simplified example. However, in a real-world
+application, we usually want to return more information if an error occurs.
+Refer to [Dealing with errors](/docs/guides/errors#expected-errors) documentation to
+learn how to return a union of types in mutation.
