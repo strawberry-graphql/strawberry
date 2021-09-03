@@ -15,9 +15,31 @@ from graphql.utilities.print_schema import (
 )
 
 from strawberry.field import StrawberryField
+from strawberry.schema_directive import Location, StrawberrySchemaDirective
 from strawberry.types.types import TypeDefinition
 
 from .schema import BaseSchema
+
+
+def print_schema_directive(directive: StrawberrySchemaDirective) -> str:
+    # TODO: get actual name
+    return f" {directive.graphql_name or directive.python_name}"
+
+
+def print_field_directives(field: Optional[StrawberryField]) -> str:
+    if not field:
+        return ""
+
+    directives = (
+        directive
+        for directive in field.directives
+        if any(
+            location in [Location.FIELD_DEFINITION, Location.INPUT_FIELD_DEFINITION]
+            for location in directive.locations
+        )
+    )
+
+    return "".join((print_schema_directive(directive) for directive in directives))
 
 
 def print_federation_field_directive(field: Optional[StrawberryField]) -> str:
@@ -58,6 +80,7 @@ def print_fields(type_, schema: BaseSchema) -> str:
             + print_args(field.args, "  ")
             + f": {field.type}"
             + print_federation_field_directive(strawberry_field)
+            + print_field_directives(strawberry_field)
             + print_deprecated(field.deprecation_reason)
         )
 

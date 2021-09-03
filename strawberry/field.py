@@ -9,6 +9,7 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Sequence,
     Type,
     TypeVar,
     Union,
@@ -18,6 +19,7 @@ from cached_property import cached_property  # type: ignore
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import UNSET, StrawberryArgument
+from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.type import StrawberryType
 from strawberry.types.info import Info
 from strawberry.utils.mixins import GraphQLNameMixin
@@ -47,6 +49,7 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
         default: object = UNSET,
         default_factory: Union[Callable[[], Any], object] = UNSET,
         deprecation_reason: Optional[str] = None,
+        directives: Sequence[StrawberrySchemaDirective] = (),
     ):
         federation = federation or FederationFieldParams()
 
@@ -92,6 +95,7 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
 
         self.federation: FederationFieldParams = federation
         self.permission_classes: List[Type[BasePermission]] = list(permission_classes)
+        self.directives = directives
 
         self.deprecation_reason = deprecation_reason
 
@@ -278,6 +282,7 @@ def field(
     deprecation_reason: Optional[str] = None,
     default: Any = UNSET,
     default_factory: Union[Callable, object] = UNSET,
+    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
 ) -> StrawberryField:
     """Annotates a method or property as a GraphQL field.
 
@@ -305,6 +310,7 @@ def field(
         deprecation_reason=deprecation_reason,
         default=default,
         default_factory=default_factory,
+        directives=directives,
     )
 
     if resolver:
