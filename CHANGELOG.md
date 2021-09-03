@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.75.1 - 2021-09-03
+-------------------
+
+This release fixes an issue with the MyPy plugin that prevented using
+TextChoices from django in `strawberry.enum`.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1202](https://github.com/strawberry-graphql/strawberry/pull/1202/)
+
+
 0.75.0 - 2021-09-01
 -------------------
 
