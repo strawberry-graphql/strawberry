@@ -1,5 +1,7 @@
-from datetime import datetime, timezone
+import base64
+from datetime import datetime, timedelta, timezone
 from textwrap import dedent
+from typing import NewType
 from uuid import UUID
 
 import pytest
@@ -157,3 +159,42 @@ def test_duplicate_scalars():
         TypeError, match="Scalar `MyCustomScalar` has already been registered"
     ):
         strawberry.Schema(Query)
+
+
+Long = strawberry.scalar(NewType("Long", int), description="64-bit int")
+Binary = strawberry.scalar(
+    bytes,
+    name="Binary",
+    serialize=lambda b: base64.b64encode(b).decode("utf8"),
+    parse_value=base64.b64decode,
+)
+Duration = strawberry.scalar(
+    timedelta,
+    name="Duration",
+    serialize=timedelta.total_seconds,
+    parse_value=lambda s: timedelta(seconds=s),
+)
+
+
+def test_custom_builtins():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def long(self, value: Long) -> Long:
+            return value
+
+        @strawberry.field
+        def base64(self, value: bytes) -> bytes:
+            return value
+
+        @strawberry.field
+        def duration(self, value: timedelta) -> timedelta:
+            return value
+
+    schema = strawberry.Schema(
+        Query, scalar_overrides={bytes: Binary, timedelta: Duration}
+    )
+    result = schema.execute_sync(
+        """{ long(value: 1) base64(value: "aGk=") duration(value: 1.0)}"""
+    )
+    assert result.data == {"long": 1, "base64": "aGk=", "duration": 1.0}

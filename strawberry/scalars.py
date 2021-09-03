@@ -5,7 +5,7 @@ from uuid import UUID
 
 
 ID = NewType("ID", str)
-SCALAR_TYPES = [int, str, float, bytes, bool, ID, UUID, datetime, date, time, Decimal]
+SCALAR_TYPES = {int, str, float, bool, ID, UUID, datetime, date, time, Decimal}
 
 
 def is_scalar(annotation: Any) -> bool:

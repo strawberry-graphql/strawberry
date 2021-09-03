@@ -17,6 +17,7 @@ from graphql.validation import ValidationRule
 from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.enum import EnumDefinition
 from strawberry.extensions import Extension
+from strawberry.scalars import SCALAR_TYPES
 from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
 from strawberry.types import ExecutionContext, ExecutionResult
@@ -56,6 +57,7 @@ class Schema:
         }
         if scalar_overrides:
             scalar_registry.update(scalar_overrides)
+            SCALAR_TYPES.update(scalar_overrides)  # type: ignore
 
         self.schema_converter = GraphQLCoreConverter(self.config, scalar_registry)
         self.directives = directives
