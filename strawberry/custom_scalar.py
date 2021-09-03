@@ -49,7 +49,7 @@ class ScalarWrapper:
 
 
 def _process_scalar(
-    cls,
+    cls: Type[_T],
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
@@ -71,7 +71,45 @@ def _process_scalar(
         parse_value=parse_value,
     )
 
-    return wrapper
+    return wrapper  # type: ignore
+
+
+@overload
+def scalar(
+    cls: Type[_T],
+    *,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    serialize: Optional[Callable] = identity,
+    parse_value: Optional[Callable] = None,
+    parse_literal: Optional[Callable] = None
+) -> Type[_T]:
+    ...
+
+
+@overload
+def scalar(
+    cls: None,
+    *,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    serialize: Optional[Callable] = identity,
+    parse_value: Optional[Callable] = None,
+    parse_literal: Optional[Callable] = None
+) -> Callable[[Type[_T]], Type[_T]]:
+    ...
+
+
+@overload
+def scalar(
+    *,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    serialize: Optional[Callable] = identity,
+    parse_value: Optional[Callable] = None,
+    parse_literal: Optional[Callable] = None
+) -> Callable[[Type[_T]], Type[_T]]:
+    ...
 
 
 @overload
