@@ -50,4 +50,4 @@ want to return more information if an error occurs.
 
 You can checkout our documentation on
 [dealing with errors](/docs/guides/errors#expected-errors) to learn how to return a
-union of types in mutation.
+union of types from a mutation.
