@@ -36,7 +36,7 @@ schema = strawberry.Schema(query=Query, mutation=Mutation)
 ```
 
 Like queries, mutations are defined in a class that is then passed to the Schema
-function. Here we create a `addBook` mutation that accept a title and an author and
+function. Here we create an `addBook` mutation that accepts a title and an author and
 returns a `Book` type.
 
 We would send the following GraphQL document to our server to execute the mutation:
