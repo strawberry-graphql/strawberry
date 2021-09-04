@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Callable, Mapping, Optional, TypeVar, Union, overload
+from typing import Any, Callable, Mapping, Optional, Type, TypeVar, Union, overload
 
 from graphql import GraphQLScalarType
 
@@ -8,7 +8,7 @@ from strawberry.type import StrawberryType
 from .utils.str_converters import to_camel_case
 
 
-_T = TypeVar("_T", bound=type)
+_T = TypeVar("_T")
 
 
 def identity(x):
@@ -58,7 +58,6 @@ def _process_scalar(
     parse_value: Optional[Callable] = None,
     parse_literal: Optional[Callable] = None,
 ):
-
     name = name or to_camel_case(cls.__name__)
 
     wrapper = ScalarWrapper(cls)
@@ -71,45 +70,7 @@ def _process_scalar(
         parse_value=parse_value,
     )
 
-    return wrapper  # type: ignore
-
-
-@overload
-def scalar(
-    cls: Type[_T],
-    *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    serialize: Optional[Callable] = identity,
-    parse_value: Optional[Callable] = None,
-    parse_literal: Optional[Callable] = None
-) -> Type[_T]:
-    ...
-
-
-@overload
-def scalar(
-    cls: None,
-    *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    serialize: Optional[Callable] = identity,
-    parse_value: Optional[Callable] = None,
-    parse_literal: Optional[Callable] = None
-) -> Callable[[Type[_T]], Type[_T]]:
-    ...
-
-
-@overload
-def scalar(
-    *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    serialize: Optional[Callable] = identity,
-    parse_value: Optional[Callable] = None,
-    parse_literal: Optional[Callable] = None
-) -> Callable[[Type[_T]], Type[_T]]:
-    ...
+    return wrapper
 
 
 @overload
