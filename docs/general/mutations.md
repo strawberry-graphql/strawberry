@@ -43,7 +43,11 @@ returns a `Book` type.
 We would send the following GraphQL document to our server to execute the mutation:
 
 ```graphql
-addBook(title: "The Little Prince", author: "Antoine de Saint-Exupéry")
+mutation {
+  addBook(title: "The Little Prince", author: "Antoine de Saint-Exupéry") {
+    title
+  }
+}
 ```
 
 The `addBook` mutation is a simplified example. In a real-world application mutations
