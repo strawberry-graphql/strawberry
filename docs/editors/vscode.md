@@ -35,26 +35,3 @@ Once you have configured the settings, you can restart VS Code and you should be
 getting type checking errors in vscode.
 
 ![Pylance showing a type error](./pylance.png)
-
-## Notes
-
-Unfortunately Pylance doesn't fully support `strawberry.field`, so for example
-using this code will result in an error from Pylance:
-
-```python
-@strawberry.type
-class User:
-    id: int
-    name: str = strawberry.field(resolver=a)
-```
-
-To prevent pylance from erroring you can provide `init=False` to the field
-function, this won't change any behavior in the code but will prevent pylance
-from erroring, like so:
-
-```python
-@strawberry.type
-class User:
-    id: int
-    name: str = strawberry.field(resolver=a, init=False)
-```
