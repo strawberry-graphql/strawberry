@@ -6,9 +6,10 @@ title: Mutations
 
 As opposed to queries, mutations in GraphQL represent operations that modify server-side
 data and/or cause side effects on the server. For example, you can have a mutation that
-creates a new instance in your application or a mutation that sends an email. Like in queries, they accept
-parameters and can return anything a regular field can, including new types and existing object types. This can be
-useful for fetching the new state of an object after an update.
+creates a new instance in your application or a mutation that sends an email. Like in
+queries, they accept parameters and can return anything a regular field can, including
+new types and existing object types. This can be useful for fetching the new state of an
+object after an update.
 
 Let's improve our books project from the [Getting started tutorial](docs/index.md) and
 implement a mutation that is supposed to add a book:
@@ -45,7 +46,9 @@ We would send the following GraphQL document to our server to execute the mutati
 addBook(title: "The Little Prince", author: "Antoine de Saint-Exupéry")
 ```
 
-The `addBook` mutation is a simplified example. In a real-world application mutations will often need to handle errors and communicate those errors back to the client. For example we might want to return an error if the book already exists.
+The `addBook` mutation is a simplified example. In a real-world application mutations
+will often need to handle errors and communicate those errors back to the client. For
+example we might want to return an error if the book already exists.
 
 You can checkout our documentation on
 [dealing with errors](/docs/guides/errors#expected-errors) to learn how to return a
