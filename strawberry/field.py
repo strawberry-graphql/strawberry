@@ -295,6 +295,7 @@ def field(
     name: Optional[str] = None,
     is_subscription: bool = False,
     description: Optional[str] = None,
+    init: Optional[Literal[True]] = True,
     permission_classes: Optional[List[Type[BasePermission]]] = None,
     federation: Optional[FederationFieldParams] = None,
     deprecation_reason: Optional[str] = None,
@@ -321,17 +322,20 @@ def field(
 
 
 def field(
-    resolver: Optional[_RESOLVER_TYPE] = None,
+    resolver=None,
     *,
-    name: Optional[str] = None,
-    is_subscription: bool = False,
-    description: Optional[str] = None,
-    init: Optional[bool] = False,
-    permission_classes: Optional[List[Type[BasePermission]]] = None,
-    federation: Optional[FederationFieldParams] = None,
-    deprecation_reason: Optional[str] = None,
-    default: Any = UNSET,
-    default_factory: Union[Callable, object] = UNSET,
+    name=None,
+    is_subscription=False,
+    description=None,
+    permission_classes=None,
+    federation=None,
+    deprecation_reason=None,
+    default=UNSET,
+    default_factory=UNSET,
+    # This init parameter is used by PyRight to determine whether this field
+    # is added in the constructor or not. It is not used to change
+    # any behavior at the moment.
+    init=None,
 ) -> Any:
     """Annotates a method or property as a GraphQL field.
 
@@ -362,7 +366,7 @@ def field(
     )
 
     if resolver:
-        assert init is False, "Can't set init as True when passing a resolver."
+        assert init is not True, "Can't set init as True when passing a resolver."
         return field_(resolver)
     return field_
 

@@ -80,6 +80,7 @@ def field(
     provides: Optional[List[str]] = None,
     requires: Optional[List[str]] = None,
     external: bool = False,
+    init: Optional[Literal[True]] = True,
     permission_classes: Optional[List[Type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
     default: Any = UNSET,
@@ -107,27 +108,24 @@ def field(
 
 
 def field(
-    resolver: Optional[_RESOLVER_TYPE] = None,
+    resolver=None,
     *,
-    name: Optional[str] = None,
-    is_subscription: bool = False,
-    description: Optional[str] = None,
-    provides: Optional[List[str]] = None,
-    requires: Optional[List[str]] = None,
-    external: bool = False,
-    init: Optional[bool] = False,
-    permission_classes: Optional[List[Type[BasePermission]]] = None,
-    deprecation_reason: Optional[str] = None,
-    default: Any = UNSET,
-    default_factory: Union[Callable, object] = UNSET,
+    name=None,
+    is_subscription=False,
+    description=None,
+    provides=None,
+    requires=None,
+    external=False,
+    permission_classes=None,
+    deprecation_reason=None,
+    default=UNSET,
+    default_factory=UNSET,
+    # This init parameter is used by PyRight to determine whether this field
+    # is added in the constructor or not. It is not used to change
+    # any behavior at the moment.
+    init=None,
 ) -> Any:
-    # hack to prevent mypy from complaining about:
-    # `Not all union combinations were tried because there are too many unions`
-    # without using # type: ignore on multiple lines
-    def _inner(**kwargs):
-        return base_field(**kwargs)
-
-    return _inner(
+    return base_field(
         resolver=resolver,
         name=name,
         is_subscription=is_subscription,
