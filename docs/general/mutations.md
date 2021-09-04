@@ -45,8 +45,7 @@ We would send the following GraphQL document to our server to execute the mutati
 addBook(title: "The Little Prince", author: "Antoine de Saint-Exupéry")
 ```
 
-The `addBook` mutation is a simplified example. In a real-world application we usually
-want to return more information if an error occurs.
+The `addBook` mutation is a simplified example. In a real-world application mutations will often need to handle errors and communicate those errors back to the client. For example we might want to return an error if the book already exists.
 
 You can checkout our documentation on
 [dealing with errors](/docs/guides/errors#expected-errors) to learn how to return a
