@@ -94,7 +94,7 @@ jobs:
         ref: "refs/pull/${{ github.event.number }}/merge"
     - name: Extract tweet message and changelog
       id: extract
-      uses: ./.github/read-tweet-action
+      uses: strawberry-graphql/tweet-actions/read-tweet@v1
       with:
         changelog: ${{ needs.release-file-check.outputs.changelog }}
         version: "(next)"
@@ -107,7 +107,7 @@ jobs:
     steps:
       - uses: actions/checkout@v2
       - name: Validate tweet
-        uses: ./.github/validate-tweet-action
+        uses: strawberry-graphql/tweet-actions/validate-tweet@v1
         with:
           tweet: ${{ needs.read-tweet-md.outputs.tweet }}
 
