@@ -7,7 +7,7 @@ title: Mutations
 As opposed to queries, mutations in GraphQL represent operations that modify server-side
 data and/or cause side effects on the server. For example, you can have a mutation that
 creates a new instance in your application or a mutation that sends an email. Like in queries, they accept
-parameters, can return an object type and can include nested fields as well. This can be
+parameters and can return anything a regular field can, including new types and existing object types. This can be
 useful for fetching the new state of an object after an update.
 
 Let's improve our books project from the [Getting started tutorial](docs/index.md) and
