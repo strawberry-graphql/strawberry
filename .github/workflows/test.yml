@@ -5,6 +5,12 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+    paths:
+      - "strawberry/**"
+      - "tests/**"
+      - "pyproject.toml"
+      - "poetry.lock"
+      - ".github/workflows/test.yml"
 
 jobs:
   unit-tests:

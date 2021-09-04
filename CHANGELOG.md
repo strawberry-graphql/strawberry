@@ -1,6 +1,127 @@
 CHANGELOG
 =========
 
+0.75.1 - 2021-09-03
+-------------------
+
+This release fixes an issue with the MyPy plugin that prevented using
+TextChoices from django in `strawberry.enum`.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1202](https://github.com/strawberry-graphql/strawberry/pull/1202/)
+
+
+0.75.0 - 2021-09-01
+-------------------
+
+This release improves how we deal with custom scalars. Instead of being global
+they are now scoped to the schema. This allows you to have multiple schemas in
+the same project with different scalars.
+
+Also you can now override the built in scalars with your own custom
+implementation. Out of the box Strawberry provides you with custom scalars for
+common Python types like `datetime` and `Decimal`. If you require a custom
+implementation of one of these built in scalars you can now pass a map of
+overrides to your schema:
+
+```python
+from datetime import datetime, timezone
+import strawberry
+
+EpochDateTime = strawberry.scalar(
+    datetime,
+    serialize=lambda value: int(value.timestamp()),
+    parse_value=lambda value: datetime.fromtimestamp(int(value), timezone.utc),
+)
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def current_time(self) -> datetime:
+        return datetime.now()
+
+schema = strawberry.Schema(
+  Query,
+  scalar_overrides={
+    datetime: EpochDateTime,
+  }
+)
+result = schema.execute_sync("{ currentTime }")
+assert result.data == {"currentTime": 1628683200}
+```
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) [PR #1147](https://github.com/strawberry-graphql/strawberry/pull/1147/)
+
+
+0.74.1 - 2021-08-27
+-------------------
+
+This release allows to install Strawberry along side `click` version 8.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1181](https://github.com/strawberry-graphql/strawberry/pull/1181/)
+
+
+0.74.0 - 2021-08-27
+-------------------
+
+This release add full support for async directives and fixes and issue when
+using directives and async extensions.
+
+```python
+@strawberry.type
+class Query:
+    name: str = "Banana"
+
+@strawberry.directive(
+    locations=[DirectiveLocation.FIELD], description="Make string uppercase"
+)
+async def uppercase(value: str):
+    return value.upper()
+
+schema = strawberry.Schema(query=Query, directives=[uppercase])
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1179](https://github.com/strawberry-graphql/strawberry/pull/1179/)
+
+
+0.73.9 - 2021-08-26
+-------------------
+
+Fix issue where `strawberry.Private` fields on converted Pydantic types were not added to the resulting dataclass.
+
+Contributed by [Paul Sud](https://github.com/paul-sud) [PR #1173](https://github.com/strawberry-graphql/strawberry/pull/1173/)
+
+
+0.73.8 - 2021-08-26
+-------------------
+
+This releases fixes a MyPy issue that prevented from using types created with
+`create_type` as base classes. This is now allowed and doesn't throw any error:
+
+```python
+import strawberry
+from strawberry.tools import create_type
+
+@strawberry.field
+def name() -> str:
+    return "foo"
+
+MyType = create_type("MyType", [name])
+
+class Query(MyType):
+    ...
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1175](https://github.com/strawberry-graphql/strawberry/pull/1175/)
+
+
+0.73.7 - 2021-08-25
+-------------------
+
+This release fixes an import error when trying to import `create_type` without having `opentelemetry` installed.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1171](https://github.com/strawberry-graphql/strawberry/pull/1171/)
+
+
 0.73.6 - 2021-08-24
 -------------------
 

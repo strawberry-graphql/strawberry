@@ -17,7 +17,7 @@ Once that's done you can use Strawberry with ASGI like so:
 ```python
 from strawberry.asgi import GraphQL
 
-from api.schema import Schema
+from api.schema import schema
 
 app = GraphQL(schema)
 ```
