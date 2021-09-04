@@ -10,12 +10,11 @@ start testing your queries and mutations. But at some point, while you are devel
 your application (or even before if you are practising TDD), you may want to write down
 also some automatic tests.
 
-We can use our schema run our first test:
+We can use the Strawberry's `schema` to run our first test:
 
 ```
-def test_query(graphql_client):
-    query = """
-        query($title: String!){
+def test_query():
+    query = """query($title: String!){
             books(title: $title){
                 title
                 author
@@ -23,7 +22,10 @@ def test_query(graphql_client):
         }
     """
 
-    resp = schema.execute_sync(query, variables={"title": "The Great Gatsby"})
+    resp = schema.execute_sync(
+        query,
+        variable_values={"title": "The Great Gatsby"},
+    )
 
     assert resp.errors is None
     assert resp.data["books"] == [
@@ -34,7 +36,7 @@ def test_query(graphql_client):
     ]
 ```
 
-We can also run our test with `async` as well:
+Since Strawberry supports async it goes without saying that tests can also be runned with async:
 
 ```
 @pytest.mark.asyncio
