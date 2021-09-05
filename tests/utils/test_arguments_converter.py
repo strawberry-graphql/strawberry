@@ -4,6 +4,7 @@ from typing import List, Optional
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import UNSET, StrawberryArgument, convert_arguments
+from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
 
 
 def test_simple_types():
@@ -32,7 +33,9 @@ def test_simple_types():
         ),
     ]
 
-    assert convert_arguments(args, arguments) == {
+    assert convert_arguments(
+        args, arguments, scalar_registry=DEFAULT_SCALAR_REGISTRY
+    ) == {
         "integer": 1,
         "string": "abc",
         "float": 1.2,
@@ -59,7 +62,9 @@ def test_list():
         ),
     ]
 
-    assert convert_arguments(args, arguments) == {
+    assert convert_arguments(
+        args, arguments, scalar_registry=DEFAULT_SCALAR_REGISTRY
+    ) == {
         "integer_list": [1, 2],
         "string_list": ["abc", "cde"],
     }
@@ -85,9 +90,9 @@ def test_input_types():
         ),
     ]
 
-    assert convert_arguments(args, arguments) == {
-        "input": MyInput(abc="example", say_hello_to="Patrick", was=10, fun="yes")
-    }
+    assert convert_arguments(
+        args, arguments, scalar_registry=DEFAULT_SCALAR_REGISTRY
+    ) == {"input": MyInput(abc="example", say_hello_to="Patrick", was=10, fun="yes")}
 
 
 def test_optional_input_types():
@@ -105,7 +110,9 @@ def test_optional_input_types():
         ),
     ]
 
-    assert convert_arguments(args, arguments) == {"input": MyInput(abc="example")}
+    assert convert_arguments(
+        args, arguments, scalar_registry=DEFAULT_SCALAR_REGISTRY
+    ) == {"input": MyInput(abc="example")}
 
 
 def test_list_of_input_types():
@@ -123,9 +130,9 @@ def test_list_of_input_types():
         ),
     ]
 
-    assert convert_arguments(args, arguments) == {
-        "input_list": [MyInput(abc="example")]
-    }
+    assert convert_arguments(
+        args, arguments, scalar_registry=DEFAULT_SCALAR_REGISTRY
+    ) == {"input_list": [MyInput(abc="example")]}
 
 
 def test_optional_list_of_input_types():
@@ -142,9 +149,9 @@ def test_optional_list_of_input_types():
             type_annotation=StrawberryAnnotation(Optional[List[MyInput]]),
         ),
     ]
-    assert convert_arguments(args, arguments) == {
-        "input_list": [MyInput(abc="example")]
-    }
+    assert convert_arguments(
+        args, arguments, scalar_registry=DEFAULT_SCALAR_REGISTRY
+    ) == {"input_list": [MyInput(abc="example")]}
 
 
 def test_nested_input_types():
@@ -190,7 +197,9 @@ def test_nested_input_types():
         ),
     ]
 
-    assert convert_arguments(args, arguments) == {
+    assert convert_arguments(
+        args, arguments, scalar_registry=DEFAULT_SCALAR_REGISTRY
+    ) == {
         "input": AddReleaseFileCommentInput(
             pr_number=12,
             status=ReleaseFileStatus.OK,
@@ -214,7 +223,9 @@ def test_nested_input_types():
         ),
     ]
 
-    assert convert_arguments(args, arguments) == {
+    assert convert_arguments(
+        args, arguments, scalar_registry=DEFAULT_SCALAR_REGISTRY
+    ) == {
         "input": AddReleaseFileCommentInput(
             pr_number=12, status=ReleaseFileStatus.OK, release_info=None
         )
@@ -240,9 +251,9 @@ def test_nested_list_of_complex_types():
         ),
     ]
 
-    assert convert_arguments(args, arguments) == {
-        "input": Input(numbers=[Number(1), Number(2)])
-    }
+    assert convert_arguments(
+        args, arguments, scalar_registry=DEFAULT_SCALAR_REGISTRY
+    ) == {"input": Input(numbers=[Number(1), Number(2)])}
 
 
 def test_uses_default_for_optional_types_when_nothing_is_passed():
@@ -266,7 +277,9 @@ def test_uses_default_for_optional_types_when_nothing_is_passed():
         ),
     ]
 
-    assert convert_arguments(args, arguments) == {"input": Input(UNSET, UNSET)}
+    assert convert_arguments(
+        args, arguments, scalar_registry=DEFAULT_SCALAR_REGISTRY
+    ) == {"input": Input(UNSET, UNSET)}
 
     # case 2
     args = {"input": {"numbersSecond": None}}
@@ -279,7 +292,9 @@ def test_uses_default_for_optional_types_when_nothing_is_passed():
         ),
     ]
 
-    assert convert_arguments(args, arguments) == {"input": Input(UNSET, None)}
+    assert convert_arguments(
+        args, arguments, scalar_registry=DEFAULT_SCALAR_REGISTRY
+    ) == {"input": Input(UNSET, None)}
 
 
 def test_when_optional():
@@ -302,4 +317,7 @@ def test_when_optional():
         )
     ]
 
-    assert convert_arguments(args, arguments) == {}
+    assert (
+        convert_arguments(args, arguments, scalar_registry=DEFAULT_SCALAR_REGISTRY)
+        == {}
+    )

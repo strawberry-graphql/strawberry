@@ -115,7 +115,7 @@ def test_error_with_empty_type_list():
 
 def test_error_with_scalar_types():
     with pytest.raises(
-        InvalidUnionType, match="Scalar type `int` cannot be used in a GraphQL Union"
+        InvalidUnionType, match="Type `int` cannot be used in a GraphQL Union"
     ):
         strawberry.union("Result", (int,))
 
@@ -126,6 +126,6 @@ def test_error_with_non_strawberry_type():
         a: int
 
     with pytest.raises(
-        InvalidUnionType, match="Union type `A` is not a Strawberry type"
+        InvalidUnionType, match="Type `A` cannot be used in a GraphQL Union"
     ):
         strawberry.union("Result", (A,))
