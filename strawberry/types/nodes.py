@@ -35,7 +35,7 @@ Selection = Union["SelectedField", "FragmentSpread", "InlineFragment"]
 def convert_value(info: GraphQLResolveInfo, node: GQLValueNode) -> Any:
     """Return useful value from any node."""
     if isinstance(node, GQLVariableNode):
-        # TODO look up variable
+        # Look up variable
         name = node.name.value
         return info.variable_values[name]
     if isinstance(node, GQLListValueNode):
