@@ -175,7 +175,7 @@ def test_override_unknown_scalars():
 
     schema = strawberry.Schema(Query, scalar_overrides={timedelta: Duration})
 
-    result = schema.execute_sync('{ duration(value: 10) }')
+    result = schema.execute_sync("{ duration(value: 10) }")
 
     assert not result.errors
     assert result.data == {"duration": 10}
