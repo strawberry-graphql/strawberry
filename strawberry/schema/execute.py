@@ -47,9 +47,7 @@ async def execute(
 ) -> ExecutionResult:
     extensions_runner = ExtensionsRunner(
         execution_context=execution_context,
-        extensions=[
-            extension(execution_context=execution_context) for extension in extensions
-        ],
+        extensions=extensions,
     )
 
     additional_middlewares = [DirectivesMiddleware(directives)]
@@ -133,9 +131,7 @@ def execute_sync(
 ) -> ExecutionResult:
     extensions_runner = ExtensionsRunner(
         execution_context=execution_context,
-        extensions=[
-            extension(execution_context=execution_context) for extension in extensions
-        ],
+        extensions=extensions,
     )
 
     additional_middlewares = [DirectivesMiddlewareSync(directives)]

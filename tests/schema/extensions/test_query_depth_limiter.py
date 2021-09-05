@@ -6,7 +6,7 @@ import pytest
 from graphql import get_introspection_query, parse, specified_rules, validate
 
 import strawberry
-from strawberry.extensions import WithQueryDepthLimiter
+from strawberry.extensions import QueryDepthLimiter
 from strawberry.extensions.query_depth_limiter import create_validator
 
 
@@ -272,7 +272,7 @@ def test_should_work_as_extension():
     }
     }
     """
-    schema = strawberry.Schema(Query, extensions=[WithQueryDepthLimiter(max_depth=4)])
+    schema = strawberry.Schema(Query, extensions=[QueryDepthLimiter(max_depth=4)])
 
     result = schema.execute_sync(query)
 

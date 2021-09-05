@@ -1,22 +1,41 @@
 from functools import lru_cache
-
-from graphql.language import DocumentNode
+from typing import Optional
 
 from strawberry.extensions.base_extension import Extension
 from strawberry.schema.execute import parse_document
 
 
-def UseParserCache(maxsize: int = None):
-    @lru_cache(maxsize=maxsize)
-    def cached_parse_document(query: str) -> DocumentNode:
-        return parse_document(query)
+class ParserCache(Extension):
+    """
+    Add LRU caching the parsing step during execution to improve performance.
 
-    class _UseParserCache(Extension):
-        def on_parsing_start(self):
-            execution_context = self.execution_context
+    Example:
 
-            execution_context.graphql_document = cached_parse_document(
-                execution_context.query,
-            )
+    >>> import strawberry
+    >>> from strawberry.extensions import ParserCache
+    >>>
+    >>> schema = strawberry.Schema(
+    >>>     Query,
+    >>>     extensions=[
+    >>>         ParserCache(maxsize=100),
+    >>>     ]
+    >>> )
 
-    return _UseParserCache
+    Arguments:
+
+    `maxsize: Optional[int]`
+        Set the maxsize of the cache. If `maxsize` is set to `None` then the
+        cache will grow without bound.
+        More info: https://docs.python.org/3/library/functools.html#functools.lru_cache
+
+    """
+
+    def __init__(self, maxsize: Optional[int] = None):
+        self.cached_parse_document = lru_cache(maxsize=maxsize)(parse_document)
+
+    def on_parsing_start(self):
+        execution_context = self.execution_context
+
+        execution_context.graphql_document = self.cached_parse_document(
+            execution_context.query,
+        )

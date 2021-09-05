@@ -1,16 +1,16 @@
-from .add_validation_rule import AddValidationRule
+from .add_validation_rules import AddValidationRules
 from .base_extension import Extension
 from .disable_validation import DisableValidation
-from .parser_cache import UseParserCache
-from .query_depth_limiter import WithQueryDepthLimiter
+from .parser_cache import ParserCache
+from .query_depth_limiter import QueryDepthLimiter
 from .validation_cache import UseValidationCache
 
 
 __all__ = [
     "Extension",
-    "AddValidationRule",
+    "AddValidationRules",
     "DisableValidation",
-    "UseParserCache",
+    "ParserCache",
     "UseValidationCache",
-    "WithQueryDepthLimiter",
+    "QueryDepthLimiter",
 ]

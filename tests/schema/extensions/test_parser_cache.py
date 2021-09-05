@@ -3,7 +3,7 @@ from unittest.mock import patch
 from graphql import parse
 
 import strawberry
-from strawberry.extensions import UseParserCache
+from strawberry.extensions import ParserCache
 
 
 @patch("strawberry.schema.execute.parse", wraps=parse)
@@ -18,7 +18,7 @@ def test_parser_cache_extension(mock_parse):
         def ping(self) -> str:
             return "pong"
 
-    schema = strawberry.Schema(query=Query, extensions=[UseParserCache()])
+    schema = strawberry.Schema(query=Query, extensions=[ParserCache()])
 
     query = "query { hello }"
 
@@ -60,7 +60,7 @@ def test_validation_cache_extension_max_size(mock_parse):
         def ping(self) -> str:
             return "pong"
 
-    schema = strawberry.Schema(query=Query, extensions=[UseParserCache(maxsize=1)])
+    schema = strawberry.Schema(query=Query, extensions=[ParserCache(maxsize=1)])
 
     query = "query { hello }"
 
@@ -97,7 +97,7 @@ async def test_validation_cache_extension_async(mock_parse):
         def ping(self) -> str:
             return "pong"
 
-    schema = strawberry.Schema(query=Query, extensions=[UseParserCache()])
+    schema = strawberry.Schema(query=Query, extensions=[ParserCache()])
 
     query = "query { hello }"
 

@@ -40,32 +40,50 @@ from graphql.language import (
 )
 from graphql.validation import ValidationContext, ValidationRule
 
-from strawberry.extensions import AddValidationRule
+from strawberry.extensions import AddValidationRules
 from strawberry.extensions.utils import is_introspection_key
 
 
 IgnoreType = Union[Callable[[str], bool], re.Pattern, str]
 
 
-def WithQueryDepthLimiter(
-    max_depth: int,
-    ignore: Optional[List[IgnoreType]] = None,
-    callback: Callable[[Dict[str, int]], None] = None,
-):
+class QueryDepthLimiter(AddValidationRules):
     """
-    Creates a validator for the GraphQL query depth
+    Add a validator to limit the query depth of GraphQL operations
 
-    - max_depth - The maximum allowed depth for any operation in a GraphQL document.
-    - ignore - Stops recursive depth checking based on a field name.
+    Example:
+
+    >>> import strawberry
+    >>> from strawberry.extensions import QueryDepthLimiter
+    >>>
+    >>> schema = strawberry.Schema(
+    >>>     Query,
+    >>>     extensions=[
+    >>>         QueryDepthLimiter(max_depth=4)
+    >>>     ]
+    >>> )
+
+    Arguments:
+
+    `max_depth: int`
+        The maximum allowed depth for any operation in a GraphQL document.
+    `ignore: Optional[List[IgnoreType]]`
+        Stops recursive depth checking based on a field name.
         Either a string or regexp to match the name, or a function that returns
         a boolean.
-    - callback - Called each time validation runs. Receives an Object which is a
+    `callback: Optional[Callable[[Dict[str, int]], None]`
+        Called each time validation runs. Receives an Object which is a
         map of the depths for each operation.
     """
 
-    validator = create_validator(max_depth, ignore, callback)
-
-    return AddValidationRule(validator)
+    def __init__(
+        self,
+        max_depth: int,
+        ignore: Optional[List[IgnoreType]] = None,
+        callback: Callable[[Dict[str, int]], None] = None,
+    ):
+        validator = create_validator(max_depth, ignore, callback)
+        super().__init__([validator])
 
 
 def create_validator(

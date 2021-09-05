@@ -1,5 +1,5 @@
 import dataclasses
-from typing import Any, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Dict, List, Optional, Tuple, Type
 
 from graphql import (
     ASTValidationRule,
@@ -19,7 +19,7 @@ class ExecutionContext:
     operation_name: Optional[str] = None
     root_value: Optional[Any] = None
     graphql_schema: Optional[GraphQLSchema] = None
-    validation_rules: Union[Tuple[Type[ASTValidationRule], ...]] = dataclasses.field(
+    validation_rules: Tuple[Type[ASTValidationRule], ...] = dataclasses.field(
         default_factory=lambda: tuple(specified_rules)
     )
 
