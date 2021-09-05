@@ -6,6 +6,7 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Union, cast
 from typing_extensions import Annotated, get_args, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
+from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.enum import EnumDefinition
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
 from strawberry.utils.mixins import GraphQLNameMixin
@@ -94,7 +95,10 @@ class StrawberryArgument(GraphQLNameMixin):
 
 
 def convert_argument(
-    value: object, type_: Union[StrawberryType, type], auto_camel_case: bool = True
+    value: object,
+    type_: Union[StrawberryType, type],
+    scalar_registry: Dict[object, Union[ScalarWrapper, ScalarDefinition]],
+    auto_camel_case: bool = True,
 ) -> object:
     if value is None:
         return None
@@ -103,13 +107,16 @@ def convert_argument(
         return value
 
     if isinstance(type_, StrawberryOptional):
-        return convert_argument(value, type_.of_type)
+        return convert_argument(value, type_.of_type, scalar_registry, auto_camel_case)
 
     if isinstance(type_, StrawberryList):
         value_list = cast(Iterable, value)
-        return [convert_argument(x, type_.of_type) for x in value_list]
+        return [
+            convert_argument(x, type_.of_type, scalar_registry, auto_camel_case)
+            for x in value_list
+        ]
 
-    if is_scalar(type_):
+    if is_scalar(type_, scalar_registry):
         return value
 
     # Convert Enum fields to instances using the value. This is safe
@@ -130,7 +137,7 @@ def convert_argument(
 
             if graphql_name in value:
                 kwargs[field.python_name] = convert_argument(
-                    value[graphql_name], field.type, auto_camel_case
+                    value[graphql_name], field.type, scalar_registry, auto_camel_case
                 )
 
         type_ = cast(type, type_)
@@ -142,6 +149,7 @@ def convert_argument(
 def convert_arguments(
     value: Dict[str, Any],
     arguments: List[StrawberryArgument],
+    scalar_registry: Dict[object, Union[ScalarWrapper, ScalarDefinition]],
     auto_camel_case: bool = True,
 ) -> Dict[str, Any]:
     """Converts a nested dictionary to a dictionary of actual types.
@@ -166,6 +174,7 @@ def convert_arguments(
                 value=current_value,
                 type_=argument.type,
                 auto_camel_case=auto_camel_case,
+                scalar_registry=scalar_registry,
             )
 
     return kwargs

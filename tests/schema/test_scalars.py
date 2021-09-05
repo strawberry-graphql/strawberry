@@ -1,4 +1,4 @@
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from textwrap import dedent
 from uuid import UUID
 
@@ -157,3 +157,25 @@ def test_duplicate_scalars():
         TypeError, match="Scalar `MyCustomScalar` has already been registered"
     ):
         strawberry.Schema(Query)
+
+
+def test_override_unknown_scalars():
+    Duration = strawberry.scalar(
+        timedelta,
+        name="Duration",
+        serialize=timedelta.total_seconds,
+        parse_value=lambda s: timedelta(seconds=s),
+    )
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def duration(self, value: timedelta) -> timedelta:
+            return value
+
+    schema = strawberry.Schema(Query, scalar_overrides={timedelta: Duration})
+
+    result = schema.execute_sync('{ duration(value: 10) }')
+
+    assert not result.errors
+    assert result.data == {"duration": 10}

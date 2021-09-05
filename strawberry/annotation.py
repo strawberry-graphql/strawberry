@@ -22,7 +22,6 @@ except ImportError:  # pragma: no cover
 from strawberry.custom_scalar import ScalarDefinition
 from strawberry.enum import EnumDefinition
 from strawberry.lazy_type import LazyType
-from strawberry.scalars import SCALAR_TYPES
 from strawberry.type import (
     StrawberryList,
     StrawberryOptional,
@@ -82,8 +81,6 @@ class StrawberryAnnotation:
             return self.create_list(evaled_type)
         elif self._is_optional(evaled_type):
             return self.create_optional(evaled_type)
-        elif self._is_scalar(evaled_type):
-            return evaled_type
         elif self._is_union(evaled_type):
             return self.create_union(evaled_type)
         elif is_type_var(evaled_type):
@@ -198,15 +195,6 @@ class StrawberryAnnotation:
         annotation_origin = getattr(annotation, "__origin__", None)
 
         return annotation_origin == list
-
-    @classmethod
-    def _is_scalar(cls, annotation: Any) -> bool:
-        type_ = getattr(annotation, "__supertype__", annotation)
-
-        if type_ in SCALAR_TYPES:
-            return True
-
-        return hasattr(annotation, "_scalar_definition")
 
     @classmethod
     def _is_strawberry_type(cls, evaled_type: Any) -> bool:
