@@ -6,13 +6,14 @@ title: Testing
 
 The GraphiQL playground integrated with Strawberry available at
 [http://localhost:8000/graphql](http://localhost:8000/graphql) can be a good place to
-start testing your queries and mutations. But at some point, while you are developing
-your application (or even before if you are practising TDD), you may want to write down
-also some automatic tests.
+start testing your queries and mutations. However, at some point, while you are
+developing your application (or even before if you are practising TDD), you may want to
+write down also some automated tests.
 
-We can use the Strawberry's `schema` to run our first test:
+We can use the Strawberry's `schema` we defined in the
+[Getting started tutorial](docs/index.md) to run our first test:
 
-```
+```python
 def test_query():
     query = """query($title: String!){
             books(title: $title){
@@ -22,13 +23,13 @@ def test_query():
         }
     """
 
-    resp = schema.execute_sync(
+    result = schema.execute_sync(
         query,
         variable_values={"title": "The Great Gatsby"},
     )
 
-    assert resp.errors is None
-    assert resp.data["books"] == [
+    assert result.errors is None
+    assert result.data["books"] == [
         {
             "title": "The Great Gatsby",
             "author": "F. Scott Fitzgerald",
@@ -36,9 +37,25 @@ def test_query():
     ]
 ```
 
-Since Strawberry supports async it goes without saying that tests can also be runned with async:
+This `test_query` example:
 
-```
+1. defines the query we want to test that takes one variable `title` as input
+2. executes the query and assign the result to a `result` variable
+3. asserts that the result is what we are expecting: nothing in `errors` and our desired
+   book in the `data`
+
+As you may have noticed, we explicitly defined the query variable `title`, and we passed
+it separately with the `variable_values` argument, but we could have directly hardcoded
+the `title` in the query string instead. We did it on purpose because usually, in most
+applications, the query's arguments will be dynamic, and, as we want to test our
+application as close to production as possible, it wouldn't make much sense to hardcode
+the variables in the test.
+
+## Testing Async
+
+Since Strawberry supports async, tests can also be written to be async:
+
+```python
 @pytest.mark.asyncio
 async def test_query_async():
     ...
@@ -47,4 +64,33 @@ async def test_query_async():
     )
 
     ...
+```
+
+## Testing Mutations
+
+As well we can write a test for our `Mutation` example:
+
+```python
+@pytest.mark.asyncio
+async def test_mutaton():
+    mutation = """
+        mutation($title: String!, $author: String!) {
+            addBook(title: $title, author: $author) {
+                title
+            }
+        }
+    """
+
+    resp = await schema.execute(
+        mutation,
+        variable_values={
+            "title": "The Little Prince",
+            "author": "Antoine de Saint-Exupéry",
+        },
+    )
+
+    assert resp.errors is None
+    assert resp.data["addBook"] == {
+        "title": "The Little Prince",
+    }
 ```
