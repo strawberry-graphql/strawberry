@@ -1,6 +1,22 @@
 CHANGELOG
 =========
 
+0.76.0 - 2021-09-06
+-------------------
+
+This release adds support for enabling subscriptions in GraphiQL
+on Django by setting a flag `subscriptions_enabled` on the BaseView class.
+```python
+from strawberry.django.views import AsyncGraphQLView
+
+from .schema import schema
+
+urlpatterns = [path("graphql", AsyncGraphQLView.as_view(schema=schema, graphiql=True, subscriptions_enabled=True))]
+```
+
+Contributed by [lijok](https://github.com/lijok) [PR #1215](https://github.com/strawberry-graphql/strawberry/pull/1215/)
+
+
 0.75.1 - 2021-09-03
 -------------------
 
