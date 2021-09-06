@@ -36,7 +36,7 @@ class ValidationCache(Extension):
         execution_context = self.execution_context
 
         errors = self.cached_validate_document(
-            execution_context.graphql_schema,
+            execution_context.schema._schema,
             execution_context.graphql_document,
             execution_context.validation_rules,
         )

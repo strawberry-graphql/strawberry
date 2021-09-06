@@ -47,7 +47,7 @@ async def execute(
 ) -> ExecutionResult:
     extensions_runner = ExtensionsRunner(
         execution_context=execution_context,
-        extensions=extensions,
+        extensions=list(extensions),
     )
 
     additional_middlewares = [DirectivesMiddleware(directives)]
@@ -85,10 +85,9 @@ async def execute(
                 len(execution_context.validation_rules) > 0
                 and execution_context.errors is None
             ):
-                assert execution_context.graphql_schema
                 assert execution_context.graphql_document
                 execution_context.errors = validate_document(
-                    execution_context.graphql_schema,
+                    execution_context.schema._schema,
                     execution_context.graphql_document,
                     execution_context.validation_rules,
                 )
@@ -131,7 +130,7 @@ def execute_sync(
 ) -> ExecutionResult:
     extensions_runner = ExtensionsRunner(
         execution_context=execution_context,
-        extensions=extensions,
+        extensions=list(extensions),
     )
 
     additional_middlewares = [DirectivesMiddlewareSync(directives)]
@@ -169,10 +168,9 @@ def execute_sync(
                 len(execution_context.validation_rules) > 0
                 and execution_context.errors is None
             ):
-                assert execution_context.graphql_schema
                 assert execution_context.graphql_document
                 execution_context.errors = validate_document(
-                    execution_context.graphql_schema,
+                    execution_context.schema._schema,
                     execution_context.graphql_document,
                     execution_context.validation_rules,
                 )
