@@ -8,7 +8,7 @@ import pytest
 from graphql import GraphQLError, ValidationRule, validate
 
 import strawberry
-from strawberry.extensions import AddValidationRule, DisableValidation
+from strawberry.extensions import AddValidationRules, DisableValidation
 
 
 @pytest.mark.parametrize("validate_queries", (True, False))
@@ -289,7 +289,7 @@ def test_adding_custom_validation_rules():
     schema = strawberry.Schema(
         query=Query,
         extensions=[
-            AddValidationRule(CustomRule),
+            AddValidationRules([CustomRule]),
         ],
     )
 
