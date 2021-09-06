@@ -17,6 +17,7 @@ def get_user_age() -> int:
 class User:
     name: str
     age: int = strawberry.field(resolver=get_user_age)
+    something_else: int = strawberry.federation.field(resolver=get_user_age)
 
 
 User(name="Patrick")
@@ -34,22 +35,22 @@ def test_pyright():
         Result(
             type="error",
             message='No parameter named "n" (reportGeneralTypeIssues)',
-            line=15,
+            line=16,
             column=6,
         ),
         Result(
             type="error",
             message='Argument missing for parameter "name" (reportGeneralTypeIssues)',
-            line=15,
+            line=16,
             column=1,
         ),
         Result(
-            type="info", message='Type of "User" is "Type[User]"', line=17, column=13
+            type="info", message='Type of "User" is "Type[User]"', line=18, column=13
         ),
         Result(
             type="info",
             message='Type of "User.__init__" is "(self: User, name: str) -> None"',
-            line=18,
+            line=19,
             column=13,
         ),
     ]
