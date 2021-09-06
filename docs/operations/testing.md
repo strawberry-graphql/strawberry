@@ -68,7 +68,7 @@ async def test_query_async():
 
 ## Testing Mutations
 
-As well we can write a test for our `Mutation` example:
+As well we can write a test for our `addBook` Mutation example:
 
 ```python
 @pytest.mark.asyncio
