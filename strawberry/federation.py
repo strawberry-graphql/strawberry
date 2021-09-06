@@ -31,25 +31,10 @@ from .field import (
 from .object_type import FederationTypeParams, type as base_type
 from .printer import print_schema
 from .schema import Schema as BaseSchema
+from .utils.typing import __dataclass_transform__
 
 
 T = TypeVar("T")
-
-
-def type(
-    cls: Type = None,
-    *,
-    name: str = None,
-    description: str = None,
-    keys: List[str] = None,
-    extend: bool = False,
-):
-    return base_type(
-        cls,
-        name=name,
-        description=description,
-        federation=FederationTypeParams(keys=keys or [], extend=extend),
-    )
 
 
 @overload
@@ -175,6 +160,25 @@ def _get_entity_type(type_map: TypeMap):
     entity_type.resolve_type = _resolve_type
 
     return entity_type
+
+
+@__dataclass_transform__(
+    order_default=True, field_descriptors=(base_field, field, StrawberryField)
+)
+def type(
+    cls: Type = None,
+    *,
+    name: str = None,
+    description: str = None,
+    keys: List[str] = None,
+    extend: bool = False,
+):
+    return base_type(
+        cls,
+        name=name,
+        description=description,
+        federation=FederationTypeParams(keys=keys or [], extend=extend),
+    )
 
 
 class Schema(BaseSchema):

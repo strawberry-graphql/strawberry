@@ -13,10 +13,10 @@ def get_user_age() -> int:
     return 0
 
 
-@strawberry.input
+@strawberry.type
 class User:
     name: str
-    age: int = strawberry.field(resolver=get_user_age, init=False)
+    age: int = strawberry.field(resolver=get_user_age)
 
 
 User(name="Patrick")
