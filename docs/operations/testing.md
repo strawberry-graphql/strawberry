@@ -100,15 +100,21 @@ And finnally a test for our [`count` Subscription](docs/general/subscriptions.md
 
 ```python
 @pytest.mark.asyncio
-async def test_subscription_with_arguments():
+async def test_subscription():
     query = """subscription {
-        count(target: 1)
+        count(target: 3)
     }
     """
 
     sub = await schema.subscribe(query)
-    result = await sub.__anext__()
 
-    assert not result.errors
-    assert result.data == {"count": 0}
+    index = 0
+    async for result in sub:
+        assert not result.errors
+        assert result.data == {"count": index}
+
+        index += 1
 ```
+
+As you can see testing Subscriptions is a bit more complicated because we want to
+check the result of each individual result.
