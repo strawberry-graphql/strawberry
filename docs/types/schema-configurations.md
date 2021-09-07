@@ -13,7 +13,7 @@ example below:
 ```python
 import strawberry
 
-from strawberry.schema.config import StrawerryConfig
+from strawberry.schema.config import StrawberryConfig
 
 
 @strawerry.type
