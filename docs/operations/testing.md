@@ -49,7 +49,7 @@ it separately with the `variable_values` argument, but we could have directly ha
 the `title` in the query string instead. We did it on purpose because usually, in most
 applications, the query's arguments will be dynamic, and, as we want to test our
 application as close to production as possible, it wouldn't make much sense to hardcode
-the variables in the test.
+the variables in the query.
 
 ## Testing Async
 
@@ -60,8 +60,7 @@ Since Strawberry supports async, tests can also be written to be async:
 async def test_query_async():
     ...
 
-    resp = await schema.execute(query, variable_values={"title": "The Great Gatsby"},
-    )
+    resp = await schema.execute(query, variable_values={"title": "The Great Gatsby"})
 
     ...
 ```
