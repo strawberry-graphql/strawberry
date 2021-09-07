@@ -67,7 +67,7 @@ async def test_query_async():
 
 ## Testing Mutations
 
-As well we can write a test for our `addBook` Mutation example:
+As well we can write a test for our [`addBook` Mutation](docs/general/mutations.md) example:
 
 ```python
 @pytest.mark.asyncio
@@ -92,4 +92,23 @@ async def test_mutaton():
     assert resp.data["addBook"] == {
         "title": "The Little Prince",
     }
+```
+
+## Testing Subscriptions
+
+And finnally a test for our [`count` Subscription](docs/general/subscriptions.md):
+
+```python
+@pytest.mark.asyncio
+async def test_subscription_with_arguments():
+    query = """subscription {
+        count(target: 1)
+    }
+    """
+
+    sub = await schema.subscribe(query)
+    result = await sub.__anext__()
+
+    assert not result.errors
+    assert result.data == {"count": 0}
 ```
