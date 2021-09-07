@@ -169,3 +169,9 @@ class MissingQueryError(Exception):
         message = 'Request data is missing a "query" value'
 
         super().__init__(message)
+
+
+class InvalidArgument(Exception):
+    def __init__(self, field_name: str, argument_type: str):
+        message = f'"{field_name}" is "{argument_type}" and invalid as an argument type'
+        super().__init__(message)

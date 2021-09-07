@@ -7,7 +7,7 @@ from typing_extensions import Annotated
 
 import strawberry
 from strawberry.arguments import UNSET
-from strawberry.exceptions import MultipleStrawberryArgumentsError
+from strawberry.exceptions import InvalidArgument, MultipleStrawberryArgumentsError
 from strawberry.type import StrawberryList, StrawberryOptional
 
 
@@ -420,3 +420,33 @@ def test_annotated_python_39():
     assert argument.type == str
     assert argument.description == "This is a description"
     assert argument.type is str
+
+
+def test_union_as_an_argument_type():
+    with pytest.raises(InvalidArgument):
+
+        @strawberry.type
+        class Noun:
+            text: str
+
+        @strawberry.type
+        class Verb:
+            text: str
+
+        Word = strawberry.union("Word", types=(Noun, Verb))
+
+        @strawberry.field
+        def add_word(word: Word) -> bool:
+            return True
+
+
+def test_interface_as_an_argument_type():
+    with pytest.raises(InvalidArgument):
+
+        @strawberry.interface
+        class Adjective:
+            text: str
+
+        @strawberry.field
+        def add_word(adjective: Adjective) -> bool:
+            return True
