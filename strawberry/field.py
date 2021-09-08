@@ -18,7 +18,7 @@ from cached_property import cached_property  # type: ignore
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import UNSET, StrawberryArgument
-from strawberry.exceptions import InvalidArgument
+from strawberry.exceptions import InvalidFieldArgument
 from strawberry.type import StrawberryType
 from strawberry.types.info import Info
 from strawberry.union import StrawberryUnion
@@ -108,10 +108,18 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
             if isinstance(argument.type_annotation.annotation, str):
                 continue
             elif isinstance(argument.type, StrawberryUnion):
-                raise InvalidArgument(argument.python_name, "Union")
+                raise InvalidFieldArgument(
+                    self.python_name,
+                    argument.python_name,
+                    "Union",
+                )
             elif getattr(argument.type, "_type_definition", False):
                 if argument.type._type_definition.is_interface:
-                    raise InvalidArgument(argument.python_name, "Interface")
+                    raise InvalidFieldArgument(
+                        self.python_name,
+                        argument.python_name,
+                        "Interface",
+                    )
 
         self.base_resolver = resolver
 

@@ -7,7 +7,7 @@ from typing_extensions import Annotated
 
 import strawberry
 from strawberry.arguments import UNSET
-from strawberry.exceptions import InvalidArgument, MultipleStrawberryArgumentsError
+from strawberry.exceptions import InvalidFieldArgument, MultipleStrawberryArgumentsError
 from strawberry.type import StrawberryList, StrawberryOptional
 
 
@@ -423,7 +423,7 @@ def test_annotated_python_39():
 
 
 def test_union_as_an_argument_type():
-    with pytest.raises(InvalidArgument):
+    with pytest.raises(InvalidFieldArgument):
 
         @strawberry.type
         class Noun:
@@ -441,7 +441,7 @@ def test_union_as_an_argument_type():
 
 
 def test_interface_as_an_argument_type():
-    with pytest.raises(InvalidArgument):
+    with pytest.raises(InvalidFieldArgument):
 
         @strawberry.interface
         class Adjective:
