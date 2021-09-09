@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.76.1 - 2021-09-09
+-------------------
+
+Change the version constraint of opentelemetry-sdk and opentelemetry-api to <2
+
+Contributed by [Michael Ossareh](https://github.com/ossareh) [PR #1226](https://github.com/strawberry-graphql/strawberry/pull/1226/)
+
+
 0.76.0 - 2021-09-06
 -------------------
 
