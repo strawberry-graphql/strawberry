@@ -603,7 +603,7 @@ python-versions = "*"
 
 [[package]]
 name = "opentelemetry-api"
-version = "1.4.1"
+version = "1.5.0"
 description = "OpenTelemetry Python API"
 category = "main"
 optional = false
@@ -614,32 +614,32 @@ Deprecated = ">=1.2.6"
 
 [[package]]
 name = "opentelemetry-instrumentation"
-version = "0.23b2"
+version = "0.24b0"
 description = "Instrumentation Tools & Auto Instrumentation for OpenTelemetry Python"
 category = "main"
 optional = false
 python-versions = ">=3.6"
 
 [package.dependencies]
-opentelemetry-api = "1.4.1"
+opentelemetry-api = ">=1.4,<2.0"
 wrapt = ">=1.0.0,<2.0.0"
 
 [[package]]
 name = "opentelemetry-sdk"
-version = "1.4.1"
+version = "1.5.0"
 description = "OpenTelemetry Python SDK"
 category = "main"
 optional = false
 python-versions = ">=3.6"
 
 [package.dependencies]
-opentelemetry-api = "1.4.1"
-opentelemetry-instrumentation = "0.23b2"
-opentelemetry-semantic-conventions = "0.23b2"
+opentelemetry-api = "1.5.0"
+opentelemetry-instrumentation = "0.24b0"
+opentelemetry-semantic-conventions = "0.24b0"
 
 [[package]]
 name = "opentelemetry-semantic-conventions"
-version = "0.23b2"
+version = "0.24b0"
 description = "OpenTelemetry Semantic Conventions"
 category = "main"
 optional = false
@@ -1741,20 +1741,20 @@ nodeenv = [
     {file = "nodeenv-1.6.0.tar.gz", hash = "sha256:3ef13ff90291ba2a4a7a4ff9a979b63ffdd00a464dbe04acf0ea6471517a4c2b"},
 ]
 opentelemetry-api = [
-    {file = "opentelemetry-api-1.4.1.tar.gz", hash = "sha256:4043fe4d2e4368e1d4bb91142fad83f6621127066e2c788a2a2e953c09d3ed09"},
-    {file = "opentelemetry_api-1.4.1-py3-none-any.whl", hash = "sha256:1da19082c05f30c362012e71d494e2a3c6be36d5a6340af12fe2273647681855"},
+    {file = "opentelemetry-api-1.5.0.tar.gz", hash = "sha256:ce439a940c37f9e8aa7c65b35c56a94e728a9e46b3df60caa0fb656a05bd4285"},
+    {file = "opentelemetry_api-1.5.0-py3-none-any.whl", hash = "sha256:19055f258459c0d2a4fe14ff00ba7e17044bec2ea80af4347cc724301ebb3cda"},
 ]
 opentelemetry-instrumentation = [
-    {file = "opentelemetry-instrumentation-0.23b2.tar.gz", hash = "sha256:03f47469f47970e96d69ae65a231c3e3510b160ac19c90b09ab33893876e2b89"},
-    {file = "opentelemetry_instrumentation-0.23b2-py3-none-any.whl", hash = "sha256:71878bf774fb4c501d994a9389f5de75915fd2450e4cc4a9898c1b1faf3690ac"},
+    {file = "opentelemetry-instrumentation-0.24b0.tar.gz", hash = "sha256:91c50b3e81c6f5e64a06f55ae95b1b901cd58556d50cf378e401b4a647737a57"},
+    {file = "opentelemetry_instrumentation-0.24b0-py3-none-any.whl", hash = "sha256:adbda25d66e9a8dfa506324a4089c34524dc54d3ee279c3d20cb0e315418f7f9"},
 ]
 opentelemetry-sdk = [
-    {file = "opentelemetry-sdk-1.4.1.tar.gz", hash = "sha256:ef0d6fe69c0e6dffe24114af5dc87f8155347a59e8feba6da81cf96837623b6a"},
-    {file = "opentelemetry_sdk-1.4.1-py3-none-any.whl", hash = "sha256:17f3dd6b7dc9015d7ef59f00ad20d78b500d64ae047c11c33fac23359a4a9af9"},
+    {file = "opentelemetry-sdk-1.5.0.tar.gz", hash = "sha256:1bb82b3d15c13057f9cfa5524e81e8c2afed74281a911b5063048a8837452ccb"},
+    {file = "opentelemetry_sdk-1.5.0-py3-none-any.whl", hash = "sha256:5ce5a6bf2b14f20e703024546114b63eb15209dc28327556ccb6645b24495f96"},
 ]
 opentelemetry-semantic-conventions = [
-    {file = "opentelemetry-semantic-conventions-0.23b2.tar.gz", hash = "sha256:f3f1a26afde671e0a80a9bb6e6f2826a034105482e8465497ab798fc72547b5c"},
-    {file = "opentelemetry_semantic_conventions-0.23b2-py3-none-any.whl", hash = "sha256:76e65b9b7ec20894fed84c49b40bf1f9a26c7d605c44481ead503dc91876ae94"},
+    {file = "opentelemetry-semantic-conventions-0.24b0.tar.gz", hash = "sha256:636e3f241ec0623c37147b4cfd2e34e2fdb57b791ff268f76400de4bfd10e667"},
+    {file = "opentelemetry_semantic_conventions-0.24b0-py3-none-any.whl", hash = "sha256:c35d24342e61fa014126a471fd2efdadc28f917ce828cf12ee85e950e16071d9"},
 ]
 packaging = [
     {file = "packaging-21.0-py3-none-any.whl", hash = "sha256:c86254f9220d55e31cc94d69bade760f0847da8000def4dfe1c6b872fd14ff14"},
