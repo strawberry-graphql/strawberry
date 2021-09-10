@@ -178,6 +178,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+      with:
+        persist-credentials: false
     - name: Remove TWEET.md and commit
       env:
         GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
