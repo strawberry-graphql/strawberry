@@ -11,6 +11,8 @@ def _convert_from_pydantic_to_strawberry_type(
     data = data_from_model if data_from_model is not None else extra
 
     if isinstance(type_, StrawberryOptional):
+        if data is None:
+            return data
         return _convert_from_pydantic_to_strawberry_type(
             type_.of_type, data_from_model=data, extra=extra
         )
