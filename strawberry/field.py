@@ -20,8 +20,10 @@ from typing_extensions import Literal
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import UNSET, StrawberryArgument
+from strawberry.exceptions import InvalidFieldArgument
 from strawberry.type import StrawberryType
 from strawberry.types.info import Info
+from strawberry.union import StrawberryUnion
 from strawberry.utils.mixins import GraphQLNameMixin
 
 from .permission import BasePermission
@@ -103,6 +105,23 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
         # Allow for StrawberryResolvers or bare functions to be provided
         if not isinstance(resolver, StrawberryResolver):
             resolver = StrawberryResolver(resolver)
+
+        for argument in resolver.arguments:
+            if isinstance(argument.type_annotation.annotation, str):
+                continue
+            elif isinstance(argument.type, StrawberryUnion):
+                raise InvalidFieldArgument(
+                    self.python_name,
+                    argument.python_name,
+                    "Union",
+                )
+            elif getattr(argument.type, "_type_definition", False):
+                if argument.type._type_definition.is_interface:
+                    raise InvalidFieldArgument(
+                        self.python_name,
+                        argument.python_name,
+                        "Interface",
+                    )
 
         self.base_resolver = resolver
 
