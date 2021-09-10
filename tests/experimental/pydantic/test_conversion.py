@@ -361,6 +361,47 @@ def test_can_covert_pydantic_type_to_strawberry_with_missing_index_data_in_neste
     ]
 
 
+def test_can_covert_pydantic_type_to_strawberry_with_optional_list():
+    class WorkModel(pydantic.BaseModel):
+        name: str
+
+    @strawberry.experimental.pydantic.type(WorkModel, fields=["name"])
+    class Work:
+        year: int
+
+    class UserModel(pydantic.BaseModel):
+        work: Optional[WorkModel]
+
+    @strawberry.experimental.pydantic.type(UserModel, fields=["work"])
+    class User:
+        pass
+
+    origin_user = UserModel(work=None)
+
+    user = User.from_pydantic(
+        origin_user,
+    )
+
+    assert user.work is None
+
+
+def test_can_covert_pydantic_type_to_strawberry_with_optional_nested_value():
+    class UserModel(pydantic.BaseModel):
+        names: Optional[List[str]]
+
+    @strawberry.experimental.pydantic.type(UserModel, fields=["names"])
+    class User:
+        pass
+
+    origin_user = UserModel(names=None)
+
+    user = User.from_pydantic(
+        origin_user,
+    )
+
+    assert user.names is None
+
+
 def test_can_convert_input_types_to_pydantic():
     class User(pydantic.BaseModel):
         age: int
