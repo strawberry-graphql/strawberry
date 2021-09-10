@@ -27,7 +27,6 @@ def _convert_from_pydantic_to_strawberry_type(
                 return _convert_from_pydantic_to_strawberry_type(
                     option_type, data_from_model=data, extra=extra
                 )
-        return None
     if isinstance(type_, StrawberryList):
         items = []
         for index, item in enumerate(data):
