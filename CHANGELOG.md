@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.77.1 - 2021-09-10
+-------------------
+
+Fix type resolution when inheriting from types from another module using deferred annotations.
+
+Contributed by [Daniel Bowring](https://github.com/dbowring) [PR #1010](https://github.com/strawberry-graphql/strawberry/pull/1010/)
+
+
 0.77.0 - 2021-09-10
 -------------------
 
