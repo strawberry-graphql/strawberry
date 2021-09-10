@@ -20,7 +20,7 @@ def test_can_use_type_standalone():
     assert user.password == "abc"
 
 
-def test_can_covert_pydantic_type_to_strawberry():
+def test_can_convert_pydantic_type_to_strawberry():
     class User(pydantic.BaseModel):
         age: int
         password: Optional[str]
@@ -36,7 +36,7 @@ def test_can_covert_pydantic_type_to_strawberry():
     assert user.password == "abc"
 
 
-def test_can_covert_alias_pydantic_field_to_strawberry():
+def test_can_convert_alias_pydantic_field_to_strawberry():
     class UserModel(pydantic.BaseModel):
         age_: int = pydantic.Field(..., alias="age")
         password: Optional[str]
@@ -52,7 +52,7 @@ def test_can_covert_alias_pydantic_field_to_strawberry():
     assert user.password == "abc"
 
 
-def test_can_covert_falsy_values_to_strawberry():
+def test_can_convert_falsy_values_to_strawberry():
     class UserModel(pydantic.BaseModel):
         age: int
         password: str
@@ -87,7 +87,7 @@ def test_can_convert_pydantic_type_to_strawberry_with_private_field():
     assert definition.fields[0].type == int
 
 
-def test_can_covert_pydantic_type_with_nested_data_to_strawberry():
+def test_can_convert_pydantic_type_with_nested_data_to_strawberry():
     class WorkModel(pydantic.BaseModel):
         name: str
 
@@ -108,7 +108,7 @@ def test_can_covert_pydantic_type_with_nested_data_to_strawberry():
     assert user.work.name == "Ice Cream inc"
 
 
-def test_can_covert_pydantic_type_with_list_of_nested_data_to_strawberry():
+def test_can_convert_pydantic_type_with_list_of_nested_data_to_strawberry():
     class WorkModel(pydantic.BaseModel):
         name: str
 
@@ -134,7 +134,7 @@ def test_can_covert_pydantic_type_with_list_of_nested_data_to_strawberry():
     assert user.work == [Work(name="Ice Cream inc"), Work(name="Wall Street")]
 
 
-def test_can_covert_pydantic_type_with_list_of_nested_int_to_strawberry():
+def test_can_convert_pydantic_type_with_list_of_nested_int_to_strawberry():
     class UserModel(pydantic.BaseModel):
         hours: List[int]
 
@@ -154,7 +154,7 @@ def test_can_covert_pydantic_type_with_list_of_nested_int_to_strawberry():
     assert user.hours == [8, 9, 10]
 
 
-def test_can_covert_pydantic_type_with_matrix_list_of_nested_int_to_strawberry():
+def test_can_convert_pydantic_type_with_matrix_list_of_nested_int_to_strawberry():
     class UserModel(pydantic.BaseModel):
         hours: List[List[int]]
 
@@ -178,7 +178,7 @@ def test_can_covert_pydantic_type_with_matrix_list_of_nested_int_to_strawberry()
     ]
 
 
-def test_can_covert_pydantic_type_with_matrix_list_of_nested_model_to_strawberry():
+def test_can_convert_pydantic_type_with_matrix_list_of_nested_model_to_strawberry():
     class HourModel(pydantic.BaseModel):
         hour: int
 
@@ -309,7 +309,7 @@ def test_can_convert_pydantic_type_to_strawberry_with_union_nullable():
     assert user.union_field is None
 
 
-def test_can_covert_pydantic_type_to_strawberry_with_additional_fields():
+def test_can_convert_pydantic_type_to_strawberry_with_additional_fields():
     class UserModel(pydantic.BaseModel):
         password: Optional[str]
 
@@ -324,7 +324,7 @@ def test_can_covert_pydantic_type_to_strawberry_with_additional_fields():
     assert user.password == "abc"
 
 
-def test_can_covert_pydantic_type_to_strawberry_with_additional_nested_fields():
+def test_can_convert_pydantic_type_to_strawberry_with_additional_nested_fields():
     @strawberry.type
     class Work:
         name: str
@@ -343,7 +343,7 @@ def test_can_covert_pydantic_type_to_strawberry_with_additional_nested_fields():
     assert user.password == "abc"
 
 
-def test_can_covert_pydantic_type_to_strawberry_with_additional_list_nested_fields():
+def test_can_convert_pydantic_type_to_strawberry_with_additional_list_nested_fields():
     @strawberry.type
     class Work:
         name: str
@@ -373,7 +373,7 @@ def test_can_covert_pydantic_type_to_strawberry_with_additional_list_nested_fiel
     assert user.password == "abc"
 
 
-def test_can_covert_pydantic_type_to_strawberry_with_missing_data_in_nested_type():
+def test_can_convert_pydantic_type_to_strawberry_with_missing_data_in_nested_type():
     class WorkModel(pydantic.BaseModel):
         name: str
 
@@ -404,7 +404,7 @@ def test_can_covert_pydantic_type_to_strawberry_with_missing_data_in_nested_type
     ]
 
 
-def test_can_covert_pydantic_type_to_strawberry_with_missing_index_data_in_nested_type():
+def test_can_convert_pydantic_type_to_strawberry_with_missing_index_data_nested_type():
     class WorkModel(pydantic.BaseModel):
         name: str
 
@@ -441,6 +441,47 @@ def test_can_covert_pydantic_type_to_strawberry_with_missing_index_data_in_neste
         # This was None in the UserModel
         Work(name="Alternative", year=3030),
     ]
+
+
+def test_can_convert_pydantic_type_to_strawberry_with_optional_list():
+    class WorkModel(pydantic.BaseModel):
+        name: str
+
+    @strawberry.experimental.pydantic.type(WorkModel, fields=["name"])
+    class Work:
+        year: int
+
+    class UserModel(pydantic.BaseModel):
+        work: Optional[WorkModel]
+
+    @strawberry.experimental.pydantic.type(UserModel, fields=["work"])
+    class User:
+        pass
+
+    origin_user = UserModel(work=None)
+
+    user = User.from_pydantic(
+        origin_user,
+    )
+
+    assert user.work is None
+
+
+def test_can_convert_pydantic_type_to_strawberry_with_optional_nested_value():
+    class UserModel(pydantic.BaseModel):
+        names: Optional[List[str]]
+
+    @strawberry.experimental.pydantic.type(UserModel, fields=["names"])
+    class User:
+        pass
+
+    origin_user = UserModel(names=None)
+
+    user = User.from_pydantic(
+        origin_user,
+    )
+
+    assert user.names is None
 
 
 def test_can_convert_input_types_to_pydantic():
