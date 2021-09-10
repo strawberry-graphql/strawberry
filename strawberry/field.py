@@ -12,9 +12,11 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    overload,
 )
 
 from cached_property import cached_property  # type: ignore
+from typing_extensions import Literal
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import UNSET, StrawberryArgument
@@ -267,8 +269,45 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
         return self._has_async_permission_classes or self._has_async_base_resolver
 
 
+T = TypeVar("T")
+
+
+@overload
 def field(
-    resolver: Optional[_RESOLVER_TYPE] = None,
+    *,
+    resolver: Callable[[], T],
+    name: Optional[str] = None,
+    is_subscription: bool = False,
+    description: Optional[str] = None,
+    init: Literal[False] = False,
+    permission_classes: Optional[List[Type[BasePermission]]] = None,
+    federation: Optional[FederationFieldParams] = None,
+    deprecation_reason: Optional[str] = None,
+    default: Any = UNSET,
+    default_factory: Union[Callable, object] = UNSET,
+) -> T:
+    ...
+
+
+@overload
+def field(
+    *,
+    name: Optional[str] = None,
+    is_subscription: bool = False,
+    description: Optional[str] = None,
+    init: Literal[True] = True,
+    permission_classes: Optional[List[Type[BasePermission]]] = None,
+    federation: Optional[FederationFieldParams] = None,
+    deprecation_reason: Optional[str] = None,
+    default: Any = UNSET,
+    default_factory: Union[Callable, object] = UNSET,
+) -> Any:
+    ...
+
+
+@overload
+def field(
+    resolver: _RESOLVER_TYPE,
     *,
     name: Optional[str] = None,
     is_subscription: bool = False,
@@ -279,6 +318,25 @@ def field(
     default: Any = UNSET,
     default_factory: Union[Callable, object] = UNSET,
 ) -> StrawberryField:
+    ...
+
+
+def field(
+    resolver=None,
+    *,
+    name=None,
+    is_subscription=False,
+    description=None,
+    permission_classes=None,
+    federation=None,
+    deprecation_reason=None,
+    default=UNSET,
+    default_factory=UNSET,
+    # This init parameter is used by PyRight to determine whether this field
+    # is added in the constructor or not. It is not used to change
+    # any behavior at the moment.
+    init=None,
+) -> Any:
     """Annotates a method or property as a GraphQL field.
 
     This is normally used inside a type declaration:
@@ -308,6 +366,7 @@ def field(
     )
 
     if resolver:
+        assert init is not True, "Can't set init as True when passing a resolver."
         return field_(resolver)
     return field_
 
