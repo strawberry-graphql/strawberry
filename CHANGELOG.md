@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.77.3 - 2021-09-10
+-------------------
+
+Fixes a bug in the Pydantic conversion code around complex `Optional` values.
+
+Contributed by [Matt Allen](https://github.com/Matt343) [PR #1229](https://github.com/strawberry-graphql/strawberry/pull/1229/)
+
+
 0.77.2 - 2021-09-10
 -------------------
 
