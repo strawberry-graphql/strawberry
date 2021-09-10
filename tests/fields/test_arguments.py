@@ -448,5 +448,20 @@ def test_interface_as_an_argument_type():
             text: str
 
         @strawberry.field
-        def add_word(adjective: Adjective) -> bool:
+        def add_adjective(adjective: Adjective) -> bool:
             return True
+
+
+def test_resolver_with_invalid_field_argument_type():
+    with pytest.raises(InvalidFieldArgument):
+
+        @strawberry.interface
+        class Adjective:
+            text: str
+
+        def add_adjective_resolver(adjective: Adjective) -> bool:
+            return True
+
+        @strawberry.type
+        class Mutation:
+            add_adjective: bool = strawberry.field(resolver=add_adjective_resolver)

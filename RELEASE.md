@@ -1,6 +1,6 @@
 Release type: patch
 
-This release adds a new exception called `InvalidFieldArgument` which is raised when if a Union or Interface is used as an argument type.
+This release adds a new exception called `InvalidFieldArgument` which is raised when a Union or Interface is used as an argument type.
 For example this will raise an exception:
 ```python
 import strawberry
