@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.77.0 - 2021-09-10
+-------------------
+
+This release adds support for Pyright and Pylance, improving the
+integration with Visual Studio Code!
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #922](https://github.com/strawberry-graphql/strawberry/pull/922/)
+
+
 0.76.1 - 2021-09-09
 -------------------
 
