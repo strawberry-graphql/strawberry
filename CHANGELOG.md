@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.77.4 - 2021-09-11
+-------------------
+
+Fixes a bug in the `export-schema` command around the handling of local modules.
+
+Contributed by [Matt Allen](https://github.com/Matt343) [PR #1233](https://github.com/strawberry-graphql/strawberry/pull/1233/)
+
+
 0.77.3 - 2021-09-10
 -------------------
 
