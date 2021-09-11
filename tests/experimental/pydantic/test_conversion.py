@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import pydantic
 
@@ -225,6 +225,120 @@ def test_can_convert_pydantic_type_with_matrix_list_of_nested_model_to_strawberr
             Hour(hour=6),
         ],
     ]
+
+
+def test_can_convert_pydantic_type_to_strawberry_with_union():
+    class BranchA(pydantic.BaseModel):
+        field_a: str
+
+    class BranchB(pydantic.BaseModel):
+        field_b: int
+
+    class User(pydantic.BaseModel):
+        age: int
+        union_field: Union[BranchA, BranchB]
+
+    @strawberry.experimental.pydantic.type(BranchA, fields=["field_a"])
+    class BranchAType:
+        pass
+
+    @strawberry.experimental.pydantic.type(BranchB, fields=["field_b"])
+    class BranchBType:
+        pass
+
+    @strawberry.experimental.pydantic.type(User, fields=["age", "union_field"])
+    class UserType:
+        pass
+
+    origin_user = User(age=1, union_field=BranchA(field_a="abc"))
+    user = UserType.from_pydantic(origin_user)
+
+    assert user.age == 1
+    assert isinstance(user.union_field, BranchAType)
+    assert user.union_field.field_a == "abc"
+
+    origin_user = User(age=1, union_field=BranchB(field_b=123))
+    user = UserType.from_pydantic(origin_user)
+
+    assert user.age == 1
+    assert isinstance(user.union_field, BranchBType)
+    assert user.union_field.field_b == 123
+
+
+def test_can_convert_pydantic_type_to_strawberry_with_union_of_strawberry_types():
+    @strawberry.type
+    class BranchA:
+        field_a: str
+
+    @strawberry.type
+    class BranchB:
+        field_b: int
+
+    class User(pydantic.BaseModel):
+        age: int
+        union_field: Union[BranchA, BranchB]
+
+    @strawberry.experimental.pydantic.type(User, fields=["age", "union_field"])
+    class UserType:
+        pass
+
+    origin_user = User(age=1, union_field=BranchA(field_a="abc"))
+    user = UserType.from_pydantic(origin_user)
+
+    assert user.age == 1
+    assert isinstance(user.union_field, BranchA)
+    assert user.union_field.field_a == "abc"
+
+    origin_user = User(age=1, union_field=BranchB(field_b=123))
+    user = UserType.from_pydantic(origin_user)
+
+    assert user.age == 1
+    assert isinstance(user.union_field, BranchB)
+    assert user.union_field.field_b == 123
+
+
+def test_can_convert_pydantic_type_to_strawberry_with_union_nullable():
+    class BranchA(pydantic.BaseModel):
+        field_a: str
+
+    class BranchB(pydantic.BaseModel):
+        field_b: int
+
+    class User(pydantic.BaseModel):
+        age: int
+        union_field: Union[None, BranchA, BranchB]
+
+    @strawberry.experimental.pydantic.type(BranchA, fields=["field_a"])
+    class BranchAType:
+        pass
+
+    @strawberry.experimental.pydantic.type(BranchB, fields=["field_b"])
+    class BranchBType:
+        pass
+
+    @strawberry.experimental.pydantic.type(User, fields=["age", "union_field"])
+    class UserType:
+        pass
+
+    origin_user = User(age=1, union_field=BranchA(field_a="abc"))
+    user = UserType.from_pydantic(origin_user)
+
+    assert user.age == 1
+    assert isinstance(user.union_field, BranchAType)
+    assert user.union_field.field_a == "abc"
+
+    origin_user = User(age=1, union_field=BranchB(field_b=123))
+    user = UserType.from_pydantic(origin_user)
+
+    assert user.age == 1
+    assert isinstance(user.union_field, BranchBType)
+    assert user.union_field.field_b == 123
+
+    origin_user = User(age=1, union_field=None)
+    user = UserType.from_pydantic(origin_user)
+
+    assert user.age == 1
+    assert user.union_field is None
 
 
 def test_can_convert_pydantic_type_to_strawberry_with_additional_fields():
