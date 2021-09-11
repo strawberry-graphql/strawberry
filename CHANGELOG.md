@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.77.5 - 2021-09-11
+-------------------
+
+Fixes a bug in the Pydantic conversion code around `Union` values.
+
+Contributed by [Matt Allen](https://github.com/Matt343) [PR #1231](https://github.com/strawberry-graphql/strawberry/pull/1231/)
+
+
 0.77.4 - 2021-09-11
 -------------------
 
