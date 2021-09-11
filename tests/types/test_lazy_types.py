@@ -1,8 +1,11 @@
+from typing import Generic, TypeVar
+
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.field import StrawberryField
 from strawberry.lazy_type import LazyType
 from strawberry.types.fields.resolver import StrawberryResolver
+from strawberry.types.types import TypeDefinition
 
 
 # This type is in the same file but should adequately test the logic.
@@ -51,6 +54,30 @@ def test_lazy_type_field():
     assert isinstance(field.type, LazyType)
     assert field.type is LazierType
     assert field.type.resolve_type() is LaziestType  # type: ignore
+
+
+def test_lazy_type_generic():
+    T = TypeVar("T")
+
+    @strawberry.type
+    class GenericType(Generic[T]):
+        item: T
+
+    # Module path is short and relative because of the way pytest runs the file
+    LazierType = LazyType["LaziestType", "test_lazy_types"]
+    ResolvedType = GenericType[LazierType]
+
+    annotation = StrawberryAnnotation(ResolvedType)
+    resolved = annotation.resolve()
+
+    # TODO: Simplify with StrawberryObject
+    assert isinstance(resolved, type)
+    assert hasattr(resolved, "_type_definition")
+    assert isinstance(resolved._type_definition, TypeDefinition)
+
+    items_field: StrawberryField = resolved._type_definition.fields[0]
+    assert items_field.type is LazierType
+    assert items_field.type.resolve_type() is LaziestType
 
 
 def test_lazy_type_object():
