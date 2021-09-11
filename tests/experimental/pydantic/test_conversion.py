@@ -1,3 +1,4 @@
+from enum import Enum
 from typing import List, Optional, Union
 
 import pydantic
@@ -339,6 +340,27 @@ def test_can_convert_pydantic_type_to_strawberry_with_union_nullable():
 
     assert user.age == 1
     assert user.union_field is None
+
+
+def test_can_convert_pydantic_type_to_strawberry_with_enum():
+    @strawberry.enum
+    class UserKind(Enum):
+        user = 0
+        admin = 1
+
+    class User(pydantic.BaseModel):
+        age: int
+        kind: UserKind
+
+    @strawberry.experimental.pydantic.type(User, fields=["age", "kind"])
+    class UserType:
+        pass
+
+    origin_user = User(age=1, kind=UserKind.user)
+    user = UserType.from_pydantic(origin_user)
+
+    assert user.age == 1
+    assert user.kind == UserKind.user
 
 
 def test_can_convert_pydantic_type_to_strawberry_with_additional_fields():

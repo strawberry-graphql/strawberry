@@ -1,13 +1,16 @@
-from typing import List, Optional
+from enum import Enum
+from typing import List, Optional, Union
 
 import pytest
 
 import pydantic
 
 import strawberry
+from strawberry.enum import EnumDefinition
 from strawberry.experimental.pydantic.exceptions import MissingFieldsListError
 from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.types.types import TypeDefinition
+from strawberry.union import StrawberryUnion
 
 
 def test_basic_type():
@@ -250,3 +253,67 @@ def test_type_with_aliased_pydantic_field():
     assert field2.python_name == "password"
     assert isinstance(field2.type, StrawberryOptional)
     assert field2.type.of_type is str
+
+
+def test_union():
+    class BranchA(pydantic.BaseModel):
+        field_a: str
+
+    class BranchB(pydantic.BaseModel):
+        field_b: int
+
+    class User(pydantic.BaseModel):
+        age: int
+        union_field: Union[BranchA, BranchB]
+
+    @strawberry.experimental.pydantic.type(BranchA, fields=["field_a"])
+    class BranchAType:
+        pass
+
+    @strawberry.experimental.pydantic.type(BranchB, fields=["field_b"])
+    class BranchBType:
+        pass
+
+    @strawberry.experimental.pydantic.type(User, fields=["age", "union_field"])
+    class UserType:
+        pass
+
+    definition: TypeDefinition = UserType._type_definition
+    assert definition.name == "UserType"
+
+    [field1, field2] = definition.fields
+
+    assert field1.python_name == "age"
+    assert field1.type is int
+
+    assert field2.python_name == "union_field"
+    assert isinstance(field2.type, StrawberryUnion)
+    assert field2.type.types[0] is BranchAType
+    assert field2.type.types[1] is BranchBType
+
+
+def test_enum():
+    @strawberry.enum
+    class UserKind(Enum):
+        user = 0
+        admin = 1
+
+    class User(pydantic.BaseModel):
+        age: int
+        kind: UserKind
+
+    @strawberry.experimental.pydantic.type(User, fields=["age", "kind"])
+    class UserType:
+        pass
+
+    definition: TypeDefinition = UserType._type_definition
+    assert definition.name == "UserType"
+
+    [field1, field2] = definition.fields
+
+    assert field1.python_name == "age"
+    assert field1.type is int
+
+    assert field2.python_name == "kind"
+    assert isinstance(field2.type, EnumDefinition)
+    assert field2.type.wrapped_cls is UserKind
