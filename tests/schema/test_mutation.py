@@ -1,4 +1,3 @@
-import dataclasses
 import typing
 
 import strawberry
@@ -214,12 +213,10 @@ def test_converting_to_dict_with_unset():
     class Mutation:
         @strawberry.mutation
         def say(self, input: Input) -> str:
-            data = dataclasses.asdict(input)
-
-            if is_unset(data["name"]):
+            if is_unset(input.name):
                 return "Hello 🤨"
 
-            return f"Hello {data['name']}!"
+            return f"Hello {input.name}!"
 
     schema = strawberry.Schema(query=Query, mutation=Mutation)
 
