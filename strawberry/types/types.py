@@ -12,6 +12,7 @@ from typing import (
     Union,
 )
 
+from strawberry.enum import EnumDefinition
 from strawberry.lazy_type import LazyType
 from strawberry.type import StrawberryType, StrawberryTypeVar
 from strawberry.utils.str_converters import capitalize_first
@@ -120,6 +121,8 @@ class TypeDefinition(StrawberryType):
         for type_ in types:
             if isinstance(type_, LazyType):
                 name = type_.type_name
+            elif isinstance(type_, EnumDefinition):
+                name = type_.name
             elif isinstance(type_, StrawberryUnion):
                 name = type_.name
             elif hasattr(type_, "_type_definition"):

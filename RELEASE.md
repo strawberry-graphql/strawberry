@@ -1,8 +1,31 @@
 Release type: patch
 
-Fix issue ([#1158][issue]) where Generics using LazyTypes would not be properly resolved
+Fix issues ([#1158][issue1158] and [#1104][issue1104]) where Generics using LazyTypes
+and Enums would not be properly resolved
 
-This now functions as expected:
+These now function as expected:
+
+# Enum
+
+```python
+T = TypeVar("T")
+
+@strawberry.enum
+class VehicleMake(Enum):
+    FORD = 'ford'
+    TOYOTA = 'toyota'
+    HONDA = 'honda'
+
+@strawberry.type
+class GenericForEnum(Generic[T]):
+    generic_slot: T
+
+@strawberry.type
+class SomeType:
+    field: GenericForEnum[VehicleMake]
+```
+
+# LazyType
 
 `another_file.py`
 ```python
@@ -24,4 +47,5 @@ class RealType:
     lazy: GenericType[LazyType["TypeFromAnotherFile", "another_file.py"]]
 ```
 
-[issue]: https://github.com/strawberry-graphql/strawberry/issues/1158
+[issue1104]: https://github.com/strawberry-graphql/strawberry/issues/1104
+[issue1158]: https://github.com/strawberry-graphql/strawberry/issues/1158
