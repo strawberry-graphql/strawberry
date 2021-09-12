@@ -2,8 +2,7 @@ import dataclasses
 from typing import List, Optional, Type, cast
 
 from .exceptions import MissingFieldAnnotationError, MissingReturnAnnotationError
-from .field import StrawberryField, field
-from .types.type_resolver import _get_fields
+from .field import StrawberryField, _get_fields, field
 from .types.types import FederationTypeParams, TypeDefinition
 from .utils.str_converters import to_camel_case
 from .utils.typing import __dataclass_transform__

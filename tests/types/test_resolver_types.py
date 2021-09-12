@@ -2,7 +2,7 @@ from enum import Enum
 from typing import List, Optional, TypeVar, Union
 
 import strawberry
-from strawberry.types.fields.resolver import StrawberryResolver
+from strawberry.types.resolver import StrawberryResolver
 
 
 def test_enum():

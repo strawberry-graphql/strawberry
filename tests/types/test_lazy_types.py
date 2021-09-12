@@ -2,7 +2,7 @@ import strawberry
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.field import StrawberryField
 from strawberry.lazy_type import LazyType
-from strawberry.types.fields.resolver import StrawberryResolver
+from strawberry.types.resolver import StrawberryResolver
 
 
 # This type is in the same file but should adequately test the logic.
