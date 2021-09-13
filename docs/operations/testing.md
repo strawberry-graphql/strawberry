@@ -102,9 +102,10 @@ And finally, a test for our [`count` Subscription](docs/general/subscriptions.md
 ```python
 @pytest.mark.asyncio
 async def test_subscription():
-    query = """subscription {
-        count(target: 3)
-    }
+    query = """
+    	subscription {
+        	count(target: 3)
+    	}
     """
 
     sub = await schema.subscribe(query)
