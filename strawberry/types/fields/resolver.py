@@ -1,16 +1,14 @@
 from __future__ import annotations
 
 import builtins
-import inspect
 import sys
 from inspect import isasyncgenfunction, iscoroutinefunction
-from typing import Callable, Generic, List, Mapping, Optional, TypeVar, Union
+from typing import Callable, Generic, Mapping, Optional, TypeVar, Union
 
 from cached_property import cached_property  # type: ignore
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import StrawberryArgument
-from strawberry.exceptions import MissingArgumentsAnnotationsError
 from strawberry.type import StrawberryType
 from strawberry.utils.inspect import get_func_args
 
@@ -33,53 +31,15 @@ class StrawberryResolver(Generic[T]):
 
         This is used when creating copies of types w/ generics
         """
+        self._arguments = StrawberryArgument.parse_from_func(func)
 
     # TODO: Use this when doing the actual resolving? How to deal with async resolvers?
     def __call__(self, *args, **kwargs) -> T:
         return self.wrapped_func(*args, **kwargs)
 
-    @cached_property
-    def arguments(self) -> List[StrawberryArgument]:
-        # TODO: Move to StrawberryArgument? StrawberryResolver ClassVar?
-        SPECIAL_ARGS = {"root", "self", "info"}
-
-        annotations = self.wrapped_func.__annotations__
-        parameters = inspect.signature(self.wrapped_func).parameters
-        function_arguments = set(parameters) - SPECIAL_ARGS
-
-        annotations = {
-            name: annotation
-            for name, annotation in annotations.items()
-            if name not in (SPECIAL_ARGS | {"return"})
-        }
-
-        annotated_arguments = set(annotations)
-        arguments_missing_annotations = function_arguments - annotated_arguments
-
-        if any(arguments_missing_annotations):
-            raise MissingArgumentsAnnotationsError(
-                field_name=self.wrapped_func.__name__,
-                arguments=arguments_missing_annotations,
-            )
-
-        module = sys.modules[self.wrapped_func.__module__]
-        annotation_namespace = module.__dict__
-        arguments = []
-        for arg_name, annotation in annotations.items():
-            parameter = parameters[arg_name]
-
-            argument = StrawberryArgument(
-                python_name=arg_name,
-                graphql_name=None,
-                type_annotation=StrawberryAnnotation(
-                    annotation=annotation, namespace=annotation_namespace
-                ),
-                default=parameter.default,
-            )
-
-            arguments.append(argument)
-
-        return arguments
+    @property
+    def arguments(self):
+        return self._arguments
 
     @cached_property
     def has_info_arg(self) -> bool:

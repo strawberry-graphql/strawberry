@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import dataclasses
 import inspect
-from typing import Any, Optional, Union
+import sys
+from typing import Any, Callable, List, Optional, Union
 
 from typing_extensions import Annotated, get_args, get_origin
 
@@ -9,7 +11,10 @@ from strawberry.annotation import StrawberryAnnotation
 from strawberry.type import StrawberryType
 from strawberry.utils.mixins import GraphQLNameMixin
 
-from ..exceptions import MultipleStrawberryArgumentsError
+from ..exceptions import (
+    MissingArgumentsAnnotationsError,
+    MultipleStrawberryArgumentsError,
+)
 
 
 class _Unset:
@@ -28,13 +33,10 @@ def is_unset(value: Any) -> bool:
     return value is UNSET
 
 
+@dataclasses.dataclass
 class StrawberryArgumentAnnotation:
-    description: Optional[str]
-    name: Optional[str]
-
-    def __init__(self, description: Optional[str] = None, name: Optional[str] = None):
-        self.description = description
-        self.name = name
+    description: Optional[str] = None
+    name: Optional[str] = None
 
 
 class StrawberryArgument(GraphQLNameMixin):
@@ -89,6 +91,52 @@ class StrawberryArgument(GraphQLNameMixin):
 
                 self.description = arg.description
                 self.graphql_name = arg.name
+
+    @classmethod
+    def parse_from_func(cls, func: Callable) -> List[StrawberryArgument]:
+        """Parse func arguments as strawberry arguments.
+
+        Intended to be used with a resolver func"""
+        # TODO: Do we want this to be a private function?
+        SPECIAL_ARGS = {"root", "self", "info"}
+
+        annotations = func.__annotations__
+        parameters = inspect.signature(func).parameters
+        function_arguments = set(parameters) - SPECIAL_ARGS
+
+        annotations = {
+            name: annotation
+            for name, annotation in annotations.items()
+            if name not in (SPECIAL_ARGS | {"return"})
+        }
+
+        annotated_arguments = set(annotations)
+        arguments_missing_annotations = function_arguments - annotated_arguments
+
+        if any(arguments_missing_annotations):
+            raise MissingArgumentsAnnotationsError(
+                field_name=func.__name__,
+                arguments=arguments_missing_annotations,
+            )
+
+        module = sys.modules[func.__module__]
+        annotation_namespace = module.__dict__
+        arguments = []
+        for arg_name, annotation in annotations.items():
+            parameter = parameters[arg_name]
+
+            argument = StrawberryArgument(
+                python_name=arg_name,
+                graphql_name=None,
+                type_annotation=StrawberryAnnotation(
+                    annotation=annotation, namespace=annotation_namespace
+                ),
+                default=parameter.default,
+            )
+
+            arguments.append(argument)
+
+        return arguments
 
 
 __all__ = ["UNSET", "StrawberryArgumentAnnotation", "StrawberryArgument"]
