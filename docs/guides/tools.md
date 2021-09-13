@@ -47,11 +47,11 @@ type Query {
 
 ### `WithQueryDepthLimiter`
 
-Add a query depth limter validation rule that limits the complexity of queries by their depth to protect against malicious
-queries.
+Extension to add a query depth limter validation rule that limits the complexity of queries by
+their depth to protect against malicious queries.
 
 ```python
-def WithQueryDepthLimiter(
+class QueryDepthLimiter(
     max_depth: int,
     ignore: Optional[List[Union[str, re.Pattern, Callable[[str], bool]]]] = None,
     callback: Optional[Callable[Dict[str, int]]] = None
@@ -69,15 +69,14 @@ Example:
 
 ```python
 import strawberry
-from strawberry.extensions import WithQueryDepthLimiter
-
+from strawberry.extensions import QueryDepthLimiter
 
 # assuming you already have a Query type
 schema = strawberry.Schema(
   Query,
   extensions=[
     # Add the depth limiter extension
-    WithQueryDepthLimiter(max_depth=3),
+    QueryDepthLimiter(max_depth=3),
   ]
 )
 
