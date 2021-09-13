@@ -87,9 +87,8 @@ def test_validation_cache_extension_max_size(mock_validate):
     assert mock_validate.call_count == 3
 
 
-@patch("strawberry.schema.execute.validate", wraps=validate)
 @pytest.mark.asyncio
-async def test_validation_cache_extension_async(mock_validate):
+async def test_validation_cache_extension_async():
     @strawberry.type
     class Query:
         @strawberry.field
@@ -104,27 +103,28 @@ async def test_validation_cache_extension_async(mock_validate):
 
     query = "query { hello }"
 
-    result = await schema.execute(query)
-
-    assert not result.errors
-    assert result.data == {"hello": "world"}
-
-    assert mock_validate.call_count == 1
-
-    # Run query multiple times
-    for _ in range(3):
+    with patch("strawberry.schema.execute.validate", wraps=validate) as mock_validate:
         result = await schema.execute(query)
+
         assert not result.errors
         assert result.data == {"hello": "world"}
 
-    # validate is still only called once
-    assert mock_validate.call_count == 1
+        assert mock_validate.call_count == 1
 
-    # Running a second query doesn't cache
-    query2 = "query { ping }"
-    result = await schema.execute(query2)
+        # Run query multiple times
+        for _ in range(3):
+            result = await schema.execute(query)
+            assert not result.errors
+            assert result.data == {"hello": "world"}
 
-    assert not result.errors
-    assert result.data == {"ping": "pong"}
+        # validate is still only called once
+        assert mock_validate.call_count == 1
 
-    assert mock_validate.call_count == 2
+        # Running a second query doesn't cache
+        query2 = "query { ping }"
+        result = await schema.execute(query2)
+
+        assert not result.errors
+        assert result.data == {"ping": "pong"}
+
+        assert mock_validate.call_count == 2

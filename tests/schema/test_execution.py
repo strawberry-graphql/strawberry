@@ -45,8 +45,7 @@ def test_enabling_query_validation_sync(mock_validate, validate_queries):
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("validate_queries", (True, False))
-@patch("strawberry.schema.execute.validate", wraps=validate)
-async def test_enabling_query_validation(mock_validate, validate_queries):
+async def test_enabling_query_validation(validate_queries):
     @strawberry.type
     class Query:
         example: Optional[str] = None
@@ -66,14 +65,15 @@ async def test_enabling_query_validation(mock_validate, validate_queries):
         }
     """
 
-    result = await schema.execute(
-        query,
-        root_value=Query(),
-    )
+    with patch("strawberry.schema.execute.validate", wraps=validate) as mock_validate:
+        result = await schema.execute(
+            query,
+            root_value=Query(),
+        )
 
-    assert not result.errors
+        assert not result.errors
 
-    assert mock_validate.called is validate_queries
+        assert mock_validate.called is validate_queries
 
 
 @pytest.mark.asyncio
