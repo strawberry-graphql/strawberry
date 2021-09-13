@@ -82,7 +82,7 @@ import strawberry
 @strawberry.type
 class Mutation:
     @strawberry.mutation
-    def login(self, info: Info) -> bool:
+    def login(self) -> bool:
         token = do_login()
         strawberry.context["response"].set_cookie(key="token", value=token)
         return True
@@ -102,7 +102,7 @@ async def notify_new_flavour(name: str):
 @strawberry.type
 class Mutation:
     @strawberry.mutation
-    def create_flavour(self, name: str, info: Info) -> bool:
+    def create_flavour(self, name: str) -> bool:
         strawberry.context["response"].background = BackgroundTask(notify_new_flavour, name)
 ```
 
