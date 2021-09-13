@@ -43,16 +43,18 @@ your resolvers. You can return anything here; by default GraphQLView returns a
 dictionary with the request.
 
 ```python
+import strawberry
+from strawberry.sanic.views import GraphQLView
+
 class MyGraphQLView(GraphQLView):
     async def get_context(self, request) -> Any:
         return {"example": 1}
 
-
 @strawberry.type
 class Query:
     @strawberry.field
-    def example(self, info: Info) -> str:
-        return str(info.context["example"])
+    def example(self) -> str:
+        return str(strawberry.context["example"])
 ```
 
 Here we are returning a custom context dictionary that contains only one item
@@ -68,10 +70,12 @@ schema. This is probably not used a lot but it might be useful in certain situat
 Here's an example:
 
 ```python
+import strawberry
+from strawberry.sanic.views import GraphQLView
+
 class MyGraphQLView(GraphQLView):
     def get_root_value(self) -> Any:
         return Query(name="Patrick")
-
 
 @strawberry.type
 class Query:
@@ -91,6 +95,7 @@ It needs to return an object of `GraphQLHTTPResponse` and accepts the execution 
 
 ```python
 from strawberry.http import GraphQLHTTPResponse
+from strawberry.sanic.views import GraphQLView
 from strawberry.types import ExecutionResult
 
 from graphql.error import format_error as format_graphql_error

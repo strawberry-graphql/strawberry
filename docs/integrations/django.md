@@ -45,26 +45,30 @@ resolver. You can return anything here, by default we return a
 `StrawberryDjangoContext` object.
 
 ```python
+import strawberry
+
 @strawberry.type
 class Query:
     @strawberry.field
-    def user(self, info: Info) -> str:
-        return str(info.context.request.user)
+    def user(self) -> str:
+        return str(strawberry.context.request.user)
 ```
 
 or in case of a custom context:
 
 ```python
+import strawberry
+from strawberry.django.views import GraphQLView
+
 class MyGraphQLView(GraphQLView):
     def get_context(self, request: HttpRequest, response: HttpResponse) -> Any:
         return {"example": 1}
 
-
 @strawberry.type
 class Query:
     @strawberry.field
-    def example(self, info: Info) -> str:
-        return str(info.context["example"])
+    def example(self) -> str:
+        return str(strawberry.context["example"])
 ```
 
 Here we are returning a custom context dictionary that contains only one item
@@ -81,10 +85,12 @@ probably not used a lot but it might be useful in certain situations.
 Here's an example:
 
 ```python
+import strawberry
+from strawberry.django.views import GraphQLView
+
 class MyGraphQLView(GraphQLView):
     def get_root_value(self, request: HttpRequest) -> Any:
         return Query(name="Patrick")
-
 
 @strawberry.type
 class Query:
@@ -167,16 +173,18 @@ resolver. You can return anything here, by default we return a dictionary with
 the request.
 
 ```python
+import strawberry
+from strawberry.django.views import AsyncGraphQLView
+
 class MyGraphQLView(AsyncGraphQLView):
     async def get_context(self, request: HttpRequest, response: HttpResponse) -> Any:
         return {"example": 1}
 
-
 @strawberry.type
 class Query:
     @strawberry.field
-    def example(self, info: Info) -> str:
-        return str(info.context["example"])
+    def example(self) -> str:
+        return str(strawberry.context["example"])
 ```
 
 Here we are returning a custom context dictionary that contains only one item
@@ -193,10 +201,12 @@ probably not used a lot but it might be useful in certain situations.
 Here's an example:
 
 ```python
+import strawberry
+from strawberry.django.views import AsyncGraphQLView
+
 class MyGraphQLView(AsyncGraphQLView):
     async def get_root_value(self, request: HttpRequest) -> Any:
         return Query(name="Patrick")
-
 
 @strawberry.type
 class Query:
@@ -218,6 +228,7 @@ and the execution results.
 ```python
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
+from strawberry.django.views import AsyncGraphQLView
 
 from graphql.error import format_error as format_graphql_error
 

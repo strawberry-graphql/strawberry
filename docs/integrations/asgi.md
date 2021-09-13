@@ -45,16 +45,22 @@ resolver. You can return anything here, by default we return a dictionary with
 the request and the response.
 
 ```python
-class MyGraphQL(GraphQL):
-    async def get_context(self, request: Union[Request, WebSocket], response: Optional[Response] = None) -> Any:
-        return {"example": 1}
+import strawberry
+from strawberry.asgi import GraphQL
 
+class MyGraphQL(GraphQL):
+    async def get_context(
+        self,
+        request: Union[Request, WebSocket],
+        response: Optional[Response] = None
+    ) -> Any:
+        return {"example": 1}
 
 @strawberry.type
 class Query:
     @strawberry.field
-    def example(self, info: Info) -> str:
-        return str(info.context["example"])
+    def example(self) -> str:
+        return str(strawberry.context["example"])
 ```
 
 Here we are returning a custom context dictionary that contains only one item
@@ -71,12 +77,14 @@ where your login mutation resolver needs to set a cookie on the response.
 This is possible by updating the response object contained inside the context of the `Info` object.
 
 ```python
+import strawberry
+
 @strawberry.type
 class Mutation:
     @strawberry.mutation
     def login(self, info: Info) -> bool:
         token = do_login()
-        info.context["response"].set_cookie(key="token", value=token)
+        strawberry.context["response"].set_cookie(key="token", value=token)
         return True
 ```
 
@@ -85,6 +93,7 @@ class Mutation:
 Similarly, [background tasks](https://www.starlette.io/background/) can be set on the response via the context:
 
 ```python
+import strawberry
 from starlette.background import BackgroundTask
 
 async def notify_new_flavour(name: str):
@@ -94,7 +103,7 @@ async def notify_new_flavour(name: str):
 class Mutation:
     @strawberry.mutation
     def create_flavour(self, name: str, info: Info) -> bool:
-        info.context["response"].background = BackgroundTask(notify_new_flavour, name)
+        strawberry.context["response"].background = BackgroundTask(notify_new_flavour, name)
 ```
 
 ## get_root_value
@@ -105,10 +114,12 @@ probably not used a lot but it might be useful in certain situations.
 Here's an example:
 
 ```python
+import strawberry
+from strawberry.asgi import GraphQL
+
 class MyGraphQL(GraphQL):
     async def get_root_value(self, request: Request) -> Any:
         return Query(name="Patrick")
-
 
 @strawberry.type
 class Query:
@@ -128,6 +139,7 @@ It needs to return an object of `GraphQLHTTPResponse` and accepts the request
 and the execution results.
 
 ```python
+from strawberry.asgi import GraphQL
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
 

@@ -172,5 +172,5 @@ class MyGraphQL(GraphQL):
 class Query:
     @strawberry.field
     async def get_user(self, info: Info, id: strawberry.ID) -> User:
-        return await info.context["user_loader"].load(id)
+        return await strawberry.context["user_loader"].load(id)
 ```

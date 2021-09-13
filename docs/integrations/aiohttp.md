@@ -12,11 +12,9 @@ import strawberry
 from aiohttp import web
 from strawberry.aiohttp.views import GraphQLView
 
-
 @strawberry.type
 class Query:
     pass
-
 
 schema = strawberry.Schema(query=Query)
 
@@ -52,17 +50,19 @@ from aiohttp import web
 from strawberry.types import Info
 from strawberry.aiohttp.views import GraphQLView
 
-
 class MyGraphQLView(GraphQLView):
-    async def get_context(self, request: web.Request, response: web.StreamResponse):
+    async def get_context(
+        self,
+        request: web.Request,
+        response: web.StreamResponse
+    ):
         return {"request": request, "response": response, "example": 1}
-
 
 @strawberry.type
 class Query:
     @strawberry.field
-    def example(self, info: Info) -> str:
-        return str(info.context["example"])
+    def example(self) -> str:
+        return str(strawberry.context["example"])
 ```
 
 Here we are returning a custom context dictionary that contains only one item
@@ -82,11 +82,9 @@ import strawberry
 from aiohttp import web
 from strawberry.aiohttp.views import GraphQLView
 
-
 class MyGraphQLView(GraphQLView):
     async def get_root_value(self, request: web.Request):
         return Query(name="Patrick")
-
 
 @strawberry.type
 class Query:
@@ -112,7 +110,6 @@ from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
 
 from graphql.error import format_error as format_graphql_error
-
 
 class MyGraphQLView(GraphQLView):
     async def process_result(

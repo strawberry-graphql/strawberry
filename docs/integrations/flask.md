@@ -43,16 +43,18 @@ resolver. You can return anything here, by default we return a dictionary with
 the request.
 
 ```python
+import strawberry
+from strawberry.flask.views import GraphQLView
+
 class MyGraphQLView(GraphQLView):
     def get_context(self) -> Any:
         return {"example": 1}
 
-
 @strawberry.type
 class Query:
     @strawberry.field
-    def example(self, info: Info) -> str:
-        return str(info.context["example"])
+    def example(self) -> str:
+        return str(strawberry.context["example"])
 ```
 
 Here we are returning a custom context dictionary that contains only one item
@@ -69,10 +71,12 @@ probably not used a lot but it might be useful in certain situations.
 Here's an example:
 
 ```python
+import strawberry
+from strawberry.flask.views import GraphQLView
+
 class MyGraphQLView(GraphQLView):
     def get_root_value(self) -> Any:
         return Query(name="Patrick")
-
 
 @strawberry.type
 class Query:

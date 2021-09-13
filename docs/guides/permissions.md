@@ -13,13 +13,12 @@ like this:
 import typing
 import strawberry
 from strawberry.permission import BasePermission
-from strawberry.types import Info
 
 class IsAuthenticated(BasePermission):
     message = "User is not authenticated"
 
     # This method can also be async!
-    def has_permission(self, source: typing.Any, info: Info, **kwargs) -> bool:
+    def has_permission(self, source: typing.Any, **kwargs) -> bool:
         return False
 
 @strawberry.type
@@ -55,8 +54,7 @@ depends on the web framework you are using.
 Most frameworks will have a `Request` object where you can either access the current
 user directly or access headers/cookies/query parameters to authenticate the user.
 
-All the Strawberry integrations provide this Request object in the `info.context` object
-that is accessible in every resolver and in the `has_permission` function.
+All the Strawberry integrations provide this Request object on the `strawberry.context` object.
 
 You can find more details about a specific framework integration under the
 "Integrations" heading in the navigation.
@@ -71,13 +69,12 @@ from myauth import authenticate_header, authenticate_query_param
 from starlette.requests import Request
 from starlette.websockets import WebSocket
 from strawberry.permission import BasePermission
-from strawberry.types import Info
 
 class IsAuthenticated(BasePermission):
     message = "User is not authenticated"
 
-    def has_permission(self, source: typing.Any, info: Info, **kwargs) -> bool:
-        request: typing.Union[Request, WebSocket] = info.context["request"]
+    def has_permission(self, source: typing.Any, **kwargs) -> bool:
+        request: typing.Union[Request, WebSocket] = strawberry.context["request"]
 
         if "Authorization" in request.headers:
             return authenticate_header(request)
@@ -88,7 +85,7 @@ class IsAuthenticated(BasePermission):
         return False
 ```
 
-Here we retrieve the `request` object from the `context` provided by `info`.
+Here we retrieve the `request` object from `strawberry.context`.
 This object will be either a `Request` or `Websocket` instance from `starlette`
 (see: [Request docs](https://www.starlette.io/requests/) and
 [Websocket docs](https://www.starlette.io/websockets/)).

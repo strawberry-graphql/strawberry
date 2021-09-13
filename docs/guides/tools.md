@@ -28,8 +28,8 @@ from strawberry.tools import create_type
 def hello(info) -> str:
     return "World"
 
-def get_name(info) -> str:
-    return info.context.user.name
+def get_name() -> str:
+    return strawberry.context.request.user.name
 
 my_name = strawberry.field(name="myName", resolver=get_name)
 
