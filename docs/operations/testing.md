@@ -43,7 +43,7 @@ This `test_query` example:
 1. defines the query we will test against; it accepts one argument, `title`, as input
 2. executes the query and assign the result to a `result` variable
 3. asserts that the result is what we are expecting: nothing in `errors` and our desired
-   book in the `data`
+   book in `data`
 
 As you may have noticed, we explicitly defined the query variable `title`, and we passed
 it separately with the `variable_values` argument, but we could have directly hardcoded
