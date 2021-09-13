@@ -92,7 +92,7 @@ def test_can_convert_pydantic_type_with_nested_data_to_strawberry():
         name: str
 
     @strawberry.experimental.pydantic.type(WorkModel, fields=["name"])
-    class Work(pydantic.BaseModel):
+    class Work:
         pass
 
     class UserModel(pydantic.BaseModel):
@@ -113,7 +113,7 @@ def test_can_convert_pydantic_type_with_list_of_nested_data_to_strawberry():
         name: str
 
     @strawberry.experimental.pydantic.type(WorkModel, fields=["name"])
-    class Work(pydantic.BaseModel):
+    class Work:
         pass
 
     class UserModel(pydantic.BaseModel):

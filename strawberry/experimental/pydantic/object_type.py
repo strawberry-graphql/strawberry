@@ -132,6 +132,7 @@ def type(
         cls = dataclasses.make_dataclass(
             cls.__name__,
             sorted_fields,
+            bases=cls.__bases__,
         )
 
         _process_type(
