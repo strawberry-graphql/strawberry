@@ -45,7 +45,7 @@ type Query {
 
 ---
 
-### `WithQueryDepthLimiter`
+### `QueryDepthLimiter`
 
 Extension to add a query depth limter validation rule that limits the complexity of queries by
 their depth to protect against malicious queries.
