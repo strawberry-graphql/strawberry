@@ -1,5 +1,6 @@
 from . import experimental, federation
 from .arguments import argument
+from .context_var import StrawberryContext
 from .custom_scalar import scalar
 from .directive import directive
 from .enum import enum
@@ -12,6 +13,9 @@ from .private import Private
 from .scalars import ID
 from .schema import Schema
 from .union import union
+
+
+context = StrawberryContext()
 
 
 __all__ = [
@@ -33,4 +37,5 @@ __all__ = [
     "subscription",
     "type",
     "union",
+    "context",
 ]

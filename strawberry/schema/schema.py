@@ -14,6 +14,7 @@ from graphql.subscription import subscribe
 from graphql.type.directives import specified_directives
 from graphql.validation import ValidationRule
 
+import strawberry
 from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.enum import EnumDefinition
 from strawberry.extensions import Extension
@@ -144,6 +145,8 @@ class Schema:
             operation_name=operation_name,
         )
 
+        context_token = strawberry.context._set_context(context_value)
+
         result = await execute(
             self._schema,
             query,
@@ -157,6 +160,8 @@ class Schema:
 
         if result.errors:
             self.process_errors(result.errors, execution_context=execution_context)
+
+        strawberry.context._reset_context(context_token)
 
         return result
 
@@ -178,6 +183,8 @@ class Schema:
             operation_name=operation_name,
         )
 
+        context_token = strawberry.context._set_context(context_value)
+
         result = execute_sync(
             self._schema,
             query,
@@ -191,6 +198,8 @@ class Schema:
 
         if result.errors:
             self.process_errors(result.errors, execution_context=execution_context)
+
+        strawberry.context._reset_context(context_token)
 
         return result
 
