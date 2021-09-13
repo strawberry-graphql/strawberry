@@ -1,5 +1,7 @@
 from unittest.mock import patch
 
+import pytest
+
 from graphql import validate
 
 import strawberry
@@ -86,6 +88,7 @@ def test_validation_cache_extension_max_size(mock_validate):
 
 
 @patch("strawberry.schema.execute.validate", wraps=validate)
+@pytest.mark.asyncio
 async def test_validation_cache_extension_async(mock_validate):
     @strawberry.type
     class Query:
