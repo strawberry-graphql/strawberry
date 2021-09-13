@@ -38,7 +38,7 @@ from .models import User
     'name',
     'friends'
 ])
-class User:
+class UserType:
     pass
 ```
 
@@ -64,6 +64,48 @@ from .models import User
     'friends'
 ])
 class UserInput:
+    pass
+```
+
+## Interface types
+
+Interface types are similar to normal types; we can create one by using the
+`strawberry.experimental.pydantic.interface` decorator:
+
+```python
+import strawberry
+from pydantic import BaseModel
+from typing import List
+
+# pydantic types
+class User(BaseModel):
+    id: int
+    name: str
+
+class NormalUser(User):
+    friends: List[int] = []
+
+class AdminUser(User):
+    role: int
+
+# strawberry types
+@strawberry.experimental.pydantic.interface(model=User, fields=[
+    'id',
+    'name',
+])
+class UserType:
+    pass
+
+@strawberry.experimental.pydantic.type(model=NormalUser, fields=[
+    'friends',
+])
+class NormalUserType(UserType):  # note the base class
+    pass
+
+@strawberry.experimental.pydantic.type(model=AdminUser, fields=[
+    'role',
+])
+class AdminUserType(UserType):
     pass
 ```
 
