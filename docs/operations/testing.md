@@ -97,7 +97,7 @@ async def test_mutaton():
 
 ## Testing Subscriptions
 
-And finnally a test for our [`count` Subscription](docs/general/subscriptions.md):
+And finally, a test for our [`count` Subscription](docs/general/subscriptions.md):
 
 ```python
 @pytest.mark.asyncio
