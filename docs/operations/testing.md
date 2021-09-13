@@ -47,8 +47,7 @@ This `test_query` example:
 
 As you may have noticed, we explicitly defined the query variable `title`, and we passed
 it separately with the `variable_values` argument, but we could have directly hardcoded
-the `title` in the query string instead. We did it on purpose because usually, in most
-applications, the query's arguments will be dynamic, and, as we want to test our
+the `title` in the query string instead. We did this on purpose because usually the query's arguments will be dynamic and, as we want to test our
 application as close to production as possible, it wouldn't make much sense to hardcode
 the variables in the query.
 
