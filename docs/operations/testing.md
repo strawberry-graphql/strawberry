@@ -15,8 +15,9 @@ We can use the Strawberry's `schema` we defined in the
 
 ```python
 def test_query():
-    query = """query($title: String!){
-            books(title: $title){
+    query = """
+    	query($title: String!) {
+            books(title: $title) {
                 title
                 author
             }
