@@ -20,8 +20,7 @@ from strawberry.types import ExecutionContext, ExecutionResult
 
 
 def parse_document(query: str) -> DocumentNode:
-    document = parse(query)
-    return document
+    return parse(query)
 
 
 def validate_document(
@@ -29,12 +28,23 @@ def validate_document(
     document: DocumentNode,
     validation_rules: Tuple[Type[ASTValidationRule], ...],
 ) -> List[GraphQLError]:
-    validation_errors = validate(
+    return validate(
         schema,
         document,
         validation_rules,
     )
-    return validation_errors
+
+
+def _run_validation(execution_context: ExecutionContext):
+    # Check if there are any validation rules or if validation has
+    # already been run by an extension
+    if len(execution_context.validation_rules) > 0 and execution_context.errors is None:
+        assert execution_context.graphql_document
+        execution_context.errors = validate_document(
+            execution_context.schema._schema,
+            execution_context.graphql_document,
+            execution_context.validation_rules,
+        )
 
 
 async def execute(
@@ -79,19 +89,7 @@ async def execute(
             )
 
         async with extensions_runner.validation():
-            # Check if there are any validation rules or if validation has
-            # already been run by an extension
-            if (
-                len(execution_context.validation_rules) > 0
-                and execution_context.errors is None
-            ):
-                assert execution_context.graphql_document
-                execution_context.errors = validate_document(
-                    execution_context.schema._schema,
-                    execution_context.graphql_document,
-                    execution_context.validation_rules,
-                )
-
+            _run_validation(execution_context)
             if execution_context.errors:
                 return ExecutionResult(data=None, errors=execution_context.errors)
 
@@ -162,19 +160,7 @@ def execute_sync(
             )
 
         with extensions_runner.validation():
-            # Check if there are any validation rules or if validation has
-            # already been run by an extension
-            if (
-                len(execution_context.validation_rules) > 0
-                and execution_context.errors is None
-            ):
-                assert execution_context.graphql_document
-                execution_context.errors = validate_document(
-                    execution_context.schema._schema,
-                    execution_context.graphql_document,
-                    execution_context.validation_rules,
-                )
-
+            _run_validation(execution_context)
             if execution_context.errors:
                 return ExecutionResult(data=None, errors=execution_context.errors)
 
