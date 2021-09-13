@@ -317,3 +317,45 @@ def test_enum():
     assert field2.python_name == "kind"
     assert isinstance(field2.type, EnumDefinition)
     assert field2.type.wrapped_cls is UserKind
+
+
+def test_interface():
+    class Base(pydantic.BaseModel):
+        base_field: str
+
+    class BranchA(Base):
+        field_a: str
+
+    class BranchB(Base):
+        field_b: int
+
+    class User(pydantic.BaseModel):
+        age: int
+        interface_field: Base
+
+    @strawberry.experimental.pydantic.interface(Base, fields=["base_field"])
+    class BaseType:
+        pass
+
+    @strawberry.experimental.pydantic.type(BranchA, fields=["field_a"])
+    class BranchAType(BaseType):
+        pass
+
+    @strawberry.experimental.pydantic.type(BranchB, fields=["field_b"])
+    class BranchBType(BaseType):
+        pass
+
+    @strawberry.experimental.pydantic.type(User, fields=["age", "interface_field"])
+    class UserType:
+        pass
+
+    definition: TypeDefinition = UserType._type_definition
+    assert definition.name == "UserType"
+
+    [field1, field2] = definition.fields
+
+    assert field1.python_name == "age"
+    assert field1.type is int
+
+    assert field2.python_name == "interface_field"
+    assert field2.type is BaseType

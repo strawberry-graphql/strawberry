@@ -93,7 +93,7 @@ def test_can_convert_pydantic_type_with_nested_data_to_strawberry():
         name: str
 
     @strawberry.experimental.pydantic.type(WorkModel, fields=["name"])
-    class Work(pydantic.BaseModel):
+    class Work:
         pass
 
     class UserModel(pydantic.BaseModel):
@@ -114,7 +114,7 @@ def test_can_convert_pydantic_type_with_list_of_nested_data_to_strawberry():
         name: str
 
     @strawberry.experimental.pydantic.type(WorkModel, fields=["name"])
-    class Work(pydantic.BaseModel):
+    class Work:
         pass
 
     class UserModel(pydantic.BaseModel):
@@ -361,6 +361,51 @@ def test_can_convert_pydantic_type_to_strawberry_with_enum():
 
     assert user.age == 1
     assert user.kind == UserKind.user
+
+
+def test_can_convert_pydantic_type_to_strawberry_with_interface():
+    class Base(pydantic.BaseModel):
+        base_field: str
+
+    class BranchA(Base):
+        field_a: str
+
+    class BranchB(Base):
+        field_b: int
+
+    class User(pydantic.BaseModel):
+        age: int
+        interface_field: Base
+
+    @strawberry.experimental.pydantic.interface(Base, fields=["base_field"])
+    class BaseType:
+        pass
+
+    @strawberry.experimental.pydantic.type(BranchA, fields=["field_a"])
+    class BranchAType(BaseType):
+        pass
+
+    @strawberry.experimental.pydantic.type(BranchB, fields=["field_b"])
+    class BranchBType(BaseType):
+        pass
+
+    @strawberry.experimental.pydantic.type(User, fields=["age", "interface_field"])
+    class UserType:
+        pass
+
+    origin_user = User(age=1, interface_field=BranchA(field_a="abc", base_field="def"))
+    user = UserType.from_pydantic(origin_user)
+
+    assert user.age == 1
+    assert isinstance(user.interface_field, BranchAType)
+    assert user.interface_field.field_a == "abc"
+
+    origin_user = User(age=1, interface_field=BranchB(field_b=123, base_field="def"))
+    user = UserType.from_pydantic(origin_user)
+
+    assert user.age == 1
+    assert isinstance(user.interface_field, BranchBType)
+    assert user.interface_field.field_b == 123
 
 
 def test_can_convert_pydantic_type_to_strawberry_with_additional_fields():

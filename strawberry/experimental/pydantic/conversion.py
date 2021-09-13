@@ -45,6 +45,10 @@ def _convert_from_pydantic_to_strawberry_type(
     elif is_scalar(type_):
         return data
     else:
+        # in the case of an interface, the concrete type may be more specific
+        # than the type in the field definition
+        if hasattr(type(data), "_strawberry_type"):
+            type_ = type(data)._strawberry_type
         return convert_pydantic_model_to_strawberry_class(
             type_, model_instance=data_from_model, extra=extra
         )

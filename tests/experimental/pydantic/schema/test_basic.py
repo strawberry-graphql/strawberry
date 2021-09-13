@@ -302,3 +302,52 @@ def test_basic_type_with_enum():
 
     assert not result.errors
     assert result.data["user"]["kind"] == "admin"
+
+
+def test_basic_type_with_interface():
+    class Base(pydantic.BaseModel):
+        base_field: str
+
+    class BranchA(Base):
+        field_a: str
+
+    class BranchB(Base):
+        field_b: int
+
+    class User(pydantic.BaseModel):
+        interface_field: Base
+
+    @strawberry.experimental.pydantic.interface(Base, fields=["base_field"])
+    class BaseType:
+        pass
+
+    @strawberry.experimental.pydantic.type(BranchA, fields=["field_a"])
+    class BranchAType(BaseType):
+        pass
+
+    @strawberry.experimental.pydantic.type(BranchB, fields=["field_b"])
+    class BranchBType(BaseType):
+        pass
+
+    @strawberry.experimental.pydantic.type(User, fields=["age", "interface_field"])
+    class UserType:
+        pass
+
+    print(BranchAType._type_definition)
+    print(BaseType._type_definition)
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self) -> UserType:
+            return UserType(interface_field=BranchBType(base_field="abc", field_b=10))
+
+    schema = strawberry.Schema(query=Query, types=[BranchAType, BranchBType])
+
+    query = "{ user { interfaceField { baseField, ... on BranchBType { fieldB } } } }"
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data["user"]["interfaceField"]["baseField"] == "abc"
+    assert result.data["user"]["interfaceField"]["fieldB"] == 10
