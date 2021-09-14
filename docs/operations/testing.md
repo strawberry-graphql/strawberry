@@ -17,7 +17,7 @@ first test:
 ```python
 def test_query():
     query = """
-    	query($title: String!) {
+        query TestQuery($title: String!) {
             books(title: $title) {
                 title
                 author
