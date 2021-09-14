@@ -34,16 +34,19 @@ class BaseGraphQLTestClient:
 
 
 class GraphQLTestClient(BaseGraphQLTestClient):
-    def query(self, query: str, variables: Optional[Dict[str, Any]] = None) -> Response:
+    def query(
+        self,
+        query: str,
+        variables: Optional[Dict[str, Any]] = None,
+        headers: Optional[Dict[str, Any]] = None,
+    ) -> Response:
         body: Body = {"query": query}
 
         if variables:
             body["variables"] = variables
 
         resp = self._client.post(
-            "/graphql/",
-            data=body,
-            content_type="application/json",
+            "/graphql/", data=body, content_type="application/json", headers=headers
         )
         data = resp.json()
         return Response(errors=data.get("errors"), data=data.get("data"))
