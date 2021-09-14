@@ -101,7 +101,7 @@ jobs:
     if: ${{ needs.read-tweet-md.outputs.tweet != '' }}
     steps:
       - name: Validate tweet
-        uses: strawberry-graphql/tweet-actions/validate-tweet@v2
+        uses: strawberry-graphql/tweet-actions/validate-tweet@v3
         with:
           tweet: ${{ needs.read-tweet-md.outputs.tweet }}
 
