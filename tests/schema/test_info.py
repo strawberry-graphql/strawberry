@@ -226,6 +226,55 @@ def test_info_arguments():
     ]
 
 
+def test_info_selected_fields_undefined_variable():
+    @strawberry.type
+    class Result:
+        ok: bool
+
+    selected_fields = None
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(
+            self, info: Info[str, str], optional_input: Optional[str] = "hi"
+        ) -> Result:
+            nonlocal selected_fields
+            selected_fields = info.selected_fields
+            return Result(ok=True)
+
+    schema = strawberry.Schema(query=Query)
+    query = """
+    query MyQuery($optionalInput: String) {
+        hello(optionalInput: $optionalInput) {
+            ok
+        }
+    }
+    """
+    result = schema.execute_sync(query, variable_values={})
+
+    assert not result.errors
+    assert selected_fields == [
+        SelectedField(
+            name="hello",
+            directives={},
+            alias=None,
+            arguments={
+                "optionalInput": None,
+            },
+            selections=[
+                SelectedField(
+                    name="ok",
+                    alias=None,
+                    arguments={},
+                    directives={},
+                    selections=[],
+                )
+            ],
+        )
+    ]
+
+
 @pytest.mark.parametrize(
     "return_type,return_value",
     [
