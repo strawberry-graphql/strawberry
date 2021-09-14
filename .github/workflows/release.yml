@@ -80,7 +80,7 @@ jobs:
     steps:
       - name: Get PR info
         id: get-info
-        uses: strawberry-graphql/get-pr-info-action@v1
+        uses: strawberry-graphql/get-pr-info-action@v3
 
 
   read-tweet-md:
