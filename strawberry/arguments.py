@@ -8,10 +8,10 @@ from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
 from .exceptions import UnsupportedTypeError
 from .scalars import is_scalar
 from .types.arguments import (
+    UNSET,
     StrawberryArgument,
     StrawberryArgumentAnnotation,
     is_unset,
-    UNSET,
 )
 from .types.types import TypeDefinition
 
