@@ -76,7 +76,7 @@ example:
 @pytest.mark.asyncio
 async def test_mutaton():
     mutation = """
-        mutation($title: String!, $author: String!) {
+        mutation TestMutation($title: String!, $author: String!) {
             addBook(title: $title, author: $author) {
                 title
             }
