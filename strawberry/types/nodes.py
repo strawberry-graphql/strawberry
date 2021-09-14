@@ -37,7 +37,7 @@ def convert_value(info: GraphQLResolveInfo, node: GQLValueNode) -> Any:
     if isinstance(node, GQLVariableNode):
         # Look up variable
         name = node.name.value
-        return info.variable_values[name]
+        return info.variable_values.get(name)
     if isinstance(node, GQLListValueNode):
         return [convert_value(info, value) for value in node.values]
     if isinstance(node, GQLObjectValueNode):
