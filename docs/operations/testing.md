@@ -5,13 +5,14 @@ title: Testing
 # Testing
 
 The GraphiQL playground integrated with Strawberry available at
-[http://localhost:8000/graphql](http://localhost:8000/graphql) can be a good place to
-start testing your queries and mutations. However, at some point, while you are
-developing your application (or even before if you are practising TDD), you may want to
-create some automated tests.
+[http://localhost:8000/graphql](http://localhost:8000/graphql) (if you run the schema
+with `strawberry server`) can be a good place to start testing your queries and
+mutations. However, at some point, while you are developing your application (or even
+before if you are practising TDD), you may want to create some automated tests.
 
 We can use the Strawberry `schema` object we defined in the
-[Getting Started tutorial](docs/index.md#step-5-create-our-schema-and-run-it) to run our first test:
+[Getting Started tutorial](docs/index.md#step-5-create-our-schema-and-run-it) to run our
+first test:
 
 ```python
 def test_query():
@@ -47,9 +48,10 @@ This `test_query` example:
 
 As you may have noticed, we explicitly defined the query variable `title`, and we passed
 it separately with the `variable_values` argument, but we could have directly hardcoded
-the `title` in the query string instead. We did this on purpose because usually the query's arguments will be dynamic and, as we want to test our
-application as close to production as possible, it wouldn't make much sense to hardcode
-the variables in the query.
+the `title` in the query string instead. We did this on purpose because usually the
+query's arguments will be dynamic and, as we want to test our application as close to
+production as possible, it wouldn't make much sense to hardcode the variables in the
+query.
 
 ## Testing Async
 
@@ -67,7 +69,8 @@ async def test_query_async():
 
 ## Testing Mutations
 
-We can also write a test for our [`addBook` Mutation](docs/general/mutations.md) example:
+We can also write a test for our [`addBook` Mutation](docs/general/mutations.md)
+example:
 
 ```python
 @pytest.mark.asyncio
@@ -117,5 +120,5 @@ async def test_subscription():
         index += 1
 ```
 
-As you can see testing Subscriptions is a bit more complicated because we want to
-check the result of each individual result.
+As you can see testing Subscriptions is a bit more complicated because we want to check
+the result of each individual result.
