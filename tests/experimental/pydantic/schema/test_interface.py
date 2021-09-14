@@ -29,8 +29,8 @@ def test_pydantic_query_interface():
         @strawberry.field
         def assortment(self) -> List[Cheese]:
             return [
-                Italian(name="Asiago", province="Friuli"),
-                Swiss(name="Tomme", canton="Vaud"),
+                Italian(name="Asiago", province="Friuli"),  # type: ignore
+                Swiss(name="Tomme", canton="Vaud"),  # type: ignore
             ]
 
     schema = strawberry.Schema(query=Root, types=[Swiss, Italian])
