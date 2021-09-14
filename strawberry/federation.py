@@ -22,15 +22,11 @@ from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 from strawberry.utils.inspect import get_func_args
 
-from .field import (
-    _RESOLVER_TYPE,
-    FederationFieldParams,
-    StrawberryField,
-    field as base_field,
-)
+from .field import FederationFieldParams, StrawberryField, field as base_field
 from .object_type import FederationTypeParams, type as base_type
 from .printer import print_schema
 from .schema import Schema as BaseSchema
+from .types.resolver import _RESOLVER_TYPE
 from .utils.typing import __dataclass_transform__
 
 

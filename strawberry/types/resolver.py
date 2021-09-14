@@ -151,4 +151,6 @@ class StrawberryResolver(Generic[T]):
         )
 
 
-__all__ = ["StrawberryResolver"]
+_RESOLVER_TYPE = Union[StrawberryResolver, Callable]
+
+__all__ = ["StrawberryResolver", "_RESOLVER_TYPE"]
