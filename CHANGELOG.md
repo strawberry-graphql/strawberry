@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.77.6 - 2021-09-13
+-------------------
+
+This release adds fragment and input variable information to the
+`selected_fields` attribute on the `Info` object.
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) [PR #1213](https://github.com/strawberry-graphql/strawberry/pull/1213/)
+
+
 0.77.5 - 2021-09-11
 -------------------
 

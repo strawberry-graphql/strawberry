@@ -78,12 +78,10 @@ jobs:
       contributor-name: ${{ steps.get-info.outputs.contributor-name }}
 
     steps:
-      - uses: actions/checkout@v1
       - name: Get PR info
         id: get-info
-        uses: ./.github/get-pr-info-action
-        env:
-          ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: strawberry-graphql/get-pr-info-action@v1
+
 
   read-tweet-md:
     name: Read TWEET.md

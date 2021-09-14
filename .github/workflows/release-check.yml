@@ -19,14 +19,9 @@ jobs:
       contributor-username: ${{ steps.get-info.outputs.contributor-username }}
 
     steps:
-      - uses: actions/checkout@v2
-        with:
-          ref: "refs/pull/${{ github.event.number }}/merge"
       - name: Get PR info
         id: get-info
-        uses: ./.github/get-pr-info-action
-        env:
-          ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: strawberry-graphql/get-pr-info-action@v3
 
   skip-if-bot:
     name: Set skip if PR is from a bot

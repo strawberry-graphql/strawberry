@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "strawberry-graphql"
 packages = [ { include = "strawberry" } ]
-version = "0.77.5"
+version = "0.77.6"
 description = "A library for creating GraphQL APIs"
 authors = ["Patrick Arminio <patrick.arminio@gmail.com>"]
 license = "MIT"
@@ -51,7 +51,7 @@ isort = "^5.9.2"
 pytest-asyncio = "^0.15.1"
 pytest-cov = "^2.12"
 mypy = "^0.910"
-flake8-bugbear = "^21.4"
+flake8-bugbear = "^21.9"
 flake8-eradicate = "^1.1.0"
 pytest-mypy-plugins = "^1.9"
 pytest-mock = "^3.6"
