@@ -1,6 +1,6 @@
 from django.test.client import Client
 
-from strawberry.django.test.client import GraphQLTestClient
+from tests.django.client import GraphQLTestClient
 
 
 def test_query():
@@ -12,3 +12,4 @@ def test_query():
     result = GraphQLTestClient(Client()).query(query)
 
     assert result.errors is None
+    assert result.data["user"] == "🍓"
