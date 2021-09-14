@@ -1,15 +1,9 @@
-from django.test.client import Client
-
-from tests.django.client import GraphQLTestClient
-
-
-def test_query():
+def test_query(graphql_client):
     query = """query {
         user
     }
     """
 
-    result = GraphQLTestClient(Client()).query(query)
+    result = graphql_client.query(query)
 
-    assert result.errors is None
     assert result.data["user"] == "🍓"

@@ -26,6 +26,7 @@ class BaseGraphQLTestClient:
         query: str,
         variables: Optional[Dict[str, Any]] = None,
         headers: Optional[Dict[str, Any]] = None,
+        asserts_errors: Optional[bool] = True,
     ) -> Response:
         raise NotImplementedError
 
@@ -39,6 +40,7 @@ class GraphQLTestClient(BaseGraphQLTestClient):
         query: str,
         variables: Optional[Dict[str, Any]] = None,
         headers: Optional[Dict[str, Any]] = None,
+        asserts_errors: Optional[bool] = True,
     ) -> Response:
         body: Body = {"query": query}
 
@@ -49,7 +51,12 @@ class GraphQLTestClient(BaseGraphQLTestClient):
             "/graphql/", data=body, content_type="application/json", headers=headers
         )
         data = resp.json()
-        return Response(errors=data.get("errors"), data=data.get("data"))
+
+        response = Response(errors=data.get("errors"), data=data.get("data"))
+        if asserts_errors:
+            assert response.errors is None
+
+        return response
 
     def force_login(self, user):
         self._client.force_login(user)
