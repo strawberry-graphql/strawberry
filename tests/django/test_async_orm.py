@@ -5,7 +5,6 @@ import pytest
 from asgiref.sync import sync_to_async
 
 import django
-from django.core.exceptions import SuspiciousOperation
 from django.test.client import RequestFactory
 
 import strawberry
