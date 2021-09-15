@@ -1,0 +1,26 @@
+name: Invite contributors
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  invite-contributor:
+    name: Invite contributors
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Invite contributors
+        uses: strawberry-graphql/invite-to-org-action@v1
+        with:
+          organisation: "strawberry-graphql"
+          comment: |
+            Thanks for contributing to Strawberry! 🎉 You've been invited to join
+            the Strawberry GraphQL organisation 😊
+
+            You can also request a free sticker by filling this form: https://forms.gle/dmnfQUPoY5gZbVT67
+
+            And don't forget to join our discord server: https://strawberry.rocks/discord 🔥
+          team-slug: "strawberry-contributors"
+          github-token: ${{ secrets.BOT_TOKEN }}

@@ -1,13 +1,15 @@
-import typing
-from collections.abc import AsyncGenerator, Callable
-from typing import Type, TypeVar
-
-
-try:
-    from typing import ForwardRef  # type: ignore
-except ImportError:  # pragma: no cover
-    # ForwardRef is private in python 3.6 and 3.7
-    from typing import _ForwardRef as ForwardRef  # type: ignore
+from collections.abc import AsyncGenerator
+from typing import _GenericAlias  # type: ignore
+from typing import (  # type: ignore
+    Any,
+    Callable,
+    ClassVar,
+    Generic,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
 
 def is_list(annotation: Type) -> bool:
@@ -23,7 +25,7 @@ def is_union(annotation: Type) -> bool:
 
     annotation_origin = getattr(annotation, "__origin__", None)
 
-    return annotation_origin == typing.Union
+    return annotation_origin == Union
 
 
 def is_optional(annotation: Type) -> bool:
@@ -58,28 +60,28 @@ def get_list_annotation(annotation: Type) -> Type:
     return annotation.__args__[0]
 
 
-def is_async_generator(annotation: Type) -> bool:
-    return getattr(annotation, "__origin__", None) == AsyncGenerator
-
-
-def get_async_generator_annotation(annotation: Type) -> Type:
-    return annotation.__args__[0]
-
-
-def is_generic(annotation: Type) -> bool:
-    """Returns True if the annotation is or extends a generic."""
+def is_concrete_generic(annotation: type) -> bool:
+    ignored_generics = (list, tuple, Union, ClassVar, AsyncGenerator)
     return (
-        isinstance(annotation, type)
-        and issubclass(annotation, typing.Generic)  # type:ignore
-        or isinstance(annotation, typing._GenericAlias)  # type:ignore
-        and annotation.__origin__
-        not in (
-            list,
-            typing.Union,
-            tuple,
-            typing.ClassVar,
-            AsyncGenerator,
-        )
+        isinstance(annotation, _GenericAlias)  # type:ignore
+        and annotation.__origin__ not in ignored_generics
+    )
+
+
+def is_generic_subclass(annotation: type) -> bool:
+    return isinstance(annotation, type) and issubclass(
+        annotation, Generic  # type:ignore
+    )
+
+
+def is_generic(annotation: type) -> bool:
+    """Returns True if the annotation is or extends a generic."""
+
+    return (
+        # TODO: These two lines appear to have the same effect. When will an
+        #       annotation have parameters but not satisfy the first condition?
+        (is_generic_subclass(annotation) or is_concrete_generic(annotation))
+        and bool(get_parameters(annotation))
     )
 
 
@@ -89,56 +91,26 @@ def is_type_var(annotation: Type) -> bool:
     return isinstance(annotation, TypeVar)  # type:ignore
 
 
-def has_type_var(annotation: Type) -> bool:
-    """
-    Returns True if the annotation or any of
-    its argument have a TypeVar as argument.
-    """
-    return any(
-        is_type_var(arg) or has_type_var(arg)
-        for arg in getattr(annotation, "__args__", [])
-    )
-
-
 def get_parameters(annotation: Type):
     if (
-        isinstance(annotation, typing._GenericAlias)  # type:ignore
+        isinstance(annotation, _GenericAlias)  # type:ignore
         or isinstance(annotation, type)
-        and issubclass(annotation, typing.Generic)  # type:ignore
-        and annotation is not typing.Generic
+        and issubclass(annotation, Generic)  # type:ignore
+        and annotation is not Generic
     ):
         return annotation.__parameters__
     else:
         return ()  # pragma: no cover
 
 
-def get_origin(annotation: Type):
-    if isinstance(annotation, typing._GenericAlias):  # type:ignore
-        return (
-            annotation.__origin__
-            if annotation.__origin__ is not typing.ClassVar
-            else None
-        )
-
-    if annotation is typing.Generic:  # pragma: no cover
-        return typing.Generic
-
-    return None  # pragma: no cover
+_T = TypeVar("_T")
 
 
-def get_args(annotation: Type):
-    if isinstance(annotation, typing._GenericAlias):  # type:ignore
-        res = annotation.__args__
-
-        if (
-            get_origin(annotation) is Callable and res[0] is not Ellipsis
-        ):  # pragma: no cover
-            res = (list(res[:-1]), res[-1])
-
-        return res
-
-    return ()
-
-
-def is_forward_ref(annotation: Type) -> bool:
-    return isinstance(annotation, ForwardRef)
+def __dataclass_transform__(
+    *,
+    eq_default: bool = True,
+    order_default: bool = False,
+    kw_only_default: bool = False,
+    field_descriptors: Tuple[Union[type, Callable[..., Any]], ...] = (()),
+) -> Callable[[_T], _T]:
+    return lambda a: a

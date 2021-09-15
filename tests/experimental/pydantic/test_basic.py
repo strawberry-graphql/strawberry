@@ -6,6 +6,7 @@ import pydantic
 
 import strawberry
 from strawberry.experimental.pydantic.exceptions import MissingFieldsListError
+from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.types.types import TypeDefinition
 
 
@@ -19,17 +20,18 @@ def test_basic_type():
         pass
 
     definition: TypeDefinition = UserType._type_definition
-
     assert definition.name == "UserType"
-    assert len(definition.fields) == 2
 
-    assert definition.fields[0].graphql_name == "age"
-    assert definition.fields[0].type is int
-    assert definition.fields[0].is_optional is False
+    [field1, field2] = definition.fields
 
-    assert definition.fields[1].graphql_name == "password"
-    assert definition.fields[1].type is str
-    assert definition.fields[1].is_optional is True
+    assert field1.python_name == "age"
+    assert field1.graphql_name is None
+    assert field1.type is int
+
+    assert field2.python_name == "password"
+    assert field2.graphql_name is None
+    assert isinstance(field2.type, StrawberryOptional)
+    assert field2.type.of_type is str
 
 
 def test_referencing_other_models_fails_when_not_registered():
@@ -70,16 +72,15 @@ def test_referencing_other_registered_models():
         pass
 
     definition: TypeDefinition = UserType._type_definition
-
     assert definition.name == "UserType"
-    assert len(definition.fields) == 2
 
-    assert definition.fields[0].graphql_name == "age"
-    assert definition.fields[0].type is int
-    assert definition.fields[0].is_optional is False
+    [field1, field2] = definition.fields
 
-    assert definition.fields[1].graphql_name == "group"
-    assert definition.fields[1].type is GroupType
+    assert field1.python_name == "age"
+    assert field1.type is int
+
+    assert field2.python_name == "group"
+    assert field2.type is GroupType
 
 
 def test_list():
@@ -91,15 +92,13 @@ def test_list():
         pass
 
     definition: TypeDefinition = UserType._type_definition
-
     assert definition.name == "UserType"
-    assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "friendNames"
-    assert definition.fields[0].type is None
-    assert definition.fields[0].is_optional is False
-    assert definition.fields[0].is_list is True
-    assert definition.fields[0].child.type is str
+    [field] = definition.fields
+
+    assert field.python_name == "friend_names"
+    assert isinstance(field.type, StrawberryList)
+    assert field.type.of_type is str
 
 
 def test_list_of_types():
@@ -118,16 +117,15 @@ def test_list_of_types():
         pass
 
     definition: TypeDefinition = UserType._type_definition
-
     assert definition.name == "UserType"
-    assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "friends"
-    assert definition.fields[0].type is None
-    assert definition.fields[0].is_optional is True
-    assert definition.fields[0].is_list is True
-    assert definition.fields[0].child.type is FriendType
-    assert definition.fields[0].child.is_optional is True
+    [field] = definition.fields
+
+    assert field.python_name == "friends"
+    assert isinstance(field.type, StrawberryOptional)
+    assert isinstance(field.type.of_type, StrawberryList)
+    assert isinstance(field.type.of_type.of_type, StrawberryOptional)
+    assert field.type.of_type.of_type.of_type is FriendType
 
 
 def test_basic_type_without_fields_throws_an_error():
@@ -155,21 +153,19 @@ def test_type_with_fields_coming_from_strawberry_and_pydantic():
         name: str
 
     definition: TypeDefinition = UserType._type_definition
-
     assert definition.name == "UserType"
-    assert len(definition.fields) == 3
 
-    assert definition.fields[0].graphql_name == "age"
-    assert definition.fields[0].type is int
-    assert definition.fields[0].is_optional is False
+    [field1, field2, field3] = definition.fields
 
-    assert definition.fields[1].graphql_name == "password"
-    assert definition.fields[1].type is str
-    assert definition.fields[1].is_optional is True
+    assert field1.python_name == "age"
+    assert field1.type is int
 
-    assert definition.fields[2].graphql_name == "name"
-    assert definition.fields[2].type is str
-    assert definition.fields[2].is_optional is False
+    assert field2.python_name == "name"
+    assert field2.type is str
+
+    assert field3.python_name == "password"
+    assert isinstance(field3.type, StrawberryOptional)
+    assert field3.type.of_type is str
 
 
 @pytest.mark.xfail(
@@ -188,22 +184,20 @@ def test_type_with_fields_coming_from_strawberry_and_pydantic_with_default():
         name: str = "Michael"
 
     definition: TypeDefinition = UserType._type_definition
-
     assert definition.name == "UserType"
-    assert len(definition.fields) == 3
 
-    assert definition.fields[0].graphql_name == "age"
-    assert definition.fields[0].type is int
-    assert definition.fields[0].is_optional is False
+    [field1, field2, field3] = definition.fields
 
-    assert definition.fields[1].graphql_name == "password"
-    assert definition.fields[1].type is str
-    assert definition.fields[1].is_optional is True
+    assert field1.python_name == "age"
+    assert field1.type is int
 
-    assert definition.fields[2].graphql_name == "name"
-    assert definition.fields[2].type is str
-    assert definition.fields[2].is_optional is False
-    assert definition.fields[2].default_value == "Michael"
+    assert field2.python_name == "password"
+    assert isinstance(field2.type, StrawberryOptional)
+    assert field2.type.of_type is str
+
+    assert field3.python_name == "name"
+    assert field3.type is str
+    assert field3.default == "Michael"
 
 
 def test_type_with_nested_fields_coming_from_strawberry_and_pydantic():
@@ -221,21 +215,19 @@ def test_type_with_nested_fields_coming_from_strawberry_and_pydantic():
         name: Name
 
     definition: TypeDefinition = UserType._type_definition
-
     assert definition.name == "UserType"
-    assert len(definition.fields) == 3
 
-    assert definition.fields[0].graphql_name == "age"
-    assert definition.fields[0].type is int
-    assert definition.fields[0].is_optional is False
+    [field1, field2, field3] = definition.fields
 
-    assert definition.fields[1].graphql_name == "password"
-    assert definition.fields[1].type is str
-    assert definition.fields[1].is_optional is True
+    assert field1.python_name == "age"
+    assert field1.type is int
 
-    assert definition.fields[2].graphql_name == "name"
-    assert definition.fields[2].type is Name
-    assert definition.fields[2].is_optional is False
+    assert field2.python_name == "name"
+    assert field2.type is Name
+
+    assert field3.python_name == "password"
+    assert isinstance(field3.type, StrawberryOptional)
+    assert field3.type.of_type is str
 
 
 def test_type_with_aliased_pydantic_field():
@@ -248,14 +240,13 @@ def test_type_with_aliased_pydantic_field():
         pass
 
     definition: TypeDefinition = User._type_definition
-
     assert definition.name == "User"
-    assert len(definition.fields) == 2
 
-    assert definition.fields[0].graphql_name == "age"
-    assert definition.fields[0].type is int
-    assert definition.fields[0].is_optional is False
+    [field1, field2] = definition.fields
 
-    assert definition.fields[1].graphql_name == "password"
-    assert definition.fields[1].type is str
-    assert definition.fields[1].is_optional is True
+    assert field1.python_name == "age_"
+    assert field1.type is int
+
+    assert field2.python_name == "password"
+    assert isinstance(field2.type, StrawberryOptional)
+    assert field2.type.of_type is str

@@ -13,6 +13,7 @@
 ## Types
 
 - [Schema](./types/schema.md)
+- [Schema configurations](./types/schema-configurations.md)
 - [Scalars](./types/scalars.md)
 - [Object types](./types/object-types.md)
 - [Interfaces](./types/interfaces.md)
@@ -23,17 +24,23 @@
 - [Resolvers](./types/resolvers.md)
 - [Union types](./types/union.md)
 
-## Features
+## Guides
 
-- [Authentication](./features/authentication.md)
-- [DataLoaders](./features/dataloaders.md)
-- [Errors](./features/errors.md)
-- [Federation](./features/federation.md)
-- [Extensions](./features/extensions.md)
-- [File upload](./features/file-upload.md)
-- [Pagination](./features/pagination.md)
-- [Permissions](./features/permissions.md)
-- [Builtin server](./features/server.md)
+- [Authentication](./guides/authentication.md)
+- [DataLoaders](./guides/dataloaders.md)
+- [Dealing with errors](./guides/errors.md)
+- [Federation](./guides/federation.md)
+- [Extensions](./guides/extensions.md)
+- [File upload](./guides/file-upload.md)
+- [Pagination](./guides/pagination.md)
+- [Permissions](./guides/permissions.md)
+- [Builtin server](./guides/server.md)
+- [Tools](./guides/tools.md)
+- [Schema export](./guides/schema-export.md)
+
+## Editor integration
+
+- [Visual Studio Code](./editors/vscode.md)
 
 ## Concepts
 
@@ -42,8 +49,10 @@
 
 ## Integrations
 
+- [AIOHTTP](./integrations/aiohttp.md)
 - [ASGI](./integrations/asgi.md)
 - [Django](./integrations/django.md)
+- [FastAPI](./integrations/fastapi.md)
 - [Flask](./integrations/flask.md)
 - [Sanic](./integrations/sanic.md)
 - [Pydantic **experimental**](./integrations/pydantic.md)

@@ -2,6 +2,8 @@ import dataclasses
 from enum import Enum, EnumMeta
 from typing import Any, Callable, Iterable, List, Optional, Union, cast
 
+from strawberry.type import StrawberryType
+
 from .exceptions import NotAnEnum
 from .utils.str_converters import to_camel_case
 
@@ -12,7 +14,7 @@ class EnumValue:
     value: Any
 
 
-class StrawberryEnum:
+class StrawberryEnum(StrawberryType):
     def __init__(
         self,
         enum: EnumMeta,

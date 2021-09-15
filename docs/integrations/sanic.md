@@ -87,8 +87,7 @@ By overriding `GraphQLView.process_result` you can customize and/or process resu
 before they are sent to a client. This can be useful for logging errors, or even hiding
 them (for example to hide internal exceptions).
 
-It needs to return an object of `GraphQLHTTPResponse` and accepts the request
-and the execution results.
+It needs to return an object of `GraphQLHTTPResponse` and accepts the execution result.
 
 ```python
 from strawberry.http import GraphQLHTTPResponse

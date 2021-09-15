@@ -1,22 +1,12 @@
 repos:
-  - repo: https://github.com/ambv/black
-    rev: 20.8b1
-    hooks:
-      - id: black
-
-  - repo: https://gitlab.com/pycqa/flake8
-    rev: 3.9.0
+  - repo: https://github.com/PyCQA/flake8
+    rev: 3.9.2
     hooks:
       - id: flake8
         additional_dependencies: ["flake8-eradicate==0.4.0"]
 
-  - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v0.812
-    hooks:
-      - id: mypy
-
   - repo: https://github.com/pycqa/isort
-    rev: 5.8.0
+    rev: 5.9.3
     hooks:
       - id: isort
 
@@ -24,17 +14,29 @@ repos:
     rev: aa5da9e54b92ab7284feddeaf52edf14b1690de3
     hooks:
       - id: alex
+        exclude: CHANGELOG.md
 
-  - repo: https://github.com/prettier/pre-commit
-    rev: 57f39166b5a5a504d6808b87ab98d41ebf095b46
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v2.4.0
     hooks:
       - id: prettier
         files: '^docs/.*\.mdx?$'
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v3.4.0
+    rev: v4.0.1
     hooks:
       - id: trailing-whitespace
       - id: check-merge-conflict
       - id: end-of-file-fixer
       - id: check-toml
+
+  - repo: https://github.com/humitos/mirrors-autoflake.git
+    rev: v1.1
+    hooks:
+      - id: autoflake
+        args: ['--in-place', '--remove-all-unused-imports', '--remove-unused-variable']
+
+  - repo: https://github.com/psf/black
+    rev: 21.8b0
+    hooks:
+      - id: black

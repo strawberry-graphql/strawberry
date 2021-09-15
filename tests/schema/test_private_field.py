@@ -15,7 +15,8 @@ def test_private_field():
     assert definition.name == "Query"
     assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "name"
+    assert definition.fields[0].python_name == "name"
+    assert definition.fields[0].graphql_name is None
     assert definition.fields[0].type == str
 
     instance = Query(name="Luke", age=22)

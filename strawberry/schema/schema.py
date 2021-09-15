@@ -1,4 +1,6 @@
-from typing import Any, Dict, List, Optional, Sequence, Type, Union
+import logging
+import sys
+from typing import Any, Collection, Dict, List, Optional, Sequence, Type, Union
 
 from graphql import (
     ExecutionContext as GraphQLExecutionContext,
@@ -7,20 +9,26 @@ from graphql import (
     parse,
     validate_schema,
 )
+from graphql.error import GraphQLError
 from graphql.subscription import subscribe
 from graphql.type.directives import specified_directives
+from graphql.validation import ValidationRule
 
-from strawberry.custom_scalar import ScalarDefinition
+from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.enum import StrawberryEnum
 from strawberry.extensions import Extension
 from strawberry.schema.schema_converter import GraphQLCoreConverter
-from strawberry.types import ExecutionResult
+from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
+from strawberry.types import ExecutionContext, ExecutionResult
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 
-from ..middleware import DirectivesMiddleware, Middleware
 from ..printer import print_schema
+from .config import StrawberryConfig
 from .execute import execute, execute_sync
+
+
+logger = logging.getLogger("strawberry.execution")
 
 
 class Schema:
@@ -34,34 +42,52 @@ class Schema:
         types=(),
         extensions: Sequence[Type[Extension]] = (),
         execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
+        config: Optional[StrawberryConfig] = None,
+        scalar_overrides: Optional[
+            Dict[object, Union[ScalarWrapper, ScalarDefinition]]
+        ] = None,
     ):
         self.extensions = extensions
         self.execution_context_class = execution_context_class
-        self.schema_converter = GraphQLCoreConverter()
+        self.config = config or StrawberryConfig()
 
-        query_type = self.schema_converter.from_object_type(query)
+        scalar_registry: Dict[object, Union[ScalarWrapper, ScalarDefinition]] = {
+            **DEFAULT_SCALAR_REGISTRY
+        }
+        if scalar_overrides:
+            scalar_registry.update(scalar_overrides)
+
+        self.schema_converter = GraphQLCoreConverter(self.config, scalar_registry)
+        self.directives = directives
+
+        query_type = self.schema_converter.from_object(query._type_definition)
         mutation_type = (
-            self.schema_converter.from_object_type(mutation) if mutation else None
+            self.schema_converter.from_object(mutation._type_definition)
+            if mutation
+            else None
         )
         subscription_type = (
-            self.schema_converter.from_object_type(subscription)
+            self.schema_converter.from_object(subscription._type_definition)
             if subscription
             else None
         )
-
-        self.middleware: List[Middleware] = [DirectivesMiddleware(directives)]
 
         directives = [
             self.schema_converter.from_directive(directive.directive_definition)
             for directive in directives
         ]
 
+        graphql_types = []
+        for type_ in types:
+            graphql_type = self.schema_converter.from_object(type_._type_definition)
+            graphql_types.append(graphql_type)
+
         self._schema = GraphQLSchema(
             query=query_type,
             mutation=mutation_type,
             subscription=subscription_type if subscription else None,
             directives=specified_directives + directives,
-            types=list(map(self.schema_converter.from_object_type, types)),
+            types=graphql_types,
         )
 
         # Validate schema early because we want developers to know about
@@ -83,6 +109,22 @@ class Schema:
 
         return None
 
+    def process_errors(
+        self, errors: List[GraphQLError], execution_context: ExecutionContext
+    ) -> None:
+        kwargs: Dict[str, Any] = {
+            "stack_info": True,
+        }
+
+        # stacklevel was added in version 3.8
+        # https://docs.python.org/3/library/logging.html#logging.Logger.debug
+
+        if sys.version_info >= (3, 8):
+            kwargs["stacklevel"] = 3
+
+        for error in errors:
+            logger.error(error, exc_info=error.original_error, **kwargs)
+
     async def execute(
         self,
         query: str,
@@ -91,25 +133,32 @@ class Schema:
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
         validate_queries: bool = True,
+        validation_rules: Optional[Collection[Type[ValidationRule]]] = None,
     ) -> ExecutionResult:
+        # Create execution context
+        execution_context = ExecutionContext(
+            query=query,
+            context=context_value,
+            root_value=root_value,
+            variables=variable_values,
+            operation_name=operation_name,
+        )
+
         result = await execute(
             self._schema,
             query,
-            variable_values=variable_values,
-            root_value=root_value,
-            context_value=context_value,
-            operation_name=operation_name,
-            additional_middlewares=self.middleware,
             extensions=self.extensions,
+            directives=self.directives,
             execution_context_class=self.execution_context_class,
             validate_queries=validate_queries,
+            execution_context=execution_context,
+            validation_rules=validation_rules,
         )
 
-        return ExecutionResult(
-            data=result.data,
-            errors=result.errors,
-            extensions=result.extensions,
-        )
+        if result.errors:
+            self.process_errors(result.errors, execution_context=execution_context)
+
+        return result
 
     def execute_sync(
         self,
@@ -119,25 +168,31 @@ class Schema:
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
         validate_queries: bool = True,
+        validation_rules: Optional[Collection[Type[ValidationRule]]] = None,
     ) -> ExecutionResult:
+        execution_context = ExecutionContext(
+            query=query,
+            context=context_value,
+            root_value=root_value,
+            variables=variable_values,
+            operation_name=operation_name,
+        )
+
         result = execute_sync(
             self._schema,
             query,
-            variable_values=variable_values,
-            root_value=root_value,
-            context_value=context_value,
-            operation_name=operation_name,
-            additional_middlewares=self.middleware,
             extensions=self.extensions,
+            directives=self.directives,
             execution_context_class=self.execution_context_class,
             validate_queries=validate_queries,
+            execution_context=execution_context,
+            validation_rules=validation_rules,
         )
 
-        return ExecutionResult(
-            data=result.data,
-            errors=result.errors,
-            extensions=result.extensions,
-        )
+        if result.errors:
+            self.process_errors(result.errors, execution_context=execution_context)
+
+        return result
 
     async def subscribe(
         self,

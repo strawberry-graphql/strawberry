@@ -15,10 +15,15 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
 
 import strawberry
-from strawberry.file_uploads.data import replace_placeholders_with_files
-from strawberry.http import GraphQLHTTPResponse, process_result
+from strawberry.exceptions import MissingQueryError
+from strawberry.file_uploads.utils import replace_placeholders_with_files
+from strawberry.http import (
+    GraphQLHTTPResponse,
+    GraphQLRequestData,
+    parse_request_data,
+    process_result,
+)
 from strawberry.types import ExecutionResult
-from strawberry.types.execution import ExecutionContext
 
 from ..schema import BaseSchema
 from .context import StrawberryDjangoContext
@@ -32,12 +37,14 @@ class TemporalHttpResponse(JsonResponse):
 
 
 class BaseView(View):
+    subscriptions_enabled = False
     graphiql = True
     schema: Optional[BaseSchema] = None
 
-    def __init__(self, schema: BaseSchema, graphiql=True):
+    def __init__(self, schema: BaseSchema, graphiql=True, subscriptions_enabled=False):
         self.schema = schema
         self.graphiql = graphiql
+        self.subscriptions_enabled = subscriptions_enabled
 
     def parse_body(self, request) -> Dict[str, Any]:
         if request.content_type.startswith("multipart/form-data"):
@@ -56,22 +63,18 @@ class BaseView(View):
     def should_render_graphiql(self, request: HttpRequest) -> bool:
         return "text/html" in request.META.get("HTTP_ACCEPT", "")
 
-    def get_execution_context(self, request: HttpRequest) -> ExecutionContext:
+    def get_request_data(self, request: HttpRequest) -> GraphQLRequestData:
         try:
             data = self.parse_body(request)
         except json.decoder.JSONDecodeError:
             raise SuspiciousOperation("Unable to parse request body as JSON")
 
         try:
-            query = data["query"]
-            variables = data.get("variables")
-            operation_name = data.get("operationName")
-        except KeyError:
+            request_data = parse_request_data(data)
+        except MissingQueryError:
             raise SuspiciousOperation("No GraphQL query found in the request")
 
-        return ExecutionContext(
-            query=query, variables=variables, operation_name=operation_name
-        )
+        return request_data
 
     def _render_graphiql(self, request: HttpRequest, context=None):
         if not self.graphiql:
@@ -91,7 +94,7 @@ class BaseView(View):
             )
 
         context = context or {}
-        context.update({"SUBSCRIPTION_ENABLED": "false"})
+        context.update({"SUBSCRIPTION_ENABLED": json.dumps(self.subscriptions_enabled)})
 
         response = TemplateResponse(request=request, template=None, context=context)
         response.content = template.render(RequestContext(request, context))
@@ -137,17 +140,17 @@ class GraphQLView(BaseView):
         if self.should_render_graphiql(request):
             return self._render_graphiql(request)
 
-        operation_context = self.get_execution_context(request)
+        request_data = self.get_request_data(request)
 
         sub_response = TemporalHttpResponse()
         context = self.get_context(request, response=sub_response)
 
         result = self.schema.execute_sync(
-            operation_context.query,
+            request_data.query,
             root_value=self.get_root_value(request),
-            variable_values=operation_context.variables,
+            variable_values=request_data.variables,
             context_value=context,
-            operation_name=operation_context.operation_name,
+            operation_name=request_data.operation_name,
         )
 
         response_data = self.process_result(request=request, result=result)
@@ -177,17 +180,18 @@ class AsyncGraphQLView(BaseView):
         if self.should_render_graphiql(request):
             return self._render_graphiql(request)
 
-        operation_context = self.get_execution_context(request)
+        request_data = self.get_request_data(request)
+
         sub_response = TemporalHttpResponse()
         context = await self.get_context(request, response=sub_response)
         root_value = await self.get_root_value(request)
 
         result = await self.schema.execute(
-            operation_context.query,
+            request_data.query,
             root_value=root_value,
-            variable_values=operation_context.variables,
+            variable_values=request_data.variables,
             context_value=context,
-            operation_name=operation_context.operation_name,
+            operation_name=request_data.operation_name,
         )
 
         response_data = await self.process_result(request=request, result=result)

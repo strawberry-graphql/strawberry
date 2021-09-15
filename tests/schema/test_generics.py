@@ -1,6 +1,8 @@
 import textwrap
 import typing
 
+import pytest
+
 import strawberry
 
 
@@ -626,6 +628,7 @@ def test_supports_lists_within_unions_empty_list():
     assert result.data == {"user": {"__typename": "UserEdge", "nodes": []}}
 
 
+@pytest.mark.xfail()
 def test_raises_error_when_unable_to_find_type():
     T = typing.TypeVar("T")
 
@@ -700,3 +703,68 @@ def test_generic_with_arguments():
     """
 
     assert str(schema) == textwrap.dedent(expected_schema).strip()
+
+
+def test_generic_extending_with_type_var():
+    T = typing.TypeVar("T")
+
+    @strawberry.interface
+    class Node(typing.Generic[T]):
+        id: strawberry.ID
+
+        def _resolve(self) -> typing.Optional[T]:
+            return None
+
+    @strawberry.type
+    class Book(Node[str]):
+        name: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def books(self) -> typing.List[Book]:
+            return list()
+
+    schema = strawberry.Schema(query=Query)
+
+    expected_schema = """
+    type Book implements Node {
+      id: ID!
+      name: String!
+    }
+
+    interface Node {
+      id: ID!
+    }
+
+    type Query {
+      books: [Book!]!
+    }
+    """
+
+    assert str(schema) == textwrap.dedent(expected_schema).strip()
+
+
+def test_supports_generic_input_type():
+    T = typing.TypeVar("T")
+
+    @strawberry.input
+    class Input(typing.Generic[T]):
+        field: T
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def field(self, input: Input[str]) -> str:
+            return input.field
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        field(input: { field: "data" })
+    }"""
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data == {"field": "data"}

@@ -1,36 +1,9 @@
-from random import random
-
-import pytest
-
 import strawberry
 from sanic import Sanic
 from strawberry.sanic.views import GraphQLView as BaseGraphQLView
 from strawberry.types import ExecutionResult, Info
 
-
-def create_app(**kwargs):
-    @strawberry.type
-    class Query:
-        hello: str = "strawberry"
-
-    schema = strawberry.Schema(query=Query)
-
-    class GraphQLView(BaseGraphQLView):
-        def get_root_value(self):
-            return Query()
-
-    app = Sanic("test-app-" + str(random()))
-
-    app.add_route(
-        GraphQLView.as_view(schema=schema, graphiql=kwargs.get("graphiql", True)),
-        "/graphql",
-    )
-    return app
-
-
-@pytest.fixture
-def sanic_client():
-    yield create_app()
+from .app import create_app
 
 
 def test_graphql_query(sanic_client):

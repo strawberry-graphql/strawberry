@@ -27,10 +27,10 @@ def print_federation_field_directive(field: Optional[StrawberryField]) -> str:
     out = ""
 
     if field.federation.provides:
-        out += f' @provides(fields: "{field.federation.provides}")'
+        out += f' @provides(fields: "{" ".join(field.federation.provides)}")'
 
     if field.federation.requires:
-        out += f' @requires(fields: "{field.federation.requires}")'
+        out += f' @requires(fields: "{" ".join(field.federation.requires)}")'
 
     if field.federation.external:
         out += " @external"
@@ -44,7 +44,13 @@ def print_fields(type_, schema: BaseSchema) -> str:
     fields = []
 
     for i, (name, field) in enumerate(type_.fields.items()):
-        strawberry_field = strawberry_type.get_field(name) if strawberry_type else None
+        python_name = field.extensions and field.extensions.get("python_name")
+
+        strawberry_field = (
+            strawberry_type.get_field(python_name)
+            if strawberry_type and python_name
+            else None
+        )
 
         fields.append(
             print_description(field, "  ", not i)
@@ -52,7 +58,7 @@ def print_fields(type_, schema: BaseSchema) -> str:
             + print_args(field.args, "  ")
             + f": {field.type}"
             + print_federation_field_directive(strawberry_field)
-            + print_deprecated(field)
+            + print_deprecated(field.deprecation_reason)
         )
 
     return print_block(fields)
@@ -91,8 +97,8 @@ def _print_object(type_, schema: BaseSchema) -> str:
         print_description(type_)
         + print_extends(type_, schema)
         + f"type {type_.name}"
-        + print_federation_key_directive(type_, schema)
         + print_implemented_interfaces(type_)
+        + print_federation_key_directive(type_, schema)
         + print_fields(type_, schema)
     )
 

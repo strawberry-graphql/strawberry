@@ -3,6 +3,7 @@ from typing import List, Optional
 import pydantic
 
 import strawberry
+from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.types.types import TypeDefinition
 
 
@@ -16,21 +17,19 @@ def test_basic_error_type():
         pass
 
     definition: TypeDefinition = UserError._type_definition
-
     assert definition.name == "UserError"
-    assert len(definition.fields) == 2
 
-    assert definition.fields[0].graphql_name == "name"
-    assert definition.fields[0].is_list is True
-    assert definition.fields[0].is_optional is True
-    assert definition.fields[0].child.type is str
-    assert definition.fields[0].child.is_optional is False
+    [field1, field2] = definition.fields
 
-    assert definition.fields[1].graphql_name == "age"
-    assert definition.fields[1].is_list is True
-    assert definition.fields[1].is_optional is True
-    assert definition.fields[1].child.type is str
-    assert definition.fields[1].child.is_optional is False
+    assert field1.python_name == "name"
+    assert isinstance(field1.type, StrawberryOptional)
+    assert isinstance(field1.type.of_type, StrawberryList)
+    assert field1.type.of_type.of_type is str
+
+    assert definition.fields[1].python_name == "age"
+    assert isinstance(field2.type, StrawberryOptional)
+    assert isinstance(field2.type.of_type, StrawberryList)
+    assert field1.type.of_type.of_type is str
 
 
 def test_error_type_with_nested_model():
@@ -49,14 +48,13 @@ def test_error_type_with_nested_model():
         pass
 
     definition: TypeDefinition = UserError._type_definition
-
     assert definition.name == "UserError"
-    assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "friend"
-    assert definition.fields[0].is_list is False
-    assert definition.fields[0].is_optional is True
-    assert definition.fields[0].type is FriendError
+    [field] = definition.fields
+
+    assert field.python_name == "friend"
+    assert isinstance(field.type, StrawberryOptional)
+    assert field.type.of_type is FriendError
 
 
 def test_error_type_with_list_nested_model():
@@ -75,15 +73,15 @@ def test_error_type_with_list_nested_model():
         pass
 
     definition: TypeDefinition = UserError._type_definition
-
     assert definition.name == "UserError"
-    assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "friends"
-    assert definition.fields[0].is_list is True
-    assert definition.fields[0].is_optional is True
-    assert definition.fields[0].child.type is FriendError
-    assert definition.fields[0].child.is_optional is True
+    [field] = definition.fields
+
+    assert field.python_name == "friends"
+    assert isinstance(field.type, StrawberryOptional)
+    assert isinstance(field.type.of_type, StrawberryList)
+    assert isinstance(field.type.of_type.of_type, StrawberryOptional)
+    assert field.type.of_type.of_type.of_type is FriendError
 
 
 def test_error_type_with_list_of_scalar():
@@ -95,17 +93,16 @@ def test_error_type_with_list_of_scalar():
         pass
 
     definition: TypeDefinition = UserError._type_definition
-
     assert definition.name == "UserError"
-    assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "friends"
-    assert definition.fields[0].is_list is True
-    assert definition.fields[0].is_optional is True
-    assert definition.fields[0].child.is_list is True
-    assert definition.fields[0].child.is_optional is True
-    assert definition.fields[0].child.child.type is str
-    assert definition.fields[0].child.child.is_optional is False
+    [field] = definition.fields
+
+    assert field.python_name == "friends"
+    assert isinstance(field.type, StrawberryOptional)
+    assert isinstance(field.type.of_type, StrawberryList)
+    assert isinstance(field.type.of_type.of_type, StrawberryOptional)
+    assert isinstance(field.type.of_type.of_type.of_type, StrawberryList)
+    assert field.type.of_type.of_type.of_type.of_type is str
 
 
 def test_error_type_with_optional_field():
@@ -117,15 +114,14 @@ def test_error_type_with_optional_field():
         pass
 
     definition: TypeDefinition = UserError._type_definition
-
     assert definition.name == "UserError"
-    assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "age"
-    assert definition.fields[0].is_list is True
-    assert definition.fields[0].is_optional is True
-    assert definition.fields[0].child.type is str
-    assert definition.fields[0].child.is_optional is False
+    [field] = definition.fields
+
+    assert field.python_name == "age"
+    assert isinstance(field.type, StrawberryOptional)
+    assert isinstance(field.type.of_type, StrawberryList)
+    assert field.type.of_type.of_type is str
 
 
 def test_error_type_with_list_of_optional_scalar():
@@ -139,15 +135,14 @@ def test_error_type_with_list_of_optional_scalar():
     definition: TypeDefinition = UserError._type_definition
 
     assert definition.name == "UserError"
-    assert len(definition.fields) == 1
+    [field] = definition.fields
 
-    assert definition.fields[0].graphql_name == "age"
-    assert definition.fields[0].is_list is True
-    assert definition.fields[0].is_optional is True
-    assert definition.fields[0].child.is_list is True
-    assert definition.fields[0].child.is_optional is True
-    assert definition.fields[0].child.child.type is str
-    assert definition.fields[0].child.child.is_optional is False
+    assert field.python_name == "age"
+    assert isinstance(field.type, StrawberryOptional)
+    assert isinstance(field.type.of_type, StrawberryList)
+    assert isinstance(field.type.of_type.of_type, StrawberryOptional)
+    assert isinstance(field.type.of_type.of_type.of_type, StrawberryList)
+    assert field.type.of_type.of_type.of_type.of_type is str
 
 
 def test_error_type_with_optional_list_scalar():
@@ -161,15 +156,14 @@ def test_error_type_with_optional_list_scalar():
     definition: TypeDefinition = UserError._type_definition
 
     assert definition.name == "UserError"
-    assert len(definition.fields) == 1
+    [field] = definition.fields
 
-    assert definition.fields[0].graphql_name == "age"
-    assert definition.fields[0].is_list is True
-    assert definition.fields[0].is_optional is True
-    assert definition.fields[0].child.is_list is True
-    assert definition.fields[0].child.is_optional is True
-    assert definition.fields[0].child.child.type is str
-    assert definition.fields[0].child.child.is_optional is False
+    assert field.python_name == "age"
+    assert isinstance(field.type, StrawberryOptional)
+    assert isinstance(field.type.of_type, StrawberryList)
+    assert isinstance(field.type.of_type.of_type, StrawberryOptional)
+    assert isinstance(field.type.of_type.of_type.of_type, StrawberryList)
+    assert field.type.of_type.of_type.of_type.of_type is str
 
 
 def test_error_type_with_optional_list_of_optional_scalar():
@@ -183,15 +177,14 @@ def test_error_type_with_optional_list_of_optional_scalar():
     definition: TypeDefinition = UserError._type_definition
 
     assert definition.name == "UserError"
-    assert len(definition.fields) == 1
+    [field] = definition.fields
 
-    assert definition.fields[0].graphql_name == "age"
-    assert definition.fields[0].is_list is True
-    assert definition.fields[0].is_optional is True
-    assert definition.fields[0].child.is_list is True
-    assert definition.fields[0].child.is_optional is True
-    assert definition.fields[0].child.child.type is str
-    assert definition.fields[0].child.child.is_optional is False
+    assert field.python_name == "age"
+    assert isinstance(field.type, StrawberryOptional)
+    assert isinstance(field.type.of_type, StrawberryList)
+    assert isinstance(field.type.of_type.of_type, StrawberryOptional)
+    assert isinstance(field.type.of_type.of_type.of_type, StrawberryList)
+    assert field.type.of_type.of_type.of_type.of_type is str
 
 
 def test_error_type_with_optional_list_of_nested_model():
@@ -212,14 +205,13 @@ def test_error_type_with_optional_list_of_nested_model():
     definition: TypeDefinition = UserError._type_definition
 
     assert definition.name == "UserError"
-    assert len(definition.fields) == 1
+    [field] = definition.fields
 
-    assert definition.fields[0].graphql_name == "friends"
-    assert definition.fields[0].is_list is True
-    assert definition.fields[0].is_optional is True
-    assert definition.fields[0].child.is_list is False
-    assert definition.fields[0].child.is_optional is True
-    assert definition.fields[0].child.type is FriendError
+    assert field.python_name == "friends"
+    assert isinstance(field.type, StrawberryOptional)
+    assert isinstance(field.type.of_type, StrawberryList)
+    assert isinstance(field.type.of_type.of_type, StrawberryOptional)
+    assert field.type.of_type.of_type.of_type is FriendError
 
 
 def test_error_type_with_matrix_list_of_scalar():
@@ -233,18 +225,18 @@ def test_error_type_with_matrix_list_of_scalar():
     definition: TypeDefinition = UserError._type_definition
 
     assert definition.name == "UserError"
-    assert len(definition.fields) == 1
+    [field] = definition.fields
 
-    assert definition.fields[0].graphql_name == "age"
-    assert definition.fields[0].is_list is True
-    assert definition.fields[0].is_optional is True
+    assert field.python_name == "age"
+    assert isinstance(field.type, StrawberryOptional)
+    assert isinstance(field.type.of_type, StrawberryList)
 
-    assert definition.fields[0].child.is_list is True
-    assert definition.fields[0].child.is_optional is True
+    assert isinstance(field.type.of_type.of_type, StrawberryOptional)
+    assert isinstance(field.type.of_type.of_type.of_type, StrawberryList)
 
-    assert definition.fields[0].child.child.is_list is True
-    assert definition.fields[0].child.child.is_optional is True
+    assert isinstance(field.type.of_type.of_type.of_type.of_type, StrawberryOptional)
+    assert isinstance(
+        field.type.of_type.of_type.of_type.of_type.of_type, StrawberryList
+    )
 
-    assert definition.fields[0].child.child.is_list is True
-    assert definition.fields[0].child.child.child.type is str
-    assert definition.fields[0].child.child.child.is_optional is False
+    assert field.type.of_type.of_type.of_type.of_type.of_type.of_type is str
