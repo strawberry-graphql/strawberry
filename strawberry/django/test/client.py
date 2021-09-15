@@ -21,7 +21,11 @@ class GraphQLTestClient(BaseGraphQLTestClient):
         )
         data = resp.json()
 
-        response = Response(errors=data.get("errors"), data=data.get("data"))
+        response = Response(
+            errors=data.get("errors"),
+            data=data.get("data"),
+            extensions=data.get("extensions"),
+        )
         if asserts_errors:
             assert response.errors is None
 

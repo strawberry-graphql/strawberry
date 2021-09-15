@@ -9,6 +9,7 @@ from typing_extensions import TypedDict
 class Response:
     errors: Optional[Dict[str, Any]]
     data: Optional[Dict[str, Any]]
+    extensions: Optional[Dict[str, Any]]
 
 
 class Body(TypedDict, total=False):
