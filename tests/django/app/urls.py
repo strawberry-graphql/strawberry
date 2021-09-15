@@ -1,8 +1,13 @@
 from django.urls import path
 
-from strawberry.django.views import GraphQLView
+from strawberry.django.views import GraphQLView as BaseGraphQLView
 
-from .schema import schema
+from .schema import Query, schema
+
+
+class GraphQLView(BaseGraphQLView):
+    def get_root_value(self, request):
+        return Query()
 
 
 urlpatterns = [
