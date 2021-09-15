@@ -10,7 +10,9 @@ from django.test.client import RequestFactory
 
 import strawberry
 from strawberry.dataloader import DataLoader
+from strawberry.django.dataloader import create_model_load_fn
 from strawberry.django.views import AsyncGraphQLView
+from strawberry.extensions.sync_to_async import SyncToAsync
 
 from .app.models import Example
 
@@ -93,3 +95,159 @@ async def test_fetch_data_from_db(mocker):
     await reset_db()
 
     mock_loader.assert_called_once_with([str(id_) for id_ in ids])
+
+
+@sync_to_async
+def set_connection_debug(value: bool):
+    from django.db import connection
+
+    connection.force_debug_cursor = value
+
+    if value is False:
+        connection.queries_log.clear()
+
+
+@pytest.mark.django_db
+async def test_create_model_load_fn(django_assert_num_queries):
+    @sync_to_async
+    def prepare_db():
+        for i in range(1, 4):
+            e = Example.objects.create(name=f"This is number {i}")
+            # Override ID
+            e.id = i
+            e.save()
+
+    await prepare_db()
+
+    loader = DataLoader(load_fn=create_model_load_fn(Example))
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        async def get_example(self, info, id: int) -> str:
+            inst = await loader.load(id)
+            return inst.name
+
+    schema = strawberry.Schema(query=Query, extensions=[SyncToAsync])
+
+    query = """
+        {
+            example1: getExample(id: 1)
+            example2: getExample(id: 2)
+            example3: getExample(id: 3)
+        }
+    """
+
+    factory = RequestFactory()
+    request = factory.post(
+        "/graphql/", {"query": query}, content_type="application/json"
+    )
+
+    await set_connection_debug(True)
+
+    response = await AsyncGraphQLView.as_view(schema=schema)(request)
+    data = json.loads(response.content.decode())
+
+    @sync_to_async
+    def get_queries():
+        from django.db import connection
+
+        return connection.queries
+
+    assert len(await get_queries()) == 1
+    await set_connection_debug(False)
+
+    assert "errors" not in data
+    assert data["data"] == {
+        "example1": "This is number 1",
+        "example2": "This is number 2",
+        "example3": "This is number 3",
+    }
+
+    reset_db = sync_to_async(lambda: Example.objects.all().delete())
+    await reset_db()
+
+
+@pytest.mark.django_db
+async def test_create_model_load_fn_from_instance(django_assert_num_queries):
+    @sync_to_async
+    def prepare_db():
+        for i in range(1, 4):
+            e = Example.objects.create(name=f"This is number {i}")
+            # Override ID
+            e.id = i
+            e.save()
+
+    await prepare_db()
+
+    loader = DataLoader(load_fn=create_model_load_fn(Example))
+
+    @strawberry.type
+    class ExampleType:
+        instance: strawberry.Private[Example]
+        name: str
+
+        @classmethod
+        def from_instance(cls, instance: Example):
+            return cls(
+                instance=instance,
+                name=instance.name,
+            )
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        async def get_example(self, info, id: int) -> ExampleType:
+            inst = await loader.load(id)
+            return ExampleType.from_instance(inst)
+
+    schema = strawberry.Schema(query=Query, extensions=[SyncToAsync])
+
+    query = """
+        {
+            example1: getExample(id: 1) {
+                name
+            }
+            example2: getExample(id: 2) {
+                name
+            }
+            example3: getExample(id: 3) {
+                name
+            }
+        }
+    """
+
+    factory = RequestFactory()
+    request = factory.post(
+        "/graphql/", {"query": query}, content_type="application/json"
+    )
+
+    await set_connection_debug(True)
+
+    response = await AsyncGraphQLView.as_view(schema=schema)(request)
+    data = json.loads(response.content.decode())
+
+    @sync_to_async
+    def get_queries():
+        from django.db import connection
+
+        return connection.queries
+
+    assert len(await get_queries()) == 1
+    await set_connection_debug(False)
+
+    assert "errors" not in data
+    assert data["data"] == {
+        "example1": {
+            "name": "This is number 1",
+        },
+        "example2": {
+            "name": "This is number 2",
+        },
+        "example3": {
+            "name": "This is number 3",
+        },
+    }
+
+    reset_db = sync_to_async(lambda: Example.objects.all().delete())
+    await reset_db()
