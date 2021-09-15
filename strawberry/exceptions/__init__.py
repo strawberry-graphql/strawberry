@@ -10,6 +10,7 @@ from .duplicated_type_name import DuplicatedTypeName
 from .exception import StrawberryException, UnableToFindExceptionSource
 from .handler import setup_exception_handler
 from .invalid_argument_type import InvalidArgumentTypeError
+from .invalid_superclass_interface import InvalidSuperclassInterfaceError
 from .invalid_union_type import InvalidTypeForUnionMergeError, InvalidUnionTypeError
 from .missing_arguments_annotations import MissingArgumentsAnnotationsError
 from .missing_dependencies import MissingOptionalDependenciesError
@@ -174,6 +175,7 @@ __all__ = [
     "InvalidArgumentTypeError",
     "InvalidCustomContext",
     "InvalidDefaultFactoryError",
+    "InvalidSuperclassInterfaceError",
     "InvalidTypeForUnionMergeError",
     "InvalidUnionTypeError",
     "MissingArgumentsAnnotationsError",

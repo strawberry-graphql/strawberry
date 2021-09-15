@@ -15,6 +15,7 @@ from typing import (
 from typing_extensions import dataclass_transform
 
 from strawberry.exceptions import (
+    InvalidSuperclassInterfaceError,
     MissingFieldAnnotationError,
     MissingReturnAnnotationError,
     ObjectIsNotClassError,
@@ -150,6 +151,14 @@ def _process_type(
     fields = _get_fields(cls, original_type_annotations)
     is_type_of = getattr(cls, "is_type_of", None)
     resolve_type = getattr(cls, "resolve_type", None)
+
+    if is_input and interfaces:
+        interface_names = [interface.name for interface in interfaces]
+
+        raise InvalidSuperclassInterfaceError(
+            input_name=name,
+            interface_names=interface_names
+        )
 
     cls.__strawberry_definition__ = StrawberryObjectDefinition(  # type: ignore[attr-defined]
         name=name,

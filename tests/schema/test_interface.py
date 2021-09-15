@@ -6,6 +6,7 @@ from pytest_mock import MockerFixture
 
 import strawberry
 from strawberry.types.base import StrawberryObjectDefinition
+from strawberry.exceptions import InvalidSuperclassInterfaceError
 
 
 def test_query_interface():
@@ -423,3 +424,27 @@ def test_resolve_type_on_interface_returning_interface():
     assert result.data
     assert result.data["one"] == {"id": "1", "__typename": "Video"}
     assert result.data["two"] == {"id": "2", "__typename": "Image"}
+
+
+def test_input_cannot_inherit_from_interface():
+    @strawberry.interface
+    class SomeInterface:
+        some_arg: str
+
+    with pytest.raises(InvalidSuperclassInterfaceError):
+
+        @strawberry.input
+        class SomeInput(SomeInterface):  # this should throw an error
+            another_arg: str
+
+    @strawberry.interface
+    class SomeOtherInterface:
+        some_other_arg: str
+
+    with pytest.raises(InvalidSuperclassInterfaceError):
+
+        @strawberry.input
+        class SomeOtherInput(
+            SomeInterface, SomeOtherInterface
+        ):  # this should throw an error
+            another_arg: str
