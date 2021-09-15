@@ -7,14 +7,18 @@ from graphql import GraphQLObjectType
 from strawberry.type import StrawberryType
 
 
-class NotAnEnum(Exception):
+class StrawberryException(Exception):
+    """Strawberry base exception"""
+
+
+class NotAnEnum(StrawberryException):
     def __init__(self):
         message = "strawberry.enum can only be used with subclasses of Enum"
 
         super().__init__(message)
 
 
-class MissingReturnAnnotationError(Exception):
+class MissingReturnAnnotationError(StrawberryException):
     """The field is missing the return annotation"""
 
     def __init__(self, field_name: str):
@@ -26,7 +30,7 @@ class MissingReturnAnnotationError(Exception):
         super().__init__(message)
 
 
-class MissingArgumentsAnnotationsError(Exception):
+class MissingArgumentsAnnotationsError(StrawberryException):
     """The field is missing the annotation for one or more arguments"""
 
     def __init__(self, field_name: str, arguments: Set[str]):
@@ -46,7 +50,7 @@ class MissingArgumentsAnnotationsError(Exception):
         super().__init__(message)
 
 
-class WrongReturnTypeForUnion(Exception):
+class WrongReturnTypeForUnion(StrawberryException):
     """The Union type cannot be resolved because it's not a field"""
 
     def __init__(self, field_name: str, result_type: str):
@@ -58,7 +62,7 @@ class WrongReturnTypeForUnion(Exception):
         super().__init__(message)
 
 
-class UnallowedReturnTypeForUnion(Exception):
+class UnallowedReturnTypeForUnion(StrawberryException):
     """The return type is not in the list of Union types"""
 
     def __init__(
@@ -74,11 +78,11 @@ class UnallowedReturnTypeForUnion(Exception):
         super().__init__(message)
 
 
-class InvalidUnionType(Exception):
+class InvalidUnionType(StrawberryException):
     """The union is constructed with an invalid type"""
 
 
-class MissingTypesForGenericError(Exception):
+class MissingTypesForGenericError(StrawberryException):
     """Raised when a generic types was used without passing any type."""
 
     def __init__(self, annotation: Union[StrawberryType, type]):
@@ -89,14 +93,14 @@ class MissingTypesForGenericError(Exception):
         super().__init__(message)
 
 
-class UnsupportedTypeError(Exception):
+class UnsupportedTypeError(StrawberryException):
     def __init__(self, annotation):
         message = f"{annotation} conversion is not supported"
 
         super().__init__(message)
 
 
-class MissingFieldAnnotationError(Exception):
+class MissingFieldAnnotationError(StrawberryException):
     def __init__(self, field_name: str):
         message = (
             f'Unable to determine the type of field "{field_name}". Either '
@@ -107,7 +111,7 @@ class MissingFieldAnnotationError(Exception):
         super().__init__(message)
 
 
-class PrivateStrawberryFieldError(Exception):
+class PrivateStrawberryFieldError(StrawberryException):
     def __init__(self, field_name: str, type_name: str):
         message = (
             f"Field {field_name} on type {type_name} cannot be both "
@@ -117,7 +121,7 @@ class PrivateStrawberryFieldError(Exception):
         super().__init__(message)
 
 
-class MultipleStrawberryArgumentsError(Exception):
+class MultipleStrawberryArgumentsError(StrawberryException):
     def __init__(self, argument_name: str):
         message = (
             f"Annotation for argument `{argument_name}` cannot have multiple "
@@ -127,14 +131,14 @@ class MultipleStrawberryArgumentsError(Exception):
         super().__init__(message)
 
 
-class ScalarAlreadyRegisteredError(Exception):
+class ScalarAlreadyRegisteredError(StrawberryException):
     def __init__(self, scalar_name: str):
         message = f"Scalar `{scalar_name}` has already been registered"
 
         super().__init__(message)
 
 
-class WrongNumberOfResultsReturned(Exception):
+class WrongNumberOfResultsReturned(StrawberryException):
     def __init__(self, expected: int, received: int):
         message = (
             "Received wrong number of results in dataloader, "
@@ -144,7 +148,7 @@ class WrongNumberOfResultsReturned(Exception):
         super().__init__(message)
 
 
-class FieldWithResolverAndDefaultValueError(Exception):
+class FieldWithResolverAndDefaultValueError(StrawberryException):
     def __init__(self, field_name: str, type_name: str):
         message = (
             f'Field "{field_name}" on type "{type_name}" cannot define a default '
@@ -154,7 +158,7 @@ class FieldWithResolverAndDefaultValueError(Exception):
         super().__init__(message)
 
 
-class FieldWithResolverAndDefaultFactoryError(Exception):
+class FieldWithResolverAndDefaultFactoryError(StrawberryException):
     def __init__(self, field_name: str, type_name: str):
         message = (
             f'Field "{field_name}" on type "{type_name}" cannot define a '
@@ -164,14 +168,14 @@ class FieldWithResolverAndDefaultFactoryError(Exception):
         super().__init__(message)
 
 
-class MissingQueryError(Exception):
+class MissingQueryError(StrawberryException):
     def __init__(self):
         message = 'Request data is missing a "query" value'
 
         super().__init__(message)
 
 
-class InvalidFieldArgument(Exception):
+class InvalidFieldArgument(StrawberryException):
     def __init__(self, field_name: str, argument_name: str, argument_type: str):
         message = f'Argument "{argument_name}" on field "{field_name}" cannot be of type\
             "{argument_type}"'
