@@ -8,7 +8,7 @@ from strawberry.arguments import UNSET
 class GraphQLTransportMessage:
     def as_dict(self) -> dict:
         data = asdict(self)
-        if getattr(self, "payload") is UNSET:
+        if getattr(self, "payload", None) is UNSET:
             # Unset fields must have a JSON value of "undefined" not "null"
             data.pop("payload")
         return data

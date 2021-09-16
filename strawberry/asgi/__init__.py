@@ -13,7 +13,7 @@ from strawberry.asgi.handlers import (
 )
 from strawberry.http import GraphQLHTTPResponse, process_result
 from strawberry.schema import BaseSchema
-from strawberry.subscriptions import GRAPHQL_TRANSPORT_PROTOCOL, GRAPHQL_WS_PROTOCOL
+from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 from strawberry.types import ExecutionResult
 
 
@@ -29,7 +29,7 @@ class GraphQL:
         keep_alive: bool = False,
         keep_alive_interval: float = 1,
         debug: bool = False,
-        protocols=(GRAPHQL_TRANSPORT_PROTOCOL, GRAPHQL_WS_PROTOCOL),
+        protocols=(GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL),
         connection_init_wait_timeout: timedelta = timedelta(minutes=1),
     ) -> None:
         self.schema = schema
@@ -55,7 +55,7 @@ class GraphQL:
             ws = WebSocket(scope=scope, receive=receive, send=send)
             intersecting_protocols = set(ws["subprotocols"]) & set(self.protocols)
 
-            if GRAPHQL_TRANSPORT_PROTOCOL in intersecting_protocols:
+            if GRAPHQL_TRANSPORT_WS_PROTOCOL in intersecting_protocols:
                 await self.graphql_transport_ws_handler_class(
                     schema=self.schema,
                     debug=self.debug,

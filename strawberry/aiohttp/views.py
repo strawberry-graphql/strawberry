@@ -8,7 +8,7 @@ from strawberry.aiohttp.handlers import (
 )
 from strawberry.http import GraphQLHTTPResponse, process_result
 from strawberry.schema import BaseSchema
-from strawberry.subscriptions import GRAPHQL_TRANSPORT_PROTOCOL, GRAPHQL_WS_PROTOCOL
+from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 from strawberry.types import ExecutionResult
 
 
@@ -24,7 +24,7 @@ class GraphQLView:
         keep_alive: bool = True,
         keep_alive_interval: float = 1,
         debug: bool = False,
-        protocols=(GRAPHQL_TRANSPORT_PROTOCOL, GRAPHQL_WS_PROTOCOL),
+        protocols=(GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL),
         connection_init_wait_timeout: timedelta = timedelta(minutes=1),
     ):
         self.schema = schema
@@ -40,7 +40,7 @@ class GraphQLView:
         ws_test = ws.can_prepare(request)
 
         if ws_test.ok:
-            if ws_test.protocol == GRAPHQL_TRANSPORT_PROTOCOL:
+            if ws_test.protocol == GRAPHQL_TRANSPORT_WS_PROTOCOL:
                 return await self.graphql_transport_ws_handler_class(
                     schema=self.schema,
                     debug=self.debug,

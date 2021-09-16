@@ -4,7 +4,7 @@ from typing import Any
 from starlette.websockets import WebSocket, WebSocketDisconnect, WebSocketState
 
 from strawberry.schema import BaseSchema
-from strawberry.subscriptions import GRAPHQL_TRANSPORT_PROTOCOL
+from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_transport_ws.handlers import (
     BaseGraphQLTransportWSHandler,
 )
@@ -39,7 +39,7 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
         await self._ws.close(code=code)
 
     async def handle_request(self) -> None:
-        await self._ws.accept(subprotocol=GRAPHQL_TRANSPORT_PROTOCOL)
+        await self._ws.accept(subprotocol=GRAPHQL_TRANSPORT_WS_PROTOCOL)
 
         try:
             while self._ws.application_state != WebSocketState.DISCONNECTED:

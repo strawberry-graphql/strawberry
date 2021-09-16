@@ -3,7 +3,7 @@ from typing import Any
 
 from aiohttp import http, web
 from strawberry.schema import BaseSchema
-from strawberry.subscriptions import GRAPHQL_TRANSPORT_PROTOCOL
+from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_transport_ws.handlers import (
     BaseGraphQLTransportWSHandler,
 )
@@ -23,7 +23,7 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
         self._get_context = get_context
         self._get_root_value = get_root_value
         self._request = request
-        self._ws = web.WebSocketResponse(protocols=[GRAPHQL_TRANSPORT_PROTOCOL])
+        self._ws = web.WebSocketResponse(protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL])
 
     async def get_context(self) -> Any:
         return await self._get_context(request=self._request, response=self._ws)
