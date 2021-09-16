@@ -62,6 +62,7 @@ class GraphQLView:
             else:
                 await ws.prepare(request)
                 await ws.close(code=4406, message=b"Subprotocol not acceptable")
+                return ws
         else:
             return await self.http_handler_class(
                 schema=self.schema,
