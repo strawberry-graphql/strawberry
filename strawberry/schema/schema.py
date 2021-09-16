@@ -136,6 +136,7 @@ class Schema:
         execution_context = ExecutionContext(
             query=query,
             schema=self,
+            is_async=True,
             context=context_value,
             root_value=root_value,
             variables=variable_values,
@@ -167,6 +168,7 @@ class Schema:
         execution_context = ExecutionContext(
             query=query,
             schema=self,
+            is_async=False,
             context=context_value,
             root_value=root_value,
             variables=variable_values,

@@ -18,6 +18,7 @@ if TYPE_CHECKING:
 class ExecutionContext:
     query: str
     schema: "Schema"
+    is_async: bool
     context: Any = None
     variables: Optional[Dict[str, Any]] = None
     operation_name: Optional[str] = None
