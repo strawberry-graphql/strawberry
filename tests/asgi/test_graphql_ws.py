@@ -2,7 +2,8 @@ import pytest
 
 from starlette.websockets import WebSocketDisconnect
 
-from strawberry.subscriptions.constants import (
+from strawberry.subscriptions import GRAPHQL_WS_PROTOCOL
+from strawberry.subscriptions.protocols.graphql_ws import (
     GQL_COMPLETE,
     GQL_CONNECTION_ACK,
     GQL_CONNECTION_INIT,
@@ -12,12 +13,11 @@ from strawberry.subscriptions.constants import (
     GQL_ERROR,
     GQL_START,
     GQL_STOP,
-    GRAPHQL_WS,
 )
 
 
 def test_simple_subscription(test_client):
-    with test_client.websocket_connect("/", GRAPHQL_WS) as ws:
+    with test_client.websocket_connect("/", [GRAPHQL_WS_PROTOCOL]) as ws:
         ws.send_json({"type": GQL_CONNECTION_INIT})
         ws.send_json(
             {
@@ -50,7 +50,7 @@ def test_simple_subscription(test_client):
 
 
 def test_operation_selection(test_client):
-    with test_client.websocket_connect("/", GRAPHQL_WS) as ws:
+    with test_client.websocket_connect("/", [GRAPHQL_WS_PROTOCOL]) as ws:
         ws.send_json({"type": GQL_CONNECTION_INIT})
         ws.send_json(
             {
@@ -87,7 +87,7 @@ def test_operation_selection(test_client):
 
 
 def test_sends_keep_alive(test_client_keep_alive):
-    with test_client_keep_alive.websocket_connect("/", GRAPHQL_WS) as ws:
+    with test_client_keep_alive.websocket_connect("/", [GRAPHQL_WS_PROTOCOL]) as ws:
         ws.send_json({"type": GQL_CONNECTION_INIT})
         ws.send_json(
             {
@@ -121,7 +121,7 @@ def test_sends_keep_alive(test_client_keep_alive):
 
 
 def test_subscription_cancellation(schema, test_client):
-    with test_client.websocket_connect("/", GRAPHQL_WS) as ws:
+    with test_client.websocket_connect("/", [GRAPHQL_WS_PROTOCOL]) as ws:
         ws.send_json({"type": GQL_CONNECTION_INIT})
         response = ws.receive_json()
         assert response["type"] == GQL_CONNECTION_ACK
@@ -185,7 +185,7 @@ def test_subscription_cancellation(schema, test_client):
 
 
 def test_subscription_errors(test_client):
-    with test_client.websocket_connect("/", GRAPHQL_WS) as ws:
+    with test_client.websocket_connect("/", [GRAPHQL_WS_PROTOCOL]) as ws:
         ws.send_json({"type": GQL_CONNECTION_INIT})
         ws.send_json(
             {
@@ -217,7 +217,7 @@ def test_subscription_errors(test_client):
 
 
 def test_subscription_exceptions(schema, test_client):
-    with test_client.websocket_connect("/", GRAPHQL_WS) as ws:
+    with test_client.websocket_connect("/", [GRAPHQL_WS_PROTOCOL]) as ws:
         ws.send_json({"type": GQL_CONNECTION_INIT})
         ws.send_json(
             {
@@ -251,7 +251,7 @@ def test_subscription_exceptions(schema, test_client):
 
 
 def test_subscription_field_error(test_client):
-    with test_client.websocket_connect("/", GRAPHQL_WS) as ws:
+    with test_client.websocket_connect("/", [GRAPHQL_WS_PROTOCOL]) as ws:
         ws.send_json({"type": GQL_CONNECTION_INIT})
         ws.send_json(
             {
@@ -283,7 +283,7 @@ def test_subscription_field_error(test_client):
 
 
 def test_subscription_syntax_error(test_client):
-    with test_client.websocket_connect("/", GRAPHQL_WS) as ws:
+    with test_client.websocket_connect("/", [GRAPHQL_WS_PROTOCOL]) as ws:
         ws.send_json({"type": GQL_CONNECTION_INIT})
         ws.send_json(
             {
@@ -313,7 +313,7 @@ def test_subscription_syntax_error(test_client):
 
 
 def test_non_text_ws_messages_are_ignored(schema, test_client):
-    with test_client.websocket_connect("/", GRAPHQL_WS) as ws:
+    with test_client.websocket_connect("/", [GRAPHQL_WS_PROTOCOL]) as ws:
         ws.send_bytes(b"")
         ws.send_json({"type": GQL_CONNECTION_INIT})
 
@@ -351,7 +351,7 @@ def test_non_text_ws_messages_are_ignored(schema, test_client):
 
 
 def test_unknown_protocol_messages_are_ignored(schema, test_client):
-    with test_client.websocket_connect("/", GRAPHQL_WS) as ws:
+    with test_client.websocket_connect("/", [GRAPHQL_WS_PROTOCOL]) as ws:
         ws.send_json({"type": "NotAProtocolMessage"})
         ws.send_json({"type": GQL_CONNECTION_INIT})
 
@@ -389,7 +389,7 @@ def test_unknown_protocol_messages_are_ignored(schema, test_client):
 
 
 def test_custom_context(schema, test_client):
-    with test_client.websocket_connect("/", GRAPHQL_WS) as ws:
+    with test_client.websocket_connect("/", [GRAPHQL_WS_PROTOCOL]) as ws:
         ws.send_json({"type": GQL_CONNECTION_INIT})
         ws.send_json(
             {
@@ -422,7 +422,7 @@ def test_custom_context(schema, test_client):
 
 
 def test_resolving_enums(schema, test_client):
-    with test_client.websocket_connect("/", GRAPHQL_WS) as ws:
+    with test_client.websocket_connect("/", [GRAPHQL_WS_PROTOCOL]) as ws:
         ws.send_json({"type": GQL_CONNECTION_INIT})
         ws.send_json(
             {
@@ -465,8 +465,8 @@ def test_resolving_enums(schema, test_client):
 
 
 def test_task_cancellation_separation(schema, test_client):
-    connection1 = test_client.websocket_connect("/", GRAPHQL_WS)
-    connection2 = test_client.websocket_connect("/", GRAPHQL_WS)
+    connection1 = test_client.websocket_connect("/", [GRAPHQL_WS_PROTOCOL])
+    connection2 = test_client.websocket_connect("/", [GRAPHQL_WS_PROTOCOL])
 
     with connection1 as ws1, connection2 as ws2:
         start_payload = {

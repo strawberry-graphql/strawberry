@@ -14,6 +14,7 @@ from graphql import GraphQLError
 
 import strawberry
 from strawberry.asgi import GraphQL as BaseGraphQL
+from strawberry.asgi.handlers import GraphQLWSHandler
 from strawberry.permission import BasePermission
 from strawberry.types import Info
 
@@ -90,9 +91,8 @@ class Subscription:
 
     @strawberry.subscription
     async def debug(self, info) -> typing.AsyncGenerator[DebugInfo, None]:
-        request = info.context["request"]
         active_result_handlers = [
-            task for task in request.state.tasks.values() if not task.done()
+            task for task in info.context["tasks"].values() if not task.done()
         ]
         yield DebugInfo(num_active_result_handlers=len(active_result_handlers))
 
@@ -116,7 +116,14 @@ def schema():
 
 @pytest.fixture
 def test_client(schema):
+    class DebuggableGraphQLWSHandler(GraphQLWSHandler):
+        async def get_context(self) -> object:
+            context = await super().get_context()
+            context["tasks"] = self.tasks
+            return context
+
     app = GraphQL(schema)
+    app.graphql_ws_handler_class = DebuggableGraphQLWSHandler
 
     return TestClient(app)
 

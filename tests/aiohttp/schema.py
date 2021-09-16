@@ -89,9 +89,8 @@ class Subscription:
 
     @strawberry.subscription
     async def debug(self, info) -> typing.AsyncGenerator[DebugInfo, None]:
-        request = info.context["request"]
         active_result_handlers = [
-            task for task in request["tasks"].values() if not task.done()
+            task for task in info.context["tasks"].values() if not task.done()
         ]
         yield DebugInfo(num_active_result_handlers=len(active_result_handlers))
 

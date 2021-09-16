@@ -1,8 +1,10 @@
 import asyncio
 
 from aiohttp import web
+from strawberry.aiohttp.handlers import GraphQLWSHandler
 from strawberry.aiohttp.views import GraphQLView
-from strawberry.subscriptions.constants import (
+from strawberry.subscriptions import GRAPHQL_WS_PROTOCOL
+from strawberry.subscriptions.protocols.graphql_ws import (
     GQL_COMPLETE,
     GQL_CONNECTION_ACK,
     GQL_CONNECTION_INIT,
@@ -12,7 +14,6 @@ from strawberry.subscriptions.constants import (
     GQL_ERROR,
     GQL_START,
     GQL_STOP,
-    GRAPHQL_WS,
 )
 from tests.aiohttp.app import create_app
 from tests.aiohttp.schema import schema
@@ -25,7 +26,9 @@ async def test_simple_subscription(aiohttp_client):
     app = create_app(keep_alive=False)
     aiohttp_app_client = await aiohttp_client(app)
 
-    async with aiohttp_app_client.ws_connect("/graphql", protocols=[GRAPHQL_WS]) as ws:
+    async with aiohttp_app_client.ws_connect(
+        "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
+    ) as ws:
         await ws.send_json({"type": GQL_CONNECTION_INIT})
         await ws.send_json(
             {
@@ -61,7 +64,9 @@ async def test_operation_selection(aiohttp_client):
     app = create_app(keep_alive=False)
     aiohttp_app_client = await aiohttp_client(app)
 
-    async with aiohttp_app_client.ws_connect("/graphql", protocols=[GRAPHQL_WS]) as ws:
+    async with aiohttp_app_client.ws_connect(
+        "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
+    ) as ws:
         await ws.send_json({"type": GQL_CONNECTION_INIT})
         await ws.send_json(
             {
@@ -103,7 +108,9 @@ async def test_sends_keep_alive(aiohttp_client):
     app = create_app(keep_alive=True, keep_alive_interval=0.1)
     aiohttp_app_client = await aiohttp_client(app)
 
-    async with aiohttp_app_client.ws_connect("/graphql", protocols=[GRAPHQL_WS]) as ws:
+    async with aiohttp_app_client.ws_connect(
+        "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
+    ) as ws:
         await ws.send_json({"type": GQL_CONNECTION_INIT})
         await ws.send_json(
             {
@@ -137,12 +144,22 @@ async def test_sends_keep_alive(aiohttp_client):
 
 
 async def test_subscription_cancellation(aiohttp_client):
+    class DebuggableHandler(GraphQLWSHandler):
+        async def get_context(self) -> object:
+            context = await super().get_context()
+            context["tasks"] = self.tasks
+            return context
+
     view = GraphQLView(schema=schema, keep_alive=False)
+    view.graphql_ws_handler_class = DebuggableHandler
+
     app = web.Application()
     app.router.add_route("*", "/graphql", view)
     aiohttp_app_client = await aiohttp_client(app)
 
-    async with aiohttp_app_client.ws_connect("/graphql", protocols=[GRAPHQL_WS]) as ws:
+    async with aiohttp_app_client.ws_connect(
+        "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
+    ) as ws:
         await ws.send_json({"type": GQL_CONNECTION_INIT})
         response = await ws.receive_json()
         assert response["type"] == GQL_CONNECTION_ACK
@@ -209,7 +226,9 @@ async def test_subscription_errors(aiohttp_client):
     app = create_app(keep_alive=False)
     aiohttp_app_client = await aiohttp_client(app)
 
-    async with aiohttp_app_client.ws_connect("/graphql", protocols=[GRAPHQL_WS]) as ws:
+    async with aiohttp_app_client.ws_connect(
+        "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
+    ) as ws:
         await ws.send_json({"type": GQL_CONNECTION_INIT})
         await ws.send_json(
             {
@@ -241,7 +260,9 @@ async def test_subscription_exceptions(aiohttp_client):
     app = create_app(keep_alive=False)
     aiohttp_app_client = await aiohttp_client(app)
 
-    async with aiohttp_app_client.ws_connect("/graphql", protocols=[GRAPHQL_WS]) as ws:
+    async with aiohttp_app_client.ws_connect(
+        "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
+    ) as ws:
         await ws.send_json({"type": GQL_CONNECTION_INIT})
         await ws.send_json(
             {
@@ -278,7 +299,9 @@ async def test_subscription_field_error(aiohttp_client):
     app = create_app(keep_alive=False)
     aiohttp_app_client = await aiohttp_client(app)
 
-    async with aiohttp_app_client.ws_connect("/graphql", protocols=[GRAPHQL_WS]) as ws:
+    async with aiohttp_app_client.ws_connect(
+        "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
+    ) as ws:
         await ws.send_json({"type": GQL_CONNECTION_INIT})
         await ws.send_json(
             {
@@ -313,7 +336,9 @@ async def test_subscription_syntax_error(aiohttp_client):
     app = create_app(keep_alive=False)
     aiohttp_app_client = await aiohttp_client(app)
 
-    async with aiohttp_app_client.ws_connect("/graphql", protocols=[GRAPHQL_WS]) as ws:
+    async with aiohttp_app_client.ws_connect(
+        "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
+    ) as ws:
         await ws.send_json({"type": GQL_CONNECTION_INIT})
         await ws.send_json(
             {
@@ -346,7 +371,9 @@ async def test_non_text_ws_messages_are_ignored(aiohttp_client):
     app = create_app(keep_alive=False)
     aiohttp_app_client = await aiohttp_client(app)
 
-    async with aiohttp_app_client.ws_connect("/graphql", protocols=[GRAPHQL_WS]) as ws:
+    async with aiohttp_app_client.ws_connect(
+        "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
+    ) as ws:
         await ws.send_bytes(b"")
         await ws.send_json({"type": GQL_CONNECTION_INIT})
 
@@ -387,7 +414,9 @@ async def test_unknown_protocol_messages_are_ignored(aiohttp_client):
     app = create_app(keep_alive=False)
     aiohttp_app_client = await aiohttp_client(app)
 
-    async with aiohttp_app_client.ws_connect("/graphql", protocols=[GRAPHQL_WS]) as ws:
+    async with aiohttp_app_client.ws_connect(
+        "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
+    ) as ws:
         await ws.send_json({"type": "NotAProtocolMessage"})
         await ws.send_json({"type": GQL_CONNECTION_INIT})
 
@@ -434,7 +463,9 @@ async def test_custom_context(aiohttp_client):
     app.router.add_route("*", "/graphql", view)
     aiohttp_app_client = await aiohttp_client(app)
 
-    async with aiohttp_app_client.ws_connect("/graphql", protocols=[GRAPHQL_WS]) as ws:
+    async with aiohttp_app_client.ws_connect(
+        "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
+    ) as ws:
         await ws.send_json({"type": GQL_CONNECTION_INIT})
         await ws.send_json(
             {
@@ -470,7 +501,9 @@ async def test_resolving_enums(aiohttp_client):
     app = create_app(keep_alive=False)
     aiohttp_app_client = await aiohttp_client(app)
 
-    async with aiohttp_app_client.ws_connect("/graphql", protocols=[GRAPHQL_WS]) as ws:
+    async with aiohttp_app_client.ws_connect(
+        "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
+    ) as ws:
         await ws.send_json({"type": GQL_CONNECTION_INIT})
         await ws.send_json(
             {
@@ -524,11 +557,15 @@ async def test_task_cancellation_separation(aiohttp_client):
         return [
             task
             for task in asyncio.all_tasks()
-            if "WebSocketHandler.handle_async_results" in repr(task)
+            if "BaseGraphQLWSHandler.handle_async_results" in repr(task)
         ]
 
-    connection1 = aiohttp_app_client.ws_connect("/graphql", protocols=[GRAPHQL_WS])
-    connection2 = aiohttp_app_client.ws_connect("/graphql", protocols=[GRAPHQL_WS])
+    connection1 = aiohttp_app_client.ws_connect(
+        "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
+    )
+    connection2 = aiohttp_app_client.ws_connect(
+        "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
+    )
 
     async with connection1 as ws1, connection2 as ws2:
         start_payload = {
