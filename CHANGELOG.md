@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.77.10 - 2021-09-16
+--------------------
+
+This release adds `python_name` to the `Info` type.
+
+Contributed by [Joe Freeman](https://github.com/joefreeman) [PR #1257](https://github.com/strawberry-graphql/strawberry/pull/1257/)
+
+
 0.77.9 - 2021-09-16
 -------------------
 
