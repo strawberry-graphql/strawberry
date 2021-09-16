@@ -60,6 +60,10 @@ class Info(Generic[ContextType, RootValueType]):
     def return_type(self) -> Optional[Union[type, StrawberryType]]:
         return self._field.type
 
+    @property
+    def python_name(self) -> str:
+        return self._field.python_name
+
     # TODO: create an abstraction on these fields
     @property
     def operation(self) -> OperationDefinitionNode:

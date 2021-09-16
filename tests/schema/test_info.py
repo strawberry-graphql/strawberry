@@ -17,6 +17,7 @@ def test_info_has_the_correct_shape():
     @strawberry.type
     class Result:
         field_name: str
+        python_name: str
         selected_field: str
         operation: str
         path: str
@@ -28,11 +29,12 @@ def test_info_has_the_correct_shape():
     @strawberry.type
     class Query:
         @strawberry.field
-        def hello(self, info: Info[str, str]) -> Result:
+        def hello_world(self, info: Info[str, str]) -> Result:
             return Result(
                 path="".join([str(p) for p in info.path.as_list()]),
                 operation=str(info.operation),
                 field_name=info.field_name,
+                python_name=info.python_name,
                 selected_field=json.dumps(dataclasses.asdict(*info.selected_fields)),
                 variable_values=str(info.variable_values),
                 context_equal=info.context == my_context,
@@ -43,8 +45,9 @@ def test_info_has_the_correct_shape():
     schema = strawberry.Schema(query=Query)
 
     query = """{
-        hello {
+        helloWorld {
             fieldName
+            pythonName
             selectedField
             contextEqual
             operation
@@ -58,7 +61,7 @@ def test_info_has_the_correct_shape():
     result = schema.execute_sync(query, context_value=my_context, root_value=root_value)
 
     assert not result.errors
-    info = result.data["hello"]
+    info = result.data["helloWorld"]
     assert info.pop("operation").startswith("OperationDefinitionNode at")
     field = json.loads(info.pop("selectedField"))
     selections = {selection["name"] for selection in field.pop("selections")}
@@ -71,11 +74,18 @@ def test_info_has_the_correct_shape():
         "variableValues",
         "returnType",
         "fieldName",
+        "pythonName",
     }
-    assert field == {"name": "hello", "directives": {}, "alias": None, "arguments": {}}
+    assert field == {
+        "name": "helloWorld",
+        "directives": {},
+        "alias": None,
+        "arguments": {},
+    }
     assert info == {
-        "fieldName": "hello",
-        "path": "hello",
+        "fieldName": "helloWorld",
+        "pythonName": "hello_world",
+        "path": "helloWorld",
         "contextEqual": True,
         "rootEqual": True,
         "variableValues": "{}",
