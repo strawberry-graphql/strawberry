@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.77.9 - 2021-09-16
+-------------------
+
+Fix the Pydantic conversion method for Enum values, and add a mechanism to specify an interface type when converting from Pydantic. The Pydantic interface is really a base dataclass for the subclasses to extend. When you do the conversion, you have to use `strawberry.experimental.pydantic.interface` to let us know that this type is an interface. You also have to use your converted interface type as the base class for the sub types as normal.
+
+Contributed by [Matt Allen](https://github.com/Matt343) [PR #1241](https://github.com/strawberry-graphql/strawberry/pull/1241/)
+
+
 0.77.8 - 2021-09-14
 -------------------
 
