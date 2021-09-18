@@ -12,6 +12,13 @@ def test_simple_query(schema, test_client):
     assert response.json() == {"data": {"hello": "Hello world"}}
 
 
+def test_fails_when_request_body_has_invalid_json(test_client):
+    response = test_client.post(
+        "/", data='{"qeury": "{__typena"', headers={"content-type": "application/json"}
+    )
+    assert response.status_code == 400
+
+
 def test_returns_errors(schema, test_client):
     response = test_client.post("/", json={"query": "{ donut }"})
 
