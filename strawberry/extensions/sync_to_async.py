@@ -15,16 +15,16 @@ class SyncToAsync(Extension):
     >>>
     >>> @strawberry.type
     >>> class Query:
-    >>>     @strawberry.field
-    >>>     def latest_book_name(self) -> str:
-    >>>         return Book.objects.order_by("-created_at").first().name
+    ...     @strawberry.field
+    ...     def latest_book_name(self) -> str:
+    ...         return Book.objects.order_by("-created_at").first().name
     >>>
     >>> schema = strawberry.Schema(
-    >>>     Query,
-    >>>     extensions=[
-    >>>         SyncToAsync,
-    >>>     ]
-    >>> )
+    ...     Query,
+    ...     extensions=[
+    ...         SyncToAsync,
+    ...     ]
+    ... )
     >>>
     >>> result = await schema.execute("{ latestBookName }")  # Works!
     """
