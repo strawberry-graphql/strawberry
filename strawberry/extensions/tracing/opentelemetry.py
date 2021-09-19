@@ -39,7 +39,7 @@ class OpenTelemetryExtension(Extension):
     def __init__(
         self,
         *,
-        execution_context: ExecutionContext = None,
+        execution_context: Optional[ExecutionContext] = None,
         arg_filter: Optional[ArgFilter] = None,
     ):
         self._arg_filter = arg_filter

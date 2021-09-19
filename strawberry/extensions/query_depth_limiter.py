@@ -57,11 +57,11 @@ class QueryDepthLimiter(AddValidationRules):
     >>> from strawberry.extensions import QueryDepthLimiter
     >>>
     >>> schema = strawberry.Schema(
-    >>>     Query,
-    >>>     extensions=[
-    >>>         QueryDepthLimiter(max_depth=4)
-    >>>     ]
-    >>> )
+    ...     Query,
+    ...     extensions=[
+    ...         QueryDepthLimiter(max_depth=4)
+    ...     ]
+    ... )
 
     Arguments:
 
@@ -80,7 +80,7 @@ class QueryDepthLimiter(AddValidationRules):
         self,
         max_depth: int,
         ignore: Optional[List[IgnoreType]] = None,
-        callback: Callable[[Dict[str, int]], None] = None,
+        callback: Optional[Callable[[Dict[str, int]], None]] = None,
     ):
         validator = create_validator(max_depth, ignore, callback)
         super().__init__([validator])

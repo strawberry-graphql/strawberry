@@ -35,7 +35,7 @@ def validate_document(
     )
 
 
-def _run_validation(execution_context: ExecutionContext):
+def _run_validation(execution_context: ExecutionContext) -> None:
     # Check if there are any validation rules or if validation has
     # already been run by an extension
     if len(execution_context.validation_rules) > 0 and execution_context.errors is None:

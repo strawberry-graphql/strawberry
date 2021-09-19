@@ -16,20 +16,20 @@ class AddValidationRules(Extension):
     >>> from graphql import ValidationRule, GraphQLError
     >>>
     >>> class MyCustomRule(ValidationRule):
-    >>>     def enter_field(self, node, *args) -> None:
-    >>>         if node.name.value == "secret_field":
-    >>>             self.report_error(
-    >>>                 GraphQLError("Can't query field 'secret_field'")
-    >>>             )
+    ...     def enter_field(self, node, *args) -> None:
+    ...         if node.name.value == "secret_field":
+    ...             self.report_error(
+    ...                 GraphQLError("Can't query field 'secret_field'")
+    ...             )
     >>>
     >>> schema = strawberry.Schema(
-    >>>     Query,
-    >>>     extensions=[
-    >>>         AddValidationRules([
-    >>>             MyCustomRule,
-    >>>         ]),
-    >>>     ]
-    >>> )
+    ...     Query,
+    ...     extensions=[
+    ...         AddValidationRules([
+    ...             MyCustomRule,
+    ...         ]),
+    ...     ]
+    ... )
 
     """
 
@@ -38,7 +38,7 @@ class AddValidationRules(Extension):
     def __init__(self, validation_rules: List[Type[ASTValidationRule]]):
         self.validation_rules = validation_rules
 
-    def on_request_start(self):
+    def on_request_start(self) -> None:
         self.execution_context.validation_rules = (
             self.execution_context.validation_rules + tuple(self.validation_rules)
         )

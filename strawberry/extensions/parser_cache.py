@@ -15,11 +15,11 @@ class ParserCache(Extension):
     >>> from strawberry.extensions import ParserCache
     >>>
     >>> schema = strawberry.Schema(
-    >>>     Query,
-    >>>     extensions=[
-    >>>         ParserCache(maxsize=100),
-    >>>     ]
-    >>> )
+    ...     Query,
+    ...     extensions=[
+    ...         ParserCache(maxsize=100),
+    ...     ]
+    ... )
 
     Arguments:
 
@@ -33,7 +33,7 @@ class ParserCache(Extension):
     def __init__(self, maxsize: Optional[int] = None):
         self.cached_parse_document = lru_cache(maxsize=maxsize)(parse_document)
 
-    def on_parsing_start(self):
+    def on_parsing_start(self) -> None:
         execution_context = self.execution_context
 
         execution_context.graphql_document = self.cached_parse_document(

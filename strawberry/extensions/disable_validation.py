@@ -11,11 +11,11 @@ class DisableValidation(Extension):
     >>> from strawberry.extensions import DisableValidation
     >>>
     >>> schema = strawberry.Schema(
-    >>>     Query,
-    >>>     extensions=[
-    >>>         DisableValidation(),
-    >>>     ]
-    >>> )
+    ...     Query,
+    ...     extensions=[
+    ...         DisableValidation(),
+    ...     ]
+    ... )
 
     """
 
@@ -24,5 +24,5 @@ class DisableValidation(Extension):
         # some in the future
         pass
 
-    def on_request_start(self):
+    def on_request_start(self) -> None:
         self.execution_context.validation_rules = ()  # remove all validation_rules
