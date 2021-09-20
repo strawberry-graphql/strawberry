@@ -32,7 +32,7 @@ jobs:
         with:
           node-version: '14'
       - run: npm install -g --no-package-lock --no-save pyright
-      - run: pip install poetry
+      - run: curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
       - name: Install dependencies
         run: poetry install
       - name: Install django ${{ matrix.django }}
@@ -52,7 +52,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
-      - run: pip install poetry
+      - run: curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/install-poetry.py | python -
       - name: Install dependencies
         run: poetry install
       - run: poetry run mypy --ignore-missing-imports --config-file mypy.ini --install-types --non-interactive .
