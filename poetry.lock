@@ -1150,7 +1150,7 @@ python-versions = "*"
 
 [[package]]
 name = "types-setuptools"
-version = "57.0.2"
+version = "57.4.0"
 description = "Typing stubs for setuptools"
 category = "dev"
 optional = false
@@ -1319,7 +1319,7 @@ sanic = ["sanic"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "f25d2c1c7ad5d5ae4339accab3f630ff2b785154bb518516e4c9c10314e87360"
+content-hash = "7ab9d8f511373bda71266e59fb5bc11410c8ac0af2f78ae7bc3ad89c2b018407"
 
 [metadata.files]
 aiofiles = [
@@ -2045,8 +2045,8 @@ types-requests = [
     {file = "types_requests-2.25.7-py3-none-any.whl", hash = "sha256:24bbe4682373ce0b1927f432b30ba1dcf46b66512fb6e848e72998c79797d040"},
 ]
 types-setuptools = [
-    {file = "types-setuptools-57.0.2.tar.gz", hash = "sha256:4ead432cc394b8de5ee94a312494f3c730d21dbfef37f300a6ac5e742271d735"},
-    {file = "types_setuptools-57.0.2-py3-none-any.whl", hash = "sha256:62c8dc465f29eeaad6b9025645138738d3df1cafc70cb0b14aea700946f2cbb7"},
+    {file = "types-setuptools-57.4.0.tar.gz", hash = "sha256:5034f81b237429c1dc0ad84d3e9015e74730400c4db2b4db40daba216d39289b"},
+    {file = "types_setuptools-57.4.0-py3-none-any.whl", hash = "sha256:986630532705e8c77740b6d3cd86aaafd1e0ba6b04119c73c39dc4a67ceae579"},
 ]
 types-toml = [
     {file = "types-toml-0.1.5.tar.gz", hash = "sha256:fc5e1df92c245404e4360c63568e9f0e732b0cabea7a220a4788d52b78f5dc59"},
