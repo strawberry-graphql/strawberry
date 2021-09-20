@@ -1,7 +1,7 @@
 import builtins
 import dataclasses
 from functools import partial
-from typing import Any, Dict, List, Optional, Type
+from typing import Any, Dict, List, Optional, Tuple, Type, cast
 
 from pydantic import BaseModel
 from pydantic.fields import ModelField
@@ -13,6 +13,7 @@ from strawberry.experimental.pydantic.conversion import (
 from strawberry.experimental.pydantic.fields import get_basic_type
 from strawberry.field import StrawberryField
 from strawberry.object_type import _process_type, _wrap_dataclass
+from strawberry.private import Private
 from strawberry.types.type_resolver import _get_fields
 from strawberry.types.types import FederationTypeParams, TypeDefinition
 
@@ -57,6 +58,14 @@ def get_type_for_field(field: ModelField):
     return type_
 
 
+def _get_private_fields(cls: Type) -> List[dataclasses.Field]:
+    private_fields: List[dataclasses.Field] = []
+    for field in dataclasses.fields(cls):
+        if isinstance(field.type, Private):
+            private_fields.append(field)
+    return private_fields
+
+
 def type(
     model: Type[BaseModel],
     *,
@@ -74,7 +83,7 @@ def type(
         model_fields = model.__fields__
         fields_set = set(fields)
 
-        all_fields = [
+        all_fields: List[Tuple[str, Any, dataclasses.Field]] = [
             (
                 name,
                 get_type_for_field(field),
@@ -93,7 +102,8 @@ def type(
         ]
 
         wrapped = _wrap_dataclass(cls)
-        extra_fields = _get_fields(wrapped)
+        extra_fields = cast(List[dataclasses.Field], _get_fields(wrapped))
+        private_fields = _get_private_fields(wrapped)
 
         all_fields.extend(
             (
@@ -102,7 +112,7 @@ def type(
                     field.type,
                     field,
                 )
-                for field in extra_fields
+                for field in extra_fields + private_fields
             )
         )
 
@@ -122,6 +132,7 @@ def type(
         cls = dataclasses.make_dataclass(
             cls.__name__,
             sorted_fields,
+            bases=cls.__bases__,
         )
 
         _process_type(
@@ -134,6 +145,7 @@ def type(
         )
 
         model._strawberry_type = cls  # type: ignore
+        cls._pydantic_type = model  # type: ignore
 
         def from_pydantic(instance: Any, extra: Dict[str, Any] = None) -> Any:
             return convert_pydantic_model_to_strawberry_class(
@@ -154,3 +166,5 @@ def type(
 
 
 input = partial(type, is_input=True)
+
+interface = partial(type, is_interface=True)

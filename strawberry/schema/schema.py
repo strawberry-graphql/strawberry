@@ -14,15 +14,15 @@ from graphql.subscription import subscribe
 from graphql.type.directives import specified_directives
 from graphql.validation import ValidationRule
 
-from strawberry.custom_scalar import ScalarDefinition
+from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.enum import EnumDefinition
 from strawberry.extensions import Extension
 from strawberry.schema.schema_converter import GraphQLCoreConverter
+from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
 from strawberry.types import ExecutionContext, ExecutionResult
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 
-from ..middleware import DirectivesMiddleware, Middleware
 from ..printer import print_schema
 from .config import StrawberryConfig
 from .execute import execute, execute_sync
@@ -43,11 +43,22 @@ class Schema:
         extensions: Sequence[Type[Extension]] = (),
         execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
         config: Optional[StrawberryConfig] = None,
+        scalar_overrides: Optional[
+            Dict[object, Union[ScalarWrapper, ScalarDefinition]]
+        ] = None,
     ):
         self.extensions = extensions
         self.execution_context_class = execution_context_class
         self.config = config or StrawberryConfig()
-        self.schema_converter = GraphQLCoreConverter(self.config)
+
+        scalar_registry: Dict[object, Union[ScalarWrapper, ScalarDefinition]] = {
+            **DEFAULT_SCALAR_REGISTRY
+        }
+        if scalar_overrides:
+            scalar_registry.update(scalar_overrides)
+
+        self.schema_converter = GraphQLCoreConverter(self.config, scalar_registry)
+        self.directives = directives
 
         query_type = self.schema_converter.from_object(query._type_definition)
         mutation_type = (
@@ -60,8 +71,6 @@ class Schema:
             if subscription
             else None
         )
-
-        self.middleware: List[Middleware] = [DirectivesMiddleware(directives)]
 
         directives = [
             self.schema_converter.from_directive(directive.directive_definition)
@@ -138,8 +147,8 @@ class Schema:
         result = await execute(
             self._schema,
             query,
-            additional_middlewares=self.middleware,
             extensions=self.extensions,
+            directives=self.directives,
             execution_context_class=self.execution_context_class,
             validate_queries=validate_queries,
             execution_context=execution_context,
@@ -172,8 +181,8 @@ class Schema:
         result = execute_sync(
             self._schema,
             query,
-            additional_middlewares=self.middleware,
             extensions=self.extensions,
+            directives=self.directives,
             execution_context_class=self.execution_context_class,
             validate_queries=validate_queries,
             execution_context=execution_context,

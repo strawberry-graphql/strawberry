@@ -248,6 +248,9 @@ class HTTPHandler(BaseGraphQLApp, ABC):
 
         response.headers.raw.extend(sub_response.headers.raw)
 
+        if sub_response.background:
+            response.background = sub_response.background
+
         if sub_response.status_code:
             response.status_code = sub_response.status_code
 
@@ -271,7 +274,13 @@ class HTTPHandler(BaseGraphQLApp, ABC):
         if request.method == "POST":
             content_type = request.headers.get("Content-Type", "")
             if "application/json" in content_type:
-                data = await request.json()
+                try:
+                    data = await request.json()
+                except json.JSONDecodeError:
+                    return PlainTextResponse(
+                        "Unable to parse request body as JSON",
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                    )
             elif content_type.startswith("multipart/form-data"):
                 multipart_data = await request.form()
                 operations = json.loads(multipart_data.get("operations", "{}"))

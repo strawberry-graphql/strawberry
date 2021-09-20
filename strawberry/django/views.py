@@ -37,12 +37,14 @@ class TemporalHttpResponse(JsonResponse):
 
 
 class BaseView(View):
+    subscriptions_enabled = False
     graphiql = True
     schema: Optional[BaseSchema] = None
 
-    def __init__(self, schema: BaseSchema, graphiql=True):
+    def __init__(self, schema: BaseSchema, graphiql=True, subscriptions_enabled=False):
         self.schema = schema
         self.graphiql = graphiql
+        self.subscriptions_enabled = subscriptions_enabled
 
     def parse_body(self, request) -> Dict[str, Any]:
         if request.content_type.startswith("multipart/form-data"):
@@ -92,7 +94,7 @@ class BaseView(View):
             )
 
         context = context or {}
-        context.update({"SUBSCRIPTION_ENABLED": "false"})
+        context.update({"SUBSCRIPTION_ENABLED": json.dumps(self.subscriptions_enabled)})
 
         response = TemplateResponse(request=request, template=None, context=context)
         response.content = template.render(RequestContext(request, context))

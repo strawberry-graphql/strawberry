@@ -1,9 +1,4 @@
 repos:
-  - repo: https://github.com/psf/black
-    rev: 21.7b0
-    hooks:
-      - id: black
-
   - repo: https://github.com/PyCQA/flake8
     rev: 3.9.2
     hooks:
@@ -22,7 +17,7 @@ repos:
         exclude: CHANGELOG.md
 
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v2.3.2
+    rev: v2.4.0
     hooks:
       - id: prettier
         files: '^docs/.*\.mdx?$'
@@ -34,3 +29,14 @@ repos:
       - id: check-merge-conflict
       - id: end-of-file-fixer
       - id: check-toml
+
+  - repo: https://github.com/humitos/mirrors-autoflake.git
+    rev: v1.1
+    hooks:
+      - id: autoflake
+        args: ['--in-place', '--remove-all-unused-imports', '--remove-unused-variable']
+
+  - repo: https://github.com/psf/black
+    rev: 21.8b0
+    hooks:
+      - id: black

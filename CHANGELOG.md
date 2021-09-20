@@ -1,6 +1,402 @@
 CHANGELOG
 =========
 
+0.77.11 - 2021-09-19
+--------------------
+
+Fixes returning "500 Internal Server Error" responses to requests with malformed json when running with ASGI integration.
+
+Contributed by [Olesia Grydzhuk](https://github.com/Zlira) [PR #1260](https://github.com/strawberry-graphql/strawberry/pull/1260/)
+
+
+0.77.10 - 2021-09-16
+--------------------
+
+This release adds `python_name` to the `Info` type.
+
+Contributed by [Joe Freeman](https://github.com/joefreeman) [PR #1257](https://github.com/strawberry-graphql/strawberry/pull/1257/)
+
+
+0.77.9 - 2021-09-16
+-------------------
+
+Fix the Pydantic conversion method for Enum values, and add a mechanism to specify an interface type when converting from Pydantic. The Pydantic interface is really a base dataclass for the subclasses to extend. When you do the conversion, you have to use `strawberry.experimental.pydantic.interface` to let us know that this type is an interface. You also have to use your converted interface type as the base class for the sub types as normal.
+
+Contributed by [Matt Allen](https://github.com/Matt343) [PR #1241](https://github.com/strawberry-graphql/strawberry/pull/1241/)
+
+
+0.77.8 - 2021-09-14
+-------------------
+
+Fixes a bug with the `selected_fields` property on `info` when an operation
+variable is not defined.
+
+Issue [#1248](https://github.com/strawberry-graphql/strawberry/issues/1248).
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) [PR #1249](https://github.com/strawberry-graphql/strawberry/pull/1249/)
+
+
+0.77.7 - 2021-09-14
+-------------------
+
+Fix issues ([#1158][issue1158] and [#1104][issue1104]) where Generics using LazyTypes
+and Enums would not be properly resolved
+
+These now function as expected:
+
+# Enum
+
+```python
+T = TypeVar("T")
+
+@strawberry.enum
+class VehicleMake(Enum):
+    FORD = 'ford'
+    TOYOTA = 'toyota'
+    HONDA = 'honda'
+
+@strawberry.type
+class GenericForEnum(Generic[T]):
+    generic_slot: T
+
+@strawberry.type
+class SomeType:
+    field: GenericForEnum[VehicleMake]
+```
+
+# LazyType
+
+`another_file.py`
+```python
+@strawberry.type
+class TypeFromAnotherFile:
+    something: bool
+```
+
+`this_file.py`
+```python
+T = TypeVar("T")
+
+@strawberry.type
+class GenericType(Generic[T]):
+    item: T
+
+@strawberry.type
+class RealType:
+    lazy: GenericType[LazyType["TypeFromAnotherFile", "another_file.py"]]
+```
+
+[issue1104]: https://github.com/strawberry-graphql/strawberry/issues/1104
+[issue1158]: https://github.com/strawberry-graphql/strawberry/issues/1158
+
+Contributed by [ignormies](https://github.com/BryceBeagle) [PR #1235](https://github.com/strawberry-graphql/strawberry/pull/1235/)
+
+
+0.77.6 - 2021-09-13
+-------------------
+
+This release adds fragment and input variable information to the
+`selected_fields` attribute on the `Info` object.
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) [PR #1213](https://github.com/strawberry-graphql/strawberry/pull/1213/)
+
+
+0.77.5 - 2021-09-11
+-------------------
+
+Fixes a bug in the Pydantic conversion code around `Union` values.
+
+Contributed by [Matt Allen](https://github.com/Matt343) [PR #1231](https://github.com/strawberry-graphql/strawberry/pull/1231/)
+
+
+0.77.4 - 2021-09-11
+-------------------
+
+Fixes a bug in the `export-schema` command around the handling of local modules.
+
+Contributed by [Matt Allen](https://github.com/Matt343) [PR #1233](https://github.com/strawberry-graphql/strawberry/pull/1233/)
+
+
+0.77.3 - 2021-09-10
+-------------------
+
+Fixes a bug in the Pydantic conversion code around complex `Optional` values.
+
+Contributed by [Matt Allen](https://github.com/Matt343) [PR #1229](https://github.com/strawberry-graphql/strawberry/pull/1229/)
+
+
+0.77.2 - 2021-09-10
+-------------------
+
+This release adds a new exception called `InvalidFieldArgument` which is raised when a Union or Interface is used as an argument type.
+For example this will raise an exception:
+```python
+import strawberry
+
+@strawberry.type
+class Noun:
+    text: str
+
+@strawberry.type
+class Verb:
+    text: str
+
+Word = strawberry.union("Word", types=(Noun, Verb))
+
+@strawberry.field
+def add_word(word: Word) -> bool:
+	...
+```
+
+Contributed by [Mohammad Hossein Yazdani](https://github.com/MAM-SYS) [PR #1222](https://github.com/strawberry-graphql/strawberry/pull/1222/)
+
+
+0.77.1 - 2021-09-10
+-------------------
+
+Fix type resolution when inheriting from types from another module using deferred annotations.
+
+Contributed by [Daniel Bowring](https://github.com/dbowring) [PR #1010](https://github.com/strawberry-graphql/strawberry/pull/1010/)
+
+
+0.77.0 - 2021-09-10
+-------------------
+
+This release adds support for Pyright and Pylance, improving the
+integration with Visual Studio Code!
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #922](https://github.com/strawberry-graphql/strawberry/pull/922/)
+
+
+0.76.1 - 2021-09-09
+-------------------
+
+Change the version constraint of opentelemetry-sdk and opentelemetry-api to <2
+
+Contributed by [Michael Ossareh](https://github.com/ossareh) [PR #1226](https://github.com/strawberry-graphql/strawberry/pull/1226/)
+
+
+0.76.0 - 2021-09-06
+-------------------
+
+This release adds support for enabling subscriptions in GraphiQL
+on Django by setting a flag `subscriptions_enabled` on the BaseView class.
+```python
+from strawberry.django.views import AsyncGraphQLView
+
+from .schema import schema
+
+urlpatterns = [path("graphql", AsyncGraphQLView.as_view(schema=schema, graphiql=True, subscriptions_enabled=True))]
+```
+
+Contributed by [lijok](https://github.com/lijok) [PR #1215](https://github.com/strawberry-graphql/strawberry/pull/1215/)
+
+
+0.75.1 - 2021-09-03
+-------------------
+
+This release fixes an issue with the MyPy plugin that prevented using
+TextChoices from django in `strawberry.enum`.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1202](https://github.com/strawberry-graphql/strawberry/pull/1202/)
+
+
+0.75.0 - 2021-09-01
+-------------------
+
+This release improves how we deal with custom scalars. Instead of being global
+they are now scoped to the schema. This allows you to have multiple schemas in
+the same project with different scalars.
+
+Also you can now override the built in scalars with your own custom
+implementation. Out of the box Strawberry provides you with custom scalars for
+common Python types like `datetime` and `Decimal`. If you require a custom
+implementation of one of these built in scalars you can now pass a map of
+overrides to your schema:
+
+```python
+from datetime import datetime, timezone
+import strawberry
+
+EpochDateTime = strawberry.scalar(
+    datetime,
+    serialize=lambda value: int(value.timestamp()),
+    parse_value=lambda value: datetime.fromtimestamp(int(value), timezone.utc),
+)
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def current_time(self) -> datetime:
+        return datetime.now()
+
+schema = strawberry.Schema(
+  Query,
+  scalar_overrides={
+    datetime: EpochDateTime,
+  }
+)
+result = schema.execute_sync("{ currentTime }")
+assert result.data == {"currentTime": 1628683200}
+```
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) [PR #1147](https://github.com/strawberry-graphql/strawberry/pull/1147/)
+
+
+0.74.1 - 2021-08-27
+-------------------
+
+This release allows to install Strawberry along side `click` version 8.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1181](https://github.com/strawberry-graphql/strawberry/pull/1181/)
+
+
+0.74.0 - 2021-08-27
+-------------------
+
+This release add full support for async directives and fixes and issue when
+using directives and async extensions.
+
+```python
+@strawberry.type
+class Query:
+    name: str = "Banana"
+
+@strawberry.directive(
+    locations=[DirectiveLocation.FIELD], description="Make string uppercase"
+)
+async def uppercase(value: str):
+    return value.upper()
+
+schema = strawberry.Schema(query=Query, directives=[uppercase])
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1179](https://github.com/strawberry-graphql/strawberry/pull/1179/)
+
+
+0.73.9 - 2021-08-26
+-------------------
+
+Fix issue where `strawberry.Private` fields on converted Pydantic types were not added to the resulting dataclass.
+
+Contributed by [Paul Sud](https://github.com/paul-sud) [PR #1173](https://github.com/strawberry-graphql/strawberry/pull/1173/)
+
+
+0.73.8 - 2021-08-26
+-------------------
+
+This releases fixes a MyPy issue that prevented from using types created with
+`create_type` as base classes. This is now allowed and doesn't throw any error:
+
+```python
+import strawberry
+from strawberry.tools import create_type
+
+@strawberry.field
+def name() -> str:
+    return "foo"
+
+MyType = create_type("MyType", [name])
+
+class Query(MyType):
+    ...
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1175](https://github.com/strawberry-graphql/strawberry/pull/1175/)
+
+
+0.73.7 - 2021-08-25
+-------------------
+
+This release fixes an import error when trying to import `create_type` without having `opentelemetry` installed.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1171](https://github.com/strawberry-graphql/strawberry/pull/1171/)
+
+
+0.73.6 - 2021-08-24
+-------------------
+
+This release adds support for the latest version of the optional opentelemetry dependency.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1170](https://github.com/strawberry-graphql/strawberry/pull/1170/)
+
+
+0.73.5 - 2021-08-24
+-------------------
+
+This release adds support for the latest version of the optional opentelemetry dependency.
+
+Contributed by [Joe Freeman](https://github.com/joefreeman) [PR #1169](https://github.com/strawberry-graphql/strawberry/pull/1169/)
+
+
+0.73.4 - 2021-08-24
+-------------------
+
+This release allows background tasks to be set with the ASGI integration. Tasks can be set on the response in the context, and will then get run after the query result is returned.
+
+```python
+from starlette.background import BackgroundTask
+
+@strawberry.mutation
+def create_flavour(self, info: Info) -> str:
+    info.context["response"].background = BackgroundTask(...)
+```
+
+Contributed by [Joe Freeman](https://github.com/joefreeman) [PR #1168](https://github.com/strawberry-graphql/strawberry/pull/1168/)
+
+
+0.73.3 - 2021-08-24
+-------------------
+
+This release caches attributes on the `Info` type which aren't delegated to the core info object.
+
+Contributed by [A. Coady](https://github.com/coady) [PR #1167](https://github.com/strawberry-graphql/strawberry/pull/1167/)
+
+
+0.73.2 - 2021-08-23
+-------------------
+
+This releases fixes an issue where you were not allowed
+to use duck typing and return a different type that the
+type declared on the field when the type was implementing
+an interface. Now this works as long as you return a type
+that has the same shape as the field type.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1150](https://github.com/strawberry-graphql/strawberry/pull/1150/)
+
+
+0.73.1 - 2021-08-23
+-------------------
+
+This release improves execution performance significantly by lazy loading
+attributes on the `Info` type 🏎
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) [PR #1165](https://github.com/strawberry-graphql/strawberry/pull/1165/)
+
+
+0.73.0 - 2021-08-22
+-------------------
+
+This release adds support for asynchronous hooks to the Strawberry extension-system.
+All available hooks can now be implemented either synchronously or asynchronously.
+
+It's also possible to mix both synchronous and asynchronous hooks within one extension.
+
+
+```python
+from strawberry.extensions import Extension
+
+class MyExtension(Extension):
+    async def on_request_start(self):
+        print("GraphQL request start")
+
+    def on_request_end(self):
+        print("GraphQL request end")
+```
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) [PR #1142](https://github.com/strawberry-graphql/strawberry/pull/1142/)
+
+
 0.72.3 - 2021-08-22
 -------------------
 

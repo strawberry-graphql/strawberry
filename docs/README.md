@@ -38,6 +38,10 @@
 - [Tools](./guides/tools.md)
 - [Schema export](./guides/schema-export.md)
 
+## Editor integration
+
+- [Visual Studio Code](./editors/vscode.md)
+
 ## Concepts
 
 - [Async](./concepts/async.md)

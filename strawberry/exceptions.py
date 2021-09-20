@@ -77,8 +77,6 @@ class UnallowedReturnTypeForUnion(Exception):
 class InvalidUnionType(Exception):
     """The union is constructed with an invalid type"""
 
-    pass
-
 
 class MissingTypesForGenericError(Exception):
     """Raised when a generic types was used without passing any type."""
@@ -170,4 +168,11 @@ class MissingQueryError(Exception):
     def __init__(self):
         message = 'Request data is missing a "query" value'
 
+        super().__init__(message)
+
+
+class InvalidFieldArgument(Exception):
+    def __init__(self, field_name: str, argument_name: str, argument_type: str):
+        message = f'Argument "{argument_name}" on field "{field_name}" cannot be of type\
+            "{argument_type}"'
         super().__init__(message)

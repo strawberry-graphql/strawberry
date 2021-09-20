@@ -1,6 +1,6 @@
 from asyncio import ensure_future
 from inspect import isawaitable
-from typing import Any, Awaitable, Collection, List, Optional, Sequence, Type, cast
+from typing import Any, Awaitable, Collection, Optional, Sequence, Type, cast
 
 from graphql import (
     ExecutionContext as GraphQLExecutionContext,
@@ -14,6 +14,7 @@ from graphql.validation import ValidationRule, validate
 
 from strawberry.extensions import Extension
 from strawberry.extensions.runner import ExtensionsRunner
+from strawberry.middleware import DirectivesMiddleware, DirectivesMiddlewareSync
 from strawberry.types import ExecutionContext, ExecutionResult
 
 
@@ -21,8 +22,8 @@ async def execute(
     schema: GraphQLSchema,
     query: str,
     extensions: Sequence[Type[Extension]],
+    directives: Sequence[Any],
     execution_context: ExecutionContext,
-    additional_middlewares: List[Any] = None,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
     validate_queries: bool = True,
     validation_rules: Optional[Collection[Type[ValidationRule]]] = None,
@@ -34,14 +35,14 @@ async def execute(
         ],
     )
 
-    additional_middlewares = additional_middlewares or []
+    additional_middlewares = [DirectivesMiddleware(directives)]
 
-    with extensions_runner.request():
+    async with extensions_runner.request():
         # Note: In graphql-core the schema would be validated here but in
         # Strawberry we are validating it at initialisation time instead
 
         try:
-            with extensions_runner.parsing():
+            async with extensions_runner.parsing():
                 document = parse(query)
                 execution_context.graphql_document = document
         except GraphQLError as error:
@@ -49,7 +50,7 @@ async def execute(
             return ExecutionResult(
                 data=None,
                 errors=[error],
-                extensions=extensions_runner.get_extensions_results(),
+                extensions=await extensions_runner.get_extensions_results(),
             )
 
         except Exception as error:  # pragma: no cover
@@ -59,11 +60,11 @@ async def execute(
             return ExecutionResult(
                 data=None,
                 errors=[error],
-                extensions=extensions_runner.get_extensions_results(),
+                extensions=await extensions_runner.get_extensions_results(),
             )
 
         if validate_queries:
-            with extensions_runner.validation():
+            async with extensions_runner.validation():
                 validation_errors = validate(schema, document, rules=validation_rules)
 
             if validation_errors:
@@ -91,7 +92,7 @@ async def execute(
     return ExecutionResult(
         data=result.data,
         errors=result.errors,
-        extensions=extensions_runner.get_extensions_results(),
+        extensions=await extensions_runner.get_extensions_results(),
     )
 
 
@@ -99,8 +100,8 @@ def execute_sync(
     schema: GraphQLSchema,
     query: str,
     extensions: Sequence[Type[Extension]],
+    directives: Sequence[Any],
     execution_context: ExecutionContext,
-    additional_middlewares: List[Any] = None,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
     validate_queries: bool = True,
     validation_rules: Optional[Collection[Type[ValidationRule]]] = None,
@@ -112,7 +113,7 @@ def execute_sync(
         ],
     )
 
-    additional_middlewares = additional_middlewares or []
+    additional_middlewares = [DirectivesMiddlewareSync(directives)]
 
     with extensions_runner.request():
         # Note: In graphql-core the schema would be validated here but in
@@ -127,7 +128,7 @@ def execute_sync(
             return ExecutionResult(
                 data=None,
                 errors=[error],
-                extensions=extensions_runner.get_extensions_results(),
+                extensions=extensions_runner.get_extensions_results_sync(),
             )
 
         except Exception as error:  # pragma: no cover
@@ -137,7 +138,7 @@ def execute_sync(
             return ExecutionResult(
                 data=None,
                 errors=[error],
-                extensions=extensions_runner.get_extensions_results(),
+                extensions=extensions_runner.get_extensions_results_sync(),
             )
 
         if validate_queries:
@@ -171,5 +172,5 @@ def execute_sync(
     return ExecutionResult(
         data=result.data,
         errors=result.errors,
-        extensions=extensions_runner.get_extensions_results(),
+        extensions=extensions_runner.get_extensions_results_sync(),
     )

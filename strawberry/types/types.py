@@ -12,6 +12,8 @@ from typing import (
     Union,
 )
 
+from strawberry.enum import EnumDefinition
+from strawberry.lazy_type import LazyType
 from strawberry.type import StrawberryType, StrawberryTypeVar
 from strawberry.utils.str_converters import capitalize_first
 from strawberry.utils.typing import is_generic as is_type_generic
@@ -117,7 +119,11 @@ class TypeDefinition(StrawberryType):
         names: List[str] = []
 
         for type_ in types:
-            if isinstance(type_, StrawberryUnion):
+            if isinstance(type_, LazyType):
+                name = type_.type_name
+            elif isinstance(type_, EnumDefinition):
+                name = type_.name
+            elif isinstance(type_, StrawberryUnion):
                 name = type_.name
             elif hasattr(type_, "_type_definition"):
                 field_type = type_._type_definition  # type: ignore

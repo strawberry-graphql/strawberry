@@ -1,9 +1,10 @@
 from dataclasses import dataclass
-from typing import Callable, Dict, Mapping, Optional, Type, TypeVar, Union
+from typing import Callable, Mapping, Optional, TypeVar, Union
+
+from graphql import GraphQLScalarType
 
 from strawberry.type import StrawberryType
 
-from .exceptions import ScalarAlreadyRegisteredError
 from .utils.str_converters import to_camel_case
 
 
@@ -19,6 +20,10 @@ class ScalarDefinition(StrawberryType):
     parse_value: Optional[Callable]
     parse_literal: Optional[Callable]
 
+    # Optionally store the GraphQLScalarType instance so that we don't get
+    # duplicates
+    implementation: Optional[GraphQLScalarType] = None
+
     def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
     ) -> Union[StrawberryType, type]:
@@ -27,9 +32,6 @@ class ScalarDefinition(StrawberryType):
     @property
     def is_generic(self) -> bool:
         return False
-
-
-SCALAR_REGISTRY: Dict[Type, ScalarDefinition] = {}
 
 
 class ScalarWrapper:
@@ -54,9 +56,6 @@ def _process_scalar(
 
     name = name or to_camel_case(cls.__name__)
 
-    if cls in SCALAR_REGISTRY:
-        raise ScalarAlreadyRegisteredError(name)
-
     wrapper = ScalarWrapper(cls)
     wrapper._scalar_definition = ScalarDefinition(
         name=name,
@@ -65,8 +64,6 @@ def _process_scalar(
         parse_literal=parse_literal,
         parse_value=parse_value,
     )
-
-    SCALAR_REGISTRY[cls] = wrapper._scalar_definition
 
     return wrapper
 
