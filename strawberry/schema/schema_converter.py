@@ -152,7 +152,7 @@ class GraphQLCoreConverter:
             argument_name = argument.get_graphql_name(self.config.auto_camel_case)
             graphql_arguments[argument_name] = self.from_argument(argument)
 
-        return GraphQLField(
+        g_field = GraphQLField(
             type_=field_type,
             args=graphql_arguments,
             resolve=resolver,
@@ -161,6 +161,10 @@ class GraphQLCoreConverter:
             deprecation_reason=field.deprecation_reason,
             extensions={"python_name": field.python_name},
         )
+
+        g_field._strawberry_field = field  # type: ignore
+
+        return g_field
 
     def from_input_field(self, field: StrawberryField) -> GraphQLInputField:
         field_type: GraphQLType
