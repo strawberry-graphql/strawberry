@@ -6,6 +6,7 @@ from typing import List, Optional
 import pytest
 
 import strawberry
+from strawberry.schema.config import StrawberryConfig
 
 
 def test_enum_resolver():
@@ -334,3 +335,29 @@ def test_enum_resolver_plain_value():
 
     assert not result.errors
     assert result.data["bestFlavour"] == "STRAWBERRY"
+
+
+def test_enum_using_values_instead_of_names():
+    @strawberry.enum
+    class IceCreamFlavour(Enum):
+        VANILLA = "vanilla"
+        STRAWBERRY = "strawberry"
+        CHOCOLATE = "chocolate"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def best_flavour(self) -> IceCreamFlavour:
+            return "strawberry"  # type: ignore
+
+    schema = strawberry.Schema(
+        query=Query, config=StrawberryConfig(enum_values=StrawberryConfig.ENUM_VALUE)
+    )
+
+    query = "{ bestFlavour }"
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data
+    assert result.data["bestFlavour"] == "strawberry"

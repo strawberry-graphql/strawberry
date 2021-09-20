@@ -61,6 +61,7 @@ class CustomGraphQLEnumType(GraphQLEnumType):
     def serialize(self, output_value: Any) -> str:
         if isinstance(output_value, Enum):
             return output_value.name
+
         return super().serialize(output_value)
 
 
@@ -116,9 +117,14 @@ class GraphQLCoreConverter:
             assert isinstance(graphql_enum, CustomGraphQLEnumType)  # For mypy
             return graphql_enum
 
+        values = {
+            self.get_enum_item_name(item): self.from_enum_value(item)
+            for item in enum.values
+        }
+
         graphql_enum = CustomGraphQLEnumType(
             name=enum.graphql_name,
-            values={item.name: self.from_enum_value(item) for item in enum.values},
+            values=values,
             description=enum.description,
         )
 
@@ -127,6 +133,12 @@ class GraphQLCoreConverter:
         )
 
         return graphql_enum
+
+    def get_enum_item_name(self, item: EnumValue) -> str:
+        if self.config.enum_values == self.config.ENUM_NAME:
+            return item.name
+
+        return item.value
 
     def from_enum_value(self, enum_value: EnumValue) -> GraphQLEnumValue:
         return GraphQLEnumValue(enum_value.value)
