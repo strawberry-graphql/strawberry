@@ -312,8 +312,8 @@ class GraphQLCoreConverter:
     def from_resolver(
         self, field: StrawberryField
     ) -> Callable:  # TODO: Take StrawberryResolver
-        if not field.base_resolver and not field.permission_classes:
-            return partial(default_resolver, field.python_name)
+        # if not field.base_resolver and not field.permission_classes:
+        #     return partial(default_resolver, field.python_name)
 
         def _get_arguments(
             source: Any,
@@ -378,9 +378,13 @@ class GraphQLCoreConverter:
             )
 
         def _get_result(_source: Any, info: Info, **kwargs):
-            field_args, field_kwargs = _get_arguments(
-                source=_source, info=info, kwargs=kwargs
-            )
+            if field.base_resolver:
+                field_args, field_kwargs = _get_arguments(
+                    source=_source, info=info, kwargs=kwargs
+                )
+            else:
+                field_args = []
+                field_kwargs = {}
 
             return field.get_result(
                 _source, info=info, args=field_args, kwargs=field_kwargs
