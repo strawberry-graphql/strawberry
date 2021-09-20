@@ -35,7 +35,7 @@ from .types.types import FederationFieldParams, TypeDefinition
 _RESOLVER_TYPE = Union[StrawberryResolver, Callable]
 
 
-def default_resolver(name: str, source: Any):
+def default_resolver(name: str, source: Any, *args, **kwargs):
     return getattr(source, name)
 
 
