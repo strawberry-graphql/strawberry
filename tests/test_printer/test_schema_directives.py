@@ -23,3 +23,23 @@ def test_print_simple_directive():
     schema = strawberry.Schema(query=Query)
 
     assert print_schema(schema) == textwrap.dedent(expected_type).strip()
+
+
+def test_print_directive_with_name():
+    @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
+    class SensitiveField:
+        reason: str
+
+    @strawberry.type
+    class Query:
+        first_name: str = strawberry.field(directives=[SensitiveField(reason="GDPR")])
+
+    expected_type = """
+    type Query {
+      firstName: String! @sensitiveField(reason: "GDPR")
+    }
+    """
+
+    schema = strawberry.Schema(query=Query)
+
+    assert print_schema(schema) == textwrap.dedent(expected_type).strip()

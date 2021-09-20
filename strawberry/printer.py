@@ -1,5 +1,5 @@
 from itertools import chain
-from typing import Optional, cast
+from typing import Dict, Optional, cast
 
 from graphql.type import is_object_type, is_specified_directive
 from graphql.utilities.print_schema import (
@@ -21,12 +21,30 @@ from strawberry.types.types import TypeDefinition
 from .schema import BaseSchema
 
 
-def print_schema_directive(directive: StrawberrySchemaDirective) -> str:
+def print_schema_directive_params(params: Dict) -> str:
+    if not params:
+        return ""
+
+    return "(" + ", ".join(f'{name}: "{value}"' for name, value in params.items()) + ")"
+
+
+def print_schema_directive(
+    directive: StrawberrySchemaDirective, schema: BaseSchema
+) -> str:
     # TODO: get actual name
-    return f" {directive.graphql_name or directive.python_name}"
+    params = {}
+
+    if directive.instance:
+        params = directive.instance.__dict__
+
+    directive_name = directive.get_graphql_name(
+        auto_camel_case=schema.config.auto_camel_case
+    )
+
+    return f" @{directive_name}{print_schema_directive_params(params)}"
 
 
-def print_field_directives(field: Optional[StrawberryField]) -> str:
+def print_field_directives(field: Optional[StrawberryField], schema: BaseSchema) -> str:
     if not field:
         return ""
 
@@ -39,7 +57,9 @@ def print_field_directives(field: Optional[StrawberryField]) -> str:
         )
     )
 
-    return "".join((print_schema_directive(directive) for directive in directives))
+    return "".join(
+        (print_schema_directive(directive, schema=schema) for directive in directives)
+    )
 
 
 def print_federation_field_directive(field: Optional[StrawberryField]) -> str:
@@ -80,7 +100,7 @@ def print_fields(type_, schema: BaseSchema) -> str:
             + print_args(field.args, "  ")
             + f": {field.type}"
             + print_federation_field_directive(strawberry_field)
-            + print_field_directives(strawberry_field)
+            + print_field_directives(strawberry_field, schema=schema)
             + print_deprecated(field.deprecation_reason)
         )
 

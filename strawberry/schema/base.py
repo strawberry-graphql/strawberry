@@ -9,8 +9,12 @@ from strawberry.types import ExecutionResult
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 
+from .config import StrawberryConfig
+
 
 class BaseSchema(Protocol):
+    config: StrawberryConfig
+
     @abstractmethod
     async def execute(
         self,

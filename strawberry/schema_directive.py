@@ -3,6 +3,8 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import List, Optional, Type
 
+from strawberry.utils.mixins import GraphQLNameMixin
+
 
 class Location(Enum):
     SCHEMA = "schema"
@@ -19,15 +21,30 @@ class Location(Enum):
 
 
 @dataclasses.dataclass
-class StrawberrySchemaDirective:
-    python_name: str
+class StrawberrySchemaDirective(GraphQLNameMixin):
     wrap: Type
+    python_name: str
     graphql_name: Optional[str]
     locations: List[Location]
     description: Optional[str] = None
+    instance: Optional[object] = dataclasses.field(init=False)
+
+    def get_graphql_name(self, auto_camel_case: bool) -> str:
+        if self.graphql_name is not None:
+            return self.graphql_name
+
+        assert self.python_name
+
+        if auto_camel_case:
+            # we don't want the first letter to be uppercase
+            return self.python_name[0].lower() + self.python_name[1:]
+
+        return self.python_name
 
     def __call__(self, *args, **kwargs):
-        return self  # self.wrap(*args, **kwargs)
+        self.instance = self.wrap(*args, **kwargs)
+
+        return self
 
 
 def schema_directive(*, locations: List[Location], description=None, name=None):
