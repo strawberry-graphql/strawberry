@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.77.12 - 2021-09-20
+--------------------
+
+This release adds support for Sanic v21
+
+Contributed by [dependabot](https://github.com/dependabot) [PR #1105](https://github.com/strawberry-graphql/strawberry/pull/1105/)
+
+
 0.77.11 - 2021-09-19
 --------------------
 
