@@ -12,7 +12,7 @@ jobs:
 
     steps:
       - name: Invite contributors
-        uses: strawberry-graphql/invite-to-org-action@v1
+        uses: strawberry-graphql/invite-to-org-action@v3
         with:
           organisation: "strawberry-graphql"
           comment: |

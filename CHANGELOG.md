@@ -1,6 +1,30 @@
 CHANGELOG
 =========
 
+0.77.11 - 2021-09-19
+--------------------
+
+Fixes returning "500 Internal Server Error" responses to requests with malformed json when running with ASGI integration.
+
+Contributed by [Olesia Grydzhuk](https://github.com/Zlira) [PR #1260](https://github.com/strawberry-graphql/strawberry/pull/1260/)
+
+
+0.77.10 - 2021-09-16
+--------------------
+
+This release adds `python_name` to the `Info` type.
+
+Contributed by [Joe Freeman](https://github.com/joefreeman) [PR #1257](https://github.com/strawberry-graphql/strawberry/pull/1257/)
+
+
+0.77.9 - 2021-09-16
+-------------------
+
+Fix the Pydantic conversion method for Enum values, and add a mechanism to specify an interface type when converting from Pydantic. The Pydantic interface is really a base dataclass for the subclasses to extend. When you do the conversion, you have to use `strawberry.experimental.pydantic.interface` to let us know that this type is an interface. You also have to use your converted interface type as the base class for the sub types as normal.
+
+Contributed by [Matt Allen](https://github.com/Matt343) [PR #1241](https://github.com/strawberry-graphql/strawberry/pull/1241/)
+
+
 0.77.8 - 2021-09-14
 -------------------
 

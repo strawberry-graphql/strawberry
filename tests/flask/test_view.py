@@ -24,6 +24,15 @@ def test_graphql_query(flask_client):
     assert data["data"]["hello"] == "strawberry"
 
 
+def test_fails_when_request_body_has_invalid_json(flask_client):
+    response = flask_client.post(
+        "/graphql",
+        data='{"qeury": "{__typena"',
+        headers={"content-type": "application/json"},
+    )
+    assert response.status_code == 400
+
+
 def test_graphiql_view(flask_client):
     flask_client.environ_base["HTTP_ACCEPT"] = "text/html"
     response = flask_client.get("/graphql")
