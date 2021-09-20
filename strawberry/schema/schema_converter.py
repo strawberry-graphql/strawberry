@@ -312,8 +312,8 @@ class GraphQLCoreConverter:
     def from_resolver(
         self, field: StrawberryField
     ) -> Callable:  # TODO: Take StrawberryResolver
-        # if not field.base_resolver and not field.permission_classes:
-        #     return partial(default_resolver, field.python_name)
+        if field.is_simple_field:
+            return partial(default_resolver, field.python_name)
 
         def _get_arguments(
             source: Any,
@@ -378,21 +378,12 @@ class GraphQLCoreConverter:
             )
 
         def _get_result(_source: Any, info: Info, **kwargs):
-            if field.base_resolver:
-                field_args, field_kwargs = _get_arguments(
-                    source=_source, info=info, kwargs=kwargs
-                )
-            else:
-                field_args = []
-                field_kwargs = {}
+            field_args, field_kwargs = _get_arguments(
+                source=_source, info=info, kwargs=kwargs
+            )
 
             return field.get_result(
                 _source, info=info, args=field_args, kwargs=field_kwargs
-            )
-
-        def _get_simple_result(_source: Any, info: Info, **kwargs):
-            return field.get_result(
-                _source, info=None, args=[], kwargs={}
             )
 
         def _resolver(_source: Any, info: GraphQLResolveInfo, **kwargs):
@@ -406,9 +397,6 @@ class GraphQLCoreConverter:
             await _check_permissions_async(_source, strawberry_info, kwargs)
 
             return await await_maybe(_get_result(_source, strawberry_info, **kwargs))
-
-        if not field.base_resolver and not field.permission_classes:
-            return _get_simple_result
 
         if field.is_async:
             _async_resolver._is_default = not field.base_resolver  # type: ignore

@@ -299,6 +299,18 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
     def is_async(self) -> bool:
         return self._has_async_permission_classes or self._has_async_base_resolver
 
+    @property
+    def is_simple_field(self):
+        """
+        Flag indicating if this is a "simple" field that just returns the
+        relevant attribute from the source object. If it is a simple field we
+        can avoid constructing an `Info` object and running any permission
+        checks in the resolver which improves performance.
+
+        Note: if a field is "simple" then `get_result` is not called.
+        """
+        return not self.base_resolver and not self.permission_classes
+
 
 T = TypeVar("T")
 
