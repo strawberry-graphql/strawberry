@@ -1,6 +1,16 @@
 import dataclasses
 from enum import Enum, EnumMeta
-from typing import Any, Callable, Iterable, List, Optional, Union, cast
+from typing import (
+    Any,
+    Callable,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    TypeVar,
+    Union,
+    cast,
+)
 
 from strawberry.type import StrawberryType
 
@@ -32,9 +42,18 @@ class StrawberryEnum(StrawberryType):
 
     def __getattr__(self, attr):
         if hasattr(self.enum, attr):
-            return self.enum[attr]
+            return getattr(self.enum, attr)
 
         return super().__getattribute__(attr)
+
+    def copy_with(
+        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
+    ) -> Union[StrawberryType, type]:
+        return super().copy_with(type_var_map)
+
+    @property
+    def is_generic(self) -> bool:
+        return False
 
     @property
     def values(self) -> List[EnumValue]:

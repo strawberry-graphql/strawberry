@@ -3,7 +3,7 @@ from enum import Enum
 import pytest
 
 import strawberry
-from strawberry.enum import EnumDefinition
+from strawberry.enum import StrawberryEnum
 from strawberry.exceptions import NotAnEnum
 
 
@@ -60,7 +60,7 @@ def test_can_use_enum_as_arguments():
     field = Query._type_definition.fields[0]
 
     assert field.arguments[0].type
-    assert isinstance(field.arguments[0].type, EnumDefinition)
+    assert isinstance(field.arguments[0].type, StrawberryEnum)
 
 
 def test_raises_error_when_using_enum_with_a_not_enum_class():

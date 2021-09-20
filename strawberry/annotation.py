@@ -20,7 +20,7 @@ except ImportError:  # pragma: no cover
     from typing import _ForwardRef as ForwardRef  # type: ignore
 
 from strawberry.custom_scalar import ScalarDefinition
-from strawberry.enum import EnumDefinition
+from strawberry.enum import StrawberryEnum
 from strawberry.lazy_type import LazyType
 from strawberry.scalars import SCALAR_TYPES
 from strawberry.type import (
@@ -101,8 +101,8 @@ class StrawberryAnnotation:
 
         raise ValueError(f"Not supported {evaled_type}")
 
-    def create_enum(self, evaled_type: Any) -> EnumDefinition:
-        return evaled_type._enum_definition
+    def create_enum(self, evaled_type: Any) -> StrawberryEnum:
+        return evaled_type
 
     def create_list(self, evaled_type: Any) -> StrawberryList:
         of_type = StrawberryAnnotation(
@@ -213,7 +213,7 @@ class StrawberryAnnotation:
         # Prevent import cycles
         from strawberry.union import StrawberryUnion
 
-        if isinstance(evaled_type, EnumDefinition):
+        if isinstance(evaled_type, StrawberryEnum):
             return True
         elif _is_input_type(evaled_type):  # TODO: Replace with StrawberryInputObject
             return True
