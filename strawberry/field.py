@@ -35,6 +35,10 @@ from .types.types import FederationFieldParams, TypeDefinition
 _RESOLVER_TYPE = Union[StrawberryResolver, Callable]
 
 
+def default_resolver(name: str, source: Any):
+    return getattr(source, name)
+
+
 class StrawberryField(dataclasses.Field, GraphQLNameMixin):
     python_name: str
 
@@ -278,7 +282,7 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
         if self.base_resolver:
             return self.base_resolver(*args, **kwargs)
 
-        return getattr(source, self.python_name)
+        return default_resolver(self.python_name, source)
 
     @property
     def _has_async_permission_classes(self) -> bool:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
+from functools import partial
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Tuple, Type, Union, cast
 
 
@@ -39,7 +40,7 @@ from strawberry.exceptions import (
     MissingTypesForGenericError,
     ScalarAlreadyRegisteredError,
 )
-from strawberry.field import StrawberryField
+from strawberry.field import StrawberryField, default_resolver
 from strawberry.lazy_type import LazyType
 from strawberry.scalars import is_scalar
 from strawberry.schema.config import StrawberryConfig
@@ -311,6 +312,9 @@ class GraphQLCoreConverter:
     def from_resolver(
         self, field: StrawberryField
     ) -> Callable:  # TODO: Take StrawberryResolver
+        if not field.base_resolver and not field.permission_classes:
+            return partial(default_resolver, field.python_name)
+
         def _get_arguments(
             source: Any,
             info: Info,
