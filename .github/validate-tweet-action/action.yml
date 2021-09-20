@@ -1,7 +1,0 @@
-name: 'Validate tweet action'
-inputs:
-  tweet:
-    required: true
-runs:
-  using: 'docker'
-  image: 'Dockerfile'

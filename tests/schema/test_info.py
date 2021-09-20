@@ -5,7 +5,9 @@ from typing import List, Optional
 import pytest
 
 import strawberry
+from strawberry.arguments import UNSET
 from strawberry.types import Info
+from strawberry.types.nodes import FragmentSpread, InlineFragment, SelectedField
 
 
 def test_info_has_the_correct_shape():
@@ -15,6 +17,7 @@ def test_info_has_the_correct_shape():
     @strawberry.type
     class Result:
         field_name: str
+        python_name: str
         selected_field: str
         operation: str
         path: str
@@ -26,11 +29,12 @@ def test_info_has_the_correct_shape():
     @strawberry.type
     class Query:
         @strawberry.field
-        def hello(self, info: Info[str, str]) -> Result:
+        def hello_world(self, info: Info[str, str]) -> Result:
             return Result(
                 path="".join([str(p) for p in info.path.as_list()]),
                 operation=str(info.operation),
                 field_name=info.field_name,
+                python_name=info.python_name,
                 selected_field=json.dumps(dataclasses.asdict(*info.selected_fields)),
                 variable_values=str(info.variable_values),
                 context_equal=info.context == my_context,
@@ -41,8 +45,9 @@ def test_info_has_the_correct_shape():
     schema = strawberry.Schema(query=Query)
 
     query = """{
-        hello {
+        helloWorld {
             fieldName
+            pythonName
             selectedField
             contextEqual
             operation
@@ -56,7 +61,7 @@ def test_info_has_the_correct_shape():
     result = schema.execute_sync(query, context_value=my_context, root_value=root_value)
 
     assert not result.errors
-    info = result.data["hello"]
+    info = result.data["helloWorld"]
     assert info.pop("operation").startswith("OperationDefinitionNode at")
     field = json.loads(info.pop("selectedField"))
     selections = {selection["name"] for selection in field.pop("selections")}
@@ -69,11 +74,18 @@ def test_info_has_the_correct_shape():
         "variableValues",
         "returnType",
         "fieldName",
+        "pythonName",
     }
-    assert field == {"name": "hello", "directives": {}, "alias": None, "arguments": {}}
+    assert field == {
+        "name": "helloWorld",
+        "directives": {},
+        "alias": None,
+        "arguments": {},
+    }
     assert info == {
-        "fieldName": "hello",
-        "path": "hello",
+        "fieldName": "helloWorld",
+        "pythonName": "hello_world",
+        "path": "helloWorld",
         "contextEqual": True,
         "rootEqual": True,
         "variableValues": "{}",
@@ -84,55 +96,193 @@ def test_info_has_the_correct_shape():
 def test_info_field_fragments():
     @strawberry.type
     class Result:
-        field: str
+        ok: bool
+
+    selected_fields = None
 
     @strawberry.type
     class Query:
         @strawberry.field
         def hello(self, info: Info[str, str]) -> Result:
-            return Result(field=json.dumps(dataclasses.asdict(*info.selected_fields)))
+            nonlocal selected_fields
+            selected_fields = info.selected_fields
+            return Result(ok=True)
 
     schema = strawberry.Schema(query=Query)
     query = """{
         hello {
             ... on Result {
-                f: field @include(if: true)
+                k: ok @include(if: true)
             }
             ...frag
         }
     }
 
     fragment frag on Result {
-        field
+        ok
     }
     """
     result = schema.execute_sync(query)
 
     assert not result.errors
-    info = result.data["hello"]
-    field = json.loads(info.pop("f"))
-    assert field == {
-        "name": "hello",
-        "directives": {},
-        "alias": None,
-        "arguments": {},
-        "selections": [
-            {
-                "type_condition": "Result",
-                "selections": [
-                    {
-                        "name": "field",
-                        "directives": {"include": {"if": True}},
-                        "alias": "f",
-                        "arguments": {},
-                        "selections": [],
-                    }
-                ],
-                "directives": {},
-            },
-            {"name": "frag", "directives": {}},
-        ],
+    assert selected_fields == [
+        SelectedField(
+            name="hello",
+            directives={},
+            alias=None,
+            arguments={},
+            selections=[
+                InlineFragment(
+                    type_condition="Result",
+                    directives={},
+                    selections=[
+                        SelectedField(
+                            name="ok",
+                            alias="k",
+                            arguments={},
+                            directives={
+                                "include": {
+                                    "if": True,
+                                },
+                            },
+                            selections=[],
+                        )
+                    ],
+                ),
+                FragmentSpread(
+                    name="frag",
+                    directives={},
+                    type_condition="Result",
+                    selections=[
+                        SelectedField(
+                            name="ok",
+                            directives={},
+                            arguments={},
+                            selections=[],
+                        )
+                    ],
+                ),
+            ],
+        )
+    ]
+
+
+def test_info_arguments():
+    @strawberry.input
+    class TestInput:
+        name: str
+        age: Optional[int] = UNSET
+
+    selected_fields = None
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def test_arg(
+            self, info: Info[str, str], input: TestInput, another_arg: bool = True
+        ) -> str:
+            nonlocal selected_fields
+            selected_fields = info.selected_fields
+            return "Hi"
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        testArg(input: {name: "hi"})
     }
+    """
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert selected_fields == [
+        SelectedField(
+            name="testArg",
+            directives={},
+            arguments={
+                "input": {
+                    "name": "hi",
+                },
+            },
+            selections=[],
+        )
+    ]
+
+    query = """query TestQuery($input: TestInput!) {
+        testArg(input: $input)
+    }
+    """
+    result = schema.execute_sync(
+        query,
+        variable_values={
+            "input": {
+                "name": "hi",
+                "age": 10,
+            },
+        },
+    )
+    assert not result.errors
+    assert selected_fields == [
+        SelectedField(
+            name="testArg",
+            directives={},
+            arguments={
+                "input": {
+                    "name": "hi",
+                    "age": 10,
+                },
+            },
+            selections=[],
+        )
+    ]
+
+
+def test_info_selected_fields_undefined_variable():
+    @strawberry.type
+    class Result:
+        ok: bool
+
+    selected_fields = None
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(
+            self, info: Info[str, str], optional_input: Optional[str] = "hi"
+        ) -> Result:
+            nonlocal selected_fields
+            selected_fields = info.selected_fields
+            return Result(ok=True)
+
+    schema = strawberry.Schema(query=Query)
+    query = """
+    query MyQuery($optionalInput: String) {
+        hello(optionalInput: $optionalInput) {
+            ok
+        }
+    }
+    """
+    result = schema.execute_sync(query, variable_values={})
+
+    assert not result.errors
+    assert selected_fields == [
+        SelectedField(
+            name="hello",
+            directives={},
+            alias=None,
+            arguments={
+                "optionalInput": None,
+            },
+            selections=[
+                SelectedField(
+                    name="ok",
+                    alias=None,
+                    arguments={},
+                    directives={},
+                    selections=[],
+                )
+            ],
+        )
+    ]
 
 
 @pytest.mark.parametrize(

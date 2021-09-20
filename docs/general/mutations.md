@@ -4,12 +4,15 @@ title: Mutations
 
 # Mutations
 
-As opposed to queries, mutation in GraphQL represent operation that cause writes
-and/or side effects on the server. For example you can have a mutation that
-sends an email or a mutation that creates a user.
+As opposed to queries, mutations in GraphQL represent operations that modify server-side
+data and/or cause side effects on the server. For example, you can have a mutation that
+creates a new instance in your application or a mutation that sends an email. Like in
+queries, they accept parameters and can return anything a regular field can, including
+new types and existing object types. This can be useful for fetching the new state of an
+object after an update.
 
-Like queries mutation can return data, and they also accept parameters. Let's
-implement a mutation that is supposed to send an email:
+Let's improve our books project from the [Getting started tutorial](docs/index.md) and
+implement a mutation that is supposed to add a book:
 
 ```python
 import strawberry
@@ -25,24 +28,32 @@ class Query:
 @strawberry.type
 class Mutation:
     @strawberry.mutation
-    def send_email(self, email: str) -> bool:
-        print(f'sending email to {email}')
+    def add_book(self, title: str, author: str) -> Book:
+        print(f'Adding {title} by {author}')
 
-        return True
+        return Book(title=title, author=author)
 
 schema = strawberry.Schema(query=Query, mutation=Mutation)
 ```
 
 Like queries, mutations are defined in a class that is then passed to the Schema
-function. Here we create a `sendEmail` mutation that accept an email and returns
-a boolean.
+function. Here we create an `addBook` mutation that accepts a title and an author and
+returns a `Book` type.
 
-We would send the following GraphQL document to our server to execute the
-mutation:
+We would send the following GraphQL document to our server to execute the mutation:
 
 ```graphql
-sendEmail(email: "patrick@example.org")
+mutation {
+  addBook(title: "The Little Prince", author: "Antoine de Saint-Exupéry") {
+    title
+  }
+}
 ```
 
-This is basic example, normally you'd return more complex data and also accept
-more complex data as input.
+The `addBook` mutation is a simplified example. In a real-world application mutations
+will often need to handle errors and communicate those errors back to the client. For
+example we might want to return an error if the book already exists.
+
+You can checkout our documentation on
+[dealing with errors](/docs/guides/errors#expected-errors) to learn how to return a
+union of types from a mutation.

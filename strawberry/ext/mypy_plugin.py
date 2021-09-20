@@ -92,7 +92,7 @@ def _get_named_type(name: str, api: SemanticAnalyzerPluginInterface):
     return api.named_type(name)
 
 
-def _get_type_for_expr(expr: Expression, api: SemanticAnalyzerPluginInterface):
+def _get_type_for_expr(expr: Expression, api: SemanticAnalyzerPluginInterface) -> Type:
     if isinstance(expr, NameExpr):
         # guarding agains invalid nodes, still have to figure out why this happens
         # but sometimes mypy crashes because the internal node of the named type
@@ -109,7 +109,7 @@ def _get_type_for_expr(expr: Expression, api: SemanticAnalyzerPluginInterface):
 
     if isinstance(expr, IndexExpr):
         type_ = _get_type_for_expr(expr.base, api)
-        type_.args = (_get_type_for_expr(expr.index, api),)
+        type_.args = (_get_type_for_expr(expr.index, api),)  # type: ignore
 
         return type_
 
@@ -216,22 +216,22 @@ def enum_hook(ctx: DynamicClassDefContext) -> None:
             )
             return
 
+    enum_type: Optional[Type]
+
     try:
         enum_type = _get_type_for_expr(first_argument, ctx.api)
-
-        type_alias = TypeAlias(
-            enum_type,
-            fullname=ctx.api.qualified_name(ctx.name),
-            line=ctx.call.line,
-            column=ctx.call.column,
-        )
     except InvalidNodeTypeException:
-        type_alias = TypeAlias(
-            AnyType(TypeOfAny.from_error),
-            fullname=ctx.api.qualified_name(ctx.name),
-            line=ctx.call.line,
-            column=ctx.call.column,
-        )
+        enum_type = None
+
+    if not enum_type:
+        enum_type = AnyType(TypeOfAny.from_error)
+
+    type_alias = TypeAlias(
+        enum_type,
+        fullname=ctx.api.qualified_name(ctx.name),
+        line=ctx.call.line,
+        column=ctx.call.column,
+    )
 
     ctx.api.add_symbol_table_node(
         ctx.name, SymbolTableNode(GDEF, type_alias, plugin_generated=False)

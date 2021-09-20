@@ -1,6 +1,206 @@
 CHANGELOG
 =========
 
+0.77.11 - 2021-09-19
+--------------------
+
+Fixes returning "500 Internal Server Error" responses to requests with malformed json when running with ASGI integration.
+
+Contributed by [Olesia Grydzhuk](https://github.com/Zlira) [PR #1260](https://github.com/strawberry-graphql/strawberry/pull/1260/)
+
+
+0.77.10 - 2021-09-16
+--------------------
+
+This release adds `python_name` to the `Info` type.
+
+Contributed by [Joe Freeman](https://github.com/joefreeman) [PR #1257](https://github.com/strawberry-graphql/strawberry/pull/1257/)
+
+
+0.77.9 - 2021-09-16
+-------------------
+
+Fix the Pydantic conversion method for Enum values, and add a mechanism to specify an interface type when converting from Pydantic. The Pydantic interface is really a base dataclass for the subclasses to extend. When you do the conversion, you have to use `strawberry.experimental.pydantic.interface` to let us know that this type is an interface. You also have to use your converted interface type as the base class for the sub types as normal.
+
+Contributed by [Matt Allen](https://github.com/Matt343) [PR #1241](https://github.com/strawberry-graphql/strawberry/pull/1241/)
+
+
+0.77.8 - 2021-09-14
+-------------------
+
+Fixes a bug with the `selected_fields` property on `info` when an operation
+variable is not defined.
+
+Issue [#1248](https://github.com/strawberry-graphql/strawberry/issues/1248).
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) [PR #1249](https://github.com/strawberry-graphql/strawberry/pull/1249/)
+
+
+0.77.7 - 2021-09-14
+-------------------
+
+Fix issues ([#1158][issue1158] and [#1104][issue1104]) where Generics using LazyTypes
+and Enums would not be properly resolved
+
+These now function as expected:
+
+# Enum
+
+```python
+T = TypeVar("T")
+
+@strawberry.enum
+class VehicleMake(Enum):
+    FORD = 'ford'
+    TOYOTA = 'toyota'
+    HONDA = 'honda'
+
+@strawberry.type
+class GenericForEnum(Generic[T]):
+    generic_slot: T
+
+@strawberry.type
+class SomeType:
+    field: GenericForEnum[VehicleMake]
+```
+
+# LazyType
+
+`another_file.py`
+```python
+@strawberry.type
+class TypeFromAnotherFile:
+    something: bool
+```
+
+`this_file.py`
+```python
+T = TypeVar("T")
+
+@strawberry.type
+class GenericType(Generic[T]):
+    item: T
+
+@strawberry.type
+class RealType:
+    lazy: GenericType[LazyType["TypeFromAnotherFile", "another_file.py"]]
+```
+
+[issue1104]: https://github.com/strawberry-graphql/strawberry/issues/1104
+[issue1158]: https://github.com/strawberry-graphql/strawberry/issues/1158
+
+Contributed by [ignormies](https://github.com/BryceBeagle) [PR #1235](https://github.com/strawberry-graphql/strawberry/pull/1235/)
+
+
+0.77.6 - 2021-09-13
+-------------------
+
+This release adds fragment and input variable information to the
+`selected_fields` attribute on the `Info` object.
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) [PR #1213](https://github.com/strawberry-graphql/strawberry/pull/1213/)
+
+
+0.77.5 - 2021-09-11
+-------------------
+
+Fixes a bug in the Pydantic conversion code around `Union` values.
+
+Contributed by [Matt Allen](https://github.com/Matt343) [PR #1231](https://github.com/strawberry-graphql/strawberry/pull/1231/)
+
+
+0.77.4 - 2021-09-11
+-------------------
+
+Fixes a bug in the `export-schema` command around the handling of local modules.
+
+Contributed by [Matt Allen](https://github.com/Matt343) [PR #1233](https://github.com/strawberry-graphql/strawberry/pull/1233/)
+
+
+0.77.3 - 2021-09-10
+-------------------
+
+Fixes a bug in the Pydantic conversion code around complex `Optional` values.
+
+Contributed by [Matt Allen](https://github.com/Matt343) [PR #1229](https://github.com/strawberry-graphql/strawberry/pull/1229/)
+
+
+0.77.2 - 2021-09-10
+-------------------
+
+This release adds a new exception called `InvalidFieldArgument` which is raised when a Union or Interface is used as an argument type.
+For example this will raise an exception:
+```python
+import strawberry
+
+@strawberry.type
+class Noun:
+    text: str
+
+@strawberry.type
+class Verb:
+    text: str
+
+Word = strawberry.union("Word", types=(Noun, Verb))
+
+@strawberry.field
+def add_word(word: Word) -> bool:
+	...
+```
+
+Contributed by [Mohammad Hossein Yazdani](https://github.com/MAM-SYS) [PR #1222](https://github.com/strawberry-graphql/strawberry/pull/1222/)
+
+
+0.77.1 - 2021-09-10
+-------------------
+
+Fix type resolution when inheriting from types from another module using deferred annotations.
+
+Contributed by [Daniel Bowring](https://github.com/dbowring) [PR #1010](https://github.com/strawberry-graphql/strawberry/pull/1010/)
+
+
+0.77.0 - 2021-09-10
+-------------------
+
+This release adds support for Pyright and Pylance, improving the
+integration with Visual Studio Code!
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #922](https://github.com/strawberry-graphql/strawberry/pull/922/)
+
+
+0.76.1 - 2021-09-09
+-------------------
+
+Change the version constraint of opentelemetry-sdk and opentelemetry-api to <2
+
+Contributed by [Michael Ossareh](https://github.com/ossareh) [PR #1226](https://github.com/strawberry-graphql/strawberry/pull/1226/)
+
+
+0.76.0 - 2021-09-06
+-------------------
+
+This release adds support for enabling subscriptions in GraphiQL
+on Django by setting a flag `subscriptions_enabled` on the BaseView class.
+```python
+from strawberry.django.views import AsyncGraphQLView
+
+from .schema import schema
+
+urlpatterns = [path("graphql", AsyncGraphQLView.as_view(schema=schema, graphiql=True, subscriptions_enabled=True))]
+```
+
+Contributed by [lijok](https://github.com/lijok) [PR #1215](https://github.com/strawberry-graphql/strawberry/pull/1215/)
+
+
+0.75.1 - 2021-09-03
+-------------------
+
+This release fixes an issue with the MyPy plugin that prevented using
+TextChoices from django in `strawberry.enum`.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1202](https://github.com/strawberry-graphql/strawberry/pull/1202/)
+
+
 0.75.0 - 2021-09-01
 -------------------
 

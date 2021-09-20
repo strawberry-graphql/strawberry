@@ -194,7 +194,8 @@ Info objects contain information for the current execution context:
 
 | Parameter name  | Type                      | Description                                                                             |
 | --------------- | ------------------------- | --------------------------------------------------------------------------------------- |
-| field_name      | `str`                     | The name of the current field                                                           |
+| field_name      | `str`                     | The name of the current field (generally camel-cased)                                   |
+| python_name     | `str`                     | The 'Python name' of the field (generally snake-cased)                                  |
 | context         | `ContextType`             | The value of the context                                                                |
 | root_value      | `RootValueType`           | The value for the root type                                                             |
 | variable_values | `Dict[str, Any]`          | The variables for this operation                                                        |
