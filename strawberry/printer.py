@@ -88,32 +88,30 @@ def print_fields(type_, schema: BaseSchema) -> str:
     return print_block(fields)
 
 
-def print_federation_key_directive(type_, schema: BaseSchema):
+def print_extends(type_, schema: BaseSchema):
+    strawberry_type = cast(TypeDefinition, schema.get_type_by_name(type_.name))
+
+    if strawberry_type and strawberry_type.extend:
+        return "extend "
+
+    return ""
+
+
+def print_type_directives(type_, schema: BaseSchema) -> str:
     strawberry_type = cast(TypeDefinition, schema.get_type_by_name(type_.name))
 
     if not strawberry_type:
         return ""
 
-    keys = strawberry_type.federation.keys
+    directives = (
+        directive
+        for directive in strawberry_type.directives or []
+        if any(location in [Location.OBJECT] for location in directive.locations)
+    )
 
-    parts = []
-
-    for key in keys:
-        parts.append(f'@key(fields: "{key}")')
-
-    if not parts:
-        return ""
-
-    return " " + " ".join(parts)
-
-
-def print_extends(type_, schema: BaseSchema):
-    strawberry_type = cast(TypeDefinition, schema.get_type_by_name(type_.name))
-
-    if strawberry_type and strawberry_type.federation.extend:
-        return "extend "
-
-    return ""
+    return "".join(
+        (print_schema_directive(directive, schema=schema) for directive in directives)
+    )
 
 
 def _print_object(type_, schema: BaseSchema) -> str:
@@ -122,7 +120,7 @@ def _print_object(type_, schema: BaseSchema) -> str:
         + print_extends(type_, schema)
         + f"type {type_.name}"
         + print_implemented_interfaces(type_)
-        + print_federation_key_directive(type_, schema)
+        + print_type_directives(type_, schema)
         + print_fields(type_, schema)
     )
 

@@ -1,5 +1,5 @@
 import dataclasses
-from typing import Any, List, Optional, Type
+from typing import Any, List, Optional, Sequence, Type
 
 from pydantic import BaseModel
 from pydantic.fields import ModelField
@@ -9,7 +9,7 @@ from strawberry.experimental.pydantic.utils import (
     normalize_type,
 )
 from strawberry.object_type import _process_type
-from strawberry.types.types import FederationTypeParams
+from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.utils.typing import get_list_annotation, is_list
 
 
@@ -47,7 +47,7 @@ def error_type(
     fields: List[str],
     name: Optional[str] = None,
     description: Optional[str] = None,
-    federation: Optional[FederationTypeParams] = None,
+    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
 ):
     def wrap(cls):
         model_fields = model.__fields__
@@ -72,7 +72,7 @@ def error_type(
             is_input=False,
             is_interface=False,
             description=description,
-            federation=federation,
+            directives=directives,
         )
 
         model._strawberry_type = cls  # type: ignore

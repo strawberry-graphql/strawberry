@@ -2,6 +2,7 @@ import builtins
 import dataclasses
 import inspect
 from typing import (
+    TYPE_CHECKING,
     Any,
     Awaitable,
     Callable,
@@ -28,9 +29,12 @@ from strawberry.types.info import Info
 from strawberry.union import StrawberryUnion
 from strawberry.utils.mixins import GraphQLNameMixin
 
-from .object_type import TypeDefinition
 from .permission import BasePermission
 from .types.fields.resolver import StrawberryResolver
+
+
+if TYPE_CHECKING:
+    from .object_type import TypeDefinition
 
 
 _RESOLVER_TYPE = Union[StrawberryResolver, Callable]

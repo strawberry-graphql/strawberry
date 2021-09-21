@@ -1,11 +1,13 @@
 import dataclasses
-from typing import List, Optional, Type, cast
+from typing import List, Optional, Sequence, Type, cast
+
+from strawberry.schema_directive import StrawberrySchemaDirective
 
 from .exceptions import MissingFieldAnnotationError, MissingReturnAnnotationError
 from .federation.field import field as federation_field
 from .field import StrawberryField, field
 from .types.type_resolver import _get_fields
-from .types.types import FederationTypeParams, TypeDefinition
+from .types.types import TypeDefinition
 from .utils.str_converters import to_camel_case
 from .utils.typing import __dataclass_transform__
 
@@ -93,7 +95,8 @@ def _process_type(
     is_input: bool = False,
     is_interface: bool = False,
     description: Optional[str] = None,
-    federation: Optional[FederationTypeParams] = None,
+    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    extend: bool = False,
 ):
     name = name or to_camel_case(cls.__name__)
 
@@ -106,8 +109,9 @@ def _process_type(
         is_interface=is_interface,
         interfaces=interfaces,
         description=description,
-        federation=federation or FederationTypeParams(),
+        directives=directives,
         origin=cls,
+        extend=extend,
         _fields=fields,
     )
 
@@ -131,7 +135,8 @@ def type(
     is_input: bool = False,
     is_interface: bool = False,
     description: str = None,
-    federation: Optional[FederationTypeParams] = None,
+    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    extend: bool = False,
 ):
     """Annotates a class as a GraphQL type.
 
@@ -151,7 +156,8 @@ def type(
             is_input=is_input,
             is_interface=is_interface,
             description=description,
-            federation=federation,
+            directives=directives,
+            extend=extend,
         )
 
     if cls is None:
@@ -166,7 +172,7 @@ def input(
     *,
     name: str = None,
     description: str = None,
-    federation: Optional[FederationTypeParams] = None,
+    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
 ):
     """Annotates a class as a GraphQL Input type.
     Example usage:
@@ -176,7 +182,7 @@ def input(
     """
 
     return type(
-        cls, name=name, description=description, federation=federation, is_input=True
+        cls, name=name, description=description, directives=directives, is_input=True
     )
 
 
@@ -188,7 +194,7 @@ def interface(
     *,
     name: str = None,
     description: str = None,
-    federation: Optional[FederationTypeParams] = None,
+    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
 ):
     """Annotates a class as a GraphQL Interface.
     Example usage:
@@ -201,13 +207,12 @@ def interface(
         cls,
         name=name,
         description=description,
-        federation=federation,
+        directives=directives,
         is_interface=True,
     )
 
 
 __all__ = [
-    "FederationTypeParams",
     "TypeDefinition",
     "input",
     "interface",

@@ -20,6 +20,7 @@ from strawberry.utils.inspect import get_func_args
 
 from ..printer import print_schema
 from ..schema import Schema as BaseSchema
+from .schema_directives import Key
 
 
 class Schema(BaseSchema):
@@ -130,6 +131,8 @@ def _has_federation_keys(
     definition: Union[TypeDefinition, ScalarDefinition, EnumDefinition, StrawberryUnion]
 ) -> bool:
     if isinstance(definition, TypeDefinition):
-        return len(definition.federation.keys) > 0
+        return any(
+            directive.wrap is Key.wrap for directive in definition.directives or []
+        )
 
     return False
