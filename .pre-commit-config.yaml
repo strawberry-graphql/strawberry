@@ -1,4 +1,15 @@
 repos:
+  - repo: https://github.com/myint/autoflake
+    rev: 'v1.4'
+    hooks:
+    - id: autoflake
+      args: ['--in-place', '--remove-all-unused-imports', '--ignore-init-module-imports']
+      name: autoflake
+      entry: autoflake
+      language: python
+      'types': [python]
+      require_serial: true
+
   - repo: https://github.com/PyCQA/flake8
     rev: 3.9.2
     hooks:

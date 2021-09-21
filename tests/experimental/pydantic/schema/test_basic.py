@@ -333,9 +333,6 @@ def test_basic_type_with_interface():
     class UserType:
         pass
 
-    print(BranchAType._type_definition)
-    print(BaseType._type_definition)
-
     @strawberry.type
     class Query:
         @strawberry.field

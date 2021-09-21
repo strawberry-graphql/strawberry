@@ -1,0 +1,29 @@
+from typing import List, Type, TypeVar
+
+from strawberry.field import StrawberryField, field as base_field
+from strawberry.object_type import FederationTypeParams, type as base_type
+from strawberry.utils.typing import __dataclass_transform__
+
+from .field import field
+
+
+T = TypeVar("T")
+
+
+@__dataclass_transform__(
+    order_default=True, field_descriptors=(base_field, field, StrawberryField)
+)
+def type(
+    cls: Type = None,
+    *,
+    name: str = None,
+    description: str = None,
+    keys: List[str] = None,
+    extend: bool = False,
+):
+    return base_type(
+        cls,
+        name=name,
+        description=description,
+        federation=FederationTypeParams(keys=keys or [], extend=extend),
+    )
