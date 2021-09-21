@@ -62,24 +62,6 @@ def print_field_directives(field: Optional[StrawberryField], schema: BaseSchema)
     )
 
 
-def print_federation_field_directive(field: Optional[StrawberryField]) -> str:
-    if not field:
-        return ""
-
-    out = ""
-
-    if field.federation.provides:
-        out += f' @provides(fields: "{" ".join(field.federation.provides)}")'
-
-    if field.federation.requires:
-        out += f' @requires(fields: "{" ".join(field.federation.requires)}")'
-
-    if field.federation.external:
-        out += " @external"
-
-    return out
-
-
 def print_fields(type_, schema: BaseSchema) -> str:
     strawberry_type = cast(TypeDefinition, schema.get_type_by_name(type_.name))
 
@@ -99,7 +81,6 @@ def print_fields(type_, schema: BaseSchema) -> str:
             + f"  {name}"
             + print_args(field.args, "  ")
             + f": {field.type}"
-            + print_federation_field_directive(strawberry_field)
             + print_field_directives(strawberry_field, schema=schema)
             + print_deprecated(field.deprecation_reason)
         )

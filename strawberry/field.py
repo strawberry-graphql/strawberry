@@ -28,9 +28,9 @@ from strawberry.types.info import Info
 from strawberry.union import StrawberryUnion
 from strawberry.utils.mixins import GraphQLNameMixin
 
+from .object_type import TypeDefinition
 from .permission import BasePermission
 from .types.fields.resolver import StrawberryResolver
-from .types.types import FederationFieldParams, TypeDefinition
 
 
 _RESOLVER_TYPE = Union[StrawberryResolver, Callable]
@@ -46,7 +46,6 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
         type_annotation: Optional[StrawberryAnnotation] = None,
         origin: Optional[Union[Type, Callable]] = None,
         is_subscription: bool = False,
-        federation: FederationFieldParams = None,
         description: Optional[str] = None,
         base_resolver: Optional[StrawberryResolver] = None,
         permission_classes: List[Type[BasePermission]] = (),  # type: ignore
@@ -55,8 +54,6 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
         deprecation_reason: Optional[str] = None,
         directives: Sequence[StrawberrySchemaDirective] = (),
     ):
-        federation = federation or FederationFieldParams()
-
         # basic fields are fields with no provided resolver
         is_basic_field = not base_resolver
 
@@ -97,7 +94,6 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
 
         self.is_subscription = is_subscription
 
-        self.federation: FederationFieldParams = federation
         self.permission_classes: List[Type[BasePermission]] = list(permission_classes)
         self.directives = directives
 
@@ -253,7 +249,6 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
             type_annotation=StrawberryAnnotation(new_type),
             origin=self.origin,
             is_subscription=self.is_subscription,
-            federation=self.federation,
             description=self.description,
             base_resolver=new_resolver,
             permission_classes=self.permission_classes,
@@ -304,7 +299,6 @@ def field(
     description: Optional[str] = None,
     init: Literal[False] = False,
     permission_classes: Optional[List[Type[BasePermission]]] = None,
-    federation: Optional[FederationFieldParams] = None,
     deprecation_reason: Optional[str] = None,
     default: Any = UNSET,
     default_factory: Union[Callable, object] = UNSET,
@@ -321,7 +315,6 @@ def field(
     description: Optional[str] = None,
     init: Literal[True] = True,
     permission_classes: Optional[List[Type[BasePermission]]] = None,
-    federation: Optional[FederationFieldParams] = None,
     deprecation_reason: Optional[str] = None,
     default: Any = UNSET,
     default_factory: Union[Callable, object] = UNSET,
@@ -338,7 +331,6 @@ def field(
     is_subscription: bool = False,
     description: Optional[str] = None,
     permission_classes: Optional[List[Type[BasePermission]]] = None,
-    federation: Optional[FederationFieldParams] = None,
     deprecation_reason: Optional[str] = None,
     default: Any = UNSET,
     default_factory: Union[Callable, object] = UNSET,
@@ -354,7 +346,6 @@ def field(
     is_subscription=False,
     description=None,
     permission_classes=None,
-    federation=None,
     deprecation_reason=None,
     default=UNSET,
     default_factory=UNSET,
@@ -386,7 +377,6 @@ def field(
         description=description,
         is_subscription=is_subscription,
         permission_classes=permission_classes or [],
-        federation=federation or FederationFieldParams(),
         deprecation_reason=deprecation_reason,
         default=default,
         default_factory=default_factory,
@@ -399,4 +389,4 @@ def field(
     return field_
 
 
-__all__ = ["FederationFieldParams", "StrawberryField", "field"]
+__all__ = ["StrawberryField", "field"]

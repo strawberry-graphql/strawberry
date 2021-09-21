@@ -2,6 +2,7 @@ import dataclasses
 from typing import List, Optional, Type, cast
 
 from .exceptions import MissingFieldAnnotationError, MissingReturnAnnotationError
+from .federation.field import field as federation_field
 from .field import StrawberryField, field
 from .types.type_resolver import _get_fields
 from .types.types import FederationTypeParams, TypeDefinition
@@ -179,7 +180,9 @@ def input(
     )
 
 
-@__dataclass_transform__(order_default=True, field_descriptors=(field, StrawberryField))
+@__dataclass_transform__(
+    order_default=True, field_descriptors=(field, federation_field, StrawberryField)
+)
 def interface(
     cls: Type = None,
     *,

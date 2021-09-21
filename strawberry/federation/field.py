@@ -1,15 +1,23 @@
-from typing import Any, Callable, List, Optional, Type, TypeVar, Union, overload
+from typing import (
+    Any,
+    Callable,
+    List,
+    Optional,
+    Sequence,
+    Type,
+    TypeVar,
+    Union,
+    overload,
+)
 
 from typing_extensions import Literal
 
 from strawberry.arguments import UNSET
-from strawberry.field import (
-    _RESOLVER_TYPE,
-    FederationFieldParams,
-    StrawberryField,
-    field as base_field,
-)
+from strawberry.field import _RESOLVER_TYPE, StrawberryField, field as base_field
 from strawberry.permission import BasePermission
+from strawberry.schema_directive import StrawberrySchemaDirective
+
+from .schema_directives import External, Provides, Requires
 
 
 T = TypeVar("T")
@@ -30,6 +38,7 @@ def field(
     deprecation_reason: Optional[str] = None,
     default: Any = UNSET,
     default_factory: Union[Callable, object] = UNSET,
+    directives: Sequence[StrawberrySchemaDirective] = (),
 ) -> T:
     ...
 
@@ -48,6 +57,7 @@ def field(
     deprecation_reason: Optional[str] = None,
     default: Any = UNSET,
     default_factory: Union[Callable, object] = UNSET,
+    directives: Sequence[StrawberrySchemaDirective] = (),
 ) -> Any:
     ...
 
@@ -66,6 +76,7 @@ def field(
     deprecation_reason: Optional[str] = None,
     default: Any = UNSET,
     default_factory: Union[Callable, object] = UNSET,
+    directives: Sequence[StrawberrySchemaDirective] = (),
 ) -> StrawberryField:
     ...
 
@@ -83,11 +94,23 @@ def field(
     deprecation_reason=None,
     default=UNSET,
     default_factory=UNSET,
+    directives: Sequence[StrawberrySchemaDirective] = (),
     # This init parameter is used by PyRight to determine whether this field
     # is added in the constructor or not. It is not used to change
     # any behavior at the moment.
     init=None,
 ) -> Any:
+    directives = list(directives)
+
+    if provides:
+        directives.append(Provides(" ".join(provides)))
+
+    if requires:
+        directives.append(Requires(" ".join(requires)))
+
+    if external:
+        directives.append(External())
+
     return base_field(
         resolver=resolver,
         name=name,
@@ -98,7 +121,5 @@ def field(
         default=default,
         default_factory=default_factory,
         init=init,
-        federation=FederationFieldParams(
-            provides=provides or [], requires=requires or [], external=external
-        ),
+        directives=directives,
     )
