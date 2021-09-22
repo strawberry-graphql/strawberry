@@ -28,6 +28,6 @@ def type(
         cls,
         name=name,
         description=description,
-        directives=directives,
+        directives=directives,  # type: ignore
         extend=extend,
     )

@@ -693,6 +693,7 @@ class StrawberryPlugin(Plugin):
             for strawberry_decorator in {
                 "strawberry.object_type.type",
                 "strawberry.federation.type",
+                "strawberry.schema_directive.schema_directive",
                 "strawberry.object_type.input",
                 "strawberry.object_type.interface",
             }
@@ -710,6 +711,7 @@ class StrawberryPlugin(Plugin):
                 "strawberry.federation.type",
                 "strawberry.input",
                 "strawberry.interface",
+                "strawberry.schema_directive",
             }
         )
 

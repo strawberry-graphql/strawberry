@@ -4,7 +4,6 @@ from typing import List, Optional, Sequence, Type, cast
 from strawberry.schema_directive import StrawberrySchemaDirective
 
 from .exceptions import MissingFieldAnnotationError, MissingReturnAnnotationError
-from .federation.field import field as federation_field
 from .field import StrawberryField, field
 from .types.type_resolver import _get_fields
 from .types.types import TypeDefinition
@@ -186,9 +185,7 @@ def input(
     )
 
 
-@__dataclass_transform__(
-    order_default=True, field_descriptors=(field, federation_field, StrawberryField)
-)
+@__dataclass_transform__(order_default=True, field_descriptors=(field, StrawberryField))
 def interface(
     cls: Type = None,
     *,

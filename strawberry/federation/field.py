@@ -103,13 +103,13 @@ def field(
     directives = list(directives)
 
     if provides:
-        directives.append(Provides(" ".join(provides)))
+        directives.append(Provides(" ".join(provides)))  # type: ignore
 
     if requires:
-        directives.append(Requires(" ".join(requires)))
+        directives.append(Requires(" ".join(requires)))  # type: ignore
 
     if external:
-        directives.append(External())
+        directives.append(External())  # type: ignore
 
     return base_field(
         resolver=resolver,

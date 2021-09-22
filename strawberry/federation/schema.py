@@ -1,4 +1,4 @@
-from typing import Union, cast
+from typing import Any, Union, cast
 
 from graphql import (
     GraphQLField,
@@ -127,12 +127,14 @@ def _get_entity_type(type_map: TypeMap):
     return entity_type
 
 
+def _is_key(directive: Any) -> bool:
+    return directive.wrap is Key.wrap  # type: ignore
+
+
 def _has_federation_keys(
     definition: Union[TypeDefinition, ScalarDefinition, EnumDefinition, StrawberryUnion]
 ) -> bool:
     if isinstance(definition, TypeDefinition):
-        return any(
-            directive.wrap is Key.wrap for directive in definition.directives or []
-        )
+        return any(_is_key(directive) for directive in definition.directives or [])
 
     return False
