@@ -1,3 +1,5 @@
+Release type: minor
+
 This release adds support for the `graphql-transport-ws` GraphQL over WebSocket
 protocol. Previously Strawberry only supported the legacy `graphql-ws` protocol.
 
