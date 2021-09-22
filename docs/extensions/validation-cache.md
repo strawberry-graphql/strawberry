@@ -6,7 +6,7 @@ tags: performance,caching
 
 # `ValidationCache`
 
-This plugin adds LRU caching to the validation step of query execution to improve performance by caching the validation errors in memory.
+This extension adds LRU caching to the validation step of query execution to improve performance by caching the validation errors in memory.
 
 ## Usage example:
 

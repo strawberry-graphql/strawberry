@@ -6,7 +6,7 @@ tags: performance,caching
 
 # `ParserCache`
 
-This plugin adds LRU caching to the parsing step of query execution to improve performance by caching the parsed result in memory.
+This extension adds LRU caching to the parsing step of query execution to improve performance by caching the parsed result in memory.
 
 ## Usage example:
 

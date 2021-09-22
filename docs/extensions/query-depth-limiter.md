@@ -6,7 +6,7 @@ tags: security
 
 # `QueryDepthLimiter`
 
-This plugin adds a validator to limit the query depth of GraphQL operations.
+This extension adds a validator to limit the query depth of GraphQL operations.
 
 ## Usage example:
 
