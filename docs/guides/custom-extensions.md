@@ -1,5 +1,5 @@
 ---
-title: Extensions
+title: Custom extensions
 ---
 
 # Extensions
