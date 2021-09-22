@@ -1,7 +1,6 @@
 import asyncio
 
 from aiohttp import web
-from strawberry.aiohttp.handlers import GraphQLWSHandler
 from strawberry.aiohttp.views import GraphQLView
 from strawberry.subscriptions import GRAPHQL_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_ws import (
@@ -144,17 +143,7 @@ async def test_sends_keep_alive(aiohttp_client):
 
 
 async def test_subscription_cancellation(aiohttp_client):
-    class DebuggableHandler(GraphQLWSHandler):
-        async def get_context(self) -> object:
-            context = await super().get_context()
-            context["tasks"] = self.tasks
-            return context
-
-    view = GraphQLView(schema=schema, keep_alive=False)
-    view.graphql_ws_handler_class = DebuggableHandler
-
-    app = web.Application()
-    app.router.add_route("*", "/graphql", view)
+    app = create_app(keep_alive=False)
     aiohttp_app_client = await aiohttp_client(app)
 
     async with aiohttp_app_client.ws_connect(

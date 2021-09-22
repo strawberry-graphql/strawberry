@@ -23,7 +23,7 @@ class FolderInput:
 @strawberry.type
 class DebugInfo:
     num_active_result_handlers: int
-    is_connection_init_timeout_task_done: bool
+    is_connection_init_timeout_task_done: typing.Optional[bool]
 
 
 @strawberry.type
@@ -93,10 +93,17 @@ class Subscription:
         active_result_handlers = [
             task for task in info.context["tasks"].values() if not task.done()
         ]
+
         connection_init_timeout_task = info.context["connectionInitTimeoutTask"]
+        is_connection_init_timeout_task_done = (
+            connection_init_timeout_task.done()
+            if connection_init_timeout_task
+            else None
+        )
+
         yield DebugInfo(
             num_active_result_handlers=len(active_result_handlers),
-            is_connection_init_timeout_task_done=connection_init_timeout_task.done(),
+            is_connection_init_timeout_task_done=is_connection_init_timeout_task_done,
         )
 
 
