@@ -153,3 +153,39 @@ schema = strawberry.Schema(query=Query, subscription=Subscription)
 ```
 
 [pep-525]: https://www.python.org/dev/peps/pep-0525/
+
+## GraphQL over WebSocket protocols
+
+Strawberry support both the legacy
+[graphql-ws](https://github.com/apollographql/subscriptions-transport-ws)
+and the newer recommended
+[graphql-transport-ws](https://github.com/enisdenjo/graphql-ws) WebSocket sub-protocols.
+
+Note that the `graphql-ws` sub-protocol is mainly supported for backwards compatibility.
+Read the [graphql-ws-transport protocols announcement](https://the-guild.dev/blog/graphql-over-websockets)
+to learn more about why the newer protocol is preferred.
+
+Strawberry allows you to choose which protocols you want to accept. All integrations
+supporting subscriptions can be configured with a list of `protocols` to accept:
+
+##### AIOHTTP
+
+```python
+from strawberry.aiohttp.views import GraphQLView
+from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
+from api.schema import schema
+
+
+view = GraphQLView(schema, protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL])
+```
+
+##### ASGI
+
+```python
+from strawberry.asgi import GraphQL
+from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
+from api.schema import schema
+
+
+app = GraphQL(schema, protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL])
+```
