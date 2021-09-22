@@ -6,6 +6,7 @@ from starlette.websockets import WebSocket, WebSocketDisconnect, WebSocketState
 from strawberry.schema import BaseSchema
 from strawberry.subscriptions import GRAPHQL_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_ws.handlers import BaseGraphQLWSHandler
+from strawberry.subscriptions.protocols.graphql_ws.types import OperationMessage
 
 
 class GraphQLWSHandler(BaseGraphQLWSHandler):
@@ -30,7 +31,7 @@ class GraphQLWSHandler(BaseGraphQLWSHandler):
     async def get_root_value(self) -> Any:
         return await self._get_root_value(request=self._ws)
 
-    async def send_json(self, data: dict) -> None:
+    async def send_json(self, data: OperationMessage) -> None:
         await self._ws.send_json(data)
 
     async def close(self, code: int = 1000, reason: Optional[str] = None) -> None:

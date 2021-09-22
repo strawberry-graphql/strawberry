@@ -51,7 +51,7 @@ class BaseGraphQLWSHandler(ABC):
         """Return the schemas root value"""
 
     @abstractmethod
-    async def send_json(self, data: dict) -> None:
+    async def send_json(self, data: OperationMessage) -> None:
         """Send the data JSON encoded to the WebSocket client"""
 
     @abstractmethod
@@ -81,7 +81,8 @@ class BaseGraphQLWSHandler(ABC):
             await self.handle_stop(message)
 
     async def handle_connection_init(self, message: OperationMessage) -> None:
-        await self.send_json({"type": GQL_CONNECTION_ACK})
+        data: OperationMessage = {"type": GQL_CONNECTION_ACK}
+        await self.send_json(data)
 
         if self.keep_alive:
             keep_alive_handler = self.handle_keep_alive()
@@ -132,7 +133,8 @@ class BaseGraphQLWSHandler(ABC):
 
     async def handle_keep_alive(self) -> None:
         while True:
-            await self.send_json({"type": GQL_CONNECTION_KEEP_ALIVE})
+            data: OperationMessage = {"type": GQL_CONNECTION_KEEP_ALIVE}
+            await self.send_json(data)
             await asyncio.sleep(self.keep_alive_interval)
 
     async def handle_async_results(
