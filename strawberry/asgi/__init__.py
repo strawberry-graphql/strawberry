@@ -53,9 +53,9 @@ class GraphQL:
 
         elif scope["type"] == "websocket":
             ws = WebSocket(scope=scope, receive=receive, send=send)
-            intersecting_protocols = set(ws["subprotocols"]) & set(self.protocols)
+            preferred_protocol = self.pick_preferred_protocol(ws)
 
-            if GRAPHQL_TRANSPORT_WS_PROTOCOL in intersecting_protocols:
+            if preferred_protocol == GRAPHQL_TRANSPORT_WS_PROTOCOL:
                 await self.graphql_transport_ws_handler_class(
                     schema=self.schema,
                     debug=self.debug,
@@ -64,7 +64,7 @@ class GraphQL:
                     get_root_value=self.get_root_value,
                     ws=ws,
                 ).handle()
-            elif GRAPHQL_WS_PROTOCOL in intersecting_protocols:
+            elif preferred_protocol == GRAPHQL_WS_PROTOCOL:
                 await self.graphql_ws_handler_class(
                     schema=self.schema,
                     debug=self.debug,
@@ -80,6 +80,12 @@ class GraphQL:
 
         else:  # pragma: no cover
             raise ValueError("Unknown scope type: %r" % (scope["type"],))
+
+    def pick_preferred_protocol(self, ws: WebSocket) -> str:
+        protocols = ws["subprotocols"]
+        intersection = set(protocols) & set(self.protocols)
+        sorted_intersection = sorted(intersection, key=protocols.index)
+        return next(iter(sorted_intersection), None)
 
     async def get_root_value(self, request: Union[Request, WebSocket]) -> Optional[Any]:
         return None
