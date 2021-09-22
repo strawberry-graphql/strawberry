@@ -1,7 +1,7 @@
 ---
 title: AddValidationRules
 summary: Add GraphQL validation rules.
-tags: validation
+tags: validation,security
 ---
 
 # `AddValidationRules`

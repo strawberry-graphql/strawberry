@@ -1,7 +1,7 @@
 ---
 title: ParserCache
 summary: Add in memory caching to the parsing step of query execution.
-tags: performance,caching
+tags: performance,caching,parsing
 ---
 
 # `ParserCache`
