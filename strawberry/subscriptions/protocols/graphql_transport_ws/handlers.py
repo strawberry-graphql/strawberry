@@ -171,13 +171,13 @@ class BaseGraphQLTransportWSHandler(ABC):
         try:
             async for result in result_source:
                 if result.errors:
-                    payload = [format_graphql_error(err) for err in result.errors]
-                    message = ErrorMessage(id=operation_id, payload=payload)
+                    error_payload = [format_graphql_error(err) for err in result.errors]
+                    message = ErrorMessage(id=operation_id, payload=error_payload)
                     await self.send_message(message)
                     return
                 else:
-                    payload = {"data": result.data}
-                    message = NextMessage(id=operation_id, payload=payload)
+                    next_payload = {"data": result.data}
+                    message = NextMessage(id=operation_id, payload=next_payload)
                     await self.send_message(message)
         except asyncio.CancelledError:
             # CancelledErrors are expected during task cleanup.
@@ -186,8 +186,10 @@ class BaseGraphQLTransportWSHandler(ABC):
             # GraphQLErrors are handled by graphql-core and included in the
             # ExecutionResult
             error = GraphQLError(str(error), original_error=error)
-            payload = [format_graphql_error(error)]
-            await self.send_message(ErrorMessage(id=operation_id, payload=payload))
+            error_payload = [format_graphql_error(error)]
+            await self.send_message(
+                ErrorMessage(id=operation_id, payload=error_payload)
+            )
             return
 
         await self.send_message(CompleteMessage(id=operation_id))
