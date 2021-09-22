@@ -39,12 +39,13 @@ class OpenTelemetryExtension(Extension):
     def __init__(
         self,
         *,
-        execution_context: ExecutionContext,
+        execution_context: Optional[ExecutionContext] = None,
         arg_filter: Optional[ArgFilter] = None,
     ):
         self._arg_filter = arg_filter
         self._tracer = trace.get_tracer("strawberry")
-        self.execution_context = execution_context
+        if execution_context:
+            self.execution_context = execution_context
 
     def on_request_start(self):
         span_name = (

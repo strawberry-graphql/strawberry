@@ -1,6 +1,6 @@
 import logging
 import sys
-from typing import Any, Collection, Dict, List, Optional, Sequence, Type, Union
+from typing import Any, Dict, List, Optional, Sequence, Type, Union
 
 from graphql import (
     ExecutionContext as GraphQLExecutionContext,
@@ -12,7 +12,6 @@ from graphql import (
 from graphql.error import GraphQLError
 from graphql.subscription import subscribe
 from graphql.type.directives import specified_directives
-from graphql.validation import ValidationRule
 
 from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.enum import EnumDefinition
@@ -132,12 +131,11 @@ class Schema:
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
-        validate_queries: bool = True,
-        validation_rules: Optional[Collection[Type[ValidationRule]]] = None,
     ) -> ExecutionResult:
         # Create execution context
         execution_context = ExecutionContext(
             query=query,
+            schema=self,
             context=context_value,
             root_value=root_value,
             variables=variable_values,
@@ -150,9 +148,7 @@ class Schema:
             extensions=self.extensions,
             directives=self.directives,
             execution_context_class=self.execution_context_class,
-            validate_queries=validate_queries,
             execution_context=execution_context,
-            validation_rules=validation_rules,
         )
 
         if result.errors:
@@ -167,11 +163,10 @@ class Schema:
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
-        validate_queries: bool = True,
-        validation_rules: Optional[Collection[Type[ValidationRule]]] = None,
     ) -> ExecutionResult:
         execution_context = ExecutionContext(
             query=query,
+            schema=self,
             context=context_value,
             root_value=root_value,
             variables=variable_values,
@@ -184,9 +179,7 @@ class Schema:
             extensions=self.extensions,
             directives=self.directives,
             execution_context_class=self.execution_context_class,
-            validate_queries=validate_queries,
             execution_context=execution_context,
-            validation_rules=validation_rules,
         )
 
         if result.errors:

@@ -45,19 +45,17 @@ type Query {
 
 ---
 
-### `depth_limit_validator`
+### `QueryDepthLimiter`
 
-Create a validator to limit the complexity of queries by their depth to protect against malicious
-queries.
+Extension to add a query depth limter validation rule that limits the complexity of queries by
+their depth to protect against malicious queries.
 
 ```python
-from graphql import ValidationRule
-
-def depth_limit_validator(
+class QueryDepthLimiter(
     max_depth: int,
     ignore: Optional[List[Union[str, re.Pattern, Callable[[str], bool]]]] = None,
     callback: Optional[Callable[Dict[str, int]]] = None
-) -> ValidationRule:
+):
     ...
 ```
 
@@ -71,16 +69,17 @@ Example:
 
 ```python
 import strawberry
-from strawberry.schema import default_validation_rules
-from strawberry.tools import depth_limit_validator
+from strawberry.extensions import QueryDepthLimiter
 
-
-# Add the depth limit validator to the list of default validation rules
-validation_rules = (
-  default_validation_rules + [depth_limit_validator(3)]
+# assuming you already have a Query type
+schema = strawberry.Schema(
+  Query,
+  extensions=[
+    # Add the depth limiter extension
+    QueryDepthLimiter(max_depth=3),
+  ]
 )
 
-# assuming you already have a schema
 result = schema.execute_sync(
     """
     query MyQuery {
@@ -94,8 +93,7 @@ result = schema.execute_sync(
         }
       }
     }
-    """,
-    validation_rules=validation_rules,
+    """
   )
 )
 assert len(result.errors) == 1
