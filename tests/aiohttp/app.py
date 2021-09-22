@@ -7,6 +7,7 @@ from tests.aiohttp.schema import Query, schema
 class DebuggableGraphQLTransportWSHandler(GraphQLTransportWSHandler):
     async def get_context(self) -> object:
         context = await super().get_context()
+        context["ws"] = self._ws
         context["tasks"] = self.tasks
         context["connectionInitTimeoutTask"] = self.connection_init_timeout_task
         return context
@@ -15,6 +16,7 @@ class DebuggableGraphQLTransportWSHandler(GraphQLTransportWSHandler):
 class DebuggableGraphQLWSHandler(GraphQLWSHandler):
     async def get_context(self) -> object:
         context = await super().get_context()
+        context["ws"] = self._ws
         context["tasks"] = self.tasks
         context["connectionInitTimeoutTask"] = None
         return context

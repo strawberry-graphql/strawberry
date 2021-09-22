@@ -6,6 +6,7 @@ from graphql import GraphQLError
 
 import strawberry
 from strawberry.file_uploads import Upload
+from strawberry.subscriptions.protocols.graphql_transport_ws.types import PingMessage
 
 
 @strawberry.enum
@@ -60,6 +61,12 @@ class Subscription:
     ) -> typing.AsyncGenerator[str, None]:
         await asyncio.sleep(delay)
         yield message
+
+    @strawberry.subscription
+    async def request_ping(self, info) -> typing.AsyncGenerator[bool, None]:
+        ws = info.context["ws"]
+        await ws.send_json(PingMessage().as_dict())
+        yield True
 
     @strawberry.subscription
     async def infinity(self, message: str) -> typing.AsyncGenerator[str, None]:
