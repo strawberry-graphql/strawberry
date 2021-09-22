@@ -200,8 +200,7 @@ class BaseGraphQLTransportWSHandler(ABC):
 
     async def send_message(self, message: GraphQLTransportMessage) -> None:
         data = message.as_dict()
-        with suppress(ConnectionResetError):
-            await self.send_json(data)
+        await self.send_json(data)
 
     async def cleanup_operation(self, operation_id: str) -> None:
         await self.subscriptions[operation_id].aclose()
