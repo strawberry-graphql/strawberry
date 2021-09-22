@@ -7,7 +7,7 @@ from strawberry.schema.execute import validate_document
 
 class ValidationCache(Extension):
     """
-    Add LRU caching the validaation step during execution to improve performance.
+    Add LRU caching the validation step during execution to improve performance.
 
     Example:
 
