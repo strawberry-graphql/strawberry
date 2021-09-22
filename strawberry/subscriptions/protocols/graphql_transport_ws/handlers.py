@@ -75,9 +75,9 @@ class BaseGraphQLTransportWSHandler(ABC):
         await self.close(code=4408, reason=reason)
 
     async def handle_message(self, message: dict):
-        message_type = message.pop("type")
-
         try:
+            message_type = message.pop("type")
+
             if message_type == ConnectionInitMessage.type:
                 await self.handle_connection_init(ConnectionInitMessage(**message))
 
@@ -88,7 +88,7 @@ class BaseGraphQLTransportWSHandler(ABC):
                 await self.handle_pong(PongMessage(**message))
 
             elif message_type == SubscribeMessage.type:
-                payload = SubscribeMessagePayload(**message.pop("payload", {}))
+                payload = SubscribeMessagePayload(**message.pop("payload"))
                 await self.handle_subscribe(
                     SubscribeMessage(payload=payload, **message)
                 )
@@ -97,10 +97,10 @@ class BaseGraphQLTransportWSHandler(ABC):
                 await self.handle_complete(CompleteMessage(**message))
 
             else:
-                error_message = f"Unknown message type: {message_type or ''}"
+                error_message = f"Unknown message type: {message_type}"
                 await self.handle_invalid_message(error_message)
 
-        except TypeError:
+        except (KeyError, TypeError):
             error_message = "Failed to parse message"
             await self.handle_invalid_message(error_message)
 
@@ -132,7 +132,7 @@ class BaseGraphQLTransportWSHandler(ABC):
         context = await self.get_context()
         root_value = await self.get_root_value()
 
-        if self.debug:
+        if self.debug:  # pragma: no cover
             pretty_print_graphql_operation(
                 message.payload.operationName,
                 message.payload.query,
@@ -173,6 +173,7 @@ class BaseGraphQLTransportWSHandler(ABC):
                     payload = [format_graphql_error(err) for err in result.errors]
                     message = ErrorMessage(id=operation_id, payload=payload)
                     await self.send_message(message)
+                    return
                 else:
                     payload = {"data": result.data}
                     message = NextMessage(id=operation_id, payload=payload)

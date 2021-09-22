@@ -23,6 +23,7 @@ class FolderInput:
 @strawberry.type
 class DebugInfo:
     num_active_result_handlers: int
+    is_connection_init_timeout_task_done: bool
 
 
 @strawberry.type
@@ -92,7 +93,11 @@ class Subscription:
         active_result_handlers = [
             task for task in info.context["tasks"].values() if not task.done()
         ]
-        yield DebugInfo(num_active_result_handlers=len(active_result_handlers))
+        connection_init_timeout_task = info.context["connectionInitTimeoutTask"]
+        yield DebugInfo(
+            num_active_result_handlers=len(active_result_handlers),
+            is_connection_init_timeout_task_done=connection_init_timeout_task.done(),
+        )
 
 
 schema = strawberry.Schema(query=Query, mutation=Mutation, subscription=Subscription)
