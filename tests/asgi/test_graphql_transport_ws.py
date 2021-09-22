@@ -65,7 +65,7 @@ def test_ws_messages_must_be_text(test_client):
 
 
 def test_connection_init_timeout():
-    app = create_app(connection_init_wait_timeout=timedelta(milliseconds=100))
+    app = create_app(connection_init_wait_timeout=timedelta(milliseconds=250))
     test_client = TestClient(app)
 
     with test_client.websocket_connect("/", [GRAPHQL_TRANSPORT_WS_PROTOCOL]) as ws:
