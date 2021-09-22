@@ -1,5 +1,5 @@
 import inspect
-from typing import Any, Dict, List, Optional, Type, Union, cast
+from typing import Any, Dict, List, Optional, Type, Union
 
 from graphql import MiddlewareManager
 
@@ -33,11 +33,9 @@ class ExtensionsRunner:
             # If the extension has already been instantiated then set the
             # `execution_context` attribute
             if isinstance(extension, Extension):
-                extension = cast(Extension, extension)
                 extension.execution_context = execution_context
                 init_extensions.append(extension)
             else:
-                extension = cast(Type[Extension], extension)
                 init_extensions.append(extension(execution_context=execution_context))
 
         self.extensions = init_extensions
