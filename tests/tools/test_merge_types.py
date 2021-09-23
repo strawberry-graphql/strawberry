@@ -1,4 +1,3 @@
-from operator import attrgetter
 from textwrap import dedent
 
 import pytest
@@ -41,7 +40,7 @@ def test_inheritance():
     definition = ComboQuery._type_definition
     assert len(definition.fields) == 4
 
-    actuals = [attrgetter("python_name", "type")(f) for f in definition.fields]
+    actuals = [(field.python_name, field.type) for field in definition.fields]
     expected = [("hi", str), ("bye", str), ("name", str), ("age", int)]
     assert actuals == expected
 
