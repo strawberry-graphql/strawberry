@@ -1,3 +1,4 @@
+import enum
 from copy import deepcopy
 from inspect import isawaitable
 from typing import Any, Callable, Dict, Optional
@@ -19,6 +20,12 @@ DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 ArgFilter = Callable[[Dict[str, Any], GraphQLResolveInfo], Dict[str, Any]]
 
 
+class RequestStage(enum.Enum):
+    REQUEST = enum.auto()
+    PARSING = enum.auto()
+    VALIDATION = enum.auto()
+
+
 if hasattr(trace, "use_span"):
 
     def _use_span(span: Span, tracer: Tracer):
@@ -33,7 +40,7 @@ else:
 
 class OpenTelemetryExtension(Extension):
     _arg_filter: Optional[ArgFilter]
-    _root_span: Span
+    _span_holder: Dict[str, Span] = dict()
     _tracer: Tracer
 
     def __init__(
@@ -54,12 +61,35 @@ class OpenTelemetryExtension(Extension):
             else "GraphQL Query"
         )
 
-        self._root_span = self._tracer.start_span(span_name, kind=SpanKind.SERVER)
-        self._root_span.set_attribute("component", "graphql")
-        self._root_span.set_attribute("query", self.execution_context.query)
+        self._span_holder[RequestStage.REQUEST] = self._tracer.start_span(
+            span_name, kind=SpanKind.SERVER
+        )
+        self._span_holder[RequestStage.REQUEST].set_attribute("component", "graphql")
+        self._span_holder[RequestStage.REQUEST].set_attribute(
+            "query", self.execution_context.query
+        )
 
     def on_request_end(self):
-        self._root_span.end()
+        self._span_holder[RequestStage.REQUEST].end()
+
+    def on_validation_start(self):
+        ctx = trace.set_span_in_context(self._span_holder[RequestStage.REQUEST])
+        self._span_holder[RequestStage.VALIDATION] = self._tracer.start_span(
+            "GraphQL Validation",
+            context=ctx,
+        )
+
+    def on_validation_end(self):
+        self._span_holder[RequestStage.VALIDATION].end()
+
+    def on_parsing_start(self):
+        ctx = trace.set_span_in_context(self._span_holder[RequestStage.REQUEST])
+        self._span_holder[RequestStage.PARSING] = self._tracer.start_span(
+            "GraphQL Parsing", context=ctx
+        )
+
+    def on_parsing_end(self):
+        self._span_holder[RequestStage.PARSING].end()
 
     def filter_resolver_args(
         self, args: Dict[str, Any], info: GraphQLResolveInfo
@@ -90,7 +120,7 @@ class OpenTelemetryExtension(Extension):
 
             return result
 
-        with _use_span(self._root_span, self._tracer):
+        with _use_span(self._span_holder[RequestStage.REQUEST], self._tracer):
             with self._tracer.start_span(info.field_name, kind=SpanKind.SERVER) as span:
                 self.add_tags(span, info, kwargs)
                 result = _next(root, info, *args, **kwargs)
@@ -108,7 +138,7 @@ class OpenTelemetryExtensionSync(OpenTelemetryExtension):
 
             return result
 
-        with _use_span(self._root_span, self._tracer):
+        with _use_span(self._span_holder[RequestStage.REQUEST], self._tracer):
             with self._tracer.start_span(info.field_name, kind=SpanKind.SERVER) as span:
                 self.add_tags(span, info, kwargs)
                 result = _next(root, info, *args, **kwargs)
