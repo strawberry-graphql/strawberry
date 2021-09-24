@@ -1,6 +1,5 @@
 import os
-import signal
-import subprocess
+import re
 import sys
 import time
 
@@ -8,8 +7,17 @@ import pytest
 
 import requests
 import uvicorn
+from xprocess import ProcessStarter
 
 from strawberry.cli.commands.server import server as cmd_server
+
+
+BOOT_MSG = "Running strawberry on http://0.0.0.0:8000/graphql"
+if sys.platform != "win32":
+    # UTF-8 chars are not supported by default console on Windows
+    BOOT_MSG = BOOT_MSG + " 🍓"
+
+BOOT_MSG_RE = re.compile(f"^{BOOT_MSG}\n")
 
 
 def test_cli_cmd_server(cli_runner):
@@ -18,7 +26,7 @@ def test_cli_cmd_server(cli_runner):
 
     assert result.exit_code == 0
     assert uvicorn.run.call_count == 1
-    assert result.output == "Running strawberry on http://0.0.0.0:8000/graphql 🍓\n"
+    assert BOOT_MSG_RE.match(result.output)
 
 
 def test_cli_cmd_server_app_dir_option(cli_runner):
@@ -28,7 +36,7 @@ def test_cli_cmd_server_app_dir_option(cli_runner):
 
     assert result.exit_code == 0
     assert uvicorn.run.call_count == 1
-    assert result.output == "Running strawberry on http://0.0.0.0:8000/graphql 🍓\n"
+    assert BOOT_MSG_RE.match(result.output)
 
 
 def test_default_schema_symbol_name(cli_runner):
@@ -92,7 +100,28 @@ def test_debug_server_routes(debug_server_client):
         assert response.status_code == 200
 
 
-def test_automatic_reloading(tmp_path):
+def test_automatic_reloading(xprocess, tmp_path):
+
+    # used to start our dev server
+    class Starter(ProcessStarter):
+        # Unbuffered output improves start up detection reliabiity on Windows
+        env = {"PYTHONUNBUFFERED": "1", **os.environ}
+        # considered started once this pattern is found
+        pattern = BOOT_MSG_RE
+        terminate_on_interrupt = True
+        timeout = 10
+        args = [
+            "poetry",
+            "run",
+            "strawberry",
+            "server",
+            "--app-dir",
+            # Python Versions < 3.8 on Windows do not have an Iterable WindowsPath
+            # casting to str prevents this from throwing a TypeError on Windows
+            str(tmp_path),
+            "schema",
+        ]
+
     source = (
         "import strawberry\n"
         "@strawberry.type\n"
@@ -107,34 +136,32 @@ def test_automatic_reloading(tmp_path):
     schema_file_path.touch()
     schema_file_path.write_text(source.format(42))
 
-    args = ["poetry", "run", "strawberry", "server", "--app-dir", tmp_path, "schema"]
+    xprocess.ensure("dev_server", Starter)
 
-    with subprocess.Popen(
-        args, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, preexec_fn=os.setsid
-    ) as proc:
+    url = "http://127.0.0.1:8000/graphql"
+    query = {"query": "{ number }"}
 
-        url = "http://127.0.0.1:8000/graphql"
-        query = {"query": "{ number }"}
+    # this disables proxy use on Windows
+    proxies = {"http": None}
 
-        # It takes uvicorn some time to initially start the server
-        for i in range(5):
-            try:
-                response = requests.post(url, json=query)
-                assert response.status_code == 200
-                assert response.json() == {"data": {"number": 42}}
-            except requests.RequestException:
-                time.sleep(0.5)
+    for _ in range(5):
+        try:
+            response = requests.post(url, json=query, proxies=proxies)
+            assert response.status_code == 200
+            assert response.json() == {"data": {"number": 42}}
+        except requests.RequestException:
+            time.sleep(0.5)
 
-        schema_file_path.write_text(source.format(1234))
+    # trigger reload
+    schema_file_path.write_text(source.format(1234))
 
-        # It takes uvicorn some time to detect file changes
-        for _ in range(5):
-            try:
-                response = requests.post(url, json=query)
-                assert response.status_code == 200
-                assert response.json() == {"data": {"number": 1234}}
-            except AssertionError:
-                time.sleep(0.5)
+    # It takes uvicorn some time to detect file changes
+    for _ in range(5):
+        try:
+            response = requests.post(url, json=query, proxies=proxies)
+            assert response.status_code == 200
+            assert response.json() == {"data": {"number": 1234}}
+        except AssertionError:
+            time.sleep(0.5)
 
-        os.killpg(proc.pid, signal.SIGKILL)
-        proc.communicate(timeout=10)
+    xprocess.getinfo("dev_server").terminate()
