@@ -1,3 +1,5 @@
+from collections import Counter
+from itertools import chain
 from typing import Tuple, Type
 
 import strawberry
@@ -23,5 +25,11 @@ def merge_types(types: Tuple[Type], name: str = DEFAULT_NAME) -> Type:
 
     if not types:
         raise ValueError("Can't merge types if none are supplied")
+
+    fields = chain(*(t._type_definition.fields for t in types))
+    counter = Counter(f.name for f in fields)
+    dupes = [f for f, c in counter.most_common() if c > 1]
+    if dupes:
+        raise Warning("{} has overridden fields: {}".format(name, ", ".join(dupes)))
 
     return strawberry.type(type(name, types, {}))
