@@ -4,6 +4,7 @@ import pytest
 
 import strawberry
 from strawberry.tools import merge_types
+from strawberry.tools.merge_types import DEFAULT_NAME
 
 
 @strawberry.type
@@ -30,6 +31,21 @@ class Greeter:
     @strawberry.field
     def bye(self, name: str = "world") -> str:
         return f"Bye, {name}!"
+
+
+def test_default_name():
+    """The resulting type should have the default name is none is specified"""
+
+    ComboQuery = merge_types((Greeter, Person))
+    assert ComboQuery.__name__ == DEFAULT_NAME
+
+
+def test_custom_name():
+    """The resulting type should have a custom name is one is specified"""
+
+    custom_name = "SuperQuery"
+    ComboQuery = merge_types((Greeter, Person), custom_name)
+    assert ComboQuery.__name__ == custom_name
 
 
 def test_inheritance():

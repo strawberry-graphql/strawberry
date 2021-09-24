@@ -3,7 +3,10 @@ from typing import Tuple, Type
 import strawberry
 
 
-def merge_types(types: Tuple[Type]) -> Type:
+DEFAULT_NAME = "MegaType"
+
+
+def merge_types(types: Tuple[Type], name: str = DEFAULT_NAME) -> Type:
     """Merge multiple Strawberry types into one
 
     For example, given two queries `A` and `B`, one can merge them as follows:
@@ -14,9 +17,11 @@ def merge_types(types: Tuple[Type]) -> Type:
 
         class Query(B, A):
             ...
+
+    An optional name may be specified for the resulting type.
     """
 
     if not types:
         raise ValueError("Can't merge types if none are supplied")
 
-    return strawberry.type(type("MegaType", types, {}))
+    return strawberry.type(type(name, types, {}))
