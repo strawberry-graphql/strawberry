@@ -1,6 +1,6 @@
 from asyncio import ensure_future
 from inspect import isawaitable
-from typing import Any, Awaitable, List, Optional, Sequence, Tuple, Type, cast
+from typing import Any, Awaitable, List, Optional, Sequence, Tuple, Type, Union, cast
 
 from graphql import (
     ExecutionContext as GraphQLExecutionContext,
@@ -50,7 +50,7 @@ def _run_validation(execution_context: ExecutionContext) -> None:
 async def execute(
     schema: GraphQLSchema,
     query: str,
-    extensions: Sequence[Type[Extension]],
+    extensions: Sequence[Union[Type[Extension], Extension]],
     directives: Sequence[Any],
     execution_context: ExecutionContext,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
@@ -121,7 +121,7 @@ async def execute(
 def execute_sync(
     schema: GraphQLSchema,
     query: str,
-    extensions: Sequence[Type[Extension]],
+    extensions: Sequence[Union[Type[Extension], Extension]],
     directives: Sequence[Any],
     execution_context: ExecutionContext,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,

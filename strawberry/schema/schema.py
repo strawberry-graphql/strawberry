@@ -39,7 +39,7 @@ class Schema:
         subscription: Optional[Type] = None,
         directives=(),
         types=(),
-        extensions: Sequence[Type[Extension]] = (),
+        extensions: Sequence[Union[Type[Extension], Extension]] = (),
         execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
         config: Optional[StrawberryConfig] = None,
         scalar_overrides: Optional[
