@@ -2,25 +2,11 @@
 title: Custom extensions
 ---
 
-# Extensions
+# Custom extensions
 
 Strawberry provides support for adding extensions. Extensions can be used to
 hook into different parts of the GraphQL execution and to provide additional
 results to the GraphQL response.
-
-To enable extensions you can pass them when creating a schema, here's an example
-that enables the Apollo tracing extension:
-
-```python
-import strawberry
-from strawberry.extensions.tracing import ApolloTracingExtension
-
-# Your Query definition goes here
-
-schema = strawberry.Schema(query=Query, extensions=[ApolloTracingExtension])
-```
-
-## Creating custom extensions
 
 To create a custom extensions you can use extend from our `Extension` base
 class:
