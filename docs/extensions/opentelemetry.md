@@ -44,6 +44,8 @@ schema = strawberry.Schema(
 
 ## API reference:
 
+`class OpenTelemetryExtension(arg_filter=None)`
+
 **`arg_filter: Optional[ArgFilter]`**
 
 A function to filter certain field arguments from being included in the tracing
