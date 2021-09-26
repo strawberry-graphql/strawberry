@@ -30,7 +30,9 @@ schema = strawberry.Schema(
 
 ## API reference:
 
-`class AddValidationRules(validation_rules)`
+```python
+class AddValidationRules(validation_rules)
+```
 
 **`validation_rules: List[Type[ASTValidationRule]]`**
 

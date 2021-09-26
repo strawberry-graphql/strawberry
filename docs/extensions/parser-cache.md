@@ -24,7 +24,9 @@ schema = strawberry.Schema(
 
 ## API reference:
 
-`class ParserCache(maxsize=None)`
+```python
+class ParserCache(maxsize=None)
+```
 
 **`maxsize: Optional[int] = None`**
 

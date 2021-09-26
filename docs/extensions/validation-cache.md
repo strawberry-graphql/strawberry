@@ -24,7 +24,9 @@ schema = strawberry.Schema(
 
 ## API reference:
 
-`class ValidationCache(maxsize=None)`
+```python
+class ValidationCache(maxsize=None)
+```
 
 **`maxsize: Optional[int] = None`**
 
