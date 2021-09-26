@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.78.1 - 2021-09-26
+-------------------
+
+Fix `extensions` argument type definition on `strawberry.Schema`
+
+Contributed by [Guillaume Andreu Sabater](https://github.com/g-as) [PR #1276](https://github.com/strawberry-graphql/strawberry/pull/1276/)
+
+
 0.78.0 - 2021-09-22
 -------------------
 
