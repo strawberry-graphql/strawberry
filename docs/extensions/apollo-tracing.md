@@ -38,4 +38,4 @@ schema = strawberry.Schema(
 
 ## API reference:
 
-*No arguments*
+_No arguments_

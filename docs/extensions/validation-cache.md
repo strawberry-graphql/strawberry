@@ -35,15 +35,16 @@ More info: https://docs.python.org/3/library/functools.html#functools.lru_cache
 <details>
   <summary>Using maxsize</summary>
 
-  ```python
-  import strawberry
-  from strawberry.extensions import ValidationCache
+```python
+import strawberry
+from strawberry.extensions import ValidationCache
 
-  schema = strawberry.Schema(
-      Query,
-      extensions=[
-          ValidationCache(maxsize=100),
-      ]
-  )
-  ```
+schema = strawberry.Schema(
+    Query,
+    extensions=[
+        ValidationCache(maxsize=100),
+    ]
+)
+```
+
 </details>

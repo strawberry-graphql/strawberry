@@ -61,27 +61,28 @@ ArgFilter = Callable[
 <details>
   <summary>Using `arg_filter`</summary>
 
-  ```python
-  import strawberry
-  from strawberry.extensions.tracing import OpenTelemetryExtensionSync
+```python
+import strawberry
+from strawberry.extensions.tracing import OpenTelemetryExtensionSync
 
-  def arg_filter(kwargs, info):
-      filtered_kwargs = {}
-      for name, value in kwargs:
-          # Never include any arguments called "password"
-          if name == "password":
-              continue
-          filtered_kwargs[name] = value
+def arg_filter(kwargs, info):
+    filtered_kwargs = {}
+    for name, value in kwargs:
+        # Never include any arguments called "password"
+        if name == "password":
+            continue
+        filtered_kwargs[name] = value
 
-      return filtered_kwargs
+    return filtered_kwargs
 
-  schema = strawberry.Schema(
-      Query,
-      extensions=[
-          OpenTelemetryExtensionSync(
-            arg_filter=arg_filter,
-          ),
-      ]
-  )
-  ```
+schema = strawberry.Schema(
+    Query,
+    extensions=[
+        OpenTelemetryExtensionSync(
+          arg_filter=arg_filter,
+        ),
+    ]
+)
+```
+
 </details>

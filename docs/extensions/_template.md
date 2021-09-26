@@ -33,15 +33,16 @@ Description of the argument.
 <details>
   <summary>Using `an_argument`</summary>
 
-  ```python
-  import strawberry
-  from strawberry.extensions import ValidationCache
+```python
+import strawberry
+from strawberry.extensions import ValidationCache
 
-  schema = strawberry.Schema(
-      Query,
-      extensions=[
-          ExtensionName(an_argument="something"),
-      ]
-  )
-  ```
+schema = strawberry.Schema(
+    Query,
+    extensions=[
+        ExtensionName(an_argument="something"),
+    ]
+)
+```
+
 </details>

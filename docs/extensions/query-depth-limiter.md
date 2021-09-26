@@ -44,24 +44,38 @@ map of the depths for each operation.
 <details>
   <summary>Ignoring fields</summary>
 
-  ```python
-  import strawberry
-  from strawberry.extensions import QueryDepthLimiter
+```python
+import strawberry
+from strawberry.extensions import QueryDepthLimiter
 
-  schema = strawberry.Schema(
-      Query,
-      extensions=[
-          QueryDepthLimiter(
-            max_depth=2,
-            ignore=["user"]
-          ),
-      ]
-  )
+schema = strawberry.Schema(
+    Query,
+    extensions=[
+        QueryDepthLimiter(
+          max_depth=2,
+          ignore=["user"]
+        ),
+    ]
+)
 
-  # This query fails
-  schema.execute("""
-    query TooDeep {
-      book {
+# This query fails
+schema.execute("""
+  query TooDeep {
+    book {
+      author {
+        publishedBooks {
+          title
+        }
+      }
+    }
+  }
+""")
+
+# This query succeeds because the `user` field is ignored
+schema.execute("""
+  query NotTooDeep {
+    user {
+      favouriteBooks {
         author {
           publishedBooks {
             title
@@ -69,89 +83,78 @@ map of the depths for each operation.
         }
       }
     }
-  """)
+  }
+""")
+```
 
-  # This query succeeds because the `user` field is ignored
-  schema.execute("""
-    query NotTooDeep {
-      user {
-        favouriteBooks {
-          author {
-            publishedBooks {
-              title
-            }
-          }
-        }
-      }
-    }
-  """)
-  ```
 </details>
 
 <details>
   <summary>Ignoring fields with regex</summary>
 
-  ```python
-  import re
-  import strawberry
-  from strawberry.extensions import QueryDepthLimiter
+```python
+import re
+import strawberry
+from strawberry.extensions import QueryDepthLimiter
 
-  schema = strawberry.Schema(
-      Query,
-      extensions=[
-          QueryDepthLimiter(
-            max_depth=2,
-            ignore=[re.compile(r".*favourite.*"]
-          ),
-      ]
-  )
+schema = strawberry.Schema(
+    Query,
+    extensions=[
+        QueryDepthLimiter(
+          max_depth=2,
+          ignore=[re.compile(r".*favourite.*"]
+        ),
+    ]
+)
 
-  # This query succeeds because an field that contains `favourite` is ignored
-  schema.execute("""
-    query NotTooDeep {
-      user {
-        favouriteBooks {
-          author {
-            publishedBooks {
-              title
-            }
+# This query succeeds because an field that contains `favourite` is ignored
+schema.execute("""
+  query NotTooDeep {
+    user {
+      favouriteBooks {
+        author {
+          publishedBooks {
+            title
           }
         }
       }
     }
-  """)
-  ```
+  }
+""")
+```
+
 </details>
 
 <details>
   <summary>Ignoring fields with a function</summary>
 
-  ```python
-  import strawberry
-  from strawberry.extensions import QueryDepthLimiter
+```python
+import strawberry
+from strawberry.extensions import QueryDepthLimiter
 
-  schema = strawberry.Schema(
-      Query,
-      extensions=[
-          QueryDepthLimiter(
-            max_depth=2,
-            ignore=[lambda field_name: field_name == "user"]
-          ),
-      ]
-  )
+schema = strawberry.Schema(
+    Query,
+    extensions=[
+        QueryDepthLimiter(
+          max_depth=2,
+          ignore=[lambda field_name: field_name == "user"]
+        ),
+    ]
+)
 
-  schema.execute("""
-    query NotTooDeep {
-      user {
-        favouriteBooks {
-          author {
-            publishedBooks {
-              title
-            }
+schema.execute("""
+  query NotTooDeep {
+    user {
+      favouriteBooks {
+        author {
+          publishedBooks {
+            title
           }
         }
       }
     }
-  """)
-  ```
+  }
+""")
+```
+
 </details>
