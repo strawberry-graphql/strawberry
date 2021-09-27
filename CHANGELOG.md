@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.78.2 - 2021-09-27
+-------------------
+
+Enhances strawberry.extensions.tracing.opentelemetry to include spans for the Parsing and Validation phases of request handling. These occur before your resovler is called, so now you can see how much time those phases take up!
+
+Contributed by [Michael Ossareh](https://github.com/ossareh) [PR #1274](https://github.com/strawberry-graphql/strawberry/pull/1274/)
+
+
 0.78.1 - 2021-09-26
 -------------------
 
