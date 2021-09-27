@@ -239,7 +239,7 @@ Each field of the `Mutation` type defines the signature and return type of a
 different mutation. The `Mutation` type for our example schema might resemble
 the following:
 
-```python
+```python line=2-4
 @strawberry.type
 class Mutation:
   @strawberry.field
