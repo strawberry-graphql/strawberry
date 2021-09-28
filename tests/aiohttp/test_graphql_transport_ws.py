@@ -101,6 +101,9 @@ async def test_connection_init_timeout(aiohttp_client):
     app = create_app(connection_init_wait_timeout=timedelta(seconds=0))
     aiohttp_app_client = await aiohttp_client(app)
 
+    # Make sure the connection init timeout expired
+    await asyncio.sleep(0.1)
+
     async with aiohttp_app_client.ws_connect(
         "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:

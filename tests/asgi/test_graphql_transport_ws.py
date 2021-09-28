@@ -3,6 +3,7 @@ import json
 from datetime import timedelta
 
 from starlette.testclient import TestClient
+from starlette.websockets import WebSocketDisconnect
 
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
@@ -64,14 +65,20 @@ def test_ws_messages_must_be_text(test_client):
         assert data["code"] == 4400
 
 
-def test_connection_init_timeout():
-    app = create_app(connection_init_wait_timeout=timedelta(milliseconds=250))
+async def test_connection_init_timeout():
+    app = create_app(connection_init_wait_timeout=timedelta(seconds=0))
     test_client = TestClient(app)
 
-    with test_client.websocket_connect("/", [GRAPHQL_TRANSPORT_WS_PROTOCOL]) as ws:
-        data = ws.receive()
-        assert data["type"] == "websocket.close"
-        assert data["code"] == 4408
+    # Hope that the connection init timeout expired
+    await asyncio.sleep(0.1)
+
+    try:
+        with test_client.websocket_connect("/", [GRAPHQL_TRANSPORT_WS_PROTOCOL]) as ws:
+            data = ws.receive()
+            assert data["type"] == "websocket.close"
+            assert data["code"] == 4408
+    except WebSocketDisconnect as exc:
+        assert exc.code == 4408
 
 
 async def test_connection_init_timeout_cancellation(test_client):
