@@ -13,5 +13,5 @@ from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL
 from api.schema import schema
 
 
-app = GraphQL(schema, protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL])
+app = GraphQL(schema, subscription_protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL])
 ```

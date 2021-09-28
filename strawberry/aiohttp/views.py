@@ -24,7 +24,7 @@ class GraphQLView:
         keep_alive: bool = True,
         keep_alive_interval: float = 1,
         debug: bool = False,
-        protocols=(GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL),
+        subscription_protocols=(GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL),
         connection_init_wait_timeout: timedelta = timedelta(minutes=1),
     ):
         self.schema = schema
@@ -32,11 +32,11 @@ class GraphQLView:
         self.keep_alive = keep_alive
         self.keep_alive_interval = keep_alive_interval
         self.debug = debug
-        self.protocols = protocols
+        self.subscription_protocols = subscription_protocols
         self.connection_init_wait_timeout = connection_init_wait_timeout
 
     async def __call__(self, request: web.Request) -> web.StreamResponse:
-        ws = web.WebSocketResponse(protocols=self.protocols)
+        ws = web.WebSocketResponse(protocols=self.subscription_protocols)
         ws_test = ws.can_prepare(request)
 
         if ws_test.ok:
