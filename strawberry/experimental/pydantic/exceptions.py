@@ -5,7 +5,11 @@ from pydantic import BaseModel
 
 class MissingFieldsListError(Exception):
     def __init__(self, type: Type[BaseModel]):
-        message = f"List of fields to copy from {type} is empty"
+        message = (
+            f"List of fields to copy from {type} is empty. Either pass a "
+            f"`fields` list, set `all_fields` to True, or add fields with the "
+            f"`auto` type"
+        )
 
         super().__init__(message)
 

@@ -3,6 +3,7 @@ from typing import List, Optional
 import pydantic
 
 import strawberry
+from strawberry.experimental.pydantic import auto
 from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.types.types import TypeDefinition
 
@@ -12,9 +13,10 @@ def test_basic_error_type():
         name: str
         age: int
 
-    @strawberry.experimental.pydantic.error_type(UserModel, fields=["name", "age"])
+    @strawberry.experimental.pydantic.error_type(UserModel)
     class UserError:
-        pass
+        name: auto
+        age: auto
 
     definition: TypeDefinition = UserError._type_definition
     assert definition.name == "UserError"
@@ -39,13 +41,13 @@ def test_error_type_with_nested_model():
     class UserModel(pydantic.BaseModel):
         friend: FriendModel
 
-    @strawberry.experimental.pydantic.error_type(FriendModel, fields=["food"])
+    @strawberry.experimental.pydantic.error_type(FriendModel)
     class FriendError:
-        pass
+        food: auto
 
-    @strawberry.experimental.pydantic.error_type(UserModel, fields=["friend"])
+    @strawberry.experimental.pydantic.error_type(UserModel)
     class UserError:
-        pass
+        friend: auto
 
     definition: TypeDefinition = UserError._type_definition
     assert definition.name == "UserError"
@@ -64,13 +66,13 @@ def test_error_type_with_list_nested_model():
     class UserModel(pydantic.BaseModel):
         friends: List[FriendModel]
 
-    @strawberry.experimental.pydantic.error_type(FriendModel, fields=["food"])
+    @strawberry.experimental.pydantic.error_type(FriendModel)
     class FriendError:
-        pass
+        food: auto
 
-    @strawberry.experimental.pydantic.error_type(UserModel, fields=["friends"])
+    @strawberry.experimental.pydantic.error_type(UserModel)
     class UserError:
-        pass
+        friends: auto
 
     definition: TypeDefinition = UserError._type_definition
     assert definition.name == "UserError"
@@ -88,9 +90,9 @@ def test_error_type_with_list_of_scalar():
     class UserModel(pydantic.BaseModel):
         friends: List[int]
 
-    @strawberry.experimental.pydantic.error_type(UserModel, fields=["friends"])
+    @strawberry.experimental.pydantic.error_type(UserModel)
     class UserError:
-        pass
+        friends: auto
 
     definition: TypeDefinition = UserError._type_definition
     assert definition.name == "UserError"
@@ -109,9 +111,9 @@ def test_error_type_with_optional_field():
     class UserModel(pydantic.BaseModel):
         age: Optional[int]
 
-    @strawberry.experimental.pydantic.error_type(UserModel, fields=["age"])
+    @strawberry.experimental.pydantic.error_type(UserModel)
     class UserError:
-        pass
+        age: auto
 
     definition: TypeDefinition = UserError._type_definition
     assert definition.name == "UserError"
@@ -128,9 +130,9 @@ def test_error_type_with_list_of_optional_scalar():
     class UserModel(pydantic.BaseModel):
         age: List[Optional[int]]
 
-    @strawberry.experimental.pydantic.error_type(UserModel, fields=["age"])
+    @strawberry.experimental.pydantic.error_type(UserModel)
     class UserError:
-        pass
+        age: auto
 
     definition: TypeDefinition = UserError._type_definition
 
@@ -149,9 +151,9 @@ def test_error_type_with_optional_list_scalar():
     class UserModel(pydantic.BaseModel):
         age: Optional[List[int]]
 
-    @strawberry.experimental.pydantic.error_type(UserModel, fields=["age"])
+    @strawberry.experimental.pydantic.error_type(UserModel)
     class UserError:
-        pass
+        age: auto
 
     definition: TypeDefinition = UserError._type_definition
 
@@ -170,9 +172,9 @@ def test_error_type_with_optional_list_of_optional_scalar():
     class UserModel(pydantic.BaseModel):
         age: Optional[List[Optional[int]]]
 
-    @strawberry.experimental.pydantic.error_type(UserModel, fields=["age"])
+    @strawberry.experimental.pydantic.error_type(UserModel)
     class UserError:
-        pass
+        age: auto
 
     definition: TypeDefinition = UserError._type_definition
 
@@ -191,16 +193,16 @@ def test_error_type_with_optional_list_of_nested_model():
     class FriendModel(pydantic.BaseModel):
         name: str
 
-    @strawberry.experimental.pydantic.error_type(FriendModel, fields=["name"])
-    class FriendError(pydantic.BaseModel):
-        pass
+    @strawberry.experimental.pydantic.error_type(FriendModel)
+    class FriendError:
+        name: auto
 
     class UserModel(pydantic.BaseModel):
         friends: Optional[List[FriendModel]]
 
-    @strawberry.experimental.pydantic.error_type(UserModel, fields=["friends"])
+    @strawberry.experimental.pydantic.error_type(UserModel)
     class UserError:
-        pass
+        friends: auto
 
     definition: TypeDefinition = UserError._type_definition
 
@@ -218,9 +220,9 @@ def test_error_type_with_matrix_list_of_scalar():
     class UserModel(pydantic.BaseModel):
         age: List[List[int]]
 
-    @strawberry.experimental.pydantic.error_type(UserModel, fields=["age"])
+    @strawberry.experimental.pydantic.error_type(UserModel)
     class UserError:
-        pass
+        age: auto
 
     definition: TypeDefinition = UserError._type_definition
 

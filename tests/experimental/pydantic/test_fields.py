@@ -3,6 +3,7 @@ import pytest
 import pydantic
 
 import strawberry
+from strawberry.experimental.pydantic import auto
 from strawberry.type import StrawberryOptional
 from strawberry.types.types import TypeDefinition
 
@@ -32,9 +33,9 @@ def test_types(pydantic_type, field_type):
     class Model(pydantic.BaseModel):
         field: pydantic_type
 
-    @strawberry.experimental.pydantic.type(Model, fields=["field"])
+    @strawberry.experimental.pydantic.type(Model)
     class Type:
-        pass
+        field: auto
 
     definition: TypeDefinition = Type._type_definition
     assert definition.name == "Type"
@@ -53,9 +54,9 @@ def test_types_optional(pydantic_type, field_type):
     class Model(pydantic.BaseModel):
         field: pydantic_type
 
-    @strawberry.experimental.pydantic.type(Model, fields=["field"])
+    @strawberry.experimental.pydantic.type(Model)
     class Type:
-        pass
+        field: auto
 
     definition: TypeDefinition = Type._type_definition
     assert definition.name == "Type"
@@ -71,9 +72,9 @@ def test_conint():
     class Model(pydantic.BaseModel):
         field: pydantic.conint(lt=100)
 
-    @strawberry.experimental.pydantic.type(Model, fields=["field"])
+    @strawberry.experimental.pydantic.type(Model)
     class Type:
-        pass
+        field: auto
 
     definition: TypeDefinition = Type._type_definition
     assert definition.name == "Type"
@@ -88,9 +89,9 @@ def test_constr():
     class Model(pydantic.BaseModel):
         field: pydantic.constr(max_length=100)
 
-    @strawberry.experimental.pydantic.type(Model, fields=["field"])
+    @strawberry.experimental.pydantic.type(Model)
     class Type:
-        pass
+        field: auto
 
     definition: TypeDefinition = Type._type_definition
     assert definition.name == "Type"
@@ -125,6 +126,6 @@ def test_unsupported_types(pydantic_type):
         strawberry.experimental.pydantic.exceptions.UnsupportedTypeError
     ):
 
-        @strawberry.experimental.pydantic.type(Model, fields=["field"])
+        @strawberry.experimental.pydantic.type(Model)
         class Type:
-            pass
+            field: auto

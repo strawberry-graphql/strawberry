@@ -7,7 +7,7 @@ import pydantic
 import strawberry
 
 
-def test_basic_type():
+def test_basic_type_field_list():
     class UserModel(pydantic.BaseModel):
         age: int
         password: Optional[str]
@@ -15,6 +15,86 @@ def test_basic_type():
     @strawberry.experimental.pydantic.type(UserModel, fields=["age", "password"])
     class User:
         pass
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self) -> User:
+            return User(age=1, password="ABC")
+
+    schema = strawberry.Schema(query=Query)
+
+    expected_schema = """
+    type Query {
+      user: User!
+    }
+
+    type User {
+      age: Int!
+      password: String
+    }
+    """
+
+    assert str(schema) == textwrap.dedent(expected_schema).strip()
+
+    query = "{ user { age } }"
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data["user"]["age"] == 1
+
+
+def test_all_fields():
+    class UserModel(pydantic.BaseModel):
+        age: int
+        password: Optional[str]
+
+    @strawberry.experimental.pydantic.type(UserModel, all_fields=True)
+    class User:
+        pass
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self) -> User:
+            return User(age=1, password="ABC")
+
+    schema = strawberry.Schema(query=Query)
+
+    expected_schema = """
+    type Query {
+      user: User!
+    }
+
+    type User {
+      age: Int!
+      password: String
+    }
+    """
+
+    assert str(schema) == textwrap.dedent(expected_schema).strip()
+
+    query = "{ user { age } }"
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data["user"]["age"] == 1
+
+
+def test_auto_fields():
+    class UserModel(pydantic.BaseModel):
+        age: int
+        password: Optional[str]
+        other: float
+
+    from strawberry.experimental.pydantic import auto
+
+    @strawberry.experimental.pydantic.type(UserModel)
+    class User:
+        age: auto
+        password: auto
 
     @strawberry.type
     class Query:
@@ -332,9 +412,6 @@ def test_basic_type_with_interface():
     @strawberry.experimental.pydantic.type(User, fields=["age", "interface_field"])
     class UserType:
         pass
-
-    print(BranchAType._type_definition)
-    print(BaseType._type_definition)
 
     @strawberry.type
     class Query:

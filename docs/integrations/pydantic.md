@@ -30,23 +30,38 @@ We can create a Strawberry type by using the
 
 ```python
 import strawberry
+from strawberry.experimental.pydantic import auto
 
 from .models import User
 
-@strawberry.experimental.pydantic.type(model=User, fields=[
-    'id',
-    'name',
-    'friends'
-])
+@strawberry.experimental.pydantic.type(model=User)
 class UserType:
-    pass
+    id: auto
+    name: auto
+    friends: auto
 ```
 
 The `strawberry.experimental.pydantic.type` decorator accepts a Pydantic model
-and a list of fields that we want to expose on our GraphQL API.
+and wraps a class that contains dataclass style fields with `auto` as the type
+annotation. The fields marked with `auto` will inherit their types from the
+Pydantic model.
 
-> **Note** specifying the list of field is required to prevent accidentally
-> exposing fields that weren't meant to be exposed on a API
+If you want to include all of the fields from your Pydantic model, you can
+instead pass `all_fields=True` to the decorator.
+
+-> **Note** Care should be taken to avoid accidentally exposing fields that
+-> weren't meant to be exposed on an API using this feature.
+
+```python
+import strawberry
+from strawberry.experimental.pydantic import auto
+
+from .models import User
+
+@strawberry.experimental.pydantic.type(model=User, all_fields=True)
+class UserType:
+    pass
+```
 
 ## Input types
 
@@ -55,16 +70,15 @@ Input types are similar to types; we can create one by using the
 
 ```python
 import strawberry
+from strawberry.experimental.pydantic import auto
 
 from .models import User
 
-@strawberry.experimental.pydantic.input(model=User, fields=[
-    'id',
-    'name',
-    'friends'
-])
+@strawberry.experimental.pydantic.input(model=User)
 class UserInput:
-    pass
+    id: auto
+    name: auto
+    friends: auto
 ```
 
 ## Interface types
@@ -74,6 +88,7 @@ Interface types are similar to normal types; we can create one by using the
 
 ```python
 import strawberry
+from strawberry.experimental.pydantic import auto
 from pydantic import BaseModel
 from typing import List
 
@@ -89,24 +104,18 @@ class AdminUser(User):
     role: int
 
 # strawberry types
-@strawberry.experimental.pydantic.interface(model=User, fields=[
-    'id',
-    'name',
-])
+@strawberry.experimental.pydantic.interface(model=User)
 class UserType:
-    pass
+    id: auto
+    name: auto
 
-@strawberry.experimental.pydantic.type(model=NormalUser, fields=[
-    'friends',
-])
+@strawberry.experimental.pydantic.type(model=NormalUser)
 class NormalUserType(UserType):  # note the base class
-    pass
+    friends: auto
 
-@strawberry.experimental.pydantic.type(model=AdminUser, fields=[
-    'role',
-])
+@strawberry.experimental.pydantic.type(model=AdminUser)
 class AdminUserType(UserType):
-    pass
+    role: auto
 ```
 
 ## Error Types
@@ -118,6 +127,7 @@ Pydantic errors in GraphQL. Let's see an example:
 ```python+schema
 import pydantic
 import strawberry
+from strawberry.experimental.pydantic import auto
 
 class User(BaseModel):
     id: int
@@ -125,13 +135,11 @@ class User(BaseModel):
     signup_ts: Optional[datetime] = None
     friends: List[int] = []
 
-@strawberry.experimental.pydantic.error_type(model=User, fields=[
-    'id',
-    'name',
-    'friends'
-])
+@strawberry.experimental.pydantic.error_type(model=User)
 class UserError:
-    pass
+    id: auto
+    name: auto
+    friends: auto
 
 ---
 
@@ -151,6 +159,7 @@ GraphQL type that aren't defined in the pydantic model
 
 ```python+schema
 import strawberry
+from strawberry.experimental.pydantic import auto
 import pydantic
 
 from .models import User
@@ -159,11 +168,10 @@ class User(BaseModel):
     id: int
     name: str
 
-@strawberry.experimental.pydantic.type(model=User, fields=[
-    'id',
-    'name',
-])
+@strawberry.experimental.pydantic.type(model=User)
 class User:
+    id: auto
+    name: auto
     age: int
 
 ---
@@ -186,6 +194,7 @@ To convert a Pydantic instance to a Strawberry instance you can use
 
 ```python
 import strawberry
+from strawberry.experimental.pydantic import auto
 from typing import List, Optional
 from pydantic import BaseModel
 
@@ -195,12 +204,10 @@ class User(BaseModel):
     name: str
 
 
-@strawberry.experimental.pydantic.type(model=User, fields=[
-    'id',
-    'name',
-])
+@strawberry.experimental.pydantic.type(model=User)
 class UserType:
-    pass
+    id: auto
+    name: auto
 
 instance = User(id='123', name='Jake')
 
@@ -213,6 +220,7 @@ specify the values to assign to them.
 
 ```python
 import strawberry
+from strawberry.experimental.pydantic import auto
 from typing import List, Optional
 from pydantic import BaseModel
 
@@ -222,11 +230,10 @@ class User(BaseModel):
     name: str
 
 
-@strawberry.experimental.pydantic.type(model=User, fields=[
-    'id',
-    'name',
-])
+@strawberry.experimental.pydantic.type(model=User)
 class UserType:
+    id: auto
+    name: auto
     age: int
 
 instance = User(id='123', name='Jake')
@@ -246,6 +253,7 @@ you can use `to_pydantic` on the Strawberry instance:
 
 ```python
 import strawberry
+from strawberry.experimental.pydantic import auto
 from typing import List, Optional
 from pydantic import BaseModel
 
@@ -255,12 +263,10 @@ class User(BaseModel):
     name: str
 
 
-@strawberry.experimental.pydantic.input(model=User, fields=[
-    'id',
-    'name',
-])
+@strawberry.experimental.pydantic.input(model=User)
 class UserInput:
-    pass
+    id: auto
+    name: auto
 
 input_data = UserInput(id='abc', name='Jake')
 
