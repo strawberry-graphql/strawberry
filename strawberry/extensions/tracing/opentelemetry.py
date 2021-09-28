@@ -26,18 +26,6 @@ class RequestStage(enum.Enum):
     VALIDATION = enum.auto()
 
 
-if hasattr(trace, "use_span"):
-
-    def _use_span(span: Span, tracer: Tracer):
-        return trace.use_span(span)
-
-
-else:
-
-    def _use_span(span: Span, tracer: Tracer):
-        return tracer.use_span(span)
-
-
 class OpenTelemetryExtension(Extension):
     _arg_filter: Optional[ArgFilter]
     _span_holder: Dict[str, Span] = dict()
@@ -120,17 +108,17 @@ class OpenTelemetryExtension(Extension):
 
             return result
 
-        with _use_span(self._span_holder[RequestStage.REQUEST], self._tracer):
-            with self._tracer.start_as_current_span(
-                info.field_name, kind=SpanKind.SERVER
-            ) as span:
-                self.add_tags(span, info, kwargs)
-                result = _next(root, info, *args, **kwargs)
+        with self._tracer.start_as_current_span(
+            f"GraphQL Handling: {info.field_name}",
+            context=trace.set_span_in_context(self._span_holder[RequestStage.REQUEST]),
+        ) as span:
+            self.add_tags(span, info, kwargs)
+            result = _next(root, info, *args, **kwargs)
 
-                if isawaitable(result):
-                    result = await result
+            if isawaitable(result):
+                result = await result
 
-                return result
+            return result
 
 
 class OpenTelemetryExtensionSync(OpenTelemetryExtension):
@@ -140,11 +128,11 @@ class OpenTelemetryExtensionSync(OpenTelemetryExtension):
 
             return result
 
-        with _use_span(self._span_holder[RequestStage.REQUEST], self._tracer):
-            with self._tracer.start_as_current_span(
-                info.field_name, kind=SpanKind.SERVER
-            ) as span:
-                self.add_tags(span, info, kwargs)
-                result = _next(root, info, *args, **kwargs)
+        with self._tracer.start_as_current_span(
+            "GraphQL Handling: {info.field_name}",
+            context=trace.set_span_in_context(self._span_holder[RequestStage.REQUEST]),
+        ) as span:
+            self.add_tags(span, info, kwargs)
+            result = _next(root, info, *args, **kwargs)
 
-                return result
+            return result
