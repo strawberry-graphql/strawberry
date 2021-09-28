@@ -166,7 +166,8 @@ Read the [graphql-ws-transport protocols announcement](https://the-guild.dev/blo
 to learn more about why the newer protocol is preferred.
 
 Strawberry allows you to choose which protocols you want to accept. All integrations
-supporting subscriptions can be configured with a list of `protocols` to accept:
+supporting subscriptions can be configured with a list of `subscription_protocols` to
+accept. By default, all protocols are accepted.
 
 ##### AIOHTTP
 

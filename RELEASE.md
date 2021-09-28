@@ -3,9 +3,9 @@ Release type: minor
 This release adds support for the `graphql-transport-ws` GraphQL over WebSocket
 protocol. Previously Strawberry only supported the legacy `graphql-ws` protocol.
 
-Developers can decide which protocols they want to accept. The following example shows
-how to do so using the ASGI integration. Take a look at our GraphQL subscription
-documentation to learn more.
+Developers can decide which protocols they want to accept. By default, both protocols
+are accepted. The following example shows how to do so using the ASGI integration.
+Take a look at our GraphQL subscription documentation to learn more.
 
 ```python
 from strawberry.asgi import GraphQL
