@@ -96,19 +96,9 @@ def error_type(
             )
         )
 
-        missing_default = []
-        has_default = []
-        for field in all_model_fields:
-            if field[2].default is dataclasses.MISSING:
-                missing_default.append(field)
-            else:
-                has_default.append(field)
-
-        sorted_fields = missing_default + has_default
-
         cls = dataclasses.make_dataclass(
             cls.__name__,
-            sorted_fields,
+            all_model_fields,
             bases=cls.__bases__,
         )
 
