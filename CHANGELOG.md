@@ -1,6 +1,34 @@
 CHANGELOG
 =========
 
+0.79.0 - 2021-09-29
+-------------------
+
+Nests the resolver under the correct span; prior to this change your span would have looked something like:
+
+```
+GraphQL Query
+  GraphQL Parsing
+  GraphQL Validation
+  my_resolver
+  my_span_of_interest #1
+    my_sub_span_of_interest #2
+```
+
+After this change you'll have:
+
+```
+GraphQL Query
+  GraphQL Parsing
+  GraphQL Validation
+  GraphQL Resolving: my_resolver
+    my_span_of_interest #1
+      my_sub_span_of_interest #2
+```
+
+Contributed by [Michael Ossareh](https://github.com/ossareh) [PR #1281](https://github.com/strawberry-graphql/strawberry/pull/1281/)
+
+
 0.78.2 - 2021-09-27
 -------------------
 
