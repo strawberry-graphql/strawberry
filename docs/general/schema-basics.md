@@ -303,7 +303,7 @@ to accept an additional argument in the future, such as a publication date.
 An input type's definition is similar to an object type's, but it uses the input
 keyword:
 
-```python
+```python highlight=AddBookInput
 @strawberry.input
 class AddBookInput:
   title: str
