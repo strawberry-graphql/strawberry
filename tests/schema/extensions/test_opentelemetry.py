@@ -96,7 +96,7 @@ async def test_open_tracing(global_tracer_mock, mocker):
     # it is a context manager, all other spans are a child of this
     global_tracer_mock.return_value.start_as_current_span.assert_has_calls(
         [
-            mocker.call("GraphQL Handling: person", context=mocker.ANY),
+            mocker.call("GraphQL Resolving: person", context=mocker.ANY),
             mocker.call().__enter__(),
             mocker.call().__enter__().set_attribute("component", "graphql"),
             mocker.call().__enter__().set_attribute("graphql.parentType", "Query"),
