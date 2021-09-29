@@ -17,7 +17,7 @@ After this change you'll have:
 GraphQL Query
   GraphQL Parsing
   GraphQL Validation
-  GraphQL Handling: my_resolver
+  GraphQL Resolving: my_resolver
     my_span_of_interest #1
       my_sub_span_of_interest #2
 ```
