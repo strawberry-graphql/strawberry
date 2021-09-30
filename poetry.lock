@@ -1034,7 +1034,7 @@ python-versions = "*"
 
 [[package]]
 name = "sanic-testing"
-version = "0.6.0"
+version = "0.7.0"
 description = "Core testing clients for Sanic"
 category = "dev"
 optional = false
@@ -1339,7 +1339,7 @@ sanic = ["sanic"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "a862cabf61d329fd65df5be846924c0bbb3645039545620a4bc7306c695e72e7"
+content-hash = "74bff66060180e6cf9bb2a402e7edb61420f1424ede417557f85c23170a70f97"
 
 [metadata.files]
 aiofiles = [
@@ -1985,8 +1985,8 @@ sanic-routing = [
     {file = "sanic_routing-0.7.1-py3-none-any.whl", hash = "sha256:0c08f5f65a55fdca259d9149d89c39fd2377a651b408065fd643bdabdb6ba293"},
 ]
 sanic-testing = [
-    {file = "sanic-testing-0.6.0.tar.gz", hash = "sha256:c239b87ed3ea5fe1dc3b5139e6e1173fb4e37bcb05767750522771ca8778e32f"},
-    {file = "sanic_testing-0.6.0-py3-none-any.whl", hash = "sha256:fc46b48253d0549a94ed18c455dddc766a9a29b7069ce849208ae867517ddf63"},
+    {file = "sanic-testing-0.7.0.tar.gz", hash = "sha256:8396507cdcc030f0b43a1b2419c04034be28bc6c466596e122e7bb407bb515b3"},
+    {file = "sanic_testing-0.7.0-py3-none-any.whl", hash = "sha256:3e600981d830731c6108c9c2f12c577800c061c92787a1b1c9c8fa6a80960843"},
 ]
 six = [
     {file = "six-1.16.0-py2.py3-none-any.whl", hash = "sha256:8abb2f1d86890a2dfb989f9a77cfcfd3e47c2a354b01111771326f8aa26e0254"},
