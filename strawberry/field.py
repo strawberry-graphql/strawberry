@@ -58,7 +58,7 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
         # basic fields are fields with no provided resolver
         is_basic_field = not base_resolver
 
-        kwargs = {}
+        kwargs: Dict[str, Any] = {}
 
         # kw_only was added to python 3.10 and it is required
         if sys.version_info >= (3, 10):
