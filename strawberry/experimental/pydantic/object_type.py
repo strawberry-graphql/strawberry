@@ -1,5 +1,6 @@
 import builtins
 import dataclasses
+import warnings
 from functools import partial
 from typing import Any, Dict, List, Optional, Tuple, Type, cast
 
@@ -79,6 +80,12 @@ def type(
         )
 
         if all_fields:
+            if fields_set:
+                warnings.warn(
+                    "Using all_fields overrides any explicitly defined fields "
+                    "in the model, using both is likely a bug",
+                    stacklevel=2,
+                )
             fields_set = set(model_fields.keys())
 
         if not fields_set:

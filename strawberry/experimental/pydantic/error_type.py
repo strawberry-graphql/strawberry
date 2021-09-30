@@ -1,4 +1,5 @@
 import dataclasses
+import warnings
 from typing import Any, List, Optional, Tuple, Type, cast
 
 from pydantic import BaseModel
@@ -65,6 +66,12 @@ def error_type(
         )
 
         if all_fields:
+            if fields_set:
+                warnings.warn(
+                    "Using all_fields overrides any explicitly defined fields "
+                    "in the model, using both is likely a bug",
+                    stacklevel=2,
+                )
             fields_set = set(model_fields.keys())
 
         if not fields_set:

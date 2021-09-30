@@ -62,6 +62,22 @@ def test_basic_error_type_all_fields():
     assert field1.type.of_type.of_type is str
 
 
+@pytest.mark.filterwarnings("error")
+def test_basic_type_all_fields_warn():
+    class User(pydantic.BaseModel):
+        age: int
+        password: Optional[str]
+
+    with pytest.raises(
+        UserWarning,
+        match=("Using all_fields overrides any explicitly defined fields"),
+    ):
+
+        @strawberry.experimental.pydantic.type(User, all_fields=True)
+        class UserType:
+            age: auto
+
+
 def test_basic_error_type_without_fields_throws_an_error():
     class User(pydantic.BaseModel):
         age: int

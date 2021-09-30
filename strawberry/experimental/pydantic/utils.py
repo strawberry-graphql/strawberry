@@ -1,8 +1,11 @@
 import dataclasses
 from typing import Any, List, Type
 
+from typing_extensions import Literal
+
 from strawberry.experimental.pydantic.exceptions import UnregisteredTypeException
 from strawberry.private import Private
+from strawberry.sentinel import sentinel
 from strawberry.utils.typing import (
     get_list_annotation,
     get_optional_annotation,
@@ -36,5 +39,4 @@ def get_private_fields(cls: Type) -> List[dataclasses.Field]:
     return private_fields
 
 
-class auto:
-    pass
+auto = Literal[sentinel("auto", repr="strawberry.experimental.pydantic.auto")]

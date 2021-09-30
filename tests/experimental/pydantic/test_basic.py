@@ -9,6 +9,7 @@ import strawberry
 from strawberry.enum import EnumDefinition
 from strawberry.experimental.pydantic import auto
 from strawberry.experimental.pydantic.exceptions import MissingFieldsListError
+from strawberry.sentinel import sentinel
 from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
@@ -62,6 +63,22 @@ def test_basic_type_all_fields():
     assert field2.type.of_type is str
 
 
+@pytest.mark.filterwarnings("error")
+def test_basic_type_all_fields_warn():
+    class User(pydantic.BaseModel):
+        age: int
+        password: Optional[str]
+
+    with pytest.raises(
+        UserWarning,
+        match=("Using all_fields overrides any explicitly defined fields"),
+    ):
+
+        @strawberry.experimental.pydantic.type(User, all_fields=True)
+        class UserType:
+            age: auto
+
+
 def test_basic_type_auto_fields():
     class User(pydantic.BaseModel):
         age: int
@@ -86,6 +103,39 @@ def test_basic_type_auto_fields():
     assert field2.graphql_name is None
     assert isinstance(field2.type, StrawberryOptional)
     assert field2.type.of_type is str
+
+
+def test_auto_fields_other_sentinel():
+    other_sentinel = sentinel("other_sentinel")
+
+    class User(pydantic.BaseModel):
+        age: int
+        password: Optional[str]
+        other: int
+
+    @strawberry.experimental.pydantic.type(User)
+    class UserType:
+        age: auto
+        password: auto
+        other: other_sentinel  # this should be a private field, not an auto field
+
+    definition: TypeDefinition = UserType._type_definition
+    assert definition.name == "UserType"
+
+    [field1, field2, field3] = definition.fields
+
+    assert field1.python_name == "age"
+    assert field1.graphql_name is None
+    assert field1.type is int
+
+    assert field2.python_name == "other"
+    assert field2.graphql_name is None
+    assert field2.type is other_sentinel
+
+    assert field3.python_name == "password"
+    assert field3.graphql_name is None
+    assert isinstance(field3.type, StrawberryOptional)
+    assert field3.type.of_type is str
 
 
 def test_referencing_other_models_fails_when_not_registered():
