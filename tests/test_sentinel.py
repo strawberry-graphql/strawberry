@@ -26,6 +26,11 @@ def test_uniqueness():
     assert sent1 != "<sent1>"
 
 
+def test_reuse():
+    sent1_other = sentinel("sent1")
+    assert sent1 is sent1_other
+
+
 def test_repr():
     assert repr(sent1) == "<sent1>"
     assert repr(sent2) == "test_sentinels.sent2"

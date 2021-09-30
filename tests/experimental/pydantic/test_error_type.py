@@ -73,8 +73,8 @@ def test_basic_type_all_fields_warn():
         match=("Using all_fields overrides any explicitly defined fields"),
     ):
 
-        @strawberry.experimental.pydantic.type(User, all_fields=True)
-        class UserType:
+        @strawberry.experimental.pydantic.error_type(User, all_fields=True)
+        class UserError:
             age: auto
 
 

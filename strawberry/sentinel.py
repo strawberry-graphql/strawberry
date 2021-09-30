@@ -24,7 +24,7 @@ def sentinel(
     try:
         module_globals = _get_parent_frame().f_globals
         module = module_globals.get("__name__", "__main__")
-    except (AttributeError, ValueError):
+    except (AttributeError, ValueError):  # pragma: no cover
         # Store the class in the sentinels module namespace.
         module_globals = globals()
         module = __name__
