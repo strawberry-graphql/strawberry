@@ -30,7 +30,7 @@ def sentinel(
         module = __name__
 
     name = _sys.intern(str(name))
-    repr = repr or f'<{name.split(".")[-1]}>'
+    repr_string = repr or f'<{name.split(".")[-1]}>'
     class_name = _sys.intern(_get_class_name(name, module))
 
     # If a sentinel with the same name was already defined in the module,
@@ -39,7 +39,7 @@ def sentinel(
         return module_globals[class_name]()
 
     class_namespace = {
-        "__repr__": lambda self: repr,
+        "__repr__": lambda self: repr_string,
     }
     cls = type(class_name, (), class_namespace)
 
@@ -56,7 +56,7 @@ def sentinel(
         return sentinel
 
     __new__.__qualname__ = f"{class_name}.__new__"
-    cls.__new__ = __new__
+    cls.__new__ = __new__  # type: ignore
 
     return sentinel
 
@@ -75,7 +75,13 @@ else:  # pragma: no cover
         try:
             raise Exception
         except Exception:
-            return _sys.exc_info()[2].tb_frame.f_back.f_back
+            info = _sys.exc_info()[2]
+            if not info:
+                return None
+            f_back = info.tb_frame.f_back
+            if not f_back:
+                return None
+            return f_back.f_back
 
 
 def _get_class_name(
