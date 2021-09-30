@@ -3,11 +3,11 @@ from typing import List, Optional
 
 import pytest
 
-from graphql import get_introspection_query, parse, validate
+from graphql import get_introspection_query, parse, specified_rules, validate
 
 import strawberry
-from strawberry.schema import default_validation_rules
-from strawberry.tools import depth_limit_validator
+from strawberry.extensions import QueryDepthLimiter
+from strawberry.extensions.query_depth_limiter import create_validator
 
 
 @strawberry.interface
@@ -66,13 +66,12 @@ def run_query(query: str, max_depth: int, ignore=None):
         nonlocal result
         result = query_depths
 
+    validation_rule = create_validator(max_depth, ignore, callback)
+
     errors = validate(
         schema._schema,
         document,
-        rules=(
-            default_validation_rules
-            + [depth_limit_validator(max_depth, ignore, callback)]
-        ),
+        rules=(specified_rules + [validation_rule]),
     )
 
     return errors, result
@@ -254,3 +253,30 @@ def test_should_raise_invalid_ignore():
             10,
             ignore=[True],
         )
+
+
+def test_should_work_as_extension():
+    query = """{
+    user {
+      pets {
+        owner {
+          pets {
+            owner {
+              pets {
+                name
+              }
+            }
+          }
+        }
+      }
+    }
+    }
+    """
+    schema = strawberry.Schema(Query, extensions=[QueryDepthLimiter(max_depth=4)])
+
+    result = schema.execute_sync(query)
+
+    assert len(result.errors) == 1
+    assert (
+        result.errors[0].message == "'anonymous' exceeds maximum operation depth of 4"
+    )

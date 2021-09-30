@@ -1,5 +1,5 @@
 import inspect
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional, Type, Union
 
 from graphql import MiddlewareManager
 
@@ -20,10 +20,25 @@ class ExtensionsRunner:
     def __init__(
         self,
         execution_context: ExecutionContext,
-        extensions: List[Extension] = None,
+        extensions: Optional[List[Union[Type[Extension], Extension]]] = None,
     ):
         self.execution_context = execution_context
-        self.extensions = extensions or []
+
+        if not extensions:
+            extensions = []
+
+        init_extensions: List[Extension] = []
+
+        for extension in extensions:
+            # If the extension has already been instantiated then set the
+            # `execution_context` attribute
+            if isinstance(extension, Extension):
+                extension.execution_context = execution_context
+                init_extensions.append(extension)
+            else:
+                init_extensions.append(extension(execution_context=execution_context))
+
+        self.extensions = init_extensions
 
     def request(self) -> RequestContextManager:
         return RequestContextManager(self.extensions)

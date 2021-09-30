@@ -1,6 +1,105 @@
 CHANGELOG
 =========
 
+0.80.0 - 2021-09-30
+-------------------
+
+This release adds support for the `graphql-transport-ws` GraphQL over WebSocket
+protocol. Previously Strawberry only supported the legacy `graphql-ws` protocol.
+
+Developers can decide which protocols they want to accept. The following example shows
+how to do so using the ASGI integration. By default, both protocols are accepted.
+Take a look at our GraphQL subscription documentation to learn more.
+
+```python
+from strawberry.asgi import GraphQL
+from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL
+from api.schema import schema
+
+
+app = GraphQL(schema, subscription_protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL])
+```
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) [PR #1256](https://github.com/strawberry-graphql/strawberry/pull/1256/)
+
+
+0.79.0 - 2021-09-29
+-------------------
+
+Nests the resolver under the correct span; prior to this change your span would have looked something like:
+
+```
+GraphQL Query
+  GraphQL Parsing
+  GraphQL Validation
+  my_resolver
+  my_span_of_interest #1
+    my_sub_span_of_interest #2
+```
+
+After this change you'll have:
+
+```
+GraphQL Query
+  GraphQL Parsing
+  GraphQL Validation
+  GraphQL Resolving: my_resolver
+    my_span_of_interest #1
+      my_sub_span_of_interest #2
+```
+
+Contributed by [Michael Ossareh](https://github.com/ossareh) [PR #1281](https://github.com/strawberry-graphql/strawberry/pull/1281/)
+
+
+0.78.2 - 2021-09-27
+-------------------
+
+Enhances strawberry.extensions.tracing.opentelemetry to include spans for the Parsing and Validation phases of request handling. These occur before your resovler is called, so now you can see how much time those phases take up!
+
+Contributed by [Michael Ossareh](https://github.com/ossareh) [PR #1274](https://github.com/strawberry-graphql/strawberry/pull/1274/)
+
+
+0.78.1 - 2021-09-26
+-------------------
+
+Fix `extensions` argument type definition on `strawberry.Schema`
+
+Contributed by [Guillaume Andreu Sabater](https://github.com/g-as) [PR #1276](https://github.com/strawberry-graphql/strawberry/pull/1276/)
+
+
+0.78.0 - 2021-09-22
+-------------------
+
+This release introduces some brand new extensions to help improve the
+performance of your GraphQL server:
+
+* `ParserCache` - Cache the parsing of a query in memory
+* `ValidationCache` - Cache the validation step of execution
+
+For complicated queries these 2 extensions can improve performance by over 50%!
+
+Example:
+
+```python
+import strawberry
+from strawberry.extensions import ParserCache, ValidationCache
+
+schema = strawberry.Schema(
+  Query,
+  extensions=[
+    ParserCache(),
+    ValidationCache(),
+  ]
+)
+```
+
+This release also removes the `validate_queries` and `validation_rules`
+parameters on the `schema.execute*` methods in favour of using the
+`DisableValidation` and `AddValidationRule` extensions.
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) [PR #1196](https://github.com/strawberry-graphql/strawberry/pull/1196/)
+
+
 0.77.12 - 2021-09-20
 --------------------
 

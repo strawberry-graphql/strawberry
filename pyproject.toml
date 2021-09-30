@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "strawberry-graphql"
 packages = [ { include = "strawberry" } ]
-version = "0.77.12"
+version = "0.80.0"
 description = "A library for creating GraphQL APIs"
 authors = ["Patrick Arminio <patrick.arminio@gmail.com>"]
 license = "MIT"
@@ -83,7 +83,7 @@ types-ujson = "^0.1.1"
 types-typed-ast = "^1.4.4"
 types-toml = "^0.10.0"
 types-setuptools = "^57.4.0"
-types-requests = "^2.25.7"
+types-requests = "^2.25.8"
 types-python-dateutil = "^2.8.0"
 types-freezegun = "^1.1.0"
 types-chardet = "^4.0.0"
