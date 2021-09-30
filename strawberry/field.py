@@ -1,6 +1,7 @@
 import builtins
 import dataclasses
 import inspect
+import sys
 from typing import (
     Any,
     Awaitable,
@@ -57,6 +58,12 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
         # basic fields are fields with no provided resolver
         is_basic_field = not base_resolver
 
+        kwargs = {}
+
+        # kw_only was added to python 3.10 and it is required
+        if sys.version_info >= (3, 10):
+            kwargs["kw_only"] = False
+
         super().__init__(  # type: ignore
             default=(default if default is not UNSET else dataclasses.MISSING),
             default_factory=(
@@ -71,6 +78,7 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
             compare=is_basic_field,
             hash=None,
             metadata={},
+            **kwargs,
         )
 
         self.graphql_name = graphql_name
