@@ -85,7 +85,7 @@ types-freezegun = "^1.1.0"
 types-chardet = "^4.0.0"
 types-certifi = "^2020.4.0"
 types-aiofiles = "^0.1.9"
-sanic-testing = "^0.6.0"
+sanic-testing = "^0.7.0"
 
 [tool.poetry.extras]
 aiohttp = ["aiohttp", "pytest-aiohttp"]
