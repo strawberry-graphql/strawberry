@@ -1,7 +1,12 @@
-from aiohttp import web
-from strawberry.aiohttp.handlers import GraphQLTransportWSHandler, GraphQLWSHandler
-from strawberry.aiohttp.views import GraphQLView
-from tests.aiohttp.schema import Query, schema
+from typing import Optional, Union
+
+from starlette.requests import Request
+from starlette.responses import Response
+from starlette.websockets import WebSocket
+
+from strawberry.asgi import GraphQL as BaseGraphQL
+from strawberry.asgi.handlers import GraphQLTransportWSHandler, GraphQLWSHandler
+from tests.asgi.schema import Query, schema
 
 
 class DebuggableGraphQLTransportWSHandler(GraphQLTransportWSHandler):
@@ -22,16 +27,20 @@ class DebuggableGraphQLWSHandler(GraphQLWSHandler):
         return context
 
 
-class MyGraphQLView(GraphQLView):
+class GraphQL(BaseGraphQL):
     graphql_transport_ws_handler_class = DebuggableGraphQLTransportWSHandler
     graphql_ws_handler_class = DebuggableGraphQLWSHandler
 
-    async def get_root_value(self, request: web.Request):
+    async def get_root_value(self, request):
         return Query()
+
+    async def get_context(
+        self,
+        request: Union[Request, WebSocket],
+        response: Optional[Response] = None,
+    ):
+        return {"request": request, "response": response, "custom_value": "Hi"}
 
 
 def create_app(**kwargs):
-    app = web.Application()
-    app.router.add_route("*", "/graphql", MyGraphQLView(schema=schema, **kwargs))
-
-    return app
+    return GraphQL(schema, **kwargs)

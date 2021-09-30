@@ -1,12 +1,22 @@
 import asyncio
 import typing
 from enum import Enum
+from typing import Optional
 
 from graphql import GraphQLError
 
 import strawberry
 from strawberry.file_uploads import Upload
+from strawberry.permission import BasePermission
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import PingMessage
+from strawberry.types import Info
+
+
+class AlwaysFailPermission(BasePermission):
+    message = "You are not authorized"
+
+    def has_permission(self, source: typing.Any, info: Info, **kwargs) -> bool:
+        return False
 
 
 @strawberry.enum
@@ -29,27 +39,39 @@ class DebugInfo:
 
 @strawberry.type
 class Query:
-    hello: str = "strawberry"
+    @strawberry.field
+    def hello(self, name: typing.Optional[str] = None) -> str:
+        return f"Hello {name or 'world'}"
+
+    @strawberry.field(permission_classes=[AlwaysFailPermission])
+    def always_fail(self) -> Optional[str]:
+        return "Hey"
+
+    @strawberry.field
+    def root_name(root) -> str:
+        return type(root).__name__
 
 
 @strawberry.type
 class Mutation:
     @strawberry.mutation
-    def read_text(self, text_file: Upload) -> str:
-        return text_file.read().decode()
+    async def read_text(self, text_file: Upload) -> str:
+        return (await text_file.read()).decode()
 
     @strawberry.mutation
-    def read_files(self, files: typing.List[Upload]) -> typing.List[str]:
+    async def read_files(self, files: typing.List[Upload]) -> typing.List[str]:
         contents = []
         for file in files:
-            contents.append(file.read().decode())
+            content = (await file.read()).decode()
+            contents.append(content)
         return contents
 
     @strawberry.mutation
-    def read_folder(self, folder: FolderInput) -> typing.List[str]:
+    async def read_folder(self, folder: FolderInput) -> typing.List[str]:
         contents = []
         for file in folder.files:
-            contents.append(file.read().decode())
+            content = (await file.read()).decode()
+            contents.append(content)
         return contents
 
 
@@ -114,4 +136,4 @@ class Subscription:
         )
 
 
-schema = strawberry.Schema(query=Query, mutation=Mutation, subscription=Subscription)
+schema = strawberry.Schema(Query, mutation=Mutation, subscription=Subscription)
