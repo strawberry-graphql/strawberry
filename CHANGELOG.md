@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.80.2 - 2021-10-01
+-------------------
+
+Add `Starlette` to the integrations section on the documentation.
+
+Contributed by [Marcelo Trylesinski](https://github.com/Kludex) [PR #1287](https://github.com/strawberry-graphql/strawberry/pull/1287/)
+
+
 0.80.1 - 2021-10-01
 -------------------
 
