@@ -33,6 +33,8 @@ def is_union(annotation: Type) -> bool:
         if isinstance(annotation, UnionType):
             return True
 
+    # unions declared as Union[A, B] fall through to this check, even on python 3.10+
+
     annotation_origin = getattr(annotation, "__origin__", None)
 
     return annotation_origin == Union
