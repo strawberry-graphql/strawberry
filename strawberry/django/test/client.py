@@ -30,6 +30,3 @@ class GraphQLTestClient(BaseGraphQLTestClient):
             assert response.errors is None
 
         return response
-
-    def force_login(self, user):
-        self._client.force_login(user)

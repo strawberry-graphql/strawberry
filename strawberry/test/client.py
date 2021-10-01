@@ -30,6 +30,3 @@ class BaseGraphQLTestClient:
         asserts_errors: Optional[bool] = True,
     ) -> Response:
         raise NotImplementedError
-
-    def force_login(self, user):
-        raise NotImplementedError
