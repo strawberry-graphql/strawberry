@@ -1,3 +1,4 @@
+import sys
 from collections.abc import AsyncGenerator
 from typing import _GenericAlias  # type: ignore
 from typing import (  # type: ignore
@@ -22,6 +23,15 @@ def is_list(annotation: Type) -> bool:
 
 def is_union(annotation: Type) -> bool:
     """Returns True if annotation is a Union"""
+
+    # this check is needed because unions declared with the new syntax `A | B`
+    # don't have a `__origin__` property on them, but they are instances of
+    # `UnionType`, which is only available in Python 3.10+
+    if sys.version_info >= (3, 10):
+        from types import UnionType
+
+        if isinstance(annotation, UnionType):
+            return True
 
     annotation_origin = getattr(annotation, "__origin__", None)
 
