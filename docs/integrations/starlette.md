@@ -4,7 +4,7 @@ title: Starlette
 
 # Starlette
 
-Strawberry provides support for [Starlette](https://fastapi.tiangolo.com/) with the ASGI integration.
+Strawberry provides support for [Starlette](https://www.starlette.io/) with the ASGI integration.
 
 See below example for integrating Starlette with Strawberry:
 
