@@ -154,7 +154,7 @@ jobs:
         release_card_url: ${{ needs.generate-preview.outputs.url }}
         tweet: ${{ needs.read-tweet-md.outputs.tweet }}
 
-  fail-if-status-is-no-ok:
+  fail-if-status-is-not-ok:
     runs-on: ubuntu-latest
     needs: [release-file-check, send-comment]
 
