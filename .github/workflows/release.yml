@@ -160,7 +160,7 @@ jobs:
 
           tweet = base64.b64decode(os.environ["TWEET"]).decode("utf-8")
 
-          api.update_status_with_media("screenshot.png", status=tweet)
+          api.update_status_with_media(filename="screenshot.png", status=tweet)
         env:
           TWEET: ${{ needs.read-tweet-md.outputs.tweet }}
           TWITTER_CONSUMER_KEY: ${{ secrets.TWITTER_CONSUMER_KEY }}
