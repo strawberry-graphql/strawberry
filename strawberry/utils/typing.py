@@ -28,7 +28,7 @@ def is_union(annotation: Type) -> bool:
     # don't have a `__origin__` property on them, but they are instances of
     # `UnionType`, which is only available in Python 3.10+
     if sys.version_info >= (3, 10):
-        from types import UnionType
+        from types import UnionType  # type: ignore
 
         if isinstance(annotation, UnionType):
             return True
