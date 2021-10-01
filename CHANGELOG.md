@@ -1,6 +1,31 @@
 CHANGELOG
 =========
 
+0.80.1 - 2021-10-01
+-------------------
+
+This release add support for the upcoming python 3.10 and it adds support
+for the new union syntax, allowing to declare unions like this:
+
+```python
+import strawberry
+
+@strawberry.type
+class User:
+    name: str
+
+@strawberry.type
+class Error:
+    code: str
+
+@strawberry.type
+class Query:
+    find_user: User | Error
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #719](https://github.com/strawberry-graphql/strawberry/pull/719/)
+
+
 0.80.0 - 2021-09-30
 -------------------
 
