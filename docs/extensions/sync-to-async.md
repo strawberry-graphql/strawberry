@@ -15,7 +15,7 @@ Read more about using asynchronous support in Django: https://docs.djangoproject
 
 ```python
 import strawberry
-from strawberry.extensions import AddValidationRules
+from strawberry.extensions.sync_to_async import SyncToAsync
 
 @strawberry.type
 class Query:
@@ -45,7 +45,7 @@ _No arguments_
 ```python
 # schema.py
 import strawberry
-from strawberry.extensions import SyncToAsync
+from strawberry.extensions.sync_to_async import SyncToAsync
 from strawberry.django.dataloader import create_model_load_fn
 
 # The Django Book model definition
