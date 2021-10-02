@@ -61,13 +61,15 @@ import strawberry
 @strawberry.type
 class Book:
   title: str
-  author: Author
+  author: ^[author](Author)
 
 @strawberry.type
 class Author:
   name: str
   books: typing.List['Book']
 ```
+
+[^author]: example footnote
 
 As you can see the code maps almost one to one with the schema, thanks to
 python’s type hints feature.
