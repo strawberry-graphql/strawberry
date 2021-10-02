@@ -1,5 +1,6 @@
 ---
 title: Frequently Asked Questions
+toc: true
 ---
 
 # Frequently Asked Questions
