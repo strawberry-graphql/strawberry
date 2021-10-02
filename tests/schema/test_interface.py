@@ -4,6 +4,7 @@ from typing import List
 import pytest
 
 import strawberry
+from strawberry.exceptions import InvalidSuperclassInterface
 
 
 def test_query_interface():
@@ -161,3 +162,27 @@ def test_interface_duck_typing_returning_dict():
 
     assert not result.errors
     assert result.data == {"anime": {"name": "One Piece"}}
+
+
+def test_input_cannot_inherit_from_interface():
+    @strawberry.interface
+    class SomeInterface:
+        some_arg: str
+
+    with pytest.raises(InvalidSuperclassInterface):
+
+        @strawberry.input
+        class SomeInput(SomeInterface):  # this should throw an error
+            another_arg: str
+
+    @strawberry.interface
+    class SomeOtherInterface:
+        some_other_arg: str
+
+    with pytest.raises(InvalidSuperclassInterface):
+
+        @strawberry.input
+        class SomeOtherInput(
+            SomeInterface, SomeOtherInterface
+        ):  # this should throw an error
+            another_arg: str

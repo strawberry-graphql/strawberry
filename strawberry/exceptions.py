@@ -176,3 +176,13 @@ class InvalidFieldArgument(Exception):
         message = f'Argument "{argument_name}" on field "{field_name}" cannot be of type\
             "{argument_type}"'
         super().__init__(message)
+
+
+class InvalidSuperclassInterface(Exception):
+    def __init__(self, input_name: str, interface_names=List[str]):
+        interface_names = ", ".join(interface_names)
+        message = (
+            f"An Input class {input_name!r} cannot inherit "
+            f"from an Interface(s) {interface_names!r}"
+        )
+        super().__init__(message)

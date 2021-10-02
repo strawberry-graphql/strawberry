@@ -1,7 +1,11 @@
 import dataclasses
 from typing import List, Optional, Type, cast
 
-from .exceptions import MissingFieldAnnotationError, MissingReturnAnnotationError
+from .exceptions import (
+    InvalidSuperclassInterface,
+    MissingFieldAnnotationError,
+    MissingReturnAnnotationError,
+)
 from .field import StrawberryField, field
 from .types.type_resolver import _get_fields
 from .types.types import FederationTypeParams, TypeDefinition
@@ -98,6 +102,13 @@ def _process_type(
 
     interfaces = _get_interfaces(cls)
     fields = _get_fields(cls)
+
+    if is_input and interfaces:
+        interface_names = [interface.name for interface in interfaces]
+
+        raise InvalidSuperclassInterface(
+            input_name=name, interface_names=interface_names
+        )
 
     cls._type_definition = TypeDefinition(
         name=name,
