@@ -1,5 +1,7 @@
 import json
-from typing import Any, Dict, Literal, Optional
+from typing import Any, Dict, Optional
+
+from typing_extensions import Literal
 
 from strawberry.test import BaseGraphQLTestClient, Response
 
