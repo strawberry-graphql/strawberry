@@ -40,18 +40,22 @@ from strawberry.exceptions import (
     MissingTypesForGenericError,
     ScalarAlreadyRegisteredError,
 )
-from strawberry.field import StrawberryField, default_resolver
+from strawberry.field import StrawberryField
 from strawberry.lazy_type import LazyType
 from strawberry.scalars import is_scalar
 from strawberry.schema.config import StrawberryConfig
 from strawberry.schema.types.scalar import _make_scalar_type
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
+from strawberry.types.fields.resolver import StrawberryResolver
 from strawberry.types.info import Info
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 from strawberry.utils.await_maybe import await_maybe
 
 from .types.concrete_type import ConcreteType
+
+
+default_resolver = StrawberryResolver.default_resolver()
 
 
 # graphql-core expects a resolver for an Enum type to return

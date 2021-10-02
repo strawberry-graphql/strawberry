@@ -4,7 +4,7 @@ import builtins
 import inspect
 import sys
 from inspect import isasyncgenfunction, iscoroutinefunction
-from typing import Callable, Generic, List, Mapping, Optional, TypeVar, Union
+from typing import Any, Callable, Generic, List, Mapping, Optional, TypeVar, Union
 
 from cached_property import cached_property  # type: ignore
 
@@ -16,6 +16,10 @@ from strawberry.utils.inspect import get_func_args
 
 
 T = TypeVar("T")
+
+
+def default_resolver(name: str, source: Any, *args, **kwargs):
+    return getattr(source, name)
 
 
 class StrawberryResolver(Generic[T]):
@@ -37,6 +41,10 @@ class StrawberryResolver(Generic[T]):
     # TODO: Use this when doing the actual resolving? How to deal with async resolvers?
     def __call__(self, *args, **kwargs) -> T:
         return self.wrapped_func(*args, **kwargs)
+
+    @classmethod
+    def default_resolver(cls):
+        return cls(default_resolver)
 
     @cached_property
     def arguments(self) -> List[StrawberryArgument]:
@@ -130,6 +138,10 @@ class StrawberryResolver(Generic[T]):
         return iscoroutinefunction(self.wrapped_func) or isasyncgenfunction(
             self.wrapped_func
         )
+
+    @cached_property
+    def is_default(self) -> bool:
+        return self.wrapped_func == default_resolver
 
     def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, builtins.type]]
