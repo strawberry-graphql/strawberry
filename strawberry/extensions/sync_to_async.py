@@ -11,7 +11,6 @@ class SyncToAsync(Extension):
     Example:
     >>> import strawberry
     >>> from strawberry.extensions import AddValidationRules
-    >>> from graphql import ValidationRule, GraphQLError
     >>>
     >>> @strawberry.type
     >>> class Query:
@@ -22,12 +21,17 @@ class SyncToAsync(Extension):
     >>> schema = strawberry.Schema(
     ...     Query,
     ...     extensions=[
-    ...         SyncToAsync,
+    ...         SyncToAsync(),
     ...     ]
     ... )
     >>>
     >>> result = await schema.execute("{ latestBookName }")  # Works!
     """
+
+    def __init__(self):
+        # There aren't any arguments to this extension yet but we might add
+        # some in the future
+        pass
 
     def resolve(self, _next, root, info, *args, **kwargs):
         # If we are not executing in an async context then bail out early

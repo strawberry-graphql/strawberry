@@ -39,7 +39,7 @@ Description of the argument.
 
 ```python
 import strawberry
-from strawberry.extensions import ValidationCache
+from strawberry.extensions import ExtensionName
 
 schema = strawberry.Schema(
     Query,
