@@ -43,8 +43,8 @@ class Mutation:
         # Your domain-specific authentication logic would go here
         user = ...
 
-        if user is not None:
-            return LoginSuccess(user=User(username=username))
-        else:
+        if user is None:
             return LoginError(message="Something went wrong")
+            
+        return LoginSuccess(user=User(username=username))
 ```
