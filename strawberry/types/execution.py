@@ -46,7 +46,7 @@ class ExecutionContext:
 
         definition = self._get_first_operation()
         if not definition:
-            raise RuntimeError("Can't get GraphQL operation")
+            return None
 
         if not definition.name:
             return None
@@ -80,7 +80,7 @@ class ExecutionContext:
     def _get_first_operation(self) -> Optional[OperationDefinitionNode]:
         graphql_document = self.graphql_document
         if not graphql_document:
-            raise RuntimeError("No GraphQL document available")
+            return None
 
         definition = next(
             (
