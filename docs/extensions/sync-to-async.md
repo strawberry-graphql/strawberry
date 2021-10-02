@@ -27,7 +27,7 @@ class Query:
 schema = strawberry.Schema(
     Query,
     extensions=[
-      SyncToAsync(),
+        SyncToAsync(),
     ]
 )
 result = await schema.execute("{ latestBookName }")  # Works!

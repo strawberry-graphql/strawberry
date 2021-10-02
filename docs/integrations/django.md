@@ -143,6 +143,13 @@ urlpatterns = [
 You'd also need to add `strawberry.django` to the `INSTALLED_APPS` of your
 project, this is needed to provide the template for the GraphiQL interface.
 
+⚠️ Async support in Django is limited, notably it's not safe to use
+the ORM in an Async context. Use the [SyncToAsync](/docs/extensions/sync-to-async)
+extension to let you use the Django ORM in resolvers when using the Async view.
+
+You can read more about Async support in the
+[Django docs](https://docs.djangoproject.com/en/3.2/topics/async/).
+
 ## Options
 
 The `AsyncGraphQLView` accepts two options at the moment:
