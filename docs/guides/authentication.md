@@ -40,8 +40,8 @@ class Mutation:
     @strawberry.field
     def login(self, username: str, password: str) -> LoginResult:
 
-        # here should stand the authentication logic
-        ...
+        # Your domain-specific authentication logic would go here
+        user = ...
 
         if user is not None:
             return LoginSuccess(user=User(username=username))
