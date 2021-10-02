@@ -2,7 +2,7 @@
 title: Frequently Asked Questions
 ---
 
-# TOC
+# Frequently Asked Questions
 
 # General
 
