@@ -49,6 +49,8 @@ class SyncToAsync(Extension):
         strawberry_field = field._strawberry_field
 
         if strawberry_field.base_resolver and not strawberry_field.is_async:
-            return sync_to_async(_next)(root, info, *args, **kwargs)
+            return sync_to_async(_next, thread_sensitive=False)(
+                root, info, *args, **kwargs
+            )
 
         return _next(root, info, *args, **kwargs)
