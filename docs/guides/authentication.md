@@ -4,13 +4,13 @@ title: Authentication
 
 # Authentication
 
-Authentication is the process of verifying that a user is "whom they claim to be" and
+Authentication is the process of verifying that a user is whom they claim to be and
 should be handled by the framework you are using. Some already have a built-in
 authentication system (like Django); others, you have to provide it manually. It's not
 Strawberry's responsibility to authenticate the user, but it can provide some
 surroundings to the real authentication process. It's also very important to not confuse
-authentication with authorization: authorization determines "what an authenticated user
-is allowed to do or which data he/she can access to". In Strawberry, this is done with
+authentication with authorization: authorization determines what an authenticated user
+is allowed to do or which data he/she can access to. In Strawberry, this is done with
 [`Permissions` classes](./permissions.md).
 
 Let's see how to put toghether these concepts with an example. First, we define a `login`
