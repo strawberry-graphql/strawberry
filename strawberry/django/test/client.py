@@ -22,9 +22,11 @@ class GraphQLTestClient(BaseGraphQLTestClient):
             body["variables"] = variables
 
         if format == "multipart":
-            ref_variable = next(iter(variables))
+            assert variables is not None
+
+            ref_variable = list(variables.keys())[0]
             if isinstance(variables.get(ref_variable), dict):
-                ref_variable += f".{next(iter(variables[ref_variable]))}"
+                ref_variable += f".{list(variables[ref_variable].keys())[0]}"
 
             if len(kwargs) == 1:
                 file_map = json.dumps({ref_variable: [f"variables.{ref_variable}"]})
