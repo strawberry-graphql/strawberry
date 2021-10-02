@@ -103,3 +103,70 @@ has the permissions you expect.
 
 _For more discussion on Authentication see_
 _[Issue #830](https://github.com/strawberry-graphql/strawberry/issues/830)._
+
+## Setting permissions on non-optional fields
+
+If you are adding a `Permission` class to a non-optional field
+Strawberry will issue a warning. This is because the GraphQL server will not be able to return
+a partial response if one of the requested fields
+doesn't pass the permission checks but others do. Consider the following example:
+
+```python
+import typing
+import strawberry
+from strawberry.permission import BasePermission
+from strawberry.types import Info
+
+class IsInOnSecret(BasePermission):
+    message = "This is secret"
+
+    def has_permission(self, source: typing.Any, info: Info, **kwargs) -> bool:
+        return False
+
+@strawberry.type
+class Query:
+    @strawberry.field(permission_classes=[IsInOnSecret])
+    def secret(self) -> str:
+        return 'secret'
+
+    @strawberry.field
+    def public(self) -> str:
+        return 'public'
+```
+
+If you now make a query like this:
+
+```graphql
+query {
+  secret
+  public
+}
+```
+
+the top-level `data` field of the response you get will be `null`.
+Because it's not possible to return `null` for the `secret` field the partial response
+cannot be formed. If you change the type of `secret` to be `typing.Optional[str]` you will get
+both an error and a field you are allowed to see:
+
+```graphql
+{
+  "data": {
+    "secret": null,
+    "public": "public"
+  },
+  "errors": [
+    {
+      "message": "This is secret",
+      "locations": [
+        {
+          "line": 2,
+          "column": 3
+        }
+      ],
+      "path": [
+        "secret"
+      ]
+    }
+  ]
+}
+```

@@ -311,6 +311,10 @@ class GraphQLCoreConverter:
     def from_resolver(
         self, field: StrawberryField
     ) -> Callable:  # TODO: Take StrawberryResolver
+        # check that permission classes are valid
+        for permission_class in field.permission_classes:
+            permission_class.assert_valid_for_field(field)
+
         def _get_arguments(
             source: Any,
             info: Info,

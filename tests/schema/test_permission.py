@@ -14,18 +14,27 @@ def test_raises_graphql_error_when_permission_method_is_missing():
     @strawberry.type
     class Query:
         @strawberry.field(permission_classes=[IsAuthenticated])
-        def user(self) -> str:
+        def user(self) -> typing.Optional[str]:
             return "patrick"
 
-    schema = strawberry.Schema(query=Query)
+    with pytest.raises(TypeError) as excinfo:
+        strawberry.Schema(query=Query)
+    assert "IsAuthenticated" in str(excinfo.value)
 
-    query = "{ user }"
 
-    result = schema.execute_sync(query)
-    assert (
-        result.errors[0].message
-        == "Permission classes should override has_permission method"
-    )
+def test_warns_about_setting_permissions_on_non_optional_fields():
+    class IsAuthenticated(BasePermission):
+        def has_permission(self, source: typing.Any, info: Info, **kwargs) -> bool:
+            return False
+
+    @strawberry.type
+    class Query:
+        @strawberry.field(permission_classes=[IsAuthenticated])
+        def my_email(self) -> str:
+            return "email@email.com"
+
+    with pytest.warns(UserWarning):
+        strawberry.Schema(query=Query)
 
 
 def test_raises_graphql_error_when_permission_is_denied():
@@ -38,7 +47,7 @@ def test_raises_graphql_error_when_permission_is_denied():
     @strawberry.type
     class Query:
         @strawberry.field(permission_classes=[IsAuthenticated])
-        def user(self) -> str:
+        def user(self) -> typing.Optional[str]:
             return "patrick"
 
     schema = strawberry.Schema(query=Query)
@@ -64,7 +73,7 @@ async def test_raises_permission_error_for_subscription():
     @strawberry.type
     class Subscription:
         @strawberry.subscription(permission_classes=[IsAdmin])
-        async def user(self, info) -> typing.AsyncGenerator[str, None]:
+        async def user(self, info) -> typing.AsyncGenerator[typing.Optional[str], None]:
             yield "Hello"
 
     schema = strawberry.Schema(query=Query, subscription=Subscription)
@@ -92,7 +101,7 @@ async def test_sync_permissions_work_with_async_resolvers():
     @strawberry.type
     class Query:
         @strawberry.field(permission_classes=[IsAuthorized])
-        async def user(self, name: str) -> User:
+        async def user(self, name: str) -> typing.Optional[User]:
             return User(name=name, email="patrick.arminio@gmail.com")
 
     schema = strawberry.Schema(query=Query)
@@ -118,7 +127,7 @@ def test_can_use_source_when_testing_permission():
         name: str
 
         @strawberry.field(permission_classes=[CanSeeEmail])
-        def email(self) -> str:
+        def email(self) -> typing.Optional[str]:
             return "patrick.arminio@gmail.com"
 
     @strawberry.type
@@ -152,7 +161,7 @@ def test_can_use_args_when_testing_permission():
         name: str
 
         @strawberry.field(permission_classes=[CanSeeEmail])
-        def email(self, secure: bool) -> str:
+        def email(self, secure: bool) -> typing.Optional[str]:
             return "patrick.arminio@gmail.com"
 
     @strawberry.type
@@ -184,7 +193,7 @@ def test_can_use_on_simple_fields():
     @strawberry.type
     class User:
         name: str
-        email: str = strawberry.field(permission_classes=[CanSeeEmail])
+        email: typing.Optional[str] = strawberry.field(permission_classes=[CanSeeEmail])
 
     @strawberry.type
     class Query:
@@ -216,7 +225,7 @@ async def test_dataclass_field_with_async_permission_class():
     @strawberry.type
     class User:
         name: str
-        email: str = strawberry.field(permission_classes=[CanSeeEmail])
+        email: typing.Optional[str] = strawberry.field(permission_classes=[CanSeeEmail])
 
     @strawberry.type
     class Query:
@@ -251,7 +260,7 @@ async def test_async_resolver_with_async_permission_class():
     @strawberry.type
     class Query:
         @strawberry.field(permission_classes=[IsAuthorized])
-        async def user(self, name: str) -> User:
+        async def user(self, name: str) -> typing.Optional[User]:
             return User(name=name, email="patrick.arminio@gmail.com")
 
     schema = strawberry.Schema(query=Query)
@@ -281,7 +290,7 @@ async def test_sync_resolver_with_async_permission_class():
     @strawberry.type
     class Query:
         @strawberry.field(permission_classes=[IsAuthorized])
-        def user(self, name: str) -> User:
+        def user(self, name: str) -> typing.Optional[User]:
             return User(name=name, email="patrick.arminio@gmail.com")
 
     schema = strawberry.Schema(query=Query)
@@ -317,7 +326,7 @@ async def test_mixed_sync_and_async_permission_classes():
     @strawberry.type
     class Query:
         @strawberry.field(permission_classes=[IsAuthorizedAsync, IsAuthorizedSync])
-        def user(self, name: str) -> User:
+        def user(self, name: str) -> typing.Optional[User]:
             return User(name=name, email="patrick.arminio@gmail.com")
 
     schema = strawberry.Schema(query=Query)
