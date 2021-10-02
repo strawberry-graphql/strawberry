@@ -1,7 +1,8 @@
 from asgiref.sync import sync_to_async
 
 from strawberry.extensions import Extension
-from .utils import is_introspection_key
+
+from .utils import is_introspection_field
 
 
 class SyncToAsync(Extension):
@@ -39,12 +40,11 @@ class SyncToAsync(Extension):
         if not self.execution_context.is_async:
             return _next(root, info, *args, **kwargs)
 
-        field_name = info.field_name
         # Skip introspection fields
-        if is_introspection_key(field_name):
+        if is_introspection_field(info):
             return _next(root, info, *args, **kwargs)
 
-        field = info.parent_type.fields[field_name]
+        field = info.parent_type.fields[info.field_name]
 
         strawberry_field = field._strawberry_field
 
