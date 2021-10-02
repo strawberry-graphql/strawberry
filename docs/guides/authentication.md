@@ -29,7 +29,7 @@ class LoginSuccess:
 
 @strawberry.type
 class LoginError:
-    message: str = None
+    message: str
 
 
 LoginResult = strawberry.union("LoginResult", (LoginSuccess, LoginError))
