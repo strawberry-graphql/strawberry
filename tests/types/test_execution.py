@@ -1,3 +1,5 @@
+import pytest
+
 import strawberry
 from strawberry.extensions import Extension
 
@@ -99,3 +101,51 @@ def test_execution_context_operation_type_mutation():
 
     assert operation_name == "MyMutation2"
     assert operation_type == "MUTATION"
+
+
+def test_execution_context_operation_name_and_type_with_fragmenets():
+    operation_name = None
+    operation_type = None
+
+    class MyExtension(Extension):
+        def on_request_end(self):
+            nonlocal operation_name
+            nonlocal operation_type
+
+            execution_context = self.execution_context
+
+            operation_name = execution_context.operation_name
+            operation_type = execution_context.operation_type
+
+    schema = strawberry.Schema(Query, extensions=[MyExtension])
+
+    result = schema.execute_sync(
+        """
+        fragment MyFragment on Query {
+            ping
+        }
+
+        query MyOperation {
+            ping
+            ...MyFragment
+        }
+        """
+    )
+    assert not result.errors
+
+    assert operation_name == "MyOperation"
+    assert operation_type == "QUERY"
+
+
+def test_error_when_accessing_operation_type_before_parsing():
+    class MyExtension(Extension):
+        def on_request_start(self):
+            execution_context = self.execution_context
+
+            # This should raise a RuntimeError
+            execution_context.operation_type
+
+    schema = strawberry.Schema(Query, extensions=[MyExtension])
+
+    with pytest.raises(RuntimeError):
+        schema.execute_sync("mutation { myMutation }")

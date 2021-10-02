@@ -31,13 +31,16 @@ class ExecutionContext:
     )
 
     # The operation name that is provided by the request
-    _provided_operation_name: Optional[str] = None
+    provided_operation_name: dataclasses.InitVar[Optional[str]] = None
 
     # Values that get populated during the GraphQL execution so that they can be
     # accessed by extensions
     graphql_document: Optional[DocumentNode] = None
     errors: Optional[List[GraphQLError]] = None
     result: Optional[GraphQLExecutionResult] = None
+
+    def __post_init__(self, provided_operation_name):
+        self._provided_operation_name = provided_operation_name
 
     @property
     def operation_name(self) -> Optional[str]:
@@ -82,14 +85,12 @@ class ExecutionContext:
         if not graphql_document:
             return None
 
-        definition = next(
-            (
-                node
-                for node in graphql_document.definitions
-                if isinstance(node, OperationDefinitionNode)
-            ),
-            None,
-        )
+        definition: Optional[OperationDefinitionNode] = None
+        for d in graphql_document.definitions:
+            if isinstance(d, OperationDefinitionNode):
+                definition = d
+                break
+
         return definition
 
 
