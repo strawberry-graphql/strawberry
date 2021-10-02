@@ -45,6 +45,6 @@ class Mutation:
 
         if user is None:
             return LoginError(message="Something went wrong")
-            
+
         return LoginSuccess(user=User(username=username))
 ```
