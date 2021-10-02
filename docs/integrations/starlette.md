@@ -18,7 +18,7 @@ graphql_app = GraphQL(schema)
 
 app = Starlette()
 app.add_route("/graphql", graphql_app)
-app.add_websocket_route("/subscriptions", graphql_app)
+app.add_websocket_route("/graphql", graphql_app)
 ```
 
 For more information about Strawberry ASGI refer to [the documentation on ASGI](./asgi.md)
