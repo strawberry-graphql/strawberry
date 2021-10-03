@@ -68,6 +68,8 @@ plugins = strawberry.ext.mypy_plugin
 
 [mypy]: http://www.mypy-lang.org/
 
+We also have [Mypy setup guide](./docs/editors/mypy.md)
+
 ### Django Integration
 
 A Django view is provided for adding a GraphQL endpoint to your application.
