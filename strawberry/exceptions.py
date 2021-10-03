@@ -14,6 +14,13 @@ class NotAnEnum(Exception):
         super().__init__(message)
 
 
+class NotAClass(Exception):
+    def __init__(self, method: str):
+        message = f"strawberry.{method} can only be used with classes"
+
+        super().__init__(message)
+
+
 class MissingReturnAnnotationError(Exception):
     """The field is missing the return annotation"""
 
