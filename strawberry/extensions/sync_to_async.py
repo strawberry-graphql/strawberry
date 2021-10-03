@@ -28,12 +28,17 @@ class SyncToAsync(Extension):
     ... )
     >>>
     >>> result = await schema.execute("{ latestBookName }")  # Works!
+
+    Arguments:
+
+    `thread_sensitive: bool = True`
+        Determine if the sync function will run in the same thread as all other
+        `thread_sensitive` functions.
+        Read more: https://docs.djangoproject.com/en/3.2/topics/async/#sync-to-async
     """
 
-    def __init__(self):
-        # There aren't any arguments to this extension yet but we might add
-        # some in the future
-        pass
+    def __init__(self, thread_sensitive: bool = True):
+        self._thread_sensitive = thread_sensitive
 
     def resolve(self, _next, root, info, *args, **kwargs):
         # If we are not executing in an async context then bail out early
@@ -49,7 +54,7 @@ class SyncToAsync(Extension):
         strawberry_field = field._strawberry_field
 
         if strawberry_field.base_resolver and not strawberry_field.is_async:
-            return sync_to_async(_next, thread_sensitive=False)(
+            return sync_to_async(_next, thread_sensitive=self._thread_sensitive)(
                 root, info, *args, **kwargs
             )
 

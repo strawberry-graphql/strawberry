@@ -35,7 +35,16 @@ result = await schema.execute("{ latestBookName }")  # Works!
 
 ## API reference:
 
-_No arguments_
+```python
+class SyncToAsync(thread_sensitive=True)
+```
+
+**`thread_sensitive: bool = True`**
+
+Determine if the sync function will run in the same thread as all other
+`thread_sensitive` functions.
+
+Read more: https://docs.djangoproject.com/en/3.2/topics/async/#sync-to-async
 
 ## More examples:
 
