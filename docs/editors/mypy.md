@@ -1,16 +1,16 @@
-#MYPY Plugin Setup
+# MYPY Plugin Setup
 
 Mypy is a static type checker for Python 3 and Python 2.7. If you sprinkle your code with type annotations, mypy can type check your code and find common bugs.
 
-##Installing and running mypy
+## Installing and running mypy
 
 Mypy requires Python 3.6 or later to run
 
 ```$ python3 -m pip install mypy```
 
 
-Ohttps://github.com/Shashwat-05/strawberry.gitnce mypy is installed, run it by using the mypy tool:
-n 3)
+Once mypy is installed, run it by using the mypy tool: 
+(Python 3)
 
 ```$ mypy program.py```
 
