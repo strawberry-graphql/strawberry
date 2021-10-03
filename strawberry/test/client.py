@@ -2,7 +2,7 @@ from abc import abstractmethod
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
-from typing_extensions import TypedDict
+from typing_extensions import Literal, TypedDict
 
 
 @dataclass
@@ -28,5 +28,7 @@ class BaseGraphQLTestClient:
         variables: Optional[Dict[str, Any]] = None,
         headers: Optional[Dict[str, Any]] = None,
         asserts_errors: Optional[bool] = True,
+        format: Literal["multipart", "json"] = "json",
+        **kwargs
     ) -> Response:
         raise NotImplementedError
