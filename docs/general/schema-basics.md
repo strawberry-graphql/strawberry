@@ -10,8 +10,11 @@ class Book:
 
 @strawberry.type
 class Author:
-  name: str = "Example ^[lol](aaa)"
+  name: str = "Example"
   ^[lol](books: typing.List['Book'])
 ```
 
-[^author]: example footnote
+<CodeNotes>
+  <note id="author">This is the content of the footnote</note>
+  <note id="lol">LOL</note>
+</CodeNotes>
