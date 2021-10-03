@@ -10,13 +10,10 @@ Mypy requires Python 3.6 or later to run
 
 
 Once mypy is installed, run it by using the mypy tool: 
-(Python 3)
 
-```$ mypy program.py```
+* ```$ mypy program.py``` (Python 3)
 
-*For Python 2*
-
-```$ mypy --py2 program.py```
+* ```$ mypy --py2 program.py``` (Python 2)
 
 
 This command makes mypy type check your program.py file and print out any errors it finds. Mypy will type check your code statically: this means that it will check for errors without ever running your code, just like a linter.
