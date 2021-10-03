@@ -21,9 +21,10 @@ And use it everywere in your test methods
 
 ```
 def test_strawberry(graphql_client):
-    query = """query Hi($name: String!) {
-        hi(name: $name)
-    }
+    query = """
+        query Hi($name: String!) {
+            hi(name: $name)
+        }
     """
 
     result = graphql_client.query(query, variables={"name": "Marcotte"})
