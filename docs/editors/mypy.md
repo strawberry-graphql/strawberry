@@ -29,14 +29,22 @@ By default, mypy will not type check dynamically typed functions. This means tha
 
 You can teach mypy to detect these kinds of bugs by adding type annotations (also known as type hints).
 
-This function is now statically typed: mypy can use the provided type hints to detect incorrect usages of the `greeting` function.
-
 ```python
 def greeting(name: str) -> str:
     return 'Hello ' + name
 ```
 
+This function is now statically typed: mypy can use the provided type hints to detect incorrect usages of the `greeting` function. For example, it will reject the following calls since the arguments have invalid types:
+
+```python
+def greeting(name: str) -> str:
+    return 'Hello ' + name
+
+greeting(3)         # Argument 1 to "greeting" has incompatible type "int"; expected "str"
+greeting(b'Alice')  # Argument 1 to "greeting" has incompatible type "bytes"; expected "str"
+```
+
 If you are trying to type check Python 2 code, you can add type hints using a comment-based syntax instead of the Python 3 annotation syntax.
 
-**Note**
+**Note -**
 You are always free to ignore the errors mypy reports and treat them as just warnings, if you so wish: mypy runs independently from Python itself.
