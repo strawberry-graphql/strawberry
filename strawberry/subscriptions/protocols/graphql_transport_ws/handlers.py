@@ -182,10 +182,10 @@ class BaseGraphQLTransportWSHandler(ABC):
         except asyncio.CancelledError:
             # CancelledErrors are expected during task cleanup.
             return
-        except Exception as error:
+        except Exception as err:
             # GraphQLErrors are handled by graphql-core and included in the
             # ExecutionResult
-            error = GraphQLError(str(error), original_error=error)
+            error = GraphQLError(str(err), original_error=err)
             error_payload = [format_graphql_error(error)]
             error_message = ErrorMessage(id=operation_id, payload=error_payload)
             await self.send_message(error_message)
