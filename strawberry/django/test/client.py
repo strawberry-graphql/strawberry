@@ -24,10 +24,14 @@ class GraphQLTestClient(BaseGraphQLTestClient):
         if format == "multipart":
             assert variables is not None
 
+            # We have fo map the variables keywords with the files provide in `kwargs`
             ref_variable = list(variables.keys())[0]
+            # In case of folders the variables will look like
+            # `{"folder": {"files": ...]}}`
             if isinstance(variables.get(ref_variable), dict):
                 ref_variable += f".{list(variables[ref_variable].keys())[0]}"
 
+            # If the variable is an array of files we must number the keys
             if len(kwargs) == 1:
                 file_map = json.dumps({ref_variable: [f"variables.{ref_variable}"]})
             else:
