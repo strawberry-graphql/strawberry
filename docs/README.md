@@ -43,6 +43,7 @@
 ## Editor integration
 
 - [Visual Studio Code](./editors/vscode.md)
+- [Mypy Plugin](./editors/mypy.md)
 
 ## Concepts
 
