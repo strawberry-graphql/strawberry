@@ -19,7 +19,7 @@ class X:
 
 # Highlighting lines
 
-```python lines=1-4
+```python line=1-4
 import strawberry
 
 @strawberry.type
