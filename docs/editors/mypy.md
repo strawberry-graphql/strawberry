@@ -32,7 +32,7 @@ By default, mypy will not type check dynamically typed functions. This means tha
 
 You can teach mypy to detect these kinds of bugs by adding type annotations (also known as type hints).
 
-This function is now statically typed: mypy can use the provided type hints to detect incorrect usages of the `<greeting>` function.
+This function is now statically typed: mypy can use the provided type hints to detect incorrect usages of the `greeting` function.
 
 ```python
 def greeting(name: str) -> str:
