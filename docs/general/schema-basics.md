@@ -14,7 +14,10 @@ class Author:
   ^[lol](books: typing.List['Book'])
 ```
 
-<CodeNotes>
-  <note id="author">This is the content of the footnote</note>
-  <note id="lol">LOL</note>
+<CodeNotes id="author">
+  This is the content of the footnote
+</CodeNotes>
+
+<CodeNotes id="lol">
+  LOL
 </CodeNotes>
