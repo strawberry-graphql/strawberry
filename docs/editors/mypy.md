@@ -6,15 +6,13 @@ Mypy is a static type checker for Python 3 and Python 2.7. If you sprinkle your 
 
 Mypy requires Python 3.6 or later to run
 
-```$ python3 -m pip install mypy```
+`$ python3 -m pip install mypy`
 
+Once mypy is installed, run it by using the mypy tool:
 
-Once mypy is installed, run it by using the mypy tool: 
+- `$ mypy program.py` (Python 3)
 
-* ```$ mypy program.py``` (Python 3)
-
-* ```$ mypy --py2 program.py``` (Python 2)
-
+- `$ mypy --py2 program.py` (Python 2)
 
 This command makes mypy type check your program.py file and print out any errors it finds. Mypy will type check your code statically: this means that it will check for errors without ever running your code, just like a linter.
 
