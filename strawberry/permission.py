@@ -1,9 +1,13 @@
 import abc
-from typing import Any, Awaitable, Optional, Union
+from typing import TYPE_CHECKING, Any, Awaitable, Optional, Union
 from warnings import warn
 
 from strawberry.type import StrawberryOptional
 from strawberry.types.info import Info
+
+
+if TYPE_CHECKING:
+    from strawberry.field import StrawberryField
 
 
 class BasePermission(abc.ABC):
@@ -17,12 +21,10 @@ class BasePermission(abc.ABC):
     def has_permission(
         self, source: Any, info: Info, **kwargs
     ) -> Union[bool, Awaitable[bool]]:
-        raise NotImplementedError(
-            "Permission classes should override has_permission method"
-        )
+        ...
 
     @classmethod
-    def assert_valid_for_field(cls, field) -> None:
+    def assert_valid_for_field(cls, field: "StrawberryField") -> None:
         # assert all abstact methods are implemented in a subclass
         not_implemented_methods = getattr(cls, "__abstractmethods__", None)
         if not_implemented_methods:
