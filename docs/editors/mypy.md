@@ -23,8 +23,10 @@ This command makes mypy type check your program.py file and print out any errors
 
 A function without type annotations is considered to be dynamically typed by mypy:
 
-```def greeting(name):
-    return 'Hello ' + name```
+```python
+def greeting(name):
+    return 'Hello ' + name
+```
 
 By default, mypy will not type check dynamically typed functions. This means that with a few exceptions, mypy will not report any errors with regular unannotated Python.
 
@@ -32,8 +34,10 @@ You can teach mypy to detect these kinds of bugs by adding type annotations (als
 
 This function is now statically typed: mypy can use the provided type hints to detect incorrect usages of the `<greeting>` function.
 
-```def greeting(name: str) -> str:
-    return 'Hello ' + name```
+```python
+def greeting(name: str) -> str:
+    return 'Hello ' + name
+```
 
 If you are trying to type check Python 2 code, you can add type hints using a comment-based syntax instead of the Python 3 annotation syntax.
 
