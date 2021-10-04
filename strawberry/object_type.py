@@ -148,13 +148,12 @@ def type(
 
     def wrap(cls):
         if not inspect.isclass(cls):
-            exc = (
-                ObjectIsNotClassError.input
-                if is_input
-                else ObjectIsNotClassError.interface
-                if is_interface
-                else ObjectIsNotClassError.type
-            )
+            if is_input:
+                exc = ObjectIsNotClassError.input
+            elif is_interface:
+                exc = ObjectIsNotClassError.interface
+            else:
+                exc = ObjectIsNotClassError.type
             raise exc(cls)
 
         wrapped = _wrap_dataclass(cls)
