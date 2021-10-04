@@ -1,5 +1,6 @@
-# TODO: add links to docs
+from __future__ import annotations
 
+from enum import Enum
 from typing import List, Set, Union
 
 from graphql import GraphQLObjectType
@@ -7,11 +8,42 @@ from graphql import GraphQLObjectType
 from strawberry.type import StrawberryType
 
 
+# TODO: add links to docs
+# https://github.com/strawberry-graphql/strawberry/issues/1298
+
+
 class NotAnEnum(Exception):
     def __init__(self):
         message = "strawberry.enum can only be used with subclasses of Enum"
 
         super().__init__(message)
+
+
+class ObjectIsNotClassError(Exception):
+    class MethodType(Enum):
+        INPUT = "input"
+        INTERFACE = "interface"
+        TYPE = "type"
+
+    def __init__(self, obj: object, method_type: MethodType):
+        message = (
+            f"strawberry.{method_type.value} can only be used with class types. "
+            f"Provided object {obj} is not a type."
+        )
+
+        super().__init__(message)
+
+    @classmethod
+    def input(cls, obj: object) -> ObjectIsNotClassError:
+        return cls(obj, cls.MethodType.INPUT)
+
+    @classmethod
+    def interface(cls, obj: object) -> ObjectIsNotClassError:
+        return cls(obj, cls.MethodType.INTERFACE)
+
+    @classmethod
+    def type(cls, obj: object) -> ObjectIsNotClassError:
+        return cls(obj, cls.MethodType.TYPE)
 
 
 class MissingReturnAnnotationError(Exception):
