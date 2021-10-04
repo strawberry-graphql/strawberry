@@ -1,10 +1,7 @@
 from enum import Enum
 from typing import List, Optional, TypeVar
 
-import pytest
-
 import strawberry
-from strawberry.exceptions import NotAClass
 from strawberry.field import StrawberryField
 
 
@@ -124,30 +121,3 @@ def test_union():
     field: StrawberryField = WishfulThinking._type_definition.fields[0]
 
     assert field.type is EU
-
-
-def test_raises_error_when_using_type_with_a_not_class_object():
-    expected_error = "strawberry.type can only be used with classes"
-    with pytest.raises(NotAClass, match=expected_error):
-
-        @strawberry.type
-        def not_a_class():
-            pass
-
-
-def test_raises_error_when_using_input_with_a_not_class_object():
-    expected_error = "strawberry.input can only be used with classes"
-    with pytest.raises(NotAClass, match=expected_error):
-
-        @strawberry.input
-        def not_a_class():
-            pass
-
-
-def test_raises_error_when_using_interface_with_a_not_class_object():
-    expected_error = "strawberry.interface can only be used with classes"
-    with pytest.raises(NotAClass, match=expected_error):
-
-        @strawberry.interface
-        def not_a_class():
-            pass

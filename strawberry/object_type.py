@@ -5,7 +5,7 @@ from typing import List, Optional, Type, cast
 from .exceptions import (
     MissingFieldAnnotationError,
     MissingReturnAnnotationError,
-    NotAClass,
+    ObjectIsNotClassError,
 )
 from .field import StrawberryField, field
 from .types.type_resolver import _get_fields
@@ -148,9 +148,14 @@ def type(
 
     def wrap(cls):
         if not inspect.isclass(cls):
-            raise NotAClass(
-                method="input" if is_input else "interface" if is_interface else "type"
+            exc = (
+                ObjectIsNotClassError.input
+                if is_input
+                else ObjectIsNotClassError.interface
+                if is_interface
+                else ObjectIsNotClassError.type
             )
+            raise exc(cls)
 
         wrapped = _wrap_dataclass(cls)
         return _process_type(
