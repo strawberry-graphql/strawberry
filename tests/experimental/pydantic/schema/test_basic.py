@@ -89,12 +89,10 @@ def test_auto_fields():
         password: Optional[str]
         other: float
 
-    from strawberry.experimental.pydantic import auto
-
     @strawberry.experimental.pydantic.type(UserModel)
     class User:
-        age: auto
-        password: auto
+        age: strawberry.auto
+        password: strawberry.auto
 
     @strawberry.type
     class Query:

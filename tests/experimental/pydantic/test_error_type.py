@@ -5,7 +5,6 @@ import pytest
 import pydantic
 
 import strawberry
-from strawberry.experimental.pydantic import auto
 from strawberry.experimental.pydantic.exceptions import MissingFieldsListError
 from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.types.types import TypeDefinition
@@ -18,8 +17,8 @@ def test_basic_error_type():
 
     @strawberry.experimental.pydantic.error_type(UserModel)
     class UserError:
-        name: auto
-        age: auto
+        name: strawberry.auto
+        age: strawberry.auto
 
     definition: TypeDefinition = UserError._type_definition
     assert definition.name == "UserError"
@@ -75,7 +74,7 @@ def test_basic_type_all_fields_warn():
 
         @strawberry.experimental.pydantic.error_type(User, all_fields=True)
         class UserError:
-            age: auto
+            age: strawberry.auto
 
 
 def test_basic_error_type_without_fields_throws_an_error():
@@ -97,8 +96,8 @@ def test_error_type_with_default_value():
 
     @strawberry.experimental.pydantic.error_type(UserModel)
     class UserError:
-        name: auto
-        age: auto
+        name: strawberry.auto
+        age: strawberry.auto
 
     definition: TypeDefinition = UserError._type_definition
     assert definition.name == "UserError"
@@ -127,11 +126,11 @@ def test_error_type_with_nested_model():
 
     @strawberry.experimental.pydantic.error_type(FriendModel)
     class FriendError:
-        food: auto
+        food: strawberry.auto
 
     @strawberry.experimental.pydantic.error_type(UserModel)
     class UserError:
-        friend: auto
+        friend: strawberry.auto
 
     definition: TypeDefinition = UserError._type_definition
     assert definition.name == "UserError"
@@ -152,11 +151,11 @@ def test_error_type_with_list_nested_model():
 
     @strawberry.experimental.pydantic.error_type(FriendModel)
     class FriendError:
-        food: auto
+        food: strawberry.auto
 
     @strawberry.experimental.pydantic.error_type(UserModel)
     class UserError:
-        friends: auto
+        friends: strawberry.auto
 
     definition: TypeDefinition = UserError._type_definition
     assert definition.name == "UserError"
@@ -176,7 +175,7 @@ def test_error_type_with_list_of_scalar():
 
     @strawberry.experimental.pydantic.error_type(UserModel)
     class UserError:
-        friends: auto
+        friends: strawberry.auto
 
     definition: TypeDefinition = UserError._type_definition
     assert definition.name == "UserError"
@@ -197,7 +196,7 @@ def test_error_type_with_optional_field():
 
     @strawberry.experimental.pydantic.error_type(UserModel)
     class UserError:
-        age: auto
+        age: strawberry.auto
 
     definition: TypeDefinition = UserError._type_definition
     assert definition.name == "UserError"
@@ -216,7 +215,7 @@ def test_error_type_with_list_of_optional_scalar():
 
     @strawberry.experimental.pydantic.error_type(UserModel)
     class UserError:
-        age: auto
+        age: strawberry.auto
 
     definition: TypeDefinition = UserError._type_definition
 
@@ -237,7 +236,7 @@ def test_error_type_with_optional_list_scalar():
 
     @strawberry.experimental.pydantic.error_type(UserModel)
     class UserError:
-        age: auto
+        age: strawberry.auto
 
     definition: TypeDefinition = UserError._type_definition
 
@@ -258,7 +257,7 @@ def test_error_type_with_optional_list_of_optional_scalar():
 
     @strawberry.experimental.pydantic.error_type(UserModel)
     class UserError:
-        age: auto
+        age: strawberry.auto
 
     definition: TypeDefinition = UserError._type_definition
 
@@ -279,14 +278,14 @@ def test_error_type_with_optional_list_of_nested_model():
 
     @strawberry.experimental.pydantic.error_type(FriendModel)
     class FriendError:
-        name: auto
+        name: strawberry.auto
 
     class UserModel(pydantic.BaseModel):
         friends: Optional[List[FriendModel]]
 
     @strawberry.experimental.pydantic.error_type(UserModel)
     class UserError:
-        friends: auto
+        friends: strawberry.auto
 
     definition: TypeDefinition = UserError._type_definition
 
@@ -306,7 +305,7 @@ def test_error_type_with_matrix_list_of_scalar():
 
     @strawberry.experimental.pydantic.error_type(UserModel)
     class UserError:
-        age: auto
+        age: strawberry.auto
 
     definition: TypeDefinition = UserError._type_definition
 

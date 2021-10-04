@@ -3,7 +3,6 @@ import pytest
 import pydantic
 
 import strawberry
-from strawberry.experimental.pydantic import auto
 from strawberry.type import StrawberryOptional
 from strawberry.types.types import TypeDefinition
 
@@ -35,7 +34,7 @@ def test_types(pydantic_type, field_type):
 
     @strawberry.experimental.pydantic.type(Model)
     class Type:
-        field: auto
+        field: strawberry.auto
 
     definition: TypeDefinition = Type._type_definition
     assert definition.name == "Type"
@@ -56,7 +55,7 @@ def test_types_optional(pydantic_type, field_type):
 
     @strawberry.experimental.pydantic.type(Model)
     class Type:
-        field: auto
+        field: strawberry.auto
 
     definition: TypeDefinition = Type._type_definition
     assert definition.name == "Type"
@@ -74,7 +73,7 @@ def test_conint():
 
     @strawberry.experimental.pydantic.type(Model)
     class Type:
-        field: auto
+        field: strawberry.auto
 
     definition: TypeDefinition = Type._type_definition
     assert definition.name == "Type"
@@ -91,7 +90,7 @@ def test_constr():
 
     @strawberry.experimental.pydantic.type(Model)
     class Type:
-        field: auto
+        field: strawberry.auto
 
     definition: TypeDefinition = Type._type_definition
     assert definition.name == "Type"
@@ -128,4 +127,4 @@ def test_unsupported_types(pydantic_type):
 
         @strawberry.experimental.pydantic.type(Model)
         class Type:
-            field: auto
+            field: strawberry.auto

@@ -3,7 +3,6 @@ from typing import Any, List, Type
 
 from strawberry.experimental.pydantic.exceptions import UnregisteredTypeException
 from strawberry.private import Private
-from strawberry.sentinel import sentinel
 from strawberry.utils.typing import (
     get_list_annotation,
     get_optional_annotation,
@@ -35,6 +34,3 @@ def get_private_fields(cls: Type) -> List[dataclasses.Field]:
         if isinstance(field.type, Private):
             private_fields.append(field)
     return private_fields
-
-
-auto = sentinel("auto", repr="strawberry.experimental.pydantic.auto")

@@ -7,12 +7,13 @@ from typing import Any, Dict, List, Optional, Tuple, Type, cast
 from pydantic import BaseModel
 from pydantic.fields import ModelField
 
+import strawberry
 from strawberry.arguments import UNSET
 from strawberry.experimental.pydantic.conversion import (
     convert_pydantic_model_to_strawberry_class,
 )
 from strawberry.experimental.pydantic.fields import get_basic_type
-from strawberry.experimental.pydantic.utils import auto, get_private_fields
+from strawberry.experimental.pydantic.utils import get_private_fields
 from strawberry.field import StrawberryField
 from strawberry.object_type import _process_type, _wrap_dataclass
 from strawberry.types.type_resolver import _get_fields
@@ -76,7 +77,7 @@ def type(
 
         existing_fields = getattr(cls, "__annotations__", {})
         fields_set = fields_set.union(
-            set(name for name, typ in existing_fields.items() if typ == auto)
+            set(name for name, typ in existing_fields.items() if typ is strawberry.auto)
         )
 
         if all_fields:
@@ -121,7 +122,7 @@ def type(
                     field,
                 )
                 for field in extra_fields + private_fields
-                if field.type != auto
+                if field.type != strawberry.auto
             )
         )
 

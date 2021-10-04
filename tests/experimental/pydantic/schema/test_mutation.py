@@ -3,7 +3,6 @@ from typing import Dict, List, Union
 import pydantic
 
 import strawberry
-from strawberry.experimental.pydantic import auto
 
 
 def test_mutation():
@@ -12,11 +11,11 @@ def test_mutation():
 
     @strawberry.experimental.pydantic.input(User)
     class CreateUserInput:
-        name: auto
+        name: strawberry.auto
 
     @strawberry.experimental.pydantic.type(User)
     class UserType:
-        name: auto
+        name: strawberry.auto
 
     @strawberry.type
     class Query:
@@ -50,11 +49,11 @@ def test_mutation_with_validation():
 
     @strawberry.experimental.pydantic.input(User)
     class CreateUserInput:
-        name: auto
+        name: strawberry.auto
 
     @strawberry.experimental.pydantic.type(User)
     class UserType:
-        name: auto
+        name: strawberry.auto
 
     @strawberry.type
     class Query:
@@ -95,18 +94,18 @@ def test_mutation_with_validation_of_nested_model():
 
     @strawberry.experimental.pydantic.input(HobbyInputModel)
     class HobbyInput:
-        name: auto
+        name: strawberry.auto
 
     @strawberry.experimental.pydantic.input(CreateUserModel)
     class CreateUserInput:
-        hobby: auto
+        hobby: strawberry.auto
 
     class UserModel(pydantic.BaseModel):
         name: str
 
     @strawberry.experimental.pydantic.type(UserModel)
     class UserType:
-        name: auto
+        name: strawberry.auto
 
     @strawberry.type
     class Query:
@@ -145,15 +144,15 @@ def test_mutation_with_validation_and_error_type():
 
     @strawberry.experimental.pydantic.input(User)
     class CreateUserInput:
-        name: auto
+        name: strawberry.auto
 
     @strawberry.experimental.pydantic.type(User)
     class UserType:
-        name: auto
+        name: strawberry.auto
 
     @strawberry.experimental.pydantic.error_type(User)
     class UserError:
-        name: auto
+        name: strawberry.auto
 
     @strawberry.type
     class Query:

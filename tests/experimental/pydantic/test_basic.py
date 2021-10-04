@@ -4,12 +4,11 @@ from typing import List, Optional, Union
 import pytest
 
 import pydantic
+import sentinel
 
 import strawberry
 from strawberry.enum import EnumDefinition
-from strawberry.experimental.pydantic import auto
 from strawberry.experimental.pydantic.exceptions import MissingFieldsListError
-from strawberry.sentinel import sentinel
 from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
@@ -76,7 +75,7 @@ def test_basic_type_all_fields_warn():
 
         @strawberry.experimental.pydantic.type(User, all_fields=True)
         class UserType:
-            age: auto
+            age: strawberry.auto
 
 
 def test_basic_type_auto_fields():
@@ -87,8 +86,8 @@ def test_basic_type_auto_fields():
 
     @strawberry.experimental.pydantic.type(User)
     class UserType:
-        age: auto
-        password: auto
+        age: strawberry.auto
+        password: strawberry.auto
 
     definition: TypeDefinition = UserType._type_definition
     assert definition.name == "UserType"
@@ -106,7 +105,7 @@ def test_basic_type_auto_fields():
 
 
 def test_auto_fields_other_sentinel():
-    other_sentinel = sentinel("other_sentinel")
+    other_sentinel = sentinel.create("other_sentinel")
 
     class User(pydantic.BaseModel):
         age: int
@@ -115,8 +114,8 @@ def test_auto_fields_other_sentinel():
 
     @strawberry.experimental.pydantic.type(User)
     class UserType:
-        age: auto
-        password: auto
+        age: strawberry.auto
+        password: strawberry.auto
         other: other_sentinel  # this should be a private field, not an auto field
 
     definition: TypeDefinition = UserType._type_definition
@@ -154,9 +153,9 @@ def test_referencing_other_models_fails_when_not_registered():
 
         @strawberry.experimental.pydantic.type(User)
         class UserType:
-            age: auto
-            password: auto
-            group: auto
+            age: strawberry.auto
+            password: strawberry.auto
+            group: strawberry.auto
 
 
 def test_referencing_other_registered_models():
@@ -169,12 +168,12 @@ def test_referencing_other_registered_models():
 
     @strawberry.experimental.pydantic.type(Group)
     class GroupType:
-        name: auto
+        name: strawberry.auto
 
     @strawberry.experimental.pydantic.type(User)
     class UserType:
-        age: auto
-        group: auto
+        age: strawberry.auto
+        group: strawberry.auto
 
     definition: TypeDefinition = UserType._type_definition
     assert definition.name == "UserType"
@@ -194,7 +193,7 @@ def test_list():
 
     @strawberry.experimental.pydantic.type(User)
     class UserType:
-        friend_names: auto
+        friend_names: strawberry.auto
 
     definition: TypeDefinition = UserType._type_definition
     assert definition.name == "UserType"
@@ -215,11 +214,11 @@ def test_list_of_types():
 
     @strawberry.experimental.pydantic.type(Friend)
     class FriendType:
-        name: auto
+        name: strawberry.auto
 
     @strawberry.experimental.pydantic.type(User)
     class UserType:
-        friends: auto
+        friends: strawberry.auto
 
     definition: TypeDefinition = UserType._type_definition
     assert definition.name == "UserType"
@@ -253,8 +252,8 @@ def test_type_with_fields_coming_from_strawberry_and_pydantic():
     @strawberry.experimental.pydantic.type(User)
     class UserType:
         name: str
-        age: auto
-        password: auto
+        age: strawberry.auto
+        password: strawberry.auto
 
     definition: TypeDefinition = UserType._type_definition
     assert definition.name == "UserType"
@@ -286,8 +285,8 @@ def test_type_with_fields_coming_from_strawberry_and_pydantic_with_default():
     @strawberry.experimental.pydantic.type(User)
     class UserType:
         name: str = "Michael"
-        age: auto
-        password: auto
+        age: strawberry.auto
+        password: strawberry.auto
 
     definition: TypeDefinition = UserType._type_definition
     assert definition.name == "UserType"
@@ -319,8 +318,8 @@ def test_type_with_nested_fields_coming_from_strawberry_and_pydantic():
     @strawberry.experimental.pydantic.type(User)
     class UserType:
         name: Name
-        age: auto
-        password: auto
+        age: strawberry.auto
+        password: strawberry.auto
 
     definition: TypeDefinition = UserType._type_definition
     assert definition.name == "UserType"
@@ -345,8 +344,8 @@ def test_type_with_aliased_pydantic_field():
 
     @strawberry.experimental.pydantic.type(UserModel)
     class User:
-        age_: auto
-        password: auto
+        age_: strawberry.auto
+        password: strawberry.auto
 
     definition: TypeDefinition = User._type_definition
     assert definition.name == "User"
@@ -374,16 +373,16 @@ def test_union():
 
     @strawberry.experimental.pydantic.type(BranchA)
     class BranchAType:
-        field_a: auto
+        field_a: strawberry.auto
 
     @strawberry.experimental.pydantic.type(BranchB)
     class BranchBType:
-        field_b: auto
+        field_b: strawberry.auto
 
     @strawberry.experimental.pydantic.type(User)
     class UserType:
-        age: auto
-        union_field: auto
+        age: strawberry.auto
+        union_field: strawberry.auto
 
     definition: TypeDefinition = UserType._type_definition
     assert definition.name == "UserType"
@@ -411,8 +410,8 @@ def test_enum():
 
     @strawberry.experimental.pydantic.type(User)
     class UserType:
-        age: auto
-        kind: auto
+        age: strawberry.auto
+        kind: strawberry.auto
 
     definition: TypeDefinition = UserType._type_definition
     assert definition.name == "UserType"
@@ -443,20 +442,20 @@ def test_interface():
 
     @strawberry.experimental.pydantic.interface(Base)
     class BaseType:
-        base_field: auto
+        base_field: strawberry.auto
 
     @strawberry.experimental.pydantic.type(BranchA)
     class BranchAType(BaseType):
-        field_a: auto
+        field_a: strawberry.auto
 
     @strawberry.experimental.pydantic.type(BranchB)
     class BranchBType(BaseType):
-        field_b: auto
+        field_b: strawberry.auto
 
     @strawberry.experimental.pydantic.type(User)
     class UserType:
-        age: auto
-        interface_field: auto
+        age: strawberry.auto
+        interface_field: strawberry.auto
 
     definition: TypeDefinition = UserType._type_definition
     assert definition.name == "UserType"

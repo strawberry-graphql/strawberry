@@ -4,7 +4,6 @@ from typing import List, Optional, Union
 import pydantic
 
 import strawberry
-from strawberry.experimental.pydantic import auto
 
 
 def test_can_use_type_standalone():
@@ -14,8 +13,8 @@ def test_can_use_type_standalone():
 
     @strawberry.experimental.pydantic.type(User)
     class UserType:
-        age: auto
-        password: auto
+        age: strawberry.auto
+        password: strawberry.auto
 
     user = UserType(age=1, password="abc")
 
@@ -30,8 +29,8 @@ def test_can_convert_pydantic_type_to_strawberry():
 
     @strawberry.experimental.pydantic.type(User)
     class UserType:
-        age: auto
-        password: auto
+        age: strawberry.auto
+        password: strawberry.auto
 
     origin_user = User(age=1, password="abc")
     user = UserType.from_pydantic(origin_user)
@@ -47,8 +46,8 @@ def test_can_convert_alias_pydantic_field_to_strawberry():
 
     @strawberry.experimental.pydantic.type(UserModel)
     class User:
-        age_: auto
-        password: auto
+        age_: strawberry.auto
+        password: strawberry.auto
 
     origin_user = UserModel(age=1, password="abc")
     user = User.from_pydantic(origin_user)
@@ -64,8 +63,8 @@ def test_can_convert_falsy_values_to_strawberry():
 
     @strawberry.experimental.pydantic.type(UserModel)
     class User:
-        age: auto
-        password: auto
+        age: strawberry.auto
+        password: strawberry.auto
 
     origin_user = UserModel(age=0, password="")
     user = User.from_pydantic(origin_user)
@@ -80,7 +79,7 @@ def test_can_convert_pydantic_type_to_strawberry_with_private_field():
 
     @strawberry.experimental.pydantic.type(model=UserModel)
     class User:
-        age: auto
+        age: strawberry.auto
         password: strawberry.Private[str]
 
     user = User(age=30, password="qwerty")
@@ -100,14 +99,14 @@ def test_can_convert_pydantic_type_with_nested_data_to_strawberry():
 
     @strawberry.experimental.pydantic.type(WorkModel)
     class Work:
-        name: auto
+        name: strawberry.auto
 
     class UserModel(pydantic.BaseModel):
         work: WorkModel
 
     @strawberry.experimental.pydantic.type(UserModel)
     class User:
-        work: auto
+        work: strawberry.auto
 
     origin_user = UserModel(work=WorkModel(name="Ice Cream inc"))
     user = User.from_pydantic(origin_user)
@@ -121,14 +120,14 @@ def test_can_convert_pydantic_type_with_list_of_nested_data_to_strawberry():
 
     @strawberry.experimental.pydantic.type(WorkModel)
     class Work:
-        name: auto
+        name: strawberry.auto
 
     class UserModel(pydantic.BaseModel):
         work: List[WorkModel]
 
     @strawberry.experimental.pydantic.type(UserModel)
     class User:
-        work: auto
+        work: strawberry.auto
 
     origin_user = UserModel(
         work=[
@@ -147,7 +146,7 @@ def test_can_convert_pydantic_type_with_list_of_nested_int_to_strawberry():
 
     @strawberry.experimental.pydantic.type(UserModel)
     class User:
-        hours: auto
+        hours: strawberry.auto
 
     origin_user = UserModel(
         hours=[
@@ -167,7 +166,7 @@ def test_can_convert_pydantic_type_with_matrix_list_of_nested_int_to_strawberry(
 
     @strawberry.experimental.pydantic.type(UserModel)
     class User:
-        hours: auto
+        hours: strawberry.auto
 
     origin_user = UserModel(
         hours=[
@@ -191,14 +190,14 @@ def test_can_convert_pydantic_type_with_matrix_list_of_nested_model_to_strawberr
 
     @strawberry.experimental.pydantic.type(HourModel)
     class Hour:
-        hour: auto
+        hour: strawberry.auto
 
     class UserModel(pydantic.BaseModel):
         hours: List[List[HourModel]]
 
     @strawberry.experimental.pydantic.type(UserModel)
     class User:
-        hours: auto
+        hours: strawberry.auto
 
     origin_user = UserModel(
         hours=[
@@ -247,16 +246,16 @@ def test_can_convert_pydantic_type_to_strawberry_with_union():
 
     @strawberry.experimental.pydantic.type(BranchA)
     class BranchAType:
-        field_a: auto
+        field_a: strawberry.auto
 
     @strawberry.experimental.pydantic.type(BranchB)
     class BranchBType:
-        field_b: auto
+        field_b: strawberry.auto
 
     @strawberry.experimental.pydantic.type(User)
     class UserType:
-        age: auto
-        union_field: auto
+        age: strawberry.auto
+        union_field: strawberry.auto
 
     origin_user = User(age=1, union_field=BranchA(field_a="abc"))
     user = UserType.from_pydantic(origin_user)
@@ -288,8 +287,8 @@ def test_can_convert_pydantic_type_to_strawberry_with_union_of_strawberry_types(
 
     @strawberry.experimental.pydantic.type(User)
     class UserType:
-        age: auto
-        union_field: auto
+        age: strawberry.auto
+        union_field: strawberry.auto
 
     origin_user = User(age=1, union_field=BranchA(field_a="abc"))
     user = UserType.from_pydantic(origin_user)
@@ -319,16 +318,16 @@ def test_can_convert_pydantic_type_to_strawberry_with_union_nullable():
 
     @strawberry.experimental.pydantic.type(BranchA)
     class BranchAType:
-        field_a: auto
+        field_a: strawberry.auto
 
     @strawberry.experimental.pydantic.type(BranchB)
     class BranchBType:
-        field_b: auto
+        field_b: strawberry.auto
 
     @strawberry.experimental.pydantic.type(User)
     class UserType:
-        age: auto
-        union_field: auto
+        age: strawberry.auto
+        union_field: strawberry.auto
 
     origin_user = User(age=1, union_field=BranchA(field_a="abc"))
     user = UserType.from_pydantic(origin_user)
@@ -363,8 +362,8 @@ def test_can_convert_pydantic_type_to_strawberry_with_enum():
 
     @strawberry.experimental.pydantic.type(User)
     class UserType:
-        age: auto
-        kind: auto
+        age: strawberry.auto
+        kind: strawberry.auto
 
     origin_user = User(age=1, kind=UserKind.user)
     user = UserType.from_pydantic(origin_user)
@@ -389,20 +388,20 @@ def test_can_convert_pydantic_type_to_strawberry_with_interface():
 
     @strawberry.experimental.pydantic.interface(Base)
     class BaseType:
-        base_field: auto
+        base_field: strawberry.auto
 
     @strawberry.experimental.pydantic.type(BranchA)
     class BranchAType(BaseType):
-        field_a: auto
+        field_a: strawberry.auto
 
     @strawberry.experimental.pydantic.type(BranchB)
     class BranchBType(BaseType):
-        field_b: auto
+        field_b: strawberry.auto
 
     @strawberry.experimental.pydantic.type(User)
     class UserType:
-        age: auto
-        interface_field: auto
+        age: strawberry.auto
+        interface_field: strawberry.auto
 
     origin_user = User(age=1, interface_field=BranchA(field_a="abc", base_field="def"))
     user = UserType.from_pydantic(origin_user)
@@ -426,7 +425,7 @@ def test_can_convert_pydantic_type_to_strawberry_with_additional_fields():
     @strawberry.experimental.pydantic.type(UserModel)
     class User:
         age: int
-        password: auto
+        password: strawberry.auto
 
     origin_user = UserModel(password="abc")
     user = User.from_pydantic(origin_user, extra={"age": 1})
@@ -446,7 +445,7 @@ def test_can_convert_pydantic_type_to_strawberry_with_additional_nested_fields()
     @strawberry.experimental.pydantic.type(UserModel)
     class User:
         work: Work
-        password: auto
+        password: strawberry.auto
 
     origin_user = UserModel(password="abc")
     user = User.from_pydantic(origin_user, extra={"work": {"name": "Ice inc"}})
@@ -466,7 +465,7 @@ def test_can_convert_pydantic_type_to_strawberry_with_additional_list_nested_fie
     @strawberry.experimental.pydantic.type(UserModel)
     class User:
         work: List[Work]
-        password: auto
+        password: strawberry.auto
 
     origin_user = UserModel(password="abc")
     user = User.from_pydantic(
@@ -493,14 +492,14 @@ def test_can_convert_pydantic_type_to_strawberry_with_missing_data_in_nested_typ
     @strawberry.experimental.pydantic.type(WorkModel)
     class Work:
         year: int
-        name: auto
+        name: strawberry.auto
 
     class UserModel(pydantic.BaseModel):
         work: List[WorkModel]
 
     @strawberry.experimental.pydantic.type(UserModel)
     class User:
-        work: auto
+        work: strawberry.auto
 
     origin_user = UserModel(work=[WorkModel(name="Software inc")])
 
@@ -525,14 +524,14 @@ def test_can_convert_pydantic_type_to_strawberry_with_missing_index_data_nested_
     @strawberry.experimental.pydantic.type(WorkModel)
     class Work:
         year: int
-        name: auto
+        name: strawberry.auto
 
     class UserModel(pydantic.BaseModel):
         work: List[Optional[WorkModel]]
 
     @strawberry.experimental.pydantic.type(UserModel)
     class User:
-        work: auto
+        work: strawberry.auto
 
     origin_user = UserModel(
         work=[
@@ -564,7 +563,7 @@ def test_can_convert_pydantic_type_to_strawberry_with_optional_list():
 
     @strawberry.experimental.pydantic.type(WorkModel)
     class Work:
-        name: auto
+        name: strawberry.auto
         year: int
 
     class UserModel(pydantic.BaseModel):
@@ -572,7 +571,7 @@ def test_can_convert_pydantic_type_to_strawberry_with_optional_list():
 
     @strawberry.experimental.pydantic.type(UserModel)
     class User:
-        work: auto
+        work: strawberry.auto
 
     origin_user = UserModel(work=None)
 
@@ -589,7 +588,7 @@ def test_can_convert_pydantic_type_to_strawberry_with_optional_nested_value():
 
     @strawberry.experimental.pydantic.type(UserModel)
     class User:
-        names: auto
+        names: strawberry.auto
 
     origin_user = UserModel(names=None)
 
@@ -607,8 +606,8 @@ def test_can_convert_input_types_to_pydantic():
 
     @strawberry.experimental.pydantic.input(User)
     class UserInput:
-        age: auto
-        password: auto
+        age: strawberry.auto
+        password: strawberry.auto
 
     data = UserInput(1, None)
     user = data.to_pydantic()
@@ -624,8 +623,8 @@ def test_can_convert_input_types_to_pydantic_default_values():
 
     @strawberry.experimental.pydantic.input(User)
     class UserInput:
-        age: auto
-        password: auto
+        age: strawberry.auto
+        password: strawberry.auto
 
     data = UserInput(1)
     user = data.to_pydantic()
