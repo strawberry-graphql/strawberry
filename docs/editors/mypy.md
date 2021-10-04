@@ -14,7 +14,7 @@ Once mypy is installed, run it by using the mypy tool:
 
 - `$ mypy --py2 program.py` (Python 2)
 
-This command makes mypy type check your program.py file and print out any errors it finds. Mypy will type check your code statically: this means that it will check for errors without ever running your code, just like a linter.
+This command makes mypy type check your program.py file and print out any errors it finds. Mypy will type check your code statically: this means that it will check for errors without ever running your code, like a linter.
 
 A function without type annotations is considered to be dynamically typed by mypy:
 
@@ -32,7 +32,7 @@ def greeting(name: str) -> str:
     return 'Hello ' + name
 ```
 
-This function is now statically typed: mypy can use the provided type hints to detect incorrect usages of the `greeting` function. For example, it will reject the following calls since the arguments have invalid types:
+This function is now statically typed: mypy can use the provided type hints to detect incorrect usages of the `greeting` function. For example, it will decline the following calls since the arguments have invalid types:
 
 ```python
 def greeting(name: str) -> str:
@@ -45,4 +45,4 @@ greeting(b'Alice')  # Argument 1 to "greeting" has incompatible type "bytes"; ex
 If you are trying to type check Python 2 code, you can add type hints using a comment-based syntax instead of the Python 3 annotation syntax.
 
 **Note -**
-You are always free to ignore the errors mypy reports and treat them as just warnings, if you so wish: mypy runs independently from Python itself.
+You are always free to ignore the errors mypy reports and treat them as  warnings, if you so wish: mypy runs independently from Python itself.
