@@ -1,4 +1,4 @@
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, Dict, Optional
 
@@ -17,7 +17,7 @@ class Body(TypedDict, total=False):
     variables: Optional[Dict[str, Any]]
 
 
-class BaseGraphQLTestClient:
+class BaseGraphQLTestClient(ABC):
     def __init__(self, client):
         self._client = client
 
