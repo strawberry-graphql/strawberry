@@ -1009,7 +1009,7 @@ idna2008 = ["idna"]
 
 [[package]]
 name = "sanic"
-version = "21.9.0"
+version = "21.9.1"
 description = "A web server and web framework that's written to go fast. Build fast. Run fast."
 category = "main"
 optional = false
@@ -1025,7 +1025,7 @@ uvloop = {version = ">=0.5.3", markers = "sys_platform != \"win32\" and implemen
 websockets = ">=10.0"
 
 [package.extras]
-all = ["pytest-sanic", "pytest-cov", "sphinx (>=2.1.2)", "mypy (>=0.901)", "tox", "sphinx-rtd-theme (>=0.4.3)", "pytest (==5.2.1)", "pytest-sugar", "sanic-testing (>=0.7.0)", "uvicorn (<0.15.0)", "beautifulsoup4", "pygments", "towncrier", "m2r2", "docutils", "flake8", "pytest-benchmark", "gunicorn (==20.0.4)", "coverage (==5.3)", "bandit", "chardet (>=3.0.0,<4.0.0)", "black", "isort (>=5.0.0)", "types-ujson"]
+all = ["beautifulsoup4", "docutils", "gunicorn (==20.0.4)", "sanic-testing (>=0.7.0)", "m2r2", "chardet (>=3.0.0,<4.0.0)", "black", "flake8", "coverage (==5.3)", "pygments", "pytest-cov", "sphinx-rtd-theme (>=0.4.3)", "uvicorn (<0.15.0)", "pytest-benchmark", "tox", "towncrier", "mypy (>=0.901)", "pytest-sanic", "pytest-sugar", "bandit", "isort (>=5.0.0)", "sphinx (>=2.1.2)", "pytest (==5.2.1)", "types-ujson"]
 dev = ["sanic-testing (>=0.7.0)", "pytest (==5.2.1)", "coverage (==5.3)", "gunicorn (==20.0.4)", "pytest-cov", "beautifulsoup4", "pytest-sanic", "pytest-sugar", "pytest-benchmark", "chardet (>=3.0.0,<4.0.0)", "flake8", "black", "isort (>=5.0.0)", "bandit", "mypy (>=0.901)", "docutils", "pygments", "uvicorn (<0.15.0)", "tox", "towncrier", "types-ujson"]
 docs = ["sphinx (>=2.1.2)", "sphinx-rtd-theme (>=0.4.3)", "docutils", "pygments", "m2r2"]
 test = ["sanic-testing (>=0.7.0)", "pytest (==5.2.1)", "coverage (==5.3)", "gunicorn (==20.0.4)", "pytest-cov", "beautifulsoup4", "pytest-sanic", "pytest-sugar", "pytest-benchmark", "chardet (>=3.0.0,<4.0.0)", "flake8", "black", "isort (>=5.0.0)", "bandit", "mypy (>=0.901)", "docutils", "pygments", "uvicorn (<0.15.0)", "types-ujson"]
@@ -1988,8 +1988,8 @@ rfc3986 = [
     {file = "rfc3986-1.5.0.tar.gz", hash = "sha256:270aaf10d87d0d4e095063c65bf3ddbc6ee3d0b226328ce21e036f946e421835"},
 ]
 sanic = [
-    {file = "sanic-21.9.0-py3-none-any.whl", hash = "sha256:fab00ce2e79731833554a16f647fa524bbb47fcf8dae38a666a32bf89e03ec0c"},
-    {file = "sanic-21.9.0.tar.gz", hash = "sha256:73a7312379761d5fa31606060886795f549361c96ad1bd83f481e048ec9273aa"},
+    {file = "sanic-21.9.1-py3-none-any.whl", hash = "sha256:fe4ce0c4296f657ced545066bcff21f8bc24c5d1faa2c08167729f00cd0b42ed"},
+    {file = "sanic-21.9.1.tar.gz", hash = "sha256:7bdb553af2df95b4d07335ad4c545d810ce6c611fbc8e2f78c8afbc12f1739df"},
 ]
 sanic-routing = [
     {file = "sanic-routing-0.7.1.tar.gz", hash = "sha256:35b09a12aceecc4e295bddb0ed39cff90363dd1504f9831c6b0b01f6f026635d"},
