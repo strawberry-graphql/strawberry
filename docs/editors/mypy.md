@@ -45,4 +45,4 @@ greeting(b'Alice')  # Argument 1 to "greeting" has incompatible type "bytes"; ex
 If you are trying to type check Python 2 code, you can add type hints using a comment-based syntax instead of the Python 3 annotation syntax.
 
 **Note -**
-You are always free to ignore the errors mypy reports and treat them as  warnings, if you so wish: mypy runs independently from Python itself.
+You are always free to ignore the errors mypy reports and treat them as warnings, if you so wish: mypy runs independently from Python itself.
