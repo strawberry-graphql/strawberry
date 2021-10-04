@@ -82,18 +82,18 @@ or when showing the request and response to a query:
 
 <Tip>
 
-This is a call out block
+This is a tip. Useful information is contained here.
 
 </Tip>
 
 <Note>
 
-This is a note block
+This is a note. Something that you should know about.
 
 </Note>
 
 <Warning>
 
-This is a warning block
+This is a warning. Something that you should be careful about.
 
 </Warning>
