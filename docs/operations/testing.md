@@ -103,7 +103,7 @@ And finally, a test for our [`count` Subscription](docs/general/subscriptions.md
 
 ```python
 import asyncio
-import pytest as pytest
+import pytest
 import strawberry
 
 @strawberry.type
@@ -113,6 +113,12 @@ class Subscription:
         for i in range(target):
             yield i
             await asyncio.sleep(0.5)
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello() -> str:
+        return "world"
 
 schema = strawberry.Schema(query=Query, subscription=Subscription)
 
@@ -132,7 +138,6 @@ async def test_subscription():
         assert result.data == {"count": index}
 
         index += 1
-
 ```
 
 As you can see testing Subscriptions is a bit more complicated because we want to check
