@@ -30,6 +30,7 @@ schema = strawberry.Schema(Query)
 ```python
 class Schema(Query, mutation=None, subscription=None, **kwargs)
 ```
+
 <!-- TODO: add docs on directives, types, extensions and execution context class -->
 
 #### `query: Type`
@@ -91,11 +92,12 @@ class Query:
 
 schema = strawberry.Schema(Query, types=[Individual, Company])
 ```
+
 </details>
 
 #### `extensions: List[Type[Extension]] = []`
 
-List of [extensions](/docs/extensions) to add to your Schema. 
+List of [extensions](/docs/extensions) to add to your Schema.
 
 #### `scalar_overrides: Optional[Dict[object, ScalarWrapper]] = None`
 
