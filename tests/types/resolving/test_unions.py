@@ -1,3 +1,4 @@
+import sys
 from dataclasses import dataclass
 from typing import Generic, TypeVar, Union
 
@@ -19,6 +20,32 @@ def test_python_union():
         name: str
 
     annotation = StrawberryAnnotation(Union[User, Error])
+    resolved = annotation.resolve()
+
+    assert isinstance(resolved, StrawberryUnion)
+    assert resolved.types == (User, Error)
+
+    assert resolved == StrawberryUnion(
+        name="UserError",
+        type_annotations=(StrawberryAnnotation(User), StrawberryAnnotation(Error)),
+    )
+    assert resolved == Union[User, Error]
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 10),
+    reason="short syntax for union is only available on python 3.10+",
+)
+def test_python_union_short_syntax():
+    @strawberry.type
+    class User:
+        name: str
+
+    @strawberry.type
+    class Error:
+        name: str
+
+    annotation = StrawberryAnnotation(User | Error)
     resolved = annotation.resolve()
 
     assert isinstance(resolved, StrawberryUnion)

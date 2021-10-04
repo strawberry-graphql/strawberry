@@ -102,6 +102,26 @@ async def test_mutaton():
 And finally, a test for our [`count` Subscription](docs/general/subscriptions.md):
 
 ```python
+import asyncio
+import pytest
+import strawberry
+
+@strawberry.type
+class Subscription:
+    @strawberry.subscription
+    async def count(self, target: int = 100) -> int:
+        for i in range(target):
+            yield i
+            await asyncio.sleep(0.5)
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello() -> str:
+        return "world"
+
+schema = strawberry.Schema(query=Query, subscription=Subscription)
+
 @pytest.mark.asyncio
 async def test_subscription():
     query = """

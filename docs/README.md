@@ -24,13 +24,15 @@
 - [Resolvers](./types/resolvers.md)
 - [Union types](./types/union.md)
 
+## [Extensions](./extensions)
+
 ## Guides
 
 - [Authentication](./guides/authentication.md)
 - [DataLoaders](./guides/dataloaders.md)
 - [Dealing with errors](./guides/errors.md)
 - [Federation](./guides/federation.md)
-- [Extensions](./guides/extensions.md)
+- [Custom extensions](./guides/custom-extensions.md)
 - [File upload](./guides/file-upload.md)
 - [Pagination](./guides/pagination.md)
 - [Permissions](./guides/permissions.md)
@@ -55,6 +57,7 @@
 - [FastAPI](./integrations/fastapi.md)
 - [Flask](./integrations/flask.md)
 - [Sanic](./integrations/sanic.md)
+- [Starlette](./integrations/starlette.md)
 - [Pydantic **experimental**](./integrations/pydantic.md)
 
 ## Operations

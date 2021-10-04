@@ -1,6 +1,89 @@
 CHANGELOG
 =========
 
+0.80.2 - 2021-10-01
+-------------------
+
+Add `Starlette` to the integrations section on the documentation.
+
+Contributed by [Marcelo Trylesinski](https://github.com/Kludex) [PR #1287](https://github.com/strawberry-graphql/strawberry/pull/1287/)
+
+
+0.80.1 - 2021-10-01
+-------------------
+
+This release add support for the upcoming python 3.10 and it adds support
+for the new union syntax, allowing to declare unions like this:
+
+```python
+import strawberry
+
+@strawberry.type
+class User:
+    name: str
+
+@strawberry.type
+class Error:
+    code: str
+
+@strawberry.type
+class Query:
+    find_user: User | Error
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #719](https://github.com/strawberry-graphql/strawberry/pull/719/)
+
+
+0.80.0 - 2021-09-30
+-------------------
+
+This release adds support for the `graphql-transport-ws` GraphQL over WebSocket
+protocol. Previously Strawberry only supported the legacy `graphql-ws` protocol.
+
+Developers can decide which protocols they want to accept. The following example shows
+how to do so using the ASGI integration. By default, both protocols are accepted.
+Take a look at our GraphQL subscription documentation to learn more.
+
+```python
+from strawberry.asgi import GraphQL
+from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL
+from api.schema import schema
+
+
+app = GraphQL(schema, subscription_protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL])
+```
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) [PR #1256](https://github.com/strawberry-graphql/strawberry/pull/1256/)
+
+
+0.79.0 - 2021-09-29
+-------------------
+
+Nests the resolver under the correct span; prior to this change your span would have looked something like:
+
+```
+GraphQL Query
+  GraphQL Parsing
+  GraphQL Validation
+  my_resolver
+  my_span_of_interest #1
+    my_sub_span_of_interest #2
+```
+
+After this change you'll have:
+
+```
+GraphQL Query
+  GraphQL Parsing
+  GraphQL Validation
+  GraphQL Resolving: my_resolver
+    my_span_of_interest #1
+      my_sub_span_of_interest #2
+```
+
+Contributed by [Michael Ossareh](https://github.com/ossareh) [PR #1281](https://github.com/strawberry-graphql/strawberry/pull/1281/)
+
+
 0.78.2 - 2021-09-27
 -------------------
 

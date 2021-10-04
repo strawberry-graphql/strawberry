@@ -1,6 +1,3 @@
-GRAPHQL_WS = "graphql-ws"
-WS_PROTOCOL = GRAPHQL_WS
-
 GQL_CONNECTION_INIT = "connection_init"
 GQL_CONNECTION_ACK = "connection_ack"
 GQL_CONNECTION_ERROR = "connection_error"
