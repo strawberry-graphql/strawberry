@@ -10,6 +10,31 @@ from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.types.types import TypeDefinition
 
 
+def test_basic_error_type_fields():
+    class UserModel(pydantic.BaseModel):
+        name: str
+        age: int
+
+    @strawberry.experimental.pydantic.error_type(UserModel, fields=["name", "age"])
+    class UserError:
+        pass
+
+    definition: TypeDefinition = UserError._type_definition
+    assert definition.name == "UserError"
+
+    [field1, field2] = definition.fields
+
+    assert field1.python_name == "name"
+    assert isinstance(field1.type, StrawberryOptional)
+    assert isinstance(field1.type.of_type, StrawberryList)
+    assert field1.type.of_type.of_type is str
+
+    assert definition.fields[1].python_name == "age"
+    assert isinstance(field2.type, StrawberryOptional)
+    assert isinstance(field2.type.of_type, StrawberryList)
+    assert field1.type.of_type.of_type is str
+
+
 def test_basic_error_type():
     class UserModel(pydantic.BaseModel):
         name: str

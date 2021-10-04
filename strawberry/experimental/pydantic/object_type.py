@@ -75,6 +75,12 @@ def type(
         model_fields = model.__fields__
         fields_set = set(fields) if fields else set([])
 
+        if fields:
+            warnings.warn(
+                "`fields` is deprecated, use `auto` type annotations instead",
+                DeprecationWarning,
+            )
+
         existing_fields = getattr(cls, "__annotations__", {})
         fields_set = fields_set.union(
             set(name for name, typ in existing_fields.items() if typ is strawberry.auto)
