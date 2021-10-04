@@ -7,7 +7,7 @@ from strawberry.exceptions import ObjectIsNotClassError
 def test_raises_error_when_using_type_with_a_not_class_object():
     expected_error = (
         r"strawberry.type can only be used with class types. Provided "
-        "object .* is not a type."
+        r"object .* is not a type."
     )
     with pytest.raises(ObjectIsNotClassError, match=expected_error):
 
@@ -19,7 +19,7 @@ def test_raises_error_when_using_type_with_a_not_class_object():
 def test_raises_error_when_using_input_with_a_not_class_object():
     expected_error = (
         r"strawberry.input can only be used with class types. Provided "
-        "object .* is not a type."
+        r"object .* is not a type."
     )
     with pytest.raises(ObjectIsNotClassError, match=expected_error):
 
@@ -31,7 +31,7 @@ def test_raises_error_when_using_input_with_a_not_class_object():
 def test_raises_error_when_using_interface_with_a_not_class_object():
     expected_error = (
         r"strawberry.interface can only be used with class types. Provided "
-        "object .* is not a type."
+        r"object .* is not a type."
     )
     with pytest.raises(ObjectIsNotClassError, match=expected_error):
 
