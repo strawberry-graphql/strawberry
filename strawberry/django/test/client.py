@@ -6,6 +6,34 @@ from typing_extensions import Literal
 from strawberry.test import BaseGraphQLTestClient, Response
 
 
+def _build_multipart_file_map(variables, kwargs):
+    map = {}
+    for key, values in variables.items():
+        reference = key
+        files = values
+
+        # In case of folders the variables will look like `{"folder": {"files": ...]}}`
+        if isinstance(values, dict):
+            files_key = list(values.keys())[0]
+            reference += f".{files_key}"
+            # the list of file is inside the folder keyword
+            files = values[files_key]
+
+        # If the variable is an array of files we must number the keys
+        if isinstance(files, list):
+            # copying `kwargs` as when we map a file we must discard from the dict
+            _kwargs = kwargs.copy()
+            for index, _ in enumerate(files):
+                k = list(_kwargs.keys())[0]
+                _kwargs.pop(k)
+                map.setdefault(k, [])
+                map[k].append(f"variables.{reference}.{index}")
+        else:
+            map[key] = [f"variables.{reference}"]
+
+    return map
+
+
 class GraphQLTestClient(BaseGraphQLTestClient):
     def query(
         self,
@@ -23,28 +51,11 @@ class GraphQLTestClient(BaseGraphQLTestClient):
 
         if format == "multipart":
             assert variables is not None
-
-            # We have to map the variables' keys to the files provided in `kwargs`
-            ref_variable = list(variables.keys())[0]
-            # In case of folders the variables will look like
-            # `{"folder": {"files": ...]}}`
-            if isinstance(variables.get(ref_variable), dict):
-                ref_variable += f".{list(variables[ref_variable].keys())[0]}"
-
-            # If the variable is an array of files we must number the keys
-            if len(kwargs) == 1:
-                file_map = json.dumps({ref_variable: [f"variables.{ref_variable}"]})
-            else:
-                file_map = json.dumps(
-                    {
-                        k: [f"variables.{ref_variable}.{index}"]
-                        for index, k in enumerate(kwargs)
-                    }
-                )
+            file_map = _build_multipart_file_map(variables, kwargs)
 
             body = {
                 "operations": json.dumps(body),
-                "map": file_map,
+                "map": json.dumps(file_map),
                 **kwargs,
             }
 

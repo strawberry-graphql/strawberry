@@ -51,21 +51,26 @@ def test_nested_file_list(graphql_client):
 
 
 def test_upload_single_and_list_file_together(graphql_client):
-    query = "mutation($files: [Upload!]!) { readFiles(files: $files) }"
+    query = """
+        mutation($files: [Upload!]!, $textFile: Upload!) {
+            readFiles(files: $files)
+            readText(textFile: $textFile)
+        }
+    """
     file1 = SimpleUploadedFile("file1.txt", b"strawberry1")
     file2 = SimpleUploadedFile("file2.txt", b"strawberry2")
     file3 = SimpleUploadedFile("file3.txt", b"strawberry3")
 
     response = graphql_client.query(
         query=query,
-        variables={"files": [None, None], "file3": None},
+        variables={"files": [None, None], "textFile": None},
         format="multipart",
         file1=file1,
         file2=file2,
-        file3=file3,
+        textFile=file3,
     )
 
     assert len(response.data["readFiles"]) == 2
     assert response.data["readFiles"][0] == "strawberry1"
     assert response.data["readFiles"][1] == "strawberry2"
-    assert response.data["readFiles"][2] == "strawberry3"
+    assert response.data["readText"] == "strawberry3"
