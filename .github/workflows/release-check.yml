@@ -17,6 +17,7 @@ jobs:
     outputs:
       contributor-name: ${{ steps.get-info.outputs.contributor-name }}
       contributor-username: ${{ steps.get-info.outputs.contributor-username }}
+      contributor-twitter-username: ${{ steps.get-info.outputs.contributor-twitter-username }}
 
     steps:
       - name: Get PR info
@@ -94,6 +95,7 @@ jobs:
         changelog: ${{ needs.release-file-check.outputs.changelog }}
         version: "(next)"
         contributor_name: ${{ needs.get-contributor-info.outputs.contributor-name }}
+        contributor_twitter_username: ${{ needs.get-contributor-info.outputs.contributor-twitter-username }}
 
   validate-tweet:
     runs-on: ubuntu-latest
@@ -120,6 +122,7 @@ jobs:
       with:
         version: "(next)"
         contributor: ${{ needs.get-contributor-info.outputs.contributor-name }}
+        contributor_twitter_username: ${{ needs.get-contributor-info.outputs.contributor-twitter-username }}
         description_base64: ${{ needs.read-tweet-md.outputs.card-text }}
 
     - name: Uploads preview

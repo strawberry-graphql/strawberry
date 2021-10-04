@@ -68,7 +68,7 @@ jobs:
 
           print(f"::set-output name=version::{get_project_version()}")
 
-  get-contributor-name:
+  get-contributor-info:
     name: Get PR info
     runs-on: ubuntu-latest
     needs: release-file-check
@@ -76,6 +76,7 @@ jobs:
 
     outputs:
       contributor-name: ${{ steps.get-info.outputs.contributor-name }}
+      contributor-twitter-username: ${{ steps.get-info.outputs.contributor-twitter-username }}
 
     steps:
       - name: Get PR info
@@ -86,8 +87,8 @@ jobs:
   read-tweet-md:
     name: Read TWEET.md
     runs-on: ubuntu-latest
-    needs: [release, get-contributor-name, release-file-check]
-    if: ${{ needs.release-file-check.outputs.status == 'OK' && needs.get-contributor-name.outputs.contributor-name }}
+    needs: [release, get-contributor-info, release-file-check]
+    if: ${{ needs.release-file-check.outputs.status == 'OK' && ( needs.get-contributor-info.outputs.contributor-name || needs.get-contributor-info.outputs.contributor-twitter-name)}}
 
     outputs:
       tweet: ${{ steps.extract.outputs.tweet }}
@@ -102,12 +103,13 @@ jobs:
       with:
         changelog: ${{ needs.release-file-check.outputs.changelog }}
         version: ${{ needs.release.outputs.version }}
-        contributor_name: ${{ needs.get-contributor-name.outputs.contributor-name }}
+        contributor_name: ${{ needs.get-contributor-info.outputs.contributor-name }}
+        contributor_twitter_username: ${{ needs.get-contributor-info.outputs.contributor-twitter-username }}
 
   generate-preview:
     name: Generate Preview
     runs-on: ubuntu-latest
-    needs: [release-file-check, read-tweet-md, release, get-contributor-name]
+    needs: [release-file-check, read-tweet-md, release, get-contributor-info]
     if: ${{ needs.release-file-check.outputs.status == 'OK' }}
 
     steps:
@@ -116,7 +118,8 @@ jobs:
       if: ${{ needs.release-file-check.outputs.status == 'OK' }}
       with:
         version: ${{ needs.release.outputs.version }}
-        contributor: ${{ needs.get-contributor-name.outputs.contributor-name }}
+        contributor: ${{ needs.get-contributor-info.outputs.contributor-name }}
+        contributor_twitter_username: ${{ needs.get-contributor-info.outputs.contributor-twitter-username }}
         description_base64: ${{ needs.read-tweet-md.outputs.card-text }}
     - name: Store card in artificats
       uses: actions/upload-artifact@v2
@@ -128,7 +131,7 @@ jobs:
   send-tweet:
     name: Send tweet
     runs-on: ubuntu-latest
-    needs: [release, read-tweet-md, get-contributor-name, generate-preview]
+    needs: [release, read-tweet-md, get-contributor-info, generate-preview]
     if: ${{ needs.release-file-check.outputs.status == 'OK' }}
 
     steps:
