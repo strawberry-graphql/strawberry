@@ -22,90 +22,148 @@ class Query:
     def hello(self) -> str:
         return "Hello World"
 
-
 schema = strawberry.Schema(Query)
 ```
 
 ## API reference
 
+```python
+class Schema(Query, mutation=None, subscription=None, **kwargs)
+```
 <!-- TODO: add docs on directives, types, extensions and execution context class -->
 
-**`query: Type`**
+#### `query: Type`
 
 The root query Strawberry type. Usually called `Query`.
 
-*Note:* a query type is always required when creating a Schema.
+<Note>
 
-**`mutation: Optional[Type] = None`**
+A query type is always required when creating a Schema.
+
+</Note>
+
+#### `mutation: Optional[Type] = None`
 
 The root mutation type. Usually called `Mutation`.
 
-**`subscription: Optional[Type] = None`**
+#### `subscription: Optional[Type] = None`
 
 The root subscription type. Usually called `Subscription`.
 
-**`config: Optional[StrawberryConfig] = None`**
+#### `config: Optional[StrawberryConfig] = None`
 
-...
+Pass a `StrawberryConfig` object to configure how the schema is generated. [Read
+more](/docs/schema-configurations).
 
-TODO: example
-
-**`directives`**
-
-*TODO*
-
-TODO: example
-
-**`types: List[Type] = []`**
+#### `types: List[Type] = []`
 
 List of extra types to register with the Schema that are not directly linked
-to from the root Query. This is often used if you're using Interfaces ...
+to from the root Query.
 
-TODO: example
+<details class="mb-4">
+<summary>Defining extra `types` when using Interfaces</summary>
 
-**`extensions: List[Type[Extension]] = []`**
+```python
+from datetime import date
+import strawberry
 
-...
+@strawberry.interface
+class Customer:
+    name: str
 
-TODO: example
+@strawberry.type
+class Individual(Customer):
+    date_of_birth: date
 
-**`scalar_overrides: ...`**
+@strawberry.type
+class Company(Customer):
+    founded: date
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def get_customer(self, id: strawberry.ID) -> Customer  # note we're returning the interface here
+        if id == "mark":
+            return Individual(name="Mark", date_of_birth=date(1984, 5, 14))
+
+        if id == "facebook":
+            return Company(name="Facebook", founded=date(2004, 2, 1))
+
+schema = strawberry.Schema(Query, types=[Individual, Company])
+```
+</details>
+
+#### `extensions: List[Type[Extension]] = []`
+
+List of extensions to 
+
+#### `scalar_overrides: ...`
 
 ...
 
 TODO: example
 
 ---
+
+## Methods
 
 ### `.execute()` (async)
 
 Executes a GraphQL operation against a schema (async)
 
-`execute(query, variable_values, context_value, root_value, operation_name)`
+```python
+async def execute(query, variable_values, context_value, root_value, operation_name)
+```
 
-| Parameter name   | Type                                   | Default | Description                                                                                            |
-| ---------------- | -------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------ |
-| query            | `str`                                  | N/A     | The document to be executed                                                                            |
-| variable_values  | `Optional[Dict[str, Any]]`             | `None`  | The variables for this operation                                                                       |
-| context_value    | `Optional[Any]`                        | `None`  | The value of the context that will be passed down to resolvers                                         |
-| root_value       | `Optional[Any]`                        | `None`  | The value for the root type that will passed down to root resolvers                                    |
-| operation_name   | `Optional[str]`                        | `None`  | The name of the operation you want to execute, useful when sending a document with multiple operations |
+#### `query: str`
 
----
+The GraphQL document to be executed.
+
+#### `variable_values: Optional[Dict[str, Any]] = None`
+
+The variables for this operation.
+
+#### `context_value: Optional[Any] = None`
+
+The value of the context that will be passed down to resolvers.
+
+#### `root_value: Optional[Any] = None`
+
+The value for the root value that will passed to root resolvers.
+
+#### `operation_name: Optional[str] = None`
+
+The name of the operation you want to execute, useful when sending a document with multiple operations. If no `operation_name` is specified the first operation in the document will be executed.
 
 ### `.execute_sync()`
 
 Executes a GraphQL operation against a schema
 
-`execute_sync(query, variable_values, context_value, root_value, operation_name)`
+```python
+async def execute_sync(query, variable_values, context_value, root_value, operation_name)`
+```
 
-| Parameter name   | Type                                   | Default | Description                                                                                            |
-| ---------------- | -------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------ |
-| query            | `str`                                  | N/A     | The document to be executed                                                                            |
-| variable_values  | `Optional[Dict[str, Any]]`             | `None`  | The variables for this operation                                                                       |
-| context_value    | `Optional[Any]`                        | `None`  | The value of the context that will be passed down to resolvers                                         |
-| root_value       | `Optional[Any]`                        | `None`  | The value for the root type that will passed down to root resolvers                                    |
-| operation_name   | `Optional[str]`                        | `None`  | The name of the operation you want to execute, useful when sending a document with multiple operations |
+#### `query: str`
+
+The GraphQL document to be executed.
+
+#### `variable_values: Optional[Dict[str, Any]] = None`
+
+The variables for this operation.
+
+#### `context_value: Optional[Any] = None`
+
+The value of the context that will be passed down to resolvers.
+
+#### `root_value: Optional[Any] = None`
+
+The value for the root value that will passed to root resolvers.
+
+#### `operation_name: Optional[str] = None`
+
+The name of the operation you want to execute, useful when sending a document with multiple operations. If no `operation_name` is specified the first operation in the document will be executed.
+
+---
 
 ## Handling execution errors
 
