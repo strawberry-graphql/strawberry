@@ -1478,7 +1478,7 @@ Fix issue where StrawberryField.graphql_name would always be camelCased
 0.53.2 - 2021-04-01
 -------------------
 
-This releases fixes an issue with the generated `__eq__` and `__repr__` methods when defining
+This release fixes an issue with the generated `__eq__` and `__repr__` methods when defining
 fields with resolvers.
 
 This now works properly:
