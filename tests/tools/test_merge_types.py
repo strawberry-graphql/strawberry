@@ -99,5 +99,5 @@ def test_schema():
 def test_fields_override():
     """It should warn when merging results in overriding fields"""
 
-    with pytest.raises(Warning):
+    with pytest.warns(Warning):
         merge_types((ComplexGreeter, SimpleGreeter))
