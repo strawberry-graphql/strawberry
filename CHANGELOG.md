@@ -1478,7 +1478,7 @@ Fix issue where StrawberryField.graphql_name would always be camelCased
 0.53.2 - 2021-04-01
 -------------------
 
-This relases fixes an issue with the generated `__eq__` and `__repr__` methods when defining
+This releases fixes an issue with the generated `__eq__` and `__repr__` methods when defining
 fields with resolvers.
 
 This now works properly:
@@ -1786,7 +1786,7 @@ Typically, in a production environment, you'd want to bring your own server :)
 0.43.2 - 2020-11-19
 -------------------
 
-This release fixes an issue when usign unions inside generic types, this is now
+This release fixes an issue when using unions inside generic types, this is now
 supported:
 
 
@@ -2070,7 +2070,7 @@ This release improves how we check for enums
 0.37.5 - 2020-10-23
 -------------------
 
-This release improves how we handle enum values when returing lists of enums.
+This release improves how we handle enum values when returning lists of enums.
 
 0.37.4 - 2020-10-22
 -------------------
@@ -2317,7 +2317,7 @@ This release fixes another issue with extending types.
 
 This releases fixes an issue when extending types, now
 fields should work as they were working before even
-when extending an exising type.
+when extending an existing type.
 
 0.32.1 - 2020-09-06
 -------------------
@@ -2371,7 +2371,7 @@ in the GraphQL results. Now it always returns 200.
 0.31.0 - 2020-08-26
 -------------------
 
-Add `process_result` to views for Django, Flask and ASGI. They can be overriden
+Add `process_result` to views for Django, Flask and ASGI. They can be overridden
 to provide a custom response and also to process results and errors.
 
 It also removes `request` from Flask view's `get_root_value` and `get_context`
@@ -2431,7 +2431,7 @@ This releases fixes the check for unset values.
 -------------------
 
 Add functions `get_root_value` and `get_context` to views for Django, Flask and
-ASGI. They can be overriden to provide custom values per request.
+ASGI. They can be overridden to provide custom values per request.
 
 Django example:
 
@@ -2847,7 +2847,7 @@ cleaner when not using info or root.
 0.23.3 - 2020-04-29
 -------------------
 
-This release fixes the dependecy of GraphQL-core
+This release fixes the dependency of GraphQL-core
 
 0.23.2 - 2020-04-25
 -------------------
@@ -3000,7 +3000,7 @@ now it should support lists of complex types properly.
 -------------------
 
 Set `is_type_of` only when the type implements an interface,
-this allows to return different (but compatibile) types in basic cases.
+this allows to return different (but compatible) types in basic cases.
 
 0.18.0 - 2019-10-31
 -------------------

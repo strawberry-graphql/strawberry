@@ -94,7 +94,7 @@ def _get_named_type(name: str, api: SemanticAnalyzerPluginInterface):
 
 def _get_type_for_expr(expr: Expression, api: SemanticAnalyzerPluginInterface) -> Type:
     if isinstance(expr, NameExpr):
-        # guarding agains invalid nodes, still have to figure out why this happens
+        # guarding against invalid nodes, still have to figure out why this happens
         # but sometimes mypy crashes because the internal node of the named type
         # is actually a Var node, which is unexpected, so we do a naive guard here
         # and raise an exception for it.
@@ -289,7 +289,7 @@ def _collect_field_args(expr: Expression) -> Tuple[bool, Dict[str, Expression]]:
     return False, {}
 
 
-# Custom dataclass transfomer that knows about strawberry.field, we cannot
+# Custom dataclass transformer that knows about strawberry.field, we cannot
 # extend the mypy one as it might be compiled by mypyc and we'd get this error
 # >>> TypeError: interpreted classes cannot inherit from compiled
 # Original copy from
