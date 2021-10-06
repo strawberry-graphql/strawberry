@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING, Any, Dict, Generic, List, Optional, TypeVar, U
 
 from cached_property import cached_property
 
-from graphql import GraphQLResolveInfo, OperationDefinitionNode
+from graphql import GraphQLResolveInfo, GraphQLSchema, OperationDefinitionNode
 from graphql.language import FieldNode
 from graphql.pyutils.path import Path
 
@@ -29,6 +29,10 @@ class Info(Generic[ContextType, RootValueType]):
     @property
     def field_name(self) -> str:
         return self._raw_info.field_name
+
+    @property
+    def schema(self) -> GraphQLSchema:
+        return self._raw_info.schema
 
     @property
     def field_nodes(self) -> List[FieldNode]:  # deprecated
