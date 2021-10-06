@@ -88,7 +88,7 @@ class GraphQLRouter(APIRouter):
             request: Request,
             context=Depends(self.context_getter),
             root_value=Depends(self.root_value_getter),
-        ):
+        ) -> Response:
             content_type = request.headers.get("content-type", "")
             if "application/json" in content_type:
                 try:
