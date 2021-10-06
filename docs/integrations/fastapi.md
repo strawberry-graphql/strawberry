@@ -9,12 +9,20 @@ Strawberry provides support for [FastAPI](https://fastapi.tiangolo.com/) with a 
 See below example for integrating FastAPI with Strawberry:
 
 ```python
+import strawberry
+
 from fastapi import FastAPI
-from strawberry.fastapi import GraphQL
+from strawberry.fastapi import GraphQLRouter
 
-from api.schema import schema
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self) -> str:
+        return "Hello World"
 
-graphql_app = GraphQL(schema)
+schema = strawberry.Schema(Query)
+
+graphql_app = GraphQLRouter(schema)
 
 app = FastAPI()
 app.include_router(graphql_app, prefix="/graphql")
@@ -40,35 +48,40 @@ the request and background tasks.
 and can inject another dependencies.
 
 ```python
-from fastapi import Depends, Request, WebSocket, BackgroundTasks
+import strawberry
+
+from fastapi import FastAPI, Depends, Request, WebSocket, BackgroundTasks
+from strawberry.types import Info
+from strawberry.fastapi import GraphQLRouter
 
 def custom_context_dependency() -> str:
-    return "Hi!"
+    return "John"
 
 
 async def get_context(
-    background_tasks: BackgroundTasks,
-    request: Request = None,
-    ws: WebSocket = None,
     custom_value=Depends(custom_context_dependency),
 ):
     return {
         "custom_value": custom_value,
-        "request": request or ws,
-        "background_tasks": background_tasks,
     }
-
-
-graphql_app = GraphQL(
-  schema,
-  context_getter=get_context
-)
 
 @strawberry.type
 class Query:
     @strawberry.field
     def example(self, info: Info) -> str:
-        return str(info.context["custom_value"])
+        print(info.context)
+        return f"Hello {info.context['custom_value']}"
+    
+
+schema = strawberry.Schema(Query)
+
+graphql_app = GraphQLRouter(
+  schema,
+  context_getter=get_context,
+)
+
+app = FastAPI()
+app.include_router(graphql_app, prefix="/graphql")
 ```
 
 Here we are returning a custom context dictionary that contains one extra item
@@ -82,18 +95,37 @@ case.
 Similarly, [background tasks](https://fastapi.tiangolo.com/tutorial/background-tasks/?h=background) can be added via the context:
 
 ```python
-from starlette.background import BackgroundTask
+import strawberry
+
+from fastapi import FastAPI, BackgroundTasks
+from strawberry.types import Info
+from strawberry.fastapi import GraphQLRouter
 
 async def notify_new_flavour(name: str):
-    ...
+    print(name)
 
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self) -> str:
+        return "Hello World"
+
+    
 @strawberry.type
 class Mutation:
     @strawberry.mutation
     def create_flavour(self, name: str, info: Info) -> bool:
-        info.context["background_tasks"].add_task(notify_new_flavour)
+        info.context["background_tasks"].add_task(notify_new_flavour, name)
+        return True
 
-        info.context["response"].background = BackgroundTask(notify_new_flavour, name)
+
+schema = strawberry.Schema(Query, Mutation)
+
+graphql_app = GraphQLRouter(schema)
+
+app = FastAPI()
+app.include_router(graphql_app, prefix="/graphql")
 ```
 
 ## root_value_getter
@@ -105,21 +137,30 @@ Here's an example:
 
 ```python
 import strawberry
-from fastapi import Request
-from strawberry.fastapi import GraphQL
 
-async def get_root_value(request: Request):
+from fastapi import FastAPI
+from strawberry.fastapi import GraphQLRouter
+
+
+async def get_root_value():
     return Query(name="Patrick")
 
-
-graphql_app = GraphQL(
-    schema,
-    root_value_getter=get_root_value,
-)
 
 @strawberry.type
 class Query:
     name: str
+
+    
+schema = strawberry.Schema(Query)
+
+graphql_app = GraphQLRouter(
+    schema,
+    root_value_getter=get_root_value,
+)
+
+app = FastAPI()
+app.include_router(graphql_app, prefix="/graphql")
+
 ```
 
 Here we are returning a Query where the name is "Patrick", so we when requesting
@@ -135,13 +176,16 @@ It needs to return an object of `GraphQLHTTPResponse` and accepts the request
 and the execution results.
 
 ```python
+from fastapi import Request
+from strawberry.fastapi import GraphQLRouter
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
 
 from graphql.error import format_error as format_graphql_error
 
-class MyGraphQL(GraphQL):
-    async def process_result(
+class MyGraphQLRouter(GraphQLRouter):
+    
+  async def process_result(
         self, request: Request, result: ExecutionResult
     ) -> GraphQLHTTPResponse:
         data: GraphQLHTTPResponse = {"data": result.data}
@@ -153,4 +197,4 @@ class MyGraphQL(GraphQL):
 ```
 
 In this case we are doing the default processing of the result, but it can be
-tweaked based on your needs. the result, but it can be tweaked based on your needs.
+tweaked based on your needs.
