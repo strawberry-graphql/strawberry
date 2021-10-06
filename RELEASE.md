@@ -17,6 +17,6 @@ class QueryB:
     ...
 
 
-ComboQuery = merge_types((QueryB, QueryA))
+ComboQuery = merge_types("ComboQuery", (QueryB, QueryA))
 schema = strawberry.Schema(query=ComboQuery)
 ```

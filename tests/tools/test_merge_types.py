@@ -4,7 +4,6 @@ import pytest
 
 import strawberry
 from strawberry.tools import merge_types
-from strawberry.tools.merge_types import DEFAULT_NAME
 
 
 @strawberry.type
@@ -36,25 +35,18 @@ class ComplexGreeter:
         return f"Bye, {name}!"
 
 
-def test_default_name():
-    """The resulting type should have the default name is none is specified"""
-
-    ComboQuery = merge_types((ComplexGreeter, Person))
-    assert ComboQuery.__name__ == DEFAULT_NAME
-
-
 def test_custom_name():
     """The resulting type should have a custom name is one is specified"""
 
     custom_name = "SuperQuery"
-    ComboQuery = merge_types((ComplexGreeter, Person), custom_name)
+    ComboQuery = merge_types(custom_name, (ComplexGreeter, Person))
     assert ComboQuery.__name__ == custom_name
 
 
 def test_inheritance():
     """It should merge multiple types following the regular inheritance rules"""
 
-    ComboQuery = merge_types((ComplexGreeter, Person))
+    ComboQuery = merge_types("SuperType", (ComplexGreeter, Person))
 
     definition = ComboQuery._type_definition
     assert len(definition.fields) == 4
@@ -68,13 +60,13 @@ def test_empty_list():
     """It should raise when the `types` argument is empty"""
 
     with pytest.raises(ValueError):
-        merge_types(())
+        merge_types("EmptyType", ())
 
 
 def test_schema():
     """It should create a valid, usable schema based on a merged query"""
 
-    ComboQuery = merge_types((ComplexGreeter, Person))
+    ComboQuery = merge_types("SuperSchema", (ComplexGreeter, Person))
     schema = strawberry.Schema(query=ComboQuery)
 
     sdl = """
@@ -100,4 +92,4 @@ def test_fields_override():
     """It should warn when merging results in overriding fields"""
 
     with pytest.warns(Warning):
-        merge_types((ComplexGreeter, SimpleGreeter))
+        merge_types("FieldsOverride", (ComplexGreeter, SimpleGreeter))

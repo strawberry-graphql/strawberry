@@ -68,23 +68,12 @@ class QueryB:
         ...
 
 
-ComboQuery = merge_types((QueryB, QueryA))
+ComboQuery = merge_types("ComboQuery", (QueryB, QueryA))
 schema = strawberry.Schema(query=ComboQuery)
 ---
 type MegaType {
   performB: String!
   performA: String!
-}
-```
-
-The default name of the resulting type is `"MegaType"`. If desired, a custom
-name may be specified:
-
-```python+schema
-ABQuery = merge_types((QueryB, QueryA), "ABQuery")
----
-type ABQuery {
-  ...
 }
 ```
 
