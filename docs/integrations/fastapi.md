@@ -71,7 +71,7 @@ class Query:
     def example(self, info: Info) -> str:
         print(info.context)
         return f"Hello {info.context['custom_value']}"
-    
+
 
 schema = strawberry.Schema(Query)
 
@@ -111,7 +111,7 @@ class Query:
     def hello(self) -> str:
         return "Hello World"
 
-    
+
 @strawberry.type
 class Mutation:
     @strawberry.mutation
@@ -150,7 +150,7 @@ async def get_root_value():
 class Query:
     name: str
 
-    
+
 schema = strawberry.Schema(Query)
 
 graphql_app = GraphQLRouter(
@@ -184,7 +184,7 @@ from strawberry.types import ExecutionResult
 from graphql.error import format_error as format_graphql_error
 
 class MyGraphQLRouter(GraphQLRouter):
-    
+
   async def process_result(
         self, request: Request, result: ExecutionResult
     ) -> GraphQLHTTPResponse:
