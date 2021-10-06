@@ -1,7 +1,7 @@
 import strawberry
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
-from strawberry.fastapi import GraphQL
+from strawberry.fastapi import GraphQLRouter
 from strawberry.types import ExecutionResult, Info
 from tests.fastapi.app import create_app
 
@@ -113,7 +113,7 @@ def test_custom_context():
 
 
 def test_custom_process_result():
-    class CustomGraphQL(GraphQL):
+    class CustomGraphQL(GraphQLRouter):
         async def process_result(self, request, result: ExecutionResult):
             return {}
 

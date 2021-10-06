@@ -1,6 +1,6 @@
 from fastapi import BackgroundTasks, Depends, FastAPI, Request, WebSocket
 from strawberry.fastapi import (
-    GraphQL as BaseGraphQL,
+    GraphQLRouter as BaseGraphQLRouter,
     GraphQLTransportWSHandler,
     GraphQLWSHandler,
 )
@@ -46,7 +46,7 @@ async def get_root_value(request: Request):
     return request
 
 
-class GraphQL(BaseGraphQL):
+class GraphQLRouter(BaseGraphQLRouter):
     graphql_transport_ws_handler_class = DebuggableGraphQLTransportWSHandler
     graphql_ws_handler_class = DebuggableGraphQLWSHandler
 
@@ -54,7 +54,7 @@ class GraphQL(BaseGraphQL):
 def create_app(schema=schema, **kwargs):
     app = FastAPI()
 
-    graphql_app = GraphQL(
+    graphql_app = GraphQLRouter(
         schema, context_getter=get_context, root_value_getter=get_root_value, **kwargs
     )
     app.include_router(graphql_app, prefix="/graphql")

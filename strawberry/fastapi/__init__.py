@@ -1,6 +1,6 @@
 import json
 from datetime import timedelta
-from typing import Any, Optional
+from typing import Any, Optional, Sequence, Callable
 
 from fastapi import (
     APIRouter,
@@ -12,6 +12,8 @@ from fastapi import (
     status,
 )
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse
+from starlette.types import ASGIApp
+
 from strawberry.asgi.utils import get_graphiql_html
 from strawberry.exceptions import MissingQueryError
 from strawberry.fastapi.handlers.graphql_transport_ws_handler import (
@@ -74,7 +76,6 @@ class GraphQLRouter(APIRouter):
 
         @self.get(
             "",
-            response_class=HTMLResponse,
             responses={
                 200: {
                     "description": "The GraphiQL integrated development environment.",
@@ -84,7 +85,7 @@ class GraphQLRouter(APIRouter):
                 },
             },
         )
-        async def get_graphiql() -> HTMLResponse:
+        async def get_graphiql() -> Response:
             if not self.graphiql:
                 return Response(status_code=status.HTTP_404_NOT_FOUND)
             return self.get_graphiql_response()
@@ -143,14 +144,20 @@ class GraphQLRouter(APIRouter):
             context=Depends(context_getter),
             root_value=Depends(get_root_value),
         ):
+            async def _get_context():
+                return context
+
+            async def _get_root_value():
+                return root_value
+
             preferred_protocol = self.pick_preferred_protocol(websocket)
             if preferred_protocol == GRAPHQL_TRANSPORT_WS_PROTOCOL:
                 await self.graphql_transport_ws_handler_class(
                     schema=self.schema,
                     debug=self.debug,
                     connection_init_wait_timeout=self.connection_init_wait_timeout,
-                    context=context,
-                    root_value=root_value,
+                    get_context=_get_context,
+                    get_root_value=_get_root_value,
                     ws=websocket,
                 ).handle()
             elif preferred_protocol == GRAPHQL_WS_PROTOCOL:
@@ -159,8 +166,8 @@ class GraphQLRouter(APIRouter):
                     debug=self.debug,
                     keep_alive=self.keep_alive,
                     keep_alive_interval=self.keep_alive_interval,
-                    context=context,
-                    root_value=root_value,
+                    get_context=_get_context,
+                    get_root_value=_get_root_value,
                     ws=websocket,
                 ).handle()
             else:
