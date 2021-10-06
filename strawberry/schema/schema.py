@@ -1,15 +1,13 @@
-import logging
-import sys
 from typing import Any, Dict, List, Optional, Sequence, Type, Union
 
 from graphql import (
     ExecutionContext as GraphQLExecutionContext,
+    GraphQLError,
     GraphQLSchema,
     get_introspection_query,
     parse,
     validate_schema,
 )
-from graphql.error import GraphQLError
 from graphql.subscription import subscribe
 from graphql.type.directives import specified_directives
 
@@ -21,13 +19,11 @@ from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
 from strawberry.types import ExecutionContext, ExecutionResult
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
+from strawberry.utils.logging import error_logger
 
 from ..printer import print_schema
 from .config import StrawberryConfig
 from .execute import execute, execute_sync
-
-
-logger = logging.getLogger("strawberry.execution")
 
 
 class Schema:
@@ -114,18 +110,7 @@ class Schema:
     def process_errors(
         self, errors: List[GraphQLError], execution_context: ExecutionContext
     ) -> None:
-        kwargs: Dict[str, Any] = {
-            "stack_info": True,
-        }
-
-        # stacklevel was added in version 3.8
-        # https://docs.python.org/3/library/logging.html#logging.Logger.debug
-
-        if sys.version_info >= (3, 8):
-            kwargs["stacklevel"] = 3
-
-        for error in errors:
-            logger.error(error, exc_info=error.original_error, **kwargs)
+        error_logger(errors, execution_context)
 
     async def execute(
         self,
