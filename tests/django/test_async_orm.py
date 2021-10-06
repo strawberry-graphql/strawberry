@@ -5,8 +5,8 @@ import pytest
 from asgiref.sync import sync_to_async
 
 import django
-from django.test.client import RequestFactory
 from django.db import transaction
+from django.test.client import RequestFactory
 
 import strawberry
 from strawberry.django.views import (
