@@ -1,6 +1,8 @@
 from typing import Any
 
-from strawberry.asgi import GraphQLTransportWSHandler as BaseGraphQLTransportWSHandler
+from strawberry.asgi.handlers import (
+    GraphQLTransportWSHandler as BaseGraphQLTransportWSHandler,
+)
 
 
 class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):

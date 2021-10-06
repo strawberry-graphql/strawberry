@@ -1,6 +1,6 @@
 from typing import Any
 
-from strawberry.asgi import GraphQLWSHandler as BaseGraphQLWSHandler
+from strawberry.asgi.handlers import GraphQLWSHandler as BaseGraphQLWSHandler
 
 
 class GraphQLWSHandler(BaseGraphQLWSHandler):
