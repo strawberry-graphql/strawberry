@@ -1,20 +1,20 @@
 import json
 from datetime import timedelta
-from typing import Optional, Any, Sequence, Callable
+from typing import Any, Callable, Optional, Sequence
 
-from fastapi import APIRouter, Depends
 from starlette import status
 from starlette.background import BackgroundTasks
 from starlette.requests import Request
-from starlette.responses import Response, PlainTextResponse, JSONResponse, HTMLResponse
+from starlette.responses import HTMLResponse, JSONResponse, PlainTextResponse, Response
 from starlette.types import ASGIApp
 from starlette.websockets import WebSocket
 
+from fastapi import APIRouter, Depends
 from strawberry.asgi.utils import get_graphiql_html
 from strawberry.exceptions import MissingQueryError
-from strawberry.fastapi.handlers import GraphQLWSHandler, GraphQLTransportWSHandler
+from strawberry.fastapi.handlers import GraphQLTransportWSHandler, GraphQLWSHandler
 from strawberry.file_uploads.utils import replace_placeholders_with_files
-from strawberry.http import parse_request_data, GraphQLHTTPResponse, process_result
+from strawberry.http import GraphQLHTTPResponse, parse_request_data, process_result
 from strawberry.schema import BaseSchema
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 from strawberry.types import ExecutionResult
@@ -55,7 +55,7 @@ class GraphQLRouter(APIRouter):
             prefix=prefix,
             default=default,
             on_startup=on_startup,
-            on_shutdown=on_shutdown
+            on_shutdown=on_shutdown,
         )
         self.schema = schema
         self.graphiql = graphiql

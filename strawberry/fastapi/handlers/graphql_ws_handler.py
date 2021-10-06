@@ -4,7 +4,6 @@ from strawberry.asgi import GraphQLWSHandler as BaseGraphQLWSHandler
 
 
 class GraphQLWSHandler(BaseGraphQLWSHandler):
-
     async def get_context(self) -> Any:
         return await self._get_context()
 
