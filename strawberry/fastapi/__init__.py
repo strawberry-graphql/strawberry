@@ -36,7 +36,7 @@ async def get_context(
     return {"request": request or ws, "background_tasks": background_tasks}
 
 
-class GraphQL(APIRouter):
+class GraphQLRouter(APIRouter):
     graphql_ws_handler_class = GraphQLWSHandler
     graphql_transport_ws_handler_class = GraphQLTransportWSHandler
 
@@ -52,8 +52,16 @@ class GraphQL(APIRouter):
         context_getter=get_context,
         subscription_protocols=(GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL),
         connection_init_wait_timeout: timedelta = timedelta(minutes=1),
+        default: Optional[ASGIApp] = None,
+        on_startup: Optional[Sequence[Callable[[], Any]]] = None,
+        on_shutdown: Optional[Sequence[Callable[[], Any]]] = None,
     ):
-        super().__init__(prefix=prefix)
+        super().__init__(
+            prefix=prefix,
+            default=default,
+            on_startup=on_startup,
+            on_shutdown=on_shutdown
+        )
         self.schema = schema
         self.graphiql = graphiql
         self.keep_alive = keep_alive

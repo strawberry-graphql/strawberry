@@ -4,7 +4,7 @@ title: FastAPI
 
 # FastAPI
 
-Strawberry provides support for [FastAPI](https://fastapi.tiangolo.com/) with the APIRouter integration.
+Strawberry provides support for [FastAPI](https://fastapi.tiangolo.com/) with a custom [APIRouter](https://fastapi.tiangolo.com/tutorial/bigger-applications/#apirouter) called `GraphQLRouter`.
 
 See below example for integrating FastAPI with Strawberry:
 
@@ -22,13 +22,13 @@ app.include_router(graphql_app, prefix="/graphql")
 
 ## Options
 
-The `GraphQL` app accepts following options:
+The `GraphQLRouter` accepts the following options:
 
 - schema: mandatory, the schema created by `strawberry.Schema`.
 - graphiql: optional, defaults to `True`, whether to enable the GraphiQL
   interface.
-- context_getter: optional FastAPI dependency for prividing custom context value
-- root_value_getter: optional FastAPI dependency for prividing custom root value
+- context_getter: optional FastAPI dependency for providing custom context value.
+- root_value_getter: optional FastAPI dependency for providing custom root value.
 
 ## context_getter
 
@@ -104,7 +104,9 @@ probably not used a lot but it might be useful in certain situations.
 Here's an example:
 
 ```python
+import strawberry
 from fastapi import Request
+from strawberry.fastapi import GraphQL
 
 async def get_root_value(request: Request):
     return Query(name="Patrick")
