@@ -164,6 +164,7 @@ class GraphQLRouter(APIRouter):
                     ws=websocket,
                 ).handle()
             else:
+                # Code 4406 is "Subprotocol not acceptable"
                 await websocket.close(code=4406)
 
     def pick_preferred_protocol(self, ws: WebSocket) -> Optional[str]:
