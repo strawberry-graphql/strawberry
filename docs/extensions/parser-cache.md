@@ -28,7 +28,7 @@ schema = strawberry.Schema(
 class ParserCache(maxsize=None)
 ```
 
-**`maxsize: Optional[int] = None`**
+#### `maxsize: Optional[int] = None`
 
 Set the maxsize of the cache. If `maxsize` is set to `None` then the cache will grow without bound.
 

@@ -22,7 +22,9 @@ schema = strawberry.Schema(
 )
 ```
 
-**Note:** If you are not running in an Async context then you'll need to use the sync version:
+<Note>
+
+If you are not running in an Async context then you'll need to use the sync version:
 
 ```python
 import strawberry
@@ -35,6 +37,8 @@ schema = strawberry.Schema(
     ]
 )
 ```
+
+</Note>
 
 ## API reference:
 

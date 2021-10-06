@@ -8,9 +8,13 @@ tags: performance,validation
 
 This extensions disables all query validation. This can be useful to improve performance in some specific cases, for example when dealing with internal APIs where queries can be trusted.
 
-**⚠️ NOTE:** Only do this if you know what you are doing! Disabling validation breaks the safety of having typed schema. If you are trying to
+<Warning>
+
+Only do this if you know what you are doing! Disabling validation breaks the safety of having typed schema. If you are trying to
 improve performance you might want to consider using the
 [ValidationCache](./validation-cache) instead.
+
+</Warning>
 
 ## Usage example:
 

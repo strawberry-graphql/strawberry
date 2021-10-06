@@ -8,11 +8,15 @@ tags: tracing
 
 This extension adds tracing information that is compatible with [Open Telemetry](https://opentelemetry.io/).
 
-**Note:** This extension requires additional requirements:
+<Note>
+
+This extension requires additional requirements:
 
 ```
 pip install strawberry-graphql[opentelemetry]
 ```
+
+</Note>
 
 ## Usage example:
 
@@ -28,7 +32,9 @@ schema = strawberry.Schema(
 )
 ```
 
-**Note:** If you are not running in an Async context then you'll need to use the sync version:
+<Note>
+
+If you are not running in an Async context then you'll need to use the sync version:
 
 ```python
 import strawberry
@@ -42,13 +48,15 @@ schema = strawberry.Schema(
 )
 ```
 
+</Note>
+
 ## API reference:
 
 ```python
 class OpenTelemetryExtension(arg_filter=None)
 ```
 
-**`arg_filter: Optional[ArgFilter]`**
+#### `arg_filter: Optional[ArgFilter]`
 
 A function to filter certain field arguments from being included in the tracing
 data.

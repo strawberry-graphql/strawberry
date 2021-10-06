@@ -34,7 +34,7 @@ schema = strawberry.Schema(
 class AddValidationRules(validation_rules)
 ```
 
-**`validation_rules: List[Type[ASTValidationRule]]`**
+#### `validation_rules: List[Type[ASTValidationRule]]`
 
 List of GraphQL validation rules.
 
