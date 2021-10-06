@@ -1,4 +1,5 @@
 import enum
+import json
 from copy import deepcopy
 from inspect import isawaitable
 from typing import Any, Callable, Dict, Optional
@@ -97,7 +98,8 @@ class OpenTelemetryExtension(Extension):
             filtered_kwargs = self.filter_resolver_args(kwargs, info)
 
             for kwarg, value in filtered_kwargs.items():
-                span.set_attribute(f"graphql.param.{kwarg}", value)
+                v = json.dumps(value) if isinstance(value, dict) else value
+                span.set_attribute(f"graphql.param.{kwarg}", v)
 
     async def resolve(self, _next, root, info, *args, **kwargs):
         if should_skip_tracing(_next, info):
