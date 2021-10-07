@@ -45,7 +45,7 @@ async def test_async_sync_to_async():
         def example_async(self) -> str:
             return Example.objects.first().name
 
-    schema = strawberry.Schema(query=Query, extensions=[SyncToAsync])
+    schema = strawberry.Schema(query=Query, extensions=[SyncToAsync()])
 
     query = "{ exampleAsync }"
 
@@ -77,7 +77,7 @@ async def test_sync_to_async_with_transaction():
             with transaction.atomic():
                 return Example.objects.first().name
 
-    schema = strawberry.Schema(query=Query, extensions=[SyncToAsync])
+    schema = strawberry.Schema(query=Query, extensions=[SyncToAsync()])
 
     query = "{ exampleAsync }"
 
@@ -118,7 +118,7 @@ async def test_sync_to_async_with_request_transaction():
             return Example.objects.first().name
 
     schema = strawberry.Schema(
-        query=Query, extensions=[SyncToAsync, WrapRequestInTransaction]
+        query=Query, extensions=[SyncToAsync(), WrapRequestInTransaction]
     )
 
     query = "{ exampleAsync }"
@@ -147,7 +147,7 @@ def test_sync_to_async_works_in_sync_context():
         def example(self) -> str:
             return Example.objects.first().name
 
-    schema = strawberry.Schema(query=Query, extensions=[SyncToAsync])
+    schema = strawberry.Schema(query=Query, extensions=[SyncToAsync()])
 
     query = "{ example }"
 

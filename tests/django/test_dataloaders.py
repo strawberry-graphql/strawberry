@@ -128,7 +128,7 @@ async def test_create_model_load_fn(django_assert_num_queries):
             inst = await loader.load(id)
             return inst.name
 
-    schema = strawberry.Schema(query=Query, extensions=[SyncToAsync])
+    schema = strawberry.Schema(query=Query, extensions=[SyncToAsync()])
 
     query = """
         {
