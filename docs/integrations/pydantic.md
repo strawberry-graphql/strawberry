@@ -45,8 +45,12 @@ class UserType:
 The `strawberry.experimental.pydantic.type` decorator accepts a Pydantic model
 and a list of fields that we want to expose on our GraphQL API.
 
-> **Note** specifying the list of field is required to prevent accidentally
-> exposing fields that weren't meant to be exposed on a API
+<Note>
+
+Specifying the list of field is required to prevent accidentally
+exposing fields that weren't meant to be exposed on a API
+
+</Note>
 
 ## Input types
 
