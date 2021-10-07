@@ -12,7 +12,7 @@ class SyncToAsync(Extension):
 
     Example:
     >>> import strawberry
-    >>> from strawberry.extensions import AddValidationRules
+    >>> from strawberry.extensions import SyncToAsync
     >>>
     >>> @strawberry.type
     >>> class Query:
