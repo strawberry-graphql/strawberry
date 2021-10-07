@@ -12,8 +12,12 @@ Strawberry supports
 box, that means that you can create services using Strawberry and federate them
 via Apollo Gateway.
 
-> _NOTE_: we don’t have a gateway server, you’ll still need to use the Apollo
-> Gateway for this.
+<Note>
+
+We don’t have a gateway server, you’ll still need to use the Apollo
+Gateway for this.
+
+</Note>
 
 ## Federated schema example
 
@@ -54,9 +58,13 @@ one and allows us to define federation-specific attributes on the type.
 Here, we are telling the federation system that the `Book`'s `id` field is its
 uniquely-identifying key.
 
-> Federation keys can be thought of as primary keys. They are used by the
-> gateway to query types between multiple services and then join them into the
-> augmented type.
+<Note>
+
+Federation keys can be thought of as primary keys. They are used by the
+gateway to query types between multiple services and then join them into the
+augmented type.
+
+</Note>
 
 ### Reviews service
 

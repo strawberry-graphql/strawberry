@@ -82,12 +82,16 @@ class Query:
 this is useful when you want to colocate resolvers and types or when you have
 very small resolvers.
 
-> _NOTE:_ the _self_ argument is a bit special here, when executing a GraphQL
-> query, in case of resolvers defined with a decorator, the _self_ argument
-> corresponds to the _root_ value that field. In this example the _root_ value
-> is the value `Query` type, which is usually `None`. You can change the _root_
-> value when calling the `execute` method on a `Schema`. More on _root_ values
-> below.
+<Note>
+
+The _self_ argument is a bit special here, when executing a GraphQL
+query, in case of resolvers defined with a decorator, the _self_ argument
+corresponds to the _root_ value that field. In this example the _root_ value
+is the value `Query` type, which is usually `None`. You can change the _root_
+value when calling the `execute` method on a `Schema`. More on _root_ values
+below.
+
+</Note>
 
 ## Defining arguments
 

@@ -8,7 +8,11 @@ Strawberry comes with a built-in DataLoader, a generic utility that can be used
 to reduce the number of requests to databases or third party APIs by batching
 and caching requests.
 
-> Note: DataLoaders provide an async API, so they only work in async context
+<Note>
+
+DataLoaders provide an async API, so they only work in async context
+
+</Note>
 
 ## Basic usage
 
