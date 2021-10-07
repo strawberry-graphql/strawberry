@@ -29,6 +29,6 @@ class BaseGraphQLTestClient(ABC):
         headers: Optional[Dict[str, Any]] = None,
         asserts_errors: Optional[bool] = True,
         format: Literal["multipart", "json"] = "json",
-        **kwargs
+        files: Optional[Dict[str, Any]] = None,
     ) -> Response:
         raise NotImplementedError
