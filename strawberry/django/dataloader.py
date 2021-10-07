@@ -17,7 +17,7 @@ def create_model_load_fn(django_model: Type[models.Model]):
     @sync_to_async(thread_sensitive=False)
     def load_model(keys):
         qs = django_model.objects.filter(pk__in=keys)
-        instance_map = {inst.id: inst for inst in qs}
+        instance_map = {inst.pk: inst for inst in qs}
 
         return [instance_map.get(key) for key in keys]
 
