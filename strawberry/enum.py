@@ -4,7 +4,7 @@ from typing import Any, Callable, List, Mapping, Optional, TypeVar, Union
 
 from strawberry.type import StrawberryType
 
-from .exceptions import NotAnEnum
+from .exceptions import ObjectIsNotAnEnumError
 
 
 @dataclasses.dataclass
@@ -38,7 +38,7 @@ def _process_enum(
     cls: EnumMeta, name: Optional[str] = None, description: Optional[str] = None
 ) -> EnumMeta:
     if not isinstance(cls, EnumMeta):
-        raise NotAnEnum()
+        raise ObjectIsNotAnEnumError(cls)
 
     if not name:
         name = cls.__name__
