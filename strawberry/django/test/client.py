@@ -15,7 +15,7 @@ def _build_multipart_file_map(
     Example usages:
 
     >>> _build_multipart_file_map(
-    >>>    variables={"textFile": None}, files={"textFile": f}
+    >>>     variables={"textFile": None}, files={"textFile": f}
     >>> )
     ... {"textFile": ["variables.textFile"]}
 
