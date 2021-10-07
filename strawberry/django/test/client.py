@@ -26,7 +26,7 @@ def _build_multipart_file_map(
     >>> )
     ... {"file1": ["variables.files.0"], "file2": ["variables.files.1"]}
 
-    If the variable contains anohter keyword (a folder) we must include that keyword
+    If `variables` contains another keyword (a folder) we must include that keyword
     in the mapping
     >>> _build_multipart_file_map(
     >>>     variables={"folder": {"files": [None, None]}},
