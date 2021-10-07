@@ -6,7 +6,49 @@ from typing_extensions import Literal
 from strawberry.test import BaseGraphQLTestClient, Response
 
 
-def _build_multipart_file_map(variables, kwargs):
+def _build_multipart_file_map(variables: Dict[str, Any], **files_kargs: Dict[str, Any]):
+    """Creates the file mapping between the variables and the files objects passed
+    as key arguments
+
+    Example usages:
+
+    >>> _build_multipart_file_map(
+    >>>    variables={"textFile": None}, textFile=f
+    >>> )
+    ... {"textFile": ["variables.textFile"]}
+
+    If the variable is a list we have to enumerate files in the mapping
+    >>> _build_multipart_file_map(
+    >>>     variables={"files": [None, None]},
+    >>>     file1=file1,
+    >>>     file2=file2,
+    >>> )
+    ... {"file1": ["variables.files.0"], "file2": ["variables.files.1"]}
+
+    If the variable contains anohter keyword (a folder) we must include that keyword
+    in the mapping
+    >>> _build_multipart_file_map(
+    >>>     variables={"folder": {"files": [None, None]}},
+    >>>     file1=file1,
+    >>>     file2=file2,
+    >>> )
+    ... {"file1": ["variables.folder.files.0"], "file2": ["variables.folder.files.1"]}
+
+    If the variables includes both a list of files and other single values, we must
+    map them accordingly
+    >>> _build_multipart_file_map(
+    >>>     variables={"files": [None, None], "textFile": None},
+    >>>     file1=file1,
+    >>>     file2=file2,
+    >>>     textFile=file3,
+    >>> )
+    ... {
+    ...     "file1": ["variables.files.0"],
+    ...     "file2": ["variables.files.1"],
+    ...     "textFile": ["variables.textFile"],
+    ... }
+    """
+
     map = {}
     for key, values in variables.items():
         reference = key
@@ -22,7 +64,7 @@ def _build_multipart_file_map(variables, kwargs):
         # If the variable is an array of files we must number the keys
         if isinstance(files, list):
             # copying `kwargs` as when we map a file we must discard from the dict
-            _kwargs = kwargs.copy()
+            _kwargs = files_kargs.copy()
             for index, _ in enumerate(files):
                 k = list(_kwargs.keys())[0]
                 _kwargs.pop(k)
@@ -42,7 +84,7 @@ class GraphQLTestClient(BaseGraphQLTestClient):
         headers: Optional[Dict[str, Any]] = None,
         asserts_errors: Optional[bool] = True,
         format: Literal["multipart", "json"] = "json",
-        **kwargs,
+        **kwargs: Dict[str, Any],
     ) -> Response:
         body: Any = {"query": query}
 
@@ -51,7 +93,7 @@ class GraphQLTestClient(BaseGraphQLTestClient):
 
         if format == "multipart":
             assert variables is not None
-            file_map = _build_multipart_file_map(variables, kwargs)
+            file_map = _build_multipart_file_map(variables, **kwargs)
 
             body = {
                 "operations": json.dumps(body),
