@@ -158,7 +158,7 @@ class NormalClass:
 
 ## PrivateStrawberryFieldError
 
-This exception is raised when `strawberry.field` is type annotated Private.
+This exception is raised when `strawberry.field` is type annotated with `strawberry.Private`
 
 ```python
 @strawberry.type
@@ -171,6 +171,15 @@ class Query:
 ```
 
 ## ScalarAlreadyRegisteredError
+
+```python
+async def idx(keys):
+    return [1, 2]
+
+loader = DataLoader(load_fn=idx)
+
+// Received wrong number of results in dataloader, expected: 1, received: 2
+```
 
 ## UnallowedReturnTypeForUnion
 
