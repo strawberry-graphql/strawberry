@@ -10,7 +10,7 @@ def create_model_load_fn(django_model: Type[models.Model]):
         raise Exception(
             (
                 "Object passed to `created_model_load_fn` has to be a Django model. "
-                f"Recieved: {django_model}"
+                f"Received: {django_model}"
             )
         )
 
