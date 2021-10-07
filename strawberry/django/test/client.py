@@ -3,11 +3,13 @@ from typing import Any, Dict, Optional
 
 from typing_extensions import Literal
 
+from django.core.files.uploadedfile import UploadedFile
+
 from strawberry.test import BaseGraphQLTestClient, Response
 
 
 def _build_multipart_file_map(
-    variables: Dict[str, Any], files: Dict[str, Any]
+    variables: Dict[str, Any], files: Dict[str, UploadedFile]
 ) -> Dict[str, Any]:
     """Creates the file mapping between the variables and the files objects passed
     as key arguments
