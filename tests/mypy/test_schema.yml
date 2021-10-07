@@ -1,0 +1,14 @@
+- case: test_passing_extensions
+  main: |
+    import strawberry
+    from strawberry.extensions import ParserCache
+
+    @strawberry.type
+    class Query:
+        b: str
+
+    schema = strawberry.Schema(Query, extensions=[ParserCache()])
+
+    reveal_type(schema)
+  out: |
+    main:10: note: Revealed type is "strawberry.schema.schema.Schema"

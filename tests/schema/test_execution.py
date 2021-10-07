@@ -1,29 +1,30 @@
 import textwrap
 from textwrap import dedent
 from typing import Optional
+from unittest.mock import patch
 
 import pytest
 
-from graphql import GraphQLError, ValidationRule
+from graphql import GraphQLError, ValidationRule, validate
 
 import strawberry
-from strawberry.schema import default_validation_rules
+from strawberry.extensions import AddValidationRules, DisableValidation
 
 
 @pytest.mark.parametrize("validate_queries", (True, False))
-def test_enabling_query_validation_sync(validate_queries, mocker):
-    extension_mock = mocker.Mock()
-    extension_mock.get_results.return_value = {}
-
-    extension_class_mock = mocker.Mock(return_value=extension_mock)
-
+@patch("strawberry.schema.execute.validate", wraps=validate)
+def test_enabling_query_validation_sync(mock_validate, validate_queries):
     @strawberry.type
     class Query:
         example: Optional[str] = None
 
+    extensions = []
+    if validate_queries is False:
+        extensions.append(DisableValidation())
+
     schema = strawberry.Schema(
         query=Query,
-        extensions=[extension_class_mock],
+        extensions=extensions,
     )
 
     query = """
@@ -35,30 +36,27 @@ def test_enabling_query_validation_sync(validate_queries, mocker):
     result = schema.execute_sync(
         query,
         root_value=Query(),
-        validate_queries=validate_queries,
     )
 
     assert not result.errors
 
-    assert extension_mock.on_validation_start.called is validate_queries
-    assert extension_mock.on_validation_end.called is validate_queries
+    assert mock_validate.called is validate_queries
 
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("validate_queries", (True, False))
-async def test_enabling_query_validation(validate_queries, mocker):
-    extension_mock = mocker.Mock()
-    extension_mock.get_results.return_value = {}
-
-    extension_class_mock = mocker.Mock(return_value=extension_mock)
-
+async def test_enabling_query_validation(validate_queries):
     @strawberry.type
     class Query:
         example: Optional[str] = None
 
+    extensions = []
+    if validate_queries is False:
+        extensions.append(DisableValidation())
+
     schema = strawberry.Schema(
         query=Query,
-        extensions=[extension_class_mock],
+        extensions=extensions,
     )
 
     query = """
@@ -67,20 +65,19 @@ async def test_enabling_query_validation(validate_queries, mocker):
         }
     """
 
-    result = await schema.execute(
-        query,
-        root_value=Query(),
-        validate_queries=validate_queries,
-    )
+    with patch("strawberry.schema.execute.validate", wraps=validate) as mock_validate:
+        result = await schema.execute(
+            query,
+            root_value=Query(),
+        )
 
-    assert not result.errors
+        assert not result.errors
 
-    assert extension_mock.on_validation_start.called is validate_queries
-    assert extension_mock.on_validation_end.called is validate_queries
+        assert mock_validate.called is validate_queries
 
 
 @pytest.mark.asyncio
-async def test_invalid_query_with_validation_disabled():
+async def test_invalid_query_with_validation_enabled():
     @strawberry.type
     class Query:
         example: Optional[str] = None
@@ -109,7 +106,7 @@ async def test_asking_for_wrong_field():
     class Query:
         example: Optional[str] = None
 
-    schema = strawberry.Schema(query=Query)
+    schema = strawberry.Schema(query=Query, extensions=[DisableValidation()])
 
     query = """
         query {
@@ -120,7 +117,6 @@ async def test_asking_for_wrong_field():
     result = await schema.execute(
         query,
         root_value=Query(),
-        validate_queries=False,
     )
 
     assert result.errors is None
@@ -135,7 +131,7 @@ async def test_sending_wrong_variables():
         def example(self, value: str) -> int:
             return 1
 
-    schema = strawberry.Schema(query=Query)
+    schema = strawberry.Schema(query=Query, extensions=[DisableValidation()])
 
     query = """
         query {
@@ -146,7 +142,6 @@ async def test_sending_wrong_variables():
     result = await schema.execute(
         query,
         root_value=Query(),
-        validate_queries=False,
     )
 
     assert (
@@ -286,16 +281,20 @@ def test_adding_custom_validation_rules():
         example: Optional[str] = None
         another_example: Optional[str] = None
 
-    schema = strawberry.Schema(query=Query)
-
     class CustomRule(ValidationRule):
         def enter_field(self, node, *args) -> None:
             if node.name.value == "example":
                 self.report_error(GraphQLError("Can't query field 'example'"))
 
+    schema = strawberry.Schema(
+        query=Query,
+        extensions=[
+            AddValidationRules([CustomRule]),
+        ],
+    )
+
     result = schema.execute_sync(
         "{ example }",
-        validation_rules=(default_validation_rules + [CustomRule]),
         root_value=Query(),
     )
 
@@ -303,7 +302,6 @@ def test_adding_custom_validation_rules():
 
     result = schema.execute_sync(
         "{ anotherExample }",
-        validation_rules=(default_validation_rules + [CustomRule]),
         root_value=Query(),
     )
     assert not result.errors

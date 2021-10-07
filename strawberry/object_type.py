@@ -1,9 +1,14 @@
 import dataclasses
+import inspect
 from typing import List, Optional, Sequence, Type, cast
 
 from strawberry.schema_directive import StrawberrySchemaDirective
 
-from .exceptions import MissingFieldAnnotationError, MissingReturnAnnotationError
+from .exceptions import (
+    MissingFieldAnnotationError,
+    MissingReturnAnnotationError,
+    ObjectIsNotClassError,
+)
 from .field import StrawberryField, field
 from .types.type_resolver import _get_fields
 from .types.types import TypeDefinition
@@ -147,8 +152,16 @@ def type(
     """
 
     def wrap(cls):
-        wrapped = _wrap_dataclass(cls)
+        if not inspect.isclass(cls):
+            if is_input:
+                exc = ObjectIsNotClassError.input
+            elif is_interface:
+                exc = ObjectIsNotClassError.interface
+            else:
+                exc = ObjectIsNotClassError.type
+            raise exc(cls)
 
+        wrapped = _wrap_dataclass(cls)
         return _process_type(
             wrapped,
             name=name,
