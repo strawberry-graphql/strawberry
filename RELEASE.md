@@ -40,9 +40,11 @@ from django.core.files.uploadedfile import SimpleUploadedFile
 
 def test_upload(graphql_client):
     f = SimpleUploadedFile("file.txt", b"strawberry")
-    query = """mutation($textFile: Upload!) {
-        readText(textFile: $textFile)
-    }"""
+    query = """
+        mutation($textFile: Upload!) {
+            readText(textFile: $textFile)
+        }
+    """
 
     response = graphql_client.query(
         query=query,
