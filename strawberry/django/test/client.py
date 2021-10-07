@@ -6,7 +6,9 @@ from typing_extensions import Literal
 from strawberry.test import BaseGraphQLTestClient, Response
 
 
-def _build_multipart_file_map(variables: Dict[str, Any], files: Dict[str, Any]):
+def _build_multipart_file_map(
+    variables: Dict[str, Any], files: Dict[str, Any]
+) -> Dict[str, Any]:
     """Creates the file mapping between the variables and the files objects passed
     as key arguments
 
@@ -45,7 +47,7 @@ def _build_multipart_file_map(variables: Dict[str, Any], files: Dict[str, Any]):
     ... }
     """
 
-    map = {}
+    map: Dict[str, Any] = {}
     for key, values in variables.items():
         reference = key
         variable_values = values
