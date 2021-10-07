@@ -34,7 +34,7 @@ def _build_multipart_file_map(
     >>> )
     ... {"file1": ["variables.folder.files.0"], "file2": ["variables.folder.files.1"]}
 
-    If the variables includes both a list of files and other single values, we must
+    If `variables` includes both a list of files and other single values, we must
     map them accordingly
     >>> _build_multipart_file_map(
     >>>     variables={"files": [None, None], "textFile": None},
