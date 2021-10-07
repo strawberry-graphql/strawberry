@@ -486,12 +486,10 @@ def test_field_with_separate_resolver_default():
 
 
 def test_field_with_resolver_default_factory():
-    with pytest.raises(FieldWithResolverAndDefaultFactoryError, match="") as e:
+    with pytest.raises(FieldWithResolverAndDefaultFactoryError):
 
         @strawberry.type
         class Query:
             @strawberry.field(default_factory=lambda: "Example C")
             def c(self) -> str:
                 return "I'm a resolver"
-
-    assert e.value == "fuck"
