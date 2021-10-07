@@ -89,6 +89,7 @@ class Schema:
             types=graphql_types,
         )
 
+        # attach our schema to the GraphQL schema instance
         self._schema._strawberry_schema = self
 
         # Validate schema early because we want developers to know about

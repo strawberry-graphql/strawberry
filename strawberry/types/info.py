@@ -8,12 +8,12 @@ from graphql import GraphQLResolveInfo, OperationDefinitionNode
 from graphql.language import FieldNode
 from graphql.pyutils.path import Path
 
-from strawberry.schema import Schema
 from strawberry.type import StrawberryType
 
 
 if TYPE_CHECKING:
     from strawberry.field import StrawberryField
+    from strawberry.schema import Schema
 
 from .nodes import Selection, convert_selections
 
@@ -32,7 +32,7 @@ class Info(Generic[ContextType, RootValueType]):
         return self._raw_info.field_name
 
     @property
-    def schema(self) -> Schema:
+    def schema(self) -> "Schema":
         return self._raw_info.schema._strawberry_schema
 
     @property
