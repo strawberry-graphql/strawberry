@@ -14,10 +14,10 @@ def _build_multipart_file_map(variables, kwargs):
 
         # In case of folders the variables will look like `{"folder": {"files": ...]}}`
         if isinstance(values, dict):
-            files_key = list(values.keys())[0]
-            reference += f".{files_key}"
+            folder_key = list(values.keys())[0]
+            reference += f".{folder_key}"
             # the list of file is inside the folder keyword
-            files = values[files_key]
+            files = values[folder_key]
 
         # If the variable is an array of files we must number the keys
         if isinstance(files, list):
