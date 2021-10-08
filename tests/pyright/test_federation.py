@@ -1,11 +1,9 @@
-import pytest
-
-from .utils import Result, pyright_exist, run_pyright
+from .utils import Result, requires_pyright, run_pyright, skip_windows
 
 
-pytestmark = pytest.mark.skipif(
-    not pyright_exist(), reason="These tests require pyright"
-)
+pytestmark = [skip_windows, requires_pyright]
+
+
 CODE = """
 import strawberry
 

@@ -1,9 +1,12 @@
 import os
 import shutil
 import subprocess
+import sys
 import tempfile
 from dataclasses import dataclass
 from typing import List, cast
+
+import pytest
 
 from typing_extensions import Literal
 
@@ -52,3 +55,13 @@ def run_pyright(code: str) -> List[Result]:
 
 def pyright_exist() -> bool:
     return shutil.which("pyright") is not None
+
+
+skip_windows = pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="Do not run pyright on windows due to path issues",
+)
+
+requires_pyright = pytest.mark.skipif(
+    not pyright_exist(), reason="These tests require pyright"
+)
