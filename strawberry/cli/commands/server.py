@@ -13,6 +13,12 @@ from strawberry.utils.importer import import_module_symbol
 @click.option("-h", "--host", default="0.0.0.0", type=str)
 @click.option("-p", "--port", default=8000, type=int)
 @click.option(
+    "--log-level",
+    default="error",
+    type=str,
+    help="passed to uvicorn to determine the log level",
+)
+@click.option(
     "--app-dir",
     default=".",
     type=str,
@@ -23,7 +29,7 @@ from strawberry.utils.importer import import_module_symbol
         "Works the same as `--app-dir` in uvicorn."
     ),
 )
-def server(schema, host, port, app_dir):
+def server(schema, host, port, log_level, app_dir):
     sys.path.insert(0, app_dir)
 
     try:
@@ -54,5 +60,10 @@ def server(schema, host, port, app_dir):
     print(f"Running strawberry on http://{host}:{port}/graphql", end=endl)
 
     uvicorn.run(
-        app, host=host, port=port, log_level="error", reload=True, reload_dirs=[app_dir]
+        app,
+        host=host,
+        port=port,
+        log_level=log_level,
+        reload=True,
+        reload_dirs=[app_dir],
     )

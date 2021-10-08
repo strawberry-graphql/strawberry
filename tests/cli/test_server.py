@@ -115,6 +115,10 @@ def test_automatic_reloading(xprocess, tmp_path):
             "run",
             "strawberry",
             "server",
+            # logging at warning prints when schema.py has changed
+            # we key on this to perform the next test
+            "--log-level",
+            "warning",
             "--app-dir",
             # Python Versions < 3.8 on Windows do not have an Iterable WindowsPath
             # casting to str prevents this from throwing a TypeError on Windows
@@ -134,34 +138,45 @@ def test_automatic_reloading(xprocess, tmp_path):
 
     schema_file_path = tmp_path / "schema.py"
     schema_file_path.touch()
-    schema_file_path.write_text(source.format(42))
-
-    xprocess.ensure("dev_server", Starter)
 
     url = "http://127.0.0.1:8000/graphql"
     query = {"query": "{ number }"}
 
-    # this disables proxy use on Windows
-    proxies = {"http": None}
+    def make_request(expected_answer: int):
+        for _ in range(5):
+            try:
+                response = requests.post(url, json=query)
+                assert response.status_code == 200
+                assert response.json() == {"data": {"number": expected_answer}}
+                break
+            except requests.RequestException:
+                time.sleep(0.5)
 
-    for _ in range(5):
-        try:
-            response = requests.post(url, json=query, proxies=proxies)
-            assert response.status_code == 200
-            assert response.json() == {"data": {"number": 42}}
-        except requests.RequestException:
-            time.sleep(0.5)
+    try:
+        schema_file_path.write_text(source.format(42))
 
-    # trigger reload
-    schema_file_path.write_text(source.format(1234))
+        # blocks until either success or failure of starting the dev server
+        xprocess.ensure("dev_server", Starter)
 
-    # It takes uvicorn some time to detect file changes
-    for _ in range(5):
-        try:
-            response = requests.post(url, json=query, proxies=proxies)
-            assert response.status_code == 200
-            assert response.json() == {"data": {"number": 1234}}
-        except AssertionError:
-            time.sleep(0.5)
+        make_request(expected_answer=42)
 
-    xprocess.getinfo("dev_server").terminate()
+        # trigger reload
+        schema_file_path.write_text(source.format(1234))
+
+        # attempt to detect the reload; continue either way
+        for _ in range(5):
+            with open(xprocess.getinfo("dev_server").logpath, "r") as logfile:
+                # when a reload is detected a line ending
+                # with "Reloading..." is output to the log
+                found_reloading_line = any(
+                    [line for line in logfile if line.endswith("Reloading...\n")]
+                )
+                if found_reloading_line:
+                    break
+                else:
+                    time.sleep(0.5)
+
+        make_request(expected_answer=1234)
+    finally:
+        # always attempt to terminate the server
+        xprocess.getinfo("dev_server").terminate()
