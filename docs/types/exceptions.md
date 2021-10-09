@@ -41,10 +41,6 @@ class Query:
 
 This exception is raised when a `Union` or `Interface` is used as an argument type.
 
-## InvalidUnionType
-
-This exception is raised when Scalar type
-
 ```python
 @strawberry.type
 class Noun:
@@ -61,6 +57,18 @@ def add_word(word: Word) -> bool:
     return True
 
 # Throws 'Argument "word" on field "None" cannot be of type "Union"'
+```
+
+## InvalidUnionType
+
+This exception is raised when Scalar type is used with a `Union` or when the list of types are not `strawberry.type`.
+
+```python
+@dataclass
+class A:
+    a: int
+
+# Throws 'Union type `A` is not a Strawberry type'
 ```
 
 ## MissingArgumentsAnnotationsError
@@ -145,7 +153,7 @@ def not_a_class():
 
 ## ObjectIsNotAnEnumError
 
-This exception is raised when `strawberry.enum` is used with an object that is not an Enum
+This exception is raised when `strawberry.enum` is used with an object that is not an Enum.
 
 ```python
 @strawberry.enum
@@ -245,7 +253,6 @@ result = schema.execute_sync(query)
 #     ],
 #     extensions={},
 # )
-
 ```
 
 ## UnsupportedTypeError
