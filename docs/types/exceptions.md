@@ -5,7 +5,7 @@ toc: true
 
 # Strawberry Exceptions
 
-Strawberry raises some of its own exceptions. Strawberry exception classes are defined in `strawberry.exceptions`.
+Strawberry raises some of its own exceptions, they are defined in `strawberry.exceptions`.
 
 ## FieldWithResolverAndDefaultFactoryError
 
@@ -18,7 +18,7 @@ class Query:
     def c(self) -> str:
         return "I'm a resolver"
 
-// Throws 'Annotation for argument `argument` on field `name` cannot have multiple `strawberry.argument`s'
+# Throws 'Field "c" on type "Query" cannot define a default_factory and a resolver.'
 
 ```
 
@@ -34,7 +34,7 @@ def test_resolver() -> str:
 class Query:
     c: str = strawberry.field(default="Example C", resolver=test_resolver)
 
-// Field "c" on type "Query" cannot define a default value and a resolver.
+# Throws 'Field "c" on type "Query" cannot define a default value and a resolver.'
 ```
 
 ## InvalidFieldArgument
@@ -60,7 +60,7 @@ Word = strawberry.union("Word", types=(Noun, Verb))
 def add_word(word: Word) -> bool:
     return True
 
-// Argument "word" on field "None" cannot be of type "Union"
+# Throws 'Argument "word" on field "None" cannot be of type "Union"'
 ```
 
 ## MissingArgumentsAnnotationsError
@@ -68,12 +68,11 @@ def add_word(word: Word) -> bool:
 The `MissingArgumentsAnnotationsError` exception is raised when the resolver's arguments are missing ot type-annotated.
 
 ```python
-
 @strawberry.field
 def hello(self, foo) -> str:
     return "I'm a resolver"
 
-// Missing annotation for argument "foo" in field "hello", did you forget to add it?
+# Throws 'Missing annotation for argument "foo" in field "hello", did you forget to add it?'
 ```
 
 ## MissingFieldAnnotationError
@@ -85,7 +84,7 @@ The `MissingFieldAnnotationError` exception is raised when a `strawberry.field` 
 class Query:  # noqa: F841
     foo = dataclasses.field()
 
-// Unable to determine the type of field "foo". Either annotate it directly, or provide a typed resolver using @strawberry.field.
+# Throws 'Unable to determine the type of field "foo". Either annotate it directly, or provide a typed resolver using @strawberry.field.'
 ```
 
 ## MissingQueryError
@@ -103,7 +102,7 @@ class Query:
     def goodbye(self):
         return "I'm a resolver"
 
-// Return annotation missing for field "goodbye", did you forget to add it?
+# Throws 'Return annotation missing for field "goodbye", did you forget to add it?'
 ```
 
 ## MissingTypesForGenericError
@@ -129,7 +128,7 @@ def name(
 ) -> str:
     return "Name"
 
-// Throws 'Annotation for argument `argument` on field `name` cannot have multiple `strawberry.argument`s'
+# Throws 'Annotation for argument `argument` on field `name` cannot have multiple `strawberry.argument`s'
 ```
 
 ## ObjectIsNotAClassError
@@ -141,7 +140,7 @@ This exception is raised when `strawberry.type`, `strawberry.input` or `strawber
 def not_a_class():
     pass
 
-// strawberry.type can only be used with class types. Provided object <function not_a_class at 0x10a20f700> is not a type.
+# Throws 'strawberry.type can only be used with class types. Provided object <function not_a_class at 0x10a20f700> is not a type.'
 ```
 
 ## ObjectIsNotAnEnumError
@@ -153,7 +152,7 @@ This exception is raised when `strawberry.enum` is used with an object that is n
 class NormalClass:
     hello = "world"
 
-// strawberry.exceptions.NotAnEnum: strawberry.enum can only be used with subclasses of Enum
+# Throws 'strawberry.exceptions.NotAnEnum: strawberry.enum can only be used with subclasses of Enum'
 ```
 
 ## PrivateStrawberryFieldError
@@ -167,10 +166,95 @@ class Query:
     age: strawberry.Private[int] = strawberry.field(description="🤫")
 
 
-// Field age on type Query cannot be both private and a strawberry.field
+# Throws 'Field age on type Query cannot be both private and a strawberry.field'
 ```
 
 ## ScalarAlreadyRegisteredError
+
+This exception is raised when two scalars are defined with the same name or the same type.
+Note that also a `TypeError` will be thrown as well.
+
+```python
+MyCustomScalar = strawberry.scalar(
+    str,
+    name="MyCustomScalar",
+)
+
+MyCustomScalar2 = strawberry.scalar(
+    int,
+    name="MyCustomScalar",
+)
+
+@strawberry.type
+class Query:
+    scalar_1: MyCustomScalar
+    scalar_2: MyCustomScalar2
+
+# Throws 'Scalar `MyCustomScalar` has already been registered'
+```
+
+## UnallowedReturnTypeForUnion
+
+This error is raised when the return type of a `Union` is not in the list of Union types.
+
+```python
+@strawberry.type
+class Outside:
+    c: int
+
+@strawberry.type
+class A:
+    a: int
+
+@strawberry.type
+class B:
+    b: int
+
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    def hello(self) -> Union[A, B]:
+        return Outside(c=5)
+
+query = """
+    mutation {
+        hello {
+            __typename
+
+            ... on A {
+                a
+            }
+
+            ... on B {
+                b
+            }
+        }
+    }
+"""
+
+result = schema.execute_sync(query)
+# result will look like:
+# ExecutionResult(
+#     data=None,
+#     errors=[
+#         GraphQLError(
+#             "The type \"<class 'schema.Outside'>\" of the field \"hello\" is not in the list of the types of the union: \"['A', 'B']\"",
+#             locations=[SourceLocation(line=3, column=9)],
+#             path=["hello"],
+#         )
+#     ],
+#     extensions={},
+# )
+
+```
+
+## UnsupportedTypeError
+
+This exception is thrown when the type-annotation used is not supported by `strawberry.field` (yet).
+
+## WrongNumberOfResultsReturned
+
+This exception is thrown when the DataLoader returns a different number of results than what we asked.
 
 ```python
 async def idx(keys):
@@ -178,13 +262,11 @@ async def idx(keys):
 
 loader = DataLoader(load_fn=idx)
 
-// Received wrong number of results in dataloader, expected: 1, received: 2
+await loader.load(1)
+
+# Throws 'Received wrong number of results in dataloader, expected: 1, received: 2'
 ```
 
-## UnallowedReturnTypeForUnion
-
-## UnsupportedTypeError
-
-## WrongNumberOfResultsReturned
-
 ## WrongReturnTypeForUnion
+
+This exception is thrown when the Union type cannot be resolved because it's not a `strawberry.field`.
