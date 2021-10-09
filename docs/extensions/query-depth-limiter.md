@@ -28,17 +28,17 @@ schema = strawberry.Schema(
 class QueryDepthLimiter(max_depth, ignore=None, callback=None)
 ```
 
-**`max_depth: int`**
+#### `max_depth: int`
 
 The maximum allowed depth for any operation in a GraphQL document.
 
-**`ignore: Optional[List[IgnoreType]]`**
+#### `ignore: Optional[List[IgnoreType]]`
 
 Stops recursive depth checking based on a field name.
 Either a string or regexp to match the name, or a function that returns
 a boolean.
 
-**`callback: Optional[Callable[[Dict[str, int]], None]`**
+#### `callback: Optional[Callable[[Dict[str, int]], None]`
 
 Called each time validation runs. Receives a dictionary which is a
 map of the depths for each operation.

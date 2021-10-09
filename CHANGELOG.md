@@ -1,6 +1,17 @@
 CHANGELOG
 =========
 
+0.81.0 - 2021-10-04
+-------------------
+
+This release adds a safety check on `strawberry.type`, `strawberry.input` and
+`strawberry.interface` decorators. When you try to use them with an object that is not a
+class, you will get a nice error message:
+`strawberry.type can only be used with classes`
+
+Contributed by [dependabot](https://github.com/dependabot) [PR #1278](https://github.com/strawberry-graphql/strawberry/pull/1278/)
+
+
 0.80.2 - 2021-10-01
 -------------------
 
