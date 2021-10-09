@@ -5,11 +5,13 @@ toc: true
 
 # Strawberry Exceptions
 
-Strawberry raises some of its own exceptions, they are defined in `strawberry.exceptions`.
+Strawberry raises some of its own exceptions, they are defined in
+`strawberry.exceptions`.
 
 ## FieldWithResolverAndDefaultFactoryError
 
-This exception is raised when in `strawberry.field` are specified both `resolver` and `default_factory`.
+This exception is raised when in `strawberry.field` are specified both
+`resolver` and `default_factory`.
 
 ```python
 @strawberry.type
@@ -24,7 +26,8 @@ class Query:
 
 ## FieldWithResolverAndDefaultValueError
 
-This exception is raised when in `strawberry.field` are specified both `resolver` and `default`.
+This exception is raised when in `strawberry.field` are specified both
+`resolver` and `default`.
 
 ```python
 def test_resolver() -> str:
@@ -39,7 +42,8 @@ class Query:
 
 ## InvalidFieldArgument
 
-This exception is raised when a `Union` or `Interface` is used as an argument type.
+This exception is raised when a `Union` or `Interface` is used as an argument
+type.
 
 ```python
 @strawberry.type
@@ -61,7 +65,8 @@ def add_word(word: Word) -> bool:
 
 ## InvalidUnionType
 
-This exception is raised when Scalar type is used with a `Union` or when the list of types are not `strawberry.type`.
+This exception is raised when Scalar type is used with a `Union` or when the
+list of types are not `strawberry.type`.
 
 ```python
 @dataclass
@@ -73,7 +78,8 @@ class A:
 
 ## MissingArgumentsAnnotationsError
 
-The `MissingArgumentsAnnotationsError` exception is raised when the resolver's arguments are missing ot type-annotated.
+The `MissingArgumentsAnnotationsError` exception is raised when the resolver's
+arguments are missing ot type-annotated.
 
 ```python
 @strawberry.field
@@ -85,7 +91,8 @@ def hello(self, foo) -> str:
 
 ## MissingFieldAnnotationError
 
-The `MissingFieldAnnotationError` exception is raised when a `strawberry.field` is not type-annotated but also has no resolver to determine its type.
+The `MissingFieldAnnotationError` exception is raised when a `strawberry.field`
+is not type-annotated but also has no resolver to determine its type.
 
 ```python
 @strawberry.type
@@ -101,7 +108,8 @@ This exception is raised when the `request` is missing the `query` paramater.
 
 ## MissingReturnAnnotationError
 
-The `MissingReturnAnnotationError` exception is raised when a resolver is missing the type annotation for the return type.
+The `MissingReturnAnnotationError` exception is raised when a resolver is
+missing the type annotation for the return type.
 
 ```python
 @strawberry.type
@@ -119,7 +127,8 @@ This exception is raised when a generic types was used without passing any type.
 
 ## MultipleStrawberryArgumentsError
 
-This exception is raised when `strawberry.argument` is used multiple times in a type annotation.
+This exception is raised when `strawberry.argument` is used multiple times in a
+type annotation.
 
 ```python
 import strawberry
@@ -141,7 +150,8 @@ def name(
 
 ## ObjectIsNotAClassError
 
-This exception is raised when `strawberry.type`, `strawberry.input` or `strawberry.interface` are used with an object that is not class.
+This exception is raised when `strawberry.type`, `strawberry.input` or
+`strawberry.interface` are used with an object that is not class.
 
 ```python
 @strawberry.type
@@ -153,7 +163,8 @@ def not_a_class():
 
 ## ObjectIsNotAnEnumError
 
-This exception is raised when `strawberry.enum` is used with an object that is not an Enum.
+This exception is raised when `strawberry.enum` is used with an object that is
+not an Enum.
 
 ```python
 @strawberry.enum
@@ -165,7 +176,8 @@ class NormalClass:
 
 ## PrivateStrawberryFieldError
 
-This exception is raised when `strawberry.field` is type annotated with `strawberry.Private`
+This exception is raised when `strawberry.field` is type annotated with
+`strawberry.Private`
 
 ```python
 @strawberry.type
@@ -179,8 +191,8 @@ class Query:
 
 ## ScalarAlreadyRegisteredError
 
-This exception is raised when two scalars are defined with the same name or the same type.
-Note that also a `TypeError` will be thrown as well.
+This exception is raised when two scalars are defined with the same name or the
+same type. Note that also a `TypeError` will be thrown as well.
 
 ```python
 MyCustomScalar = strawberry.scalar(
@@ -203,7 +215,8 @@ class Query:
 
 ## UnallowedReturnTypeForUnion
 
-This error is raised when the return type of a `Union` is not in the list of Union types.
+This error is raised when the return type of a `Union` is not in the list of
+Union types.
 
 ```python
 @strawberry.type
@@ -257,11 +270,13 @@ result = schema.execute_sync(query)
 
 ## UnsupportedTypeError
 
-This exception is thrown when the type-annotation used is not supported by `strawberry.field` (yet).
+This exception is thrown when the type-annotation used is not supported by
+`strawberry.field` (yet).
 
 ## WrongNumberOfResultsReturned
 
-This exception is thrown when the DataLoader returns a different number of results than what we asked.
+This exception is thrown when the DataLoader returns a different number of
+results than what we asked.
 
 ```python
 async def idx(keys):
@@ -276,4 +291,5 @@ await loader.load(1)
 
 ## WrongReturnTypeForUnion
 
-This exception is thrown when the Union type cannot be resolved because it's not a `strawberry.field`.
+This exception is thrown when the Union type cannot be resolved because it's not
+a `strawberry.field`.
