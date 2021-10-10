@@ -4,19 +4,25 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - 'e2e-federation-tests/**/*'
-      - 'strawberry/federation.py'
-      - 'strawberry/printer.py'
-      - 'tests/federation/**/*'
+      - "e2e-federation-tests/**/*"
+      - "strawberry/**"
+      - "tests/federation/**/*"
+      - "pyproject.toml"
+      - "poetry.lock"
 
 jobs:
   test:
+    name: Federation e2e on ${{ matrix.python-version }}
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.7', '3.8', '3.9', '3.10']
     steps:
       - uses: actions/checkout@master
       - uses: actions/setup-python@v2
         with:
-          python-version: "3.7"
+          python-version: ${{ matrix.python-version }}
+          architecture: x64
       - name: Install poetry
         run: pip install poetry
       - name: Start products service
