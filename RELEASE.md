@@ -1,6 +1,6 @@
 Release type: minor
 
-This release adds a `GraphQLTestClient` for Django. It hides the http request's details and asserts that there are no errors in the response (you can always disable this behavior by passing `asserts_errors=False`). This makes it easier to test queries and makes your tests cleaner.
+This release adds a `GraphQLTestClient`. It hides the http request's details and asserts that there are no errors in the response (you can always disable this behavior by passing `asserts_errors=False`). This makes it easier to test queries and makes your tests cleaner.
 
 If you are using `pytest` you can add a fixture in `conftest.py`
 
@@ -49,7 +49,6 @@ def test_upload(graphql_client):
     response = graphql_client.query(
         query=query,
         variables={"textFile": None},
-        format="multipart",
         files={"textFile": f},
     )
 
