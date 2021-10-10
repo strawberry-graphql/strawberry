@@ -22,7 +22,6 @@ class BaseGraphQLTestClient(ABC):
     def __init__(self, client):
         self._client = client
 
-    @abstractmethod
     def query(
         self,
         query: str,
@@ -32,21 +31,9 @@ class BaseGraphQLTestClient(ABC):
         format: Literal["multipart", "json"] = "json",
         files: Optional[Dict[str, Any]] = None,
     ) -> Response:
-        raise NotImplementedError
-
-
-class GraphQLTestClient(BaseGraphQLTestClient):
-    def query(
-        self,
-        query: str,
-        variables: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, Any]] = None,
-        asserts_errors: Optional[bool] = True,
-        files: Optional[Dict[str, Any]] = None,
-    ) -> Response:
         body = self._build_body(query, variables, files)
 
-        resp = self._request(body, headers, files)
+        resp = self.request(body, headers, files)
         data = self._decode(resp, type="multipart" if files else "json")
 
         response = Response(
@@ -58,6 +45,15 @@ class GraphQLTestClient(BaseGraphQLTestClient):
             assert response.errors is None
 
         return response
+
+    @abstractmethod
+    def request(
+        self,
+        body: Dict[str, Any],
+        headers: Optional[Dict[str, Any]] = None,
+        files: Optional[Dict[str, Any]] = None,
+    ):
+        raise NotImplementedError
 
     def _build_body(
         self,
@@ -74,7 +70,7 @@ class GraphQLTestClient(BaseGraphQLTestClient):
         if files:
             assert variables is not None
             assert files is not None
-            file_map = GraphQLTestClient._build_multipart_file_map(variables, files)
+            file_map = BaseGraphQLTestClient._build_multipart_file_map(variables, files)
 
             body = {
                 "operations": json.dumps(body),
@@ -83,26 +79,6 @@ class GraphQLTestClient(BaseGraphQLTestClient):
             }
 
         return body
-
-    def _request(
-        self,
-        body: Dict[str, Any],
-        headers: Optional[Dict[str, Any]] = None,
-        files: Optional[Dict[str, Any]] = None,
-    ):
-        if files:
-            return self._client.post(
-                "/graphql/", data=body, format="multipart", headers=headers
-            )
-
-        return self._client.post(
-            "/graphql/", data=body, content_type="application/json", headers=headers
-        )
-
-    def _decode(self, response, type: Literal["multipart", "json"]):
-        if type == "multipart":
-            return json.loads(response.content.decode())
-        return response.json()
 
     @staticmethod
     def _build_multipart_file_map(
@@ -175,3 +151,8 @@ class GraphQLTestClient(BaseGraphQLTestClient):
                 map[key] = [f"variables.{reference}"]
 
         return map
+
+    def _decode(self, response, type: Literal["multipart", "json"]):
+        if type == "multipart":
+            return json.loads(response.content.decode())
+        return response.json()

@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional
 
 from typing_extensions import Literal
 
-from strawberry.test import GraphQLTestClient as BaseGraphQLTestClient
+from strawberry.test import BaseGraphQLTestClient
 
 
 class GraphQLTestClient(BaseGraphQLTestClient):
@@ -30,7 +30,7 @@ class GraphQLTestClient(BaseGraphQLTestClient):
             }
         return body
 
-    def _request(
+    def request(
         self,
         body: Dict[str, Any],
         headers: Optional[Dict[str, Any]] = None,

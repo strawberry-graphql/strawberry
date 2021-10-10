@@ -2,7 +2,7 @@ import pytest
 
 from django.test.client import Client
 
-from strawberry.test import GraphQLTestClient
+from strawberry.django.test import GraphQLTestClient
 
 
 @pytest.fixture()
