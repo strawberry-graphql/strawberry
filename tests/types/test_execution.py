@@ -149,3 +149,17 @@ def test_error_when_accessing_operation_type_before_parsing():
 
     with pytest.raises(RuntimeError):
         schema.execute_sync("mutation { myMutation }")
+
+
+def test_error_when_accessing_operation_type_with_invalid_operation_name():
+    class MyExtension(Extension):
+        def on_parsing_end(self):
+            execution_context = self.execution_context
+
+            # This should raise a RuntimeError
+            execution_context.operation_type
+
+    schema = strawberry.Schema(Query, extensions=[MyExtension])
+
+    with pytest.raises(RuntimeError):
+        schema.execute_sync("query { ping }", operation_name="MyQuery")
