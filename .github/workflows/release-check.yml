@@ -22,7 +22,7 @@ jobs:
     steps:
       - name: Get PR info
         id: get-info
-        uses: strawberry-graphql/get-pr-info-action@v4
+        uses: strawberry-graphql/get-pr-info-action@v5
 
   skip-if-bot:
     name: Set skip if PR is from a bot
@@ -90,7 +90,7 @@ jobs:
         ref: "refs/pull/${{ github.event.number }}/merge"
     - name: Extract tweet message and changelog
       id: extract
-      uses: strawberry-graphql/tweet-actions/read-tweet@v1
+      uses: strawberry-graphql/tweet-actions/read-tweet@v4
       with:
         changelog: ${{ needs.release-file-check.outputs.changelog }}
         version: "(next)"
