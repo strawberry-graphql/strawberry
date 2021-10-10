@@ -14,6 +14,13 @@ def test_simple_query(graphql_client):
     assert response.data == {"hello": "Hello world"}
 
 
+def test_fails_when_request_body_has_invalid_json(test_client):
+    response = test_client.post(
+        "/", data='{"qeury": "{__typena"', headers={"content-type": "application/json"}
+    )
+    assert response.status_code == 400
+
+
 def test_returns_errors(graphql_client):
     query = "{ donut }"
 

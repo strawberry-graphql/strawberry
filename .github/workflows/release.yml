@@ -78,12 +78,10 @@ jobs:
       contributor-name: ${{ steps.get-info.outputs.contributor-name }}
 
     steps:
-      - uses: actions/checkout@v1
       - name: Get PR info
         id: get-info
-        uses: ./.github/get-pr-info-action
-        env:
-          ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: strawberry-graphql/get-pr-info-action@v4
+
 
   read-tweet-md:
     name: Read TWEET.md
@@ -141,7 +139,7 @@ jobs:
         with:
           python-version: '3.9'
       - name: Install dependencies
-        run: pip install tweepy
+        run: pip install tweepy==4.0.0
       - name: Send tweet
         shell: python
         run: |
@@ -162,7 +160,7 @@ jobs:
 
           tweet = base64.b64decode(os.environ["TWEET"]).decode("utf-8")
 
-          api.update_with_media("screenshot.png", status=tweet)
+          api.update_status_with_media(filename="screenshot.png", status=tweet)
         env:
           TWEET: ${{ needs.read-tweet-md.outputs.tweet }}
           TWITTER_CONSUMER_KEY: ${{ secrets.TWITTER_CONSUMER_KEY }}
@@ -178,6 +176,8 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+      with:
+        persist-credentials: false
     - name: Remove TWEET.md and commit
       env:
         GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}

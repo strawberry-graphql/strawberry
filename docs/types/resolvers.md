@@ -82,12 +82,16 @@ class Query:
 this is useful when you want to colocate resolvers and types or when you have
 very small resolvers.
 
-> _NOTE:_ the _self_ argument is a bit special here, when executing a GraphQL
-> query, in case of resolvers defined with a decorator, the _self_ argument
-> corresponds to the _root_ value that field. In this example the _root_ value
-> is the value `Query` type, which is usually `None`. You can change the _root_
-> value when calling the `execute` method on a `Schema`. More on _root_ values
-> below.
+<Note>
+
+The _self_ argument is a bit special here, when executing a GraphQL
+query, in case of resolvers defined with a decorator, the _self_ argument
+corresponds to the _root_ value that field. In this example the _root_ value
+is the value `Query` type, which is usually `None`. You can change the _root_
+value when calling the `execute` method on a `Schema`. More on _root_ values
+below.
+
+</Note>
 
 ## Defining arguments
 
@@ -194,7 +198,8 @@ Info objects contain information for the current execution context:
 
 | Parameter name  | Type                      | Description                                                                             |
 | --------------- | ------------------------- | --------------------------------------------------------------------------------------- |
-| field_name      | `str`                     | The name of the current field                                                           |
+| field_name      | `str`                     | The name of the current field (generally camel-cased)                                   |
+| python_name     | `str`                     | The 'Python name' of the field (generally snake-cased)                                  |
 | context         | `ContextType`             | The value of the context                                                                |
 | root_value      | `RootValueType`           | The value for the root type                                                             |
 | variable_values | `Dict[str, Any]`          | The variables for this operation                                                        |

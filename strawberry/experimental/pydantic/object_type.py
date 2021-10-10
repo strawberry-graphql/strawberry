@@ -132,6 +132,7 @@ def type(
         cls = dataclasses.make_dataclass(
             cls.__name__,
             sorted_fields,
+            bases=cls.__bases__,
         )
 
         _process_type(
@@ -144,6 +145,7 @@ def type(
         )
 
         model._strawberry_type = cls  # type: ignore
+        cls._pydantic_type = model  # type: ignore
 
         def from_pydantic(instance: Any, extra: Dict[str, Any] = None) -> Any:
             return convert_pydantic_model_to_strawberry_class(
@@ -164,3 +166,5 @@ def type(
 
 
 input = partial(type, is_input=True)
+
+interface = partial(type, is_interface=True)

@@ -39,8 +39,6 @@ class GraphQLView(HTTPMethodView):
         )
     """
 
-    methods = ["GET", "POST"]
-
     def __init__(self, schema: BaseSchema, graphiql: bool = True):
         self.graphiql = graphiql
         self.schema = schema
@@ -57,19 +55,14 @@ class GraphQLView(HTTPMethodView):
     def process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse:
         return process_result(result)
 
-    async def dispatch_request(self, request: Request):  # type: ignore
-        request_method = request.method.lower()
-        if not self.graphiql and request_method == "get":
+    async def get(self, request: Request) -> HTTPResponse:
+        if not self.graphiql:
             abort(404)
 
-        show_graphiql = request_method == "get" and self.should_display_graphiql(
-            request
-        )
+        template = render_graphiql_page()
+        return self.render_template(template=template)
 
-        if show_graphiql:
-            template = render_graphiql_page()
-            return self.render_template(template=template)
-
+    async def post(self, request: Request) -> HTTPResponse:
         request_data = self.get_request_data(request)
         context = await self.get_context(request)
         root_value = self.get_root_value()
@@ -110,13 +103,3 @@ class GraphQLView(HTTPMethodView):
             except KeyError:
                 abort(400, "File(s) missing in form data")
         return request.json
-
-    def should_display_graphiql(self, request):
-        if not self.graphiql:
-            return False
-        return self.request_wants_html(request)
-
-    @staticmethod
-    def request_wants_html(request: Request):
-        accept = request.headers.get("accept", {})
-        return "text/html" in accept or "*/*" in accept

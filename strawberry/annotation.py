@@ -1,3 +1,4 @@
+import sys
 import typing
 from collections.abc import AsyncGenerator as AsyncGenerator_abc
 from enum import Enum
@@ -238,6 +239,18 @@ class StrawberryAnnotation:
     @classmethod
     def _is_union(cls, annotation: Any) -> bool:
         """Returns True if annotation is a Union"""
+
+        # this check is needed because unions declared with the new syntax `A | B`
+        # don't have a `__origin__` property on them, but they are instances of
+        # `UnionType`, which is only available in Python 3.10+
+        if sys.version_info >= (3, 10):
+            from types import UnionType  # type: ignore
+
+            if isinstance(annotation, UnionType):
+                return True
+
+        # unions declared as Union[A, B] fall through to this check, even on python 3.10+
+
         annotation_origin = getattr(annotation, "__origin__", None)
 
         return annotation_origin is typing.Union

@@ -19,14 +19,9 @@ jobs:
       contributor-username: ${{ steps.get-info.outputs.contributor-username }}
 
     steps:
-      - uses: actions/checkout@v2
-        with:
-          ref: "refs/pull/${{ github.event.number }}/merge"
       - name: Get PR info
         id: get-info
-        uses: ./.github/get-pr-info-action
-        env:
-          ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: strawberry-graphql/get-pr-info-action@v4
 
   skip-if-bot:
     name: Set skip if PR is from a bot
@@ -105,9 +100,8 @@ jobs:
     needs: read-tweet-md
     if: ${{ needs.read-tweet-md.outputs.tweet != '' }}
     steps:
-      - uses: actions/checkout@v2
       - name: Validate tweet
-        uses: strawberry-graphql/tweet-actions/validate-tweet@v1
+        uses: strawberry-graphql/tweet-actions/validate-tweet@v3
         with:
           tweet: ${{ needs.read-tweet-md.outputs.tweet }}
 
@@ -160,7 +154,7 @@ jobs:
         release_card_url: ${{ needs.generate-preview.outputs.url }}
         tweet: ${{ needs.read-tweet-md.outputs.tweet }}
 
-  fail-if-status-is-no-ok:
+  fail-if-status-is-not-ok:
     runs-on: ubuntu-latest
     needs: [release-file-check, send-comment]
 

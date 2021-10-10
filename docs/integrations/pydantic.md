@@ -38,15 +38,19 @@ from .models import User
     'name',
     'friends'
 ])
-class User:
+class UserType:
     pass
 ```
 
 The `strawberry.experimental.pydantic.type` decorator accepts a Pydantic model
 and a list of fields that we want to expose on our GraphQL API.
 
-> **Note** specifying the list of field is required to prevent accidentally
-> exposing fields that weren't meant to be exposed on a API
+<Note>
+
+Specifying the list of field is required to prevent accidentally
+exposing fields that weren't meant to be exposed on a API
+
+</Note>
 
 ## Input types
 
@@ -64,6 +68,48 @@ from .models import User
     'friends'
 ])
 class UserInput:
+    pass
+```
+
+## Interface types
+
+Interface types are similar to normal types; we can create one by using the
+`strawberry.experimental.pydantic.interface` decorator:
+
+```python
+import strawberry
+from pydantic import BaseModel
+from typing import List
+
+# pydantic types
+class User(BaseModel):
+    id: int
+    name: str
+
+class NormalUser(User):
+    friends: List[int] = []
+
+class AdminUser(User):
+    role: int
+
+# strawberry types
+@strawberry.experimental.pydantic.interface(model=User, fields=[
+    'id',
+    'name',
+])
+class UserType:
+    pass
+
+@strawberry.experimental.pydantic.type(model=NormalUser, fields=[
+    'friends',
+])
+class NormalUserType(UserType):  # note the base class
+    pass
+
+@strawberry.experimental.pydantic.type(model=AdminUser, fields=[
+    'role',
+])
+class AdminUserType(UserType):
     pass
 ```
 
