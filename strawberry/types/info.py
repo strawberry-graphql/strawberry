@@ -33,7 +33,7 @@ class Info(Generic[ContextType, RootValueType]):
 
     @property
     def schema(self) -> "Schema":
-        return self._raw_info.schema._strawberry_schema
+        return self._raw_info.schema._strawberry_schema  # type: ignore
 
     @property
     def field_nodes(self) -> List[FieldNode]:  # deprecated

@@ -90,7 +90,7 @@ class Schema:
         )
 
         # attach our schema to the GraphQL schema instance
-        self._schema._strawberry_schema = self
+        self._schema._strawberry_schema = self  # type: ignore
 
         # Validate schema early because we want developers to know about
         # possible issues as soon as possible
