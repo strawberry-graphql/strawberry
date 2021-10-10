@@ -36,8 +36,13 @@ class GraphQLTestClient(BaseGraphQLTestClient):
         headers: Optional[Dict[str, Any]] = None,
         files: Optional[Dict[str, Any]] = None,
     ):
-
-        return self._client.post("/graphql/", data=body, files=files, headers=headers)
+        return self._client.post(
+            "/graphql/",
+            json=body if not files else None,
+            data=body if files else None,
+            files=files,
+            headers=headers,
+        )
 
     def _decode(self, response, type: Literal["multipart", "json"]):
         return response.json()
