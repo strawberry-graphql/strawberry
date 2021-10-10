@@ -1,4 +1,4 @@
-from .client import BaseGraphQLTestClient, Body, Response
+from .client import BaseGraphQLTestClient, Body, GraphQLTestClient, Response
 
 
-__all__ = ["Body", "Response", "BaseGraphQLTestClient"]
+__all__ = ["Body", "Response", "BaseGraphQLTestClient", "GraphQLTestClient"]
