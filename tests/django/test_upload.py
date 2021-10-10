@@ -10,7 +10,6 @@ def test_upload(graphql_client):
     response = graphql_client.query(
         query=query,
         variables={"textFile": None},
-        format="multipart",
         files={"textFile": f},
     )
 
@@ -25,7 +24,6 @@ def test_file_list_upload(graphql_client):
     response = graphql_client.query(
         query=query,
         variables={"files": [None, None]},
-        format="multipart",
         files={"file1": file1, "file2": file2},
     )
 
@@ -42,7 +40,6 @@ def test_nested_file_list(graphql_client):
     response = graphql_client.query(
         query=query,
         variables={"folder": {"files": [None, None]}},
-        format="multipart",
         files={"file1": file1, "file2": file2},
     )
 
@@ -65,7 +62,6 @@ def test_upload_single_and_list_file_together(graphql_client):
     response = graphql_client.query(
         query=query,
         variables={"files": [None, None], "textFile": None},
-        format="multipart",
         files={"file1": file1, "file2": file2, "textFile": file3},
     )
 

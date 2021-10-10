@@ -14,6 +14,8 @@ from graphql import GraphQLError
 
 import strawberry
 from strawberry.asgi import GraphQL as BaseGraphQL
+from strawberry.asgi.test import GraphQLTestClient
+from strawberry.file_uploads import Upload
 from strawberry.permission import BasePermission
 from strawberry.types import Info
 
@@ -50,6 +52,34 @@ class Query:
     @strawberry.field
     def root_name(root) -> str:
         return type(root).__name__
+
+
+@strawberry.input
+class FolderInput:
+    files: typing.List[Upload]
+
+
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    async def read_text(self, text_file: Upload) -> str:
+        return (await text_file.read()).decode()
+
+    @strawberry.mutation
+    async def read_files(self, files: typing.List[Upload]) -> typing.List[str]:
+        contents = []
+        for file in files:
+            content = (await file.read()).decode()
+            contents.append(content)
+        return contents
+
+    @strawberry.mutation
+    async def read_folder(self, folder: FolderInput) -> typing.List[str]:
+        contents = []
+        for file in folder.files:
+            content = (await file.read()).decode()
+            contents.append(content)
+        return contents
 
 
 @strawberry.type
@@ -111,7 +141,7 @@ class GraphQL(BaseGraphQL):
 
 @pytest.fixture
 def schema():
-    return strawberry.Schema(Query, subscription=Subscription)
+    return strawberry.Schema(Query, mutation=Mutation, subscription=Subscription)
 
 
 @pytest.fixture
@@ -119,6 +149,11 @@ def test_client(schema):
     app = GraphQL(schema)
 
     return TestClient(app)
+
+
+@pytest.fixture
+def graphql_client(test_client):
+    yield GraphQLTestClient(test_client)
 
 
 @pytest.fixture
