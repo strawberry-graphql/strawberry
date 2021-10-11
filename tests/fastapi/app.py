@@ -39,8 +39,8 @@ async def get_context(
     }
 
 
-async def get_root_value(request: Request):
-    return request
+async def get_root_value(request: Request = None, ws: WebSocket = None):
+    return request or ws
 
 
 class GraphQLRouter(BaseGraphQLRouter):

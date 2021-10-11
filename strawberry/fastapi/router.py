@@ -21,19 +21,19 @@ from strawberry.types import ExecutionResult
 from strawberry.utils.debug import pretty_print_graphql_operation
 
 
-async def get_root_value():
-    return None
-
-
-async def get_context(
-    background_tasks: BackgroundTasks, request: Request = None, ws: WebSocket = None
-) -> Optional[Any]:
-    return {"request": request or ws, "background_tasks": background_tasks}
-
-
 class GraphQLRouter(APIRouter):
     graphql_ws_handler_class = GraphQLWSHandler
     graphql_transport_ws_handler_class = GraphQLTransportWSHandler
+
+    @staticmethod
+    async def __get_root_value():
+        return None
+
+    @staticmethod
+    async def __get_context(
+            background_tasks: BackgroundTasks, request: Request = None, ws: WebSocket = None
+    ) -> Optional[Any]:
+        return {"request": request or ws, "background_tasks": background_tasks}
 
     def __init__(
         self,
@@ -43,8 +43,8 @@ class GraphQLRouter(APIRouter):
         keep_alive: bool = False,
         keep_alive_interval: float = 1,
         debug: bool = False,
-        root_value_getter=get_root_value,
-        context_getter=get_context,
+        root_value_getter=None,
+        context_getter=None,
         subscription_protocols=(GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL),
         connection_init_wait_timeout: timedelta = timedelta(minutes=1),
         default: Optional[ASGIApp] = None,
@@ -62,8 +62,8 @@ class GraphQLRouter(APIRouter):
         self.keep_alive = keep_alive
         self.keep_alive_interval = keep_alive_interval
         self.debug = debug
-        self.root_value_getter = root_value_getter
-        self.context_getter = context_getter
+        self.root_value_getter = root_value_getter or self.__get_root_value
+        self.context_getter = context_getter or self.__get_context
         self.protocols = subscription_protocols
         self.connection_init_wait_timeout = connection_init_wait_timeout
 
@@ -134,8 +134,8 @@ class GraphQLRouter(APIRouter):
         @self.websocket("")
         async def websocket_endpoint(
             websocket: WebSocket,
-            context=Depends(context_getter),
-            root_value=Depends(get_root_value),
+            context=Depends(self.context_getter),
+            root_value=Depends(self.root_value_getter),
         ):
             async def _get_context():
                 return context
