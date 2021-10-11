@@ -118,9 +118,13 @@ Here is result of executed query:
 }
 ```
 
-> **NOTE**: GraphQL types are not a map of name: value, like in python enums.
-> Strawberry uses the name of the members of the enum to create the GraphQL
-> type.
+<Note>
+
+GraphQL types are not a map of name: value, like in python enums.
+Strawberry uses the name of the members of the enum to create the GraphQL
+type.
+
+</Note>
 
 <AdditionalResources
   title="Enums"

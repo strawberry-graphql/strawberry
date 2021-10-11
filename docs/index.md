@@ -97,9 +97,13 @@ class Query:
 
 Using `strawberry.field` allows us to specify a resolver for a particular field.
 
-> **NOTE**: we didn't have to specify any resolver for the Book's fields, this
-> is because Strawberry adds a default for each field, returning the value of
-> that field.
+<Note>
+
+We didn't have to specify any resolver for the Book's fields, this
+is because Strawberry adds a default for each field, returning the value of
+that field.
+
+</Note>
 
 ## Step 5: Create our schema and run it
 

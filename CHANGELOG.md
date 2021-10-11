@@ -1,6 +1,43 @@
 CHANGELOG
 =========
 
+0.82.1 - 2021-10-11
+-------------------
+
+Fix bug where errors thrown in the on_parse_* extension hooks were being
+swallowed instead of being propagated.
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) [PR #1324](https://github.com/strawberry-graphql/strawberry/pull/1324/)
+
+
+0.82.0 - 2021-10-11
+-------------------
+
+Adds support for the `auto` type annotation described in #1192 to the Pydantic
+integration, which allows a user to define the list of fields without having to
+re-specify the type themselves. This gives better editor and type checker
+support. If you want to expose every field you can instead pass
+`all_fields=True` to the decorators and leave the body empty.
+
+```python
+import pydantic
+import strawberry
+from strawberry.experimental.pydantic import auto
+
+class User(pydantic.BaseModel):
+    age: int
+    password: str
+
+
+@strawberry.experimental.pydantic.type(User)
+class UserType:
+    age: auto
+    password: auto
+```
+
+Contributed by [Matt Allen](https://github.com/Matt343) [PR #1280](https://github.com/strawberry-graphql/strawberry/pull/1280/)
+
+
 0.81.0 - 2021-10-04
 -------------------
 
