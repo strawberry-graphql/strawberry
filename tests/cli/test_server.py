@@ -142,7 +142,7 @@ def test_automatic_reloading(xprocess, tmp_path):
     url = "http://127.0.0.1:8000/graphql"
     query = {"query": "{ number }"}
 
-    def make_request(expected_answer: int):
+    def make_request(expected_answer: int) -> None:
         for _ in range(5):
             try:
                 response = requests.post(url, json=query)
