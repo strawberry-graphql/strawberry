@@ -31,7 +31,7 @@ class GraphQLRouter(APIRouter):
 
     @staticmethod
     async def __get_context(
-            background_tasks: BackgroundTasks, request: Request = None, ws: WebSocket = None
+        background_tasks: BackgroundTasks, request: Request = None, ws: WebSocket = None
     ) -> Optional[Any]:
         return {"request": request or ws, "background_tasks": background_tasks}
 
