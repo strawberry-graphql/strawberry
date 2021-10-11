@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.82.1 - 2021-10-11
+-------------------
+
+Fix bug where errors thrown in the on_parse_* extension hooks were being
+swallowed instead of being propagated.
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) [PR #1324](https://github.com/strawberry-graphql/strawberry/pull/1324/)
+
+
 0.82.0 - 2021-10-11
 -------------------
 
