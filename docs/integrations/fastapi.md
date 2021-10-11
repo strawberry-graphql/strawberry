@@ -69,7 +69,6 @@ async def get_context(
 class Query:
     @strawberry.field
     def example(self, info: Info) -> str:
-        print(info.context)
         return f"Hello {info.context['custom_value']}"
 
 
