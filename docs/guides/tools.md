@@ -71,7 +71,7 @@ class QueryB:
 ComboQuery = merge_types("ComboQuery", (QueryB, QueryA))
 schema = strawberry.Schema(query=ComboQuery)
 ---
-type MegaType {
+type ComboQuery {
   performB: String!
   performA: String!
 }
