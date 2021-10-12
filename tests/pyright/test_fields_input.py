@@ -1,7 +1,7 @@
-from .utils import Result, requires_pyright, run_pyright, skip_windows
+from .utils import Result, requires_pyright, run_pyright, skip_on_windows
 
 
-pytestmark = [skip_windows, requires_pyright]
+pytestmark = [skip_on_windows, requires_pyright]
 
 CODE = """
 import strawberry

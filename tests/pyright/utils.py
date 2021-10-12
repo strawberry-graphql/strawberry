@@ -57,11 +57,12 @@ def pyright_exist() -> bool:
     return shutil.which("pyright") is not None
 
 
-skip_windows = pytest.mark.skipif(
+skip_on_windows = pytest.mark.skipif(
     sys.platform == "win32",
     reason="Do not run pyright on windows due to path issues",
 )
 
 requires_pyright = pytest.mark.skipif(
-    not pyright_exist(), reason="These tests require pyright"
+    not pyright_exist(),
+    reason="These tests require pyright",
 )

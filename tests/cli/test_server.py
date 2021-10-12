@@ -15,9 +15,9 @@ from strawberry.cli.commands.server import server as cmd_server
 BOOT_MSG = "Running strawberry on http://0.0.0.0:8000/graphql"
 if sys.platform != "win32":
     # UTF-8 chars are not supported by default console on Windows
-    BOOT_MSG = BOOT_MSG + " 🍓"
+    BOOT_MSG += " 🍓"
 
-BOOT_MSG_RE = re.compile(f"^{BOOT_MSG}\n")
+BOOT_MSG += "\n"
 
 
 def test_cli_cmd_server(cli_runner):
@@ -26,7 +26,7 @@ def test_cli_cmd_server(cli_runner):
 
     assert result.exit_code == 0
     assert uvicorn.run.call_count == 1
-    assert BOOT_MSG_RE.match(result.output)
+    assert re.match(BOOT_MSG, result.output)
 
 
 def test_cli_cmd_server_app_dir_option(cli_runner):
@@ -36,7 +36,7 @@ def test_cli_cmd_server_app_dir_option(cli_runner):
 
     assert result.exit_code == 0
     assert uvicorn.run.call_count == 1
-    assert BOOT_MSG_RE.match(result.output)
+    assert re.match(BOOT_MSG, result.output)
 
 
 def test_default_schema_symbol_name(cli_runner):
@@ -107,7 +107,7 @@ def test_automatic_reloading(xprocess, tmp_path):
         # Unbuffered output improves start up detection reliabiity on Windows
         env = {"PYTHONUNBUFFERED": "1", **os.environ}
         # considered started once this pattern is found
-        pattern = BOOT_MSG_RE
+        pattern = BOOT_MSG
         terminate_on_interrupt = True
         timeout = 10
         args = [
@@ -152,6 +152,20 @@ def test_automatic_reloading(xprocess, tmp_path):
             except requests.RequestException:
                 time.sleep(0.5)
 
+    def wait_for_reload() -> None:
+        # attempt to detect the reload; continue either way
+        for _ in range(5):
+            with open(xprocess.getinfo("dev_server").logpath) as logfile:
+                # when a reload is detected a line ending
+                # with "Reloading..." is output to the log
+                found_reloading_line = any(
+                    line for line in logfile if line.strip().endswith("Reloading...")
+                )
+                if found_reloading_line:
+                    break
+                else:
+                    time.sleep(0.5)
+
     try:
         schema_file_path.write_text(source.format(42))
 
@@ -163,18 +177,7 @@ def test_automatic_reloading(xprocess, tmp_path):
         # trigger reload
         schema_file_path.write_text(source.format(1234))
 
-        # attempt to detect the reload; continue either way
-        for _ in range(5):
-            with open(xprocess.getinfo("dev_server").logpath, "r") as logfile:
-                # when a reload is detected a line ending
-                # with "Reloading..." is output to the log
-                found_reloading_line = any(
-                    [line for line in logfile if line.endswith("Reloading...\n")]
-                )
-                if found_reloading_line:
-                    break
-                else:
-                    time.sleep(0.5)
+        wait_for_reload()
 
         make_request(expected_answer=1234)
     finally:
