@@ -9,8 +9,8 @@ Strawberry defines its library-specific exceptions in `strawberry.exceptions`.
 
 ## FieldWithResolverAndDefaultFactoryError
 
-This exception is raised when `strawberry.field` is used with both
-`resolver` and `default_factory` arguments.
+This exception is raised when `strawberry.field` is used with both `resolver` and
+`default_factory` arguments.
 
 ```python
 @strawberry.type
@@ -25,8 +25,8 @@ class Query:
 
 ## FieldWithResolverAndDefaultValueError
 
-This exception is raised when in `strawberry.field` is used with both
-`resolver` and `default` arguments.
+This exception is raised when in `strawberry.field` is used with both `resolver` and
+`default` arguments.
 
 ```python
 def test_resolver() -> str:
@@ -41,8 +41,7 @@ class Query:
 
 ## InvalidFieldArgument
 
-This exception is raised when a `Union` or an `Interface` is used as an argument
-type.
+This exception is raised when a `Union` or an `Interface` is used as an argument type.
 
 ```python
 @strawberry.type
@@ -64,8 +63,8 @@ def add_word(word: Word) -> bool:
 
 ## InvalidUnionType
 
-This exception is raised when a scalar type is used with a `Union` or when one
-of the provided types is not a `strawberry.type`.
+This exception is raised when a scalar type is used with a `Union` or when one of the
+provided types is not a `strawberry.type`.
 
 ```python
 @dataclass
@@ -77,8 +76,8 @@ class A:
 
 ## MissingArgumentsAnnotationsError
 
-The `MissingArgumentsAnnotationsError` exception is raised when a resolver's
-arguments are missing type annotations.
+The `MissingArgumentsAnnotationsError` exception is raised when a resolver's arguments
+are missing type annotations.
 
 ```python
 @strawberry.field
@@ -90,8 +89,8 @@ def hello(self, foo) -> str:
 
 ## MissingFieldAnnotationError
 
-The `MissingFieldAnnotationError` exception is raised when a `strawberry.field`
-is not type-annotated but also has no resolver to determine its type.
+The `MissingFieldAnnotationError` exception is raised when a `strawberry.field` is not
+type-annotated but also has no resolver to determine its type.
 
 ```python
 @strawberry.type
@@ -107,8 +106,8 @@ This exception is raised when the `request` is missing the `query` paramater.
 
 ## MissingReturnAnnotationError
 
-The `MissingReturnAnnotationError` exception is raised when a resolver is
-missing the type annotation for the return type.
+The `MissingReturnAnnotationError` exception is raised when a resolver is missing the
+type annotation for the return type.
 
 ```python
 @strawberry.type
@@ -127,8 +126,8 @@ passing any type to make it concrete.
 
 ## MultipleStrawberryArgumentsError
 
-This exception is raised when `strawberry.argument` is used multiple times in a
-type annotation.
+This exception is raised when `strawberry.argument` is used multiple times in a type
+annotation.
 
 ```python
 import strawberry
@@ -163,8 +162,8 @@ def not_a_class():
 
 ## ObjectIsNotAnEnumError
 
-This exception is raised when `strawberry.enum` is used with an object that is
-not an Enum.
+This exception is raised when `strawberry.enum` is used with an object that is not an
+Enum.
 
 ```python
 @strawberry.enum
@@ -191,8 +190,9 @@ class Query:
 
 ## ScalarAlreadyRegisteredError
 
-This exception is raised when two scalars are defined with the same name or the
-same type. Note that also a `TypeError` will be thrown as well.
+This exception is raised when two scalars are used with the same name or the same type.
+Note that also `graphql` library will throw a `TypeError` exception with the same
+message.
 
 ```python
 MyCustomScalar = strawberry.scalar(
@@ -211,12 +211,45 @@ class Query:
     scalar_2: MyCustomScalar2
 
 # Throws 'Scalar `MyCustomScalar` has already been registered'
+# The traceback will look like:
+.../venv/lib/python3.9/site-packages/graphql/type/definition.py:767: in fields
+    fields = resolve_thunk(self._fields)
+.../venv/lib/python3.9/site-packages/graphql/type/definition.py:296: in resolve_thunk
+    return thunk() if callable(thunk) else thunk
+.../venv/lib/python3.9/site-packages/strawberry/schema/schema_converter.py:294: in get_graphql_fields
+    graphql_fields[field_name] = self.from_field(field)
+.../venv/lib/python3.9/site-packages/strawberry/schema/schema_converter.py:140: in from_field
+    field_type = self.from_non_optional(field.type)
+.../venv/lib/python3.9/site-packages/strawberry/schema/schema_converter.py:276: in from_non_optional
+    of_type = self.from_type(type_)
+.../venv/lib/python3.9/site-packages/strawberry/schema/schema_converter.py:456: in from_type
+    return self.from_scalar(type_)
+.../venv/lib/python3.9/site-packages/strawberry/schema/schema_converter.py:429: in from_scalar
+    raise ScalarAlreadyRegisteredError(scalar_definition.name)
+E   strawberry.exceptions.ScalarAlreadyRegisteredError: Scalar `MyCustomScalar` has already been registered
+
+During handling of the above exception, another exception occurred:
+test_schema.py:4: in <module>
+    from schema import schema
+schema.py:79: in <module>
+    schema = strawberry.Schema(
+.../venv/lib/python3.9/site-packages/strawberry/schema/schema.py:84: in __init__
+    self._schema = GraphQLSchema(
+.../venv/lib/python3.9/site-packages/graphql/type/schema.py:208: in __init__
+    collect_referenced_types(query)
+.../venv/lib/python3.9/site-packages/graphql/type/schema.py:422: in collect_referenced_types
+    for field in named_type.fields.values():
+....9envet__
+    val = self.func(instance)
+.../venv/lib/python3.9/site-packages/graphql/type/definition.py:769: in fields
+    raise TypeError(f"{self.name} fields cannot be resolved. {error}")
+E   TypeError: Query fields cannot be resolved. Scalar `MyCustomScalar` has already been registered
 ```
 
 ## UnallowedReturnTypeForUnion
 
-This error is raised when the return type of a `Union` is not in the list of
-Union types.
+This error is raised when the return type of a `Union` is not in the list of Union
+types.
 
 ```python
 @strawberry.type
@@ -271,12 +304,23 @@ result = schema.execute_sync(query)
 ## UnsupportedTypeError
 
 This exception is thrown when the type-annotation used is not supported by
-`strawberry.field` (yet).
+`strawberry.field` (yet). At the time of writing this exception is used by Pydantic
+only
+
+```python
+class Model(pydantic.BaseModel):
+    field: pydantic.Json
+
+@strawberry.experimental.pydantic.type(Model, fields=["field"])
+class Type:
+    pass
+
+```
 
 ## WrongNumberOfResultsReturned
 
-This exception is thrown when the DataLoader returns a different number of
-results than requested.
+This exception is thrown when the DataLoader returns a different number of results than
+requested.
 
 ```python
 async def idx(keys):
@@ -291,5 +335,5 @@ await loader.load(1)
 
 ## WrongReturnTypeForUnion
 
-This exception is thrown when the Union type cannot be resolved because it's not
-a `strawberry.field`.
+This exception is thrown when the Union type cannot be resolved because it's not a
+`strawberry.field`.
