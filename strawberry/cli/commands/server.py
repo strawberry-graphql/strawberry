@@ -15,7 +15,7 @@ from strawberry.utils.importer import import_module_symbol
 @click.option(
     "--log-level",
     default="error",
-    type=str,
+    type=click.Choice(["debug", "info", "warning", "error"], case_sensitive=False),
     help="passed to uvicorn to determine the log level",
 )
 @click.option(
