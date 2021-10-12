@@ -41,7 +41,7 @@ class Query:
 
 ## InvalidFieldArgument
 
-This exception is raised when a `Union` or `Interface` is used as an argument
+This exception is raised when a `Union` or an `Interface` is used as an argument
 type.
 
 ```python
