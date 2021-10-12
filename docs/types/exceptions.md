@@ -176,7 +176,7 @@ class NormalClass:
 
 ## PrivateStrawberryFieldError
 
-This exception is raised when `strawberry.field` is type annotated with
+This exception is raised when a `strawberry.field` is type annotated with
 `strawberry.Private`
 
 ```python
