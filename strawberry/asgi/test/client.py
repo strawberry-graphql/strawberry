@@ -1,5 +1,5 @@
 import json
-from typing import Dict, Optional
+from typing import Dict, Mapping, Optional
 
 from typing_extensions import Literal
 
@@ -10,7 +10,7 @@ class GraphQLTestClient(BaseGraphQLTestClient):
     def _build_body(
         self,
         query: str,
-        variables: Optional[Dict[str, object]] = None,
+        variables: Optional[Dict[str, Mapping]] = None,
         files: Optional[Dict[str, object]] = None,
     ) -> Dict[str, object]:
 

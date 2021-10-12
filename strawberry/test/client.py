@@ -1,7 +1,7 @@
 import json
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Mapping, Optional
 
 from typing_extensions import Literal, TypedDict
 
@@ -58,7 +58,7 @@ class BaseGraphQLTestClient(ABC):
     def _build_body(
         self,
         query: str,
-        variables: Optional[Dict[str, object]] = None,
+        variables: Optional[Dict[str, Mapping]] = None,
         files: Optional[Dict[str, object]] = None,
     ) -> Dict[str, object]:
 
@@ -82,7 +82,7 @@ class BaseGraphQLTestClient(ABC):
 
     @staticmethod
     def _build_multipart_file_map(
-        variables: Dict[str, Any], files: Dict[str, object]
+        variables: Dict[str, Mapping], files: Dict[str, object]
     ) -> Dict[str, List[str]]:
         """Creates the file mapping between the variables and the files objects passed
         as key arguments
