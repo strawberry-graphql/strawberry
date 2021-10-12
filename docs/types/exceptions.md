@@ -77,8 +77,8 @@ class A:
 
 ## MissingArgumentsAnnotationsError
 
-The `MissingArgumentsAnnotationsError` exception is raised when the resolver's
-arguments are missing ot type-annotated.
+The `MissingArgumentsAnnotationsError` exception is raised when a resolver's
+arguments are missing type annotations.
 
 ```python
 @strawberry.field
