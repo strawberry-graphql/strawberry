@@ -64,8 +64,8 @@ def add_word(word: Word) -> bool:
 
 ## InvalidUnionType
 
-This exception is raised when Scalar type is used with a `Union` or when the
-list of types are not `strawberry.type`.
+This exception is raised when a scalar type is used with a `Union` or when one
+of the provided types is not a `strawberry.type`.
 
 ```python
 @dataclass
