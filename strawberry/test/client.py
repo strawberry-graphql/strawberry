@@ -49,7 +49,7 @@ class BaseGraphQLTestClient(ABC):
     @abstractmethod
     def request(
         self,
-        body: Dict[str, Any],
+        body: Dict[str, object],
         headers: Optional[Dict[str, object]] = None,
         files: Optional[Dict[str, object]] = None,
     ):
@@ -60,9 +60,9 @@ class BaseGraphQLTestClient(ABC):
         query: str,
         variables: Optional[Dict[str, object]] = None,
         files: Optional[Dict[str, object]] = None,
-    ) -> Dict[str, Any]:
+    ) -> Dict[str, object]:
 
-        body: Dict[str, Any] = {"query": query}
+        body: Dict[str, object] = {"query": query}
 
         if variables:
             body["variables"] = variables
@@ -82,7 +82,7 @@ class BaseGraphQLTestClient(ABC):
 
     @staticmethod
     def _build_multipart_file_map(
-        variables: Dict[str, Any], files: Dict[str, Any]
+        variables: Dict[str, Any], files: Dict[str, object]
     ) -> Dict[str, List[str]]:
         """Creates the file mapping between the variables and the files objects passed
         as key arguments
@@ -125,7 +125,7 @@ class BaseGraphQLTestClient(ABC):
         ... }
         """
 
-        map: Dict[str, Any] = {}
+        map: Dict[str, List[str]] = {}
         for key, values in variables.items():
             reference = key
             variable_values = values
