@@ -139,18 +139,6 @@ class MissingFieldAnnotationError(Exception):
         super().__init__(message)
 
 
-class FieldResolverMismatchAnnotationError(Exception):
-    def __init__(
-        self, field_name: str, field_type: str, resolver_name: str, resolver_type: str
-    ):
-        message = (
-            f"The field '{field_name}''s type '{field_type}' does not match with the "
-            f"resolver '{resolver_name}''s return type '{resolver_type}'"
-        )
-
-        super().__init__(message)
-
-
 class PrivateStrawberryFieldError(Exception):
     def __init__(self, field_name: str, type_name: str):
         message = (
