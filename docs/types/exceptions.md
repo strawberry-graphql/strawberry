@@ -122,7 +122,8 @@ class Query:
 
 ## MissingTypesForGenericError
 
-This exception is raised when a generic types was used without passing any type.
+This exception is raised when a `Generic` type is added to the Strawberry Schema without
+passing any type to make it concrete.
 
 ## MultipleStrawberryArgumentsError
 
