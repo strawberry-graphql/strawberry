@@ -8,7 +8,7 @@ class GraphQLTestClient(BaseGraphQLTestClient):
         self,
         body: Dict[str, Any],
         headers: Optional[Dict[str, object]] = None,
-        files: Optional[Dict[str, Any]] = None,
+        files: Optional[Dict[str, object]] = None,
     ):
         if files:
             return self._client.post(
