@@ -119,7 +119,7 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
                 continue
             elif isinstance(argument.type, StrawberryUnion):
                 raise InvalidFieldArgument(
-                    resolver.wrapped_func.__name__,
+                    resolver.name,
                     argument.python_name,
                     "Union",
                 )
