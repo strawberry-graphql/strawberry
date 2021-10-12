@@ -3,7 +3,6 @@ import inspect
 from typing import List, Optional, Type, cast
 
 from .exceptions import (
-    FieldResolverMismatchAnnotationError,
     MissingFieldAnnotationError,
     MissingReturnAnnotationError,
     ObjectIsNotClassError,
@@ -69,13 +68,9 @@ def _check_field_annotations(cls: Type):
                 cls_annotations[field_name] = field_.base_resolver.type_annotation
 
             # TODO: Make sure the cls annotation agrees with the field's type
-            if cls_annotations[field_name] != field_.base_resolver.type:
-                raise FieldResolverMismatchAnnotationError(
-                    field_name,
-                    cls_annotations[field_name].__name__,
-                    field_.base_resolver.name,
-                    field_.base_resolver.type.__name__,
-                )
+            # >>> if cls_annotations[field_name] != field.base_resolver.type:
+            # >>>     # TODO: Proper error
+            # >>>    raise Exception
 
         # If somehow a non-StrawberryField field is added to the cls without annotations
         # it raises an exception. This would occur if someone manually uses
