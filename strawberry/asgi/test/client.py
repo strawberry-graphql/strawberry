@@ -10,11 +10,11 @@ class GraphQLTestClient(BaseGraphQLTestClient):
     def _build_body(
         self,
         query: str,
-        variables: Optional[Dict[str, Any]] = None,
-        files: Optional[Dict[str, Any]] = None,
+        variables: Optional[Dict[str, object]] = None,
+        files: Optional[Dict[str, object]] = None,
     ) -> Dict[str, Any]:
 
-        body: Dict[str, Any] = {"query": query}
+        body: Dict[str, object] = {"query": query}
 
         if variables:
             body["variables"] = variables
