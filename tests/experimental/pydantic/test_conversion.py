@@ -56,6 +56,25 @@ def test_can_convert_alias_pydantic_field_to_strawberry():
     assert user.password == "abc"
 
 
+def test_can_pass_pydantic_field_description_to_strawberry():
+    class UserModel(pydantic.BaseModel):
+        age: int
+        password: Optional[str] = pydantic.Field(..., description="NOT 'password'.")
+
+    @strawberry.experimental.pydantic.type(UserModel)
+    class User:
+        age: strawberry.auto
+        password: strawberry.auto
+
+    definition = User._type_definition
+
+    assert definition.fields[0].python_name == "age"
+    assert definition.fields[0].description is None
+
+    assert definition.fields[1].python_name == "password"
+    assert definition.fields[1].description == "NOT 'password'."
+
+
 def test_can_convert_falsy_values_to_strawberry():
     class UserModel(pydantic.BaseModel):
         age: int
