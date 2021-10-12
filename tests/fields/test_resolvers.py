@@ -4,6 +4,7 @@ import pytest
 
 import strawberry
 from strawberry.exceptions import (
+    FieldResolverMismatchAnnotationError,
     MissingArgumentsAnnotationsError,
     MissingFieldAnnotationError,
     MissingReturnAnnotationError,
@@ -129,6 +130,21 @@ def test_raises_error_when_missing_type():
         'Unable to determine the type of field "missing". Either annotate it '
         "directly, or provide a typed resolver using @strawberry.field."
     )
+
+
+def test_raise_error_when_type_annotations_do_not_match():
+    expected_error = (
+        "The field 'name''s type 'int' does not match with the resolver "
+        "'example''s return type 'str'"
+    )
+    with pytest.raises(FieldResolverMismatchAnnotationError, match=expected_error):
+
+        def example() -> str:
+            ...
+
+        @strawberry.type
+        class Query:
+            name: int = strawberry.field(resolver=example)
 
 
 def test_can_reuse_resolver():

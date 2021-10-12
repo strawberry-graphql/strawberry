@@ -8,14 +8,14 @@ from typing_extensions import Literal, TypedDict
 
 @dataclass
 class Response:
-    errors: Optional[Dict[str, Any]]
-    data: Optional[Dict[str, Any]]
-    extensions: Optional[Dict[str, Any]]
+    errors: Optional[Dict[str, object]]
+    data: Optional[Dict[str, object]]
+    extensions: Optional[Dict[str, object]]
 
 
 class Body(TypedDict, total=False):
     query: str
-    variables: Optional[Dict[str, Any]]
+    variables: Optional[Dict[str, object]]
 
 
 class BaseGraphQLTestClient(ABC):
@@ -25,11 +25,11 @@ class BaseGraphQLTestClient(ABC):
     def query(
         self,
         query: str,
-        variables: Optional[Dict[str, Any]] = None,
-        headers: Optional[Dict[str, Any]] = None,
+        variables: Optional[Dict[str, object]] = None,
+        headers: Optional[Dict[str, object]] = None,
         asserts_errors: Optional[bool] = True,
         format: Literal["multipart", "json"] = "json",
-        files: Optional[Dict[str, Any]] = None,
+        files: Optional[Dict[str, object]] = None,
     ) -> Response:
         body = self._build_body(query, variables, files)
 
@@ -50,16 +50,16 @@ class BaseGraphQLTestClient(ABC):
     def request(
         self,
         body: Dict[str, Any],
-        headers: Optional[Dict[str, Any]] = None,
-        files: Optional[Dict[str, Any]] = None,
+        headers: Optional[Dict[str, object]] = None,
+        files: Optional[Dict[str, object]] = None,
     ):
         raise NotImplementedError
 
     def _build_body(
         self,
         query: str,
-        variables: Optional[Dict[str, Any]] = None,
-        files: Optional[Dict[str, Any]] = None,
+        variables: Optional[Dict[str, object]] = None,
+        files: Optional[Dict[str, object]] = None,
     ) -> Dict[str, Any]:
 
         body: Dict[str, Any] = {"query": query}
