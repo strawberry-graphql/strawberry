@@ -25,10 +25,9 @@ class BaseGraphQLTestClient(ABC):
     def query(
         self,
         query: str,
-        variables: Optional[Dict[str, object]] = None,
+        variables: Optional[Dict[str, Mapping]] = None,
         headers: Optional[Dict[str, object]] = None,
         asserts_errors: Optional[bool] = True,
-        format: Literal["multipart", "json"] = "json",
         files: Optional[Dict[str, object]] = None,
     ) -> Response:
         body = self._build_body(query, variables, files)
