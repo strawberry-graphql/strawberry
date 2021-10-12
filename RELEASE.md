@@ -1,6 +1,6 @@
 Release type: patch
 
-Copied pydantic field's `description`.
+Pydantic fields' `description` are now copied to the GraphQL schema
 
 ```python
 import pydantic
