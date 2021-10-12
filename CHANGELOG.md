@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.82.2 - 2021-10-12
+-------------------
+
+Makes the GraphQLSchema instance accessible from resolvers via the `info` parameter.
+
+Contributed by [Aryan Iyappan](https://github.com/codebyaryan) [PR #1311](https://github.com/strawberry-graphql/strawberry/pull/1311/)
+
+
 0.82.1 - 2021-10-11
 -------------------
 
