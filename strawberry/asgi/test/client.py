@@ -32,9 +32,9 @@ class GraphQLTestClient(BaseGraphQLTestClient):
 
     def request(
         self,
-        body: Dict[str, Any],
-        headers: Optional[Dict[str, Any]] = None,
-        files: Optional[Dict[str, Any]] = None,
+        body: Dict[str, object],
+        headers: Optional[Dict[str, object]] = None,
+        files: Optional[Dict[str, object]] = None,
     ):
         return self._client.post(
             "/graphql/",
