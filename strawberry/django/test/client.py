@@ -6,7 +6,7 @@ from strawberry.test import BaseGraphQLTestClient
 class GraphQLTestClient(BaseGraphQLTestClient):
     def request(
         self,
-        body: Dict[str, Any],
+        body: Dict[str, object],
         headers: Optional[Dict[str, object]] = None,
         files: Optional[Dict[str, object]] = None,
     ):
