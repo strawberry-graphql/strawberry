@@ -18,8 +18,6 @@ def merge_types(name: str, types: Tuple[Type]) -> Type:
 
         class SuperQuery(B, A):
             ...
-
-    An optional name may be specified for the resulting type.
     """
 
     if not types:
