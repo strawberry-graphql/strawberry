@@ -337,3 +337,42 @@ await loader.load(1)
 
 This exception is thrown when the Union type cannot be resolved because it's not a
 `strawberry.field`.
+
+```python
+@strawberry.type
+class A:
+    a: int
+
+@strawberry.type
+class B:
+    b: int
+
+@strawberry.type
+class Query:
+    ab: Union[A, B] = "ciao" // missing `strawberry.field` !
+
+query = """{
+    ab {
+        __typename,
+
+        ... on A {
+            a
+        }
+    }
+}"""
+
+result = schema.execute_sync(query, root_value=Query())
+
+# result will look like:
+# ExecutionResult(
+#     data=None,
+#     errors=[
+#         GraphQLError(
+#             'The type "<class \'str\'>" cannot be resolved for the field "ab" , are you using a strawberry.field?',
+#             locations=[SourceLocation(line=2, column=9)],
+#             path=["ab"],
+#         )
+#     ],
+#     extensions={},
+# )
+```
