@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.83.1 - 2021-10-12
+-------------------
+
+We now run our tests against Windows during CI!
+
+Contributed by [Michael Ossareh](https://github.com/ossareh) [PR #1321](https://github.com/strawberry-graphql/strawberry/pull/1321/)
+
+
 0.83.0 - 2021-10-12
 -------------------
 
