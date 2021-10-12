@@ -275,7 +275,7 @@ This exception is thrown when the type-annotation used is not supported by
 ## WrongNumberOfResultsReturned
 
 This exception is thrown when the DataLoader returns a different number of
-results than what we asked.
+results than requested.
 
 ```python
 async def idx(keys):
