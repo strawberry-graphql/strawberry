@@ -9,8 +9,8 @@ Strawberry defines its library-specific exceptions in `strawberry.exceptions`.
 
 ## FieldWithResolverAndDefaultFactoryError
 
-This exception is raised when in `strawberry.field` are specified both
-`resolver` and `default_factory`.
+This exception is raised when `strawberry.field` is used with both
+`resolver` and `default_factory` arguments.
 
 ```python
 @strawberry.type
