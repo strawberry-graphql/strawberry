@@ -7,7 +7,7 @@ class GraphQLTestClient(BaseGraphQLTestClient):
     def request(
         self,
         body: Dict[str, Any],
-        headers: Optional[Dict[str, Any]] = None,
+        headers: Optional[Dict[str, object]] = None,
         files: Optional[Dict[str, Any]] = None,
     ):
         if files:
