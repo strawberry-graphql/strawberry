@@ -206,6 +206,7 @@ Info objects contain information for the current execution context:
 | operation       | `OperationDefinitionNode` | The ast for the current operation (public API might change in future)                   |
 | path            | `Path`                    | The path for the current field                                                          |
 | selected_fields | `List[SelectedField]`     | Additional information related to the current field (public API might change in future) |
+| schema          | `Schema`                  | The Strawberry schema instance                                                          |
 
 [^1]:
     see
