@@ -71,10 +71,10 @@ def test_schema():
 
     sdl = """
         schema {
-          query: MegaType
+          query: SuperSchema
         }
 
-        type MegaType {
+        type SuperSchema {
           hi(name: String! = "world"): String!
           bye(name: String! = "world"): String!
           name: String!
