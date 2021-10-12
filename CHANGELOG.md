@@ -1,6 +1,33 @@
 CHANGELOG
 =========
 
+0.83.0 - 2021-10-12
+-------------------
+
+Add a shortcut to merge queries, mutations. E.g.:
+
+```python
+import strawberry
+from strawberry.tools import merge_types
+
+
+@strawberry.type
+class QueryA:
+    ...
+
+
+@strawberry.type
+class QueryB:
+    ...
+
+
+ComboQuery = merge_types("ComboQuery", (QueryB, QueryA))
+schema = strawberry.Schema(query=ComboQuery)
+```
+
+Contributed by [Alexandru Mărășteanu](https://github.com/alexei) [PR #1273](https://github.com/strawberry-graphql/strawberry/pull/1273/)
+
+
 0.82.2 - 2021-10-12
 -------------------
 
