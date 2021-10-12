@@ -126,7 +126,7 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
             elif getattr(argument.type, "_type_definition", False):
                 if argument.type._type_definition.is_interface:
                     raise InvalidFieldArgument(
-                        resolver.wrapped_func.__name__,
+                        resolver.name,
                         argument.python_name,
                         "Interface",
                     )
