@@ -110,6 +110,7 @@ def type(
                         field.default_factory if field.default_factory else UNSET
                     ),
                     type_annotation=get_type_for_field(field),
+                    description=field.field_info.description,
                 ),
             )
             for name, field in model_fields.items()
