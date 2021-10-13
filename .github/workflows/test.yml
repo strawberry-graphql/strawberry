@@ -18,7 +18,6 @@ jobs:
     strategy:
       matrix:
         python-version: ['3.7', '3.8', '3.9', '3.10']
-        django: [3.2, 3.1.8, 3.0.14, 2.2.20]
         os: [ubuntu-latest, windows-latest]
         include:
           - os: ubuntu-latest
@@ -26,7 +25,7 @@ jobs:
           - os: windows-latest
             cache-path: ~\AppData\Local\pypoetry\Cache
 
-    name: Test on ${{ matrix.os }} - ${{ matrix.python-version }} - django ${{ matrix.django }}
+    name: Test on ${{ matrix.os }} - ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -57,11 +56,54 @@ jobs:
         run: poetry install
         if: steps.cache-poetry-dependencies.outputs.cache-hit != 'true'
 
+      - name: pytest
+        run: poetry run py.test --cov-report xml --cov=. --showlocals -vv
+
+      - uses: codecov/codecov-action@v1
+        if: ${{ always() }}
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+          verbose: true
+
+  django-unit-tests:
+    strategy:
+      matrix:
+        # TODO: shall we just do one python version for django?
+        python-version: ['3.7', '3.8', '3.9', '3.10']
+        django: [3.2, 3.1.8, 3.0.14, 2.2.20]
+
+    name: Test ${{ matrix.python-version }} - django ${{ matrix.django }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+          architecture: x64
+
+      - run: pip install poetry
+      - run: poetry config experimental.new-installer false
+
+      - name: "Python dependencies cache"
+        id: cache-poetry-dependencies
+        uses: actions/cache@v2
+        with:
+          path: ${{ matrix.cache-path }}
+          key: ${{ runner.os }}-py-${{ matrix.python-version }}-poetry-${{ hashFiles('poetry.lock') }}
+          restore-keys: ${{ runner.os }}-py-${{ matrix.python-version }}-poetry-
+
+      - name: Install dependencies
+        run: poetry install
+        if: steps.cache-poetry-dependencies.outputs.cache-hit != 'true'
+
       - name: Install django ${{ matrix.django }}
         run: poetry add django==${{ matrix.django }}
 
       - name: pytest
-        run: poetry run py.test --cov-report xml --cov=. --cov-fail-under 80 --showlocals -vv
+        run: poetry run py.test --cov-report xml --cov=. --showlocals -vv
 
       - uses: codecov/codecov-action@v1
         if: ${{ always() }}
