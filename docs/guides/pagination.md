@@ -131,10 +131,6 @@ This is an example for forward pagination - pagination can be done backwards too
 
 Now that we know a few of the common ways to implement pagination, let us look at how we can implement them in GraphQL.
 
-```py
-
-```
-
 -> **Note** The Relay specification already has an established pattern for pagination, via "connection" types. If you're interested,
 -> you can check it out [here](https://relay.dev/graphql/connections.htm)!
 
