@@ -148,66 +148,66 @@ from strawberry.types import Info
 
 @strawberry.type
 class User:
-  name: str = strawberry.field(
-    description="""
-    The name of the user.
-    """
-  )
+    name: str = strawberry.field(
+        description="""
+        The name of the user.
+        """
+    )
 
-  occupation: str = strawberry.field(
-    description="""
-    The occupation of the user.
-    """
-  )
+    occupation: str = strawberry.field(
+        description="""
+        The occupation of the user.
+        """
+    )
 
-  age: int = strawberry.field(
-    description="""
-    The age of the user.
-    """
-  )
+    age: int = strawberry.field(
+        description="""
+        The age of the user.
+        """
+    )
 
 
 @strawberry.type
 class PageMeta:
-  total: int = strawberry.field(
-    description="""
-    The total number of items in the dataset.
-    """
-  )
+    total: int = strawberry.field(
+        description="""
+        The total number of items in the dataset.
+        """
+    )
 
-  page: int = strawberry.field(
-    description="""
-    The current page number in the dataset.
-    """
-  )
+    page: int = strawberry.field(
+        description="""
+        The current page number in the dataset.
+        """
+    )
 
-  pages: int = strawberry.field(
-    description="""
-    The total number of pages in the dataset.
-    """
-  )
+    pages: int = strawberry.field(
+        description="""
+        The total number of pages in the dataset.
+        """
+    )
 
 
 @strawberry.type
 class UserResponse:
-  users: List[User] = strawberry.field(
-    description="""
-    The list of users.
-    """
-  )
+    users: List[User] = strawberry.field(
+        description="""
+        The list of users.
+        """
+    )
 
-  page_meta: PageMeta = strawberry.field(
-    description="""
-    Metadata to aid in pagination.
-    """
-  )
+    page_meta: PageMeta = strawberry.field(
+        description="""
+        Metadata to aid in pagination.
+        """
+    )
 
 
 @strawberry.type
 class Query:
-  @strawberry.field(description="Returns a list of users.")
-  def get_users(self, info: Info) -> UserResponse:
-    ...
+    @strawberry.field(description="Returns a list of users.")
+    def get_users(self, info: Info) -> UserResponse:
+        ...
 
 ```
 
@@ -257,31 +257,31 @@ import strawberry
 
 @strawberry.type
 class Query:
-  @strawberry.field(description="Returns a paginated list of users.")
-  def get_users(self, info: Info, offset: int, limit: int) -> UserResponse:
-    # slice the relevant user data.
-    sliced_users = user_data[offset:offset+limit]
+    @strawberry.field(description="Returns a paginated list of users.")
+    def get_users(self, info: Info, offset: int, limit: int) -> UserResponse:
+        # slice the relevant user data.
+        sliced_users = user_data[offset:offset+limit]
 
-    # type cast the sliced data.
-    sliced_users = cast(List[UserType], sliced_users)
+        # type cast the sliced data.
+        sliced_users = cast(List[UserType], sliced_users)
 
-    # calculate the total items present.
-    total = len(user_data)
+        # calculate the total items present.
+        total = len(user_data)
 
-    # calculate the client's current page number.
-    page = ceil((offset-1) / limit) + 1
+        # calculate the client's current page number.
+        page = ceil((offset-1) / limit) + 1
 
-    # calculate the total number of pages.
-    pages = ceil(total / limit)
+        # calculate the total number of pages.
+        pages = ceil(total / limit)
 
-    return UserResponse(
-      users=sliced_users,
-      page_meta=PageMeta(
-        total=total,
-        page=page,
-        pages=pages
-      )
-    )
+        return UserResponse(
+            users=sliced_users,
+            page_meta=PageMeta(
+                total=total,
+                page=page,
+                pages=pages
+            )
+        )
 ```
 
 Now, let us plug our query into a schema and start a debug server!
@@ -297,31 +297,31 @@ import strawberry
 
 @strawberry.type
 class Query:
-  @strawberry.field(description="Returns a paginated list of users.")
-  def get_users(self, info: Info, offset: int, limit: int) -> UserResponse:
-    # slice the relevant user data.
-    sliced_users = user_data[offset:offset+limit]
+    @strawberry.field(description="Returns a paginated list of users.")
+    def get_users(self, info: Info, offset: int, limit: int) -> UserResponse:
+        # slice the relevant user data.
+        sliced_users = user_data[offset:offset+limit]
 
-    # type cast the sliced data.
-    sliced_users = cast(List[UserType], sliced_users)
+        # type cast the sliced data.
+        sliced_users = cast(List[UserType], sliced_users)
 
-    # calculate the total items present.
-    total = len(user_data)
+        # calculate the total items present.
+        total = len(user_data)
 
-    # calculate the client's current page number.
-    page = ceil((offset-1) / limit) + 1
+        # calculate the client's current page number.
+        page = ceil((offset-1) / limit) + 1
 
-    # calculate the total number of pages.
-    pages = ceil(total / limit)
+        # calculate the total number of pages.
+        pages = ceil(total / limit)
 
-    return UserResponse(
-      users=sliced_users,
-      page_meta=PageMeta(
-        total=total,
-        page=page,
-        pages=pages
-      )
-    )
+        return UserResponse(
+            users=sliced_users,
+            page_meta=PageMeta(
+                total=total,
+                page=page,
+                pages=pages
+            )
+        )
 
 schema = strawberry.Schema(query=Query)
 ```
@@ -363,9 +363,9 @@ import strawberry
 
 @strawberry.type
 class Query:
-  @strawberry.field(description="Returns a paginated list of users.")
-  def get_users(self, info: Info, offset: int, limit: int) -> UserResponse:
-    # limit pagination arguments
-    if len(limit) > 20:
-      raise Exception("Requested limit is too high!")
+    @strawberry.field(description="Returns a paginated list of users.")
+    def get_users(self, info: Info, offset: int, limit: int) -> UserResponse:
+        # limit pagination arguments
+        if len(limit) > 20:
+        raise Exception("Requested limit is too high!")
 ```
