@@ -40,9 +40,13 @@ The schema defines all the types and relationships between them. With this we
 enable client developers to see exactly what data is available and request a
 specific subset of that data.
 
-Note: the ! sign specifies that a field is non-nullable.
+<Note>
 
-Note that the schema doesn’t specify how to get the data. That comes later when
+The `!` sign specifies that a field is non-nullable.
+
+</Note>
+
+Notice that the schema doesn’t specify how to get the data. That comes later when
 defining the resolvers.
 
 <!-- TODO: plug Ariadne for a schema-first alternative -->
@@ -83,7 +87,7 @@ need to quote the `Author` annotation.
     ...
 ```
 
-Note that here we are also not specifying how to fetch data, that will be
+Notice that here we are also not specifying how to fetch data, that will be
 explained in the resolvers section.
 
 ## Supported types
@@ -110,9 +114,13 @@ default scalar types in GraphQL:
 - ID, a unique identifier that usually used to refetch an object or as the key
   for a cache. Serialized as string and available as `strawberry.ID(“value”)`
 
-> **NOTE:** Strawberry also includes support for date, time and datetime
-> objects, they are not officially included with the GraphQL spec, but they are
-> usually needed in most servers. They are serialized as ISO-8601.
+<Note>
+
+Strawberry also includes support for date, time and datetime
+objects, they are not officially included with the GraphQL spec, but they are
+usually needed in most servers. They are serialized as ISO-8601.
+
+</Note>
 
 <!--alex ignore-->
 
@@ -252,8 +260,12 @@ accepts two arguments (title and author) and returns a newly created Book
 object. As you'd expect, this Book object conforms to the structure that we
 defined in our schema.
 
-> **NOTE:** strawberry converts fields names from snake case to camel case
-> automatically.
+<Note>
+
+Strawberry converts fields names from snake case to camel case
+automatically.
+
+</Note>
 
 ### Structuring a mutation
 
@@ -276,8 +288,16 @@ As with queries, our server would respond to this mutation with a result that
 matches the mutation's structure, like so:
 
 ```json
-{ "data": { "addBook": { "title": "Fox in Socks", "author": { "name": "Dr.
-Seuss" } } } }
+{
+  "data": {
+    "addBook": {
+      "title": "Fox in Socks",
+      "author": {
+        "name": "Dr. Seuss"
+      }
+    }
+  }
+}
 ```
 
 ## Input types

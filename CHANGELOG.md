@@ -1,6 +1,86 @@
 CHANGELOG
 =========
 
+0.83.1 - 2021-10-12
+-------------------
+
+We now run our tests against Windows during CI!
+
+Contributed by [Michael Ossareh](https://github.com/ossareh) [PR #1321](https://github.com/strawberry-graphql/strawberry/pull/1321/)
+
+
+0.83.0 - 2021-10-12
+-------------------
+
+Add a shortcut to merge queries, mutations. E.g.:
+
+```python
+import strawberry
+from strawberry.tools import merge_types
+
+
+@strawberry.type
+class QueryA:
+    ...
+
+
+@strawberry.type
+class QueryB:
+    ...
+
+
+ComboQuery = merge_types("ComboQuery", (QueryB, QueryA))
+schema = strawberry.Schema(query=ComboQuery)
+```
+
+Contributed by [Alexandru Mărășteanu](https://github.com/alexei) [PR #1273](https://github.com/strawberry-graphql/strawberry/pull/1273/)
+
+
+0.82.2 - 2021-10-12
+-------------------
+
+Makes the GraphQLSchema instance accessible from resolvers via the `info` parameter.
+
+Contributed by [Aryan Iyappan](https://github.com/codebyaryan) [PR #1311](https://github.com/strawberry-graphql/strawberry/pull/1311/)
+
+
+0.82.1 - 2021-10-11
+-------------------
+
+Fix bug where errors thrown in the on_parse_* extension hooks were being
+swallowed instead of being propagated.
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) [PR #1324](https://github.com/strawberry-graphql/strawberry/pull/1324/)
+
+
+0.82.0 - 2021-10-11
+-------------------
+
+Adds support for the `auto` type annotation described in #1192 to the Pydantic
+integration, which allows a user to define the list of fields without having to
+re-specify the type themselves. This gives better editor and type checker
+support. If you want to expose every field you can instead pass
+`all_fields=True` to the decorators and leave the body empty.
+
+```python
+import pydantic
+import strawberry
+from strawberry.experimental.pydantic import auto
+
+class User(pydantic.BaseModel):
+    age: int
+    password: str
+
+
+@strawberry.experimental.pydantic.type(User)
+class UserType:
+    age: auto
+    password: auto
+```
+
+Contributed by [Matt Allen](https://github.com/Matt343) [PR #1280](https://github.com/strawberry-graphql/strawberry/pull/1280/)
+
+
 0.81.0 - 2021-10-04
 -------------------
 
