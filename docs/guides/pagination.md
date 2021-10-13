@@ -49,15 +49,15 @@ The response from the server would be:
       "age": 16
     }
   ],
-  "page_info": {
-    "total": 200,
+  "page_meta": {
+    "total": 4,
     "page": 1,
-    "pages": 100
+    "pages": 2
   }
 }
 ```
 
-Where total is the total number of items on all pages, page is the current page and pages is the total number of pages available.
+Where `total` is the total number of items on all pages, `page` is the current page and `pages` is the total number of pages available.
 To get the next page in the dataset, we can send another request, incrementing the offset by the existing limit.
 
 ```json
@@ -131,5 +131,180 @@ This is an example for forward pagination - pagination can be done backwards too
 
 Now that we know a few of the common ways to implement pagination, let us look at how we can implement them in GraphQL.
 
+```py
+
+```
+
 -> **Note** The Relay specification already has an established pattern for pagination, via "connection" types. If you're interested,
 -> you can check it out [here](https://relay.dev/graphql/connections.htm)!
+
+Let us start by implementing offset-based pagination first. We should be able to return a list of users which can be paginated by the client.
+We can model our schema like this:
+
+```py
+# example.py
+
+from typing import List
+
+import strawberry
+from strawberry.types import Info
+
+
+@strawberry.type
+class User:
+  name: str
+  occupation: str
+  age: int
+
+
+@strawberry.type
+class PageMeta:
+  total: int
+  page: int
+  pages: int
+
+
+@strawberry.type
+class UserResponse:
+  users: List[User]
+  page_meta: PageMeta
+
+
+@strawberry.type
+class Query:
+  @strawberry.field(description="Returns a list of users.")
+  def get_users(self, info: Info) -> UserResponse:
+    ...
+
+```
+
+As you can see above, we have modelled our field's return type to return additional fields, rather than an ordinary list.
+The client can query the provided object types (PageMeta) in order to know more about the dataset.
+
+now, it is time to implement pagination. For simplicity's sake, our dataset is going to be an in-memory list.
+
+```py
+# example.py
+
+user_data = [
+  {
+    "name": "Norman Osborn",
+    "occupation": "Founder, Oscorp Industries",
+    "age": 42
+  },
+  {
+    "name": "Peter Parker",
+    "occupation": "Freelance Photographer, The Daily Bugle",
+    "age": 16
+  },
+  {
+    "name": "Harold Osborn",
+    "occupation": "President, Oscorp Industries",
+    "age": 19
+  },
+  {
+    "name": "Eddie Brock",
+    "occupation": "Journalist, The Eddie Brock Report",
+    "age": 20
+  }
+]
+```
+
+We're going to use the data in our `get_users` field resolver.
+Our field is going to accept two arguments, `limit` and `offset`, to control pagination.
+
+```py
+# example.py
+
+from typing import List, cast
+
+import strawberry
+
+# code omitted above for readability.
+
+@strawberry.type
+class Query:
+  @strawberry.field(description="Returns a paginated list of users.")
+  def get_users(self, info: Info, offset: int, limit: int) -> UserResponse:
+    # slice the relevant user data.
+    sliced_users = user_data[offset:offset+limit]
+    # type cast the sliced data.
+    sliced_users = cast(List[UserType], sliced_users)
+    # calculate the total items present.
+    total = len(user_data)
+    # calculate the client's current page number.
+    page = ceil((offset-1)/limit) + 1
+    # calculate the total number of pages.
+    pages = total / limit
+
+    return UserResponse(
+      users=sliced_users,
+      page_meta=PageMeta(
+        total=total,
+        page=page,
+        pages=pages
+      )
+    )
+```
+
+Now, let us plug our query into a schema and start a debug server!
+
+```py
+# example.py
+
+from typing import List, cast
+
+import strawberry
+
+# code omitted above for readability.
+
+@strawberry.type
+class Query:
+  @strawberry.field(description="Returns a paginated list of users.")
+  def get_users(self, info: Info, offset: int, limit: int) -> UserResponse:
+    # slice the relevant user data.
+    sliced_users = user_data[offset:offset+limit]
+    # type cast the sliced data.
+    sliced_users = cast(List[UserType], sliced_users)
+    # calculate the total items present.
+    total = len(user_data)
+    # calculate the client's current page number.
+    page = ceil((offset-1)/limit) + 1
+    # calculate the total number of pages.
+    pages = total / limit
+
+    return UserResponse(
+      users=sliced_users,
+      page_meta=PageMeta(
+        total=total,
+        page=page,
+        pages=pages
+      )
+    )
+
+schema = strawberry.Schema(query=Query)
+```
+
+```text
+strawberry server example:schema
+```
+
+now, we should be able to query for users on the GraphiQL explorer!
+Here's a sample query for you!
+
+```text
+query {
+  getUsers {
+    users {
+      name
+      occupation
+    }
+    pageMeta {
+      total
+      pages
+    }
+  }
+}
+```
+
+Next up, let's try to remodel our schema to use cursor-based pagination!
