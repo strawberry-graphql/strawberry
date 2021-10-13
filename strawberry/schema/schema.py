@@ -1,8 +1,7 @@
-from typing import Any, Dict, List, Optional, Sequence, Type, Union
+from typing import Any, Dict, Optional, Sequence, Type, Union
 
 from graphql import (
     ExecutionContext as GraphQLExecutionContext,
-    GraphQLError,
     GraphQLSchema,
     get_introspection_query,
     parse,
@@ -19,14 +18,14 @@ from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
 from strawberry.types import ExecutionContext, ExecutionResult
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
-from strawberry.utils.logging import error_logger
 
 from ..printer import print_schema
+from .base import BaseSchema
 from .config import StrawberryConfig
 from .execute import execute, execute_sync
 
 
-class Schema:
+class Schema(BaseSchema):
     def __init__(
         self,
         # TODO: can we make sure we only allow to pass something that has been decorated?
@@ -106,11 +105,6 @@ class Schema:
             return self.schema_converter.type_map[name].definition
 
         return None
-
-    def process_errors(
-        self, errors: List[GraphQLError], execution_context: ExecutionContext
-    ) -> None:
-        error_logger(errors, execution_context)
 
     async def execute(
         self,
