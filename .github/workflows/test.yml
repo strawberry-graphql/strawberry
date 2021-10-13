@@ -40,8 +40,16 @@ jobs:
       - run: pip install poetry
       - run: poetry config experimental.new-installer false
 
+      - name: "Python dependencies cache"
+        id: cache-poetry-dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pypoetry/virtualenvs
+          key: py${{ matrix.python-version }}-poetry-${{ hashFiles('poetry.lock') }}
+
       - name: Install dependencies
         run: poetry install
+        if: steps.cache-poetry-dependencies.outputs.cache-hit != 'true'
 
       - name: Install django ${{ matrix.django }}
         run: poetry add django==${{ matrix.django }}
