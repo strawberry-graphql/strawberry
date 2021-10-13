@@ -12,9 +12,6 @@ items that take a considerable toll on the server! The goal of this guide is to 
 We have always dealt with pagination in different situations. Let us take a look at some of the common ways pagination
 can be implemented today!
 
--> **Note** The Relay specification already has an established pattern for pagination, via "connection" types. If you're interested,
--> you can check it out [here](https://relay.dev/graphql/connections.htm)!
-
 ### Offset based pagination
 
 This pagination style is similar to the syntax we use when looking up database records. Here, the client specifies the number of result to be
@@ -87,7 +84,7 @@ after the given pointer. This method addresses the drawbacks of using offset pag
 - The client can’t jump to a specific page.
 
 Let us understand cursor based pagination better, with the sample example given below. We want to request a list of users, 2 at a time, from
-a server. We don't know the cursor initially, so we will assign it a null value.
+the server. We don't know the cursor initially, so we will assign it a null value.
 
 ```json
 {
@@ -134,4 +131,5 @@ This is an example for forward pagination - pagination can be done backwards too
 
 Now that we know a few of the common ways to implement pagination, let us look at how we can implement them in GraphQL.
 
-documentation coming soon!
+-> **Note** The Relay specification already has an established pattern for pagination, via "connection" types. If you're interested,
+-> you can check it out [here](https://relay.dev/graphql/connections.htm)!
