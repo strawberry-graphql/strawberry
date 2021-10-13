@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.83.3 - 2021-10-13
+-------------------
+
+This release fixes a bug where passing scalars in the `scalar_overrides`
+parameter wasn't being applied consistently.
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) [PR #1212](https://github.com/strawberry-graphql/strawberry/pull/1212/)
+
+
 0.83.2 - 2021-10-13
 -------------------
 
