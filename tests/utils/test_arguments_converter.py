@@ -4,6 +4,7 @@ from typing import List, Optional
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import UNSET, StrawberryArgument, convert_arguments
+from strawberry.lazy_type import LazyType
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
 
 
@@ -68,6 +69,31 @@ def test_list():
         "integer_list": [1, 2],
         "string_list": ["abc", "cde"],
     }
+
+
+@strawberry.input
+class LaziestType:
+    something: bool
+
+
+def test_lazy():
+    LazierType = LazyType["LaziestType", __name__]
+
+    args = {
+        "lazyArg": {"something": True},
+    }
+
+    arguments = [
+        StrawberryArgument(
+            graphql_name="lazyArg",
+            python_name="lazy_arg",
+            type_annotation=StrawberryAnnotation(LazierType),
+        ),
+    ]
+
+    assert convert_arguments(
+        args, arguments, scalar_registry=DEFAULT_SCALAR_REGISTRY
+    ) == {"lazy_arg": LaziestType(something=True)}
 
 
 def test_input_types():
