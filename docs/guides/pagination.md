@@ -48,7 +48,7 @@ Now, we can use the next cursor provided to get the next set of users from the s
 ```json
 {
     "limit": 10
-    "cursor": "11" # we don't know the cursor initially
+    "cursor": "11" # we supply the previously obtained cursor
 }
 ```
 
