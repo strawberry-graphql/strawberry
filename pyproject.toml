@@ -122,6 +122,7 @@ sections = ["FUTURE", "STDLIB", "PYTEST", "THIRDPARTY", "DJANGO", "GRAPHQL", "FI
 addopts = "-s --emoji --mypy-ini-file=mypy_tests.ini --benchmark-disable"
 DJANGO_SETTINGS_MODULE = "tests.django.django_settings"
 testpaths = ["tests/"]
+markers = ["django"]
 
 [tool.autopub]
 git-username = "Botberry"
