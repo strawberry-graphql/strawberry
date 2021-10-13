@@ -352,7 +352,7 @@ Next up, let's try to remodel our schema to use cursor-based pagination!
 
 (cursor-based implementation goes here)
 
-## Limiting provided limits
+## Controlling provided limits
 
 There are a few gotchas that you need to know, to secure your paginated fields. You should always limit the maximum
 value of the `limit` or `offset` provided by the client (during offset-based pagination). You could throw up an error
