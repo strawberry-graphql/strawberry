@@ -66,27 +66,27 @@ async def execute(
         # Note: In graphql-core the schema would be validated here but in
         # Strawberry we are validating it at initialisation time instead
 
-        try:
-            async with extensions_runner.parsing():
+        async with extensions_runner.parsing():
+            try:
                 if not execution_context.graphql_document:
                     execution_context.graphql_document = parse_document(query)
-        except GraphQLError as error:
-            execution_context.errors = [error]
-            return ExecutionResult(
-                data=None,
-                errors=[error],
-                extensions=await extensions_runner.get_extensions_results(),
-            )
+            except GraphQLError as error:
+                execution_context.errors = [error]
+                return ExecutionResult(
+                    data=None,
+                    errors=[error],
+                    extensions=await extensions_runner.get_extensions_results(),
+                )
 
-        except Exception as error:  # pragma: no cover
-            error = GraphQLError(str(error), original_error=error)
+            except Exception as error:  # pragma: no cover
+                error = GraphQLError(str(error), original_error=error)
 
-            execution_context.errors = [error]
-            return ExecutionResult(
-                data=None,
-                errors=[error],
-                extensions=await extensions_runner.get_extensions_results(),
-            )
+                execution_context.errors = [error]
+                return ExecutionResult(
+                    data=None,
+                    errors=[error],
+                    extensions=await extensions_runner.get_extensions_results(),
+                )
 
         async with extensions_runner.validation():
             _run_validation(execution_context)
@@ -137,27 +137,27 @@ def execute_sync(
         # Note: In graphql-core the schema would be validated here but in
         # Strawberry we are validating it at initialisation time instead
 
-        try:
-            with extensions_runner.parsing():
+        with extensions_runner.parsing():
+            try:
                 if not execution_context.graphql_document:
                     execution_context.graphql_document = parse_document(query)
-        except GraphQLError as error:
-            execution_context.errors = [error]
-            return ExecutionResult(
-                data=None,
-                errors=[error],
-                extensions=extensions_runner.get_extensions_results_sync(),
-            )
+            except GraphQLError as error:
+                execution_context.errors = [error]
+                return ExecutionResult(
+                    data=None,
+                    errors=[error],
+                    extensions=extensions_runner.get_extensions_results_sync(),
+                )
 
-        except Exception as error:  # pragma: no cover
-            error = GraphQLError(str(error), original_error=error)
+            except Exception as error:  # pragma: no cover
+                error = GraphQLError(str(error), original_error=error)
 
-            execution_context.errors = [error]
-            return ExecutionResult(
-                data=None,
-                errors=[error],
-                extensions=extensions_runner.get_extensions_results_sync(),
-            )
+                execution_context.errors = [error]
+                return ExecutionResult(
+                    data=None,
+                    errors=[error],
+                    extensions=extensions_runner.get_extensions_results_sync(),
+                )
 
         with extensions_runner.validation():
             _run_validation(execution_context)

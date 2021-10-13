@@ -1,5 +1,6 @@
 from . import experimental, federation
 from .arguments import argument
+from .auto import auto
 from .custom_scalar import scalar
 from .directive import directive
 from .enum import enum
@@ -33,4 +34,5 @@ __all__ = [
     "subscription",
     "type",
     "union",
+    "auto",
 ]
