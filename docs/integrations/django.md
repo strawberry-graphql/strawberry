@@ -235,3 +235,10 @@ class MyGraphQLView(AsyncGraphQLView):
 
 In this case we are doing the default processing of the result, but it can be
 tweaked based on your needs.
+
+# Pagination in Django
+
+Django provides numerous utilities to make common tasks in the web-development world easier.
+It has it's own pagination API that is useful, when it comes to pagination with Strawberry.
+
+(docs coming soon)
