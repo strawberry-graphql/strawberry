@@ -224,12 +224,16 @@ class Query:
   def get_users(self, info: Info, offset: int, limit: int) -> UserResponse:
     # slice the relevant user data.
     sliced_users = user_data[offset:offset+limit]
+
     # type cast the sliced data.
     sliced_users = cast(List[UserType], sliced_users)
+
     # calculate the total items present.
     total = len(user_data)
+
     # calculate the client's current page number.
     page = ceil((offset-1)/limit) + 1
+
     # calculate the total number of pages.
     pages = total / limit
 
@@ -260,12 +264,16 @@ class Query:
   def get_users(self, info: Info, offset: int, limit: int) -> UserResponse:
     # slice the relevant user data.
     sliced_users = user_data[offset:offset+limit]
+
     # type cast the sliced data.
     sliced_users = cast(List[UserType], sliced_users)
+
     # calculate the total items present.
     total = len(user_data)
+
     # calculate the client's current page number.
     page = ceil((offset-1)/limit) + 1
+
     # calculate the total number of pages.
     pages = total / limit
 
