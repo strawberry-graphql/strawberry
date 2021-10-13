@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.83.4 - 2021-10-13
+-------------------
+
+Add logic to convert arguments of type LazyType.
+
+Contributed by [Luke Murray](https://github.com/lukesmurray) [PR #1350](https://github.com/strawberry-graphql/strawberry/pull/1350/)
+
+
 0.83.3 - 2021-10-13
 -------------------
 
