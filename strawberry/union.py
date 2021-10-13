@@ -28,7 +28,6 @@ from strawberry.exceptions import (
     UnallowedReturnTypeForUnion,
     WrongReturnTypeForUnion,
 )
-from strawberry.scalars import SCALAR_TYPES
 from strawberry.type import StrawberryType
 
 
@@ -205,14 +204,9 @@ def union(
         raise TypeError("No types passed to `union`")
 
     for _type in types:
-        if _type in SCALAR_TYPES:
-            raise InvalidUnionType(
-                f"Scalar type `{_type.__name__}` cannot be used in a GraphQL Union"
-            )
-
         if not isinstance(_type, TypeVar) and not hasattr(_type, "_type_definition"):
             raise InvalidUnionType(
-                f"Union type `{_type.__name__}` is not a Strawberry type"
+                f"Type `{_type.__name__}` cannot be used in a GraphQL Union"
             )
 
     union_definition = StrawberryUnion(
