@@ -45,7 +45,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~/.cache/pypoetry/virtualenvs
-          key: py${{ matrix.python-version }}-poetry-${{ hashFiles('poetry.lock') }}
+          key: $${{ matrix.os }}-py-${{ matrix.python-version }}-poetry-${{ hashFiles('poetry.lock') }}
 
       - name: Install dependencies
         run: poetry install
