@@ -24,7 +24,7 @@ jobs:
           - os: windows-latest
             cache-path: ~\AppData\Local\pypoetry\Cache
 
-    name: Test on ${{ matrix.os }} - ${{ matrix.python-version }}
+    name: Test ${{ matrix.os }} - Python ${{ matrix.python-version }}
     runs-on: ${{ matrix.os }}
 
     steps:
@@ -72,7 +72,7 @@ jobs:
         python-version: ['3.7', '3.8', '3.9', '3.10']
         django: [3.2, 3.1.8, 3.0.14, 2.2.20]
 
-    name: Test ${{ matrix.python-version }} - django ${{ matrix.django }}
+    name: Test Python ${{ matrix.python-version }} - Django ${{ matrix.django }}
     runs-on: ubuntu-latest
 
     steps:
