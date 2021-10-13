@@ -269,7 +269,7 @@ class Query:
     total = len(user_data)
 
     # calculate the client's current page number.
-    page = ceil((offset-1)/limit) + 1
+    page = ceil((offset-1) / limit) + 1
 
     # calculate the total number of pages.
     pages = total / limit
@@ -309,7 +309,7 @@ class Query:
     total = len(user_data)
 
     # calculate the client's current page number.
-    page = ceil((offset-1)/limit) + 1
+    page = ceil((offset-1) / limit) + 1
 
     # calculate the total number of pages.
     pages = total / limit
