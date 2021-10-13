@@ -333,7 +333,7 @@ strawberry server example:schema
 now, we should be able to query for users on the GraphiQL explorer!
 Here's a sample query for you!
 
-```text
+```graphql
 query {
   getUsers {
     users {
