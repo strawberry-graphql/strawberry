@@ -272,7 +272,7 @@ class Query:
     page = ceil((offset-1) / limit) + 1
 
     # calculate the total number of pages.
-    pages = total / limit
+    pages = ceil(total / limit)
 
     return UserResponse(
       users=sliced_users,
@@ -312,7 +312,7 @@ class Query:
     page = ceil((offset-1) / limit) + 1
 
     # calculate the total number of pages.
-    pages = total / limit
+    pages = ceil(total / limit)
 
     return UserResponse(
       users=sliced_users,
