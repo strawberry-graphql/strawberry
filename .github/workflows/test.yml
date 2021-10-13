@@ -70,6 +70,10 @@ jobs:
           fail_ci_if_error: true
           verbose: true
 
+      - run: ls ~\AppData\Local\
+        if: ${{ always() }}
+      - run: ls ~\AppData\Local\pypoetry
+
   mypy:
     runs-on: ubuntu-latest
     container: python:3.9
