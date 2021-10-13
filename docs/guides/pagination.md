@@ -349,3 +349,23 @@ query {
 ```
 
 Next up, let's try to remodel our schema to use cursor-based pagination!
+
+(cursor-based implementation goes here)
+
+## Limiting provided limits
+
+There are a few gotchas that you need to know, to secure your paginated fields. You should always limit the maximum
+value of the `limit` or `offset` provided by the client (during offset-based pagination). You could throw up an error
+when the given argument is above the expected size.
+
+```py
+import strawberry
+
+@strawberry.type
+class Query:
+  @strawberry.field(description="Returns a paginated list of users.")
+  def get_users(self, info: Info, offset: int, limit: int) -> UserResponse:
+    # limit pagination arguments
+    if len(limit) > 20:
+      raise Exception("Requested limit is too high!")
+```
