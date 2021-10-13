@@ -22,9 +22,9 @@ jobs:
         os: [ubuntu-latest, windows-latest]
         include:
           - os: ubuntu-latest
-            path: ~/.cache/pypoetry/virtualenvs
+            cache-path: ~/.cache/pypoetry/virtualenvs
           - os: windows-latest
-            path: ~\AppData\Local\pypoetry\Cache
+            cache-path: ~\AppData\Local\pypoetry\Cache
 
     name: Test on ${{ matrix.os }} - ${{ matrix.python-version }} - django ${{ matrix.django }}
     runs-on: ${{ matrix.os }}
