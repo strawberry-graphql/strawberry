@@ -90,7 +90,7 @@ jobs:
         id: cache-poetry-dependencies
         uses: actions/cache@v2
         with:
-          path: ${{ matrix.cache-path }}
+          path: ~/.cache/pypoetry/virtualenvs
           key: ${{ runner.os }}-py-${{ matrix.python-version }}-poetry-${{ hashFiles('poetry.lock') }}
           restore-keys: ${{ runner.os }}-py-${{ matrix.python-version }}-poetry-
 
