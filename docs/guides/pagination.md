@@ -25,12 +25,13 @@ after the given pointer. This method addresses the drawbacks of using offset pag
 - The client can’t jump to a specific page.
 
 Let us understand cursor based pagination better, with an example.
-Let us assume that we want to request a list of users from a server.
+Let us assume that we want to request a list of users, 10 at a time, from a server.
+We don't know the cursor initially, so we will assign it a null value.
 
 ```json
 {
-    "limit": 10 # server returns 10 users at a time.
-    "cursor": null # we don't know the cursor initially
+  "limit": 10,
+  "cursor": null
 }
 ```
 
@@ -39,16 +40,16 @@ The response from the server would be:
 ```json
 {
     "users": [...],
-    "next_cursor": "11",  # the user ID of the extra result.
+    "next_cursor": "11"
 }
 ```
 
-Now, we can use the next cursor provided to get the next set of users from the server.
+The next cursor returned by the server can be used to get the next set of users from the server.
 
 ```json
 {
-    "limit": 10
-    "cursor": "11" # we supply the previously obtained cursor
+  "limit": 10,
+  "cursor": "11"
 }
 ```
 
