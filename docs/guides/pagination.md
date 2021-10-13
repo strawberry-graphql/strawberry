@@ -102,14 +102,14 @@ The response from the server would be:
 {
   "users": [
     {
-      "name": "Norman Osborn",
-      "occupation": "Founder, Oscorp Industries",
-      "age": 42
+      "name": "Harold Osborn",
+      "occupation": "President, Oscorp Industries",
+      "age": 19
     },
     {
-      "name": "Peter Parker",
-      "occupation": "Freelance Photographer, The Daily Bugle",
-      "age": 16
+      "name": "Eddie Brock",
+      "occupation": "Journalist, The Eddie Brock Report",
+      "age": 20
     }
   ],
   "next_cursor": "3"
