@@ -2,17 +2,19 @@ import logging
 import sys
 from typing import Any, Optional
 
+from typing_extensions import Final
+
 from graphql.error import GraphQLError
 
 from strawberry.types import ExecutionContext
 
 
-logger = logging.getLogger("strawberry.execution")
-
-
 class StrawberryLogger:
-    @staticmethod
+    logger: Final[logging.Logger] = logging.getLogger("strawberry.execution")
+
+    @classmethod
     def error(
+        cls,
         error: GraphQLError,
         execution_context: Optional[ExecutionContext] = None,
         # https://www.python.org/dev/peps/pep-0484/#arbitrary-argument-lists-and-default-argument-values
@@ -27,4 +29,4 @@ class StrawberryLogger:
         if sys.version_info >= (3, 8):
             logger_kwargs["stacklevel"] = 3
 
-        logger.error(error, exc_info=error.original_error, **logger_kwargs)
+        cls.logger.error(error, exc_info=error.original_error, **logger_kwargs)
