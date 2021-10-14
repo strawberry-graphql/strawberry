@@ -372,6 +372,14 @@ from strawberry.types import Info
 
 # code omitted above for readability.
 
+@strawberry.type
+class PageMeta:
+    next_cursor: int = strawberry.field(
+        description="""
+        The next cursor to continue with.
+        """
+    )
+
 
 @strawberry.type
 class UserResponse:
@@ -381,9 +389,9 @@ class UserResponse:
         """
     )
 
-    next_cursor: str = strawberry.field(
+    page_meta: PageMeta = strawberry.field(
         description="""
-        The next cursor to continue with.
+        Metadata to aid in pagination.
         """
     )
 
@@ -391,7 +399,7 @@ class UserResponse:
 @strawberry.type
 class Query:
     @strawberry.field(description="Returns a list of users.")
-    def get_users(self, info: Info, limit: int, cursor: Optional[str] = None) -> UserResponse:
+    def get_users(self, info: Info, limit: int, cursor: Optional[int] = None) -> UserResponse:
         ...
 ```
 
@@ -400,12 +408,35 @@ That's because the client doesn't know the cursor intiially, when it makes the f
 
 Now is a good time to think of what we could use as a cursor for our dataset. Our cursor needs to be an opaque value,
 which doesn't usually change over time. It makes more sense to use the IDs of the users as our cursor, as it fits both criteria.
+Because our IDs are integers, our cursors will also be the same.
+
+Using IDs as our cursor, we can implement our pagination logic like this:
+
+```py
+# example.py
+
+from typing import Optional
+
+import strawberry
+from strawberry.types import Info
+
+
+@strawberry.type
+class Query:
+    @strawberry.field(description="Returns a list of users.")
+    def get_users(self, info: Info, limit: int, cursor: Optional[str] = None) -> UserResponse:
+        return UserResponse(
+            users=sliced_users,
+            page_meta=PageMeta(
+                next_cursor=next_cursor
+            )
+        )
+```
 
 ## Controlling provided limits
 
-There are a few gotchas that you need to know, to secure your paginated fields. You should always limit the maximum
-value of the `limit` or `offset` provided by the client (during offset-based pagination). You could throw up an error
-when the given argument is above the expected size.
+You should always limit the maximum value of the `limit` or `offset` provided by the client (during offset-based
+pagination). You could throw up an error when the given argument is above the expected size.
 
 ```py
 import strawberry
@@ -416,7 +447,7 @@ class Query:
     def get_users(self, info: Info, offset: int, limit: int) -> UserResponse:
         # limit pagination arguments
         if len(limit) > 20:
-          raise Exception("Requested limit is too high!")
+            raise Exception("Requested limit is too high!")
 ```
 
 It is also good practice to check if the provided limits are negative, and throw an error.
@@ -430,5 +461,5 @@ class Query:
     def get_users(self, info: Info, offset: int, limit: int) -> UserResponse:
         # limit pagination arguments
         if len(limit) <= 0:
-          raise Exception("Requested limit is too low!")
+            raise Exception("Requested limit is too low!")
 ```
