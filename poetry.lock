@@ -1168,7 +1168,7 @@ python-versions = "*"
 
 [[package]]
 name = "types-certifi"
-version = "2020.4.0"
+version = "2021.10.8.0"
 description = "Typing stubs for certifi"
 category = "dev"
 optional = false
@@ -1383,7 +1383,7 @@ sanic = ["sanic"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "9505c71906c9c0230ded60fe3ffe09e88242d23979b131d7930e7b42b0b1fd43"
+content-hash = "ed6c01e4f5bf3f19e0ad101492a9fa0b420cde49a711180e32f77521b87e98fe"
 
 [metadata.files]
 aiofiles = [
@@ -2151,8 +2151,8 @@ types-aiofiles = [
     {file = "types_aiofiles-0.7.0-py3-none-any.whl", hash = "sha256:0334df97d4fcc70a29ad82ccbe48b914cd7bf31e6cc95942862057892ec5cc81"},
 ]
 types-certifi = [
-    {file = "types-certifi-2020.4.0.tar.gz", hash = "sha256:787d1a0c7897a1c658f8f7958ae57141b3fff13acb866e5bcd31cfb45037546f"},
-    {file = "types_certifi-2020.4.0-py3-none-any.whl", hash = "sha256:0ffdbe451d3b02f6d2cfd87bcfb2f086a4ff1fa76a35d51cfc3771e261d7a8fd"},
+    {file = "types-certifi-2021.10.8.0.tar.gz", hash = "sha256:33308fb722d28cad8ae19834dcc4d2593509ac80bcbabe77c6d8e9a25001c2de"},
+    {file = "types_certifi-2021.10.8.0-py3-none-any.whl", hash = "sha256:ca164939fe86b5f70988eed480b788162ee81f62e72f486a7b96cb53f4112355"},
 ]
 types-chardet = [
     {file = "types-chardet-4.0.1.tar.gz", hash = "sha256:6d2a73711c98f875ab73b87956e8bc1e7ac74f4bd9464631a1ce68f21bc3c1d1"},
