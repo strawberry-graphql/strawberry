@@ -415,7 +415,7 @@ Using IDs as our cursor, we can implement our pagination logic like this:
 ```py
 # example.py
 
-from typing import Optional
+from typing import List, Optional, cast
 
 import strawberry
 from strawberry.types import Info
