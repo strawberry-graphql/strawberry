@@ -420,6 +420,7 @@ from typing import List, Optional, cast
 import strawberry
 from strawberry.types import Info
 
+# code omitted above for readability.
 
 @strawberry.type
 class Query:
