@@ -366,5 +366,19 @@ class Query:
     def get_users(self, info: Info, offset: int, limit: int) -> UserResponse:
         # limit pagination arguments
         if len(limit) > 20:
-        raise Exception("Requested limit is too high!")
+          raise Exception("Requested limit is too high!")
+```
+
+It is also good practice to check if the provided limits are negative, and throw an error.
+
+```py
+import strawberry
+
+@strawberry.type
+class Query:
+    @strawberry.field(description="Returns a paginated list of users.")
+    def get_users(self, info: Info, offset: int, limit: int) -> UserResponse:
+        # limit pagination arguments
+        if len(limit) <= 0:
+          raise Exception("Requested limit is too low!")
 ```
