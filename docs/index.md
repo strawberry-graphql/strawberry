@@ -99,9 +99,8 @@ Using `strawberry.field` allows us to specify a resolver for a particular field.
 
 <Note>
 
-We didn't have to specify any resolver for the Book's fields, this
-is because Strawberry adds a default for each field, returning the value of
-that field.
+We didn't have to specify any resolver for the Book's fields, this is because
+Strawberry adds a default for each field, returning the value of that field.
 
 </Note>
 
@@ -132,7 +131,7 @@ We can now execute GraphQL queries. Strawberry comes with a tool called
 
 You should see something like this:
 
-![](./images/index-server.png)
+<img src="./images/index-server.png" alt="A view of the GraphiQL interface" width="2048" height="1536" />
 
 The GraphiQL UI includes:
 
@@ -156,7 +155,7 @@ Paste the following string into the left area and then click the play button:
 
 You should see the hardcoded data appear on the right side:
 
-![](./images/index-query-example.png)
+<img src="./images/index-query-example.png" alt="A view of the GraphiQL interface after running a GraphQL query" width="2048" height="1536" />
 
 GraphQL allows clients to query only the fields they need, go ahead and remove
 `author` from the query and run it again. The response should now only show the
