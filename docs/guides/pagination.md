@@ -434,6 +434,24 @@ class Query:
         )
 ```
 
+Starting the debug server again, we should be able to query for users again on the GraphiQL explorer.
+
+```graphql
+query {
+  # we don't know the cursor initially
+  getUsers(limit: 2) {
+    users {
+      name
+      occupation
+    }
+    pageMeta {
+      total
+      pages
+    }
+  }
+}
+```
+
 ## Controlling provided limits
 
 You should always limit the maximum value of the `limit` or `offset` provided by the client (during offset-based
