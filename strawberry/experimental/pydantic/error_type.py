@@ -2,19 +2,23 @@ import dataclasses
 import warnings
 from typing import Any, List, Optional, Tuple, Type, cast
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ValidationError
 from pydantic.fields import ModelField
 
 import strawberry
+from strawberry.experimental.pydantic.conversion import (
+    convert_pydantic_error_to_strawberry_class,
+)
 from strawberry.experimental.pydantic.utils import (
     get_private_fields,
-    get_strawberry_type_from_model,
+    get_strawberry_error_type_from_model,
     normalize_type,
 )
+from strawberry.field import StrawberryField
 from strawberry.object_type import _process_type, _wrap_dataclass
 from strawberry.types.type_resolver import _get_fields
 from strawberry.types.types import FederationTypeParams
-from strawberry.utils.typing import get_list_annotation, is_list
+from strawberry.utils.typing import is_union
 
 from .exceptions import MissingFieldsListError
 
@@ -29,19 +33,14 @@ def field_type_to_type(type_):
     error_class: Any = str
     strawberry_type: Any = error_class
 
-    if is_list(type_):
-        child_type = get_list_annotation(type_)
-
-        if is_list(child_type):
-            strawberry_type = field_type_to_type(child_type)
-        elif issubclass(child_type, BaseModel):
-            strawberry_type = get_strawberry_type_from_model(child_type)
-        else:
-            strawberry_type = List[error_class]
-
-        strawberry_type = Optional[strawberry_type]
+    if is_union(type_):
+        new_type = type_.copy_with(tuple(field_type_to_type(t) for t in type_.__args__))
+        return Optional[List[new_type]]  # type: ignore
+    if hasattr(type_, "__args__"):
+        new_type = type_.copy_with(tuple(field_type_to_type(t) for t in type_.__args__))
+        return Optional[new_type]
     elif issubclass(type_, BaseModel):
-        strawberry_type = get_strawberry_type_from_model(type_)
+        strawberry_type = get_strawberry_error_type_from_model(type_)
         return Optional[strawberry_type]
 
     return Optional[List[strawberry_type]]
@@ -87,7 +86,12 @@ def error_type(
             (
                 name,
                 get_type_for_field(field),
-                dataclasses.field(default=None),  # type: ignore
+                StrawberryField(
+                    python_name=field.name,
+                    graphql_name=field.alias if field.has_alias else None,
+                    default=None,
+                    type_annotation=get_type_for_field(field),
+                ),
             )
             for name, field in model_fields.items()
             if name in fields_set
@@ -124,8 +128,14 @@ def error_type(
             federation=federation,
         )
 
-        model._strawberry_type = cls  # type: ignore
+        model._strawberry_error_type = cls  # type: ignore
         cls._pydantic_type = model  # type: ignore
+
+        def from_pydantic_error(error: ValidationError) -> Any:
+            return convert_pydantic_error_to_strawberry_class(cls=cls, error=error)
+
+        cls.from_pydantic_error = staticmethod(from_pydantic_error)
+
         return cls
 
     return wrap

@@ -28,6 +28,13 @@ def get_strawberry_type_from_model(type_: Any):
         raise UnregisteredTypeException(type_)
 
 
+def get_strawberry_error_type_from_model(type_: Any):
+    if hasattr(type_, "_strawberry_error_type"):
+        return type_._strawberry_error_type
+    else:
+        raise UnregisteredTypeException(type_)
+
+
 def get_private_fields(cls: Type) -> List[dataclasses.Field]:
     private_fields: List[dataclasses.Field] = []
     for field in dataclasses.fields(cls):

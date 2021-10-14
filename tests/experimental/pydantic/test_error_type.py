@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Union
 
 import pytest
 
@@ -8,6 +8,7 @@ import strawberry
 from strawberry.experimental.pydantic.exceptions import MissingFieldsListError
 from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.types.types import TypeDefinition
+from strawberry.union import StrawberryUnion
 
 
 def test_basic_error_type_fields():
@@ -350,3 +351,43 @@ def test_error_type_with_matrix_list_of_scalar():
     )
 
     assert field.type.of_type.of_type.of_type.of_type.of_type.of_type is str
+
+
+def test_error_type_with_union():
+    class BranchA(pydantic.BaseModel):
+        field_a: int
+
+    class BranchB(pydantic.BaseModel):
+        field_b: int
+
+    class User(pydantic.BaseModel):
+        age: int
+        union_field: Union[BranchA, BranchB]
+
+    @strawberry.experimental.pydantic.error_type(BranchA)
+    class BranchAError:
+        field_a: strawberry.auto
+
+    @strawberry.experimental.pydantic.error_type(BranchB)
+    class BranchBError:
+        field_b: strawberry.auto
+
+    @strawberry.experimental.pydantic.error_type(User)
+    class UserError:
+        age: strawberry.auto
+        union_field: strawberry.auto
+
+    definition: TypeDefinition = UserError._type_definition
+
+    assert definition.name == "UserError"
+    [field1, field2] = definition.fields
+
+    assert field1.python_name == "age"
+    assert isinstance(field1.type, StrawberryOptional)
+    assert isinstance(field1.type.of_type, StrawberryList)
+    assert field1.type.of_type.of_type == str
+
+    assert field2.python_name == "union_field"
+    assert isinstance(field2.type, StrawberryOptional)
+    assert isinstance(field2.type.of_type, StrawberryList)
+    assert isinstance(field2.type.of_type.of_type, StrawberryUnion)
