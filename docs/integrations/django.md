@@ -248,7 +248,7 @@ We've already covered how to do pagination in general. You can check our docs [h
 Let us try to implement the same example we did earlier, with Django's pagination API.
 We want to request a list of users, 2 at a time, from a server.
 
-We can model our schema like:
+We can model our schema like this:
 
 ```py
 # example.py
