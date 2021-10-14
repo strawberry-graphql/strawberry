@@ -7,7 +7,9 @@ toc: true
 
 Strawberry defines its library-specific exceptions in `strawberry.exceptions`.
 
-## FieldWithResolverAndDefaultFactoryError
+## Strawberry Schema Exceptions¶
+
+### FieldWithResolverAndDefaultFactoryError
 
 This exception is raised when `strawberry.field` is used with both `resolver` and
 `default_factory` arguments.
@@ -23,7 +25,7 @@ class Query:
 
 ```
 
-## FieldWithResolverAndDefaultValueError
+### FieldWithResolverAndDefaultValueError
 
 This exception is raised when in `strawberry.field` is used with both `resolver` and
 `default` arguments.
@@ -39,7 +41,7 @@ class Query:
 # Throws 'Field "c" on type "Query" cannot define a default value and a resolver.'
 ```
 
-## InvalidFieldArgument
+### InvalidFieldArgument
 
 This exception is raised when a `Union` or an `Interface` is used as an argument type.
 
@@ -61,7 +63,7 @@ def add_word(word: Word) -> bool:
 # Throws 'Argument "word" on field "None" cannot be of type "Union"'
 ```
 
-## InvalidUnionType
+### InvalidUnionType
 
 This exception is raised when a scalar type is used with a `Union` or when one of the
 provided types is not a `strawberry.type`.
@@ -74,7 +76,7 @@ class A:
 # Throws 'Union type `A` is not a Strawberry type'
 ```
 
-## MissingArgumentsAnnotationsError
+### MissingArgumentsAnnotationsError
 
 The `MissingArgumentsAnnotationsError` exception is raised when a resolver's arguments
 are missing type annotations.
@@ -87,7 +89,7 @@ def hello(self, foo) -> str:
 # Throws 'Missing annotation for argument "foo" in field "hello", did you forget to add it?'
 ```
 
-## MissingFieldAnnotationError
+### MissingFieldAnnotationError
 
 The `MissingFieldAnnotationError` exception is raised when a `strawberry.field` is not
 type-annotated but also has no resolver to determine its type.
@@ -100,11 +102,7 @@ class Query:  # noqa: F841
 # Throws 'Unable to determine the type of field "foo". Either annotate it directly, or provide a typed resolver using @strawberry.field.'
 ```
 
-## MissingQueryError
-
-This exception is raised when the `request` is missing the `query` paramater.
-
-## MissingReturnAnnotationError
+### MissingReturnAnnotationError
 
 The `MissingReturnAnnotationError` exception is raised when a resolver is missing the
 type annotation for the return type.
@@ -119,12 +117,12 @@ class Query:
 # Throws 'Return annotation missing for field "goodbye", did you forget to add it?'
 ```
 
-## MissingTypesForGenericError
+### MissingTypesForGenericError
 
 This exception is raised when a `Generic` type is added to the Strawberry Schema without
 passing any type to make it concrete.
 
-## MultipleStrawberryArgumentsError
+### MultipleStrawberryArgumentsError
 
 This exception is raised when `strawberry.argument` is used multiple times in a type
 annotation.
@@ -147,7 +145,7 @@ def name(
 # Throws 'Annotation for argument `argument` on field `name` cannot have multiple `strawberry.argument`s'
 ```
 
-## ObjectIsNotAClassError
+### ObjectIsNotAClassError
 
 This exception is raised when `strawberry.type`, `strawberry.input` or
 `strawberry.interface` are used with an object that is not class.
@@ -160,7 +158,7 @@ def not_a_class():
 # Throws 'strawberry.type can only be used with class types. Provided object <function not_a_class at 0x10a20f700> is not a type.'
 ```
 
-## ObjectIsNotAnEnumError
+### ObjectIsNotAnEnumError
 
 This exception is raised when `strawberry.enum` is used with an object that is not an
 Enum.
@@ -173,7 +171,7 @@ class NormalClass:
 # Throws 'strawberry.exceptions.NotAnEnum: strawberry.enum can only be used with subclasses of Enum'
 ```
 
-## PrivateStrawberryFieldError
+### PrivateStrawberryFieldError
 
 This exception is raised when a `strawberry.field` is type annotated with
 `strawberry.Private`
@@ -188,7 +186,7 @@ class Query:
 # Throws 'Field age on type Query cannot be both private and a strawberry.field'
 ```
 
-## ScalarAlreadyRegisteredError
+### ScalarAlreadyRegisteredError
 
 This exception is raised when two scalars are used with the same name or the same type.
 Note that also `graphql` library will throw a `TypeError` exception with the same
@@ -246,6 +244,52 @@ schema.py:79: in <module>
 E   TypeError: Query fields cannot be resolved. Scalar `MyCustomScalar` has already been registered
 ```
 
+### UnsupportedTypeError
+
+This exception is thrown when the type-annotation used is not supported by
+`strawberry.field` (yet). At the time of writing this exception is used by Pydantic
+only
+
+```python
+class Model(pydantic.BaseModel):
+    field: pydantic.Json
+
+@strawberry.experimental.pydantic.type(Model, fields=["field"])
+class Type:
+    pass
+
+```
+
+### WrongNumberOfResultsReturned
+
+This exception is thrown when the DataLoader returns a different number of results than
+requested.
+
+```python
+async def idx(keys):
+    return [1, 2]
+
+loader = DataLoader(load_fn=idx)
+
+await loader.load(1)
+
+# Throws 'Received wrong number of results in dataloader, expected: 1, received: 2'
+```
+
+## Runtime exceptions
+
+Some errors are also thrown when trying to exectuing queries (mutations or subscriptions).
+
+### MissingQueryError
+
+This exception is raised when the `request` is missing the `query` paramater.
+
+```python
+client.post("/graphql", data={})
+
+# Trhows 'Request data is missing a "query" value'
+```
+
 ## UnallowedReturnTypeForUnion
 
 This error is raised when the return type of a `Union` is not in the list of Union
@@ -299,38 +343,6 @@ result = schema.execute_sync(query)
 #     ],
 #     extensions={},
 # )
-```
-
-## UnsupportedTypeError
-
-This exception is thrown when the type-annotation used is not supported by
-`strawberry.field` (yet). At the time of writing this exception is used by Pydantic
-only
-
-```python
-class Model(pydantic.BaseModel):
-    field: pydantic.Json
-
-@strawberry.experimental.pydantic.type(Model, fields=["field"])
-class Type:
-    pass
-
-```
-
-## WrongNumberOfResultsReturned
-
-This exception is thrown when the DataLoader returns a different number of results than
-requested.
-
-```python
-async def idx(keys):
-    return [1, 2]
-
-loader = DataLoader(load_fn=idx)
-
-await loader.load(1)
-
-# Throws 'Received wrong number of results in dataloader, expected: 1, received: 2'
 ```
 
 ## WrongReturnTypeForUnion
