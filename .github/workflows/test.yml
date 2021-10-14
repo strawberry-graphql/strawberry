@@ -20,6 +20,11 @@ jobs:
         python-version: ['3.7', '3.8', '3.9', '3.10']
         django: [3.2, 3.1.8, 3.0.14, 2.2.20]
         os: [ubuntu-latest, windows-latest]
+        include:
+          - os: ubuntu-latest
+            cache-path: ~/.cache/pypoetry/virtualenvs
+          - os: windows-latest
+            cache-path: ~\AppData\Local\pypoetry\Cache
 
     name: Test on ${{ matrix.os }} - ${{ matrix.python-version }} - django ${{ matrix.django }}
     runs-on: ${{ matrix.os }}
@@ -40,8 +45,17 @@ jobs:
       - run: pip install poetry
       - run: poetry config experimental.new-installer false
 
+      - name: "Python dependencies cache"
+        id: cache-poetry-dependencies
+        uses: actions/cache@v2
+        with:
+          path: ${{ matrix.cache-path }}
+          key: ${{ runner.os }}-py-${{ matrix.python-version }}-poetry-${{ hashFiles('poetry.lock') }}
+          restore-keys: ${{ runner.os }}-py-${{ matrix.python-version }}-poetry-
+
       - name: Install dependencies
         run: poetry install
+        if: steps.cache-poetry-dependencies.outputs.cache-hit != 'true'
 
       - name: Install django ${{ matrix.django }}
         run: poetry add django==${{ matrix.django }}

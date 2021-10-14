@@ -1,6 +1,50 @@
 CHANGELOG
 =========
 
+0.83.4 - 2021-10-13
+-------------------
+
+Add logic to convert arguments of type LazyType.
+
+Contributed by [Luke Murray](https://github.com/lukesmurray) [PR #1350](https://github.com/strawberry-graphql/strawberry/pull/1350/)
+
+
+0.83.3 - 2021-10-13
+-------------------
+
+This release fixes a bug where passing scalars in the `scalar_overrides`
+parameter wasn't being applied consistently.
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) [PR #1212](https://github.com/strawberry-graphql/strawberry/pull/1212/)
+
+
+0.83.2 - 2021-10-13
+-------------------
+
+Pydantic fields' `description` are now copied to the GraphQL schema
+
+```python
+import pydantic
+import strawberry
+
+class UserModel(pydantic.BaseModel):
+    age: str = pydantic.Field(..., description="Description")
+
+@strawberry.experimental.pydantic.type(UserModel)
+class User:
+    age: strawberry.auto
+```
+
+```
+type User {
+  """Description"""
+  age: String!
+}
+```
+
+Contributed by [Guillaume Andreu Sabater](https://github.com/g-as) [PR #1332](https://github.com/strawberry-graphql/strawberry/pull/1332/)
+
+
 0.83.1 - 2021-10-12
 -------------------
 
