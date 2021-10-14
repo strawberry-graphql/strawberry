@@ -7,7 +7,7 @@ toc: true
 
 Strawberry defines its library-specific exceptions in `strawberry.exceptions`.
 
-## Strawberry Schema Exceptions¶
+## Strawberry Schema Exceptions
 
 ### FieldWithResolverAndDefaultFactoryError
 
