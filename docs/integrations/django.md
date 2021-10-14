@@ -455,7 +455,7 @@ Here's a sample query for you!
 
 ```graphql
 query {
-  getUsers {
+  getUsers(pageNumber: 1, limit: 2) {
     users {
       name
       occupation

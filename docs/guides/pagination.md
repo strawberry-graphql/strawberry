@@ -342,7 +342,7 @@ Here's a sample query for you!
 
 ```graphql
 query {
-  getUsers {
+  getUsers(offset: 0, limit: 2) {
     users {
       name
       occupation
