@@ -445,8 +445,7 @@ query {
       occupation
     }
     pageMeta {
-      total
-      pages
+      nextCursor
     }
   }
 }
