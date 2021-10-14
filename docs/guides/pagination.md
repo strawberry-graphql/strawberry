@@ -434,7 +434,7 @@ class Query:
         )
 ```
 
-Starting the debug server again, we should be able to query for users again on the GraphiQL explorer.
+Starting the debug server, we should be able to query for users again on the GraphiQL explorer.
 
 ```graphql
 query {
