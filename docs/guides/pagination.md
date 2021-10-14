@@ -39,11 +39,13 @@ The response from the server would be:
 {
   "users": [
     {
+      "id": 1,
       "name": "Norman Osborn",
       "occupation": "Founder, Oscorp Industries",
       "age": 42
     },
     {
+      "id": 2,
       "name": "Peter Parker",
       "occupation": "Freelance Photographer, The Daily Bugle",
       "age": 16
@@ -99,11 +101,13 @@ The response from the server would be:
 {
   "users": [
     {
+      "id": 3,
       "name": "Harold Osborn",
       "occupation": "President, Oscorp Industries",
       "age": 19
     },
     {
+      "id": 4,
       "name": "Eddie Brock",
       "occupation": "Journalist, The Eddie Brock Report",
       "age": 20
@@ -220,21 +224,25 @@ now, it is time to implement pagination. For simplicity's sake, our dataset is g
 
 user_data = [
   {
+    "id": 1,
     "name": "Norman Osborn",
     "occupation": "Founder, Oscorp Industries",
     "age": 42
   },
   {
+    "id": 2,
     "name": "Peter Parker",
     "occupation": "Freelance Photographer, The Daily Bugle",
     "age": 16
   },
   {
+    "id": 3,
     "name": "Harold Osborn",
     "occupation": "President, Oscorp Industries",
     "age": 19
   },
   {
+    "id": 4,
     "name": "Eddie Brock",
     "occupation": "Journalist, The Eddie Brock Report",
     "age": 20
@@ -347,9 +355,51 @@ query {
 }
 ```
 
-Next up, let's try to remodel our schema to use cursor-based pagination!
+Next up, let's try to remodel our schema to use cursor-based pagination! The server needs to return a `cursor`
+along with the sliced user data, so that our client can know what to query for next. The client could also provide
+a `limit` value, to specify how much users it wants at a time.
 
-(cursor-based implementation goes here)
+Therefore, we could model our schema like this:
+
+```py
+# example.py
+
+from typing import List, Optional
+
+import strawberry
+from strawberry.types import Info
+
+
+# code omitted above for readability.
+
+
+@strawberry.type
+class UserResponse:
+    users: List[User] = strawberry.field(
+        description="""
+        The list of users.
+        """
+    )
+
+    next_cursor: str = strawberry.field(
+        description="""
+        The next cursor to continue with.
+        """
+    )
+
+
+@strawberry.type
+class Query:
+    @strawberry.field(description="Returns a list of users.")
+    def get_users(self, info: Info, limit: int, cursor: Optional[str] = None) -> UserResponse:
+        ...
+```
+
+The `get_users` field takes in two arguments, `limit` and `cursor`. Did you notice that the `cursor` argument is optional?
+That's because the client doesn't know the cursor intiially, when it makes the first request.
+
+Now is a good time to think of what we could use as a cursor for our dataset. Our cursor needs to be an opaque value,
+which doesn't usually change over time. It makes more sense to use the IDs of the users as our cursor, as it fits both criteria.
 
 ## Controlling provided limits
 

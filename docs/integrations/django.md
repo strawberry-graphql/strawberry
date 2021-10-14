@@ -331,21 +331,25 @@ an in-memory list of hard-coded users.
 
 user_data = [
   {
+    "id": 1,
     "name": "Norman Osborn",
     "occupation": "Founder, Oscorp Industries",
     "age": 42
   },
   {
+    "id": 2,
     "name": "Peter Parker",
     "occupation": "Freelance Photographer, The Daily Bugle",
     "age": 16
   },
   {
+    "id": 3,
     "name": "Harold Osborn",
     "occupation": "President, Oscorp Industries",
     "age": 19
   },
   {
+    "id": 4,
     "name": "Eddie Brock",
     "occupation": "Journalist, The Eddie Brock Report",
     "age": 20
