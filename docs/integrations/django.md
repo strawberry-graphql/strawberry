@@ -241,4 +241,225 @@ tweaked based on your needs.
 Django provides numerous utilities to make common tasks in the web-development world easier.
 It has it's own pagination API that is useful, when it comes to pagination with Strawberry.
 
-(docs coming soon)
+-> **Note** You can check Django's docs regarding pagination [here](https://docs.djangoproject.com/en/3.2/topics/pagination/).
+
+We've already covered how to do pagination in general. You can check our docs [here](/docs/guides/pagination)!
+
+Let us try to implement the same example we did earlier, with Django's pagination API.
+We want to request a list of users, 2 at a time, from a server.
+
+We can model our schema like:
+
+```py
+# example.py
+
+from typing import List
+
+import strawberry
+from strawberry.types import Info
+
+
+@strawberry.type
+class User:
+    name: str = strawberry.field(
+        description="""
+        The name of the user.
+        """
+    )
+
+    occupation: str = strawberry.field(
+        description="""
+        The occupation of the user.
+        """
+    )
+
+    age: int = strawberry.field(
+        description="""
+        The age of the user.
+        """
+    )
+
+
+@strawberry.type
+class PageMeta:
+    total: int = strawberry.field(
+        description="""
+        The total number of items in the dataset.
+        """
+    )
+
+    page: int = strawberry.field(
+        description="""
+        The current page number in the dataset.
+        """
+    )
+
+    pages: int = strawberry.field(
+        description="""
+        The total number of pages in the dataset.
+        """
+    )
+
+
+@strawberry.type
+class UserResponse:
+    users: List[User] = strawberry.field(
+        description="""
+        The list of users.
+        """
+    )
+
+    page_meta: PageMeta = strawberry.field(
+        description="""
+        Metadata to aid in pagination.
+        """
+    )
+
+
+@strawberry.type
+class Query:
+    @strawberry.field(description="Returns a list of users.")
+    def get_users(self, info: Info) -> UserResponse:
+        ...
+```
+
+For simplicity's sake, we'll use the same dataset used in the eariler example-
+an in-memory list of hard-coded users.
+
+```py
+# example.py
+
+user_data = [
+  {
+    "name": "Norman Osborn",
+    "occupation": "Founder, Oscorp Industries",
+    "age": 42
+  },
+  {
+    "name": "Peter Parker",
+    "occupation": "Freelance Photographer, The Daily Bugle",
+    "age": 16
+  },
+  {
+    "name": "Harold Osborn",
+    "occupation": "President, Oscorp Industries",
+    "age": 19
+  },
+  {
+    "name": "Eddie Brock",
+    "occupation": "Journalist, The Eddie Brock Report",
+    "age": 20
+  }
+]
+```
+
+Implementing pagination is a breeze with Django's abstraction layers.
+
+```py
+# example.py
+
+from typing import List, cast
+
+import strawberry
+from django.core.paginator import Paginator
+
+# code omitted above for readability.
+
+@strawberry.type
+class Query:
+    @strawberry.field(description="Returns a paginated list of users.")
+    def get_users(self, info: Info, page_number: int, limit: int) -> UserResponse:
+        # initialize the paginator.
+        paginator = Paginator(user_data, per_page=limit)
+
+        # get the relevant user data.
+        sliced_users = paginator.get_page(page_number)
+
+        # type cast the sliced data.
+        sliced_users = cast(List[UserType], sliced_users)
+
+        # calculate the total items present.
+        total = paginator.count
+
+        # calculate the client's current page number.
+        page = sliced_users.number
+
+        # calculate the total number of pages.
+        pages = paginator.num_pages
+
+        return UserResponse(
+            users=sliced_users,
+            page_meta=PageMeta(
+                total=total,
+                page=page,
+                pages=pages
+            )
+        )
+```
+
+Now, let us plug our query into a schema and start a debug server!
+
+```py
+# example.py
+
+from typing import List, cast
+
+import strawberry
+
+# code omitted above for readability.
+
+@strawberry.type
+class Query:
+    @strawberry.field(description="Returns a paginated list of users.")
+    def get_users(self, info: Info, page_number: int, limit: int) -> UserResponse:
+        # initialize the paginator.
+        paginator = Paginator(user_data, per_page=limit)
+
+        # get the relevant user data.
+        sliced_users = paginator.get_page(page_number)
+
+        # type cast the sliced data.
+        sliced_users = cast(List[UserType], sliced_users)
+
+        # calculate the total items present.
+        total = paginator.count
+
+        # calculate the client's current page number.
+        page = sliced_users.number
+
+        # calculate the total number of pages.
+        pages = paginator.num_pages
+
+        return UserResponse(
+            users=sliced_users,
+            page_meta=PageMeta(
+                total=total,
+                page=page,
+                pages=pages
+            )
+        )
+
+schema = strawberry.Schema(query=Query)
+```
+
+```text
+strawberry server example:schema
+```
+
+now, we should be able to query for users on the GraphiQL explorer!
+Here's a sample query for you!
+
+```graphql
+query {
+  getUsers {
+    users {
+      name
+      occupation
+    }
+    pageMeta {
+      total
+      pages
+    }
+  }
+}
+```

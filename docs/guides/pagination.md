@@ -83,7 +83,7 @@ after the given pointer. This method addresses the drawbacks of using offset pag
 - There is no concept of the total number of pages or results in the dataset.
 - The client can’t jump to a specific page.
 
-Let us understand cursor based pagination better, with the sample example given below. We want to request a list of users, 2 at a time, from
+Let us understand cursor based pagination better, with the example given below. We want to request a list of users, 2 at a time, from
 the server. We don't know the cursor initially, so we will assign it a null value.
 
 ```json
@@ -131,8 +131,7 @@ This is an example for forward pagination - pagination can be done backwards too
 
 Now that we know a few of the common ways to implement pagination, let us look at how we can implement them in GraphQL.
 
--> **Note** The Relay specification already has an established pattern for pagination, via "connection" types. If you're interested,
--> you can check it out [here](https://relay.dev/graphql/connections.htm)!
+-> **Note** There's also an official pagination guide provided by GraphQL. You can check it out [here](https://graphql.org/learn/pagination/)!
 
 Let us start by implementing offset-based pagination first. We should be able to return a list of users which can be paginated by the client.
 We can model our schema like this:
