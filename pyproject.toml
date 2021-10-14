@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "strawberry-graphql"
 packages = [ { include = "strawberry" } ]
-version = "0.83.3"
+version = "0.83.4"
 description = "A library for creating GraphQL APIs"
 authors = ["Patrick Arminio <patrick.arminio@gmail.com>"]
 license = "MIT"
@@ -87,7 +87,7 @@ types-requests = "^2.25.9"
 types-python-dateutil = "^2.8.0"
 types-freezegun = "^1.1.0"
 types-chardet = "^4.0.0"
-types-certifi = "^2020.4.0"
+types-certifi = "^2021.10.8"
 types-aiofiles = "^0.7.0"
 sanic-testing = "^0.7.0"
 pytest-xprocess = "^0.18.1"
