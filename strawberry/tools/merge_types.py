@@ -1,7 +1,7 @@
 import warnings
 from collections import Counter
 from itertools import chain
-from typing import Tuple, Type
+from typing import Tuple
 
 import strawberry
 
