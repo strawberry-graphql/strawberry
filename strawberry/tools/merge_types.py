@@ -6,7 +6,7 @@ from typing import Tuple, Type
 import strawberry
 
 
-def merge_types(name: str, types: Tuple[Type, ...]) -> Type:
+def merge_types(name: str, types: Tuple[type, ...]) -> type:
     """Merge multiple Strawberry types into one
 
     For example, given two queries `A` and `B`, one can merge them into a
