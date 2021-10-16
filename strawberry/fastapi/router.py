@@ -31,14 +31,14 @@ class GraphQLRouter(APIRouter):
 
     @staticmethod
     async def __get_context(
-            background_tasks: BackgroundTasks, request: Request = None, ws: WebSocket = None
+        background_tasks: BackgroundTasks, request: Request = None, ws: WebSocket = None
     ) -> Optional[Any]:
         return {"request": request or ws, "background_tasks": background_tasks}
 
     def __init__(
         self,
         schema: BaseSchema,
-        prefix: str = "",
+        path: str = "",
         graphiql: bool = True,
         keep_alive: bool = False,
         keep_alive_interval: float = 1,
@@ -52,7 +52,6 @@ class GraphQLRouter(APIRouter):
         on_shutdown: Optional[Sequence[Callable[[], Any]]] = None,
     ):
         super().__init__(
-            prefix=prefix,
             default=default,
             on_startup=on_startup,
             on_shutdown=on_shutdown,
@@ -68,7 +67,7 @@ class GraphQLRouter(APIRouter):
         self.connection_init_wait_timeout = connection_init_wait_timeout
 
         @self.get(
-            "",
+            path,
             responses={
                 200: {
                     "description": "The GraphiQL integrated development environment.",
@@ -83,7 +82,7 @@ class GraphQLRouter(APIRouter):
                 return Response(status_code=status.HTTP_404_NOT_FOUND)
             return self.get_graphiql_response()
 
-        @self.post("")
+        @self.post(path)
         async def handle_http_query(
             request: Request,
             context=Depends(self.context_getter),
@@ -131,7 +130,7 @@ class GraphQLRouter(APIRouter):
 
             return JSONResponse(response_data, status_code=status.HTTP_200_OK)
 
-        @self.websocket("")
+        @self.websocket(path)
         async def websocket_endpoint(
             websocket: WebSocket,
             context=Depends(self.context_getter),
