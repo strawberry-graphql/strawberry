@@ -14,7 +14,7 @@ The quick start method provides a server and CLI to get going quickly. Install
 with:
 
 ```shell
-pip install strawberry-graphql[debug-server]
+pip install 'strawberry-graphql[debug-server]'
 ```
 
 ## Getting Started
@@ -100,8 +100,8 @@ enabled server. The debug server can be made to support WebSockets with these
 commands:
 
 ```shell
-pip install strawberry-graphql[debug-server]
-pip install uvicorn[standard]
+pip install 'strawberry-graphql[debug-server]'
+pip install 'uvicorn[standard]'
 ```
 
 ## Contributing
