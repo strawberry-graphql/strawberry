@@ -90,7 +90,7 @@ def test_missing_debug_server_dependencies(cli_runner, mocker, dependency):
     assert result.output == (
         "Error: "
         "The debug server requires additional packages, install them by running:\n"
-        "pip install strawberry-graphql[debug-server]\n"
+        "pip install 'strawberry-graphql[debug-server]'\n"
     )
 
 
