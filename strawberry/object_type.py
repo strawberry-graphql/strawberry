@@ -1,6 +1,6 @@
 import dataclasses
 import inspect
-from typing import List, Optional, Type, cast
+from typing import Callable, List, Optional, Type, TypeVar, cast, overload
 
 from .exceptions import (
     MissingFieldAnnotationError,
@@ -127,15 +127,44 @@ def _process_type(
     return cls
 
 
+T = TypeVar("T")
+
+
+@overload
 @__dataclass_transform__(order_default=True, field_descriptors=(field, StrawberryField))
 def type(
-    cls: Type = None,
+    cls: T,
     *,
     name: str = None,
     is_input: bool = False,
     is_interface: bool = False,
     description: str = None,
     federation: Optional[FederationTypeParams] = None,
+) -> T:
+    ...
+
+
+@overload
+@__dataclass_transform__(order_default=True, field_descriptors=(field, StrawberryField))
+def type(
+    *,
+    name: str = None,
+    is_input: bool = False,
+    is_interface: bool = False,
+    description: str = None,
+    federation: Optional[FederationTypeParams] = None,
+) -> Callable[[T], T]:
+    ...
+
+
+def type(
+    cls: Optional[Type] = None,
+    *,
+    name=None,
+    is_input=False,
+    is_interface=False,
+    description=None,
+    federation=None,
 ):
     """Annotates a class as a GraphQL type.
 
@@ -172,13 +201,35 @@ def type(
     return wrap(cls)
 
 
+@overload
 @__dataclass_transform__(order_default=True, field_descriptors=(field, StrawberryField))
 def input(
-    cls: Type = None,
+    cls: T,
     *,
     name: str = None,
     description: str = None,
     federation: Optional[FederationTypeParams] = None,
+) -> T:
+    ...
+
+
+@overload
+@__dataclass_transform__(order_default=True, field_descriptors=(field, StrawberryField))
+def input(
+    *,
+    name: str = None,
+    description: str = None,
+    federation: Optional[FederationTypeParams] = None,
+) -> Callable[[T], T]:
+    ...
+
+
+def input(
+    cls=None,
+    *,
+    name=None,
+    description=None,
+    federation=None,
 ):
     """Annotates a class as a GraphQL Input type.
     Example usage:
