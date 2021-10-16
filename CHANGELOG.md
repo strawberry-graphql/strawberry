@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.83.5 - 2021-10-16
+-------------------
+
+Errors encountered in subscriptions will now be logged to the `strawberry.execution` logger as errors encountered in Queries and Mutations are. <3
+
+Contributed by [Michael Ossareh](https://github.com/ossareh) [PR #1316](https://github.com/strawberry-graphql/strawberry/pull/1316/)
+
+
 0.83.4 - 2021-10-13
 -------------------
 
