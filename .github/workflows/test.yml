@@ -83,4 +83,4 @@ jobs:
       - name: Install dependencies
         run: poetry install
 
-      - run: poetry run mypy --ignore-missing-imports --config-file mypy.ini --install-types --non-interactive .
+      - run: poetry run mypy --ignore-missing-imports --config-file mypy.ini --install-types --non-interactive --show-traceback .

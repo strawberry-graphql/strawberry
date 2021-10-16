@@ -44,6 +44,7 @@ pydantic = {version = "<2", optional = true}
 python-multipart = "^0.0.5"
 sanic = {version = ">=20.12.2,<22.0.0", optional = true}
 aiohttp = {version = "^3.7.4.post0", optional = true}
+fastapi = {version = ">=0.65.2", optional = true}
 sentinel = "^0.3.0"
 
 [tool.poetry.dev-dependencies]
@@ -90,6 +91,7 @@ types-chardet = "^4.0.0"
 types-certifi = "^2021.10.8"
 types-aiofiles = "^0.7.0"
 sanic-testing = "^0.7.0"
+fastapi = {version = ">=0.65.0", optional = false}
 pytest-xprocess = "^0.18.1"
 
 [tool.poetry.extras]
