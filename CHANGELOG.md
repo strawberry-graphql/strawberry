@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.83.6 - 2021-10-16
+-------------------
+
+Improve help texts for CLI to work better on ZSH.
+
+Contributed by [Magnus Markling](https://github.com/memark) [PR #1360](https://github.com/strawberry-graphql/strawberry/pull/1360/)
+
+
 0.83.5 - 2021-10-16
 -------------------
 
