@@ -169,7 +169,11 @@ class GraphQLRouter(APIRouter):
     def pick_preferred_protocol(self, ws: WebSocket) -> Optional[str]:
         protocols = ws["subprotocols"]
         intersection = set(protocols) & set(self.protocols)
-        return min(intersection, key=lambda i: protocols.index(i), default=None)
+        return min(
+            intersection,
+            key=lambda i: protocols.index(i),  # type: ignore
+            default=None,
+        )
 
     def get_graphiql_response(self) -> HTMLResponse:
         html = get_graphiql_html()
