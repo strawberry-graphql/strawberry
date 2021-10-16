@@ -151,12 +151,14 @@ class BaseGraphQLTransportWSHandler(ABC):
         except GraphQLError as error:
             payload = [format_graphql_error(error)]
             await self.send_message(ErrorMessage(id=message.id, payload=payload))
+            self.schema.process_errors([error])
             return
 
         if isinstance(result_source, GraphQLExecutionResult):
             assert result_source.errors
             payload = [format_graphql_error(result_source.errors[0])]
             await self.send_message(ErrorMessage(id=message.id, payload=payload))
+            self.schema.process_errors(result_source.errors)
             return
 
         handler = self.handle_async_results(result_source, message.id)
@@ -174,6 +176,7 @@ class BaseGraphQLTransportWSHandler(ABC):
                     error_payload = [format_graphql_error(err) for err in result.errors]
                     error_message = ErrorMessage(id=operation_id, payload=error_payload)
                     await self.send_message(error_message)
+                    self.schema.process_errors(result.errors)
                     return
                 else:
                     next_payload = {"data": result.data}
@@ -189,6 +192,7 @@ class BaseGraphQLTransportWSHandler(ABC):
             error_payload = [format_graphql_error(error)]
             error_message = ErrorMessage(id=operation_id, payload=error_payload)
             await self.send_message(error_message)
+            self.schema.process_errors([error])
             return
 
         await self.send_message(CompleteMessage(id=operation_id))
