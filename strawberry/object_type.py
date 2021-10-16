@@ -158,7 +158,7 @@ def type(
 
 
 def type(
-    cls: Optional[Type] = None,
+    cls=None,
     *,
     name=None,
     is_input=False,

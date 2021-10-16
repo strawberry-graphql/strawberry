@@ -162,9 +162,6 @@ def _get_entity_type(type_map: TypeMap):
     return entity_type
 
 
-T = TypeVar("T")
-
-
 @overload
 @__dataclass_transform__(
     order_default=True, field_descriptors=(base_field, field, StrawberryField)
