@@ -32,7 +32,7 @@ In addition to Apollo Tracing we also support
 You also need to install the extras for opentelemetry by doing:
 
 ```
-pip install strawberry-graphql[opentelemetry]
+pip install 'strawberry-graphql[opentelemetry]'
 ```
 
 ```python

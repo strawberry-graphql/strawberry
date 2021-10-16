@@ -31,7 +31,7 @@ After that we need a new virtualenv:
 Activate the virtualenv and then install strawberry plus the debug server.
 
     source virtualenv/bin/activate
-    pip install strawberry-graphql[debug-server]
+    pip install 'strawberry-graphql[debug-server]'
 
 ## Step 2: Define the schema
 
