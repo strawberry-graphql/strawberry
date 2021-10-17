@@ -60,7 +60,7 @@ Word = strawberry.union("Word", types=(Noun, Verb))
 def add_word(word: Word) -> bool:
     return True
 
-# Throws 'Argument "word" on field "None" cannot be of type "Union"'
+# Throws 'Argument "word" on field "add_word" cannot be of type "Union"'
 ```
 
 ### InvalidUnionType
