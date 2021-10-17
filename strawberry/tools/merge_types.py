@@ -1,12 +1,12 @@
 import warnings
 from collections import Counter
 from itertools import chain
-from typing import Tuple, Type
+from typing import Tuple
 
 import strawberry
 
 
-def merge_types(name: str, types: Tuple[Type]) -> Type:
+def merge_types(name: str, types: Tuple[type, ...]) -> type:
     """Merge multiple Strawberry types into one
 
     For example, given two queries `A` and `B`, one can merge them into a
@@ -23,7 +23,9 @@ def merge_types(name: str, types: Tuple[Type]) -> Type:
     if not types:
         raise ValueError("Can't merge types if none are supplied")
 
-    fields = chain(*(t._type_definition.fields for t in types))
+    fields = chain(
+        *(t._type_definition.fields for t in types)  # type: ignore[attr-defined]
+    )
     counter = Counter(f.name for f in fields)
     dupes = [f for f, c in counter.most_common() if c > 1]
     if dupes:
