@@ -6,8 +6,8 @@ title: Schema Directives
 
 Strawberry supports
 [schema directives](https://spec.graphql.org/June2018/#TypeSystemDirectiveLocation),
-these directives don't change the behavior of your GraphQL schema but they
-provided a way to add additional metadata to your schema.
+which are directives that don't change the behavior of your GraphQL schema but instead
+provide a way to add additional metadata to it.
 
 > For example our [Apollo Federation integration](../guides/federation.md) is
 > based on schema directives.
@@ -21,18 +21,20 @@ import strawberry
 
 @strawberry.schema_directive(locations=[OBJECT])
 class Keys:
-  fields: str
+    fields: str
 ```
 
-Here we are creating a directive called `keys` (the name will, by default
-converted to camelCase) that can be applied to
-[Object types definitions](./object-types.md) and that accepts one parameter
-called `fields`.
+Here we are creating a directive called `keys` that can be applied to
+[Object types definitions](./object-types.md) and accepts one parameter
+called `fields`. Note that directive names, by default, are converted to camelCase
+on the GraphQL schema.
 
 Here's how we can use it in our schema:
 
 ```python
 import strawberry
+
+from .directives import Keys  # or could be same file
 
 @strawberry.type(directives=Keys(fields="id"))
 class User:
@@ -51,7 +53,7 @@ type User @keys(fields: "id") {
 
 ## Locations
 
-Schema directives can be applied to many different parts of a schema, here's the
+Schema directives can be applied to many different parts of a schema. Here's the
 list of all the allowed locations:
 
 | Name                   |                         | Description                                              |
