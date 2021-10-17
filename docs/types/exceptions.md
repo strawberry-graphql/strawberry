@@ -262,7 +262,7 @@ class Type:
 
 ### WrongNumberOfResultsReturned
 
-This exception is thrown when the DataLoader returns a different number of results than
+This exception is raised when the DataLoader returns a different number of results than
 requested.
 
 ```python
