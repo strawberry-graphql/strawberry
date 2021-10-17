@@ -4,7 +4,17 @@ title: FastAPI
 
 # FastAPI
 
-Strawberry provides support for [FastAPI](https://fastapi.tiangolo.com/) with a custom [APIRouter](https://fastapi.tiangolo.com/tutorial/bigger-applications/#apirouter) called `GraphQLRouter`.
+Strawberry provides support for [FastAPI](https://fastapi.tiangolo.com/) with a
+custom
+[APIRouter](https://fastapi.tiangolo.com/tutorial/bigger-applications/#apirouter)
+called `GraphQLRouter`.
+
+Before using Strawberry's FastAPI support make sure you install all the required
+dependencies by running:
+
+```
+pip install 'strawberry-graphql[fastapi]'
+```
 
 See below example for integrating FastAPI with Strawberry:
 
@@ -35,17 +45,20 @@ The `GraphQLRouter` accepts the following options:
 - schema: mandatory, the schema created by `strawberry.Schema`.
 - graphiql: optional, defaults to `True`, whether to enable the GraphiQL
   interface.
-- context_getter: optional FastAPI dependency for providing custom context value.
-- root_value_getter: optional FastAPI dependency for providing custom root value.
+- context_getter: optional FastAPI dependency for providing custom context
+  value.
+- root_value_getter: optional FastAPI dependency for providing custom root
+  value.
 
 ## context_getter
 
-`context_getter` option allows to provide a custom context object that can be used in your
-resolver. You can return anything here, by default we return a dictionary with
-the request and background tasks.
+`context_getter` option allows to provide a custom context object that can be
+used in your resolver. You can return anything here, by default we return a
+dictionary with the request and background tasks.
 
-`context_getter` is [FastAPI dependency](https://fastapi.tiangolo.com/tutorial/dependencies/)
-and can inject another dependencies.
+`context_getter` is
+[FastAPI dependency](https://fastapi.tiangolo.com/tutorial/dependencies/) and
+can inject another dependencies.
 
 ```python
 import strawberry
@@ -91,7 +104,9 @@ case.
 
 ### Setting background tasks
 
-Similarly, [background tasks](https://fastapi.tiangolo.com/tutorial/background-tasks/?h=background) can be added via the context:
+Similarly,
+[background tasks](https://fastapi.tiangolo.com/tutorial/background-tasks/?h=background)
+can be added via the context:
 
 ```python
 import strawberry
@@ -129,8 +144,9 @@ app.include_router(graphql_app, prefix="/graphql")
 
 ## root_value_getter
 
-`root_value_getter` option allows to provide a custom root value for your schema, this is
-probably not used a lot but it might be useful in certain situations.
+`root_value_getter` option allows to provide a custom root value for your
+schema, this is probably not used a lot but it might be useful in certain
+situations.
 
 Here's an example:
 

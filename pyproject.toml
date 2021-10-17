@@ -103,6 +103,7 @@ flask = ["flask", "pytest-flask"]
 opentelemetry = ["opentelemetry-api", "opentelemetry-sdk"]
 pydantic = ["pydantic"]
 sanic = ["sanic"]
+fastapi = ["fastapi"]
 
 [tool.poetry.scripts]
 strawberry = "strawberry.cli:run"
