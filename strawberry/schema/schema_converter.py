@@ -317,7 +317,10 @@ class GraphQLCoreConverter:
             kwargs: Dict[str, Any],
         ) -> Tuple[List[Any], Dict[str, Any]]:
             kwargs = convert_arguments(
-                kwargs, field.arguments, auto_camel_case=self.config.auto_camel_case
+                kwargs,
+                field.arguments,
+                scalar_registry=self.scalar_registry,
+                auto_camel_case=self.config.auto_camel_case,
             )
 
             # the following code allows to omit info and root arguments
@@ -451,12 +454,14 @@ class GraphQLCoreConverter:
             return self.from_object(type_definition)
         elif isinstance(type_, TypeDefinition):  # TODO: Replace with StrawberryObject
             return self.from_object(type_)
-        elif _is_scalar(type_):  # TODO: Replace with StrawberryScalar
-            return self.from_scalar(type_)
         elif isinstance(type_, StrawberryUnion):
             return self.from_union(type_)
         elif isinstance(type_, LazyType):
             return self.from_type(type_.resolve_type())
+        elif _is_scalar(
+            type_, self.scalar_registry
+        ):  # TODO: Replace with StrawberryScalar
+            return self.from_scalar(type_)
 
         raise TypeError(f"Unexpected type '{type_}'")
 
@@ -511,9 +516,12 @@ def _is_interface_type(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
     return type_definition.is_interface
 
 
-def _is_scalar(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
+def _is_scalar(
+    type_: Union[StrawberryType, type],
+    scalar_registry: Dict[object, Union[ScalarWrapper, ScalarDefinition]],
+) -> TypeGuard[type]:
     # isinstance(type_, StrawberryScalar)  # noqa: E800
-    return is_scalar(type_)
+    return is_scalar(type_, scalar_registry)
 
 
 def _is_object_type(type_: Union[StrawberryType, type]) -> TypeGuard[type]:

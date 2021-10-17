@@ -115,12 +115,14 @@ class BaseGraphQLWSHandler(ABC):
         except GraphQLError as error:
             error_payload = format_graphql_error(error)
             await self.send_message(GQL_ERROR, operation_id, error_payload)
+            self.schema.process_errors([error])
             return
 
         if isinstance(result_source, GraphQLExecutionResult):
             assert result_source.errors
             error_payload = format_graphql_error(result_source.errors[0])
             await self.send_message(GQL_ERROR, operation_id, error_payload)
+            self.schema.process_errors(result_source.errors)
             return
 
         self.subscriptions[operation_id] = result_source
@@ -150,6 +152,10 @@ class BaseGraphQLWSHandler(ABC):
                         format_graphql_error(err) for err in result.errors
                     ]
                 await self.send_message(GQL_DATA, operation_id, payload)
+                # log errors after send_message to prevent potential
+                # slowdown of sending result
+                if result.errors:
+                    self.schema.process_errors(result.errors)
         except asyncio.CancelledError:
             # CancelledErrors are expected during task cleanup.
             pass
@@ -162,6 +168,7 @@ class BaseGraphQLWSHandler(ABC):
                 operation_id,
                 {"data": None, "errors": [format_graphql_error(error)]},
             )
+            self.schema.process_errors([error])
 
         await self.send_message(GQL_COMPLETE, operation_id, None)
 
