@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.84.1 - 2021-10-17
+-------------------
+
+This release fixes the `merge_types` type signature.
+
+Contributed by [Guillaume Andreu Sabater](https://github.com/g-as) [PR #1348](https://github.com/strawberry-graphql/strawberry/pull/1348/)
+
+
 0.84.0 - 2021-10-16
 -------------------
 
