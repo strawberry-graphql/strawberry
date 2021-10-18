@@ -287,7 +287,7 @@ This exception is raised when the `request` is missing the `query` paramater.
 ```python
 client.post("/graphql", data={})
 
-# Trhows 'Request data is missing a "query" value'
+# Throws 'Request data is missing a "query" value'
 ```
 
 ## UnallowedReturnTypeForUnion
