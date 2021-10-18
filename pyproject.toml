@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "strawberry-graphql"
 packages = [ { include = "strawberry" } ]
-version = "0.84.1"
+version = "0.84.2"
 description = "A library for creating GraphQL APIs"
 authors = ["Patrick Arminio <patrick.arminio@gmail.com>"]
 license = "MIT"
@@ -103,6 +103,7 @@ flask = ["flask", "pytest-flask"]
 opentelemetry = ["opentelemetry-api", "opentelemetry-sdk"]
 pydantic = ["pydantic"]
 sanic = ["sanic"]
+fastapi = ["fastapi"]
 
 [tool.poetry.scripts]
 strawberry = "strawberry.cli:run"

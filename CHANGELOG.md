@@ -1,6 +1,21 @@
 CHANGELOG
 =========
 
+0.84.2 - 2021-10-17
+-------------------
+
+This release adds an extra dependency for FastAPI to prevent
+it being downloaded even when not needed.
+
+To install Strawberry with FastAPI support you can do:
+
+```
+pip install 'strawberry-graphql[fastapi]'
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1366](https://github.com/strawberry-graphql/strawberry/pull/1366/)
+
+
 0.84.1 - 2021-10-17
 -------------------
 
