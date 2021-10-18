@@ -205,7 +205,7 @@ Info objects contain information for the current execution context:
 | variable_values | `Dict[str, Any]`          | The variables for this operation                                                        |
 | operation       | `OperationDefinitionNode` | The ast for the current operation (public API might change in future)                   |
 | path            | `Path`                    | The path for the current field                                                          |
-| selected_fields | `List[SelectedField]`     | Additional information related to the current field (public API might change in future) |
+| selected_fields | `List[SelectedField]`     | Additional information related to the current field                                     |
 | schema          | `Schema`                  | The Strawberry schema instance                                                          |
 
 [^1]:
