@@ -1,11 +1,7 @@
-from abc import abstractmethod
 from typing import TYPE_CHECKING, Any
 
-from typing_extensions import Protocol
-
 from strawberry.extensions import Extension
-from strawberry.types.info import Info
-from strawberry.utils.await_maybe import await_maybe
+from strawberry.utils.await_maybe import AwaitableOrValue, await_maybe
 
 
 if TYPE_CHECKING:
@@ -16,15 +12,11 @@ if TYPE_CHECKING:
 SPECIFIED_DIRECTIVES = {"include", "skip"}
 
 
-class Middleware(Protocol):
-    @abstractmethod
-    def resolve(self, next_, root, info: Info, **kwargs) -> None:
-        raise NotImplementedError
-
-
 class DirectivesExtension(Extension):
-    async def resolve(self, next_, root, info, **kwargs) -> Any:
-        result = await await_maybe(next_(root, info, **kwargs))
+    async def resolve(
+        self, next_, root, info, *args, **kwargs
+    ) -> AwaitableOrValue[Any]:
+        result = await await_maybe(next_(root, info, *args, **kwargs))
 
         for directive in info.field_nodes[0].directives:
             directive_name = directive.name.value
@@ -53,8 +45,8 @@ class DirectivesExtension(Extension):
 
 class DirectivesExtensionSync(Extension):
     # TODO: we might need the graphql info here
-    def resolve(self, next_, root, info, **kwargs) -> Any:
-        result = next_(root, info, **kwargs)
+    def resolve(self, next_, root, info, *args, **kwargs) -> AwaitableOrValue[Any]:
+        result = next_(root, info, *args, **kwargs)
 
         for directive in info.field_nodes[0].directives:
             directive_name = directive.name.value

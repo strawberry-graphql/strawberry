@@ -31,11 +31,7 @@ def print_schema_directive_params(params: Dict) -> str:
 def print_schema_directive(
     directive: StrawberrySchemaDirective, schema: BaseSchema
 ) -> str:
-    # TODO: get actual name
-    params = {}
-
-    if directive.instance:
-        params = directive.instance.__dict__
+    params = directive.instance.__dict__ if directive.instance else {}
 
     directive_name = directive.get_graphql_name(
         auto_camel_case=schema.config.auto_camel_case
