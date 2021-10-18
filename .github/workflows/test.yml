@@ -68,19 +68,18 @@ jobs:
   django-unit-tests:
     strategy:
       matrix:
-        # TODO: shall we just do one python version for django?
-        python-version: ['3.7', '3.8', '3.9', '3.10']
         django: [3.2, 3.1.8, 3.0.14, 2.2.20]
 
-    name: Test Python ${{ matrix.python-version }} - Django ${{ matrix.django }}
+    name: Test Django ${{ matrix.django }}
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v2
 
       - uses: actions/setup-python@v2
+        id: setup-python
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: '3.x'
           architecture: x64
 
       - run: pip install poetry
@@ -91,8 +90,8 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ~/.cache/pypoetry/virtualenvs
-          key: ${{ runner.os }}-py-${{ matrix.python-version }}-poetry-${{ hashFiles('poetry.lock') }}
-          restore-keys: ${{ runner.os }}-py-${{ matrix.python-version }}-poetry-
+          key: ${{ runner.os }}-py-${{ steps.setup-python.outputs.python-version }}-poetry-${{ hashFiles('poetry.lock') }}
+          restore-keys: ${{ runner.os }}-py-${{ steps.setup-python.outputs.python-version }}-poetry-
 
       - name: Install dependencies
         run: poetry install
