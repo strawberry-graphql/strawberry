@@ -6,6 +6,7 @@ from typing_extensions import Protocol
 from graphql import GraphQLError
 
 from strawberry.custom_scalar import ScalarDefinition
+from strawberry.directive import StrawberryDirective
 from strawberry.enum import EnumDefinition
 from strawberry.types import ExecutionContext, ExecutionResult
 from strawberry.types.types import TypeDefinition
@@ -57,6 +58,10 @@ class BaseSchema(Protocol):
     ) -> Optional[
         Union[TypeDefinition, ScalarDefinition, EnumDefinition, StrawberryUnion]
     ]:
+        raise NotImplementedError
+
+    @abstractmethod
+    def get_directive_by_name(self, graphql_name: str) -> Optional[StrawberryDirective]:
         raise NotImplementedError
 
     @abstractmethod

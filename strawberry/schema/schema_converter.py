@@ -124,8 +124,13 @@ class GraphQLCoreConverter:
             argument_name = argument.get_graphql_name(self.config.auto_camel_case)
             graphql_arguments[argument_name] = self.from_argument(argument)
 
+        directive_name = directive.get_graphql_name(self.config.auto_camel_case)
+
+        if not directive_name:
+            breakpoint()
+
         return GraphQLDirective(
-            name=directive.graphql_name,
+            name=directive_name,
             locations=directive.locations,
             args=graphql_arguments,
             description=directive.description,
