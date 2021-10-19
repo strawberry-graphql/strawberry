@@ -30,16 +30,13 @@ class StrawberrySchemaDirective(GraphQLNameMixin):
     instance: Optional[object] = dataclasses.field(init=False)
 
     def get_graphql_name(self, auto_camel_case: bool) -> str:
-        if self.graphql_name is not None:
-            return self.graphql_name
-
-        assert self.python_name
+        name = super().get_graphql_name(auto_camel_case)
 
         if auto_camel_case:
-            # we don't want the first letter to be uppercase
-            return self.python_name[0].lower() + self.python_name[1:]
+            # we don't want the first letter to be uppercase for directives
+            return name[0].lower() + name[1:]
 
-        return self.python_name
+        return name
 
     def __call__(self, *args, **kwargs):
         self.instance = self.wrap(*args, **kwargs)
