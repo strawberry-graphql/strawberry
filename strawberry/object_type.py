@@ -1,6 +1,6 @@
 import dataclasses
 import inspect
-from typing import List, Optional, Sequence, Type, cast
+from typing import Callable, List, Optional, Sequence, Type, TypeVar, cast, overload
 
 from strawberry.schema_directive import StrawberrySchemaDirective
 
@@ -131,9 +131,13 @@ def _process_type(
     return cls
 
 
+T = TypeVar("T")
+
+
+@overload
 @__dataclass_transform__(order_default=True, field_descriptors=(field, StrawberryField))
 def type(
-    cls: Type = None,
+    cls: T,
     *,
     name: str = None,
     is_input: bool = False,
@@ -141,6 +145,33 @@ def type(
     description: str = None,
     directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
     extend: bool = False,
+) -> T:
+    ...
+
+
+@overload
+@__dataclass_transform__(order_default=True, field_descriptors=(field, StrawberryField))
+def type(
+    *,
+    name: str = None,
+    is_input: bool = False,
+    is_interface: bool = False,
+    description: str = None,
+    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    extend: bool = False,
+) -> Callable[[T], T]:
+    ...
+
+
+def type(
+    cls=None,
+    *,
+    name=None,
+    is_input=False,
+    is_interface=False,
+    description=None,
+    directives=(),
+    extend=False,
 ):
     """Annotates a class as a GraphQL type.
 
@@ -178,13 +209,35 @@ def type(
     return wrap(cls)
 
 
+@overload
 @__dataclass_transform__(order_default=True, field_descriptors=(field, StrawberryField))
 def input(
-    cls: Type = None,
+    cls: T,
     *,
     name: str = None,
     description: str = None,
     directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+) -> T:
+    ...
+
+
+@overload
+@__dataclass_transform__(order_default=True, field_descriptors=(field, StrawberryField))
+def input(
+    *,
+    name: str = None,
+    description: str = None,
+    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+) -> Callable[[T], T]:
+    ...
+
+
+def input(
+    cls=None,
+    *,
+    name=None,
+    description=None,
+    directives=(),
 ):
     """Annotates a class as a GraphQL Input type.
     Example usage:
