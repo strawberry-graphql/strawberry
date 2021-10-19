@@ -15,7 +15,10 @@ from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.directive import StrawberryDirective
 from strawberry.enum import EnumDefinition
 from strawberry.extensions import Extension
-from strawberry.middleware import DirectivesExtension, DirectivesExtensionSync
+from strawberry.extensions.directives import (
+    DirectivesExtension,
+    DirectivesExtensionSync,
+)
 from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
 from strawberry.types import ExecutionContext, ExecutionResult
