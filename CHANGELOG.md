@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.84.3 - 2021-10-19
+-------------------
+
+This release fixed the typing support for Pyright.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1363](https://github.com/strawberry-graphql/strawberry/pull/1363/)
+
+
 0.84.2 - 2021-10-17
 -------------------
 
