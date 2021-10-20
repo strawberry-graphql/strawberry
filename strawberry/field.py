@@ -99,6 +99,13 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
         # `dataclasses.MISSING` to represent an "undefined" value and
         # `.default_value` uses `UNSET`
         self.default_value = default
+        if callable(default_factory):
+            try:
+                self.default_value = default_factory()
+            except TypeError as exc:
+                raise TypeError(
+                    "`default_factory` must be a callable of 0 arity"
+                ) from exc
 
         self.is_subscription = is_subscription
 
