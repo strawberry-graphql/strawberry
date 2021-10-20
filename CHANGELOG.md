@@ -1,6 +1,81 @@
 CHANGELOG
 =========
 
+0.84.3 - 2021-10-19
+-------------------
+
+This release fixed the typing support for Pyright.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1363](https://github.com/strawberry-graphql/strawberry/pull/1363/)
+
+
+0.84.2 - 2021-10-17
+-------------------
+
+This release adds an extra dependency for FastAPI to prevent
+it being downloaded even when not needed.
+
+To install Strawberry with FastAPI support you can do:
+
+```
+pip install 'strawberry-graphql[fastapi]'
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1366](https://github.com/strawberry-graphql/strawberry/pull/1366/)
+
+
+0.84.1 - 2021-10-17
+-------------------
+
+This release fixes the `merge_types` type signature.
+
+Contributed by [Guillaume Andreu Sabater](https://github.com/g-as) [PR #1348](https://github.com/strawberry-graphql/strawberry/pull/1348/)
+
+
+0.84.0 - 2021-10-16
+-------------------
+
+This release adds support for FastAPI integration using APIRouter.
+
+```python
+import strawberry
+
+from fastapi import FastAPI
+from strawberry.fastapi import GraphQLRouter
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self) -> str:
+        return "Hello World"
+
+schema = strawberry.Schema(Query)
+
+graphql_app = GraphQLRouter(schema)
+
+app = FastAPI()
+app.include_router(graphql_app, prefix="/graphql")
+```
+
+Contributed by [Jiří Bireš](https://github.com/jiribires) [PR #1291](https://github.com/strawberry-graphql/strawberry/pull/1291/)
+
+
+0.83.6 - 2021-10-16
+-------------------
+
+Improve help texts for CLI to work better on ZSH.
+
+Contributed by [Magnus Markling](https://github.com/memark) [PR #1360](https://github.com/strawberry-graphql/strawberry/pull/1360/)
+
+
+0.83.5 - 2021-10-16
+-------------------
+
+Errors encountered in subscriptions will now be logged to the `strawberry.execution` logger as errors encountered in Queries and Mutations are. <3
+
+Contributed by [Michael Ossareh](https://github.com/ossareh) [PR #1316](https://github.com/strawberry-graphql/strawberry/pull/1316/)
+
+
 0.83.4 - 2021-10-13
 -------------------
 

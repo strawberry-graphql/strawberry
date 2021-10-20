@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "strawberry-graphql"
 packages = [ { include = "strawberry" } ]
-version = "0.83.4"
+version = "0.84.3"
 description = "A library for creating GraphQL APIs"
 authors = ["Patrick Arminio <patrick.arminio@gmail.com>"]
 license = "MIT"
@@ -44,6 +44,7 @@ pydantic = {version = "<2", optional = true}
 python-multipart = "^0.0.5"
 sanic = {version = ">=20.12.2,<22.0.0", optional = true}
 aiohttp = {version = "^3.7.4.post0", optional = true}
+fastapi = {version = ">=0.65.2", optional = true}
 sentinel = "^0.3.0"
 
 [tool.poetry.dev-dependencies]
@@ -87,9 +88,10 @@ types-requests = "^2.25.9"
 types-python-dateutil = "^2.8.0"
 types-freezegun = "^1.1.0"
 types-chardet = "^4.0.0"
-types-certifi = "^2020.4.0"
+types-certifi = "^2021.10.8"
 types-aiofiles = "^0.7.0"
 sanic-testing = "^0.7.0"
+fastapi = {version = ">=0.65.0", optional = false}
 pytest-xprocess = "^0.18.1"
 
 [tool.poetry.extras]
@@ -101,6 +103,7 @@ flask = ["flask", "pytest-flask"]
 opentelemetry = ["opentelemetry-api", "opentelemetry-sdk"]
 pydantic = ["pydantic"]
 sanic = ["sanic"]
+fastapi = ["fastapi"]
 
 [tool.poetry.scripts]
 strawberry = "strawberry.cli:run"
@@ -122,6 +125,7 @@ sections = ["FUTURE", "STDLIB", "PYTEST", "THIRDPARTY", "DJANGO", "GRAPHQL", "FI
 addopts = "-s --emoji --mypy-ini-file=mypy_tests.ini --benchmark-disable"
 DJANGO_SETTINGS_MODULE = "tests.django.django_settings"
 testpaths = ["tests/"]
+markers = ["django"]
 
 [tool.autopub]
 git-username = "Botberry"

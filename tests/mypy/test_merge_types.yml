@@ -1,0 +1,18 @@
+- case: test_merge_types
+  main: |
+    import strawberry
+    from strawberry.tools import merge_types
+
+    @strawberry.type
+    class QueryA:
+        field1: str
+
+    @strawberry.type
+    class QueryB:
+        field2: int
+
+    Query = merge_types("AwesomeQuery", (QueryA, QueryB))
+
+    reveal_type(Query)
+  out: |
+    main:14: note: Revealed type is "builtins.type"

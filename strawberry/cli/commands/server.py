@@ -38,7 +38,7 @@ def server(schema, host, port, log_level, app_dir):
     except ImportError:
         message = (
             "The debug server requires additional packages, install them by running:\n"
-            "pip install strawberry-graphql[debug-server]"
+            "pip install 'strawberry-graphql[debug-server]'"
         )
         raise click.ClickException(message)
 
