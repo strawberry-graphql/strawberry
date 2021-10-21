@@ -15,6 +15,8 @@ def test_print_simple_directive():
         first_name: str = strawberry.field(directives=[Sensitive(reason="GDPR")])
 
     expected_type = """
+    directive @sensitive on FIELD_DEFINITION
+
     type Query {
       firstName: String! @sensitive(reason: "GDPR")
     }
@@ -35,6 +37,8 @@ def test_print_directive_with_name():
         first_name: str = strawberry.field(directives=[SensitiveField(reason="GDPR")])
 
     expected_type = """
+    directive @sensitiveField on FIELD_DEFINITION
+
     type Query {
       firstName: String! @sensitiveField(reason: "GDPR")
     }
