@@ -104,7 +104,7 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
                 self.default_value = default_factory()
             except TypeError as exc:
                 raise TypeError(
-                    "`default_factory` must be a callable of 0 arity"
+                    "`default_factory` must be a callable that requires no arguments"
                 ) from exc
 
         self.is_subscription = is_subscription
