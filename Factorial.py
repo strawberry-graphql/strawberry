@@ -1,8 +1,9 @@
 # This Python Program finds the factorial of a number
 
+
 def factorial(num):
     """This is a recursive function that calls
-   itself to find the factorial of given number"""
+    itself to find the factorial of given number"""
     if num == 1:
         return num
     else:
