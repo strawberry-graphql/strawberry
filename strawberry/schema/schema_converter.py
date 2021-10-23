@@ -3,6 +3,8 @@ from __future__ import annotations
 from enum import Enum
 from typing import TYPE_CHECKING, Any, Callable, Dict, List, Tuple, Type, Union, cast
 
+from typing_extensions import Protocol
+
 
 # TypeGuard is only available in typing_extensions => 3.10, we don't want
 # to force updates to the typing_extensions package so we only use it when
@@ -53,6 +55,11 @@ from strawberry.utils.await_maybe import await_maybe
 from .types.concrete_type import ConcreteType
 
 
+# TODO: remove this when we implement the StrawberryObject
+class HasTypeDefinition(Protocol):
+    _type_definition: TypeDefinition
+
+
 # graphql-core expects a resolver for an Enum type to return
 # the enum's *value* (not its name or an instance of the enum). We have to
 # subclass the GraphQLEnumType class to enable returning Enum members from
@@ -98,14 +105,14 @@ class GraphQLCoreConverter:
 
         if _is_object_type(type_):
             if type_._type_definition.is_input:
-                return self.from_input_object_type(type_)
+                return self.from_input_object(type_)
             elif type_._type_definition.is_interface:
                 return self.from_interface(type_._type_definition)
             else:
-                return self.from_object_type(type_)
+                return self.from_object(type_._type_definition)
         elif isinstance(type_, StrawberryEnum):
             return self.from_enum(type_)
-        elif _is_scalar(type_):
+        elif _is_scalar(type_, self.scalar_registry):
             return self.from_scalar(type_)
 
         raise TypeError(f"Unexpected type '{type_}'")
@@ -208,8 +215,10 @@ class GraphQLCoreConverter:
             description=field.description,
         )
 
-    def from_input_object(self, object_type: type) -> GraphQLInputObjectType:
-        type_definition = object_type._type_definition  # type: ignore
+    def from_input_object(
+        self, object_type: HasTypeDefinition
+    ) -> GraphQLInputObjectType:
+        type_definition = object_type._type_definition
 
         # Don't reevaluate known types
         if type_definition.name in self.type_map:
@@ -526,19 +535,21 @@ class GraphQLCoreConverter:
 ################################################################################
 
 
-def _is_input_type(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
+def _is_input_type(type_: Union[StrawberryType, type]) -> TypeGuard[HasTypeDefinition]:
     if not _is_object_type(type_):
         return False
 
-    type_definition: TypeDefinition = type_._type_definition  # type: ignore
+    type_definition: TypeDefinition = type_._type_definition
     return type_definition.is_input
 
 
-def _is_interface_type(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
+def _is_interface_type(
+    type_: Union[StrawberryType, type]
+) -> TypeGuard[HasTypeDefinition]:
     if not _is_object_type(type_):
         return False
 
-    type_definition: TypeDefinition = type_._type_definition  # type: ignore
+    type_definition: TypeDefinition = type_._type_definition
     return type_definition.is_interface
 
 
@@ -550,7 +561,7 @@ def _is_scalar(
     return is_scalar(type_, scalar_registry)
 
 
-def _is_object_type(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
+def _is_object_type(type_: Union[StrawberryType, type]) -> TypeGuard[HasTypeDefinition]:
     # isinstance(type_, StrawberryObjectType)  # noqa: E800
     return hasattr(type_, "_type_definition")
 
