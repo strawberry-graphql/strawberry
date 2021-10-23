@@ -15,7 +15,6 @@ from graphql.utilities.print_schema import (
 )
 
 from strawberry.field import StrawberryField
-from strawberry.schema.config import StrawberryConfig
 from strawberry.schema_directive import Location, StrawberrySchemaDirective
 from strawberry.types.types import TypeDefinition
 
@@ -129,21 +128,6 @@ def _print_type(field, schema: BaseSchema) -> str:
     return original_print_type(field)
 
 
-def print_schema_directive_definition(
-    directive: StrawberrySchemaDirective, config: StrawberryConfig
-) -> str:
-    directive_name = directive.get_graphql_name(auto_camel_case=config.auto_camel_case)
-
-    return (
-        # TODO: print description
-        f"directive @{directive_name}"
-        # TODO: print args
-        # TODO: print repeatable
-        + " on "
-        + " | ".join(location.name for location in directive.locations)
-    )
-
-
 def print_schema(schema: BaseSchema) -> str:
     graphql_core_schema = schema._schema  # type: ignore
 
@@ -153,15 +137,10 @@ def print_schema(schema: BaseSchema) -> str:
     type_map = graphql_core_schema.type_map
 
     types = filter(is_defined_type, map(type_map.get, sorted(type_map)))  # type: ignore
-    schema_directives = sorted(schema.schema_directives, key=lambda d: d.python_name)
 
     return "\n\n".join(
         chain(
             filter(None, [print_schema_definition(graphql_core_schema)]),
-            (
-                print_schema_directive_definition(directive, schema.config)
-                for directive in schema_directives
-            ),
             (print_directive(directive) for directive in directives),
             (_print_type(type_, schema) for type_ in types),  # type: ignore
         )

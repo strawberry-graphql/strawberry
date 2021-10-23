@@ -29,9 +29,6 @@ class StrawberrySchemaDirective(GraphQLNameMixin):
     description: Optional[str] = None
     instance: Optional[object] = dataclasses.field(init=False)
 
-    def __hash__(self) -> int:
-        return hash(self.python_name)
-
     def get_graphql_name(self, auto_camel_case: bool) -> str:
         name = super().get_graphql_name(auto_camel_case)
 

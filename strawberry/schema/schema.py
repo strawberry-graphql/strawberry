@@ -20,7 +20,6 @@ from strawberry.extensions.directives import (
     DirectivesExtensionSync,
 )
 from strawberry.schema.schema_converter import GraphQLCoreConverter
-from strawberry.schema.types.concrete_type import ConcreteType
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
 from strawberry.types import ExecutionContext, ExecutionResult
 from strawberry.types.types import TypeDefinition
@@ -101,26 +100,6 @@ class Schema(BaseSchema):
             raise ValueError(f"Invalid Schema. Errors:\n\n{formatted_errors}")
 
         self.query = self.schema_converter.type_map[query_type.name]
-
-        self.collect_schema_directives(self.schema_converter.type_map)
-
-    def collect_schema_directives(self, type_map: Dict[str, ConcreteType]) -> None:
-        types = (
-            type_.definition
-            for type_ in type_map.values()
-            if isinstance(type_.definition, TypeDefinition)
-        )
-
-        directives = set()
-
-        for type_ in types:
-            if type_.directives:
-                directives |= set(type_.directives)
-
-            for field in type_.fields:
-                directives |= set(field.directives)
-
-        self.schema_directives = directives
 
     def get_type_by_name(
         self, name: str

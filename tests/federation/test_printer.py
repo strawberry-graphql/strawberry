@@ -34,10 +34,6 @@ def test_entities_type_when_no_type_has_keys():
     schema = strawberry.federation.Schema(query=Query)
 
     expected = """
-        directive @external on FIELD_DEFINITION
-
-        directive @key on OBJECT | INTERFACE
-
         extend type Product @key(fields: "upc") {
           upc: String! @external
           reviews: [Review!]!
@@ -91,10 +87,6 @@ def test_entities_extending_interface():
     schema = strawberry.federation.Schema(query=Query)
 
     expected = """
-        directive @external on FIELD_DEFINITION
-
-        directive @key on OBJECT | INTERFACE
-
         extend type Product implements SomeInterface @key(fields: "upc") {
           id: ID!
           upc: String! @external
@@ -155,12 +147,6 @@ def test_fields_requires_are_printed_correctly():
     schema = strawberry.federation.Schema(query=Query)
 
     expected = """
-        directive @external on FIELD_DEFINITION
-
-        directive @key on OBJECT | INTERFACE
-
-        directive @requires on FIELD_DEFINITION
-
         extend type Product @key(fields: "upc") {
           upc: String! @external
           field1: String! @external
@@ -229,12 +215,6 @@ def test_field_provides_are_printed_correctly_camel_case_on():
     )
 
     expected = """
-        directive @external on FIELD_DEFINITION
-
-        directive @key on OBJECT | INTERFACE
-
-        directive @provides on FIELD_DEFINITION
-
         extend type Product @key(fields: "upc") {
           upc: String! @external
           theName: String! @external
@@ -301,12 +281,6 @@ def test_field_provides_are_printed_correctly_camel_case_off():
     )
 
     expected = """
-        directive @external on FIELD_DEFINITION
-
-        directive @key on OBJECT | INTERFACE
-
-        directive @provides on FIELD_DEFINITION
-
         extend type Product @key(fields: "upc") {
           upc: String! @external
           the_name: String! @external

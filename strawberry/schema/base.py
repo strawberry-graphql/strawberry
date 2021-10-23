@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from functools import lru_cache
-from typing import Any, Dict, Iterable, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from typing_extensions import Protocol
 
@@ -9,7 +9,6 @@ from graphql import GraphQLError
 from strawberry.custom_scalar import ScalarDefinition
 from strawberry.directive import StrawberryDirective
 from strawberry.enum import EnumDefinition
-from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.types import ExecutionContext, ExecutionResult
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
@@ -20,7 +19,6 @@ from .config import StrawberryConfig
 
 class BaseSchema(Protocol):
     config: StrawberryConfig
-    schema_directives: Iterable[StrawberrySchemaDirective]
 
     @abstractmethod
     async def execute(
