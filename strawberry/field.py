@@ -21,7 +21,7 @@ from typing_extensions import Literal
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import UNSET, StrawberryArgument
-from strawberry.exceptions import InvalidFieldArgument
+from strawberry.exceptions import InvalidDefaultFactoryError, InvalidFieldArgument
 from strawberry.type import StrawberryType
 from strawberry.types.info import Info
 from strawberry.union import StrawberryUnion
@@ -99,6 +99,11 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
         # `dataclasses.MISSING` to represent an "undefined" value and
         # `.default_value` uses `UNSET`
         self.default_value = default
+        if callable(default_factory):
+            try:
+                self.default_value = default_factory()
+            except TypeError as exc:
+                raise InvalidDefaultFactoryError() from exc
 
         self.is_subscription = is_subscription
 

@@ -208,3 +208,10 @@ class InvalidFieldArgument(Exception):
         message = f'Argument "{argument_name}" on field "{field_name}" cannot be of type\
             "{argument_type}"'
         super().__init__(message)
+
+
+class InvalidDefaultFactoryError(Exception):
+    def __init__(self):
+        message = "`default_factory` must be a callable that requires no arguments"
+
+        super().__init__(message)
