@@ -21,7 +21,7 @@ from typing_extensions import Literal
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import UNSET, StrawberryArgument
-from strawberry.exceptions import InvalidFieldArgument
+from strawberry.exceptions import InvalidDefaultFactoryError, InvalidFieldArgument
 from strawberry.type import StrawberryType
 from strawberry.types.info import Info
 from strawberry.union import StrawberryUnion
@@ -103,9 +103,7 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
             try:
                 self.default_value = default_factory()
             except TypeError as exc:
-                raise TypeError(
-                    "`default_factory` must be a callable that requires no arguments"
-                ) from exc
+                raise InvalidDefaultFactoryError() from exc
 
         self.is_subscription = is_subscription
 
