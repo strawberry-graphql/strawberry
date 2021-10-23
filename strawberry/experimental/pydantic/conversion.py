@@ -2,7 +2,6 @@ from typing import Union, cast
 
 from strawberry.enum import StrawberryEnum
 from strawberry.field import StrawberryField
-from strawberry.scalars import is_scalar
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
 from strawberry.union import StrawberryUnion
 
@@ -42,9 +41,8 @@ def _convert_from_pydantic_to_strawberry_type(
             )
 
         return items
-    elif is_scalar(type_):
-        return data
-    else:
+
+    if hasattr(type_, "_type_definition"):
         # in the case of an interface, the concrete type may be more specific
         # than the type in the field definition
         if hasattr(type(data), "_strawberry_type"):
@@ -52,6 +50,8 @@ def _convert_from_pydantic_to_strawberry_type(
         return convert_pydantic_model_to_strawberry_class(
             type_, model_instance=data_from_model, extra=extra
         )
+
+    return data
 
 
 def convert_pydantic_model_to_strawberry_class(cls, *, model_instance=None, extra=None):

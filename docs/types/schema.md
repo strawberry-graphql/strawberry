@@ -22,74 +22,148 @@ class Query:
     def hello(self) -> str:
         return "Hello World"
 
-
 schema = strawberry.Schema(Query)
 ```
 
-## API
+## API reference
 
 ```python
-strawberry.Schema(
-    query: Type,
-    mutation: Type = None,
-    subscription: Type = None
-    validate_queries: bool = True
-)
+class Schema(Query, mutation=None, subscription=None, **kwargs)
 ```
 
 <!-- TODO: add docs on directives, types, extensions and execution context class -->
 
-Creates a GraphQL schema
+#### `query: Type`
 
-- `query`: The root query type
-- `mutation`: The root mutation type
-- `subscription`: The root subscription type
+The root query Strawberry type. Usually called `Query`.
+
+<Note>
+
+A query type is always required when creating a Schema.
+
+</Note>
+
+#### `mutation: Optional[Type] = None`
+
+The root mutation type. Usually called `Mutation`.
+
+#### `subscription: Optional[Type] = None`
+
+The root subscription type. Usually called `Subscription`.
+
+#### `config: Optional[StrawberryConfig] = None`
+
+Pass a `StrawberryConfig` object to configure how the schema is generated. [Read
+more](/docs/types/schema-configurations).
+
+#### `types: List[Type] = []`
+
+List of extra types to register with the Schema that are not directly linked
+to from the root Query.
+
+<details class="mb-4">
+<summary>Defining extra `types` when using Interfaces</summary>
+
+```python
+from datetime import date
+import strawberry
+
+@strawberry.interface
+class Customer:
+    name: str
+
+@strawberry.type
+class Individual(Customer):
+    date_of_birth: date
+
+@strawberry.type
+class Company(Customer):
+    founded: date
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def get_customer(self, id: strawberry.ID) -> Customer  # note we're returning the interface here
+        if id == "mark":
+            return Individual(name="Mark", date_of_birth=date(1984, 5, 14))
+
+        if id == "facebook":
+            return Company(name="Facebook", founded=date(2004, 2, 1))
+
+schema = strawberry.Schema(Query, types=[Individual, Company])
+```
+
+</details>
+
+#### `extensions: List[Type[Extension]] = []`
+
+List of [extensions](/docs/extensions) to add to your Schema.
+
+#### `scalar_overrides: Optional[Dict[object, ScalarWrapper]] = None`
+
+Override the implementation of the built in scalars. [More information](/docs/types/scalars#overriding-built-in-scalars).
 
 ---
+
+## Methods
 
 ### `.execute()` (async)
 
 Executes a GraphQL operation against a schema (async)
 
-`execute(query, variable_values, context_value, root_value, operation_name, validate_queries)`
+```python
+async def execute(query, variable_values, context_value, root_value, operation_name)
+```
 
-| Parameter name   | Type                                   | Default | Description                                                                                            |
-| ---------------- | -------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------ |
-| query            | `str`                                  | N/A     | The document to be executed                                                                            |
-| variable_values  | `Optional[Dict[str, Any]]`             | `None`  | The variables for this operation                                                                       |
-| context_value    | `Optional[Any]`                        | `None`  | The value of the context that will be passed down to resolvers                                         |
-| root_value       | `Optional[Any]`                        | `None`  | The value for the root type that will passed down to root resolvers                                    |
-| operation_name   | `Optional[str]`                        | `None`  | The name of the operation you want to execute, useful when sending a document with multiple operations |
-| validate_queries | `bool`                                 | `True`  | This flag enables/disables query validation                                                            |
-| validation_rules | `Optional[List[Type[ValidationRule]]]` | `None`  | List of GraphQL core validation rules                                                                  |
+#### `query: str`
 
----
+The GraphQL document to be executed.
+
+#### `variable_values: Optional[Dict[str, Any]] = None`
+
+The variables for this operation.
+
+#### `context_value: Optional[Any] = None`
+
+The value of the context that will be passed down to resolvers.
+
+#### `root_value: Optional[Any] = None`
+
+The value for the root value that will passed to root resolvers.
+
+#### `operation_name: Optional[str] = None`
+
+The name of the operation you want to execute, useful when sending a document with multiple operations. If no `operation_name` is specified the first operation in the document will be executed.
 
 ### `.execute_sync()`
 
 Executes a GraphQL operation against a schema
 
-`execute_sync(query, variable_values, context_value, root_value, operation_name, validate_queries)`
+```python
+async def execute_sync(query, variable_values, context_value, root_value, operation_name)`
+```
 
-| Parameter name   | Type                                   | Default | Description                                                                                            |
-| ---------------- | -------------------------------------- | ------- | ------------------------------------------------------------------------------------------------------ |
-| query            | `str`                                  | N/A     | The document to be executed                                                                            |
-| variable_values  | `Optional[Dict[str, Any]]`             | `None`  | The variables for this operation                                                                       |
-| context_value    | `Optional[Any]`                        | `None`  | The value of the context that will be passed down to resolvers                                         |
-| root_value       | `Optional[Any]`                        | `None`  | The value for the root type that will passed down to root resolvers                                    |
-| operation_name   | `Optional[str]`                        | `None`  | The name of the operation you want to execute, useful when sending a document with multiple operations |
-| validate_queries | `bool`                                 | `True`  | This flag allows to disable query validation                                                           |
-| validation_rules | `Optional[List[Type[ValidationRule]]]` | `None`  | List of GraphQL core validation rules                                                                  |
+#### `query: str`
 
-## Query validation
+The GraphQL document to be executed.
 
-When creating a schema you can decide to disable the validation of the queries
-sent from clients. This can be useful to improve performances in some specific
-cases, for example when dealing with internal APIs where queries can be trusted.
+#### `variable_values: Optional[Dict[str, Any]] = None`
 
-> ⚠️ NOTE: make sure you understand the trade-offs of disabling validation, for
-> example when asking for field that don't exist the GraphQL schema won't return
-> any error, which is something that breaks the safety of having a typed schema.
+The variables for this operation.
+
+#### `context_value: Optional[Any] = None`
+
+The value of the context that will be passed down to resolvers.
+
+#### `root_value: Optional[Any] = None`
+
+The value for the root value that will passed to root resolvers.
+
+#### `operation_name: Optional[str] = None`
+
+The name of the operation you want to execute, useful when sending a document with multiple operations. If no `operation_name` is specified the first operation in the document will be executed.
+
+---
 
 ## Handling execution errors
 

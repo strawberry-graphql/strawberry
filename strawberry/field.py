@@ -1,6 +1,7 @@
 import builtins
 import dataclasses
 import inspect
+import sys
 from typing import (
     Any,
     Awaitable,
@@ -20,7 +21,7 @@ from typing_extensions import Literal
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import UNSET, StrawberryArgument
-from strawberry.exceptions import InvalidFieldArgument
+from strawberry.exceptions import InvalidDefaultFactoryError, InvalidFieldArgument
 from strawberry.type import StrawberryType
 from strawberry.types.info import Info
 from strawberry.union import StrawberryUnion
@@ -57,6 +58,12 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
         # basic fields are fields with no provided resolver
         is_basic_field = not base_resolver
 
+        kwargs: Dict[str, Any] = {}
+
+        # kw_only was added to python 3.10 and it is required
+        if sys.version_info >= (3, 10):
+            kwargs["kw_only"] = False
+
         super().__init__(  # type: ignore
             default=(default if default is not UNSET else dataclasses.MISSING),
             default_factory=(
@@ -71,6 +78,7 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
             compare=is_basic_field,
             hash=None,
             metadata={},
+            **kwargs,
         )
 
         self.graphql_name = graphql_name
@@ -91,6 +99,11 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
         # `dataclasses.MISSING` to represent an "undefined" value and
         # `.default_value` uses `UNSET`
         self.default_value = default
+        if callable(default_factory):
+            try:
+                self.default_value = default_factory()
+            except TypeError as exc:
+                raise InvalidDefaultFactoryError() from exc
 
         self.is_subscription = is_subscription
 

@@ -162,16 +162,42 @@ def _get_entity_type(type_map: TypeMap):
     return entity_type
 
 
+@overload
 @__dataclass_transform__(
     order_default=True, field_descriptors=(base_field, field, StrawberryField)
 )
 def type(
-    cls: Type = None,
+    cls: T,
     *,
     name: str = None,
     description: str = None,
     keys: List[str] = None,
     extend: bool = False,
+) -> T:
+    ...
+
+
+@overload
+@__dataclass_transform__(
+    order_default=True, field_descriptors=(base_field, field, StrawberryField)
+)
+def type(
+    *,
+    name: str = None,
+    description: str = None,
+    keys: List[str] = None,
+    extend: bool = False,
+) -> Callable[[T], T]:
+    ...
+
+
+def type(
+    cls=None,
+    *,
+    name=None,
+    description=None,
+    keys=None,
+    extend=False,
 ):
     return base_type(
         cls,

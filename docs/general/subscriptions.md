@@ -5,8 +5,8 @@ title: Subscriptions
 # Subscriptions
 
 In GraphQL you can use subscriptions to stream data from a server. To enable
-this with Strawberry your server must support ASGI and websockets or use the AIOHTTP
-integration.
+this with Strawberry your server must support ASGI and websockets or use the
+AIOHTTP integration.
 
 This is how you define a subscription-capable resolver:
 
@@ -32,9 +32,9 @@ class Subscription:
 schema = strawberry.Schema(query=Query, subscription=Subscription)
 ```
 
-Like queries and mutations, subscriptions are defined in a class and passed
-to the Schema function. Here we create a rudimentary counting function which
-counts from 0 to the target sleeping between each loop iteration.
+Like queries and mutations, subscriptions are defined in a class and passed to
+the Schema function. Here we create a rudimentary counting function which counts
+from 0 to the target sleeping between each loop iteration.
 
 We would send the following GraphQL document to our server to subscribe to this
 data stream:
@@ -47,7 +47,7 @@ subscription {
 
 In this example, the data looks like this as it passes over the websocket:
 
-![](../images/subscriptions-count-websocket.png)
+<img src="../images/subscriptions-count-websocket.png" alt="A view of the data that's been passed via websocket" width="1013" height="267" />
 
 This is a very short example of what is possible. Like with queries and
 mutations the subscription can return any GraphQL type, not only scalars as
@@ -153,3 +153,48 @@ schema = strawberry.Schema(query=Query, subscription=Subscription)
 ```
 
 [pep-525]: https://www.python.org/dev/peps/pep-0525/
+
+## GraphQL over WebSocket protocols
+
+Strawberry support both the legacy
+[graphql-ws](https://github.com/apollographql/subscriptions-transport-ws) and
+the newer recommended
+[graphql-transport-ws](https://github.com/enisdenjo/graphql-ws) WebSocket
+sub-protocols.
+
+Note that the `graphql-ws` sub-protocol is mainly supported for backwards
+compatibility. Read the
+[graphql-ws-transport protocols announcement](https://the-guild.dev/blog/graphql-over-websockets)
+to learn more about why the newer protocol is preferred.
+
+Strawberry allows you to choose which protocols you want to accept. All
+integrations supporting subscriptions can be configured with a list of
+`subscription_protocols` to accept. By default, all protocols are accepted.
+
+##### AIOHTTP
+
+```python
+from strawberry.aiohttp.views import GraphQLView
+from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
+from api.schema import schema
+
+
+view = GraphQLView(schema, subscription_protocols=[
+    GRAPHQL_TRANSPORT_WS_PROTOCOL,
+    GRAPHQL_WS_PROTOCOL
+])
+```
+
+##### ASGI
+
+```python
+from strawberry.asgi import GraphQL
+from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
+from api.schema import schema
+
+
+app = GraphQL(schema, subscription_protocols=[
+    GRAPHQL_TRANSPORT_WS_PROTOCOL,
+    GRAPHQL_WS_PROTOCOL,
+])
+```

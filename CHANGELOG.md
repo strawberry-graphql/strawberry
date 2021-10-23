@@ -1,6 +1,370 @@
 CHANGELOG
 =========
 
+0.84.4 - 2021-10-23
+-------------------
+
+Field definition uses output of `default_factory` as the GraphQL `default_value`.
+```python
+a_field: list[str] = strawberry.field(default_factory=list)
+```
+```graphql
+aField: [String!]! = []
+```
+
+Contributed by [A. Coady](https://github.com/coady) [PR #1371](https://github.com/strawberry-graphql/strawberry/pull/1371/)
+
+
+0.84.3 - 2021-10-19
+-------------------
+
+This release fixed the typing support for Pyright.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1363](https://github.com/strawberry-graphql/strawberry/pull/1363/)
+
+
+0.84.2 - 2021-10-17
+-------------------
+
+This release adds an extra dependency for FastAPI to prevent
+it being downloaded even when not needed.
+
+To install Strawberry with FastAPI support you can do:
+
+```
+pip install 'strawberry-graphql[fastapi]'
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1366](https://github.com/strawberry-graphql/strawberry/pull/1366/)
+
+
+0.84.1 - 2021-10-17
+-------------------
+
+This release fixes the `merge_types` type signature.
+
+Contributed by [Guillaume Andreu Sabater](https://github.com/g-as) [PR #1348](https://github.com/strawberry-graphql/strawberry/pull/1348/)
+
+
+0.84.0 - 2021-10-16
+-------------------
+
+This release adds support for FastAPI integration using APIRouter.
+
+```python
+import strawberry
+
+from fastapi import FastAPI
+from strawberry.fastapi import GraphQLRouter
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self) -> str:
+        return "Hello World"
+
+schema = strawberry.Schema(Query)
+
+graphql_app = GraphQLRouter(schema)
+
+app = FastAPI()
+app.include_router(graphql_app, prefix="/graphql")
+```
+
+Contributed by [Jiří Bireš](https://github.com/jiribires) [PR #1291](https://github.com/strawberry-graphql/strawberry/pull/1291/)
+
+
+0.83.6 - 2021-10-16
+-------------------
+
+Improve help texts for CLI to work better on ZSH.
+
+Contributed by [Magnus Markling](https://github.com/memark) [PR #1360](https://github.com/strawberry-graphql/strawberry/pull/1360/)
+
+
+0.83.5 - 2021-10-16
+-------------------
+
+Errors encountered in subscriptions will now be logged to the `strawberry.execution` logger as errors encountered in Queries and Mutations are. <3
+
+Contributed by [Michael Ossareh](https://github.com/ossareh) [PR #1316](https://github.com/strawberry-graphql/strawberry/pull/1316/)
+
+
+0.83.4 - 2021-10-13
+-------------------
+
+Add logic to convert arguments of type LazyType.
+
+Contributed by [Luke Murray](https://github.com/lukesmurray) [PR #1350](https://github.com/strawberry-graphql/strawberry/pull/1350/)
+
+
+0.83.3 - 2021-10-13
+-------------------
+
+This release fixes a bug where passing scalars in the `scalar_overrides`
+parameter wasn't being applied consistently.
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) [PR #1212](https://github.com/strawberry-graphql/strawberry/pull/1212/)
+
+
+0.83.2 - 2021-10-13
+-------------------
+
+Pydantic fields' `description` are now copied to the GraphQL schema
+
+```python
+import pydantic
+import strawberry
+
+class UserModel(pydantic.BaseModel):
+    age: str = pydantic.Field(..., description="Description")
+
+@strawberry.experimental.pydantic.type(UserModel)
+class User:
+    age: strawberry.auto
+```
+
+```
+type User {
+  """Description"""
+  age: String!
+}
+```
+
+Contributed by [Guillaume Andreu Sabater](https://github.com/g-as) [PR #1332](https://github.com/strawberry-graphql/strawberry/pull/1332/)
+
+
+0.83.1 - 2021-10-12
+-------------------
+
+We now run our tests against Windows during CI!
+
+Contributed by [Michael Ossareh](https://github.com/ossareh) [PR #1321](https://github.com/strawberry-graphql/strawberry/pull/1321/)
+
+
+0.83.0 - 2021-10-12
+-------------------
+
+Add a shortcut to merge queries, mutations. E.g.:
+
+```python
+import strawberry
+from strawberry.tools import merge_types
+
+
+@strawberry.type
+class QueryA:
+    ...
+
+
+@strawberry.type
+class QueryB:
+    ...
+
+
+ComboQuery = merge_types("ComboQuery", (QueryB, QueryA))
+schema = strawberry.Schema(query=ComboQuery)
+```
+
+Contributed by [Alexandru Mărășteanu](https://github.com/alexei) [PR #1273](https://github.com/strawberry-graphql/strawberry/pull/1273/)
+
+
+0.82.2 - 2021-10-12
+-------------------
+
+Makes the GraphQLSchema instance accessible from resolvers via the `info` parameter.
+
+Contributed by [Aryan Iyappan](https://github.com/codebyaryan) [PR #1311](https://github.com/strawberry-graphql/strawberry/pull/1311/)
+
+
+0.82.1 - 2021-10-11
+-------------------
+
+Fix bug where errors thrown in the on_parse_* extension hooks were being
+swallowed instead of being propagated.
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) [PR #1324](https://github.com/strawberry-graphql/strawberry/pull/1324/)
+
+
+0.82.0 - 2021-10-11
+-------------------
+
+Adds support for the `auto` type annotation described in #1192 to the Pydantic
+integration, which allows a user to define the list of fields without having to
+re-specify the type themselves. This gives better editor and type checker
+support. If you want to expose every field you can instead pass
+`all_fields=True` to the decorators and leave the body empty.
+
+```python
+import pydantic
+import strawberry
+from strawberry.experimental.pydantic import auto
+
+class User(pydantic.BaseModel):
+    age: int
+    password: str
+
+
+@strawberry.experimental.pydantic.type(User)
+class UserType:
+    age: auto
+    password: auto
+```
+
+Contributed by [Matt Allen](https://github.com/Matt343) [PR #1280](https://github.com/strawberry-graphql/strawberry/pull/1280/)
+
+
+0.81.0 - 2021-10-04
+-------------------
+
+This release adds a safety check on `strawberry.type`, `strawberry.input` and
+`strawberry.interface` decorators. When you try to use them with an object that is not a
+class, you will get a nice error message:
+`strawberry.type can only be used with classes`
+
+Contributed by [dependabot](https://github.com/dependabot) [PR #1278](https://github.com/strawberry-graphql/strawberry/pull/1278/)
+
+
+0.80.2 - 2021-10-01
+-------------------
+
+Add `Starlette` to the integrations section on the documentation.
+
+Contributed by [Marcelo Trylesinski](https://github.com/Kludex) [PR #1287](https://github.com/strawberry-graphql/strawberry/pull/1287/)
+
+
+0.80.1 - 2021-10-01
+-------------------
+
+This release add support for the upcoming python 3.10 and it adds support
+for the new union syntax, allowing to declare unions like this:
+
+```python
+import strawberry
+
+@strawberry.type
+class User:
+    name: str
+
+@strawberry.type
+class Error:
+    code: str
+
+@strawberry.type
+class Query:
+    find_user: User | Error
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #719](https://github.com/strawberry-graphql/strawberry/pull/719/)
+
+
+0.80.0 - 2021-09-30
+-------------------
+
+This release adds support for the `graphql-transport-ws` GraphQL over WebSocket
+protocol. Previously Strawberry only supported the legacy `graphql-ws` protocol.
+
+Developers can decide which protocols they want to accept. The following example shows
+how to do so using the ASGI integration. By default, both protocols are accepted.
+Take a look at our GraphQL subscription documentation to learn more.
+
+```python
+from strawberry.asgi import GraphQL
+from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL
+from api.schema import schema
+
+
+app = GraphQL(schema, subscription_protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL])
+```
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) [PR #1256](https://github.com/strawberry-graphql/strawberry/pull/1256/)
+
+
+0.79.0 - 2021-09-29
+-------------------
+
+Nests the resolver under the correct span; prior to this change your span would have looked something like:
+
+```
+GraphQL Query
+  GraphQL Parsing
+  GraphQL Validation
+  my_resolver
+  my_span_of_interest #1
+    my_sub_span_of_interest #2
+```
+
+After this change you'll have:
+
+```
+GraphQL Query
+  GraphQL Parsing
+  GraphQL Validation
+  GraphQL Resolving: my_resolver
+    my_span_of_interest #1
+      my_sub_span_of_interest #2
+```
+
+Contributed by [Michael Ossareh](https://github.com/ossareh) [PR #1281](https://github.com/strawberry-graphql/strawberry/pull/1281/)
+
+
+0.78.2 - 2021-09-27
+-------------------
+
+Enhances strawberry.extensions.tracing.opentelemetry to include spans for the Parsing and Validation phases of request handling. These occur before your resovler is called, so now you can see how much time those phases take up!
+
+Contributed by [Michael Ossareh](https://github.com/ossareh) [PR #1274](https://github.com/strawberry-graphql/strawberry/pull/1274/)
+
+
+0.78.1 - 2021-09-26
+-------------------
+
+Fix `extensions` argument type definition on `strawberry.Schema`
+
+Contributed by [Guillaume Andreu Sabater](https://github.com/g-as) [PR #1276](https://github.com/strawberry-graphql/strawberry/pull/1276/)
+
+
+0.78.0 - 2021-09-22
+-------------------
+
+This release introduces some brand new extensions to help improve the
+performance of your GraphQL server:
+
+* `ParserCache` - Cache the parsing of a query in memory
+* `ValidationCache` - Cache the validation step of execution
+
+For complicated queries these 2 extensions can improve performance by over 50%!
+
+Example:
+
+```python
+import strawberry
+from strawberry.extensions import ParserCache, ValidationCache
+
+schema = strawberry.Schema(
+  Query,
+  extensions=[
+    ParserCache(),
+    ValidationCache(),
+  ]
+)
+```
+
+This release also removes the `validate_queries` and `validation_rules`
+parameters on the `schema.execute*` methods in favour of using the
+`DisableValidation` and `AddValidationRule` extensions.
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) [PR #1196](https://github.com/strawberry-graphql/strawberry/pull/1196/)
+
+
+0.77.12 - 2021-09-20
+--------------------
+
+This release adds support for Sanic v21
+
+Contributed by [dependabot](https://github.com/dependabot) [PR #1105](https://github.com/strawberry-graphql/strawberry/pull/1105/)
+
+
 0.77.11 - 2021-09-19
 --------------------
 

@@ -1,6 +1,4 @@
-import logging
-import sys
-from typing import Any, Collection, Dict, List, Optional, Sequence, Type, Union
+from typing import Any, Dict, Optional, Sequence, Type, Union
 
 from graphql import (
     ExecutionContext as GraphQLExecutionContext,
@@ -9,10 +7,8 @@ from graphql import (
     parse,
     validate_schema,
 )
-from graphql.error import GraphQLError
 from graphql.subscription import subscribe
 from graphql.type.directives import specified_directives
-from graphql.validation import ValidationRule
 
 from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.enum import StrawberryEnum
@@ -24,14 +20,12 @@ from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 
 from ..printer import print_schema
+from .base import BaseSchema
 from .config import StrawberryConfig
 from .execute import execute, execute_sync
 
 
-logger = logging.getLogger("strawberry.execution")
-
-
-class Schema:
+class Schema(BaseSchema):
     def __init__(
         self,
         # TODO: can we make sure we only allow to pass something that has been decorated?
@@ -40,7 +34,7 @@ class Schema:
         subscription: Optional[Type] = None,
         directives=(),
         types=(),
-        extensions: Sequence[Type[Extension]] = (),
+        extensions: Sequence[Union[Type[Extension], Extension]] = (),
         execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
         config: Optional[StrawberryConfig] = None,
         scalar_overrides: Optional[
@@ -90,6 +84,9 @@ class Schema:
             types=graphql_types,
         )
 
+        # attach our schema to the GraphQL schema instance
+        self._schema._strawberry_schema = self  # type: ignore
+
         # Validate schema early because we want developers to know about
         # possible issues as soon as possible
         errors = validate_schema(self._schema)
@@ -109,22 +106,6 @@ class Schema:
 
         return None
 
-    def process_errors(
-        self, errors: List[GraphQLError], execution_context: ExecutionContext
-    ) -> None:
-        kwargs: Dict[str, Any] = {
-            "stack_info": True,
-        }
-
-        # stacklevel was added in version 3.8
-        # https://docs.python.org/3/library/logging.html#logging.Logger.debug
-
-        if sys.version_info >= (3, 8):
-            kwargs["stacklevel"] = 3
-
-        for error in errors:
-            logger.error(error, exc_info=error.original_error, **kwargs)
-
     async def execute(
         self,
         query: str,
@@ -132,12 +113,11 @@ class Schema:
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
-        validate_queries: bool = True,
-        validation_rules: Optional[Collection[Type[ValidationRule]]] = None,
     ) -> ExecutionResult:
         # Create execution context
         execution_context = ExecutionContext(
             query=query,
+            schema=self,
             context=context_value,
             root_value=root_value,
             variables=variable_values,
@@ -150,9 +130,7 @@ class Schema:
             extensions=self.extensions,
             directives=self.directives,
             execution_context_class=self.execution_context_class,
-            validate_queries=validate_queries,
             execution_context=execution_context,
-            validation_rules=validation_rules,
         )
 
         if result.errors:
@@ -167,11 +145,10 @@ class Schema:
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
-        validate_queries: bool = True,
-        validation_rules: Optional[Collection[Type[ValidationRule]]] = None,
     ) -> ExecutionResult:
         execution_context = ExecutionContext(
             query=query,
+            schema=self,
             context=context_value,
             root_value=root_value,
             variables=variable_values,
@@ -184,9 +161,7 @@ class Schema:
             extensions=self.extensions,
             directives=self.directives,
             execution_context_class=self.execution_context_class,
-            validate_queries=validate_queries,
             execution_context=execution_context,
-            validation_rules=validation_rules,
         )
 
         if result.errors:

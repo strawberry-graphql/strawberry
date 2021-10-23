@@ -292,3 +292,49 @@ def test_warning_about_async_get_results_hooks_in_sync_context():
         schema.execute_sync(query)
         msg = "Cannot use async extension hook during sync execution"
         assert str(exc_info.value) == msg
+
+
+@pytest.mark.asyncio
+async def test_dont_swallow_errors_in_parsing_hooks():
+    class MyExtension(Extension):
+        def on_parsing_start(self):
+            raise Exception("This shouldn't be swallowed")
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def ping(self) -> str:
+            return "pong"
+
+    schema = strawberry.Schema(query=Query, extensions=[MyExtension])
+    query = "query { string }"
+
+    with pytest.raises(Exception, match="This shouldn't be swallowed"):
+        schema.execute_sync(query)
+
+    with pytest.raises(Exception, match="This shouldn't be swallowed"):
+        await schema.execute(query)
+
+
+def test_on_parsing_end_called_when_errors():
+    execution_errors = False
+
+    class MyExtension(Extension):
+        def on_parsing_end(self):
+            nonlocal execution_errors
+            execution_context = self.execution_context
+            execution_errors = execution_context.errors
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def ping(self) -> str:
+            return "pong"
+
+    schema = strawberry.Schema(query=Query, extensions=[MyExtension])
+    query = "query { string"  # Invalid query
+
+    result = schema.execute_sync(query)
+    assert result.errors
+
+    assert result.errors == execution_errors

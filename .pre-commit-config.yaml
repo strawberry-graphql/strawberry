@@ -1,4 +1,15 @@
 repos:
+  - repo: https://github.com/myint/autoflake
+    rev: 'v1.4'
+    hooks:
+    - id: autoflake
+      args: ['--in-place', '--remove-all-unused-imports', '--ignore-init-module-imports']
+      name: autoflake
+      entry: autoflake
+      language: python
+      'types': [python]
+      require_serial: true
+
   - repo: https://github.com/PyCQA/flake8
     rev: 3.9.2
     hooks:
@@ -17,7 +28,7 @@ repos:
         exclude: CHANGELOG.md
 
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v2.4.0
+    rev: v2.4.1
     hooks:
       - id: prettier
         files: '^docs/.*\.mdx?$'
@@ -37,6 +48,6 @@ repos:
         args: ['--in-place', '--remove-all-unused-imports', '--remove-unused-variable']
 
   - repo: https://github.com/psf/black
-    rev: 21.8b0
+    rev: 21.9b0
     hooks:
       - id: black

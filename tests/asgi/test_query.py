@@ -6,7 +6,7 @@ from strawberry.asgi import GraphQL as BaseGraphQL
 from strawberry.types import ExecutionResult, Info
 
 
-def test_simple_query(schema, test_client):
+def test_simple_query(test_client):
     response = test_client.post("/", json={"query": "{ hello }"})
 
     assert response.json() == {"data": {"hello": "Hello world"}}
@@ -19,7 +19,7 @@ def test_fails_when_request_body_has_invalid_json(test_client):
     assert response.status_code == 400
 
 
-def test_returns_errors(schema, test_client):
+def test_returns_errors(test_client):
     response = test_client.post("/", json={"query": "{ donut }"})
 
     assert response.json() == {
@@ -34,7 +34,7 @@ def test_returns_errors(schema, test_client):
     }
 
 
-def test_can_pass_variables(schema, test_client):
+def test_can_pass_variables(test_client):
     response = test_client.post(
         "/",
         json={
@@ -46,7 +46,7 @@ def test_can_pass_variables(schema, test_client):
     assert response.json() == {"data": {"hello": "Hello James"}}
 
 
-def test_returns_errors_and_data(schema, test_client):
+def test_returns_errors_and_data(test_client):
     response = test_client.post("/", json={"query": "{ hello, alwaysFail }"})
 
     assert response.status_code == 200
@@ -62,7 +62,7 @@ def test_returns_errors_and_data(schema, test_client):
     }
 
 
-def test_root_value(schema, test_client):
+def test_root_value(test_client):
     response = test_client.post("/", json={"query": "{ rootName }"})
 
     assert response.json() == {"data": {"rootName": "Query"}}

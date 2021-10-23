@@ -1,13 +1,16 @@
 from abc import abstractmethod
-from typing import Any, Dict, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 from typing_extensions import Protocol
 
+from graphql import GraphQLError
+
 from strawberry.custom_scalar import ScalarDefinition
 from strawberry.enum import StrawberryEnum
-from strawberry.types import ExecutionResult
+from strawberry.types import ExecutionContext, ExecutionResult
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
+from strawberry.utils.logging import StrawberryLogger
 
 
 class BaseSchema(Protocol):
@@ -55,3 +58,11 @@ class BaseSchema(Protocol):
     @abstractmethod
     def as_str(self) -> str:
         raise NotImplementedError
+
+    def process_errors(
+        self,
+        errors: List[GraphQLError],
+        execution_context: Optional[ExecutionContext] = None,
+    ) -> None:
+        for error in errors:
+            StrawberryLogger.error(error, execution_context)

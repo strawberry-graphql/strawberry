@@ -1,3 +1,4 @@
+import sys
 import typing
 from collections.abc import AsyncGenerator as AsyncGenerator_abc
 from enum import Enum
@@ -22,7 +23,6 @@ except ImportError:  # pragma: no cover
 from strawberry.custom_scalar import ScalarDefinition
 from strawberry.enum import StrawberryEnum
 from strawberry.lazy_type import LazyType
-from strawberry.scalars import SCALAR_TYPES
 from strawberry.type import (
     StrawberryList,
     StrawberryOptional,
@@ -82,8 +82,6 @@ class StrawberryAnnotation:
             return self.create_list(evaled_type)
         elif self._is_optional(evaled_type):
             return self.create_optional(evaled_type)
-        elif self._is_scalar(evaled_type):
-            return evaled_type
         elif self._is_union(evaled_type):
             return self.create_union(evaled_type)
         elif is_type_var(evaled_type):
@@ -200,15 +198,6 @@ class StrawberryAnnotation:
         return annotation_origin == list
 
     @classmethod
-    def _is_scalar(cls, annotation: Any) -> bool:
-        type_ = getattr(annotation, "__supertype__", annotation)
-
-        if type_ in SCALAR_TYPES:
-            return True
-
-        return hasattr(annotation, "_scalar_definition")
-
-    @classmethod
     def _is_strawberry_type(cls, evaled_type: Any) -> bool:
         # Prevent import cycles
         from strawberry.union import StrawberryUnion
@@ -238,6 +227,18 @@ class StrawberryAnnotation:
     @classmethod
     def _is_union(cls, annotation: Any) -> bool:
         """Returns True if annotation is a Union"""
+
+        # this check is needed because unions declared with the new syntax `A | B`
+        # don't have a `__origin__` property on them, but they are instances of
+        # `UnionType`, which is only available in Python 3.10+
+        if sys.version_info >= (3, 10):
+            from types import UnionType  # type: ignore
+
+            if isinstance(annotation, UnionType):
+                return True
+
+        # unions declared as Union[A, B] fall through to this check, even on python 3.10+
+
         annotation_origin = getattr(annotation, "__origin__", None)
 
         return annotation_origin is typing.Union
