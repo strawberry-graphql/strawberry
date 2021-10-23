@@ -10,6 +10,7 @@ from typing import (
     TypeVar,
     Union,
     cast,
+    overload,
 )
 
 from strawberry.type import StrawberryType
@@ -40,11 +41,14 @@ class StrawberryEnum(StrawberryType):
     def __call__(self, *args: Any, **kwds: Any) -> Any:
         return self.enum(*args, **kwds)
 
-    def __getattr__(self, attr):
+    def __getattr__(self, attr: str) -> object:
         if hasattr(self.enum, attr):
             return getattr(self.enum, attr)
 
         return super().__getattribute__(attr)
+
+    def __getitem__(self, item: str) -> object:
+        return self.enum[item]
 
     def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
@@ -86,19 +90,33 @@ def _process_enum(
     )
 
 
+# not using bound=EnumMeta because it's PyRight doesn't support it properly
+T = TypeVar("T")
+
+
+@overload
+def enum(cls: T, *, name: Optional[str] = None, description: Optional[str] = None) -> T:
+    ...
+
+
+@overload
 def enum(
-    _cls: EnumMeta = None, *, name=None, description=None
-) -> Union[StrawberryEnum, Callable[[EnumMeta], StrawberryEnum]]:
+    *, name: Optional[str] = None, description: Optional[str] = None
+) -> Callable[[T], T]:
+    ...
+
+
+def enum(cls=None, *, name=None, description=None):
     """Registers the enum in the GraphQL type system.
 
     If name is passed, the name of the GraphQL type will be
     the value passed of name instead of the Enum class name.
     """
 
-    def wrap(cls: EnumMeta) -> StrawberryEnum:
-        return _process_enum(cls, name, description)
+    def wrap(cls: T) -> T:
+        return _process_enum(cls, name, description)  # type: ignore
 
-    if not _cls:
+    if not cls:
         return wrap
 
-    return wrap(_cls)
+    return wrap(cls)
