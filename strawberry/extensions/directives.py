@@ -6,7 +6,6 @@ from strawberry.utils.await_maybe import AwaitableOrValue, await_maybe
 
 
 if TYPE_CHECKING:
-
     from strawberry.schema.schema import Schema
 
 
