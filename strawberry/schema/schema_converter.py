@@ -126,9 +126,6 @@ class GraphQLCoreConverter:
 
         directive_name = directive.get_graphql_name(self.config.auto_camel_case)
 
-        if not directive_name:
-            breakpoint()
-
         return GraphQLDirective(
             name=directive_name,
             locations=directive.locations,
