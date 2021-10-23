@@ -1,6 +1,17 @@
 CHANGELOG
 =========
 
+0.85.0 - 2021-10-23
+-------------------
+
+This release introduces initial support for schema directives and
+updates the federation support to use that.
+
+Full support will be implemented in future releases.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #815](https://github.com/strawberry-graphql/strawberry/pull/815/)
+
+
 0.84.4 - 2021-10-23
 -------------------
 
