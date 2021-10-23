@@ -30,7 +30,7 @@ class Extension:
 
     def resolve(
         self, _next, root, info: Info, *args, **kwargs
-    ) -> AwaitableOrValue[Any]:
+    ) -> AwaitableOrValue[object]:
         return _next(root, info, *args, **kwargs)
 
     def get_results(self) -> AwaitableOrValue[Dict[str, Any]]:
