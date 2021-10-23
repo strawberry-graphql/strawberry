@@ -18,7 +18,6 @@
 - [Object types](./types/object-types.md)
 - [Interfaces](./types/interfaces.md)
 - [Input types](./types/input-types.md)
-- [Directives](./types/directives.md)
 - [Enums](./types/enums.md)
 - [Generics](./types/generics.md)
 - [Resolvers](./types/resolvers.md)

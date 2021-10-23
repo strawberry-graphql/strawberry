@@ -1,3 +1,4 @@
+from functools import lru_cache
 from typing import Any, Dict, Optional, Sequence, Type, Union
 
 from graphql import (
@@ -11,8 +12,13 @@ from graphql.subscription import subscribe
 from graphql.type.directives import specified_directives
 
 from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
+from strawberry.directive import StrawberryDirective
 from strawberry.enum import EnumDefinition
 from strawberry.extensions import Extension
+from strawberry.extensions.directives import (
+    DirectivesExtension,
+    DirectivesExtensionSync,
+)
 from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
 from strawberry.types import ExecutionContext, ExecutionResult
@@ -32,7 +38,7 @@ class Schema(BaseSchema):
         query: Type,
         mutation: Optional[Type] = None,
         subscription: Optional[Type] = None,
-        directives=(),
+        directives: Sequence[StrawberryDirective] = (),
         types=(),
         extensions: Sequence[Union[Type[Extension], Extension]] = (),
         execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
@@ -66,9 +72,8 @@ class Schema(BaseSchema):
             else None
         )
 
-        directives = [
-            self.schema_converter.from_directive(directive.directive_definition)
-            for directive in directives
+        graphql_directives = [
+            self.schema_converter.from_directive(directive) for directive in directives
         ]
 
         graphql_types = []
@@ -80,7 +85,7 @@ class Schema(BaseSchema):
             query=query_type,
             mutation=mutation_type,
             subscription=subscription_type if subscription else None,
-            directives=specified_directives + directives,
+            directives=specified_directives + graphql_directives,
             types=graphql_types,
         )
 
@@ -106,6 +111,18 @@ class Schema(BaseSchema):
 
         return None
 
+    @lru_cache()
+    def get_directive_by_name(self, graphql_name: str) -> Optional[StrawberryDirective]:
+        return next(
+            (
+                directive
+                for directive in self.directives
+                if directive.get_graphql_name(self.config.auto_camel_case)
+                == graphql_name
+            ),
+            None,
+        )
+
     async def execute(
         self,
         query: str,
@@ -127,8 +144,7 @@ class Schema(BaseSchema):
         result = await execute(
             self._schema,
             query,
-            extensions=self.extensions,
-            directives=self.directives,
+            extensions=list(self.extensions) + [DirectivesExtension],
             execution_context_class=self.execution_context_class,
             execution_context=execution_context,
         )
@@ -158,8 +174,7 @@ class Schema(BaseSchema):
         result = execute_sync(
             self._schema,
             query,
-            extensions=self.extensions,
-            directives=self.directives,
+            extensions=list(self.extensions) + [DirectivesExtensionSync],
             execution_context_class=self.execution_context_class,
             execution_context=execution_context,
         )

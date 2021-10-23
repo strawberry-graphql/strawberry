@@ -6,6 +6,7 @@ import pytest
 import strawberry
 from strawberry.directive import DirectiveLocation
 from strawberry.extensions import Extension
+from strawberry.schema.config import StrawberryConfig
 from strawberry.utils.await_maybe import await_maybe
 
 
@@ -127,18 +128,65 @@ def test_runs_directives():
     @strawberry.directive(
         locations=[DirectiveLocation.FIELD], description="Make string uppercase"
     )
-    def uppercase(value: str):
+    def turn_uppercase(value: str):
         return value.upper()
 
     @strawberry.directive(locations=[DirectiveLocation.FIELD])
     def replace(value: str, old: str, new: str):
         return value.replace(old, new)
 
-    schema = strawberry.Schema(query=Query, directives=[uppercase, replace])
+    schema = strawberry.Schema(query=Query, directives=[turn_uppercase, replace])
 
     query = """query People($identified: Boolean!){
         person {
-            name @uppercase
+            name @turnUppercase
+        }
+        jess: person {
+            name @replace(old: "Jess", new: "Jessica")
+        }
+        johnDoe: person {
+            name @replace(old: "Jess", new: "John") @include(if: $identified)
+        }
+    }"""
+
+    result = schema.execute_sync(query, variable_values={"identified": False})
+
+    assert not result.errors
+    assert result.data["person"]["name"] == "JESS"
+    assert result.data["jess"]["name"] == "Jessica"
+    assert result.data["johnDoe"].get("name") is None
+
+
+def test_runs_directives_camel_case_off():
+    @strawberry.type
+    class Person:
+        name: str = "Jess"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def person(self) -> Person:
+            return Person()
+
+    @strawberry.directive(
+        locations=[DirectiveLocation.FIELD], description="Make string uppercase"
+    )
+    def turn_uppercase(value: str):
+        return value.upper()
+
+    @strawberry.directive(locations=[DirectiveLocation.FIELD])
+    def replace(value: str, old: str, new: str):
+        return value.replace(old, new)
+
+    schema = strawberry.Schema(
+        query=Query,
+        directives=[turn_uppercase, replace],
+        config=StrawberryConfig(auto_camel_case=False),
+    )
+
+    query = """query People($identified: Boolean!){
+        person {
+            name @turn_uppercase
         }
         jess: person {
             name @replace(old: "Jess", new: "Jessica")

@@ -1,6 +1,6 @@
 from asyncio import ensure_future
 from inspect import isawaitable
-from typing import Any, Awaitable, List, Optional, Sequence, Tuple, Type, Union, cast
+from typing import Awaitable, List, Optional, Sequence, Tuple, Type, Union, cast
 
 from graphql import (
     ExecutionContext as GraphQLExecutionContext,
@@ -15,7 +15,6 @@ from graphql.validation import ASTValidationRule, validate
 
 from strawberry.extensions import Extension
 from strawberry.extensions.runner import ExtensionsRunner
-from strawberry.middleware import DirectivesMiddleware, DirectivesMiddlewareSync
 from strawberry.types import ExecutionContext, ExecutionResult
 
 
@@ -51,7 +50,6 @@ async def execute(
     schema: GraphQLSchema,
     query: str,
     extensions: Sequence[Union[Type[Extension], Extension]],
-    directives: Sequence[Any],
     execution_context: ExecutionContext,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
 ) -> ExecutionResult:
@@ -59,8 +57,6 @@ async def execute(
         execution_context=execution_context,
         extensions=list(extensions),
     )
-
-    additional_middlewares = [DirectivesMiddleware(directives)]
 
     async with extensions_runner.request():
         # Note: In graphql-core the schema would be validated here but in
@@ -97,7 +93,7 @@ async def execute(
             schema,
             execution_context.graphql_document,
             root_value=execution_context.root_value,
-            middleware=extensions_runner.as_middleware_manager(*additional_middlewares),
+            middleware=extensions_runner.as_middleware_manager(),
             variable_values=execution_context.variables,
             operation_name=execution_context.operation_name,
             context_value=execution_context.context,
@@ -122,7 +118,6 @@ def execute_sync(
     schema: GraphQLSchema,
     query: str,
     extensions: Sequence[Union[Type[Extension], Extension]],
-    directives: Sequence[Any],
     execution_context: ExecutionContext,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
 ) -> ExecutionResult:
@@ -130,8 +125,6 @@ def execute_sync(
         execution_context=execution_context,
         extensions=list(extensions),
     )
-
-    additional_middlewares = [DirectivesMiddlewareSync(directives)]
 
     with extensions_runner.request():
         # Note: In graphql-core the schema would be validated here but in
@@ -168,7 +161,7 @@ def execute_sync(
             schema,
             execution_context.graphql_document,
             root_value=execution_context.root_value,
-            middleware=extensions_runner.as_middleware_manager(*additional_middlewares),
+            middleware=extensions_runner.as_middleware_manager(),
             variable_values=execution_context.variables,
             operation_name=execution_context.operation_name,
             context_value=execution_context.context,

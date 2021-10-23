@@ -253,13 +253,13 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext):
 
 def is_dataclasses_field_or_strawberry_field(expr: Expression) -> bool:
     if isinstance(expr, CallExpr):
-        if isinstance(expr.callee, RefExpr):
-            if expr.callee.fullname in (
-                "dataclasses.field",
-                "strawberry.field.field",
-                "strawberry.federation.field",
-            ):
-                return True
+        if isinstance(expr.callee, RefExpr) and expr.callee.fullname in (
+            "dataclasses.field",
+            "strawberry.field.field",
+            "strawberry.federation.field",
+            "strawberry.federation.field.field",
+        ):
+            return True
 
         if isinstance(expr.callee, MemberExpr) and isinstance(
             expr.callee.expr, NameExpr
@@ -693,6 +693,7 @@ class StrawberryPlugin(Plugin):
             for strawberry_decorator in {
                 "strawberry.object_type.type",
                 "strawberry.federation.type",
+                "strawberry.schema_directive.schema_directive",
                 "strawberry.object_type.input",
                 "strawberry.object_type.interface",
             }
@@ -710,6 +711,7 @@ class StrawberryPlugin(Plugin):
                 "strawberry.federation.type",
                 "strawberry.input",
                 "strawberry.interface",
+                "strawberry.schema_directive",
             }
         )
 

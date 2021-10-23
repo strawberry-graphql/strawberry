@@ -626,8 +626,7 @@ def test_federation():
     assert definition_copy.name == "StrEdge"
     assert not definition_copy.is_generic
     assert definition_copy.type_params == []
-    assert definition_copy.federation.keys == ["id"]
-    assert not definition_copy.federation.extend
+    assert definition_copy.directives == Edge._type_definition.directives
 
     [field1_copy, field2_copy] = definition_copy.fields
 

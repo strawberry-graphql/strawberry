@@ -33,7 +33,7 @@ from graphql import (
 
 from strawberry.arguments import UNSET, StrawberryArgument, convert_arguments, is_unset
 from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
-from strawberry.directive import DirectiveDefinition
+from strawberry.directive import StrawberryDirective
 from strawberry.enum import EnumDefinition, EnumValue
 from strawberry.exceptions import (
     MissingTypesForGenericError,
@@ -117,15 +117,17 @@ class GraphQLCoreConverter:
     def from_enum_value(self, enum_value: EnumValue) -> GraphQLEnumValue:
         return GraphQLEnumValue(enum_value.value)
 
-    def from_directive(self, directive: DirectiveDefinition) -> GraphQLDirective:
-
+    def from_directive(self, directive: StrawberryDirective) -> GraphQLDirective:
         graphql_arguments = {}
+
         for argument in directive.arguments:
             argument_name = argument.get_graphql_name(self.config.auto_camel_case)
             graphql_arguments[argument_name] = self.from_argument(argument)
 
+        directive_name = directive.get_graphql_name(self.config.auto_camel_case)
+
         return GraphQLDirective(
-            name=directive.name,
+            name=directive_name,
             locations=directive.locations,
             args=graphql_arguments,
             description=directive.description,
