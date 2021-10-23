@@ -14,9 +14,9 @@ from typing import (
 )
 
 from strawberry.type import StrawberryType
+from strawberry.utils.mixins import GraphQLNameMixin
 
 from .exceptions import NotAnEnum
-from .utils.str_converters import to_camel_case
 
 
 @dataclasses.dataclass
@@ -25,7 +25,7 @@ class EnumValue:
     value: Any
 
 
-class StrawberryEnum(StrawberryType):
+class StrawberryEnum(GraphQLNameMixin, StrawberryType):
     def __init__(
         self,
         enum: EnumMeta,
@@ -64,13 +64,6 @@ class StrawberryEnum(StrawberryType):
         return [
             EnumValue(item.name, item.value) for item in cast(Iterable[Enum], self.enum)
         ]
-
-    @property
-    def graphql_name(self) -> str:
-        if self._graphql_name:
-            return self._graphql_name
-
-        return to_camel_case(self.python_name)
 
 
 def _process_enum(

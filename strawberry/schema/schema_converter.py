@@ -100,23 +100,6 @@ class GraphQLCoreConverter:
             description=argument.description,
         )
 
-    def get_graphql_type(self, type_: Any) -> GraphQLType:
-        # TODO: Accept StrawberryType when implemented
-
-        if _is_object_type(type_):
-            if type_._type_definition.is_input:
-                return self.from_input_object(type_)
-            elif type_._type_definition.is_interface:
-                return self.from_interface(type_._type_definition)
-            else:
-                return self.from_object(type_._type_definition)
-        elif isinstance(type_, StrawberryEnum):
-            return self.from_enum(type_)
-        elif _is_scalar(type_, self.scalar_registry):
-            return self.from_scalar(type_)
-
-        raise TypeError(f"Unexpected type '{type_}'")
-
     def from_enum(self, enum: StrawberryEnum) -> CustomGraphQLEnumType:
         # Don't reevaluate known types
         if enum.graphql_name in self.type_map:

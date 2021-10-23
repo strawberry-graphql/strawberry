@@ -1,10 +1,22 @@
 from enum import Enum
+from typing import cast
 
 import pytest
 
 import strawberry
 from strawberry.enum import StrawberryEnum
 from strawberry.exceptions import NotAnEnum
+
+
+def test_can_use_enum_directly():
+    @strawberry.enum
+    class IceCreamFlavour(Enum):
+        VANILLA = "vanilla"
+        STRAWBERRY = "strawberry"
+        CHOCOLATE = "chocolate"
+
+    assert IceCreamFlavour.VANILLA.value == "vanilla"
+    assert IceCreamFlavour["STRAWBERRY"].value == "strawberry"
 
 
 def test_basic_enum():
@@ -14,7 +26,7 @@ def test_basic_enum():
         STRAWBERRY = "strawberry"
         CHOCOLATE = "chocolate"
 
-    definition = IceCreamFlavour
+    definition = cast(StrawberryEnum, IceCreamFlavour)
 
     assert definition.python_name == "IceCreamFlavour"
     assert definition.graphql_name == "IceCreamFlavour"
@@ -37,7 +49,7 @@ def test_can_pass_name_and_description():
         STRAWBERRY = "strawberry"
         CHOCOLATE = "chocolate"
 
-    definition = IceCreamFlavour
+    definition = cast(StrawberryEnum, IceCreamFlavour)
 
     assert definition.python_name == "IceCreamFlavour"
     assert definition.graphql_name == "Flavour"
