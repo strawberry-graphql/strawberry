@@ -1,28 +1,10 @@
-import dataclasses
-from enum import Enum, EnumMeta
-from typing import (
-    Any,
-    Callable,
-    Iterable,
-    List,
-    Mapping,
-    Optional,
-    TypeVar,
-    Union,
-    cast,
-    overload,
-)
+from enum import EnumMeta
+from typing import Any, Callable, Mapping, Optional, TypeVar, Union, overload
 
 from strawberry.type import StrawberryType
 from strawberry.utils.mixins import GraphQLNameMixin
 
 from .exceptions import NotAnEnum
-
-
-@dataclasses.dataclass
-class EnumValue:
-    name: str
-    value: Any
 
 
 class StrawberryEnum(GraphQLNameMixin, StrawberryType):
@@ -58,12 +40,6 @@ class StrawberryEnum(GraphQLNameMixin, StrawberryType):
     @property
     def is_generic(self) -> bool:
         return False
-
-    @property
-    def values(self) -> List[EnumValue]:
-        return [
-            EnumValue(item.name, item.value) for item in cast(Iterable[Enum], self.enum)
-        ]
 
 
 def _process_enum(

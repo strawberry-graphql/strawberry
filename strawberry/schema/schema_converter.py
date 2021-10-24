@@ -1,7 +1,18 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Tuple, Type, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
 
 from typing_extensions import Protocol
 
@@ -36,7 +47,7 @@ from graphql import (
 from strawberry.arguments import StrawberryArgument, convert_arguments, is_unset
 from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.directive import StrawberryDirective
-from strawberry.enum import EnumValue, StrawberryEnum
+from strawberry.enum import StrawberryEnum
 from strawberry.exceptions import (
     MissingTypesForGenericError,
     ScalarAlreadyRegisteredError,
@@ -111,7 +122,7 @@ class GraphQLCoreConverter:
 
         values = {
             self.get_enum_item_name(item): self.from_enum_value(item)
-            for item in enum.values
+            for item in cast(Iterable[Enum], enum.enum)
         }
 
         graphql_enum = CustomGraphQLEnumType(
@@ -126,13 +137,13 @@ class GraphQLCoreConverter:
 
         return graphql_enum
 
-    def get_enum_item_name(self, item: EnumValue) -> str:
+    def get_enum_item_name(self, item: Enum) -> str:
         if self.config.enum_values == self.config.ENUM_NAME:
             return item.name
 
         return item.value
 
-    def from_enum_value(self, enum_value: EnumValue) -> GraphQLEnumValue:
+    def from_enum_value(self, enum_value: Enum) -> GraphQLEnumValue:
         return GraphQLEnumValue(enum_value.value)
 
     def from_directive(self, directive: StrawberryDirective) -> GraphQLDirective:

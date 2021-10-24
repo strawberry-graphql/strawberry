@@ -44,15 +44,6 @@ def test_basic_enum():
     assert definition.graphql_name == "IceCreamFlavour"
     assert definition.description is None
 
-    assert definition.values[0].name == "VANILLA"
-    assert definition.values[0].value == "vanilla"
-
-    assert definition.values[1].name == "STRAWBERRY"
-    assert definition.values[1].value == "strawberry"
-
-    assert definition.values[2].name == "CHOCOLATE"
-    assert definition.values[2].value == "chocolate"
-
 
 def test_can_pass_name_and_description():
     @strawberry.enum(name="Flavour", description="example")
