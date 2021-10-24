@@ -1,12 +1,12 @@
+import enum
 from dataclasses import dataclass
-
-from typing_extensions import Final
 
 
 @dataclass
 class StrawberryConfig:
-    ENUM_VALUE: Final[str] = "ENUM_VALUE"
-    ENUM_NAME: Final[str] = "ENUM_NAME"
+    class EnumNameExport(enum.Enum):
+        VALUE = enum.auto()
+        NAME = enum.auto()
 
     auto_camel_case: bool = True
-    enum_values: str = ENUM_NAME
+    enum_values: EnumNameExport = EnumNameExport.NAME

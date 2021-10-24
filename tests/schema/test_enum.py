@@ -351,7 +351,8 @@ def test_enum_using_values_instead_of_names():
             return "strawberry"  # type: ignore
 
     schema = strawberry.Schema(
-        query=Query, config=StrawberryConfig(enum_values=StrawberryConfig.ENUM_VALUE)
+        query=Query,
+        config=StrawberryConfig(enum_values=StrawberryConfig.EnumNameExport.VALUE),
     )
 
     query = "{ bestFlavour }"

@@ -138,7 +138,7 @@ class GraphQLCoreConverter:
         return graphql_enum
 
     def get_enum_item_name(self, item: Enum) -> str:
-        if self.config.enum_values == self.config.ENUM_NAME:
+        if self.config.enum_values == self.config.EnumNameExport.NAME:
             return item.name
 
         return item.value
