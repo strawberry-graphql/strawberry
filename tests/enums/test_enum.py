@@ -1,4 +1,4 @@
-from enum import Enum
+from enum import Enum, auto
 from typing import cast
 
 import pytest
@@ -17,6 +17,18 @@ def test_can_use_enum_directly():
 
     assert IceCreamFlavour.VANILLA.value == "vanilla"
     assert IceCreamFlavour["STRAWBERRY"].value == "strawberry"
+
+
+def test_enums_with_auto():
+    @strawberry.enum
+    class IceCreamFlavour(Enum):
+        VANILLA = auto()
+        STRAWBERRY = auto()
+        CHOCOLATE = auto()
+
+    assert IceCreamFlavour.VANILLA.value == 1
+    assert IceCreamFlavour.STRAWBERRY.value == 2
+    assert IceCreamFlavour.CHOCOLATE.value == 3
 
 
 def test_basic_enum():
