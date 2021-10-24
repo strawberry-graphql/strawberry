@@ -7,6 +7,7 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Sequence,
     Type,
     TypeVar,
     Union,
@@ -21,12 +22,7 @@ from strawberry.utils.typing import is_generic as is_type_generic
 
 if TYPE_CHECKING:
     from strawberry.field import StrawberryField
-
-
-@dataclasses.dataclass
-class FederationTypeParams:
-    keys: List[str] = dataclasses.field(default_factory=list)
-    extend: bool = False
+    from strawberry.schema_directive import StrawberrySchemaDirective
 
 
 @dataclasses.dataclass(eq=False)
@@ -36,8 +32,9 @@ class TypeDefinition(StrawberryType):
     is_interface: bool
     origin: Type
     description: Optional[str]
-    federation: FederationTypeParams
     interfaces: List["TypeDefinition"]
+    extend: bool
+    directives: Optional[Sequence[StrawberrySchemaDirective]]
 
     _fields: List["StrawberryField"]
 
@@ -90,9 +87,10 @@ class TypeDefinition(StrawberryType):
             is_input=self.is_input,
             origin=self.origin,
             is_interface=self.is_interface,
-            federation=self.federation,
+            directives=self.directives,
             interfaces=self.interfaces,
             description=self.description,
+            extend=self.extend,
             _fields=fields,
             concrete_of=self,
             type_var_map=type_var_map,
@@ -188,10 +186,3 @@ class TypeDefinition(StrawberryType):
 
         # All field mappings succeeded. This is a match
         return True
-
-
-@dataclasses.dataclass
-class FederationFieldParams:
-    provides: List[str] = dataclasses.field(default_factory=list)
-    requires: List[str] = dataclasses.field(default_factory=list)
-    external: bool = False

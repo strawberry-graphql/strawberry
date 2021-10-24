@@ -12,6 +12,7 @@ from .permission import BasePermission
 from .private import Private
 from .scalars import ID
 from .schema import Schema
+from .schema_directive import schema_directive
 from .union import union
 
 
@@ -24,6 +25,7 @@ __all__ = [
     "Schema",
     "argument",
     "directive",
+    "schema_directive",
     "enum",
     "federation",
     "field",

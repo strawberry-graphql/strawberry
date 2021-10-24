@@ -2,7 +2,7 @@ import builtins
 import dataclasses
 import warnings
 from functools import partial
-from typing import Any, Dict, List, Optional, Tuple, Type, cast
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, cast
 
 from pydantic import BaseModel
 from pydantic.fields import ModelField
@@ -16,9 +16,10 @@ from strawberry.experimental.pydantic.fields import get_basic_type
 from strawberry.experimental.pydantic.utils import get_private_fields
 from strawberry.field import StrawberryField
 from strawberry.object_type import _process_type, _wrap_dataclass
+from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.type import StrawberryType
 from strawberry.types.type_resolver import _get_fields
-from strawberry.types.types import FederationTypeParams, TypeDefinition
+from strawberry.types.types import TypeDefinition
 
 from .exceptions import MissingFieldsListError, UnregisteredTypeException
 
@@ -72,7 +73,7 @@ def type(
     is_input: bool = False,
     is_interface: bool = False,
     description: Optional[str] = None,
-    federation: Optional[FederationTypeParams] = None,
+    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
     all_fields: bool = False,
 ):
     def wrap(cls):
@@ -162,7 +163,7 @@ def type(
             is_input=is_input,
             is_interface=is_interface,
             description=description,
-            federation=federation,
+            directives=directives,
         )
 
         model._strawberry_type = cls  # type: ignore
