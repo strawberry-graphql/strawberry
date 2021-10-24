@@ -53,13 +53,14 @@ jobs:
         if: steps.check_release.outputs.release == ''
         env:
           GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
+          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
         run: |
           git remote set-url origin https://${{ secrets.BOT_TOKEN }}@github.com/${{ github.repository }}
           autopub prepare
           poetry build
           autopub commit
           autopub githubrelease
-          poetry publish --username __token__ --password ${{ secrets.PYPI_TOKEN }}
+          poetry publish --username __token__
       - name: Get project version
         id: get-version
         shell: python
