@@ -25,7 +25,6 @@ from strawberry.types import ExecutionContext, ExecutionResult
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 
-from ..printer import print_schema
 from .base import BaseSchema
 from .config import StrawberryConfig
 from .execute import execute, execute_sync
@@ -202,6 +201,8 @@ class Schema(BaseSchema):
         )
 
     def as_str(self) -> str:
+        from strawberry.printer import print_schema
+
         return print_schema(self)
 
     __str__ = as_str

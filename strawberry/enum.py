@@ -35,7 +35,7 @@ class StrawberryEnum(GraphQLNameMixin, StrawberryType):
     ) -> None:
         self.enum = enum
         self.python_name = python_name
-        self._graphql_name = graphql_name
+        self.graphql_name = graphql_name
         self.description = description
 
     def __call__(self, *args: Any, **kwds: Any) -> Any:
