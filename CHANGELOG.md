@@ -841,7 +841,7 @@ you can install the required dependencies needed to use Strawberry with
 ASGI by running:
 
 ```
-pip install strawberry[asgi]
+pip install 'strawberry[asgi]'
 ```
 
 Contributed by [A. Coady](https://github.com/coady) [PR #1036](https://github.com/strawberry-graphql/strawberry/pull/1036/)
@@ -2001,7 +2001,7 @@ To get going quickly, you can install `[debug-server]` which brings along a serv
 you to develop your API dynamically, assuming your schema is defined in the `app` module:
 
 ```
-pip install strawberry-graphql[debug-server]
+pip install 'strawberry-graphql[debug-server]'
 strawberry server app
 ```
 
@@ -3329,7 +3329,7 @@ Usage:
 ```python
 
 # Install
-$ pip install strawberry-graphql[django]
+$ pip install 'strawberry-graphql[django]'
 
 # settings.py
 INSTALLED_APPS = [
