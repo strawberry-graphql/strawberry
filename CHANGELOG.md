@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.85.1 - 2021-10-26
+-------------------
+
+This release fixes an issue with schema directives not
+being printed correctly.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1376](https://github.com/strawberry-graphql/strawberry/pull/1376/)
+
+
 0.85.0 - 2021-10-23
 -------------------
 
