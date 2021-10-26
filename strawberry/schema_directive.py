@@ -39,9 +39,18 @@ class StrawberrySchemaDirective(GraphQLNameMixin):
         return name
 
     def __call__(self, *args, **kwargs):
-        self.instance = self.wrap(*args, **kwargs)
+        # TODO: this should be implemented differently
 
-        return self
+        x = StrawberrySchemaDirective(
+            wrap=self.wrap,
+            python_name=self.python_name,
+            graphql_name=self.graphql_name,
+            locations=self.locations,
+            description=self.description,
+        )
+        x.instance = self.wrap(*args, **kwargs)
+
+        return x
 
 
 def schema_directive(*, locations: List[Location], description=None, name=None):
