@@ -74,6 +74,7 @@ AsyncGenerator to the ASGI server which is responsible for streaming
 subscription results until the Generator exits.
 
 ```python
+import strawberry
 import asyncio
 import asyncio.subprocess as subprocess
 from asyncio import streams
