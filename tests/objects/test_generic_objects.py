@@ -134,14 +134,17 @@ def test_list_inside_generic():
 
     @strawberry.type
     class Foo:
+        string: Value[str]
         strings: Value[List[str]]
 
     definition = Foo._type_definition
     assert definition.name == "Foo"
     assert not definition.is_generic
-    [field] = definition.fields
-    assert field.python_name == "strings"
-    assert field.type._type_definition.name == "StrValue"
+    [string_field, strings_field] = definition.fields
+    assert string_field.python_name == "string"
+    assert string_field.type._type_definition.name == "StrValue"
+    assert strings_field.python_name == "strings"
+    assert strings_field.type._type_definition.name == "StrListValue"
 
 
 def test_generic_with_optional():
