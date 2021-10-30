@@ -1,3 +1,4 @@
+import datetime
 from typing import Generic, List, Optional, TypeVar, Union
 
 import pytest
@@ -121,6 +122,26 @@ def test_generics_nested_in_list():
     assert field_copy.python_name == "edges"
     assert isinstance(field_copy.type, StrawberryList)
     assert field_copy.type.of_type._type_definition.name == "StrEdge"
+
+
+def test_list_inside_generic():
+    T = TypeVar("T")
+
+    @strawberry.type
+    class Value(Generic[T]):
+        valuation_date: datetime.date
+        value: T
+
+    @strawberry.type
+    class Foo:
+        strings: Value[List[str]]
+
+    definition = Foo._type_definition
+    assert definition.name == "Foo"
+    assert not definition.is_generic
+    [field] = definition.fields
+    assert field.python_name == "strings"
+    assert field.type._type_definition.name == "StrValue"
 
 
 def test_generic_with_optional():
