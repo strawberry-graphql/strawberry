@@ -15,7 +15,7 @@ from typing import (
 
 from strawberry.enum import EnumDefinition
 from strawberry.lazy_type import LazyType
-from strawberry.type import StrawberryType, StrawberryTypeVar
+from strawberry.type import StrawberryContainer, StrawberryType, StrawberryTypeVar
 from strawberry.utils.str_converters import capitalize_first
 from strawberry.utils.typing import is_generic as is_type_generic
 
@@ -111,25 +111,29 @@ class TypeDefinition(StrawberryType):
             (field for field in self.fields if field.python_name == python_name), None
         )
 
-    def get_name_from_types(self, types: Iterable[Union[StrawberryType, type]]) -> str:
+    def get_name_from_type(self, type_: Union[StrawberryType, type]) -> str:
         from strawberry.union import StrawberryUnion
 
+        if isinstance(type_, LazyType):
+            return type_.type_name
+        elif isinstance(type_, EnumDefinition):
+            return type_.name
+        elif isinstance(type_, StrawberryUnion):
+            return type_.name
+        elif isinstance(type_, StrawberryContainer):
+            return self.get_name_from_type(type_.of_type)
+        elif hasattr(type_, "_type_definition"):
+            field_type = type_._type_definition  # type: ignore
+
+            return capitalize_first(field_type.name)
+        else:
+            return capitalize_first(type_.__name__)  # type: ignore
+
+    def get_name_from_types(self, types: Iterable[Union[StrawberryType, type]]) -> str:
         names: List[str] = []
 
         for type_ in types:
-            if isinstance(type_, LazyType):
-                name = type_.type_name
-            elif isinstance(type_, EnumDefinition):
-                name = type_.name
-            elif isinstance(type_, StrawberryUnion):
-                name = type_.name
-            elif hasattr(type_, "_type_definition"):
-                field_type = type_._type_definition  # type: ignore
-
-                name = capitalize_first(field_type.name)
-            else:
-                name = capitalize_first(type_.__name__)  # type: ignore
-
+            name = self.get_name_from_type(type_)
             names.append(name)
 
         return "".join(names) + self.name
