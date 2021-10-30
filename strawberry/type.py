@@ -108,11 +108,11 @@ class StrawberryContainer(StrawberryType):
 
 
 class StrawberryList(StrawberryContainer):
-    ...
+    name = "List"
 
 
 class StrawberryOptional(StrawberryContainer):
-    ...
+    name = "Optional"
 
 
 class StrawberryTypeVar(StrawberryType):

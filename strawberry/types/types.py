@@ -15,12 +15,7 @@ from typing import (
 
 from strawberry.enum import EnumDefinition
 from strawberry.lazy_type import LazyType
-from strawberry.type import (
-    StrawberryContainer,
-    StrawberryList,
-    StrawberryType,
-    StrawberryTypeVar,
-)
+from strawberry.type import StrawberryContainer, StrawberryType, StrawberryTypeVar
 from strawberry.utils.str_converters import capitalize_first
 from strawberry.utils.typing import is_generic as is_type_generic
 
@@ -125,10 +120,8 @@ class TypeDefinition(StrawberryType):
             return type_.name
         elif isinstance(type_, StrawberryUnion):
             return type_.name
-        elif isinstance(type_, StrawberryList):
-            return self.get_name_from_type(type_.of_type) + "List"
         elif isinstance(type_, StrawberryContainer):
-            return self.get_name_from_type(type_.of_type)
+            return self.get_name_from_type(type_.of_type) + type_.name
         elif hasattr(type_, "_type_definition"):
             field_type = type_._type_definition  # type: ignore
 
