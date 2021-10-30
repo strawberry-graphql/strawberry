@@ -136,15 +136,26 @@ def test_list_inside_generic():
     class Foo:
         string: Value[str]
         strings: Value[List[str]]
+        optional_string: Value[Optional[str]]
+        optional_strings: Value[Optional[List[str]]]
 
     definition = Foo._type_definition
     assert definition.name == "Foo"
     assert not definition.is_generic
-    [string_field, strings_field] = definition.fields
+    [
+        string_field,
+        strings_field,
+        optional_string_field,
+        optional_strings_field,
+    ] = definition.fields
     assert string_field.python_name == "string"
     assert string_field.type._type_definition.name == "StrValue"
     assert strings_field.python_name == "strings"
     assert strings_field.type._type_definition.name == "StrListValue"
+    assert optional_string_field.python_name == "optional_string"
+    assert optional_string_field.type._type_definition.name == "StrOptionalValue"
+    assert optional_strings_field.python_name == "optional_strings"
+    assert optional_strings_field.type._type_definition.name == "StrListOptionalValue"
 
 
 def test_generic_with_optional():
