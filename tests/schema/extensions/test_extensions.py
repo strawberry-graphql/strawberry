@@ -1,6 +1,12 @@
+from typing import Any, Dict, Optional
+from unittest.mock import patch
+
 import pytest
 
-from graphql import ExecutionResult as GraphQLExecutionResult
+from graphql import (
+    ExecutionResult as GraphQLExecutionResult,
+    execute as original_execute,
+)
 
 import strawberry
 from strawberry.extensions import Extension
@@ -407,3 +413,83 @@ async def test_extension_override_execution_async():
     assert result.data == {
         "surprise": "data",
     }
+
+
+@patch("strawberry.schema.execute.original_execute", wraps=original_execute)
+def test_execution_cache_example(mock_original_execute):
+    # Test that the example of how to use the on_executing_start hook in the
+    # docs actually works
+
+    response_cache = dict()
+
+    # Helper function to hash query variables for the cache key
+    def hash_map(input_map: Optional[Dict[str, Any]]):
+        if input_map is None:
+            return ""
+        return ":".join(map(lambda x: str(hash(x)), list(input_map.items())))
+
+    class ExecutionCache(Extension):
+        def on_executing_start(self):
+            # Check if we've come across this query before
+            execution_context = self.execution_context
+            self.cache_key = (
+                f"{execution_context.query}:{hash_map(execution_context.variables)}"
+            )
+            if self.cache_key in response_cache:
+                self.execution_context.result = response_cache[self.cache_key]
+
+        def on_executing_end(self):
+            execution_context = self.execution_context
+            if self.cache_key not in response_cache:
+                response_cache[self.cache_key] = execution_context.result
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def ping(self, return_value: Optional[str] = None) -> str:
+            if return_value:
+                return return_value
+            return "pong"
+
+    schema = strawberry.Schema(
+        Query,
+        extensions=[
+            ExecutionCache,
+        ],
+    )
+
+    query = """
+        query TestQuery($returnValue: String) {
+            ping(returnValue: $returnValue)
+        }
+    """
+    result = schema.execute_sync(query)
+    assert not result.errors
+    assert result.data == {
+        "ping": "pong",
+    }
+
+    assert mock_original_execute.call_count == 1
+
+    # This should be cached
+    result = schema.execute_sync(query)
+    assert not result.errors
+    assert result.data == {
+        "ping": "pong",
+    }
+
+    assert mock_original_execute.call_count == 1
+
+    # Calling with different variables should not be cached
+    result = schema.execute_sync(
+        query,
+        variable_values={
+            "returnValue": "plong",
+        },
+    )
+    assert not result.errors
+    assert result.data == {
+        "ping": "plong",
+    }
+
+    assert mock_original_execute.call_count == 2

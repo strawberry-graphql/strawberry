@@ -105,6 +105,64 @@ class MyExtension(Extension):
         print('GraphQL parsing end')
 ```
 
+### Execution
+
+`on_executing_start` and `on_executing_end` can be used to run code on the execution step of
+the GraphQL execution. Both methods can be implemented asynchronously.
+
+```python
+from strawberry.extensions import Extension
+
+class MyExtension(Extension):
+    def on_executing_start(self):
+        print('GraphQL execution start')
+
+    def on_executing_end(self):
+        print('GraphQL execution end')
+```
+
+<details>
+  <summary>In memory cached execution</summary>
+
+```python
+import strawberry
+from strawberry.extensions import Extension
+
+# Use an actual cache in production so that this doesn't grow unbounded
+response_cache = dict()
+
+# Helper function to hash query variables for the cache key
+def hash_map(input_map: Optional[Dict[str, Any]]):
+    if input_map is None:
+        return ""
+    return ":".join(map(lambda x: str(hash(x)), list(input_map.items())))
+
+class ExecutionCache(Extension):
+        def on_executing_start(self):
+            # Check if we've come across this query before
+            execution_context = self.execution_context
+            self.cache_key = (
+                f"{execution_context.query}:{hash_map(execution_context.variables)}"
+            )
+            if self.cache_key in response_cache:
+                self.execution_context.result = response_cache[self.cache_key]
+
+        def on_executing_end(self):
+            execution_context = self.execution_context
+            if self.cache_key not in response_cache:
+                response_cache[self.cache_key] = execution_context.result
+
+
+schema = strawberry.Schema(
+    Query,
+    extensions=[
+        ExecutionCache,
+    ]
+)
+```
+
+</details>
+
 ### Execution Context
 
 The `Extension` object has an `execution_context` property on `self` of type
