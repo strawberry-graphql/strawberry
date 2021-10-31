@@ -16,7 +16,7 @@ if TYPE_CHECKING:
     from strawberry.schema import Schema
 
 
-graphql_operation_types = Literal["QUERY", "MUTATION"]
+GraphqlOperationTypes = Literal["QUERY", "MUTATION"]
 
 
 @dataclasses.dataclass
@@ -57,7 +57,7 @@ class ExecutionContext:
         return definition.name.value
 
     @property
-    def operation_type(self) -> graphql_operation_types:
+    def operation_type(self) -> GraphqlOperationTypes:
         definition: Optional[OperationDefinitionNode] = None
 
         graphql_document = self.graphql_document
@@ -78,7 +78,7 @@ class ExecutionContext:
         if not definition:
             raise RuntimeError("Can't get GraphQL operation type")
 
-        return cast(graphql_operation_types, definition.operation.name)
+        return cast(GraphqlOperationTypes, definition.operation.name)
 
     def _get_first_operation(self) -> Optional[OperationDefinitionNode]:
         graphql_document = self.graphql_document
