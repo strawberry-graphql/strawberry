@@ -138,25 +138,53 @@ def hash_map(input_map: Optional[Dict[str, Any]]):
     return ":".join(map(lambda x: str(hash(x)), list(input_map.items())))
 
 class ExecutionCache(Extension):
-        def on_executing_start(self):
-            # Check if we've come across this query before
-            execution_context = self.execution_context
-            self.cache_key = (
-                f"{execution_context.query}:{hash_map(execution_context.variables)}"
-            )
-            if self.cache_key in response_cache:
-                self.execution_context.result = response_cache[self.cache_key]
+    def on_executing_start(self):
+        # Check if we've come across this query before
+        execution_context = self.execution_context
+        self.cache_key = (
+            f"{execution_context.query}:{hash_map(execution_context.variables)}"
+        )
+        if self.cache_key in response_cache:
+            self.execution_context.result = response_cache[self.cache_key]
 
-        def on_executing_end(self):
-            execution_context = self.execution_context
-            if self.cache_key not in response_cache:
-                response_cache[self.cache_key] = execution_context.result
+    def on_executing_end(self):
+        execution_context = self.execution_context
+        if self.cache_key not in response_cache:
+            response_cache[self.cache_key] = execution_context.result
 
 
 schema = strawberry.Schema(
     Query,
     extensions=[
         ExecutionCache,
+    ]
+)
+```
+
+</details>
+
+<details>
+  <summary>Rejecting a request before executing it</summary>
+
+```python
+import strawberry
+from strawberry.extensions import Extension
+
+class RejectSomeQueries(Extension):
+    def on_executing_start(self):
+        # Reject all operations called "RejectMe"
+        execution_context = self.execution_context
+        if execution_context.operation_name == "RejectMe":
+            self.execution_context.result = GraphQLExecutionResult(
+                data=None,
+                errors=[GraphQLError("Well you asked for it")],
+            )
+
+
+schema = strawberry.Schema(
+    Query,
+    extensions=[
+        RejectSomeQueries,
     ]
 )
 ```

@@ -5,6 +5,7 @@ import pytest
 
 from graphql import (
     ExecutionResult as GraphQLExecutionResult,
+    GraphQLError,
     execute as original_execute,
 )
 
@@ -493,3 +494,55 @@ def test_execution_cache_example(mock_original_execute):
     }
 
     assert mock_original_execute.call_count == 2
+
+
+@patch("strawberry.schema.execute.original_execute", wraps=original_execute)
+def test_execution_reject_example(mock_original_execute):
+    # Test that the example of how to use the on_executing_start hook in the
+    # docs actually works
+
+    class RejectSomeQueries(Extension):
+        def on_executing_start(self):
+            # Reject all operations called "RejectMe"
+            execution_context = self.execution_context
+            if execution_context.operation_name == "RejectMe":
+                self.execution_context.result = GraphQLExecutionResult(
+                    data=None,
+                    errors=[GraphQLError("Well you asked for it")],
+                )
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def ping(self) -> str:
+            return "pong"
+
+    schema = strawberry.Schema(
+        Query,
+        extensions=[
+            RejectSomeQueries,
+        ],
+    )
+
+    query = """
+        query TestQuery {
+            ping
+        }
+    """
+    result = schema.execute_sync(query, operation_name="TestQuery")
+    assert not result.errors
+    assert result.data == {
+        "ping": "pong",
+    }
+
+    assert mock_original_execute.call_count == 1
+
+    query = """
+        query RejectMe {
+            ping
+        }
+    """
+    result = schema.execute_sync(query, operation_name="RejectMe")
+    assert result.errors == [GraphQLError("Well you asked for it")]
+
+    assert mock_original_execute.call_count == 1
