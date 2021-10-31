@@ -121,6 +121,8 @@ class MyExtension(Extension):
         print('GraphQL execution end')
 ```
 
+#### Examples:
+
 <details>
   <summary>In memory cached execution</summary>
 
