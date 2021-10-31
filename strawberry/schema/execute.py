@@ -89,27 +89,32 @@ async def execute(
             if execution_context.errors:
                 return ExecutionResult(data=None, errors=execution_context.errors)
 
-        result = original_execute(
-            schema,
-            execution_context.graphql_document,
-            root_value=execution_context.root_value,
-            middleware=extensions_runner.as_middleware_manager(),
-            variable_values=execution_context.variables,
-            operation_name=execution_context.operation_name,
-            context_value=execution_context.context,
-            execution_context_class=execution_context_class,
-        )
+        async with extensions_runner.executing():
+            if not execution_context.result:
+                result = original_execute(
+                    schema,
+                    execution_context.graphql_document,
+                    root_value=execution_context.root_value,
+                    middleware=extensions_runner.as_middleware_manager(),
+                    variable_values=execution_context.variables,
+                    operation_name=execution_context.operation_name,
+                    context_value=execution_context.context,
+                    execution_context_class=execution_context_class,
+                )
 
-        if isawaitable(result):
-            result = await cast(Awaitable[GraphQLExecutionResult], result)
+                if isawaitable(result):
+                    result = await cast(Awaitable[GraphQLExecutionResult], result)
 
-        execution_context.result = cast(GraphQLExecutionResult, result)
-
-    result = cast(GraphQLExecutionResult, result)
+                result = cast(GraphQLExecutionResult, result)
+                execution_context.result = result
+                # Also set errors on the execution_context so that it's easier
+                # to access in extensions
+                if result.errors:
+                    execution_context.errors = result.errors
 
     return ExecutionResult(
-        data=result.data,
-        errors=result.errors,
+        data=execution_context.result.data,
+        errors=execution_context.result.errors,
         extensions=await extensions_runner.get_extensions_results(),
     )
 
@@ -157,28 +162,36 @@ def execute_sync(
             if execution_context.errors:
                 return ExecutionResult(data=None, errors=execution_context.errors)
 
-        result = original_execute(
-            schema,
-            execution_context.graphql_document,
-            root_value=execution_context.root_value,
-            middleware=extensions_runner.as_middleware_manager(),
-            variable_values=execution_context.variables,
-            operation_name=execution_context.operation_name,
-            context_value=execution_context.context,
-            execution_context_class=execution_context_class,
-        )
+        with extensions_runner.executing():
+            if not execution_context.result:
+                result = original_execute(
+                    schema,
+                    execution_context.graphql_document,
+                    root_value=execution_context.root_value,
+                    middleware=extensions_runner.as_middleware_manager(),
+                    variable_values=execution_context.variables,
+                    operation_name=execution_context.operation_name,
+                    context_value=execution_context.context,
+                    execution_context_class=execution_context_class,
+                )
 
-        if isawaitable(result):
-            ensure_future(cast(Awaitable[GraphQLExecutionResult], result)).cancel()
-            raise RuntimeError("GraphQL execution failed to complete synchronously.")
+                if isawaitable(result):
+                    ensure_future(
+                        cast(Awaitable[GraphQLExecutionResult], result)
+                    ).cancel()
+                    raise RuntimeError(
+                        "GraphQL execution failed to complete synchronously."
+                    )
 
-        result = cast(GraphQLExecutionResult, result)
-        execution_context.result = result
-        if result.errors:
-            execution_context.errors = result.errors
+                result = cast(GraphQLExecutionResult, result)
+                execution_context.result = result
+                # Also set errors on the execution_context so that it's easier
+                # to access in extensions
+                if result.errors:
+                    execution_context.errors = result.errors
 
     return ExecutionResult(
-        data=result.data,
-        errors=result.errors,
+        data=execution_context.result.data,
+        errors=execution_context.result.errors,
         extensions=extensions_runner.get_extensions_results_sync(),
     )
