@@ -1,5 +1,7 @@
 import pytest
 
+from graphql import ExecutionResult as GraphQLExecutionResult
+
 import strawberry
 from strawberry.extensions import Extension
 
@@ -338,3 +340,70 @@ def test_on_parsing_end_called_when_errors():
     assert result.errors
 
     assert result.errors == execution_errors
+
+
+def test_extension_override_execution():
+    class MyExtension(Extension):
+        def on_executing_start(self):
+            # Always return a static response
+            self.execution_context.result = GraphQLExecutionResult(
+                data={
+                    "surprise": "data",
+                },
+                errors=[],
+            )
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def ping(self) -> str:
+            return "pong"
+
+    schema = strawberry.Schema(query=Query, extensions=[MyExtension])
+
+    query = """
+        query TestQuery {
+            ping
+        }
+    """
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data == {
+        "surprise": "data",
+    }
+
+
+@pytest.mark.asyncio
+async def test_extension_override_execution_async():
+    class MyExtension(Extension):
+        def on_executing_start(self):
+            # Always return a static response
+            self.execution_context.result = GraphQLExecutionResult(
+                data={
+                    "surprise": "data",
+                },
+                errors=[],
+            )
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def ping(self) -> str:
+            return "pong"
+
+    schema = strawberry.Schema(query=Query, extensions=[MyExtension])
+
+    query = """
+        query TestQuery {
+            ping
+        }
+    """
+
+    result = await schema.execute(query)
+
+    assert not result.errors
+    assert result.data == {
+        "surprise": "data",
+    }
