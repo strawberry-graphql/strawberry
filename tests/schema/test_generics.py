@@ -17,13 +17,13 @@ def test_supports_generic_simple_type():
     @strawberry.type
     class Query:
         @strawberry.field
-        def int_edge(self) -> Edge[int]:
+        def edge_int(self) -> Edge[int]:
             return Edge(cursor=strawberry.ID("1"), node_field=1)
 
     schema = strawberry.Schema(query=Query)
 
     query = """{
-        intEdge {
+        edgeInt {
             __typename
             cursor
             nodeField
@@ -34,7 +34,7 @@ def test_supports_generic_simple_type():
 
     assert not result.errors
     assert result.data == {
-        "intEdge": {"__typename": "IntEdge", "cursor": "1", "nodeField": 1}
+        "edgeInt": {"__typename": "EdgeInt", "cursor": "1", "nodeField": 1}
     }
 
 
@@ -53,13 +53,13 @@ def test_supports_generic():
     @strawberry.type
     class Query:
         @strawberry.field
-        def person_edge(self) -> Edge[Person]:
+        def edge_person(self) -> Edge[Person]:
             return Edge(cursor=strawberry.ID("1"), node=Person(name="Example"))
 
     schema = strawberry.Schema(query=Query)
 
     query = """{
-        personEdge {
+        edgePerson {
             __typename
             cursor
             node {
@@ -72,8 +72,8 @@ def test_supports_generic():
 
     assert not result.errors
     assert result.data == {
-        "personEdge": {
-            "__typename": "PersonEdge",
+        "edgePerson": {
+            "__typename": "EdgePerson",
             "cursor": "1",
             "node": {"name": "Example"},
         }
@@ -109,7 +109,7 @@ def test_supports_multiple_generic():
 
     assert not result.errors
     assert result.data == {
-        "multiple": {"__typename": "IntStrMultiple", "a": 123, "b": "123"}
+        "multiple": {"__typename": "MultipleStrInt", "a": 123, "b": "123"}
     }
 
 
@@ -153,8 +153,8 @@ def test_support_nested_generics():
     assert not result.errors
     assert result.data == {
         "users": {
-            "__typename": "UserConnection",
-            "edge": {"__typename": "UserEdge", "node": {"name": "Patrick"}},
+            "__typename": "ConnectionUser",
+            "edge": {"__typename": "EdgeUser", "node": {"name": "Patrick"}},
         }
     }
 
@@ -190,7 +190,7 @@ def test_supports_optional():
     result = schema.execute_sync(query)
 
     assert not result.errors
-    assert result.data == {"user": {"__typename": "UserEdge", "node": None}}
+    assert result.data == {"user": {"__typename": "EdgeUser", "node": None}}
 
 
 def test_supports_lists():
@@ -224,7 +224,7 @@ def test_supports_lists():
     result = schema.execute_sync(query)
 
     assert not result.errors
-    assert result.data == {"user": {"__typename": "UserEdge", "nodes": []}}
+    assert result.data == {"user": {"__typename": "EdgeUser", "nodes": []}}
 
 
 def test_supports_lists_of_optionals():
@@ -258,7 +258,7 @@ def test_supports_lists_of_optionals():
     result = schema.execute_sync(query)
 
     assert not result.errors
-    assert result.data == {"user": {"__typename": "UserEdge", "nodes": [None]}}
+    assert result.data == {"user": {"__typename": "EdgeUser", "nodes": [None]}}
 
 
 def test_can_extend_generics():
@@ -306,9 +306,9 @@ def test_can_extend_generics():
     assert not result.errors
     assert result.data == {
         "users": {
-            "__typename": "UserConnectionWithMeta",
+            "__typename": "ConnectionWithMetaUser",
             "meta": "123",
-            "edges": [{"__typename": "UserEdge", "node": {"name": "Patrick"}}],
+            "edges": [{"__typename": "EdgeUser", "node": {"name": "Patrick"}}],
         }
     }
 
@@ -337,7 +337,7 @@ def test_supports_generic_in_unions():
         example {
             __typename
 
-            ... on IntEdge {
+            ... on EdgeInt {
                 cursor
                 node
             }
@@ -348,7 +348,7 @@ def test_supports_generic_in_unions():
 
     assert not result.errors
     assert result.data == {
-        "example": {"__typename": "IntEdge", "cursor": "1", "node": 1}
+        "example": {"__typename": "EdgeInt", "cursor": "1", "node": 1}
     }
 
 
@@ -377,7 +377,7 @@ def test_supports_generic_in_unions_multiple_vars():
         example {
             __typename
 
-            ... on IntStrEdge {
+            ... on EdgeStrInt {
                 node
                 info
             }
@@ -388,7 +388,7 @@ def test_supports_generic_in_unions_multiple_vars():
 
     assert not result.errors
     assert result.data == {
-        "example": {"__typename": "IntStrEdge", "node": "string", "info": 1}
+        "example": {"__typename": "EdgeStrInt", "node": "string", "info": 1}
     }
 
 
@@ -422,7 +422,7 @@ def test_supports_generic_in_unions_with_nesting():
     query = """{
         users {
             __typename
-            ... on UserConnection {
+            ... on ConnectionUser {
                 edge {
                     __typename
                     node {
@@ -438,8 +438,8 @@ def test_supports_generic_in_unions_with_nesting():
     assert not result.errors
     assert result.data == {
         "users": {
-            "__typename": "UserConnection",
-            "edge": {"__typename": "UserEdge", "node": {"name": "Patrick"}},
+            "__typename": "ConnectionUser",
+            "edge": {"__typename": "EdgeUser", "node": {"name": "Patrick"}},
         }
     }
 
@@ -464,20 +464,20 @@ def test_supports_multiple_generics_in_union():
     schema = strawberry.Schema(query=Query)
 
     expected_schema = """
-      type IntEdge {
+      type EdgeInt {
         cursor: ID!
         node: Int!
       }
 
-      union IntEdgeStrEdge = IntEdge | StrEdge
+      union EdgeIntEdgeStr = EdgeInt | EdgeStr
 
-      type Query {
-        example: [IntEdgeStrEdge!]!
-      }
-
-      type StrEdge {
+      type EdgeStr {
         cursor: ID!
         node: String!
+      }
+
+      type Query {
+        example: [EdgeIntEdgeStr!]!
       }
     """
 
@@ -487,12 +487,12 @@ def test_supports_multiple_generics_in_union():
         example {
             __typename
 
-            ... on IntEdge {
+            ... on EdgeInt {
                 cursor
                 intNode: node
             }
 
-            ... on StrEdge {
+            ... on EdgeStr {
                 cursor
                 strNode: node
             }
@@ -504,8 +504,8 @@ def test_supports_multiple_generics_in_union():
     assert not result.errors
     assert result.data == {
         "example": [
-            {"__typename": "IntEdge", "cursor": "1", "intNode": 1},
-            {"__typename": "StrEdge", "cursor": "2", "strNode": "string"},
+            {"__typename": "EdgeInt", "cursor": "1", "intNode": 1},
+            {"__typename": "EdgeStr", "cursor": "2", "strNode": "string"},
         ]
     }
 
@@ -547,7 +547,7 @@ def test_generated_names():
     assert not result.errors
     assert result.data == {
         "personEdge": {
-            "__typename": "SpecialPersonEdgeWithCursor",
+            "__typename": "EdgeWithCursorSpecialPerson",
             "cursor": "1",
             "node": {"name": "Example"},
         }
@@ -577,7 +577,7 @@ def test_supports_lists_within_unions():
         user {
             __typename
 
-            ... on UserEdge {
+            ... on EdgeUser {
                 nodes {
                     name
                 }
@@ -588,7 +588,7 @@ def test_supports_lists_within_unions():
     result = schema.execute_sync(query)
 
     assert not result.errors
-    assert result.data == {"user": {"__typename": "UserEdge", "nodes": [{"name": "P"}]}}
+    assert result.data == {"user": {"__typename": "EdgeUser", "nodes": [{"name": "P"}]}}
 
 
 def test_supports_lists_within_unions_empty_list():
@@ -614,7 +614,7 @@ def test_supports_lists_within_unions_empty_list():
         user {
             __typename
 
-            ... on UserEdge {
+            ... on EdgeUser {
                 nodes {
                     name
                 }
@@ -625,7 +625,7 @@ def test_supports_lists_within_unions_empty_list():
     result = schema.execute_sync(query)
 
     assert not result.errors
-    assert result.data == {"user": {"__typename": "UserEdge", "nodes": []}}
+    assert result.data == {"user": {"__typename": "EdgeUser", "nodes": []}}
 
 
 @pytest.mark.xfail()
@@ -652,7 +652,7 @@ def test_raises_error_when_unable_to_find_type():
         user {
             __typename
 
-            ... on UserEdge {
+            ... on EdgeUser {
                 nodes {
                     name
                 }
@@ -689,16 +689,16 @@ def test_generic_with_arguments():
     schema = strawberry.Schema(Query)
 
     expected_schema = """
+    type CollectionPost {
+      byId(ids: [Int!]!): [Post!]!
+    }
+
     type Post {
       name: String!
     }
 
-    type PostCollection {
-      byId(ids: [Int!]!): [Post!]!
-    }
-
     type Query {
-      user: PostCollection!
+      user: CollectionPost!
     }
     """
 

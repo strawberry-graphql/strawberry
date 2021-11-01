@@ -121,7 +121,7 @@ class TypeDefinition(StrawberryType):
         elif isinstance(type_, StrawberryUnion):
             return type_.name
         elif isinstance(type_, StrawberryContainer):
-            return self.get_name_from_type(type_.of_type) + type_.name
+            return type_.name + self.get_name_from_type(type_.of_type)
         elif hasattr(type_, "_type_definition"):
             field_type = type_._type_definition  # type: ignore
 
@@ -136,7 +136,10 @@ class TypeDefinition(StrawberryType):
             name = self.get_name_from_type(type_)
             names.append(name)
 
-        return "".join(names) + self.name
+        # we want to generate types from inside out, for example
+        # getting `ValueOptionalListStr` from `Value[Optional[List[str]]]`
+        # so we reverse the list of names, since it goes outside in
+        return self.name + "".join(reversed(names))
 
     @property
     def fields(self) -> List["StrawberryField"]:

@@ -117,7 +117,7 @@ def test_union_with_generic():
     assert strawberry_union.types[0] == Error
 
     assert strawberry_union.types[1]._type_definition.is_generic is False
-    assert strawberry_union.types[1]._type_definition.name == "StrEdge"
+    assert strawberry_union.types[1]._type_definition.name == "EdgeStr"
 
 
 def test_cannot_use_union_directly():
