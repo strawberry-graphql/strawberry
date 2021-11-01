@@ -179,17 +179,17 @@ def test_using_generics():
     assert not result.errors
 
     sdl = """
+        type ListOfProductsProduct {
+          products: [Product!]!
+        }
+
         type Product {
           upc: String!
         }
 
-        type ProductListOfProducts {
-          products: [Product!]!
-        }
-
         extend type Query {
           _service: _Service!
-          topProducts(first: Int!): ProductListOfProducts!
+          topProducts(first: Int!): ListOfProductsProduct!
         }
 
         scalar _Any

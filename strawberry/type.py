@@ -48,6 +48,8 @@ class StrawberryType(ABC):
 
 
 class StrawberryContainer(StrawberryType):
+    name: str
+
     def __init__(self, of_type: Union[StrawberryType, type]):
         self.of_type = of_type
 
