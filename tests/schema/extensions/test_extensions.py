@@ -1,4 +1,5 @@
-from typing import Dict, Optional
+import json
+from typing import Optional
 from unittest.mock import patch
 
 import pytest
@@ -423,18 +424,12 @@ def test_execution_cache_example(mock_original_execute):
 
     response_cache = {}
 
-    # Helper function to hash query variables for the cache key
-    def hash_map(input_map: Optional[Dict[str, object]]):
-        if input_map is None:
-            return ""
-        return ":".join(map(lambda x: str(hash(x)), input_map.items()))
-
     class ExecutionCache(Extension):
         def on_executing_start(self):
             # Check if we've come across this query before
             execution_context = self.execution_context
             self.cache_key = (
-                f"{execution_context.query}:{hash_map(execution_context.variables)}"
+                f"{execution_context.query}:{json.dumps(execution_context.variables)}"
             )
             if self.cache_key in response_cache:
                 self.execution_context.result = response_cache[self.cache_key]

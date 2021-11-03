@@ -127,24 +127,19 @@ class MyExtension(Extension):
   <summary>In memory cached execution</summary>
 
 ```python
+import json
 import strawberry
 from strawberry.extensions import Extension
 
 # Use an actual cache in production so that this doesn't grow unbounded
 response_cache = {}
 
-# Helper function to hash query variables for the cache key
-def hash_map(input_map: Optional[Dict[str, object]]) -> str:
-    if input_map is None:
-        return ""
-    return ":".join(map(lambda x: str(hash(x)), input_map.items()))
-
 class ExecutionCache(Extension):
     def on_executing_start(self):
         # Check if we've come across this query before
         execution_context = self.execution_context
         self.cache_key = (
-            f"{execution_context.query}:{hash_map(execution_context.variables)}"
+            f"{execution_context.query}:{json.dumps(execution_context.variables)}"
         )
         if self.cache_key in response_cache:
             self.execution_context.result = response_cache[self.cache_key]
