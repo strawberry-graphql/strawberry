@@ -131,13 +131,13 @@ import strawberry
 from strawberry.extensions import Extension
 
 # Use an actual cache in production so that this doesn't grow unbounded
-response_cache = dict()
+response_cache = {}
 
 # Helper function to hash query variables for the cache key
-def hash_map(input_map: Optional[Dict[str, Any]]):
+def hash_map(input_map: Optional[Dict[str, object]]) -> str:
     if input_map is None:
         return ""
-    return ":".join(map(lambda x: str(hash(x)), list(input_map.items())))
+    return ":".join(map(lambda x: str(hash(x)), input_map.items()))
 
 class ExecutionCache(Extension):
     def on_executing_start(self):

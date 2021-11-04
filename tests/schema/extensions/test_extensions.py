@@ -421,13 +421,13 @@ def test_execution_cache_example(mock_original_execute):
     # Test that the example of how to use the on_executing_start hook in the
     # docs actually works
 
-    response_cache = dict()
+    response_cache = {}
 
     # Helper function to hash query variables for the cache key
-    def hash_map(input_map: Optional[Dict[str, Any]]):
+    def hash_map(input_map: Optional[Dict[str, object]]):
         if input_map is None:
             return ""
-        return ":".join(map(lambda x: str(hash(x)), list(input_map.items())))
+        return ":".join(map(lambda x: str(hash(x)), input_map.items()))
 
     class ExecutionCache(Extension):
         def on_executing_start(self):
@@ -448,7 +448,7 @@ def test_execution_cache_example(mock_original_execute):
     class Query:
         @strawberry.field
         def ping(self, return_value: Optional[str] = None) -> str:
-            if return_value:
+            if return_value is not None:
                 return return_value
             return "pong"
 

@@ -176,9 +176,8 @@ def execute_sync(
                 )
 
                 if isawaitable(result):
-                    ensure_future(
-                        cast(Awaitable[GraphQLExecutionResult], result)
-                    ).cancel()
+                    result = cast(Awaitable[GraphQLExecutionResult], result)
+                    ensure_future(result).cancel()
                     raise RuntimeError(
                         "GraphQL execution failed to complete synchronously."
                     )
