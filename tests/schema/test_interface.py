@@ -107,6 +107,10 @@ def test_interface_duck_typing():
     class Anime(Entity):
         name: str
 
+        @classmethod
+        def is_type_of(cls, obj, _info) -> bool:
+            return isinstance(obj, AnimeORM)
+
     @dataclass
     class AnimeORM:
         id: int
@@ -130,7 +134,7 @@ def test_interface_duck_typing():
     assert result.data == {"anime": {"name": "One Piece"}}
 
 
-def test_interface_type_resolution():
+def test_interface_explicit_type_resolution():
     @dataclass
     class AnimeORM:
         id: int
@@ -154,14 +158,13 @@ def test_interface_type_resolution():
         def node(self) -> Node:
             return AnimeORM(id=1, name="One Piece")  # type: ignore
 
-    schema = strawberry.Schema(query=Query)
+    schema = strawberry.Schema(query=Query, types=[Anime])
 
     query = "{ node { __typename, id } }"
     result = schema.execute_sync(query)
 
     assert not result.errors
     assert result.data == {"node": {"__typename": "Anime", "id": 1}}
-    # errors with: "type object 'AnimeORM' has no attribute '_type_definition'"
 
 
 @pytest.mark.xfail(reason="We don't support returning dictionaries yet")
