@@ -109,7 +109,7 @@ def test_supports_multiple_generic():
 
     assert not result.errors
     assert result.data == {
-        "multiple": {"__typename": "MultipleStrInt", "a": 123, "b": "123"}
+        "multiple": {"__typename": "MultipleIntStr", "a": 123, "b": "123"}
     }
 
 
@@ -377,7 +377,7 @@ def test_supports_generic_in_unions_multiple_vars():
         example {
             __typename
 
-            ... on EdgeStrInt {
+            ... on EdgeIntStr {
                 node
                 info
             }
@@ -388,7 +388,7 @@ def test_supports_generic_in_unions_multiple_vars():
 
     assert not result.errors
     assert result.data == {
-        "example": {"__typename": "EdgeStrInt", "node": "string", "info": 1}
+        "example": {"__typename": "EdgeIntStr", "node": "string", "info": 1}
     }
 
 
