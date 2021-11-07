@@ -3,10 +3,10 @@ from __future__ import annotations
 import dataclasses
 from typing import (
     TYPE_CHECKING,
-    Iterable,
     List,
     Mapping,
     Optional,
+    Reversible,
     Sequence,
     Type,
     TypeVar,
@@ -129,7 +129,9 @@ class TypeDefinition(StrawberryType):
         else:
             return capitalize_first(type_.__name__)  # type: ignore
 
-    def get_name_from_types(self, types: Iterable[Union[StrawberryType, type]]) -> str:
+    def get_name_from_types(
+        self, types: Reversible[Union[StrawberryType, type]]
+    ) -> str:
         names: List[str] = []
 
         for type_ in reversed(types):
