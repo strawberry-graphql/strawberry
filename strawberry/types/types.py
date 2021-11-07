@@ -132,7 +132,7 @@ class TypeDefinition(StrawberryType):
     def get_name_from_types(self, types: Iterable[Union[StrawberryType, type]]) -> str:
         names: List[str] = []
 
-        for type_ in types:
+        for type_ in reversed(types):
             name = self.get_name_from_type(type_)
             names.append(name)
 
