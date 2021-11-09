@@ -1,9 +1,10 @@
-from typing import Generic, TypeVar
+from typing import TypeVar
 
 import pytest
 
 import strawberry
 from strawberry.enum import EnumDefinition
+from strawberry.schema.config import StrawberryConfig
 from strawberry.type import StrawberryList
 from strawberry.union import StrawberryUnion
 
@@ -36,10 +37,6 @@ class TypeB:
     ],
 )
 def test_name_generation(types, expected_name):
-    @strawberry.type
-    class Example(Generic[T]):
-        node: T
+    config = StrawberryConfig()
 
-    definition = Example._type_definition  # type: ignore
-
-    assert definition.get_name_from_types(types) == expected_name
+    assert config.get_name_from_types("Example", types) == expected_name

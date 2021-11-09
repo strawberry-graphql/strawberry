@@ -21,7 +21,9 @@ class StrawberryConfig:
 
     def get_object_type_name(self, object_type: TypeDefinition) -> str:
         if object_type.concrete_of:
-            return self.get_name_from_types(object_type.name, object_type.type_var_map)
+            return self.get_name_from_types(
+                object_type.name, list(object_type.type_var_map.values())
+            )
 
         return object_type.name
 
@@ -55,11 +57,11 @@ class StrawberryConfig:
         return name
 
     def get_name_from_types(
-        self, type_name: str, types: Mapping[TypeVar, Union[StrawberryType, type]]
+        self, type_name: str, types: List[Union[StrawberryType, type]]
     ) -> str:
         names: List[str] = []
 
-        for type_ in reversed(types.values()):
+        for type_ in reversed(types):
             name = self.get_name_from_type(type_)
             names.append(name)
 
