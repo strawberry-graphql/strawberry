@@ -6,17 +6,13 @@ from typing import (
     List,
     Mapping,
     Optional,
-    Reversible,
     Sequence,
     Type,
     TypeVar,
     Union,
 )
 
-from strawberry.enum import EnumDefinition
-from strawberry.lazy_type import LazyType
-from strawberry.type import StrawberryContainer, StrawberryType, StrawberryTypeVar
-from strawberry.utils.str_converters import capitalize_first
+from strawberry.type import StrawberryType, StrawberryTypeVar
 from strawberry.utils.typing import is_generic as is_type_generic
 
 
@@ -65,8 +61,6 @@ class TypeDefinition(StrawberryType):
     def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
     ) -> type:
-        name = self.get_name_from_types(type_var_map.values())
-
         fields = []
         for field in self.fields:
             # TODO: Logic unnecessary with StrawberryObject
@@ -83,7 +77,7 @@ class TypeDefinition(StrawberryType):
             fields.append(field)
 
         new_type_definition = TypeDefinition(
-            name=name,
+            name=self.name,
             is_input=self.is_input,
             origin=self.origin,
             is_interface=self.is_interface,
@@ -110,38 +104,6 @@ class TypeDefinition(StrawberryType):
         return next(
             (field for field in self.fields if field.python_name == python_name), None
         )
-
-    def get_name_from_type(self, type_: Union[StrawberryType, type]) -> str:
-        from strawberry.union import StrawberryUnion
-
-        if isinstance(type_, LazyType):
-            return type_.type_name
-        elif isinstance(type_, EnumDefinition):
-            return type_.name
-        elif isinstance(type_, StrawberryUnion):
-            return type_.name
-        elif isinstance(type_, StrawberryContainer):
-            return type_.name + self.get_name_from_type(type_.of_type)
-        elif hasattr(type_, "_type_definition"):
-            field_type = type_._type_definition  # type: ignore
-
-            return capitalize_first(field_type.name)
-        else:
-            return capitalize_first(type_.__name__)  # type: ignore
-
-    def get_name_from_types(
-        self, types: Reversible[Union[StrawberryType, type]]
-    ) -> str:
-        names: List[str] = []
-
-        for type_ in reversed(types):
-            name = self.get_name_from_type(type_)
-            names.append(name)
-
-        # we want to generate types from inside out, for example
-        # getting `ValueOptionalListStr` from `Value[Optional[List[str]]]`
-        # so we reverse the list of names, since it goes outside in
-        return self.name + "".join(reversed(names))
 
     @property
     def fields(self) -> List["StrawberryField"]:

@@ -11,7 +11,7 @@ from strawberry.union import StrawberryUnion
 T = TypeVar("T")
 
 
-Enum = EnumDefinition(None, name="Enum", values=[], description=None)
+Enum = EnumDefinition(None, name="Enum", values=[], description=None)  # type: ignore
 
 
 @strawberry.type
@@ -30,7 +30,7 @@ class TypeB:
         ([StrawberryList(str)], "ExampleListStr"),
         ([StrawberryList(StrawberryList(str))], "ExampleListListStr"),
         ([StrawberryList(Enum)], "ExampleListEnum"),
-        ([StrawberryUnion("Union", [TypeA, TypeB])], "ExampleUnion"),
+        ([StrawberryUnion("Union", (TypeA, TypeB))], "ExampleUnion"),  # type: ignore
         ([TypeA], "ExampleTypeA"),
         ([TypeA, TypeB], "ExampleTypeATypeB"),
     ],
@@ -40,6 +40,6 @@ def test_name_generation(types, expected_name):
     class Example(Generic[T]):
         node: T
 
-    definition = Example._type_definition
+    definition = Example._type_definition  # type: ignore
 
     assert definition.get_name_from_types(types) == expected_name

@@ -43,7 +43,7 @@ class StrawberryUnion(StrawberryType):
         type_annotations: Tuple["StrawberryAnnotation", ...] = tuple(),
         description: Optional[str] = None,
     ):
-        self._name = name
+        self.name = name
         self.type_annotations = type_annotations
         self.description = description
 
@@ -62,20 +62,6 @@ class StrawberryUnion(StrawberryType):
     def __hash__(self) -> int:
         # TODO: Is this a bad idea? __eq__ objects are supposed to have the same hash
         return id(self)
-
-    @property
-    def name(self) -> str:
-        if self._name is not None:
-            return self._name
-
-        name = ""
-        for type_ in self.types:
-            if hasattr(type_, "_type_definition"):
-                name += type_._type_definition.name  # type: ignore
-            else:
-                name += type.__name__
-
-        return name
 
     @property
     def types(self) -> Tuple[StrawberryType, ...]:
