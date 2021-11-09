@@ -76,30 +76,6 @@ class GraphQLCoreConverter:
         self.config = config
         self.scalar_registry = scalar_registry
 
-    def get_argument_name(self, argument: StrawberryArgument) -> str:
-        return argument.get_graphql_name(self.config.auto_camel_case)
-
-    def get_object_type_name(self, object_type: TypeDefinition) -> str:
-        return object_type.name
-
-    def get_input_type_name(self, input_type: TypeDefinition) -> str:
-        return input_type.name
-
-    def get_interface_name(self, interface: TypeDefinition) -> str:
-        return interface.name
-
-    def get_enum_name(self, enum: EnumDefinition) -> str:
-        return enum.name
-
-    def get_directive_name(self, directive: StrawberryDirective) -> str:
-        return directive.get_graphql_name(self.config.auto_camel_case)
-
-    def get_scalar_name(self, scalar: ScalarDefinition) -> str:
-        return scalar.name
-
-    def get_union_name(self, union: StrawberryUnion) -> str:
-        return union.name
-
     def from_argument(self, argument: StrawberryArgument) -> GraphQLArgument:
         argument_type: GraphQLType
 
@@ -117,7 +93,7 @@ class GraphQLCoreConverter:
         )
 
     def from_enum(self, enum: EnumDefinition) -> CustomGraphQLEnumType:
-        enum_name = self.get_enum_name(enum)
+        enum_name = self.config.get_enum_name(enum)
 
         assert enum_name is not None
 
@@ -146,10 +122,10 @@ class GraphQLCoreConverter:
         graphql_arguments = {}
 
         for argument in directive.arguments:
-            argument_name = self.get_argument_name(argument)
+            argument_name = self.config.get_argument_name(argument)
             graphql_arguments[argument_name] = self.from_argument(argument)
 
-        directive_name = self.get_directive_name(directive)
+        directive_name = self.config.get_directive_name(directive)
 
         return GraphQLDirective(
             name=directive_name,
@@ -175,7 +151,7 @@ class GraphQLCoreConverter:
 
         graphql_arguments = {}
         for argument in field.arguments:
-            argument_name = self.get_argument_name(argument)
+            argument_name = self.config.get_argument_name(argument)
             graphql_arguments[argument_name] = self.from_argument(argument)
 
         return GraphQLField(
@@ -212,7 +188,7 @@ class GraphQLCoreConverter:
     def from_input_object(self, object_type: type) -> GraphQLInputObjectType:
         type_definition = object_type._type_definition  # type: ignore
 
-        type_name = self.get_input_type_name(type_definition)
+        type_name = self.config.get_input_type_name(type_definition)
 
         # Don't reevaluate known types
         if type_name in self.type_map:
@@ -243,7 +219,7 @@ class GraphQLCoreConverter:
 
     def from_interface(self, interface: TypeDefinition) -> GraphQLInterfaceType:
         # TODO: Use StrawberryInterface when it's implemented in another PR
-        interface_name = self.get_interface_name(interface)
+        interface_name = self.config.get_interface_name(interface)
 
         # Don't reevaluate known types
         if interface_name in self.type_map:
@@ -308,7 +284,7 @@ class GraphQLCoreConverter:
 
     def from_object(self, object_type: TypeDefinition) -> GraphQLObjectType:
         # TODO: Use StrawberryObjectType when it's implemented in another PR
-        object_type_name = self.get_object_type_name(object_type)
+        object_type_name = self.config.get_object_type_name(object_type)
 
         # Don't reevaluate known types
         if object_type_name in self.type_map:
@@ -447,7 +423,7 @@ class GraphQLCoreConverter:
         else:
             scalar_definition = scalar._scalar_definition
 
-        scalar_name = self.get_scalar_name(scalar_definition)
+        scalar_name = self.config.get_scalar_name(scalar_definition)
 
         if scalar_name not in self.type_map:
             implementation = (
@@ -499,7 +475,7 @@ class GraphQLCoreConverter:
         raise TypeError(f"Unexpected type '{type_}'")
 
     def from_union(self, union: StrawberryUnion) -> GraphQLUnionType:
-        union_name = self.get_union_name(union)
+        union_name = self.config.get_union_name(union)
 
         # Don't reevaluate known types
         if union_name in self.type_map:
