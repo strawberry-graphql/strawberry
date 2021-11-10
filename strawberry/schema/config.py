@@ -5,9 +5,8 @@ from typing import TYPE_CHECKING, List, Optional, Union
 
 from typing_extensions import Protocol
 
-from strawberry.utils.str_converters import capitalize_first, to_camel_case
-
 from strawberry.schema_directive import StrawberrySchemaDirective
+from strawberry.utils.str_converters import capitalize_first, to_camel_case
 
 
 if TYPE_CHECKING:
@@ -62,7 +61,9 @@ class StrawberryConfig:
     def get_enum_name(self, enum: EnumDefinition) -> str:
         return enum.name
 
-    def get_directive_name(self, directive: Union[StrawberryDirective, StrawberrySchemaDirective]) -> str:
+    def get_directive_name(
+        self, directive: Union[StrawberryDirective, StrawberrySchemaDirective]
+    ) -> str:
         name = self.get_graphql_name(directive)
 
         if self.auto_camel_case:
