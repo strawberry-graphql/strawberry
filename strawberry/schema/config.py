@@ -7,16 +7,15 @@ from typing_extensions import Protocol
 
 from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.utils.str_converters import capitalize_first, to_camel_case
-
+from strawberry.lazy_type import LazyType
+from strawberry.type import StrawberryContainer, StrawberryType
+from strawberry.enum import EnumDefinition
 
 if TYPE_CHECKING:
     from strawberry.arguments import StrawberryArgument
     from strawberry.custom_scalar import ScalarDefinition
     from strawberry.directive import StrawberryDirective
-    from strawberry.enum import EnumDefinition
     from strawberry.field import StrawberryField
-    from strawberry.lazy_type import LazyType
-    from strawberry.type import StrawberryContainer, StrawberryType
     from strawberry.types.types import TypeDefinition
     from strawberry.union import StrawberryUnion
 

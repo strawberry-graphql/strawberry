@@ -1,7 +1,17 @@
 from __future__ import annotations
 
 import inspect
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    Union,
+    cast,
+)
 
 from typing_extensions import Annotated, get_args, get_origin
 
@@ -9,12 +19,15 @@ from strawberry.annotation import StrawberryAnnotation
 from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.enum import EnumDefinition
 from strawberry.lazy_type import LazyType
-from strawberry.schema.config import StrawberryConfig
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
 
 from .exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError
 from .scalars import is_scalar
 from .types.types import TypeDefinition
+
+
+if TYPE_CHECKING:
+    from strawberry.schema.config import StrawberryConfig
 
 
 class _Unset:

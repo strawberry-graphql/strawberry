@@ -9,10 +9,7 @@ from typing import TYPE_CHECKING, Callable, List, Optional, TypeVar
 from graphql import DirectiveLocation
 
 from strawberry.annotation import StrawberryAnnotation
-
-
-if TYPE_CHECKING:
-    from strawberry.arguments import StrawberryArgument
+from strawberry.arguments import StrawberryArgument
 
 
 @dataclasses.dataclass
