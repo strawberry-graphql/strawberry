@@ -26,7 +26,7 @@ def test_python_union():
     assert resolved.types == (User, Error)
 
     assert resolved == StrawberryUnion(
-        name="UserError",
+        name=None,
         type_annotations=(StrawberryAnnotation(User), StrawberryAnnotation(Error)),
     )
     assert resolved == Union[User, Error]
@@ -52,7 +52,7 @@ def test_python_union_short_syntax():
     assert resolved.types == (User, Error)
 
     assert resolved == StrawberryUnion(
-        name="UserError",
+        name=None,
         type_annotations=(StrawberryAnnotation(User), StrawberryAnnotation(Error)),
     )
     assert resolved == Union[User, Error]
@@ -117,7 +117,6 @@ def test_union_with_generic():
     assert strawberry_union.types[0] == Error
 
     assert strawberry_union.types[1]._type_definition.is_generic is False
-    assert strawberry_union.types[1]._type_definition.name == "EdgeStr"
 
 
 def test_cannot_use_union_directly():
