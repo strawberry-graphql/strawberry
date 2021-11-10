@@ -4,6 +4,7 @@ import pytest
 
 import strawberry
 from strawberry.enum import EnumDefinition
+from strawberry.lazy_type import LazyType
 from strawberry.schema.config import StrawberryConfig
 from strawberry.type import StrawberryList
 from strawberry.union import StrawberryUnion
@@ -34,6 +35,7 @@ class TypeB:
         ([StrawberryUnion("Union", (TypeA, TypeB))], "ExampleUnion"),  # type: ignore
         ([TypeA], "ExampleTypeA"),
         ([TypeA, TypeB], "ExampleTypeATypeB"),
+        ([TypeA, LazyType["TypeB", "test_names"]], "ExampleTypeATypeB"),
     ],
 )
 def test_name_generation(types, expected_name):

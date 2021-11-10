@@ -85,10 +85,9 @@ class StrawberryConfig:
         name = ""
 
         for type_ in union.types:
-            if hasattr(type_, "_type_definition"):
-                name += self.get_object_type_name(type_._type_definition)  # type: ignore
-            else:
-                name += type.__name__
+            assert hasattr(type_, "_type_definition")
+
+            name += self.get_object_type_name(type_._type_definition)  # type: ignore
 
         return name
 
