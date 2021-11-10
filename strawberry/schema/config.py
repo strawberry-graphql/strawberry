@@ -119,9 +119,13 @@ class StrawberryConfig:
             return type_.name
         elif isinstance(type_, StrawberryContainer):
             return type_.name + self.get_name_from_type(type_.of_type)
-        elif hasattr(type_, "_type_definition"):
-            field_type = type_._type_definition  # type: ignore
+        elif hasattr(type_, "_scalar_definition"):
+            strawberry_type = type_._scalar_definition  # type: ignore
 
-            return capitalize_first(field_type.name)
+            return capitalize_first(strawberry_type.name)
+        elif hasattr(type_, "_type_definition"):
+            strawberry_type = type_._type_definition  # type: ignore
+
+            return capitalize_first(strawberry_type.name)
         else:
             return capitalize_first(type_.__name__)  # type: ignore

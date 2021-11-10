@@ -1,4 +1,4 @@
-from typing import TypeVar
+from typing import Any, NewType, TypeVar
 
 import pytest
 
@@ -14,6 +14,7 @@ T = TypeVar("T")
 
 
 Enum = EnumDefinition(None, name="Enum", values=[], description=None)  # type: ignore
+JSON = strawberry.scalar(NewType("JSON", Any))
 
 
 @strawberry.type
@@ -34,6 +35,7 @@ class TypeB:
         ([StrawberryList(Enum)], "ExampleListEnum"),
         ([StrawberryUnion("Union", (TypeA, TypeB))], "ExampleUnion"),  # type: ignore
         ([TypeA], "ExampleTypeA"),
+        ([JSON], "ExampleJSON"),
         ([TypeA, TypeB], "ExampleTypeATypeB"),
         ([TypeA, LazyType["TypeB", "test_names"]], "ExampleTypeATypeB"),
     ],
