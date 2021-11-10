@@ -1,23 +1,49 @@
-from dataclasses import dataclass
-from typing import List, Mapping, TypeVar, Union
+from __future__ import annotations
 
-from strawberry.arguments import StrawberryArgument
-from strawberry.custom_scalar import ScalarDefinition
-from strawberry.directive import StrawberryDirective
-from strawberry.enum import EnumDefinition
-from strawberry.lazy_type import LazyType
-from strawberry.type import StrawberryContainer, StrawberryType
-from strawberry.types.types import TypeDefinition
-from strawberry.union import StrawberryUnion
-from strawberry.utils.str_converters import capitalize_first
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, List, Optional, Union
+
+from typing_extensions import Protocol
+
+from strawberry.utils.str_converters import capitalize_first, to_camel_case
+
+from strawberry.schema_directive import StrawberrySchemaDirective
+
+
+if TYPE_CHECKING:
+    from strawberry.arguments import StrawberryArgument
+    from strawberry.custom_scalar import ScalarDefinition
+    from strawberry.directive import StrawberryDirective
+    from strawberry.enum import EnumDefinition
+    from strawberry.field import StrawberryField
+    from strawberry.lazy_type import LazyType
+    from strawberry.type import StrawberryContainer, StrawberryType
+    from strawberry.types.types import TypeDefinition
+    from strawberry.union import StrawberryUnion
+
+
+class HasGraphQLName(Protocol):
+    python_name: str
+    graphql_name: Optional[str]
 
 
 @dataclass
 class StrawberryConfig:
     auto_camel_case: bool = True
 
+    def get_graphql_name(self, obj: HasGraphQLName) -> str:
+        if obj.graphql_name is not None:
+            return obj.graphql_name
+
+        assert obj.python_name
+
+        if self.auto_camel_case:
+            return to_camel_case(obj.python_name)
+
+        return obj.python_name
+
     def get_argument_name(self, argument: StrawberryArgument) -> str:
-        return argument.get_graphql_name(self.auto_camel_case)
+        return self.get_graphql_name(argument)
 
     def get_object_type_name(self, object_type: TypeDefinition) -> str:
         if object_type.concrete_of:
@@ -36,11 +62,20 @@ class StrawberryConfig:
     def get_enum_name(self, enum: EnumDefinition) -> str:
         return enum.name
 
-    def get_directive_name(self, directive: StrawberryDirective) -> str:
-        return directive.get_graphql_name(self.auto_camel_case)
+    def get_directive_name(self, directive: Union[StrawberryDirective, StrawberrySchemaDirective]) -> str:
+        name = self.get_graphql_name(directive)
+
+        if self.auto_camel_case:
+            # we don't want the first letter to be uppercase for directives
+            return name[0].lower() + name[1:]
+
+        return name
 
     def get_scalar_name(self, scalar: ScalarDefinition) -> str:
         return scalar.name
+
+    def get_field_name(self, field: StrawberryField) -> str:
+        return self.get_graphql_name(field)
 
     def get_union_name(self, union: StrawberryUnion) -> str:
         if union.name is not None:

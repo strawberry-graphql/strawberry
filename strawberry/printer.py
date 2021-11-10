@@ -33,9 +33,7 @@ def print_schema_directive(
 ) -> str:
     params = directive.instance.__dict__ if directive.instance else {}
 
-    directive_name = directive.get_graphql_name(
-        auto_camel_case=schema.config.auto_camel_case
-    )
+    directive_name = schema.config.get_directive_name(directive)
 
     return f" @{directive_name}{print_schema_directive_params(params)}"
 

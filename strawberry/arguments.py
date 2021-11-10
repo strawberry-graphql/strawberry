@@ -9,8 +9,8 @@ from strawberry.annotation import StrawberryAnnotation
 from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.enum import EnumDefinition
 from strawberry.lazy_type import LazyType
+from strawberry.schema.config import StrawberryConfig
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
-from strawberry.utils.mixins import GraphQLNameMixin
 
 from .exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError
 from .scalars import is_scalar
@@ -41,7 +41,7 @@ class StrawberryArgumentAnnotation:
         self.name = name
 
 
-class StrawberryArgument(GraphQLNameMixin):
+class StrawberryArgument:
     def __init__(
         self,
         python_name: str,
@@ -99,7 +99,7 @@ def convert_argument(
     value: object,
     type_: Union[StrawberryType, type],
     scalar_registry: Dict[object, Union[ScalarWrapper, ScalarDefinition]],
-    auto_camel_case: bool = True,
+    config: StrawberryConfig,
 ) -> object:
     if value is None:
         return None
@@ -108,12 +108,12 @@ def convert_argument(
         return value
 
     if isinstance(type_, StrawberryOptional):
-        return convert_argument(value, type_.of_type, scalar_registry, auto_camel_case)
+        return convert_argument(value, type_.of_type, scalar_registry, config)
 
     if isinstance(type_, StrawberryList):
         value_list = cast(Iterable, value)
         return [
-            convert_argument(x, type_.of_type, scalar_registry, auto_camel_case)
+            convert_argument(x, type_.of_type, scalar_registry, config)
             for x in value_list
         ]
 
@@ -126,9 +126,7 @@ def convert_argument(
         return type_.wrapped_cls(value)
 
     if isinstance(type_, LazyType):
-        return convert_argument(
-            value, type_.resolve_type(), scalar_registry, auto_camel_case
-        )
+        return convert_argument(value, type_.resolve_type(), scalar_registry, config)
 
     if hasattr(type_, "_type_definition"):  # TODO: Replace with StrawberryInputObject
         type_definition: TypeDefinition = type_._type_definition  # type: ignore
@@ -139,11 +137,11 @@ def convert_argument(
 
         for field in type_definition.fields:
             value = cast(Mapping, value)
-            graphql_name = field.get_graphql_name(auto_camel_case)
+            graphql_name = config.get_field_name(field)
 
             if graphql_name in value:
                 kwargs[field.python_name] = convert_argument(
-                    value[graphql_name], field.type, scalar_registry, auto_camel_case
+                    value[graphql_name], field.type, scalar_registry, config
                 )
 
         type_ = cast(type, type_)
@@ -156,7 +154,7 @@ def convert_arguments(
     value: Dict[str, Any],
     arguments: List[StrawberryArgument],
     scalar_registry: Dict[object, Union[ScalarWrapper, ScalarDefinition]],
-    auto_camel_case: bool = True,
+    config: StrawberryConfig,
 ) -> Dict[str, Any]:
     """Converts a nested dictionary to a dictionary of actual types.
 
@@ -171,7 +169,7 @@ def convert_arguments(
     for argument in arguments:
         assert argument.python_name
 
-        name = argument.get_graphql_name(auto_camel_case)
+        name = config.get_argument_name(argument)
 
         if name in value:
             current_value = value[name]
@@ -179,7 +177,7 @@ def convert_arguments(
             kwargs[argument.python_name] = convert_argument(
                 value=current_value,
                 type_=argument.type,
-                auto_camel_case=auto_camel_case,
+                config=config,
                 scalar_registry=scalar_registry,
             )
 

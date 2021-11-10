@@ -28,7 +28,6 @@ from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.type import StrawberryType
 from strawberry.types.info import Info
 from strawberry.union import StrawberryUnion
-from strawberry.utils.mixins import GraphQLNameMixin
 
 from .permission import BasePermission
 from .types.fields.resolver import StrawberryResolver
@@ -41,7 +40,7 @@ if TYPE_CHECKING:
 _RESOLVER_TYPE = Union[StrawberryResolver, Callable]
 
 
-class StrawberryField(dataclasses.Field, GraphQLNameMixin):
+class StrawberryField(dataclasses.Field):
     python_name: str
 
     def __init__(

@@ -1,18 +1,22 @@
+from __future__ import annotations
+
 import dataclasses
 import inspect
 import sys
 from itertools import islice
-from typing import Callable, List, Optional, TypeVar
+from typing import TYPE_CHECKING, Callable, List, Optional, TypeVar
 
 from graphql import DirectiveLocation
 
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.arguments import StrawberryArgument
-from strawberry.utils.mixins import GraphQLNameMixin
+
+
+if TYPE_CHECKING:
+    from strawberry.arguments import StrawberryArgument
 
 
 @dataclasses.dataclass
-class StrawberryDirective(GraphQLNameMixin):
+class StrawberryDirective:
     python_name: str
     graphql_name: Optional[str]
     resolver: Callable

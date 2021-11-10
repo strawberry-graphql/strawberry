@@ -199,7 +199,7 @@ class GraphQLCoreConverter:
         def get_graphql_fields() -> Dict[str, GraphQLInputField]:
             graphql_fields = {}
             for field in type_definition.fields:
-                field_name = field.get_graphql_name(self.config.auto_camel_case)
+                field_name = self.config.get_field_name(field)
 
                 graphql_fields[field_name] = self.from_input_field(field)
 
@@ -231,7 +231,7 @@ class GraphQLCoreConverter:
             graphql_fields = {}
 
             for field in interface.fields:
-                field_name = field.get_graphql_name(self.config.auto_camel_case)
+                field_name = self.config.get_field_name(field)
                 graphql_fields[field_name] = self.from_field(field)
 
             return graphql_fields
@@ -296,7 +296,7 @@ class GraphQLCoreConverter:
             graphql_fields = {}
 
             for field in object_type.fields:
-                field_name = field.get_graphql_name(self.config.auto_camel_case)
+                field_name = self.config.get_field_name(field)
 
                 graphql_fields[field_name] = self.from_field(field)
 
@@ -327,7 +327,7 @@ class GraphQLCoreConverter:
                 kwargs,
                 field.arguments,
                 scalar_registry=self.scalar_registry,
-                auto_camel_case=self.config.auto_camel_case,
+                config=self.config,
             )
 
             # the following code allows to omit info and root arguments

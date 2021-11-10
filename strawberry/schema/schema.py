@@ -117,7 +117,7 @@ class Schema(BaseSchema):
             (
                 directive
                 for directive in self.directives
-                if directive.get_graphql_name(self.config.auto_camel_case)
+                if self.config.get_directive_name(directive)
                 == graphql_name
             ),
             None,
