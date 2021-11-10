@@ -109,23 +109,25 @@ class StrawberryConfig:
         from strawberry.union import StrawberryUnion
 
         if isinstance(type_, LazyType):
-            return type_.type_name
+            name = type_.type_name
         elif isinstance(type_, EnumDefinition):
-            return type_.name
+            name = type_.name
         elif isinstance(type_, StrawberryUnion):
             # TODO: test Generics with unnamed unions
             assert type_.name
 
-            return type_.name
+            name = type_.name
         elif isinstance(type_, StrawberryContainer):
-            return type_.name + self.get_name_from_type(type_.of_type)
+            name = type_.name + self.get_name_from_type(type_.of_type)
         elif hasattr(type_, "_scalar_definition"):
             strawberry_type = type_._scalar_definition  # type: ignore
 
-            return capitalize_first(strawberry_type.name)
+            name = strawberry_type.name
         elif hasattr(type_, "_type_definition"):
             strawberry_type = type_._type_definition  # type: ignore
 
-            return capitalize_first(strawberry_type.name)
+            name = strawberry_type.name
         else:
-            return capitalize_first(type_.__name__)  # type: ignore
+            name = type_.__name__  # type: ignore
+
+        return capitalize_first(name)
