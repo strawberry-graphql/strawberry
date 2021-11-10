@@ -5,11 +5,12 @@ from typing import TYPE_CHECKING, List, Optional, Union
 
 from typing_extensions import Protocol
 
-from strawberry.schema_directive import StrawberrySchemaDirective
-from strawberry.utils.str_converters import capitalize_first, to_camel_case
-from strawberry.lazy_type import LazyType
-from strawberry.type import StrawberryContainer, StrawberryType
 from strawberry.enum import EnumDefinition
+from strawberry.lazy_type import LazyType
+from strawberry.schema_directive import StrawberrySchemaDirective
+from strawberry.type import StrawberryContainer, StrawberryType
+from strawberry.utils.str_converters import capitalize_first, to_camel_case
+
 
 if TYPE_CHECKING:
     from strawberry.arguments import StrawberryArgument

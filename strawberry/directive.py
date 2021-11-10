@@ -4,7 +4,7 @@ import dataclasses
 import inspect
 import sys
 from itertools import islice
-from typing import TYPE_CHECKING, Callable, List, Optional, TypeVar
+from typing import Callable, List, Optional, TypeVar
 
 from graphql import DirectiveLocation
 
