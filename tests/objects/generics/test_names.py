@@ -43,4 +43,4 @@ class TypeB:
 def test_name_generation(types, expected_name):
     config = StrawberryConfig()
 
-    assert config.get_name_for_concrete_type("Example", types) == expected_name
+    assert config.name_converter.get_for_concrete_type("Example", types) == expected_name

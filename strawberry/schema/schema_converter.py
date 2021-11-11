@@ -85,7 +85,7 @@ class GraphQLCoreConverter:
         )
 
     def from_enum(self, enum: EnumDefinition) -> CustomGraphQLEnumType:
-        enum_name = self.config.name_from_type(enum)
+        enum_name = self.config.name_converter.from_type(enum)
 
         assert enum_name is not None
 
@@ -114,10 +114,10 @@ class GraphQLCoreConverter:
         graphql_arguments = {}
 
         for argument in directive.arguments:
-            argument_name = self.config.name_from_argument(argument)
+            argument_name = self.config.name_converter.from_argument(argument)
             graphql_arguments[argument_name] = self.from_argument(argument)
 
-        directive_name = self.config.name_from_type(directive)
+        directive_name = self.config.name_converter.from_type(directive)
 
         return GraphQLDirective(
             name=directive_name,
@@ -143,7 +143,7 @@ class GraphQLCoreConverter:
 
         graphql_arguments = {}
         for argument in field.arguments:
-            argument_name = self.config.name_from_argument(argument)
+            argument_name = self.config.name_converter.from_argument(argument)
             graphql_arguments[argument_name] = self.from_argument(argument)
 
         return GraphQLField(
@@ -180,7 +180,7 @@ class GraphQLCoreConverter:
     def from_input_object(self, object_type: type) -> GraphQLInputObjectType:
         type_definition = object_type._type_definition  # type: ignore
 
-        type_name = self.config.name_from_type(type_definition)
+        type_name = self.config.name_converter.from_type(type_definition)
 
         # Don't reevaluate known types
         if type_name in self.type_map:
@@ -191,7 +191,7 @@ class GraphQLCoreConverter:
         def get_graphql_fields() -> Dict[str, GraphQLInputField]:
             graphql_fields = {}
             for field in type_definition.fields:
-                field_name = self.config.name_from_field(field)
+                field_name = self.config.name_converter.from_field(field)
 
                 graphql_fields[field_name] = self.from_input_field(field)
 
@@ -212,7 +212,7 @@ class GraphQLCoreConverter:
     def from_interface(self, interface: TypeDefinition) -> GraphQLInterfaceType:
         # TODO: Use StrawberryInterface when it's implemented in another PR
 
-        interface_name = self.config.name_from_type(interface)
+        interface_name = self.config.name_converter.from_type(interface)
 
         # Don't reevaluate known types
         if interface_name in self.type_map:
@@ -224,7 +224,7 @@ class GraphQLCoreConverter:
             graphql_fields = {}
 
             for field in interface.fields:
-                field_name = self.config.name_from_field(field)
+                field_name = self.config.name_converter.from_field(field)
                 graphql_fields[field_name] = self.from_field(field)
 
             return graphql_fields
@@ -277,7 +277,7 @@ class GraphQLCoreConverter:
 
     def from_object(self, object_type: TypeDefinition) -> GraphQLObjectType:
         # TODO: Use StrawberryObjectType when it's implemented in another PR
-        object_type_name = self.config.name_from_type(object_type)
+        object_type_name = self.config.name_converter.from_type(object_type)
 
         # Don't reevaluate known types
         if object_type_name in self.type_map:
@@ -289,7 +289,7 @@ class GraphQLCoreConverter:
             graphql_fields = {}
 
             for field in object_type.fields:
-                field_name = self.config.name_from_field(field)
+                field_name = self.config.name_converter.from_field(field)
 
                 graphql_fields[field_name] = self.from_field(field)
 
@@ -416,7 +416,7 @@ class GraphQLCoreConverter:
         else:
             scalar_definition = scalar._scalar_definition
 
-        scalar_name = self.config.name_from_type(scalar_definition)
+        scalar_name = self.config.name_converter.from_type(scalar_definition)
 
         if scalar_name not in self.type_map:
             implementation = (
@@ -468,7 +468,7 @@ class GraphQLCoreConverter:
         raise TypeError(f"Unexpected type '{type_}'")
 
     def from_union(self, union: StrawberryUnion) -> GraphQLUnionType:
-        union_name = self.config.name_from_type(union)
+        union_name = self.config.name_converter.from_type(union)
 
         # Don't reevaluate known types
         if union_name in self.type_map:

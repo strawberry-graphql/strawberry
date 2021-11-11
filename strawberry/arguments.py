@@ -150,7 +150,7 @@ def convert_argument(
 
         for field in type_definition.fields:
             value = cast(Mapping, value)
-            graphql_name = config.name_from_field(field)
+            graphql_name = config.name_converter.from_field(field)
 
             if graphql_name in value:
                 kwargs[field.python_name] = convert_argument(
@@ -182,7 +182,7 @@ def convert_arguments(
     for argument in arguments:
         assert argument.python_name
 
-        name = config.name_from_argument(argument)
+        name = config.name_converter.from_argument(argument)
 
         if name in value:
             current_value = value[name]
