@@ -56,8 +56,8 @@ class NameConverter:
 
     def from_object(self, object_type: TypeDefinition) -> str:
         if object_type.concrete_of:
-            return self.get_for_concrete_type(
-                object_type.name, list(object_type.type_var_map.values())
+            return self.from_generic(
+                object_type, list(object_type.type_var_map.values())
             )
 
         return object_type.name
@@ -100,9 +100,11 @@ class NameConverter:
 
         return name
 
-    def get_for_concrete_type(
-        self, generic_type_name: str, types: List[Union[StrawberryType, type]]
+    def from_generic(
+        self, generic_type: TypeDefinition, types: List[Union[StrawberryType, type]]
     ) -> str:
+        generic_type_name = generic_type.name
+
         names: List[str] = []
 
         for type_ in reversed(types):

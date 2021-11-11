@@ -1,4 +1,4 @@
-from typing import Any, NewType, TypeVar
+from typing import Any, Generic, NewType, TypeVar
 
 import pytest
 
@@ -43,4 +43,10 @@ class TypeB:
 def test_name_generation(types, expected_name):
     config = StrawberryConfig()
 
-    assert config.name_converter.get_for_concrete_type("Example", types) == expected_name
+    @strawberry.type
+    class Example(Generic[T]):
+        a: T
+
+    type_definition = Example._type_definition  # type: ignore
+
+    assert config.name_converter.from_generic(type_definition, types) == expected_name
