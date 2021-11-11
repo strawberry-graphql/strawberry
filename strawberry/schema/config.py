@@ -1,17 +1,18 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import InitVar, dataclass, field
 
 from .name_converter import NameConverter
 
 
 @dataclass
 class StrawberryConfig:
-    name_converter: NameConverter
+    auto_camel_case: InitVar[bool] = None  # type: ignore
+    name_converter: NameConverter = field(default_factory=NameConverter)
 
-    def __init__(
+    def __post_init__(
         self,
-        auto_camel_case: bool = True,
-        name_converter: NameConverter = None,
+        auto_camel_case: bool,
     ):
-        self.name_converter = name_converter or NameConverter(auto_camel_case)
+        if auto_camel_case is not None:
+            self.name_converter.auto_camel_case = auto_camel_case
