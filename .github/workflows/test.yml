@@ -49,7 +49,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ matrix.cache-path }}
-          key: ${{ runner.os }}-py-${{ steps.setup-python.outputs.python-version }}-poetry-${{ hashFiles('poetry.lock') }}-4
+          key: ${{ runner.os }}-py-${{ steps.setup-python.outputs.python-version }}-poetry-${{ hashFiles('poetry.lock') }}
           restore-keys: ${{ runner.os }}-py-${{ steps.setup-python.outputs.python-version }}-poetry-
 
       - name: Install dependencies
