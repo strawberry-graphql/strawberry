@@ -1,4 +1,4 @@
-from typing import Any, Generic, NewType, TypeVar
+from typing import Generic, NewType, TypeVar
 
 import pytest
 
@@ -14,7 +14,7 @@ T = TypeVar("T")
 
 
 Enum = EnumDefinition(None, name="Enum", values=[], description=None)  # type: ignore
-JSON = strawberry.scalar(NewType("JSON", Any))
+CustomInt = strawberry.scalar(NewType("CustomInt", int))
 
 
 @strawberry.type
@@ -35,9 +35,9 @@ class TypeB:
         ([StrawberryList(Enum)], "ExampleListEnum"),
         ([StrawberryUnion("Union", (TypeA, TypeB))], "ExampleUnion"),  # type: ignore
         ([TypeA], "ExampleTypeA"),
-        ([JSON], "ExampleJSON"),
+        ([CustomInt], "ExampleCustomInt"),
         ([TypeA, TypeB], "ExampleTypeATypeB"),
-        ([TypeA, LazyType["TypeB", "test_names"]], "ExampleTypeATypeB"),
+        ([TypeA, LazyType["TypeB", "test_names"]], "ExampleTypeATypeB"),  # type: ignore
     ],
 )
 def test_name_generation(types, expected_name):
