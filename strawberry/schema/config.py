@@ -46,7 +46,7 @@ class StrawberryConfig:
 
     def get_object_type_name(self, object_type: TypeDefinition) -> str:
         if object_type.concrete_of:
-            return self.get_name_from_types(
+            return self.get_name_for_concrete_type(
                 object_type.name, list(object_type.type_var_map.values())
             )
 
@@ -91,8 +91,8 @@ class StrawberryConfig:
 
         return name
 
-    def get_name_from_types(
-        self, type_name: str, types: List[Union[StrawberryType, type]]
+    def get_name_for_concrete_type(
+        self, generic_type_name: str, types: List[Union[StrawberryType, type]]
     ) -> str:
         names: List[str] = []
 
@@ -103,7 +103,7 @@ class StrawberryConfig:
         # we want to generate types from inside out, for example
         # getting `ValueOptionalListStr` from `Value[Optional[List[str]]]`
         # so we reverse the list of names, since it goes outside in
-        return type_name + "".join(reversed(names))
+        return generic_type_name + "".join(reversed(names))
 
     def get_name_from_type(self, type_: Union[StrawberryType, type]) -> str:
         from strawberry.union import StrawberryUnion
