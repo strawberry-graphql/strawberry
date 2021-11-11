@@ -1,15 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Tuple, Type, Union, cast
-
-
-# TypeGuard is only available in typing_extensions => 3.10, we don't want
-# to force updates to the typing_extensions package so we only use it when
-# TYPE_CHECKING is enabled.
-
-if TYPE_CHECKING:
-    from typing_extensions import TypeGuard
+from typing import Any, Callable, Dict, List, Tuple, Type, Union, cast
 
 from graphql import (
     GraphQLArgument,
@@ -41,7 +33,6 @@ from strawberry.exceptions import (
 )
 from strawberry.field import StrawberryField
 from strawberry.lazy_type import LazyType
-from strawberry.scalars import is_scalar
 from strawberry.schema.config import StrawberryConfig
 from strawberry.schema.types.scalar import _make_scalar_type
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
@@ -50,6 +41,7 @@ from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 from strawberry.utils.await_maybe import await_maybe
 
+from . import compat
 from .types.concrete_type import ConcreteType
 
 
@@ -93,7 +85,7 @@ class GraphQLCoreConverter:
         )
 
     def from_enum(self, enum: EnumDefinition) -> CustomGraphQLEnumType:
-        enum_name = self.config.get_enum_name(enum)
+        enum_name = self.config.name_from_type(enum)
 
         assert enum_name is not None
 
@@ -122,10 +114,10 @@ class GraphQLCoreConverter:
         graphql_arguments = {}
 
         for argument in directive.arguments:
-            argument_name = self.config.get_argument_name(argument)
+            argument_name = self.config.name_from_argument(argument)
             graphql_arguments[argument_name] = self.from_argument(argument)
 
-        directive_name = self.config.get_directive_name(directive)
+        directive_name = self.config.name_from_type(directive)
 
         return GraphQLDirective(
             name=directive_name,
@@ -151,7 +143,7 @@ class GraphQLCoreConverter:
 
         graphql_arguments = {}
         for argument in field.arguments:
-            argument_name = self.config.get_argument_name(argument)
+            argument_name = self.config.name_from_argument(argument)
             graphql_arguments[argument_name] = self.from_argument(argument)
 
         return GraphQLField(
@@ -188,7 +180,7 @@ class GraphQLCoreConverter:
     def from_input_object(self, object_type: type) -> GraphQLInputObjectType:
         type_definition = object_type._type_definition  # type: ignore
 
-        type_name = self.config.get_input_type_name(type_definition)
+        type_name = self.config.name_from_type(type_definition)
 
         # Don't reevaluate known types
         if type_name in self.type_map:
@@ -199,7 +191,7 @@ class GraphQLCoreConverter:
         def get_graphql_fields() -> Dict[str, GraphQLInputField]:
             graphql_fields = {}
             for field in type_definition.fields:
-                field_name = self.config.get_field_name(field)
+                field_name = self.config.name_from_field(field)
 
                 graphql_fields[field_name] = self.from_input_field(field)
 
@@ -219,7 +211,8 @@ class GraphQLCoreConverter:
 
     def from_interface(self, interface: TypeDefinition) -> GraphQLInterfaceType:
         # TODO: Use StrawberryInterface when it's implemented in another PR
-        interface_name = self.config.get_interface_name(interface)
+
+        interface_name = self.config.name_from_type(interface)
 
         # Don't reevaluate known types
         if interface_name in self.type_map:
@@ -231,7 +224,7 @@ class GraphQLCoreConverter:
             graphql_fields = {}
 
             for field in interface.fields:
-                field_name = self.config.get_field_name(field)
+                field_name = self.config.name_from_field(field)
                 graphql_fields[field_name] = self.from_field(field)
 
             return graphql_fields
@@ -284,7 +277,7 @@ class GraphQLCoreConverter:
 
     def from_object(self, object_type: TypeDefinition) -> GraphQLObjectType:
         # TODO: Use StrawberryObjectType when it's implemented in another PR
-        object_type_name = self.config.get_object_type_name(object_type)
+        object_type_name = self.config.name_from_type(object_type)
 
         # Don't reevaluate known types
         if object_type_name in self.type_map:
@@ -296,7 +289,7 @@ class GraphQLCoreConverter:
             graphql_fields = {}
 
             for field in object_type.fields:
-                field_name = self.config.get_field_name(field)
+                field_name = self.config.name_from_field(field)
 
                 graphql_fields[field_name] = self.from_field(field)
 
@@ -423,7 +416,7 @@ class GraphQLCoreConverter:
         else:
             scalar_definition = scalar._scalar_definition
 
-        scalar_name = self.config.get_scalar_name(scalar_definition)
+        scalar_name = self.config.name_from_type(scalar_definition)
 
         if scalar_name not in self.type_map:
             implementation = (
@@ -446,19 +439,19 @@ class GraphQLCoreConverter:
         return implementation
 
     def from_type(self, type_: Union[StrawberryType, type]) -> GraphQLNullableType:
-        if _is_generic(type_):
+        if compat.is_generic(type_):
             raise MissingTypesForGenericError(type_)
 
         if isinstance(type_, EnumDefinition):  # TODO: Replace with StrawberryEnum
             return self.from_enum(type_)
-        elif _is_input_type(type_):  # TODO: Replace with StrawberryInputObject
+        elif compat.is_input_type(type_):  # TODO: Replace with StrawberryInputObject
             return self.from_input_object(type_)
         elif isinstance(type_, StrawberryList):
             return self.from_list(type_)
-        elif _is_interface_type(type_):  # TODO: Replace with StrawberryInterface
+        elif compat.is_interface_type(type_):  # TODO: Replace with StrawberryInterface
             type_definition: TypeDefinition = type_._type_definition  # type: ignore
             return self.from_interface(type_definition)
-        elif _is_object_type(type_):  # TODO: Replace with StrawberryObject
+        elif compat.is_object_type(type_):  # TODO: Replace with StrawberryObject
             type_definition: TypeDefinition = type_._type_definition  # type: ignore
             return self.from_object(type_definition)
         elif isinstance(type_, TypeDefinition):  # TODO: Replace with StrawberryObject
@@ -467,7 +460,7 @@ class GraphQLCoreConverter:
             return self.from_union(type_)
         elif isinstance(type_, LazyType):
             return self.from_type(type_.resolve_type())
-        elif _is_scalar(
+        elif compat.is_scalar(
             type_, self.scalar_registry
         ):  # TODO: Replace with StrawberryScalar
             return self.from_scalar(type_)
@@ -475,7 +468,7 @@ class GraphQLCoreConverter:
         raise TypeError(f"Unexpected type '{type_}'")
 
     def from_union(self, union: StrawberryUnion) -> GraphQLUnionType:
-        union_name = self.config.get_union_name(union)
+        union_name = self.config.name_from_type(union)
 
         # Don't reevaluate known types
         if union_name in self.type_map:
@@ -503,49 +496,3 @@ class GraphQLCoreConverter:
         )
 
         return graphql_union
-
-
-################################################################################
-# Temporary functions to be removed with new types
-################################################################################
-
-
-def _is_input_type(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
-    if not _is_object_type(type_):
-        return False
-
-    type_definition: TypeDefinition = type_._type_definition  # type: ignore
-    return type_definition.is_input
-
-
-def _is_interface_type(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
-    if not _is_object_type(type_):
-        return False
-
-    type_definition: TypeDefinition = type_._type_definition  # type: ignore
-    return type_definition.is_interface
-
-
-def _is_scalar(
-    type_: Union[StrawberryType, type],
-    scalar_registry: Dict[object, Union[ScalarWrapper, ScalarDefinition]],
-) -> TypeGuard[type]:
-    # isinstance(type_, StrawberryScalar)  # noqa: E800
-    return is_scalar(type_, scalar_registry)
-
-
-def _is_object_type(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
-    # isinstance(type_, StrawberryObjectType)  # noqa: E800
-    return hasattr(type_, "_type_definition")
-
-
-def _is_generic(type_: Union[StrawberryType, type]) -> bool:
-    if hasattr(type_, "_type_definition"):
-
-        type_definition: TypeDefinition = type_._type_definition  # type: ignore
-        return type_definition.is_generic
-
-    if isinstance(type_, StrawberryType):
-        return type_.is_generic
-
-    return False

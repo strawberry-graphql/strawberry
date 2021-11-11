@@ -33,7 +33,7 @@ def print_schema_directive(
 ) -> str:
     params = directive.instance.__dict__ if directive.instance else {}
 
-    directive_name = schema.config.get_directive_name(directive)
+    directive_name = schema.config.name_from_directive(directive)
 
     return f" @{directive_name}{print_schema_directive_params(params)}"
 
