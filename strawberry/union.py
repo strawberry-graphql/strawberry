@@ -43,7 +43,7 @@ class StrawberryUnion(StrawberryType):
         type_annotations: Tuple["StrawberryAnnotation", ...] = tuple(),
         description: Optional[str] = None,
     ):
-        self.name = name
+        self.graphql_name = name
         self.type_annotations = type_annotations
         self.description = description
 
@@ -51,7 +51,7 @@ class StrawberryUnion(StrawberryType):
         if isinstance(other, StrawberryType):
             if isinstance(other, StrawberryUnion):
                 return (
-                    self.name == other.name
+                    self.graphql_name == other.graphql_name
                     and self.type_annotations == other.type_annotations
                     and self.description == other.description
                 )

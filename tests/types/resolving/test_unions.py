@@ -94,7 +94,7 @@ def test_named_union():
 
     strawberry_union = Result
     assert isinstance(strawberry_union, StrawberryUnion)
-    assert strawberry_union.name == "Result"
+    assert strawberry_union.graphql_name == "Result"
     assert strawberry_union.types == (A, B)
 
 
@@ -113,7 +113,7 @@ def test_union_with_generic():
 
     strawberry_union = Result
     assert isinstance(strawberry_union, StrawberryUnion)
-    assert strawberry_union.name == "Result"
+    assert strawberry_union.graphql_name == "Result"
     assert strawberry_union.types[0] == Error
 
     assert strawberry_union.types[1]._type_definition.is_generic is False

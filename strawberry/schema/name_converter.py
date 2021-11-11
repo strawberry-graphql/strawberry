@@ -89,8 +89,8 @@ class NameConverter:
         return self.get_graphql_name(field)
 
     def from_union(self, union: StrawberryUnion) -> str:
-        if union.name is not None:
-            return union.name
+        if union.graphql_name is not None:
+            return union.graphql_name
 
         name = ""
 
@@ -125,9 +125,9 @@ class NameConverter:
             name = type_.name
         elif isinstance(type_, StrawberryUnion):
             # TODO: test Generics with unnamed unions
-            assert type_.name
+            assert type_.graphql_name
 
-            name = type_.name
+            name = type_.graphql_name
         elif isinstance(type_, StrawberryContainer):
             name = type_.name + self.get_from_type(type_.of_type)
         elif hasattr(type_, "_scalar_definition"):
