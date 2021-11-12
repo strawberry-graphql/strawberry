@@ -30,9 +30,9 @@ class TypeB:
 @pytest.mark.parametrize(
     "types,expected_name",
     [
-        ([StrawberryList(str)], "ListStrExample"),
-        ([StrawberryList(StrawberryList(str))], "ListListStrExample"),
-        ([StrawberryList(Enum)], "ListEnumExample"),
+        ([StrawberryList(str)], "StrListExample"),
+        ([StrawberryList(StrawberryList(str))], "StrListListExample"),
+        ([StrawberryList(Enum)], "EnumListExample"),
         ([StrawberryUnion("Union", (TypeA, TypeB))], "UnionExample"),  # type: ignore
         ([TypeA], "TypeAExample"),
         ([CustomInt], "CustomIntExample"),

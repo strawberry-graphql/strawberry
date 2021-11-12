@@ -128,9 +128,9 @@ class NameConverter:
 
             name = type_.graphql_name
         elif isinstance(type_, StrawberryList):
-            name = "List" + self.get_from_type(type_.of_type)
+            name = self.get_from_type(type_.of_type) + "List"
         elif isinstance(type_, StrawberryOptional):
-            name = "Optional" + self.get_from_type(type_.of_type)
+            name = self.get_from_type(type_.of_type) + "Optional"
         elif hasattr(type_, "_scalar_definition"):
             strawberry_type = type_._scalar_definition  # type: ignore
 
