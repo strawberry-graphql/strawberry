@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.86.1 - 2021-11-12
+-------------------
+
+This release fixes our MyPy plugin and re-adds support
+for typechecking classes created with the apollo federation decorator.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1414](https://github.com/strawberry-graphql/strawberry/pull/1414/)
+
+
 0.86.0 - 2021-11-12
 -------------------
 
