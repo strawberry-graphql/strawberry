@@ -6,7 +6,7 @@ import strawberry
 from strawberry.enum import EnumDefinition
 from strawberry.lazy_type import LazyType
 from strawberry.schema.config import StrawberryConfig
-from strawberry.type import StrawberryList
+from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.union import StrawberryUnion
 
 
@@ -32,6 +32,7 @@ class TypeB:
     [
         ([StrawberryList(str)], "StrListExample"),
         ([StrawberryList(StrawberryList(str))], "StrListListExample"),
+        ([StrawberryOptional(StrawberryList(str))], "StrListOptionalExample"),
         ([StrawberryList(Enum)], "EnumListExample"),
         ([StrawberryUnion("Union", (TypeA, TypeB))], "UnionExample"),  # type: ignore
         ([TypeA], "TypeAExample"),
