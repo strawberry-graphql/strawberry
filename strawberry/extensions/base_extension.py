@@ -28,6 +28,12 @@ class Extension:
     def on_parsing_end(self) -> AwaitableOrValue[None]:
         """This method is called after the parsing step"""
 
+    def on_executing_start(self) -> AwaitableOrValue[None]:
+        """This method is called before the execution step"""
+
+    def on_executing_end(self) -> AwaitableOrValue[None]:
+        """This method is called after the executing step"""
+
     def resolve(
         self, _next, root, info: Info, *args, **kwargs
     ) -> AwaitableOrValue[object]:
