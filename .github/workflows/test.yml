@@ -31,6 +31,7 @@ jobs:
       - uses: actions/checkout@v2
 
       - uses: actions/setup-python@v2
+        id: setup-python
         with:
           python-version: ${{ matrix.python-version }}
           architecture: x64
@@ -48,15 +49,15 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ matrix.cache-path }}
-          key: ${{ runner.os }}-py-${{ matrix.python-version }}-poetry-${{ hashFiles('poetry.lock') }}
-          restore-keys: ${{ runner.os }}-py-${{ matrix.python-version }}-poetry-
+          key: ${{ runner.os }}-py-${{ steps.setup-python.outputs.python-version }}-poetry-${{ hashFiles('poetry.lock') }}-4
+          restore-keys: ${{ runner.os }}-py-${{ steps.setup-python.outputs.python-version }}-poetry-
 
       - name: Install dependencies
         run: poetry install
         if: steps.cache-poetry-dependencies.outputs.cache-hit != 'true'
 
       - name: pytest
-        run: poetry run py.test --cov-report xml --cov=. --showlocals -vv -m "not django"
+        run: poetry run pytest --cov-report xml --cov=. --showlocals -vv -m "not django"
 
       - uses: codecov/codecov-action@v1
         if: ${{ always() }}
@@ -101,7 +102,7 @@ jobs:
         run: poetry add django==${{ matrix.django }}
 
       - name: pytest
-        run: poetry run py.test --cov-report xml --cov=. --showlocals -vv -m django
+        run: poetry run pytest --cov-report xml --cov=. --showlocals -vv -m django
 
       - uses: codecov/codecov-action@v1
         if: ${{ always() }}
