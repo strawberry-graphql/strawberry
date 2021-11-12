@@ -9,7 +9,7 @@ from strawberry.directive import StrawberryDirective
 from strawberry.enum import EnumDefinition
 from strawberry.lazy_type import LazyType
 from strawberry.schema_directive import StrawberrySchemaDirective
-from strawberry.type import StrawberryContainer, StrawberryType
+from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 from strawberry.utils.str_converters import capitalize_first, to_camel_case
@@ -127,8 +127,10 @@ class NameConverter:
             assert type_.graphql_name
 
             name = type_.graphql_name
-        elif isinstance(type_, StrawberryContainer):
-            name = type_.name + self.get_from_type(type_.of_type)
+        elif isinstance(type_, StrawberryList):
+            name = "List" + self.get_from_type(type_.of_type)
+        elif isinstance(type_, StrawberryOptional):
+            name = "Optional" + self.get_from_type(type_.of_type)
         elif hasattr(type_, "_scalar_definition"):
             strawberry_type = type_._scalar_definition  # type: ignore
 
