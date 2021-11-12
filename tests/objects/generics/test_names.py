@@ -30,14 +30,14 @@ class TypeB:
 @pytest.mark.parametrize(
     "types,expected_name",
     [
-        ([StrawberryList(str)], "ExampleListStr"),
-        ([StrawberryList(StrawberryList(str))], "ExampleListListStr"),
-        ([StrawberryList(Enum)], "ExampleListEnum"),
-        ([StrawberryUnion("Union", (TypeA, TypeB))], "ExampleUnion"),  # type: ignore
-        ([TypeA], "ExampleTypeA"),
-        ([CustomInt], "ExampleCustomInt"),
-        ([TypeA, TypeB], "ExampleTypeATypeB"),
-        ([TypeA, LazyType["TypeB", "test_names"]], "ExampleTypeATypeB"),  # type: ignore
+        ([StrawberryList(str)], "ListStrExample"),
+        ([StrawberryList(StrawberryList(str))], "ListListStrExample"),
+        ([StrawberryList(Enum)], "ListEnumExample"),
+        ([StrawberryUnion("Union", (TypeA, TypeB))], "UnionExample"),  # type: ignore
+        ([TypeA], "TypeAExample"),
+        ([CustomInt], "CustomIntExample"),
+        ([TypeA, TypeB], "TypeATypeBExample"),
+        ([TypeA, LazyType["TypeB", "test_names"]], "TypeATypeBExample"),  # type: ignore
     ],
 )
 def test_name_generation(types, expected_name):
