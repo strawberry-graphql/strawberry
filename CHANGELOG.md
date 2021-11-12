@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.86.0 - 2021-11-12
+-------------------
+
+Add `on_executing_*` hooks to extensions to allow you to override the execution phase of a GraphQL operation.
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) [PR #1400](https://github.com/strawberry-graphql/strawberry/pull/1400/)
+
+
 0.85.1 - 2021-10-26
 -------------------
 
