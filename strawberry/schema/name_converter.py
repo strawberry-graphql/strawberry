@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
 from typing import TYPE_CHECKING, List, Optional, Union
 
 from typing_extensions import Protocol
@@ -153,12 +152,3 @@ class NameConverter:
             return to_camel_case(obj.python_name)
 
         return obj.python_name
-
-
-@dataclass
-class StrawberryConfig:
-    auto_camel_case: bool = True
-    name_converter: NameConverter = field(default_factory=NameConverter)
-
-    def __post_init__(self) -> None:
-        self.name_converter.auto_camel_case = self.auto_camel_case
