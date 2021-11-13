@@ -3,7 +3,7 @@ from typing import Generic, List, Optional, TypeVar, Union
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.enum import EnumDefinition
+from strawberry.enum import StrawberryEnum
 from strawberry.field import StrawberryField
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryTypeVar
 from strawberry.types.types import TypeDefinition
@@ -106,5 +106,5 @@ def test_generic_with_enums():
     assert isinstance(resolved._type_definition, TypeDefinition)
 
     generic_slot_field: StrawberryField = resolved._type_definition.fields[0]
-    assert isinstance(generic_slot_field.type, EnumDefinition)
-    assert generic_slot_field.type is VehicleMake._enum_definition
+    assert isinstance(generic_slot_field.type, StrawberryEnum)
+    assert generic_slot_field.type is VehicleMake

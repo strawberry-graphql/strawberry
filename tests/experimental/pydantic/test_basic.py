@@ -7,7 +7,7 @@ import pydantic
 import sentinel
 
 import strawberry
-from strawberry.enum import EnumDefinition
+from strawberry.enum import StrawberryEnum
 from strawberry.experimental.pydantic.exceptions import MissingFieldsListError
 from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.types.types import TypeDefinition
@@ -422,8 +422,8 @@ def test_enum():
     assert field1.type is int
 
     assert field2.python_name == "kind"
-    assert isinstance(field2.type, EnumDefinition)
-    assert field2.type.wrapped_cls is UserKind
+    assert isinstance(field2.type, StrawberryEnum)
+    assert field2.type is UserKind
 
 
 def test_interface():

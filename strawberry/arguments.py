@@ -7,7 +7,7 @@ from typing_extensions import Annotated, get_args, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
-from strawberry.enum import EnumDefinition
+from strawberry.enum import StrawberryEnum
 from strawberry.lazy_type import LazyType
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
 from strawberry.utils.mixins import GraphQLNameMixin
@@ -122,8 +122,8 @@ def convert_argument(
 
     # Convert Enum fields to instances using the value. This is safe
     # because graphql-core has already validated the input.
-    if isinstance(type_, EnumDefinition):
-        return type_.wrapped_cls(value)
+    if isinstance(type_, StrawberryEnum):
+        return type_(value)
 
     if isinstance(type_, LazyType):
         return convert_argument(

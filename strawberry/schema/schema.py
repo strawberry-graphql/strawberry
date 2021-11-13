@@ -13,7 +13,7 @@ from graphql.type.directives import specified_directives
 
 from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.directive import StrawberryDirective
-from strawberry.enum import EnumDefinition
+from strawberry.enum import StrawberryEnum
 from strawberry.extensions import Extension
 from strawberry.extensions.directives import (
     DirectivesExtension,
@@ -25,7 +25,6 @@ from strawberry.types import ExecutionContext, ExecutionResult
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 
-from ..printer import print_schema
 from .base import BaseSchema
 from .config import StrawberryConfig
 from .execute import execute, execute_sync
@@ -104,7 +103,7 @@ class Schema(BaseSchema):
     def get_type_by_name(
         self, name: str
     ) -> Optional[
-        Union[TypeDefinition, ScalarDefinition, EnumDefinition, StrawberryUnion]
+        Union[TypeDefinition, ScalarDefinition, StrawberryEnum, StrawberryUnion]
     ]:
         if name in self.schema_converter.type_map:
             return self.schema_converter.type_map[name].definition
@@ -202,6 +201,8 @@ class Schema(BaseSchema):
         )
 
     def as_str(self) -> str:
+        from strawberry.printer import print_schema
+
         return print_schema(self)
 
     __str__ = as_str

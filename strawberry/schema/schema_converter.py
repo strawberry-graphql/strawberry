@@ -1,7 +1,20 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Tuple, Type, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
+
+from typing_extensions import Protocol
 
 
 # TypeGuard is only available in typing_extensions => 3.10, we don't want
@@ -31,10 +44,10 @@ from graphql import (
     Undefined,
 )
 
-from strawberry.arguments import UNSET, StrawberryArgument, convert_arguments, is_unset
+from strawberry.arguments import StrawberryArgument, convert_arguments, is_unset
 from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.directive import StrawberryDirective
-from strawberry.enum import EnumDefinition, EnumValue
+from strawberry.enum import StrawberryEnum
 from strawberry.exceptions import (
     MissingTypesForGenericError,
     ScalarAlreadyRegisteredError,
@@ -53,6 +66,11 @@ from strawberry.utils.await_maybe import await_maybe
 from .types.concrete_type import ConcreteType
 
 
+# TODO: remove this when we implement the StrawberryObject
+class HasTypeDefinition(Protocol):
+    _type_definition: TypeDefinition
+
+
 # graphql-core expects a resolver for an Enum type to return
 # the enum's *value* (not its name or an instance of the enum). We have to
 # subclass the GraphQLEnumType class to enable returning Enum members from
@@ -61,6 +79,7 @@ class CustomGraphQLEnumType(GraphQLEnumType):
     def serialize(self, output_value: Any) -> str:
         if isinstance(output_value, Enum):
             return output_value.name
+
         return super().serialize(output_value)
 
 
@@ -84,7 +103,7 @@ class GraphQLCoreConverter:
         else:
             argument_type = self.from_non_optional(argument.type)
 
-        default_value = Undefined if argument.default is UNSET else argument.default
+        default_value = Undefined if is_unset(argument.default) else argument.default
 
         return GraphQLArgument(
             type_=argument_type,
@@ -92,29 +111,39 @@ class GraphQLCoreConverter:
             description=argument.description,
         )
 
-    def from_enum(self, enum: EnumDefinition) -> CustomGraphQLEnumType:
-
-        assert enum.name is not None
+    def from_enum(self, enum: StrawberryEnum) -> CustomGraphQLEnumType:
+        graphql_name = enum.get_graphql_name(self.config.auto_camel_case)
 
         # Don't reevaluate known types
-        if enum.name in self.type_map:
-            graphql_enum = self.type_map[enum.name].implementation
+        if graphql_name in self.type_map:
+            graphql_enum = self.type_map[graphql_name].implementation
             assert isinstance(graphql_enum, CustomGraphQLEnumType)  # For mypy
             return graphql_enum
 
+        values = {
+            self.get_enum_item_name(item): self.from_enum_value(item)
+            for item in cast(Iterable[Enum], enum.enum)
+        }
+
         graphql_enum = CustomGraphQLEnumType(
-            name=enum.name,
-            values={item.name: self.from_enum_value(item) for item in enum.values},
+            name=graphql_name,
+            values=values,
             description=enum.description,
         )
 
-        self.type_map[enum.name] = ConcreteType(
+        self.type_map[graphql_name] = ConcreteType(
             definition=enum, implementation=graphql_enum
         )
 
         return graphql_enum
 
-    def from_enum_value(self, enum_value: EnumValue) -> GraphQLEnumValue:
+    def get_enum_item_name(self, item: Enum) -> str:
+        if self.config.enum_values == self.config.EnumNameExport.NAME:
+            return item.name
+
+        return item.value
+
+    def from_enum_value(self, enum_value: Enum) -> GraphQLEnumValue:
         return GraphQLEnumValue(enum_value.value)
 
     def from_directive(self, directive: StrawberryDirective) -> GraphQLDirective:
@@ -184,8 +213,10 @@ class GraphQLCoreConverter:
             description=field.description,
         )
 
-    def from_input_object(self, object_type: type) -> GraphQLInputObjectType:
-        type_definition = object_type._type_definition  # type: ignore
+    def from_input_object(
+        self, object_type: HasTypeDefinition
+    ) -> GraphQLInputObjectType:
+        type_definition = object_type._type_definition
 
         # Don't reevaluate known types
         if type_definition.name in self.type_map:
@@ -442,7 +473,7 @@ class GraphQLCoreConverter:
         if _is_generic(type_):
             raise MissingTypesForGenericError(type_)
 
-        if isinstance(type_, EnumDefinition):  # TODO: Replace with StrawberryEnum
+        if isinstance(type_, StrawberryEnum):
             return self.from_enum(type_)
         elif _is_input_type(type_):  # TODO: Replace with StrawberryInputObject
             return self.from_input_object(type_)
@@ -502,19 +533,21 @@ class GraphQLCoreConverter:
 ################################################################################
 
 
-def _is_input_type(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
+def _is_input_type(type_: Union[StrawberryType, type]) -> TypeGuard[HasTypeDefinition]:
     if not _is_object_type(type_):
         return False
 
-    type_definition: TypeDefinition = type_._type_definition  # type: ignore
+    type_definition: TypeDefinition = type_._type_definition
     return type_definition.is_input
 
 
-def _is_interface_type(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
+def _is_interface_type(
+    type_: Union[StrawberryType, type]
+) -> TypeGuard[HasTypeDefinition]:
     if not _is_object_type(type_):
         return False
 
-    type_definition: TypeDefinition = type_._type_definition  # type: ignore
+    type_definition: TypeDefinition = type_._type_definition
     return type_definition.is_interface
 
 
@@ -526,7 +559,7 @@ def _is_scalar(
     return is_scalar(type_, scalar_registry)
 
 
-def _is_object_type(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
+def _is_object_type(type_: Union[StrawberryType, type]) -> TypeGuard[HasTypeDefinition]:
     # isinstance(type_, StrawberryObjectType)  # noqa: E800
     return hasattr(type_, "_type_definition")
 

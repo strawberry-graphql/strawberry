@@ -1,28 +1,36 @@
-import dataclasses
 from enum import EnumMeta
-from typing import Any, Callable, List, Mapping, Optional, TypeVar, Union
+from typing import Any, Callable, Mapping, Optional, TypeVar, Union, overload
 
 from strawberry.type import StrawberryType
+from strawberry.utils.mixins import GraphQLNameMixin
 
 from .exceptions import NotAnEnum
 
 
-@dataclasses.dataclass
-class EnumValue:
-    name: str
-    value: Any
+class StrawberryEnum(GraphQLNameMixin, StrawberryType):
+    def __init__(
+        self,
+        enum: EnumMeta,
+        python_name: str,
+        graphql_name: Optional[str],
+        description: Optional[str],
+    ) -> None:
+        self.enum = enum
+        self.python_name = python_name
+        self.graphql_name = graphql_name
+        self.description = description
 
+    def __call__(self, *args: Any, **kwds: Any) -> Any:
+        return self.enum(*args, **kwds)
 
-@dataclasses.dataclass
-class EnumDefinition(StrawberryType):
-    wrapped_cls: EnumMeta
-    name: str
-    values: List[EnumValue]
-    description: Optional[str]
+    def __getattr__(self, attr: str) -> object:
+        if hasattr(self.enum, attr):
+            return getattr(self.enum, attr)
 
-    def __hash__(self) -> int:
-        # TODO: Is this enough for unique-ness?
-        return hash(self.name)
+        return super().__getattribute__(attr)
+
+    def __getitem__(self, item: str) -> object:
+        return self.enum[item]
 
     def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
@@ -36,40 +44,48 @@ class EnumDefinition(StrawberryType):
 
 def _process_enum(
     cls: EnumMeta, name: Optional[str] = None, description: Optional[str] = None
-) -> EnumMeta:
+) -> StrawberryEnum:
     if not isinstance(cls, EnumMeta):
         raise NotAnEnum()
 
     if not name:
         name = cls.__name__
 
-    description = description
-
-    values = [EnumValue(item.name, item.value) for item in cls]  # type: ignore
-
-    cls._enum_definition = EnumDefinition(  # type: ignore
-        wrapped_cls=cls,
-        name=name,
-        values=values,
+    return StrawberryEnum(
+        enum=cls,
+        python_name=cls.__name__,
+        graphql_name=name,
         description=description,
     )
 
-    return cls
+
+# not using bound=EnumMeta because it's PyRight doesn't support it properly
+T = TypeVar("T")
 
 
+@overload
+def enum(cls: T, *, name: Optional[str] = None, description: Optional[str] = None) -> T:
+    ...
+
+
+@overload
 def enum(
-    _cls: EnumMeta = None, *, name=None, description=None
-) -> Union[EnumMeta, Callable[[EnumMeta], EnumMeta]]:
+    *, name: Optional[str] = None, description: Optional[str] = None
+) -> Callable[[T], T]:
+    ...
+
+
+def enum(cls=None, *, name=None, description=None):
     """Registers the enum in the GraphQL type system.
 
     If name is passed, the name of the GraphQL type will be
     the value passed of name instead of the Enum class name.
     """
 
-    def wrap(cls: EnumMeta) -> EnumMeta:
-        return _process_enum(cls, name, description)
+    def wrap(cls: T) -> T:
+        return _process_enum(cls, name, description)  # type: ignore
 
-    if not _cls:
+    if not cls:
         return wrap
 
-    return wrap(_cls)
+    return wrap(cls)

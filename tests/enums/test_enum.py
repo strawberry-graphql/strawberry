@@ -1,10 +1,34 @@
-from enum import Enum
+from enum import Enum, auto
+from typing import cast
 
 import pytest
 
 import strawberry
-from strawberry.enum import EnumDefinition
+from strawberry.enum import StrawberryEnum
 from strawberry.exceptions import NotAnEnum
+
+
+def test_can_use_enum_directly():
+    @strawberry.enum
+    class IceCreamFlavour(Enum):
+        VANILLA = "vanilla"
+        STRAWBERRY = "strawberry"
+        CHOCOLATE = "chocolate"
+
+    assert IceCreamFlavour.VANILLA.value == "vanilla"
+    assert IceCreamFlavour["STRAWBERRY"].value == "strawberry"
+
+
+def test_enums_with_auto():
+    @strawberry.enum
+    class IceCreamFlavour(Enum):
+        VANILLA = auto()
+        STRAWBERRY = auto()
+        CHOCOLATE = auto()
+
+    assert IceCreamFlavour.VANILLA.value == 1
+    assert IceCreamFlavour.STRAWBERRY.value == 2
+    assert IceCreamFlavour.CHOCOLATE.value == 3
 
 
 def test_basic_enum():
@@ -14,19 +38,11 @@ def test_basic_enum():
         STRAWBERRY = "strawberry"
         CHOCOLATE = "chocolate"
 
-    definition = IceCreamFlavour._enum_definition
+    definition = cast(StrawberryEnum, IceCreamFlavour)
 
-    assert definition.name == "IceCreamFlavour"
+    assert definition.python_name == "IceCreamFlavour"
+    assert definition.graphql_name == "IceCreamFlavour"
     assert definition.description is None
-
-    assert definition.values[0].name == "VANILLA"
-    assert definition.values[0].value == "vanilla"
-
-    assert definition.values[1].name == "STRAWBERRY"
-    assert definition.values[1].value == "strawberry"
-
-    assert definition.values[2].name == "CHOCOLATE"
-    assert definition.values[2].value == "chocolate"
 
 
 def test_can_pass_name_and_description():
@@ -36,9 +52,10 @@ def test_can_pass_name_and_description():
         STRAWBERRY = "strawberry"
         CHOCOLATE = "chocolate"
 
-    definition = IceCreamFlavour._enum_definition
+    definition = cast(StrawberryEnum, IceCreamFlavour)
 
-    assert definition.name == "Flavour"
+    assert definition.python_name == "IceCreamFlavour"
+    assert definition.graphql_name == "Flavour"
     assert definition.description == "example"
 
 
@@ -57,7 +74,8 @@ def test_can_use_enum_as_arguments():
 
     field = Query._type_definition.fields[0]
 
-    assert isinstance(field.arguments[0].type, EnumDefinition)
+    assert field.arguments[0].type
+    assert isinstance(field.arguments[0].type, StrawberryEnum)
 
 
 def test_raises_error_when_using_enum_with_a_not_enum_class():

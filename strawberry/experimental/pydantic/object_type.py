@@ -17,6 +17,7 @@ from strawberry.experimental.pydantic.utils import get_private_fields
 from strawberry.field import StrawberryField
 from strawberry.object_type import _process_type, _wrap_dataclass
 from strawberry.schema_directive import StrawberrySchemaDirective
+from strawberry.type import StrawberryType
 from strawberry.types.type_resolver import _get_fields
 from strawberry.types.types import TypeDefinition
 
@@ -40,6 +41,9 @@ def replace_pydantic_types(type_: Any):
             )
 
         return new_type
+
+    if isinstance(type_, StrawberryType):
+        return type_
 
     if issubclass(type_, BaseModel):
         if hasattr(type_, "_strawberry_type"):

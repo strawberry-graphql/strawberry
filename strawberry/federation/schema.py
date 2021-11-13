@@ -1,4 +1,4 @@
-from typing import Any, Union, cast
+from typing import Any, TypeVar, Union, cast
 
 from graphql import (
     GraphQLField,
@@ -12,15 +12,18 @@ from graphql import (
 from graphql.type.definition import GraphQLArgument
 
 from strawberry.custom_scalar import ScalarDefinition
-from strawberry.enum import EnumDefinition
+from strawberry.enum import StrawberryEnum
+from strawberry.printer import print_schema
+from strawberry.schema import Schema as BaseSchema
 from strawberry.schema.types.concrete_type import TypeMap
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 from strawberry.utils.inspect import get_func_args
 
-from ..printer import print_schema
-from ..schema import Schema as BaseSchema
 from .schema_directives import Key
+
+
+T = TypeVar("T")
 
 
 class Schema(BaseSchema):
@@ -132,7 +135,7 @@ def _is_key(directive: Any) -> bool:
 
 
 def _has_federation_keys(
-    definition: Union[TypeDefinition, ScalarDefinition, EnumDefinition, StrawberryUnion]
+    definition: Union[TypeDefinition, ScalarDefinition, StrawberryEnum, StrawberryUnion]
 ) -> bool:
     if isinstance(definition, TypeDefinition):
         return any(_is_key(directive) for directive in definition.directives or [])
