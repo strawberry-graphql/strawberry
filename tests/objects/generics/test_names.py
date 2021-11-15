@@ -33,6 +33,7 @@ class TypeB:
         ([StrawberryList(str)], "StrListExample"),
         ([StrawberryList(StrawberryList(str))], "StrListListExample"),
         ([StrawberryOptional(StrawberryList(str))], "StrListOptionalExample"),
+        ([StrawberryList(StrawberryOptional(str))], "StrOptionalListExample"),
         ([StrawberryList(Enum)], "EnumListExample"),
         ([StrawberryUnion("Union", (TypeA, TypeB))], "UnionExample"),  # type: ignore
         ([TypeA], "TypeAExample"),
