@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.87.1 - 2021-11-15
+-------------------
+
+This release renames an internal exception from `NotAnEnum` to `ObjectIsNotAnEnumError`.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1317](https://github.com/strawberry-graphql/strawberry/pull/1317/)
+
+
 0.87.0 - 2021-11-15
 -------------------
 
