@@ -14,7 +14,7 @@ repos:
     rev: 4.0.1
     hooks:
       - id: flake8
-        additional_dependencies: ["flake8-eradicate==0.4.0"]
+        additional_dependencies: ["flake8-eradicate==1.2.0"]
 
   - repo: https://github.com/pycqa/isort
     rev: 5.10.1
