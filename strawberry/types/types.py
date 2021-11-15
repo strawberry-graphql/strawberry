@@ -3,7 +3,6 @@ from __future__ import annotations
 import dataclasses
 from typing import (
     TYPE_CHECKING,
-    Iterable,
     List,
     Mapping,
     Optional,
@@ -13,10 +12,7 @@ from typing import (
     Union,
 )
 
-from strawberry.enum import EnumDefinition
-from strawberry.lazy_type import LazyType
 from strawberry.type import StrawberryType, StrawberryTypeVar
-from strawberry.utils.str_converters import capitalize_first
 from strawberry.utils.typing import is_generic as is_type_generic
 
 
@@ -65,8 +61,6 @@ class TypeDefinition(StrawberryType):
     def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
     ) -> type:
-        name = self.get_name_from_types(type_var_map.values())
-
         fields = []
         for field in self.fields:
             # TODO: Logic unnecessary with StrawberryObject
@@ -83,7 +77,7 @@ class TypeDefinition(StrawberryType):
             fields.append(field)
 
         new_type_definition = TypeDefinition(
-            name=name,
+            name=self.name,
             is_input=self.is_input,
             origin=self.origin,
             is_interface=self.is_interface,
@@ -110,29 +104,6 @@ class TypeDefinition(StrawberryType):
         return next(
             (field for field in self.fields if field.python_name == python_name), None
         )
-
-    def get_name_from_types(self, types: Iterable[Union[StrawberryType, type]]) -> str:
-        from strawberry.union import StrawberryUnion
-
-        names: List[str] = []
-
-        for type_ in types:
-            if isinstance(type_, LazyType):
-                name = type_.type_name
-            elif isinstance(type_, EnumDefinition):
-                name = type_.name
-            elif isinstance(type_, StrawberryUnion):
-                name = type_.name
-            elif hasattr(type_, "_type_definition"):
-                field_type = type_._type_definition  # type: ignore
-
-                name = capitalize_first(field_type.name)
-            else:
-                name = capitalize_first(type_.__name__)  # type: ignore
-
-            names.append(name)
-
-        return "".join(names) + self.name
 
     @property
     def fields(self) -> List["StrawberryField"]:
