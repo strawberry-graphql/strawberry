@@ -12,9 +12,12 @@ from strawberry.type import StrawberryType
 # https://github.com/strawberry-graphql/strawberry/issues/1298
 
 
-class NotAnEnum(Exception):
-    def __init__(self):
-        message = "strawberry.enum can only be used with subclasses of Enum"
+class ObjectIsNotAnEnumError(Exception):
+    def __init__(self, obj: object):
+        message = (
+            "strawberry.enum can only be used with subclasses of Enum. "
+            f"Provided object {obj} is not an enum."
+        )
 
         super().__init__(message)
 
