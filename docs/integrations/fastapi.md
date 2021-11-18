@@ -16,7 +16,7 @@ dependencies by running:
 pip install 'strawberry-graphql[fastapi]'
 ```
 
-See below example for integrating FastAPI with Strawberry:
+See the example below for integrating FastAPI with Strawberry:
 
 ```python
 import strawberry
@@ -52,13 +52,13 @@ The `GraphQLRouter` accepts the following options:
 
 ## context_getter
 
-`context_getter` option allows to provide a custom context object that can be
+The `context_getter` option allows you to provide a custom context object that can be
 used in your resolver. You can return anything here, by default we return a
 dictionary with the request and background tasks.
 
-`context_getter` is
+`context_getter` is a
 [FastAPI dependency](https://fastapi.tiangolo.com/tutorial/dependencies/) and
-can inject another dependencies.
+can inject other dependencies.
 
 ```python
 import strawberry
@@ -99,7 +99,7 @@ app.include_router(graphql_app, prefix="/graphql")
 Here we are returning a custom context dictionary that contains one extra item
 called "custom_value", which is injected from `custom_context_dependency`.
 
-Then we use the context in a resolver, the resolver will return "Hi!" in this
+Then we use the context in a resolver. The resolver will return "Hello John" in this
 case.
 
 ### Setting background tasks
@@ -144,8 +144,8 @@ app.include_router(graphql_app, prefix="/graphql")
 
 ## root_value_getter
 
-`root_value_getter` option allows to provide a custom root value for your
-schema, this is probably not used a lot but it might be useful in certain
+The `root_value_getter` option allows you to provide a custom root value for your
+schema. This is most likely a rare usecase but might be useful in certain
 situations.
 
 Here's an example:
@@ -178,17 +178,17 @@ app.include_router(graphql_app, prefix="/graphql")
 
 ```
 
-Here we are returning a Query where the name is "Patrick", so we when requesting
-the field name we'll return "Patrick" in this case.
+Here we are returning a Query where the name is "Patrick", so when we request
+the field name we'll return "Patrick".
 
 ## process_result
 
-`process_result` allows to customize and/or process results before they are sent
-to the clients. This can be useful logging errors or hiding them (for example to
+`process_result` allows you to customize and/or process results before they are sent
+to the clients. This can be useful for logging errors or hiding them (for example to
 hide internal exceptions).
 
-It needs to return an object of `GraphQLHTTPResponse` and accepts the request
-and the execution results.
+It needs to return a `GraphQLHTTPResponse` object and accepts the request
+and execution results.
 
 ```python
 from fastapi import Request
