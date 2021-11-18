@@ -183,7 +183,7 @@ the field name we'll return "Patrick".
 
 ## process_result
 
-`process_result` allows you to customize and/or process results before they are sent
+The `process_result` option allows you to customize and/or process results before they are sent
 to the clients. This can be useful for logging errors or hiding them (for example to
 hide internal exceptions).
 
