@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.87.2 - 2021-11-19
+-------------------
+
+This releases updates the `typing_extension` dependency to latest version.
+
+Contributed by [dependabot](https://github.com/dependabot) [PR #1417](https://github.com/strawberry-graphql/strawberry/pull/1417/)
+
+
 0.87.1 - 2021-11-15
 -------------------
 
