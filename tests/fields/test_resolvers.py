@@ -47,6 +47,25 @@ def test_resolver_fields():
     assert definition.fields[0].base_resolver(None) == Query().name()
 
 
+def test_staticmethod_resolver_fields():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        @staticmethod
+        def name() -> str:
+            return "Name"
+
+    definition = Query._type_definition
+
+    assert definition.name == "Query"
+    assert len(definition.fields) == 1
+
+    assert definition.fields[0].python_name == "name"
+    assert definition.fields[0].graphql_name is None
+    assert definition.fields[0].type == str
+    assert definition.fields[0].base_resolver(None) == Query().name()
+
+
 def test_raises_error_when_return_annotation_missing():
     with pytest.raises(MissingReturnAnnotationError) as e:
 

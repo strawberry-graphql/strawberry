@@ -37,7 +37,7 @@ if TYPE_CHECKING:
     from .object_type import TypeDefinition
 
 
-_RESOLVER_TYPE = Union[StrawberryResolver, Callable]
+_RESOLVER_TYPE = Union[StrawberryResolver, Callable, staticmethod]
 
 
 class StrawberryField(dataclasses.Field):

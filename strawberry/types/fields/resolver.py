@@ -21,12 +21,12 @@ T = TypeVar("T")
 class StrawberryResolver(Generic[T]):
     def __init__(
         self,
-        func: Callable[..., T],
+        func: Union[Callable[..., T], staticmethod],
         *,
         description: Optional[str] = None,
         type_override: Optional[Union[StrawberryType, type]] = None,
     ):
-        self.wrapped_func = func
+        self.wrapped_func = func.__func__ if isinstance(func, staticmethod) else func
         self._description = description
         self._type_override = type_override
         """Specify the type manually instead of calculating from wrapped func
