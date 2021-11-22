@@ -110,9 +110,6 @@ class NameConverter:
             name = self.get_from_type(type_)
             names.append(name)
 
-        # we want to generate types from inside out, for example
-        # getting `ValueOptionalListStr` from `Value[Optional[List[str]]]`
-        # so we reverse the list of names, since it goes outside in
         return "".join(names) + generic_type_name
 
     def get_from_type(self, type_: Union[StrawberryType, type]) -> str:
@@ -138,7 +135,11 @@ class NameConverter:
         elif hasattr(type_, "_type_definition"):
             strawberry_type = type_._type_definition  # type: ignore
 
-            name = strawberry_type.name
+            if strawberry_type.is_generic:
+                types = type_.__args__  # type: ignore
+                name = self.from_generic(strawberry_type, types)
+            else:
+                name = strawberry_type.name
         else:
             name = type_.__name__  # type: ignore
 
