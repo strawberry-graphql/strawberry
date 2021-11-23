@@ -110,23 +110,3 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
           verbose: true
-
-  mypy:
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/setup-python@v2
-        id: setup-python
-        with:
-          python-version: '3.10'
-          architecture: x64
-
-      - uses: actions/checkout@v2
-
-      - run: pip install poetry
-      - run: poetry config experimental.new-installer false
-
-      - name: Install dependencies
-        run: poetry install
-
-      - run: poetry run mypy --ignore-missing-imports --config-file mypy.ini --install-types --non-interactive --show-traceback .
