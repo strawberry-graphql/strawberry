@@ -1,6 +1,27 @@
 CHANGELOG
 =========
 
+0.87.3 - 2021-11-23
+-------------------
+
+This release fixes the naming generation of generics when
+passing a generic type to another generic, like so:
+
+```python
+@strawberry.type
+class Edge(Generic[T]):
+    node: T
+
+@strawberry.type
+class Connection(Generic[T]):
+    edges: List[T]
+
+Connection[Edge[int]]
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1436](https://github.com/strawberry-graphql/strawberry/pull/1436/)
+
+
 0.87.2 - 2021-11-19
 -------------------
 

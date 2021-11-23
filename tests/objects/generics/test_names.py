@@ -1,4 +1,4 @@
-from typing import Generic, NewType, TypeVar
+from typing import Generic, List, NewType, TypeVar
 
 import pytest
 
@@ -52,3 +52,27 @@ def test_name_generation(types, expected_name):
     type_definition = Example._type_definition  # type: ignore
 
     assert config.name_converter.from_generic(type_definition, types) == expected_name
+
+
+def test_nested_generics():
+    config = StrawberryConfig()
+
+    @strawberry.type
+    class Edge(Generic[T]):
+        node: T
+
+    @strawberry.type
+    class Connection(Generic[T]):
+        edges: List[T]
+
+    type_definition = Connection._type_definition  # type: ignore
+
+    assert (
+        config.name_converter.from_generic(
+            type_definition,
+            [
+                Edge[int],
+            ],
+        )
+        == "IntEdgeConnection"
+    )
