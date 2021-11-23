@@ -171,9 +171,12 @@ class StrawberryUnion(StrawberryType):
         return _resolve_union_type
 
 
+Types = TypeVar("Types", bound=Type)
+
+
 def union(
-    name: str, types: Tuple[Type, ...], *, description: str = None
-) -> StrawberryUnion:
+    name: str, types: Tuple[Types, ...], *, description: str = None
+) -> Union[Types]:  # type: ignore
     """Creates a new named Union type.
 
     Example usages:
@@ -201,4 +204,4 @@ def union(
         description=description,
     )
 
-    return union_definition
+    return union_definition  # type: ignore
