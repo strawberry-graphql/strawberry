@@ -1,5 +1,5 @@
-import logging
-from typing import Any, Dict, List, Optional, Sequence, Type, Union
+from functools import lru_cache
+from typing import Any, Dict, Optional, Sequence, Type, Union
 
 from graphql import (
     ExecutionContext as GraphQLExecutionContext,
@@ -8,66 +8,89 @@ from graphql import (
     parse,
     validate_schema,
 )
-from graphql.error import GraphQLError
 from graphql.subscription import subscribe
 from graphql.type.directives import specified_directives
 
-from strawberry.custom_scalar import ScalarDefinition
+from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
+from strawberry.directive import StrawberryDirective
 from strawberry.enum import EnumDefinition
 from strawberry.extensions import Extension
+from strawberry.extensions.directives import (
+    DirectivesExtension,
+    DirectivesExtensionSync,
+)
 from strawberry.schema.schema_converter import GraphQLCoreConverter
+from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
 from strawberry.types import ExecutionContext, ExecutionResult
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 
-from ..middleware import DirectivesMiddleware, Middleware
 from ..printer import print_schema
+from .base import BaseSchema
+from .config import StrawberryConfig
 from .execute import execute, execute_sync
 
 
-logger = logging.getLogger("strawberry.execution")
-
-
-class Schema:
+class Schema(BaseSchema):
     def __init__(
         self,
         # TODO: can we make sure we only allow to pass something that has been decorated?
         query: Type,
         mutation: Optional[Type] = None,
         subscription: Optional[Type] = None,
-        directives=(),
+        directives: Sequence[StrawberryDirective] = (),
         types=(),
-        extensions: Sequence[Type[Extension]] = (),
+        extensions: Sequence[Union[Type[Extension], Extension]] = (),
         execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
+        config: Optional[StrawberryConfig] = None,
+        scalar_overrides: Optional[
+            Dict[object, Union[ScalarWrapper, ScalarDefinition]]
+        ] = None,
     ):
         self.extensions = extensions
         self.execution_context_class = execution_context_class
-        self.schema_converter = GraphQLCoreConverter()
+        self.config = config or StrawberryConfig()
 
-        query_type = self.schema_converter.from_object_type(query)
+        scalar_registry: Dict[object, Union[ScalarWrapper, ScalarDefinition]] = {
+            **DEFAULT_SCALAR_REGISTRY
+        }
+        if scalar_overrides:
+            scalar_registry.update(scalar_overrides)
+
+        self.schema_converter = GraphQLCoreConverter(self.config, scalar_registry)
+        self.directives = directives
+
+        query_type = self.schema_converter.from_object(query._type_definition)
         mutation_type = (
-            self.schema_converter.from_object_type(mutation) if mutation else None
+            self.schema_converter.from_object(mutation._type_definition)
+            if mutation
+            else None
         )
         subscription_type = (
-            self.schema_converter.from_object_type(subscription)
+            self.schema_converter.from_object(subscription._type_definition)
             if subscription
             else None
         )
 
-        self.middleware: List[Middleware] = [DirectivesMiddleware(directives)]
-
-        directives = [
-            self.schema_converter.from_directive(directive.directive_definition)
-            for directive in directives
+        graphql_directives = [
+            self.schema_converter.from_directive(directive) for directive in directives
         ]
+
+        graphql_types = []
+        for type_ in types:
+            graphql_type = self.schema_converter.from_object(type_._type_definition)
+            graphql_types.append(graphql_type)
 
         self._schema = GraphQLSchema(
             query=query_type,
             mutation=mutation_type,
             subscription=subscription_type if subscription else None,
-            directives=specified_directives + directives,
-            types=list(map(self.schema_converter.from_object_type, types)),
+            directives=specified_directives + graphql_directives,
+            types=graphql_types,
         )
+
+        # attach our schema to the GraphQL schema instance
+        self._schema._strawberry_schema = self  # type: ignore
 
         # Validate schema early because we want developers to know about
         # possible issues as soon as possible
@@ -88,12 +111,16 @@ class Schema:
 
         return None
 
-    def process_errors(
-        self, errors: List[GraphQLError], execution_context: ExecutionContext
-    ) -> None:
-        for error in errors:
-            actual_error = error.original_error or error
-            logger.error(actual_error, exc_info=actual_error)
+    @lru_cache()
+    def get_directive_by_name(self, graphql_name: str) -> Optional[StrawberryDirective]:
+        return next(
+            (
+                directive
+                for directive in self.directives
+                if self.config.name_converter.from_directive(directive) == graphql_name
+            ),
+            None,
+        )
 
     async def execute(
         self,
@@ -102,11 +129,11 @@ class Schema:
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
-        validate_queries: bool = True,
     ) -> ExecutionResult:
         # Create execution context
         execution_context = ExecutionContext(
             query=query,
+            schema=self,
             context=context_value,
             root_value=root_value,
             variables=variable_values,
@@ -116,21 +143,15 @@ class Schema:
         result = await execute(
             self._schema,
             query,
-            additional_middlewares=self.middleware,
-            extensions=self.extensions,
+            extensions=list(self.extensions) + [DirectivesExtension],
             execution_context_class=self.execution_context_class,
-            validate_queries=validate_queries,
             execution_context=execution_context,
         )
 
         if result.errors:
             self.process_errors(result.errors, execution_context=execution_context)
 
-        return ExecutionResult(
-            data=result.data,
-            errors=result.errors,
-            extensions=result.extensions,
-        )
+        return result
 
     def execute_sync(
         self,
@@ -139,10 +160,10 @@ class Schema:
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
-        validate_queries: bool = True,
     ) -> ExecutionResult:
         execution_context = ExecutionContext(
             query=query,
+            schema=self,
             context=context_value,
             root_value=root_value,
             variables=variable_values,
@@ -152,21 +173,15 @@ class Schema:
         result = execute_sync(
             self._schema,
             query,
-            additional_middlewares=self.middleware,
-            extensions=self.extensions,
+            extensions=list(self.extensions) + [DirectivesExtensionSync],
             execution_context_class=self.execution_context_class,
-            validate_queries=validate_queries,
             execution_context=execution_context,
         )
 
         if result.errors:
             self.process_errors(result.errors, execution_context=execution_context)
 
-        return ExecutionResult(
-            data=result.data,
-            errors=result.errors,
-            extensions=result.extensions,
-        )
+        return result
 
     async def subscribe(
         self,

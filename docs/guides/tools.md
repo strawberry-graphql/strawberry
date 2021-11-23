@@ -42,3 +42,94 @@ type Query {
   myName: String!
 }
 ```
+
+---
+
+### `merge_types`
+
+Merge multiple Strawberry types into one. Example:
+
+```python+schema
+import strawberry
+from strawberry.tools import merge_types
+
+
+@strawberry.type
+class QueryA:
+    @strawberry.field
+    def perform_a(self) -> str:
+        ...
+
+
+@strawberry.type
+class QueryB:
+    @strawberry.field
+    def perform_b(self) -> str:
+        ...
+
+
+ComboQuery = merge_types("ComboQuery", (QueryB, QueryA))
+schema = strawberry.Schema(query=ComboQuery)
+---
+type ComboQuery {
+  performB: String!
+  performA: String!
+}
+```
+
+---
+
+### `QueryDepthLimiter`
+
+Extension to add a query depth limter validation rule that limits the complexity of queries by
+their depth to protect against malicious queries.
+
+```python
+class QueryDepthLimiter(
+    max_depth: int,
+    ignore: Optional[List[Union[str, re.Pattern, Callable[[str], bool]]]] = None,
+    callback: Optional[Callable[Dict[str, int]]] = None
+):
+    ...
+```
+
+| Parameter name | Type                                                            | Default | Description                                                                                                                               |
+| -------------- | --------------------------------------------------------------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| max_depth      | `int`                                                           | N/A     | The maximum allowed depth for any operation in a GraphQL document                                                                         |
+| ignore         | `Optional[List[Union[str, re.Pattern, Callable[[str], bool]]]]` | `None`  | Stops recursive depth checking based on a field name. Either a string or regexp to match the name, or a function that reaturns a boolean. |
+| callback       | `Optional[Callable[[Dict[str, int]], None]]`                    | `None`  | Called each time validation runs. Receives an Object which is a map of the depths for each operation                                      |
+
+Example:
+
+```python
+import strawberry
+from strawberry.extensions import QueryDepthLimiter
+
+# assuming you already have a Query type
+schema = strawberry.Schema(
+  Query,
+  extensions=[
+    # Add the depth limiter extension
+    QueryDepthLimiter(max_depth=3),
+  ]
+)
+
+result = schema.execute_sync(
+    """
+    query MyQuery {
+      user {
+        pets {
+          owner {
+            pets {
+              name
+            }
+          }
+        }
+      }
+    }
+    """
+  )
+)
+assert len(result.errors) == 1
+assert result.errors[0].message == "'MyQuery' exceeds maximum operation depth of 3"
+```

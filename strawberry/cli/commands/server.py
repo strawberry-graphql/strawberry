@@ -1,14 +1,10 @@
-import importlib
+import os
 import sys
 
 import click
-import hupper
-import uvicorn
-from starlette.applications import Starlette
-from starlette.middleware.cors import CORSMiddleware
 
 from strawberry import Schema
-from strawberry.asgi import GraphQL
+from strawberry.cli.constants import DEBUG_SERVER_SCHEMA_ENV_VAR_KEY
 from strawberry.utils.importer import import_module_symbol
 
 
@@ -16,6 +12,12 @@ from strawberry.utils.importer import import_module_symbol
 @click.argument("schema", type=str)
 @click.option("-h", "--host", default="0.0.0.0", type=str)
 @click.option("-p", "--port", default=8000, type=int)
+@click.option(
+    "--log-level",
+    default="error",
+    type=click.Choice(["debug", "info", "warning", "error"], case_sensitive=False),
+    help="passed to uvicorn to determine the log level",
+)
 @click.option(
     "--app-dir",
     default=".",
@@ -27,8 +29,18 @@ from strawberry.utils.importer import import_module_symbol
         "Works the same as `--app-dir` in uvicorn."
     ),
 )
-def server(schema, host, port, app_dir):
+def server(schema, host, port, log_level, app_dir):
     sys.path.insert(0, app_dir)
+
+    try:
+        import starlette  # noqa: F401
+        import uvicorn
+    except ImportError:
+        message = (
+            "The debug server requires additional packages, install them by running:\n"
+            "pip install 'strawberry-graphql[debug-server]'"
+        )
+        raise click.ClickException(message)
 
     try:
         schema_symbol = import_module_symbol(schema, default_symbol_name="schema")
@@ -40,21 +52,18 @@ def server(schema, host, port, app_dir):
         message = "The `schema` must be an instance of strawberry.Schema"
         raise click.BadArgumentUsage(message)
 
-    reloader = hupper.start_reloader("strawberry.cli.run", verbose=False)
-    schema_module = importlib.import_module(schema_symbol.__module__)
-    reloader.watch_files([schema_module.__file__])
+    os.environ[DEBUG_SERVER_SCHEMA_ENV_VAR_KEY] = schema
+    app = "strawberry.cli.debug_server:app"
 
-    app = Starlette(debug=True)
-    app.add_middleware(
-        CORSMiddleware, allow_headers=["*"], allow_origins=["*"], allow_methods=["*"]
+    # Windows doesn't support UTF-8 by default
+    endl = " 🍓\n" if sys.platform != "win32" else "\n"
+    print(f"Running strawberry on http://{host}:{port}/graphql", end=endl)
+
+    uvicorn.run(
+        app,
+        host=host,
+        port=port,
+        log_level=log_level,
+        reload=True,
+        reload_dirs=[app_dir],
     )
-
-    graphql_app = GraphQL(schema_symbol, debug=True)
-
-    paths = ["/", "/graphql"]
-    for path in paths:
-        app.add_route(path, graphql_app)
-        app.add_websocket_route(path, graphql_app)
-
-    print(f"Running strawberry on http://{host}:{port}/ 🍓")
-    uvicorn.run(app, loop="none", host=host, port=port, log_level="error")

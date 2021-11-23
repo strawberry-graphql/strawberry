@@ -1,17 +1,21 @@
+from __future__ import annotations
+
 import dataclasses
 import inspect
+import sys
 from itertools import islice
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, TypeVar
 
 from graphql import DirectiveLocation
 
-from strawberry.arguments import StrawberryArgument, get_arguments_from_annotations
-from strawberry.utils.str_converters import to_camel_case
+from strawberry.annotation import StrawberryAnnotation
+from strawberry.arguments import StrawberryArgument
 
 
 @dataclasses.dataclass
-class DirectiveDefinition:
-    name: str
+class StrawberryDirective:
+    python_name: str
+    graphql_name: Optional[str]
     resolver: Callable
     locations: List[DirectiveLocation]
     description: Optional[str] = None
@@ -24,25 +28,45 @@ class DirectiveDefinition:
 
         parameters = inspect.signature(self.resolver).parameters
 
-        return get_arguments_from_annotations(
-            annotations, parameters, origin=self.resolver
-        )
+        module = sys.modules[self.resolver.__module__]
+        annotation_namespace = module.__dict__
+        arguments = []
+        for arg_name, annotation in annotations.items():
+            parameter = parameters[arg_name]
+
+            argument = StrawberryArgument(
+                python_name=arg_name,
+                graphql_name=None,
+                type_annotation=StrawberryAnnotation(
+                    annotation=annotation, namespace=annotation_namespace
+                ),
+                default=parameter.default,
+            )
+
+            arguments.append(argument)
+
+        return arguments
 
 
-def directive(*, locations: List[DirectiveLocation], description=None, name=None):
-    def _wrap(f):
-        directive_name = name or to_camel_case(f.__name__)
+T = TypeVar("T")
 
-        f.directive_definition = DirectiveDefinition(
-            name=directive_name,
+
+def directive(
+    *,
+    locations: List[DirectiveLocation],
+    description: Optional[str] = None,
+    name: Optional[str] = None
+) -> Callable[[Callable[..., T]], T]:
+    def _wrap(f: Callable[..., T]) -> T:
+        return StrawberryDirective(  # type: ignore
+            python_name=f.__name__,
+            graphql_name=name,
             locations=locations,
             description=description,
             resolver=f,
         )
 
-        return f
-
     return _wrap
 
 
-__all__ = ["DirectiveLocation", "DirectiveDefinition", "directive"]
+__all__ = ["DirectiveLocation", "StrawberryDirective", "directive"]

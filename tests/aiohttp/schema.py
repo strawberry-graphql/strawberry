@@ -6,6 +6,7 @@ from graphql import GraphQLError
 
 import strawberry
 from strawberry.file_uploads import Upload
+from strawberry.subscriptions.protocols.graphql_transport_ws.types import PingMessage
 
 
 @strawberry.enum
@@ -23,6 +24,7 @@ class FolderInput:
 @strawberry.type
 class DebugInfo:
     num_active_result_handlers: int
+    is_connection_init_timeout_task_done: typing.Optional[bool]
 
 
 @strawberry.type
@@ -61,6 +63,12 @@ class Subscription:
         yield message
 
     @strawberry.subscription
+    async def request_ping(self, info) -> typing.AsyncGenerator[bool, None]:
+        ws = info.context["ws"]
+        await ws.send_json(PingMessage().as_dict())
+        yield True
+
+    @strawberry.subscription
     async def infinity(self, message: str) -> typing.AsyncGenerator[str, None]:
         while True:
             yield message
@@ -89,11 +97,21 @@ class Subscription:
 
     @strawberry.subscription
     async def debug(self, info) -> typing.AsyncGenerator[DebugInfo, None]:
-        request = info.context["request"]
         active_result_handlers = [
-            task for task in request["tasks"].values() if not task.done()
+            task for task in info.context["tasks"].values() if not task.done()
         ]
-        yield DebugInfo(num_active_result_handlers=len(active_result_handlers))
+
+        connection_init_timeout_task = info.context["connectionInitTimeoutTask"]
+        is_connection_init_timeout_task_done = (
+            connection_init_timeout_task.done()
+            if connection_init_timeout_task
+            else None
+        )
+
+        yield DebugInfo(
+            num_active_result_handlers=len(active_result_handlers),
+            is_connection_init_timeout_task_done=is_connection_init_timeout_task_done,
+        )
 
 
 schema = strawberry.Schema(query=Query, mutation=Mutation, subscription=Subscription)

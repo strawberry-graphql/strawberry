@@ -38,7 +38,8 @@ GraphQL is strongly typed and so Strawberry validates all queries before executi
 
 Each error has a message, line, column and path to help you identify what part of the query caused the error.
 
-The validation rules are part of the GraphQL specification and built into Strawberry, so there’s not really a way to customize this behavior, except to pass `validate_queries=False` when executing a query, which skips validation altogether: [/docs/types/schema#execute-async](../types/schema#execute-async).
+The validation rules are part of the GraphQL specification and built into Strawberry, so there’s not really a way to customize this behavior.
+You can disable all validation by using the [DisableValidation](../extensions/disable-validation) extension.
 
 ## GraphQL type errors
 

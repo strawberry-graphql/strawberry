@@ -3,6 +3,7 @@ import pytest
 import pydantic
 
 import strawberry
+from strawberry.type import StrawberryOptional
 from strawberry.types.types import TypeDefinition
 
 
@@ -31,18 +32,17 @@ def test_types(pydantic_type, field_type):
     class Model(pydantic.BaseModel):
         field: pydantic_type
 
-    @strawberry.experimental.pydantic.type(Model, fields=["field"])
+    @strawberry.experimental.pydantic.type(Model)
     class Type:
-        pass
+        field: strawberry.auto
 
     definition: TypeDefinition = Type._type_definition
-
     assert definition.name == "Type"
-    assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "field"
-    assert definition.fields[0].type is field_type
-    assert definition.fields[0].is_optional is False
+    [field] = definition.fields
+
+    assert field.python_name == "field"
+    assert field.type is field_type
 
 
 @pytest.mark.parametrize(
@@ -53,54 +53,52 @@ def test_types_optional(pydantic_type, field_type):
     class Model(pydantic.BaseModel):
         field: pydantic_type
 
-    @strawberry.experimental.pydantic.type(Model, fields=["field"])
+    @strawberry.experimental.pydantic.type(Model)
     class Type:
-        pass
+        field: strawberry.auto
 
     definition: TypeDefinition = Type._type_definition
-
     assert definition.name == "Type"
-    assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "field"
-    assert definition.fields[0].type is field_type
-    assert definition.fields[0].is_optional is True
+    [field] = definition.fields
+
+    assert field.python_name == "field"
+    assert isinstance(field.type, StrawberryOptional)
+    assert field.type.of_type is field_type
 
 
 def test_conint():
     class Model(pydantic.BaseModel):
         field: pydantic.conint(lt=100)
 
-    @strawberry.experimental.pydantic.type(Model, fields=["field"])
+    @strawberry.experimental.pydantic.type(Model)
     class Type:
-        pass
+        field: strawberry.auto
 
     definition: TypeDefinition = Type._type_definition
-
     assert definition.name == "Type"
-    assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "field"
-    assert definition.fields[0].type is int
-    assert definition.fields[0].is_optional is False
+    [field] = definition.fields
+
+    assert field.python_name == "field"
+    assert field.type is int
 
 
 def test_constr():
     class Model(pydantic.BaseModel):
         field: pydantic.constr(max_length=100)
 
-    @strawberry.experimental.pydantic.type(Model, fields=["field"])
+    @strawberry.experimental.pydantic.type(Model)
     class Type:
-        pass
+        field: strawberry.auto
 
     definition: TypeDefinition = Type._type_definition
-
     assert definition.name == "Type"
-    assert len(definition.fields) == 1
 
-    assert definition.fields[0].graphql_name == "field"
-    assert definition.fields[0].type is str
-    assert definition.fields[0].is_optional is False
+    [field] = definition.fields
+
+    assert field.python_name == "field"
+    assert field.type is str
 
 
 @pytest.mark.parametrize(
@@ -127,6 +125,6 @@ def test_unsupported_types(pydantic_type):
         strawberry.experimental.pydantic.exceptions.UnsupportedTypeError
     ):
 
-        @strawberry.experimental.pydantic.type(Model, fields=["field"])
+        @strawberry.experimental.pydantic.type(Model)
         class Type:
-            pass
+            field: strawberry.auto

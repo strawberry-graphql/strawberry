@@ -71,7 +71,7 @@ query {
 
 Interfaces are a good choice whenever you have a set of objects that are used
 interchangeably, and they have several significant fields in common. When they
-don’t have fields in common, use a [Union](/docs/types/unions) instead.
+don’t have fields in common, use a [Union](/docs/types/union) instead.
 
 ## Defining interfaces
 
@@ -89,7 +89,11 @@ interface Customer {
 }
 ```
 
-> Note: Interface classes should never be instantiated directly.
+<Note>
+
+Interface classes should never be instantiated directly.
+
+</Note>
 
 ## Implementing interfaces
 
@@ -108,13 +112,17 @@ class Company(Customer):
     # additional fields
 ```
 
-> ⚠️ If you add an object type which implements an interface, but that object
-> type doesn’t appear in your schema as a field return type or a union member,
-> then you will need to add that object to the Schema defintion directly.
->
-> ```python
-> schema = strawberry.Schema(query=Query, types=[Individual, Company])
-> ```
+<Tip>
+
+If you add an object type which implements an interface, but that object
+type doesn’t appear in your schema as a field return type or a union member,
+then you will need to add that object to the Schema defintion directly.
+
+```python
+schema = strawberry.Schema(query=Query, types=[Individual, Company])
+```
+
+</Tip>
 
 Interfaces can also implement other interfaces:
 

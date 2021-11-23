@@ -13,15 +13,17 @@
 ## Types
 
 - [Schema](./types/schema.md)
+- [Schema configurations](./types/schema-configurations.md)
 - [Scalars](./types/scalars.md)
 - [Object types](./types/object-types.md)
 - [Interfaces](./types/interfaces.md)
 - [Input types](./types/input-types.md)
-- [Directives](./types/directives.md)
 - [Enums](./types/enums.md)
 - [Generics](./types/generics.md)
 - [Resolvers](./types/resolvers.md)
 - [Union types](./types/union.md)
+
+## [Extensions](./extensions)
 
 ## Guides
 
@@ -29,13 +31,17 @@
 - [DataLoaders](./guides/dataloaders.md)
 - [Dealing with errors](./guides/errors.md)
 - [Federation](./guides/federation.md)
-- [Extensions](./guides/extensions.md)
+- [Custom extensions](./guides/custom-extensions.md)
 - [File upload](./guides/file-upload.md)
 - [Pagination](./guides/pagination.md)
 - [Permissions](./guides/permissions.md)
 - [Builtin server](./guides/server.md)
 - [Tools](./guides/tools.md)
 - [Schema export](./guides/schema-export.md)
+
+## Editor integration
+
+- [Visual Studio Code](./editors/vscode.md)
 
 ## Concepts
 
@@ -47,8 +53,10 @@
 - [AIOHTTP](./integrations/aiohttp.md)
 - [ASGI](./integrations/asgi.md)
 - [Django](./integrations/django.md)
+- [FastAPI](./integrations/fastapi.md)
 - [Flask](./integrations/flask.md)
 - [Sanic](./integrations/sanic.md)
+- [Starlette](./integrations/starlette.md)
 - [Pydantic **experimental**](./integrations/pydantic.md)
 
 ## Operations

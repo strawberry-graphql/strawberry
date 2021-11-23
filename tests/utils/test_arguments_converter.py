@@ -2,20 +2,45 @@ from enum import Enum
 from typing import List, Optional
 
 import strawberry
+from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import UNSET, StrawberryArgument, convert_arguments
+from strawberry.lazy_type import LazyType
+from strawberry.schema.config import StrawberryConfig
+from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
 
 
 def test_simple_types():
     args = {"integer": 1, "string": "abc", "float": 1.2, "bool": True}
 
     arguments = [
-        StrawberryArgument(graphql_name="integer", type_=int, python_name="integer"),
-        StrawberryArgument(graphql_name="string", type_=str, python_name="string"),
-        StrawberryArgument(graphql_name="float", type_=float, python_name="float"),
-        StrawberryArgument(graphql_name="bool", type_=bool, python_name="bool"),
+        StrawberryArgument(
+            graphql_name="integer",
+            type_annotation=StrawberryAnnotation(int),
+            python_name="integer",
+        ),
+        StrawberryArgument(
+            graphql_name="string",
+            type_annotation=StrawberryAnnotation(str),
+            python_name="string",
+        ),
+        StrawberryArgument(
+            graphql_name="float",
+            type_annotation=StrawberryAnnotation(float),
+            python_name="float",
+        ),
+        StrawberryArgument(
+            graphql_name="bool",
+            type_annotation=StrawberryAnnotation(bool),
+            python_name="bool",
+        ),
     ]
 
-    assert convert_arguments(args, arguments) == {
+    assert convert_arguments(
+        args,
+        arguments,
+        scalar_registry=DEFAULT_SCALAR_REGISTRY,
+        config=StrawberryConfig(),
+    ) == {
         "integer": 1,
         "string": "abc",
         "float": 1.2,
@@ -33,23 +58,55 @@ def test_list():
         StrawberryArgument(
             graphql_name="integerList",
             python_name="integer_list",
-            type_=int,
-            is_list=True,
-            child=StrawberryArgument(graphql_name=None, python_name=None, type_=int),
+            type_annotation=StrawberryAnnotation(List[int]),
         ),
         StrawberryArgument(
             graphql_name="stringList",
             python_name="string_list",
-            type_=str,
-            is_list=True,
-            child=StrawberryArgument(graphql_name=None, python_name=None, type_=str),
+            type_annotation=StrawberryAnnotation(List[str]),
         ),
     ]
 
-    assert convert_arguments(args, arguments) == {
+    assert convert_arguments(
+        args,
+        arguments,
+        scalar_registry=DEFAULT_SCALAR_REGISTRY,
+        config=StrawberryConfig(),
+    ) == {
         "integer_list": [1, 2],
         "string_list": ["abc", "cde"],
     }
+
+
+@strawberry.input
+class LaziestType:
+    something: bool
+
+
+def test_lazy():
+    LazierType = LazyType["LaziestType", __name__]
+
+    args = {
+        "lazyArg": {"something": True},
+    }
+
+    arguments = [
+        StrawberryArgument(
+            graphql_name="lazyArg",
+            python_name="lazy_arg",
+            type_annotation=StrawberryAnnotation(LazierType),
+        ),
+    ]
+
+    assert (
+        convert_arguments(
+            args,
+            arguments,
+            scalar_registry=DEFAULT_SCALAR_REGISTRY,
+            config=StrawberryConfig(),
+        )
+        == {"lazy_arg": LaziestType(something=True)}
+    )
 
 
 def test_input_types():
@@ -65,12 +122,22 @@ def test_input_types():
     }
 
     arguments = [
-        StrawberryArgument(graphql_name=None, python_name="input", type_=MyInput)
+        StrawberryArgument(
+            graphql_name=None,
+            python_name="input",
+            type_annotation=StrawberryAnnotation(MyInput),
+        ),
     ]
 
-    assert convert_arguments(args, arguments) == {
-        "input": MyInput(abc="example", say_hello_to="Patrick", was=10, fun="yes")
-    }
+    assert (
+        convert_arguments(
+            args,
+            arguments,
+            scalar_registry=DEFAULT_SCALAR_REGISTRY,
+            config=StrawberryConfig(),
+        )
+        == {"input": MyInput(abc="example", say_hello_to="Patrick", was=10, fun="yes")}
+    )
 
 
 def test_optional_input_types():
@@ -82,11 +149,21 @@ def test_optional_input_types():
 
     arguments = [
         StrawberryArgument(
-            graphql_name=None, python_name="input", type_=MyInput, is_optional=True
-        )
+            graphql_name=None,
+            python_name="input",
+            type_annotation=StrawberryAnnotation(Optional[MyInput]),
+        ),
     ]
 
-    assert convert_arguments(args, arguments) == {"input": MyInput(abc="example")}
+    assert (
+        convert_arguments(
+            args,
+            arguments,
+            scalar_registry=DEFAULT_SCALAR_REGISTRY,
+            config=StrawberryConfig(),
+        )
+        == {"input": MyInput(abc="example")}
+    )
 
 
 def test_list_of_input_types():
@@ -100,17 +177,19 @@ def test_list_of_input_types():
         StrawberryArgument(
             graphql_name="inputList",
             python_name="input_list",
-            type_=None,
-            child=StrawberryArgument(
-                graphql_name=None, python_name=None, type_=MyInput
-            ),
-            is_list=True,
-        )
+            type_annotation=StrawberryAnnotation(List[MyInput]),
+        ),
     ]
 
-    assert convert_arguments(args, arguments) == {
-        "input_list": [MyInput(abc="example")]
-    }
+    assert (
+        convert_arguments(
+            args,
+            arguments,
+            scalar_registry=DEFAULT_SCALAR_REGISTRY,
+            config=StrawberryConfig(),
+        )
+        == {"input_list": [MyInput(abc="example")]}
+    )
 
 
 def test_optional_list_of_input_types():
@@ -124,17 +203,18 @@ def test_optional_list_of_input_types():
         StrawberryArgument(
             graphql_name="inputList",
             python_name="input_list",
-            is_optional=True,
-            type_=None,
-            child=StrawberryArgument(
-                graphql_name=None, python_name=None, type_=MyInput
-            ),
-            is_list=True,
-        )
+            type_annotation=StrawberryAnnotation(Optional[List[MyInput]]),
+        ),
     ]
-    assert convert_arguments(args, arguments) == {
-        "input_list": [MyInput(abc="example")]
-    }
+    assert (
+        convert_arguments(
+            args,
+            arguments,
+            scalar_registry=DEFAULT_SCALAR_REGISTRY,
+            config=StrawberryConfig(),
+        )
+        == {"input_list": [MyInput(abc="example")]}
+    )
 
 
 def test_nested_input_types():
@@ -174,11 +254,18 @@ def test_nested_input_types():
 
     arguments = [
         StrawberryArgument(
-            graphql_name=None, python_name="input", type_=AddReleaseFileCommentInput
-        )
+            graphql_name=None,
+            python_name="input",
+            type_annotation=StrawberryAnnotation(AddReleaseFileCommentInput),
+        ),
     ]
 
-    assert convert_arguments(args, arguments) == {
+    assert convert_arguments(
+        args,
+        arguments,
+        scalar_registry=DEFAULT_SCALAR_REGISTRY,
+        config=StrawberryConfig(),
+    ) == {
         "input": AddReleaseFileCommentInput(
             pr_number=12,
             status=ReleaseFileStatus.OK,
@@ -196,11 +283,18 @@ def test_nested_input_types():
 
     arguments = [
         StrawberryArgument(
-            graphql_name=None, python_name="input", type_=AddReleaseFileCommentInput
-        )
+            graphql_name=None,
+            python_name="input",
+            type_annotation=StrawberryAnnotation(AddReleaseFileCommentInput),
+        ),
     ]
 
-    assert convert_arguments(args, arguments) == {
+    assert convert_arguments(
+        args,
+        arguments,
+        scalar_registry=DEFAULT_SCALAR_REGISTRY,
+        config=StrawberryConfig(),
+    ) == {
         "input": AddReleaseFileCommentInput(
             pr_number=12, status=ReleaseFileStatus.OK, release_info=None
         )
@@ -219,12 +313,22 @@ def test_nested_list_of_complex_types():
     args = {"input": {"numbers": [{"value": 1}, {"value": 2}]}}
 
     arguments = [
-        StrawberryArgument(graphql_name=None, python_name="input", type_=Input)
+        StrawberryArgument(
+            graphql_name=None,
+            python_name="input",
+            type_annotation=StrawberryAnnotation(Input),
+        ),
     ]
 
-    assert convert_arguments(args, arguments) == {
-        "input": Input(numbers=[Number(1), Number(2)])
-    }
+    assert (
+        convert_arguments(
+            args,
+            arguments,
+            scalar_registry=DEFAULT_SCALAR_REGISTRY,
+            config=StrawberryConfig(),
+        )
+        == {"input": Input(numbers=[Number(1), Number(2)])}
+    )
 
 
 def test_uses_default_for_optional_types_when_nothing_is_passed():
@@ -241,19 +345,43 @@ def test_uses_default_for_optional_types_when_nothing_is_passed():
     args = {"input": {}}
 
     arguments = [
-        StrawberryArgument(graphql_name=None, python_name="input", type_=Input)
+        StrawberryArgument(
+            graphql_name=None,
+            python_name="input",
+            type_annotation=StrawberryAnnotation(Input),
+        ),
     ]
 
-    assert convert_arguments(args, arguments) == {"input": Input(UNSET, UNSET)}
+    assert (
+        convert_arguments(
+            args,
+            arguments,
+            scalar_registry=DEFAULT_SCALAR_REGISTRY,
+            config=StrawberryConfig(),
+        )
+        == {"input": Input(UNSET, UNSET)}
+    )
 
     # case 2
     args = {"input": {"numbersSecond": None}}
 
     arguments = [
-        StrawberryArgument(graphql_name=None, python_name="input", type_=Input)
+        StrawberryArgument(
+            graphql_name=None,
+            python_name="input",
+            type_annotation=StrawberryAnnotation(Input),
+        ),
     ]
 
-    assert convert_arguments(args, arguments) == {"input": Input(UNSET, None)}
+    assert (
+        convert_arguments(
+            args,
+            arguments,
+            scalar_registry=DEFAULT_SCALAR_REGISTRY,
+            config=StrawberryConfig(),
+        )
+        == {"input": Input(UNSET, None)}
+    )
 
 
 def test_when_optional():
@@ -270,8 +398,18 @@ def test_when_optional():
 
     arguments = [
         StrawberryArgument(
-            graphql_name=None, python_name="input", type_=Input, is_optional=True
+            graphql_name=None,
+            python_name="input",
+            type_annotation=StrawberryAnnotation(Optional[Input]),
         )
     ]
 
-    assert convert_arguments(args, arguments) == {}
+    assert (
+        convert_arguments(
+            args,
+            arguments,
+            scalar_registry=DEFAULT_SCALAR_REGISTRY,
+            config=StrawberryConfig(),
+        )
+        == {}
+    )

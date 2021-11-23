@@ -1,3 +1,4 @@
+from starlette.background import BackgroundTask
 from starlette.testclient import TestClient
 
 import strawberry
@@ -5,13 +6,20 @@ from strawberry.asgi import GraphQL as BaseGraphQL
 from strawberry.types import ExecutionResult, Info
 
 
-def test_simple_query(schema, test_client):
+def test_simple_query(test_client):
     response = test_client.post("/", json={"query": "{ hello }"})
 
     assert response.json() == {"data": {"hello": "Hello world"}}
 
 
-def test_returns_errors(schema, test_client):
+def test_fails_when_request_body_has_invalid_json(test_client):
+    response = test_client.post(
+        "/", data='{"qeury": "{__typena"', headers={"content-type": "application/json"}
+    )
+    assert response.status_code == 400
+
+
+def test_returns_errors(test_client):
     response = test_client.post("/", json={"query": "{ donut }"})
 
     assert response.json() == {
@@ -26,7 +34,7 @@ def test_returns_errors(schema, test_client):
     }
 
 
-def test_can_pass_variables(schema, test_client):
+def test_can_pass_variables(test_client):
     response = test_client.post(
         "/",
         json={
@@ -38,7 +46,7 @@ def test_can_pass_variables(schema, test_client):
     assert response.json() == {"data": {"hello": "Hello James"}}
 
 
-def test_returns_errors_and_data(schema, test_client):
+def test_returns_errors_and_data(test_client):
     response = test_client.post("/", json={"query": "{ hello, alwaysFail }"})
 
     assert response.status_code == 200
@@ -54,7 +62,7 @@ def test_returns_errors_and_data(schema, test_client):
     }
 
 
-def test_root_value(schema, test_client):
+def test_root_value(test_client):
     response = test_client.post("/", json={"query": "{ rootName }"})
 
     assert response.json() == {"data": {"rootName": "Query"}}
@@ -97,6 +105,31 @@ def test_can_set_custom_status_code():
 
     assert response.status_code == 418
     assert response.json() == {"data": {"something": "foo"}}
+
+
+def test_can_set_background_task():
+    task_complete = False
+
+    def task():
+        nonlocal task_complete
+        task_complete = True
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def something(self, info: Info) -> str:
+            r = info.context["response"]
+            r.background = BackgroundTask(task)
+            return "foo"
+
+    schema = strawberry.Schema(query=Query)
+    app = BaseGraphQL(schema)
+
+    test_client = TestClient(app)
+    response = test_client.post("/", json={"query": "{ something }"})
+
+    assert response.json() == {"data": {"something": "foo"}}
+    assert task_complete
 
 
 def test_custom_context():
