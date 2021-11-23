@@ -1,3 +1,4 @@
+# type: ignore
 from enum import Enum
 from typing import List, Optional, TypeVar
 
@@ -115,7 +116,7 @@ def test_union():
 
     @strawberry.type
     class WishfulThinking:
-        desire: EU  # type: ignore
+        desire: EU
 
     # TODO: Remove reference to ._type_definition with StrawberryObject
     field: StrawberryField = WishfulThinking._type_definition.fields[0]
