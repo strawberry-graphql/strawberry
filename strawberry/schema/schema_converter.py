@@ -283,8 +283,10 @@ class GraphQLCoreConverter:
         if object_type.is_type_of:
             is_type_of = object_type.is_type_of
         elif object_type.interfaces:
+
             def is_type_of(obj: Any, _info: GraphQLResolveInfo) -> bool:
                 return isinstance(obj, object_type.origin)
+
         else:
             is_type_of = None
 
