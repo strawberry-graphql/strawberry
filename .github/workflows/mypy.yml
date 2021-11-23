@@ -38,4 +38,5 @@ jobs:
         run: poetry install
         if: steps.cache-poetry-dependencies.outputs.cache-hit != 'true'
 
+      - run: rm -rf .mypy_cache
       - run: poetry run mypy --ignore-missing-imports --config-file mypy.ini --install-types --non-interactive --show-traceback .
