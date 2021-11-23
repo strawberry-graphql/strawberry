@@ -1,4 +1,4 @@
-Release type: patch
+Release type: minor
 
 This release adds support for AWS Chalice. A framework for deploying serverless applications using AWS.
 
