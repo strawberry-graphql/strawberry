@@ -147,10 +147,17 @@ def type(
 
         sorted_fields = missing_default + has_default
 
+        # Implicitly define `is_type_of` to support interfaces/unions that use
+        # pydantic objects (not the corresponding strawberry type)
+        @classmethod
+        def is_type_of(cls, obj, _info) -> bool:
+            return isinstance(obj, (cls, model))
+
         cls = dataclasses.make_dataclass(
             cls.__name__,
             sorted_fields,
             bases=cls.__bases__,
+            namespace={"is_type_of": is_type_of},
         )
 
         _process_type(
