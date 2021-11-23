@@ -33,10 +33,7 @@ class GraphQLView:
         Returns:
             Whether html has been requested True for yes, False for no
         """
-        try:
-            accept_headers = headers.get("accept")
-        except TypeError:
-            return False
+        accept_headers = headers.get("accept", None)
 
         if accept_headers is None:
             return False
