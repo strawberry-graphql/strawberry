@@ -139,9 +139,7 @@ class StrawberryUnion(StrawberryType):
             # defined on the union's inner types
             if not hasattr(root, "_type_definition"):
                 for inner_type in type_.types:
-                    if inner_type.is_type_of is None:
-                        break
-                    elif inner_type.is_type_of(root, info):
+                    if inner_type.is_type_of is not None and inner_type.is_type_of(root, info):
                         return inner_type.name
 
                 # Couldn't resolve using `is_type_of``

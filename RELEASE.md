@@ -1,4 +1,4 @@
-Release type: patch
+Release type: minor
 
 This releases fixes an issue where you were not allowed
 to return a non-strawberry type for fields that return
