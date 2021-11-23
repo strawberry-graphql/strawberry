@@ -2,6 +2,7 @@ import json
 from http import HTTPStatus
 
 import pytest
+
 from chalice.test import Client, HTTPResponse
 
 from .app import app
