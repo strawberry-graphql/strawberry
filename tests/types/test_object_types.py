@@ -115,7 +115,7 @@ def test_union():
 
     @strawberry.type
     class WishfulThinking:
-        desire: EU
+        desire: EU  # type: ignore
 
     # TODO: Remove reference to ._type_definition with StrawberryObject
     field: StrawberryField = WishfulThinking._type_definition.fields[0]
