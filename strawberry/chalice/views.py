@@ -1,7 +1,6 @@
-import functools
 from http import HTTPStatus
 
-from chalice.app import CaseInsensitiveMapping, Request, Response
+from chalice.app import CaseInsensitiveMapping, Request, Response, BadRequestError
 from strawberry.chalice.graphiql import render_graphiql_page
 from strawberry.http import GraphQLHTTPResponse, process_result
 from strawberry.schema import BaseSchema
@@ -58,7 +57,7 @@ class GraphQLView:
         An errors response
         """
         return Response(
-            body={"errors": ["Provide a valid query / body to your call"]},
+            body={"errors": ["Provide a valid graphql query in the body of your request"]},
             status_code=HTTPStatus.OK,
         )
 
@@ -100,7 +99,7 @@ class GraphQLView:
 
         try:
             request_data = request.json_body
-        except ValueError:
+        except BadRequestError:
             return self.invalid_query_response()
 
         if request_data is None:
