@@ -78,13 +78,6 @@ def strawberry_field_hook(ctx: FunctionContext) -> Type:
     return AnyType(TypeOfAny.special_form)
 
 
-def private_type_analyze_callback(ctx: AnalyzeTypeContext) -> Type:
-    type_name = ctx.type.args[0]
-    type_ = ctx.api.analyze_type(type_name)
-
-    return type_
-
-
 def _get_named_type(name: str, api: SemanticAnalyzerPluginInterface):
     if "." in name:
         return api.named_type_or_none(name)  # type: ignore
@@ -638,9 +631,6 @@ class StrawberryPlugin(Plugin):
         if self._is_strawberry_lazy_type(fullname):
             return lazy_type_analyze_callback
 
-        if self._is_strawberry_private(fullname):
-            return private_type_analyze_callback
-
         return None
 
     def get_class_decorator_hook(
@@ -681,11 +671,6 @@ class StrawberryPlugin(Plugin):
 
     def _is_strawberry_lazy_type(self, fullname: str) -> bool:
         return fullname == "strawberry.lazy_type.LazyType"
-
-    def _is_strawberry_private(self, fullname: str) -> bool:
-        return fullname == "strawberry.private.Private" or fullname.endswith(
-            "strawberry.Private"
-        )
 
     def _is_strawberry_decorator(self, fullname: str) -> bool:
         if any(
