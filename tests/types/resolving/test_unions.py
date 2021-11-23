@@ -1,3 +1,4 @@
+import sys
 from dataclasses import dataclass
 from typing import Generic, TypeVar, Union
 
@@ -25,7 +26,33 @@ def test_python_union():
     assert resolved.types == (User, Error)
 
     assert resolved == StrawberryUnion(
-        name="UserError",
+        name=None,
+        type_annotations=(StrawberryAnnotation(User), StrawberryAnnotation(Error)),
+    )
+    assert resolved == Union[User, Error]
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 10),
+    reason="short syntax for union is only available on python 3.10+",
+)
+def test_python_union_short_syntax():
+    @strawberry.type
+    class User:
+        name: str
+
+    @strawberry.type
+    class Error:
+        name: str
+
+    annotation = StrawberryAnnotation(User | Error)
+    resolved = annotation.resolve()
+
+    assert isinstance(resolved, StrawberryUnion)
+    assert resolved.types == (User, Error)
+
+    assert resolved == StrawberryUnion(
+        name=None,
         type_annotations=(StrawberryAnnotation(User), StrawberryAnnotation(Error)),
     )
     assert resolved == Union[User, Error]
@@ -67,7 +94,7 @@ def test_named_union():
 
     strawberry_union = Result
     assert isinstance(strawberry_union, StrawberryUnion)
-    assert strawberry_union.name == "Result"
+    assert strawberry_union.graphql_name == "Result"
     assert strawberry_union.types == (A, B)
 
 
@@ -86,11 +113,10 @@ def test_union_with_generic():
 
     strawberry_union = Result
     assert isinstance(strawberry_union, StrawberryUnion)
-    assert strawberry_union.name == "Result"
+    assert strawberry_union.graphql_name == "Result"
     assert strawberry_union.types[0] == Error
 
     assert strawberry_union.types[1]._type_definition.is_generic is False
-    assert strawberry_union.types[1]._type_definition.name == "StrEdge"
 
 
 def test_cannot_use_union_directly():
@@ -115,7 +141,7 @@ def test_error_with_empty_type_list():
 
 def test_error_with_scalar_types():
     with pytest.raises(
-        InvalidUnionType, match="Scalar type `int` cannot be used in a GraphQL Union"
+        InvalidUnionType, match="Type `int` cannot be used in a GraphQL Union"
     ):
         strawberry.union("Result", (int,))
 
@@ -126,6 +152,6 @@ def test_error_with_non_strawberry_type():
         a: int
 
     with pytest.raises(
-        InvalidUnionType, match="Union type `A` is not a Strawberry type"
+        InvalidUnionType, match="Type `A` cannot be used in a GraphQL Union"
     ):
         strawberry.union("Result", (A,))

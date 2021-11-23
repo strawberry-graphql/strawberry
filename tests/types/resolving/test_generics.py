@@ -1,7 +1,9 @@
+from enum import Enum
 from typing import Generic, List, Optional, TypeVar, Union
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
+from strawberry.enum import EnumDefinition
 from strawberry.field import StrawberryField
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryTypeVar
 from strawberry.types.types import TypeDefinition
@@ -80,3 +82,29 @@ def test_generic_unions():
     assert resolved.is_generic
 
     assert resolved == Union[S, T]
+
+
+def test_generic_with_enums():
+    T = TypeVar("T")
+
+    @strawberry.enum
+    class VehicleMake(Enum):
+        FORD = "ford"
+        TOYOTA = "toyota"
+        HONDA = "honda"
+
+    @strawberry.type
+    class GenericForEnum(Generic[T]):
+        generic_slot: T
+
+    annotation = StrawberryAnnotation(GenericForEnum[VehicleMake])
+    resolved = annotation.resolve()
+
+    # TODO: Simplify with StrawberryObject
+    assert isinstance(resolved, type)
+    assert hasattr(resolved, "_type_definition")
+    assert isinstance(resolved._type_definition, TypeDefinition)
+
+    generic_slot_field: StrawberryField = resolved._type_definition.fields[0]
+    assert isinstance(generic_slot_field.type, EnumDefinition)
+    assert generic_slot_field.type is VehicleMake._enum_definition

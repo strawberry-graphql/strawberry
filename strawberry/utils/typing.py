@@ -1,6 +1,16 @@
-import typing
+import sys
 from collections.abc import AsyncGenerator
-from typing import Type, TypeVar
+from typing import _GenericAlias  # type: ignore
+from typing import (  # type: ignore
+    Any,
+    Callable,
+    ClassVar,
+    Generic,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
 
 def is_list(annotation: Type) -> bool:
@@ -14,9 +24,20 @@ def is_list(annotation: Type) -> bool:
 def is_union(annotation: Type) -> bool:
     """Returns True if annotation is a Union"""
 
+    # this check is needed because unions declared with the new syntax `A | B`
+    # don't have a `__origin__` property on them, but they are instances of
+    # `UnionType`, which is only available in Python 3.10+
+    if sys.version_info >= (3, 10):
+        from types import UnionType  # type: ignore
+
+        if isinstance(annotation, UnionType):
+            return True
+
+    # unions declared as Union[A, B] fall through to this check, even on python 3.10+
+
     annotation_origin = getattr(annotation, "__origin__", None)
 
-    return annotation_origin == typing.Union
+    return annotation_origin == Union
 
 
 def is_optional(annotation: Type) -> bool:
@@ -52,16 +73,16 @@ def get_list_annotation(annotation: Type) -> Type:
 
 
 def is_concrete_generic(annotation: type) -> bool:
-    ignored_generics = (list, tuple, typing.Union, typing.ClassVar, AsyncGenerator)
+    ignored_generics = (list, tuple, Union, ClassVar, AsyncGenerator)
     return (
-        isinstance(annotation, typing._GenericAlias)  # type:ignore
+        isinstance(annotation, _GenericAlias)  # type:ignore
         and annotation.__origin__ not in ignored_generics
     )
 
 
 def is_generic_subclass(annotation: type) -> bool:
     return isinstance(annotation, type) and issubclass(
-        annotation, typing.Generic  # type:ignore
+        annotation, Generic  # type:ignore
     )
 
 
@@ -84,11 +105,24 @@ def is_type_var(annotation: Type) -> bool:
 
 def get_parameters(annotation: Type):
     if (
-        isinstance(annotation, typing._GenericAlias)  # type:ignore
+        isinstance(annotation, _GenericAlias)  # type:ignore
         or isinstance(annotation, type)
-        and issubclass(annotation, typing.Generic)  # type:ignore
-        and annotation is not typing.Generic
+        and issubclass(annotation, Generic)  # type:ignore
+        and annotation is not Generic
     ):
         return annotation.__parameters__
     else:
         return ()  # pragma: no cover
+
+
+_T = TypeVar("_T")
+
+
+def __dataclass_transform__(
+    *,
+    eq_default: bool = True,
+    order_default: bool = False,
+    kw_only_default: bool = False,
+    field_descriptors: Tuple[Union[type, Callable[..., Any]], ...] = (()),
+) -> Callable[[_T], _T]:
+    return lambda a: a

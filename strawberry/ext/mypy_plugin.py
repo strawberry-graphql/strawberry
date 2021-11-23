@@ -92,7 +92,7 @@ def _get_named_type(name: str, api: SemanticAnalyzerPluginInterface):
     return api.named_type(name)
 
 
-def _get_type_for_expr(expr: Expression, api: SemanticAnalyzerPluginInterface):
+def _get_type_for_expr(expr: Expression, api: SemanticAnalyzerPluginInterface) -> Type:
     if isinstance(expr, NameExpr):
         # guarding agains invalid nodes, still have to figure out why this happens
         # but sometimes mypy crashes because the internal node of the named type
@@ -109,7 +109,7 @@ def _get_type_for_expr(expr: Expression, api: SemanticAnalyzerPluginInterface):
 
     if isinstance(expr, IndexExpr):
         type_ = _get_type_for_expr(expr.base, api)
-        type_.args = (_get_type_for_expr(expr.index, api),)
+        type_.args = (_get_type_for_expr(expr.index, api),)  # type: ignore
 
         return type_
 
@@ -129,6 +129,25 @@ def _get_type_for_expr(expr: Expression, api: SemanticAnalyzerPluginInterface):
         return expr.type
 
     raise ValueError(f"Unsupported expression {type(expr)}")
+
+
+def create_type_hook(ctx: DynamicClassDefContext) -> None:
+    # returning classes/type aliases is not supported yet by mypy
+    # see https://github.com/python/mypy/issues/5865
+
+    type_alias = TypeAlias(
+        AnyType(TypeOfAny.from_error),
+        fullname=ctx.api.qualified_name(ctx.name),
+        line=ctx.call.line,
+        column=ctx.call.column,
+    )
+
+    ctx.api.add_symbol_table_node(
+        ctx.name,
+        SymbolTableNode(GDEF, type_alias, plugin_generated=True),
+    )
+
+    return
 
 
 def union_hook(ctx: DynamicClassDefContext) -> None:
@@ -197,22 +216,22 @@ def enum_hook(ctx: DynamicClassDefContext) -> None:
             )
             return
 
+    enum_type: Optional[Type]
+
     try:
         enum_type = _get_type_for_expr(first_argument, ctx.api)
-
-        type_alias = TypeAlias(
-            enum_type,
-            fullname=ctx.api.qualified_name(ctx.name),
-            line=ctx.call.line,
-            column=ctx.call.column,
-        )
     except InvalidNodeTypeException:
-        type_alias = TypeAlias(
-            AnyType(TypeOfAny.from_error),
-            fullname=ctx.api.qualified_name(ctx.name),
-            line=ctx.call.line,
-            column=ctx.call.column,
-        )
+        enum_type = None
+
+    if not enum_type:
+        enum_type = AnyType(TypeOfAny.from_error)
+
+    type_alias = TypeAlias(
+        enum_type,
+        fullname=ctx.api.qualified_name(ctx.name),
+        line=ctx.call.line,
+        column=ctx.call.column,
+    )
 
     ctx.api.add_symbol_table_node(
         ctx.name, SymbolTableNode(GDEF, type_alias, plugin_generated=False)
@@ -234,13 +253,13 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext):
 
 def is_dataclasses_field_or_strawberry_field(expr: Expression) -> bool:
     if isinstance(expr, CallExpr):
-        if isinstance(expr.callee, RefExpr):
-            if expr.callee.fullname in (
-                "dataclasses.field",
-                "strawberry.field.field",
-                "strawberry.federation.field",
-            ):
-                return True
+        if isinstance(expr.callee, RefExpr) and expr.callee.fullname in (
+            "dataclasses.field",
+            "strawberry.field.field",
+            "strawberry.federation.field",
+            "strawberry.federation.field.field",
+        ):
+            return True
 
         if isinstance(expr.callee, MemberExpr) and isinstance(
             expr.callee.expr, NameExpr
@@ -602,6 +621,9 @@ class StrawberryPlugin(Plugin):
         if self._is_strawberry_enum(fullname):
             return enum_hook
 
+        if self._is_strawberry_create_type(fullname):
+            return create_type_hook
+
         return None
 
     def get_function_hook(
@@ -671,6 +693,8 @@ class StrawberryPlugin(Plugin):
             for strawberry_decorator in {
                 "strawberry.object_type.type",
                 "strawberry.federation.type",
+                "strawberry.federation.object_type.type",
+                "strawberry.schema_directive.schema_directive",
                 "strawberry.object_type.input",
                 "strawberry.object_type.interface",
             }
@@ -688,7 +712,19 @@ class StrawberryPlugin(Plugin):
                 "strawberry.federation.type",
                 "strawberry.input",
                 "strawberry.interface",
+                "strawberry.schema_directive",
             }
+        )
+
+    def _is_strawberry_create_type(self, fullname: str) -> bool:
+        # using endswith(.create_type) is not ideal as there might be
+        # other function called like that, but it's the best we can do
+        # when follow-imports is set to "skip". Hopefully in the future
+        # we can remove our custom hook for create type
+
+        return (
+            fullname == "strawberry.tools.create_type.create_type"
+            or fullname.endswith(".create_type")
         )
 
     def _is_strawberry_pydantic_decorator(self, fullname: str) -> bool:

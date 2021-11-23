@@ -1,6 +1,9 @@
 import builtins
 import dataclasses
+import inspect
+import sys
 from typing import (
+    TYPE_CHECKING,
     Any,
     Awaitable,
     Callable,
@@ -8,26 +11,36 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Sequence,
     Type,
     TypeVar,
     Union,
+    overload,
 )
+
+from cached_property import cached_property  # type: ignore
+from typing_extensions import Literal
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import UNSET, StrawberryArgument
+from strawberry.exceptions import InvalidDefaultFactoryError, InvalidFieldArgument
+from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.type import StrawberryType
 from strawberry.types.info import Info
-from strawberry.utils.mixins import GraphQLNameMixin
+from strawberry.union import StrawberryUnion
 
 from .permission import BasePermission
 from .types.fields.resolver import StrawberryResolver
-from .types.types import FederationFieldParams, TypeDefinition
+
+
+if TYPE_CHECKING:
+    from .object_type import TypeDefinition
 
 
 _RESOLVER_TYPE = Union[StrawberryResolver, Callable]
 
 
-class StrawberryField(dataclasses.Field, GraphQLNameMixin):
+class StrawberryField(dataclasses.Field):
     python_name: str
 
     def __init__(
@@ -37,18 +50,22 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
         type_annotation: Optional[StrawberryAnnotation] = None,
         origin: Optional[Union[Type, Callable]] = None,
         is_subscription: bool = False,
-        federation: FederationFieldParams = None,
         description: Optional[str] = None,
         base_resolver: Optional[StrawberryResolver] = None,
         permission_classes: List[Type[BasePermission]] = (),  # type: ignore
         default: object = UNSET,
         default_factory: Union[Callable[[], Any], object] = UNSET,
         deprecation_reason: Optional[str] = None,
+        directives: Sequence[StrawberrySchemaDirective] = (),
     ):
-        federation = federation or FederationFieldParams()
-
         # basic fields are fields with no provided resolver
         is_basic_field = not base_resolver
+
+        kwargs: Dict[str, Any] = {}
+
+        # kw_only was added to python 3.10 and it is required
+        if sys.version_info >= (3, 10):
+            kwargs["kw_only"] = False
 
         super().__init__(  # type: ignore
             default=(default if default is not UNSET else dataclasses.MISSING),
@@ -64,6 +81,7 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
             compare=is_basic_field,
             hash=None,
             metadata={},
+            **kwargs,
         )
 
         self.graphql_name = graphql_name
@@ -84,11 +102,16 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
         # `dataclasses.MISSING` to represent an "undefined" value and
         # `.default_value` uses `UNSET`
         self.default_value = default
+        if callable(default_factory):
+            try:
+                self.default_value = default_factory()
+            except TypeError as exc:
+                raise InvalidDefaultFactoryError() from exc
 
         self.is_subscription = is_subscription
 
-        self.federation: FederationFieldParams = federation
         self.permission_classes: List[Type[BasePermission]] = list(permission_classes)
+        self.directives = directives
 
         self.deprecation_reason = deprecation_reason
 
@@ -98,6 +121,23 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
         # Allow for StrawberryResolvers or bare functions to be provided
         if not isinstance(resolver, StrawberryResolver):
             resolver = StrawberryResolver(resolver)
+
+        for argument in resolver.arguments:
+            if isinstance(argument.type_annotation.annotation, str):
+                continue
+            elif isinstance(argument.type, StrawberryUnion):
+                raise InvalidFieldArgument(
+                    self.python_name,
+                    argument.python_name,
+                    "Union",
+                )
+            elif getattr(argument.type, "_type_definition", False):
+                if argument.type._type_definition.is_interface:
+                    raise InvalidFieldArgument(
+                        self.python_name,
+                        argument.python_name,
+                        "Interface",
+                    )
 
         self.base_resolver = resolver
 
@@ -225,7 +265,6 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
             type_annotation=StrawberryAnnotation(new_type),
             origin=self.origin,
             is_subscription=self.is_subscription,
-            federation=self.federation,
             description=self.description,
             base_resolver=new_resolver,
             permission_classes=self.permission_classes,
@@ -248,19 +287,90 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
 
         return getattr(source, self.python_name)
 
+    @property
+    def _has_async_permission_classes(self) -> bool:
+        for permission_class in self.permission_classes:
+            if inspect.iscoroutinefunction(permission_class.has_permission):
+                return True
+        return False
 
+    @property
+    def _has_async_base_resolver(self) -> bool:
+        return self.base_resolver is not None and self.base_resolver.is_async
+
+    @cached_property
+    def is_async(self) -> bool:
+        return self._has_async_permission_classes or self._has_async_base_resolver
+
+
+T = TypeVar("T")
+
+
+@overload
 def field(
-    resolver: Optional[_RESOLVER_TYPE] = None,
+    *,
+    resolver: Callable[[], T],
+    name: Optional[str] = None,
+    is_subscription: bool = False,
+    description: Optional[str] = None,
+    init: Literal[False] = False,
+    permission_classes: Optional[List[Type[BasePermission]]] = None,
+    deprecation_reason: Optional[str] = None,
+    default: Any = UNSET,
+    default_factory: Union[Callable, object] = UNSET,
+    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+) -> T:
+    ...
+
+
+@overload
+def field(
+    *,
+    name: Optional[str] = None,
+    is_subscription: bool = False,
+    description: Optional[str] = None,
+    init: Literal[True] = True,
+    permission_classes: Optional[List[Type[BasePermission]]] = None,
+    deprecation_reason: Optional[str] = None,
+    default: Any = UNSET,
+    default_factory: Union[Callable, object] = UNSET,
+    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+) -> Any:
+    ...
+
+
+@overload
+def field(
+    resolver: _RESOLVER_TYPE,
     *,
     name: Optional[str] = None,
     is_subscription: bool = False,
     description: Optional[str] = None,
     permission_classes: Optional[List[Type[BasePermission]]] = None,
-    federation: Optional[FederationFieldParams] = None,
     deprecation_reason: Optional[str] = None,
     default: Any = UNSET,
     default_factory: Union[Callable, object] = UNSET,
+    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
 ) -> StrawberryField:
+    ...
+
+
+def field(
+    resolver=None,
+    *,
+    name=None,
+    is_subscription=False,
+    description=None,
+    permission_classes=None,
+    deprecation_reason=None,
+    default=UNSET,
+    default_factory=UNSET,
+    directives=(),
+    # This init parameter is used by PyRight to determine whether this field
+    # is added in the constructor or not. It is not used to change
+    # any behavior at the moment.
+    init=None,
+) -> Any:
     """Annotates a method or property as a GraphQL field.
 
     This is normally used inside a type declaration:
@@ -283,15 +393,16 @@ def field(
         description=description,
         is_subscription=is_subscription,
         permission_classes=permission_classes or [],
-        federation=federation or FederationFieldParams(),
         deprecation_reason=deprecation_reason,
         default=default,
         default_factory=default_factory,
+        directives=directives,
     )
 
     if resolver:
+        assert init is not True, "Can't set init as True when passing a resolver."
         return field_(resolver)
     return field_
 
 
-__all__ = ["FederationFieldParams", "StrawberryField", "field"]
+__all__ = ["StrawberryField", "field"]

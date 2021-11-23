@@ -53,13 +53,14 @@ jobs:
         if: steps.check_release.outputs.release == ''
         env:
           GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
+          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
         run: |
           git remote set-url origin https://${{ secrets.BOT_TOKEN }}@github.com/${{ github.repository }}
           autopub prepare
           poetry build
           autopub commit
           autopub githubrelease
-          poetry publish --username __token__ --password ${{ secrets.PYPI_TOKEN }}
+          poetry publish --username __token__
       - name: Get project version
         id: get-version
         shell: python
@@ -78,12 +79,10 @@ jobs:
       contributor-name: ${{ steps.get-info.outputs.contributor-name }}
 
     steps:
-      - uses: actions/checkout@v1
       - name: Get PR info
         id: get-info
-        uses: ./.github/get-pr-info-action
-        env:
-          ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: strawberry-graphql/get-pr-info-action@v4
+
 
   read-tweet-md:
     name: Read TWEET.md
@@ -100,7 +99,7 @@ jobs:
     - uses: actions/checkout@v1
     - name: Extract tweet message and changelog
       id: extract
-      uses: ./.github/read-tweet-action
+      uses: strawberry-graphql/tweet-actions/read-tweet@v1
       with:
         changelog: ${{ needs.release-file-check.outputs.changelog }}
         version: ${{ needs.release.outputs.version }}
@@ -141,7 +140,7 @@ jobs:
         with:
           python-version: '3.9'
       - name: Install dependencies
-        run: pip install tweepy
+        run: pip install tweepy==4.0.0
       - name: Send tweet
         shell: python
         run: |
@@ -162,7 +161,7 @@ jobs:
 
           tweet = base64.b64decode(os.environ["TWEET"]).decode("utf-8")
 
-          api.update_with_media("screenshot.png", status=tweet)
+          api.update_status_with_media(filename="screenshot.png", status=tweet)
         env:
           TWEET: ${{ needs.read-tweet-md.outputs.tweet }}
           TWITTER_CONSUMER_KEY: ${{ secrets.TWITTER_CONSUMER_KEY }}
@@ -178,10 +177,15 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+      with:
+        persist-credentials: false
     - name: Remove TWEET.md and commit
+      env:
+        GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
       run: |
         git config --global user.name 'Strawberry GraphQL Bot'
         git config --global user.email 'bot@strawberry.rocks'
+        git remote set-url origin https://${{ secrets.BOT_TOKEN }}@github.com/${{ github.repository }}
         git pull
         git rm TWEET.md
         git commit -m "Remove TWEET.md"

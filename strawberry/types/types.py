@@ -3,28 +3,22 @@ from __future__ import annotations
 import dataclasses
 from typing import (
     TYPE_CHECKING,
-    Iterable,
     List,
     Mapping,
     Optional,
+    Sequence,
     Type,
     TypeVar,
     Union,
 )
 
 from strawberry.type import StrawberryType, StrawberryTypeVar
-from strawberry.utils.str_converters import capitalize_first
 from strawberry.utils.typing import is_generic as is_type_generic
 
 
 if TYPE_CHECKING:
     from strawberry.field import StrawberryField
-
-
-@dataclasses.dataclass
-class FederationTypeParams:
-    keys: List[str] = dataclasses.field(default_factory=list)
-    extend: bool = False
+    from strawberry.schema_directive import StrawberrySchemaDirective
 
 
 @dataclasses.dataclass(eq=False)
@@ -34,8 +28,9 @@ class TypeDefinition(StrawberryType):
     is_interface: bool
     origin: Type
     description: Optional[str]
-    federation: FederationTypeParams
     interfaces: List["TypeDefinition"]
+    extend: bool
+    directives: Optional[Sequence[StrawberrySchemaDirective]]
 
     _fields: List["StrawberryField"]
 
@@ -66,8 +61,6 @@ class TypeDefinition(StrawberryType):
     def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
     ) -> type:
-        name = self.get_name_from_types(type_var_map.values())
-
         fields = []
         for field in self.fields:
             # TODO: Logic unnecessary with StrawberryObject
@@ -84,13 +77,14 @@ class TypeDefinition(StrawberryType):
             fields.append(field)
 
         new_type_definition = TypeDefinition(
-            name=name,
+            name=self.name,
             is_input=self.is_input,
             origin=self.origin,
             is_interface=self.is_interface,
-            federation=self.federation,
+            directives=self.directives,
             interfaces=self.interfaces,
             description=self.description,
+            extend=self.extend,
             _fields=fields,
             concrete_of=self,
             type_var_map=type_var_map,
@@ -110,25 +104,6 @@ class TypeDefinition(StrawberryType):
         return next(
             (field for field in self.fields if field.python_name == python_name), None
         )
-
-    def get_name_from_types(self, types: Iterable[Union[StrawberryType, type]]) -> str:
-        from strawberry.union import StrawberryUnion
-
-        names: List[str] = []
-
-        for type_ in types:
-            if isinstance(type_, StrawberryUnion):
-                name = type_.name
-            elif hasattr(type_, "_type_definition"):
-                field_type = type_._type_definition  # type: ignore
-
-                name = capitalize_first(field_type.name)
-            else:
-                name = capitalize_first(type_.__name__)  # type: ignore
-
-            names.append(name)
-
-        return "".join(names) + self.name
 
     @property
     def fields(self) -> List["StrawberryField"]:
@@ -182,10 +157,3 @@ class TypeDefinition(StrawberryType):
 
         # All field mappings succeeded. This is a match
         return True
-
-
-@dataclasses.dataclass
-class FederationFieldParams:
-    provides: List[str] = dataclasses.field(default_factory=list)
-    requires: List[str] = dataclasses.field(default_factory=list)
-    external: bool = False

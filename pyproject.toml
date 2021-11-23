@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "strawberry-graphql"
 packages = [ { include = "strawberry" } ]
-version = "0.71.3"
+version = "0.87.2"
 description = "A library for creating GraphQL APIs"
 authors = ["Patrick Arminio <patrick.arminio@gmail.com>"]
 license = "MIT"
@@ -13,45 +13,53 @@ repository = "https://github.com/strawberry-graphql/strawberry"
 documentation = "https://strawberry.rocks/"
 
 classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: Developers",
     "Topic :: Software Development :: Libraries",
-    "Topic :: Software Development :: Libraries :: Python Modules"
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "License :: OSI Approved :: MIT License",
 ]
 include = ["strawberry/py.typed"]
+
+[build-system]
+requires = ["poetry>=0.12"]
+build-backend = "poetry.masonry.api"
 
 [tool.poetry.dependencies]
 python = "^3.7"
 starlette = {version = ">=0.13.6,<0.17.0", optional = true}
-click = {version = "^7.0", optional = true}
-hupper = {version = "^1.5", optional = true}
+click = {version = ">=7.0,<9.0", optional = true}
 pygments = "^2.3"
-uvicorn = {version = ">=0.11.6,<0.15.0", optional = true}
+uvicorn = {version = ">=0.11.6,<0.16.0", optional = true}
 django = {version = ">=2,<4", optional = true}
-graphql-core = {version = "^3.1.0"}
+graphql-core = "~3.1.0"
 asgiref = {version = "^3.2", optional = true}
 flask = {version = "^1.1", optional = true}
+typing_extensions = ">=3.7.4,<5.0.0"
+opentelemetry-api = {version = "<2", optional = true}
+opentelemetry-sdk = {version = "<2", optional = true}
 chalice = {version = "^1.22", optional = true}
-typing_extensions = "^3.7.4"
-opentelemetry-api = {version = "^0.17b0", optional = true}
-opentelemetry-sdk = {version = "^0.17b0", optional = true}
 python-dateutil = "^2.7.0"
 cached-property = "^1.5.2"
 pydantic = {version = "<2", optional = true}
 python-multipart = "^0.0.5"
-sanic = {version = "^20.12.2", optional = true}
+sanic = {version = ">=20.12.2,<22.0.0", optional = true}
 aiohttp = {version = "^3.7.4.post0", optional = true}
+fastapi = {version = ">=0.65.2", optional = true}
+sentinel = "^0.3.0"
 
 [tool.poetry.dev-dependencies]
 pytest = "^6.2"
 pytest-emoji = "^0.2.0"
 flake8 = "^3.9"
-black = {version = "^21.7b0", allow-prereleases = true}
+black = {version = "^21.11b1", allow-prereleases = true}
 isort = "^5.9.2"
-pytest-asyncio = "^0.15.1"
-pytest-cov = "^2.12"
+pytest-asyncio = "^0.16.0"
+pytest-cov = "^3.0"
 mypy = "^0.910"
-flake8-bugbear = "^21.4"
-flake8-eradicate = "^1.1.0"
-pytest-mypy-plugins = "^1.7"
+flake8-bugbear = "^21.9"
+flake8-eradicate = "^1.2.0"
+pytest-mypy-plugins = "^1.9"
 pytest-mock = "^3.6"
 pytest-django = {version = "^4.4"}
 asgiref = "^3.2"
@@ -59,42 +67,45 @@ pytest-flask = {version = "^1.2.0"}
 flask = {version = "^1.1"}
 chalice = {version = "^1.22"}
 requests = "^2.26.0"
-pre-commit = "^2.14.0"
+pre-commit = "^2.15.0"
 pytest-benchmark = "^3.4.1"
 freezegun = "^1.1.0"
-opentelemetry-api = "^0.17b0"
-opentelemetry-sdk = "^0.17b0"
-flake8-isort = "^4.0.0"
+opentelemetry-api = "<2"
+opentelemetry-sdk = "<2"
+flake8-isort = "^4.1.1"
 flake8-black = "^0.2.1"
 django = {version = ">=2,<4", optional = false}
 pydantic = {version = "<2", optional = false}
 email-validator = {version = "^1.1.3", optional = false}
 starlette = ">=0.13.6,<0.17.0"
-uvicorn = ">=0.11.6,<0.15.0"
-hupper = "^1.5"
-sanic = "^20.12.2"
+uvicorn = ">=0.11.6,<0.16.0"
+sanic = ">=20.12.2,<22.0.0"
 aiohttp = "^3.7.4.post0"
 pytest-aiohttp = "^0.3.0"
-types-ujson = "^0.1.1"
+types-ujson = "^4.2.0"
 types-typed-ast = "^1.4.4"
-types-toml = "^0.1.5"
-types-setuptools = "^57.0.2"
-types-requests = "^2.25.6"
-types-python-dateutil = "^0.1.6"
-types-freezegun = "^1.1.0"
-types-chardet = "^0.1.5"
-types-certifi = "^0.1.4"
-types-aiofiles = "^0.1.9"
+types-toml = "^0.10.0"
+types-setuptools = "^57.4.2"
+types-requests = "^2.26.0"
+types-python-dateutil = "^2.8.2"
+types-freezegun = "^1.1.3"
+types-chardet = "^4.0.0"
+types-certifi = "^2021.10.8"
+types-aiofiles = "^0.7.0"
+sanic-testing = "^0.7.0"
+fastapi = {version = ">=0.65.0", optional = false}
+pytest-xprocess = "^0.18.1"
 
 [tool.poetry.extras]
 aiohttp = ["aiohttp", "pytest-aiohttp"]
 asgi = ["starlette"]
-debug-server = ["starlette", "uvicorn", "hupper"]
+debug-server = ["starlette", "uvicorn"]
 django = ["django", "pytest-django", "asgiref"]
 flask = ["flask", "pytest-flask"]
 opentelemetry = ["opentelemetry-api", "opentelemetry-sdk"]
 pydantic = ["pydantic"]
 sanic = ["sanic"]
+fastapi = ["fastapi"]
 chalice = ["chalice"]
 
 [tool.poetry.scripts]
@@ -117,12 +128,18 @@ sections = ["FUTURE", "STDLIB", "PYTEST", "THIRDPARTY", "DJANGO", "GRAPHQL", "FI
 addopts = "-s --emoji --mypy-ini-file=mypy_tests.ini --benchmark-disable"
 DJANGO_SETTINGS_MODULE = "tests.django.django_settings"
 testpaths = ["tests/"]
-[build-system]
-requires = ["poetry>=0.12"]
-build-backend = "poetry.masonry.api"
+markers = ["django"]
 
 [tool.autopub]
 git-username = "Botberry"
 git-email = "bot@strawberry.rocks"
 project-name = "🍓"
 append-github-contributor = true
+
+[tool.pyright]
+include = ["strawberry"]
+exclude = ["**/__pycache__",]
+reportMissingImports = true
+reportMissingTypeStubs = false
+pythonVersion = "3.7"
+stubPath = ""

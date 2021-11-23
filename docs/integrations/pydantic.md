@@ -33,20 +33,33 @@ import strawberry
 
 from .models import User
 
-@strawberry.experimental.pydantic.type(model=User, fields=[
-    'id',
-    'name',
-    'friends'
-])
-class User:
-    pass
+@strawberry.experimental.pydantic.type(model=User)
+class UserType:
+    id: strawberry.auto
+    name: strawberry.auto
+    friends: strawberry.auto
 ```
 
 The `strawberry.experimental.pydantic.type` decorator accepts a Pydantic model
-and a list of fields that we want to expose on our GraphQL API.
+and wraps a class that contains dataclass style fields with `strawberry.auto` as the type
+annotation. The fields marked with `strawberry.auto` will inherit their types from the
+Pydantic model.
 
-> **Note** specifying the list of field is required to prevent accidentally
-> exposing fields that weren't meant to be exposed on a API
+If you want to include all of the fields from your Pydantic model, you can
+instead pass `all_fields=True` to the decorator.
+
+-> **Note** Care should be taken to avoid accidentally exposing fields that
+-> weren't meant to be exposed on an API using this feature.
+
+```python
+import strawberry
+
+from .models import User
+
+@strawberry.experimental.pydantic.type(model=User, all_fields=True)
+class UserType:
+    pass
+```
 
 ## Input types
 
@@ -58,13 +71,47 @@ import strawberry
 
 from .models import User
 
-@strawberry.experimental.pydantic.input(model=User, fields=[
-    'id',
-    'name',
-    'friends'
-])
+@strawberry.experimental.pydantic.input(model=User)
 class UserInput:
-    pass
+    id: strawberry.auto
+    name: strawberry.auto
+    friends: strawberry.auto
+```
+
+## Interface types
+
+Interface types are similar to normal types; we can create one by using the
+`strawberry.experimental.pydantic.interface` decorator:
+
+```python
+import strawberry
+from pydantic import BaseModel
+from typing import List
+
+# pydantic types
+class User(BaseModel):
+    id: int
+    name: str
+
+class NormalUser(User):
+    friends: List[int] = []
+
+class AdminUser(User):
+    role: int
+
+# strawberry types
+@strawberry.experimental.pydantic.interface(model=User)
+class UserType:
+    id: strawberry.auto
+    name: strawberry.auto
+
+@strawberry.experimental.pydantic.type(model=NormalUser)
+class NormalUserType(UserType):  # note the base class
+    friends: strawberry.auto
+
+@strawberry.experimental.pydantic.type(model=AdminUser)
+class AdminUserType(UserType):
+    role: strawberry.auto
 ```
 
 ## Error Types
@@ -83,13 +130,11 @@ class User(BaseModel):
     signup_ts: Optional[datetime] = None
     friends: List[int] = []
 
-@strawberry.experimental.pydantic.error_type(model=User, fields=[
-    'id',
-    'name',
-    'friends'
-])
+@strawberry.experimental.pydantic.error_type(model=User)
 class UserError:
-    pass
+    id: strawberry.auto
+    name: strawberry.auto
+    friends: strawberry.auto
 
 ---
 
@@ -117,11 +162,10 @@ class User(BaseModel):
     id: int
     name: str
 
-@strawberry.experimental.pydantic.type(model=User, fields=[
-    'id',
-    'name',
-])
+@strawberry.experimental.pydantic.type(model=User)
 class User:
+    id: strawberry.auto
+    name: strawberry.auto
     age: int
 
 ---
@@ -153,12 +197,10 @@ class User(BaseModel):
     name: str
 
 
-@strawberry.experimental.pydantic.type(model=User, fields=[
-    'id',
-    'name',
-])
+@strawberry.experimental.pydantic.type(model=User)
 class UserType:
-    pass
+    id: strawberry.auto
+    name: strawberry.auto
 
 instance = User(id='123', name='Jake')
 
@@ -180,11 +222,10 @@ class User(BaseModel):
     name: str
 
 
-@strawberry.experimental.pydantic.type(model=User, fields=[
-    'id',
-    'name',
-])
+@strawberry.experimental.pydantic.type(model=User)
 class UserType:
+    id: strawberry.auto
+    name: strawberry.auto
     age: int
 
 instance = User(id='123', name='Jake')
@@ -213,12 +254,10 @@ class User(BaseModel):
     name: str
 
 
-@strawberry.experimental.pydantic.input(model=User, fields=[
-    'id',
-    'name',
-])
+@strawberry.experimental.pydantic.input(model=User)
 class UserInput:
-    pass
+    id: strawberry.auto
+    name: strawberry.auto
 
 input_data = UserInput(id='abc', name='Jake')
 
