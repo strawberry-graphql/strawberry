@@ -7,6 +7,8 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, cast
 from pydantic import BaseModel
 from pydantic.fields import ModelField
 
+from graphql import GraphQLResolveInfo
+
 import strawberry
 from strawberry.arguments import UNSET
 from strawberry.experimental.pydantic.conversion import (
@@ -149,8 +151,8 @@ def type(
 
         # Implicitly define `is_type_of` to support interfaces/unions that use
         # pydantic objects (not the corresponding strawberry type)
-        @classmethod
-        def is_type_of(cls, obj, _info) -> bool:
+        @classmethod  # type: ignore
+        def is_type_of(cls: Type, obj: Any, _info: GraphQLResolveInfo) -> bool:
             return isinstance(obj, (cls, model))
 
         cls = dataclasses.make_dataclass(
