@@ -14,7 +14,6 @@ class GraphQLView:
         self.graphiql = render_graphiql
 
     @staticmethod
-    @functools.lru_cache()
     def render_graphiql() -> str:
         """
         Returns a string containing the html for the graphiql webpage. It also caches the

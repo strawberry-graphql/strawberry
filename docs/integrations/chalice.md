@@ -49,6 +49,7 @@ def handle_graphql() -> Response:
     request: Request = app.current_request
     result = view.execute_request(request)
     return result
+
 ```
 
 And then run `chalice local` to start the localhost
@@ -57,7 +58,7 @@ And then run `chalice local` to start the localhost
 chalice local
 ```
 
-GraphiQL will be hosted on localhost:8000/graphql
+The GraphiQL interface can then be opened in your browser on http://localhost:8000/graphql
 
 ## Options
 
