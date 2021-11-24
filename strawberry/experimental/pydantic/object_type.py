@@ -3,10 +3,10 @@ import dataclasses
 import warnings
 from functools import partial
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, cast
-from typing_extensions import Literal
 
 from pydantic import BaseModel
 from pydantic.fields import ModelField
+from typing_extensions import Literal
 
 import strawberry
 from strawberry.arguments import UNSET
