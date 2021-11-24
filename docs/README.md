@@ -56,6 +56,7 @@
 - [FastAPI](./integrations/fastapi.md)
 - [Flask](./integrations/flask.md)
 - [Sanic](./integrations/sanic.md)
+- [Chalice](./integrations/chalice.md)
 - [Starlette](./integrations/starlette.md)
 - [Pydantic **experimental**](./integrations/pydantic.md)
 

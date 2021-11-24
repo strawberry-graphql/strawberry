@@ -38,6 +38,7 @@ flask = {version = "^1.1", optional = true}
 typing_extensions = ">=3.7.4,<5.0.0"
 opentelemetry-api = {version = "<2", optional = true}
 opentelemetry-sdk = {version = "<2", optional = true}
+chalice = {version = "^1.22", optional = true}
 python-dateutil = "^2.7.0"
 cached-property = "^1.5.2"
 pydantic = {version = "<2", optional = true}
@@ -64,6 +65,7 @@ pytest-django = {version = "^4.4"}
 asgiref = "^3.2"
 pytest-flask = {version = "^1.2.0"}
 flask = {version = "^1.1"}
+chalice = {version = "^1.22"}
 requests = "^2.26.0"
 pre-commit = "^2.15.0"
 pytest-benchmark = "^3.4.1"
@@ -104,6 +106,7 @@ opentelemetry = ["opentelemetry-api", "opentelemetry-sdk"]
 pydantic = ["pydantic"]
 sanic = ["sanic"]
 fastapi = ["fastapi"]
+chalice = ["chalice"]
 
 [tool.poetry.scripts]
 strawberry = "strawberry.cli:run"
