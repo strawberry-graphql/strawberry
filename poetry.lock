@@ -1312,7 +1312,7 @@ python-versions = "*"
 
 [[package]]
 name = "types-python-dateutil"
-version = "2.8.2"
+version = "2.8.3"
 description = "Typing stubs for python-dateutil"
 category = "dev"
 optional = false
@@ -1513,7 +1513,7 @@ sanic = ["sanic"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "cc9de6a6d77035793d730523a3a132637f3bbf05cb42fddaf319b2458eb314a7"
+content-hash = "9b6324ede8560137d6fd49f84d9c6b2ecb4b08885106c2eb282f412ae1fc3a5a"
 
 [metadata.files]
 aiofiles = [
@@ -2371,8 +2371,8 @@ types-freezegun = [
     {file = "types_freezegun-1.1.3-py3-none-any.whl", hash = "sha256:e072fd10fbc4dd7f28f33c094ccb36f9578e1e96f70b01f2ed3f214f0383e6e8"},
 ]
 types-python-dateutil = [
-    {file = "types-python-dateutil-2.8.2.tar.gz", hash = "sha256:84a1b09fae40d61c01f450ea87cd594201bbe8511a64fecbe433051b87fb582c"},
-    {file = "types_python_dateutil-2.8.2-py3-none-any.whl", hash = "sha256:74d7d3a79ff07e7921472cf252b7fe4ffda5dc35570b9d3c7c4908761e9f9b87"},
+    {file = "types-python-dateutil-2.8.3.tar.gz", hash = "sha256:d94e7c7ecd9f0e23b3a78087eae12c0d7aa4af9e067a8ea963ad03ed0abd1cb7"},
+    {file = "types_python_dateutil-2.8.3-py3-none-any.whl", hash = "sha256:42262d0b8f8ecb06cdc5c458956685eb3b27c74f170adf541d1cc5ee4ff68bdc"},
 ]
 types-requests = [
     {file = "types-requests-2.26.0.tar.gz", hash = "sha256:df5ec8c34b413a42ebb38e4f96bdeb68090b875bdfcc5138dc82989c95445883"},
