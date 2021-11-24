@@ -1,6 +1,17 @@
 CHANGELOG
 =========
 
+0.88.0 - 2021-11-24
+-------------------
+
+This release adds support for AWS Chalice. A framework for deploying serverless applications using AWS.
+
+A view for aws chalice has been added to the strawberry codebase.
+This view embedded in a chalice app allows anyone to get a GraphQL API working and hosted on AWS in minutes using a serverless architecture.
+
+Contributed by [Mark Sheehan](https://github.com/mcsheehan) [PR #923](https://github.com/strawberry-graphql/strawberry/pull/923/)
+
+
 0.87.3 - 2021-11-23
 -------------------
 
