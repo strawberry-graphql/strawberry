@@ -53,7 +53,7 @@ pytest = "^6.2"
 pytest-emoji = "^0.2.0"
 flake8 = "^4.0"
 black = {version = "^21.11b1", allow-prereleases = true}
-isort = "^5.9.2"
+isort = "^5.10.1"
 pytest-asyncio = "^0.16.0"
 pytest-cov = "^3.0"
 mypy = "^0.910"
