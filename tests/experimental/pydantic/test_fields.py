@@ -145,4 +145,4 @@ def test_literal_types():
     [field] = definition.fields
 
     assert field.python_name == "field"
-    assert field.type is Literal["field"]
+    assert field.type == Literal["field"]
