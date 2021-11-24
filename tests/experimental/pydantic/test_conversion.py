@@ -1,5 +1,6 @@
 from enum import Enum
 from typing import List, Optional, Union
+from typing_extensions import Literal
 
 import pydantic
 
@@ -650,3 +651,4 @@ def test_can_convert_input_types_to_pydantic_default_values():
 
     assert user.age == 1
     assert user.password is None
+
