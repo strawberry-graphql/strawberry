@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.89.0 - 2021-11-24
+-------------------
+
+This release changes how `strawberry.Private` is implemented to
+improve support for type checkers.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1437](https://github.com/strawberry-graphql/strawberry/pull/1437/)
+
+
 0.88.0 - 2021-11-24
 -------------------
 
