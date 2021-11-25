@@ -27,6 +27,7 @@ from .exceptions import MissingFieldsListError, UnregisteredTypeException
 def replace_pydantic_types(type_: Any):
     origin = getattr(type_, "__origin__", None)
     if origin is Literal:
+        # Literal does not have types in its __args__ so we return early
         return type_
     if hasattr(type_, "__args__"):
         new_type = type_.copy_with(
