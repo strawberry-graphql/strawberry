@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.89.1 - 2021-11-25
+-------------------
+
+This release fixes an issubclass test failing for `Literal`s in the experimental `pydantic` integration.
+
+Contributed by [Nina](https://github.com/nina-j) [PR #1445](https://github.com/strawberry-graphql/strawberry/pull/1445/)
+
+
 0.89.0 - 2021-11-24
 -------------------
 
