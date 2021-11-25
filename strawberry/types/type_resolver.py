@@ -113,7 +113,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
             # or the class where this field was defined, so we always have
             # the correct origin for determining field types when resolving
             # the types.
-            field.origin = field.origin or cls
+            field.origin = cls
 
             # Make sure types are StrawberryAnnotations
             if not isinstance(field.type_annotation, StrawberryAnnotation):
