@@ -180,17 +180,17 @@ def test_raises_error_when_missing_type():
 
 
 def test_raises_error_calling_uncallable_resolver():
-    @staticmethod
-    def static_func() -> int:
+    @classmethod
+    def class_func(cls) -> int:
         ...
 
-    # Note that static_func is a raw staticmethod object because it has not been bound
+    # Note that static_func is a raw classmethod object because it has not been bound
     # to a class at this point
-    resolver = StrawberryResolver(static_func)
+    resolver = StrawberryResolver(class_func)
 
     expected_error_message = (
         f"Attempted to call resolver {resolver} with uncallable function "
-        f"{static_func}"
+        f"{class_func}"
     )
 
     with pytest.raises(UncallableResolverError, match=expected_error_message):
