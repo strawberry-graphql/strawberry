@@ -1,7 +1,7 @@
 Release type: minor
 
 This release improves type checking support for `strawberry.union` and now allows
-to use unions without any type issues, like so:
+to use unions without any type issue, like so:
 
 ```python
 @strawberry.type
