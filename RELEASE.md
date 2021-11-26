@@ -1,6 +1,6 @@
 Release type: patch
 
-Allow using a staticmethods and classmethods as resolvers
+Allow using staticmethods and classmethods as resolvers
 
 ```python
 import strawberry
