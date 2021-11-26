@@ -77,11 +77,12 @@ jobs:
 
     outputs:
       contributor-name: ${{ steps.get-info.outputs.contributor-name }}
+      contributor-twitter-username: ${{ steps.get-info.outputs.contributor-twitter-username }}
 
     steps:
       - name: Get PR info
         id: get-info
-        uses: strawberry-graphql/get-pr-info-action@v4
+        uses: strawberry-graphql/get-pr-info-action@v6
 
 
   read-tweet-md:
@@ -99,11 +100,12 @@ jobs:
     - uses: actions/checkout@v1
     - name: Extract tweet message and changelog
       id: extract
-      uses: strawberry-graphql/tweet-actions/read-tweet@v1
+      uses: strawberry-graphql/tweet-actions/read-tweet@v4
       with:
         changelog: ${{ needs.release-file-check.outputs.changelog }}
         version: ${{ needs.release.outputs.version }}
         contributor_name: ${{ needs.get-contributor-name.outputs.contributor-name }}
+        contributor_twitter_username: ${{ needs.get-contributor-name.outputs.contributor-twitter-username }}
 
   generate-preview:
     name: Generate Preview

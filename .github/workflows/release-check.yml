@@ -17,11 +17,12 @@ jobs:
     outputs:
       contributor-name: ${{ steps.get-info.outputs.contributor-name }}
       contributor-username: ${{ steps.get-info.outputs.contributor-username }}
+      contributor-twitter-username: ${{ steps.get-info.outputs.contributor-twitter-username }}
 
     steps:
       - name: Get PR info
         id: get-info
-        uses: strawberry-graphql/get-pr-info-action@v4
+        uses: strawberry-graphql/get-pr-info-action@v6
 
   skip-if-bot:
     name: Set skip if PR is from a bot
@@ -89,11 +90,12 @@ jobs:
         ref: "refs/pull/${{ github.event.number }}/merge"
     - name: Extract tweet message and changelog
       id: extract
-      uses: strawberry-graphql/tweet-actions/read-tweet@v1
+      uses: strawberry-graphql/tweet-actions/read-tweet@v4
       with:
         changelog: ${{ needs.release-file-check.outputs.changelog }}
         version: "(next)"
         contributor_name: ${{ needs.get-contributor-info.outputs.contributor-name }}
+        contributor_twitter_username: ${{ needs.get-contributor-name.outputs.contributor-twitter-username }}
 
   validate-tweet:
     runs-on: ubuntu-latest
@@ -101,7 +103,7 @@ jobs:
     if: ${{ needs.read-tweet-md.outputs.tweet != '' }}
     steps:
       - name: Validate tweet
-        uses: strawberry-graphql/tweet-actions/validate-tweet@v3
+        uses: strawberry-graphql/tweet-actions/validate-tweet@v4
         with:
           tweet: ${{ needs.read-tweet-md.outputs.tweet }}
 
