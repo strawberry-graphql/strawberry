@@ -1,4 +1,3 @@
-import sys
 from dataclasses import dataclass
 from typing import Generic, TypeVar, Union
 
@@ -7,7 +6,6 @@ import pytest
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import InvalidUnionType
-from strawberry.type import StrawberryOptional
 from strawberry.union import StrawberryUnion, union
 
 
@@ -31,80 +29,6 @@ def test_python_union():
         type_annotations=(StrawberryAnnotation(User), StrawberryAnnotation(Error)),
     )
     assert resolved == Union[User, Error]
-
-
-@pytest.mark.skipif(
-    sys.version_info < (3, 10),
-    reason="short syntax for union is only available on python 3.10+",
-)
-def test_python_union_short_syntax():
-    @strawberry.type
-    class User:
-        name: str
-
-    @strawberry.type
-    class Error:
-        name: str
-
-    annotation = StrawberryAnnotation(User | Error)
-    resolved = annotation.resolve()
-
-    assert isinstance(resolved, StrawberryUnion)
-    assert resolved.types == (User, Error)
-
-    assert resolved == StrawberryUnion(
-        name=None,
-        type_annotations=(StrawberryAnnotation(User), StrawberryAnnotation(Error)),
-    )
-    assert resolved == Union[User, Error]
-
-
-@pytest.mark.skipif(
-    sys.version_info < (3, 10),
-    reason="short syntax for union is only available on python 3.10+",
-)
-def test_python_union_none():
-    @strawberry.type
-    class User:
-        name: str
-
-    annotation = StrawberryAnnotation(User | None)
-    resolved = annotation.resolve()
-
-    assert isinstance(resolved, StrawberryOptional)
-    assert resolved.of_type == User
-
-    assert resolved == StrawberryOptional(
-        of_type=User,
-    )
-    assert resolved == Union[User, None]
-
-
-@pytest.mark.skipif(
-    sys.version_info < (3, 10),
-    reason="short syntax for union is only available on python 3.10+",
-)
-def test_python_strawberry_union_and_none():
-    @strawberry.type
-    class User:
-        name: str
-
-    @strawberry.type
-    class Error:
-        name: str
-
-    UserOrError = strawberry.union("UserOrError", (User, Error))
-    annotation = StrawberryAnnotation(UserOrError | None)
-    resolved = annotation.resolve()
-
-    assert isinstance(resolved, StrawberryOptional)
-
-    assert resolved == StrawberryOptional(
-        of_type=StrawberryUnion(
-            name="UserOrError",
-            type_annotations=(StrawberryAnnotation(User), StrawberryAnnotation(Error)),
-        )
-    )
 
 
 def test_strawberry_union():
