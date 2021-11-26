@@ -142,11 +142,6 @@ def test_optional_info_and_root_params():
     @strawberry.type
     class Query:
         @strawberry.field
-        @staticmethod
-        def hi() -> str:
-            return "Hi"
-
-        @strawberry.field
         def hello(self) -> str:
             return "I'm a function resolver"
 
@@ -164,7 +159,6 @@ def test_optional_info_and_root_params():
     schema = strawberry.Schema(query=Query)
 
     query = """{
-        hi
         hello
         helloWithParams(x: "abc")
         usesSelf
@@ -173,7 +167,6 @@ def test_optional_info_and_root_params():
     result = schema.execute_sync(query, root_value=Query())
 
     assert not result.errors
-    assert result.data["hi"] == "Hi"
     assert result.data["hello"] == "I'm a function resolver"
     assert result.data["helloWithParams"] == "I'm abc"
     assert result.data["usesSelf"] == "I'm self"
