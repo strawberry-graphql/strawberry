@@ -185,7 +185,7 @@ def test_raises_error_calling_uncallable_resolver():
     def class_func(cls) -> int:
         ...
 
-    # Note that static_func is a raw classmethod object because it has not been bound
+    # Note that class_func is a raw classmethod object because it has not been bound
     # to a class at this point
     resolver = StrawberryResolver(class_func)
 
