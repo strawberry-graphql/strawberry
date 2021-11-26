@@ -24,7 +24,7 @@ class StrawberryResolver(Generic[T]):
 
     def __init__(
         self,
-        func: Callable[..., T],
+        func: Union[Callable[..., T], staticmethod, classmethod],
         *,
         description: Optional[str] = None,
         type_override: Optional[Union[StrawberryType, type]] = None,
@@ -37,10 +37,10 @@ class StrawberryResolver(Generic[T]):
         This is used when creating copies of types w/ generics
         """
 
-        self._is_bound = False
-
     # TODO: Use this when doing the actual resolving? How to deal with async resolvers?
     def __call__(self, *args, **kwargs) -> T:
+        if not callable(self.wrapped_func):
+            raise UncallableResolverError(self)
         return self.wrapped_func(*args, **kwargs)
 
     @cached_property
@@ -174,6 +174,15 @@ class StrawberryResolver(Generic[T]):
             return self.wrapped_func.__func__
 
         return self.wrapped_func
+
+
+class UncallableResolverError(Exception):
+    def __init__(self, resolver: "StrawberryResolver"):
+        message = (
+            f"Attempted to call resolver {resolver} with uncallable function "
+            f"{resolver.wrapped_func}"
+        )
+        super().__init__(message)
 
 
 __all__ = ["StrawberryResolver"]
