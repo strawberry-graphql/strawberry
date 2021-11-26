@@ -47,8 +47,7 @@ class StrawberryResolver(Generic[T]):
     def annotations(self) -> Dict[str, object]:
         """Annotations for the resolver.
 
-        Does not include special args defined in _SPECIAL_ARGS (e.g. self, root, and
-        info).
+        Does not include special args defined in _SPECIAL_ARGS (e.g. self, root, info)
         """
         annotations = self._unbound_wrapped_func.__annotations__
 
@@ -123,7 +122,6 @@ class StrawberryResolver(Generic[T]):
             # No return annotation at all (as opposed to `-> None`)
             return None
 
-        # TODO: PyCharm doesn't like this. Says `() -> ...` has no __module__ attribute
         module = sys.modules[self._module]
         type_annotation = StrawberryAnnotation(
             annotation=return_annotation, namespace=module.__dict__
