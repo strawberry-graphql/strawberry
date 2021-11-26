@@ -184,6 +184,8 @@ def test_raises_error_calling_uncallable_resolver():
     def static_func() -> int:
         ...
 
+    # Note that static_func is a raw staticmethod object because it has not been bound
+    # to a class at this point
     resolver = StrawberryResolver(static_func)
 
     expected_error_message = (
