@@ -28,7 +28,7 @@ from strawberry.exceptions import (
     UnallowedReturnTypeForUnion,
     WrongReturnTypeForUnion,
 )
-from strawberry.type import StrawberryType
+from strawberry.type import StrawberryOptional, StrawberryType
 
 
 if TYPE_CHECKING:
@@ -62,6 +62,14 @@ class StrawberryUnion(StrawberryType):
     def __hash__(self) -> int:
         # TODO: Is this a bad idea? __eq__ objects are supposed to have the same hash
         return id(self)
+
+    def __or__(self, other: Union[StrawberryType, type]) -> StrawberryType:
+        # TODO: shall we add support to merge unions with other unions?
+        # TODO: shall we add support to merge unions with other types?]
+        # current use case is to allow SomeUnion | None, as a nicer way to
+        # mark a field as optional when using a union type
+
+        return StrawberryOptional(of_type=self)
 
     @property
     def types(self) -> Tuple[StrawberryType, ...]:

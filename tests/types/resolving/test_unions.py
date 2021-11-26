@@ -80,6 +80,33 @@ def test_python_union_none():
     assert resolved == Union[User, None]
 
 
+@pytest.mark.skipif(
+    sys.version_info < (3, 10),
+    reason="short syntax for union is only available on python 3.10+",
+)
+def test_python_strawberry_union_and_none():
+    @strawberry.type
+    class User:
+        name: str
+
+    @strawberry.type
+    class Error:
+        name: str
+
+    UserOrError = strawberry.union("UserOrError", (User, Error))
+    annotation = StrawberryAnnotation(UserOrError | None)
+    resolved = annotation.resolve()
+
+    assert isinstance(resolved, StrawberryOptional)
+
+    assert resolved == StrawberryOptional(
+        of_type=StrawberryUnion(
+            name="UserOrError",
+            type_annotations=(StrawberryAnnotation(User), StrawberryAnnotation(Error)),
+        )
+    )
+
+
 def test_strawberry_union():
     @strawberry.type
     class User:
