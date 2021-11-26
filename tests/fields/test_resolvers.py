@@ -9,6 +9,7 @@ from strawberry.exceptions import (
     MissingFieldAnnotationError,
     MissingReturnAnnotationError,
 )
+from strawberry.types.fields.resolver import StrawberryResolver, UncallableResolverError
 
 
 def test_resolver_as_argument():
@@ -176,6 +177,22 @@ def test_raises_error_when_missing_type():
         'Unable to determine the type of field "missing". Either annotate it '
         "directly, or provide a typed resolver using @strawberry.field."
     )
+
+
+def test_raises_error_calling_uncallable_resolver():
+    @staticmethod
+    def static_func() -> int:
+        ...
+
+    resolver = StrawberryResolver(static_func)
+
+    expected_error_message = (
+        f"Attempted to call resolver {resolver} with uncallable function "
+        f"{static_func}"
+    )
+
+    with pytest.raises(UncallableResolverError, match=expected_error_message):
+        resolver()
 
 
 def test_can_reuse_resolver():
