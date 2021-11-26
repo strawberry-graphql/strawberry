@@ -1,4 +1,5 @@
 import dataclasses
+import re
 from typing import ClassVar
 
 import pytest
@@ -188,7 +189,7 @@ def test_raises_error_calling_uncallable_resolver():
     # to a class at this point
     resolver = StrawberryResolver(class_func)
 
-    expected_error_message = (
+    expected_error_message = re.escape(
         f"Attempted to call resolver {resolver} with uncallable function "
         f"{class_func}"
     )
