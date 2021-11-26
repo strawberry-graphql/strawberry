@@ -66,8 +66,12 @@ def convert_pydantic_model_to_strawberry_class(cls, *, model_instance=None, extr
         data_from_model = (
             getattr(model_instance, python_name, None) if model_instance else None
         )
-        kwargs[python_name] = _convert_from_pydantic_to_strawberry_type(
-            field.type, data_from_model, extra=data_from_extra
-        )
+
+        # only convert and add fields to kwargs if they are present in the `__init__`
+        # method of the class
+        if field.init:
+            kwargs[python_name] = _convert_from_pydantic_to_strawberry_type(
+                field.type, data_from_model, extra=data_from_extra
+            )
 
     return cls(**kwargs)
