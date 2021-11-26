@@ -7,6 +7,7 @@ import pytest
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import InvalidUnionType
+from strawberry.type import StrawberryOptional
 from strawberry.union import StrawberryUnion, union
 
 
@@ -56,6 +57,27 @@ def test_python_union_short_syntax():
         type_annotations=(StrawberryAnnotation(User), StrawberryAnnotation(Error)),
     )
     assert resolved == Union[User, Error]
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 10),
+    reason="short syntax for union is only available on python 3.10+",
+)
+def test_python_union_none():
+    @strawberry.type
+    class User:
+        name: str
+
+    annotation = StrawberryAnnotation(User | None)
+    resolved = annotation.resolve()
+
+    assert isinstance(resolved, StrawberryOptional)
+    assert resolved.of_type == User
+
+    assert resolved == StrawberryOptional(
+        of_type=User,
+    )
+    assert resolved == Union[User, None]
 
 
 def test_strawberry_union():
