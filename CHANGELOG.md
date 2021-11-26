@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.89.2 - 2021-11-26
+-------------------
+
+Fix init of Strawberry types from pydantic by skipping fields that have resolvers.
+
+Contributed by [Nina](https://github.com/nina-j) [PR #1451](https://github.com/strawberry-graphql/strawberry/pull/1451/)
+
+
 0.89.1 - 2021-11-25
 -------------------
 
