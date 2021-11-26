@@ -1,4 +1,5 @@
 import dataclasses
+from typing import ClassVar
 
 import pytest
 
@@ -63,7 +64,34 @@ def test_staticmethod_resolver_fields():
     assert definition.fields[0].python_name == "name"
     assert definition.fields[0].graphql_name is None
     assert definition.fields[0].type == str
-    assert definition.fields[0].base_resolver(None) == Query().name()
+    assert definition.fields[0].base_resolver() == Query.name()
+
+    assert Query.name() == "Name"
+    assert Query().name() == "Name"
+
+
+def test_classmethod_resolver_fields():
+    @strawberry.type
+    class Query:
+        my_val: ClassVar[str] = "thingy"
+
+        @strawberry.field
+        @classmethod
+        def val(cls) -> str:
+            return cls.my_val
+
+    definition = Query._type_definition
+
+    assert definition.name == "Query"
+    assert len(definition.fields) == 1
+
+    assert definition.fields[0].python_name == "val"
+    assert definition.fields[0].graphql_name is None
+    assert definition.fields[0].type == str
+    assert definition.fields[0].base_resolver() == Query.val()
+
+    assert Query.val() == "thingy"
+    assert Query().val() == "thingy"
 
 
 def test_raises_error_when_return_annotation_missing():
