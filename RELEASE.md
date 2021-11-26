@@ -1,7 +1,6 @@
 Release type: patch
 
-Allow using a static method as a resolver when the `self` argument is not
-needed.
+Allow using a staticmethods and classmethods as resolvers
 
 ```python
 import strawberry
@@ -12,4 +11,9 @@ class Query:
     @staticmethod
     def static_text() -> str:
         return "Strawberry"
+
+    @strawberry.field
+    @classmethod
+    def class_name(cls) -> str:
+        return cls.__name__
 ```
