@@ -23,6 +23,7 @@ jobs:
       - name: Get PR info
         id: get-info
         uses: strawberry-graphql/get-pr-info-action@v6
+      - run: echo "${{ steps.get-info.outputs.contributor-twitter-username }}"
 
   skip-if-bot:
     name: Set skip if PR is from a bot
@@ -95,7 +96,7 @@ jobs:
         changelog: ${{ needs.release-file-check.outputs.changelog }}
         version: "(next)"
         contributor_name: ${{ needs.get-contributor-info.outputs.contributor-name }}
-        contributor_twitter_username: ${{ needs.get-contributor-name.outputs.contributor-twitter-username }}
+        contributor_twitter_username: ${{ needs.get-contributor-info.outputs.contributor-twitter-username }}
 
   validate-tweet:
     runs-on: ubuntu-latest
