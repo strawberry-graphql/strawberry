@@ -1,6 +1,30 @@
 CHANGELOG
 =========
 
+0.90.1 - 2021-11-27
+-------------------
+
+This release fixes an issue that prevented using `classmethod`s and `staticmethod`s as resolvers
+
+```python
+import strawberry
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    @staticmethod
+    def static_text() -> str:
+        return "Strawberry"
+
+    @strawberry.field
+    @classmethod
+    def class_name(cls) -> str:
+        return cls.__name__
+```
+
+Contributed by [Illia Volochii](https://github.com/illia-v) [PR #1430](https://github.com/strawberry-graphql/strawberry/pull/1430/)
+
+
 0.90.0 - 2021-11-26
 -------------------
 
