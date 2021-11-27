@@ -8,7 +8,16 @@ from strawberry.exceptions import (
 )
 
 
-def test_field_with_resolver_default():
+def test_field_with_default():
+    @strawberry.type
+    class Query:
+        the_field: int = strawberry.field(default=3)
+
+    instance = Query()
+    assert instance.the_field == 3
+
+
+def test_field_with_resolver_and_default():
     with pytest.raises(FieldWithResolverAndDefaultValueError):
 
         @strawberry.type
