@@ -4,6 +4,7 @@ import strawberry
 from strawberry.exceptions import (
     FieldWithResolverAndDefaultFactoryError,
     FieldWithResolverAndDefaultValueError,
+    InvalidDefaultFactoryError,
 )
 
 
@@ -36,3 +37,8 @@ def test_field_with_resolver_default_factory():
             @strawberry.field(default_factory=lambda: "steel")
             def metal(self) -> str:
                 return "iron"
+
+
+def test_invalid_default_factory():
+    with pytest.raises(InvalidDefaultFactoryError):
+        strawberry.field(default_factory=round)
