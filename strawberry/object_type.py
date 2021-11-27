@@ -1,5 +1,6 @@
 import dataclasses
 import inspect
+import types
 from typing import Callable, List, Optional, Sequence, Type, TypeVar, cast, overload
 
 from strawberry.schema_directive import StrawberrySchemaDirective
@@ -123,10 +124,22 @@ def _process_type(
     # https://github.com/python/cpython/blob/577d7c4e/Lib/dataclasses.py#L873-L880
     # so we need to restore them, this will change in future, but for now this
     # solution should suffice
-
     for field_ in fields:
         if field_.base_resolver and field_.python_name:
-            setattr(cls, field_.python_name, field_.base_resolver.wrapped_func)
+            wrapped_func = field_.base_resolver.wrapped_func
+
+            # Bind the functions to the class object. This is necessary because when
+            # the @strawberry.field decorator is used on @staticmethod/@classmethods,
+            # we get the raw staticmethod/classmethod objects before class evaluation
+            # binds them to the class. We need to do this manually.
+            if isinstance(wrapped_func, staticmethod):
+                bound_method = wrapped_func.__get__(cls)
+                field_.base_resolver.wrapped_func = bound_method
+            elif isinstance(wrapped_func, classmethod):
+                bound_method = types.MethodType(wrapped_func.__func__, cls)
+                field_.base_resolver.wrapped_func = bound_method
+
+            setattr(cls, field_.python_name, wrapped_func)
 
     return cls
 
