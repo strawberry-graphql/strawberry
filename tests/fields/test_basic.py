@@ -1,5 +1,3 @@
-from typing import List
-
 import strawberry
 
 
@@ -86,16 +84,3 @@ def test_graphql_name_unchanged():
 
     assert definition.fields[0].python_name == "the_field"
     assert definition.fields[0].graphql_name == "some_name"
-
-
-def test_field_with_default_factory():
-    @strawberry.type
-    class Query:
-        the_int: int = strawberry.field(default_factory=lambda: 3)
-        the_list: List[str] = strawberry.field(default_factory=list)
-
-    instance = Query()
-    assert instance.the_int == 3
-    assert instance.the_list == []
-    fields = Query._type_definition.fields
-    assert [field.default_value for field in fields] == [3, []]
