@@ -1,6 +1,6 @@
 Release type: patch
 
-This release fixes an issue that prevented using classmethod and staticmethods as resolvers
+This release fixes an issue that prevented using `classmethod`s and `staticmethod`s as resolvers
 
 ```python
 import strawberry
