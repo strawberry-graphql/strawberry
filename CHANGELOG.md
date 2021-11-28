@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.90.2 - 2021-11-28
+-------------------
+
+This release fixes the message of `InvalidFieldArgument` to properly show the field's name in the error message.
+
+Contributed by [Etty](https://github.com/estyxx) [PR #1322](https://github.com/strawberry-graphql/strawberry/pull/1322/)
+
+
 0.90.1 - 2021-11-27
 -------------------
 
