@@ -152,9 +152,9 @@ def convert_argument(
             value = cast(Mapping, value)
             graphql_name = config.name_converter.from_field(field)
 
-            if graphql_name in value:
+            if hasattr(value, graphql_name):
                 kwargs[field.python_name] = convert_argument(
-                    value[graphql_name], field.type, scalar_registry, config
+                    getattr(value, graphql_name), field.type, scalar_registry, config
                 )
 
         type_ = cast(type, type_)
