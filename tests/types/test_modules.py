@@ -109,26 +109,6 @@ def test_c_composition_resolver():
     assert b_field.type == List[b_mod.BObject]
 
 
-def test_c_composition_by_name_resolver():
-    @strawberry.type
-    class Query:
-        c: List[c_mod.CCompositionByName] = strawberry.field(
-            resolver=c_mod.c_composition_by_name_resolver
-        )
-
-    [field] = Query._type_definition.fields
-    assert field.type == List[c_mod.CCompositionByName]
-    [a_field, b_field] = field.type.of_type._type_definition.fields
-    assert a_field.type == List[a_mod.AObject]
-    assert b_field.type == List[b_mod.BObject]
-
-
-def test_c_composition_by_name():
-    [a_field, b_field] = c_mod.CCompositionByName._type_definition.fields
-    assert a_field.type == List[a_mod.AObject]
-    assert b_field.type == List[b_mod.BObject]
-
-
 def test_c_composition_by_name_with_resolvers():
     [a_field, b_field] = c_mod.CCompositionByNameWithResolvers._type_definition.fields
     assert a_field.type == List[a_mod.AObject]
