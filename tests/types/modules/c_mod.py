@@ -3,6 +3,8 @@ from typing import List
 import strawberry
 
 from . import a_mod, b_mod, x_mod
+from .a_mod import AObject as C_AObject
+from .b_mod import BObject as C_BObject
 
 
 def c_inheritance_resolver() -> List["CInheritance"]:
@@ -58,7 +60,3 @@ class CCompositionByNameWithTypelessResolvers:
 class CCompositionOnlyResolvers:
     a_list = strawberry.field(resolver=a_mod.a_resolver)
     b_list = strawberry.field(resolver=b_mod.b_resolver)
-
-
-from .a_mod import AObject as C_AObject
-from .b_mod import BObject as C_BObject
