@@ -33,6 +33,14 @@ class CCompositionByName:
     a_list: List["C_AObject"]
     b_list: List["C_BObject"]
 
+    @strawberry.field
+    def a_method(self) -> List["C_AObject"]:
+        return self.a_list
+
+    @strawberry.field
+    def b_method(self) -> List["C_BObject"]:
+        return self.b_list
+
 
 @strawberry.type
 class CCompositionByNameWithResolvers:

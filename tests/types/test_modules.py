@@ -55,17 +55,33 @@ def test_a_typeless_resolver():
 
 
 def test_c_composition_by_name():
-    [a_field, b_field] = c_mod.CCompositionByName._type_definition.fields
+    [
+        a_field,
+        b_field,
+        a_method,
+        b_method,
+    ] = c_mod.CCompositionByName._type_definition.fields
     assert a_field.type == List[a_mod.AObject]
     assert b_field.type == List[b_mod.BObject]
+    assert a_method.type == List[a_mod.AObject]
+    assert b_method.type == List[b_mod.BObject]
 
 
 def test_c_inheritance():
-    [a_name, a_age, b_name, b_age] = c_mod.CInheritance._type_definition.fields
+    [
+        a_name,
+        a_age,
+        a_is_of_full_age,
+        b_name,
+        b_age,
+        b_is_of_full_age,
+    ] = c_mod.CInheritance._type_definition.fields
     assert a_name.origin == a_mod.ABase
     assert a_age.origin == a_mod.AObject
+    assert a_is_of_full_age.origin == a_mod.AObject
     assert b_name.origin == b_mod.BBase
     assert b_age.origin == b_mod.BObject
+    assert b_is_of_full_age.origin == b_mod.BObject
 
 
 def test_c_inheritance_resolver():
