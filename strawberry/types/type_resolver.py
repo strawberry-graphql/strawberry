@@ -104,15 +104,8 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
                     field.python_name, cls.__name__
                 )
 
-            # we make sure that the origin is either the field's resolver when
-            # called as:
-            #
-            # >>> @strawberry.field
-            # ... def x(self): ...
-            #
-            # or the class where this field was defined, so we always have
-            # the correct origin for determining field types when resolving
-            # the types.
+            # Add the class where this field was defined in as origin.
+            # This is used when resolving the field types.
             field.origin = cls
 
             # Make sure types are StrawberryAnnotations
