@@ -55,7 +55,7 @@ def test_a_typeless_resolver():
 
 
 def test_c_composition_by_name():
-    [a_field, b_field] = c_mod.CObjectCompositionByName._type_definition.fields
+    [a_field, b_field] = c_mod.CCompositionByName._type_definition.fields
     assert a_field.type == List[a_mod.AObject]
     assert b_field.type == List[b_mod.BObject]
 
