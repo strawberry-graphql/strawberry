@@ -1,13 +1,7 @@
 from functools import lru_cache
 from typing import Any, Dict, Optional, Sequence, Type, Union
 
-from graphql import (
-    ExecutionContext as GraphQLExecutionContext,
-    GraphQLSchema,
-    get_introspection_query,
-    parse,
-    validate_schema,
-)
+from graphql import GraphQLSchema, get_introspection_query, parse, validate_schema
 from graphql.subscription import subscribe
 from graphql.type.directives import specified_directives
 
@@ -29,6 +23,7 @@ from ..printer import print_schema
 from .base import BaseSchema
 from .config import StrawberryConfig
 from .execute import execute, execute_sync
+from .execution_context import StrawberryExecutionContext
 
 
 class Schema(BaseSchema):
@@ -41,14 +36,16 @@ class Schema(BaseSchema):
         directives: Sequence[StrawberryDirective] = (),
         types=(),
         extensions: Sequence[Union[Type[Extension], Extension]] = (),
-        execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
+        execution_context_class: Optional[Type[StrawberryExecutionContext]] = None,
         config: Optional[StrawberryConfig] = None,
         scalar_overrides: Optional[
             Dict[object, Union[ScalarWrapper, ScalarDefinition]]
         ] = None,
     ):
         self.extensions = extensions
-        self.execution_context_class = execution_context_class
+        self.execution_context_class = (
+            execution_context_class or StrawberryExecutionContext
+        )
         self.config = config or StrawberryConfig()
 
         scalar_registry: Dict[object, Union[ScalarWrapper, ScalarDefinition]] = {

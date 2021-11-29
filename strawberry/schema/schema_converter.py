@@ -16,7 +16,6 @@ from graphql import (
     GraphQLNonNull,
     GraphQLNullableType,
     GraphQLObjectType,
-    GraphQLResolveInfo,
     GraphQLScalarType,
     GraphQLType,
     GraphQLUnionType,
@@ -231,7 +230,7 @@ class GraphQLCoreConverter:
 
         def resolve_type(
             obj: Any,
-            info: GraphQLResolveInfo,
+            info: Info,
             type_: Union[GraphQLInterfaceType, GraphQLUnionType],
         ) -> GraphQLObjectType:
             # TODO: this will probably break when passing dicts
@@ -370,12 +369,6 @@ class GraphQLCoreConverter:
                     message = getattr(permission, "message", None)
                     raise PermissionError(message)
 
-        def _strawberry_info_from_graphql(info: GraphQLResolveInfo) -> Info:
-            return Info(
-                _raw_info=info,
-                _field=field,
-            )
-
         def _get_result(_source: Any, info: Info, **kwargs):
             field_args, field_kwargs = _get_arguments(
                 source=_source, info=info, kwargs=kwargs
@@ -385,17 +378,17 @@ class GraphQLCoreConverter:
                 _source, info=info, args=field_args, kwargs=field_kwargs
             )
 
-        def _resolver(_source: Any, info: GraphQLResolveInfo, **kwargs):
-            strawberry_info = _strawberry_info_from_graphql(info)
-            _check_permissions(_source, strawberry_info, kwargs)
+        def _resolver(_source: Any, info: Info, **kwargs):
+            info._field = field
+            _check_permissions(_source, info, kwargs)
 
-            return _get_result(_source, strawberry_info, **kwargs)
+            return _get_result(_source, info, **kwargs)
 
-        async def _async_resolver(_source: Any, info: GraphQLResolveInfo, **kwargs):
-            strawberry_info = _strawberry_info_from_graphql(info)
-            await _check_permissions_async(_source, strawberry_info, kwargs)
+        async def _async_resolver(_source: Any, info: Info, **kwargs):
+            info._field = field
+            await _check_permissions_async(_source, info, kwargs)
 
-            return await await_maybe(_get_result(_source, strawberry_info, **kwargs))
+            return await await_maybe(_get_result(_source, info, **kwargs))
 
         if field.is_async:
             _async_resolver._is_default = not field.base_resolver  # type: ignore
