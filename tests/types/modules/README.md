@@ -29,11 +29,10 @@ fail.
 ## Robust tests
 
 **Important**: For these tests not to mask any incorrect resolution
-behavior, all type names are unique across the whole test, not just
-each module. E.g. when importing `a.AObject` into the `c` module it
-is renamed to `C_AObject`. This ensures that we can discern which module
-the object is coming from and any incorrect resolution behavior can be
-detected.
+behavior, all type names are unique across all modules. E.g. when
+importing `a.AObject` into the `c` module it is renamed to `C_AObject`.
+This ensures that we can discern which module the object is coming from
+and any incorrect resolution behavior can be detected.
 
 ## Submodules
 
