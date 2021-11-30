@@ -1,14 +1,15 @@
-# The following tests ensure that the resolver is able to resolve all types
-# using the correct module. Concrete types should be non-problematic and are
-# only included here for completeless. The problematic cases are where a
-# `str` is given as type which can only be resolved at schema construction.
-#
-# Important: For this tests not to hide any wrong resolves no types must
-# be imported into the namespaces under the same name and all type names
-# must be unique. e.g. when importing `a.AObject` into the `c` module it
-# must be renamed to something like `C_AObject`. That way wrong resolves
-# like `C_AObject` being loaded from `a` or `AObject` being loaded from
-# `c` can be detected.
+"""
+The following tests ensure that the types are resolved using the correct
+module. Concrete types should be non-problematic and are only included
+here for completeless. The problematic cases are where a `str` is given
+as type which can only be resolved at schema construction.
+
+Important: For these tests not to mask any incorrect resolution behavior,
+all type names must be unique across the whole test, not just each module.
+E.g. when importing `a.AObject` into the `c` module it must be renamed to
+something like `C_AObject`. This ensures that we can discern which module
+the object is coming from and any incorrect resolution behavior can be detected.
+"""
 
 
 from typing import List
