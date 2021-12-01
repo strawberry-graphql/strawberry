@@ -1,10 +1,10 @@
 from textwrap import dedent
-from typing import Optional
+from typing import Optional, Union
 
 from typing_extensions import Annotated
 
 import strawberry
-from strawberry.arguments import UNSET, is_unset
+from strawberry.arguments import UNSET, _Unset, is_unset
 
 
 def test_argument_descriptions():
@@ -105,6 +105,29 @@ def test_optional_argument_unset():
     assert result.data == {"hello": "Hi there"}
 
 
+def test_optional_argument_unset_with_exhaustive_typing():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(
+            self,
+            name: Union[_Unset, Optional[str]] = UNSET,
+            age: Union[int, None, _Unset] = UNSET,
+        ) -> str:
+            if is_unset(name):
+                return "Hi there"
+            return f"Hi {name}"
+
+    schema = strawberry.Schema(query=Query)
+
+    assert str(schema) == dedent(
+        """\
+        type Query {
+          hello(name: String, age: Int): String!
+        }"""
+    )
+
+
 def test_optional_input_field_unset():
     @strawberry.input
     class TestInput:
@@ -146,3 +169,36 @@ def test_optional_input_field_unset():
     )
     assert not result.errors
     assert result.data == {"hello": "Hi there"}
+
+
+def test_optional_input_field_unset_with_exhaustive_typing():
+    @strawberry.input
+    class TestInput:
+        name: Union[_Unset, Optional[str]] = UNSET
+        age: Union[_Unset, None, int] = UNSET
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(self, input: TestInput) -> str:
+            if is_unset(input.name):
+                return "Hi there"
+            return f"Hi {input.name}"
+
+    schema = strawberry.Schema(query=Query)
+
+    assert (
+        str(schema)
+        == dedent(
+            """
+        type Query {
+          hello(input: TestInput!): String!
+        }
+
+        input TestInput {
+          name: String
+          age: Int
+        }
+        """
+        ).strip()
+    )
