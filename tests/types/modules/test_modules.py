@@ -5,12 +5,11 @@ here for completeless. The problematic cases are where a `str` is given
 as type which can only be resolved at schema construction.
 """
 
-
 from typing import List
 
-from modules import a_mod, b_mod, c_mod, x_mod
-
 import strawberry
+
+from . import a_mod, b_mod, c_mod, x_mod
 
 
 def test_a():
