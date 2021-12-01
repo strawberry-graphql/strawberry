@@ -61,7 +61,7 @@ flake8-bugbear = "^21.11"
 flake8-eradicate = "^1.2.0"
 pytest-mypy-plugins = "^1.9"
 pytest-mock = "^3.6"
-pytest-django = {version = "^4.4"}
+pytest-django = {version = "^4.5"}
 asgiref = "^3.2"
 pytest-flask = {version = "^1.2.0"}
 flask = {version = "^1.1"}
