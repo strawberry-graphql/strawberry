@@ -37,7 +37,7 @@ if TYPE_CHECKING:
     from .object_type import TypeDefinition
 
 
-_RESOLVER_TYPE = Union[StrawberryResolver, Callable]
+_RESOLVER_TYPE = Union[StrawberryResolver, Callable, staticmethod, classmethod]
 
 
 class StrawberryField(dataclasses.Field):
@@ -48,7 +48,7 @@ class StrawberryField(dataclasses.Field):
         python_name: Optional[str] = None,
         graphql_name: Optional[str] = None,
         type_annotation: Optional[StrawberryAnnotation] = None,
-        origin: Optional[Union[Type, Callable]] = None,
+        origin: Optional[Union[Type, Callable, staticmethod, classmethod]] = None,
         is_subscription: bool = False,
         description: Optional[str] = None,
         base_resolver: Optional[StrawberryResolver] = None,
@@ -91,7 +91,7 @@ class StrawberryField(dataclasses.Field):
         self.type_annotation = type_annotation
 
         self.description: Optional[str] = description
-        self.origin: Optional[Union[Type, Callable]] = origin
+        self.origin = origin
 
         self._base_resolver: Optional[StrawberryResolver] = None
         if base_resolver is not None:
@@ -127,14 +127,14 @@ class StrawberryField(dataclasses.Field):
                 continue
             elif isinstance(argument.type, StrawberryUnion):
                 raise InvalidFieldArgument(
-                    self.python_name,
+                    resolver.name,
                     argument.python_name,
                     "Union",
                 )
             elif getattr(argument.type, "_type_definition", False):
                 if argument.type._type_definition.is_interface:
                     raise InvalidFieldArgument(
-                        self.python_name,
+                        resolver.name,
                         argument.python_name,
                         "Interface",
                     )

@@ -1,6 +1,77 @@
 CHANGELOG
 =========
 
+0.90.2 - 2021-11-28
+-------------------
+
+This release fixes the message of `InvalidFieldArgument` to properly show the field's name in the error message.
+
+Contributed by [Etty](https://github.com/estyxx) [PR #1322](https://github.com/strawberry-graphql/strawberry/pull/1322/)
+
+
+0.90.1 - 2021-11-27
+-------------------
+
+This release fixes an issue that prevented using `classmethod`s and `staticmethod`s as resolvers
+
+```python
+import strawberry
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    @staticmethod
+    def static_text() -> str:
+        return "Strawberry"
+
+    @strawberry.field
+    @classmethod
+    def class_name(cls) -> str:
+        return cls.__name__
+```
+
+Contributed by [Illia Volochii](https://github.com/illia-v) [PR #1430](https://github.com/strawberry-graphql/strawberry/pull/1430/)
+
+
+0.90.0 - 2021-11-26
+-------------------
+
+This release improves type checking support for `strawberry.union` and now allows
+to use unions without any type issue, like so:
+
+```python
+@strawberry.type
+class User:
+    name: str
+
+@strawberry.type
+class Error:
+    message: str
+
+UserOrError = strawberry.union("UserOrError", (User, Error))
+
+x: UserOrError = User(name="Patrick")
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1438](https://github.com/strawberry-graphql/strawberry/pull/1438/)
+
+
+0.89.2 - 2021-11-26
+-------------------
+
+Fix init of Strawberry types from pydantic by skipping fields that have resolvers.
+
+Contributed by [Nina](https://github.com/nina-j) [PR #1451](https://github.com/strawberry-graphql/strawberry/pull/1451/)
+
+
+0.89.1 - 2021-11-25
+-------------------
+
+This release fixes an issubclass test failing for `Literal`s in the experimental `pydantic` integration.
+
+Contributed by [Nina](https://github.com/nina-j) [PR #1445](https://github.com/strawberry-graphql/strawberry/pull/1445/)
+
+
 0.89.0 - 2021-11-24
 -------------------
 

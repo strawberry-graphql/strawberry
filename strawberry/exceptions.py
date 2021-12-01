@@ -208,8 +208,10 @@ class MissingQueryError(Exception):
 
 class InvalidFieldArgument(Exception):
     def __init__(self, field_name: str, argument_name: str, argument_type: str):
-        message = f'Argument "{argument_name}" on field "{field_name}" cannot be of type\
-            "{argument_type}"'
+        message = (
+            f'Argument "{argument_name}" on field "{field_name}" cannot be of type '
+            f'"{argument_type}"'
+        )
         super().__init__(message)
 
 

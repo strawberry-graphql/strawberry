@@ -1,6 +1,7 @@
 import pytest
 
 import pydantic
+from typing_extensions import Literal
 
 import strawberry
 from strawberry.type import StrawberryOptional
@@ -128,3 +129,20 @@ def test_unsupported_types(pydantic_type):
         @strawberry.experimental.pydantic.type(Model)
         class Type:
             field: strawberry.auto
+
+
+def test_literal_types():
+    class Model(pydantic.BaseModel):
+        field: Literal["field"]
+
+    @strawberry.experimental.pydantic.type(Model)
+    class Type:
+        field: strawberry.auto
+
+    definition: TypeDefinition = Type._type_definition
+    assert definition.name == "Type"
+
+    [field] = definition.fields
+
+    assert field.python_name == "field"
+    assert field.type == Literal["field"]

@@ -202,7 +202,7 @@ def test_only_info_function_resolvers():
     assert result.data["helloWithParams"] == "I'm abc for helloWithParams"
 
 
-def test_classmethods_resolvers():
+def test_classmethod_resolvers():
     global User
 
     @strawberry.type
@@ -228,6 +228,26 @@ def test_classmethods_resolvers():
     assert result.data == {"users": [{"name": "Bob"}, {"name": "Nancy"}]}
 
     del User
+
+
+def test_staticmethod_resolvers():
+    class Alphabet:
+        @staticmethod
+        def get_letters() -> List[str]:
+            return ["a", "b", "c"]
+
+    @strawberry.type
+    class Query:
+        letters: List[str] = strawberry.field(resolver=Alphabet.get_letters)
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ letters }"
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data == {"letters": ["a", "b", "c"]}
 
 
 def test_lambda_resolvers():

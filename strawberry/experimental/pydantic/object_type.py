@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, cast
 
 from pydantic import BaseModel
 from pydantic.fields import ModelField
+from typing_extensions import Literal
 
 import strawberry
 from strawberry.arguments import UNSET
@@ -24,6 +25,10 @@ from .exceptions import MissingFieldsListError, UnregisteredTypeException
 
 
 def replace_pydantic_types(type_: Any):
+    origin = getattr(type_, "__origin__", None)
+    if origin is Literal:
+        # Literal does not have types in its __args__ so we return early
+        return type_
     if hasattr(type_, "__args__"):
         new_type = type_.copy_with(
             tuple(replace_pydantic_types(t) for t in type_.__args__)

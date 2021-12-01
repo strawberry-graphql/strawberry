@@ -1,10 +1,10 @@
-from __future__ import annotations
+from __future__ import annotations as _
 
 import builtins
 import inspect
 import sys
 from inspect import isasyncgenfunction, iscoroutinefunction
-from typing import Callable, Generic, List, Mapping, Optional, TypeVar, Union
+from typing import Callable, Dict, Generic, List, Mapping, Optional, TypeVar, Union
 
 from cached_property import cached_property  # type: ignore
 
@@ -19,9 +19,12 @@ T = TypeVar("T")
 
 
 class StrawberryResolver(Generic[T]):
+    # TODO: Move to StrawberryArgument? StrawberryResolver ClassVar?
+    _SPECIAL_ARGS = {"root", "info", "self", "cls"}
+
     def __init__(
         self,
-        func: Callable[..., T],
+        func: Union[Callable[..., T], staticmethod, classmethod],
         *,
         description: Optional[str] = None,
         type_override: Optional[Union[StrawberryType, type]] = None,
@@ -36,36 +39,46 @@ class StrawberryResolver(Generic[T]):
 
     # TODO: Use this when doing the actual resolving? How to deal with async resolvers?
     def __call__(self, *args, **kwargs) -> T:
+        if not callable(self.wrapped_func):
+            raise UncallableResolverError(self)
         return self.wrapped_func(*args, **kwargs)
 
     @cached_property
-    def arguments(self) -> List[StrawberryArgument]:
-        # TODO: Move to StrawberryArgument? StrawberryResolver ClassVar?
-        SPECIAL_ARGS = {"root", "self", "info"}
+    def annotations(self) -> Dict[str, object]:
+        """Annotations for the resolver.
 
-        annotations = self.wrapped_func.__annotations__
-        parameters = inspect.signature(self.wrapped_func).parameters
-        function_arguments = set(parameters) - SPECIAL_ARGS
+        Does not include special args defined in _SPECIAL_ARGS (e.g. self, root, info)
+        """
+        annotations = self._unbound_wrapped_func.__annotations__
 
         annotations = {
             name: annotation
             for name, annotation in annotations.items()
-            if name not in (SPECIAL_ARGS | {"return"})
+            if name not in self._SPECIAL_ARGS
         }
 
-        annotated_arguments = set(annotations)
-        arguments_missing_annotations = function_arguments - annotated_arguments
+        return annotations
+
+    @cached_property
+    def arguments(self) -> List[StrawberryArgument]:
+        parameters = inspect.signature(self._unbound_wrapped_func).parameters
+        function_arguments = set(parameters) - self._SPECIAL_ARGS
+
+        arguments = self.annotations.copy()
+        arguments.pop("return", None)  # Discard return annotation to get just arguments
+
+        arguments_missing_annotations = function_arguments - set(arguments)
 
         if any(arguments_missing_annotations):
             raise MissingArgumentsAnnotationsError(
-                field_name=self.wrapped_func.__name__,
+                field_name=self.name,
                 arguments=arguments_missing_annotations,
             )
 
-        module = sys.modules[self.wrapped_func.__module__]
+        module = sys.modules[self._module]
         annotation_namespace = module.__dict__
-        arguments = []
-        for arg_name, annotation in annotations.items():
+        strawberry_arguments = []
+        for arg_name, annotation in arguments.items():
             parameter = parameters[arg_name]
 
             argument = StrawberryArgument(
@@ -77,40 +90,39 @@ class StrawberryResolver(Generic[T]):
                 default=parameter.default,
             )
 
-            arguments.append(argument)
+            strawberry_arguments.append(argument)
 
-        return arguments
+        return strawberry_arguments
 
     @cached_property
     def has_info_arg(self) -> bool:
-        args = get_func_args(self.wrapped_func)
+        args = get_func_args(self._unbound_wrapped_func)
         return "info" in args
 
     @cached_property
     def has_root_arg(self) -> bool:
-        args = get_func_args(self.wrapped_func)
+        args = get_func_args(self._unbound_wrapped_func)
         return "root" in args
 
     @cached_property
     def has_self_arg(self) -> bool:
-        args = get_func_args(self.wrapped_func)
+        args = get_func_args(self._unbound_wrapped_func)
         return args and args[0] == "self"
 
     @cached_property
     def name(self) -> str:
         # TODO: What to do if resolver is a lambda?
-        return self.wrapped_func.__name__
+        return self._unbound_wrapped_func.__name__
 
     @cached_property
     def type_annotation(self) -> Optional[StrawberryAnnotation]:
         try:
-            return_annotation = self.wrapped_func.__annotations__["return"]
+            return_annotation = self.annotations["return"]
         except KeyError:
             # No return annotation at all (as opposed to `-> None`)
             return None
 
-        # TODO: PyCharm doesn't like this. Says `() -> ...` has no __module__ attribute
-        module = sys.modules[self.wrapped_func.__module__]
+        module = sys.modules[self._module]
         type_annotation = StrawberryAnnotation(
             annotation=return_annotation, namespace=module.__dict__
         )
@@ -127,8 +139,8 @@ class StrawberryResolver(Generic[T]):
 
     @cached_property
     def is_async(self) -> bool:
-        return iscoroutinefunction(self.wrapped_func) or isasyncgenfunction(
-            self.wrapped_func
+        return iscoroutinefunction(self._unbound_wrapped_func) or isasyncgenfunction(
+            self._unbound_wrapped_func
         )
 
     def copy_with(
@@ -149,6 +161,26 @@ class StrawberryResolver(Generic[T]):
             description=self._description,
             type_override=type_override,
         )
+
+    @cached_property
+    def _module(self) -> str:
+        return self._unbound_wrapped_func.__module__
+
+    @cached_property
+    def _unbound_wrapped_func(self) -> Callable[..., T]:
+        if isinstance(self.wrapped_func, (staticmethod, classmethod)):
+            return self.wrapped_func.__func__
+
+        return self.wrapped_func
+
+
+class UncallableResolverError(Exception):
+    def __init__(self, resolver: "StrawberryResolver"):
+        message = (
+            f"Attempted to call resolver {resolver} with uncallable function "
+            f"{resolver.wrapped_func}"
+        )
+        super().__init__(message)
 
 
 __all__ = ["StrawberryResolver"]

@@ -171,9 +171,17 @@ class StrawberryUnion(StrawberryType):
         return _resolve_union_type
 
 
+Types = TypeVar("Types", bound=Type)
+
+
+# We return a Union type here in order to allow to use the union type as type
+# annotation.
+# For the `types` argument we'd ideally use a TypeVarTuple, but that's not
+# yet supported in any python implementation (or in typing_extensions).
+# See https://www.python.org/dev/peps/pep-0646/ for more information
 def union(
-    name: str, types: Tuple[Type, ...], *, description: str = None
-) -> StrawberryUnion:
+    name: str, types: Tuple[Types, ...], *, description: str = None
+) -> Union[Types]:  # type: ignore
     """Creates a new named Union type.
 
     Example usages:
@@ -201,4 +209,4 @@ def union(
         description=description,
     )
 
-    return union_definition
+    return union_definition  # type: ignore

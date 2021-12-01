@@ -650,3 +650,27 @@ def test_can_convert_input_types_to_pydantic_default_values():
 
     assert user.age == 1
     assert user.password is None
+
+
+def test_can_convert_pydantic_type_to_strawberry_with_additional_field_resolvers():
+    def some_resolver() -> int:
+        return 84
+
+    class UserModel(pydantic.BaseModel):
+        password: Optional[str]
+        new_age: int
+
+    @strawberry.experimental.pydantic.type(UserModel)
+    class User:
+        password: strawberry.auto
+        new_age: int = strawberry.field(resolver=some_resolver)
+
+        @strawberry.field
+        def age() -> int:
+            return 42
+
+    origin_user = UserModel(password="abc", new_age=21)
+    user = User.from_pydantic(origin_user)
+    assert user.password == "abc"
+    assert User._type_definition.fields[0].base_resolver() == 84
+    assert User._type_definition.fields[1].base_resolver() == 42
