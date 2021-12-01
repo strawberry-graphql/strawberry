@@ -352,6 +352,64 @@ def test_supports_generic_in_unions():
     }
 
 
+def test_generic_with_enum_as_param_of_type_inside_unions():
+    import enum
+
+    T = typing.TypeVar("T")
+
+    @strawberry.type
+    class Pet:
+        name: str
+        age: int
+
+    @strawberry.type
+    class ErrorNode(typing.Generic[T]):
+        code: T
+
+    @strawberry.enum
+    class Codes(enum.Enum):
+        a = "a"
+        b = "b"
+
+    @strawberry.type
+    class FaultyType:
+        result: typing.Union[Pet, ErrorNode[Codes]]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def does_not_work(self) -> FaultyType:
+            return FaultyType(
+                result=ErrorNode(code=Codes.a),
+            )
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        doesNotWork {
+            result {
+                __typename
+
+                ... on Pet {
+                    name
+                    age
+                }
+
+                ... on CodesErrorNode {
+                    code
+                }
+            }
+        }
+    }"""
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data == {
+        "doesNotWork": {"result": {"__typename": "CodesErrorNode", "code": "a"}}
+    }
+
+
 def test_supports_generic_in_unions_multiple_vars():
     A = typing.TypeVar("A")
     B = typing.TypeVar("B")
