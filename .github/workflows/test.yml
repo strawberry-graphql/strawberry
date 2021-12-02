@@ -59,9 +59,11 @@ jobs:
       - name: pytest
         run: poetry run pytest --cov --showlocals -vv -m "not django"
 
-      - uses: coverallsapp/github-action@1.1.3
+      - name: "Coveralls unit tests"
+        uses: AndreMiras/coveralls-python-action@develop
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          parallel: true
+          flag-name: "Unit tests"
 
   django-unit-tests:
     strategy:
@@ -101,6 +103,17 @@ jobs:
       - name: pytest
         run: poetry run pytest --cov --showlocals -vv -m django
 
-      - uses: coverallsapp/github-action@1.1.3
+      - name: "Coveralls Django unit tests"
+        uses: AndreMiras/coveralls-python-action@develop
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
+          parallel: true
+          flag-name: "Django tests"
+
+  coveralls_finish:
+    needs: [ unit-tests, django-unit-tests ]
+    runs-on: ubuntu-latest
+    steps:
+    - name: Finish Coveralls reporting
+      uses: AndreMiras/coveralls-python-action@develop
+      with:
+        parallel-finished: true
