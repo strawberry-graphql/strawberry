@@ -423,7 +423,8 @@ def test_annotated_python_39():
 
 
 def test_union_as_an_argument_type():
-    with pytest.raises(InvalidFieldArgument):
+    error_message = 'Argument "word" on field "add_word" cannot be of type "Union"'
+    with pytest.raises(InvalidFieldArgument, match=error_message):
 
         @strawberry.type
         class Noun:
@@ -441,7 +442,10 @@ def test_union_as_an_argument_type():
 
 
 def test_interface_as_an_argument_type():
-    with pytest.raises(InvalidFieldArgument):
+    error_message = (
+        'Argument "adjective" on field "add_adjective" cannot be of type "Interface"'
+    )
+    with pytest.raises(InvalidFieldArgument, match=error_message):
 
         @strawberry.interface
         class Adjective:
@@ -453,7 +457,11 @@ def test_interface_as_an_argument_type():
 
 
 def test_resolver_with_invalid_field_argument_type():
-    with pytest.raises(InvalidFieldArgument):
+    error_message = (
+        'Argument "adjective" on field "add_adjective_resolver" cannot be '
+        'of type "Interface"'
+    )
+    with pytest.raises(InvalidFieldArgument, match=error_message):
 
         @strawberry.interface
         class Adjective:

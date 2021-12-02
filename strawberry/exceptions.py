@@ -12,9 +12,12 @@ from strawberry.type import StrawberryType
 # https://github.com/strawberry-graphql/strawberry/issues/1298
 
 
-class NotAnEnum(Exception):
-    def __init__(self):
-        message = "strawberry.enum can only be used with subclasses of Enum"
+class ObjectIsNotAnEnumError(Exception):
+    def __init__(self, obj: object):
+        message = (
+            "strawberry.enum can only be used with subclasses of Enum. "
+            f"Provided object {obj} is not an enum."
+        )
 
         super().__init__(message)
 
@@ -205,6 +208,15 @@ class MissingQueryError(Exception):
 
 class InvalidFieldArgument(Exception):
     def __init__(self, field_name: str, argument_name: str, argument_type: str):
-        message = f'Argument "{argument_name}" on field "{field_name}" cannot be of type\
-            "{argument_type}"'
+        message = (
+            f'Argument "{argument_name}" on field "{field_name}" cannot be of type '
+            f'"{argument_type}"'
+        )
+        super().__init__(message)
+
+
+class InvalidDefaultFactoryError(Exception):
+    def __init__(self):
+        message = "`default_factory` must be a callable that requires no arguments"
+
         super().__init__(message)

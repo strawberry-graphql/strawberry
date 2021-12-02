@@ -1,26 +1,34 @@
 import builtins
 import dataclasses
+import warnings
 from functools import partial
-from typing import Any, Dict, List, Optional, Tuple, Type, cast
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, cast
 
 from pydantic import BaseModel
 from pydantic.fields import ModelField
+from typing_extensions import Literal
 
+import strawberry
 from strawberry.arguments import UNSET
 from strawberry.experimental.pydantic.conversion import (
     convert_pydantic_model_to_strawberry_class,
 )
 from strawberry.experimental.pydantic.fields import get_basic_type
+from strawberry.experimental.pydantic.utils import get_private_fields
 from strawberry.field import StrawberryField
 from strawberry.object_type import _process_type, _wrap_dataclass
-from strawberry.private import Private
+from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.types.type_resolver import _get_fields
-from strawberry.types.types import FederationTypeParams, TypeDefinition
+from strawberry.types.types import TypeDefinition
 
 from .exceptions import MissingFieldsListError, UnregisteredTypeException
 
 
 def replace_pydantic_types(type_: Any):
+    origin = getattr(type_, "__origin__", None)
+    if origin is Literal:
+        # Literal does not have types in its __args__ so we return early
+        return type_
     if hasattr(type_, "__args__"):
         new_type = type_.copy_with(
             tuple(replace_pydantic_types(t) for t in type_.__args__)
@@ -58,32 +66,45 @@ def get_type_for_field(field: ModelField):
     return type_
 
 
-def _get_private_fields(cls: Type) -> List[dataclasses.Field]:
-    private_fields: List[dataclasses.Field] = []
-    for field in dataclasses.fields(cls):
-        if isinstance(field.type, Private):
-            private_fields.append(field)
-    return private_fields
-
-
 def type(
     model: Type[BaseModel],
     *,
-    fields: List[str],
+    fields: Optional[List[str]] = None,
     name: Optional[str] = None,
     is_input: bool = False,
     is_interface: bool = False,
     description: Optional[str] = None,
-    federation: Optional[FederationTypeParams] = None,
+    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    all_fields: bool = False,
 ):
     def wrap(cls):
-        if not fields:
-            raise MissingFieldsListError(model)
-
         model_fields = model.__fields__
-        fields_set = set(fields)
+        fields_set = set(fields) if fields else set([])
 
-        all_fields: List[Tuple[str, Any, dataclasses.Field]] = [
+        if fields:
+            warnings.warn(
+                "`fields` is deprecated, use `auto` type annotations instead",
+                DeprecationWarning,
+            )
+
+        existing_fields = getattr(cls, "__annotations__", {})
+        fields_set = fields_set.union(
+            set(name for name, typ in existing_fields.items() if typ is strawberry.auto)
+        )
+
+        if all_fields:
+            if fields_set:
+                warnings.warn(
+                    "Using all_fields overrides any explicitly defined fields "
+                    "in the model, using both is likely a bug",
+                    stacklevel=2,
+                )
+            fields_set = set(model_fields.keys())
+
+        if not fields_set:
+            raise MissingFieldsListError(cls)
+
+        all_model_fields: List[Tuple[str, Any, dataclasses.Field]] = [
             (
                 name,
                 get_type_for_field(field),
@@ -95,6 +116,7 @@ def type(
                         field.default_factory if field.default_factory else UNSET
                     ),
                     type_annotation=get_type_for_field(field),
+                    description=field.field_info.description,
                 ),
             )
             for name, field in model_fields.items()
@@ -103,9 +125,9 @@ def type(
 
         wrapped = _wrap_dataclass(cls)
         extra_fields = cast(List[dataclasses.Field], _get_fields(wrapped))
-        private_fields = _get_private_fields(wrapped)
+        private_fields = get_private_fields(wrapped)
 
-        all_fields.extend(
+        all_model_fields.extend(
             (
                 (
                     field.name,
@@ -113,6 +135,7 @@ def type(
                     field,
                 )
                 for field in extra_fields + private_fields
+                if field.type != strawberry.auto
             )
         )
 
@@ -121,7 +144,7 @@ def type(
         # first
         missing_default = []
         has_default = []
-        for field in all_fields:
+        for field in all_model_fields:
             if field[2].default is dataclasses.MISSING:
                 missing_default.append(field)
             else:
@@ -141,7 +164,7 @@ def type(
             is_input=is_input,
             is_interface=is_interface,
             description=description,
-            federation=federation,
+            directives=directives,
         )
 
         model._strawberry_type = cls  # type: ignore

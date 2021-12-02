@@ -13,6 +13,7 @@ from strawberry.type import StrawberryType
 
 if TYPE_CHECKING:
     from strawberry.field import StrawberryField
+    from strawberry.schema import Schema
 
 from .nodes import Selection, convert_selections
 
@@ -29,6 +30,10 @@ class Info(Generic[ContextType, RootValueType]):
     @property
     def field_name(self) -> str:
         return self._raw_info.field_name
+
+    @property
+    def schema(self) -> "Schema":
+        return self._raw_info.schema._strawberry_schema  # type: ignore
 
     @property
     def field_nodes(self) -> List[FieldNode]:  # deprecated

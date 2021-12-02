@@ -28,7 +28,6 @@ from strawberry.exceptions import (
     UnallowedReturnTypeForUnion,
     WrongReturnTypeForUnion,
 )
-from strawberry.scalars import SCALAR_TYPES
 from strawberry.type import StrawberryType
 
 
@@ -44,7 +43,7 @@ class StrawberryUnion(StrawberryType):
         type_annotations: Tuple["StrawberryAnnotation", ...] = tuple(),
         description: Optional[str] = None,
     ):
-        self._name = name
+        self.graphql_name = name
         self.type_annotations = type_annotations
         self.description = description
 
@@ -52,7 +51,7 @@ class StrawberryUnion(StrawberryType):
         if isinstance(other, StrawberryType):
             if isinstance(other, StrawberryUnion):
                 return (
-                    self.name == other.name
+                    self.graphql_name == other.graphql_name
                     and self.type_annotations == other.type_annotations
                     and self.description == other.description
                 )
@@ -63,20 +62,6 @@ class StrawberryUnion(StrawberryType):
     def __hash__(self) -> int:
         # TODO: Is this a bad idea? __eq__ objects are supposed to have the same hash
         return id(self)
-
-    @property
-    def name(self) -> str:
-        if self._name is not None:
-            return self._name
-
-        name = ""
-        for type_ in self.types:
-            if hasattr(type_, "_type_definition"):
-                name += type_._type_definition.name  # type: ignore
-            else:
-                name += type.__name__
-
-        return name
 
     @property
     def types(self) -> Tuple[StrawberryType, ...]:
@@ -186,9 +171,17 @@ class StrawberryUnion(StrawberryType):
         return _resolve_union_type
 
 
+Types = TypeVar("Types", bound=Type)
+
+
+# We return a Union type here in order to allow to use the union type as type
+# annotation.
+# For the `types` argument we'd ideally use a TypeVarTuple, but that's not
+# yet supported in any python implementation (or in typing_extensions).
+# See https://www.python.org/dev/peps/pep-0646/ for more information
 def union(
-    name: str, types: Tuple[Type, ...], *, description: str = None
-) -> StrawberryUnion:
+    name: str, types: Tuple[Types, ...], *, description: str = None
+) -> Union[Types]:  # type: ignore
     """Creates a new named Union type.
 
     Example usages:
@@ -205,14 +198,9 @@ def union(
         raise TypeError("No types passed to `union`")
 
     for _type in types:
-        if _type in SCALAR_TYPES:
-            raise InvalidUnionType(
-                f"Scalar type `{_type.__name__}` cannot be used in a GraphQL Union"
-            )
-
         if not isinstance(_type, TypeVar) and not hasattr(_type, "_type_definition"):
             raise InvalidUnionType(
-                f"Union type `{_type.__name__}` is not a Strawberry type"
+                f"Type `{_type.__name__}` cannot be used in a GraphQL Union"
             )
 
     union_definition = StrawberryUnion(
@@ -221,4 +209,4 @@ def union(
         description=description,
     )
 
-    return union_definition
+    return union_definition  # type: ignore

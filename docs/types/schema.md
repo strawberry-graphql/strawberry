@@ -54,7 +54,7 @@ The root subscription type. Usually called `Subscription`.
 #### `config: Optional[StrawberryConfig] = None`
 
 Pass a `StrawberryConfig` object to configure how the schema is generated. [Read
-more](/docs/schema-configurations).
+more](/docs/types/schema-configurations).
 
 #### `types: List[Type] = []`
 
