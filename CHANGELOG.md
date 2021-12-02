@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.90.3 - 2021-12-02
+-------------------
+
+This release fixes an issue that prevented using enums as
+arguments for generic types inside unions.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1463](https://github.com/strawberry-graphql/strawberry/pull/1463/)
+
+
 0.90.2 - 2021-11-28
 -------------------
 
