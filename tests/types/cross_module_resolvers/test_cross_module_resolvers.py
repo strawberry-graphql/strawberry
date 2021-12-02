@@ -7,9 +7,12 @@ as type which can only be resolved at schema construction.
 
 from typing import List
 
-import strawberry
+import a_mod
+import b_mod
+import c_mod
+import x_mod
 
-from . import a_mod, b_mod, c_mod, x_mod
+import strawberry
 
 
 def test_a():

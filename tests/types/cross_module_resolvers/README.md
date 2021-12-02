@@ -1,7 +1,7 @@
 # Module tests
 
-This directory contains the modules needed for the `test_modules.py`
-file in the directory above.
+This directory contains the modules needed for the
+`test_cross_module_resolvers.py` file in the directory above.
 
 ## Problem
 
