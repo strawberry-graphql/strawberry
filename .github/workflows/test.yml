@@ -59,12 +59,9 @@ jobs:
       - name: pytest
         run: poetry run pytest --cov-report xml --cov=. --showlocals -vv -m "not django"
 
-      - uses: codecov/codecov-action@v1
-        if: ${{ always() }}
+      - uses: coverallsapp/github-action@v1.1.3
         with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          fail_ci_if_error: true
-          verbose: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 
   django-unit-tests:
     strategy:
