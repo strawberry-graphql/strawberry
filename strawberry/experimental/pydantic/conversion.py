@@ -5,7 +5,6 @@ import pydantic
 
 from strawberry.enum import EnumDefinition
 from strawberry.field import StrawberryField
-from strawberry.scalars import is_scalar
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
 from strawberry.union import StrawberryUnion
 
@@ -45,9 +44,8 @@ def _convert_from_pydantic_to_strawberry_type(
             )
 
         return items
-    elif is_scalar(type_):
-        return data
-    else:
+
+    if hasattr(type_, "_type_definition"):
         # in the case of an interface, the concrete type may be more specific
         # than the type in the field definition
         if hasattr(type(data), "_strawberry_type"):
@@ -55,6 +53,8 @@ def _convert_from_pydantic_to_strawberry_type(
         return convert_pydantic_model_to_strawberry_class(
             type_, model_instance=data_from_model, extra=extra
         )
+
+    return data
 
 
 def convert_pydantic_model_to_strawberry_class(cls, *, model_instance=None, extra=None):
@@ -69,9 +69,13 @@ def convert_pydantic_model_to_strawberry_class(cls, *, model_instance=None, extr
         data_from_model = (
             getattr(model_instance, python_name, None) if model_instance else None
         )
-        kwargs[python_name] = _convert_from_pydantic_to_strawberry_type(
-            field.type, data_from_model, extra=data_from_extra
-        )
+
+        # only convert and add fields to kwargs if they are present in the `__init__`
+        # method of the class
+        if field.init:
+            kwargs[python_name] = _convert_from_pydantic_to_strawberry_type(
+                field.type, data_from_model, extra=data_from_extra
+            )
 
     return cls(**kwargs)
 

@@ -3,6 +3,7 @@ import dataclasses
 import inspect
 import sys
 from typing import (
+    TYPE_CHECKING,
     Any,
     Awaitable,
     Callable,
@@ -10,6 +11,7 @@ from typing import (
     List,
     Mapping,
     Optional,
+    Sequence,
     Type,
     TypeVar,
     Union,
@@ -21,21 +23,24 @@ from typing_extensions import Literal
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import UNSET, StrawberryArgument
-from strawberry.exceptions import InvalidFieldArgument
+from strawberry.exceptions import InvalidDefaultFactoryError, InvalidFieldArgument
+from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.type import StrawberryType
 from strawberry.types.info import Info
 from strawberry.union import StrawberryUnion
-from strawberry.utils.mixins import GraphQLNameMixin
 
 from .permission import BasePermission
 from .types.fields.resolver import StrawberryResolver
-from .types.types import FederationFieldParams, TypeDefinition
 
 
-_RESOLVER_TYPE = Union[StrawberryResolver, Callable]
+if TYPE_CHECKING:
+    from .object_type import TypeDefinition
 
 
-class StrawberryField(dataclasses.Field, GraphQLNameMixin):
+_RESOLVER_TYPE = Union[StrawberryResolver, Callable, staticmethod, classmethod]
+
+
+class StrawberryField(dataclasses.Field):
     python_name: str
 
     def __init__(
@@ -43,18 +48,16 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
         python_name: Optional[str] = None,
         graphql_name: Optional[str] = None,
         type_annotation: Optional[StrawberryAnnotation] = None,
-        origin: Optional[Union[Type, Callable]] = None,
+        origin: Optional[Union[Type, Callable, staticmethod, classmethod]] = None,
         is_subscription: bool = False,
-        federation: FederationFieldParams = None,
         description: Optional[str] = None,
         base_resolver: Optional[StrawberryResolver] = None,
         permission_classes: List[Type[BasePermission]] = (),  # type: ignore
         default: object = UNSET,
         default_factory: Union[Callable[[], Any], object] = UNSET,
         deprecation_reason: Optional[str] = None,
+        directives: Sequence[StrawberrySchemaDirective] = (),
     ):
-        federation = federation or FederationFieldParams()
-
         # basic fields are fields with no provided resolver
         is_basic_field = not base_resolver
 
@@ -88,7 +91,7 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
         self.type_annotation = type_annotation
 
         self.description: Optional[str] = description
-        self.origin: Optional[Union[Type, Callable]] = origin
+        self.origin = origin
 
         self._base_resolver: Optional[StrawberryResolver] = None
         if base_resolver is not None:
@@ -99,11 +102,16 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
         # `dataclasses.MISSING` to represent an "undefined" value and
         # `.default_value` uses `UNSET`
         self.default_value = default
+        if callable(default_factory):
+            try:
+                self.default_value = default_factory()
+            except TypeError as exc:
+                raise InvalidDefaultFactoryError() from exc
 
         self.is_subscription = is_subscription
 
-        self.federation: FederationFieldParams = federation
         self.permission_classes: List[Type[BasePermission]] = list(permission_classes)
+        self.directives = directives
 
         self.deprecation_reason = deprecation_reason
 
@@ -119,14 +127,14 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
                 continue
             elif isinstance(argument.type, StrawberryUnion):
                 raise InvalidFieldArgument(
-                    self.python_name,
+                    resolver.name,
                     argument.python_name,
                     "Union",
                 )
             elif getattr(argument.type, "_type_definition", False):
                 if argument.type._type_definition.is_interface:
                     raise InvalidFieldArgument(
-                        self.python_name,
+                        resolver.name,
                         argument.python_name,
                         "Interface",
                     )
@@ -257,7 +265,6 @@ class StrawberryField(dataclasses.Field, GraphQLNameMixin):
             type_annotation=StrawberryAnnotation(new_type),
             origin=self.origin,
             is_subscription=self.is_subscription,
-            federation=self.federation,
             description=self.description,
             base_resolver=new_resolver,
             permission_classes=self.permission_classes,
@@ -308,10 +315,10 @@ def field(
     description: Optional[str] = None,
     init: Literal[False] = False,
     permission_classes: Optional[List[Type[BasePermission]]] = None,
-    federation: Optional[FederationFieldParams] = None,
     deprecation_reason: Optional[str] = None,
     default: Any = UNSET,
     default_factory: Union[Callable, object] = UNSET,
+    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
 ) -> T:
     ...
 
@@ -324,10 +331,10 @@ def field(
     description: Optional[str] = None,
     init: Literal[True] = True,
     permission_classes: Optional[List[Type[BasePermission]]] = None,
-    federation: Optional[FederationFieldParams] = None,
     deprecation_reason: Optional[str] = None,
     default: Any = UNSET,
     default_factory: Union[Callable, object] = UNSET,
+    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
 ) -> Any:
     ...
 
@@ -340,10 +347,10 @@ def field(
     is_subscription: bool = False,
     description: Optional[str] = None,
     permission_classes: Optional[List[Type[BasePermission]]] = None,
-    federation: Optional[FederationFieldParams] = None,
     deprecation_reason: Optional[str] = None,
     default: Any = UNSET,
     default_factory: Union[Callable, object] = UNSET,
+    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
 ) -> StrawberryField:
     ...
 
@@ -355,10 +362,10 @@ def field(
     is_subscription=False,
     description=None,
     permission_classes=None,
-    federation=None,
     deprecation_reason=None,
     default=UNSET,
     default_factory=UNSET,
+    directives=(),
     # This init parameter is used by PyRight to determine whether this field
     # is added in the constructor or not. It is not used to change
     # any behavior at the moment.
@@ -386,10 +393,10 @@ def field(
         description=description,
         is_subscription=is_subscription,
         permission_classes=permission_classes or [],
-        federation=federation or FederationFieldParams(),
         deprecation_reason=deprecation_reason,
         default=default,
         default_factory=default_factory,
+        directives=directives,
     )
 
     if resolver:
@@ -398,4 +405,4 @@ def field(
     return field_
 
 
-__all__ = ["FederationFieldParams", "StrawberryField", "field"]
+__all__ = ["StrawberryField", "field"]

@@ -2,7 +2,7 @@ import dataclasses
 from typing import Any, List, Type
 
 from strawberry.experimental.pydantic.exceptions import UnregisteredTypeException
-from strawberry.private import Private
+from strawberry.private import is_private
 from strawberry.utils.typing import (
     get_list_annotation,
     get_optional_annotation,
@@ -37,7 +37,9 @@ def get_strawberry_error_type_from_model(type_: Any):
 
 def get_private_fields(cls: Type) -> List[dataclasses.Field]:
     private_fields: List[dataclasses.Field] = []
+
     for field in dataclasses.fields(cls):
-        if isinstance(field.type, Private):
+        if is_private(field.type):
             private_fields.append(field)
+
     return private_fields

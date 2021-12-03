@@ -9,7 +9,7 @@ from strawberry.exceptions import (
     PrivateStrawberryFieldError,
 )
 from strawberry.field import StrawberryField
-from strawberry.private import Private
+from strawberry.private import is_private
 
 from ..arguments import UNSET
 
@@ -81,7 +81,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
 
         if isinstance(field, StrawberryField):
             # Check that the field type is not Private
-            if isinstance(field.type, Private):
+            if is_private(field.type):
                 raise PrivateStrawberryFieldError(field.python_name, cls.__name__)
 
             # Check that default is not set if a resolver is defined
@@ -125,7 +125,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
         # Create a StrawberryField for fields that didn't use strawberry.field
         else:
             # Only ignore Private fields that weren't defined using StrawberryFields
-            if isinstance(field.type, Private):
+            if is_private(field.type):
                 continue
 
             field_type = field.type

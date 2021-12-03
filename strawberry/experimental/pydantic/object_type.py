@@ -2,10 +2,11 @@ import builtins
 import dataclasses
 import warnings
 from functools import partial
-from typing import Any, Dict, List, Optional, Tuple, Type, cast
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, cast
 
 from pydantic import BaseModel
 from pydantic.fields import ModelField
+from typing_extensions import Literal
 
 import strawberry
 from strawberry.arguments import UNSET
@@ -16,13 +17,18 @@ from strawberry.experimental.pydantic.fields import get_basic_type
 from strawberry.experimental.pydantic.utils import get_private_fields
 from strawberry.field import StrawberryField
 from strawberry.object_type import _process_type, _wrap_dataclass
+from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.types.type_resolver import _get_fields
-from strawberry.types.types import FederationTypeParams, TypeDefinition
+from strawberry.types.types import TypeDefinition
 
 from .exceptions import MissingFieldsListError, UnregisteredTypeException
 
 
 def replace_pydantic_types(type_: Any):
+    origin = getattr(type_, "__origin__", None)
+    if origin is Literal:
+        # Literal does not have types in its __args__ so we return early
+        return type_
     if hasattr(type_, "__args__"):
         new_type = type_.copy_with(
             tuple(replace_pydantic_types(t) for t in type_.__args__)
@@ -68,7 +74,7 @@ def type(
     is_input: bool = False,
     is_interface: bool = False,
     description: Optional[str] = None,
-    federation: Optional[FederationTypeParams] = None,
+    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
     all_fields: bool = False,
 ):
     def wrap(cls):
@@ -110,6 +116,7 @@ def type(
                         field.default_factory if field.default_factory else UNSET
                     ),
                     type_annotation=get_type_for_field(field),
+                    description=field.field_info.description,
                 ),
             )
             for name, field in model_fields.items()
@@ -157,7 +164,7 @@ def type(
             is_input=is_input,
             is_interface=is_interface,
             description=description,
-            federation=federation,
+            directives=directives,
         )
 
         model._strawberry_type = cls  # type: ignore

@@ -58,6 +58,25 @@ def test_can_convert_alias_pydantic_field_to_strawberry():
     assert user.password == "abc"
 
 
+def test_can_pass_pydantic_field_description_to_strawberry():
+    class UserModel(pydantic.BaseModel):
+        age: int
+        password: Optional[str] = pydantic.Field(..., description="NOT 'password'.")
+
+    @strawberry.experimental.pydantic.type(UserModel)
+    class User:
+        age: strawberry.auto
+        password: strawberry.auto
+
+    definition = User._type_definition
+
+    assert definition.fields[0].python_name == "age"
+    assert definition.fields[0].description is None
+
+    assert definition.fields[1].python_name == "password"
+    assert definition.fields[1].description == "NOT 'password'."
+
+
 def test_can_convert_falsy_values_to_strawberry():
     class UserModel(pydantic.BaseModel):
         age: int
@@ -633,6 +652,30 @@ def test_can_convert_input_types_to_pydantic_default_values():
 
     assert user.age == 1
     assert user.password is None
+
+
+def test_can_convert_pydantic_type_to_strawberry_with_additional_field_resolvers():
+    def some_resolver() -> int:
+        return 84
+
+    class UserModel(pydantic.BaseModel):
+        password: Optional[str]
+        new_age: int
+
+    @strawberry.experimental.pydantic.type(UserModel)
+    class User:
+        password: strawberry.auto
+        new_age: int = strawberry.field(resolver=some_resolver)
+
+        @strawberry.field
+        def age() -> int:
+            return 42
+
+    origin_user = UserModel(password="abc", new_age=21)
+    user = User.from_pydantic(origin_user)
+    assert user.password == "abc"
+    assert User._type_definition.fields[0].base_resolver() == 84
+    assert User._type_definition.fields[1].base_resolver() == 42
 
 
 def test_can_convert_pydantic_type_to_strawberry_error():

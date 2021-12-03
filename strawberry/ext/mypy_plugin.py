@@ -78,13 +78,6 @@ def strawberry_field_hook(ctx: FunctionContext) -> Type:
     return AnyType(TypeOfAny.special_form)
 
 
-def private_type_analyze_callback(ctx: AnalyzeTypeContext) -> Type:
-    type_name = ctx.type.args[0]
-    type_ = ctx.api.analyze_type(type_name)
-
-    return type_
-
-
 def _get_named_type(name: str, api: SemanticAnalyzerPluginInterface):
     if "." in name:
         return api.named_type_or_none(name)  # type: ignore
@@ -253,13 +246,13 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext):
 
 def is_dataclasses_field_or_strawberry_field(expr: Expression) -> bool:
     if isinstance(expr, CallExpr):
-        if isinstance(expr.callee, RefExpr):
-            if expr.callee.fullname in (
-                "dataclasses.field",
-                "strawberry.field.field",
-                "strawberry.federation.field",
-            ):
-                return True
+        if isinstance(expr.callee, RefExpr) and expr.callee.fullname in (
+            "dataclasses.field",
+            "strawberry.field.field",
+            "strawberry.federation.field",
+            "strawberry.federation.field.field",
+        ):
+            return True
 
         if isinstance(expr.callee, MemberExpr) and isinstance(
             expr.callee.expr, NameExpr
@@ -638,9 +631,6 @@ class StrawberryPlugin(Plugin):
         if self._is_strawberry_lazy_type(fullname):
             return lazy_type_analyze_callback
 
-        if self._is_strawberry_private(fullname):
-            return private_type_analyze_callback
-
         return None
 
     def get_class_decorator_hook(
@@ -682,17 +672,14 @@ class StrawberryPlugin(Plugin):
     def _is_strawberry_lazy_type(self, fullname: str) -> bool:
         return fullname == "strawberry.lazy_type.LazyType"
 
-    def _is_strawberry_private(self, fullname: str) -> bool:
-        return fullname == "strawberry.private.Private" or fullname.endswith(
-            "strawberry.Private"
-        )
-
     def _is_strawberry_decorator(self, fullname: str) -> bool:
         if any(
             strawberry_decorator in fullname
             for strawberry_decorator in {
                 "strawberry.object_type.type",
                 "strawberry.federation.type",
+                "strawberry.federation.object_type.type",
+                "strawberry.schema_directive.schema_directive",
                 "strawberry.object_type.input",
                 "strawberry.object_type.interface",
             }
@@ -710,6 +697,7 @@ class StrawberryPlugin(Plugin):
                 "strawberry.federation.type",
                 "strawberry.input",
                 "strawberry.interface",
+                "strawberry.schema_directive",
             }
         )
 

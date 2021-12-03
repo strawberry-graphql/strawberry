@@ -1,6 +1,6 @@
 import dataclasses
 import warnings
-from typing import Any, List, Optional, Tuple, Type, cast
+from typing import Any, List, Optional, Sequence, Tuple, Type, cast
 
 from pydantic import BaseModel, ValidationError
 from pydantic.fields import ModelField
@@ -16,8 +16,8 @@ from strawberry.experimental.pydantic.utils import (
 )
 from strawberry.field import StrawberryField
 from strawberry.object_type import _process_type, _wrap_dataclass
+from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.types.type_resolver import _get_fields
-from strawberry.types.types import FederationTypeParams
 from strawberry.utils.typing import is_union
 
 from .exceptions import MissingFieldsListError
@@ -52,7 +52,7 @@ def error_type(
     fields: List[str] = None,
     name: Optional[str] = None,
     description: Optional[str] = None,
-    federation: Optional[FederationTypeParams] = None,
+    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
     all_fields: bool = False
 ):
     def wrap(cls):
@@ -125,7 +125,7 @@ def error_type(
             is_input=False,
             is_interface=False,
             description=description,
-            federation=federation,
+            directives=directives,
         )
 
         model._strawberry_error_type = cls  # type: ignore
