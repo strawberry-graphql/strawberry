@@ -329,3 +329,48 @@ def test_can_change_status_code():
 
     assert response.status_code == 418
     assert data == {"data": {"abc": "ABC"}}
+
+
+def test_json_encoder():
+    query = "{ hello }"
+
+    factory = RequestFactory()
+    request = factory.post(
+        "/graphql/", {"query": query}, content_type="application/json"
+    )
+
+    class CustomEncoder(json.JSONEncoder):
+        def encode(self, o: Any) -> str:
+            # Reverse the result.
+            return super().encode(o)[::-1]
+
+    response1 = GraphQLView.as_view(schema=schema, json_encoder=CustomEncoder)(request)
+    assert response1.content.decode() == '{"data": {"hello": "strawberry"}}'[::-1]
+
+    class CustomGraphQLView(GraphQLView):
+        json_encoder = CustomEncoder
+
+    response2 = CustomGraphQLView.as_view(schema=schema)(request)
+    assert response1.content == response2.content
+
+
+def test_json_dumps_params():
+    query = "{ hello }"
+
+    factory = RequestFactory()
+    request = factory.post(
+        "/graphql/", {"query": query}, content_type="application/json"
+    )
+
+    dumps_params = {"separators": (",", ":")}
+
+    response1 = GraphQLView.as_view(schema=schema, json_dumps_params=dumps_params)(
+        request
+    )
+    assert response1.content.decode() == '{"data":{"hello":"strawberry"}}'
+
+    class CustomGraphQLView(GraphQLView):
+        json_dumps_params = dumps_params
+
+    response2 = CustomGraphQLView.as_view(schema=schema)(request)
+    assert response1.content == response2.content
