@@ -26,7 +26,7 @@ from .exceptions import MissingFieldsListError
 def get_type_for_field(field: ModelField):
     type_ = field.outer_type_
     type_ = normalize_type(type_)
-    return field_type_to_type(type_)
+    return Optional[field_type_to_type(type_)]
 
 
 def field_type_to_type(type_):
@@ -35,15 +35,17 @@ def field_type_to_type(type_):
 
     if is_union(type_):
         new_type = type_.copy_with(tuple(field_type_to_type(t) for t in type_.__args__))
-        return Optional[List[new_type]]  # type: ignore
+        return List[new_type]  # type: ignore
     if hasattr(type_, "__args__"):
-        new_type = type_.copy_with(tuple(field_type_to_type(t) for t in type_.__args__))
-        return Optional[new_type]
+        new_type = type_.copy_with(
+            tuple(Optional[field_type_to_type(t)] for t in type_.__args__)
+        )
+        return new_type
     elif issubclass(type_, BaseModel):
         strawberry_type = get_strawberry_error_type_from_model(type_)
-        return Optional[strawberry_type]
+        return strawberry_type
 
-    return Optional[List[strawberry_type]]
+    return List[strawberry_type]
 
 
 def error_type(
