@@ -80,7 +80,7 @@ def convert_pydantic_model_to_strawberry_class(cls, *, model_instance=None, extr
     return cls(**kwargs)
 
 
-def _convert_pydantic_error(cls: Type, loc: Iterable, error: str) -> Any:
+def _convert_pydantic_error(cls: Type, loc: Iterable, error: str) -> object:
     first_loc, *rest = loc
 
     if isinstance(cls, StrawberryOptional):
@@ -127,9 +127,9 @@ def _convert_pydantic_error(cls: Type, loc: Iterable, error: str) -> Any:
     return error_args
 
 
-def _convert_pydantic_error_to_srawberry_type(
+def _convert_pydantic_error_to_strawberry_type(
     strawberry_cls: Type, cls: Type, error: pydantic.ValidationError
-) -> Any:
+) -> object:
     if error.model != cls:
         raise TypeError(f"Class {strawberry_cls} received an error for model {cls}")
 
@@ -145,7 +145,7 @@ def _convert_pydantic_error_to_srawberry_type(
         field = fields[field_name]
         existing = args.get(field_name)
         if len(loc) == 1:
-            new_errors = [f'{e["type"]}: {e["msg"]}']
+            new_errors: Any = [f'{e["type"]}: {e["msg"]}']
         else:
             new_errors = _convert_pydantic_error(
                 field.type, loc[1:], f'{e["type"]}: {e["msg"]}'
@@ -166,10 +166,11 @@ def _merge_error_args(args1: Any, args2: Any) -> Union[Dict[str, Any], List[Any]
         new_args_dict: Dict[str, Any] = {}
         for key, value in args1.items():
             existing_value = new_args_dict.get(key, [])
-            other_value = args2.get(key)
-            new_args_dict[key] = _merge_error_args(
-                existing_value, [*(value or []), *(other_value or [])]
-            )
+            other_value = args2.get(key) or []
+            new_value = value or []
+            merged_new_values = [*new_value, *other_value]
+
+            new_args_dict[key] = _merge_error_args(existing_value, merged_new_values)
         return new_args_dict
 
     if isinstance(args1, list):
@@ -177,12 +178,12 @@ def _merge_error_args(args1: Any, args2: Any) -> Union[Dict[str, Any], List[Any]
         for args1_item, args2_item in zip(args1, args2):
             new_args.append(_merge_error_args(args1_item, args2_item))
 
-        longer = args1 if len(args1) > len(args2) else args2
+        longer = max(args1, args2, key=len)
         for extra in longer[len(new_args) :]:
             new_args.append(extra)
         return new_args
 
-    if dataclasses.is_dataclass(args1) and type(args1) == type(args2):
+    if dataclasses.is_dataclass(args1) and type(args1) is type(args2):
         return type(args1)(
             **_merge_error_args(dataclasses.asdict(args1), dataclasses.asdict(args2))
         )
@@ -194,5 +195,5 @@ def _merge_error_args(args1: Any, args2: Any) -> Union[Dict[str, Any], List[Any]
 
 def convert_pydantic_error_to_strawberry_class(
     cls: Type, error: pydantic.ValidationError
-) -> Any:
-    return _convert_pydantic_error_to_srawberry_type(cls, cls._pydantic_type, error)
+) -> object:
+    return _convert_pydantic_error_to_strawberry_type(cls, cls._pydantic_type, error)
