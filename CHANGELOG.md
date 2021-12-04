@@ -1,6 +1,20 @@
 CHANGELOG
 =========
 
+0.92.0 - 2021-12-04
+-------------------
+
+This releases fixes an issue where you were not allowed
+to return a non-strawberry type for fields that return
+an interface. Now this works as long as each type
+implementing the interface implements an `is_type_of`
+classmethod. Previous automatic duck typing on types
+that implement an interface now requires explicit
+resolution using this classmethod.
+
+Contributed by [Etty](https://github.com/estyxx) [PR #1299](https://github.com/strawberry-graphql/strawberry/pull/1299/)
+
+
 0.91.0 - 2021-12-04
 -------------------
 
