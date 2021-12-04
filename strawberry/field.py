@@ -174,7 +174,6 @@ class StrawberryField(dataclasses.Field):
     @base_resolver.setter
     def base_resolver(self, resolver: StrawberryResolver) -> None:
         self._base_resolver = resolver
-        self.origin = resolver.wrapped_func
 
         # Don't add field to __init__, __repr__ and __eq__ once it has a resolver
         self.init = False
