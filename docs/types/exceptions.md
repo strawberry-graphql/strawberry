@@ -247,7 +247,7 @@ E   TypeError: Query fields cannot be resolved. Scalar `MyCustomScalar` has alre
 ### UnsupportedTypeError
 
 This exception is thrown when the type-annotation used is not supported by
-`strawberry.field` (yet). At the time of writing this exception is used by Pydantic
+`strawberry.field`. At the time of writing this exception is used by Pydantic
 only
 
 ```python
