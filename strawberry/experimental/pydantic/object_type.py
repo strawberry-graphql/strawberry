@@ -8,6 +8,8 @@ from pydantic import BaseModel
 from pydantic.fields import ModelField
 from typing_extensions import Literal
 
+from graphql import GraphQLResolveInfo
+
 import strawberry
 from strawberry.arguments import UNSET
 from strawberry.experimental.pydantic.conversion import (
@@ -152,10 +154,17 @@ def type(
 
         sorted_fields = missing_default + has_default
 
+        # Implicitly define `is_type_of` to support interfaces/unions that use
+        # pydantic objects (not the corresponding strawberry type)
+        @classmethod  # type: ignore
+        def is_type_of(cls: Type, obj: Any, _info: GraphQLResolveInfo) -> bool:
+            return isinstance(obj, (cls, model))
+
         cls = dataclasses.make_dataclass(
             cls.__name__,
             sorted_fields,
             bases=cls.__bases__,
+            namespace={"is_type_of": is_type_of},
         )
 
         _process_type(

@@ -135,9 +135,16 @@ class StrawberryUnion(StrawberryType):
 
             from strawberry.types.types import TypeDefinition
 
-            # Make sure that the type that's passed in is an Object type
+            # If the type given is not an Object type, try resolving using `is_type_of`
+            # defined on the union's inner types
             if not hasattr(root, "_type_definition"):
-                # TODO: If root=python dict, this won't work
+                for inner_type in type_.types:
+                    if inner_type.is_type_of is not None and inner_type.is_type_of(
+                        root, info
+                    ):
+                        return inner_type.name
+
+                # Couldn't resolve using `is_type_of``
                 raise WrongReturnTypeForUnion(info.field_name, str(type(root)))
 
             return_type: Optional[GraphQLType]

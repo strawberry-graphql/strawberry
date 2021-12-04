@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import Any, Callable, Dict, List, Tuple, Type, Union, cast
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union, cast
 
 from graphql import (
     GraphQLArgument,
@@ -229,27 +229,11 @@ class GraphQLCoreConverter:
 
             return graphql_fields
 
-        def resolve_type(
-            obj: Any,
-            info: GraphQLResolveInfo,
-            type_: Union[GraphQLInterfaceType, GraphQLUnionType],
-        ) -> GraphQLObjectType:
-            # TODO: this will probably break when passing dicts
-            # or even non strawberry types
-            resolved_type = self.type_map[
-                obj.__class__._type_definition.name
-            ].implementation
-
-            assert isinstance(resolved_type, GraphQLObjectType)
-
-            return resolved_type
-
         graphql_interface = GraphQLInterfaceType(
             name=interface_name,
             fields=get_graphql_fields,
             interfaces=list(map(self.from_interface, interface.interfaces)),
             description=interface.description,
-            resolve_type=resolve_type,
         )
 
         self.type_map[interface_name] = ConcreteType(
@@ -295,11 +279,23 @@ class GraphQLCoreConverter:
 
             return graphql_fields
 
+        is_type_of: Optional[Callable[[Any, GraphQLResolveInfo], bool]]
+        if object_type.is_type_of:
+            is_type_of = object_type.is_type_of
+        elif object_type.interfaces:
+
+            def is_type_of(obj: Any, _info: GraphQLResolveInfo) -> bool:
+                return isinstance(obj, object_type.origin)
+
+        else:
+            is_type_of = None
+
         graphql_object_type = GraphQLObjectType(
             name=object_type_name,
             fields=get_graphql_fields,
             interfaces=list(map(self.from_interface, object_type.interfaces)),
             description=object_type.description,
+            is_type_of=is_type_of,
         )
 
         self.type_map[object_type_name] = ConcreteType(
