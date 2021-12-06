@@ -28,7 +28,7 @@ repos:
         exclude: CHANGELOG.md
 
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v2.5.0
+    rev: v2.5.1
     hooks:
       - id: prettier
         files: '^docs/.*\.mdx?$'
@@ -48,6 +48,6 @@ repos:
         args: ['--in-place', '--remove-all-unused-imports', '--remove-unused-variable']
 
   - repo: https://github.com/psf/black
-    rev: 21.11b1
+    rev: 21.12b0
     hooks:
       - id: black
