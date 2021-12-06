@@ -74,7 +74,7 @@ example:
 
 ```python
 @pytest.mark.asyncio
-async def test_mutaton():
+async def test_mutation():
     mutation = """
         mutation TestMutation($title: String!, $author: String!) {
             addBook(title: $title, author: $author) {

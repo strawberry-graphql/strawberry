@@ -6,10 +6,12 @@ from strawberry.asgi import GraphQL as BaseGraphQL
 from strawberry.types import ExecutionResult, Info
 
 
-def test_simple_query(test_client):
-    response = test_client.post("/", json={"query": "{ hello }"})
+def test_simple_query(graphql_client):
+    query = "{ hello }"
 
-    assert response.json() == {"data": {"hello": "Hello world"}}
+    response = graphql_client.query(query=query)
+
+    assert response.data == {"hello": "Hello world"}
 
 
 def test_fails_when_request_body_has_invalid_json(test_client):
@@ -19,53 +21,49 @@ def test_fails_when_request_body_has_invalid_json(test_client):
     assert response.status_code == 400
 
 
-def test_returns_errors(test_client):
-    response = test_client.post("/", json={"query": "{ donut }"})
+def test_returns_errors(graphql_client):
+    query = "{ donut }"
 
-    assert response.json() == {
-        "data": None,
-        "errors": [
-            {
-                "locations": [{"column": 3, "line": 1}],
-                "message": "Cannot query field 'donut' on type 'Query'.",
-                "path": None,
-            }
-        ],
-    }
+    response = graphql_client.query(query=query, asserts_errors=False)
 
-
-def test_can_pass_variables(test_client):
-    response = test_client.post(
-        "/",
-        json={
-            "query": "query Hello($name: String!) { hello(name: $name) }",
-            "variables": {"name": "James"},
-        },
-    )
-
-    assert response.json() == {"data": {"hello": "Hello James"}}
+    assert response.errors == [
+        {
+            "locations": [{"column": 3, "line": 1}],
+            "message": "Cannot query field 'donut' on type 'Query'.",
+            "path": None,
+        }
+    ]
 
 
-def test_returns_errors_and_data(test_client):
-    response = test_client.post("/", json={"query": "{ hello, alwaysFail }"})
+def test_can_pass_variables(graphql_client):
+    query = "query Hello($name: String!) { hello(name: $name) }"
 
-    assert response.status_code == 200
-    assert response.json() == {
-        "data": {"hello": "Hello world", "alwaysFail": None},
-        "errors": [
-            {
-                "locations": [{"column": 10, "line": 1}],
-                "message": "You are not authorized",
-                "path": ["alwaysFail"],
-            }
-        ],
-    }
+    response = graphql_client.query(query=query, variables={"name": "James"})
+
+    assert response.data == {"hello": "Hello James"}
 
 
-def test_root_value(test_client):
-    response = test_client.post("/", json={"query": "{ rootName }"})
+def test_returns_errors_and_data(graphql_client):
+    query = "{ hello, alwaysFail }"
 
-    assert response.json() == {"data": {"rootName": "Query"}}
+    response = graphql_client.query(query=query, asserts_errors=False)
+
+    assert response.data == {"hello": "Hello world", "alwaysFail": None}
+    assert response.errors == [
+        {
+            "locations": [{"column": 10, "line": 1}],
+            "message": "You are not authorized",
+            "path": ["alwaysFail"],
+        }
+    ]
+
+
+def test_root_value(graphql_client):
+    query = "{ rootName }"
+
+    response = graphql_client.query(query=query)
+
+    assert response.data == {"rootName": "Query"}
 
 
 def test_context_response():

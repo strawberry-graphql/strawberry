@@ -1,5 +1,5 @@
 import textwrap
-from typing import Optional
+from typing import List, Optional
 from uuid import UUID
 
 import strawberry
@@ -132,6 +132,7 @@ def test_input_defaults():
         s: Optional[str] = None
         i: int = 0
         x: Optional[int] = UNSET
+        l: List[str] = strawberry.field(default_factory=list)
 
     @strawberry.type
     class Query:
@@ -144,6 +145,7 @@ def test_input_defaults():
       s: String = null
       i: Int! = 0
       x: Int
+      l: [String!]! = []
     }
 
     type Query {

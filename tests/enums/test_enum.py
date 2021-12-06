@@ -4,7 +4,7 @@ import pytest
 
 import strawberry
 from strawberry.enum import EnumDefinition
-from strawberry.exceptions import NotAnEnum
+from strawberry.exceptions import ObjectIsNotAnEnumError
 
 
 def test_basic_enum():
@@ -62,7 +62,7 @@ def test_can_use_enum_as_arguments():
 
 def test_raises_error_when_using_enum_with_a_not_enum_class():
     expected_error = "strawberry.enum can only be used with subclasses of Enum"
-    with pytest.raises(NotAnEnum, match=expected_error):
+    with pytest.raises(ObjectIsNotAnEnumError, match=expected_error):
 
         @strawberry.enum
         class NormalClass:

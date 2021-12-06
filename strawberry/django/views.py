@@ -1,9 +1,10 @@
 import asyncio
 import json
 import os
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Type
 
 from django.core.exceptions import SuspiciousOperation
+from django.core.serializers.json import DjangoJSONEncoder
 from django.http import Http404, HttpRequest, HttpResponseNotAllowed, JsonResponse
 from django.http.response import HttpResponse
 from django.template import RequestContext, Template
@@ -40,11 +41,20 @@ class BaseView(View):
     subscriptions_enabled = False
     graphiql = True
     schema: Optional[BaseSchema] = None
+    json_encoder: Type[json.JSONEncoder] = DjangoJSONEncoder
+    json_dumps_params: Optional[Dict[str, Any]] = None
 
-    def __init__(self, schema: BaseSchema, graphiql=True, subscriptions_enabled=False):
+    def __init__(
+        self,
+        schema: BaseSchema,
+        graphiql=True,
+        subscriptions_enabled=False,
+        **kwargs: Any,
+    ):
         self.schema = schema
         self.graphiql = graphiql
         self.subscriptions_enabled = subscriptions_enabled
+        super().__init__(**kwargs)
 
     def parse_body(self, request) -> Dict[str, Any]:
         if request.content_type.startswith("multipart/form-data"):
@@ -104,7 +114,11 @@ class BaseView(View):
     def _create_response(
         self, response_data: GraphQLHTTPResponse, sub_response: HttpResponse
     ) -> JsonResponse:
-        response = JsonResponse(response_data)
+        response = JsonResponse(
+            response_data,
+            encoder=self.json_encoder,
+            json_dumps_params=self.json_dumps_params,
+        )
 
         for name, value in sub_response.items():
             response[name] = value

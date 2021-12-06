@@ -1,6 +1,5 @@
-import logging
-import sys
-from typing import Any, Dict, List, Optional, Sequence, Type, Union
+from functools import lru_cache
+from typing import Any, Dict, Optional, Sequence, Type, Union
 
 from graphql import (
     ExecutionContext as GraphQLExecutionContext,
@@ -9,13 +8,17 @@ from graphql import (
     parse,
     validate_schema,
 )
-from graphql.error import GraphQLError
 from graphql.subscription import subscribe
 from graphql.type.directives import specified_directives
 
 from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
+from strawberry.directive import StrawberryDirective
 from strawberry.enum import EnumDefinition
 from strawberry.extensions import Extension
+from strawberry.extensions.directives import (
+    DirectivesExtension,
+    DirectivesExtensionSync,
+)
 from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
 from strawberry.types import ExecutionContext, ExecutionResult
@@ -23,21 +26,19 @@ from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 
 from ..printer import print_schema
+from .base import BaseSchema
 from .config import StrawberryConfig
 from .execute import execute, execute_sync
 
 
-logger = logging.getLogger("strawberry.execution")
-
-
-class Schema:
+class Schema(BaseSchema):
     def __init__(
         self,
         # TODO: can we make sure we only allow to pass something that has been decorated?
         query: Type,
         mutation: Optional[Type] = None,
         subscription: Optional[Type] = None,
-        directives=(),
+        directives: Sequence[StrawberryDirective] = (),
         types=(),
         extensions: Sequence[Union[Type[Extension], Extension]] = (),
         execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
@@ -71,9 +72,8 @@ class Schema:
             else None
         )
 
-        directives = [
-            self.schema_converter.from_directive(directive.directive_definition)
-            for directive in directives
+        graphql_directives = [
+            self.schema_converter.from_directive(directive) for directive in directives
         ]
 
         graphql_types = []
@@ -85,9 +85,12 @@ class Schema:
             query=query_type,
             mutation=mutation_type,
             subscription=subscription_type if subscription else None,
-            directives=specified_directives + directives,
+            directives=specified_directives + graphql_directives,
             types=graphql_types,
         )
+
+        # attach our schema to the GraphQL schema instance
+        self._schema._strawberry_schema = self  # type: ignore
 
         # Validate schema early because we want developers to know about
         # possible issues as soon as possible
@@ -108,21 +111,16 @@ class Schema:
 
         return None
 
-    def process_errors(
-        self, errors: List[GraphQLError], execution_context: ExecutionContext
-    ) -> None:
-        kwargs: Dict[str, Any] = {
-            "stack_info": True,
-        }
-
-        # stacklevel was added in version 3.8
-        # https://docs.python.org/3/library/logging.html#logging.Logger.debug
-
-        if sys.version_info >= (3, 8):
-            kwargs["stacklevel"] = 3
-
-        for error in errors:
-            logger.error(error, exc_info=error.original_error, **kwargs)
+    @lru_cache()
+    def get_directive_by_name(self, graphql_name: str) -> Optional[StrawberryDirective]:
+        return next(
+            (
+                directive
+                for directive in self.directives
+                if self.config.name_converter.from_directive(directive) == graphql_name
+            ),
+            None,
+        )
 
     async def execute(
         self,
@@ -145,8 +143,7 @@ class Schema:
         result = await execute(
             self._schema,
             query,
-            extensions=self.extensions,
-            directives=self.directives,
+            extensions=list(self.extensions) + [DirectivesExtension],
             execution_context_class=self.execution_context_class,
             execution_context=execution_context,
         )
@@ -176,8 +173,7 @@ class Schema:
         result = execute_sync(
             self._schema,
             query,
-            extensions=self.extensions,
-            directives=self.directives,
+            extensions=list(self.extensions) + [DirectivesExtensionSync],
             execution_context_class=self.execution_context_class,
             execution_context=execution_context,
         )
