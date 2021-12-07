@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.93.0 - 2021-12-07
+-------------------
+
+This release `operation_type` to the `ExecutionContext` type that is available
+in extensions. It also gets the `operation_name` from the query if one isn't
+provided by the client.
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) [PR #1286](https://github.com/strawberry-graphql/strawberry/pull/1286/)
+
+
 0.92.2 - 2021-12-06
 -------------------
 
