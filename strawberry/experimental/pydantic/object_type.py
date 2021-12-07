@@ -1,6 +1,7 @@
 import builtins
 import dataclasses
 import warnings
+from enum import Enum
 from functools import partial
 from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, cast
 
@@ -25,6 +26,8 @@ from strawberry.types.types import TypeDefinition
 
 from .exceptions import MissingFieldsListError, UnregisteredTypeException
 
+create_type = type
+
 
 def replace_pydantic_types(type_: Any):
     origin = getattr(type_, "__origin__", None)
@@ -48,11 +51,20 @@ def replace_pydantic_types(type_: Any):
 
         return new_type
 
+    if issubclass(type_, Enum):
+        new_type = strawberry.enum(type_)
+        return new_type
+
     if issubclass(type_, BaseModel):
         if hasattr(type_, "_strawberry_type"):
             return type_._strawberry_type
         else:
-            raise UnregisteredTypeException(type_)
+            # register nested class
+            strawberry.experimental.pydantic.type(model=type_, all_fields=True)(
+                create_type(type_.__name__, (), {})
+            )
+
+            return type_._strawberry_type
 
     return type_
 
