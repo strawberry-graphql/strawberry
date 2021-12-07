@@ -57,15 +57,13 @@ As mentioned Strawberry uses a code first approach. The previous schema would
 look like this in Strawberry
 
 ```python
-from __future__ import annotations
-
 import typing
 import strawberry
 
 @strawberry.type
 class Book:
   title: str
-  author: Author
+  author: 'Author'
 
 @strawberry.type
 class Author:
@@ -75,17 +73,6 @@ class Author:
 
 As you can see the code maps almost one to one with the schema, thanks to
 python’s type hints feature.
-
-The `__future__` import allows us to annotate types that are defined later in
-the file, as per [PEP 563](https://www.python.org/dev/peps/pep-0563/). If you
-can’t use this feature (because your other code is incompatible with it), you
-need to quote the `Author` annotation.
-
-```python
-    ...
-    author: 'Author'
-    ...
-```
 
 Notice that here we are also not specifying how to fetch data, that will be
 explained in the resolvers section.
@@ -143,7 +130,7 @@ import strawberry
 @strawberry.type
 class Book:
   title: str
-  author: Author
+  author: 'Author'
 
 @strawberry.type
 class Author:
