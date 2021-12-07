@@ -43,9 +43,10 @@ class OpenTelemetryExtension(Extension):
             self.execution_context = execution_context
 
     def on_request_start(self):
+        self._operation_name = self.execution_context.operation_name
         span_name = (
-            f"GraphQL Query: {self.execution_context.operation_name}"
-            if self.execution_context.operation_name
+            f"GraphQL Query: {self._operation_name}"
+            if self._operation_name
             else "GraphQL Query"
         )
 
@@ -58,6 +59,14 @@ class OpenTelemetryExtension(Extension):
         )
 
     def on_request_end(self):
+        # If the client doesn't provide an operation name then GraphQL will
+        # execute the first operation in the query string. This might be a named
+        # operation but we don't know until the parsing stage has finished. If
+        # that's the case we want to update the span name so that we have a more
+        # useful name in our trace.
+        if not self._operation_name and self.execution_context.operation_name:
+            span_name = f"GraphQL Query: {self.execution_context.operation_name}"
+            self._span_holder[RequestStage.REQUEST].update_name(span_name)
         self._span_holder[RequestStage.REQUEST].end()
 
     def on_validation_start(self):
