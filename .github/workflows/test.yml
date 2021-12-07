@@ -69,7 +69,7 @@ jobs:
   django-unit-tests:
     strategy:
       matrix:
-        django: [3.2, 3.1.8, 3.0.14, 2.2.20]
+        django: [4.0, 3.2, 2.2.25]
 
     name: Test Django ${{ matrix.django }}
     runs-on: ubuntu-latest
