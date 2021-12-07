@@ -69,7 +69,7 @@ jobs:
   django-unit-tests:
     strategy:
       matrix:
-        django: [4.0, 3.2, 2.2.25]
+        django: ["4.0", "3.2", "2.2"]
 
     name: Test Django ${{ matrix.django }}
     runs-on: ubuntu-latest
@@ -80,7 +80,8 @@ jobs:
       - uses: actions/setup-python@v2
         id: setup-python
         with:
-          python-version: '3.x'
+          # Pin to 3.9 because Django 2.2 does not support 3.10
+          python-version: '3.9'
           architecture: x64
 
       - run: pip install poetry
@@ -99,7 +100,8 @@ jobs:
         if: steps.cache-poetry-dependencies.outputs.cache-hit != 'true'
 
       - name: Install django ${{ matrix.django }}
-        run: poetry add django==${{ matrix.django }}
+        # Add --python ^3.9 marker because django 4.0 does not support 3.7
+        run: poetry add --python ^3.9 django@^${{ matrix.django }}
 
       - name: pytest
         run: poetry run pytest --cov-report xml --cov=. --showlocals -vv -m django
