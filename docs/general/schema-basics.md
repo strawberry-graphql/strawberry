@@ -113,6 +113,7 @@ default scalar types in GraphQL:
 - Boolean, true or false, maps to python’s bool
 - ID, a unique identifier that usually used to refetch an object or as the key
   for a cache. Serialized as string and available as `strawberry.ID(“value”)`
+- `UUID`, a [UUID](https://docs.python.org/3/library/uuid.html#uuid.UUID) value serialized as a string
 
 <Note>
 
