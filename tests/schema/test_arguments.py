@@ -103,3 +103,46 @@ def test_optional_argument_unset():
     )
     assert not result.errors
     assert result.data == {"hello": "Hi there"}
+
+
+def test_optional_input_field_unset():
+    @strawberry.input
+    class TestInput:
+        name: Optional[str] = UNSET
+        age: Optional[int] = UNSET
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(self, input: TestInput) -> str:
+            if is_unset(input.name):
+                return "Hi there"
+            return f"Hi {input.name}"
+
+    schema = strawberry.Schema(query=Query)
+
+    assert (
+        str(schema)
+        == dedent(
+            """
+        type Query {
+          hello(input: TestInput!): String!
+        }
+
+        input TestInput {
+          name: String
+          age: Int
+        }
+        """
+        ).strip()
+    )
+
+    result = schema.execute_sync(
+        """
+        query {
+            hello(input: {})
+        }
+    """
+    )
+    assert not result.errors
+    assert result.data == {"hello": "Hi there"}
