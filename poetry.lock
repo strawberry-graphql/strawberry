@@ -1568,7 +1568,7 @@ sanic = ["sanic"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "86b63cfdb1b1e223459f623649aa909a2735e94e9f27f67994f0362b03b6c829"
+content-hash = "52af03401a0011d5d6738f0a543692428185a5133b1d1237427436eb0da08689"
 
 [metadata.files]
 aiofiles = [
