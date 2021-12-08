@@ -22,6 +22,7 @@
 - [Generics](./types/generics.md)
 - [Resolvers](./types/resolvers.md)
 - [Union types](./types/union.md)
+- [Exceptions](./types/exceptions.md)
 
 ## [Extensions](./extensions)
 
