@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.93.1 - 2021-12-08
+-------------------
+
+This release adds support for Django 4.0
+
+Contributed by [Guillaume Andreu Sabater](https://github.com/g-as) [PR #1484](https://github.com/strawberry-graphql/strawberry/pull/1484/)
+
+
 0.93.0 - 2021-12-07
 -------------------
 
