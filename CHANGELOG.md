@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.93.3 - 2021-12-08
+-------------------
+
+This release adds support for uvicorn 0.16
+
+Contributed by [dependabot](https://github.com/dependabot) [PR #1487](https://github.com/strawberry-graphql/strawberry/pull/1487/)
+
+
 0.93.2 - 2021-12-08
 -------------------
 
