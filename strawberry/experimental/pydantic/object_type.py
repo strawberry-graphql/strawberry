@@ -75,7 +75,7 @@ def replace_pydantic_types(
             if register_nested is not None:
                 # register nested class
                 type_name = register_nested.format_type(type_.__name__)
-                strawberry.experimental.pydantic.type(model=type_, all_fields=True)(
+                strawberry.experimental.pydantic.type(model=type_, all_fields=True, register_nested=register_nested)(
                     create_type(type_name, (), {})
                 )
 
