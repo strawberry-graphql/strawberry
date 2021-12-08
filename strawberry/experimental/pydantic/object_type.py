@@ -3,7 +3,7 @@ import dataclasses
 import warnings
 from enum import Enum
 from functools import partial
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, cast
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, cast, Callable
 
 from pydantic import BaseModel
 from pydantic.fields import ModelField
@@ -29,14 +29,27 @@ from .exceptions import MissingFieldsListError, UnregisteredTypeException
 create_type = type
 
 
-def replace_pydantic_types(type_: Any, register_nested: bool):
+@dataclasses.dataclass
+class RegisterNestedOptions:
+    """Options for registering nested pydantic model"""
+
+    format_type: Callable[[str], str] = lambda x: x # Default does not rename the nested model's name
+    # todo: Other options such as exclude all fields that have a certain name
+
+
+def replace_pydantic_types(
+    type_: Any, register_nested: Optional[RegisterNestedOptions]
+):
     origin = getattr(type_, "__origin__", None)
     if origin is Literal:
         # Literal does not have types in its __args__ so we return early
         return type_
     if hasattr(type_, "__args__"):
         new_type = type_.copy_with(
-            tuple(replace_pydantic_types(t, register_nested=register_nested) for t in type_.__args__)
+            tuple(
+                replace_pydantic_types(t, register_nested=register_nested)
+                for t in type_.__args__
+            )
         )
 
         if isinstance(new_type, TypeDefinition):
@@ -59,10 +72,11 @@ def replace_pydantic_types(type_: Any, register_nested: bool):
         if hasattr(type_, "_strawberry_type"):
             return type_._strawberry_type
         else:
-            if register_nested:
+            if register_nested is not None:
                 # register nested class
+                type_name = register_nested.format_type(type_.__name__)
                 strawberry.experimental.pydantic.type(model=type_, all_fields=True)(
-                    create_type(type_.__name__, (), {})
+                    create_type(type_name, (), {})
                 )
 
                 assert hasattr(
@@ -73,11 +87,12 @@ def replace_pydantic_types(type_: Any, register_nested: bool):
             else:
                 raise UnregisteredTypeException(type_)
 
-
     return type_
 
 
-def get_type_for_field(field: ModelField, register_nested: bool):
+def get_type_for_field(
+    field: ModelField, register_nested: Optional[RegisterNestedOptions]
+):
     type_ = field.outer_type_
     type_ = get_basic_type(type_)
     type_ = replace_pydantic_types(type_, register_nested=register_nested)
@@ -98,7 +113,7 @@ def type(
     description: Optional[str] = None,
     directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
     all_fields: bool = False,
-    register_nested: bool = False,
+    register_nested: Optional[RegisterNestedOptions] = None,
 ):
     def wrap(cls):
         model_fields = model.__fields__
@@ -138,7 +153,9 @@ def type(
                     default_factory=(
                         field.default_factory if field.default_factory else UNSET
                     ),
-                    type_annotation=get_type_for_field(field, register_nested=register_nested),
+                    type_annotation=get_type_for_field(
+                        field, register_nested=register_nested
+                    ),
                     description=field.field_info.description,
                 ),
             )
