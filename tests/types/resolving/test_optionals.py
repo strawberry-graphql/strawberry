@@ -39,6 +39,17 @@ def test_optional_with_unset_as_union():
     assert resolved == Optional[str]
 
 
+def test_optional_union_containing_a_real_union_and_unset():
+    annotation = StrawberryAnnotation(Union[str, int, None, _Unset])
+    resolved = annotation.resolve()
+
+    assert isinstance(resolved, StrawberryOptional)
+    assert resolved.of_type == Union[str, int]
+
+    assert resolved == StrawberryOptional(of_type=Union[str, int])
+    assert resolved == Optional[Union[str, int]]
+
+
 def test_optional_list():
     annotation = StrawberryAnnotation(Optional[List[bool]])
     resolved = annotation.resolve()
