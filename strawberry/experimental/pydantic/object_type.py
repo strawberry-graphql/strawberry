@@ -3,7 +3,7 @@ import dataclasses
 import warnings
 from enum import Enum
 from functools import partial
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, cast, Callable
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, cast
 
 from pydantic import BaseModel
 from pydantic.fields import ModelField
@@ -26,6 +26,7 @@ from strawberry.types.types import TypeDefinition
 
 from .exceptions import MissingFieldsListError, UnregisteredTypeException
 
+
 create_type = type
 
 
@@ -33,7 +34,9 @@ create_type = type
 class RegisterNestedOptions:
     """Options for registering nested pydantic model"""
 
-    format_type: Callable[[str], str] = lambda x: x # Default does not rename the nested model's name
+    format_type: Callable[
+        [str], str
+    ] = lambda x: x  # Default does not rename the nested model's name
     # todo: Other options such as exclude all fields that have a certain name
 
 
@@ -75,9 +78,9 @@ def replace_pydantic_types(
             if register_nested is not None:
                 # register nested class
                 type_name = register_nested.format_type(type_.__name__)
-                strawberry.experimental.pydantic.type(model=type_, all_fields=True, register_nested=register_nested)(
-                    create_type(type_name, (), {})
-                )
+                strawberry.experimental.pydantic.type(
+                    model=type_, all_fields=True, register_nested=register_nested
+                )(create_type(type_name, (), {}))
 
                 assert hasattr(
                     type_, "_strawberry_type"

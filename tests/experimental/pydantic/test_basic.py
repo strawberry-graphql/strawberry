@@ -70,9 +70,10 @@ def test_basic_type_all_fields_warn():
         password: Optional[str]
 
     with pytest.raises(
-            UserWarning,
-            match=("Using all_fields overrides any explicitly defined fields"),
+        UserWarning,
+        match=("Using all_fields overrides any explicitly defined fields"),
     ):
+
         @strawberry.experimental.pydantic.type(User, all_fields=True)
         class UserType:
             age: strawberry.auto
@@ -147,9 +148,10 @@ def test_referencing_other_models_fails_when_not_registered():
         group: Group
 
     with pytest.raises(
-            strawberry.experimental.pydantic.UnregisteredTypeException,
-            match=("Cannot find a Strawberry Type for (.*) did you forget to register it?"),
+        strawberry.experimental.pydantic.UnregisteredTypeException,
+        match=("Cannot find a Strawberry Type for (.*) did you forget to register it?"),
     ):
+
         @strawberry.experimental.pydantic.type(User)
         class UserType:
             age: strawberry.auto
@@ -199,7 +201,9 @@ def test_referencing_other_registered_models_register_nested():
         age: int
         group: Group
 
-    @strawberry.experimental.pydantic.type(User, register_nested=RegisterNestedOptions())
+    @strawberry.experimental.pydantic.type(
+        User, register_nested=RegisterNestedOptions()
+    )
     class UserType:
         age: strawberry.auto
         group: strawberry.auto
@@ -224,7 +228,10 @@ def test_referencing_other_registered_models_register_nested_options():
         age: int
         group: Group
 
-    @strawberry.experimental.pydantic.type(User, register_nested=RegisterNestedOptions(format_type=lambda x: x + "Strawberry"))
+    @strawberry.experimental.pydantic.type(
+        User,
+        register_nested=RegisterNestedOptions(format_type=lambda x: x + "Strawberry"),
+    )
     class UserType:
         age: strawberry.auto
         group: strawberry.auto
@@ -238,7 +245,9 @@ def test_referencing_other_registered_models_register_nested_options():
     assert field1.type is int
 
     assert field2.python_name == "group"
-    assert field2.type.__name__ == "GroupStrawberry", "should rename type to parameter format_type"
+    assert (
+        field2.type.__name__ == "GroupStrawberry"
+    ), "should rename type to parameter format_type"
 
 
 def test_referencing_other_registered_models_register_nested_all_fields():
@@ -250,7 +259,9 @@ def test_referencing_other_registered_models_register_nested_all_fields():
         age: int
         group: Group
 
-    @strawberry.experimental.pydantic.type(User, register_nested=RegisterNestedOptions(), all_fields=True)
+    @strawberry.experimental.pydantic.type(
+        User, register_nested=RegisterNestedOptions(), all_fields=True
+    )
     class UserType:
         ...
 
@@ -317,6 +328,7 @@ def test_basic_type_without_fields_throws_an_error():
         password: Optional[str]
 
     with pytest.raises(MissingFieldsListError):
+
         @strawberry.experimental.pydantic.type(User)
         class UserType:
             pass
@@ -351,8 +363,8 @@ def test_type_with_fields_coming_from_strawberry_and_pydantic():
 
 @pytest.mark.xfail(
     reason=(
-            "passing default values when extending types from pydantic is not"
-            "supported. https://github.com/strawberry-graphql/strawberry/issues/829"
+        "passing default values when extending types from pydantic is not"
+        "supported. https://github.com/strawberry-graphql/strawberry/issues/829"
     )
 )
 def test_type_with_fields_coming_from_strawberry_and_pydantic_with_default():
