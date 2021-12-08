@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.93.2 - 2021-12-08
+-------------------
+
+This fixes the previous release that introduced a direct dependency on Django.
+
+Contributed by [Guillaume Andreu Sabater](https://github.com/g-as) [PR #1489](https://github.com/strawberry-graphql/strawberry/pull/1489/)
+
+
 0.93.1 - 2021-12-08
 -------------------
 
