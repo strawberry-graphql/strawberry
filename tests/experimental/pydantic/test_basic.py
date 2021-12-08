@@ -158,7 +158,8 @@ def test_referencing_other_models_fails_when_not_registered():
             group: strawberry.auto
 
 
-def test_referencing_other_registered_models():
+def test_referencing_other_registered_models_manual():
+    # Manually register Group model
     class Group(pydantic.BaseModel):
         name: str
 
@@ -185,6 +186,57 @@ def test_referencing_other_registered_models():
 
     assert field2.python_name == "group"
     assert field2.type is GroupType
+
+
+def test_referencing_other_registered_models_register_nested():
+    # Automatically register with register_nested
+    class Group(pydantic.BaseModel):
+        name: str
+
+    class User(pydantic.BaseModel):
+        age: int
+        group: Group
+
+    @strawberry.experimental.pydantic.type(User, register_nested=True)
+    class UserType:
+        age: strawberry.auto
+        group: strawberry.auto
+
+    definition: TypeDefinition = UserType._type_definition
+    assert definition.name == "UserType"
+
+    [field1, field2] = definition.fields
+
+    assert field1.python_name == "age"
+    assert field1.type is int
+
+    assert field2.python_name == "group"
+    assert field2.type.__name__ == "Group"
+
+
+def test_referencing_other_registered_models_register_nested_all_fields():
+    # Interaction with all_fields should work to register all the fields
+    class Group(pydantic.BaseModel):
+        name: str
+
+    class User(pydantic.BaseModel):
+        age: int
+        group: Group
+
+    @strawberry.experimental.pydantic.type(User, register_nested=True, all_fields=True)
+    class UserType:
+        ...
+
+    definition: TypeDefinition = UserType._type_definition
+    assert definition.name == "UserType"
+
+    [field1, field2] = definition.fields
+
+    assert field1.python_name == "age"
+    assert field1.type is int
+
+    assert field2.python_name == "group"
+    assert field2.type.__name__ == "Group"
 
 
 def test_list():

@@ -29,14 +29,14 @@ from .exceptions import MissingFieldsListError, UnregisteredTypeException
 create_type = type
 
 
-def replace_pydantic_types(type_: Any):
+def replace_pydantic_types(type_: Any, register_nested: bool):
     origin = getattr(type_, "__origin__", None)
     if origin is Literal:
         # Literal does not have types in its __args__ so we return early
         return type_
     if hasattr(type_, "__args__"):
         new_type = type_.copy_with(
-            tuple(replace_pydantic_types(t) for t in type_.__args__)
+            tuple(replace_pydantic_types(t, register_nested=register_nested) for t in type_.__args__)
         )
 
         if isinstance(new_type, TypeDefinition):
@@ -59,20 +59,28 @@ def replace_pydantic_types(type_: Any):
         if hasattr(type_, "_strawberry_type"):
             return type_._strawberry_type
         else:
-            # register nested class
-            strawberry.experimental.pydantic.type(model=type_, all_fields=True)(
-                create_type(type_.__name__, (), {})
-            )
+            if register_nested:
+                # register nested class
+                strawberry.experimental.pydantic.type(model=type_, all_fields=True)(
+                    create_type(type_.__name__, (), {})
+                )
 
-            return type_._strawberry_type
+                assert hasattr(
+                    type_, "_strawberry_type"
+                ), f"Failed to create _strawberry_type for {type_.__name__}. Please report this bug"
+
+                return type_._strawberry_type
+            else:
+                raise UnregisteredTypeException(type_)
+
 
     return type_
 
 
-def get_type_for_field(field: ModelField):
+def get_type_for_field(field: ModelField, register_nested: bool):
     type_ = field.outer_type_
     type_ = get_basic_type(type_)
-    type_ = replace_pydantic_types(type_)
+    type_ = replace_pydantic_types(type_, register_nested=register_nested)
 
     if not field.required:
         type_ = Optional[type_]
@@ -90,6 +98,7 @@ def type(
     description: Optional[str] = None,
     directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
     all_fields: bool = False,
+    register_nested: bool = False,
 ):
     def wrap(cls):
         model_fields = model.__fields__
@@ -121,7 +130,7 @@ def type(
         all_model_fields: List[Tuple[str, Any, dataclasses.Field]] = [
             (
                 name,
-                get_type_for_field(field),
+                get_type_for_field(field, register_nested=register_nested),
                 StrawberryField(
                     python_name=field.name,
                     graphql_name=field.alias if field.has_alias else None,
@@ -129,7 +138,7 @@ def type(
                     default_factory=(
                         field.default_factory if field.default_factory else UNSET
                     ),
-                    type_annotation=get_type_for_field(field),
+                    type_annotation=get_type_for_field(field, register_nested=register_nested),
                     description=field.field_info.description,
                 ),
             )
