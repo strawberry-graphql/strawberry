@@ -162,16 +162,16 @@ def type(
         # Sort fields so that fields with missing defaults go first
         # because dataclasses require that fields with no defaults are defined
         # first
-        missing_default = []
-        has_default = []
-        for field in all_model_fields:
+        missing_default: List[Tuple[str, Any, dataclasses.Field]] = []
+        has_default: List[Tuple[str, Any, dataclasses.Field]] = []
+        for model_field in all_model_fields:
             if (
-                field[2].default is dataclasses.MISSING
-                and field[2].default_factory is dataclasses.MISSING
+                model_field[2].default is dataclasses.MISSING
+                and model_field[2].default_factory is dataclasses.MISSING # type: ignore
             ):
-                missing_default.append(field)
+                missing_default.append(model_field)
             else:
-                has_default.append(field)
+                has_default.append(model_field)
 
         sorted_fields = missing_default + has_default
 
