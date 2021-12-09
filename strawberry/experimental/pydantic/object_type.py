@@ -124,7 +124,7 @@ def type(
                             "Both default and default_factory were defined! thats bad!!"
                         )
                     else:
-                        default_factory = lambda:  smart_deepcopy(default)
+                        default_factory = lambda: smart_deepcopy(default)
 
                 all_model_fields.append(
                     (
@@ -135,9 +135,7 @@ def type(
                             graphql_name=field.alias if field.has_alias else None,
                             default=UNSET,
                             default_factory=default_factory,
-                            type_annotation=get_type_for_field(
-                                field
-                            ),
+                            type_annotation=get_type_for_field(field),
                             description=field.field_info.description,
                         ),
                     )
@@ -167,7 +165,7 @@ def type(
         for model_field in all_model_fields:
             if (
                 model_field[2].default is dataclasses.MISSING
-                and model_field[2].default_factory is dataclasses.MISSING # type: ignore
+                and model_field[2].default_factory is dataclasses.MISSING  # type: ignore
             ):
                 missing_default.append(model_field)
             else:
