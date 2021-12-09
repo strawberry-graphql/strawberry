@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, cast
 
 from pydantic import BaseModel
 from pydantic.fields import ModelField
+from pydantic.utils import smart_deepcopy
 from typing_extensions import Literal
 
 from graphql import GraphQLResolveInfo
@@ -106,24 +107,41 @@ def type(
         if not fields_set:
             raise MissingFieldsListError(cls)
 
-        all_model_fields: List[Tuple[str, Any, dataclasses.Field]] = [
-            (
-                name,
-                get_type_for_field(field),
-                StrawberryField(
-                    python_name=field.name,
-                    graphql_name=field.alias if field.has_alias else None,
-                    default=field.default if not field.required else UNSET,
-                    default_factory=(
-                        field.default_factory if field.default_factory else UNSET
-                    ),
-                    type_annotation=get_type_for_field(field),
-                    description=field.field_info.description,
-                ),
-            )
-            for name, field in model_fields.items()
-            if name in fields_set
-        ]
+        all_model_fields: List[Tuple[str, Any, dataclasses.Field]] = []
+
+        for field_name, field in model_fields.items():
+            if field_name in fields_set:
+                default = field.default if not field.required else UNSET
+                default_factory = (
+                    field.default_factory if field.default_factory else UNSET
+                )
+
+                # Handle mutable defaults when making the dataclass by using pydantic's smart_deepcopy
+                # and always using a default_factory instead of a default
+                if default is not UNSET:
+                    if default_factory is not UNSET:
+                        raise RuntimeError(
+                            "Both default and default_factory were defined! thats bad!!"
+                        )
+                    else:
+                        default_factory = lambda:  smart_deepcopy(default)
+
+                all_model_fields.append(
+                    (
+                        field_name,
+                        get_type_for_field(field),
+                        StrawberryField(
+                            python_name=field.name,
+                            graphql_name=field.alias if field.has_alias else None,
+                            default=UNSET,
+                            default_factory=default_factory,
+                            type_annotation=get_type_for_field(
+                                field
+                            ),
+                            description=field.field_info.description,
+                        ),
+                    )
+                )
 
         wrapped = _wrap_dataclass(cls)
         extra_fields = cast(List[dataclasses.Field], _get_fields(wrapped))
@@ -147,7 +165,10 @@ def type(
         missing_default = []
         has_default = []
         for field in all_model_fields:
-            if field[2].default is dataclasses.MISSING:
+            if (
+                field[2].default is dataclasses.MISSING
+                and field[2].default_factory is dataclasses.MISSING
+            ):
                 missing_default.append(field)
             else:
                 has_default.append(field)

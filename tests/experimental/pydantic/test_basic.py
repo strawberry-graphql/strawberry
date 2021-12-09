@@ -1,3 +1,4 @@
+import dataclasses
 from enum import Enum
 from typing import List, Optional, Union
 
@@ -269,6 +270,33 @@ def test_type_with_fields_coming_from_strawberry_and_pydantic():
     assert field3.python_name == "password"
     assert isinstance(field3.type, StrawberryOptional)
     assert field3.type.of_type is str
+
+
+def test_type_with_fields_mutable_default():
+    empty_list = []
+
+    class User(pydantic.BaseModel):
+        groups: List[str]
+        friends: List[str] = empty_list
+
+    @strawberry.experimental.pydantic.type(User)
+    class UserType:
+        groups: strawberry.auto
+        friends: strawberry.auto
+
+    definition: TypeDefinition = UserType._type_definition
+    assert definition.name == "UserType"
+
+    [field1, field2] = definition.fields
+
+    assert field1.default == dataclasses.MISSING
+    assert field2.default == dataclasses.MISSING
+    assert field1.default_factory == dataclasses.MISSING
+    # check that we really made a copy
+    assert id(field2.default_factory()) != id(empty_list)
+    assert id(UserType(groups=["groups"]).friends) != id(empty_list)
+    UserType(groups=["groups"]).friends.append("joe")
+    assert empty_list == []
 
 
 @pytest.mark.xfail(
