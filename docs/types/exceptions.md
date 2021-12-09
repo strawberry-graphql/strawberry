@@ -94,7 +94,7 @@ type-annotated but also has no resolver to determine its type.
 ```python
 @strawberry.type
 class Query:  # noqa: F841
-    foo = dataclasses.field()
+    foo = strawberry.field()
 
 # Throws 'Unable to determine the type of field "foo". Either annotate it directly, or provide a typed resolver using @strawberry.field.'
 ```
@@ -279,7 +279,7 @@ Some errors are also thrown when trying to exectuing queries (mutations or subsc
 
 ### MissingQueryError
 
-This exception is raised when the `request` is missing the `query` paramater.
+This exception is raised when the `request` is missing the `query` parameter.
 
 ```python
 client.post("/graphql", data={})
