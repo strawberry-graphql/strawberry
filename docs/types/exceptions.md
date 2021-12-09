@@ -65,15 +65,12 @@ def add_word(word: Word) -> bool:
 
 ### InvalidUnionType
 
-This exception is raised when a scalar type is used with a `Union` or when one of the
-provided types is not a `strawberry.type`.
+This exception is raised when an invalid type is used with `Union`.
 
 ```python
-@dataclass
-class A:
-    a: int
+Result = strawberry.union("Result", (int, ))
 
-# Throws 'Union type `A` is not a Strawberry type'
+# Throws 'Type `int` cannot be used in a GraphQL Union'
 ```
 
 ### MissingArgumentsAnnotationsError
