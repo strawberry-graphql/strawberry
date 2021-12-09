@@ -70,10 +70,6 @@ This exception is raised when an invalid type is used with `Union`.
 ```python
 Result = strawberry.union("Result", (int, ))
 
-@strawberry.type
-class Query:
-    ab: Result = A
-
 # Throws 'Type `int` cannot be used in a GraphQL Union'
 ```
 
