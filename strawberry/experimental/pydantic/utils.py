@@ -6,7 +6,7 @@ from pydantic.utils import smart_deepcopy
 
 from strawberry.arguments import _Unset
 from strawberry.experimental.pydantic.exceptions import (
-    DefaultAndDefaultFactoryDefined,
+    BothDefaultAndDefaultFactoryDefinedError,
     UnregisteredTypeException,
 )
 from strawberry.private import is_private

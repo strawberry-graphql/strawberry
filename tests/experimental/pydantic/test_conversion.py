@@ -757,7 +757,7 @@ def test_convert_input_types_to_pydantic_default_and_default_factory():
 
     # If the user defines both through a hacky way, we'll still going to catch it
     with pytest.raises(
-        DefaultAndDefaultFactoryDefined,
+        BothDefaultAndDefaultFactoryDefinedError,
         match=("Not allowed to specify both default and default_factory."),
     ):
         hacked_field = Field(default_factory=lambda: None)

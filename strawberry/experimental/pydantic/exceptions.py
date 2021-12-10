@@ -27,7 +27,7 @@ class UnregisteredTypeException(Exception):
         super().__init__(message)
 
 
-class DefaultAndDefaultFactoryDefined(Exception):
+class BothDefaultAndDefaultFactoryDefinedError(Exception):
     def __init__(self, default: Any, default_factory: NoArgAnyCallable):
         message = (
             f"Not allowed to specify both default and default_factory. "
