@@ -2,14 +2,19 @@ from enum import Enum
 from typing import List, Optional, Union
 
 import pydantic
+import pytest
+from pydantic import Field
 
 import strawberry
 from strawberry.arguments import UNSET
+from strawberry.experimental.pydantic.exceptions import DefaultAndDefaultFactoryDefined
 from strawberry.experimental.pydantic.utils import (
     sort_creation_fields,
     DataclassCreationFields,
 )
 from strawberry.field import StrawberryField
+from strawberry.type import StrawberryOptional
+from strawberry.types.types import TypeDefinition
 
 
 def test_can_use_type_standalone():
@@ -651,13 +656,15 @@ def test_can_convert_input_types_to_pydantic_default_values():
         age: strawberry.auto
         password: strawberry.auto
 
-    data = UserInput(1)
+    data = UserInput(age=1)
     user = data.to_pydantic()
 
     assert user.age == 1
     assert user.password is None
 
+
 def test_can_convert_input_types_to_pydantic_default_values_when_defaults_declared_first():
+    # test that we can declare a field with a default. before a field without a default
     class User(pydantic.BaseModel):
         password: Optional[str] = None
         age: int
@@ -673,6 +680,22 @@ def test_can_convert_input_types_to_pydantic_default_values_when_defaults_declar
     assert user.age == 1
     assert user.password is None
 
+    definition: TypeDefinition = UserInput._type_definition
+    assert definition.name == "UserInput"
+
+    [
+        age_field,
+        password_field,
+    ] = (
+        definition.fields
+    )  # fields without a default go first, so the order gets reverse
+
+    assert age_field.python_name == "age"
+    assert age_field.type is int
+
+    assert password_field.python_name == "password"
+    assert isinstance(password_field.type, StrawberryOptional)
+    assert password_field.type.of_type is str
 
 
 def test_sort_creation_fields():
@@ -719,6 +742,33 @@ def test_sort_creation_fields():
         has_default_factory,
     ], "should place items with defaults last"
 
+
+def test_convert_input_types_to_pydantic_default_and_default_factory():
+    # Pydantic should raise an error if the user specifies both default and default_factory
+    # this checks for a regression on their side
+    with pytest.raises(
+        ValueError,
+        match=("cannot specify both default and default_factory"),
+    ):
+
+        class User(pydantic.BaseModel):
+            password: Optional[str] = Field(default=None, default_factory=lambda: None)
+
+    with pytest.raises(
+        DefaultAndDefaultFactoryDefined,
+        match=("Not allowed to specify both default and default_factory."),
+    ):
+        # If the user defines both through a hacky way, we'll still going to catch it
+        hacked_field = Field(default_factory=lambda: None)
+
+        class User2(pydantic.BaseModel):
+            password: Optional[str] = hacked_field
+
+        hacked_field.default = None
+
+        @strawberry.experimental.pydantic.input(User2)
+        class UserInput:
+            password: strawberry.auto
 
 
 def test_can_convert_pydantic_type_to_strawberry_with_additional_field_resolvers():

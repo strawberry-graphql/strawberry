@@ -1,7 +1,14 @@
 import dataclasses
-from typing import Any, List, Type, Tuple
+from typing import Any, List, Type, Tuple, Union
 
-from strawberry.experimental.pydantic.exceptions import UnregisteredTypeException
+from pydantic.typing import NoArgAnyCallable
+from pydantic.utils import smart_deepcopy
+
+from strawberry.arguments import _Unset
+from strawberry.experimental.pydantic.exceptions import (
+    UnregisteredTypeException,
+    DefaultAndDefaultFactoryDefined,
+)
 from strawberry.private import is_private
 from strawberry.utils.typing import (
     get_list_annotation,
@@ -71,3 +78,21 @@ def sort_creation_fields(
         else:
             has_default.append(model_field)
     return missing_default + has_default
+
+
+def defaults_into_factory(
+    default: Union[_Unset, Any], default_factory: Union[_Unset, NoArgAnyCallable]
+) -> Union[NoArgAnyCallable, _Unset]:
+    """
+    Handle mutable defaults when making the dataclass by using pydantic's smart_deepcopy
+    Returns optionally a NoArgAnyCallable representing a default_factory parameter
+    """
+    if not isinstance(default, _Unset):
+        if not isinstance(default_factory, _Unset):
+            raise DefaultAndDefaultFactoryDefined(
+                default=default, default_factory=default_factory
+            )
+        else:
+            default_factory = lambda: smart_deepcopy(default)
+
+    return default_factory

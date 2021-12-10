@@ -2,14 +2,12 @@ import builtins
 import dataclasses
 import warnings
 from functools import partial
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, cast
-
-from pydantic import BaseModel
-from pydantic.fields import ModelField
-from pydantic.utils import smart_deepcopy
-from typing_extensions import Literal
+from typing import Any, Dict, List, Optional, Sequence, Type, cast
 
 from graphql import GraphQLResolveInfo
+from pydantic import BaseModel
+from pydantic.fields import ModelField
+from typing_extensions import Literal
 
 import strawberry
 from strawberry.arguments import UNSET
@@ -21,13 +19,13 @@ from strawberry.experimental.pydantic.utils import (
     get_private_fields,
     DataclassCreationFields,
     sort_creation_fields,
+    defaults_into_factory,
 )
 from strawberry.field import StrawberryField
 from strawberry.object_type import _process_type, _wrap_dataclass
 from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.types.type_resolver import _get_fields
 from strawberry.types.types import TypeDefinition
-
 from .exceptions import MissingFieldsListError, UnregisteredTypeException
 
 
@@ -115,21 +113,6 @@ def type(
 
         for field_name, field in model_fields.items():
             if field_name in fields_set:
-                default = field.default if not field.required else UNSET
-                default_factory = (
-                    field.default_factory if field.default_factory else UNSET
-                )
-
-                # Handle mutable defaults when making the dataclass by using pydantic's smart_deepcopy
-                # and always using a default_factory instead of a default
-                if default is not UNSET:
-                    if default_factory is not UNSET:
-                        raise RuntimeError(
-                            "Both default and default_factory were defined! thats bad!!"
-                        )
-                    else:
-                        default_factory = lambda: smart_deepcopy(default)
-
                 all_model_fields.append(
                     DataclassCreationFields(
                         name=field_name,
@@ -137,8 +120,13 @@ def type(
                         field=StrawberryField(
                             python_name=field.name,
                             graphql_name=field.alias if field.has_alias else None,
-                            default=UNSET,
-                            default_factory=default_factory,
+                            default=UNSET,  # default is always unset because we set it instead by default_factory
+                            default_factory=defaults_into_factory(
+                                default=field.default if not field.required else UNSET,
+                                default_factory=field.default_factory
+                                if field.default_factory
+                                else UNSET,
+                            ),
                             type_annotation=get_type_for_field(field),
                             description=field.field_info.description,
                         ),
@@ -151,10 +139,10 @@ def type(
 
         all_model_fields.extend(
             (
-                (
-                    field.name,
-                    field.type,
-                    field,
+                DataclassCreationFields(
+                    name=field.name,
+                    type_annotation=field.type,
+                    field=field,
                 )
                 for field in extra_fields + private_fields
                 if field.type != strawberry.auto
