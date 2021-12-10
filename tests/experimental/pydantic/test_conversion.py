@@ -8,7 +8,6 @@ from pydantic import Field
 
 import strawberry
 from strawberry.arguments import UNSET
-from strawberry.experimental.pydantic.exceptions import DefaultAndDefaultFactoryDefined
 from strawberry.experimental.pydantic.utils import (
     DataclassCreationFields,
     sort_creation_fields,

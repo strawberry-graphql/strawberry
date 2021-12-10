@@ -5,10 +5,7 @@ from pydantic.typing import NoArgAnyCallable
 from pydantic.utils import smart_deepcopy
 
 from strawberry.arguments import _Unset
-from strawberry.experimental.pydantic.exceptions import (
-    BothDefaultAndDefaultFactoryDefinedError,
-    UnregisteredTypeException,
-)
+from strawberry.experimental.pydantic.exceptions import UnregisteredTypeException
 from strawberry.private import is_private
 from strawberry.utils.typing import (
     get_list_annotation,
