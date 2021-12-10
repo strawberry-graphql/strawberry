@@ -1,4 +1,4 @@
-from typing import Type, Any
+from typing import Any, Type
 
 from pydantic import BaseModel
 from pydantic.typing import NoArgAnyCallable

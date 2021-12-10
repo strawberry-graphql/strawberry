@@ -1,16 +1,17 @@
 from enum import Enum
 from typing import List, Optional, Union
 
-import pydantic
 import pytest
+
+import pydantic
 from pydantic import Field
 
 import strawberry
 from strawberry.arguments import UNSET
 from strawberry.experimental.pydantic.exceptions import DefaultAndDefaultFactoryDefined
 from strawberry.experimental.pydantic.utils import (
-    sort_creation_fields,
     DataclassCreationFields,
+    sort_creation_fields,
 )
 from strawberry.field import StrawberryField
 from strawberry.type import StrawberryOptional
