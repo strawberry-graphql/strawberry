@@ -1,6 +1,18 @@
 CHANGELOG
 =========
 
+0.93.4 - 2021-12-10
+-------------------
+
+This release allows running strawberry as a script, for example, you can start the debug server with the following command:
+
+```shell
+python -m strawberry server schema
+```
+
+Contributed by [YogiLiu](https://github.com/YogiLiu) [PR #1481](https://github.com/strawberry-graphql/strawberry/pull/1481/)
+
+
 0.93.3 - 2021-12-08
 -------------------
 
