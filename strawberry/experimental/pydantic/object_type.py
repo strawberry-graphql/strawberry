@@ -122,7 +122,7 @@ def type(
                         field=StrawberryField(
                             python_name=field.name,
                             graphql_name=field.alias if field.has_alias else None,
-                            # default is always unset because we set it instead by default_factory
+                            # always unset because we use default_factory instead
                             default=UNSET,
                             default_factory=defaults_into_factory(
                                 default=field.default if not field.required else UNSET,
