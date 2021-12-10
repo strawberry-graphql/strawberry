@@ -664,7 +664,7 @@ def test_can_convert_input_types_to_pydantic_default_values():
     assert user.password is None
 
 
-def test_can_convert_input_types_to_pydantic_default_values_when_defaults_declared_first():
+def test_can_convert_input_types_to_pydantic_default_values_defaults_declared_first():
     # test that we can declare a field with a default. before a field without a default
     class User(pydantic.BaseModel):
         password: Optional[str] = None
@@ -745,8 +745,8 @@ def test_sort_creation_fields():
 
 
 def test_convert_input_types_to_pydantic_default_and_default_factory():
-    # Pydantic should raise an error if the user specifies both default and default_factory
-    # this checks for a regression on their side
+    # Pydantic should raise an error if the user specifies both default
+    # and default_factory. this checks for a regression on their side
     with pytest.raises(
         ValueError,
         match=("cannot specify both default and default_factory"),
@@ -755,11 +755,11 @@ def test_convert_input_types_to_pydantic_default_and_default_factory():
         class User(pydantic.BaseModel):
             password: Optional[str] = Field(default=None, default_factory=lambda: None)
 
+    # If the user defines both through a hacky way, we'll still going to catch it
     with pytest.raises(
         DefaultAndDefaultFactoryDefined,
         match=("Not allowed to specify both default and default_factory."),
     ):
-        # If the user defines both through a hacky way, we'll still going to catch it
         hacked_field = Field(default_factory=lambda: None)
 
         class User2(pydantic.BaseModel):

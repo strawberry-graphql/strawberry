@@ -87,12 +87,17 @@ def defaults_into_factory(
     Handle mutable defaults when making the dataclass by using pydantic's smart_deepcopy
     Returns optionally a NoArgAnyCallable representing a default_factory parameter
     """
+    final_factory = default_factory
     if not isinstance(default, _Unset):
         if not isinstance(default_factory, _Unset):
             raise DefaultAndDefaultFactoryDefined(
                 default=default, default_factory=default_factory
             )
         else:
-            default_factory = lambda: smart_deepcopy(default)
 
-    return default_factory
+            def factory_func():
+                return smart_deepcopy(default)
+
+            final_factory = factory_func
+
+    return final_factory
