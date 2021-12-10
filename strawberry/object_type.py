@@ -58,7 +58,7 @@ def _check_field_annotations(cls: Type):
                 # If the field uses the default resolver, the field _must_ be
                 # annotated
                 if not field_.base_resolver:
-                    raise MissingFieldAnnotationError(field_name)
+                    raise MissingFieldAnnotationError(field_name, cls)
 
                 # The resolver _must_ have a return type annotation
                 # TODO: Maybe check this immediately when adding resolver to
