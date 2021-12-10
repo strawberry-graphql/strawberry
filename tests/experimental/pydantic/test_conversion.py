@@ -4,6 +4,12 @@ from typing import List, Optional, Union
 import pydantic
 
 import strawberry
+from strawberry.arguments import UNSET
+from strawberry.experimental.pydantic.utils import (
+    sort_creation_fields,
+    DataclassCreationFields,
+)
+from strawberry.field import StrawberryField
 
 
 def test_can_use_type_standalone():
@@ -650,6 +656,69 @@ def test_can_convert_input_types_to_pydantic_default_values():
 
     assert user.age == 1
     assert user.password is None
+
+def test_can_convert_input_types_to_pydantic_default_values_when_defaults_declared_first():
+    class User(pydantic.BaseModel):
+        password: Optional[str] = None
+        age: int
+
+    @strawberry.experimental.pydantic.input(User)
+    class UserInput:
+        password: strawberry.auto
+        age: strawberry.auto
+
+    data = UserInput(age=1)
+    user = data.to_pydantic()
+
+    assert user.age == 1
+    assert user.password is None
+
+
+
+def test_sort_creation_fields():
+    has_default = DataclassCreationFields(
+        name="has_default",
+        type_annotation=str,
+        field=StrawberryField(
+            python_name="has_default",
+            graphql_name="has_default",
+            default="default_str",
+            default_factory=UNSET,
+            type_annotation=str,
+            description="description",
+        ),
+    )
+    has_default_factory = DataclassCreationFields(
+        name="has_default",
+        type_annotation=str,
+        field=StrawberryField(
+            python_name="has_default",
+            graphql_name="has_default",
+            default=UNSET,
+            default_factory=lambda: "default_factory_str",
+            type_annotation=str,
+            description="description",
+        ),
+    )
+    no_defaults = DataclassCreationFields(
+        name="has_default",
+        type_annotation=str,
+        field=StrawberryField(
+            python_name="has_default",
+            graphql_name="has_default",
+            default=UNSET,
+            default_factory=UNSET,
+            type_annotation=str,
+            description="description",
+        ),
+    )
+    fields = [has_default, has_default_factory, no_defaults]
+    assert sort_creation_fields(fields) == [
+        no_defaults,
+        has_default,
+        has_default_factory,
+    ], "should place items with defaults last"
+
 
 
 def test_can_convert_pydantic_type_to_strawberry_with_additional_field_resolvers():

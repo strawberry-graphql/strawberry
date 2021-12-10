@@ -1,5 +1,5 @@
 import dataclasses
-from typing import Any, List, Type
+from typing import Any, List, Type, Tuple
 
 from strawberry.experimental.pydantic.exceptions import UnregisteredTypeException
 from strawberry.private import is_private
@@ -36,3 +36,38 @@ def get_private_fields(cls: Type) -> List[dataclasses.Field]:
             private_fields.append(field)
 
     return private_fields
+
+
+@dataclasses.dataclass()
+class DataclassCreationFields:
+    """Fields required for the fields parameter of make_dataclass"""
+
+    name: str
+    type_annotation: Any
+    field: dataclasses.Field
+
+    @property
+    def to_tuple(self) -> Tuple[str, Any, dataclasses.Field]:
+        # fields parameter wants (name, type, Field)
+        return (self.name, self.type_annotation, self.field)
+
+
+def sort_creation_fields(
+    fields: List[DataclassCreationFields],
+) -> List[DataclassCreationFields]:
+    """
+    Sort fields so that fields with missing defaults go first
+    because dataclasses require that fields with no defaults are defined
+    first
+    """
+    missing_default: List[DataclassCreationFields] = []
+    has_default: List[DataclassCreationFields] = []
+    for model_field in fields:
+        if (
+            model_field.field.default is dataclasses.MISSING
+            and model_field.field.default_factory is dataclasses.MISSING  # type: ignore
+        ):
+            missing_default.append(model_field)
+        else:
+            has_default.append(model_field)
+    return missing_default + has_default

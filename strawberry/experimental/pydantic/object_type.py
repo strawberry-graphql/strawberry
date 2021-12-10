@@ -17,7 +17,11 @@ from strawberry.experimental.pydantic.conversion import (
     convert_pydantic_model_to_strawberry_class,
 )
 from strawberry.experimental.pydantic.fields import get_basic_type
-from strawberry.experimental.pydantic.utils import get_private_fields
+from strawberry.experimental.pydantic.utils import (
+    get_private_fields,
+    DataclassCreationFields,
+    sort_creation_fields,
+)
 from strawberry.field import StrawberryField
 from strawberry.object_type import _process_type, _wrap_dataclass
 from strawberry.schema_directive import StrawberrySchemaDirective
@@ -107,7 +111,7 @@ def type(
         if not fields_set:
             raise MissingFieldsListError(cls)
 
-        all_model_fields: List[Tuple[str, Any, dataclasses.Field]] = []
+        all_model_fields: List[DataclassCreationFields] = []
 
         for field_name, field in model_fields.items():
             if field_name in fields_set:
@@ -127,10 +131,10 @@ def type(
                         default_factory = lambda: smart_deepcopy(default)
 
                 all_model_fields.append(
-                    (
-                        field_name,
-                        get_type_for_field(field),
-                        StrawberryField(
+                    DataclassCreationFields(
+                        name=field_name,
+                        type_annotation=get_type_for_field(field),
+                        field=StrawberryField(
                             python_name=field.name,
                             graphql_name=field.alias if field.has_alias else None,
                             default=UNSET,
@@ -158,20 +162,7 @@ def type(
         )
 
         # Sort fields so that fields with missing defaults go first
-        # because dataclasses require that fields with no defaults are defined
-        # first
-        missing_default: List[Tuple[str, Any, dataclasses.Field]] = []
-        has_default: List[Tuple[str, Any, dataclasses.Field]] = []
-        for model_field in all_model_fields:
-            if (
-                model_field[2].default is dataclasses.MISSING
-                and model_field[2].default_factory is dataclasses.MISSING  # type: ignore
-            ):
-                missing_default.append(model_field)
-            else:
-                has_default.append(model_field)
-
-        sorted_fields = missing_default + has_default
+        sorted_fields = sort_creation_fields(all_model_fields)
 
         # Implicitly define `is_type_of` to support interfaces/unions that use
         # pydantic objects (not the corresponding strawberry type)
@@ -181,7 +172,7 @@ def type(
 
         cls = dataclasses.make_dataclass(
             cls.__name__,
-            sorted_fields,
+            [field.to_tuple for field in sorted_fields],
             bases=cls.__bases__,
             namespace={"is_type_of": is_type_of},
         )
