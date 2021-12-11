@@ -85,7 +85,8 @@ class GraphQLRouter(APIRouter):
         @self.post(path)
         async def handle_http_query(
             request: Request,
-            context=Depends(self.__get_context) | Depends(self.context_getter) if self.context_getter is not None else Depends(self.__get_context),
+            custom_context=Depends(self.context_getter),
+            default_context=Depends(self.__get_context),
             root_value=Depends(self.root_value_getter),
         ) -> Response:
             content_type = request.headers.get("content-type", "")
@@ -117,7 +118,8 @@ class GraphQLRouter(APIRouter):
                     "No GraphQL query found in the request",
                     status_code=status.HTTP_400_BAD_REQUEST,
                 )
-
+            
+            context = default_context if custom_context == default_context else default_context | custom_context
             result = await self.execute(
                 request_data.query,
                 variables=request_data.variables,
