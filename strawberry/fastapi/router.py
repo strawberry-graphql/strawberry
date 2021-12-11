@@ -61,7 +61,7 @@ class GraphQLRouter(APIRouter):
         self.keep_alive = keep_alive
         self.keep_alive_interval = keep_alive_interval
         self.debug = debug
-        self.root_value_getter = root_value_getter | self.__get_root_value
+        self.root_value_getter = root_value_getter or self.__get_root_value
         self.context_getter = context_getter
         self.protocols = subscription_protocols
         self.connection_init_wait_timeout = connection_init_wait_timeout
