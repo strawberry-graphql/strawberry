@@ -62,7 +62,7 @@ class GraphQLRouter(APIRouter):
         self.keep_alive_interval = keep_alive_interval
         self.debug = debug
         self.root_value_getter = root_value_getter | self.__get_root_value
-        self.context_getter = context_getter | self.__get_context
+        self.context_getter = context_getter
         self.protocols = subscription_protocols
         self.connection_init_wait_timeout = connection_init_wait_timeout
 
@@ -85,7 +85,7 @@ class GraphQLRouter(APIRouter):
         @self.post(path)
         async def handle_http_query(
             request: Request,
-            context=Depends(self.context_getter),
+            context=Depends(self.__get_context) | Depends(self.context_getter) if self.context_getter is not None else Depends(self.__get_context),
             root_value=Depends(self.root_value_getter),
         ) -> Response:
             content_type = request.headers.get("content-type", "")
