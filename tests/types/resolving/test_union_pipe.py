@@ -134,6 +134,33 @@ def test_strawberry_union_and_another_strawberry_union():
     assert StrawberryAnnotation(Example) in resolved.type_annotations
 
 
+def test_strawberry_union_and_a_union():
+    @strawberry.type
+    class User:
+        name: str
+
+    @strawberry.type
+    class Error:
+        name: str
+
+    @strawberry.type
+    class Example:
+        name: str
+
+    UserOrError = strawberry.union("UserOrError", (User, Error))
+    annotation = StrawberryAnnotation(UserOrError | Union[Example, Error])
+    resolved = annotation.resolve()
+
+    assert isinstance(resolved, StrawberryUnion)
+
+    assert len(resolved.type_annotations) == 3
+
+    # doing this to avoid errors due to order of types
+    assert StrawberryAnnotation(User) in resolved.type_annotations
+    assert StrawberryAnnotation(Error) in resolved.type_annotations
+    assert StrawberryAnnotation(Example) in resolved.type_annotations
+
+
 def test_raises_error_when_piping_with_scalar():
     @strawberry.type
     class User:

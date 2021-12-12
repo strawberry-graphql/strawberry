@@ -29,6 +29,7 @@ from strawberry.exceptions import (
     WrongReturnTypeForUnion,
 )
 from strawberry.type import StrawberryOptional, StrawberryType
+from strawberry.utils.typing import is_union
 
 
 if TYPE_CHECKING:
@@ -71,6 +72,9 @@ class StrawberryUnion(StrawberryType):
                     StrawberryAnnotation(other),
                 )
             )
+
+        if is_union(other):
+            return self | StrawberryAnnotation(other).resolve()
 
         if isinstance(other, StrawberryUnion):
             return StrawberryUnion(
