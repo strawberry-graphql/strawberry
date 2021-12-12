@@ -64,10 +64,6 @@ class StrawberryUnion(StrawberryType):
         return id(self)
 
     def __or__(self, other: Union[StrawberryType, type]) -> StrawberryType:
-        # TODO: shall we add support to merge unions with other unions?
-        # current use case is to allow SomeUnion | None, as a nicer way to
-        # mark a field as optional when using a union type
-
         if hasattr(other, "_type_definition"):
             return StrawberryUnion(
                 type_annotations=(
@@ -88,7 +84,10 @@ class StrawberryUnion(StrawberryType):
                 )
             )
 
-        return StrawberryOptional(of_type=self)
+        if other is None:
+            return StrawberryOptional(of_type=self)
+
+        raise InvalidUnionType(other)
 
     @property
     def types(self) -> Tuple[StrawberryType, ...]:

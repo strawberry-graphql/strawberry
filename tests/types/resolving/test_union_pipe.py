@@ -5,6 +5,7 @@ import pytest
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
+from strawberry.exceptions import InvalidUnionType
 from strawberry.type import StrawberryOptional
 from strawberry.union import StrawberryUnion
 
@@ -131,3 +132,18 @@ def test_python_strawberry_union_and_another_strawberry_union():
     assert StrawberryAnnotation(User) in resolved.type_annotations
     assert StrawberryAnnotation(Error) in resolved.type_annotations
     assert StrawberryAnnotation(Example) in resolved.type_annotations
+
+
+def test_raises_error_when_piping_with_scalar():
+    @strawberry.type
+    class User:
+        name: str
+
+    @strawberry.type
+    class Error:
+        name: str
+
+    UserOrError = strawberry.union("UserOrError", (User, Error))
+
+    with pytest.raises(InvalidUnionType):
+        StrawberryAnnotation(UserOrError | int)
