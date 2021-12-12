@@ -75,3 +75,59 @@ def test_python_strawberry_union_and_none():
             type_annotations=(StrawberryAnnotation(User), StrawberryAnnotation(Error)),
         )
     )
+
+
+def test_python_strawberry_union_and_another_type():
+    @strawberry.type
+    class User:
+        name: str
+
+    @strawberry.type
+    class Error:
+        name: str
+
+    @strawberry.type
+    class Example:
+        name: str
+
+    UserOrError = strawberry.union("UserOrError", (User, Error))
+    annotation = StrawberryAnnotation(UserOrError | Example)
+    resolved = annotation.resolve()
+
+    assert isinstance(resolved, StrawberryUnion)
+
+    assert resolved == StrawberryUnion(
+        type_annotations=(
+            StrawberryAnnotation(User),
+            StrawberryAnnotation(Error),
+            StrawberryAnnotation(Example),
+        ),
+    )
+
+
+def test_python_strawberry_union_and_another_strawberry_union():
+    @strawberry.type
+    class User:
+        name: str
+
+    @strawberry.type
+    class Error:
+        name: str
+
+    @strawberry.type
+    class Example:
+        name: str
+
+    UserOrError = strawberry.union("UserOrError", (User, Error))
+    ExampleOrError = strawberry.union("ExampleOrError", (Example, Error))
+    annotation = StrawberryAnnotation(UserOrError | ExampleOrError)
+    resolved = annotation.resolve()
+
+    assert isinstance(resolved, StrawberryUnion)
+
+    assert len(resolved.type_annotations) == 3
+
+    # doing this to avoid errors due to order of types
+    assert StrawberryAnnotation(User) in resolved.type_annotations
+    assert StrawberryAnnotation(Error) in resolved.type_annotations
+    assert StrawberryAnnotation(Example) in resolved.type_annotations

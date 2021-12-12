@@ -50,6 +50,9 @@ class StrawberryAnnotation:
 
         return self.resolve() == other.resolve()
 
+    def __hash__(self) -> int:
+        return hash(self.annotation)
+
     def resolve(self) -> Union[StrawberryType, type]:
         annotation: object
         if isinstance(self.annotation, str):

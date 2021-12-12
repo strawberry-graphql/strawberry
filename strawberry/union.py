@@ -65,9 +65,28 @@ class StrawberryUnion(StrawberryType):
 
     def __or__(self, other: Union[StrawberryType, type]) -> StrawberryType:
         # TODO: shall we add support to merge unions with other unions?
-        # TODO: shall we add support to merge unions with other types?]
         # current use case is to allow SomeUnion | None, as a nicer way to
         # mark a field as optional when using a union type
+
+        if hasattr(other, "_type_definition"):
+            return StrawberryUnion(
+                type_annotations=(
+                    *self.type_annotations,
+                    StrawberryAnnotation(other),
+                )
+            )
+
+        if isinstance(other, StrawberryUnion):
+            return StrawberryUnion(
+                type_annotations=tuple(
+                    set(
+                        (
+                            *self.type_annotations,
+                            *other.type_annotations,
+                        )
+                    )
+                )
+            )
 
         return StrawberryOptional(of_type=self)
 
