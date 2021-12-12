@@ -16,7 +16,7 @@ pytestmark = pytest.mark.skipif(
 )
 
 
-def test_python_union_short_syntax():
+def test_union_short_syntax():
     @strawberry.type
     class User:
         name: str
@@ -38,7 +38,7 @@ def test_python_union_short_syntax():
     assert resolved == Union[User, Error]
 
 
-def test_python_union_none():
+def test_union_none():
     @strawberry.type
     class User:
         name: str
@@ -55,7 +55,7 @@ def test_python_union_none():
     assert resolved == Union[User, None]
 
 
-def test_python_strawberry_union_and_none():
+def test_strawberry_union_and_none():
     @strawberry.type
     class User:
         name: str
@@ -78,7 +78,7 @@ def test_python_strawberry_union_and_none():
     )
 
 
-def test_python_strawberry_union_and_another_type():
+def test_strawberry_union_and_another_type():
     @strawberry.type
     class User:
         name: str
@@ -106,7 +106,7 @@ def test_python_strawberry_union_and_another_type():
     )
 
 
-def test_python_strawberry_union_and_another_strawberry_union():
+def test_strawberry_union_and_another_strawberry_union():
     @strawberry.type
     class User:
         name: str
