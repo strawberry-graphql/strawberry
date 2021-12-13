@@ -39,7 +39,7 @@ class GraphQLRouter(APIRouter):
             custom_getter: Dict[str, Any],
             request: Request = None,
             ws: WebSocket = None,
-        ):
+        ) -> Callable[..., Dict[str, Any]]:
             return {
                 "request": request or ws,
                 "background_tasks": background_tasks,
