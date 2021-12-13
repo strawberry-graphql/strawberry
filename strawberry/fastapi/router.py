@@ -36,9 +36,9 @@ class GraphQLRouter(APIRouter):
     ) -> Callable[..., Dict[str, Any]]:
         async def dependency(
             background_tasks: BackgroundTasks,
+            custom_getter: Dict[str, Any],
             request: Request = None,
             ws: WebSocket = None,
-            custom_getter: Dict[str, Any] = {},
         ):
             return {
                 "request": request or ws,
