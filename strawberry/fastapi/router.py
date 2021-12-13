@@ -50,7 +50,7 @@ class GraphQLRouter(APIRouter):
         sig = sig.replace(
             parameters=[
                 *list(sig.parameters.values())[:-1],
-                sig.parameters["custom_getter: Dict[str, Any]"].replace(
+                sig.parameters["custom_getter"].replace(
                     default=Depends(custom_getter)
                 ),
             ]
