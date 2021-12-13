@@ -1,5 +1,6 @@
 import json
 from datetime import timedelta
+from inspect import signature
 from typing import Any, Callable, Dict, Optional, Sequence
 
 from starlette import status
@@ -10,7 +11,6 @@ from starlette.types import ASGIApp
 from starlette.websockets import WebSocket
 
 from fastapi import APIRouter, Depends
-from inspect import signature
 from strawberry.asgi.utils import get_graphiql_html
 from strawberry.exceptions import MissingQueryError
 from strawberry.fastapi.handlers import GraphQLTransportWSHandler, GraphQLWSHandler
