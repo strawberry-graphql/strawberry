@@ -43,6 +43,10 @@ class GraphQLRouter(APIRouter):
             return {
                 "request": request or ws,
                 "background_tasks": background_tasks,
+            } if custom_getter is None else
+            {
+                "request": request or ws,
+                "background_tasks": background_tasks,
                 **custom_getter,
             }
 
@@ -50,7 +54,7 @@ class GraphQLRouter(APIRouter):
         sig = sig.replace(
             parameters=[
                 *list(sig.parameters.values())[:-1],
-                sig.parameters["custom_getter"].replace(default=Depends(custom_getter)),
+                sig.parameters["custom_getter: Dict[str, Any]"].replace(default=Depends(custom_getter)),
             ]
         )
         dependency.__signature__ = sig
