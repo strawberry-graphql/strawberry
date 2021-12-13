@@ -37,15 +37,19 @@ class GraphQLRouter(APIRouter):
             background_tasks: BackgroundTasks,
             request: Request = None,
             ws: WebSocket = None,
-            custom_getter: Optional[Dict[str, Any]] = None
+            custom_getter: Optional[Dict[str, Any]] = None,
         ):
-            return {"request": request or ws, "background_tasks": background_tasks, **custom_getter}
+            return {
+                "request": request or ws,
+                "background_tasks": background_tasks,
+                **custom_getter,
+            }
 
         sig = signature(dependency)
         sig = sig.replace(
             parameters=[
                 *list(sig.parameters.values())[:-1],
-                sig.parameters["custom_getter"].replace(default=Depends(custom_getter))
+                sig.parameters["custom_getter"].replace(default=Depends(custom_getter)),
             ]
         )
         dependency.__signature__ = sig
