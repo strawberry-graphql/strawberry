@@ -86,7 +86,7 @@ class GraphQLRouter(APIRouter):
         self.context_getter = (
             self.__get_context_getter(context_getter)
             if context_getter is not None
-            else lambda: None
+            else self.__get_context_getter(lambda: None)
         )
         self.protocols = subscription_protocols
         self.connection_init_wait_timeout = connection_init_wait_timeout
