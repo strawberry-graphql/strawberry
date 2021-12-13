@@ -1,6 +1,6 @@
 import json
 from datetime import timedelta
-from typing import Any, Callable, Optional, Sequence
+from typing import Any, Callable, Dict, Optional, Sequence
 
 from starlette import status
 from starlette.background import BackgroundTasks
