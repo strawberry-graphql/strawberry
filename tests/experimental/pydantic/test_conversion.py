@@ -745,14 +745,14 @@ def test_sort_creation_fields():
         no_defaults,
         has_default,
         has_default_factory,
-    ], "should place items with defaults last"
+    ]  # should place items with defaults last
 
 
 def test_defaults_into_factory():
     assert (
         defaults_into_factory(default=arguments.UNSET, default_factory=arguments.UNSET)
         is arguments.UNSET
-    ), "should return UNSET when both defaults are UNSET"
+    )  # should return UNSET when both defaults are UNSET
 
     def factory_func():
         return "strawberry"
@@ -760,7 +760,7 @@ def test_defaults_into_factory():
     assert (
         defaults_into_factory(default=arguments.UNSET, default_factory=factory_func)
         is factory_func
-    ), "should return the default_factory unchanged"
+    )  # should return the default_factory unchanged
 
     mutable_default = [123, "strawberry"]
     created_factory = defaults_into_factory(
@@ -768,10 +768,10 @@ def test_defaults_into_factory():
     )
     assert (
         created_factory() is not mutable_default
-    ), "should return a factory that copies the default parameter"
+    )  # should return a factory that copies the default parameter
     assert (
         created_factory() == mutable_default
-    ), "should return a factory that copies the default parameter"
+    )  # should return a factory that copies the default parameter
 
     with pytest.raises(
         BothDefaultAndDefaultFactoryDefinedError,
