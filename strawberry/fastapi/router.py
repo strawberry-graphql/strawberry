@@ -30,10 +30,26 @@ class GraphQLRouter(APIRouter):
         return None
 
     @staticmethod
-    async def __get_context(
-        background_tasks: BackgroundTasks, request: Request = None, ws: WebSocket = None
-    ) -> Optional[Any]:
-        return {"request": request or ws, "background_tasks": background_tasks}
+    def __get_context_getter(
+        custom_getter: Callable[..., Optional[Dict[str, Any]]] = lambda: None
+    ) -> Callable[..., Dict[str, Any]]:
+        async def dependency(
+            background_tasks: BackgroundTasks,
+            request: Request = None,
+            ws: WebSocket = None,
+            custom_getter: Optional[Dict[str, Any]] = None
+        )
+            return {"request": request or ws, "background_tasks": background_tasks, **custom_getter}
+        
+        sig = signature(dependency)
+        sig = sig.replace(
+            parameters=[
+                *list(sig.parameters.values())[:-1],
+                sig.parameters["custom_getter"].replace(default=Depends(custom_getter))
+            ]
+        )
+        dependency.__signature__ = sig
+        return dependency
 
     def __init__(
         self,
@@ -62,7 +78,7 @@ class GraphQLRouter(APIRouter):
         self.keep_alive_interval = keep_alive_interval
         self.debug = debug
         self.root_value_getter = root_value_getter or self.__get_root_value
-        self.context_getter = context_getter or self.__get_context
+        self.context_getter = self.__get_context_getter(context_getter)
         self.protocols = subscription_protocols
         self.connection_init_wait_timeout = connection_init_wait_timeout
 
@@ -85,8 +101,7 @@ class GraphQLRouter(APIRouter):
         @self.post(path)
         async def handle_http_query(
             request: Request,
-            custom_context=Depends(self.context_getter),
-            default_context=Depends(self.__get_context),
+            context=Depends(self.context_getter),
             root_value=Depends(self.root_value_getter),
         ) -> Response:
             content_type = request.headers.get("content-type", "")
@@ -119,7 +134,6 @@ class GraphQLRouter(APIRouter):
                     status_code=status.HTTP_400_BAD_REQUEST,
                 )
             
-            context = default_context if custom_context == default_context else default_context | custom_context
             result = await self.execute(
                 request_data.query,
                 variables=request_data.variables,
