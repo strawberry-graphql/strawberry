@@ -45,13 +45,14 @@ class GraphQLRouter(APIRouter):
                 "background_tasks": background_tasks,
                 **custom_getter,
             }
-            
 
         sig = signature(dependency)
         sig = sig.replace(
             parameters=[
                 *list(sig.parameters.values())[:-1],
-                sig.parameters["custom_getter: Dict[str, Any]"].replace(default=Depends(custom_getter)),
+                sig.parameters["custom_getter: Dict[str, Any]"].replace(
+                    default=Depends(custom_getter)
+                ),
             ]
         )
         dependency.__signature__ = sig
