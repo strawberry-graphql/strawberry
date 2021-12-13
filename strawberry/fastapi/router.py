@@ -38,7 +38,7 @@ class GraphQLRouter(APIRouter):
             background_tasks: BackgroundTasks,
             request: Request = None,
             ws: WebSocket = None,
-            custom_getter: Optional[Dict[str, Any]] = {},
+            custom_getter: Dict[str, Any] = {},
         ):
             return {
                 "request": request or ws,
