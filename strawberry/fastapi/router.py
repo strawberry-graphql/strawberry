@@ -32,7 +32,7 @@ class GraphQLRouter(APIRouter):
 
     @staticmethod
     def __get_context_getter(
-        custom_getter: Callable[..., Optional[Dict[str, Any]]] = lambda: None
+        custom_getter: Callable[..., Optional[Dict[str, Any]]]
     ) -> Callable[..., Dict[str, Any]]:
         async def dependency(
             background_tasks: BackgroundTasks,
@@ -83,7 +83,7 @@ class GraphQLRouter(APIRouter):
         self.keep_alive_interval = keep_alive_interval
         self.debug = debug
         self.root_value_getter = root_value_getter or self.__get_root_value
-        self.context_getter = self.__get_context_getter(context_getter)
+        self.context_getter = self.__get_context_getter(context_getter or lambda: None)
         self.protocols = subscription_protocols
         self.connection_init_wait_timeout = connection_init_wait_timeout
 
