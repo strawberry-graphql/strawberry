@@ -40,7 +40,7 @@ class GraphQLRouter(APIRouter):
             custom_getter: Optional[Dict[str, Any]] = None
         )
             return {"request": request or ws, "background_tasks": background_tasks, **custom_getter}
-        
+
         sig = signature(dependency)
         sig = sig.replace(
             parameters=[
@@ -133,7 +133,7 @@ class GraphQLRouter(APIRouter):
                     "No GraphQL query found in the request",
                     status_code=status.HTTP_400_BAD_REQUEST,
                 )
-            
+
             result = await self.execute(
                 request_data.query,
                 variables=request_data.variables,
