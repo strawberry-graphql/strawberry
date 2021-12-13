@@ -1,11 +1,14 @@
 import dataclasses
-from typing import Any, List, Tuple, Type, Union
+from typing import Any, List, NamedTuple, Tuple, Type, Union
 
 from pydantic.typing import NoArgAnyCallable
 from pydantic.utils import smart_deepcopy
 
 from strawberry.arguments import _Unset
-from strawberry.experimental.pydantic.exceptions import UnregisteredTypeException
+from strawberry.experimental.pydantic.exceptions import (
+    BothDefaultAndDefaultFactoryDefinedError,
+    UnregisteredTypeException,
+)
 from strawberry.private import is_private
 from strawberry.utils.typing import (
     get_list_annotation,
@@ -42,18 +45,17 @@ def get_private_fields(cls: Type) -> List[dataclasses.Field]:
     return private_fields
 
 
-@dataclasses.dataclass()
-class DataclassCreationFields:
+class DataclassCreationFields(NamedTuple):
     """Fields required for the fields parameter of make_dataclass"""
 
     name: str
-    type_annotation: Any
+    type_annotation: Type
     field: dataclasses.Field
 
     @property
-    def to_tuple(self) -> Tuple[str, Any, dataclasses.Field]:
+    def to_tuple(self) -> Tuple[str, Type, dataclasses.Field]:
         # fields parameter wants (name, type, Field)
-        return (self.name, self.type_annotation, self.field)
+        return self.name, self.type_annotation, self.field
 
 
 def sort_creation_fields(
@@ -64,17 +66,14 @@ def sort_creation_fields(
     because dataclasses require that fields with no defaults are defined
     first
     """
-    missing_default: List[DataclassCreationFields] = []
-    has_default: List[DataclassCreationFields] = []
-    for model_field in fields:
-        if (
-            model_field.field.default is dataclasses.MISSING
-            and model_field.field.default_factory is dataclasses.MISSING  # type: ignore
-        ):
-            missing_default.append(model_field)
-        else:
-            has_default.append(model_field)
-    return missing_default + has_default
+
+    def has_default(model_field: DataclassCreationFields) -> bool:
+        """Check if field has defaults."""
+        return (model_field.field.default is not dataclasses.MISSING) or (
+            model_field.field.default_factory is not dataclasses.MISSING  # type: ignore
+        )
+
+    return sorted(fields, key=has_default)
 
 
 def defaults_into_factory(
@@ -87,7 +86,7 @@ def defaults_into_factory(
     final_factory = default_factory
     if not isinstance(default, _Unset):
         if not isinstance(default_factory, _Unset):
-            raise DefaultAndDefaultFactoryDefined(
+            raise BothDefaultAndDefaultFactoryDefinedError(
                 default=default, default_factory=default_factory
             )
         else:

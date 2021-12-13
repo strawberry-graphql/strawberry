@@ -7,9 +7,14 @@ import pydantic
 from pydantic import Field
 
 import strawberry
+from strawberry import arguments
 from strawberry.arguments import UNSET
+from strawberry.experimental.pydantic.exceptions import (
+    BothDefaultAndDefaultFactoryDefinedError,
+)
 from strawberry.experimental.pydantic.utils import (
     DataclassCreationFields,
+    defaults_into_factory,
     sort_creation_fields,
 )
 from strawberry.field import StrawberryField
@@ -712,11 +717,11 @@ def test_sort_creation_fields():
         ),
     )
     has_default_factory = DataclassCreationFields(
-        name="has_default",
+        name="has_default_factory",
         type_annotation=str,
         field=StrawberryField(
-            python_name="has_default",
-            graphql_name="has_default",
+            python_name="has_default_factory",
+            graphql_name="has_default_factory",
             default=UNSET,
             default_factory=lambda: "default_factory_str",
             type_annotation=str,
@@ -724,11 +729,11 @@ def test_sort_creation_fields():
         ),
     )
     no_defaults = DataclassCreationFields(
-        name="has_default",
+        name="no_defaults",
         type_annotation=str,
         field=StrawberryField(
-            python_name="has_default",
-            graphql_name="has_default",
+            python_name="no_defaults",
+            graphql_name="no_defaults",
             default=UNSET,
             default_factory=UNSET,
             type_annotation=str,
@@ -743,6 +748,38 @@ def test_sort_creation_fields():
     ], "should place items with defaults last"
 
 
+def test_defaults_into_factory():
+    assert (
+        defaults_into_factory(default=arguments.UNSET, default_factory=arguments.UNSET)
+        is arguments.UNSET
+    ), "should return UNSET when both defaults are UNSET"
+
+    def factory_func():
+        return "strawberry"
+
+    assert (
+        defaults_into_factory(default=arguments.UNSET, default_factory=factory_func)
+        is factory_func
+    ), "should return the default_factory unchanged"
+
+    mutable_default = [123, "strawberry"]
+    created_factory = defaults_into_factory(
+        default=mutable_default, default_factory=arguments.UNSET
+    )
+    assert (
+        created_factory() is not mutable_default
+    ), "should return a factory that copies the default parameter"
+    assert (
+        created_factory() == mutable_default
+    ), "should return a factory that copies the default parameter"
+
+    with pytest.raises(
+        BothDefaultAndDefaultFactoryDefinedError,
+        match=("Not allowed to specify both default and default_factory."),
+    ):
+        defaults_into_factory(default=mutable_default, default_factory=factory_func)
+
+
 def test_convert_input_types_to_pydantic_default_and_default_factory():
     # Pydantic should raise an error if the user specifies both default
     # and default_factory. this checks for a regression on their side
@@ -755,16 +792,16 @@ def test_convert_input_types_to_pydantic_default_and_default_factory():
             password: Optional[str] = Field(default=None, default_factory=lambda: None)
 
     # If the user defines both through a hacky way, we'll still going to catch it
+    hacked_field = Field(default_factory=lambda: None)
+
+    class User2(pydantic.BaseModel):
+        password: Optional[str] = hacked_field
+
+    hacked_field.default = None
     with pytest.raises(
         BothDefaultAndDefaultFactoryDefinedError,
         match=("Not allowed to specify both default and default_factory."),
     ):
-        hacked_field = Field(default_factory=lambda: None)
-
-        class User2(pydantic.BaseModel):
-            password: Optional[str] = hacked_field
-
-        hacked_field.default = None
 
         @strawberry.experimental.pydantic.input(User2)
         class UserInput:

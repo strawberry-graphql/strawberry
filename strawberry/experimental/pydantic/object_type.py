@@ -111,30 +111,26 @@ def type(
         if not fields_set:
             raise MissingFieldsListError(cls)
 
-        all_model_fields: List[DataclassCreationFields] = []
-
-        for field_name, field in model_fields.items():
-            if field_name in fields_set:
-                all_model_fields.append(
-                    DataclassCreationFields(
-                        name=field_name,
-                        type_annotation=get_type_for_field(field),
-                        field=StrawberryField(
-                            python_name=field.name,
-                            graphql_name=field.alias if field.has_alias else None,
-                            # always unset because we use default_factory instead
-                            default=UNSET,
-                            default_factory=defaults_into_factory(
-                                default=field.default if not field.required else UNSET,
-                                default_factory=field.default_factory
-                                if field.default_factory
-                                else UNSET,
-                            ),
-                            type_annotation=get_type_for_field(field),
-                            description=field.field_info.description,
-                        ),
-                    )
-                )
+        all_model_fields: List[DataclassCreationFields] = [
+            DataclassCreationFields(
+                name=field_name,
+                type_annotation=get_type_for_field(field),
+                field=StrawberryField(
+                    python_name=field.name,
+                    graphql_name=field.alias if field.has_alias else None,
+                    # always unset because we use default_factory instead
+                    default=UNSET,
+                    default_factory=defaults_into_factory(
+                        default=field.default if not field.required else UNSET,
+                        default_factory=field.default_factory or UNSET,
+                    ),
+                    type_annotation=get_type_for_field(field),
+                    description=field.field_info.description,
+                ),
+            )
+            for field_name, field in model_fields.items()
+            if field_name in fields_set
+        ]
 
         wrapped = _wrap_dataclass(cls)
         extra_fields = cast(List[dataclasses.Field], _get_fields(wrapped))

@@ -293,8 +293,8 @@ def test_type_with_fields_mutable_default():
     assert field2.default == dataclasses.MISSING
     assert field1.default_factory == dataclasses.MISSING
     # check that we really made a copy
-    assert id(field2.default_factory()) != id(empty_list)
-    assert id(UserType(groups=["groups"]).friends) != id(empty_list)
+    assert field2.default_factory() is not empty_list
+    assert UserType(groups=["groups"]).friends is not empty_list
     UserType(groups=["groups"]).friends.append("joe")
     assert empty_list == []
 
