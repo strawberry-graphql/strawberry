@@ -43,12 +43,9 @@ class GraphQLRouter(APIRouter):
             return {
                 "request": request or ws,
                 "background_tasks": background_tasks,
-            } if custom_getter is None else
-            {
-                "request": request or ws,
-                "background_tasks": background_tasks,
                 **custom_getter,
             }
+            
 
         sig = signature(dependency)
         sig = sig.replace(
