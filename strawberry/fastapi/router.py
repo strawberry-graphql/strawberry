@@ -38,7 +38,7 @@ class GraphQLRouter(APIRouter):
             request: Request = None,
             ws: WebSocket = None,
             custom_getter: Optional[Dict[str, Any]] = None
-        )
+        ):
             return {"request": request or ws, "background_tasks": background_tasks, **custom_getter}
 
         sig = signature(dependency)
