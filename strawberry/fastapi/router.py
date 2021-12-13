@@ -38,17 +38,9 @@ class GraphQLRouter(APIRouter):
             background_tasks: BackgroundTasks,
             request: Request = None,
             ws: WebSocket = None,
-            custom_getter: Optional[Dict[str, Any]] = None,
+            custom_getter: Optional[Dict[str, Any]] = {},
         ):
-            default_context = {
-                "request": request or ws,
-                "background_tasks": background_tasks,
-            }
-            return (
-                {**default_context, **custom_getter}
-                if custom_getter is not None
-                else default_context
-            )
+            return {"request": request or ws, "background_tasks": background_tasks, **custom_getter}
 
         sig = signature(dependency)
         sig = sig.replace(
@@ -90,7 +82,7 @@ class GraphQLRouter(APIRouter):
         self.context_getter = (
             self.__get_context_getter(context_getter)
             if context_getter is not None
-            else self.__get_context_getter(lambda: None)
+            else self.__get_context_getter(lambda: {})
         )
         self.protocols = subscription_protocols
         self.connection_init_wait_timeout = connection_init_wait_timeout
