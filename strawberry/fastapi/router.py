@@ -44,7 +44,11 @@ class GraphQLRouter(APIRouter):
                 "request": request or ws,
                 "background_tasks": background_tasks,
             }
-            return {**default_context, **custom_getter} if custom_getter is not None else default_context
+            return (
+                {**default_context, **custom_getter}
+                if custom_getter is not None
+                else default_context
+            )
 
         sig = signature(dependency)
         sig = sig.replace(
