@@ -20,8 +20,8 @@ def test_with_context_getter():
 
     app = FastAPI()
     schema = strawberry.Schema(query=Query)
-    graphql_app = GraphQLRouter(schema)
-    app.include_router(graphql_app, context_getter=get_context, prefix="/graphql")
+    graphql_app = GraphQLRouter(schema=schema, context_getter=get_context)
+    app.include_router(graphql_app, prefix="/graphql")
 
     test_client = TestClient(app)
     response = test_client.post("/graphql", json={"query": "{ abc }"})
