@@ -35,8 +35,8 @@ class GraphQLRouter(APIRouter):
         custom_getter: Callable[..., Optional[Dict[str, Any]]]
     ) -> Callable[..., Dict[str, Any]]:
         async def dependency(
-            background_tasks: BackgroundTasks,
             custom_getter: Dict[str, Any],
+            background_tasks: BackgroundTasks,
             request: Request = None,
             ws: WebSocket = None,
         ) -> Callable[..., Dict[str, Any]]:
@@ -49,7 +49,7 @@ class GraphQLRouter(APIRouter):
         sig = signature(dependency)
         sig = sig.replace(
             parameters=[
-                *list(sig.parameters.values())[:-1],
+                *list(sig.parameters.values())[1:],
                 sig.parameters["custom_getter"].replace(default=Depends(custom_getter)),
             ]
         )
