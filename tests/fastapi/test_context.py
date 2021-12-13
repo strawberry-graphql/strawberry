@@ -11,7 +11,7 @@ def test_with_context_getter():
     class Query:
         @strawberry.field
         def abc(self, info: Info) -> str:
-            assert info.context.get("request") != None
+            assert info.context.get("request") is not None
             assert info.context.get("strawberry") == "rocks"
             return "abc"
 
@@ -35,8 +35,8 @@ def test_without_context_getter():
     class Query:
         @strawberry.field
         def abc(self, info: Info) -> str:
-            assert info.context.get("request") != None
-            assert info.context.get("strawberry") == None
+            assert info.context.get("request") is not None
+            assert info.context.get("strawberry") is None
             return "abc"
 
     app = FastAPI()
