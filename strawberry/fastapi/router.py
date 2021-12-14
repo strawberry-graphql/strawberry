@@ -59,7 +59,7 @@ class GraphQLRouter(APIRouter):
         # there is an ongoing issue in MyPy with types and .__signature__ applied to Callables:
         # https://github.com/python/mypy/issues/5958, as of 14/12/21
         # as such, the below line has its typing ignored by MyPy
-        dependency.__signature__ = sig # type: ignore
+        dependency.__signature__ = sig  # type: ignore
         return dependency
 
     def __init__(
@@ -89,7 +89,9 @@ class GraphQLRouter(APIRouter):
         self.keep_alive_interval = keep_alive_interval
         self.debug = debug
         self.root_value_getter = root_value_getter or self.__get_root_value
-        self.context_getter = self.__get_context_getter(context_getter or (lambda: None))
+        self.context_getter = self.__get_context_getter(
+            context_getter or (lambda: None)
+        )
         self.protocols = subscription_protocols
         self.connection_init_wait_timeout = connection_init_wait_timeout
 
