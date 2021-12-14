@@ -35,7 +35,7 @@ class GraphQLRouter(APIRouter):
         custom_getter: Callable[..., Optional[Dict[str, Any]]]
     ) -> Callable[..., Dict[str, Any]]:
         def dependency(
-            custom_getter: Dict[str, Any],
+            custom_getter: Optional[Dict[str, Any]],
             background_tasks: BackgroundTasks,
             request: Request = None,
             ws: WebSocket = None,
