@@ -46,14 +46,18 @@ class GraphQLRouter(APIRouter):
                 **(custom_getter or {}),
             }
 
+        # replace the signature parameters of dependency...
+        # ...with the old parameters minus the first argument of dependency on line 38 as it will be replaced...
+        # ...with the value obtained by injecting custom_getter context as a dependency.
         sig = signature(dependency)
-        sig = sig.replace( # replace the signature parameters of dependency...
+        sig = sig.replace(
             parameters=[
-                *list(sig.parameters.values())[1:], # ...with the old parameters minus the first argument of dependency on line 38 as it will be replaced...
-                sig.parameters["custom_getter"].replace(default=Depends(custom_getter)), # ...with the value obtained by injecting custom_getter context as a dependency.
+                *list(sig.parameters.values())[1:], 
+                sig.parameters["custom_getter"].replace(default=Depends(custom_getter)),
             ],
         )
-        # there is an ongoing issue in MyPy with types and .__signature__ applied to Callables: https://github.com/python/mypy/issues/5958, as of 14/12/21
+        # there is an ongoing issue in MyPy with types and .__signature__ applied to Callables:
+        # https://github.com/python/mypy/issues/5958, as of 14/12/21
         # as such, the below line has its typing ignored by MyPy
         dependency.__signature__ = sig # type: ignore
         return dependency
