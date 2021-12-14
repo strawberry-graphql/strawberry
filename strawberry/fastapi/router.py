@@ -1,7 +1,7 @@
 import json
 from datetime import timedelta
 from inspect import signature
-from typing import Any, Callable, Dict, Optional, Sequence
+from typing import Any, Callable, Dict, Optional, Sequence, Union
 
 from starlette import status
 from starlette.background import BackgroundTasks
@@ -34,26 +34,28 @@ class GraphQLRouter(APIRouter):
     def __get_context_getter(
         custom_getter: Callable[..., Optional[Dict[str, Any]]]
     ) -> Callable[..., Dict[str, Any]]:
-        async def dependency(
+        def dependency(
             custom_getter: Dict[str, Any],
             background_tasks: BackgroundTasks,
             request: Request = None,
             ws: WebSocket = None,
-        ) -> Callable[..., Dict[str, Any]]:
+        ) -> Dict[str, Union[Any, BackgroundTasks, Request, WebSocket]]:
             return {
                 "request": request or ws,
                 "background_tasks": background_tasks,
-                **custom_getter,
+                **(custom_getter or {}),
             }
 
         sig = signature(dependency)
-        sig = sig.replace(
+        sig = sig.replace( # replace the signature parameters of dependency...
             parameters=[
-                *list(sig.parameters.values())[1:],
-                sig.parameters["custom_getter"].replace(default=Depends(custom_getter)),
-            ]
+                *list(sig.parameters.values())[1:], # ...with the old parameters minus the first argument of dependency on line 38 as it will be replaced...
+                sig.parameters["custom_getter"].replace(default=Depends(custom_getter)), # ...with the value obtained by injecting custom_getter context as a dependency.
+            ],
         )
-        dependency.__signature__ = sig
+        # there is an ongoing issue in MyPy with types and .__signature__ applied to Callables: https://github.com/python/mypy/issues/5958, as of 14/12/21
+        # as such, the below line has its typing ignored by MyPy
+        dependency.__signature__ = sig # type: ignore
         return dependency
 
     def __init__(
@@ -83,11 +85,7 @@ class GraphQLRouter(APIRouter):
         self.keep_alive_interval = keep_alive_interval
         self.debug = debug
         self.root_value_getter = root_value_getter or self.__get_root_value
-        self.context_getter = (
-            self.__get_context_getter(context_getter)
-            if context_getter is not None
-            else self.__get_context_getter(lambda: {})
-        )
+        self.context_getter = self.__get_context_getter(context_getter or (lambda: None))
         self.protocols = subscription_protocols
         self.connection_init_wait_timeout = connection_init_wait_timeout
 
