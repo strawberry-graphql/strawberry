@@ -289,9 +289,9 @@ def test_type_with_fields_mutable_default():
 
     [field1, field2] = definition.fields
 
-    assert field1.default == dataclasses.MISSING
-    assert field2.default == dataclasses.MISSING
-    assert field1.default_factory == dataclasses.MISSING
+    assert field1.default is dataclasses.MISSING
+    assert field2.default is dataclasses.MISSING
+    assert field1.default_factory is dataclasses.MISSING
     # check that we really made a copy
     assert field2.default_factory() is not empty_list
     assert UserType(groups=["groups"]).friends is not empty_list
