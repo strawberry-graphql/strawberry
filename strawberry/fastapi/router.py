@@ -52,7 +52,7 @@ class GraphQLRouter(APIRouter):
         sig = signature(dependency)
         sig = sig.replace(
             parameters=[
-                *list(sig.parameters.values())[1:], 
+                *list(sig.parameters.values())[1:],
                 sig.parameters["custom_getter"].replace(default=Depends(custom_getter)),
             ],
         )
