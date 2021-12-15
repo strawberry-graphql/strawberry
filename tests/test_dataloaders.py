@@ -194,3 +194,22 @@ async def test_cache_disabled_immediate_await(mocker):
     assert a == b
 
     mock_loader.assert_has_calls([mocker.call([1]), mocker.call([1])])
+
+
+def test_works_when_created_in_a_different_loop(mocker):
+    async def idx(keys):
+        return keys
+
+    mock_loader = mocker.Mock(side_effect=idx)
+    loader = DataLoader(load_fn=mock_loader, cache=False)
+
+    loop = asyncio.new_event_loop()
+
+    async def run():
+        return await loader.load(1)
+
+    data = loop.run_until_complete(run())
+
+    assert data == 1
+
+    mock_loader.assert_called_once_with([1])
