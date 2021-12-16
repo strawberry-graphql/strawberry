@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.93.5 - 2021-12-16
+-------------------
+
+This release fixes an issue that prevented from lazily importing
+enum types using LazyType.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1501](https://github.com/strawberry-graphql/strawberry/pull/1501/)
+
+
 0.93.4 - 2021-12-10
 -------------------
 
