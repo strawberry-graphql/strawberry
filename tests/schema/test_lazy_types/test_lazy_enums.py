@@ -15,29 +15,20 @@ class LazyEnum(enum.Enum):
     BREAD = "BREAD"
 
 
-def test_cyclic_import():
-    from .type_b import TypeB
-
+def test_lazy_enum():
     @strawberry.type
     class Query:
         a: strawberry.LazyType[
             "LazyEnum", "tests.schema.test_lazy_types.test_lazy_enums"
         ]
-        b: TypeB
 
     expected = """
+    enum LazyEnum {
+      BREAD
+    }
+
     type Query {
-      a: TypeA!
-      b: TypeB!
-    }
-
-    type TypeA {
-      listOfB: [TypeB!]
-      typeB: TypeB!
-    }
-
-    type TypeB {
-      typeA: TypeA!
+      a: LazyEnum!
     }
     """
 

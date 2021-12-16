@@ -450,6 +450,9 @@ class GraphQLCoreConverter:
         elif compat.is_object_type(type_):  # TODO: Replace with StrawberryObject
             type_definition: TypeDefinition = type_._type_definition  # type: ignore
             return self.from_object(type_definition)
+        elif compat.is_enum(type_):  # TODO: Replace with StrawberryEnum
+            enum_definition: EnumDefinition = type_._enum_definition  # type: ignore
+            return self.from_enum(enum_definition)
         elif isinstance(type_, TypeDefinition):  # TODO: Replace with StrawberryObject
             return self.from_object(type_)
         elif isinstance(type_, StrawberryUnion):
