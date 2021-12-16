@@ -45,6 +45,11 @@ def is_object_type(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
     return hasattr(type_, "_type_definition")
 
 
+def is_enum(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
+    # isinstance(type_, StrawberryEnumType)  # noqa: E800
+    return hasattr(type_, "_enum_definition")
+
+
 def is_generic(type_: Union[StrawberryType, type]) -> bool:
     if hasattr(type_, "_type_definition"):
 
