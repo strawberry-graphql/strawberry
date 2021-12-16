@@ -49,7 +49,6 @@ def test_lazy_type_enum():
     assert isinstance(resolved, LazyType)
     assert resolved is LazierType
     assert resolved.resolve_type() is LazyEnum
-    breakpoint()
 
 
 def test_lazy_type_argument():
