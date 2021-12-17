@@ -520,7 +520,7 @@ class CustomDataclassTransformer:
                 line=stmt.line,
                 column=stmt.column,
                 type=sym.type,
-                kw_only = False,
+                kw_only=False,
             )
 
             # add support for mypy >= 0.800 without breaking backwards compatibility
