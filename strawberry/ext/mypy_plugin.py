@@ -371,11 +371,11 @@ class CustomDataclassTransformer:
                     obj_type,
                 )
 
-                 # Backward-compatible with TypeVarDef from Mypy 0.910.
-                 if isinstance(order_tvar_def, TypeVarType):
-                     order_other_type = order_tvar_def
-                 else:
-                     order_other_type = TypeVarType(order_tvar_def)
+                # Backward-compatible with TypeVarDef from Mypy 0.910.
+                if isinstance(order_tvar_def, TypeVarType):
+                    order_other_type = order_tvar_def
+                else:
+                    order_other_type = TypeVarType(order_tvar_def)
                 
                 order_return_type = ctx.api.named_type("__builtins__.bool")
                 order_args = [
