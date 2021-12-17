@@ -42,11 +42,16 @@ from mypy.types import (
     NoneType,
     Type,
     TypeOfAny,
-    TypeVarDef,
     TypeVarType,
     UnionType,
     get_proper_type,
 )
+
+try:
+    from mypy.types import TypeVarDef
+except ImportError:
+    # Backward-compatible with TypeVarDef from Mypy 0.910.
+    from mypy.types import TypeVarType as TypeVarDef  # type: ignore[misc]
 
 
 class InvalidNodeTypeException(Exception):
@@ -357,6 +362,7 @@ class CustomDataclassTransformer:
                 # Like for __eq__ and __ne__, we want "other" to match
                 # the self type.
                 obj_type = ctx.api.named_type("__builtins__.object")
+                                   
                 order_tvar_def = TypeVarDef(
                     SELF_TVAR_NAME,
                     info.fullname + "." + SELF_TVAR_NAME,
@@ -364,7 +370,13 @@ class CustomDataclassTransformer:
                     [],
                     obj_type,
                 )
-                order_other_type = TypeVarType(order_tvar_def)
+
+                 # Backward-compatible with TypeVarDef from Mypy 0.910.
+                 if isinstance(order_tvar_def, TypeVarType):
+                     order_other_type = order_tvar_def
+                 else:
+                     order_other_type = TypeVarType(order_tvar_def)
+                
                 order_return_type = ctx.api.named_type("__builtins__.bool")
                 order_args = [
                     Argument(

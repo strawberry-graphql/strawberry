@@ -59,7 +59,7 @@ black = {version = "^21.12b0", allow-prereleases = true}
 isort = "^5.10.1"
 pytest-asyncio = "^0.16.0"
 pytest-cov = "^3.0"
-mypy = "^0.910"
+mypy = "^0.920"
 flake8-bugbear = "^21.11"
 flake8-eradicate = "^1.2.0"
 pytest-mypy-plugins = "^1.9"
