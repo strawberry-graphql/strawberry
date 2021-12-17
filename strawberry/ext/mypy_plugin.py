@@ -50,7 +50,7 @@ from mypy.types import (
 
 # Backwards compatible with the removal of `TypeVarDef` in mypy 0.920.
 try:
-    from mypy.types import TypeVarDef
+    from mypy.types import TypeVarDef  # type: ignore
 except ImportError:
     TypeVarDef = TypeVarType
 
@@ -376,7 +376,7 @@ class CustomDataclassTransformer:
                 if isinstance(order_tvar_def, TypeVarType):
                     order_other_type = order_tvar_def
                 else:
-                    order_other_type = TypeVarType(order_tvar_def)
+                    order_other_type = TypeVarType(order_tvar_def)  # type: ignore
 
                 order_return_type = ctx.api.named_type("__builtins__.bool")
                 order_args = [

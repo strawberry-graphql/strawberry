@@ -1,3 +1,3 @@
 Release type: minor
 
-This release add support for mypy 0.920.
+This release adds support for mypy 0.920.
