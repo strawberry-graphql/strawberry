@@ -48,11 +48,11 @@ from mypy.types import (
 )
 
 
+# Backwards compatible with the removal of `TypeVarDef` in mypy 0.920.
 try:
     from mypy.types import TypeVarDef
 except ImportError:
-    # Backward-compatible with TypeVarDef from Mypy 0.910.
-    from mypy.types import TypeVarType as TypeVarDef  # type: ignore[misc]
+    TypeVarDef = TypeVarType
 
 
 class InvalidNodeTypeException(Exception):
@@ -372,7 +372,7 @@ class CustomDataclassTransformer:
                     obj_type,
                 )
 
-                # Backward-compatible with TypeVarDef from Mypy 0.910.
+                # Backwards compatible with the removal of `TypeVarDef` in mypy 0.920.
                 if isinstance(order_tvar_def, TypeVarType):
                     order_other_type = order_tvar_def
                 else:
