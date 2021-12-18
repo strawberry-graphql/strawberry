@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.93.6 - 2021-12-18
+-------------------
+
+This release changes when we fetch the event loop in dataloaders
+to prevent using the wrong event loop in some occasions.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1498](https://github.com/strawberry-graphql/strawberry/pull/1498/)
+
+
 0.93.5 - 2021-12-16
 -------------------
 
