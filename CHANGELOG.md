@@ -1,6 +1,17 @@
 CHANGELOG
 =========
 
+0.93.7 - 2021-12-18
+-------------------
+
+Change `context_getter` in `strawberry.fastapi.GraphQLRouter` to merge, rather than overwrite, default and custom getters.
+
+This mean now you can always access the `request` instance from `info.context`, even when using
+a custom context getter.
+
+Contributed by [Tommy Smith](https://github.com/tsmith023) [PR #1494](https://github.com/strawberry-graphql/strawberry/pull/1494/)
+
+
 0.93.6 - 2021-12-18
 -------------------
 
