@@ -359,7 +359,7 @@ def test_uses_default_for_optional_types_when_nothing_is_passed():
             scalar_registry=DEFAULT_SCALAR_REGISTRY,
             config=StrawberryConfig(),
         )
-        == {"input": Input(numbers=UNSET, numbers_secondUNSET)}
+        == {"input": Input(numbers=UNSET, numbers_second=UNSET)}
     )
 
     # case 2
