@@ -12,19 +12,19 @@ When using Strawberry to build graphQL APIs, as was shown in [Schema basics](htt
 
 The complete mapping of the required type hints for the relevant graphQL types is as follows:
 
-| GraphQL       | Python                          |
-| ------------- | ------------------------------- |
-| `ID`          | `strawberry.ID`                 |
-| `String`      | `str`                           |
-| `Integer`     | `int`                           |
-| `Float`       | `float`                         |
-| `Decimal`     | `decimal.Decimal`               |
-| `Array`, `[]` | `typing.List` or `list`         |
-| `Union`       | `typing.Union` or `|`           |
-| `Nullable`    | `typing.Optional` or `None |`   |
-| `date`        | `datetime.date`                 |
-| `timetz`      | `datetime.time`                 |
-| `timestamptz` | `datetime.datetime`             |
+| GraphQL       | Python                     |
+| ------------- | -------------------------- | --- |
+| `ID`          | `strawberry.ID`            |
+| `String`      | `str`                      |
+| `Integer`     | `int`                      |
+| `Float`       | `float`                    |
+| `Decimal`     | `decimal.Decimal`          |
+| `Array`, `[]` | `typing.List` or `list`    |
+| `Union`       | `typing.Union` or `        | `   |
+| `Nullable`    | `typing.Optional` or `None | `   |
+| `date`        | `datetime.date`            |
+| `timetz`      | `datetime.time`            |
+| `timestamptz` | `datetime.datetime`        |
 
 where `typing`, `datetime`, and `decimal` are all part of the Python standard library. There is also `typing.Dict` that possesses no mapping since it is the entire structure of the graphQL query itself that is a dictionary.
 
