@@ -57,7 +57,7 @@ except ImportError:
     TypeVarDef = TypeVarType  # type: ignore
 
 
-class _Version:
+class MypyVersion:
     VERSION: Decimal
 
 
@@ -540,9 +540,9 @@ class CustomDataclassTransformer:
 
             # Support the addition of `info` in mypy 0.800 and `kw_only` in mypy 0.920
             # without breaking backwards compatibility.
-            if _Version.VERSION >= Decimal("0.800"):
+            if MypyVersion.VERSION >= Decimal("0.800"):
                 params["info"] = cls.info
-            if _Version.VERSION >= Decimal("0.920"):
+            if MypyVersion.VERSION >= Decimal("0.920"):
                 params["kw_only"] = False
 
             attribute = DataclassAttribute(**params)  # type: ignore
@@ -784,5 +784,7 @@ class StrawberryPlugin(Plugin):
 
 
 def plugin(version: str):
-    _Version.VERSION = Decimal(version)
+    # Save the version to be used by the plugin.
+    MypyVersion.VERSION = Decimal(version)
+
     return StrawberryPlugin
