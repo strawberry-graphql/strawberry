@@ -338,11 +338,11 @@ class CustomDataclassTransformer:
             "frozen": _get_decorator_bool_argument(self._ctx, "frozen", False),
         }
 
-        # If there are no attributes, it may be that the semantic analyzer has
-        # not processed them yet. In order to work around this, we can simply
-        # skip generating __init__ if there are no attributes, because if the
-        # user truly did not define any, then the object default __init__
-        # with an empty signature will be present anyway.
+        # If there are no attributes, it may be that the semantic analyzer has not
+        # processed them yet. In order to work around this, we can simply skip
+        # generating __init__ if there are no attributes, because if the user
+        # truly did not define any, then the object default __init__ with an
+        # empty signature will be present anyway.
         if (
             decorator_arguments["init"]
             and (
@@ -353,11 +353,7 @@ class CustomDataclassTransformer:
             add_method(
                 ctx,
                 "__init__",
-                args=[
-                    attr.to_argument()
-                    for attr in attributes
-                    if attr.is_in_init and not self._is_kw_only_type(attr.type)
-                ],
+                args=[attr.to_argument() for attr in attributes if attr.is_in_init],
                 return_type=NoneType(),
             )
 
@@ -428,8 +424,6 @@ class CustomDataclassTransformer:
 
         self.reset_init_only_vars(info, attributes)
 
-        self._add_dataclass_fields_magic_attribute()
-
         info.metadata["dataclass"] = {
             "attributes": [attr.serialize() for attr in attributes],
             "frozen": decorator_arguments["frozen"],
@@ -457,20 +451,17 @@ class CustomDataclassTransformer:
 
     def collect_attributes(self) -> Optional[List[DataclassAttribute]]:
         """Collect all attributes declared in the dataclass and its parents.
-
         All assignments of the form
-
-          a: SomeType
-          b: SomeOtherType = ...
-
+            a: SomeType
+            b: SomeOtherType = ...
         are collected.
         """
+
         # First, collect attributes belonging to the current class.
         ctx = self._ctx
         cls = self._ctx.cls
         attrs: List[DataclassAttribute] = []
         known_attrs: Set[str] = set()
-        kw_only = _get_decorator_bool_argument(ctx, "kw_only", False)
         for stmt in cls.defs.body:
             # Any assignment that doesn't use the new type declaration
             # syntax can be ignored out of hand.
@@ -485,9 +476,8 @@ class CustomDataclassTransformer:
 
             sym = cls.info.names.get(lhs.name)
             if sym is None:
-                # This name is likely blocked by a star import.
-                # We don't need to defer because defer() is already
-                # called by mark_incomplete().
+                # This name is likely blocked by a star import. We don't need
+                # to defer because defer() is already called by mark_incomplete().
                 continue
 
             node = sym.node
@@ -509,9 +499,6 @@ class CustomDataclassTransformer:
             ):
                 is_init_var = True
                 node.type = node_type.args[0]
-
-            if self._is_kw_only_type(node_type):
-                kw_only = True
 
             has_field_call, field_args = _collect_field_args(stmt.rvalue, ctx)
 
@@ -540,13 +527,6 @@ class CustomDataclassTransformer:
                 # on self in the generated __init__(), not in the class body.
                 sym.implicit = True
 
-            is_kw_only = kw_only
-            # Use the kw_only field arg if it is provided. Otherwise use the
-            # kw_only value from the decorator parameter.
-            field_kw_only_param = field_args.get("kw_only")
-            if field_kw_only_param is not None:
-                is_kw_only = bool(ctx.api.parse_bool(field_kw_only_param))
-
             known_attrs.add(lhs.name)
             params = dict(
                 name=lhs.name,
@@ -563,7 +543,7 @@ class CustomDataclassTransformer:
             if _Version.VERSION >= Decimal("0.800"):
                 params["info"] = cls.info
             if _Version.VERSION >= Decimal("0.920"):
-                params["kw_only"] = is_kw_only
+                params["kw_only"] = False
 
             attribute = DataclassAttribute(**params)  # type: ignore
             attrs.append(attribute)
@@ -571,9 +551,8 @@ class CustomDataclassTransformer:
         # Next, collect attributes belonging to any class in the MRO
         # as long as those attributes weren't already collected.  This
         # makes it possible to overwrite attributes in subclasses.
-        # copy() because we potentially modify all_attrs below and
-        # if this code requires debugging we'll have unmodified attrs
-        # laying around.
+        # copy() because we potentially modify all_attrs below and if
+        # this code requires debugging we'll have unmodified attrs laying around.
         all_attrs = attrs.copy()
         for info in cls.info.mro[1:-1]:
             if "dataclass" not in info.metadata:
@@ -593,8 +572,7 @@ class CustomDataclassTransformer:
                 elif all_attrs:
                     # How early in the attribute list an attribute appears is
                     # determined by the reverse MRO, not simply MRO.
-                    # See
-                    # https://docs.python.org/3/library/dataclasses.html#inheritance
+                    # See https://docs.python.org/3/library/dataclasses.html#inheritance
                     # for details.
                     for attr in all_attrs:
                         if attr.name == name:
@@ -602,23 +580,15 @@ class CustomDataclassTransformer:
                             super_attrs.append(attr)
                             break
             all_attrs = super_attrs + all_attrs
-            all_attrs.sort(key=lambda a: a.kw_only)
 
         # Ensure that arguments without a default don't follow
         # arguments that have a default.
         found_default = False
-        # Ensure that the KW_ONLY sentinel is only provided once
-        found_kw_sentinel = False
         for attr in all_attrs:
-            # If we find any attribute that is_in_init, not kw_only, and that
+            # If we find any attribute that is_in_init but that
             # doesn't have a default after one that does have one,
             # then that's an error.
-            if (
-                found_default
-                and attr.is_in_init
-                and not attr.has_default
-                and not attr.kw_only
-            ):
+            if found_default and attr.is_in_init and not attr.has_default:
                 # If the issue comes from merging different classes, report it
                 # at the class definition point.
                 context = (
@@ -632,17 +602,6 @@ class CustomDataclassTransformer:
                 )
 
             found_default = found_default or (attr.has_default and attr.is_in_init)
-            if found_kw_sentinel and self._is_kw_only_type(attr.type):
-                context = (
-                    Context(line=attr.line, column=attr.column)
-                    if attr in attrs
-                    else ctx.cls
-                )
-                ctx.api.fail(
-                    "There may not be more than one field with the KW_ONLY type",
-                    context,
-                )
-            found_kw_sentinel = found_kw_sentinel or self._is_kw_only_type(attr.type)
 
         return all_attrs
 
@@ -681,38 +640,6 @@ class CustomDataclassTransformer:
                 var.is_settable_property = True
                 var._fullname = info.fullname + "." + var.name
                 info.names[var.name] = SymbolTableNode(MDEF, var)
-
-    def _is_kw_only_type(self, node: Optional[Type]) -> bool:
-        """Checks if the type of the node is the KW_ONLY sentinel value."""
-        if node is None:
-            return False
-        node_type = get_proper_type(node)
-        if not isinstance(node_type, Instance):
-            return False
-        return node_type.type.fullname == "dataclasses.KW_ONLY"
-
-    def _add_dataclass_fields_magic_attribute(self) -> None:
-        attr_name = "__dataclass_fields__"
-        any_type = AnyType(TypeOfAny.explicit)
-        field_type = (
-            self._ctx.api.named_type_or_none("dataclasses.Field", [any_type])
-            or any_type
-        )
-        attr_type = self._ctx.api.named_type(
-            "__builtins__.dict",
-            [
-                self._ctx.api.named_type("__builtins__.str"),
-                field_type,
-            ],
-        )
-        var = Var(name=attr_name, type=attr_type)
-        var.info = self._ctx.cls.info
-        var._fullname = self._ctx.cls.info.fullname + "." + attr_name
-        self._ctx.cls.info.names[attr_name] = SymbolTableNode(
-            kind=MDEF,
-            node=var,
-            plugin_generated=True,
-        )
 
 
 def custom_dataclass_class_maker_callback(ctx: ClassDefContext) -> None:
