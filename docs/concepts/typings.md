@@ -12,7 +12,6 @@ When using Strawberry to build graphQL APIs, as was shown in [Schema basics](htt
 
 The complete mapping of the required type hints for the relevant graphQL types is as follows:
 
-<<<<<<< HEAD
 | GraphQL         | Python                        |
 | --------------- | ----------------------------- |
 | `ID`            | `strawberry.ID`               |
@@ -33,25 +32,6 @@ There are a few different ways in which these Python type hints can be used to e
 - For versions of Python >= 3.10, it is possible to annotate an array of types with `list[Type]`. However, for all previous versions, `typing.List[Type]` must be used instead.
 - The annotation `|` is shorthand for `typing.Union[]`, allowing either of `typing.Union[TypeA, TypeB]` or `TypeA | TypeB` interchangably.
 - The annotation `typing.Optional[Type]` is shorthand for `typing.Union[None, Type]`, which is itself equivalent to `None | Type`.
-=======
-| GraphQL         | Python            |
-| --------------- | ----------------- |
-| `ID`            | `strawberry.ID`   |
-| `String`        | `str`             |
-| `Integer`       | `int`             |
-| `Float`         | `float`           |
-| `Array` or `[]` | `typing.List`     |
-| `Union`         | `typing.Union`    |
-| `Nullable`      | `typing.Optional` |
-| `Date`          | `datetime.date`   |
-| `Decimal`       | `decimal.Decimal` |
-
-where `typing`, `datetime`, and `decimal` are all part of the Python standard library.
-
-The usefulness of using `typing.List` instead of the keyword `list` is so that the types held in the list can be notated. A list of integers is notated as `typing.List[int]` and not as `list[int]`. The only effective equivalence that can be understood by the machine is that `typing.List[typing.Any]` is equivalent to `list`.
-
-The `typing.Optional` hint signifies that the variable being hinted can be its type or `None`. As a result, `Optional[int]` is equivalent to `Union[None, int]`.
->>>>>>> 5614cb72c82a2b8550dfb0ca5b52e5d45e0724fd
 
 ## Example
 
@@ -114,7 +94,6 @@ class Group:
 
 ## Motivation
 
-<<<<<<< HEAD
 Python, much like Javascript and Ruby, is a _dynamically typed_ language that allows for high-level programming where the fundamental types of variables, e.g. integers, arrays, hash-maps, _etc._, are understood by the machine at _runtime_ through Just-in-Time compilation.
 
 Yet, much like the low-level languages of C, Java, and Rust, the graphQL query language is _statically typed_ since the data types defined by the schema must be known prior to compiling the API code in order to define a definite schema to query against.
@@ -122,12 +101,3 @@ Yet, much like the low-level languages of C, Java, and Rust, the graphQL query l
 In the low-level _statically typed_ languages mentioned above, every function must have the types of both their arguments and returns explicitly declared so that the compiler can interpret their behaviours correctly and ensure type safety and consistency.
 
 Strawberry takes inspiration from these languages by requiring that all of its types, fields, resolvers, and mutations declare the types of their arguments and returns. Through this, the schema is generated in a standard and efficient way that aligns with the style-direction of Python and programming as a whole.
-=======
-Python, much like Javascript and Ruby, is a _dynamically typed_ language that allows for high-level programming where the fundamental types of variables, e.g. integers, arrays, hash-maps, etc., are understood by the machine at _runtime_ through Just-in-Time compilation.
-
-Yet, much like the low-level languages of C, Java, and Rust, the graphQL query language is _statically typed_ since the data types defined by the schema must be known prior to running the API in order to define a definite schema to query against.
-
-In the low-level _statically typed_ languages in the above, every function must have the types of both their arguments and returns explicitly declared so that the compiler can interpret their behaviours correctly and ensure type safety and consistency.
-
-Strawberry takes inspiration from these languages by requiring that all Strawberry types, fields, resolvers, and mutations declare the types of their arguments and returns. Through this, the schema is generated in a standard and efficient way that aligns with the style-direction of Python and programming as a whole.
->>>>>>> 5614cb72c82a2b8550dfb0ca5b52e5d45e0724fd
