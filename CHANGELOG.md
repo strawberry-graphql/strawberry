@@ -1,6 +1,34 @@
 CHANGELOG
 =========
 
+0.93.8 - 2021-12-20
+-------------------
+
+This release modifies the internal utility function `await_maybe` towards updating mypy to 0.920.
+
+Contributed by [Yossi Rozantsev](https://github.com/Apakottur) [PR #1505](https://github.com/strawberry-graphql/strawberry/pull/1505/)
+
+
+0.93.7 - 2021-12-18
+-------------------
+
+Change `context_getter` in `strawberry.fastapi.GraphQLRouter` to merge, rather than overwrite, default and custom getters.
+
+This mean now you can always access the `request` instance from `info.context`, even when using
+a custom context getter.
+
+Contributed by [Tommy Smith](https://github.com/tsmith023) [PR #1494](https://github.com/strawberry-graphql/strawberry/pull/1494/)
+
+
+0.93.6 - 2021-12-18
+-------------------
+
+This release changes when we fetch the event loop in dataloaders
+to prevent using the wrong event loop in some occasions.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1498](https://github.com/strawberry-graphql/strawberry/pull/1498/)
+
+
 0.93.5 - 2021-12-16
 -------------------
 

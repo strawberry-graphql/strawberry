@@ -47,12 +47,19 @@ class DataLoader(Generic[K, T]):
         self.load_fn = load_fn
         self.max_batch_size = max_batch_size
 
-        self.loop = loop or get_event_loop()
+        self._loop = loop
 
         self.cache = cache
 
         if self.cache:
             self.cache_map = {}
+
+    @property
+    def loop(self) -> AbstractEventLoop:
+        if self._loop is None:
+            self._loop = get_event_loop()
+
+        return self._loop
 
     def load(self, key: K) -> Awaitable[T]:
         if self.cache:
