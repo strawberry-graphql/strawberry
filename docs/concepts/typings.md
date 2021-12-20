@@ -12,23 +12,24 @@ When using Strawberry to build graphQL APIs, as was shown in [Schema basics](htt
 
 The complete mapping of the required type hints for the relevant graphQL types is as follows:
 
-| GraphQL         | Python                        |
-| --------------- | ----------------------------- |
-| `ID`            | `strawberry.ID`               |
-| `String`        | `str`                         |
-| `Integer`       | `int`                         |
-| `Float`         | `float`                       |
-| `Decimal`       | `decimal.Decimal`             |
-| `Array`, `[]`   | `typing.List` or `list`       |
-| `Union`         | `typing.Union` or `|`         |
-| `Nullable`      | `typing.Optional` or `None |` |
-| `date`          | `datetime.date`               |
-| `timetz`        | `datetime.time`               |
-| `timestamptz`   | `datetime.datetime`           |
+| GraphQL       | Python                     |
+| ------------- | -------------------------- | --- |
+| `ID`          | `strawberry.ID`            |
+| `String`      | `str`                      |
+| `Integer`     | `int`                      |
+| `Float`       | `float`                    |
+| `Decimal`     | `decimal.Decimal`          |
+| `Array`, `[]` | `typing.List` or `list`    |
+| `Union`       | `typing.Union` or `        | `   |
+| `Nullable`    | `typing.Optional` or `None | `   |
+| `date`        | `datetime.date`            |
+| `timetz`      | `datetime.time`            |
+| `timestamptz` | `datetime.datetime`        |
 
 where `typing`, `datetime`, and `decimal` are all part of the Python standard library. There is also `typing.Dict` that possesses no mapping since it is the entire structure of the graphQL query itself that is a dictionary.
 
 There are a few different ways in which these Python type hints can be used to express the required Strawberry graphQL type annotation.
+
 - For versions of Python >= 3.10, it is possible to annotate an array of types with `list[Type]`. However, for all previous versions, `typing.List[Type]` must be used instead.
 - The annotation `|` is shorthand for `typing.Union[]`, allowing either of `typing.Union[TypeA, TypeB]` or `TypeA | TypeB` interchangably.
 - The annotation `typing.Optional[Type]` is shorthand for `typing.Union[None, Type]`, which is itself equivalent to `None | Type`.
@@ -79,7 +80,7 @@ class Author:
 class Group:
     name: Optional[str] # groups of authors don't necessarily have names
     authors: typing.List['Author']
-    
+
     @strawberry.field
     def books(self) -> typing.List['Book']:
         books = []
@@ -88,6 +89,7 @@ class Group:
         return books
 
 ```
+
 - `self` within a resolver's definition, whether decorated as `@strawberry.field` or `@strawberry.mutation`, never needs a type hint because it can be inferred.
 - `Optional` is the way to tell Strawberry that a field is nullable. Without it, every field is assumed to be non-null. This is in contrast to graphene wherein every field is assumed nullable unless `required=True` is supplied.
 - Type hinting doesn't stop at being a requirement for Strawberry to function, it is also immensely helpful for collaborating developers. By specifying the type of `stored_books` in `get_books_by_author`, an IDE equipped with PyLance will be able to infer that `book` within the list comprehension is a dictionary and so will understand that `.get()` is a method function of the `dict` class. This helps the readability and maintainability of written code.
