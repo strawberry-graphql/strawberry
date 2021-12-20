@@ -66,6 +66,7 @@ def get_books_by_author(root: 'Author') -> typing.List['Book']:
     stored_books: typing.List[typing.Dict[str, str | int]] = BOOKS_LOOKUP[root.name]
     return [Book(
         title = book.get('title'),
+        author = root,
         date_published = book.get('date_published'),
         price = book.get('price'),
         isbn = book.get('isbn')
