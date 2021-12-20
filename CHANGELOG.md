@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.93.8 - 2021-12-20
+-------------------
+
+This release modifies the internal utility function `await_maybe` towards updating mypy to 0.920.
+
+Contributed by [Yossi Rozantsev](https://github.com/Apakottur) [PR #1505](https://github.com/strawberry-graphql/strawberry/pull/1505/)
+
+
 0.93.7 - 2021-12-18
 -------------------
 
