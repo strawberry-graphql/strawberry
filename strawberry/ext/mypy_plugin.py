@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, cast
 
 from typing_extensions import Final
@@ -38,15 +39,28 @@ from mypy.plugins.dataclasses import DataclassAttribute
 from mypy.server.trigger import make_wildcard_trigger
 from mypy.types import (
     AnyType,
+    CallableType,
     Instance,
     NoneType,
     Type,
     TypeOfAny,
-    TypeVarDef,
     TypeVarType,
     UnionType,
     get_proper_type,
 )
+
+
+# Backwards compatible with the removal of `TypeVarDef` in mypy 0.920.
+try:
+    from mypy.types import TypeVarDef  # type: ignore
+except ImportError:
+    TypeVarDef = TypeVarType  # type: ignore
+
+
+class MypyVersion:
+    """Stores the mypy version to be used by the plugin"""
+
+    VERSION: Decimal
 
 
 class InvalidNodeTypeException(Exception):
@@ -286,9 +300,9 @@ def _collect_field_args(expr: Expression) -> Tuple[bool, Dict[str, Expression]]:
 # extend the mypy one as it might be compiled by mypyc and we'd get this error
 # >>> TypeError: interpreted classes cannot inherit from compiled
 # Original copy from
-# https://github.com/python/mypy/blob/849a7f73/mypy/plugins/dataclasses.py
+# https://github.com/python/mypy/blob/5253f7c0/mypy/plugins/dataclasses.py
 
-SELF_TVAR_NAME = "_DT"  # type: Final
+SELF_TVAR_NAME: Final = "_DT"
 
 
 class CustomDataclassTransformer:
@@ -364,7 +378,13 @@ class CustomDataclassTransformer:
                     [],
                     obj_type,
                 )
-                order_other_type = TypeVarType(order_tvar_def)
+
+                # Backwards compatible with the removal of `TypeVarDef` in mypy 0.920.
+                if isinstance(order_tvar_def, TypeVarType):
+                    order_other_type = order_tvar_def
+                else:
+                    order_other_type = TypeVarType(order_tvar_def)  # type: ignore
+
                 order_return_type = ctx.api.named_type("__builtins__.bool")
                 order_args = [
                     Argument(
@@ -392,6 +412,8 @@ class CustomDataclassTransformer:
 
         if decorator_arguments["frozen"]:
             self._freeze(attributes)
+        else:
+            self._propertize_callables(attributes)
 
         self.reset_init_only_vars(info, attributes)
 
@@ -509,16 +531,14 @@ class CustomDataclassTransformer:
                 type=sym.type,
             )
 
-            # add support for mypy >= 0.800 without breaking backwards compatibility
-            # https://github.com/python/mypy/pull/9380/file
-            # https://github.com/strawberry-graphql/strawberry/issues/678
-
-            try:
-                attribute = DataclassAttribute(**params)  # type: ignore
-            except TypeError:
+            # Support the addition of `info` in mypy 0.800 and `kw_only` in mypy 0.920
+            # without breaking backwards compatibility.
+            if MypyVersion.VERSION >= Decimal("0.800"):
                 params["info"] = cls.info
-                attribute = DataclassAttribute(**params)  # type: ignore
+            if MypyVersion.VERSION >= Decimal("0.920"):
+                params["kw_only"] = False
 
+            attribute = DataclassAttribute(**params)  # type: ignore
             attrs.append(attribute)
 
         # Next, collect attributes belonging to any class in the MRO
@@ -536,9 +556,10 @@ class CustomDataclassTransformer:
             ctx.api.add_plugin_dependency(make_wildcard_trigger(info.fullname))
 
             for data in info.metadata["dataclass"]["attributes"]:
-                name = data["name"]  # type: str
+                name: str = data["name"]
                 if name not in known_attrs:
                     attr = DataclassAttribute.deserialize(info, data, ctx.api)
+                    attr.expand_typevar_from_subtype(ctx.cls.info)
                     known_attrs.add(name)
                     super_attrs.append(attr)
                 elif all_attrs:
@@ -592,6 +613,24 @@ class CustomDataclassTransformer:
                 var = attr.to_var()
                 var.info = info
                 var.is_property = True
+                var._fullname = info.fullname + "." + var.name
+                info.names[var.name] = SymbolTableNode(MDEF, var)
+
+    def _propertize_callables(self, attributes: List[DataclassAttribute]) -> None:
+        """Converts all attributes with callable types to @property methods.
+
+        This avoids the typechecker getting confused and thinking that
+        `my_dataclass_instance.callable_attr(foo)` is going to receive a
+        `self` argument (it is not).
+
+        """
+        info = self._ctx.cls.info
+        for attr in attributes:
+            if isinstance(get_proper_type(attr.type), CallableType):
+                var = attr.to_var()
+                var.info = info
+                var.is_property = True
+                var.is_settable_property = True
                 var._fullname = info.fullname + "." + var.name
                 info.names[var.name] = SymbolTableNode(MDEF, var)
 
@@ -738,4 +777,7 @@ class StrawberryPlugin(Plugin):
 
 
 def plugin(version: str):
+    # Save the version to be used by the plugin.
+    MypyVersion.VERSION = Decimal(version)
+
     return StrawberryPlugin
