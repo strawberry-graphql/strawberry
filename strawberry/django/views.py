@@ -2,6 +2,7 @@ import asyncio
 import json
 import os
 from typing import Any, Dict, Optional, Type
+import warnings
 
 from django.core.exceptions import SuspiciousOperation
 from django.core.serializers.json import DjangoJSONEncoder
@@ -131,7 +132,7 @@ class BaseView(View):
         return response
 
 
-class GraphQLView(BaseView):
+class GraphQLBaseView(BaseView):
     def get_root_value(self, request: HttpRequest) -> Any:
         return None
 
@@ -172,7 +173,7 @@ class GraphQLView(BaseView):
         )
 
 
-class AsyncGraphQLView(BaseView):
+class AsyncGraphQLBaseView(BaseView):
     @classonlymethod
     def as_view(cls, **initkwargs):
         # This code tells django that this view is async, see docs here:
@@ -218,6 +219,22 @@ class AsyncGraphQLView(BaseView):
         return StrawberryDjangoContext(request=request, response=response)
 
     async def process_result(
-        self, request: HttpRequest, result: ExecutionResult
+            self, request: HttpRequest, result: ExecutionResult
     ) -> GraphQLHTTPResponse:
         return process_result(result)
+
+
+@method_decorator(csrf_exempt, name='dispatch')  # Prevent breaking change
+class GraphQLView(GraphQLBaseView):
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn('This class adds @method_decorator(csrf_exempt) to dispatch - use GraphQLBaseView if you want to control csrf yourself', stacklevel=2, category=RuntimeWarning)
+        super().__init__(*args, **kwargs)
+
+
+@method_decorator(csrf_exempt, name='dispatch')  # Prevent breaking change
+class AsyncGraphQLView(AsyncGraphQLBaseView):
+    def __init__(self, *args, **kwargs):
+        warnings.warn('This class adds @method_decorator(csrf_exempt) to dispatch - use AsyncGraphQLBaseView if you want to control csrf yourself', stacklevel=2, category=RuntimeWarning)
+        super().__init__(*args, **kwargs)
+
