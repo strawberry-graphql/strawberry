@@ -157,7 +157,7 @@ volumes:
     external: true
 ```
 
-In the same directory add a `otel-collector-config`:
+In the same directory add a `otel-collector-config.yaml`:
 
 ```yaml
 receivers:
