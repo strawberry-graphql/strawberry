@@ -50,10 +50,10 @@ from strawberry.extensions.tracing import OpenTelemetryExtensionSync
 schema = strawberry.Schema(query=Query, extensions=[OpenTelemetryExtensionSync])
 ```
 
-
 Example Elasticsearch, Kibana, APM, Collector docker-compose to track django and strawberry tracing metrics
 
 This will spin up:
+
 - an elastic search instance to keep your data
 - kibana to visualize data
 - the elastic APM Server for processing incoming traces
@@ -62,7 +62,7 @@ This will spin up:
 For more details see the elasticsearch [docs](https://www.elastic.co/guide/en/apm/get-started/current/open-telemetry-elastic.html)
 
 ```yaml
-version: '3'
+version: "3"
 
 services:
   elasticsearch:
@@ -76,7 +76,7 @@ services:
     environment:
       - discovery.type=single-node
       - bootstrap.memory_lock=true
-      - 'ES_JAVA_OPTS=-Xms1024m -Xmx1024m'
+      - "ES_JAVA_OPTS=-Xms1024m -Xmx1024m"
       - ELASTIC_PASSWORD=changeme
       - xpack.security.enabled=true
     volumes:
@@ -90,7 +90,7 @@ services:
     image: docker.elastic.co/kibana/kibana:7.16.2
     container_name: kibana
     environment:
-      ELASTICSEARCH_URL: 'http://elasticsearch:9200'
+      ELASTICSEARCH_URL: "http://elasticsearch:9200"
       ELASTICSEARCH_HOSTS: '["http://elasticsearch:9200"]'
       ELASTICSEARCH_USERNAME: elastic
       ELASTICSEARCH_PASSWORD: changeme
@@ -108,32 +108,32 @@ services:
     restart: always
     command:
       [
-        '--strict.perms=false',
-        '-e',
-        '-E',
-        'apm-server.host=0.0.0.0:8200',
-        '-E',
-        'apm-server.kibana.enabled=true',
-        '-E',
-        'apm-server.kibana.host=kibana:5601',
-        '-E',
-        'apm-server.kibana.username=elastic',
-        '-E',
-        'apm-server.kibana.password=changeme',
-        '-E',
+        "--strict.perms=false",
+        "-e",
+        "-E",
+        "apm-server.host=0.0.0.0:8200",
+        "-E",
+        "apm-server.kibana.enabled=true",
+        "-E",
+        "apm-server.kibana.host=kibana:5601",
+        "-E",
+        "apm-server.kibana.username=elastic",
+        "-E",
+        "apm-server.kibana.password=changeme",
+        "-E",
         "output.elasticsearch.hosts=['elasticsearch:9200']",
-        '-E',
-        'output.elasticsearch.enabled=true',
-        '-E',
-        'output.elasticsearch.username=elastic',
-        '-E',
-        'output.elasticsearch.password=changeme',
+        "-E",
+        "output.elasticsearch.enabled=true",
+        "-E",
+        "output.elasticsearch.username=elastic",
+        "-E",
+        "output.elasticsearch.password=changeme",
       ]
     depends_on:
       elasticsearch:
         condition: service_healthy
-    cap_add: ['CHOWN', 'DAC_OVERRIDE', 'SETGID', 'SETUID']
-    cap_drop: ['ALL']
+    cap_add: ["CHOWN", "DAC_OVERRIDE", "SETGID", "SETUID"]
+    cap_drop: ["ALL"]
     healthcheck:
       interval: 10s
       retries: 12
@@ -143,7 +143,7 @@ services:
     image: otel/opentelemetry-collector:0.41.0
     container_name: otel-collector
     restart: always
-    command: '--config=/etc/otel-collector-config.yaml'
+    command: "--config=/etc/otel-collector-config.yaml"
     volumes:
       - ./otel-collector-config.yaml:/etc/otel-collector-config.yaml:ro
     depends_on:
@@ -158,6 +158,7 @@ volumes:
 ```
 
 In the same directory add a `otel-collector-config`:
+
 ```yaml
 receivers:
   otlp:
@@ -191,14 +192,15 @@ service:
 ```
 
 Spin this docker-compose up with (this will take a while, give it a minute):
+
 ```
 docker-compose up --force-recreate --build
 ```
 
-
 Example Django Integration
 
 Requirements:
+
 ```shell
 pip install opentelemetry-api
 pip install opentelemetry-sdk
@@ -206,6 +208,7 @@ pip install opentelemetry-exporter-otlp
 ```
 
 in the manage.py
+
 ```python
 from opentelemetry import trace
 from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
@@ -227,4 +230,3 @@ def main():
     DjangoInstrumentor().instrument()
     ...
 ```
-
