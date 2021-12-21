@@ -1,8 +1,8 @@
 import asyncio
 import json
 import os
-from typing import Any, Dict, Optional, Type
 import warnings
+from typing import Any, Dict, Optional, Type
 
 from django.core.exceptions import SuspiciousOperation
 from django.core.serializers.json import DjangoJSONEncoder
@@ -219,22 +219,28 @@ class AsyncGraphQLBaseView(BaseView):
         return StrawberryDjangoContext(request=request, response=response)
 
     async def process_result(
-            self, request: HttpRequest, result: ExecutionResult
+        self, request: HttpRequest, result: ExecutionResult
     ) -> GraphQLHTTPResponse:
         return process_result(result)
 
 
-@method_decorator(csrf_exempt, name='dispatch')  # Prevent breaking change
+@method_decorator(csrf_exempt, name="dispatch")  # Prevent breaking change
 class GraphQLView(GraphQLBaseView):
-
     def __init__(self, *args, **kwargs):
-        warnings.warn('This class adds @method_decorator(csrf_exempt) to dispatch - use GraphQLBaseView if you want to control csrf yourself', stacklevel=2, category=RuntimeWarning)
+        warnings.warn(
+            "This class adds @method_decorator(csrf_exempt) to dispatch - use GraphQLBaseView if you want to control csrf yourself",
+            stacklevel=2,
+            category=RuntimeWarning,
+        )
         super().__init__(*args, **kwargs)
 
 
-@method_decorator(csrf_exempt, name='dispatch')  # Prevent breaking change
+@method_decorator(csrf_exempt, name="dispatch")  # Prevent breaking change
 class AsyncGraphQLView(AsyncGraphQLBaseView):
     def __init__(self, *args, **kwargs):
-        warnings.warn('This class adds @method_decorator(csrf_exempt) to dispatch - use AsyncGraphQLBaseView if you want to control csrf yourself', stacklevel=2, category=RuntimeWarning)
+        warnings.warn(
+            "This class adds @method_decorator(csrf_exempt) to dispatch - use AsyncGraphQLBaseView if you want to control csrf yourself",
+            stacklevel=2,
+            category=RuntimeWarning,
+        )
         super().__init__(*args, **kwargs)
-
