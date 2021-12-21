@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.93.10 - 2021-12-21
+--------------------
+
+This release adds support for mypy 0.920.
+
+Contributed by [Yossi Rozantsev](https://github.com/Apakottur) [PR #1503](https://github.com/strawberry-graphql/strawberry/pull/1503/)
+
+
 0.93.9 - 2021-12-21
 -------------------
 
