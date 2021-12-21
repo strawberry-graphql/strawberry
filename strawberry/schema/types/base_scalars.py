@@ -11,7 +11,7 @@ from graphql import GraphQLError
 from strawberry.custom_scalar import scalar
 
 
-def wrap_iso_parser(parser: Callable, type_: str) -> Callable:
+def wrap_parser(parser: Callable, type_: str) -> Callable:
     def inner(value: str):
         try:
             return parser(value)
@@ -19,6 +19,13 @@ def wrap_iso_parser(parser: Callable, type_: str) -> Callable:
             raise GraphQLError(f'Value cannot represent a {type_}: "{value}". {e}')
 
     return inner
+
+
+def parse_decimal(value: str):
+    try:
+        return decimal.Decimal(value)
+    except decimal.DecimalException:
+        raise GraphQLError(f'Value cannot represent a Decimal: "{value}".')
 
 
 isoformat = methodcaller("isoformat")
@@ -29,21 +36,21 @@ Date = scalar(
     name="Date",
     description="Date (isoformat)",
     serialize=isoformat,
-    parse_value=wrap_iso_parser(datetime.date.fromisoformat, "Date"),
+    parse_value=wrap_parser(datetime.date.fromisoformat, "Date"),
 )
 DateTime = scalar(
     datetime.datetime,
     name="DateTime",
     description="Date with time (isoformat)",
     serialize=isoformat,
-    parse_value=wrap_iso_parser(dateutil.parser.isoparse, "DateTime"),
+    parse_value=wrap_parser(dateutil.parser.isoparse, "DateTime"),
 )
 Time = scalar(
     datetime.time,
     name="Time",
     description="Time (isoformat)",
     serialize=isoformat,
-    parse_value=wrap_iso_parser(datetime.time.fromisoformat, "Time"),
+    parse_value=wrap_parser(datetime.time.fromisoformat, "Time"),
 )
 
 Decimal = scalar(
@@ -51,12 +58,12 @@ Decimal = scalar(
     name="Decimal",
     description="Decimal (fixed-point)",
     serialize=str,
-    parse_value=decimal.Decimal,
+    parse_value=parse_decimal,
 )
 
 UUID = scalar(
     uuid.UUID,
     name="UUID",
     serialize=str,
-    parse_value=uuid.UUID,
+    parse_value=wrap_parser(uuid.UUID, "UUID"),
 )
