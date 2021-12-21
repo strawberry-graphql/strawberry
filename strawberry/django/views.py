@@ -13,6 +13,7 @@ from django.template.exceptions import TemplateDoesNotExist
 from django.template.loader import render_to_string
 from django.template.response import TemplateResponse
 from django.utils.decorators import classonlymethod, method_decorator
+from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
 
 import strawberry
