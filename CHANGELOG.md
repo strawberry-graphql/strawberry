@@ -1,6 +1,12 @@
 CHANGELOG
 =========
 
+0.93.9 - 2021-12-21
+-------------------
+
+This releases fixes a bug with the opentracing extension
+where the tracer wasn't replacing the field name correctly.
+
 0.93.8 - 2021-12-20
 -------------------
 
