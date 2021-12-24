@@ -8,7 +8,7 @@ Pagination is a common use case in APIs to efficiently return some results of a 
 
 GraphQL as a spec [recommends cursor based pagination](https://graphql.org/learn/pagination/) and refers to [Relay's Connection Spec](https://relay.dev/graphql/connections.htm) for specific implementation details.
 
-Here we show a minimal example of how you can leverage Strawberry's generic Types 
+Here we show a minimal example of how you can leverage Strawberry's generic Types
 to build the types required to comply with the relay spec.
 
 ```python
@@ -26,7 +26,7 @@ GenericType = TypeVar("T")  # type: ignore warning as 'T' is too succint to be m
 @strawberry.type
 class Connection(Generic[GenericType]):
     """Represents a paginated relationship between two entities
-    
+
     This pattern is using when the relationship itself has attributes.
     In the facebook domain for example, a friendship between two persons
     would be a connection that might have a friendshipStartTime
@@ -38,11 +38,11 @@ class Connection(Generic[GenericType]):
 @strawberry.type
 class PageInfo:
     """Pagination context to navigate objects with cursor-based pagination
-    
+
     Instead of a page and per_page one has a cursor of the last object
     and fetches item starting from that one
 
-    Read more at: 
+    Read more at:
         - https://graphql.org/learn/pagination/#pagination-and-edges
         - https://relay.dev/graphql/connections.htm
     """
@@ -83,7 +83,7 @@ Cursor = str
 
 def get_books(first: int = 10, after: Optional[Cursor] = UNSET) -> Connection[Book]:
     """
-    A non-trivial implementation should efficiently fetch only 
+    A non-trivial implementation should efficiently fetch only
     the books after the offset and only first ones.
     For simplicity, here we build the list and then slice it accordingly
     """
@@ -99,7 +99,7 @@ def get_books(first: int = 10, after: Optional[Cursor] = UNSET) -> Connection[Bo
     ][after:first+1]
 
     edges = [
-        Edge(node=Book.from_db_model(book), cursor=build_book_cursor(book)) 
+        Edge(node=Book.from_db_model(book), cursor=build_book_cursor(book))
         for book in books
     ]
 
@@ -125,4 +125,3 @@ Name your file `pagination.py` and run `strawberry server pagination`
 
 When you visit the graphql url on your terminal you should see something like this
 <img src="../images/pagination-graphiql-screenshot.png" alt="A view of the GraphiQL interface with a example pagination query"/>
-
