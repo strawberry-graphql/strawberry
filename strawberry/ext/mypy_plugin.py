@@ -112,7 +112,7 @@ def _get_type_for_expr(expr: Expression, api: SemanticAnalyzerPluginInterface) -
             if sym and isinstance(sym.node, Var):
                 raise InvalidNodeTypeException(sym.node)
 
-        return _get_named_type(expr.name, api)
+        return _get_named_type(expr.fullname, api)
 
     if isinstance(expr, IndexExpr):
         type_ = _get_type_for_expr(expr.base, api)
