@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.93.12 - 2021-12-24
+--------------------
+
+Fix mypy plugin crushes when _get_type_for_expr is used on var nodes
+
+Contributed by [Andrii Kohut](https://github.com/andriykohut) [PR #1513](https://github.com/strawberry-graphql/strawberry/pull/1513/)
+
+
 0.93.11 - 2021-12-24
 --------------------
 
