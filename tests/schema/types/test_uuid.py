@@ -51,7 +51,6 @@ def test_serialization_of_incorrect_uuid_string():
     class Mutation:
         @strawberry.mutation
         def uuid_input(self, uuid_input: uuid.UUID) -> uuid.UUID:
-            assert isinstance(uuid_input, uuid.UUID)
             return uuid_input
 
     schema = strawberry.Schema(query=Query, mutation=Mutation)

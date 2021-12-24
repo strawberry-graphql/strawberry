@@ -21,7 +21,7 @@ def wrap_parser(parser: Callable, type_: str) -> Callable:
     return inner
 
 
-def parse_decimal(value: str):
+def parse_decimal(value: str) -> decimal.Decimal:
     try:
         return decimal.Decimal(value)
     except decimal.DecimalException:

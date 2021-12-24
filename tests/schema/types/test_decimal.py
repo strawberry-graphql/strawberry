@@ -49,7 +49,6 @@ def test_serialization_of_incorrect_decimal_string():
     class Mutation:
         @strawberry.mutation
         def decimal_input(self, decimal_input: Decimal) -> Decimal:
-            assert isinstance(decimal_input, Decimal)
             return decimal_input
 
     schema = strawberry.Schema(query=Query, mutation=Mutation)
