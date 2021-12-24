@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.93.11 - 2021-12-24
+--------------------
+
+This release fixes a bug in the annotation parser that prevents using strict typinh for Optional arguments which have their default set to UNSET.
+
+Contributed by [Sarah Henkens](https://github.com/sarahhenkens) [PR #1467](https://github.com/strawberry-graphql/strawberry/pull/1467/)
+
+
 0.93.10 - 2021-12-21
 --------------------
 
