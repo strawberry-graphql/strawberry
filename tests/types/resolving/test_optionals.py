@@ -3,6 +3,7 @@ from typing import List, Optional, Union
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.type import StrawberryOptional
+from strawberry.unset import _Unset
 
 
 def test_basic_optional():
@@ -14,6 +15,39 @@ def test_basic_optional():
 
     assert resolved == StrawberryOptional(of_type=str)
     assert resolved == Optional[str]
+
+
+def test_optional_with_unset():
+    annotation = StrawberryAnnotation(Union[_Unset, Optional[str]])
+    resolved = annotation.resolve()
+
+    assert isinstance(resolved, StrawberryOptional)
+    assert resolved.of_type is str
+
+    assert resolved == StrawberryOptional(of_type=str)
+    assert resolved == Optional[str]
+
+
+def test_optional_with_unset_as_union():
+    annotation = StrawberryAnnotation(Union[_Unset, None, str])
+    resolved = annotation.resolve()
+
+    assert isinstance(resolved, StrawberryOptional)
+    assert resolved.of_type is str
+
+    assert resolved == StrawberryOptional(of_type=str)
+    assert resolved == Optional[str]
+
+
+def test_optional_union_containing_a_real_union_and_unset():
+    annotation = StrawberryAnnotation(Union[str, int, None, _Unset])
+    resolved = annotation.resolve()
+
+    assert isinstance(resolved, StrawberryOptional)
+    assert resolved.of_type == Union[str, int]
+
+    assert resolved == StrawberryOptional(of_type=Union[str, int])
+    assert resolved == Optional[Union[str, int]]
 
 
 def test_optional_list():
