@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.93.13 - 2021-12-25
+--------------------
+
+This release updates the Decimal and UUID scalar parsers to exclude the original_error exception and format the error message similar to other builtin scalars.
+
+Contributed by [Silas Sewell](https://github.com/silas) [PR #1507](https://github.com/strawberry-graphql/strawberry/pull/1507/)
+
+
 0.93.12 - 2021-12-24
 --------------------
 
