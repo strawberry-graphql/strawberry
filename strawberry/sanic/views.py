@@ -101,5 +101,7 @@ class GraphQLView(HTTPMethodView):
             try:
                 return replace_placeholders_with_files(operations, files_map, files)
             except KeyError:
-                raise SanicException(status_code=400, message="File(s) missing in form data")
+                raise SanicException(
+                    status_code=400, message="File(s) missing in form data"
+                )
         return request.json
