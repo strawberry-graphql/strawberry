@@ -1,8 +1,9 @@
 import builtins
 import dataclasses
 import warnings
+from enum import Enum
 from functools import partial
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, cast
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type, cast
 
 from pydantic import BaseModel
 from pydantic.fields import ModelField
@@ -26,14 +27,32 @@ from strawberry.types.types import TypeDefinition
 from .exceptions import MissingFieldsListError, UnregisteredTypeException
 
 
-def replace_pydantic_types(type_: Any):
+create_type = type
+
+
+@dataclasses.dataclass
+class RegisterNestedOptions:
+    """Options for registering nested pydantic model"""
+
+    format_type: Callable[
+        [str], str
+    ] = lambda x: x  # Default does not rename the nested model's name
+    # todo: Other options such as exclude all fields that have a certain name
+
+
+def replace_pydantic_types(
+    type_: Any, register_nested: Optional[RegisterNestedOptions]
+):
     origin = getattr(type_, "__origin__", None)
     if origin is Literal:
         # Literal does not have types in its __args__ so we return early
         return type_
     if hasattr(type_, "__args__"):
         new_type = type_.copy_with(
-            tuple(replace_pydantic_types(t) for t in type_.__args__)
+            tuple(
+                replace_pydantic_types(t, register_nested=register_nested)
+                for t in type_.__args__
+            )
         )
 
         if isinstance(new_type, TypeDefinition):
@@ -48,19 +67,38 @@ def replace_pydantic_types(type_: Any):
 
         return new_type
 
+    if issubclass(type_, Enum):
+        new_type = strawberry.enum(type_)
+        return new_type
+
     if issubclass(type_, BaseModel):
         if hasattr(type_, "_strawberry_type"):
             return type_._strawberry_type
         else:
-            raise UnregisteredTypeException(type_)
+            if register_nested is not None:
+                # register nested class
+                type_name = register_nested.format_type(type_.__name__)
+                strawberry.experimental.pydantic.type(
+                    model=type_, all_fields=True, register_nested=register_nested
+                )(create_type(type_name, (), {}))
+
+                assert hasattr(
+                    type_, "_strawberry_type"
+                ), f"Failed to create _strawberry_type for {type_.__name__}. Please report this bug"
+
+                return type_._strawberry_type
+            else:
+                raise UnregisteredTypeException(type_)
 
     return type_
 
 
-def get_type_for_field(field: ModelField):
+def get_type_for_field(
+    field: ModelField, register_nested: Optional[RegisterNestedOptions]
+):
     type_ = field.outer_type_
     type_ = get_basic_type(type_)
-    type_ = replace_pydantic_types(type_)
+    type_ = replace_pydantic_types(type_, register_nested=register_nested)
 
     if not field.required:
         type_ = Optional[type_]
@@ -78,6 +116,7 @@ def type(
     description: Optional[str] = None,
     directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
     all_fields: bool = False,
+    register_nested: Optional[RegisterNestedOptions] = None,
 ):
     def wrap(cls):
         model_fields = model.__fields__
@@ -109,7 +148,7 @@ def type(
         all_model_fields: List[Tuple[str, Any, dataclasses.Field]] = [
             (
                 name,
-                get_type_for_field(field),
+                get_type_for_field(field, register_nested=register_nested),
                 StrawberryField(
                     python_name=field.name,
                     graphql_name=field.alias if field.has_alias else None,
@@ -117,7 +156,9 @@ def type(
                     default_factory=(
                         field.default_factory if field.default_factory else UNSET
                     ),
-                    type_annotation=get_type_for_field(field),
+                    type_annotation=get_type_for_field(
+                        field, register_nested=register_nested
+                    ),
                     description=field.field_info.description,
                 ),
             )
