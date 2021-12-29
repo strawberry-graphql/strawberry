@@ -1298,7 +1298,7 @@ python-versions = ">=3.6"
 
 [[package]]
 name = "types-aiofiles"
-version = "0.7.0"
+version = "0.7.3"
 description = "Typing stubs for aiofiles"
 category = "dev"
 optional = false
@@ -1531,7 +1531,7 @@ sanic = ["sanic"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "31def3e95d68216937ef60169ef4cfe80b8f5e7c0e62e8842d2de76299fb76a1"
+content-hash = "efc8cb6f5807b2d1bd115464ae532daa719b9b39cb94ffccc6ff03783f931f2c"
 
 [metadata.files]
 aiofiles = [
@@ -2499,8 +2499,8 @@ typed-ast = [
     {file = "typed_ast-1.5.1.tar.gz", hash = "sha256:484137cab8ecf47e137260daa20bafbba5f4e3ec7fda1c1e69ab299b75fa81c5"},
 ]
 types-aiofiles = [
-    {file = "types-aiofiles-0.7.0.tar.gz", hash = "sha256:f1c9aacd8ee8fcf3c66744b4bd0963e1eac3753f0e5c20d71214f53da11bc7e3"},
-    {file = "types_aiofiles-0.7.0-py3-none-any.whl", hash = "sha256:0334df97d4fcc70a29ad82ccbe48b914cd7bf31e6cc95942862057892ec5cc81"},
+    {file = "types-aiofiles-0.7.3.tar.gz", hash = "sha256:5c54783745252302f5ba3e14d8f7e8547d100f72c74c9a5478ce2f7f01aa0cda"},
+    {file = "types_aiofiles-0.7.3-py3-none-any.whl", hash = "sha256:fd7f410a94e0362c7a3cf7a98e62f972f1dab245130dfdf6f48914f462994262"},
 ]
 types-certifi = [
     {file = "types-certifi-2021.10.8.0.tar.gz", hash = "sha256:33308fb722d28cad8ae19834dcc4d2593509ac80bcbabe77c6d8e9a25001c2de"},
