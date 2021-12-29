@@ -1314,7 +1314,7 @@ python-versions = "*"
 
 [[package]]
 name = "types-chardet"
-version = "4.0.1"
+version = "4.0.2"
 description = "Typing stubs for chardet"
 category = "dev"
 optional = false
@@ -1531,7 +1531,7 @@ sanic = ["sanic"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "31def3e95d68216937ef60169ef4cfe80b8f5e7c0e62e8842d2de76299fb76a1"
+content-hash = "75ef28a368a9dd21803fb44c4bbf8d51894936439db16ed039fae2344fb77315"
 
 [metadata.files]
 aiofiles = [
@@ -2507,8 +2507,8 @@ types-certifi = [
     {file = "types_certifi-2021.10.8.0-py3-none-any.whl", hash = "sha256:ca164939fe86b5f70988eed480b788162ee81f62e72f486a7b96cb53f4112355"},
 ]
 types-chardet = [
-    {file = "types-chardet-4.0.1.tar.gz", hash = "sha256:6d2a73711c98f875ab73b87956e8bc1e7ac74f4bd9464631a1ce68f21bc3c1d1"},
-    {file = "types_chardet-4.0.1-py3-none-any.whl", hash = "sha256:a503019a8c4b945adc2c460857a0cc6958101e410a7ed8aa1a669a88b6179be1"},
+    {file = "types-chardet-4.0.2.tar.gz", hash = "sha256:133806b34cf17228ab230ff6cbdb22635c95840a733ad5cf2a352a633b176188"},
+    {file = "types_chardet-4.0.2-py3-none-any.whl", hash = "sha256:1e05ac2f3bc46c4f067d59211aa54b63755e6d05f6d51022438a269fce139a26"},
 ]
 types-freezegun = [
     {file = "types-freezegun-1.1.3.tar.gz", hash = "sha256:eb12cd460cb9ed9a0674c6f2c799763f85650db59b00f2918ff55bc11e1be2ae"},
