@@ -31,6 +31,27 @@ def test_argument_descriptions():
     )
 
 
+def test_argument_deprecation_reason():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(  # type: ignore
+            name: Annotated[
+                str, strawberry.argument(deprecation_reason="Your reason")  # noqa: F722
+            ] = "Patrick"
+        ) -> str:
+            return f"Hi {name}"
+
+    schema = strawberry.Schema(query=Query)
+
+    assert str(schema) == dedent(
+        """\
+        type Query {
+          hello(name: String! = "Patrick" @deprecated(reason: "Your reason")): String!
+        }"""
+    )
+
+
 def test_argument_names():
     @strawberry.input
     class HelloInput:

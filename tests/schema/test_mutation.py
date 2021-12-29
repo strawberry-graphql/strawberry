@@ -1,5 +1,6 @@
 import dataclasses
 import typing
+from textwrap import dedent
 
 import strawberry
 from strawberry.arguments import UNSET, is_unset
@@ -231,3 +232,28 @@ def test_converting_to_dict_with_unset():
 
     assert not result.errors
     assert result.data["say"] == "Hello 🤨"
+
+
+def test_mutation_deprecation_reason():
+    @strawberry.type
+    class Query:
+        hello: str = "world"
+
+    @strawberry.type
+    class Mutation:
+        @strawberry.mutation(deprecation_reason="Your reason")
+        def say(self, name: str) -> str:
+            return f"Hello {name}!"
+
+    schema = strawberry.Schema(query=Query, mutation=Mutation)
+
+    assert str(schema) == dedent(
+        """\
+        type Mutation {
+          say(name: String!): String! @deprecated(reason: "Your reason")
+        }
+
+        type Query {
+          hello: String!
+        }"""
+    )
