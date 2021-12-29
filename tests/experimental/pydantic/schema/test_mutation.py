@@ -1,4 +1,4 @@
-from typing import Dict, List, Union
+from typing import Union
 
 import pydantic
 
@@ -165,15 +165,9 @@ def test_mutation_with_validation_and_error_type():
             try:
                 data = input.to_pydantic()
             except pydantic.ValidationError as e:
-                args: Dict[str, List[str]] = {}
-                for error in e.errors():
-                    field = error["loc"][0]  # currently doesn't support nested errors
-                    field_errors = args.get(field, [])
-                    field_errors.append(error["msg"])
-                    args[field] = field_errors
-                return UserError(**args)
+                return UserError.from_pydantic_error(e)
             else:
-                return UserType(data.name)
+                return UserType.from_pydantic(data)
 
     schema = strawberry.Schema(query=Query, mutation=Mutation)
 
@@ -195,5 +189,5 @@ def test_mutation_with_validation_and_error_type():
     assert result.errors is None
     assert result.data["createUser"].get("name") is None
     assert result.data["createUser"]["nameErrors"] == [
-        ("ensure this value has at least 2 characters")
+        "value_error.any_str.min_length: ensure this value has at least 2 characters"
     ]
