@@ -23,6 +23,10 @@ async def test_loading():
     assert value_b == 2
     assert value_c == 3
 
+    values = await loader.load_many([1, 2, 3, 4, 5, 6])
+
+    assert values == [1, 2, 3, 4, 5, 6]
+
 
 async def test_gathering(mocker):
     async def idx(keys):

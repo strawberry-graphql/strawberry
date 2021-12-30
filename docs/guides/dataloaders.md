@@ -74,6 +74,13 @@ await loader.load(1)
 
 Will result in only one call to `load_users`.
 
+And finally sometimes we'll want to load more than one key at a time. In those
+cases we can use the `load_many` method.
+
+```python
+[user_a, user_b, user_c] = await loader.load_many([1, 2, 3])
+```
+
 ## Usage with GraphQL
 
 Let's see an example of how you can use DataLoaders with GraphQL:
