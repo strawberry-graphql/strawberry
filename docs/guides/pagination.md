@@ -84,7 +84,7 @@ Cursor = str
 def get_books(first: int = 10, after: Optional[Cursor] = UNSET) -> Connection[Book]:
     """
     A non-trivial implementation should efficiently fetch only 
-    the books after the offset and only first ones.
+    the necessary books after the offset.
     For simplicity, here we build the list and then slice it accordingly
     """
     after = after if after is not UNSET else None
