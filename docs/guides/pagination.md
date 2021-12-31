@@ -4,9 +4,12 @@ title: Pagination
 
 # Pagination
 
-Pagination is a common use case in APIs to efficiently return some results of a relationship instead of all of them, since that may be unperformant.
+APIs commonly use pagination to efficiently return a portion of a result instead
+of every single item, which can have inefficient performance. 
 
-GraphQL as a spec [recommends cursor based pagination](https://graphql.org/learn/pagination/) and refers to [Relay's Connection Spec](https://relay.dev/graphql/connections.htm) for specific implementation details.
+The GraphQL spec [recommends cursor-based pagination](https://graphql.org/learn/pagination/) 
+and refers to [Relay's Connection Spec](https://relay.dev/graphql/connections.htm)
+for specific implementation details.
 
 Here we show a minimal example of how you can leverage Strawberry's generic Types
 to build the types required to comply with the relay spec.
