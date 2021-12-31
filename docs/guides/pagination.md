@@ -40,7 +40,7 @@ class Connection(Generic[GenericType]):
 @strawberry.type
 class PageInfo:
     """Pagination context to navigate objects with cursor-based pagination
-    
+
     Instead of classic offset pagination via `page` and `limit` parameters,
     here we have a cursor of the last object and we fetch items starting from that one
 
@@ -85,7 +85,7 @@ Cursor = str
 
 def get_books(first: int = 10, after: Optional[Cursor] = UNSET) -> Connection[Book]:
     """
-    A non-trivial implementation should efficiently fetch only 
+    A non-trivial implementation should efficiently fetch only
     the necessary books after the offset.
     For simplicity, here we build the list and then slice it accordingly
     """
