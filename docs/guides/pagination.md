@@ -29,9 +29,9 @@ GenericType = TypeVar("T")  # type: ignore warning as 'T' is too succint to be m
 class Connection(Generic[GenericType]):
     """Represents a paginated relationship between two entities
 
-    This pattern is using when the relationship itself has attributes.
-    In the facebook domain for example, a friendship between two persons
-    would be a connection that might have a friendshipStartTime
+    This pattern is used when the relationship itself has attributes.
+    In a Facebook-based domain example, a friendship between two people
+    would be a connection that might have a `friendshipStartTime`
     """
     page_info: 'PageInfo'
     edges: list['Edge[GenericType]']
