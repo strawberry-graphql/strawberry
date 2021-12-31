@@ -5,9 +5,9 @@ title: Pagination
 # Pagination
 
 APIs commonly use pagination to efficiently return a portion of a result instead
-of every single item, which can have inefficient performance. 
+of every single item, which can have inefficient performance.
 
-The GraphQL spec [recommends cursor-based pagination](https://graphql.org/learn/pagination/) 
+The GraphQL spec [recommends cursor-based pagination](https://graphql.org/learn/pagination/)
 and refers to [Relay's Connection Spec](https://relay.dev/graphql/connections.htm)
 for specific implementation details.
 
