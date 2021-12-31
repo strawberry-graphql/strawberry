@@ -39,8 +39,8 @@ class Connection(Generic[GenericType]):
 class PageInfo:
     """Pagination context to navigate objects with cursor-based pagination
     
-    Instead of a page and per_page one has a cursor of the last object
-    and fetches item starting from that one
+    Instead of classic offset pagination via `page` and `limit` parameters,
+    here we have a cursor of the last object and we fetch items starting from that one
 
     Read more at: 
         - https://graphql.org/learn/pagination/#pagination-and-edges
