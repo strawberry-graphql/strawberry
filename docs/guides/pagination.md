@@ -15,7 +15,6 @@ Here we show a minimal example of how you can leverage Strawberry's generic Type
 to build the types required to comply with the relay spec.
 
 ```python
-
 import base64
 from typing import List, Generic, TypeVar, Optional
 
