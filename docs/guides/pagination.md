@@ -20,7 +20,7 @@ import strawberry
 from strawberry.arguments import UNSET
 
 
-GenericType = TypeVar("T")  # type: ignore warning as 'T' is too succint to be meaningful for humans
+GenericType = TypeVar("GenericType")
 
 
 @strawberry.type
@@ -31,8 +31,8 @@ class Connection(Generic[GenericType]):
     In the facebook domain for example, a friendship between two persons
     would be a connection that might have a friendshipStartTime
     """
-    page_info: 'PageInfo'
-    edges: list['Edge[GenericType]']
+    page_info: "PageInfo"
+    edges: list["Edge[GenericType]"]
 
 
 @strawberry.type
@@ -74,7 +74,7 @@ class Book:
 
 def build_book_cursor(book: Book):
     """Adapt this method to build an *opaque* id from an instance"""
-    bookid = f'{id(book)}'.encode('utf-8')
+    bookid = f"{id(book)}".encode("utf-8")
     return base64.b64encode(bookid).decode()
 
 
@@ -92,8 +92,8 @@ def get_books(first: int = 10, after: Optional[Cursor] = UNSET) -> Connection[Bo
     # Fetch the requested books plus one, just to calculate `has_next_page`
     books = [
         Book(
-            title=f'Title {x}',
-            author=f'Author {x}',
+            title=f"Title {x}",
+            author=f"Author {x}",
         )
         for x in range(20)
     ][after:first+1]
