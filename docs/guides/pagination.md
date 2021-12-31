@@ -125,5 +125,5 @@ schema = strawberry.Schema(query=Query)
 
 Name your file `pagination.py` and run `strawberry server pagination`
 
-When you visit the graphql url on your terminal you should see something like this
-<img src="../images/pagination-graphiql-screenshot.png" alt="A view of the GraphiQL interface with a example pagination query"/>
+When you visit the GraphQL URL from your terminal output, you should see something like this:
+<img src="../images/pagination-graphiql-screenshot.png" alt="A view of the GraphiQL interface with an example pagination query"/>
