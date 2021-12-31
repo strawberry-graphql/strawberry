@@ -4,15 +4,17 @@ title: Pagination
 
 # Pagination
 
-Pagination is a common use case in APIs to efficiently return some results of a relationship instead of all of them, since that may be unperformant.
+APIs commonly use pagination to efficiently return a portion of a result instead
+of every single item, which can have inefficient performance.
 
-GraphQL as a spec [recommends cursor based pagination](https://graphql.org/learn/pagination/) and refers to [Relay's Connection Spec](https://relay.dev/graphql/connections.htm) for specific implementation details.
+The GraphQL spec [recommends cursor-based pagination](https://graphql.org/learn/pagination/)
+and refers to [Relay's Connection Spec](https://relay.dev/graphql/connections.htm)
+for specific implementation details.
 
-Here we show a minimal example of how you can leverage Strawberry's generic Types 
+Here we show a minimal example of how you can leverage Strawberry's generic Types
 to build the types required to comply with the relay spec.
 
 ```python
-
 import base64
 from typing import List, Generic, TypeVar, Optional
 
@@ -26,10 +28,10 @@ GenericType = TypeVar("GenericType")
 @strawberry.type
 class Connection(Generic[GenericType]):
     """Represents a paginated relationship between two entities
-    
-    This pattern is using when the relationship itself has attributes.
-    In the facebook domain for example, a friendship between two persons
-    would be a connection that might have a friendshipStartTime
+
+    This pattern is used when the relationship itself has attributes.
+    In a Facebook-based domain example, a friendship between two people
+    would be a connection that might have a `friendshipStartTime`
     """
     page_info: "PageInfo"
     edges: list["Edge[GenericType]"]
@@ -42,7 +44,7 @@ class PageInfo:
     Instead of classic offset pagination via `page` and `limit` parameters,
     here we have a cursor of the last object and we fetch items starting from that one
 
-    Read more at: 
+    Read more at:
         - https://graphql.org/learn/pagination/#pagination-and-edges
         - https://relay.dev/graphql/connections.htm
     """
@@ -99,7 +101,7 @@ def get_books(first: int = 10, after: Optional[Cursor] = UNSET) -> Connection[Bo
     ][after:first+1]
 
     edges = [
-        Edge(node=Book.from_db_model(book), cursor=build_book_cursor(book)) 
+        Edge(node=Book.from_db_model(book), cursor=build_book_cursor(book))
         for book in books
     ]
 
@@ -123,6 +125,5 @@ schema = strawberry.Schema(query=Query)
 
 Name your file `pagination.py` and run `strawberry server pagination`
 
-When you visit the graphql url on your terminal you should see something like this
-<img src="../images/pagination-graphiql-screenshot.png" alt="A view of the GraphiQL interface with a example pagination query"/>
-
+When you visit the GraphQL URL from your terminal output, you should see something like this:
+<img src="../images/pagination-graphiql-screenshot.png" alt="A view of the GraphiQL interface with an example pagination query"/>
