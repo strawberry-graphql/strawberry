@@ -421,7 +421,7 @@ from base64 import b64encode, b64decode
 def encode_cursor(id: int) -> str:
   """
   Encodes the given user ID into a cursor.
-  
+
   :param id: The user ID to encode.
 
   :return: The encoded cursor.
@@ -432,7 +432,7 @@ def encode_cursor(id: int) -> str:
 def decode_cursor(cursor: str) -> int:
   """
   Decodes the user ID from the given cursor.
-  
+
   :param cursor: The cursor to decode.
 
   :return: The decoded user ID.
@@ -462,14 +462,14 @@ class Query:
           # decode the user ID from the given cursor.
           user_id = decode_cursor(cursor=cursor)
         else:
-          # no cursor was given (this happens usually when the 
+          # no cursor was given (this happens usually when the
           # client sends a query for the first time).
           user_id = 0
-        
+
         # filter the user data, going through the next set of results.
         filtered_data = map(lambda user: user.id > user_id, user_data)
 
-        # slice the relevant user data (Here, we also slice an 
+        # slice the relevant user data (Here, we also slice an
         # additional user instance, to prepare the next cursor).
         sliced_users = filtered_data[:limit+1]
 
