@@ -7,7 +7,6 @@ import pydantic
 from pydantic import Field
 
 import strawberry
-from strawberry import arguments
 from strawberry.arguments import UNSET
 from strawberry.experimental.pydantic.exceptions import (
     BothDefaultAndDefaultFactoryDefinedError,
@@ -741,30 +740,30 @@ def test_sort_creation_fields():
         ),
     )
     fields = [has_default, has_default_factory, no_defaults]
+    # should place items with defaults last
     assert sort_creation_fields(fields) == [
         no_defaults,
         has_default,
         has_default_factory,
-    ]  # should place items with defaults last
+    ]
 
 
 def test_defaults_into_factory():
-    assert (
-        defaults_into_factory(default=arguments.UNSET, default_factory=arguments.UNSET)
-        is arguments.UNSET
-    )  # should return UNSET when both defaults are UNSET
+    # should return UNSET when both defaults are UNSET
+    assert defaults_into_factory(default=UNSET, default_factory=UNSET) is UNSET
 
     def factory_func():
         return "strawberry"
 
+    # should return the default_factory unchanged
     assert (
-        defaults_into_factory(default=arguments.UNSET, default_factory=factory_func)
+        defaults_into_factory(default=UNSET, default_factory=factory_func)
         is factory_func
-    )  # should return the default_factory unchanged
+    )
 
     mutable_default = [123, "strawberry"]
     created_factory = defaults_into_factory(
-        default=mutable_default, default_factory=arguments.UNSET
+        default=mutable_default, default_factory=UNSET
     )
     # should return a factory that copies the default parameter
     assert created_factory() == mutable_default
