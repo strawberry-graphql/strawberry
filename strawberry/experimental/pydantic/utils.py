@@ -52,7 +52,6 @@ class DataclassCreationFields(NamedTuple):
     type_annotation: Type
     field: dataclasses.Field
 
-    @property
     def to_tuple(self) -> Tuple[str, Type, dataclasses.Field]:
         # fields parameter wants (name, type, Field)
         return self.name, self.type_annotation, self.field

@@ -159,7 +159,7 @@ def type(
 
         cls = dataclasses.make_dataclass(
             cls.__name__,
-            [field.to_tuple for field in sorted_fields],
+            [field.to_tuple() for field in sorted_fields],
             bases=cls.__bases__,
             namespace={"is_type_of": is_type_of},
         )
