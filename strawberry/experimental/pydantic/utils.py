@@ -4,7 +4,7 @@ from typing import Any, List, NamedTuple, Tuple, Type, Union
 from pydantic.typing import NoArgAnyCallable
 from pydantic.utils import smart_deepcopy
 
-from strawberry.arguments import UNSET, _Unset
+from strawberry.arguments import UNSET, _Unset  # type: ignore
 from strawberry.experimental.pydantic.exceptions import (
     BothDefaultAndDefaultFactoryDefinedError,
     UnregisteredTypeException,
