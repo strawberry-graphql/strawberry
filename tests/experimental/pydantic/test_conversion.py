@@ -1,9 +1,24 @@
 from enum import Enum
 from typing import List, Optional, Union
 
+import pytest
+
 import pydantic
+from pydantic import Field
 
 import strawberry
+from strawberry.arguments import UNSET
+from strawberry.experimental.pydantic.exceptions import (
+    BothDefaultAndDefaultFactoryDefinedError,
+)
+from strawberry.experimental.pydantic.utils import (
+    DataclassCreationFields,
+    defaults_into_factory,
+    sort_creation_fields,
+)
+from strawberry.field import StrawberryField
+from strawberry.type import StrawberryOptional
+from strawberry.types.types import TypeDefinition
 
 
 def test_can_use_type_standalone():
@@ -645,11 +660,148 @@ def test_can_convert_input_types_to_pydantic_default_values():
         age: strawberry.auto
         password: strawberry.auto
 
-    data = UserInput(1)
+    data = UserInput(age=1)
     user = data.to_pydantic()
 
     assert user.age == 1
     assert user.password is None
+
+
+def test_can_convert_input_types_to_pydantic_default_values_defaults_declared_first():
+    # test that we can declare a field with a default. before a field without a default
+    class User(pydantic.BaseModel):
+        password: Optional[str] = None
+        age: int
+
+    @strawberry.experimental.pydantic.input(User)
+    class UserInput:
+        password: strawberry.auto
+        age: strawberry.auto
+
+    data = UserInput(age=1)
+    user = data.to_pydantic()
+
+    assert user.age == 1
+    assert user.password is None
+
+    definition: TypeDefinition = UserInput._type_definition
+    assert definition.name == "UserInput"
+
+    [
+        age_field,
+        password_field,
+    ] = (
+        definition.fields
+    )  # fields without a default go first, so the order gets reverse
+
+    assert age_field.python_name == "age"
+    assert age_field.type is int
+
+    assert password_field.python_name == "password"
+    assert isinstance(password_field.type, StrawberryOptional)
+    assert password_field.type.of_type is str
+
+
+def test_sort_creation_fields():
+    has_default = DataclassCreationFields(
+        name="has_default",
+        type_annotation=str,
+        field=StrawberryField(
+            python_name="has_default",
+            graphql_name="has_default",
+            default="default_str",
+            default_factory=UNSET,
+            type_annotation=str,
+            description="description",
+        ),
+    )
+    has_default_factory = DataclassCreationFields(
+        name="has_default_factory",
+        type_annotation=str,
+        field=StrawberryField(
+            python_name="has_default_factory",
+            graphql_name="has_default_factory",
+            default=UNSET,
+            default_factory=lambda: "default_factory_str",
+            type_annotation=str,
+            description="description",
+        ),
+    )
+    no_defaults = DataclassCreationFields(
+        name="no_defaults",
+        type_annotation=str,
+        field=StrawberryField(
+            python_name="no_defaults",
+            graphql_name="no_defaults",
+            default=UNSET,
+            default_factory=UNSET,
+            type_annotation=str,
+            description="description",
+        ),
+    )
+    fields = [has_default, has_default_factory, no_defaults]
+    # should place items with defaults last
+    assert sort_creation_fields(fields) == [
+        no_defaults,
+        has_default,
+        has_default_factory,
+    ]
+
+
+def test_defaults_into_factory():
+    # should return UNSET when both defaults are UNSET
+    assert defaults_into_factory(default=UNSET, default_factory=UNSET) is UNSET
+
+    def factory_func():
+        return "strawberry"
+
+    # should return the default_factory unchanged
+    assert (
+        defaults_into_factory(default=UNSET, default_factory=factory_func)
+        is factory_func
+    )
+
+    mutable_default = [123, "strawberry"]
+    created_factory = defaults_into_factory(
+        default=mutable_default, default_factory=UNSET
+    )
+    # should return a factory that copies the default parameter
+    assert created_factory() == mutable_default
+    assert created_factory() is not mutable_default
+
+    with pytest.raises(
+        BothDefaultAndDefaultFactoryDefinedError,
+        match=("Not allowed to specify both default and default_factory."),
+    ):
+        defaults_into_factory(default=mutable_default, default_factory=factory_func)
+
+
+def test_convert_input_types_to_pydantic_default_and_default_factory():
+    # Pydantic should raise an error if the user specifies both default
+    # and default_factory. this checks for a regression on their side
+    with pytest.raises(
+        ValueError,
+        match=("cannot specify both default and default_factory"),
+    ):
+
+        class User(pydantic.BaseModel):
+            password: Optional[str] = Field(default=None, default_factory=lambda: None)
+
+    # If the user defines both through a hacky way, we'll still going to catch it
+    hacked_field = Field(default_factory=lambda: None)
+
+    class User2(pydantic.BaseModel):
+        password: Optional[str] = hacked_field
+
+    hacked_field.default = None
+    with pytest.raises(
+        BothDefaultAndDefaultFactoryDefinedError,
+        match=("Not allowed to specify both default and default_factory."),
+    ):
+
+        @strawberry.experimental.pydantic.input(User2)
+        class UserInput:
+            password: strawberry.auto
 
 
 def test_can_convert_pydantic_type_to_strawberry_with_additional_field_resolvers():

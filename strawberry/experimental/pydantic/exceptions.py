@@ -1,6 +1,7 @@
-from typing import Type
+from typing import Any, Type
 
 from pydantic import BaseModel
+from pydantic.typing import NoArgAnyCallable
 
 
 class MissingFieldsListError(Exception):
@@ -21,6 +22,16 @@ class UnregisteredTypeException(Exception):
     def __init__(self, type: BaseModel):
         message = (
             f"Cannot find a Strawberry Type for {type} did you forget to register it?"
+        )
+
+        super().__init__(message)
+
+
+class BothDefaultAndDefaultFactoryDefinedError(Exception):
+    def __init__(self, default: Any, default_factory: NoArgAnyCallable):
+        message = (
+            f"Not allowed to specify both default and default_factory. "
+            f"default:{default} default_factory:{default_factory}"
         )
 
         super().__init__(message)

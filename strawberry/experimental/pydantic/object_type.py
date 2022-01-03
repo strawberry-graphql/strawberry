@@ -2,7 +2,7 @@ import builtins
 import dataclasses
 import warnings
 from functools import partial
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, cast
+from typing import Any, Dict, List, Optional, Sequence, Type, cast
 
 from pydantic import BaseModel
 from pydantic.fields import ModelField
@@ -16,7 +16,12 @@ from strawberry.experimental.pydantic.conversion import (
     convert_pydantic_model_to_strawberry_class,
 )
 from strawberry.experimental.pydantic.fields import get_basic_type
-from strawberry.experimental.pydantic.utils import get_private_fields
+from strawberry.experimental.pydantic.utils import (
+    DataclassCreationFields,
+    defaults_into_factory,
+    get_private_fields,
+    sort_creation_fields,
+)
 from strawberry.field import StrawberryField
 from strawberry.object_type import _process_type, _wrap_dataclass
 from strawberry.schema_directive import StrawberrySchemaDirective
@@ -106,23 +111,25 @@ def type(
         if not fields_set:
             raise MissingFieldsListError(cls)
 
-        all_model_fields: List[Tuple[str, Any, dataclasses.Field]] = [
-            (
-                name,
-                get_type_for_field(field),
-                StrawberryField(
+        all_model_fields: List[DataclassCreationFields] = [
+            DataclassCreationFields(
+                name=field_name,
+                type_annotation=get_type_for_field(field),
+                field=StrawberryField(
                     python_name=field.name,
                     graphql_name=field.alias if field.has_alias else None,
-                    default=field.default if not field.required else UNSET,
-                    default_factory=(
-                        field.default_factory if field.default_factory else UNSET
+                    # always unset because we use default_factory instead
+                    default=UNSET,
+                    default_factory=defaults_into_factory(
+                        default=field.default if not field.required else UNSET,
+                        default_factory=field.default_factory or UNSET,
                     ),
                     type_annotation=get_type_for_field(field),
                     description=field.field_info.description,
                 ),
             )
-            for name, field in model_fields.items()
-            if name in fields_set
+            for field_name, field in model_fields.items()
+            if field_name in fields_set
         ]
 
         wrapped = _wrap_dataclass(cls)
@@ -131,10 +138,10 @@ def type(
 
         all_model_fields.extend(
             (
-                (
-                    field.name,
-                    field.type,
-                    field,
+                DataclassCreationFields(
+                    name=field.name,
+                    type_annotation=field.type,
+                    field=field,
                 )
                 for field in extra_fields + private_fields
                 if field.type != strawberry.auto
@@ -142,17 +149,7 @@ def type(
         )
 
         # Sort fields so that fields with missing defaults go first
-        # because dataclasses require that fields with no defaults are defined
-        # first
-        missing_default = []
-        has_default = []
-        for field in all_model_fields:
-            if field[2].default is dataclasses.MISSING:
-                missing_default.append(field)
-            else:
-                has_default.append(field)
-
-        sorted_fields = missing_default + has_default
+        sorted_fields = sort_creation_fields(all_model_fields)
 
         # Implicitly define `is_type_of` to support interfaces/unions that use
         # pydantic objects (not the corresponding strawberry type)
@@ -162,7 +159,7 @@ def type(
 
         cls = dataclasses.make_dataclass(
             cls.__name__,
-            sorted_fields,
+            [field.to_tuple() for field in sorted_fields],
             bases=cls.__bases__,
             namespace={"is_type_of": is_type_of},
         )
