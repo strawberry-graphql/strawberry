@@ -38,10 +38,12 @@ class GraphQLRouter(APIRouter):
             custom_getter: Optional[Dict[str, Any]],
             background_tasks: BackgroundTasks,
             request: Request = None,
+            response: Response = None,
             ws: WebSocket = None,
         ) -> Dict[str, Union[Any, BackgroundTasks, Request, WebSocket]]:
             return {
                 "request": request or ws,
+                "response": response,
                 "background_tasks": background_tasks,
                 **(custom_getter or {}),
             }
@@ -114,6 +116,7 @@ class GraphQLRouter(APIRouter):
         @self.post(path)
         async def handle_http_query(
             request: Request,
+            response: Response,
             context=Depends(self.context_getter),
             root_value=Depends(self.root_value_getter),
         ) -> Response:
@@ -122,10 +125,11 @@ class GraphQLRouter(APIRouter):
                 try:
                     data = await request.json()
                 except json.JSONDecodeError:
-                    return PlainTextResponse(
+                    actual_response = PlainTextResponse(
                         "Unable to parse request body as JSON",
                         status_code=status.HTTP_400_BAD_REQUEST,
                     )
+                    return self.__merge_responses(response, actual_response)
             elif content_type.startswith("multipart/form-data"):
                 multipart_data = await request.form()
                 operations = json.loads(multipart_data.get("operations", {}))
@@ -134,18 +138,20 @@ class GraphQLRouter(APIRouter):
                     operations, files_map, multipart_data
                 )
             else:
-                return PlainTextResponse(
+                actual_response = PlainTextResponse(
                     "Unsupported Media Type",
                     status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
                 )
+                return self.__merge_responses(response, actual_response)
 
             try:
                 request_data = parse_request_data(data)
             except MissingQueryError:
-                return PlainTextResponse(
+                actual_response = PlainTextResponse(
                     "No GraphQL query found in the request",
                     status_code=status.HTTP_400_BAD_REQUEST,
                 )
+                return self.__merge_responses(response, actual_response)
 
             result = await self.execute(
                 request_data.query,
@@ -157,7 +163,11 @@ class GraphQLRouter(APIRouter):
 
             response_data = await self.process_result(request, result)
 
-            return JSONResponse(response_data, status_code=status.HTTP_200_OK)
+            actual_response = JSONResponse(
+                response_data,
+                status_code=status.HTTP_200_OK,
+            )
+            return self.__merge_responses(response, actual_response)
 
         @self.websocket(path)
         async def websocket_endpoint(
@@ -207,6 +217,14 @@ class GraphQLRouter(APIRouter):
     def get_graphiql_response(self) -> HTMLResponse:
         html = get_graphiql_html()
         return HTMLResponse(html)
+
+    @staticmethod
+    def __merge_responses(response: Response, actual_response: Response) -> Response:
+        actual_response.headers.raw.extend(response.headers.raw)
+        if response.status_code:
+            actual_response.status_code = response.status_code
+
+        return actual_response
 
     async def execute(
         self, query, variables=None, context=None, operation_name=None, root_value=None
