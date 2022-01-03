@@ -766,12 +766,9 @@ def test_defaults_into_factory():
     created_factory = defaults_into_factory(
         default=mutable_default, default_factory=arguments.UNSET
     )
-    assert (
-        created_factory() is not mutable_default
-    )  # should return a factory that copies the default parameter
-    assert (
-        created_factory() == mutable_default
-    )  # should return a factory that copies the default parameter
+    # should return a factory that copies the default parameter
+    assert created_factory() == mutable_default
+    assert created_factory() is not mutable_default
 
     with pytest.raises(
         BothDefaultAndDefaultFactoryDefinedError,
