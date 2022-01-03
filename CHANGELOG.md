@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.93.14 - 2022-01-03
+--------------------
+
+This release allows conversion of pydantic models with mutable default fields into strawberry types.
+Also fixes bug when converting a pydantic model field with default_factory. Previously it would raise an exception when fields with a default_factory were declared before fields without defaults.
+
+Contributed by [James Chua](https://github.com/thejaminator) [PR #1491](https://github.com/strawberry-graphql/strawberry/pull/1491/)
+
+
 0.93.13 - 2021-12-25
 --------------------
 
