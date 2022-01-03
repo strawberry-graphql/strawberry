@@ -4,7 +4,7 @@ from typing import Any, List, NamedTuple, Tuple, Type, Union
 from pydantic.typing import NoArgAnyCallable
 from pydantic.utils import smart_deepcopy
 
-from strawberry.arguments import _Unset
+from strawberry.arguments import UNSET, _Unset
 from strawberry.experimental.pydantic.exceptions import (
     BothDefaultAndDefaultFactoryDefinedError,
     UnregisteredTypeException,
@@ -84,10 +84,10 @@ def defaults_into_factory(
     Returns optionally a NoArgAnyCallable representing a default_factory parameter
     """
     final_factory = default_factory
-    if not isinstance(default, _Unset):
-        if not isinstance(default_factory, _Unset):
+    if default is not UNSET:
+        if default_factory is not UNSET:
             raise BothDefaultAndDefaultFactoryDefinedError(
-                default=default, default_factory=default_factory
+                default=default, default_factory=default_factory  # type: ignore
             )
         else:
 
