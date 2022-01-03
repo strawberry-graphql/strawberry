@@ -415,6 +415,8 @@ bother about the type of data to paginate, and can pass unique IDs during pagina
 Let us define a couple of helper functions to encode and decode cursors as follows:
 
 ```py
+# example.py
+
 from base64 import b64encode, b64decode
 
 
