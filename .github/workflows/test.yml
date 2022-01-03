@@ -31,6 +31,7 @@ jobs:
       - uses: actions/checkout@v2
 
       - uses: actions/setup-python@v2
+        id: setup-python
         with:
           python-version: ${{ matrix.python-version }}
           architecture: x64
@@ -48,15 +49,15 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ matrix.cache-path }}
-          key: ${{ runner.os }}-py-${{ matrix.python-version }}-poetry-${{ hashFiles('poetry.lock') }}
-          restore-keys: ${{ runner.os }}-py-${{ matrix.python-version }}-poetry-
+          key: ${{ runner.os }}-py-${{ steps.setup-python.outputs.python-version }}-poetry-${{ hashFiles('poetry.lock') }}
+          restore-keys: ${{ runner.os }}-py-${{ steps.setup-python.outputs.python-version }}-poetry-
 
       - name: Install dependencies
         run: poetry install
         if: steps.cache-poetry-dependencies.outputs.cache-hit != 'true'
 
       - name: pytest
-        run: poetry run py.test --cov-report xml --cov=. --showlocals -vv -m "not django"
+        run: poetry run pytest --cov-report xml --cov=. --showlocals -vv -m "not django"
 
       - uses: codecov/codecov-action@v1
         if: ${{ always() }}
@@ -68,7 +69,7 @@ jobs:
   django-unit-tests:
     strategy:
       matrix:
-        django: [3.2, 3.1.8, 3.0.14, 2.2.20]
+        django: ["4.0", "3.2", "2.2"]
 
     name: Test Django ${{ matrix.django }}
     runs-on: ubuntu-latest
@@ -79,7 +80,8 @@ jobs:
       - uses: actions/setup-python@v2
         id: setup-python
         with:
-          python-version: '3.x'
+          # Pin to 3.9 because Django 2.2 does not support 3.10
+          python-version: '3.9'
           architecture: x64
 
       - run: pip install poetry
@@ -98,10 +100,11 @@ jobs:
         if: steps.cache-poetry-dependencies.outputs.cache-hit != 'true'
 
       - name: Install django ${{ matrix.django }}
-        run: poetry add django==${{ matrix.django }}
+        # Add --python ^3.9 marker because django 4.0 does not support 3.7
+        run: poetry add --python ^3.9 django@^${{ matrix.django }}
 
       - name: pytest
-        run: poetry run py.test --cov-report xml --cov=. --showlocals -vv -m django
+        run: poetry run pytest --cov-report xml --cov=. --showlocals -vv -m django
 
       - uses: codecov/codecov-action@v1
         if: ${{ always() }}
@@ -109,18 +112,3 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           fail_ci_if_error: true
           verbose: true
-
-  mypy:
-    runs-on: ubuntu-latest
-    container: python:3.9
-
-    steps:
-      - uses: actions/checkout@v2
-
-      - run: pip install poetry
-      - run: poetry config experimental.new-installer false
-
-      - name: Install dependencies
-        run: poetry install
-
-      - run: poetry run mypy --ignore-missing-imports --config-file mypy.ini --install-types --non-interactive --show-traceback .

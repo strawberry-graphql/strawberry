@@ -13,7 +13,7 @@ confuse authentication with authorization: authorization determines what an
 authenticated user can do or which data they can access. In Strawberry, this is managed
 with [`Permissions` classes](./permissions.md).
 
-Let's see how to put toghether these concepts with an example. First, we define a
+Let's see how to put together these concepts with an example. First, we define a
 `login` mutation where we authenticate credentials and return `LoginSucces` or
 `LoginError` types depending on whether the user was successfully authenticated or not.
 

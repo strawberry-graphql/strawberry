@@ -12,7 +12,9 @@ if typing.TYPE_CHECKING:
 @strawberry.type
 class TypeB:
     @strawberry.field()
-    def type_a(self) -> strawberry.LazyType["TypeA", "tests.test_cyclic.type_a"]:
+    def type_a(
+        self,
+    ) -> strawberry.LazyType["TypeA", "tests.schema.test_lazy_types.type_a"]:
         from .type_a import TypeA
 
         return TypeA()

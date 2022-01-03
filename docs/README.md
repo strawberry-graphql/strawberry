@@ -18,11 +18,11 @@
 - [Object types](./types/object-types.md)
 - [Interfaces](./types/interfaces.md)
 - [Input types](./types/input-types.md)
-- [Directives](./types/directives.md)
 - [Enums](./types/enums.md)
 - [Generics](./types/generics.md)
 - [Resolvers](./types/resolvers.md)
 - [Union types](./types/union.md)
+- [Exceptions](./types/exceptions.md)
 
 ## [Extensions](./extensions)
 
@@ -57,6 +57,7 @@
 - [FastAPI](./integrations/fastapi.md)
 - [Flask](./integrations/flask.md)
 - [Sanic](./integrations/sanic.md)
+- [Chalice](./integrations/chalice.md)
 - [Starlette](./integrations/starlette.md)
 - [Pydantic **experimental**](./integrations/pydantic.md)
 

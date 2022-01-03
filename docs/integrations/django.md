@@ -24,11 +24,19 @@ project, this is needed to provide the template for the GraphiQL interface.
 
 ## Options
 
-The `GraphQLView` accepts two options at the moment:
+The `GraphQLView` accepts five options at the moment:
 
-- schema: mandatory, the schema created by `strawberry.Schema`.
-- graphiql: optional, defaults to `True`, whether to enable the GraphiQL
+- `schema`: mandatory, the schema created by `strawberry.Schema`.
+- `graphiql`: optional, defaults to `True`, whether to enable the GraphiQL
   interface.
+- `subscriptions_enabled`: optional boolean paramenter enabling subscriptions
+  in the GraphiQL interface, defaults to `False`.
+- `json_encoder`: optional JSON encoder, defaults to `DjangoJSONEncoder`, will
+  be used to serialize the data.
+- `json_dumps_params`: optional dictionary of keyword arguments to pass to
+  the `json.dumps` call used to generate the response. To get the most compact
+  JSON representation, you should specify `{"separators": (",", ":")}`,
+  defaults to `None`.
 
 ## Extending the view
 

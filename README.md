@@ -104,6 +104,12 @@ pip install 'strawberry-graphql[debug-server]'
 pip install 'uvicorn[standard]'
 ```
 
+## Examples
+
+* [Various examples on how to use Strawberry](https://github.com/strawberry-graphql/examples)
+* [Full stack example using Starlette, SQLAlchemy, Typescript codegen and Next.js](https://github.com/jokull/python-ts-graphql-demo)
+* [Quart + Strawberry tutorial](https://github.com/rockyburt/Ketchup)
+
 ## Contributing
 
 We use [poetry](https://github.com/sdispater/poetry) to manage dependencies, to

@@ -116,7 +116,7 @@ class Company(Customer):
 
 If you add an object type which implements an interface, but that object
 type doesn’t appear in your schema as a field return type or a union member,
-then you will need to add that object to the Schema defintion directly.
+then you will need to add that object to the Schema definition directly.
 
 ```python
 schema = strawberry.Schema(query=Query, types=[Individual, Company])

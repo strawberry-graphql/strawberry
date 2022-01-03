@@ -1,4 +1,5 @@
 # type: ignore
+import enum
 from typing import Generic, TypeVar
 
 import strawberry
@@ -15,6 +16,11 @@ class LaziestType:
     something: bool
 
 
+@strawberry.enum
+class LazyEnum(enum.Enum):
+    BREAD = "BREAD"
+
+
 def test_lazy_type():
     # Module path is short and relative because of the way pytest runs the file
     LazierType = LazyType["LaziestType", "test_lazy_types"]
@@ -28,6 +34,21 @@ def test_lazy_type():
     assert isinstance(resolved, LazyType)
     assert resolved is LazierType
     assert resolved.resolve_type() is LaziestType
+
+
+def test_lazy_type_enum():
+    # Module path is short and relative because of the way pytest runs the file
+    LazierType = LazyType["LazyEnum", "test_lazy_types"]
+
+    annotation = StrawberryAnnotation(LazierType)
+    resolved = annotation.resolve()
+
+    # Currently StrawberryAnnotation(LazyType).resolve() returns the unresolved
+    # LazyType. We may want to find a way to directly return the referenced object
+    # without a second resolving step.
+    assert isinstance(resolved, LazyType)
+    assert resolved is LazierType
+    assert resolved.resolve_type() is LazyEnum
 
 
 def test_lazy_type_argument():

@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from textwrap import dedent
 from typing import Optional, Union
 
@@ -380,3 +381,37 @@ def test_union_used_multiple_times():
           field2: MyUnion!
         }"""
     )
+
+
+def test_union_explicit_type_resolution():
+    @dataclass
+    class ADataclass:
+        a: int
+
+    @strawberry.type
+    class A:
+        a: int
+
+        @classmethod
+        def is_type_of(cls, obj, _info) -> bool:
+            return isinstance(obj, ADataclass)
+
+    @strawberry.type
+    class B:
+        b: int
+
+    MyUnion = strawberry.union("MyUnion", types=(A, B))
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def my_field(self) -> MyUnion:
+            return ADataclass(a=1)  # type: ignore
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ myField { __typename, ... on A { a }, ... on B { b } } }"
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data == {"myField": {"__typename": "A", "a": 1}}

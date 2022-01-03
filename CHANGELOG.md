@@ -1,6 +1,463 @@
 CHANGELOG
 =========
 
+0.93.13 - 2021-12-25
+--------------------
+
+This release updates the Decimal and UUID scalar parsers to exclude the original_error exception and format the error message similar to other builtin scalars.
+
+Contributed by [Silas Sewell](https://github.com/silas) [PR #1507](https://github.com/strawberry-graphql/strawberry/pull/1507/)
+
+
+0.93.12 - 2021-12-24
+--------------------
+
+Fix mypy plugin crushes when _get_type_for_expr is used on var nodes
+
+Contributed by [Andrii Kohut](https://github.com/andriykohut) [PR #1513](https://github.com/strawberry-graphql/strawberry/pull/1513/)
+
+
+0.93.11 - 2021-12-24
+--------------------
+
+This release fixes a bug in the annotation parser that prevents using strict typinh for Optional arguments which have their default set to UNSET.
+
+Contributed by [Sarah Henkens](https://github.com/sarahhenkens) [PR #1467](https://github.com/strawberry-graphql/strawberry/pull/1467/)
+
+
+0.93.10 - 2021-12-21
+--------------------
+
+This release adds support for mypy 0.920.
+
+Contributed by [Yossi Rozantsev](https://github.com/Apakottur) [PR #1503](https://github.com/strawberry-graphql/strawberry/pull/1503/)
+
+
+0.93.9 - 2021-12-21
+-------------------
+
+This releases fixes a bug with the opentracing extension
+where the tracer wasn't replacing the field name correctly.
+
+0.93.8 - 2021-12-20
+-------------------
+
+This release modifies the internal utility function `await_maybe` towards updating mypy to 0.920.
+
+Contributed by [Yossi Rozantsev](https://github.com/Apakottur) [PR #1505](https://github.com/strawberry-graphql/strawberry/pull/1505/)
+
+
+0.93.7 - 2021-12-18
+-------------------
+
+Change `context_getter` in `strawberry.fastapi.GraphQLRouter` to merge, rather than overwrite, default and custom getters.
+
+This mean now you can always access the `request` instance from `info.context`, even when using
+a custom context getter.
+
+Contributed by [Tommy Smith](https://github.com/tsmith023) [PR #1494](https://github.com/strawberry-graphql/strawberry/pull/1494/)
+
+
+0.93.6 - 2021-12-18
+-------------------
+
+This release changes when we fetch the event loop in dataloaders
+to prevent using the wrong event loop in some occasions.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1498](https://github.com/strawberry-graphql/strawberry/pull/1498/)
+
+
+0.93.5 - 2021-12-16
+-------------------
+
+This release fixes an issue that prevented from lazily importing
+enum types using LazyType.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1501](https://github.com/strawberry-graphql/strawberry/pull/1501/)
+
+
+0.93.4 - 2021-12-10
+-------------------
+
+This release allows running strawberry as a script, for example, you can start the debug server with the following command:
+
+```shell
+python -m strawberry server schema
+```
+
+Contributed by [YogiLiu](https://github.com/YogiLiu) [PR #1481](https://github.com/strawberry-graphql/strawberry/pull/1481/)
+
+
+0.93.3 - 2021-12-08
+-------------------
+
+This release adds support for uvicorn 0.16
+
+Contributed by [dependabot](https://github.com/dependabot) [PR #1487](https://github.com/strawberry-graphql/strawberry/pull/1487/)
+
+
+0.93.2 - 2021-12-08
+-------------------
+
+This fixes the previous release that introduced a direct dependency on Django.
+
+Contributed by [Guillaume Andreu Sabater](https://github.com/g-as) [PR #1489](https://github.com/strawberry-graphql/strawberry/pull/1489/)
+
+
+0.93.1 - 2021-12-08
+-------------------
+
+This release adds support for Django 4.0
+
+Contributed by [Guillaume Andreu Sabater](https://github.com/g-as) [PR #1484](https://github.com/strawberry-graphql/strawberry/pull/1484/)
+
+
+0.93.0 - 2021-12-07
+-------------------
+
+This release `operation_type` to the `ExecutionContext` type that is available
+in extensions. It also gets the `operation_name` from the query if one isn't
+provided by the client.
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) [PR #1286](https://github.com/strawberry-graphql/strawberry/pull/1286/)
+
+
+0.92.2 - 2021-12-06
+-------------------
+
+This release adds support for passing `json_encoder` and `json_dumps_params` to Django [`JsonResponse`](https://docs.djangoproject.com/en/stable/ref/request-response/#jsonresponse-objects) via a view.
+
+
+```python
+from json import JSONEncoder
+
+from django.urls import path
+from strawberry.django.views import AsyncGraphQLView
+
+from .schema import schema
+
+# Pass the JSON params to `.as_view`
+urlpatterns = [
+    path(
+        "graphql",
+        AsyncGraphQLView.as_view(
+            schema=schema,
+            json_encoder=JSONEncoder,
+            json_dumps_params={"separators": (",", ":")},
+        ),
+    ),
+]
+
+# … or set them in a custom view
+class CustomAsyncGraphQLView(AsyncGraphQLView):
+    json_encoder = JSONEncoder
+    json_dumps_params = {"separators": (",", ":")}
+```
+
+Contributed by [Illia Volochii](https://github.com/illia-v) [PR #1472](https://github.com/strawberry-graphql/strawberry/pull/1472/)
+
+
+0.92.1 - 2021-12-04
+-------------------
+
+Fix cross-module type resolving for fields and resolvers
+
+The following two issues are now fixed:
+
+- A field with a generic (typeless) resolver looks up the
+  type relative to the resolver and not the class the field is
+  defined in. (#1448)
+
+- When inheriting fields from another class the origin of the
+  fields are set to the inheriting class and not the class the
+  field is defined in.
+
+Both these issues could lead to a rather undescriptive error message:
+
+> TypeError: (...) fields cannot be resolved. Unexpected type 'None'
+
+Contributed by [Michael P. Jung](https://github.com/bikeshedder) [PR #1449](https://github.com/strawberry-graphql/strawberry/pull/1449/)
+
+
+0.92.0 - 2021-12-04
+-------------------
+
+This releases fixes an issue where you were not allowed
+to return a non-strawberry type for fields that return
+an interface. Now this works as long as each type
+implementing the interface implements an `is_type_of`
+classmethod. Previous automatic duck typing on types
+that implement an interface now requires explicit
+resolution using this classmethod.
+
+Contributed by [Etty](https://github.com/estyxx) [PR #1299](https://github.com/strawberry-graphql/strawberry/pull/1299/)
+
+
+0.91.0 - 2021-12-04
+-------------------
+
+This release adds a `GraphQLTestClient`. It hides the http request's details and asserts that there are no errors in the response (you can always disable this behavior by passing `asserts_errors=False`). This makes it easier to test queries and makes your tests cleaner.
+
+If you are using `pytest` you can add a fixture in `conftest.py`
+
+```python
+import pytest
+
+from django.test.client import Client
+
+from strawberry.django.test import GraphQLTestClient
+
+
+@pytest.fixture()
+def graphql_client():
+    yield GraphQLTestClient(Client())
+```
+
+And use it everywere in your test methods
+
+```python
+def test_strawberry(graphql_client):
+    query = """
+        query Hi($name: String!) {
+            hi(name: $name)
+        }
+    """
+
+    result = graphql_client.query(query, variables={"name": "Marcotte"})
+
+    assert result.data == {"hi": "Hi Marcotte!"}
+```
+
+It can be used to test the file uploads as well
+
+```python
+from django.core.files.uploadedfile import SimpleUploadedFile
+
+
+def test_upload(graphql_client):
+    f = SimpleUploadedFile("file.txt", b"strawberry")
+    query = """
+        mutation($textFile: Upload!) {
+            readText(textFile: $textFile)
+        }
+    """
+
+    response = graphql_client.query(
+        query=query,
+        variables={"textFile": None},
+        files={"textFile": f},
+    )
+
+    assert response.data["readText"] == "strawberry"
+```
+
+Contributed by [Etty](https://github.com/estyxx) [PR #1225](https://github.com/strawberry-graphql/strawberry/pull/1225/)
+
+
+0.90.3 - 2021-12-02
+-------------------
+
+This release fixes an issue that prevented using enums as
+arguments for generic types inside unions.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1463](https://github.com/strawberry-graphql/strawberry/pull/1463/)
+
+
+0.90.2 - 2021-11-28
+-------------------
+
+This release fixes the message of `InvalidFieldArgument` to properly show the field's name in the error message.
+
+Contributed by [Etty](https://github.com/estyxx) [PR #1322](https://github.com/strawberry-graphql/strawberry/pull/1322/)
+
+
+0.90.1 - 2021-11-27
+-------------------
+
+This release fixes an issue that prevented using `classmethod`s and `staticmethod`s as resolvers
+
+```python
+import strawberry
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    @staticmethod
+    def static_text() -> str:
+        return "Strawberry"
+
+    @strawberry.field
+    @classmethod
+    def class_name(cls) -> str:
+        return cls.__name__
+```
+
+Contributed by [Illia Volochii](https://github.com/illia-v) [PR #1430](https://github.com/strawberry-graphql/strawberry/pull/1430/)
+
+
+0.90.0 - 2021-11-26
+-------------------
+
+This release improves type checking support for `strawberry.union` and now allows
+to use unions without any type issue, like so:
+
+```python
+@strawberry.type
+class User:
+    name: str
+
+@strawberry.type
+class Error:
+    message: str
+
+UserOrError = strawberry.union("UserOrError", (User, Error))
+
+x: UserOrError = User(name="Patrick")
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1438](https://github.com/strawberry-graphql/strawberry/pull/1438/)
+
+
+0.89.2 - 2021-11-26
+-------------------
+
+Fix init of Strawberry types from pydantic by skipping fields that have resolvers.
+
+Contributed by [Nina](https://github.com/nina-j) [PR #1451](https://github.com/strawberry-graphql/strawberry/pull/1451/)
+
+
+0.89.1 - 2021-11-25
+-------------------
+
+This release fixes an issubclass test failing for `Literal`s in the experimental `pydantic` integration.
+
+Contributed by [Nina](https://github.com/nina-j) [PR #1445](https://github.com/strawberry-graphql/strawberry/pull/1445/)
+
+
+0.89.0 - 2021-11-24
+-------------------
+
+This release changes how `strawberry.Private` is implemented to
+improve support for type checkers.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1437](https://github.com/strawberry-graphql/strawberry/pull/1437/)
+
+
+0.88.0 - 2021-11-24
+-------------------
+
+This release adds support for AWS Chalice. A framework for deploying serverless applications using AWS.
+
+A view for aws chalice has been added to the strawberry codebase.
+This view embedded in a chalice app allows anyone to get a GraphQL API working and hosted on AWS in minutes using a serverless architecture.
+
+Contributed by [Mark Sheehan](https://github.com/mcsheehan) [PR #923](https://github.com/strawberry-graphql/strawberry/pull/923/)
+
+
+0.87.3 - 2021-11-23
+-------------------
+
+This release fixes the naming generation of generics when
+passing a generic type to another generic, like so:
+
+```python
+@strawberry.type
+class Edge(Generic[T]):
+    node: T
+
+@strawberry.type
+class Connection(Generic[T]):
+    edges: List[T]
+
+Connection[Edge[int]]
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1436](https://github.com/strawberry-graphql/strawberry/pull/1436/)
+
+
+0.87.2 - 2021-11-19
+-------------------
+
+This releases updates the `typing_extension` dependency to latest version.
+
+Contributed by [dependabot](https://github.com/dependabot) [PR #1417](https://github.com/strawberry-graphql/strawberry/pull/1417/)
+
+
+0.87.1 - 2021-11-15
+-------------------
+
+This release renames an internal exception from `NotAnEnum` to `ObjectIsNotAnEnumError`.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1317](https://github.com/strawberry-graphql/strawberry/pull/1317/)
+
+
+0.87.0 - 2021-11-15
+-------------------
+
+This release changes how we handle GraphQL names. It also introduces a new
+configuration option called `name_converter`. This option allows you to specify
+a custom `NameConverter` to be used when generating GraphQL names.
+
+This is currently not documented because the API will change slightly in future
+as we are working on renaming internal types.
+
+This release also fixes an issue when creating concrete types from generic when
+passing list objects.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1394](https://github.com/strawberry-graphql/strawberry/pull/1394/)
+
+
+0.86.1 - 2021-11-12
+-------------------
+
+This release fixes our MyPy plugin and re-adds support
+for typechecking classes created with the apollo federation decorator.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1414](https://github.com/strawberry-graphql/strawberry/pull/1414/)
+
+
+0.86.0 - 2021-11-12
+-------------------
+
+Add `on_executing_*` hooks to extensions to allow you to override the execution phase of a GraphQL operation.
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) [PR #1400](https://github.com/strawberry-graphql/strawberry/pull/1400/)
+
+
+0.85.1 - 2021-10-26
+-------------------
+
+This release fixes an issue with schema directives not
+being printed correctly.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1376](https://github.com/strawberry-graphql/strawberry/pull/1376/)
+
+
+0.85.0 - 2021-10-23
+-------------------
+
+This release introduces initial support for schema directives and
+updates the federation support to use that.
+
+Full support will be implemented in future releases.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #815](https://github.com/strawberry-graphql/strawberry/pull/815/)
+
+
+0.84.4 - 2021-10-23
+-------------------
+
+Field definition uses output of `default_factory` as the GraphQL `default_value`.
+```python
+a_field: list[str] = strawberry.field(default_factory=list)
+```
+```graphql
+aField: [String!]! = []
+```
+
+Contributed by [A. Coady](https://github.com/coady) [PR #1371](https://github.com/strawberry-graphql/strawberry/pull/1371/)
+
+
 0.84.3 - 2021-10-19
 -------------------
 
@@ -816,7 +1273,7 @@ you can install the required dependencies needed to use Strawberry with
 ASGI by running:
 
 ```
-pip install strawberry[asgi]
+pip install 'strawberry[asgi]'
 ```
 
 Contributed by [A. Coady](https://github.com/coady) [PR #1036](https://github.com/strawberry-graphql/strawberry/pull/1036/)
@@ -1677,7 +2134,7 @@ Fix issue where StrawberryField.graphql_name would always be camelCased
 0.53.2 - 2021-04-01
 -------------------
 
-This relases fixes an issue with the generated `__eq__` and `__repr__` methods when defining
+This release fixes an issue with the generated `__eq__` and `__repr__` methods when defining
 fields with resolvers.
 
 This now works properly:
@@ -1976,7 +2433,7 @@ To get going quickly, you can install `[debug-server]` which brings along a serv
 you to develop your API dynamically, assuming your schema is defined in the `app` module:
 
 ```
-pip install strawberry-graphql[debug-server]
+pip install 'strawberry-graphql[debug-server]'
 strawberry server app
 ```
 
@@ -1985,7 +2442,7 @@ Typically, in a production environment, you'd want to bring your own server :)
 0.43.2 - 2020-11-19
 -------------------
 
-This release fixes an issue when usign unions inside generic types, this is now
+This release fixes an issue when using unions inside generic types, this is now
 supported:
 
 
@@ -2269,7 +2726,7 @@ This release improves how we check for enums
 0.37.5 - 2020-10-23
 -------------------
 
-This release improves how we handle enum values when returing lists of enums.
+This release improves how we handle enum values when returning lists of enums.
 
 0.37.4 - 2020-10-22
 -------------------
@@ -2516,7 +2973,7 @@ This release fixes another issue with extending types.
 
 This releases fixes an issue when extending types, now
 fields should work as they were working before even
-when extending an exising type.
+when extending an existing type.
 
 0.32.1 - 2020-09-06
 -------------------
@@ -2570,7 +3027,7 @@ in the GraphQL results. Now it always returns 200.
 0.31.0 - 2020-08-26
 -------------------
 
-Add `process_result` to views for Django, Flask and ASGI. They can be overriden
+Add `process_result` to views for Django, Flask and ASGI. They can be overridden
 to provide a custom response and also to process results and errors.
 
 It also removes `request` from Flask view's `get_root_value` and `get_context`
@@ -2630,7 +3087,7 @@ This releases fixes the check for unset values.
 -------------------
 
 Add functions `get_root_value` and `get_context` to views for Django, Flask and
-ASGI. They can be overriden to provide custom values per request.
+ASGI. They can be overridden to provide custom values per request.
 
 Django example:
 
@@ -3046,7 +3503,7 @@ cleaner when not using info or root.
 0.23.3 - 2020-04-29
 -------------------
 
-This release fixes the dependecy of GraphQL-core
+This release fixes the dependency of GraphQL-core
 
 0.23.2 - 2020-04-25
 -------------------
@@ -3199,7 +3656,7 @@ now it should support lists of complex types properly.
 -------------------
 
 Set `is_type_of` only when the type implements an interface,
-this allows to return different (but compatibile) types in basic cases.
+this allows to return different (but compatible) types in basic cases.
 
 0.18.0 - 2019-10-31
 -------------------
@@ -3304,7 +3761,7 @@ Usage:
 ```python
 
 # Install
-$ pip install strawberry-graphql[django]
+$ pip install 'strawberry-graphql[django]'
 
 # settings.py
 INSTALLED_APPS = [

@@ -65,8 +65,8 @@ Both of these types are documented in [PEP-525][pep-525]. Anything yielded from
 these types of resolvers will be shipped across the websocket. Care needs to be
 taken to ensure the returned values conform to the GraphQL schema.
 
-The benefit of an AsyncGenerator, over an interator, is that the complex
-business logic can be broken out into a seperate module within your codebase.
+The benefit of an AsyncGenerator, over an iterator, is that the complex
+business logic can be broken out into a separate module within your codebase.
 Allowing you to keep the resolver logic succinct.
 
 The following example is similar to the one above, except it returns an
@@ -74,6 +74,7 @@ AsyncGenerator to the ASGI server which is responsible for streaming
 subscription results until the Generator exits.
 
 ```python
+import strawberry
 import asyncio
 import asyncio.subprocess as subprocess
 from asyncio import streams

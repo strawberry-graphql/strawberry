@@ -129,6 +129,37 @@ async def test_open_tracing_uses_operation_name(global_tracer_mock, mocker):
 
 
 @pytest.mark.asyncio
+async def test_open_tracing_gets_operation_name(global_tracer_mock, mocker):
+    schema = strawberry.Schema(query=Query, extensions=[OpenTelemetryExtension])
+    query = """
+        query Example {
+            person {
+                name
+            }
+        }
+    """
+
+    tracers = []
+
+    def generate_trace(*args, **kwargs):
+        nonlocal tracers
+        tracer = mocker.Mock()
+        tracers.append(tracer)
+        return tracer
+
+    global_tracer_mock.return_value.start_span.side_effect = generate_trace
+
+    await schema.execute(query)
+
+    tracers[0].update_name.assert_has_calls(
+        [
+            # if operation_name is supplied it is added to this span's tag
+            mocker.call("GraphQL Query: Example"),
+        ]
+    )
+
+
+@pytest.mark.asyncio
 async def test_tracing_add_kwargs(global_tracer_mock, mocker):
     @strawberry.type
     class Query:

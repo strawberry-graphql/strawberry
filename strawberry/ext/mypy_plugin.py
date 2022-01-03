@@ -1,3 +1,4 @@
+from decimal import Decimal
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, cast
 
 from typing_extensions import Final
@@ -38,15 +39,28 @@ from mypy.plugins.dataclasses import DataclassAttribute
 from mypy.server.trigger import make_wildcard_trigger
 from mypy.types import (
     AnyType,
+    CallableType,
     Instance,
     NoneType,
     Type,
     TypeOfAny,
-    TypeVarDef,
     TypeVarType,
     UnionType,
     get_proper_type,
 )
+
+
+# Backwards compatible with the removal of `TypeVarDef` in mypy 0.920.
+try:
+    from mypy.types import TypeVarDef  # type: ignore
+except ImportError:
+    TypeVarDef = TypeVarType  # type: ignore
+
+
+class MypyVersion:
+    """Stores the mypy version to be used by the plugin"""
+
+    VERSION: Decimal
 
 
 class InvalidNodeTypeException(Exception):
@@ -78,13 +92,6 @@ def strawberry_field_hook(ctx: FunctionContext) -> Type:
     return AnyType(TypeOfAny.special_form)
 
 
-def private_type_analyze_callback(ctx: AnalyzeTypeContext) -> Type:
-    type_name = ctx.type.args[0]
-    type_ = ctx.api.analyze_type(type_name)
-
-    return type_
-
-
 def _get_named_type(name: str, api: SemanticAnalyzerPluginInterface):
     if "." in name:
         return api.named_type_or_none(name)  # type: ignore
@@ -94,7 +101,7 @@ def _get_named_type(name: str, api: SemanticAnalyzerPluginInterface):
 
 def _get_type_for_expr(expr: Expression, api: SemanticAnalyzerPluginInterface) -> Type:
     if isinstance(expr, NameExpr):
-        # guarding agains invalid nodes, still have to figure out why this happens
+        # guarding against invalid nodes, still have to figure out why this happens
         # but sometimes mypy crashes because the internal node of the named type
         # is actually a Var node, which is unexpected, so we do a naive guard here
         # and raise an exception for it.
@@ -105,7 +112,7 @@ def _get_type_for_expr(expr: Expression, api: SemanticAnalyzerPluginInterface) -
             if sym and isinstance(sym.node, Var):
                 raise InvalidNodeTypeException(sym.node)
 
-        return _get_named_type(expr.name, api)
+        return _get_named_type(expr.fullname or expr.name, api)
 
     if isinstance(expr, IndexExpr):
         type_ = _get_type_for_expr(expr.base, api)
@@ -253,13 +260,13 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext):
 
 def is_dataclasses_field_or_strawberry_field(expr: Expression) -> bool:
     if isinstance(expr, CallExpr):
-        if isinstance(expr.callee, RefExpr):
-            if expr.callee.fullname in (
-                "dataclasses.field",
-                "strawberry.field.field",
-                "strawberry.federation.field",
-            ):
-                return True
+        if isinstance(expr.callee, RefExpr) and expr.callee.fullname in (
+            "dataclasses.field",
+            "strawberry.field.field",
+            "strawberry.federation.field",
+            "strawberry.federation.field.field",
+        ):
+            return True
 
         if isinstance(expr.callee, MemberExpr) and isinstance(
             expr.callee.expr, NameExpr
@@ -289,13 +296,13 @@ def _collect_field_args(expr: Expression) -> Tuple[bool, Dict[str, Expression]]:
     return False, {}
 
 
-# Custom dataclass transfomer that knows about strawberry.field, we cannot
+# Custom dataclass transformer that knows about strawberry.field, we cannot
 # extend the mypy one as it might be compiled by mypyc and we'd get this error
 # >>> TypeError: interpreted classes cannot inherit from compiled
 # Original copy from
-# https://github.com/python/mypy/blob/849a7f73/mypy/plugins/dataclasses.py
+# https://github.com/python/mypy/blob/5253f7c0/mypy/plugins/dataclasses.py
 
-SELF_TVAR_NAME = "_DT"  # type: Final
+SELF_TVAR_NAME: Final = "_DT"
 
 
 class CustomDataclassTransformer:
@@ -371,7 +378,13 @@ class CustomDataclassTransformer:
                     [],
                     obj_type,
                 )
-                order_other_type = TypeVarType(order_tvar_def)
+
+                # Backwards compatible with the removal of `TypeVarDef` in mypy 0.920.
+                if isinstance(order_tvar_def, TypeVarType):
+                    order_other_type = order_tvar_def
+                else:
+                    order_other_type = TypeVarType(order_tvar_def)  # type: ignore
+
                 order_return_type = ctx.api.named_type("__builtins__.bool")
                 order_args = [
                     Argument(
@@ -399,6 +412,8 @@ class CustomDataclassTransformer:
 
         if decorator_arguments["frozen"]:
             self._freeze(attributes)
+        else:
+            self._propertize_callables(attributes)
 
         self.reset_init_only_vars(info, attributes)
 
@@ -516,16 +531,14 @@ class CustomDataclassTransformer:
                 type=sym.type,
             )
 
-            # add support for mypy >= 0.800 without breaking backwards compatibility
-            # https://github.com/python/mypy/pull/9380/file
-            # https://github.com/strawberry-graphql/strawberry/issues/678
-
-            try:
-                attribute = DataclassAttribute(**params)  # type: ignore
-            except TypeError:
+            # Support the addition of `info` in mypy 0.800 and `kw_only` in mypy 0.920
+            # without breaking backwards compatibility.
+            if MypyVersion.VERSION >= Decimal("0.800"):
                 params["info"] = cls.info
-                attribute = DataclassAttribute(**params)  # type: ignore
+            if MypyVersion.VERSION >= Decimal("0.920"):
+                params["kw_only"] = False
 
+            attribute = DataclassAttribute(**params)  # type: ignore
             attrs.append(attribute)
 
         # Next, collect attributes belonging to any class in the MRO
@@ -543,9 +556,10 @@ class CustomDataclassTransformer:
             ctx.api.add_plugin_dependency(make_wildcard_trigger(info.fullname))
 
             for data in info.metadata["dataclass"]["attributes"]:
-                name = data["name"]  # type: str
+                name: str = data["name"]
                 if name not in known_attrs:
                     attr = DataclassAttribute.deserialize(info, data, ctx.api)
+                    attr.expand_typevar_from_subtype(ctx.cls.info)
                     known_attrs.add(name)
                     super_attrs.append(attr)
                 elif all_attrs:
@@ -602,6 +616,24 @@ class CustomDataclassTransformer:
                 var._fullname = info.fullname + "." + var.name
                 info.names[var.name] = SymbolTableNode(MDEF, var)
 
+    def _propertize_callables(self, attributes: List[DataclassAttribute]) -> None:
+        """Converts all attributes with callable types to @property methods.
+
+        This avoids the typechecker getting confused and thinking that
+        `my_dataclass_instance.callable_attr(foo)` is going to receive a
+        `self` argument (it is not).
+
+        """
+        info = self._ctx.cls.info
+        for attr in attributes:
+            if isinstance(get_proper_type(attr.type), CallableType):
+                var = attr.to_var()
+                var.info = info
+                var.is_property = True
+                var.is_settable_property = True
+                var._fullname = info.fullname + "." + var.name
+                info.names[var.name] = SymbolTableNode(MDEF, var)
+
 
 def custom_dataclass_class_maker_callback(ctx: ClassDefContext) -> None:
     """Hooks into the class typechecking process to add support for dataclasses."""
@@ -637,9 +669,6 @@ class StrawberryPlugin(Plugin):
     def get_type_analyze_hook(self, fullname: str):
         if self._is_strawberry_lazy_type(fullname):
             return lazy_type_analyze_callback
-
-        if self._is_strawberry_private(fullname):
-            return private_type_analyze_callback
 
         return None
 
@@ -682,17 +711,14 @@ class StrawberryPlugin(Plugin):
     def _is_strawberry_lazy_type(self, fullname: str) -> bool:
         return fullname == "strawberry.lazy_type.LazyType"
 
-    def _is_strawberry_private(self, fullname: str) -> bool:
-        return fullname == "strawberry.private.Private" or fullname.endswith(
-            "strawberry.Private"
-        )
-
     def _is_strawberry_decorator(self, fullname: str) -> bool:
         if any(
             strawberry_decorator in fullname
             for strawberry_decorator in {
                 "strawberry.object_type.type",
                 "strawberry.federation.type",
+                "strawberry.federation.object_type.type",
+                "strawberry.schema_directive.schema_directive",
                 "strawberry.object_type.input",
                 "strawberry.object_type.interface",
             }
@@ -710,6 +736,7 @@ class StrawberryPlugin(Plugin):
                 "strawberry.federation.type",
                 "strawberry.input",
                 "strawberry.interface",
+                "strawberry.schema_directive",
             }
         )
 
@@ -750,4 +777,7 @@ class StrawberryPlugin(Plugin):
 
 
 def plugin(version: str):
+    # Save the version to be used by the plugin.
+    MypyVersion.VERSION = Decimal(version)
+
     return StrawberryPlugin
