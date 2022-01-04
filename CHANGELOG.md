@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.93.15 - 2022-01-04
+--------------------
+
+This release fixes the conversion of pydantic models with a default_factory
+field.
+
+Contributed by [James Chua](https://github.com/thejaminator) [PR #1538](https://github.com/strawberry-graphql/strawberry/pull/1538/)
+
+
 0.93.14 - 2022-01-03
 --------------------
 
