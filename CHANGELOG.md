@@ -1,6 +1,31 @@
 CHANGELOG
 =========
 
+0.93.16 - 2022-01-04
+--------------------
+
+Add support for piping `StrawberryUnion` and `None` when annotating types.
+
+For example:
+```python
+@strawberry.type
+class Cat:
+    name: str
+
+@strawberry.type
+class Dog:
+    name: str
+
+Animal = strawberry.union("Animal", (Cat, Dog))
+
+@strawberry.type
+class Query:
+    animal: Animal | None # This line no longer triggers a TypeError
+```
+
+Contributed by [Yossi Rozantsev](https://github.com/Apakottur) [PR #1540](https://github.com/strawberry-graphql/strawberry/pull/1540/)
+
+
 0.93.15 - 2022-01-04
 --------------------
 
