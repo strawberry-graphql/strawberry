@@ -28,7 +28,7 @@ from strawberry.exceptions import (
     UnallowedReturnTypeForUnion,
     WrongReturnTypeForUnion,
 )
-from strawberry.type import StrawberryType
+from strawberry.type import StrawberryOptional, StrawberryType
 
 
 if TYPE_CHECKING:
@@ -62,6 +62,16 @@ class StrawberryUnion(StrawberryType):
     def __hash__(self) -> int:
         # TODO: Is this a bad idea? __eq__ objects are supposed to have the same hash
         return id(self)
+
+    def __or__(self, other: Union[StrawberryType, type]) -> StrawberryType:
+        if other is None:
+            # Return the correct notation when using `StrawberryUnion | None`.
+            return StrawberryOptional(of_type=self)
+
+        # Raise an error in any other case.
+        # There is Work in progress to deal with more merging cases, see:
+        # https://github.com/strawberry-graphql/strawberry/pull/1455
+        raise InvalidUnionType(other)
 
     @property
     def types(self) -> Tuple[StrawberryType, ...]:
