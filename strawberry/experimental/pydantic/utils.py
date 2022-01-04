@@ -87,12 +87,8 @@ def get_default_factory_for_field(field: ModelField) -> Union[NoArgAnyCallable, 
     default_factory = field.default_factory
     default = field.default
 
-    # pydantic doesn't use something like `UNSET` or `undefined`, but it rather
-    # uses `None` and `field.required = False` to mark a field as optional
-    # with no default
-
     has_factory = default_factory is not None and not is_unset(default_factory)
-    has_default = default is not None and not is_unset(default) and field.required
+    has_default = default is not None and not is_unset(default)
 
     # defining both default and default_factory is not supported
 
