@@ -2,7 +2,11 @@ from dataclasses import dataclass
 from textwrap import dedent
 from typing import Optional, Union
 
+import pytest
+
 import strawberry
+from strawberry.annotation import StrawberryAnnotation
+from strawberry.exceptions import InvalidUnionType
 
 
 def test_union_as_field():
@@ -449,3 +453,18 @@ def test_union_optional_with_or_operator():
 
     assert not result.errors
     assert result.data["animal"] is None
+
+
+def test_raises_error_when_piping_with_scalar():
+    @strawberry.type
+    class User:
+        name: str
+
+    @strawberry.type
+    class Error:
+        name: str
+
+    UserOrError = strawberry.union("UserOrError", (User, Error))
+
+    with pytest.raises(InvalidUnionType):
+        StrawberryAnnotation(UserOrError | int)
