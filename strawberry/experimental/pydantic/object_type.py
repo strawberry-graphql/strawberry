@@ -18,7 +18,7 @@ from strawberry.experimental.pydantic.conversion import (
 from strawberry.experimental.pydantic.fields import get_basic_type
 from strawberry.experimental.pydantic.utils import (
     DataclassCreationFields,
-    defaults_into_factory,
+    get_default_factory_for_field,
     get_private_fields,
     sort_creation_fields,
 )
@@ -120,10 +120,7 @@ def type(
                     graphql_name=field.alias if field.has_alias else None,
                     # always unset because we use default_factory instead
                     default=UNSET,
-                    default_factory=defaults_into_factory(
-                        default=field.default if not field.required else UNSET,
-                        default_factory=field.default_factory or UNSET,
-                    ),
+                    default_factory=get_default_factory_for_field(field),
                     type_annotation=get_type_for_field(field),
                     description=field.field_info.description,
                 ),

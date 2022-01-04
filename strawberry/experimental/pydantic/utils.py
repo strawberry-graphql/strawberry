@@ -1,10 +1,11 @@
 import dataclasses
-from typing import Any, List, NamedTuple, Tuple, Type, Union
+from typing import Any, List, NamedTuple, Tuple, Type, Union, cast
 
+from pydantic.fields import ModelField
 from pydantic.typing import NoArgAnyCallable
 from pydantic.utils import smart_deepcopy
 
-from strawberry.arguments import UNSET, _Unset  # type: ignore
+from strawberry.arguments import UNSET, _Unset, is_unset  # type: ignore
 from strawberry.experimental.pydantic.exceptions import (
     BothDefaultAndDefaultFactoryDefinedError,
     UnregisteredTypeException,
@@ -75,24 +76,45 @@ def sort_creation_fields(
     return sorted(fields, key=has_default)
 
 
-def defaults_into_factory(
-    default: Union[_Unset, Any], default_factory: Union[_Unset, NoArgAnyCallable]
-) -> Union[NoArgAnyCallable, _Unset]:
+def get_default_factory_for_field(field: ModelField) -> Union[NoArgAnyCallable, _Unset]:
     """
-    Handle mutable defaults when making the dataclass by using pydantic's smart_deepcopy
+    Gets the default factory for a pydantic field.
+
+    Handles mutable defaults when making the dataclass by using pydantic's smart_deepcopy
+
     Returns optionally a NoArgAnyCallable representing a default_factory parameter
     """
-    final_factory = default_factory
-    if default is not UNSET:
-        if default_factory is not UNSET:
-            raise BothDefaultAndDefaultFactoryDefinedError(
-                default=default, default_factory=default_factory  # type: ignore
-            )
-        else:
+    default_factory = field.default_factory
+    default = field.default
 
-            def factory_func():
-                return smart_deepcopy(default)
+    has_factory = default_factory is not None and not is_unset(default_factory)
+    has_default = default is not None and not is_unset(default)
 
-            final_factory = factory_func
+    # defining both default and default_factory is not supported
 
-    return final_factory
+    if has_factory and has_default:
+        default_factory = cast(NoArgAnyCallable, default_factory)
+
+        raise BothDefaultAndDefaultFactoryDefinedError(
+            default=default, default_factory=default_factory
+        )
+
+    # if we have a default_factory, we should return it
+
+    if has_factory:
+        default_factory = cast(NoArgAnyCallable, default_factory)
+
+        return default_factory
+
+    # if we have a default, we should return it
+
+    if has_default:
+        return lambda: smart_deepcopy(default)
+
+    # if we don't have default or default_factory, but the field is not required,
+    # we should return a factory that returns None
+
+    if not field.required:
+        return lambda: None
+
+    return UNSET
