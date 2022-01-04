@@ -787,22 +787,6 @@ def test_convert_input_types_to_pydantic_default_and_default_factory():
         class User(pydantic.BaseModel):
             password: Optional[str] = Field(default=None, default_factory=lambda: None)
 
-    # If the user defines both through a hacky way, we'll still going to catch it
-    hacked_field = Field(default_factory=lambda: None)
-
-    class User2(pydantic.BaseModel):
-        password: Optional[str] = hacked_field
-
-    hacked_field.default = None
-    with pytest.raises(
-        BothDefaultAndDefaultFactoryDefinedError,
-        match=("Not allowed to specify both default and default_factory."),
-    ):
-
-        @strawberry.experimental.pydantic.input(User2)
-        class UserInput:
-            password: strawberry.auto
-
 
 def test_can_convert_pydantic_type_to_strawberry_with_additional_field_resolvers():
     def some_resolver() -> int:
