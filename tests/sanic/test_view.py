@@ -1,9 +1,19 @@
+import sys
+
+import pytest
+
 import strawberry
 from sanic import Sanic
 from strawberry.sanic.views import GraphQLView as BaseGraphQLView
 from strawberry.types import ExecutionResult, Info
 
 from .app import create_app
+
+
+pytestmark = pytest.mark.skipif(
+    sys.platform == "win32" and sys.version_info < (3, 8),
+    reason="sanic doesn't seem to be working on windows with python < 3.8",
+)
 
 
 def test_graphql_query(sanic_client):
