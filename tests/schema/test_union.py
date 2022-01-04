@@ -415,3 +415,37 @@ def test_union_explicit_type_resolution():
 
     assert not result.errors
     assert result.data == {"myField": {"__typename": "A", "a": 1}}
+
+
+def test_union_optional_with_or_operator():
+    """
+    Verify that the `|` operator is supported when annotating unions as optional.
+    """
+
+    @strawberry.type
+    class Cat:
+        name: str
+
+    @strawberry.type
+    class Dog:
+        name: str
+
+    animal_union = strawberry.union("Animal", (Cat, Dog))
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def animal(self) -> animal_union | None:
+            return None
+
+    schema = strawberry.Schema(query=Query)
+    query = """{
+        animal {
+            __typename
+        }
+    }"""
+
+    result = schema.execute_sync(query, root_value=Query())
+
+    assert not result.errors
+    assert result.data["animal"] is None

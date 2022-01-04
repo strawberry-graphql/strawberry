@@ -63,6 +63,16 @@ class StrawberryUnion(StrawberryType):
         # TODO: Is this a bad idea? __eq__ objects are supposed to have the same hash
         return id(self)
 
+    def __or__(self, other):
+        if other is None:
+            # Return the correct notation when using `StrawberryUnion | None`.
+            return Optional[self]
+        else:
+            # Raise an error in any other case.
+            # This can be replaced with logic to merge a union with another
+            # union or another type.
+            raise TypeError(f"Cannot use OR operator with {other}")
+
     @property
     def types(self) -> Tuple[StrawberryType, ...]:
         return tuple(
