@@ -111,7 +111,7 @@ def get_default_factory_for_field(field: ModelField) -> Union[NoArgAnyCallable, 
     if has_default:
         return lambda: smart_deepcopy(default)
 
-    # if we don't have default or default_factory, but the field is required,
+    # if we don't have default or default_factory, but the field is not required,
     # we should return a factory that returns None
 
     if not field.required:

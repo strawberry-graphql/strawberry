@@ -274,13 +274,14 @@ def test_type_with_fields_coming_from_strawberry_and_pydantic():
 
 def test_default_and_default_factory():
     class User1(pydantic.BaseModel):
-        friend: Optional[str] = "friend"
+        friend: Optional[str] = "friend_value"
 
     @strawberry.experimental.pydantic.type(User1)
     class UserType1:
         friend: strawberry.auto
 
-    assert UserType1().friend == "friend"
+    assert UserType1().friend == "friend_value"
+    assert UserType1().to_pydantic().friend == "friend_value"
 
     class User2(pydantic.BaseModel):
         friend: Optional[str] = None
@@ -290,17 +291,19 @@ def test_default_and_default_factory():
         friend: strawberry.auto
 
     assert UserType2().friend is None
+    assert UserType2().to_pydantic().friend is None
 
     # Test instantiation using default_factory
 
     class User3(pydantic.BaseModel):
-        friend: Optional[str] = pydantic.Field(default_factory=lambda: "friend")
+        friend: Optional[str] = pydantic.Field(default_factory=lambda: "friend_value")
 
     @strawberry.experimental.pydantic.type(User3)
     class UserType3:
         friend: strawberry.auto
 
-    assert UserType3().friend == "friend"
+    assert UserType3().friend == "friend_value"
+    assert UserType3().to_pydantic().friend == "friend_value"
 
     class User4(pydantic.BaseModel):
         friend: Optional[str] = pydantic.Field(default_factory=lambda: None)
@@ -310,6 +313,7 @@ def test_default_and_default_factory():
         friend: strawberry.auto
 
     assert UserType4().friend is None
+    assert UserType4().to_pydantic().friend is None
 
 
 def test_type_with_fields_mutable_default():
