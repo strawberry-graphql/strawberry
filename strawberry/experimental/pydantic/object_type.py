@@ -121,7 +121,10 @@ def type(
                     # always unset because we use default_factory instead
                     default=UNSET,
                     default_factory=defaults_into_factory(
-                        default=field.default if not field.required else UNSET,
+                        # pydantic's default and default_factory are None by default
+                        default=field.default
+                        if (not field.required) and (field.default_factory is None)
+                        else UNSET,
                         default_factory=field.default_factory or UNSET,
                     ),
                     type_annotation=get_type_for_field(field),

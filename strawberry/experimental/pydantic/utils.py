@@ -85,11 +85,9 @@ def defaults_into_factory(
     final_factory = default_factory
     if default is not UNSET:
         if default_factory is not UNSET:
-            # pydantic ModelField default and default_factory are None by default
-            if default is not None and default_factory is not None:
-                raise BothDefaultAndDefaultFactoryDefinedError(
-                    default=default, default_factory=default_factory  # type: ignore
-                )
+            raise BothDefaultAndDefaultFactoryDefinedError(
+                default=default, default_factory=default_factory  # type: ignore
+            )
         else:
 
             def factory_func():
