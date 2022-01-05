@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.93.18 - 2022-01-05
+--------------------
+
+This release allows setting http headers and custom http status codes with FastAPI GraphQLRouter.
+
+Contributed by [David Němec](https://github.com/davidnemec) [PR #1537](https://github.com/strawberry-graphql/strawberry/pull/1537/)
+
+
 0.93.17 - 2022-01-05
 --------------------
 
