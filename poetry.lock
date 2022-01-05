@@ -121,17 +121,6 @@ tests = ["coverage[toml] (>=5.0.2)", "hypothesis", "pympler", "pytest (>=4.3.0)"
 tests_no_zope = ["coverage[toml] (>=5.0.2)", "hypothesis", "pympler", "pytest (>=4.3.0)", "six", "mypy", "pytest-mypy-plugins"]
 
 [[package]]
-name = "backports.zoneinfo"
-version = "0.2.1"
-description = "Backport of the standard library zoneinfo module"
-category = "main"
-optional = false
-python-versions = ">=3.6"
-
-[package.extras]
-tzdata = ["tzdata"]
-
-[[package]]
 name = "black"
 version = "21.12b0"
 description = "The uncompromising code formatter."
@@ -324,24 +313,6 @@ python-versions = ">=3.6"
 asgiref = ">=3.3.2,<4"
 pytz = "*"
 sqlparse = ">=0.2.2"
-
-[package.extras]
-argon2 = ["argon2-cffi (>=19.1.0)"]
-bcrypt = ["bcrypt"]
-
-[[package]]
-name = "django"
-version = "4.0"
-description = "A high-level Python web framework that encourages rapid development and clean, pragmatic design."
-category = "main"
-optional = false
-python-versions = ">=3.8"
-
-[package.dependencies]
-asgiref = ">=3.4.1,<4"
-"backports.zoneinfo" = {version = "*", markers = "python_version < \"3.9\""}
-sqlparse = ">=0.2.2"
-tzdata = {version = "*", markers = "sys_platform == \"win32\""}
 
 [package.extras]
 argon2 = ["argon2-cffi (>=19.1.0)"]
@@ -1315,7 +1286,7 @@ python-versions = ">=3.6"
 
 [[package]]
 name = "types-aiofiles"
-version = "0.7.3"
+version = "0.8.0"
 description = "Typing stubs for aiofiles"
 category = "dev"
 optional = false
@@ -1400,14 +1371,6 @@ description = "Backported and Experimental Type Hints for Python 3.6+"
 category = "main"
 optional = false
 python-versions = ">=3.6"
-
-[[package]]
-name = "tzdata"
-version = "2021.5"
-description = "Provider of IANA time zone data"
-category = "main"
-optional = false
-python-versions = ">=2"
 
 [[package]]
 name = "ujson"
@@ -1555,7 +1518,7 @@ sanic = ["sanic"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "a8d2d8f77fddeed25fdbafe62de988abcb2b0e68e7b3a00678ed345fccf78759"
+content-hash = "7a89fdf6ef4a84097b319339ba62356477b520823ee4406c6a50754ef35976f7"
 
 [metadata.files]
 aiofiles = [
@@ -1668,24 +1631,6 @@ attrs = [
     {file = "attrs-21.2.0-py2.py3-none-any.whl", hash = "sha256:149e90d6d8ac20db7a955ad60cf0e6881a3f20d37096140088356da6c716b0b1"},
     {file = "attrs-21.2.0.tar.gz", hash = "sha256:ef6aaac3ca6cd92904cdd0d83f629a15f18053ec84e6432106f7a4d04ae4f5fb"},
 ]
-"backports.zoneinfo" = [
-    {file = "backports.zoneinfo-0.2.1-cp36-cp36m-macosx_10_14_x86_64.whl", hash = "sha256:da6013fd84a690242c310d77ddb8441a559e9cb3d3d59ebac9aca1a57b2e18bc"},
-    {file = "backports.zoneinfo-0.2.1-cp36-cp36m-manylinux1_i686.whl", hash = "sha256:89a48c0d158a3cc3f654da4c2de1ceba85263fafb861b98b59040a5086259722"},
-    {file = "backports.zoneinfo-0.2.1-cp36-cp36m-manylinux1_x86_64.whl", hash = "sha256:1c5742112073a563c81f786e77514969acb58649bcdf6cdf0b4ed31a348d4546"},
-    {file = "backports.zoneinfo-0.2.1-cp36-cp36m-win32.whl", hash = "sha256:e8236383a20872c0cdf5a62b554b27538db7fa1bbec52429d8d106effbaeca08"},
-    {file = "backports.zoneinfo-0.2.1-cp36-cp36m-win_amd64.whl", hash = "sha256:8439c030a11780786a2002261569bdf362264f605dfa4d65090b64b05c9f79a7"},
-    {file = "backports.zoneinfo-0.2.1-cp37-cp37m-macosx_10_14_x86_64.whl", hash = "sha256:f04e857b59d9d1ccc39ce2da1021d196e47234873820cbeaad210724b1ee28ac"},
-    {file = "backports.zoneinfo-0.2.1-cp37-cp37m-manylinux1_i686.whl", hash = "sha256:17746bd546106fa389c51dbea67c8b7c8f0d14b5526a579ca6ccf5ed72c526cf"},
-    {file = "backports.zoneinfo-0.2.1-cp37-cp37m-manylinux1_x86_64.whl", hash = "sha256:5c144945a7752ca544b4b78c8c41544cdfaf9786f25fe5ffb10e838e19a27570"},
-    {file = "backports.zoneinfo-0.2.1-cp37-cp37m-win32.whl", hash = "sha256:e55b384612d93be96506932a786bbcde5a2db7a9e6a4bb4bffe8b733f5b9036b"},
-    {file = "backports.zoneinfo-0.2.1-cp37-cp37m-win_amd64.whl", hash = "sha256:a76b38c52400b762e48131494ba26be363491ac4f9a04c1b7e92483d169f6582"},
-    {file = "backports.zoneinfo-0.2.1-cp38-cp38-macosx_10_14_x86_64.whl", hash = "sha256:8961c0f32cd0336fb8e8ead11a1f8cd99ec07145ec2931122faaac1c8f7fd987"},
-    {file = "backports.zoneinfo-0.2.1-cp38-cp38-manylinux1_i686.whl", hash = "sha256:e81b76cace8eda1fca50e345242ba977f9be6ae3945af8d46326d776b4cf78d1"},
-    {file = "backports.zoneinfo-0.2.1-cp38-cp38-manylinux1_x86_64.whl", hash = "sha256:7b0a64cda4145548fed9efc10322770f929b944ce5cee6c0dfe0c87bf4c0c8c9"},
-    {file = "backports.zoneinfo-0.2.1-cp38-cp38-win32.whl", hash = "sha256:1b13e654a55cd45672cb54ed12148cd33628f672548f373963b0bff67b217328"},
-    {file = "backports.zoneinfo-0.2.1-cp38-cp38-win_amd64.whl", hash = "sha256:4a0f800587060bf8880f954dbef70de6c11bbe59c673c3d818921f042f9954a6"},
-    {file = "backports.zoneinfo-0.2.1.tar.gz", hash = "sha256:fadbfe37f74051d024037f223b8e001611eac868b5c5b06144ef4d8b799862f2"},
-]
 black = [
     {file = "black-21.12b0-py3-none-any.whl", hash = "sha256:a615e69ae185e08fdd73e4715e260e2479c861b5740057fde6e8b4e3b7dd589f"},
     {file = "black-21.12b0.tar.gz", hash = "sha256:77b80f693a569e2e527958459634f18df9b0ba2625ba4e0c2d5da5be42e6f2b3"},
@@ -1794,8 +1739,6 @@ distlib = [
 django = [
     {file = "Django-3.2.10-py3-none-any.whl", hash = "sha256:df6f5eb3c797b27c096d61494507b7634526d4ce8d7c8ca1e57a4fb19c0738a3"},
     {file = "Django-3.2.10.tar.gz", hash = "sha256:074e8818b4b40acdc2369e67dcd6555d558329785408dcd25340ee98f1f1d5c4"},
-    {file = "Django-4.0-py3-none-any.whl", hash = "sha256:59304646ebc6a77b9b6a59adc67d51ecb03c5e3d63ed1f14c909cdfda84e8010"},
-    {file = "Django-4.0.tar.gz", hash = "sha256:d5a8a14da819a8b9237ee4d8c78dfe056ff6e8a7511987be627192225113ee75"},
 ]
 dnspython = [
     {file = "dnspython-2.1.0-py3-none-any.whl", hash = "sha256:95d12f6ef0317118d2a1a6fc49aac65ffec7eb8087474158f42f26a639135216"},
@@ -2551,8 +2494,8 @@ typed-ast = [
     {file = "typed_ast-1.5.1.tar.gz", hash = "sha256:484137cab8ecf47e137260daa20bafbba5f4e3ec7fda1c1e69ab299b75fa81c5"},
 ]
 types-aiofiles = [
-    {file = "types-aiofiles-0.7.3.tar.gz", hash = "sha256:5c54783745252302f5ba3e14d8f7e8547d100f72c74c9a5478ce2f7f01aa0cda"},
-    {file = "types_aiofiles-0.7.3-py3-none-any.whl", hash = "sha256:fd7f410a94e0362c7a3cf7a98e62f972f1dab245130dfdf6f48914f462994262"},
+    {file = "types-aiofiles-0.8.0.tar.gz", hash = "sha256:2a11ae2b5b7330706994ddb864fc084ba067d0cde9af7e1ed663fccf2eeece92"},
+    {file = "types_aiofiles-0.8.0-py3-none-any.whl", hash = "sha256:844382334052b47d26f228e03687fd440c9d078adddafa0e8a80d89bed61d00d"},
 ]
 types-certifi = [
     {file = "types-certifi-2021.10.8.0.tar.gz", hash = "sha256:33308fb722d28cad8ae19834dcc4d2593509ac80bcbabe77c6d8e9a25001c2de"},
@@ -2593,10 +2536,6 @@ types-ujson = [
 typing-extensions = [
     {file = "typing_extensions-4.0.1-py3-none-any.whl", hash = "sha256:7f001e5ac290a0c0401508864c7ec868be4e701886d5b573a9528ed3973d9d3b"},
     {file = "typing_extensions-4.0.1.tar.gz", hash = "sha256:4ca091dea149f945ec56afb48dae714f21e8692ef22a395223bcd328961b6a0e"},
-]
-tzdata = [
-    {file = "tzdata-2021.5-py2.py3-none-any.whl", hash = "sha256:3eee491e22ebfe1e5cfcc97a4137cd70f092ce59144d81f8924a844de05ba8f5"},
-    {file = "tzdata-2021.5.tar.gz", hash = "sha256:68dbe41afd01b867894bbdfd54fa03f468cfa4f0086bfb4adcd8de8f24f3ee21"},
 ]
 ujson = [
     {file = "ujson-5.1.0-cp310-cp310-macosx_10_9_x86_64.whl", hash = "sha256:644552d1e89983c08d0c24358fbcb5829ae5b5deee9d876e16d20085cfa7dc81"},
