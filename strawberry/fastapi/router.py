@@ -129,7 +129,7 @@ class GraphQLRouter(APIRouter):
                         "Unable to parse request body as JSON",
                         status_code=status.HTTP_400_BAD_REQUEST,
                     )
-                    return self.__merge_responses(response, actual_response)
+                    return self._merge_responses(response, actual_response)
             elif content_type.startswith("multipart/form-data"):
                 multipart_data = await request.form()
                 operations = json.loads(multipart_data.get("operations", {}))
@@ -142,7 +142,7 @@ class GraphQLRouter(APIRouter):
                     "Unsupported Media Type",
                     status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
                 )
-                return self.__merge_responses(response, actual_response)
+                return self._merge_responses(response, actual_response)
 
             try:
                 request_data = parse_request_data(data)
@@ -151,7 +151,7 @@ class GraphQLRouter(APIRouter):
                     "No GraphQL query found in the request",
                     status_code=status.HTTP_400_BAD_REQUEST,
                 )
-                return self.__merge_responses(response, actual_response)
+                return self._merge_responses(response, actual_response)
 
             result = await self.execute(
                 request_data.query,
@@ -167,7 +167,7 @@ class GraphQLRouter(APIRouter):
                 response_data,
                 status_code=status.HTTP_200_OK,
             )
-            return self.__merge_responses(response, actual_response)
+            return self._merge_responses(response, actual_response)
 
         @self.websocket(path)
         async def websocket_endpoint(
@@ -219,7 +219,7 @@ class GraphQLRouter(APIRouter):
         return HTMLResponse(html)
 
     @staticmethod
-    def __merge_responses(response: Response, actual_response: Response) -> Response:
+    def _merge_responses(response: Response, actual_response: Response) -> Response:
         actual_response.headers.raw.extend(response.headers.raw)
         if response.status_code:
             actual_response.status_code = response.status_code
