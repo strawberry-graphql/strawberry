@@ -2,7 +2,19 @@ import builtins
 import dataclasses
 import warnings
 from functools import partial
-from typing import Any, Dict, List, Optional, Sequence, Type, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    Generic,
+    List,
+    Optional,
+    Sequence,
+    Type,
+    TypeVar,
+    cast,
+)
 
 from pydantic import BaseModel
 from pydantic.fields import ModelField
@@ -73,8 +85,34 @@ def get_type_for_field(field: ModelField):
     return type_
 
 
+if TYPE_CHECKING:
+    A = TypeVar("A", bound=BaseModel)
+
+    class StrawberryTypeFromPydantic(Generic[A]):
+        """This class does not exist in runtime.
+        Its only makes the below methods visible for IDEs"""
+
+        def __init__(self, **kwargs):
+            ...
+
+        @staticmethod
+        def from_pydantic(instance: A, extra: Dict[str, Any] = None) -> A:
+            ...
+
+        def to_pydantic(self) -> A:
+            ...
+
+        @property
+        def _type_definition(self) -> TypeDefinition:
+            ...
+
+        @property
+        def _pydantic_type(self) -> A:
+            ...
+
+
 def type(
-    model: Type[BaseModel],
+    model: "Type[A]",
     *,
     fields: Optional[List[str]] = None,
     name: Optional[str] = None,
@@ -83,8 +121,8 @@ def type(
     description: Optional[str] = None,
     directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
     all_fields: bool = False,
-):
-    def wrap(cls):
+) -> "Callable[..., Type[StrawberryTypeFromPydantic[A]]]":
+    def wrap(cls: Any) -> "Type[StrawberryTypeFromPydantic[A]]":
         model_fields = model.__fields__
         fields_set = set(fields) if fields else set([])
 
