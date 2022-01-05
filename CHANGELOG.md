@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.93.17 - 2022-01-05
+--------------------
+
+Fix compatibility with Sanic 21.12
+
+Contributed by [Artjoms Iskovs](https://github.com/mildbyte) [PR #1520](https://github.com/strawberry-graphql/strawberry/pull/1520/)
+
+
 0.93.16 - 2022-01-04
 --------------------
 
