@@ -1,3 +1,13 @@
+import sys
+
+import pytest
+
+
+pytestmark = pytest.mark.skipif(
+    sys.platform == "win32" and sys.version_info < (3, 8),
+    reason="sanic doesn't seem to be working on windows with python < 3.8",
+)
+
 OPERATIONS_FIELD = (
     "------sanic\r\n"
     'Content-Disposition: form-data; name="operations"\r\n'

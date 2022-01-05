@@ -1,7 +1,7 @@
 import json
 from typing import Any
 
-from sanic.exceptions import ServerError, abort
+from sanic.exceptions import SanicException, ServerError
 from sanic.request import Request
 from sanic.response import HTTPResponse, html
 from sanic.views import HTTPMethodView
@@ -57,7 +57,7 @@ class GraphQLView(HTTPMethodView):
 
     async def get(self, request: Request) -> HTTPResponse:
         if not self.graphiql:
-            abort(404)
+            raise SanicException(status_code=404)
 
         template = render_graphiql_page()
         return self.render_template(template=template)
@@ -101,5 +101,7 @@ class GraphQLView(HTTPMethodView):
             try:
                 return replace_placeholders_with_files(operations, files_map, files)
             except KeyError:
-                abort(400, "File(s) missing in form data")
+                raise SanicException(
+                    status_code=400, message="File(s) missing in form data"
+                )
         return request.json
