@@ -120,7 +120,10 @@ class GraphQLRouter(APIRouter):
             context=Depends(self.context_getter),
             root_value=Depends(self.root_value_getter),
         ) -> Response:
+            actual_response: Response
+
             content_type = request.headers.get("content-type", "")
+
             if "application/json" in content_type:
                 try:
                     data = await request.json()
@@ -129,6 +132,7 @@ class GraphQLRouter(APIRouter):
                         "Unable to parse request body as JSON",
                         status_code=status.HTTP_400_BAD_REQUEST,
                     )
+
                     return self._merge_responses(response, actual_response)
             elif content_type.startswith("multipart/form-data"):
                 multipart_data = await request.form()
@@ -142,6 +146,7 @@ class GraphQLRouter(APIRouter):
                     "Unsupported Media Type",
                     status_code=status.HTTP_415_UNSUPPORTED_MEDIA_TYPE,
                 )
+
                 return self._merge_responses(response, actual_response)
 
             try:
@@ -167,6 +172,7 @@ class GraphQLRouter(APIRouter):
                 response_data,
                 status_code=status.HTTP_200_OK,
             )
+
             return self._merge_responses(response, actual_response)
 
         @self.websocket(path)
