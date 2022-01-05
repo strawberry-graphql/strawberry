@@ -105,6 +105,31 @@ def test_basic_type_with_input_metadata():
         "frenemy": "frenemy_value"
     }
 
+    # explicit tests for None
+    class User3(pydantic.BaseModel):
+        enemy: Optional[str] = None
+        friend: Optional[str] = pydantic.Field(default_factory=lambda: None)
+        frenemy: str
+
+    @strawberry.experimental.pydantic.type(User3, with_input_metadata=True)
+    class UserType3:
+        enemy: strawberry.auto
+        friend: strawberry.auto
+        frenemy: strawberry.auto
+
+    user_input_3 = UserType3(frenemy="frenemy_value")
+    assert is_unset(user_input_3.friend)
+    assert is_unset(user_input_3.enemy)
+    assert user_input_3.to_pydantic().friend is None
+    assert user_input_3.to_pydantic().dict() == {
+        "enemy": None,
+        "friend": None,
+        "frenemy": "frenemy_value",
+    }
+    assert user_input_3.to_pydantic().dict(exclude_unset=True) == {
+        "frenemy": "frenemy_value"
+    }
+
 
 @pytest.mark.filterwarnings("error")
 def test_basic_type_all_fields_warn():
