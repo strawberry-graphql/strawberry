@@ -280,13 +280,14 @@ def add_method_to_class(
             cls.defs.body.remove(sym.node)
 
     self_type = self_type or fill_typevars(info)
-    if MypyVersion.VERSION >= Decimal("0.93"):
+    # For compat with mypy < 0.93
+    if MypyVersion.VERSION < Decimal("0.93"):
+        function_type = api.named_type("__builtins__.function")  # type: ignore
+    else:
         if isinstance(api, SemanticAnalyzerPluginInterface):
             function_type = api.named_type("builtins.function")
         else:
             function_type = api.named_generic_type("builtins.function", [])
-    else:
-        function_type = api.named_type("__builtins__.function")
 
     if not is_static:
         args = [Argument(Var("self"), self_type, None, ARG_POS)] + args
