@@ -86,9 +86,9 @@ def get_type_for_field(field: ModelField):
 
 
 if TYPE_CHECKING:
-    A = TypeVar("A", bound=BaseModel)
+    PydanticModel = TypeVar("PydanticModel", bound=BaseModel)
 
-    class StrawberryTypeFromPydantic(Generic[A]):
+    class StrawberryTypeFromPydantic(Generic[PydanticModel]):
         """This class does not exist in runtime.
         Its only makes the below methods visible for IDEs"""
 
@@ -96,10 +96,12 @@ if TYPE_CHECKING:
             ...
 
         @staticmethod
-        def from_pydantic(instance: A, extra: Dict[str, Any] = None) -> A:
+        def from_pydantic(
+            instance: PydanticModel, extra: Dict[str, Any] = None
+        ) -> PydanticModel:
             ...
 
-        def to_pydantic(self) -> A:
+        def to_pydantic(self) -> PydanticModel:
             ...
 
         @property
@@ -107,12 +109,12 @@ if TYPE_CHECKING:
             ...
 
         @property
-        def _pydantic_type(self) -> A:
+        def _pydantic_type(self) -> PydanticModel:
             ...
 
 
 def type(
-    model: "Type[A]",
+    model: "Type[PydanticModel]",
     *,
     fields: Optional[List[str]] = None,
     name: Optional[str] = None,
@@ -121,8 +123,8 @@ def type(
     description: Optional[str] = None,
     directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
     all_fields: bool = False,
-) -> "Callable[..., Type[StrawberryTypeFromPydantic[A]]]":
-    def wrap(cls: Any) -> "Type[StrawberryTypeFromPydantic[A]]":
+) -> "Callable[..., Type[StrawberryTypeFromPydantic[PydanticModel]]]":
+    def wrap(cls: Any) -> "Type[StrawberryTypeFromPydantic[PydanticModel]]":
         model_fields = model.__fields__
         fields_set = set(fields) if fields else set([])
 
