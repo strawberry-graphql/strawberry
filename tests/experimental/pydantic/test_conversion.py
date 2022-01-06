@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, List, Optional, Union, cast
+from typing import Any, List, NewType, Optional, Union, cast
 
 import pytest
 
@@ -701,6 +701,25 @@ def test_can_convert_input_types_to_pydantic_default_values_defaults_declared_fi
     assert password_field.python_name == "password"
     assert isinstance(password_field.type, StrawberryOptional)
     assert password_field.type.of_type is str
+
+
+def test_can_convert_pydantic_type_to_strawberry_newtype():
+    Password = NewType("Password", str)
+
+    class User(BaseModel):
+        age: int
+        password: Optional[Password]
+
+    @strawberry.experimental.pydantic.type(User)
+    class UserType:
+        age: strawberry.auto
+        password: strawberry.auto
+
+    origin_user = User(age=1, password="abc")
+    user = UserType.from_pydantic(origin_user)
+
+    assert user.age == 1
+    assert user.password == "abc"
 
 
 def test_sort_creation_fields():
