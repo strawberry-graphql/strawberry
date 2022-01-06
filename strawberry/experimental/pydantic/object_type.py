@@ -83,6 +83,7 @@ def type(
     description: Optional[str] = None,
     directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
     all_fields: bool = False,
+    gql_uses_alias: bool = True,
 ):
     def wrap(cls):
         model_fields = model.__fields__
@@ -117,7 +118,9 @@ def type(
                 type_annotation=get_type_for_field(field),
                 field=StrawberryField(
                     python_name=field.name,
-                    graphql_name=field.alias if field.has_alias else None,
+                    graphql_name=field.alias
+                    if field.has_alias and gql_uses_alias
+                    else None,
                     # always unset because we use default_factory instead
                     default=UNSET,
                     default_factory=get_default_factory_for_field(field),
