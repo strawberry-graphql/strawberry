@@ -2,7 +2,7 @@ import builtins
 import dataclasses
 import warnings
 from functools import partial
-from typing import Any, Dict, List, Optional, Sequence, Type, cast
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, cast
 
 from pydantic import BaseModel
 from pydantic.fields import ModelField
@@ -11,7 +11,7 @@ from typing_extensions import Literal
 from graphql import GraphQLResolveInfo
 
 import strawberry
-from strawberry.arguments import UNSET
+from strawberry.arguments import UNSET, is_unset
 from strawberry.experimental.pydantic.conversion import (
     convert_pydantic_model_to_strawberry_class,
 )
@@ -30,6 +30,17 @@ from strawberry.types.type_resolver import _get_fields
 from strawberry.types.types import TypeDefinition
 
 from .exceptions import MissingFieldsListError, UnregisteredTypeException
+
+
+class PydanticInputMetadataDict(Dict[str, Any]):
+    """
+    This is a compatibility workaround allowing us to leverage
+    GraphQL's spec ability to distinguish if a field was provided at
+    model creation with Pydantic's exclude_unset setting.
+    """
+
+    def __init__(self, fields: List[Tuple[str, Any]]) -> None:
+        super().__init__(field for field in fields if not is_unset(field[1]))
 
 
 def replace_pydantic_types(type_: Any):
@@ -84,6 +95,7 @@ def type(
     description: Optional[str] = None,
     directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
     all_fields: bool = False,
+    with_input_metadata: bool = False,
 ):
     def wrap(cls):
         model_fields = model.__fields__
@@ -125,7 +137,10 @@ def type(
                     graphql_name=field.alias if field.has_alias else None,
                     # always unset because we use default_factory instead
                     default=UNSET,
-                    default_factory=get_default_factory_for_field(field),
+                    default_factory=get_default_factory_for_field(
+                        field,
+                        with_input_metadata,
+                    ),
                     type_annotation=get_type_for_field(field),
                     description=field.field_info.description,
                 ),
@@ -184,7 +199,12 @@ def type(
             )
 
         def to_pydantic(self) -> Any:
-            instance_kwargs = dataclasses.asdict(self)
+            instance_kwargs = dataclasses.asdict(
+                self,
+                dict_factory=dict
+                if not with_input_metadata
+                else PydanticInputMetadataDict,
+            )
 
             return model(**instance_kwargs)
 

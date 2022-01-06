@@ -78,7 +78,9 @@ def sort_creation_fields(
     return sorted(fields, key=has_default)
 
 
-def get_default_factory_for_field(field: ModelField) -> Union[NoArgAnyCallable, _Unset]:
+def get_default_factory_for_field(
+    field: ModelField, with_input_metadata: bool = False
+) -> Union[NoArgAnyCallable, _Unset]:
     """
     Gets the default factory for a pydantic field.
 
@@ -86,6 +88,11 @@ def get_default_factory_for_field(field: ModelField) -> Union[NoArgAnyCallable, 
 
     Returns optionally a NoArgAnyCallable representing a default_factory parameter
     """
+    # Short circuit behaviour to allow usage of strawberry input parsing
+    # without losing metadata on provided payload.
+    if not field.required and with_input_metadata:
+        return lambda: UNSET
+
     default_factory = field.default_factory
     default = field.default
 

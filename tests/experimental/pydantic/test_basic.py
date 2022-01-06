@@ -8,6 +8,7 @@ import pydantic
 import sentinel
 
 import strawberry
+from strawberry.arguments import is_unset
 from strawberry.enum import EnumDefinition
 from strawberry.experimental.pydantic.exceptions import MissingFieldsListError
 from strawberry.type import StrawberryList, StrawberryOptional
@@ -61,6 +62,48 @@ def test_basic_type_all_fields():
     assert field2.graphql_name is None
     assert isinstance(field2.type, StrawberryOptional)
     assert field2.type.of_type is str
+
+
+def test_basic_type_with_input_metadata():
+    class User1(pydantic.BaseModel):
+        friend: Optional[str] = "friend_value"
+        frenemy: str
+
+    @strawberry.experimental.pydantic.type(User1, with_input_metadata=True)
+    class UserType1:
+        friend: strawberry.auto
+        frenemy: strawberry.auto
+
+    user_input_1 = UserType1(frenemy="frenemy_value")
+    assert is_unset(user_input_1.friend)
+    assert user_input_1.to_pydantic().friend == "friend_value"
+    assert user_input_1.to_pydantic().dict() == {
+        "friend": "friend_value",
+        "frenemy": "frenemy_value",
+    }
+    assert user_input_1.to_pydantic().dict(exclude_unset=True) == {
+        "frenemy": "frenemy_value"
+    }
+
+    class User2(pydantic.BaseModel):
+        friend: Optional[str] = pydantic.Field(default_factory=lambda: "friend_value")
+        frenemy: str
+
+    @strawberry.experimental.pydantic.type(User2, with_input_metadata=True)
+    class UserType2:
+        friend: strawberry.auto
+        frenemy: strawberry.auto
+
+    user_input_2 = UserType2(frenemy="frenemy_value")
+    assert is_unset(user_input_2.friend)
+    assert user_input_2.to_pydantic().friend == "friend_value"
+    assert user_input_2.to_pydantic().dict() == {
+        "friend": "friend_value",
+        "frenemy": "frenemy_value",
+    }
+    assert user_input_2.to_pydantic().dict(exclude_unset=True) == {
+        "frenemy": "frenemy_value"
+    }
 
 
 @pytest.mark.filterwarnings("error")
