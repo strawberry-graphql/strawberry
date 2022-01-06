@@ -37,21 +37,21 @@ def replace_pydantic_types(type_: Any):
         # Literal does not have types in its __args__ so we return early
         return type_
     if hasattr(type_, "__args__"):
-        new_type = type_.copy_with(
+        replaced_type = type_.copy_with(
             tuple(replace_pydantic_types(t) for t in type_.__args__)
         )
 
-        if isinstance(new_type, TypeDefinition):
+        if isinstance(replaced_type, TypeDefinition):
             # TODO: Not sure if this is necessary. No coverage in tests
             # TODO: Unnecessary with StrawberryObject
 
-            new_type = builtins.type(
-                new_type.name,
+            replaced_type = builtins.type(
+                replaced_type.name,
                 (),
-                {"_type_definition": new_type},
+                {"_type_definition": replaced_type},
             )
 
-        return new_type
+        return replaced_type
 
     if issubclass(type_, BaseModel):
         if hasattr(type_, "_strawberry_type"):
