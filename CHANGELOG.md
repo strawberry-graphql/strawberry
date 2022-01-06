@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.93.19 - 2022-01-06
+--------------------
+
+Fixes TypeError when converting a pydantic BaseModel with NewType field
+
+Contributed by [James Chua](https://github.com/thejaminator) [PR #1547](https://github.com/strawberry-graphql/strawberry/pull/1547/)
+
+
 0.93.18 - 2022-01-05
 --------------------
 
