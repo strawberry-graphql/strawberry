@@ -24,8 +24,8 @@ from strawberry.utils.debug import pretty_print_graphql_operation
 
 class BaseContext:
     def __init__(self):
-        self.request: Union[Request, WebSocket] = None
-        self.background_tasks: BackgroundTasks = None
+        self.request: Optional[Union[Request, WebSocket]] = None
+        self.background_tasks: Optional[BackgroundTasks] = None
 
 
 class GraphQLRouter(APIRouter):
