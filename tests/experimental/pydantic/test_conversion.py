@@ -1,3 +1,4 @@
+import re
 from enum import Enum
 from typing import Any, List, Optional, Union, cast
 
@@ -10,6 +11,7 @@ from pydantic.typing import NoArgAnyCallable
 import strawberry
 from strawberry.arguments import UNSET
 from strawberry.experimental.pydantic.exceptions import (
+    AutoFieldsNotInBaseModelError,
     BothDefaultAndDefaultFactoryDefinedError,
 )
 from strawberry.experimental.pydantic.utils import (
@@ -53,6 +55,66 @@ def test_can_convert_pydantic_type_to_strawberry():
 
     assert user.age == 1
     assert user.password == "abc"
+
+
+def test_cannot_convert_pydantic_type_to_strawberry_missing_field():
+    class User(BaseModel):
+        age: int
+
+    with pytest.raises(
+        AutoFieldsNotInBaseModelError,
+        match=re.escape(
+            "UserType defines ['password'] with strawberry.auto."
+            " Field(s) not present in User BaseModel."
+        ),
+    ):
+
+        @strawberry.experimental.pydantic.type(User)
+        class UserType:
+            age: strawberry.auto
+            password: strawberry.auto
+
+
+def test_cannot_convert_pydantic_type_to_strawberry_property_auto():
+    class User(BaseModel):
+        age: int
+
+        @property
+        def password(self) -> str:
+            return "hunter2"
+
+    with pytest.raises(
+        AutoFieldsNotInBaseModelError,
+        match=re.escape(
+            "UserType defines ['password'] with strawberry.auto."
+            " Field(s) not present in User BaseModel."
+        ),
+    ):
+
+        @strawberry.experimental.pydantic.type(User)
+        class UserType:
+            age: strawberry.auto
+            password: strawberry.auto
+
+
+def test_can_convert_pydantic_type_to_strawberry_property():
+    class User(BaseModel):
+        age: int
+
+        @property
+        def password(self) -> str:
+            return "hunter2"
+
+    @strawberry.experimental.pydantic.type(User)
+    class UserType:
+        age: strawberry.auto
+        password: str
+
+    origin_user = User(age=1)
+    user = UserType.from_pydantic(origin_user)
+
+    assert user.age == 1
+    assert user.password == "hunter2"
 
 
 def test_can_convert_alias_pydantic_field_to_strawberry():

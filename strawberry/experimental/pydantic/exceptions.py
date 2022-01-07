@@ -1,4 +1,4 @@
-from typing import Any, Type
+from typing import Any, List, Type
 
 from pydantic import BaseModel
 from pydantic.typing import NoArgAnyCallable
@@ -32,6 +32,16 @@ class BothDefaultAndDefaultFactoryDefinedError(Exception):
         message = (
             f"Not allowed to specify both default and default_factory. "
             f"default:{default} default_factory:{default_factory}"
+        )
+
+        super().__init__(message)
+
+
+class AutoFieldsNotInBaseModelError(Exception):
+    def __init__(self, fields: List[str], cls_name: str, model: Type[BaseModel]):
+        message = (
+            f"{cls_name} defines {fields} with strawberry.auto. "
+            f"Field(s) not present in {model.__name__} BaseModel."
         )
 
         super().__init__(message)
