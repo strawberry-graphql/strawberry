@@ -10,9 +10,9 @@ from strawberry.types import Info
 
 def test_base_context():
     base_context = BaseContext()
-    assert base_context.request == None
-    assert base_context.background_tasks == None
-
+    assert base_context.request is None
+    assert base_context.background_tasks is None
+    assert base_context.response is None
 
 def test_with_class_context_getter():
     @strawberry.type
@@ -119,7 +119,8 @@ def test_with_invalid_context_getter():
     except TypeError as e:
         assert (
             str(e)
-            == "The custom context dependency must be either a class or a dictionary"
+            == "The custom context dependency must be either a " \
+                "class that inherits from BaseContext or a dictionary"
         )
         response = "Task failed successfully"
     assert response == "Task failed successfully"

@@ -26,6 +26,7 @@ class BaseContext:
     def __init__(self):
         self.request: Optional[Union[Request, WebSocket]] = None
         self.background_tasks: Optional[BackgroundTasks] = None
+        self.response: Optional[Response] = None
 
 
 class GraphQLRouter(APIRouter):
@@ -49,24 +50,27 @@ class GraphQLRouter(APIRouter):
         ) -> Union[
             BaseContext, Dict[str, Union[Any, BackgroundTasks, Request, WebSocket]]
         ]:
+            default_dict = {
+                "request": request or ws,
+                "background_tasks": background_tasks,
+                "response": response,
+            }
             if isinstance(custom_getter, BaseContext):
                 custom_getter.request = request or ws
                 custom_getter.background_tasks = background_tasks
+                custom_getter.response = response
                 return custom_getter
             elif isinstance(custom_getter, dict):
                 return {
-                    "request": request or ws,
-                    "background_tasks": background_tasks,
-                    **(custom_getter or {}),
+                    **default_dict,
+                    **custom_getter,
                 }
             elif custom_getter == None:
-                return {
-                    "request": request or ws,
-                    "background_tasks": background_tasks,
-                }
+                return default_dict
             else:
                 raise TypeError(
-                    "The custom context dependency is neither a class that inherits from BaseContext nor a dictionary"
+                    "The custom context dependency must be either a " \
+                    "class that inherits from BaseContext or a dictionary"
                 )
 
         # replace the signature parameters of dependency...
