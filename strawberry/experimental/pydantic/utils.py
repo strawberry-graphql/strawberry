@@ -126,10 +126,9 @@ def ensure_all_auto_fields_in_pydantic(
     model: Type[BaseModel], auto_fields: Set[str], cls_name: str
 ) -> Union[NoReturn, None]:
     # Raise error if user defined a strawberry.auto field not present in the model
-    undefined = [
-        field_name for field_name in auto_fields if field_name not in model.__fields__
-    ]
-    if len(undefined) > 0:
+    non_existing_fields = auto_fields - model.__fields__.keys()
+    
+    if len(non_existing_fields) > 0:
         raise AutoFieldsNotInBaseModelError(
             fields=undefined, cls_name=cls_name, model=model
         )
