@@ -4,7 +4,7 @@ Release type: patch
  It is raised when strawberry.auto is used, but the pydantic model does not have
 the particular field defined.
 
-```{python}
+```python
 class User(BaseModel):
     age: int
 
