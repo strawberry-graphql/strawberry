@@ -3,6 +3,7 @@ from typing import Optional
 from uuid import UUID
 
 import pydantic
+from pydantic.typing import is_new_type, new_type_supertype
 
 from .exceptions import UnsupportedTypeError
 
@@ -75,5 +76,8 @@ def get_basic_type(type_):
 
         if type_ is None:
             raise UnsupportedTypeError()
+
+    if is_new_type(type_):
+        return new_type_supertype(type_)
 
     return type_

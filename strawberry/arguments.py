@@ -24,19 +24,11 @@ from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
 from .exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError
 from .scalars import is_scalar
 from .types.types import TypeDefinition
+from .unset import _Unset
 
 
 if TYPE_CHECKING:
     from strawberry.schema.config import StrawberryConfig
-
-
-class _Unset:
-    def __str__(self):
-        return ""
-
-    def __bool__(self):
-        return False
-
 
 UNSET: Any = _Unset()
 
@@ -48,10 +40,17 @@ def is_unset(value: Any) -> bool:
 class StrawberryArgumentAnnotation:
     description: Optional[str]
     name: Optional[str]
+    deprecation_reason: Optional[str]
 
-    def __init__(self, description: Optional[str] = None, name: Optional[str] = None):
+    def __init__(
+        self,
+        description: Optional[str] = None,
+        name: Optional[str] = None,
+        deprecation_reason: Optional[str] = None,
+    ):
         self.description = description
         self.name = name
+        self.deprecation_reason = deprecation_reason
 
 
 class StrawberryArgument:
@@ -63,6 +62,7 @@ class StrawberryArgument:
         is_subscription: bool = False,
         description: Optional[str] = None,
         default: object = UNSET,
+        deprecation_reason: Optional[str] = None,
     ) -> None:
         self.python_name = python_name  # type: ignore
         self.graphql_name = graphql_name
@@ -70,6 +70,7 @@ class StrawberryArgument:
         self.description = description
         self._type: Optional[StrawberryType] = None
         self.type_annotation = type_annotation
+        self.deprecation_reason = deprecation_reason
 
         # TODO: Consider moving this logic to a function
         self.default = UNSET if default is inspect.Parameter.empty else default
@@ -106,6 +107,7 @@ class StrawberryArgument:
 
                 self.description = arg.description
                 self.graphql_name = arg.name
+                self.deprecation_reason = arg.deprecation_reason
 
 
 def convert_argument(
@@ -198,9 +200,13 @@ def convert_arguments(
 
 
 def argument(
-    description: Optional[str] = None, name: Optional[str] = None
+    description: Optional[str] = None,
+    name: Optional[str] = None,
+    deprecation_reason: Optional[str] = None,
 ) -> StrawberryArgumentAnnotation:
-    return StrawberryArgumentAnnotation(description=description, name=name)
+    return StrawberryArgumentAnnotation(
+        description=description, name=name, deprecation_reason=deprecation_reason
+    )
 
 
 # TODO: check exports

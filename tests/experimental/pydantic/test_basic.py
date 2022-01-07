@@ -1,3 +1,4 @@
+import dataclasses
 from enum import Enum
 from typing import List, Optional, Union
 
@@ -269,6 +270,77 @@ def test_type_with_fields_coming_from_strawberry_and_pydantic():
     assert field3.python_name == "password"
     assert isinstance(field3.type, StrawberryOptional)
     assert field3.type.of_type is str
+
+
+def test_default_and_default_factory():
+    class User1(pydantic.BaseModel):
+        friend: Optional[str] = "friend_value"
+
+    @strawberry.experimental.pydantic.type(User1)
+    class UserType1:
+        friend: strawberry.auto
+
+    assert UserType1().friend == "friend_value"
+    assert UserType1().to_pydantic().friend == "friend_value"
+
+    class User2(pydantic.BaseModel):
+        friend: Optional[str] = None
+
+    @strawberry.experimental.pydantic.type(User2)
+    class UserType2:
+        friend: strawberry.auto
+
+    assert UserType2().friend is None
+    assert UserType2().to_pydantic().friend is None
+
+    # Test instantiation using default_factory
+
+    class User3(pydantic.BaseModel):
+        friend: Optional[str] = pydantic.Field(default_factory=lambda: "friend_value")
+
+    @strawberry.experimental.pydantic.type(User3)
+    class UserType3:
+        friend: strawberry.auto
+
+    assert UserType3().friend == "friend_value"
+    assert UserType3().to_pydantic().friend == "friend_value"
+
+    class User4(pydantic.BaseModel):
+        friend: Optional[str] = pydantic.Field(default_factory=lambda: None)
+
+    @strawberry.experimental.pydantic.type(User4)
+    class UserType4:
+        friend: strawberry.auto
+
+    assert UserType4().friend is None
+    assert UserType4().to_pydantic().friend is None
+
+
+def test_type_with_fields_mutable_default():
+    empty_list = []
+
+    class User(pydantic.BaseModel):
+        groups: List[str]
+        friends: List[str] = empty_list
+
+    @strawberry.experimental.pydantic.type(User)
+    class UserType:
+        groups: strawberry.auto
+        friends: strawberry.auto
+
+    definition: TypeDefinition = UserType._type_definition
+    assert definition.name == "UserType"
+
+    [field1, field2] = definition.fields
+
+    assert field1.default is dataclasses.MISSING
+    assert field2.default is dataclasses.MISSING
+    assert field1.default_factory is dataclasses.MISSING
+    # check that we really made a copy
+    assert field2.default_factory() is not empty_list
+    assert UserType(groups=["groups"]).friends is not empty_list
+    UserType(groups=["groups"]).friends.append("joe")
+    assert empty_list == []
 
 
 @pytest.mark.xfail(
