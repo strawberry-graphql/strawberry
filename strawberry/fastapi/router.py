@@ -23,8 +23,8 @@ from strawberry.utils.debug import pretty_print_graphql_operation
 
 class BaseContext:
     def __init__(self):
-        self.request = ""
-        self.background_tasks = ""
+        self.request: Union[Request, WebSocket] = None
+        self.background_tasks: BackgroundTasks = None
 
 class GraphQLRouter(APIRouter):
     graphql_ws_handler_class = GraphQLWSHandler
@@ -60,7 +60,7 @@ class GraphQLRouter(APIRouter):
                     "background_tasks": background_tasks,
                 }
             else:
-                raise TypeError("The custom context dependency is neither a class nor a dictionary")
+                raise TypeError("The custom context dependency must be either a class or a dictionary")
 
         # replace the signature parameters of dependency...
         # ...with the old parameters minus the first argument as it will be replaced...

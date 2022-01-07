@@ -7,6 +7,11 @@ from strawberry.types import Info
 
 from typing import Dict
 
+def test_base_context():
+    base_context = BaseContext()
+    assert base_context.request == None
+    assert base_context.background_tasks == None
+
 def test_with_class_context_getter():
     @strawberry.type
     class Query:
@@ -74,7 +79,7 @@ def test_without_context_getter():
 
     app = FastAPI()
     schema = strawberry.Schema(query=Query)
-    graphql_app = GraphQLRouter(schema)
+    graphql_app = GraphQLRouter(schema, context_getter=None)
     app.include_router(graphql_app, prefix="/graphql")
 
     test_client = TestClient(app)
@@ -82,3 +87,31 @@ def test_without_context_getter():
 
     assert response.status_code == 200
     assert response.json() == {"data": {"abc": "abc"}}
+
+def test_with_invalid_context_getter():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def abc(self, info: Info) -> str:
+            assert info.context.get("request") is not None
+            assert info.context.get("strawberry") is None
+            return "abc"
+
+    def custom_context_dependency() -> str:
+        return "rocks"
+
+    def get_context(value: str = Depends(custom_context_dependency)) -> str:
+        return value
+
+    app = FastAPI()
+    schema = strawberry.Schema(query=Query)
+    graphql_app = GraphQLRouter(schema=schema, context_getter=get_context)
+    app.include_router(graphql_app, prefix="/graphql")
+
+    test_client = TestClient(app)
+    try:
+        response = test_client.post("/graphql", json={"query": "{ abc }"})
+    except TypeError as e:
+        assert str(e) == "The custom context dependency must be either a class or a dictionary"
+        response = "Task failed successfully"
+    assert response == "Task failed successfully"
