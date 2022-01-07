@@ -1,12 +1,14 @@
 import dataclasses
-from typing import Any, List, NamedTuple, Tuple, Type, Union, cast
+from typing import Any, List, NamedTuple, NoReturn, Set, Tuple, Type, Union, cast
 
+from pydantic import BaseModel
 from pydantic.fields import ModelField
 from pydantic.typing import NoArgAnyCallable
 from pydantic.utils import smart_deepcopy
 
 from strawberry.arguments import UNSET, _Unset, is_unset  # type: ignore
 from strawberry.experimental.pydantic.exceptions import (
+    AutoFieldsNotInBaseModelError,
     BothDefaultAndDefaultFactoryDefinedError,
     UnregisteredTypeException,
 )
@@ -118,3 +120,17 @@ def get_default_factory_for_field(field: ModelField) -> Union[NoArgAnyCallable, 
         return lambda: None
 
     return UNSET
+
+
+def ensure_all_auto_fields_in_pydantic(
+    model: Type[BaseModel], auto_fields: Set[str], cls_name: str
+) -> Union[NoReturn, None]:
+    # Raise error if user defined a strawberry.auto field not present in the model
+    non_existing_fields = list(auto_fields - model.__fields__.keys())
+
+    if non_existing_fields:
+        raise AutoFieldsNotInBaseModelError(
+            fields=non_existing_fields, cls_name=cls_name, model=model
+        )
+    else:
+        return None

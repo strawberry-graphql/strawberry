@@ -18,6 +18,7 @@ from strawberry.experimental.pydantic.conversion import (
 from strawberry.experimental.pydantic.fields import get_basic_type
 from strawberry.experimental.pydantic.utils import (
     DataclassCreationFields,
+    ensure_all_auto_fields_in_pydantic,
     get_default_factory_for_field,
     get_private_fields,
     sort_creation_fields,
@@ -110,6 +111,10 @@ def type(
 
         if not fields_set:
             raise MissingFieldsListError(cls)
+
+        ensure_all_auto_fields_in_pydantic(
+            model=model, auto_fields=fields_set, cls_name=cls.__name__
+        )
 
         all_model_fields: List[DataclassCreationFields] = [
             DataclassCreationFields(
