@@ -30,6 +30,7 @@ from strawberry.type import (
     StrawberryTypeVar,
 )
 from strawberry.types.types import TypeDefinition
+from strawberry.unset import _Unset
 from strawberry.utils.typing import is_generic, is_type_var
 
 
@@ -113,7 +114,10 @@ class StrawberryAnnotation:
     def create_optional(self, evaled_type: Any) -> StrawberryOptional:
         types = evaled_type.__args__
         non_optional_types = tuple(
-            filter(lambda x: x is not type(None), types)  # noqa: E721
+            filter(
+                lambda x: x is not type(None) and x is not _Unset,  # noqa: E721
+                types,
+            )
         )
 
         # Note that passing a single type to `Union` is equivalent to not using `Union`
