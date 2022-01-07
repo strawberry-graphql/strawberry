@@ -1,3 +1,5 @@
+from typing import Dict
+
 from starlette.testclient import TestClient
 
 import strawberry
@@ -5,7 +7,6 @@ from fastapi import Depends, FastAPI
 from strawberry.fastapi import BaseContext, GraphQLRouter
 from strawberry.types import Info
 
-from typing import Dict
 
 def test_with_class_context_getter():
     @strawberry.type
@@ -21,7 +22,7 @@ def test_with_class_context_getter():
             self.strawberry = rocks
 
     def custom_context_dependency() -> CustomContext:
-        return CustomContext(rocks = "rocks")
+        return CustomContext(rocks="rocks")
 
     def get_context(custom_context: CustomContext = Depends(custom_context_dependency)):
         return custom_context
@@ -36,6 +37,7 @@ def test_with_class_context_getter():
 
     assert response.status_code == 200
     assert response.json() == {"data": {"abc": "abc"}}
+
 
 def test_with_dict_context_getter():
     @strawberry.type
@@ -62,6 +64,7 @@ def test_with_dict_context_getter():
 
     assert response.status_code == 200
     assert response.json() == {"data": {"abc": "abc"}}
+
 
 def test_without_context_getter():
     @strawberry.type

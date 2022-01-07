@@ -1,7 +1,7 @@
 import json
 from datetime import timedelta
 from inspect import signature
-from typing import Any, Callable, Dict, Optional, Sequence, TypeVar, Union
+from typing import Any, Callable, Dict, Optional, Sequence, Union
 
 from starlette import status
 from starlette.background import BackgroundTasks
@@ -21,10 +21,12 @@ from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_P
 from strawberry.types import ExecutionResult
 from strawberry.utils.debug import pretty_print_graphql_operation
 
+
 class BaseContext:
     def __init__(self):
         self.request = ""
         self.background_tasks = ""
+
 
 class GraphQLRouter(APIRouter):
     graphql_ws_handler_class = GraphQLWSHandler
@@ -44,7 +46,9 @@ class GraphQLRouter(APIRouter):
             request: Request = None,
             response: Response = None,
             ws: WebSocket = None,
-        ) -> Union[BaseContext, Dict[str, Union[Any, BackgroundTasks, Request, WebSocket]]]:
+        ) -> Union[
+            BaseContext, Dict[str, Union[Any, BackgroundTasks, Request, WebSocket]]
+        ]:
             if isinstance(custom_getter, BaseContext):
                 custom_getter.request = request or ws
                 custom_getter.background_tasks = background_tasks
@@ -61,7 +65,9 @@ class GraphQLRouter(APIRouter):
                     "background_tasks": background_tasks,
                 }
             else:
-                raise TypeError("The custom context dependency is neither a class that inherits from BaseContext nor a dictionary")
+                raise TypeError(
+                    "The custom context dependency is neither a class that inherits from BaseContext nor a dictionary"
+                )
 
         # replace the signature parameters of dependency...
         # ...with the old parameters minus the first argument as it will be replaced...
