@@ -1,7 +1,7 @@
 import json
 from datetime import timedelta
 from inspect import signature
-from typing import Any, Callable, Dict, Optional, Sequence, Union
+from typing import Any, Callable, Dict, Optional, Sequence, TypeVar, Union
 
 from starlette import status
 from starlette.background import BackgroundTasks
@@ -21,6 +21,10 @@ from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_P
 from strawberry.types import ExecutionResult
 from strawberry.utils.debug import pretty_print_graphql_operation
 
+class BaseContext:
+    def __init__(self):
+        self.request = ""
+        self.background_tasks = ""
 
 class GraphQLRouter(APIRouter):
     graphql_ws_handler_class = GraphQLWSHandler
@@ -32,19 +36,31 @@ class GraphQLRouter(APIRouter):
 
     @staticmethod
     def __get_context_getter(
-        custom_getter: Callable[..., Optional[Dict[str, Any]]]
-    ) -> Callable[..., Dict[str, Any]]:
+        custom_getter: Callable[..., Optional[Union[BaseContext, Dict[str, Any]]]]
+    ) -> Callable[..., Union[BaseContext, Dict[str, Any]]]:
         def dependency(
-            custom_getter: Optional[Dict[str, Any]],
+            custom_getter: Optional[Union[BaseContext, Dict[str, Any]]],
             background_tasks: BackgroundTasks,
             request: Request = None,
             ws: WebSocket = None,
-        ) -> Dict[str, Union[Any, BackgroundTasks, Request, WebSocket]]:
-            return {
-                "request": request or ws,
-                "background_tasks": background_tasks,
-                **(custom_getter or {}),
-            }
+        ) -> Union[BaseContext, Dict[str, Union[Any, BackgroundTasks, Request, WebSocket]]]:
+            if isinstance(custom_getter, BaseContext):
+                custom_getter.request = request or ws
+                custom_getter.background_tasks = background_tasks
+                return custom_getter
+            elif isinstance(custom_getter, dict):
+                return {
+                    "request": request or ws,
+                    "background_tasks": background_tasks,
+                    **(custom_getter or {}),
+                }
+            elif custom_getter == None:
+                return {
+                    "request": request or ws,
+                    "background_tasks": background_tasks,
+                }
+            else:
+                raise TypeError("The custom context dependency is neither a class nor a dictionary")
 
         # replace the signature parameters of dependency...
         # ...with the old parameters minus the first argument as it will be replaced...
