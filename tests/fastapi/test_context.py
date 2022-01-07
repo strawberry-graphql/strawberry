@@ -13,6 +13,7 @@ def test_base_context():
     assert base_context.request == None
     assert base_context.background_tasks == None
 
+
 def test_with_class_context_getter():
     @strawberry.type
     class Query:
@@ -91,6 +92,7 @@ def test_without_context_getter():
     assert response.status_code == 200
     assert response.json() == {"data": {"abc": "abc"}}
 
+
 def test_with_invalid_context_getter():
     @strawberry.type
     class Query:
@@ -115,6 +117,9 @@ def test_with_invalid_context_getter():
     try:
         response = test_client.post("/graphql", json={"query": "{ abc }"})
     except TypeError as e:
-        assert str(e) == "The custom context dependency must be either a class or a dictionary"
+        assert (
+            str(e)
+            == "The custom context dependency must be either a class or a dictionary"
+        )
         response = "Task failed successfully"
     assert response == "Task failed successfully"
