@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.93.21 - 2022-01-07
+--------------------
+
+This release adds `deprecation_reason` support to arguments and mutations.
+
+Contributed by [Silas Sewell](https://github.com/silas) [PR #1527](https://github.com/strawberry-graphql/strawberry/pull/1527/)
+
+
 0.93.20 - 2022-01-07
 --------------------
 
