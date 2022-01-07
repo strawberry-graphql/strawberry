@@ -76,6 +76,8 @@ def test_cannot_convert_pydantic_type_to_strawberry_missing_field():
 
 
 def test_cannot_convert_pydantic_type_to_strawberry_property_auto():
+    # auto inferring type of a property is not supported
+
     class User(BaseModel):
         age: int
 
