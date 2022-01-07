@@ -130,7 +130,7 @@ def ensure_all_auto_fields_in_pydantic(
 
     if len(non_existing_fields) > 0:
         raise AutoFieldsNotInBaseModelError(
-            fields=undefined, cls_name=cls_name, model=model
+            fields=non_existing_fields, cls_name=cls_name, model=model
         )
     else:
         return None
