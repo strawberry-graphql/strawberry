@@ -14,6 +14,7 @@ def test_base_context():
     assert base_context.background_tasks is None
     assert base_context.response is None
 
+
 def test_with_class_context_getter():
     @strawberry.type
     class Query:
@@ -118,9 +119,8 @@ def test_with_invalid_context_getter():
         response = test_client.post("/graphql", json={"query": "{ abc }"})
     except TypeError as e:
         assert (
-            str(e)
-            == "The custom context dependency must be either a " \
-                "class that inherits from BaseContext or a dictionary"
+            str(e) == "The custom context dependency must be either a "
+            "class that inherits from BaseContext or a dictionary"
         )
         response = "Task failed successfully"
     assert response == "Task failed successfully"
