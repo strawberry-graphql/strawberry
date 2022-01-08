@@ -267,9 +267,9 @@ instance = input_data.to_pydantic()
 
 ### Retaining input information
 
-When looking to use pydantic as a validation layer and export models afterwards,
-it is sometimes important to retain metadata about the original input. In strawberry,
-this is possible via the `with_input_metadata` flag on input models.
+When using pydantic as a validation layer, it is sometimes important to retain metadata about
+the original input while exporting models.
+In strawberry, this is possible via the `with_input_metadata` flag on input models.
 
 ```python
 import strawberry
