@@ -255,21 +255,18 @@ def enum_hook(ctx: DynamicClassDefContext) -> None:
     )
 
 
-def add_method_to_class(
+def add_static_method_to_class(
     api: Union[SemanticAnalyzerPluginInterface, CheckerPluginInterface],
     cls: ClassDef,
     name: str,
     args: List[Argument],
     return_type: Type,
-    self_type: Optional[Type] = None,
     tvar_def: Optional[TypeVarType] = None,
-    is_static: bool = False,
 ) -> None:
-    """Adds a new method to a class definition.
-    Edited to add is_static logic for
-    https://github.com/python/mypy/blob/9c05d3d19de74fc10a51aa5b663e6a38bc6abc73
-    /mypy/plugins/common.py
-    because couldn't figure out how to add static methods otherwise"""
+    """Adds a static method
+    Edited add_method_to_class to incorporate static method logic
+    https://github.com/python/mypy/blob/9c05d3d19de74fc10a51aa5b663e6a38bc6abc73/mypy/plugins/common.py # noqa: E501
+    """
     info = cls.info
 
     # First remove any previously generated methods with the same name
@@ -279,7 +276,6 @@ def add_method_to_class(
         if sym.plugin_generated and isinstance(sym.node, FuncDef):
             cls.defs.body.remove(sym.node)
 
-    self_type = self_type or fill_typevars(info)
     # For compat with mypy < 0.93
     if MypyVersion.VERSION < Decimal("0.93"):
         function_type = api.named_type("__builtins__.function")  # type: ignore
@@ -289,8 +285,6 @@ def add_method_to_class(
         else:
             function_type = api.named_generic_type("builtins.function", [])
 
-    if not is_static:
-        args = [Argument(Var("self"), self_type, None, ARG_POS)] + args
     arg_types, arg_names, arg_kinds = [], [], []
     for arg in args:
         assert arg.type_annotation, "All arguments must be fully typed."
@@ -306,9 +300,7 @@ def add_method_to_class(
 
     func = FuncDef(name, args, Block([PassStmt()]))
 
-    if is_static:
-        func.is_static = True
-
+    func.is_static = True
     func.info = info
     func.type = set_callable_name(signature, func)
     func._fullname = info.fullname + "." + name
@@ -365,13 +357,12 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
             kind=ARG_OPT,
         )
 
-        add_method_to_class(
+        add_static_method_to_class(
             ctx.api,
             ctx.cls,
             name="from_pydantic",
             args=[model_argument],
             return_type=fill_typevars(ctx.cls.info),
-            is_static=True,
         )
 
 
