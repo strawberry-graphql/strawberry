@@ -201,9 +201,9 @@ def type(
         def to_pydantic(self) -> Any:
             instance_kwargs = dataclasses.asdict(
                 self,
-                dict_factory=dict
-                if not with_input_metadata
-                else PydanticInputMetadataDict,
+                dict_factory=(
+                    dict if not with_input_metadata else PydanticInputMetadataDict
+                ),
             )
 
             return model(**instance_kwargs)
