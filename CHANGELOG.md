@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.93.22 - 2022-01-09
+--------------------
+
+This release adds `load_many` to `DataLoader`.
+
+Contributed by [Silas Sewell](https://github.com/silas) [PR #1528](https://github.com/strawberry-graphql/strawberry/pull/1528/)
+
+
 0.93.21 - 2022-01-07
 --------------------
 
