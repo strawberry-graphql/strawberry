@@ -75,7 +75,7 @@ class Book:
 
 
 def build_book_cursor(book: Book):
-    """Adapt this method to build an *opaque* id from an instance"""
+    """Adapt this method to build an *opaque* ID from an instance"""
     bookid = f"{id(book)}".encode("utf-8")
     return base64.b64encode(bookid).decode()
 
