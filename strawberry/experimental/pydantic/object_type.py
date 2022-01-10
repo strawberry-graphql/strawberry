@@ -2,7 +2,7 @@ import builtins
 import dataclasses
 import warnings
 from functools import partial
-from typing import Any, Dict, List, Optional, Sequence, Tuple, Type, cast
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Tuple, Type, cast
 
 from pydantic import BaseModel
 from pydantic.fields import ModelField
@@ -39,7 +39,7 @@ class PydanticInputMetadataDict(Dict[str, Any]):
     model creation with Pydantic's exclude_unset setting.
     """
 
-    def __init__(self, fields: List[Tuple[str, Any]]) -> None:
+    def __init__(self, fields: Iterable[Tuple[str, Any]]) -> None:
         super().__init__(field for field in fields if not is_unset(field[1]))
 
 
