@@ -76,6 +76,7 @@ def test_basic_type_with_input_metadata():
 
     user_input_1 = UserType1(frenemy="frenemy_value")
     assert is_unset(user_input_1.friend)
+    assert user_input_1.friend == "friend_value"
     assert user_input_1.to_pydantic().friend == "friend_value"
     assert user_input_1.to_pydantic().dict() == {
         "friend": "friend_value",
