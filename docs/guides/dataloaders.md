@@ -161,6 +161,7 @@ from strawberry.dataloader import DataLoader
 
 from starlette.requests import Request
 from starlette.websockets import WebSocket
+from starlette.responses import Response
 
 
 @strawberry.type
@@ -173,7 +174,7 @@ async def load_users(keys) -> List[User]:
 
 
 class MyGraphQL(GraphQL):
-    async def get_context(self, request: Union[Request, WebSocket]) -> Any:
+    async def get_context(self, request: Union[Request, WebSocket], response: Optional[Response]) -> Any:
         return {
             "user_loader": DataLoader(load_fn=load_users)
         }
