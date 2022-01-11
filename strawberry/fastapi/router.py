@@ -65,7 +65,7 @@ class GraphQLRouter(APIRouter):
                     **default_dict,
                     **custom_getter,
                 }
-            elif custom_getter == None:
+            elif custom_getter is None:
                 return default_dict
             else:
                 raise TypeError(
