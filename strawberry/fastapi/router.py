@@ -69,7 +69,7 @@ class GraphQLRouter(APIRouter):
                 return default_dict
             else:
                 raise TypeError(
-                    "The custom context dependency must be either a " \
+                    "The custom context dependency must be either a "
                     "class that inherits from BaseContext or a dictionary"
                 )
 
