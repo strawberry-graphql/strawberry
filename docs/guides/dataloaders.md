@@ -192,7 +192,7 @@ schema = strawberry.Schema(query=Query)
 app = MyGraphQL(schema)
 ```
 
-Now you can run the server with any async server (ASGI) that you want, for example we can install uvicorn with
+Now you can run the server with any async server ([ASGI](../integrations/asgi.md)) that you want, for example we can install uvicorn with
 ```bash
 pip install uvicorn
 ```
