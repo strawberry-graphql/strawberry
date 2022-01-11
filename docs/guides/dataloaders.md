@@ -193,10 +193,13 @@ app = MyGraphQL(schema)
 ```
 
 Now you can run the server with any async server ([ASGI](../integrations/asgi.md)) that you want, for example we can install uvicorn with
+
 ```bash
 pip install uvicorn
 ```
+
 and then, asumming we named our file above `dataloader_sample.py` we can start the app with
+
 ```
 uvicorn dataloader_sample:app
 ```
