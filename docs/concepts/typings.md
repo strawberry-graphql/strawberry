@@ -60,7 +60,8 @@ the following:
 
 ```python
 import datetime
-import typing
+from typing import List, Union, Optional
+
 import strawberry
 
 BOOKS_LOOKUP = {
@@ -78,12 +79,11 @@ class Book:
     author: 'Author'
     date_published: datetime.date
     price: decimal.Decimal
-    isbn: Union[int, str] # could be 1234567890000 or '123-4-56-789000-0'
+    isbn: str
 
-def get_books_by_author(root: 'Author') -> typing.List['Book']:
-    # error will be thrown in here if a book in BOOKS_LOOKUP is missing a field
-    # since none of the types of Book are optional
-    stored_books: typing.List[typing.Dict[str, str | int]] = BOOKS_LOOKUP[root.name]
+def get_books_by_author(root: 'Author') -> List['Book']:
+    stored_books = BOOKS_LOOKUP[root.name]
+
     return [Book(
         title = book.get('title'),
         author = root,
@@ -95,20 +95,21 @@ def get_books_by_author(root: 'Author') -> typing.List['Book']:
 @strawberry.type
 class Author:
     name: str
-    books: typing.List['Book'] = strawberry.field(resolver=get_books_by_author)
+    books: List[Book] = strawberry.field(resolver=get_books_by_author)
 
 @strawberry.type
 class Group:
     name: Optional[str] # groups of authors don't necessarily have names
-    authors: typing.List['Author']
+    authors: List[Author]
 
     @strawberry.field
-    def books(self) -> typing.List['Book']:
+    def books(self) -> List[Book]:
         books = []
+
         for author in self.authors:
             books += get_books_by_author(author)
-        return books
 
+        return books
 ```
 
 - `self` within a resolver's definition, whether decorated as
