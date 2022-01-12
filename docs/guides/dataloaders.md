@@ -88,6 +88,7 @@ Let's see an example of how you can use DataLoaders with GraphQL:
 ```python
 from typing import List
 
+from strawberry.dataloader import DataLoader
 import strawberry
 
 @strawberry.type
@@ -152,7 +153,7 @@ context so that it only caches results with a single request. Let's see an
 example of this using our ASGI view:
 
 ```python
-from typing import List, Union, Any
+from typing import List, Union, Any, Optional
 
 import strawberry
 from strawberry.types import Info
@@ -185,4 +186,22 @@ class Query:
     @strawberry.field
     async def get_user(self, info: Info, id: strawberry.ID) -> User:
         return await info.context["user_loader"].load(id)
+
+
+schema = strawberry.Schema(query=Query)
+app = MyGraphQL(schema)
+```
+
+You can now run the example above with any ASGI server, you can read [ASGI](../integrations/asgi.md)) to
+get more details on how to run the app.
+In case you choose uvicorn you can install it wih
+
+```bash
+pip install uvicorn
+```
+
+and then, asumming we named our file above `schema.py` we start the app with
+
+```
+uvicorn schema:app
 ```
