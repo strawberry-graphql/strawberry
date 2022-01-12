@@ -26,7 +26,6 @@ app = GraphQL(schema)
 Every ASGI server will accept this `app` instance to start the server.
 For example if you're using [uvicorn](https://pypi.org/project/uvicorn/) you run the app with `uvicorn server:app`
 
-
 ## Options
 
 The `GraphQL` app accepts two options at the moment:

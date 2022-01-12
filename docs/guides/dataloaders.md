@@ -193,7 +193,7 @@ app = MyGraphQL(schema)
 ```
 
 You can now run the example above with any ASGI server, you can read [ASGI](../integrations/asgi.md)) to
-get more details on how to run the app. 
+get more details on how to run the app.
 In case you choose uvicorn you can install it wih
 
 ```bash
