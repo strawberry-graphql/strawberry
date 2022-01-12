@@ -15,12 +15,17 @@ pip install 'strawberry-graphql[asgi]'
 Once that's done you can use Strawberry with ASGI like so:
 
 ```python
+# server.py
 from strawberry.asgi import GraphQL
 
 from api.schema import schema
 
 app = GraphQL(schema)
 ```
+
+Every ASGI server will accept this `app` instance to start the server.
+For example if you're using [uvicorn](https://pypi.org/project/uvicorn/) you run the app with `uvicorn server:app`
+
 
 ## Options
 

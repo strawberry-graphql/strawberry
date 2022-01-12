@@ -192,14 +192,16 @@ schema = strawberry.Schema(query=Query)
 app = MyGraphQL(schema)
 ```
 
-Now you can run the server with any async server ([ASGI](../integrations/asgi.md)) that you want, for example we can install uvicorn with
+You can now run the example above with any ASGI server, you can read [ASGI](../integrations/asgi.md)) to
+get more details on how to run the app. 
+In case you choose uvicorn you can install it wih
 
 ```bash
 pip install uvicorn
 ```
 
-and then, asumming we named our file above `dataloader_sample.py` we can start the app with
+and then, asumming we named our file above `schema.py` we start the app with
 
 ```
-uvicorn dataloader_sample:app
+uvicorn schema:app
 ```
