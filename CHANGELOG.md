@@ -1,6 +1,141 @@
 CHANGELOG
 =========
 
+0.93.23 - 2022-01-11
+--------------------
+
+Improve typing of `@strawberry.enum()` by:
+
+1. Using a `TypeVar` bound on `EnumMeta` instead of `EnumMeta`, which allows
+   type-checkers (like pyright) to detect the fields of the enum being
+   decorated. For example, for the following enum:
+
+```python
+@strawberry.enum
+class IceCreamFlavour(Enum):
+    VANILLA = "vanilla"
+    STRAWBERRY = "strawberry"
+    CHOCOLATE = "chocolate"
+```
+
+Prior to this change, pyright would complain if you tried to access
+`IceCreamFlavour.VANILLA`, since the type information of `IceCreamFlavour` was
+being erased by the `EnumMeta` typing .
+
+2. Overloading it so that type-checkers (like pyright) knows in what cases it
+   returns a decorator (when it's called with keyword arguments, e.g.
+   `@strawberry.enum(name="IceCreamFlavor")`), versus when it returns the
+   original enum type (without keyword arguments.
+
+Contributed by [Tim Joseph Dumol](https://github.com/TimDumol) [PR #1568](https://github.com/strawberry-graphql/strawberry/pull/1568/)
+
+
+0.93.22 - 2022-01-09
+--------------------
+
+This release adds `load_many` to `DataLoader`.
+
+Contributed by [Silas Sewell](https://github.com/silas) [PR #1528](https://github.com/strawberry-graphql/strawberry/pull/1528/)
+
+
+0.93.21 - 2022-01-07
+--------------------
+
+This release adds `deprecation_reason` support to arguments and mutations.
+
+Contributed by [Silas Sewell](https://github.com/silas) [PR #1527](https://github.com/strawberry-graphql/strawberry/pull/1527/)
+
+
+0.93.20 - 2022-01-07
+--------------------
+
+This release checks for AutoFieldsNotInBaseModelError when converting from pydantic models.
+ It is raised when strawberry.auto is used, but the pydantic model does not have
+the particular field defined.
+
+```python
+class User(BaseModel):
+    age: int
+
+@strawberry.experimental.pydantic.type(User)
+class UserType:
+    age: strawberry.auto
+    password: strawberry.auto
+```
+
+Previously no errors would be raised, and the password field would not appear on graphql schema.
+Such mistakes could be common during refactoring. Now, AutoFieldsNotInBaseModelError is raised.
+
+Contributed by [James Chua](https://github.com/thejaminator) [PR #1551](https://github.com/strawberry-graphql/strawberry/pull/1551/)
+
+
+0.93.19 - 2022-01-06
+--------------------
+
+Fixes TypeError when converting a pydantic BaseModel with NewType field
+
+Contributed by [James Chua](https://github.com/thejaminator) [PR #1547](https://github.com/strawberry-graphql/strawberry/pull/1547/)
+
+
+0.93.18 - 2022-01-05
+--------------------
+
+This release allows setting http headers and custom http status codes with FastAPI GraphQLRouter.
+
+Contributed by [David Němec](https://github.com/davidnemec) [PR #1537](https://github.com/strawberry-graphql/strawberry/pull/1537/)
+
+
+0.93.17 - 2022-01-05
+--------------------
+
+Fix compatibility with Sanic 21.12
+
+Contributed by [Artjoms Iskovs](https://github.com/mildbyte) [PR #1520](https://github.com/strawberry-graphql/strawberry/pull/1520/)
+
+
+0.93.16 - 2022-01-04
+--------------------
+
+Add support for piping `StrawberryUnion` and `None` when annotating types.
+
+For example:
+```python
+@strawberry.type
+class Cat:
+    name: str
+
+@strawberry.type
+class Dog:
+    name: str
+
+Animal = strawberry.union("Animal", (Cat, Dog))
+
+@strawberry.type
+class Query:
+    animal: Animal | None # This line no longer triggers a TypeError
+```
+
+Contributed by [Yossi Rozantsev](https://github.com/Apakottur) [PR #1540](https://github.com/strawberry-graphql/strawberry/pull/1540/)
+
+
+0.93.15 - 2022-01-04
+--------------------
+
+This release fixes the conversion of pydantic models with a default_factory
+field.
+
+Contributed by [James Chua](https://github.com/thejaminator) [PR #1538](https://github.com/strawberry-graphql/strawberry/pull/1538/)
+
+
+0.93.14 - 2022-01-03
+--------------------
+
+This release allows conversion of pydantic models with mutable default fields into strawberry types.
+Also fixes bug when converting a pydantic model field with default_factory. Previously it would raise an exception when fields with a default_factory were declared before fields without defaults.
+
+Contributed by [James Chua](https://github.com/thejaminator) [PR #1491](https://github.com/strawberry-graphql/strawberry/pull/1491/)
+
+
 0.93.13 - 2021-12-25
 --------------------
 

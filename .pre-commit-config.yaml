@@ -34,7 +34,7 @@ repos:
         files: '^docs/.*\.mdx?$'
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.0.1
+    rev: v4.1.0
     hooks:
       - id: trailing-whitespace
       - id: check-merge-conflict

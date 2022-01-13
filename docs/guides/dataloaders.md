@@ -74,6 +74,13 @@ await loader.load(1)
 
 Will result in only one call to `load_users`.
 
+And finally sometimes we'll want to load more than one key at a time. In those
+cases we can use the `load_many` method.
+
+```python
+[user_a, user_b, user_c] = await loader.load_many([1, 2, 3])
+```
+
 ## Usage with GraphQL
 
 Let's see an example of how you can use DataLoaders with GraphQL:
@@ -81,6 +88,7 @@ Let's see an example of how you can use DataLoaders with GraphQL:
 ```python
 from typing import List
 
+from strawberry.dataloader import DataLoader
 import strawberry
 
 @strawberry.type
@@ -145,7 +153,7 @@ context so that it only caches results with a single request. Let's see an
 example of this using our ASGI view:
 
 ```python
-from typing import List, Union, Any
+from typing import List, Union, Any, Optional
 
 import strawberry
 from strawberry.types import Info
@@ -154,6 +162,7 @@ from strawberry.dataloader import DataLoader
 
 from starlette.requests import Request
 from starlette.websockets import WebSocket
+from starlette.responses import Response
 
 
 @strawberry.type
@@ -166,7 +175,7 @@ async def load_users(keys) -> List[User]:
 
 
 class MyGraphQL(GraphQL):
-    async def get_context(self, request: Union[Request, WebSocket]) -> Any:
+    async def get_context(self, request: Union[Request, WebSocket], response: Optional[Response]) -> Any:
         return {
             "user_loader": DataLoader(load_fn=load_users)
         }
@@ -177,4 +186,22 @@ class Query:
     @strawberry.field
     async def get_user(self, info: Info, id: strawberry.ID) -> User:
         return await info.context["user_loader"].load(id)
+
+
+schema = strawberry.Schema(query=Query)
+app = MyGraphQL(schema)
+```
+
+You can now run the example above with any ASGI server, you can read [ASGI](../integrations/asgi.md)) to
+get more details on how to run the app.
+In case you choose uvicorn you can install it wih
+
+```bash
+pip install uvicorn
+```
+
+and then, asumming we named our file above `schema.py` we start the app with
+
+```
+uvicorn schema:app
 ```

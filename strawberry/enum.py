@@ -1,6 +1,6 @@
 import dataclasses
 from enum import EnumMeta
-from typing import Any, Callable, List, Mapping, Optional, TypeVar, Union
+from typing import Any, Callable, List, Mapping, Optional, TypeVar, Union, overload
 
 from strawberry.type import StrawberryType
 
@@ -34,9 +34,12 @@ class EnumDefinition(StrawberryType):
         return False
 
 
+EnumType = TypeVar("EnumType", bound=EnumMeta)
+
+
 def _process_enum(
-    cls: EnumMeta, name: Optional[str] = None, description: Optional[str] = None
-) -> EnumMeta:
+    cls: EnumType, name: Optional[str] = None, description: Optional[str] = None
+) -> EnumType:
     if not isinstance(cls, EnumMeta):
         raise ObjectIsNotAnEnumError(cls)
 
@@ -57,16 +60,28 @@ def _process_enum(
     return cls
 
 
+@overload
+def enum(_cls: EnumType, *, name=None, description=None) -> EnumType:
+    ...
+
+
+@overload
 def enum(
-    _cls: EnumMeta = None, *, name=None, description=None
-) -> Union[EnumMeta, Callable[[EnumMeta], EnumMeta]]:
+    _cls: None = None, *, name=None, description=None
+) -> Callable[[EnumType], EnumType]:
+    ...
+
+
+def enum(
+    _cls: Optional[EnumType] = None, *, name=None, description=None
+) -> Union[EnumType, Callable[[EnumType], EnumType]]:
     """Registers the enum in the GraphQL type system.
 
     If name is passed, the name of the GraphQL type will be
     the value passed of name instead of the Enum class name.
     """
 
-    def wrap(cls: EnumMeta) -> EnumMeta:
+    def wrap(cls: EnumType) -> EnumType:
         return _process_enum(cls, name, description)
 
     if not _cls:

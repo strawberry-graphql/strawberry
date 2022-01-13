@@ -332,7 +332,7 @@ def test_basic_type_with_union():
     class BranchBType:
         pass
 
-    @strawberry.experimental.pydantic.type(User, fields=["age", "union_field"])
+    @strawberry.experimental.pydantic.type(User, fields=["union_field"])
     class UserType:
         pass
 
@@ -370,7 +370,7 @@ def test_basic_type_with_union_pydantic_types():
     class BranchBType:
         pass
 
-    @strawberry.experimental.pydantic.type(User, fields=["age", "union_field"])
+    @strawberry.experimental.pydantic.type(User, fields=["union_field"])
     class UserType:
         pass
 
@@ -446,7 +446,7 @@ def test_basic_type_with_interface():
     class BranchBType(BaseType):
         pass
 
-    @strawberry.experimental.pydantic.type(User, fields=["age", "interface_field"])
+    @strawberry.experimental.pydantic.type(User, fields=["interface_field"])
     class UserType:
         pass
 

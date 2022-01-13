@@ -1,9 +1,19 @@
 import dataclasses
-from asyncio import create_task, get_event_loop
+from asyncio import create_task, gather, get_event_loop
 from asyncio.events import AbstractEventLoop
 from asyncio.futures import Future
 from dataclasses import dataclass
-from typing import Any, Awaitable, Callable, Dict, Generic, List, Optional, TypeVar
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    Generic,
+    Iterable,
+    List,
+    Optional,
+    TypeVar,
+)
 
 from .exceptions import WrongNumberOfResultsReturned
 
@@ -77,6 +87,9 @@ class DataLoader(Generic[K, T]):
         batch.add_task(key, future)
 
         return future
+
+    def load_many(self, keys: Iterable[K]) -> Awaitable[List[T]]:
+        return gather(*map(self.load, keys))
 
 
 def should_create_new_batch(loader: DataLoader, batch: Batch) -> bool:

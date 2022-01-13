@@ -725,7 +725,7 @@ class User:
         description="""
         The age of the user.
         """
-    )
+    )    
 
 
 @strawberry.type
@@ -797,7 +797,6 @@ class Query:
                 end_cursor=end_cursor,
             )
         )
-
 
 schema = strawberry.Schema(query=Query)
 ```
