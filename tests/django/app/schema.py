@@ -35,6 +35,11 @@ class Mutation:
             contents.append(file.read().decode())
         return contents
 
+    @strawberry.mutation
+    def match_text(self, text_file: Upload, pattern: str) -> str:
+        text = text_file.read().decode()
+        return pattern if pattern in text else ""
+
 
 @strawberry.type
 class Query:

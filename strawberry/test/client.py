@@ -129,6 +129,10 @@ class BaseGraphQLTestClient(ABC):
             reference = key
             variable_values = values
 
+            # don't inlcude in the file map other variables
+            if key not in files.keys():
+                continue
+
             # In case of folders the variables will look like
             # `{"folder": {"files": ...]}}`
             if isinstance(values, dict):

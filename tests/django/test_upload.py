@@ -69,3 +69,18 @@ def test_upload_single_and_list_file_together(graphql_client):
     assert response.data["readFiles"][0] == "strawberry1"
     assert response.data["readFiles"][1] == "strawberry2"
     assert response.data["readText"] == "strawberry3"
+
+
+def test_mixed_files_and_variables(graphql_client):
+    f = SimpleUploadedFile("file.txt", b"strawberry is great!")
+    query = """mutation($textFile: Upload!, $pattern: String!) {
+        matchText(textFile: $textFile, pattern: $pattern)
+    }"""
+
+    response = graphql_client.query(
+        query=query,
+        variables={"textFile": None, "pattern": "strawberry"},
+        files={"textFile": f},
+    )
+
+    assert response.data["matchText"] == "strawberry"
