@@ -12,7 +12,7 @@ from starlette.websockets import WebSocket
 
 from fastapi import APIRouter, Depends
 from strawberry.asgi.utils import get_graphiql_html
-from strawberry.exceptions import MissingQueryError
+from strawberry.exceptions import InvalidCustomContext, MissingQueryError
 from strawberry.fastapi.handlers import GraphQLTransportWSHandler, GraphQLWSHandler
 from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import GraphQLHTTPResponse, parse_request_data, process_result
@@ -29,6 +29,12 @@ class BaseContext:
         self.response: Optional[Response] = None
 
 
+CustomContext = Union[BaseContext, Dict[str, Any]]
+MergedContext = Union[
+    BaseContext, Dict[str, Union[Any, BackgroundTasks, Request, Response, WebSocket]]
+]
+
+
 class GraphQLRouter(APIRouter):
     graphql_ws_handler_class = GraphQLWSHandler
     graphql_transport_ws_handler_class = GraphQLTransportWSHandler
@@ -39,17 +45,15 @@ class GraphQLRouter(APIRouter):
 
     @staticmethod
     def __get_context_getter(
-        custom_getter: Callable[..., Optional[Union[BaseContext, Dict[str, Any]]]]
-    ) -> Callable[..., Union[BaseContext, Dict[str, Any]]]:
+        custom_getter: Callable[..., Optional[CustomContext]]
+    ) -> Callable[..., CustomContext]:
         def dependency(
-            custom_getter: Optional[Union[BaseContext, Dict[str, Any]]],
+            custom_getter: Optional[CustomContext],
             background_tasks: BackgroundTasks,
             request: Request = None,
             response: Response = None,
             ws: WebSocket = None,
-        ) -> Union[
-            BaseContext, Dict[str, Union[Any, BackgroundTasks, Request, WebSocket]]
-        ]:
+        ) -> MergedContext:
             default_dict = {
                 "request": request or ws,
                 "background_tasks": background_tasks,
@@ -68,10 +72,7 @@ class GraphQLRouter(APIRouter):
             elif custom_getter is None:
                 return default_dict
             else:
-                raise TypeError(
-                    "The custom context dependency must be either a "
-                    "class that inherits from BaseContext or a dictionary"
-                )
+                raise InvalidCustomContext()
 
         # replace the signature parameters of dependency...
         # ...with the old parameters minus the first argument as it will be replaced...

@@ -1,9 +1,12 @@
 from typing import Dict
 
+import pytest
+
 from starlette.testclient import TestClient
 
 import strawberry
 from fastapi import Depends, FastAPI
+from strawberry.exceptions import InvalidCustomContext
 from strawberry.fastapi import BaseContext, GraphQLRouter
 from strawberry.types import Info
 
@@ -115,12 +118,9 @@ def test_with_invalid_context_getter():
     app.include_router(graphql_app, prefix="/graphql")
 
     test_client = TestClient(app)
-    try:
-        response = test_client.post("/graphql", json={"query": "{ abc }"})
-    except TypeError as e:
-        assert (
-            str(e) == "The custom context dependency must be either a "
-            "class that inherits from BaseContext or a dictionary"
-        )
-        response = "Task failed successfully"
-    assert response == "Task failed successfully"
+    with pytest.raises(
+        InvalidCustomContext,
+        match="The custom context must be either a class\
+            that inherits from BaseContext or a dictionary",
+    ):
+        test_client.post("/graphql", json={"query": "{ abc }"})
