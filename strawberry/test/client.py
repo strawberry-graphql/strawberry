@@ -129,10 +129,6 @@ class BaseGraphQLTestClient(ABC):
             reference = key
             variable_values = values
 
-            # don't inlcude in the file map other variables
-            if key not in files.keys():
-                continue
-
             # In case of folders the variables will look like
             # `{"folder": {"files": ...]}}`
             if isinstance(values, dict):
@@ -153,7 +149,10 @@ class BaseGraphQLTestClient(ABC):
             else:
                 map[key] = [f"variables.{reference}"]
 
-        return map
+        # remove the other variables that are not files, we can't remove them before
+        # because they can be part of a list of files or folder
+        map_without_vars = {k: v for k, v in map.items() if k in files.keys()}
+        return map_without_vars
 
     def _decode(self, response, type: Literal["multipart", "json"]):
         if type == "multipart":
