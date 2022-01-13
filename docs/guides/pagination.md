@@ -69,19 +69,18 @@ To get the next page in the dataset, we can send another request, incrementing t
 }
 ```
 
-
 -> **Note** Offset based pagination has a few limitations:
 -> - It is not suitable for large datasets, because we need access to offset + limit number of items from the dataset, before discarding the offset
-->   and only returning the counted values.
+-> and only returning the counted values.
 -> - It doesn't work well in environments where records are frequently updated, the page window becomes inconsistent and unreliable. This often
-->   results in duplicate results and potentially skipping values.
+-> results in duplicate results and potentially skipping values.
 ->
 -> However, it provides a quick and easy way to get started, and works well with small-medium datasets. When your dataset scales, you will
 -> need a reliable and consistent way to handle pagination.
 
 ### Cursor based pagination
 
-Cursor-based pagination, also known as keyset pagination, works by returning a pointer to a specific item in the dataset. On subsequent requests, 
+Cursor-based pagination, also known as keyset pagination, works by returning a pointer to a specific item in the dataset. On subsequent requests,
 the server returns results after the given pointer. This method addresses the drawbacks of using offset pagination, but does so by making certain trade offs:
 
 - The cursor must be based on a unique, sequential identifier in the given source.
@@ -138,8 +137,8 @@ This is an example for forward pagination - pagination can be done backwards too
 
 Now that we know a few of the common ways to implement pagination, let us look at how we can implement them in GraphQL.
 
--> **Note** The GraphQL specification [recommends cursor-based pagination](https://graphql.org/learn/pagination/) and 
--> refers to [Relay's Connection specification](https://relay.dev/graphql/connections.htm) for specific implementation details. 
+-> **Note** The GraphQL specification [recommends cursor-based pagination](https://graphql.org/learn/pagination/) and
+-> refers to [Relay's Connection specification](https://relay.dev/graphql/connections.htm) for specific implementation details.
 -> We'll learn more about that later in this guide!
 
 Let us start by implementing offset-based pagination first. We should be able to return a list of users which can be paginated by the client.
@@ -519,7 +518,7 @@ query {
 
 ## Working with Relay Connections
 
-The GraphQL specification [recommends cursor-based pagination](https://graphql.org/learn/pagination/) and refers 
+The GraphQL specification [recommends cursor-based pagination](https://graphql.org/learn/pagination/) and refers
 to [Relay's Connection specification](https://relay.dev/graphql/connections.htm) for specific implementation details.
 
 ### Connections
@@ -592,9 +591,11 @@ class PageInfo:
     )
 
 ```
+
 You can read more about the `PageInfo` type at:
-  - https://graphql.org/learn/pagination/#pagination-and-edges
-  - https://relay.dev/graphql/connections.htm
+
+- https://graphql.org/learn/pagination/#pagination-and-edges
+- https://relay.dev/graphql/connections.htm
 
 The `edges` field must return a list type that wraps an edge type.
 
@@ -622,7 +623,7 @@ class Edge(Generic[GenericType]):
 
 ```
 
-EdgeTypes must have atleast two fields - `cursor` and `node`. The field names are self-explanatory. 
+EdgeTypes must have atleast two fields - `cursor` and `node`. The field names are self-explanatory.
 Each edge has it's own cursor and item (represented by the `node` field).
 
 Now that we have the types needed to implement pagination using Relay Connections, let
@@ -725,7 +726,7 @@ class User:
         description="""
         The age of the user.
         """
-    )    
+    )
 
 
 @strawberry.type
@@ -766,7 +767,7 @@ class Query:
         # build user edges.
         edges = [
           Edge(
-            node=cast(UserType, user), 
+            node=cast(UserType, user),
             cursor=encode_user_cursor(id=user.id),
           )
           for user in sliced_users
@@ -826,6 +827,6 @@ Here's an example query to try out:
       }
       cursor
     }
-  }  
+  }
 }
 ```
