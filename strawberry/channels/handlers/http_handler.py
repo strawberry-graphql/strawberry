@@ -4,14 +4,23 @@ A consumer to provide a graphql endpoint, and optionally graphiql.
 """
 import json
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 from cached_property import cached_property
 
+from django.http import HttpRequest, HttpResponse
+
 from channels.generic.http import AsyncHttpConsumer
+from strawberry.channels.context import StrawberryChannelsContext
 from strawberry.exceptions import MissingQueryError
-from strawberry.http import GraphQLRequestData, parse_request_data
+from strawberry.http import (
+    GraphQLHTTPResponse,
+    GraphQLRequestData,
+    parse_request_data,
+    process_result,
+)
 from strawberry.schema import BaseSchema
+from strawberry.types import ExecutionResult
 
 
 class GraphQLHTTPConsumer(AsyncHttpConsumer):
@@ -36,16 +45,10 @@ class GraphQLHTTPConsumer(AsyncHttpConsumer):
     def __init__(
         self,
         schema: BaseSchema,
-        graphiql: bool,
-        get_context,
-        get_root_value,
-        process_result,
+        graphiql: bool = True,
     ):
         self.schema = schema
         self.graphiql = graphiql
-        self.process_result = process_result
-        self.get_context = get_context
-        self.get_root_value = get_root_value
         super().__init__()
 
     async def parse_multipart_body(self, body):
@@ -104,18 +107,21 @@ class GraphQLHTTPConsumer(AsyncHttpConsumer):
         html_string = self.graphiql_html_file_path.read_text()
         html_string = html_string.replace("{{ SUBSCRIPTION_ENABLED }}", "true")
         await self.send_response(
-            200, html_string, headers=[(b"Content-Type", b"text/html")]
+            200, html_string.encode("utf-8"), headers=[(b"Content-Type", b"text/html")]
         )
 
     def get_header(self, header_name, default=None):
-        return dict(self.scope["headers"]).get(header_name.lower(), default)
+        return (
+            dict(self.scope["headers"])
+            .get(header_name.lower().encode("utf-8"), default)
+            .decode("utf-8")
+        )
 
     def should_render_graphiql(self):
-        if not self.graphiql or "text/html" not in self.get_header("Accept", ""):
-            return False
-        return True
+        return bool(self.graphiql and "text/html" in self.get_header("Accept", ""))
 
     async def get(self, body):
+
         if self.should_render_graphiql():
             return await self.render_graphiql(body)
 
@@ -127,3 +133,14 @@ class GraphQLHTTPConsumer(AsyncHttpConsumer):
         await self.send_response(
             405, b"Method not allowed", headers=[b"Allow", b"GET, POST"]
         )
+
+    async def get_root_value(self, request: HttpRequest) -> Any:
+        return None
+
+    async def get_context(self, request: HttpRequest, response: HttpResponse) -> Any:
+        return StrawberryChannelsContext(request=request, response=response)
+
+    async def process_result(
+        self, request: HttpRequest, result: ExecutionResult
+    ) -> GraphQLHTTPResponse:
+        return process_result(result)
