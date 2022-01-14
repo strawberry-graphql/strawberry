@@ -4,35 +4,38 @@ title: Channels
 
 # Channels
 
-Strawberry provides support for [Channels](https://channels.readthedocs.io/) with
-[Consumers](https://channels.readthedocs.io/en/stable/topics/consumers.html) to provide
-GraphQL support over WebSockets and HTTP.
+Strawberry provides support for [Channels](https://channels.readthedocs.io/)
+with
+[Consumers](https://channels.readthedocs.io/en/stable/topics/consumers.html) to
+provide GraphQL support over WebSockets and HTTP.
 
-While Channels does require Django to be installed as a dependency, you can actually
-run this integration without using Django's request handler. However the most common
-use case will be to run a normal Django project with GraphQL subscriptions support,
-typically taking advantage of the Channel Layers functionality which is exposed through
-the Strawberry integration.
+While Channels does require Django to be installed as a dependency, you can
+actually run this integration without using Django's request handler. However
+the most common use case will be to run a normal Django project with GraphQL
+subscriptions support, typically taking advantage of the Channel Layers
+functionality which is exposed through the Strawberry integration.
 
 ## Getting Started
 
-Before using Strawberry's Channels support, make sure you install all the required
-dependencies by running:
+Before using Strawberry's Channels support, make sure you install all the
+required dependencies by running:
 
 ```
 pip install 'strawberry-graphql[channels]'
 ```
 
-The example below assumes you've already got a working Django project, having followed the
+The example below assumes you've already got a working Django project, having
+followed the
 [installation instructions](https://channels.readthedocs.io/en/stable/installation.html)
-for Channels, and while not absolutely required, you probably want to also have set up
-Django integration for Strawberry by following the [documentation here](/docs/integrations/django).
+for Channels, and while not absolutely required, you probably want to also have
+set up Django integration for Strawberry by following the
+[documentation here](../integrations/django.md).
 
-The easiest way to use Channels with Strawberry is to use the GraphQLProtocolTypeRouter,
-which will wrap your Django application, and route HTTP and websockets for /graphql to
-Strawberry, while sending all other requests to Django.
-You'll need to modify the `myproject.asgi.py` file from the Channels instructions to look
-something like this:
+The easiest way to use Channels with Strawberry is to use the
+GraphQLProtocolTypeRouter, which will wrap your Django application, and route
+HTTP and websockets for /graphql to Strawberry, while sending all other requests
+to Django. You'll need to modify the `myproject.asgi.py` file from the Channels
+instructions to look something like this:
 
 ```python
 import os
@@ -54,13 +57,15 @@ from mysite.graphql import schema
 application = GraphQLProtocolTypeRouter(schema, django_application=django_asgi_app)
 ```
 
-The above code is not very flexible, taking away some of the useful capabilities of
-Channels. For more complex deployments, you'll most likely want to read on further...
+The above code is not very flexible, taking away some of the useful capabilities
+of Channels. For more complex deployments, you'll most likely want to read on
+further...
 
 ## Custom ProtocolTypeRouter
 
-A more complex use case is when you want to integrate several ASGI applications on
-different URLs and protocols, like what is described in the [Channels documentation](https://channels.readthedocs.io/en/stable/topics/protocols.html).
+A more complex use case is when you want to integrate several ASGI applications
+on different URLs and protocols, like what is described in the
+[Channels documentation](https://channels.readthedocs.io/en/stable/topics/protocols.html).
 
 An example of this would be:
 
@@ -97,26 +102,28 @@ application = ProtocolTypeRouter({
 })
 ```
 
-This example demonstrates some ways that Channels can be set up to handle routing.
-A very common scenario will be that you want user and session information inside the
-GraphQL context, which the AuthMiddlewareStack wrapper above will provide.
-It might be apparent by now, there's no reason at all why you couldn't run a Channels
-server without any Django ASGI application at all.
-However, take care to ensure you run django.setup() instead of get_asgi_application(),
-if you need any Django ORM or other Django features in Strawberry.
+This example demonstrates some ways that Channels can be set up to handle
+routing. A very common scenario will be that you want user and session
+information inside the GraphQL context, which the AuthMiddlewareStack wrapper
+above will provide. It might be apparent by now, there's no reason at all why
+you couldn't run a Channels server without any Django ASGI application at all.
+However, take care to ensure you run django.setup() instead of
+get_asgi_application(), if you need any Django ORM or other Django features in
+Strawberry.
 
 ## Channel Layers
 
-The Context for Channels integration includes the consumer, which has an instance of the
-channel layer and the consumer's channel name. Here's an example of how this can be used
-in the schema to provide subscriptions to events generated by background tasks or the
-web server, even if these are executed in other threads, processes, or even other
-servers if you are using a Layer backend like Redis or RabbitMQ.
+The Context for Channels integration includes the consumer, which has an
+instance of the channel layer and the consumer's channel name. Here's an example
+of how this can be used in the schema to provide subscriptions to events
+generated by background tasks or the web server, even if these are executed in
+other threads, processes, or even other servers if you are using a Layer backend
+like Redis or RabbitMQ.
 
 To set this up, you'll need to make sure Channel Layers is configured as per the
 [documentation](https://channels.readthedocs.io/en/stable/topics/channel_layers.html).
-Then you'll want to add a subscription that accesses the channel layer and joins one
-or more broadcast groups:
+Then you'll want to add a subscription that accesses the channel layer and joins
+one or more broadcast groups:
 
 ```python
 
@@ -151,4 +158,6 @@ class Subscription:
 
 Look here for some much more complete examples:
 
-1. The [Strawberry Examples repo](https://github.com/strawberry-graphql/examples) contains a basic example app demonstrating subscriptions with Channels.
+1. The
+   [Strawberry Examples repo](https://github.com/strawberry-graphql/examples)
+   contains a basic example app demonstrating subscriptions with Channels.
