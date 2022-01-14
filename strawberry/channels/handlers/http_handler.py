@@ -3,9 +3,10 @@
 A consumer to provide a graphql endpoint, and optionally graphiql.
 """
 import json
-from functools import cached_property
 from pathlib import Path
 from typing import Optional
+
+from cached_property import cached_property
 
 from channels.generic.http import AsyncHttpConsumer
 from strawberry.exceptions import MissingQueryError
