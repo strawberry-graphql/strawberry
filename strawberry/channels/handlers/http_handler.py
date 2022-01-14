@@ -8,10 +8,7 @@ from typing import Any, Optional
 
 from cached_property import cached_property
 
-from django.http import HttpRequest, HttpResponse
-
 from channels.generic.http import AsyncHttpConsumer
-from strawberry.channels.context import StrawberryChannelsContext
 from strawberry.exceptions import MissingQueryError
 from strawberry.http import (
     GraphQLHTTPResponse,
@@ -51,17 +48,19 @@ class GraphQLHTTPConsumer(AsyncHttpConsumer):
         self.graphiql = graphiql
         super().__init__()
 
+    @cached_property
+    def headers(self):
+        return {
+            header_name.decode("utf-8").lower(): header_value.decode("utf-8")
+            for header_name, header_value in self.scope["headers"]
+        }
+
     async def parse_multipart_body(self, body):
         await self.send_response(500, "Unable to parse the multipart body")
         return None
 
     async def get_request_data(self, body) -> Optional[GraphQLRequestData]:
-        if (
-            self.scope["headers"]
-            .get(b"content-type", b"")
-            .decode("utf-8")
-            .startswith("multipart/form-data")
-        ):
+        if self.headers.get("content-type", "").startswith("multipart/form-data"):
             data = await self.parse_multipart_body(body)
             if data is None:
                 return None
@@ -95,7 +94,7 @@ class GraphQLHTTPConsumer(AsyncHttpConsumer):
         response_data = await self.process_result(result)
         await self.send_response(
             200,
-            json.dumps(response_data),
+            json.dumps(response_data).encode("utf-8"),
             headers=[(b"Content-Type", b"application/json")],
         )
 
@@ -110,15 +109,8 @@ class GraphQLHTTPConsumer(AsyncHttpConsumer):
             200, html_string.encode("utf-8"), headers=[(b"Content-Type", b"text/html")]
         )
 
-    def get_header(self, header_name, default=None):
-        return (
-            dict(self.scope["headers"])
-            .get(header_name.lower().encode("utf-8"), default)
-            .decode("utf-8")
-        )
-
     def should_render_graphiql(self):
-        return bool(self.graphiql and "text/html" in self.get_header("Accept", ""))
+        return bool(self.graphiql and "text/html" in self.headers.get("accept", ""))
 
     async def get(self, body):
 
@@ -134,13 +126,12 @@ class GraphQLHTTPConsumer(AsyncHttpConsumer):
             405, b"Method not allowed", headers=[b"Allow", b"GET, POST"]
         )
 
-    async def get_root_value(self, request: HttpRequest) -> Any:
+    async def get_root_value(self) -> Any:
         return None
 
-    async def get_context(self, request: HttpRequest, response: HttpResponse) -> Any:
-        return StrawberryChannelsContext(request=request, response=response)
+    async def get_context(self) -> Any:
+        # TODO: Add context
+        return None
 
-    async def process_result(
-        self, request: HttpRequest, result: ExecutionResult
-    ) -> GraphQLHTTPResponse:
+    async def process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse:
         return process_result(result)
