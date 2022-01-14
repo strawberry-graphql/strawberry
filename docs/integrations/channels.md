@@ -96,7 +96,7 @@ application = ProtocolTypeRouter({
         re_path("^", third_party_asgi_app),
     ]),
     "websocket": URLRouter([
-        re_path("^grapqhl", AuthMiddlewareStack(GraphQLWSConsumer.as_asgi(schema=schema))),
+        re_path("^graphql", AuthMiddlewareStack(GraphQLWSConsumer.as_asgi(schema=schema))),
         re_path("^chat", ChatApp.as_asgi()),
     ]),
 })
@@ -107,8 +107,8 @@ routing. A very common scenario will be that you want user and session
 information inside the GraphQL context, which the AuthMiddlewareStack wrapper
 above will provide. It might be apparent by now, there's no reason at all why
 you couldn't run a Channels server without any Django ASGI application at all.
-However, take care to ensure you run django.setup() instead of
-get_asgi_application(), if you need any Django ORM or other Django features in
+However, take care to ensure you run `django.setup()` instead of
+`get_asgi_application()`, if you need any Django ORM or other Django features in
 Strawberry.
 
 ## Channel Layers
