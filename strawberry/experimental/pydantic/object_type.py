@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import builtins
 import dataclasses
 import warnings
@@ -7,9 +9,9 @@ from typing import (
     Any,
     Callable,
     Dict,
-    Generic,
     List,
     Optional,
+    Protocol,
     Sequence,
     Type,
     TypeVar,
@@ -88,9 +90,9 @@ def get_type_for_field(field: ModelField):
 if TYPE_CHECKING:
     PydanticModel = TypeVar("PydanticModel", bound=BaseModel)
 
-    class StrawberryTypeFromPydantic(Generic[PydanticModel]):
+    class StrawberryTypeFromPydantic(Protocol[PydanticModel]):
         """This class does not exist in runtime.
-        Its only makes the below methods visible for IDEs"""
+        It only makes the methods below visible for IDEs"""
 
         def __init__(self, **kwargs):
             ...
@@ -114,7 +116,7 @@ if TYPE_CHECKING:
 
 
 def type(
-    model: "Type[PydanticModel]",
+    model: Type[PydanticModel],
     *,
     fields: Optional[List[str]] = None,
     name: Optional[str] = None,
@@ -123,8 +125,8 @@ def type(
     description: Optional[str] = None,
     directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
     all_fields: bool = False,
-) -> "Callable[..., Type[StrawberryTypeFromPydantic[PydanticModel]]]":
-    def wrap(cls: Any) -> "Type[StrawberryTypeFromPydantic[PydanticModel]]":
+) -> Callable[..., Type[StrawberryTypeFromPydantic[PydanticModel]]]:
+    def wrap(cls: Any) -> Type[StrawberryTypeFromPydantic[PydanticModel]]:
         model_fields = model.__fields__
         fields_set = set(fields) if fields else set([])
 
