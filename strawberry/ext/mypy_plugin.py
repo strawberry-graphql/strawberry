@@ -303,7 +303,7 @@ def add_static_method_to_class(
     func.is_static = True
     func.info = info
     func.type = set_callable_name(signature, func)
-    func._fullname = info.fullname + "." + name
+    func._fullname = f"{info.fullname}.{name}"
     func.line = info.line
 
     # NOTE: we would like the plugin generated node to dominate, but we still
@@ -349,7 +349,6 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
         )
 
         # Add from_pydantic
-
         model_argument = Argument(
             variable=Var(name="instance", type=model_type),
             type_annotation=model_type,
