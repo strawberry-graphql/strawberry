@@ -32,10 +32,10 @@ def test_pyright():
 
     assert results == [
         Result(
-            type="info",
+            type="information",
             message='Type of "UserOrError" is "Type[User] | Type[Error]"',
             line=16,
             column=13,
         ),
-        Result(type="info", message='Type of "x" is "User"', line=20, column=13),
+        Result(type="information", message='Type of "x" is "User"', line=20, column=13),
     ]
