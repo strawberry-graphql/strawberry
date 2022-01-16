@@ -25,13 +25,13 @@ def test_enum_with_decorator():
 
     assert results == [
         Result(
-            type="info",
+            type="information",
             message='Type of "IceCreamFlavour" is "Type[IceCreamFlavour]"',
             line=12,
             column=13,
         ),
         Result(
-            type="info",
+            type="information",
             message=(
                 'Type of "IceCreamFlavour.VANILLA" is '
                 '"Literal[IceCreamFlavour.VANILLA]"'
@@ -63,13 +63,13 @@ def test_enum_with_decorator_and_name():
 
     assert results == [
         Result(
-            type="info",
+            type="information",
             message='Type of "Flavour" is "Type[Flavour]"',
             line=12,
             column=13,
         ),
         Result(
-            type="info",
+            type="information",
             message='Type of "Flavour.VANILLA" is "Literal[Flavour.VANILLA]"',
             line=13,
             column=13,
@@ -97,7 +97,7 @@ def test_enum_with_manual_decorator():
 
     assert results == [
         Result(
-            type="info",
+            type="information",
             message=(
                 'Type of "strawberry.enum(IceCreamFlavour)" '
                 'is "Type[IceCreamFlavour]"'
@@ -106,7 +106,7 @@ def test_enum_with_manual_decorator():
             column=13,
         ),
         Result(
-            type="info",
+            type="information",
             message=(
                 'Type of "strawberry.enum(IceCreamFlavour).VANILLA" '
                 'is "Literal[IceCreamFlavour.VANILLA]"'
@@ -137,7 +137,7 @@ def test_enum_with_manual_decorator_and_name():
 
     assert results == [
         Result(
-            type="info",
+            type="information",
             message=(
                 'Type of "strawberry.enum(name="IceCreamFlavour")(Flavour)" '
                 'is "Type[Flavour]"'
@@ -146,7 +146,7 @@ def test_enum_with_manual_decorator_and_name():
             column=13,
         ),
         Result(
-            type="info",
+            type="information",
             message=(
                 'Type of "strawberry.enum(name="IceCreamFlavour")(Flavour).VANILLA" '
                 'is "Literal[Flavour.VANILLA]"'

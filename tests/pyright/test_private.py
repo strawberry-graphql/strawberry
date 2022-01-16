@@ -42,9 +42,15 @@ def test_pyright():
             column=1,
         ),
         Result(
-            type="info", message='Type of "patrick.name" is "str"', line=14, column=13
+            type="information",
+            message='Type of "patrick.name" is "str"',
+            line=14,
+            column=13,
         ),
         Result(
-            type="info", message='Type of "patrick.age" is "int"', line=15, column=13
+            type="information",
+            message='Type of "patrick.age" is "int"',
+            line=15,
+            column=13,
         ),
     ]
