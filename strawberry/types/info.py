@@ -2,7 +2,7 @@ import dataclasses
 import warnings
 from typing import TYPE_CHECKING, Any, Dict, Generic, List, Optional, TypeVar, Union
 
-from cached_property import cached_property
+from backports.cached_property import backports.cached_property
 
 from graphql import GraphQLResolveInfo, OperationDefinitionNode
 from graphql.language import FieldNode
@@ -43,7 +43,7 @@ class Info(Generic[ContextType, RootValueType]):
         )
         return self._raw_info.field_nodes
 
-    @cached_property
+    @backports.cached_property
     def selected_fields(self) -> List[Selection]:
         info = self._raw_info
         return convert_selections(info, info.field_nodes)
