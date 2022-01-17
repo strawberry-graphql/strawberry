@@ -11,7 +11,6 @@ from typing import (
     Dict,
     List,
     Optional,
-    Protocol,
     Sequence,
     Type,
     TypeVar,
@@ -20,7 +19,7 @@ from typing import (
 
 from pydantic import BaseModel
 from pydantic.fields import ModelField
-from typing_extensions import Literal
+from typing_extensions import Literal, Protocol
 
 from graphql import GraphQLResolveInfo
 
