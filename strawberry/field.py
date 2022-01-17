@@ -18,10 +18,15 @@ from typing import (
     overload,
 )
 
+
 <<<<<<< HEAD
-from backports.cached_property import cached_property # type: ignore
+from backports.cached_property import cached_property  # type: ignore
+
+
 =======
 from backports.cached_property import backports.cached_property  # type: ignore
+
+
 >>>>>>> 8ad28f3124202ec45729fae36d41355469b315ba
 from typing_extensions import Literal
 
