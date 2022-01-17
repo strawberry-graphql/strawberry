@@ -18,7 +18,7 @@ from typing import (
     overload,
 )
 
-from backports.cached_property import backports.cached_property # type: ignore
+from backports.cached_property import backports.cached_property  # type: ignore
 from typing_extensions import Literal
 
 from strawberry.annotation import StrawberryAnnotation
