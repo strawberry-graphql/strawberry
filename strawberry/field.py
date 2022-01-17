@@ -19,7 +19,6 @@ from typing import (
 )
 
 from backports.cached_property import cached_property
-
 from typing_extensions import Literal
 
 from strawberry.annotation import StrawberryAnnotation
