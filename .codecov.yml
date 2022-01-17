@@ -19,3 +19,4 @@ comment:
 
 ignore:
   - "strawberry/ext/mypy_plugin.py"
+  - "setup.py"
