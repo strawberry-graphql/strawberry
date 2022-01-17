@@ -1,3 +1,4 @@
+import warnings
 from http import HTTPStatus
 
 from chalice.app import BadRequestError, CaseInsensitiveMapping, Request, Response
@@ -8,9 +9,19 @@ from strawberry.types import ExecutionResult
 
 
 class GraphQLView:
-    def __init__(self, schema: BaseSchema, render_graphiql: bool = True):
+    def __init__(
+        self, schema: BaseSchema, graphiql: bool = True, render_graphiql: bool = True
+    ):
         self._schema = schema
-        self.graphiql = render_graphiql
+        self.graphiql = graphiql
+
+        if render_graphiql:
+            warnings.warn(
+                "`render_graphiql` is deprecated and it will stop working in releases "
+                "of strawberry made after 2022-02-17. Use `graphiql` instead",
+                DeprecationWarning,
+            )
+            self.graphiql = render_graphiql
 
     @staticmethod
     def render_graphiql() -> str:
