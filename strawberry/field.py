@@ -18,7 +18,7 @@ from typing import (
     overload,
 )
 
-from backports.cached_property import backports.cached_property # type: ignore
+from backports.cached_property import cached_property # type: ignore
 from typing_extensions import Literal
 
 from strawberry.annotation import StrawberryAnnotation
@@ -297,7 +297,7 @@ class StrawberryField(dataclasses.Field):
     def _has_async_base_resolver(self) -> bool:
         return self.base_resolver is not None and self.base_resolver.is_async
 
-    @backports.cached_property
+    @cached_property
     def is_async(self) -> bool:
         return self._has_async_permission_classes or self._has_async_base_resolver
 

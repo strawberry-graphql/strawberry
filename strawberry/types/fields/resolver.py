@@ -6,7 +6,7 @@ import sys
 from inspect import isasyncgenfunction, iscoroutinefunction
 from typing import Callable, Dict, Generic, List, Mapping, Optional, TypeVar, Union
 
-from backports.cached_property import backports.cached_property  # type: ignore
+from backports.cached_property import cached_property  # type: ignore
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import StrawberryArgument
@@ -43,7 +43,7 @@ class StrawberryResolver(Generic[T]):
             raise UncallableResolverError(self)
         return self.wrapped_func(*args, **kwargs)
 
-    @backports.cached_property
+    @cached_property
     def annotations(self) -> Dict[str, object]:
         """Annotations for the resolver.
 
@@ -59,7 +59,7 @@ class StrawberryResolver(Generic[T]):
 
         return annotations
 
-    @backports.cached_property
+    @cached_property
     def arguments(self) -> List[StrawberryArgument]:
         parameters = inspect.signature(self._unbound_wrapped_func).parameters
         function_arguments = set(parameters) - self._SPECIAL_ARGS
@@ -94,27 +94,27 @@ class StrawberryResolver(Generic[T]):
 
         return strawberry_arguments
 
-    @backports.cached_property
+    @cached_property
     def has_info_arg(self) -> bool:
         args = get_func_args(self._unbound_wrapped_func)
         return "info" in args
 
-    @backports.cached_property
+    @cached_property
     def has_root_arg(self) -> bool:
         args = get_func_args(self._unbound_wrapped_func)
         return "root" in args
 
-    @backports.cached_property
+    @cached_property
     def has_self_arg(self) -> bool:
         args = get_func_args(self._unbound_wrapped_func)
         return args and args[0] == "self"
 
-    @backports.cached_property
+    @cached_property
     def name(self) -> str:
         # TODO: What to do if resolver is a lambda?
         return self._unbound_wrapped_func.__name__
 
-    @backports.cached_property
+    @cached_property
     def type_annotation(self) -> Optional[StrawberryAnnotation]:
         try:
             return_annotation = self.annotations["return"]
@@ -137,7 +137,7 @@ class StrawberryResolver(Generic[T]):
             return None
         return self.type_annotation.resolve()
 
-    @backports.cached_property
+    @cached_property
     def is_async(self) -> bool:
         return iscoroutinefunction(self._unbound_wrapped_func) or isasyncgenfunction(
             self._unbound_wrapped_func
@@ -162,11 +162,11 @@ class StrawberryResolver(Generic[T]):
             type_override=type_override,
         )
 
-    @backports.cached_property
+    @cached_property
     def _module(self) -> str:
         return self._unbound_wrapped_func.__module__
 
-    @backports.cached_property
+    @cached_property
     def _unbound_wrapped_func(self) -> Callable[..., T]:
         if isinstance(self.wrapped_func, (staticmethod, classmethod)):
             return self.wrapped_func.__func__
