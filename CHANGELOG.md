@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.94.0 - 2022-01-18
+-------------------
+
+This release replaces `cached_property` with `backports.cached_property` to improve
+the typing of the library.
+
+Contributed by [Rishi Kumar Ray](https://github.com/RishiKumarRay) [PR #1582](https://github.com/strawberry-graphql/strawberry/pull/1582/)
+
+
 0.93.23 - 2022-01-11
 --------------------
 
