@@ -6,7 +6,7 @@ import sys
 from inspect import isasyncgenfunction, iscoroutinefunction
 from typing import Callable, Dict, Generic, List, Mapping, Optional, TypeVar, Union
 
-from backports.cached_property import cached_property 
+from backports.cached_property import cached_property
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import StrawberryArgument
