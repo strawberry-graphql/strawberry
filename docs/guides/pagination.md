@@ -133,11 +133,6 @@ The next cursor returned by the server can be used to get the next set of users 
 
 This is an example for forward pagination - pagination can be done backwards too!
 
-<Note>
-The cursor used during pagination need not always be a number. It is an
-opaque value that the client may use to page through the result set.
-</Note>
-
 ## Implementing pagination in GraphQL
 
 Now that we know a few of the common ways to implement pagination, let us look at how we can implement them in GraphQL.
