@@ -1,3 +1,3 @@
 ---
-title: Pagination - Working with Relay Connections
+title: Pagination - Working with Connections
 ---
