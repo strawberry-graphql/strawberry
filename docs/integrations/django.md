@@ -249,7 +249,7 @@ tweaked based on your needs.
 Django provides numerous utilities to make common tasks in the web-development world easier.
 It has it's own pagination API that is useful, when it comes to pagination with Strawberry.
 
-<Tip> You can check Django's docs regarding pagination [here](https://docs.djangoproject.com/en/3.2/topics/pagination/). </Tip>
+You can check Django's docs regarding pagination [here](https://docs.djangoproject.com/en/3.2/topics/pagination/).
 
 We've already covered how to do pagination in general. You can check our docs [here](/docs/guides/pagination)!
 
