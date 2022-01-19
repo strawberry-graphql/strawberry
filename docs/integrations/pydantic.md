@@ -264,3 +264,34 @@ input_data = UserInput(id='abc', name='Jake')
 # this will run pydantic's validation
 instance = input_data.to_pydantic()
 ```
+
+### Retaining input information
+
+When using pydantic as a validation layer, it is sometimes important to retain metadata about
+the original input while exporting models.
+With Strawberry, this is possible via the `with_input_metadata` flag on input models.
+
+```python
+import strawberry
+from typing import List, Optional
+from pydantic import BaseModel
+
+
+class User(BaseModel):
+    id: int
+    name: Optional[str]
+
+
+@strawberry.experimental.pydantic.input(model=User, with_input_metadata=True)
+class UserInput:
+    id: strawberry.auto
+    name: strawberry.auto
+
+input_data = UserInput(id='abc')
+
+# this will run pydantic's validation
+instance = input_data.to_pydantic()
+
+# this will export ONLY the data available at Input
+instance.dict(exclude_unset=True)
+```
