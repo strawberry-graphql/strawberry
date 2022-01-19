@@ -9,7 +9,7 @@ Make sure to check our introduction to pagination [here](./overview.md)!
 Let us implement offset based pagination in GraphQL. By the end of this tutorial, we
 should be able to return a list of users which can be paginated by the client.
 
-```query+response
+```graphql+response
 query {
   getUsers(offset: 0, limit: 2) {
     users {
