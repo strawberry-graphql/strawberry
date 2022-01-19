@@ -4,11 +4,9 @@ title: Pagination - Working with Connections
 
 # Working with Connections
 
-<Note>
 The GraphQL specification [recommends cursor-based pagination](https://graphql.org/learn/pagination/) and
 refers to [Relay's Connection specification](https://relay.dev/graphql/connections.htm) for specific implementation details.
-We'll learn more about that later!
-</Note>
+We'll learn about connections in this guide.
 
 ## Connections
 
