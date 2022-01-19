@@ -69,14 +69,17 @@ To get the next page in the dataset, we can send another request, incrementing t
 }
 ```
 
--> **Note** Offset based pagination has a few limitations:
--> - It is not suitable for large datasets, because we need access to offset + limit number of items from the dataset, before discarding the offset
--> and only returning the counted values.
--> - It doesn't work well in environments where records are frequently updated, the page window becomes inconsistent and unreliable. This often
--> results in duplicate results and potentially skipping values.
-->
--> However, it provides a quick and easy way to get started, and works well with small-medium datasets. When your dataset scales, you will
--> need a reliable and consistent way to handle pagination.
+<Note>
+Offset based pagination has a few limitations:
+
+- It is not suitable for large datasets, because we need access to offset + limit number of items from the dataset, before discarding the offset
+  and only returning the counted values.
+- It doesn't work well in environments where records are frequently updated, the page window becomes inconsistent and unreliable. This often
+  results in duplicate results and potentially skipping values.
+
+However, it provides a quick way to get started, and works well with small-medium datasets. When your dataset scales, you will
+need a reliable and consistent way to handle pagination.
+</Note>
 
 ### Cursor based pagination
 
@@ -130,8 +133,10 @@ The next cursor returned by the server can be used to get the next set of users 
 
 This is an example for forward pagination - pagination can be done backwards too!
 
--> **Note** The cursor used during pagination need not always be a number. It is an
--> opaque value that the client may use to page through the result set.
+<Note>
+The cursor used during pagination need not always be a number. It is an
+opaque value that the client may use to page through the result set.
+</Note>
 
 ## Implementing pagination in GraphQL
 
@@ -628,7 +633,7 @@ Each edge has it's own cursor and item (represented by the `node` field).
 
 Now that we have the types needed to implement pagination using Relay Connections, let
 us use them to paginate a list of users. As seen in the previous examples, let our dataset be a
-simple list of dictionaries.
+list of dictionaries.
 
 ```py
 # example.py
