@@ -83,7 +83,7 @@ need a reliable and consistent way to handle pagination.
 
 ### Cursor based pagination
 
-Cursor-based pagination, also known as keyset pagination, works by returning a pointer to a specific item in the dataset. On subsequent requests,
+Cursor based pagination, also known as keyset pagination, works by returning a pointer to a specific item in the dataset. On subsequent requests,
 the server returns results after the given pointer. This method addresses the drawbacks of using offset pagination, but does so by making certain trade offs:
 
 - The cursor must be based on a unique, sequential identifier in the given source.
@@ -135,7 +135,7 @@ This is an example for forward pagination - pagination can be done backwards too
 
 ## Implementing pagination in GraphQL
 
-Now that we know a few of the common ways to implement pagination, let us look at how we can implement them in GraphQL.
+Let us look at how we can implement pagination in GraphQL.
 
 - [Implementing Offset Pagination](./offset-based.md)
 - [Implementing Cursor Pagination](./cursor-based.md)
