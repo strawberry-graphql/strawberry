@@ -220,7 +220,7 @@ bother about the type of data to paginate, and can pass unique IDs during pagina
 
 Let us define a couple of helper functions to encode and decode cursors as follows:
 
-```py line=3,35-55
+```py line=3,35-39
 # example.py
 
 from base64 import b64encode, b64decode
@@ -339,7 +339,7 @@ Let us implement the pagination logic as follows.
 
 Now, let us implement the pagination logic.
 
-```py line=103-139
+```py line=79-105
 # example.py
 
 from base64 import b64encode, b64decode
