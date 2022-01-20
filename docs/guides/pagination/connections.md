@@ -47,7 +47,7 @@ Connections must have atleast two fields - `edges` and `page_info`.
 The `page_info` field contains metadata about the connection.
 Following the Relay specification, we can define a `PageInfo` type like this:
 
-```py line=26-50
+```py line=20-44
 # example.py
 
 from typing import Generic, TypeVar
@@ -111,7 +111,7 @@ The `edges` field must return a list type that wraps an edge type.
 Following the Relay specification, let us define an Edge that takes
 in a generic ObjectType.
 
-```py line=53-65
+```py line=47-59
 # example.py
 
 from typing import Generic, TypeVar
@@ -186,12 +186,39 @@ Each edge has it's own cursor and item (represented by the `node` field).
 Now that we have the types needed to implement pagination using Relay Connections, let
 us use them to paginate a list of users. For simplicity's sake, let our dataset be a list of dictionaries.
 
-```py line=67-92
+```py line=7-32
 # example.py
 
 from typing import Generic, TypeVar
 
 import strawberry
+
+user_data = [
+  {
+    "id": 1,
+    "name": "Norman Osborn",
+    "occupation": "Founder, Oscorp Industries",
+    "age": 42
+  },
+  {
+    "id": 2,
+    "name": "Peter Parker",
+    "occupation": "Freelance Photographer, The Daily Bugle",
+    "age": 16
+  },
+  {
+    "id": 3,
+    "name": "Harold Osborn",
+    "occupation": "President, Oscorp Industries",
+    "age": 19
+  },
+  {
+    "id": 4,
+    "name": "Eddie Brock",
+    "occupation": "Journalist, The Eddie Brock Report",
+    "age": 20
+  }
+]
 
 
 GenericType = TypeVar("GenericType")
@@ -253,6 +280,26 @@ class Edge(Generic[GenericType]):
       """
     )
 
+```
+
+Now is a good time to think of what we could use as a cursor for our dataset. Our cursor needs to be an opaque value,
+which doesn't usually change over time. It makes more sense to use the IDs of the users as our cursor, as it fits both criteria.
+
+<Tip>
+While working with Connections, it is a convention to base64-encode cursors. It provides a unified interface to the
+end user. API clients need not bother about the type of data to paginate, and can pass unique IDs during pagination.
+</Tip>
+
+Let us define a couple of helper functions to encode and decode cursors as follows:
+
+```py line=3,35-39
+# example.py
+
+from base64 import b64encode, b64decode
+from typing import Generic, TypeVar
+
+import strawberry
+
 user_data = [
   {
     "id": 1,
@@ -279,25 +326,6 @@ user_data = [
     "age": 20
   }
 ]
-```
-
-Now is a good time to think of what we could use as a cursor for our dataset. Our cursor needs to be an opaque value,
-which doesn't usually change over time. It makes more sense to use the IDs of the users as our cursor, as it fits both criteria.
-
-<Tip>
-It is good practice to base64-encode cursors, to provide a unified interface to the end user. API clients need not
-bother about the type of data to paginate, and can pass unique IDs during pagination.
-</Tip>
-
-Let us define a couple of helper functions to encode and decode cursors as follows:
-
-```py
-# example.py
-
-from base64 import b64encode, b64decode
-
-# code omitted above for readability.
-
 
 def encode_user_cursor(id: int) -> str:
   """
@@ -320,6 +348,66 @@ def decode_user_cursor(cursor: str) -> int:
   """
   cursor_data = b64decode(cursor.encode("ascii")).decode("ascii")
   return int(cursor_data.split(":")[1])
+
+
+GenericType = TypeVar("GenericType")
+
+
+@strawberry.type
+class Connection(Generic[GenericType]):
+    page_info: "PageInfo" = strawberry.field(
+      description="""
+      Information to aid in pagination.
+      """
+    )
+
+    edges: list["Edge[GenericType]"] = strawberry.field(
+      description="""
+      A list of edges in this connection.
+      """
+    )
+
+
+@strawberry.type
+class PageInfo:
+    has_next_page: bool = strawberry.field(
+      description="""
+      When paginating forwards, are there more items?
+      """
+    )
+
+    has_previous_page: bool = strawberry.field(
+      description="""
+      When paginating backwards, are there more items?
+      """
+    )
+
+    start_cursor: Optional[str] = strawberry.field(
+      description="""
+      When paginating backwards, the cursor to continue.
+      """
+    )
+
+    end_cursor: Optional[str] = strawberry.field(
+      description="""
+      When paginating forwards, the cursor to continue.
+      """
+    )
+
+
+@strawberry.type
+class Edge(Generic[GenericType]):
+    node: GenericType = strawberry.field(
+      description="""
+      The item at the end of the edge.
+      """
+    )
+
+    cursor: str = strawberry.field(
+      description="""
+      A cursor for use in pagination.
+      """
+    )
 
 ```
 
