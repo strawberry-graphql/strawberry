@@ -10,11 +10,13 @@ Let us implement offset based pagination in GraphQL. By the end of this tutorial
 should be able to return a list of users which can be paginated by the client.
 
 ```graphql+response
-query {
+query getUsers {
   getUsers(offset: 0, limit: 2) {
     users {
+      id
       name
       occupation
+      age
     }
     pageMeta {
       total
@@ -123,14 +125,14 @@ class Query:
     def get_users(self) -> UserResponse:
         ...
 
-schema = strawberry.schema(query=Query)
+schema = strawberry.Schema(query=Query)
 
 ```
 
-As you can see above, we have modelled our field's return type to return an object type, rather than a list.
+As you can see above, we have modelled our field to return an object type, rather than a list.
 The return type contains additional metadata that the client can query for, to know more about the paginated list.
 
-Now, let us implement the paging logic. For simplicity's sake, our dataset is going to be an in-memory list.
+For simplicity's sake, our dataset is going to be an in-memory list.
 
 ```py line=7-32
 # example.py
@@ -229,7 +231,7 @@ class Query:
     def get_users(self) -> UserResponse:
         ...
 
-schema = strawberry.schema(query=Query)
+schema = strawberry.Schema(query=Query)
 
 ```
 
@@ -357,7 +359,7 @@ class Query:
             )
         )
 
-schema = strawberry.schema(query=Query)
+schema = strawberry.Schema(query=Query)
 
 ```
 
@@ -370,11 +372,13 @@ strawberry server example:schema
 We should be able to query for users on the GraphiQL explorer. Here's a sample query for you!
 
 ```graphql
-query {
+query getUsers {
   getUsers(offset: 0, limit: 2) {
     users {
+      id
       name
       occupation
+      age
     }
     pageMeta {
       total
