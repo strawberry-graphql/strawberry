@@ -9,7 +9,7 @@ Make sure to check our introduction to pagination [here](./overview.md)!
 Let us implement offset based pagination in GraphQL. By the end of this tutorial, we
 should be able to return a list of users which can be paginated by the client.
 
-```query+response
+```graphql+response
 query {
   getUsers(offset: 0, limit: 2) {
     users {
@@ -132,7 +132,7 @@ The return type contains additional metadata that the client can query for, to k
 
 Now, let us implement the paging logic. For simplicity's sake, our dataset is going to be an in-memory list.
 
-```py line=8-33
+```py line=7-32
 # example.py
 
 from typing import List
@@ -235,8 +235,9 @@ schema = strawberry.schema(query=Query)
 
 We're going to use the dataset we defined in our `get_users` field resolver.
 Our field is going to accept two arguments, `limit` and `offset`, to control pagination.
+Let us implement the pagination logic as follows.
 
-```py line=93-119
+```py line=76-118
 # example.py
 
 from typing import List
