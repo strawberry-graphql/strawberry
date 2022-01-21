@@ -251,7 +251,7 @@ It has it's own pagination API that is useful, when it comes to pagination with 
 
 You can check Django's docs regarding pagination [here](https://docs.djangoproject.com/en/3.2/topics/pagination/).
 
-We've already covered how to do pagination in general. You can check our docs [here](/docs/guides/pagination)!
+We've already covered how to do pagination in general. You can check our docs [here](/docs/guides/pagination/overview.md)!
 
 Let us try to implement the same example we did earlier, with Django's pagination API.
 We want to request a list of users, 2 at a time, from a server.
