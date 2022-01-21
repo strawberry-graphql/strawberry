@@ -47,7 +47,7 @@ Connections must have atleast two fields - `edges` and `page_info`.
 The `page_info` field contains metadata about the connection.
 Following the Relay specification, we can define a `PageInfo` type like this:
 
-```py line=22-44
+```py line=22-43
 # example.py
 
 from typing import Generic, TypeVar
@@ -111,7 +111,7 @@ The `edges` field must return a list type that wraps an edge type.
 Following the Relay specification, let us define an Edge that takes
 in a generic ObjectType.
 
-```py line=39-58
+```py line=41-57
 # example.py
 
 from typing import Generic, TypeVar
@@ -413,7 +413,7 @@ class Edge(Generic[GenericType]):
 
 Let us define a `get_users` field which returns a connection of users, as well as an `UserType`.
 
-```python line=105-196
+```python line=104-195
 # example.py
 
 from base64 import b64encode, b64decode

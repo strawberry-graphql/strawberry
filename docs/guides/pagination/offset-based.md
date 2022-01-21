@@ -134,7 +134,7 @@ The return type contains additional metadata that the client can query for, to k
 
 For simplicity's sake, our dataset is going to be an in-memory list.
 
-```py line=7-32
+```py line=7-31
 # example.py
 
 from typing import List

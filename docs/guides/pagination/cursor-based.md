@@ -339,7 +339,7 @@ Let us implement the pagination logic as follows.
 
 Now, let us implement the pagination logic.
 
-```py line=79-116
+```py line=79-115
 # example.py
 
 from base64 import b64encode, b64decode
