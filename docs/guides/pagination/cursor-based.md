@@ -220,7 +220,7 @@ bother about the type of data to paginate, and can pass unique IDs during pagina
 
 Let us define a couple of helper functions to encode and decode cursors as follows:
 
-```py line=3,35-39
+```py line=3,35-43
 # example.py
 
 from base64 import b64encode, b64decode
@@ -339,7 +339,7 @@ Let us implement the pagination logic as follows.
 
 Now, let us implement the pagination logic.
 
-```py line=79-105
+```py line=79-116
 # example.py
 
 from base64 import b64encode, b64decode
@@ -485,7 +485,7 @@ schema = strawberry.Schema(query=Query)
 ```
 
 <Note>
-Did you notice that `cursor` argument we defined is optional? That's because the client doesn't know
+Did you notice that cursor argument we defined is optional? That's because the client doesn't know
 the cursor intiially, when it makes the first request.
 </Note>
 
