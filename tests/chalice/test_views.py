@@ -94,3 +94,11 @@ def test_graphiql_query_with_no_request_body():
         response = client.http.post("/graphql", headers=headers, body="")
         assert response.status_code == HTTPStatus.OK
         assert response_is_of_error_type(response)
+
+
+def test_deprecated_render_graphiql():
+    with Client(app) as client:
+        headers = {"Accept": "application/json"}
+        response = client.http.get("/deprecated-graphql", headers=headers)
+        assert response.status_code == HTTPStatus.OK
+        assert response_is_of_error_type(response)
