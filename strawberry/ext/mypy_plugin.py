@@ -265,7 +265,7 @@ def add_static_method_to_class(
 ) -> None:
     """Adds a static method
     Edited add_method_to_class to incorporate static method logic
-    https://github.com/python/mypy/blob/9c05d3d19de74fc10a51aa5b663e6a38bc6abc73/mypy/plugins/common.py # noqa: E501
+    https://github.com/python/mypy/blob/9c05d3d19/mypy/plugins/common.py
     """
     info = cls.info
 
