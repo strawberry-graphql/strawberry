@@ -21,7 +21,7 @@ class StrawberryTypeFromPydantic(Protocol[PydanticModel]):
     @staticmethod
     def from_pydantic(
         instance: PydanticModel, extra: Dict[str, Any] = None
-    ) -> PydanticModel:
+    ) -> StrawberryTypeFromPydantic[PydanticModel]:
         ...
 
     def to_pydantic(self) -> PydanticModel:

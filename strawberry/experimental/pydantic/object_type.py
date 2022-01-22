@@ -195,12 +195,14 @@ def type(
         model._strawberry_type = cls  # type: ignore
         cls._pydantic_type = model  # type: ignore
 
-        def from_pydantic(instance: Any, extra: Dict[str, Any] = None) -> Any:
+        def from_pydantic(
+            instance: PydanticModel, extra: Dict[str, Any] = None
+        ) -> StrawberryTypeFromPydantic[PydanticModel]:
             return convert_pydantic_model_to_strawberry_class(
                 cls=cls, model_instance=instance, extra=extra
             )
 
-        def to_pydantic(self) -> Any:
+        def to_pydantic(self) -> PydanticModel:
             instance_kwargs = dataclasses.asdict(self)
 
             return model(**instance_kwargs)
