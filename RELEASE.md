@@ -1,3 +1,3 @@
 Release type: patch
 
-This release deprecate the parameter `render_graphiql` in favour of `graphiql` in Chalice's `GraphQLView`.
+With this release in Chalice's `GraphQLView` the parameter `render_graphiql` is now deprecated and has been replaced with `graphiq`. It will be removed in releases of Strawberry made after 2022-02-22.
