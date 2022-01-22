@@ -134,7 +134,7 @@ The return type contains additional metadata that the client can query for, to k
 
 For simplicity's sake, our dataset is going to be an in-memory list.
 
-```py line=7-31
+```py line=7-32
 # example.py
 
 from typing import List
@@ -362,6 +362,11 @@ class Query:
 schema = strawberry.Schema(query=Query)
 
 ```
+
+<Tip>
+If you're using Strawberry with django, you might want to make use of the
+django pagination API. You can check it out [here](https://docs.djangoproject.com/en/4.0/topics/pagination/).
+</Tip>
 
 Now, let us start a debug server with our schema!
 
