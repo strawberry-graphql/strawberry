@@ -1,8 +1,20 @@
+from __future__ import annotations
+
 import builtins
 import dataclasses
 import warnings
 from functools import partial
-from typing import Any, Dict, List, Optional, Sequence, Type, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Type,
+    cast,
+)
 
 from pydantic import BaseModel
 from pydantic.fields import ModelField
@@ -74,8 +86,15 @@ def get_type_for_field(field: ModelField):
     return type_
 
 
+if TYPE_CHECKING:
+    from strawberry.experimental.pydantic.conversion_types import (
+        PydanticModel,
+        StrawberryTypeFromPydantic,
+    )
+
+
 def type(
-    model: Type[BaseModel],
+    model: Type[PydanticModel],
     *,
     fields: Optional[List[str]] = None,
     name: Optional[str] = None,
@@ -84,8 +103,8 @@ def type(
     description: Optional[str] = None,
     directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
     all_fields: bool = False,
-):
-    def wrap(cls):
+) -> Callable[..., Type[StrawberryTypeFromPydantic[PydanticModel]]]:
+    def wrap(cls: Any) -> Type[StrawberryTypeFromPydantic[PydanticModel]]:
         model_fields = model.__fields__
         fields_set = set(fields) if fields else set([])
 
@@ -178,12 +197,14 @@ def type(
         model._strawberry_type = cls  # type: ignore
         cls._pydantic_type = model  # type: ignore
 
-        def from_pydantic(instance: Any, extra: Dict[str, Any] = None) -> Any:
+        def from_pydantic(
+            instance: PydanticModel, extra: Dict[str, Any] = None
+        ) -> StrawberryTypeFromPydantic[PydanticModel]:
             return convert_pydantic_model_to_strawberry_class(
                 cls=cls, model_instance=instance, extra=extra
             )
 
-        def to_pydantic(self) -> Any:
+        def to_pydantic(self) -> PydanticModel:
             instance_kwargs = dataclasses.asdict(self)
 
             return model(**instance_kwargs)
