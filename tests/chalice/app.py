@@ -35,15 +35,3 @@ def handle_graphql():
     request: Request = app.current_request
     result = view.execute_request(request)
     return result
-
-
-deprecated_graphiql_view = GraphQLView(schema=schema, render_graphiql=True)
-
-
-@app.route(
-    "/deprecated-graphql", methods=["GET", "POST"], content_types=["application/json"]
-)
-def handle_deprecated_graphql():
-    request: Request = app.current_request
-    result = deprecated_graphiql_view.execute_request(request)
-    return result
