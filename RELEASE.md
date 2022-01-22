@@ -1,8 +1,8 @@
 Release type: minor
 
-Improves the following for types converted from pydantic BaseModel.
-Adds mypy extension support for `to_pydantic` and `from_pydantic` methods.
-Adds type hints for IDE support.
+Adds `to_pydantic` and `from_pydantic` type hints for IDE support.
+
+Adds mypy extension support as well.
 
 ```python
 from pydantic import BaseModel
@@ -17,4 +17,4 @@ class UserStrawberry:
 
 reveal_type(UserStrawberry(age=123).to_pydantic())
 ```
-Mypy will infer the type as "UserPydantic". Previously it would be `Any`.
+Mypy will infer the type as "UserPydantic". Previously it would be "Any"
