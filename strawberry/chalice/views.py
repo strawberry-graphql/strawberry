@@ -1,8 +1,7 @@
-from http import HTTPStatus
-
 from chalice.app import BadRequestError, CaseInsensitiveMapping, Request, Response
 from strawberry.chalice.graphiql import render_graphiql_page
-from strawberry.http import GraphQLHTTPResponse, process_result
+from strawberry.exceptions import MissingQueryError
+from strawberry.http import GraphQLHTTPResponse, parse_request_data, process_result
 from strawberry.schema import BaseSchema
 from strawberry.types import ExecutionResult
 
@@ -47,30 +46,16 @@ class GraphQLView:
         return False
 
     @staticmethod
-    def invalid_query_response() -> Response:
+    def error_response(message, error_code, http_status_code, headers=None) -> Response:
         """
-        A response for malformed queries
+        A wrapper for error responses
         Returns:
         An errors response
         """
-        return Response(
-            body={
-                "errors": ["Provide a valid graphql query in the body of your request"]
-            },
-            status_code=HTTPStatus.OK,
-        )
+        body = {"Code": error_code, "Message": message}
+        response = Response(body=body, status_code=http_status_code, headers=headers)
 
-    @staticmethod
-    def invalid_rest_verb_response() -> Response:
-        """
-        A response for calling the graphql endpoint with a non POST request
-        Returns:
-
-        """
-        return Response(
-            body={"errors": ["GraphQL queries must be of request type POST"]},
-            status_code=HTTPStatus.OK,
-        )
+        return response
 
     def execute_request(self, request: Request) -> Response:
         """
@@ -93,29 +78,52 @@ class GraphQLView:
                     status_code=200,
                 )
 
-        if not request.method == "POST":
-            return self.invalid_rest_verb_response()
+        if request.method not in ["POST", "GET"]:
+            return self.error_response(
+                error_code="MethodNotAllowedError",
+                message="Unsupported method, must be of request type POST or GET",
+                http_status_code=405,
+            )
+        content_type = request.headers.get("content-type", "")
+        if "application/json" in content_type:
+            try:
+                data = request.json_body
+                if not (isinstance(data, dict)):
+                    return self.error_response(
+                        error_code="BadRequestError",
+                        message="""Provide a valid graphql query
+                         in the body of your request""",
+                        http_status_code=400,
+                    )
+            except BadRequestError:
+                return self.error_response(
+                    error_code="BadRequestError",
+                    message="Provide a valid graphql query in the body of your request",
+                    http_status_code=400,
+                )
+        elif request.query_params:
+            data = request.query_params
+        else:
+            return self.error_response(
+                error_code="UnsupportedMediaType",
+                message="Unsupported Media Type",
+                http_status_code=415,
+            )
 
         try:
-            request_data = request.json_body
-        except BadRequestError:
-            return self.invalid_query_response()
-
-        if request_data is None:
-            return self.invalid_query_response()
-        try:
-            query = request_data["query"]
-            variables = request_data.get("variables")
-            operation_name = request_data.get("operationName")
-
-        except (KeyError, TypeError):
-            return self.invalid_query_response()
+            request_data = parse_request_data(data)
+        except MissingQueryError:
+            return self.error_response(
+                error_code="BadRequestError",
+                message="No GraphQL query found in the request",
+                http_status_code=400,
+            )
 
         result: ExecutionResult = self._schema.execute_sync(
-            query,
-            variable_values=variables,
+            request_data.query,
+            variable_values=request_data.variables,
             context_value=request,
-            operation_name=operation_name,
+            operation_name=request_data.operation_name,
             root_value=None,
         )
 

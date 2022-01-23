@@ -134,13 +134,29 @@ class GraphQLRouter(APIRouter):
                 },
             },
         )
-        async def get_graphiql() -> Response:
-            if not self.graphiql:
-                return Response(status_code=status.HTTP_404_NOT_FOUND)
-            return self.get_graphiql_response()
+        async def handle_http_get(
+            request: Request,
+            response: Response,
+            context=Depends(self.context_getter),
+            root_value=Depends(self.root_value_getter),
+        ) -> Response:
+            actual_response: Response
+
+            if request.query_params:
+                data = request.query_params
+                return await self.execute_request(
+                    request=request,
+                    response=response,
+                    data=data,
+                    context=context,
+                    root_value=root_value,
+                )
+            elif self.graphiql:
+                return self.get_graphiql_response()
+            return Response(status_code=status.HTTP_404_NOT_FOUND)
 
         @self.post(path)
-        async def handle_http_query(
+        async def handle_http_post(
             request: Request,
             response: Response,
             context=Depends(self.context_getter),
@@ -167,6 +183,8 @@ class GraphQLRouter(APIRouter):
                 data = replace_placeholders_with_files(
                     operations, files_map, multipart_data
                 )
+            elif request.query_params:
+                data = request.query_params
             else:
                 actual_response = PlainTextResponse(
                     "Unsupported Media Type",
@@ -175,31 +193,13 @@ class GraphQLRouter(APIRouter):
 
                 return self._merge_responses(response, actual_response)
 
-            try:
-                request_data = parse_request_data(data)
-            except MissingQueryError:
-                actual_response = PlainTextResponse(
-                    "No GraphQL query found in the request",
-                    status_code=status.HTTP_400_BAD_REQUEST,
-                )
-                return self._merge_responses(response, actual_response)
-
-            result = await self.execute(
-                request_data.query,
-                variables=request_data.variables,
+            return await self.execute_request(
+                request=request,
+                response=response,
+                data=data,
                 context=context,
-                operation_name=request_data.operation_name,
                 root_value=root_value,
             )
-
-            response_data = await self.process_result(request, result)
-
-            actual_response = JSONResponse(
-                response_data,
-                status_code=status.HTTP_200_OK,
-            )
-
-            return self._merge_responses(response, actual_response)
 
         @self.websocket(path)
         async def websocket_endpoint(
@@ -276,3 +276,33 @@ class GraphQLRouter(APIRouter):
         self, request: Request, result: ExecutionResult
     ) -> GraphQLHTTPResponse:
         return process_result(result)
+
+    async def execute_request(
+        self, request: Request, response: Response, data: dict, context, root_value
+    ) -> Response:
+
+        try:
+            request_data = parse_request_data(data)
+        except MissingQueryError:
+            actual_response = PlainTextResponse(
+                "No GraphQL query found in the request",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+            return self._merge_responses(response, actual_response)
+
+        result = await self.execute(
+            request_data.query,
+            variables=request_data.variables,
+            context=context,
+            operation_name=request_data.operation_name,
+            root_value=root_value,
+        )
+
+        response_data = await self.process_result(request, result)
+
+        actual_response = JSONResponse(
+            response_data,
+            status_code=status.HTTP_200_OK,
+        )
+
+        return self._merge_responses(response, actual_response)

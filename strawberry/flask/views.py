@@ -42,14 +42,19 @@ class GraphQLView(View):
             template = render_graphiql_page()
             return self.render_template(template=template)
 
-        if request.content_type.startswith("multipart/form-data"):
+        content_type = request.content_type or ""
+
+        if "application/json" in content_type:
+            data = request.json
+        elif content_type.startswith("multipart/form-data"):
             operations = json.loads(request.form.get("operations", "{}"))
             files_map = json.loads(request.form.get("map", "{}"))
 
             data = replace_placeholders_with_files(operations, files_map, request.files)
-
+        elif request.args:
+            data = request.args
         else:
-            data = request.json  # type: ignore
+            return Response("Unsupported Media Type", 415)
 
         try:
             request_data = parse_request_data(data)

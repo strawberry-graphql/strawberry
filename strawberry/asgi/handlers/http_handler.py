@@ -2,6 +2,7 @@ import json
 from typing import Any, Callable, Optional
 
 from starlette import status
+from starlette.datastructures import QueryParams
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, JSONResponse, PlainTextResponse, Response
 from starlette.types import Receive, Scope, Send
@@ -74,12 +75,13 @@ class HTTPHandler:
         context: Optional[Any],
     ) -> Response:
         if request.method == "GET":
-            if not graphiql:
+            if request.query_params:
+                data = request.query_params
+            elif graphiql:
+                return self.get_graphiql_response()
+            else:
                 return HTMLResponse(status_code=status.HTTP_404_NOT_FOUND)
-
-            return self.get_graphiql_response()
-
-        if request.method == "POST":
+        elif request.method == "POST":
             content_type = request.headers.get("Content-Type", "")
             if "application/json" in content_type:
                 try:
@@ -97,6 +99,8 @@ class HTTPHandler:
                 data = replace_placeholders_with_files(
                     operations, files_map, multipart_data
                 )
+            elif request.query_params:
+                data = request.query_params
 
             else:
                 return PlainTextResponse(

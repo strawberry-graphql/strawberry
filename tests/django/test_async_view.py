@@ -7,6 +7,7 @@ from asgiref.sync import sync_to_async
 import django
 from django.core.exceptions import SuspiciousOperation
 from django.test.client import RequestFactory
+from django.utils.http import urlencode
 
 import strawberry
 from strawberry.django.views import AsyncGraphQLView as AsyncBaseGraphQLView
@@ -71,6 +72,37 @@ async def test_graphiql_view():
     body = response.content.decode()
 
     assert "GraphiQL" in body
+
+
+async def test_async_graphql_get_query_using_params():
+    params = {"query": "{ helloAsync }"}
+
+    factory = RequestFactory()
+    request = factory.get(
+        "/graphql",
+        data=params,
+    )
+
+    response = await AsyncGraphQLView.as_view(schema=schema)(request)
+    data = json.loads(response.content.decode())
+
+    assert data["data"]["helloAsync"] == "async strawberry"
+
+
+async def test_async_graphql_post_query_using_params():
+    params = {"query": "{ helloAsync }"}
+
+    factory = RequestFactory()
+    request = factory.post(
+        "/graphql",
+        **{"QUERY_STRING": urlencode(params, doseq=True)},
+        content_type="application/x-www-form-urlencoded"
+    )
+
+    response = await AsyncGraphQLView.as_view(schema=schema)(request)
+    data = json.loads(response.content.decode())
+
+    assert data["data"]["helloAsync"] == "async strawberry"
 
 
 @pytest.mark.parametrize("method", ["DELETE", "HEAD", "PUT", "PATCH"])

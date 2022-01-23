@@ -66,11 +66,30 @@ class GraphQLView(HTTPMethodView):
         return process_result(result)
 
     async def get(self, request: Request) -> HTTPResponse:
-        if not self.graphiql:
-            raise SanicException(status_code=404)
+        if request.args:
+            # Sanic uses urllib to parse
+            # This returns a list of values for each variable name
+            # Enforcing only one value
+            data = {
+                variable_name: value[0] for variable_name, value in request.args.items()
+            }
 
-        template = render_graphiql_page()
-        return self.render_template(template=template)
+            try:
+                request_data = parse_request_data(data)
+            except MissingQueryError:
+                raise ServerError(
+                    "No GraphQL query found in the request", status_code=400
+                )
+
+            return await self.execute_request(
+                request=request, request_data=request_data
+            )
+
+        elif self.graphiql:
+            template = render_graphiql_page()
+            return self.render_template(template=template)
+
+        raise SanicException(status_code=404)
 
     async def get_response(self, response_data: GraphQLHTTPResponse) -> HTTPResponse:
         data = json.dumps(
@@ -85,6 +104,12 @@ class GraphQLView(HTTPMethodView):
 
     async def post(self, request: Request) -> HTTPResponse:
         request_data = self.get_request_data(request)
+
+        return await self.execute_request(request=request, request_data=request_data)
+
+    async def execute_request(
+        self, request: Request, request_data: GraphQLRequestData
+    ) -> HTTPResponse:
         context = await self.get_context(request)
         root_value = self.get_root_value()
 
@@ -102,7 +127,7 @@ class GraphQLView(HTTPMethodView):
 
     def get_request_data(self, request: Request) -> GraphQLRequestData:
         try:
-            data = self.parse_body(request)
+            data = self.parse_request(request)
         except json.JSONDecodeError:
             raise ServerError("Unable to parse request body as JSON", status_code=400)
 
@@ -113,8 +138,12 @@ class GraphQLView(HTTPMethodView):
 
         return request_data
 
-    def parse_body(self, request: Request) -> dict:
-        if request.content_type.startswith("multipart/form-data"):
+    def parse_request(self, request: Request) -> dict:
+        content_type = request.content_type or ""
+
+        if "application/json" in content_type:
+            return request.json
+        elif content_type.startswith("multipart/form-data"):
             files = convert_request_to_files_dict(request)
             operations = json.loads(request.form.get("operations", "{}"))
             files_map = json.loads(request.form.get("map", "{}"))
@@ -124,4 +153,13 @@ class GraphQLView(HTTPMethodView):
                 raise SanicException(
                     status_code=400, message="File(s) missing in form data"
                 )
-        return request.json
+        elif request.args:
+            # Sanic uses urllib to parse
+            # This returns a list of values for each variable name
+            # Enforcing only one value
+            data = {
+                variable_name: value[0] for variable_name, value in request.args.items()
+            }
+            return data
+
+        raise ServerError("Unsupported Media Type", status_code=415)

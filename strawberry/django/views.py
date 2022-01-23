@@ -56,16 +56,22 @@ class BaseView(View):
         self.subscriptions_enabled = subscriptions_enabled
         super().__init__(**kwargs)
 
-    def parse_body(self, request) -> Dict[str, Any]:
-        if request.content_type.startswith("multipart/form-data"):
+    def parse_body(self, request: HttpRequest) -> Dict[str, Any]:
+        content_type = request.content_type or ""
+
+        if "application/json" in content_type:
+            return json.loads(request.body)
+        elif content_type.startswith("multipart/form-data"):
             data = json.loads(request.POST.get("operations", "{}"))
             files_map = json.loads(request.POST.get("map", "{}"))
 
             data = replace_placeholders_with_files(data, files_map, request.FILES)
 
             return data
+        elif request.META.get("QUERY_STRING"):
+            return request.GET
 
-        return json.loads(request.body)
+        raise HttpResponse("Unsupported Media Type", status=415)
 
     def is_request_allowed(self, request: HttpRequest) -> bool:
         return request.method.lower() in ("get", "post")

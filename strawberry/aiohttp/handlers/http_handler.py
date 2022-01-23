@@ -35,12 +35,30 @@ class HTTPHandler:
         raise web.HTTPMethodNotAllowed(self.request.method, ["GET", "POST"])
 
     async def get(self, request: web.Request) -> web.StreamResponse:
-        if self.should_render_graphiql(request):
+        if request.query:
+            data = request.query
+
+            try:
+                request_data = parse_request_data(data)
+            except MissingQueryError:
+                raise web.HTTPBadRequest(reason="No GraphQL query found in the request")
+
+            return await self.execute_request(
+                request=request, request_data=request_data
+            )
+
+        elif self.should_render_graphiql(request):
             return self.render_graphiql()
         raise web.HTTPNotFound()
 
     async def post(self, request: web.Request) -> web.StreamResponse:
         request_data = await self.get_request_data(request)
+
+        return await self.execute_request(request=request, request_data=request_data)
+
+    async def execute_request(
+        self, request: web.Request, request_data: GraphQLRequestData
+    ) -> web.StreamResponse:
         response = web.Response()
         context = await self.get_context(request, response)
         root_value = await self.get_root_value(request)
@@ -71,6 +89,8 @@ class HTTPHandler:
     async def parse_body(self, request: web.Request) -> dict:
         if request.content_type.startswith("multipart/form-data"):
             return await self.parse_multipart_body(request)
+        elif request.query:
+            return request.query
         try:
             return await request.json()
         except json.JSONDecodeError:
