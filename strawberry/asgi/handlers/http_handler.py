@@ -2,7 +2,6 @@ import json
 from typing import Any, Callable, Optional
 
 from starlette import status
-from starlette.datastructures import QueryParams
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, JSONResponse, PlainTextResponse, Response
 from starlette.types import Receive, Scope, Send
