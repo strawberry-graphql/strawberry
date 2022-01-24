@@ -42,7 +42,7 @@ class Connection(Generic[GenericType]):
 
 ```
 
-Connections must have atleast two fields - `edges` and `page_info`.
+Connections must have atleast two fields: `edges` and `page_info`.
 
 The `page_info` field contains metadata about the connection.
 Following the Relay specification, we can define a `PageInfo` type like this:
