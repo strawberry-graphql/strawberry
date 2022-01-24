@@ -54,7 +54,7 @@ The response from the server would be:
       "id": 2,
       "name": "Peter Parker",
       "occupation": "Freelance Photographer, The Daily Bugle",
-      "age": 16
+      "age": 20
     }
   ],
   "page_meta": {

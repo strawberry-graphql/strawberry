@@ -38,7 +38,7 @@ query getUsers {
           "id": 2,
           "name": "Peter Parker",
           "occupation": "Freelance Photographer, The Daily Bugle",
-          "age": 16
+          "age": 20
         }
       ],
       "pageMeta": {
@@ -138,7 +138,7 @@ user_data = [
     "id": 2,
     "name": "Peter Parker",
     "occupation": "Freelance Photographer, The Daily Bugle",
-    "age": 16
+    "age": 20
   },
   {
     "id": 3,
@@ -241,7 +241,7 @@ user_data = [
     "id": 2,
     "name": "Peter Parker",
     "occupation": "Freelance Photographer, The Daily Bugle",
-    "age": 16
+    "age": 20
   },
   {
     "id": 3,
@@ -360,7 +360,7 @@ user_data = [
     "id": 2,
     "name": "Peter Parker",
     "occupation": "Freelance Photographer, The Daily Bugle",
-    "age": 16
+    "age": 20
   },
   {
     "id": 3,
