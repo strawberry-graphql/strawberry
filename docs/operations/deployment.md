@@ -24,14 +24,14 @@ It can be turned off by setting the `graphiql` option to `False`
 
 See the Strawberry Options documentation for the integration you are using for more information on how to disable it:
 
-- [AIOHTTP](./integrations/aiohttp.md#options)
-- [ASGI](./integrations/asgi.md#options)
-- [Django](./integrations/django.md#options)
-- [FastAPI](./integrations/fastapi.md#options)
-- [Flask](./integrations/flask.md#options)
-- [Sanic](./integrations/sanic.md#options)
-- [Chalice](./integrations/chalice.md#options)
-- [Starlette](./integrations/starlette.md#options)
+- [AIOHTTP](../integrations/aiohttp.md#options)
+- [ASGI](../integrations/asgi.md#options)
+- [Django](../integrations/django.md#options)
+- [FastAPI](../integrations/fastapi.md#options)
+- [Flask](../integrations/flask.md#options)
+- [Sanic](../integrations/sanic.md#options)
+- [Chalice](../integrations/chalice.md#options)
+- [Starlette](../integrations/starlette.md#options)
 
 ### Introspection
 
