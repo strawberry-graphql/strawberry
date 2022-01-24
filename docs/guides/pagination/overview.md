@@ -15,11 +15,11 @@ can be implemented today!
 ### Offset based pagination
 
 This pagination style is similar to the syntax we use when looking up database records. Here, the client specifies the number of result to be
-obtained at a time, along with an offset- which usually denotes the number of results to be skipped from the beginning. This type of pagination
+obtained at a time, along with an offset which usually denotes the number of results to be skipped from the beginning. This type of pagination
 is widely used. Implementing offset-based pagination with an SQL database is straight-forward:
 
 - We count all of the results to determine the total number of pages
-- We use the limit and offset values given to query for the items in the requested page.
+- We use the `limit` and `offset` values given to query for the items in the requested page.
 
 Offset based pagination also provides us the ability to jump to a specific page in a dataset.
 
@@ -133,7 +133,7 @@ The next cursor returned by the server can be used to get the next set of users 
 }
 ```
 
-This is an example for forward pagination - pagination can be done backwards too!
+This is an example of forward pagination, but pagination can be done backwards too!
 
 ## Implementing pagination in GraphQL
 
