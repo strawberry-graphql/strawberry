@@ -364,8 +364,10 @@ schema = strawberry.Schema(query=Query)
 ```
 
 <Tip>
+
 If you're using Strawberry with the Django web framework, you might want to make use of the
 Django pagination API. You can check it out [here](https://docs.djangoproject.com/en/4.0/topics/pagination/).
+
 </Tip>
 
 Now, let us start a debug server with our schema!

@@ -214,8 +214,10 @@ Now is a good time to think of what we could use as a cursor for our dataset. Ou
 which doesn't usually change over time. It makes more sense to use the IDs of the users as our cursor, as it fits both criteria.
 
 <Tip>
+
 It is good practice to base64-encode cursors, to provide a unified interface to the end user. API clients need not
 bother about the type of data to paginate, and can pass unique IDs during pagination.
+
 </Tip>
 
 Let us define a couple of helper functions to encode and decode cursors as follows:
@@ -485,8 +487,10 @@ schema = strawberry.Schema(query=Query)
 ```
 
 <Note>
+
 Did you notice that cursor argument we defined is optional? That's because the client doesn't know
 the cursor intiially, when it makes the first request.
+
 </Note>
 
 Now, let us start a debug server with our schema!

@@ -70,6 +70,7 @@ To get the next page in the dataset, we can send another request, incrementing t
 ```
 
 <Note>
+
 Offset based pagination has a few limitations:
 
 - It is not suitable for large datasets, because we need access to offset + limit number of items from the dataset, before discarding the offset
@@ -79,6 +80,7 @@ Offset based pagination has a few limitations:
 
 However, it provides a quick way to get started, and works well with small-medium datasets. When your dataset scales, you will
 need a reliable and consistent way to handle pagination.
+
 </Note>
 
 ### Cursor based pagination
