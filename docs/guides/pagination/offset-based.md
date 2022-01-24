@@ -129,7 +129,7 @@ schema = strawberry.Schema(query=Query)
 
 ```
 
-As you can see above, we have modelled our field to return an object type, rather than a list.
+As you can see above, we have modeled our field to return an object type, rather than a list.
 The return type contains additional metadata that the client can query for, to know more about the paginated list.
 
 For simplicity's sake, our dataset is going to be an in-memory list.
