@@ -168,6 +168,10 @@ def test_referencing_other_input_models_fails_when_not_registered():
         password: Optional[str]
         group: Group
 
+    @strawberry.experimental.pydantic.type(Group)
+    class GroupType:
+        name: strawberry.auto
+
     with pytest.raises(
         strawberry.experimental.pydantic.UnregisteredTypeException,
         match=("Cannot find a Strawberry Type for (.*) did you forget to register it?"),
