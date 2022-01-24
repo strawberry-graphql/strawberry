@@ -32,6 +32,13 @@ We start out be sending a request to the server, with the desired limit and offs
 }
 ```
 
+<Note>
+
+We are not sending GraphQL requests here, don't worry about the request format for now! We are looking into
+pagination conceptually, we'll implement pagination in GraphQL later!
+
+</Note>
+
 The response from the server would be:
 
 ```json
