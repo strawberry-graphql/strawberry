@@ -958,5 +958,8 @@ def test_can_convert_both_output_and_input_type():
     )
     group = GroupOutput.from_pydantic(origin_group)
     final_group = group.to_pydantic()
+    assert origin_group == final_group
 
+    group_input = GroupInput.from_pydantic(origin_group)
+    final_group = group_input.to_pydantic()
     assert origin_group == final_group
