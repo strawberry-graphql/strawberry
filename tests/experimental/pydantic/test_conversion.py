@@ -910,3 +910,53 @@ def test_can_convert_pydantic_type_to_strawberry_with_additional_field_resolvers
     assert user.password == "abc"
     assert User._type_definition.fields[0].base_resolver() == 84
     assert User._type_definition.fields[1].base_resolver() == 42
+
+
+def test_can_convert_both_output_and_input_type():
+    class Work(BaseModel):
+        time: float
+
+    class User(BaseModel):
+        name: str
+        work: Optional[Work]
+
+    class Group(BaseModel):
+        users: List[User]
+
+    # Test both definition orders
+    @strawberry.experimental.pydantic.input(Work)
+    class WorkInput:
+        time: strawberry.auto
+
+    @strawberry.experimental.pydantic.type(Work)
+    class WorkOutput:
+        time: strawberry.auto
+
+    @strawberry.experimental.pydantic.type(User)
+    class UserOutput:
+        name: strawberry.auto
+        work: strawberry.auto
+
+    @strawberry.experimental.pydantic.input(User)
+    class UserInput:
+        name: strawberry.auto
+        work: strawberry.auto
+
+    @strawberry.experimental.pydantic.input(Group)
+    class GroupInput:
+        users: strawberry.auto
+
+    @strawberry.experimental.pydantic.type(Group)
+    class GroupOutput:
+        users: strawberry.auto
+
+    origin_group = Group(
+        users=[
+            User(name="Alice", work=Work(time=10.0)),
+            User(name="Bob", work=Work(time=5.0)),
+        ]
+    )
+    group = GroupOutput.from_pydantic(origin_group)
+    final_group = group.to_pydantic()
+
+    assert origin_group == final_group

@@ -32,14 +32,14 @@ from strawberry.types.types import TypeDefinition
 from .exceptions import MissingFieldsListError, UnregisteredTypeException
 
 
-def replace_pydantic_types(type_: Any):
+def replace_pydantic_types(type_: Any, is_input: bool):
     origin = getattr(type_, "__origin__", None)
     if origin is Literal:
         # Literal does not have types in its __args__ so we return early
         return type_
     if hasattr(type_, "__args__"):
         replaced_type = type_.copy_with(
-            tuple(replace_pydantic_types(t) for t in type_.__args__)
+            tuple(replace_pydantic_types(t, is_input) for t in type_.__args__)
         )
 
         if isinstance(replaced_type, TypeDefinition):
@@ -55,18 +55,24 @@ def replace_pydantic_types(type_: Any):
         return replaced_type
 
     if issubclass(type_, BaseModel):
-        if hasattr(type_, "_strawberry_type"):
-            return type_._strawberry_type
+        if is_input:
+            if hasattr(type_, "_strawberry_input_type"):
+                return type_._strawberry_input_type
+            else:
+                raise UnregisteredTypeException(type_)
         else:
-            raise UnregisteredTypeException(type_)
+            if hasattr(type_, "_strawberry_type"):
+                return type_._strawberry_type
+            else:
+                raise UnregisteredTypeException(type_)
 
     return type_
 
 
-def get_type_for_field(field: ModelField):
+def get_type_for_field(field: ModelField, is_input: bool):
     type_ = field.outer_type_
     type_ = get_basic_type(type_)
-    type_ = replace_pydantic_types(type_)
+    type_ = replace_pydantic_types(type_, is_input)
 
     if not field.required:
         type_ = Optional[type_]
@@ -119,14 +125,14 @@ def type(
         all_model_fields: List[DataclassCreationFields] = [
             DataclassCreationFields(
                 name=field_name,
-                type_annotation=get_type_for_field(field),
+                type_annotation=get_type_for_field(field, is_input),
                 field=StrawberryField(
                     python_name=field.name,
                     graphql_name=field.alias if field.has_alias else None,
                     # always unset because we use default_factory instead
                     default=UNSET,
                     default_factory=get_default_factory_for_field(field),
-                    type_annotation=get_type_for_field(field),
+                    type_annotation=get_type_for_field(field, is_input),
                     description=field.field_info.description,
                 ),
             )
@@ -175,7 +181,10 @@ def type(
             directives=directives,
         )
 
-        model._strawberry_type = cls  # type: ignore
+        if is_input:
+            model._strawberry_input_type = cls  # type: ignore
+        else:
+            model._strawberry_type = cls  # type: ignore
         cls._pydantic_type = model  # type: ignore
 
         def from_pydantic(instance: Any, extra: Dict[str, Any] = None) -> Any:

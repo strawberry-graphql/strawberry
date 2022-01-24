@@ -539,3 +539,62 @@ def test_interface():
 
     assert field2.python_name == "interface_field"
     assert field2.type is BaseType
+
+
+def test_both_output_and_input_type():
+    class Work(pydantic.BaseModel):
+        time: float
+
+    class User(pydantic.BaseModel):
+        name: str
+        work: Optional[Work]
+
+    class Group(pydantic.BaseModel):
+        users: List[User]
+
+    # Test both definition orders
+    @strawberry.experimental.pydantic.input(Work)
+    class WorkInput:
+        time: strawberry.auto
+
+    @strawberry.experimental.pydantic.type(Work)
+    class WorkOutput:
+        time: strawberry.auto
+
+    @strawberry.experimental.pydantic.type(User)
+    class UserOutput:
+        name: strawberry.auto
+        work: strawberry.auto
+
+    @strawberry.experimental.pydantic.input(User)
+    class UserInput:
+        name: strawberry.auto
+        work: strawberry.auto
+
+    @strawberry.experimental.pydantic.input(Group)
+    class GroupInput:
+        users: strawberry.auto
+
+    @strawberry.experimental.pydantic.type(Group)
+    class GroupOutput:
+        users: strawberry.auto
+
+    @strawberry.type
+    class Query:
+        groups: List[GroupOutput]
+
+    @strawberry.type
+    class Mutation:
+        @strawberry.mutation
+        def updateGroup(group: GroupInput) -> GroupOutput:
+            pass
+
+    # This triggers the exception from #1504
+    strawberry.Schema(query=Query, mutation=Mutation)
+
+    assert Group._strawberry_type == GroupOutput
+    assert Group._strawberry_input_type == GroupInput
+    assert User._strawberry_type == UserOutput
+    assert User._strawberry_input_type == UserInput
+    assert Work._strawberry_type == WorkOutput
+    assert Work._strawberry_input_type == WorkInput
