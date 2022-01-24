@@ -239,7 +239,7 @@ We're going to use the dataset we defined in our `get_users` field resolver.
 Our field is going to accept two arguments, `limit` and `offset`, to control pagination.
 Let us implement the pagination logic as follows.
 
-```py line=76-117
+```py line=76-116
 # example.py
 
 from typing import List

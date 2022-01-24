@@ -415,7 +415,7 @@ class Edge(Generic[GenericType]):
 
 Let us define a `get_users` field which returns a connection of users, as well as an `UserType`.
 
-```python line=104-195
+```python line=104-194
 # example.py
 
 from base64 import b64encode, b64decode
