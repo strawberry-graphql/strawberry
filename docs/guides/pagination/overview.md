@@ -9,13 +9,12 @@ items that take a considerable toll on the server! The goal of this guide is to 
 
 ## Pagination at a glance
 
-We have always dealt with pagination in different situations. Let us take a look at some of the common ways pagination
-can be implemented today!
+Let us take a look at some of the common ways pagination can be implemented today!
 
 ### Offset based pagination
 
-This pagination style is similar to the syntax we use when looking up database records. Here, the client specifies the number of result to be
-obtained at a time, along with an offset- which usually denotes the number of results to be skipped from the beginning. This type of pagination
+This pagination style is similar to the syntax we use when looking up database records. Here, the client specifies the number of results to be
+obtained at a time, along with an offset, which usually denotes the number of results to be "skipped" at the start. This type of pagination
 is widely used. Implementing offset-based pagination with an SQL database is straight-forward:
 
 - We count all of the results to determine the total number of pages
