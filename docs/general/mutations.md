@@ -11,7 +11,7 @@ queries, they accept parameters and can return anything a regular field can, inc
 new types and existing object types. This can be useful for fetching the new state of an
 object after an update.
 
-Let's improve our books project from the [Getting started tutorial](docs/index.md) and
+Let's improve our books project from the [Getting started tutorial](../index.md) and
 implement a mutation that is supposed to add a book:
 
 ```python
