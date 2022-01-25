@@ -52,7 +52,11 @@ class HTTPHandler:
         )
 
         # Only add headers from sub_response if they're not already present in response
-        response.headers.raw.extend((k, v) for k, v in sub_response.headers.raw if k not in {k for k, _ in response.headers.raw})
+        response.headers.raw.extend(
+            (k, v)
+            for k, v in sub_response.headers.raw
+            if k not in {k for k, _ in response.headers.raw}
+        )
 
         if sub_response.background:
             response.background = sub_response.background
