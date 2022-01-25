@@ -39,13 +39,7 @@ class HTTPHandler:
         request = Request(scope=scope, receive=receive)
         root_value = await self.get_root_value(request)
 
-        sub_response = Response(
-            content=None,
-            status_code=None,  # type: ignore
-            headers=None,
-            media_type=None,
-            background=None,
-        )
+        sub_response = Response()
 
         context = await self.get_context(request=request, response=sub_response)
 
@@ -57,7 +51,8 @@ class HTTPHandler:
             context=context,
         )
 
-        response.headers.raw.extend(sub_response.headers.raw)
+        # Only add headers from sub_response if they're not already present in response
+        response.headers.raw.extend((k, v) for k, v in sub_response.headers.raw if k not in {k for k, _ in response.headers.raw})
 
         if sub_response.background:
             response.background = sub_response.background
