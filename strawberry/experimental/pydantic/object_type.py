@@ -67,16 +67,11 @@ def replace_pydantic_types(type_: Any, is_input: bool):
         return replaced_type
 
     if issubclass(type_, BaseModel):
-        if is_input:
-            if hasattr(type_, "_strawberry_input_type"):
-                return type_._strawberry_input_type
-            else:
-                raise UnregisteredTypeException(type_)
+        attr = "_strawberry_input_type" if is_input else "_strawberry_type"
+        if hasattr(type_, attr):
+            return getattr(type_, attr)
         else:
-            if hasattr(type_, "_strawberry_type"):
-                return type_._strawberry_type
-            else:
-                raise UnregisteredTypeException(type_)
+            raise UnregisteredTypeException(type_)
 
     return type_
 

@@ -615,7 +615,42 @@ def test_both_output_and_input_type():
             pass
 
     # This triggers the exception from #1504
-    strawberry.Schema(query=Query, mutation=Mutation)
+    schema = strawberry.Schema(query=Query, mutation=Mutation)
+    expected_schema = """
+input GroupInput {
+  users: [UserInput!]!
+}
+
+type GroupOutput {
+  users: [UserOutput!]!
+}
+
+type Mutation {
+  updateGroup(group: GroupInput!): GroupOutput!
+}
+
+type Query {
+  groups: [GroupOutput!]!
+}
+
+input UserInput {
+  name: String!
+  work: WorkInput = null
+}
+
+type UserOutput {
+  name: String!
+  work: WorkOutput
+}
+
+input WorkInput {
+  time: Float!
+}
+
+type WorkOutput {
+  time: Float!
+}"""
+    assert schema.as_str().strip() == expected_schema.strip()
 
     assert Group._strawberry_type == GroupOutput
     assert Group._strawberry_input_type == GroupInput
