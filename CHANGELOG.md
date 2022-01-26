@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.95.1 - 2022-01-26
+-------------------
+
+Fix bug #1504 in the Pydantic integration, where it was impossible to define
+both an input and output type based on the same Pydantic base class.
+
+Contributed by [Matt Allen](https://github.com/Matt343) [PR #1592](https://github.com/strawberry-graphql/strawberry/pull/1592/)
+
+
 0.95.0 - 2022-01-22
 -------------------
 
