@@ -41,6 +41,9 @@ class HTTPHandler:
         root_value = await self.get_root_value(request)
 
         sub_response = Response()
+        if sub_response.status_code == 200:
+            # Set default status code to None
+            sub_response.status_code = None  # typing: ignore
 
         context = await self.get_context(request=request, response=sub_response)
 
