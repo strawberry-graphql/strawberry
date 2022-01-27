@@ -18,7 +18,7 @@ class DirectivesExtension(Extension):
     ) -> AwaitableOrValue[Any]:
         result = await await_maybe(_next(root, info, *args, **kwargs))
 
-        for directive in info.field_nodes[0].directives:
+        for directive in info.field_nodes[0].directives:  # type: ignore
             directive_name = directive.name.value
 
             if directive_name in SPECIFIED_DIRECTIVES:

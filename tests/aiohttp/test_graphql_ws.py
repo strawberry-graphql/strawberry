@@ -263,9 +263,7 @@ async def test_subscription_exceptions(aiohttp_client):
         assert response["type"] == GQL_DATA
         assert response["id"] == "demo"
         assert response["payload"]["data"] is None
-        assert response["payload"]["errors"] == [
-            {"locations": None, "message": "TEST EXC", "path": None}
-        ]
+        assert response["payload"]["errors"] == [{"message": "TEST EXC"}]
 
         await ws.send_json({"type": GQL_STOP, "id": "demo"})
         response = await ws.receive_json()
@@ -303,7 +301,6 @@ async def test_subscription_field_error(aiohttp_client):
         assert response["id"] == "invalid-field"
         assert response["payload"] == {
             "locations": [{"line": 1, "column": 16}],
-            "path": None,
             "message": (
                 "The subscription field 'notASubscriptionField' is not defined."
             ),
@@ -340,7 +337,6 @@ async def test_subscription_syntax_error(aiohttp_client):
         assert response["id"] == "syntax-error"
         assert response["payload"] == {
             "locations": [{"line": 1, "column": 24}],
-            "path": None,
             "message": "Syntax Error: Expected Name, found <EOF>.",
         }
 

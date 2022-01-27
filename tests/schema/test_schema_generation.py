@@ -1,10 +1,11 @@
-from typing import Any, Dict, Optional, cast
+from typing import Any, Dict, List, Optional, cast
 
 import pytest
 
 from graphql import (
     ExecutionContext as GraphQLExecutionContext,
     ExecutionResult,
+    GraphQLError,
     GraphQLField,
     GraphQLNonNull,
     GraphQLObjectType,
@@ -67,9 +68,11 @@ def test_schema_fails_on_an_invalid_schema():
 def test_custom_execution_context():
     class CustomExecutionContext(GraphQLExecutionContext):
         def build_response(
-            self, data: AwaitableOrValue[Optional[Dict[str, Any]]]
+            self,
+            data: AwaitableOrValue[Optional[Dict[str, Any]]],
+            errors: List[GraphQLError],
         ) -> AwaitableOrValue[ExecutionResult]:
-            result = cast(ExecutionResult, super().build_response(data))
+            result = cast(ExecutionResult, super().build_response(data, errors))
 
             if not result.data:
                 return result

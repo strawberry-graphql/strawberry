@@ -136,8 +136,6 @@ class StrawberryUnion(StrawberryType):
         raise ValueError("Cannot use union type directly")
 
     def get_type_resolver(self, type_map: "TypeMap") -> GraphQLTypeResolver:
-        # TODO: Type annotate returned function
-
         def _resolve_union_type(
             root: Any, info: GraphQLResolveInfo, type_: GraphQLAbstractType
         ) -> str:
