@@ -149,7 +149,8 @@ class BaseGraphQLTestClient(ABC):
             else:
                 map[key] = [f"variables.{reference}"]
 
-        # remove the other variables that are not files, we can't remove them before
+        # Variables can be mixed files and other data, we don't want to map non-files
+        # vars so we need to remove them, we can't remove them before
         # because they can be part of a list of files or folder
         map_without_vars = {k: v for k, v in map.items() if k in files.keys()}
         return map_without_vars
