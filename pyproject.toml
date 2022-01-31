@@ -69,7 +69,7 @@ asgiref = "^3.2"
 pytest-flask = {version = "^1.2.0"}
 flask = {version = "^1.1"}
 chalice = {version = "^1.22"}
-requests = "^2.27.0"
+requests = "^2.27.1"
 pre-commit = "^2.16.0"
 pytest-benchmark = "^3.4.1"
 freezegun = "^1.1.0"
