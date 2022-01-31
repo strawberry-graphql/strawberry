@@ -55,7 +55,7 @@ def directive(
     *,
     locations: List[DirectiveLocation],
     description: Optional[str] = None,
-    name: Optional[str] = None
+    name: Optional[str] = None,
 ) -> Callable[[Callable[..., T]], T]:
     def _wrap(f: Callable[..., T]) -> T:
         return StrawberryDirective(  # type: ignore
