@@ -412,7 +412,7 @@ toml = "*"
 
 [[package]]
 name = "flake8-bugbear"
-version = "21.11.29"
+version = "22.1.11"
 description = "A plugin for flake8 finding likely bugs and design problems in your program. Contains warnings that don't belong in pyflakes and pycodestyle."
 category = "dev"
 optional = false
@@ -1020,11 +1020,11 @@ docs = ["sphinx", "sphinx-rtd-theme"]
 
 [[package]]
 name = "pytest-mock"
-version = "3.6.1"
+version = "3.7.0"
 description = "Thin-wrapper around the mock package for easier use with pytest"
 category = "dev"
 optional = false
-python-versions = ">=3.6"
+python-versions = ">=3.7"
 
 [package.dependencies]
 pytest = ">=5.0"
@@ -1361,7 +1361,7 @@ python-versions = "*"
 
 [[package]]
 name = "types-ujson"
-version = "4.2.0"
+version = "4.2.1"
 description = "Typing stubs for ujson"
 category = "dev"
 optional = false
@@ -1529,7 +1529,7 @@ sanic = ["sanic"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "c2e26ac4263af78a4b5eb9a8ef6373022ad806c8b2fdaacafcf6a6c051d8411f"
+content-hash = "5a7f254c0f2bf7b45fd441707303b59d7c6e9d92c8296c0caaa8b0aa4a6a8df8"
 
 [metadata.files]
 aiofiles = [
@@ -1776,8 +1776,8 @@ flake8-black = [
     {file = "flake8_black-0.2.3-py3-none-any.whl", hash = "sha256:cc080ba5b3773b69ba102b6617a00cc4ecbad8914109690cfda4d565ea435d96"},
 ]
 flake8-bugbear = [
-    {file = "flake8-bugbear-21.11.29.tar.gz", hash = "sha256:8b04cb2fafc6a78e1a9d873bd3988e4282f7959bb6b0d7c1ae648ec09b937a7b"},
-    {file = "flake8_bugbear-21.11.29-py36.py37.py38-none-any.whl", hash = "sha256:179e41ddae5de5e3c20d1f61736feeb234e70958fbb56ab3c28a67739c8e9a82"},
+    {file = "flake8-bugbear-22.1.11.tar.gz", hash = "sha256:4c2a4136bd4ecb8bf02d5159af302ffc067642784c9d0488b33ce4610da825ee"},
+    {file = "flake8_bugbear-22.1.11-py3-none-any.whl", hash = "sha256:ce7ae44aaaf67ef192b8a6de94a5ac617144e1675ad0654fdea556f48dc18d9b"},
 ]
 flake8-eradicate = [
     {file = "flake8-eradicate-1.2.0.tar.gz", hash = "sha256:acaa1b6839ff00d284b805c432fdfa6047262bd15a5504ec945797e87b4de1fa"},
@@ -2289,8 +2289,8 @@ pytest-flask = [
     {file = "pytest_flask-1.2.0-py3-none-any.whl", hash = "sha256:fe25b39ad0db09c3d1fe728edecf97ced85e774c775db259a6d25f0270a4e7c9"},
 ]
 pytest-mock = [
-    {file = "pytest-mock-3.6.1.tar.gz", hash = "sha256:40217a058c52a63f1042f0784f62009e976ba824c418cced42e88d5f40ab0e62"},
-    {file = "pytest_mock-3.6.1-py3-none-any.whl", hash = "sha256:30c2f2cc9759e76eee674b81ea28c9f0b94f8f0445a1b87762cadf774f0df7e3"},
+    {file = "pytest-mock-3.7.0.tar.gz", hash = "sha256:5112bd92cc9f186ee96e1a92efc84969ea494939c3aead39c50f421c4cc69534"},
+    {file = "pytest_mock-3.7.0-py3-none-any.whl", hash = "sha256:6cff27cec936bf81dc5ee87f07132b807bcda51106b5ec4b90a04331cba76231"},
 ]
 pytest-mypy-plugins = [
     {file = "pytest-mypy-plugins-1.9.2.tar.gz", hash = "sha256:26528ab66549ade53badae2ab396f426379f921bf5ddd91534c669a25b4b7e69"},
@@ -2543,8 +2543,8 @@ types-typed-ast = [
     {file = "types_typed_ast-1.5.1-py3-none-any.whl", hash = "sha256:5c8ef528821fb2a96d750deed100b25d7fdb055610747ee5352120887d915f8c"},
 ]
 types-ujson = [
-    {file = "types-ujson-4.2.0.tar.gz", hash = "sha256:b97ab027754c0788e7083eaa4a57d5837fb248d0e59879e80f26fc1ad6e58eea"},
-    {file = "types_ujson-4.2.0-py3-none-any.whl", hash = "sha256:8b1cc4eeae31a3f9c01809011671e8bc41af5513022342baec6474436522d076"},
+    {file = "types-ujson-4.2.1.tar.gz", hash = "sha256:9e7576316914151f4e7086fae4c5aea3a17ae2d66c2edea6525f4c82354c364d"},
+    {file = "types_ujson-4.2.1-py3-none-any.whl", hash = "sha256:dd6ef2d1a29561e8fbbe4fa95e3509a1104c8f1d7d77004ae50ff99bfa89320c"},
 ]
 types-urllib3 = [
     {file = "types-urllib3-1.26.7.tar.gz", hash = "sha256:cfd1fbbe4ba9a605ed148294008aac8a7b8b7472651d1cc357d507ae5962e3d2"},
