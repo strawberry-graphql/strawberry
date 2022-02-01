@@ -908,7 +908,9 @@ def test_can_convert_pydantic_type_to_strawberry_with_additional_field_resolvers
     origin_user = UserModel(password="abc", new_age=21)
     user = User.from_pydantic(origin_user)
     assert user.password == "abc"
+    assert User._type_definition.fields[0].name == "new_age"
     assert User._type_definition.fields[0].base_resolver() == 84
+    assert User._type_definition.fields[1].name == "age"
     assert User._type_definition.fields[1].base_resolver() == 42
 
 

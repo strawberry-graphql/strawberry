@@ -12,6 +12,7 @@ from typing import (
     List,
     Optional,
     Sequence,
+    Set,
     Type,
     cast,
 )
@@ -87,6 +88,43 @@ def get_type_for_field(field: ModelField, is_input: bool):
     return type_
 
 
+def _build_dataclass_creation_fields(
+    field: ModelField,
+    is_input: bool,
+    existing_fields: Dict[str, StrawberryField],
+    auto_fields_set: Set[str],
+) -> DataclassCreationFields:
+    type_annotation = (
+        get_type_for_field(field, is_input)
+        if field.name in auto_fields_set
+        else existing_fields[field.name].type
+    )
+
+    if (
+        field.name in existing_fields
+        and existing_fields[field.name].base_resolver is not None
+    ):
+        # if the user has defined a resolver for this field, always use it
+        strawberry_field = existing_fields[field.name]
+    else:
+        # otherwise we build an appropriate strawberry field that resolves it
+        strawberry_field = StrawberryField(
+            python_name=field.name,
+            graphql_name=field.alias if field.has_alias else None,
+            # always unset because we use default_factory instead
+            default=UNSET,
+            default_factory=get_default_factory_for_field(field),
+            type_annotation=type_annotation,
+            description=field.field_info.description,
+        )
+
+    return DataclassCreationFields(
+        name=field.name,
+        type_annotation=type_annotation,
+        field=strawberry_field,
+    )
+
+
 if TYPE_CHECKING:
     from strawberry.experimental.pydantic.conversion_types import (
         PydanticModel,
@@ -107,7 +145,7 @@ def type(
 ) -> Callable[..., Type[StrawberryTypeFromPydantic[PydanticModel]]]:
     def wrap(cls: Any) -> Type[StrawberryTypeFromPydantic[PydanticModel]]:
         model_fields = model.__fields__
-        fields_set = set(fields) if fields else set([])
+        original_fields_set = set(fields) if fields else set([])
 
         if fields:
             warnings.warn(
@@ -116,8 +154,15 @@ def type(
             )
 
         existing_fields = getattr(cls, "__annotations__", {})
-        fields_set = fields_set.union(
-            set(name for name, typ in existing_fields.items() if typ is strawberry.auto)
+        # these are the fields that matched a field name in the pydantic model
+        # and should copy their alias from the pydantic model
+        fields_set = original_fields_set.union(
+            set(name for name, _ in existing_fields.items() if name in model_fields)
+        )
+        # these are the fields that were marked with strawberry.auto and
+        # should copy their type from the pydantic model
+        auto_fields_set = original_fields_set.union(
+            set(name for name, typ in existing_fields.items() if typ == strawberry.auto)
         )
 
         if all_fields:
@@ -128,35 +173,29 @@ def type(
                     stacklevel=2,
                 )
             fields_set = set(model_fields.keys())
+            auto_fields_set = set(model_fields.keys())
 
         if not fields_set:
             raise MissingFieldsListError(cls)
 
         ensure_all_auto_fields_in_pydantic(
-            model=model, auto_fields=fields_set, cls_name=cls.__name__
+            model=model, auto_fields=auto_fields_set, cls_name=cls.__name__
         )
 
+        wrapped = _wrap_dataclass(cls)
+        extra_strawberry_fields = _get_fields(wrapped)
+        extra_fields = cast(List[dataclasses.Field], extra_strawberry_fields)
+        private_fields = get_private_fields(wrapped)
+
+        extra_fields_dict = {field.name: field for field in extra_strawberry_fields}
+
         all_model_fields: List[DataclassCreationFields] = [
-            DataclassCreationFields(
-                name=field_name,
-                type_annotation=get_type_for_field(field, is_input),
-                field=StrawberryField(
-                    python_name=field.name,
-                    graphql_name=field.alias if field.has_alias else None,
-                    # always unset because we use default_factory instead
-                    default=UNSET,
-                    default_factory=get_default_factory_for_field(field),
-                    type_annotation=get_type_for_field(field, is_input),
-                    description=field.field_info.description,
-                ),
+            _build_dataclass_creation_fields(
+                field, is_input, extra_fields_dict, auto_fields_set
             )
             for field_name, field in model_fields.items()
             if field_name in fields_set
         ]
-
-        wrapped = _wrap_dataclass(cls)
-        extra_fields = cast(List[dataclasses.Field], _get_fields(wrapped))
-        private_fields = get_private_fields(wrapped)
 
         all_model_fields.extend(
             (
@@ -166,7 +205,7 @@ def type(
                     field=field,
                 )
                 for field in extra_fields + private_fields
-                if field.type != strawberry.auto
+                if field.name not in fields_set
             )
         )
 
