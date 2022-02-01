@@ -264,3 +264,52 @@ input_data = UserInput(id='abc', name='Jake')
 # this will run pydantic's validation
 instance = input_data.to_pydantic()
 ```
+
+### Classes with \_\_get_validators\_\_
+
+Pydantic BaseModels may define a custom type with [\_\_get_validators\_\_](https://pydantic-docs.helpmanual.io/usage/types/#classes-with-__get_validators__)
+logic. You will need to add a scalar type and add the mapping to the `scalar_overrides`
+argument in the Schema class.
+
+```python
+import strawberry
+from pydantic import BaseModel
+
+
+class MyCustomType:
+    @classmethod
+    def __get_validators__(cls):
+        yield cls.validate
+
+    @classmethod
+    def validate(cls, v):
+        return MyCustomType()
+
+
+class Example(BaseModel):
+    custom: MyCustomType
+
+
+@strawberry.experimental.pydantic.type(model=Example, all_fields=True)
+class ExampleGQL:
+    ...
+
+
+MyScalarType = strawberry.scalar(
+    MyCustomType,
+    # or another function describing how to represent MyCustomType in the response
+    serialize=str,
+    parse_value=lambda v: MyCustomType(),
+)
+
+
+@strawberry.type
+class Query:
+    @strawberry.field()
+    def test(self) -> ExampleGQL:
+        return Example(custom=MyCustomType())
+
+
+# Tells strawberry to convert MyCustomType into MyScalarType
+schema = strawberry.Schema(query=Query, scalar_overrides={MyCustomType: MyScalarType})
+```
