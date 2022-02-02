@@ -28,6 +28,9 @@ jobs:
         with open(event_json_path) as f:
             event_data = json.load(f)
 
+        print(all_files)
+        print(event_data)
+
         links = [
           "https://strawberry.rocks/docs/pr/{pr_number}/{path}".format(
             pr_number=event_data["number"],
