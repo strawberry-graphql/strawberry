@@ -1,6 +1,7 @@
+import base64
 import re
 from enum import Enum
-from typing import Any, List, NewType, Optional, Union, cast
+from typing import Any, Dict, List, NewType, Optional, Union, cast
 
 import pytest
 
@@ -965,3 +966,40 @@ def test_can_convert_both_output_and_input_type():
     group_input = GroupInput.from_pydantic(origin_group)
     final_group = group_input.to_pydantic()
     assert origin_group == final_group
+
+
+def test_custom_conversion_functions():
+    class User(BaseModel):
+        age: int
+        password: Optional[str]
+
+    @strawberry.experimental.pydantic.type(User)
+    class UserType:
+        age: str
+        password: strawberry.auto
+
+        @staticmethod
+        def from_pydantic(user: User, extra: Dict[str, Any] = None) -> "UserType":
+            return UserType(
+                age=str(user.age),
+                password=base64.b64encode(user.password.encode()).decode()
+                if user.password
+                else None,
+            )
+
+        def to_pydantic(self) -> User:
+            return User(
+                age=int(self.age),
+                password=base64.b64decode(self.password.encode()).decode()
+                if self.password
+                else None,
+            )
+
+    user = User(age=1, password="abc")
+    user_strawberry = UserType.from_pydantic(user)
+
+    assert user_strawberry.age == "1"
+    assert user_strawberry.password == "YWJj"
+
+    user_pydantic = user_strawberry.to_pydantic()
+    assert user == user_pydantic

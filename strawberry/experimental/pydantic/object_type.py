@@ -218,11 +218,16 @@ def type(
         def is_type_of(cls: Type, obj: Any, _info: GraphQLResolveInfo) -> bool:
             return isinstance(obj, (cls, model))
 
+        namespace = {"is_type_of": is_type_of}
+        if hasattr(cls, "from_pydantic"):
+            namespace["from_pydantic"] = cls.from_pydantic
+        if hasattr(cls, "to_pydantic"):
+            namespace["to_pydantic"] = cls.to_pydantic
         cls = dataclasses.make_dataclass(
             cls.__name__,
             [field.to_tuple() for field in sorted_fields],
             bases=cls.__bases__,
-            namespace={"is_type_of": is_type_of},
+            namespace=namespace,
         )
 
         _process_type(
@@ -252,8 +257,10 @@ def type(
 
             return model(**instance_kwargs)
 
-        cls.from_pydantic = staticmethod(from_pydantic)
-        cls.to_pydantic = to_pydantic
+        if not hasattr(cls, "from_pydantic"):
+            cls.from_pydantic = staticmethod(from_pydantic)
+        if not hasattr(cls, "to_pydantic"):
+            cls.to_pydantic = to_pydantic
 
         return cls
 
