@@ -226,6 +226,8 @@ class InvalidCustomContext(Exception):
     """Raised when a custom context object is of the wrong python type"""
 
     def __init__(self):
-        message = "The custom context must be either a class\
-            that inherits from BaseContext or a dictionary"
+        message = (
+            "The custom context must be either a class "
+            "that inherits from BaseContext or a dictionary"
+        )
         super().__init__(message)

@@ -134,7 +134,7 @@ class CustomContext(BaseContext):
 
 
 def custom_context_dependency() -> CustomContext:
-    return CustomContext(greeting = "you rock!", name = "John")
+    return CustomContext(greeting="you rock!", name="John")
 
 
 async def get_context(
@@ -208,6 +208,8 @@ graphql_app = GraphQLRouter(schema)
 app = FastAPI()
 app.include_router(graphql_app, prefix="/graphql")
 ```
+
+If using a custom context class, then background tasks should be stored within the class object as `.background_tasks`.
 
 ## root_value_getter
 

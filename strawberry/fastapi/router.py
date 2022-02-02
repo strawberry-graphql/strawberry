@@ -22,17 +22,17 @@ from strawberry.types import ExecutionResult
 from strawberry.utils.debug import pretty_print_graphql_operation
 
 
+CustomContext = Union["BaseContext", Dict[str, Any]]
+MergedContext = Union[
+    "BaseContext", Dict[str, Union[Any, BackgroundTasks, Request, Response, WebSocket]]
+]
+
+
 class BaseContext:
     def __init__(self):
         self.request: Optional[Union[Request, WebSocket]] = None
         self.background_tasks: Optional[BackgroundTasks] = None
         self.response: Optional[Response] = None
-
-
-CustomContext = Union[BaseContext, Dict[str, Any]]
-MergedContext = Union[
-    BaseContext, Dict[str, Union[Any, BackgroundTasks, Request, Response, WebSocket]]
-]
 
 
 class GraphQLRouter(APIRouter):
@@ -54,7 +54,7 @@ class GraphQLRouter(APIRouter):
             response: Response = None,
             ws: WebSocket = None,
         ) -> MergedContext:
-            default_dict = {
+            default_context = {
                 "request": request or ws,
                 "background_tasks": background_tasks,
                 "response": response,
@@ -66,11 +66,11 @@ class GraphQLRouter(APIRouter):
                 return custom_getter
             elif isinstance(custom_getter, dict):
                 return {
-                    **default_dict,
+                    **default_context,
                     **custom_getter,
                 }
             elif custom_getter is None:
-                return default_dict
+                return default_context
             else:
                 raise InvalidCustomContext()
 

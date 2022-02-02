@@ -120,7 +120,9 @@ def test_with_invalid_context_getter():
     test_client = TestClient(app)
     with pytest.raises(
         InvalidCustomContext,
-        match="The custom context must be either a class\
-            that inherits from BaseContext or a dictionary",
+        match=(
+            "The custom context must be either a class "
+            "that inherits from BaseContext or a dictionary"
+        ),
     ):
         test_client.post("/graphql", json={"query": "{ abc }"})
