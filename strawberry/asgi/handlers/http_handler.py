@@ -53,6 +53,8 @@ class HTTPHandler:
             context=context,
         )
 
+        response.headers.raw.extend(sub_response.headers.raw)
+
         if sub_response.background:
             response.background = sub_response.background
 
