@@ -44,6 +44,8 @@ jobs:
           {links}
           """
         ).format(links="\n".join(links))
+
+        message = message.replace("%", "%25").replace("\n", "%0A").replace("\r", "%0D")
         output = "::set-output name=message::{}".format(message)
 
         print(output)
