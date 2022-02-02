@@ -1,5 +1,4 @@
 import json
-import warnings
 from typing import Any, Callable, Dict, Iterable, Optional
 
 from starlette import status
