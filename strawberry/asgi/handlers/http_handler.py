@@ -41,9 +41,8 @@ class HTTPHandler:
         root_value = await self.get_root_value(request)
 
         sub_response = Response()
-        if sub_response.status_code == 200:
-            # Set default status code to None
-            sub_response.status_code = None  # typing: ignore
+        sub_response.status_code = None  # typing: ignore
+        del sub_response.headers["content-length"]
 
         context = await self.get_context(request=request, response=sub_response)
 
@@ -54,22 +53,6 @@ class HTTPHandler:
             root_value=root_value,
             context=context,
         )
-
-        # Only add headers from sub_response if they're not already present in response
-        duplicate_headers = []
-        response_headers_keys = {k for k, _ in response.headers.raw}
-
-        for k, v in sub_response.headers.raw:
-            if k not in response_headers_keys:
-                response.headers.raw.append((k, v))
-            elif k != b"content-length":
-                duplicate_headers.append(k)
-
-        # Warning for any duplicate headers found
-        if duplicate_headers:
-            warnings.warn(
-                "Duplicate headers in sub response found. {0}".format(duplicate_headers)
-            )
 
         if sub_response.background:
             response.background = sub_response.background
