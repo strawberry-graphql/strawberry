@@ -265,9 +265,9 @@ input_data = UserInput(id='abc', name='Jake')
 instance = input_data.to_pydantic()
 ```
 
-### Classes with \_\_get_validators\_\_
+### Classes with `\_\_get_validators\_\_`
 
-Pydantic BaseModels may define a custom type with [\_\_get_validators\_\_](https://pydantic-docs.helpmanual.io/usage/types/#classes-with-__get_validators__)
+Pydantic BaseModels may define a custom type with [`\_\_get_validators\_\_`](https://pydantic-docs.helpmanual.io/usage/types/#classes-with-__get_validators__)
 logic. You will need to add a scalar type and add the mapping to the `scalar_overrides`
 argument in the Schema class.
 
