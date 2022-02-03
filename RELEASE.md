@@ -1,6 +1,6 @@
 Release type: minor
 
-This release introduce the `GraphQLTestClient` also for `aiohttp` integration (was already availabe for `asgi` and `Django`). It hides the http request's details and asserts that there are no errors in the response (you can always disable this behavior by passing `asserts_errors=False`). This makes it easier to test queries and makes your tests cleaner.
+This release adds an implementation of the `GraphQLTestClient` for the `aiohttp` integration (in addition to the existing `asgi` and `Django` support). It hides the HTTP request's details and verifies that there are no errors in the response (this behavior can be disabled by passing `asserts_errors=False`). This makes it easier to test queries and makes your tests cleaner.
 
 If you are using `pytest` you can add a fixture in `conftest.py`
 
