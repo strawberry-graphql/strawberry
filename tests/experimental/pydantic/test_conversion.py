@@ -973,27 +973,28 @@ def test_custom_conversion_functions():
         age: int
         password: Optional[str]
 
-    @strawberry.experimental.pydantic.type(User)
+    def user_from_pydantic(instance: User, extra: Dict[str, Any] = None) -> "UserType":
+        return UserType(
+            age=str(instance.age),
+            password=base64.b64encode(instance.password.encode()).decode()
+            if instance.password
+            else None,
+        )
+
+    def user_to_pydantic(self) -> User:
+        return User(
+            age=int(self.age),
+            password=base64.b64decode(self.password.encode()).decode()
+            if self.password
+            else None,
+        )
+
+    @strawberry.experimental.pydantic.type(
+        User, from_pydantic=user_from_pydantic, to_pydantic=user_to_pydantic
+    )
     class UserType:
         age: str
         password: strawberry.auto
-
-        @staticmethod
-        def from_pydantic(user: User, extra: Dict[str, Any] = None) -> "UserType":
-            return UserType(
-                age=str(user.age),
-                password=base64.b64encode(user.password.encode()).decode()
-                if user.password
-                else None,
-            )
-
-        def to_pydantic(self) -> User:
-            return User(
-                age=int(self.age),
-                password=base64.b64decode(self.password.encode()).decode()
-                if self.password
-                else None,
-            )
 
     user = User(age=1, password="abc")
     user_strawberry = UserType.from_pydantic(user)
@@ -1003,3 +1004,49 @@ def test_custom_conversion_functions():
 
     user_pydantic = user_strawberry.to_pydantic()
     assert user == user_pydantic
+
+
+def test_nested_custom_conversion_functions():
+    class User(BaseModel):
+        age: int
+        password: Optional[str]
+
+    class Parent(BaseModel):
+        user: User
+
+    def user_from_pydantic(instance: User, extra: Dict[str, Any] = None) -> "UserType":
+        return UserType(
+            age=str(instance.age),
+            password=base64.b64encode(instance.password.encode()).decode()
+            if instance.password
+            else None,
+        )
+
+    def user_to_pydantic(self) -> User:
+        return User(
+            age=int(self.age),
+            password=base64.b64decode(self.password.encode()).decode()
+            if self.password
+            else None,
+        )
+
+    @strawberry.experimental.pydantic.type(
+        User, from_pydantic=user_from_pydantic, to_pydantic=user_to_pydantic
+    )
+    class UserType:
+        age: str
+        password: strawberry.auto
+
+    @strawberry.experimental.pydantic.type(Parent)
+    class ParentType:
+        user: strawberry.auto
+
+    user = User(age=1, password="abc")
+    parent = Parent(user=user)
+    parent_strawberry = ParentType.from_pydantic(parent)
+
+    assert parent_strawberry.user.age == "1"
+    assert parent_strawberry.user.password == "YWJj"
+
+    parent_pydantic = parent_strawberry.to_pydantic()
+    assert parent == parent_pydantic

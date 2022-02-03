@@ -27,6 +27,7 @@ import strawberry
 from strawberry.arguments import UNSET
 from strawberry.experimental.pydantic.conversion import (
     convert_pydantic_model_to_strawberry_class,
+    convert_strawberry_class_to_pydantic_model,
 )
 from strawberry.experimental.pydantic.fields import get_basic_type
 from strawberry.experimental.pydantic.utils import (
@@ -142,6 +143,15 @@ def type(
     description: Optional[str] = None,
     directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
     all_fields: bool = False,
+    from_pydantic: Optional[
+        Callable[
+            [PydanticModel, Dict[str, Any]],
+            StrawberryTypeFromPydantic[PydanticModel],
+        ]
+    ] = None,
+    to_pydantic: Optional[
+        Callable[[StrawberryTypeFromPydantic[PydanticModel]], PydanticModel]
+    ] = None,
 ) -> Callable[..., Type[StrawberryTypeFromPydantic[PydanticModel]]]:
     def wrap(cls: Any) -> Type[StrawberryTypeFromPydantic[PydanticModel]]:
         model_fields = model.__fields__
@@ -218,16 +228,11 @@ def type(
         def is_type_of(cls: Type, obj: Any, _info: GraphQLResolveInfo) -> bool:
             return isinstance(obj, (cls, model))
 
-        namespace = {"is_type_of": is_type_of}
-        if hasattr(cls, "from_pydantic"):
-            namespace["from_pydantic"] = cls.from_pydantic
-        if hasattr(cls, "to_pydantic"):
-            namespace["to_pydantic"] = cls.to_pydantic
         cls = dataclasses.make_dataclass(
             cls.__name__,
             [field.to_tuple() for field in sorted_fields],
             bases=cls.__bases__,
-            namespace=namespace,
+            namespace={"is_type_of": is_type_of},
         )
 
         _process_type(
@@ -245,22 +250,24 @@ def type(
             model._strawberry_type = cls  # type: ignore
         cls._pydantic_type = model  # type: ignore
 
-        def from_pydantic(
+        def from_pydantic_default(
             instance: PydanticModel, extra: Dict[str, Any] = None
         ) -> StrawberryTypeFromPydantic[PydanticModel]:
             return convert_pydantic_model_to_strawberry_class(
                 cls=cls, model_instance=instance, extra=extra
             )
 
-        def to_pydantic(self) -> PydanticModel:
-            instance_kwargs = dataclasses.asdict(self)
-
+        def to_pydantic_default(self) -> PydanticModel:
+            instance_kwargs = {
+                f.name: convert_strawberry_class_to_pydantic_model(
+                    getattr(self, f.name)
+                )
+                for f in dataclasses.fields(self)
+            }
             return model(**instance_kwargs)
 
-        if not hasattr(cls, "from_pydantic"):
-            cls.from_pydantic = staticmethod(from_pydantic)
-        if not hasattr(cls, "to_pydantic"):
-            cls.to_pydantic = to_pydantic
+        cls.from_pydantic = from_pydantic or staticmethod(from_pydantic_default)
+        cls.to_pydantic = to_pydantic or to_pydantic_default
 
         return cls
 
