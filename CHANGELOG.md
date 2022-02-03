@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.95.3 - 2022-02-03
+-------------------
+
+This release fixes an issue with FastAPI context dependency injection that causes class-based custom contexts to no longer be permitted.
+
+Contributed by [Tommy Smith](https://github.com/tsmith023) [PR #1564](https://github.com/strawberry-graphql/strawberry/pull/1564/)
+
+
 0.95.2 - 2022-02-02
 -------------------
 
