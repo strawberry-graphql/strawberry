@@ -403,8 +403,8 @@ class UserType:
     content_description: Optional[str] = None
 
     @staticmethod
-    def from_pydantic(user: User, extra: Dict[str, Any] = None) -> "UserType":
-        data = user.dict()
+    def from_pydantic(instance: User, extra: Dict[str, Any] = None) -> "UserType":
+        data = instance.dict()
         content = data.pop("content")
         data.update({f"content_{k.value}": v for k, v in content.items()})
         return UserType(**data)
