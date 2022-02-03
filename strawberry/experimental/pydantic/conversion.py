@@ -51,9 +51,7 @@ def _convert_from_pydantic_to_strawberry_type(
         if hasattr(type(data), "_strawberry_type"):
             type_ = type(data)._strawberry_type
         if hasattr(type_, "from_pydantic"):
-            return type_.from_pydantic(  # type: ignore
-                instance=data_from_model, extra=extra
-            )
+            return type_.from_pydantic(data_from_model, extra)  # type: ignore
         return convert_pydantic_model_to_strawberry_class(
             type_, model_instance=data_from_model, extra=extra
         )
