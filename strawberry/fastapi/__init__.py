@@ -1,4 +1,4 @@
-from strawberry.fastapi.router import GraphQLRouter
+from strawberry.fastapi.router import BaseContext, GraphQLRouter
 
 
-__all__ = ["GraphQLRouter"]
+__all__ = ["BaseContext", "GraphQLRouter"]
