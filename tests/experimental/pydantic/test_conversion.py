@@ -1050,3 +1050,54 @@ def test_nested_custom_conversion_functions():
 
     parent_pydantic = parent_strawberry.to_pydantic()
     assert parent == parent_pydantic
+
+
+def test_can_convert_input_types_to_pydantic_with_non_pydantic_dataclass():
+    @strawberry.type
+    class Work:
+        hours: int
+
+    class User(BaseModel):
+        age: int
+        password: Optional[str]
+        work: Work
+
+    @strawberry.experimental.pydantic.input(User)
+    class UserInput:
+        age: strawberry.auto
+        password: strawberry.auto
+        work: strawberry.auto
+
+    data = UserInput(age=1, password=None, work=Work(hours=1))
+    user = data.to_pydantic()
+
+    assert user.age == 1
+    assert user.password is None
+    assert user.work.hours == 1
+
+
+def test_can_convert_input_types_to_pydantic_with_dict():
+    class Work(BaseModel):
+        hours: int
+
+    class User(BaseModel):
+        age: int
+        password: Optional[str]
+        work: Dict[str, Work]
+
+    @strawberry.experimental.pydantic.input(Work)
+    class WorkInput:
+        hours: strawberry.auto
+
+    @strawberry.experimental.pydantic.input(User)
+    class UserInput:
+        age: strawberry.auto
+        password: strawberry.auto
+        work: strawberry.auto
+
+    data = UserInput(age=1, password=None, work={"Monday": Work(hours=1)})
+    user = data.to_pydantic()
+
+    assert user.age == 1
+    assert user.password is None
+    assert user.work["Monday"].hours == 1
