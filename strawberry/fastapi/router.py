@@ -12,7 +12,7 @@ from starlette.websockets import WebSocket
 
 from fastapi import APIRouter, Depends
 from strawberry.asgi.utils import get_graphiql_html
-from strawberry.exceptions import MissingQueryError
+from strawberry.exceptions import InvalidCustomContext, MissingQueryError
 from strawberry.fastapi.handlers import GraphQLTransportWSHandler, GraphQLWSHandler
 from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import GraphQLHTTPResponse, parse_request_data, process_result
@@ -20,6 +20,19 @@ from strawberry.schema import BaseSchema
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 from strawberry.types import ExecutionResult
 from strawberry.utils.debug import pretty_print_graphql_operation
+
+
+CustomContext = Union["BaseContext", Dict[str, Any]]
+MergedContext = Union[
+    "BaseContext", Dict[str, Union[Any, BackgroundTasks, Request, Response, WebSocket]]
+]
+
+
+class BaseContext:
+    def __init__(self):
+        self.request: Optional[Union[Request, WebSocket]] = None
+        self.background_tasks: Optional[BackgroundTasks] = None
+        self.response: Optional[Response] = None
 
 
 class GraphQLRouter(APIRouter):
@@ -32,21 +45,34 @@ class GraphQLRouter(APIRouter):
 
     @staticmethod
     def __get_context_getter(
-        custom_getter: Callable[..., Optional[Dict[str, Any]]]
-    ) -> Callable[..., Dict[str, Any]]:
+        custom_getter: Callable[..., Optional[CustomContext]]
+    ) -> Callable[..., CustomContext]:
         def dependency(
-            custom_getter: Optional[Dict[str, Any]],
+            custom_getter: Optional[CustomContext],
             background_tasks: BackgroundTasks,
             request: Request = None,
             response: Response = None,
             ws: WebSocket = None,
-        ) -> Dict[str, Union[Any, BackgroundTasks, Request, WebSocket]]:
-            return {
+        ) -> MergedContext:
+            default_context = {
                 "request": request or ws,
-                "response": response,
                 "background_tasks": background_tasks,
-                **(custom_getter or {}),
+                "response": response,
             }
+            if isinstance(custom_getter, BaseContext):
+                custom_getter.request = request or ws
+                custom_getter.background_tasks = background_tasks
+                custom_getter.response = response
+                return custom_getter
+            elif isinstance(custom_getter, dict):
+                return {
+                    **default_context,
+                    **custom_getter,
+                }
+            elif custom_getter is None:
+                return default_context
+            else:
+                raise InvalidCustomContext()
 
         # replace the signature parameters of dependency...
         # ...with the old parameters minus the first argument as it will be replaced...
