@@ -14,7 +14,7 @@ def graphql_client(aiohttp_client, myapp):
     yield GraphQLTestClient(aiohttp_client(myapp))
 ```
 
-And use it everywere in your test methods
+And use it everywhere in your tests
 
 ```python
 def test_strawberry(graphql_client):
