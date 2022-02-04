@@ -143,15 +143,6 @@ def type(
     description: Optional[str] = None,
     directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
     all_fields: bool = False,
-    from_pydantic: Optional[
-        Callable[
-            [PydanticModel, Dict[str, Any]],
-            StrawberryTypeFromPydantic[PydanticModel],
-        ]
-    ] = None,
-    to_pydantic: Optional[
-        Callable[[StrawberryTypeFromPydantic[PydanticModel]], PydanticModel]
-    ] = None,
 ) -> Callable[..., Type[StrawberryTypeFromPydantic[PydanticModel]]]:
     def wrap(cls: Any) -> Type[StrawberryTypeFromPydantic[PydanticModel]]:
         model_fields = model.__fields__
@@ -228,11 +219,24 @@ def type(
         def is_type_of(cls: Type, obj: Any, _info: GraphQLResolveInfo) -> bool:
             return isinstance(obj, (cls, model))
 
+        namespace = {"is_type_of": is_type_of}
+        has_custom_from_pydantic = hasattr(
+            cls, "from_pydantic"
+        ) and cls.from_pydantic.__qualname__.endswith(f"{cls.__name__}.from_pydantic")
+        has_custom_to_pydantic = hasattr(
+            cls, "to_pydantic"
+        ) and cls.to_pydantic.__qualname__.endswith(f"{cls.__name__}.to_pydantic")
+
+        if has_custom_from_pydantic:
+            namespace["from_pydantic"] = cls.from_pydantic
+        if has_custom_to_pydantic:
+            namespace["to_pydantic"] = cls.to_pydantic
+
         cls = dataclasses.make_dataclass(
             cls.__name__,
             [field.to_tuple() for field in sorted_fields],
             bases=cls.__bases__,
-            namespace={"is_type_of": is_type_of},
+            namespace=namespace,
         )
 
         _process_type(
@@ -266,8 +270,10 @@ def type(
             }
             return model(**instance_kwargs)
 
-        cls.from_pydantic = from_pydantic or staticmethod(from_pydantic_default)
-        cls.to_pydantic = to_pydantic or to_pydantic_default
+        if not has_custom_from_pydantic:
+            cls.from_pydantic = staticmethod(from_pydantic_default)
+        if not has_custom_to_pydantic:
+            cls.to_pydantic = to_pydantic_default
 
         return cls
 

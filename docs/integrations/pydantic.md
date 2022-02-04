@@ -395,33 +395,30 @@ class User(BaseModel):
     id: str
     content: Dict[ContentType, str]
 
-def user_from_pydantic(instance: User, extra: Dict[str, Any] = None) -> "UserType":
-    data = instance.dict()
-    content = data.pop("content")
-    data.update({f"content_{k.value}": v for k, v in content.items()})
-    return UserType(**data)
 
-def user_to_pydantic(self) -> User:
-    data = dataclasses.asdict(self)
-
-    # Pull out the content_* fields into a dict
-    content = {}
-    for enum_member in ContentType:
-        key = f"content_{enum_member.value}"
-        if data.get(key) is not None:
-            content[enum_member.value] = data.pop(key)
-
-
-@strawberry.experimental.pydantic.type(
-    model=User, from_pydantic=user_from_pydantic, to_pydantic=user_to_pydantic
-)
+@strawberry.experimental.pydantic.type(model=User)
 class UserType:
     id: strawberry.auto
     # Flatten the content dict into specific fields in the query
     content_name: Optional[str] = None
     content_description: Optional[str] = None
 
+    @staticmethod
+    def from_pydantic(instance: User, extra: Dict[str, Any] = None) -> "UserType":
+        data = instance.dict()
+        content = data.pop("content")
+        data.update({f"content_{k.value}": v for k, v in content.items()})
+        return UserType(**data)
 
+    def to_pydantic(self) -> User:
+        data = dataclasses.asdict(self)
+
+        # Pull out the content_* fields into a dict
+        content = {}
+        for enum_member in ContentType:
+            key = f"content_{enum_member.value}"
+            if data.get(key) is not None:
+                content[enum_member.value] = data.pop(key)
         return User(content=content, **data)
 
 user = User(id="abc", content={ContentType.NAME: "Bob"})
