@@ -2,11 +2,68 @@
 title: Pagination - Working with Connections
 ---
 
-# Working with Connections
+# Implementing pagination with Connections
 
-The GraphQL specification [recommends cursor-based pagination](https://graphql.org/learn/pagination/) and
-refers to [Relay's Connection specification](https://relay.dev/graphql/connections.htm) for specific implementation details.
-We'll learn about connections in this guide.
+We naively implemented cursor based pagination in the [previous guide](./cursor-based.md). To ensure a consistent implementation
+of this pattern, the Relay project has a formal [specification](https://relay.dev/graphql/connections.htm) you can follow for building
+GraphQL APIs which use a cursor based connection pattern.
+
+By the end of this tutorial, we should be able to return a connection of users when requested.
+
+```graphql+response
+query getUsers {
+  getUsers(first: 2) {
+    users {
+      edges {
+        node {
+          id
+          name
+          occupation
+          age
+        }
+      }
+      cursor
+    }
+    pageInfo {
+      endCursor
+      hasNextPage
+    }
+  }
+}
+---
+{
+  "data": {
+    "getUsers": {
+      "users": {
+        "edges": [
+          {
+            "node": {
+              "id": 1,
+              "name": "Norman Osborn",
+              "occupation": "Founder, Oscorp Industries",
+              "age": 42
+            },
+            "cursor": "dXNlcjox"
+          },
+          {
+            "node": {
+              "id": 2,
+              "name": "Peter Parker",
+              "occupation": "Freelance Photographer, The Daily Bugle",
+              "age": 20
+            },
+            "cursor": "dXNlcjoy"
+          }
+        ]
+      },
+      "pageInfo": {
+          "endCursor": "dXNlcjoz",
+          "hasNextPage": true
+      }
+    }
+  }
+}
+```
 
 ## Connections
 
@@ -29,15 +86,11 @@ GenericType = TypeVar("GenericType")
 @strawberry.type
 class Connection(Generic[GenericType]):
     page_info: "PageInfo" = strawberry.field(
-      description="""
-      Information to aid in pagination.
-      """
+      description="Information to aid in pagination."
     )
 
     edges: list["Edge[GenericType]"] = strawberry.field(
-      description="""
-      A list of edges in this connection.
-      """
+      description="A list of edges in this connection."
     )
 
 ```
@@ -61,42 +114,30 @@ GenericType = TypeVar("GenericType")
 @strawberry.type
 class Connection(Generic[GenericType]):
     page_info: "PageInfo" = strawberry.field(
-      description="""
-      Information to aid in pagination.
-      """
+      description="Information to aid in pagination."
     )
 
     edges: list["Edge[GenericType]"] = strawberry.field(
-      description="""
-      A list of edges in this connection.
-      """
+      description="A list of edges in this connection."
     )
 
 
 @strawberry.type
 class PageInfo:
     has_next_page: bool = strawberry.field(
-      description="""
-      When paginating forwards, are there more items?
-      """
+      description="When paginating forwards, are there more items?"
     )
 
     has_previous_page: bool = strawberry.field(
-      description="""
-      When paginating backwards, are there more items?
-      """
+      description="When paginating backwards, are there more items?"
     )
 
     start_cursor: Optional[str] = strawberry.field(
-      description="""
-      When paginating backwards, the cursor to continue.
-      """
+      description="When paginating backwards, the cursor to continue."
     )
 
     end_cursor: Optional[str] = strawberry.field(
-      description="""
-      When paginating forwards, the cursor to continue.
-      """
+      description="When paginating forwards, the cursor to continue."
     )
 
 ```
@@ -125,57 +166,41 @@ GenericType = TypeVar("GenericType")
 @strawberry.type
 class Connection(Generic[GenericType]):
     page_info: "PageInfo" = strawberry.field(
-      description="""
-      Information to aid in pagination.
-      """
+      description="Information to aid in pagination."
     )
 
     edges: list["Edge[GenericType]"] = strawberry.field(
-      description="""
-      A list of edges in this connection.
-      """
+      description="A list of edges in this connection."
     )
 
 
 @strawberry.type
 class PageInfo:
     has_next_page: bool = strawberry.field(
-      description="""
-      When paginating forwards, are there more items?
-      """
+      description="When paginating forwards, are there more items?"
     )
 
     has_previous_page: bool = strawberry.field(
-      description="""
-      When paginating backwards, are there more items?
-      """
+      description="When paginating backwards, are there more items?"
     )
 
     start_cursor: Optional[str] = strawberry.field(
-      description="""
-      When paginating backwards, the cursor to continue.
-      """
+      description="When paginating backwards, the cursor to continue."
     )
 
     end_cursor: Optional[str] = strawberry.field(
-      description="""
-      When paginating forwards, the cursor to continue.
-      """
+      description="When paginating forwards, the cursor to continue."
     )
 
 
 @strawberry.type
 class Edge(Generic[GenericType]):
     node: GenericType = strawberry.field(
-      description="""
-      The item at the end of the edge.
-      """
+      description="The item at the end of the edge."
     )
 
     cursor: str = strawberry.field(
-      description="""
-      A cursor for use in pagination.
-      """
+      description="A cursor for use in pagination."
     )
 
 ```
@@ -227,57 +252,41 @@ GenericType = TypeVar("GenericType")
 @strawberry.type
 class Connection(Generic[GenericType]):
     page_info: "PageInfo" = strawberry.field(
-      description="""
-      Information to aid in pagination.
-      """
+      description="Information to aid in pagination."
     )
 
     edges: list["Edge[GenericType]"] = strawberry.field(
-      description="""
-      A list of edges in this connection.
-      """
+      description="A list of edges in this connection."
     )
 
 
 @strawberry.type
 class PageInfo:
     has_next_page: bool = strawberry.field(
-      description="""
-      When paginating forwards, are there more items?
-      """
+      description="When paginating forwards, are there more items?"
     )
 
     has_previous_page: bool = strawberry.field(
-      description="""
-      When paginating backwards, are there more items?
-      """
+      description="When paginating backwards, are there more items?"
     )
 
     start_cursor: Optional[str] = strawberry.field(
-      description="""
-      When paginating backwards, the cursor to continue.
-      """
+      description="When paginating backwards, the cursor to continue."
     )
 
     end_cursor: Optional[str] = strawberry.field(
-      description="""
-      When paginating forwards, the cursor to continue.
-      """
+      description="When paginating forwards, the cursor to continue."
     )
 
 
 @strawberry.type
 class Edge(Generic[GenericType]):
     node: GenericType = strawberry.field(
-      description="""
-      The item at the end of the edge.
-      """
+      description="The item at the end of the edge."
     )
 
     cursor: str = strawberry.field(
-      description="""
-      A cursor for use in pagination.
-      """
+      description="A cursor for use in pagination."
     )
 
 ```
@@ -358,57 +367,41 @@ GenericType = TypeVar("GenericType")
 @strawberry.type
 class Connection(Generic[GenericType]):
     page_info: "PageInfo" = strawberry.field(
-      description="""
-      Information to aid in pagination.
-      """
+      description="Information to aid in pagination."
     )
 
     edges: list["Edge[GenericType]"] = strawberry.field(
-      description="""
-      A list of edges in this connection.
-      """
+      description="A list of edges in this connection."
     )
 
 
 @strawberry.type
 class PageInfo:
     has_next_page: bool = strawberry.field(
-      description="""
-      When paginating forwards, are there more items?
-      """
+      description="When paginating forwards, are there more items?"
     )
 
     has_previous_page: bool = strawberry.field(
-      description="""
-      When paginating backwards, are there more items?
-      """
+      description="When paginating backwards, are there more items?"
     )
 
     start_cursor: Optional[str] = strawberry.field(
-      description="""
-      When paginating backwards, the cursor to continue.
-      """
+      description="When paginating backwards, the cursor to continue."
     )
 
     end_cursor: Optional[str] = strawberry.field(
-      description="""
-      When paginating forwards, the cursor to continue.
-      """
+      description="When paginating forwards, the cursor to continue."
     )
 
 
 @strawberry.type
 class Edge(Generic[GenericType]):
     node: GenericType = strawberry.field(
-      description="""
-      The item at the end of the edge.
-      """
+      description="The item at the end of the edge."
     )
 
     cursor: str = strawberry.field(
-      description="""
-      A cursor for use in pagination.
-      """
+      description="A cursor for use in pagination."
     )
 
 ```
@@ -479,77 +472,55 @@ GenericType = TypeVar("GenericType")
 @strawberry.type
 class Connection(Generic[GenericType]):
     page_info: "PageInfo" = strawberry.field(
-      description="""
-      Information to aid in pagination.
-      """
+      description="Information to aid in pagination."
     )
 
     edges: list["Edge[GenericType]"] = strawberry.field(
-      description="""
-      A list of edges in this connection.
-      """
+      description="A list of edges in this connection."
     )
 
 
 @strawberry.type
 class PageInfo:
     has_next_page: bool = strawberry.field(
-      description="""
-      When paginating forwards, are there more items?
-      """
+      description="When paginating forwards, are there more items?"
     )
 
     has_previous_page: bool = strawberry.field(
-      description="""
-      When paginating backwards, are there more items?
-      """
+      description="When paginating backwards, are there more items?"
     )
 
     start_cursor: Optional[str] = strawberry.field(
-      description="""
-      When paginating backwards, the cursor to continue.
-      """
+      description="When paginating backwards, the cursor to continue."
     )
 
     end_cursor: Optional[str] = strawberry.field(
-      description="""
-      When paginating forwards, the cursor to continue.
-      """
+      description="When paginating forwards, the cursor to continue."
     )
 
 
 @strawberry.type
 class Edge(Generic[GenericType]):
     node: GenericType = strawberry.field(
-      description="""
-      The item at the end of the edge.
-      """
+      description="The item at the end of the edge."
     )
 
     cursor: str = strawberry.field(
-      description="""
-      A cursor for use in pagination.
-      """
+      description="A cursor for use in pagination."
     )
 
 @strawberry.type
 class User:
     name: str = strawberry.field(
-        description="""
-        The name of the user.
-        """
+        description="The name of the user."
     )
 
     occupation: str = strawberry.field(
-        description="""
-        The occupation of the user.
-        """
+        description="The occupation of the user."
     )
 
     age: int = strawberry.field(
-        description="""
-        The age of the user.
-        """
+        description="The age of the user."
     )
 
 
@@ -636,21 +607,22 @@ strawberry server example:schema
 Here's an example query to try out:
 
 ```graphql
-{
-  getUsers {
-    pageInfo {
-      hasNextPage
-      hasPreviousPage
-      startCursor
-      endCursor
-    }
-    edges {
-      node {
-        name
-        occupation
-        age
+query getUsers {
+  getUsers(first: 2) {
+    users {
+      edges {
+        node {
+          id
+          name
+          occupation
+          age
+        }
       }
       cursor
+    }
+    pageInfo {
+      endCursor
+      hasNextPage
     }
   }
 }

@@ -65,57 +65,41 @@ import strawberry
 @strawberry.type
 class User:
     name: str = strawberry.field(
-        description="""
-        The name of the user.
-        """
+        description="The name of the user."
     )
 
     occupation: str = strawberry.field(
-        description="""
-        The occupation of the user.
-        """
+        description="The occupation of the user."
     )
 
     age: int = strawberry.field(
-        description="""
-        The age of the user.
-        """
+        description="The age of the user."
     )
 
 
 @strawberry.type
 class PageMeta:
     total: int = strawberry.field(
-        description="""
-        The total number of items in the dataset.
-        """
+        description="The total number of items in the dataset."
     )
 
     page: int = strawberry.field(
-        description="""
-        The current page number in the dataset.
-        """
+        description="The current page number in the dataset."
     )
 
     pages: int = strawberry.field(
-        description="""
-        The total number of pages in the dataset.
-        """
+        description="The total number of pages in the dataset."
     )
 
 
 @strawberry.type
 class UserResponse:
     users: List[User] = strawberry.field(
-        description="""
-        The list of users.
-        """
+        description="The list of users."
     )
 
     page_meta: PageMeta = strawberry.field(
-        description="""
-        Metadata to aid in pagination.
-        """
+        description="Metadata to aid in pagination."
     )
 
 
@@ -171,57 +155,41 @@ user_data = [
 @strawberry.type
 class User:
     name: str = strawberry.field(
-        description="""
-        The name of the user.
-        """
+        description="The name of the user."
     )
 
     occupation: str = strawberry.field(
-        description="""
-        The occupation of the user.
-        """
+        description="The occupation of the user."
     )
 
     age: int = strawberry.field(
-        description="""
-        The age of the user.
-        """
+        description="The age of the user."
     )
 
 
 @strawberry.type
 class PageMeta:
     total: int = strawberry.field(
-        description="""
-        The total number of items in the dataset.
-        """
+        description="The total number of items in the dataset."
     )
 
     page: int = strawberry.field(
-        description="""
-        The current page number in the dataset.
-        """
+        description="The current page number in the dataset."
     )
 
     pages: int = strawberry.field(
-        description="""
-        The total number of pages in the dataset.
-        """
+        description="The total number of pages in the dataset."
     )
 
 
 @strawberry.type
 class UserResponse:
     users: List[User] = strawberry.field(
-        description="""
-        The list of users.
-        """
+        description="The list of users."
     )
 
     page_meta: PageMeta = strawberry.field(
-        description="""
-        Metadata to aid in pagination.
-        """
+        description="Metadata to aid in pagination."
     )
 
 
@@ -276,57 +244,41 @@ user_data = [
 @strawberry.type
 class User:
     name: str = strawberry.field(
-        description="""
-        The name of the user.
-        """
+        description="The name of the user."
     )
 
     occupation: str = strawberry.field(
-        description="""
-        The occupation of the user.
-        """
+        description="The occupation of the user."
     )
 
     age: int = strawberry.field(
-        description="""
-        The age of the user.
-        """
+        description="The age of the user."
     )
 
 
 @strawberry.type
 class PageMeta:
     total: int = strawberry.field(
-        description="""
-        The total number of items in the dataset.
-        """
+        description="The total number of items in the dataset."
     )
 
     page: int = strawberry.field(
-        description="""
-        The current page number in the dataset.
-        """
+        description="The current page number in the dataset."
     )
 
     pages: int = strawberry.field(
-        description="""
-        The total number of pages in the dataset.
-        """
+        description="The total number of pages in the dataset."
     )
 
 
 @strawberry.type
 class UserResponse:
     users: List[User] = strawberry.field(
-        description="""
-        The list of users.
-        """
+        description="The list of users."
     )
 
     page_meta: PageMeta = strawberry.field(
-        description="""
-        Metadata to aid in pagination.
-        """
+        description="Metadata to aid in pagination."
     )
 
 
