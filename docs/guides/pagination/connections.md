@@ -95,7 +95,7 @@ class Connection(Generic[GenericType]):
 
 ```
 
-Connections must have atleast two fields - `edges` and `page_info`.
+Connections must have atleast two fields: `edges` and `page_info`.
 
 The `page_info` field contains metadata about the connection.
 Following the Relay specification, we can define a `PageInfo` type like this:
@@ -205,7 +205,7 @@ class Edge(Generic[GenericType]):
 
 ```
 
-EdgeTypes must have atleast two fields - `cursor` and `node`. The field names are self-explanatory.
+EdgeTypes must have atleast two fields - `cursor` and `node`.
 Each edge has it's own cursor and item (represented by the `node` field).
 
 Now that we have the types needed to implement pagination using Relay Connections, let
