@@ -4,7 +4,7 @@ title: Pagination - Working with Connections
 
 # Implementing pagination with Connections
 
-We naively implemented cursor based pagination in the [previous guide](./cursor-based.md). To ensure a consistent implementation
+We naively implemented cursor based pagination in the [previous tutorial](./cursor-based.md). To ensure a consistent implementation
 of this pattern, the Relay project has a formal [specification](https://relay.dev/graphql/connections.htm) you can follow for building
 GraphQL APIs which use a cursor based connection pattern.
 
