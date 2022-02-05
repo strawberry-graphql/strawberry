@@ -82,7 +82,7 @@ async def test_connection_init_timeout():
 
 
 async def test_connection_init_timeout_cancellation(test_client):
-    app = create_app(connection_init_wait_timeout=timedelta(milliseconds=500))
+    app = create_app(connection_init_wait_timeout=timedelta(milliseconds=1000))
     test_client = TestClient(app)
 
     with test_client.websocket_connect("/", [GRAPHQL_TRANSPORT_WS_PROTOCOL]) as ws:
@@ -91,7 +91,7 @@ async def test_connection_init_timeout_cancellation(test_client):
         response = ws.receive_json()
         assert response == ConnectionAckMessage().as_dict()
 
-        await asyncio.sleep(1)
+        await asyncio.sleep(2)
 
         ws.send_json(
             SubscribeMessage(
