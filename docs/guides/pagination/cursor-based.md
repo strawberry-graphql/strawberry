@@ -441,7 +441,7 @@ schema = strawberry.Schema(query=Query)
 <Note>
 
 Did you notice that cursor argument we defined is optional? That's because the client doesn't know
-the cursor intiially, when it makes the first request.
+the cursor initially, when it makes the first request.
 
 </Note>
 
