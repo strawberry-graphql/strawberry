@@ -142,7 +142,7 @@ def test_convert_alias_name():
         password: Optional[str]
 
     @strawberry.experimental.pydantic.type(
-        UserModel, all_fields=True, gql_uses_alias=True
+        UserModel, all_fields=True, use_pydantic_alias=True
     )
     class User:
         ...
@@ -161,7 +161,7 @@ def test_do_not_convert_alias_name():
         password: Optional[str]
 
     @strawberry.experimental.pydantic.type(
-        UserModel, all_fields=True, gql_uses_alias=False
+        UserModel, all_fields=True, use_pydantic_alias=False
     )
     class User:
         ...
