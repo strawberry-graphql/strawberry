@@ -1,6 +1,125 @@
 CHANGELOG
 =========
 
+0.95.1 - 2022-01-26
+-------------------
+
+Fix bug #1504 in the Pydantic integration, where it was impossible to define
+both an input and output type based on the same Pydantic base class.
+
+Contributed by [Matt Allen](https://github.com/Matt343) [PR #1592](https://github.com/strawberry-graphql/strawberry/pull/1592/)
+
+
+0.95.0 - 2022-01-22
+-------------------
+
+Adds `to_pydantic` and `from_pydantic` type hints for IDE support.
+
+Adds mypy extension support as well.
+
+```python
+from pydantic import BaseModel
+import strawberry
+
+class UserPydantic(BaseModel):
+    age: int
+
+@strawberry.experimental.pydantic.type(UserPydantic)
+class UserStrawberry:
+    age: strawberry.auto
+
+reveal_type(UserStrawberry(age=123).to_pydantic())
+```
+Mypy will infer the type as "UserPydantic". Previously it would be "Any"
+
+Contributed by [James Chua](https://github.com/thejaminator) [PR #1544](https://github.com/strawberry-graphql/strawberry/pull/1544/)
+
+
+0.94.0 - 2022-01-18
+-------------------
+
+This release replaces `cached_property` with `backports.cached_property` to improve
+the typing of the library.
+
+Contributed by [Rishi Kumar Ray](https://github.com/RishiKumarRay) [PR #1582](https://github.com/strawberry-graphql/strawberry/pull/1582/)
+
+
+0.93.23 - 2022-01-11
+--------------------
+
+Improve typing of `@strawberry.enum()` by:
+
+1. Using a `TypeVar` bound on `EnumMeta` instead of `EnumMeta`, which allows
+   type-checkers (like pyright) to detect the fields of the enum being
+   decorated. For example, for the following enum:
+
+```python
+@strawberry.enum
+class IceCreamFlavour(Enum):
+    VANILLA = "vanilla"
+    STRAWBERRY = "strawberry"
+    CHOCOLATE = "chocolate"
+```
+
+Prior to this change, pyright would complain if you tried to access
+`IceCreamFlavour.VANILLA`, since the type information of `IceCreamFlavour` was
+being erased by the `EnumMeta` typing .
+
+2. Overloading it so that type-checkers (like pyright) knows in what cases it
+   returns a decorator (when it's called with keyword arguments, e.g.
+   `@strawberry.enum(name="IceCreamFlavor")`), versus when it returns the
+   original enum type (without keyword arguments.
+
+Contributed by [Tim Joseph Dumol](https://github.com/TimDumol) [PR #1568](https://github.com/strawberry-graphql/strawberry/pull/1568/)
+
+
+0.93.22 - 2022-01-09
+--------------------
+
+This release adds `load_many` to `DataLoader`.
+
+Contributed by [Silas Sewell](https://github.com/silas) [PR #1528](https://github.com/strawberry-graphql/strawberry/pull/1528/)
+
+
+0.93.21 - 2022-01-07
+--------------------
+
+This release adds `deprecation_reason` support to arguments and mutations.
+
+Contributed by [Silas Sewell](https://github.com/silas) [PR #1527](https://github.com/strawberry-graphql/strawberry/pull/1527/)
+
+
+0.93.20 - 2022-01-07
+--------------------
+
+This release checks for AutoFieldsNotInBaseModelError when converting from pydantic models.
+ It is raised when strawberry.auto is used, but the pydantic model does not have
+the particular field defined.
+
+```python
+class User(BaseModel):
+    age: int
+
+@strawberry.experimental.pydantic.type(User)
+class UserType:
+    age: strawberry.auto
+    password: strawberry.auto
+```
+
+Previously no errors would be raised, and the password field would not appear on graphql schema.
+Such mistakes could be common during refactoring. Now, AutoFieldsNotInBaseModelError is raised.
+
+Contributed by [James Chua](https://github.com/thejaminator) [PR #1551](https://github.com/strawberry-graphql/strawberry/pull/1551/)
+
+
+0.93.19 - 2022-01-06
+--------------------
+
+Fixes TypeError when converting a pydantic BaseModel with NewType field
+
+Contributed by [James Chua](https://github.com/thejaminator) [PR #1547](https://github.com/strawberry-graphql/strawberry/pull/1547/)
+
+
 0.93.18 - 2022-01-05
 --------------------
 

@@ -43,7 +43,7 @@ jobs:
         print(output)
       shell: python
 
-    - uses: actions/github-script@v1
+    - uses: actions/github-script@v5
       id: add-comment
       env:
         number: ${{ github.event.number }}
@@ -53,11 +53,13 @@ jobs:
         script: |
           const links = JSON.parse(process.env.links).map(l => `- ${l}`).join('\n')
 
+          console.log(links);
+
           if (links.length) {
             const message = `
-              Hi 👋  You can find a preview of the docs here: \n\n${links}
+              Hi 👋 You can find a preview of the docs here: \n\n${links}
             `.trim()
-            await github.issues.createComment({
+            await github.rest.issues.createComment({
               issue_number: process.env.number,
               owner: context.repo.owner,
               repo: context.repo.repo,

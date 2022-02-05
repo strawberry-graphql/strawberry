@@ -82,6 +82,7 @@ class GraphQLCoreConverter:
             type_=argument_type,
             default_value=default_value,
             description=argument.description,
+            deprecation_reason=argument.deprecation_reason,
         )
 
     def from_enum(self, enum: EnumDefinition) -> CustomGraphQLEnumType:
@@ -175,6 +176,7 @@ class GraphQLCoreConverter:
             type_=field_type,
             default_value=default_value,
             description=field.description,
+            deprecation_reason=field.deprecation_reason,
         )
 
     def from_input_object(self, object_type: type) -> GraphQLInputObjectType:

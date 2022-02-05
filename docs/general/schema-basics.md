@@ -325,7 +325,7 @@ class Mutation:
     ...
 ```
 
-Not only does this facilitate passing the PostAndMediaInput type around within
+Not only does this facilitate passing the AddBookInput type around within
 our schema, it also provides a basis for annotating fields with descriptions
 that are automatically exposed by GraphQL-enabled tools:
 

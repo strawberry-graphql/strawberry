@@ -1,5 +1,6 @@
+import re
 from enum import Enum
-from typing import Any, List, Optional, Union, cast
+from typing import Any, List, NewType, Optional, Union, cast
 
 import pytest
 
@@ -10,6 +11,7 @@ from pydantic.typing import NoArgAnyCallable
 import strawberry
 from strawberry.arguments import UNSET
 from strawberry.experimental.pydantic.exceptions import (
+    AutoFieldsNotInBaseModelError,
     BothDefaultAndDefaultFactoryDefinedError,
 )
 from strawberry.experimental.pydantic.utils import (
@@ -53,6 +55,68 @@ def test_can_convert_pydantic_type_to_strawberry():
 
     assert user.age == 1
     assert user.password == "abc"
+
+
+def test_cannot_convert_pydantic_type_to_strawberry_missing_field():
+    class User(BaseModel):
+        age: int
+
+    with pytest.raises(
+        AutoFieldsNotInBaseModelError,
+        match=re.escape(
+            "UserType defines ['password'] with strawberry.auto."
+            " Field(s) not present in User BaseModel."
+        ),
+    ):
+
+        @strawberry.experimental.pydantic.type(User)
+        class UserType:
+            age: strawberry.auto
+            password: strawberry.auto
+
+
+def test_cannot_convert_pydantic_type_to_strawberry_property_auto():
+    # auto inferring type of a property is not supported
+
+    class User(BaseModel):
+        age: int
+
+        @property
+        def password(self) -> str:
+            return "hunter2"
+
+    with pytest.raises(
+        AutoFieldsNotInBaseModelError,
+        match=re.escape(
+            "UserType defines ['password'] with strawberry.auto."
+            " Field(s) not present in User BaseModel."
+        ),
+    ):
+
+        @strawberry.experimental.pydantic.type(User)
+        class UserType:
+            age: strawberry.auto
+            password: strawberry.auto
+
+
+def test_can_convert_pydantic_type_to_strawberry_property():
+    class User(BaseModel):
+        age: int
+
+        @property
+        def password(self) -> str:
+            return "hunter2"
+
+    @strawberry.experimental.pydantic.type(User)
+    class UserType:
+        age: strawberry.auto
+        password: str
+
+    origin_user = User(age=1)
+    user = UserType.from_pydantic(origin_user)
+
+    assert user.age == 1
+    assert user.password == "hunter2"
 
 
 def test_can_convert_alias_pydantic_field_to_strawberry():
@@ -741,6 +805,25 @@ def test_can_convert_input_types_to_pydantic_default_values_defaults_declared_fi
     assert password_field.type.of_type is str
 
 
+def test_can_convert_pydantic_type_to_strawberry_newtype():
+    Password = NewType("Password", str)
+
+    class User(BaseModel):
+        age: int
+        password: Optional[Password]
+
+    @strawberry.experimental.pydantic.type(User)
+    class UserType:
+        age: strawberry.auto
+        password: strawberry.auto
+
+    origin_user = User(age=1, password="abc")
+    user = UserType.from_pydantic(origin_user)
+
+    assert user.age == 1
+    assert user.password == "abc"
+
+
 def test_sort_creation_fields():
     has_default = DataclassCreationFields(
         name="has_default",
@@ -865,3 +948,56 @@ def test_can_convert_pydantic_type_to_strawberry_with_additional_field_resolvers
     assert user.password == "abc"
     assert User._type_definition.fields[0].base_resolver() == 84
     assert User._type_definition.fields[1].base_resolver() == 42
+
+
+def test_can_convert_both_output_and_input_type():
+    class Work(BaseModel):
+        time: float
+
+    class User(BaseModel):
+        name: str
+        work: Optional[Work]
+
+    class Group(BaseModel):
+        users: List[User]
+
+    # Test both definition orders
+    @strawberry.experimental.pydantic.input(Work)
+    class WorkInput:
+        time: strawberry.auto
+
+    @strawberry.experimental.pydantic.type(Work)
+    class WorkOutput:
+        time: strawberry.auto
+
+    @strawberry.experimental.pydantic.type(User)
+    class UserOutput:
+        name: strawberry.auto
+        work: strawberry.auto
+
+    @strawberry.experimental.pydantic.input(User)
+    class UserInput:
+        name: strawberry.auto
+        work: strawberry.auto
+
+    @strawberry.experimental.pydantic.input(Group)
+    class GroupInput:
+        users: strawberry.auto
+
+    @strawberry.experimental.pydantic.type(Group)
+    class GroupOutput:
+        users: strawberry.auto
+
+    origin_group = Group(
+        users=[
+            User(name="Alice", work=Work(time=10.0)),
+            User(name="Bob", work=Work(time=5.0)),
+        ]
+    )
+    group = GroupOutput.from_pydantic(origin_group)
+    final_group = group.to_pydantic()
+    assert origin_group == final_group
+
+    group_input = GroupInput.from_pydantic(origin_group)
+    final_group = group_input.to_pydantic()
+    assert origin_group == final_group

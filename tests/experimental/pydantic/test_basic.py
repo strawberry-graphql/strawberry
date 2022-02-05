@@ -159,6 +159,31 @@ def test_referencing_other_models_fails_when_not_registered():
             group: strawberry.auto
 
 
+def test_referencing_other_input_models_fails_when_not_registered():
+    class Group(pydantic.BaseModel):
+        name: str
+
+    class User(pydantic.BaseModel):
+        age: int
+        password: Optional[str]
+        group: Group
+
+    @strawberry.experimental.pydantic.type(Group)
+    class GroupType:
+        name: strawberry.auto
+
+    with pytest.raises(
+        strawberry.experimental.pydantic.UnregisteredTypeException,
+        match=("Cannot find a Strawberry Type for (.*) did you forget to register it?"),
+    ):
+
+        @strawberry.experimental.pydantic.input(User)
+        class UserInputType:
+            age: strawberry.auto
+            password: strawberry.auto
+            group: strawberry.auto
+
+
 def test_referencing_other_registered_models():
     class Group(pydantic.BaseModel):
         name: str
@@ -539,3 +564,97 @@ def test_interface():
 
     assert field2.python_name == "interface_field"
     assert field2.type is BaseType
+
+
+def test_both_output_and_input_type():
+    class Work(pydantic.BaseModel):
+        time: float
+
+    class User(pydantic.BaseModel):
+        name: str
+        work: Optional[Work]
+
+    class Group(pydantic.BaseModel):
+        users: List[User]
+
+    # Test both definition orders
+    @strawberry.experimental.pydantic.input(Work)
+    class WorkInput:
+        time: strawberry.auto
+
+    @strawberry.experimental.pydantic.type(Work)
+    class WorkOutput:
+        time: strawberry.auto
+
+    @strawberry.experimental.pydantic.type(User)
+    class UserOutput:
+        name: strawberry.auto
+        work: strawberry.auto
+
+    @strawberry.experimental.pydantic.input(User)
+    class UserInput:
+        name: strawberry.auto
+        work: strawberry.auto
+
+    @strawberry.experimental.pydantic.input(Group)
+    class GroupInput:
+        users: strawberry.auto
+
+    @strawberry.experimental.pydantic.type(Group)
+    class GroupOutput:
+        users: strawberry.auto
+
+    @strawberry.type
+    class Query:
+        groups: List[GroupOutput]
+
+    @strawberry.type
+    class Mutation:
+        @strawberry.mutation
+        def updateGroup(group: GroupInput) -> GroupOutput:
+            pass
+
+    # This triggers the exception from #1504
+    schema = strawberry.Schema(query=Query, mutation=Mutation)
+    expected_schema = """
+input GroupInput {
+  users: [UserInput!]!
+}
+
+type GroupOutput {
+  users: [UserOutput!]!
+}
+
+type Mutation {
+  updateGroup(group: GroupInput!): GroupOutput!
+}
+
+type Query {
+  groups: [GroupOutput!]!
+}
+
+input UserInput {
+  name: String!
+  work: WorkInput = null
+}
+
+type UserOutput {
+  name: String!
+  work: WorkOutput
+}
+
+input WorkInput {
+  time: Float!
+}
+
+type WorkOutput {
+  time: Float!
+}"""
+    assert schema.as_str().strip() == expected_schema.strip()
+
+    assert Group._strawberry_type == GroupOutput
+    assert Group._strawberry_input_type == GroupInput
+    assert User._strawberry_type == UserOutput
+    assert User._strawberry_input_type == UserInput
+    assert Work._strawberry_type == WorkOutput
+    assert Work._strawberry_input_type == WorkInput
