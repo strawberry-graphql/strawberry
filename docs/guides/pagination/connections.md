@@ -291,8 +291,8 @@ class Edge(Generic[GenericType]):
 
 ```
 
-Now is a good time to think of what we could use as a cursor for our dataset. Our cursor 
-needs to be an opaque value, which doesn't usually change over time. It makes sense to use 
+Now is a good time to think of what we could use as a cursor for our dataset. Our cursor
+needs to be an opaque value, which doesn't usually change over time. It makes sense to use
 base64 encoded IDs of users as our cursor, as they fit both criteria.
 
 <Tip>
