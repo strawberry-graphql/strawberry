@@ -1,6 +1,102 @@
 CHANGELOG
 =========
 
+0.95.3 - 2022-02-03
+-------------------
+
+This release fixes an issue with FastAPI context dependency injection that causes class-based custom contexts to no longer be permitted.
+
+Contributed by [Tommy Smith](https://github.com/tsmith023) [PR #1564](https://github.com/strawberry-graphql/strawberry/pull/1564/)
+
+
+0.95.2 - 2022-02-02
+-------------------
+
+This release fixes an issue with the name generation for nested generics,
+the following:
+
+```python
+T = TypeVar("T")
+K = TypeVar("K")
+V = TypeVar("V")
+
+@strawberry.type
+class Value(Generic[T]):
+    value: T
+
+@strawberry.type
+class DictItem(Generic[K, V]):
+    key: K
+    value: V
+
+@strawberry.type
+class Query:
+    d: Value[List[DictItem[int, str]]]
+```
+
+now yields the correct schema:
+
+```graphql
+type IntStrDictItem {
+  key: Int!
+  value: String!
+}
+
+type IntStrDictItemListValue {
+  value: [IntStrDictItem!]!
+}
+
+type Query {
+  d: IntStrDictItemListValue!
+}
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1621](https://github.com/strawberry-graphql/strawberry/pull/1621/)
+
+
+0.95.1 - 2022-01-26
+-------------------
+
+Fix bug #1504 in the Pydantic integration, where it was impossible to define
+both an input and output type based on the same Pydantic base class.
+
+Contributed by [Matt Allen](https://github.com/Matt343) [PR #1592](https://github.com/strawberry-graphql/strawberry/pull/1592/)
+
+
+0.95.0 - 2022-01-22
+-------------------
+
+Adds `to_pydantic` and `from_pydantic` type hints for IDE support.
+
+Adds mypy extension support as well.
+
+```python
+from pydantic import BaseModel
+import strawberry
+
+class UserPydantic(BaseModel):
+    age: int
+
+@strawberry.experimental.pydantic.type(UserPydantic)
+class UserStrawberry:
+    age: strawberry.auto
+
+reveal_type(UserStrawberry(age=123).to_pydantic())
+```
+Mypy will infer the type as "UserPydantic". Previously it would be "Any"
+
+Contributed by [James Chua](https://github.com/thejaminator) [PR #1544](https://github.com/strawberry-graphql/strawberry/pull/1544/)
+
+
+0.94.0 - 2022-01-18
+-------------------
+
+This release replaces `cached_property` with `backports.cached_property` to improve
+the typing of the library.
+
+Contributed by [Rishi Kumar Ray](https://github.com/RishiKumarRay) [PR #1582](https://github.com/strawberry-graphql/strawberry/pull/1582/)
+
+
 0.93.23 - 2022-01-11
 --------------------
 

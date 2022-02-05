@@ -45,6 +45,7 @@ def _convert_from_pydantic_to_strawberry_type(
     if hasattr(type_, "_type_definition"):
         # in the case of an interface, the concrete type may be more specific
         # than the type in the field definition
+        # don't check _strawberry_input_type because inputs can't be interfaces
         if hasattr(type(data), "_strawberry_type"):
             type_ = type(data)._strawberry_type
         return convert_pydantic_model_to_strawberry_class(

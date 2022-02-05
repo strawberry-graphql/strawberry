@@ -11,7 +11,7 @@ mutations. However, at some point, while you are developing your application (or
 before if you are practising TDD), you may want to create some automated tests.
 
 We can use the Strawberry `schema` object we defined in the
-[Getting Started tutorial](docs/index.md#step-5-create-our-schema-and-run-it) to run our
+[Getting Started tutorial](../index.md#step-5-create-our-schema-and-run-it) to run our
 first test:
 
 ```python
@@ -69,7 +69,7 @@ async def test_query_async():
 
 ## Testing Mutations
 
-We can also write a test for our [`addBook` Mutation](docs/general/mutations.md)
+We can also write a test for our [`addBook` Mutation](../general/mutations.md)
 example:
 
 ```python
@@ -99,7 +99,7 @@ async def test_mutation():
 
 ## Testing Subscriptions
 
-And finally, a test for our [`count` Subscription](docs/general/subscriptions.md):
+And finally, a test for our [`count` Subscription](../general/subscriptions.md):
 
 ```python
 import asyncio

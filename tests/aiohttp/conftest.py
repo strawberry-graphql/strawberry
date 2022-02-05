@@ -1,10 +1,10 @@
-import pytest
+import pytest_asyncio
 
 from tests.aiohttp.app import create_app
 
 
-@pytest.fixture
-def aiohttp_app_client(loop, aiohttp_client):
+@pytest_asyncio.fixture
+async def aiohttp_app_client(event_loop, aiohttp_client):
     app = create_app(graphiql=True)
-    loop.set_debug(True)
-    return loop.run_until_complete(aiohttp_client(app))
+    event_loop.set_debug(True)
+    return await aiohttp_client(app)
