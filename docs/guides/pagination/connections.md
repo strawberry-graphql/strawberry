@@ -291,13 +291,15 @@ class Edge(Generic[GenericType]):
 
 ```
 
-Now is a good time to think of what we could use as a cursor for our dataset. Our cursor needs to be an opaque value,
-which doesn't usually change over time. It makes more sense to use the IDs of the users as our cursor, as it fits both criteria.
+Now is a good time to think of what we could use as a cursor for our dataset. Our cursor 
+needs to be an opaque value, which doesn't usually change over time. It makes sense to use 
+base64 encoded IDs of users as our cursor, as they fit both criteria.
 
 <Tip>
 
 While working with Connections, it is a convention to base64-encode cursors. It provides a unified interface to the
 end user. API clients need not bother about the type of data to paginate, and can pass unique IDs during pagination.
+It also makes the cursors opaque.
 
 </Tip>
 
