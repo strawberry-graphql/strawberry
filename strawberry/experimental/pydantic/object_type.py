@@ -119,6 +119,12 @@ def type(
         fields_set = fields_set.union(
             set(name for name, typ in existing_fields.items() if typ is strawberry.auto)
         )
+        inherited_fields = set(
+            name
+            for base in cls.__bases__
+            for name in getattr(base, "__annotations__", {}).keys()
+            if name in existing_fields
+        )
 
         if all_fields:
             if fields_set:
@@ -129,7 +135,7 @@ def type(
                 )
             fields_set = set(model_fields.keys())
 
-        if not fields_set:
+        if not fields_set and not inherited_fields:
             raise MissingFieldsListError(cls)
 
         ensure_all_auto_fields_in_pydantic(

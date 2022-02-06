@@ -658,3 +658,33 @@ type WorkOutput {
     assert User._strawberry_input_type == UserInput
     assert Work._strawberry_type == WorkOutput
     assert Work._strawberry_input_type == WorkInput
+
+
+def test_empty_inheritance():
+    class Model(pydantic.BaseModel):
+        base_field: str
+
+    @strawberry.experimental.pydantic.input(Model)
+    class ModelInput:
+        base_field: strawberry.auto
+
+    @strawberry.experimental.pydantic.type(Model)
+    class ModelOutput(ModelInput):
+        pass
+
+    definition: TypeDefinition = ModelOutput._type_definition
+    assert definition.name == "ModelOutput"
+
+    [field] = definition.fields
+
+    assert field.python_name == "base_field"
+    assert field.type is str
+
+    class ModelInput:
+        pass
+
+    with pytest.raises(MissingFieldsListError):
+
+        @strawberry.experimental.pydantic.type(Model)
+        class ModelOutput(ModelInput):
+            pass
