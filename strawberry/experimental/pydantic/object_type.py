@@ -143,9 +143,11 @@ def type(
                 type_annotation=get_type_for_field(field, is_input),
                 field=StrawberryField(
                     python_name=field.name,
-                    graphql_name=field.alias
-                    if field.has_alias and use_pydantic_alias
-                    else None,
+                    graphql_name=(
+                        field.alias
+                        if field.has_alias and use_pydantic_alias
+                        else None
+                    ),
                     # always unset because we use default_factory instead
                     default=UNSET,
                     default_factory=get_default_factory_for_field(field),

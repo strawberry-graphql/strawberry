@@ -1,7 +1,7 @@
 Release type: patch
 
-Adds support for use_pydantic_alias parameter in pydantic model conversion.
-Decides if the graphql field name should use the alias name or not.
+Adds support for `use_pydantic_alias` parameter in pydantic model conversion.
+Decides if the all the GraphQL field names for the generated type should use the alias name or not.
 
 ```python
 from pydantic import BaseModel, Field
@@ -17,18 +17,18 @@ class User:
     id: strawberry.auto
 ```
 
-If use_pydantic_alias is `False`, the graphql type User will have the field id
+If `use_pydantic_alias` is `False`, the GraphQL type User will use `id` for the name of the `id` field coming from the Pydantic model.
 ```
 type User {
       id: Int!
 }
 ```
 
-instead of the field myAliasName.
+With `use_pydantic_alias` set to `True` (the default behaviour) the GraphQL type user will use `myAliasName` for the `id` field coming from the Pydantic models (since the field has a `alias` specified`)
 ```
 type User {
       myAliasName: Int!
 }
 ```
 
-Currently use_pydantic_alias is set to `True` for backwards compatibility.
+`use_pydantic_alias` is set to `True` for backwards compatibility.
