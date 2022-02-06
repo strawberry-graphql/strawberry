@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.95.4 - 2022-02-06
+-------------------
+
+This release adds compatibility with uvicron 0.17
+
+Contributed by [dependabot](https://github.com/dependabot) [PR #1627](https://github.com/strawberry-graphql/strawberry/pull/1627/)
+
+
 0.95.3 - 2022-02-03
 -------------------
 
