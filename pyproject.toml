@@ -52,7 +52,7 @@ sentinel = "^0.3.0"
 "backports.cached-property" = "^1.0.1"
 
 [tool.poetry.dev-dependencies]
-pytest = "^6.2"
+pytest = "^7.0"
 pytest-emoji = "^0.2.0"
 flake8 = "^4.0"
 black = {version = "^21.12b0", allow-prereleases = true}
