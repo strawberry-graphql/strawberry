@@ -144,9 +144,7 @@ def type(
                 field=StrawberryField(
                     python_name=field.name,
                     graphql_name=(
-                        field.alias
-                        if field.has_alias and use_pydantic_alias
-                        else None
+                        field.alias if field.has_alias and use_pydantic_alias else None
                     ),
                     # always unset because we use default_factory instead
                     default=UNSET,
