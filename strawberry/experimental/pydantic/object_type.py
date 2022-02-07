@@ -94,6 +94,7 @@ def _build_dataclass_creation_fields(
     is_input: bool,
     existing_fields: Dict[str, StrawberryField],
     auto_fields_set: Set[str],
+    use_pydantic_alias: bool,
 ) -> DataclassCreationFields:
     type_annotation = (
         get_type_for_field(field, is_input)
@@ -111,7 +112,9 @@ def _build_dataclass_creation_fields(
         # otherwise we build an appropriate strawberry field that resolves it
         strawberry_field = StrawberryField(
             python_name=field.name,
-            graphql_name=field.alias if field.has_alias else None,
+            graphql_name=field.alias
+            if field.has_alias and use_pydantic_alias
+            else None,
             # always unset because we use default_factory instead
             default=UNSET,
             default_factory=get_default_factory_for_field(field),
@@ -143,6 +146,7 @@ def type(
     description: Optional[str] = None,
     directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
     all_fields: bool = False,
+    use_pydantic_alias: bool = True,
 ) -> Callable[..., Type[StrawberryTypeFromPydantic[PydanticModel]]]:
     def wrap(cls: Any) -> Type[StrawberryTypeFromPydantic[PydanticModel]]:
         model_fields = model.__fields__
@@ -192,7 +196,7 @@ def type(
 
         all_model_fields: List[DataclassCreationFields] = [
             _build_dataclass_creation_fields(
-                field, is_input, extra_fields_dict, auto_fields_set
+                field, is_input, extra_fields_dict, auto_fields_set, use_pydantic_alias
             )
             for field_name, field in model_fields.items()
             if field_name in fields_set
