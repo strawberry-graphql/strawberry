@@ -16,12 +16,9 @@ from strawberry.subscriptions.protocols.graphql_ws import (
 )
 from tests.aiohttp.app import create_app
 from tests.aiohttp.schema import schema
-from tests.fixtures.utils import TickEventLoopPolicy
 
 
 async def test_simple_subscription(aiohttp_client):
-    asyncio.set_event_loop_policy(TickEventLoopPolicy())
-
     app = create_app(keep_alive=False)
     aiohttp_app_client = await aiohttp_client(app)
 
@@ -101,9 +98,7 @@ async def test_operation_selection(aiohttp_client):
         assert ws.closed
 
 
-async def test_sends_keep_alive(aiohttp_client):
-    asyncio.set_event_loop_policy(TickEventLoopPolicy())
-
+async def test_sends_keep_alive(aiohttp_client, event_loop):
     app = create_app(keep_alive=True, keep_alive_interval=0.1)
     aiohttp_app_client = await aiohttp_client(app)
 

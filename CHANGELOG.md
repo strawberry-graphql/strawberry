@@ -1,6 +1,67 @@
 CHANGELOG
 =========
 
+0.95.4 - 2022-02-06
+-------------------
+
+This release adds compatibility with uvicorn 0.17
+
+Contributed by [dependabot](https://github.com/dependabot) [PR #1627](https://github.com/strawberry-graphql/strawberry/pull/1627/)
+
+
+0.95.3 - 2022-02-03
+-------------------
+
+This release fixes an issue with FastAPI context dependency injection that causes class-based custom contexts to no longer be permitted.
+
+Contributed by [Tommy Smith](https://github.com/tsmith023) [PR #1564](https://github.com/strawberry-graphql/strawberry/pull/1564/)
+
+
+0.95.2 - 2022-02-02
+-------------------
+
+This release fixes an issue with the name generation for nested generics,
+the following:
+
+```python
+T = TypeVar("T")
+K = TypeVar("K")
+V = TypeVar("V")
+
+@strawberry.type
+class Value(Generic[T]):
+    value: T
+
+@strawberry.type
+class DictItem(Generic[K, V]):
+    key: K
+    value: V
+
+@strawberry.type
+class Query:
+    d: Value[List[DictItem[int, str]]]
+```
+
+now yields the correct schema:
+
+```graphql
+type IntStrDictItem {
+  key: Int!
+  value: String!
+}
+
+type IntStrDictItemListValue {
+  value: [IntStrDictItem!]!
+}
+
+type Query {
+  d: IntStrDictItemListValue!
+}
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1621](https://github.com/strawberry-graphql/strawberry/pull/1621/)
+
+
 0.95.1 - 2022-01-26
 -------------------
 
