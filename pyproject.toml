@@ -57,7 +57,7 @@ pytest-emoji = "^0.2.0"
 flake8 = "^4.0"
 black = {version = "^21.12b0", allow-prereleases = true}
 isort = "^5.10.1"
-pytest-asyncio = "^0.17.2"
+pytest-asyncio = "^0.18.0"
 pytest-cov = "^3.0"
 mypy = "^0.931"
 flake8-bugbear = "^22.1.11"
