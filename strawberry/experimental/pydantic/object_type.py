@@ -224,6 +224,11 @@ def type(
             return isinstance(obj, (cls, model))
 
         namespace = {"is_type_of": is_type_of}
+        # We need to tell the difference between a from_pydantic method that is
+        # inherited from a base class and one that is defined by the user in the
+        # decorated class. We want to override the method only if it is
+        # inherited. To tell the difference, we compare the class name to the
+        # fully qualified name of the method, which will end in <class>.from_pydantic
         has_custom_from_pydantic = hasattr(
             cls, "from_pydantic"
         ) and cls.from_pydantic.__qualname__.endswith(f"{cls.__name__}.from_pydantic")
