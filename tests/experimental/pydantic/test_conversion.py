@@ -136,6 +136,44 @@ def test_can_convert_alias_pydantic_field_to_strawberry():
     assert user.password == "abc"
 
 
+def test_convert_alias_name():
+    class UserModel(BaseModel):
+        age_: int = Field(..., alias="age")
+        password: Optional[str]
+
+    @strawberry.experimental.pydantic.type(
+        UserModel, all_fields=True, use_pydantic_alias=True
+    )
+    class User:
+        ...
+
+    origin_user = UserModel(age=1, password="abc")
+    user = User.from_pydantic(origin_user)
+    assert user.age_ == 1
+    definition = User._type_definition
+
+    assert definition.fields[0].graphql_name == "age"
+
+
+def test_do_not_convert_alias_name():
+    class UserModel(BaseModel):
+        age_: int = Field(..., alias="age")
+        password: Optional[str]
+
+    @strawberry.experimental.pydantic.type(
+        UserModel, all_fields=True, use_pydantic_alias=False
+    )
+    class User:
+        ...
+
+    origin_user = UserModel(age=1, password="abc")
+    user = User.from_pydantic(origin_user)
+    assert user.age_ == 1
+    definition = User._type_definition
+
+    assert definition.fields[0].graphql_name is None
+
+
 def test_can_pass_pydantic_field_description_to_strawberry():
     class UserModel(BaseModel):
         age: int

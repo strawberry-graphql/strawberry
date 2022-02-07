@@ -104,6 +104,7 @@ def type(
     description: Optional[str] = None,
     directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
     all_fields: bool = False,
+    use_pydantic_alias: bool = True,
 ) -> Callable[..., Type[StrawberryTypeFromPydantic[PydanticModel]]]:
     def wrap(cls: Any) -> Type[StrawberryTypeFromPydantic[PydanticModel]]:
         model_fields = model.__fields__
@@ -142,7 +143,9 @@ def type(
                 type_annotation=get_type_for_field(field, is_input),
                 field=StrawberryField(
                     python_name=field.name,
-                    graphql_name=field.alias if field.has_alias else None,
+                    graphql_name=(
+                        field.alias if field.has_alias and use_pydantic_alias else None
+                    ),
                     # always unset because we use default_factory instead
                     default=UNSET,
                     default_factory=get_default_factory_for_field(field),
