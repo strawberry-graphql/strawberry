@@ -1,8 +1,8 @@
 ---
-title: Pagination - Implementing the Connection Specification
+title: Pagination - Implementing the Relay Connection Specification
 ---
 
-# Implementing the Connection Specification
+# Implementing the Relay Connection Specification
 
 We naively implemented cursor based pagination in the [previous tutorial](./cursor-based.md). To ensure a consistent implementation
 of this pattern, the Relay project has a formal [specification](https://relay.dev/graphql/connections.htm) you can follow for building

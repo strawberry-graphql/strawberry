@@ -147,4 +147,4 @@ Let us look at how we can implement pagination in GraphQL.
 
 - [Implementing Offset Pagination](./offset-based.md)
 - [Implementing Cursor Pagination](./cursor-based.md)
-- [Implementing the Connection Specification](./connections.md)
+- [Implementing the Relay Connection Specification](./connections.md)
