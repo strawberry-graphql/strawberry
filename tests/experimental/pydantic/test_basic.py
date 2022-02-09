@@ -451,6 +451,7 @@ def test_type_with_aliased_pydantic_field():
 
     assert field1.python_name == "age_"
     assert field1.type is int
+    assert field1.graphql_name == "age"
 
     assert field2.python_name == "password"
     assert isinstance(field2.type, StrawberryOptional)
@@ -658,3 +659,45 @@ type WorkOutput {
     assert User._strawberry_input_type == UserInput
     assert Work._strawberry_type == WorkOutput
     assert Work._strawberry_input_type == WorkInput
+
+
+def test_single_field_changed_type():
+    class User(pydantic.BaseModel):
+        age: int
+
+    @strawberry.experimental.pydantic.type(User)
+    class UserType:
+        age: str
+
+    definition: TypeDefinition = UserType._type_definition
+    assert definition.name == "UserType"
+
+    [field1] = definition.fields
+
+    assert field1.python_name == "age"
+    assert field1.graphql_name is None
+    assert field1.type is str
+
+
+def test_type_with_aliased_pydantic_field_changed_type():
+    class UserModel(pydantic.BaseModel):
+        age_: int = pydantic.Field(..., alias="age")
+        password: Optional[str]
+
+    @strawberry.experimental.pydantic.type(UserModel)
+    class User:
+        age_: str
+        password: strawberry.auto
+
+    definition: TypeDefinition = User._type_definition
+    assert definition.name == "User"
+
+    [field1, field2] = definition.fields
+
+    assert field1.python_name == "age_"
+    assert field1.type is str
+    assert field1.graphql_name == "age"
+
+    assert field2.python_name == "password"
+    assert isinstance(field2.type, StrawberryOptional)
+    assert field2.type.of_type is str

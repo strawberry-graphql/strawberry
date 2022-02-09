@@ -1,6 +1,71 @@
 CHANGELOG
 =========
 
+0.96.0 - 2022-02-07
+-------------------
+
+Add better support for custom Pydantic conversion logic and standardize the
+behavior when not using `strawberry.auto` as the type.
+
+See https://strawberry.rocks/docs/integrations/pydantic#custom-conversion-logic for details and examples.
+
+Note that this release fixes a bug related to Pydantic aliases in schema
+generation. If you have a field with the same name as an aliased Pydantic field
+but with a different type than `strawberry.auto`, the generated field will now
+use the alias name. This may cause schema changes on upgrade in these cases, so
+care should be taken. The alias behavior can be disabled by setting the
+`use_pydantic_alias` option of the decorator to false.
+
+Contributed by [Matt Allen](https://github.com/Matt343) [PR #1629](https://github.com/strawberry-graphql/strawberry/pull/1629/)
+
+
+0.95.5 - 2022-02-07
+-------------------
+
+Adds support for `use_pydantic_alias` parameter in pydantic model conversion.
+Decides if the all the GraphQL field names for the generated type should use the alias name or not.
+
+```python
+from pydantic import BaseModel, Field
+import strawberry
+
+class UserModel(BaseModel):
+      id: int = Field(..., alias="my_alias_name")
+
+@strawberry.experimental.pydantic.type(
+    UserModel, use_pydantic_alias=False
+)
+class User:
+    id: strawberry.auto
+```
+
+If `use_pydantic_alias` is `False`, the GraphQL type User will use `id` for the name of the `id` field coming from the Pydantic model.
+```
+type User {
+      id: Int!
+}
+```
+
+With `use_pydantic_alias` set to `True` (the default behaviour) the GraphQL type user will use `myAliasName` for the `id` field coming from the Pydantic models (since the field has a `alias` specified`)
+```
+type User {
+      myAliasName: Int!
+}
+```
+
+`use_pydantic_alias` is set to `True` for backwards compatibility.
+
+Contributed by [James Chua](https://github.com/thejaminator) [PR #1546](https://github.com/strawberry-graphql/strawberry/pull/1546/)
+
+
+0.95.4 - 2022-02-06
+-------------------
+
+This release adds compatibility with uvicorn 0.17
+
+Contributed by [dependabot](https://github.com/dependabot) [PR #1627](https://github.com/strawberry-graphql/strawberry/pull/1627/)
+
+
 0.95.3 - 2022-02-03
 -------------------
 
