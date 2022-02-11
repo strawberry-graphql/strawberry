@@ -37,7 +37,7 @@ Django = [
 ]
 graphql-core = "~3.1.0"
 asgiref = {version = "^3.2", optional = true}
-flask = {version = "^1.1", optional = true}
+flask = {version = ">=1.1,<3.0", optional = true}
 typing_extensions = ">=3.7.4,<5.0.0"
 opentelemetry-api = {version = "<2", optional = true}
 opentelemetry-sdk = {version = "<2", optional = true}
@@ -67,7 +67,7 @@ pytest-mock = "^3.7"
 pytest-django = {version = "^4.5"}
 asgiref = "^3.2"
 pytest-flask = {version = "^1.2.0"}
-flask = {version = "^1.1"}
+flask = {version = ">=1.1,<3.0"}
 chalice = {version = "^1.22"}
 requests = "^2.27.1"
 pre-commit = "^2.16.0"
