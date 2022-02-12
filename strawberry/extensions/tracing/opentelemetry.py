@@ -98,6 +98,8 @@ class OpenTelemetryExtension(Extension):
             filtered_kwargs = self.filter_resolver_args(kwargs, info)
 
             for kwarg, value in filtered_kwargs.items():
+                if value is None:
+                    continue
                 v = json.dumps(value) if isinstance(value, dict) else value
                 span.set_attribute(f"graphql.param.{kwarg}", v)
 
