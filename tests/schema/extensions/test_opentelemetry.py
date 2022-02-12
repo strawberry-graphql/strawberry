@@ -155,7 +155,9 @@ async def test_tracing_add_kwargs(global_tracer_mock, mocker):
             mocker.call().__enter__().set_attribute("graphql.parentType", "Query"),
             mocker.call().__enter__().set_attribute("graphql.path", "hi"),
             mocker.call().__enter__().set_attribute("graphql.param.name", "Patrick"),
-            mocker.call().__enter__().set_attribute("graphql.param.obj", '{"input": "my_data"}'),
+            mocker.call()
+            .__enter__()
+            .set_attribute("graphql.param.obj", '{"input": "my_data"}'),
         ]
     )
 
