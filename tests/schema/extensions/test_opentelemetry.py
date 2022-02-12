@@ -1,3 +1,5 @@
+import json
+
 import pytest
 
 from opentelemetry.trace import SpanKind
@@ -157,7 +159,7 @@ async def test_tracing_add_kwargs(global_tracer_mock, mocker):
             mocker.call().__enter__().set_attribute("graphql.param.name", "Patrick"),
             mocker.call()
             .__enter__()
-            .set_attribute("graphql.param.obj", '{"input": "my_data"}'),
+            .set_attribute("graphql.param.obj", json.dumps({"input": "my_data"})),
         ]
     )
 
