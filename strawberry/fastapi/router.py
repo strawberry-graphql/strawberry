@@ -143,17 +143,16 @@ class GraphQLRouter(APIRouter):
             actual_response: Response
 
             if request.query_params:
-                data = request.query_params
                 return await self.execute_request(
                     request=request,
                     response=response,
-                    data=data,
+                    data=request.query_params,
                     context=context,
                     root_value=root_value,
                 )
-            elif self.graphiql:
+            elif self.should_render_graphiql(request):
                 return self.get_graphiql_response()
-            return Response(status_code=status.HTTP_404_NOT_FOUND)
+            return Response(status_code=status.HTTP_400_BAD_REQUEST)
 
         @self.post(path)
         async def handle_http_post(
@@ -183,8 +182,6 @@ class GraphQLRouter(APIRouter):
                 data = replace_placeholders_with_files(
                     operations, files_map, multipart_data
                 )
-            elif request.query_params:
-                data = request.query_params
             else:
                 actual_response = PlainTextResponse(
                     "Unsupported Media Type",
@@ -244,6 +241,14 @@ class GraphQLRouter(APIRouter):
             intersection,
             key=lambda i: protocols.index(i),  # type: ignore
             default=None,
+        )
+
+    def should_render_graphiql(self, request: Request) -> bool:
+        if not self.graphiql:
+            return False
+        return any(
+            supported_header in request.headers.get("accept", "")
+            for supported_header in ("text/html", "*/*")
         )
 
     def get_graphiql_response(self) -> HTMLResponse:

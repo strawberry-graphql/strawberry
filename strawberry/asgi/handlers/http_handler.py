@@ -49,7 +49,6 @@ class HTTPHandler:
             request=request,
             execute=self.execute,
             process_result=self.process_result,
-            graphiql=self.graphiql,
             root_value=root_value,
             context=context,
         )
@@ -69,14 +68,13 @@ class HTTPHandler:
         request: Request,
         execute: Callable,
         process_result: Callable,
-        graphiql: bool,
         root_value: Optional[Any],
         context: Optional[Any],
     ) -> Response:
         if request.method == "GET":
             if request.query_params:
                 data = request.query_params
-            elif graphiql:
+            elif self.should_render_graphiql(request):
                 return self.get_graphiql_response()
             else:
                 return HTMLResponse(status_code=status.HTTP_404_NOT_FOUND)
@@ -98,9 +96,6 @@ class HTTPHandler:
                 data = replace_placeholders_with_files(
                     operations, files_map, multipart_data
                 )
-            elif request.query_params:
-                data = request.query_params
-
             else:
                 return PlainTextResponse(
                     "Unsupported Media Type",
@@ -131,6 +126,14 @@ class HTTPHandler:
         response_data = await process_result(request=request, result=result)
 
         return JSONResponse(response_data, status_code=status.HTTP_200_OK)
+
+    def should_render_graphiql(self, request: Request) -> bool:
+        if not self.graphiql:
+            return False
+        return any(
+            supported_header in request.headers.get("accept", "")
+            for supported_header in ("text/html", "*/*")
+        )
 
     def get_graphiql_response(self) -> HTMLResponse:
         html = get_graphiql_html()

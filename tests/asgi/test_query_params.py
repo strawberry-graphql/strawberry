@@ -16,8 +16,7 @@ def test_no_graphiql_get_with_query_params(test_client_no_graphiql):
     assert response.json() == {"data": {"hello": "Hello world"}}
 
 
-def test_no_graphiql_post_with_query_params(test_client):
+def test_no_graphiql_post_fails_with_query_params(test_client):
     response = test_client.post("/graphql", params={"query": "{ hello }"})
 
-    assert response.status_code == status.HTTP_200_OK
-    assert response.json() == {"data": {"hello": "Hello world"}}
+    assert response.status_code == status.HTTP_415_UNSUPPORTED_MEDIA_TYPE

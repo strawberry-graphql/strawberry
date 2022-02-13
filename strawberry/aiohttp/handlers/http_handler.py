@@ -36,10 +36,8 @@ class HTTPHandler:
 
     async def get(self, request: web.Request) -> web.StreamResponse:
         if request.query:
-            data = request.query
-
             try:
-                request_data = parse_request_data(data)
+                request_data = parse_request_data(request.query)
             except MissingQueryError:
                 raise web.HTTPBadRequest(reason="No GraphQL query found in the request")
 
@@ -89,8 +87,6 @@ class HTTPHandler:
     async def parse_body(self, request: web.Request) -> dict:
         if request.content_type.startswith("multipart/form-data"):
             return await self.parse_multipart_body(request)
-        elif request.query:
-            return request.query
         try:
             return await request.json()
         except json.JSONDecodeError:
@@ -126,7 +122,10 @@ class HTTPHandler:
     def should_render_graphiql(self, request: web.Request) -> bool:
         if not self.graphiql:
             return False
-        return "text/html" in request.headers.get("Accept", "")
+        return any(
+            supported_header in request.headers.get("Accept", "")
+            for supported_header in ("text/html", "*/*")
+        )
 
     @property
     def graphiql_html_file_path(self) -> Path:

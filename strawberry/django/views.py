@@ -68,16 +68,25 @@ class BaseView(View):
             data = replace_placeholders_with_files(data, files_map, request.FILES)
 
             return data
-        elif request.META.get("QUERY_STRING"):
+        elif request.method.lower() == "get" and request.META.get("QUERY_STRING"):
             return request.GET
 
-        raise HttpResponse("Unsupported Media Type", status=415)
+        return json.loads(request.body)
 
     def is_request_allowed(self, request: HttpRequest) -> bool:
         return request.method.lower() in ("get", "post")
 
     def should_render_graphiql(self, request: HttpRequest) -> bool:
-        return "text/html" in request.headers.get("Accept", "")
+        if request.method.lower() != "get":
+            return False
+
+        if request.META.get("QUERY_STRING"):
+            return False
+
+        return any(
+            supported_header in request.META.get("HTTP_ACCEPT", "")
+            for supported_header in ("text/html", "*/*")
+        )
 
     def get_request_data(self, request: HttpRequest) -> GraphQLRequestData:
         try:

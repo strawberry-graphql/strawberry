@@ -89,7 +89,7 @@ async def test_async_graphql_get_query_using_params():
     assert data["data"]["helloAsync"] == "async strawberry"
 
 
-async def test_async_graphql_post_query_using_params():
+async def test_async_graphql_post_query_fails_using_params():
     params = {"query": "{ helloAsync }"}
 
     factory = RequestFactory()
@@ -99,10 +99,10 @@ async def test_async_graphql_post_query_using_params():
         content_type="application/x-www-form-urlencoded"
     )
 
-    response = await AsyncGraphQLView.as_view(schema=schema)(request)
-    data = json.loads(response.content.decode())
+    with pytest.raises(SuspiciousOperation) as e:
+        await AsyncGraphQLView.as_view(schema=schema)(request)
 
-    assert data["data"]["helloAsync"] == "async strawberry"
+    assert e.value.args == ("No GraphQL query found in the request",)
 
 
 @pytest.mark.parametrize("method", ["DELETE", "HEAD", "PUT", "PATCH"])

@@ -1,4 +1,4 @@
-from chalice.app import BadRequestError, CaseInsensitiveMapping, Request, Response
+from chalice.app import BadRequestError, Request, Response
 from strawberry.chalice.graphiql import render_graphiql_page
 from strawberry.exceptions import MissingQueryError
 from strawberry.http import GraphQLHTTPResponse, parse_request_data, process_result
@@ -23,7 +23,7 @@ class GraphQLView:
         return result
 
     @staticmethod
-    def has_html_been_asked_for(headers: CaseInsensitiveMapping) -> bool:
+    def should_render_graphiql(graphiql: bool, request: Request) -> bool:
         """
         Do the headers indicate that the invoker has requested html?
         Args:
@@ -32,18 +32,12 @@ class GraphQLView:
         Returns:
             Whether html has been requested True for yes, False for no
         """
-        accept_headers = headers.get("accept", None)
-
-        if accept_headers is None:
+        if not graphiql:
             return False
-
-        if "text/html" in accept_headers:
-            return True
-
-        if "*/*" in accept_headers:
-            return True
-
-        return False
+        return any(
+            supported_header in request.headers.get("accept", "")
+            for supported_header in ("text/html", "*/*")
+        )
 
     @staticmethod
     def error_response(message, error_code, http_status_code, headers=None) -> Response:
@@ -66,17 +60,6 @@ class GraphQLView:
         Returns:
             A chalice response
         """
-        if self.graphiql:
-            if (
-                self.has_html_been_asked_for(request.headers)
-                and request.method == "GET"
-            ):
-                graphiql_page: str = self.render_graphiql()
-                return Response(
-                    body=graphiql_page,
-                    headers={"content-type": "text/html"},
-                    status_code=200,
-                )
 
         if request.method not in ["POST", "GET"]:
             return self.error_response(
@@ -101,8 +84,19 @@ class GraphQLView:
                     message="Provide a valid graphql query in the body of your request",
                     http_status_code=400,
                 )
-        elif request.query_params:
+        elif request.method == "GET" and request.query_params:
             data = request.query_params
+
+        elif request.method == "GET" and self.should_render_graphiql(
+            self.graphiql, request
+        ):
+            graphiql_page: str = self.render_graphiql()
+            return Response(
+                body=graphiql_page,
+                headers={"content-type": "text/html"},
+                status_code=200,
+            )
+
         else:
             return self.error_response(
                 error_code="UnsupportedMediaType",

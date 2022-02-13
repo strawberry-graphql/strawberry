@@ -7,13 +7,11 @@ def test_no_graphiql_empty_get(sanic_client_no_graphiql):
 def test_no_graphiql_no_query(sanic_client_no_graphiql):
     params = {
         "variables": """
-            query {
-                hello
-            }
+            hello
         """
     }
 
-    request, response = sanic_client_no_graphiql.test_client.post(
+    request, response = sanic_client_no_graphiql.test_client.get(
         "/graphql", params=params
     )
     assert response.status == 400
@@ -28,7 +26,7 @@ def test_no_graphiql_get_with_query_params(sanic_client_no_graphiql):
         """
     }
 
-    request, response = sanic_client_no_graphiql.test_client.post(
+    request, response = sanic_client_no_graphiql.test_client.get(
         "/graphql", params=params
     )
     data = response.json
@@ -36,7 +34,7 @@ def test_no_graphiql_get_with_query_params(sanic_client_no_graphiql):
     assert data["data"]["hello"] == "strawberry"
 
 
-def test_post_with_query_params(sanic_client):
+def test_post_fails_with_query_params(sanic_client):
     query = {
         "query": """
             query {
@@ -46,6 +44,5 @@ def test_post_with_query_params(sanic_client):
     }
 
     request, response = sanic_client.test_client.post("/graphql", params=query)
-    data = response.json
-    assert response.status == 200
-    assert data["data"]["hello"] == "strawberry"
+
+    assert response.status == 415

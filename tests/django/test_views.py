@@ -152,7 +152,7 @@ def test_graphql_get_query_using_params():
     assert data["data"]["hello"] == "strawberry"
 
 
-def test_graphql_post_query_using_params():
+def test_graphql_post_query_fails_using_params():
     params = {"query": "{ hello }"}
 
     factory = RequestFactory()
@@ -162,10 +162,10 @@ def test_graphql_post_query_using_params():
         content_type="application/x-www-form-urlencoded"
     )
 
-    response = GraphQLView.as_view(schema=schema)(request)
-    data = json.loads(response.content.decode())
+    with pytest.raises(SuspiciousOperation) as e:
+        GraphQLView.as_view(schema=schema)(request)
 
-    assert data["data"]["hello"] == "strawberry"
+    assert e.value.args == ("No GraphQL query found in the request",)
 
 
 @pytest.mark.django_db

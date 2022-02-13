@@ -42,7 +42,7 @@ def test_no_graphiql_get_with_query_params(flask_client_no_graphiql):
     assert data["data"]["hello"] == "strawberry"
 
 
-def test_no_graphiql_post_with_query_params(flask_client):
+def test_no_graphiql_post_fails_with_query_params(flask_client):
     params = {
         "query": """
             query {
@@ -52,8 +52,6 @@ def test_no_graphiql_post_with_query_params(flask_client):
     }
 
     query_url = url_unparse(("", "", "/graphql", url_encode(params), ""))
-    response = flask_client.get(query_url)
-    data = json.loads(response.data.decode())
+    response = flask_client.post(query_url)
 
-    assert response.status_code == 200
-    assert data["data"]["hello"] == "strawberry"
+    assert response.status_code == 415

@@ -13,12 +13,11 @@ from strawberry.http import (
     parse_request_data,
     process_result,
 )
+from strawberry.sanic.context import StrawberrySanicContext
+from strawberry.sanic.graphiql import render_graphiql_page, should_render_graphiql
+from strawberry.sanic.utils import convert_request_to_files_dict
+from strawberry.schema import BaseSchema
 from strawberry.types import ExecutionResult
-
-from ..schema import BaseSchema
-from .context import StrawberrySanicContext
-from .graphiql import render_graphiql_page
-from .utils import convert_request_to_files_dict
 
 
 class GraphQLView(HTTPMethodView):
@@ -85,7 +84,7 @@ class GraphQLView(HTTPMethodView):
                 request=request, request_data=request_data
             )
 
-        elif self.graphiql:
+        elif should_render_graphiql(self.graphiql, request):
             template = render_graphiql_page()
             return self.render_template(template=template)
 
@@ -153,13 +152,5 @@ class GraphQLView(HTTPMethodView):
                 raise SanicException(
                     status_code=400, message="File(s) missing in form data"
                 )
-        elif request.args:
-            # Sanic uses urllib to parse
-            # This returns a list of values for each variable name
-            # Enforcing only one value
-            data = {
-                variable_name: value[0] for variable_name, value in request.args.items()
-            }
-            return data
 
         raise ServerError("Unsupported Media Type", status_code=415)

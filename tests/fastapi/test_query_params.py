@@ -43,7 +43,7 @@ def test_no_graphiql_get_with_query_params():
     assert response.json() == {"data": {"abc": "abc"}}
 
 
-def test_post_with_query_params():
+def test_post_fails_with_query_params():
     @strawberry.type
     class Query:
         @strawberry.field
@@ -58,5 +58,4 @@ def test_post_with_query_params():
     test_client = TestClient(app)
     response = test_client.post("/graphql", params={"query": "{ abc }"})
 
-    assert response.status_code == status.HTTP_200_OK
-    assert response.json() == {"data": {"abc": "abc"}}
+    assert response.status_code == status.HTTP_415_UNSUPPORTED_MEDIA_TYPE

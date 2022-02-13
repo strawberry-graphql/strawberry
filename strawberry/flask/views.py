@@ -1,14 +1,13 @@
 import json
 
-from flask import Response, abort, render_template_string, request
+from flask import Response, render_template_string, request
 from flask.views import View
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
+from strawberry.flask.graphiql import render_graphiql_page, should_render_graphiql
 from strawberry.http import GraphQLHTTPResponse, parse_request_data, process_result
+from strawberry.schema.base import BaseSchema
 from strawberry.types import ExecutionResult
-
-from ..schema import BaseSchema
-from .graphiql import render_graphiql_page
 
 
 class GraphQLView(View):
@@ -35,12 +34,6 @@ class GraphQLView(View):
         return process_result(result)
 
     def dispatch_request(self):
-        if "text/html" in request.environ.get("HTTP_ACCEPT", ""):
-            if not self.graphiql:
-                abort(404)
-
-            template = render_graphiql_page()
-            return self.render_template(template=template)
 
         content_type = request.content_type or ""
 
@@ -51,8 +44,12 @@ class GraphQLView(View):
             files_map = json.loads(request.form.get("map", "{}"))
 
             data = replace_placeholders_with_files(operations, files_map, request.files)
-        elif request.args:
+        elif request.method == "GET" and request.args:
             data = request.args
+        elif request.method == "GET" and should_render_graphiql(self.graphiql, request):
+            template = render_graphiql_page()
+            return self.render_template(template=template)
+
         else:
             return Response("Unsupported Media Type", 415)
 

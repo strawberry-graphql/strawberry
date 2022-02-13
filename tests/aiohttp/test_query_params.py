@@ -26,7 +26,7 @@ async def test_no_graphiql_get_with_query_params(aiohttp_app_client):
     assert data["data"]["hello"] == "strawberry"
 
 
-async def test_post_with_query_params(aiohttp_app_client):
+async def test_post_fails_with_query_params(aiohttp_app_client):
     query = {
         "query": """
             query {
@@ -36,6 +36,5 @@ async def test_post_with_query_params(aiohttp_app_client):
     }
 
     response = await aiohttp_app_client.post("/graphql", params=query)
-    data = await response.json()
-    assert response.status == 200
-    assert data["data"]["hello"] == "strawberry"
+
+    assert response.status == 400
