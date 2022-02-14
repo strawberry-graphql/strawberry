@@ -29,6 +29,10 @@ class StrawberryResolver(Generic[T]):
         description: Optional[str] = None,
         type_override: Optional[Union[StrawberryType, type]] = None,
     ):
+        # Fallback to docstring as GraphQL description
+        if description is None and func.__doc__ is not None:
+            description = inspect.cleandoc(func.__doc__)
+
         self.wrapped_func = func
         self._description = description
         self._type_override = type_override

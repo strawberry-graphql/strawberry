@@ -123,6 +123,75 @@ def test_auto_fields():
     assert result.data["user"]["age"] == 1
 
 
+def test_type_description():
+    class TypeAModel(pydantic.BaseModel):
+        a: int
+
+    @strawberry.experimental.pydantic.type(
+        TypeAModel, description="Decorator argument description"
+    )
+    class TypeA:
+        a: strawberry.auto
+
+    class TypeBModel(pydantic.BaseModel):
+        b: int
+
+    @strawberry.experimental.pydantic.type(TypeBModel)
+    class TypeB:
+        """Docstring description"""
+
+        b: strawberry.auto
+
+    class TypeCModel(pydantic.BaseModel):
+        c: int
+
+    @strawberry.experimental.pydantic.type(TypeCModel)
+    class TypeC:
+        # No description
+        c: strawberry.auto
+
+    @strawberry.type
+    class Query:
+        a: TypeA
+        b: TypeB
+        c: TypeC
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        a: __type(name: "TypeA") {
+            name
+            description
+        }
+        b: __type(name: "TypeB") {
+            name
+            description
+        }
+        c: __type(name: "TypeC") {
+            name
+            description
+        }
+    }"""
+
+    result = schema.execute_sync(query)
+    assert not result.errors
+
+    assert result.data == {
+        "a": {
+            "name": "TypeA",
+            "description": "Decorator argument description",
+        },
+        "b": {
+            "name": "TypeB",
+            "description": "Docstring description",
+        },
+        "c": {
+            "name": "TypeC",
+            "description": None,
+        },
+    }
+
+
 def test_basic_alias_type():
     class UserModel(pydantic.BaseModel):
         age_: int = pydantic.Field(..., alias="age")

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import builtins
 import dataclasses
+import inspect
 import warnings
 from functools import partial
 from typing import (
@@ -149,6 +150,11 @@ def type(
     use_pydantic_alias: bool = True,
 ) -> Callable[..., Type[StrawberryTypeFromPydantic[PydanticModel]]]:
     def wrap(cls: Any) -> Type[StrawberryTypeFromPydantic[PydanticModel]]:
+        # Fallback to docstring as GraphQL description
+        nonlocal description
+        if description is None and cls.__doc__ is not None:
+            description = inspect.cleandoc(cls.__doc__)
+
         model_fields = model.__fields__
         original_fields_set = set(fields) if fields else set([])
 

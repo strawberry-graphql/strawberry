@@ -90,7 +90,7 @@ class StrawberryField(dataclasses.Field):
 
         self.type_annotation = type_annotation
 
-        self.description: Optional[str] = description
+        self._description: Optional[str] = description
         self.origin = origin
 
         self._base_resolver: Optional[StrawberryResolver] = None
@@ -190,6 +190,14 @@ class StrawberryField(dataclasses.Field):
         #       If we want to change when the exception is thrown, this line can be
         #       removed.
         _ = resolver.arguments
+
+    @property
+    def description(self) -> Optional[str]:
+        if self._description is not None:
+            return self._description
+        if self._base_resolver is not None:
+            return self._base_resolver._description
+        return None
 
     @property  # type: ignore
     def type(self) -> Union[StrawberryType, type]:  # type: ignore

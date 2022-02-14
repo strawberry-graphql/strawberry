@@ -207,6 +207,11 @@ def type(
                 exc = ObjectIsNotClassError.type
             raise exc(cls)
 
+        # Fallback to docstring as GraphQL description
+        nonlocal description
+        if description is None and cls.__doc__ is not None:
+            description = inspect.cleandoc(cls.__doc__)
+
         wrapped = _wrap_dataclass(cls)
         return _process_type(
             wrapped,

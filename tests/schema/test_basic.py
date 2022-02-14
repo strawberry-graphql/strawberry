@@ -130,13 +130,35 @@ def test_type_description():
         a: str
 
     @strawberry.type
+    class TypeB:
+        """Docstring description"""
+        b: str
+
+    @strawberry.type
+    class TypeC:
+        # No description
+        c: str
+
+    @strawberry.type
     class Query:
         a: TypeA
+        b: TypeB
+        c: TypeC
 
     schema = strawberry.Schema(query=Query)
 
     query = """{
-        __type(name: "TypeA") {
+        a: __type(name: "TypeA") {
+            name
+            description
+        }
+
+        b: __type(name: "TypeB") {
+            name
+            description
+        }
+
+        c: __type(name: "TypeC") {
             name
             description
         }
@@ -145,9 +167,19 @@ def test_type_description():
     result = schema.execute_sync(query)
     assert not result.errors
 
-    assert result.data["__type"] == {
-        "name": "TypeA",
-        "description": "Decorator argument description",
+    assert result.data == {
+        "a": {
+            "name": "TypeA",
+            "description": "Decorator argument description",
+        },
+        "b": {
+            "name": "TypeB",
+            "description": "Docstring description",
+        },
+        "c": {
+            "name": "TypeC",
+            "description": None,
+        },
     }
 
 
@@ -162,6 +194,11 @@ def test_field_description():
 
         @strawberry.field(description="Example C")
         def c(self, id: int) -> str:
+            return "I'm a resolver"
+
+        @strawberry.field
+        def d(self, id: int) -> str:
+            """Example D"""
             return "I'm a resolver"
 
     schema = strawberry.Schema(query=Query)
@@ -183,6 +220,7 @@ def test_field_description():
         {"name": "a", "description": "Example"},
         {"name": "b", "description": None},
         {"name": "c", "description": "Example C"},
+        {"name": "d", "description": "Example D"},
     ]
 
 
@@ -261,10 +299,16 @@ def test_enum_description():
     class PizzaType(Enum):
         MARGHERITA = "margherita"
 
+    @strawberry.enum
+    class SaladType(Enum):
+        """Not as good as ice-cream"""
+        LETTUCE = "lettuce"
+
     @strawberry.type
     class Query:
         favorite_ice_cream: IceCreamFlavour = IceCreamFlavour.STRAWBERRY
         pizza: PizzaType = PizzaType.MARGHERITA
+        salad: SaladType = SaladType.LETTUCE
 
     schema = strawberry.Schema(query=Query)
 
@@ -279,20 +323,30 @@ def test_enum_description():
         pizzas: __type(name: "PizzaType") {
             description
         }
+        salads: __type(name: "SaladType") {
+            description
+        }
     }"""
 
     result = schema.execute_sync(query)
 
     assert not result.errors
-
-    assert result.data["iceCreamFlavour"]["description"] == "We love ice-creams"
-    assert result.data["iceCreamFlavour"]["enumValues"] == [
-        {"name": "VANILLA", "description": None},
-        {"name": "STRAWBERRY", "description": None},
-        {"name": "CHOCOLATE", "description": None},
-    ]
-
-    assert result.data["pizzas"]["description"] is None
+    assert result.data == {
+        "iceCreamFlavour": {
+            "description": "We love ice-creams",
+            "enumValues": [
+                {"name": "VANILLA", "description": None},
+                {"name": "STRAWBERRY", "description": None},
+                {"name": "CHOCOLATE", "description": None},
+            ],
+        },
+        "pizzas": {
+            "description": None,
+        },
+        "salads": {
+            "description": "Not as good as ice-cream",
+        },
+    }
 
 
 def test_parent_class_fields_are_inherited():

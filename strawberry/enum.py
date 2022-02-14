@@ -1,5 +1,6 @@
 import dataclasses
-from enum import EnumMeta
+import inspect
+from enum import Enum, EnumMeta
 from typing import Any, Callable, List, Mapping, Optional, TypeVar, Union, overload
 
 from strawberry.type import StrawberryType
@@ -82,9 +83,24 @@ def enum(
     """
 
     def wrap(cls: EnumType) -> EnumType:
+        # Fallback to docstring as GraphQL description
+        nonlocal description
+        if (
+            description is None
+            and cls.__doc__ is not None
+            and cls.__doc__ is not UndocumentedEnum.__doc__
+        ):
+            description = inspect.cleandoc(cls.__doc__)
+
         return _process_enum(cls, name, description)
 
     if not _cls:
         return wrap
 
     return wrap(_cls)
+
+
+class UndocumentedEnum(Enum):
+    # `Enum` automatically adds 'An enumeration.' as docstring
+    # This is used to detect and ignore it
+    pass
