@@ -132,6 +132,7 @@ def test_type_description():
     @strawberry.type
     class TypeB:
         """Docstring description"""
+
         b: str
 
     @strawberry.type
@@ -302,6 +303,7 @@ def test_enum_description():
     @strawberry.enum
     class SaladType(Enum):
         """Not as good as ice-cream"""
+
         LETTUCE = "lettuce"
 
     @strawberry.type
