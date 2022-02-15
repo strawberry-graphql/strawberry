@@ -50,6 +50,7 @@ aiohttp = {version = "^3.7.4.post0", optional = true}
 fastapi = {version = ">=0.65.2", optional = true}
 sentinel = "^0.3.0"
 "backports.cached-property" = "^1.0.1"
+docstring-parser = "^0.13"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.0"
