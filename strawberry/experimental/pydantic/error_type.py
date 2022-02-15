@@ -14,6 +14,7 @@ from strawberry.experimental.pydantic.utils import (
 from strawberry.object_type import _process_type, _wrap_dataclass
 from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.types.type_resolver import _get_fields
+from strawberry.utils import docstrings
 from strawberry.utils.typing import get_list_annotation, is_list
 
 from .exceptions import MissingFieldsListError
@@ -93,6 +94,7 @@ def error_type(
             if name in fields_set
         ]
 
+        docstring = docstrings.get(cls)
         wrapped = _wrap_dataclass(cls)
         extra_fields = cast(List[dataclasses.Field], _get_fields(wrapped))
         private_fields = get_private_fields(wrapped)
@@ -121,6 +123,7 @@ def error_type(
             is_input=False,
             is_interface=False,
             description=description,
+            docstring=docstring,
             directives=directives,
         )
 

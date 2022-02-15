@@ -42,6 +42,7 @@ from strawberry.object_type import _process_type, _wrap_dataclass
 from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.types.type_resolver import _get_fields
 from strawberry.types.types import TypeDefinition
+from strawberry.utils import docstrings
 
 from .exceptions import MissingFieldsListError, UnregisteredTypeException
 
@@ -187,6 +188,7 @@ def type(
             model=model, auto_fields=auto_fields_set, cls_name=cls.__name__
         )
 
+        docstring = docstrings.get(cls)
         wrapped = _wrap_dataclass(cls)
         extra_strawberry_fields = _get_fields(wrapped)
         extra_fields = cast(List[dataclasses.Field], extra_strawberry_fields)
@@ -254,6 +256,7 @@ def type(
             is_input=is_input,
             is_interface=is_interface,
             description=description,
+            docstring=docstring,
             directives=directives,
         )
 

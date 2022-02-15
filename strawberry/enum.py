@@ -3,6 +3,8 @@ from enum import EnumMeta
 from typing import Any, Callable, List, Mapping, Optional, TypeVar, Union, overload
 
 from strawberry.type import StrawberryType
+from strawberry.utils import docstrings
+from strawberry.utils.docstrings import Docstring
 
 from .exceptions import ObjectIsNotAnEnumError
 
@@ -11,6 +13,7 @@ from .exceptions import ObjectIsNotAnEnumError
 class EnumValue:
     name: str
     value: Any
+    description: Optional[str] = None
 
 
 @dataclasses.dataclass
@@ -18,7 +21,8 @@ class EnumDefinition(StrawberryType):
     wrapped_cls: EnumMeta
     name: str
     values: List[EnumValue]
-    description: Optional[str]
+    description: Optional[str] = None
+    docstring: Optional[Docstring] = None
 
     def __hash__(self) -> int:
         # TODO: Is this enough for unique-ness?
@@ -46,8 +50,6 @@ def _process_enum(
     if not name:
         name = cls.__name__
 
-    description = description
-
     values = [EnumValue(item.name, item.value) for item in cls]  # type: ignore
 
     cls._enum_definition = EnumDefinition(  # type: ignore
@@ -55,6 +57,7 @@ def _process_enum(
         name=name,
         values=values,
         description=description,
+        docstring=docstrings.get(cls),
     )
 
     return cls

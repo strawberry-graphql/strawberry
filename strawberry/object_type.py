@@ -13,6 +13,8 @@ from .exceptions import (
 from .field import StrawberryField, field
 from .types.type_resolver import _get_fields
 from .types.types import TypeDefinition
+from .utils import docstrings
+from .utils.docstrings import Docstring
 from .utils.str_converters import to_camel_case
 from .utils.typing import __dataclass_transform__
 
@@ -100,6 +102,7 @@ def _process_type(
     is_input: bool = False,
     is_interface: bool = False,
     description: Optional[str] = None,
+    docstring: Optional[Docstring] = None,
     directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
     extend: bool = False,
 ):
@@ -115,6 +118,7 @@ def _process_type(
         is_interface=is_interface,
         interfaces=interfaces,
         description=description,
+        docstring=docstring,
         directives=directives,
         origin=cls,
         extend=extend,
@@ -207,6 +211,7 @@ def type(
                 exc = ObjectIsNotClassError.type
             raise exc(cls)
 
+        docstring = docstrings.get(cls)
         wrapped = _wrap_dataclass(cls)
         return _process_type(
             wrapped,
@@ -214,6 +219,7 @@ def type(
             is_input=is_input,
             is_interface=is_interface,
             description=description,
+            docstring=docstring,
             directives=directives,
             extend=extend,
         )
