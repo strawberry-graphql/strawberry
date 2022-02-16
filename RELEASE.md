@@ -1,6 +1,6 @@
 Release type: minor
 
-Support using docstrings are GraphQL descriptions
+Support using docstrings as GraphQL descriptions
 
 It is now possible to use python docstrings to provide GraphQL descriptions.
 
@@ -44,7 +44,7 @@ class Query:
         return 1
 ```
 
-It produces this GraphQL schema:
+Produces this GraphQL schema:
 
 ```
 """Example enum"""
