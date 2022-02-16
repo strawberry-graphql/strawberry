@@ -8,6 +8,7 @@
 - [Queries](./general/queries.md)
 - [Mutations](./general/mutations.md)
 - [Subscriptions](./general/subscriptions.md)
+- [Descriptions](./general/descriptions.md)
 - [Why](./general/why.md)
 
 ## Types
