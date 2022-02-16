@@ -16,6 +16,7 @@ def identity(x):
 class ScalarDefinition(StrawberryType):
     name: str
     description: Optional[str]
+    specified_by_url: Optional[str]
     serialize: Optional[Callable]
     parse_value: Optional[Callable]
     parse_literal: Optional[Callable]
@@ -47,11 +48,12 @@ class ScalarWrapper:
 def _process_scalar(
     cls,
     *,
-    name: str = None,
-    description: str = None,
-    serialize: Callable = None,
-    parse_value: Callable = None,
-    parse_literal: Callable = None
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    specified_by_url: Optional[str] = None,
+    serialize: Optional[Callable] = None,
+    parse_value: Optional[Callable] = None,
+    parse_literal: Optional[Callable] = None,
 ):
 
     name = name or to_camel_case(cls.__name__)
@@ -60,6 +62,7 @@ def _process_scalar(
     wrapper._scalar_definition = ScalarDefinition(
         name=name,
         description=description,
+        specified_by_url=specified_by_url,
         serialize=serialize,
         parse_literal=parse_literal,
         parse_value=parse_value,
@@ -72,10 +75,11 @@ def scalar(
     cls=None,
     *,
     name: str = None,
-    description: str = None,
+    description: Optional[str] = None,
+    specified_by_url: Optional[str] = None,
     serialize: Callable = identity,
     parse_value: Optional[Callable] = None,
-    parse_literal: Optional[Callable] = None
+    parse_literal: Optional[Callable] = None,
 ):
     """Annotates a class or type as a GraphQL custom scalar.
 
@@ -111,6 +115,7 @@ def scalar(
             cls,
             name=name,
             description=description,
+            specified_by_url=specified_by_url,
             serialize=serialize,
             parse_value=parse_value,
             parse_literal=parse_literal,

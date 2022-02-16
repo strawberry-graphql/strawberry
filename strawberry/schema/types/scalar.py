@@ -22,6 +22,7 @@ def _make_scalar_type(definition: ScalarDefinition) -> GraphQLScalarType:
     return GraphQLScalarType(
         name=definition.name,
         description=definition.description,
+        specified_by_url=definition.specified_by_url,
         serialize=definition.serialize,
         parse_value=definition.parse_value,
         parse_literal=definition.parse_literal,
@@ -32,6 +33,7 @@ def _make_scalar_definition(scalar_type: GraphQLScalarType) -> ScalarDefinition:
     return ScalarDefinition(
         name=scalar_type.name,
         description=scalar_type.name,
+        specified_by_url=scalar_type.specified_by_url,
         serialize=scalar_type.serialize,
         parse_literal=scalar_type.parse_literal,
         parse_value=scalar_type.parse_value,
