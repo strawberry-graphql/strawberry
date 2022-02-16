@@ -118,6 +118,15 @@ result = schema.execute_sync("{ base64 }")
 assert results.data  == {"base64": "aGk="}
 ```
 
+<Note>
+The `Base16`, `Base32` and `Base64` scalar types are available in `strawberry.scalars`
+
+```python
+from strawberry.scalars import Base16, Base32, Base64
+```
+
+</Note>
+
 ## Example JSONScalar
 
 ```python
@@ -126,11 +135,11 @@ from typing import Any, NewType
 
 import strawberry
 
-JSONScalar = strawberry.scalar(
-    NewType("JSONScalar", Any),
+JSON = strawberry.scalar(
+    NewType("JSON", object),
+    description="The `JSON` scalar type represents JSON values as specified by ECMA-404",
     serialize=lambda v: v,
     parse_value=lambda v: v,
-    description="The JSONScalar scalar type represents a generic GraphQL scalar value that can be built from: List, Object, String, Number, Boolean or Null"
 )
 
 ```
@@ -141,7 +150,7 @@ Usage:
 @strawberry.type
 class Query:
     @strawberry.field
-    def data(self, info) -> JSONScalar:
+    def data(self, info) -> JSON:
         return {"hello": {"a": 1}, "someNumbers": [1, 2, 3]}
 
 ```
@@ -160,6 +169,15 @@ query ExampleDataQuery {
   }
 }
 ```
+
+<Note>
+The `JSON` scalar type is available in `strawberry.scalars`
+
+```python
+from strawberry.scalars import JSON
+```
+
+</Note>
 
 ## Overriding built in scalars
 
