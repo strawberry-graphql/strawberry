@@ -1,10 +1,12 @@
 from datetime import datetime, timedelta, timezone
 from textwrap import dedent
+from typing import Optional
 from uuid import UUID
 
 import pytest
 
 import strawberry
+from strawberry.scalars import JSON, Base16, Base32, Base64
 
 
 def test_uuid_field_string_value():
@@ -96,6 +98,155 @@ def test_uuid_input():
     assert not result.errors
     assert result.data == {
         "uuidInput": "e350746c-33b6-4469-86b0-5f16e1e12232",
+    }
+
+
+def test_json():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def echo_json(data: JSON) -> JSON:
+            return data
+
+        @strawberry.field
+        def echo_json_nullable(data: Optional[JSON]) -> Optional[JSON]:
+            return data
+
+    schema = strawberry.Schema(query=Query)
+
+    assert (
+        str(schema)
+        == dedent(
+            '''
+        """
+        The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+        """
+        scalar JSON @specifiedBy(url: "http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf")
+
+        type Query {
+          echoJson(data: JSON!): JSON!
+          echoJsonNullable(data: JSON): JSON
+        }
+    '''  # noqa: E501
+        ).strip()
+    )
+
+    result = schema.execute_sync(
+        """
+        query {
+            echoJson(data: {hello: {a: 1}, someNumbers: [1, 2, 3], null: null})
+            echoJsonNullable(data: {hello: {a: 1}, someNumbers: [1, 2, 3], null: null})
+        }
+    """
+    )
+
+    assert not result.errors
+    assert result.data == {
+        "echoJson": {"hello": {"a": 1}, "someNumbers": [1, 2, 3], "null": None},
+        "echoJsonNullable": {"hello": {"a": 1}, "someNumbers": [1, 2, 3], "null": None},
+    }
+
+    result = schema.execute_sync(
+        """
+        query {
+            echoJson(data: null)
+        }
+    """
+    )
+    assert result.errors  # echoJson is not-null null
+
+    result = schema.execute_sync(
+        """
+        query {
+            echoJsonNullable(data: null)
+        }
+    """
+    )
+    assert not result.errors
+    assert result.data == {
+        "echoJsonNullable": None,
+    }
+
+
+def test_base16():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def base16_encode(data: str) -> Base16:
+            return bytes(data, "utf-8")
+
+        @strawberry.field
+        def base16_decode(data: Base16) -> str:
+            return data.decode("utf-8")
+
+        @strawberry.field
+        def base32_encode(data: str) -> Base32:
+            return bytes(data, "utf-8")
+
+        @strawberry.field
+        def base32_decode(data: Base32) -> str:
+            return data.decode("utf-8")
+
+        @strawberry.field
+        def base64_encode(data: str) -> Base64:
+            return bytes(data, "utf-8")
+
+        @strawberry.field
+        def base64_decode(data: Base64) -> str:
+            return data.decode("utf-8")
+
+    schema = strawberry.Schema(query=Query)
+
+    assert (
+        str(schema)
+        == dedent(
+            '''
+        """Represents binary data as Base16-encoded (hexadecimal) strings."""
+        scalar Base16 @specifiedBy(url: "https://datatracker.ietf.org/doc/html/rfc4648.html#section-8")
+
+        """
+        Represents binary data as Base32-encoded strings, using the standard alphabet.
+        """
+        scalar Base32 @specifiedBy(url: "https://datatracker.ietf.org/doc/html/rfc4648.html#section-6")
+
+        """
+        Represents binary data as Base64-encoded strings, using the standard alphabet.
+        """
+        scalar Base64 @specifiedBy(url: "https://datatracker.ietf.org/doc/html/rfc4648.html#section-4")
+
+        type Query {
+          base16Encode(data: String!): Base16!
+          base16Decode(data: Base16!): String!
+          base32Encode(data: String!): Base32!
+          base32Decode(data: Base32!): String!
+          base64Encode(data: String!): Base64!
+          base64Decode(data: Base64!): String!
+        }
+    '''  # noqa: E501
+        ).strip()
+    )
+
+    result = schema.execute_sync(
+        """
+        query {
+            base16Encode(data: "Hello")
+            base16Decode(data: "48656c6C6f")  # < Mix lowercase and uppercase
+            base32Encode(data: "Hello")
+            base32Decode(data: "JBSWY3dp")  # < Mix lowercase and uppercase
+            base64Encode(data: "Hello")
+            base64Decode(data: "SGVsbG8=")
+        }
+    """
+    )
+
+    assert not result.errors
+    assert result.data == {
+        "base16Encode": "48656C6C6F",
+        "base16Decode": "Hello",
+        "base32Encode": "JBSWY3DP",
+        "base32Decode": "Hello",
+        "base64Encode": "SGVsbG8=",
+        "base64Decode": "Hello",
     }
 
 
