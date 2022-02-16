@@ -7,6 +7,60 @@ import pytest
 import strawberry
 
 
+def test_void_function():
+    NoneType = type(None)
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def void_ret(self) -> None:
+            return
+
+        @strawberry.field
+        def void_ret_crash(self) -> NoneType:
+            return 1
+
+        @strawberry.field
+        def void_arg(self, x: None) -> None:
+            return
+
+    schema = strawberry.Schema(query=Query)
+
+    assert (
+        str(schema)
+        == dedent(
+            '''
+      type Query {
+        voidRet: Void
+        voidRetCrash: Void
+        voidArg(x: Void): Void
+      }
+
+      """Represents NULL values"""
+      scalar Void
+    '''
+        ).strip()
+    )
+
+    result = schema.execute_sync("query { voidRet }")
+    assert not result.errors
+    assert result.data == {
+        "voidRet": None,
+    }
+
+    result = schema.execute_sync("query { voidArg (x: null) }")
+    assert not result.errors
+    assert result.data == {
+        "voidArg": None,
+    }
+
+    result = schema.execute_sync("query { voidArg (x: 1) }")
+    assert result.errors
+
+    result = schema.execute_sync("query { voidRetCrash }")
+    assert result.errors
+
+
 def test_uuid_field_string_value():
     @strawberry.type
     class Query:
