@@ -14,7 +14,7 @@ from strawberry.fastapi import GraphQLRouter
 from strawberry.fastapi.handlers import GraphQLTransportWSHandler, GraphQLWSHandler
 class MyGraphQLWSHandler(GraphQLWSHandler):
     async def process_connection_payload(self, payload):
-        if not payload or payload.get("name") == "bob":
+        if payload.get("name") == "bob":
             await self.close(4400, "Bob is banned")
             return
         return {"hello": "Welcome to our server!"}

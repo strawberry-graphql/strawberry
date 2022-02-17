@@ -112,13 +112,13 @@ class BaseGraphQLTransportWSHandler(ABC):
 
         self.connection_init_received = True
         ack = ConnectionAckMessage()
-        payload = await self.process_connection_payload(message.payload)
+        payload = await self.process_connection_payload(message.payload or {})
         if payload:
             ack.payload = payload
         await self.send_message(ack)
         self.connection_acknowledged = True
 
-    async def process_connection_payload(self,  payload: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    async def process_connection_payload(self,  payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Can be overridden to validate connection payload and provide response payload"""
         return None
 

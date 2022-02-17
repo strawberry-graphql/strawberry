@@ -82,7 +82,7 @@ class BaseGraphQLWSHandler(ABC):
 
     async def handle_connection_init(self, message: OperationMessage) -> None:
         data: OperationMessage = {"type": GQL_CONNECTION_ACK}
-        payload = await self.process_connection_payload(message.get("payload"))
+        payload = await self.process_connection_payload(message.get("payload") or {})
         if payload:
             data["payload"] = payload
         await self.send_json(data)
@@ -91,7 +91,7 @@ class BaseGraphQLWSHandler(ABC):
             keep_alive_handler = self.handle_keep_alive()
             self.keep_alive_task = asyncio.create_task(keep_alive_handler)
 
-    async def process_connection_payload(self,  payload: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+    async def process_connection_payload(self,  payload: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """Can be overridden to validate connection payload and provide response payload"""
         return None
 
