@@ -3,7 +3,6 @@ from enum import EnumMeta
 from typing import Any, Callable, List, Mapping, Optional, TypeVar, Union, overload
 
 from strawberry.type import StrawberryType
-from strawberry.utils import docstrings
 from strawberry.utils.docstrings import Docstring
 
 from .exceptions import ObjectIsNotAnEnumError
@@ -57,7 +56,7 @@ def _process_enum(
         name=name,
         values=values,
         description=description,
-        docstring=docstrings.get(cls),
+        docstring=Docstring.get(cls),
     )
 
     return cls

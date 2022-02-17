@@ -13,7 +13,6 @@ from .exceptions import (
 from .field import StrawberryField, field
 from .types.type_resolver import _get_fields
 from .types.types import TypeDefinition
-from .utils import docstrings
 from .utils.docstrings import Docstring
 from .utils.str_converters import to_camel_case
 from .utils.typing import __dataclass_transform__
@@ -211,7 +210,7 @@ def type(
                 exc = ObjectIsNotClassError.type
             raise exc(cls)
 
-        docstring = docstrings.get(cls)
+        docstring = Docstring.get(cls)
         wrapped = _wrap_dataclass(cls)
         return _process_type(
             wrapped,

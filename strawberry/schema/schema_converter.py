@@ -40,7 +40,6 @@ from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
 from strawberry.types.info import Info
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
-from strawberry.utils import docstrings
 from strawberry.utils.await_maybe import await_maybe
 from strawberry.utils.docstrings import Docstring
 
@@ -77,11 +76,11 @@ class GraphQLCoreConverter:
         argument_type = cast(GraphQLInputType, self.from_maybe_optional(argument.type))
         default_value = Undefined if argument.default is UNSET else argument.default
 
-        description = argument.description
-        if description is None and self.config.description_from_docstrings:
-            description = docstrings.arg_description(
-                parent_docstring, argument.python_name
-            )
+        description = self._get_description(
+            argument.description,
+            parent_docstring=parent_docstring,
+            child_name=argument.python_name,
+        )
 
         return GraphQLArgument(
             type_=argument_type,
@@ -101,15 +100,13 @@ class GraphQLCoreConverter:
             assert isinstance(graphql_enum, CustomGraphQLEnumType)  # For mypy
             return graphql_enum
 
-        description = enum.description
-        docstring = enum.docstring
-        if description is None and self.config.description_from_docstrings:
-            description = docstrings.type_description(docstring)
+        description = self._get_description(enum.description, docstring=enum.docstring)
 
         graphql_enum = CustomGraphQLEnumType(
             name=enum_name,
             values={
-                item.name: self.from_enum_value(item, docstring) for item in enum.values
+                item.name: self.from_enum_value(item, enum.docstring)
+                for item in enum.values
             },
             description=description,
         )
@@ -123,24 +120,26 @@ class GraphQLCoreConverter:
     def from_enum_value(
         self, enum_value: EnumValue, parent_docstring: Optional[Docstring] = None
     ) -> GraphQLEnumValue:
-        description = enum_value.description
-        if description is None and self.config.description_from_docstrings:
-            description = docstrings.attribute_description(
-                parent_docstring, enum_value.name
-            )
+        description = self._get_description(
+            enum_value.description,
+            parent_docstring=parent_docstring,
+            child_name=enum_value.name,
+        )
+
         return GraphQLEnumValue(enum_value.value, description=description)
 
     def from_directive(self, directive: StrawberryDirective) -> GraphQLDirective:
-        description = directive.description
-        docstring = directive.docstring
-        if description is None and self.config.description_from_docstrings:
-            description = docstrings.type_description(docstring)
+        description = self._get_description(
+            directive.description, docstring=directive.docstring
+        )
 
         graphql_arguments = {}
 
         for argument in directive.arguments:
             argument_name = self.config.name_converter.from_argument(argument)
-            graphql_arguments[argument_name] = self.from_argument(argument, docstring)
+            graphql_arguments[argument_name] = self.from_argument(
+                argument, directive.docstring
+            )
 
         directive_name = self.config.name_converter.from_type(directive)
 
@@ -163,20 +162,19 @@ class GraphQLCoreConverter:
             subscribe = resolver
             resolver = lambda event, *_, **__: event  # noqa: E731
 
-        description = field.description
-        docstring = field.docstring
-        if description is None and self.config.description_from_docstrings:
-            if docstring is not None:
-                description = docstrings.func_description(docstring)
-            else:
-                description = docstrings.attribute_description(
-                    parent_docstring, field.python_name
-                )
+        description = self._get_description(
+            field.description,
+            docstring=field.docstring,
+            parent_docstring=parent_docstring,
+            child_name=field.python_name,
+        )
 
         graphql_arguments = {}
         for argument in field.arguments:
             argument_name = self.config.name_converter.from_argument(argument)
-            graphql_arguments[argument_name] = self.from_argument(argument, docstring)
+            graphql_arguments[argument_name] = self.from_argument(
+                argument, field.docstring
+            )
 
         return GraphQLField(
             type_=field_type,
@@ -199,11 +197,12 @@ class GraphQLCoreConverter:
         else:
             default_value = field.default_value
 
-        description = field.description
-        if description is None and self.config.description_from_docstrings:
-            description = docstrings.attribute_description(
-                parent_docstring, field.python_name
-            )
+        description = self._get_description(
+            field.description,
+            docstring=field.docstring,
+            parent_docstring=parent_docstring,
+            child_name=field.python_name,
+        )
 
         return GraphQLInputField(
             type_=field_type,
@@ -223,17 +222,18 @@ class GraphQLCoreConverter:
             assert isinstance(graphql_object_type, GraphQLInputObjectType)  # For mypy
             return graphql_object_type
 
-        description = type_definition.description
-        docstring = type_definition.docstring
-        if description is None and self.config.description_from_docstrings:
-            description = docstrings.type_description(docstring)
+        description = self._get_description(
+            type_definition.description, docstring=type_definition.docstring
+        )
 
         def get_graphql_fields() -> Dict[str, GraphQLInputField]:
             graphql_fields = {}
             for field in type_definition.fields:
                 field_name = self.config.name_converter.from_field(field)
 
-                graphql_fields[field_name] = self.from_input_field(field, docstring)
+                graphql_fields[field_name] = self.from_input_field(
+                    field, type_definition.docstring
+                )
 
             return graphql_fields
 
@@ -260,17 +260,16 @@ class GraphQLCoreConverter:
             assert isinstance(graphql_interface, GraphQLInterfaceType)  # For mypy
             return graphql_interface
 
-        description = interface.description
-        docstring = interface.docstring
-        if description is None and self.config.description_from_docstrings:
-            description = docstrings.type_description(docstring)
+        description = self._get_description(
+            interface.description, docstring=interface.docstring
+        )
 
         def get_graphql_fields() -> Dict[str, GraphQLField]:
             graphql_fields = {}
 
             for field in interface.fields:
                 field_name = self.config.name_converter.from_field(field)
-                graphql_fields[field_name] = self.from_field(field, docstring)
+                graphql_fields[field_name] = self.from_field(field, interface.docstring)
 
             return graphql_fields
 
@@ -302,10 +301,9 @@ class GraphQLCoreConverter:
             assert isinstance(graphql_object_type, GraphQLObjectType)  # For mypy
             return graphql_object_type
 
-        description = object_type.description
-        docstring = object_type.docstring
-        if description is None and self.config.description_from_docstrings:
-            description = docstrings.type_description(docstring)
+        description = self._get_description(
+            object_type.description, docstring=object_type.docstring
+        )
 
         def get_graphql_fields() -> Dict[str, GraphQLField]:
             graphql_fields = {}
@@ -313,7 +311,9 @@ class GraphQLCoreConverter:
             for field in object_type.fields:
                 field_name = self.config.name_converter.from_field(field)
 
-                graphql_fields[field_name] = self.from_field(field, docstring)
+                graphql_fields[field_name] = self.from_field(
+                    field, object_type.docstring
+                )
 
             return graphql_fields
 
@@ -544,3 +544,19 @@ class GraphQLCoreConverter:
         )
 
         return graphql_union
+
+    def _get_description(
+        self,
+        description: Optional[str],
+        *,
+        docstring: Optional[Docstring] = None,
+        parent_docstring: Optional[Docstring] = None,
+        child_name: Optional[str] = None,
+    ) -> Optional[str]:
+        ret: Optional[str] = description
+        if self.config.description_from_docstrings:
+            if ret is None and docstring is not None:
+                ret = docstring.main_description
+            if ret is None and parent_docstring is not None and child_name is not None:
+                ret = parent_docstring.child_description(child_name)
+        return ret

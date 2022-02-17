@@ -10,7 +10,6 @@ from graphql import DirectiveLocation
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import StrawberryArgument
-from strawberry.utils import docstrings
 from strawberry.utils.docstrings import Docstring
 
 
@@ -66,7 +65,7 @@ def directive(
             graphql_name=name,
             locations=locations,
             description=description,
-            docstring=docstrings.get(f),
+            docstring=Docstring.get(f),
             resolver=f,
         )
 

@@ -28,7 +28,6 @@ from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.type import StrawberryType
 from strawberry.types.info import Info
 from strawberry.union import StrawberryUnion
-from strawberry.utils import docstrings
 from strawberry.utils.docstrings import Docstring
 
 from .permission import BasePermission
@@ -177,7 +176,7 @@ class StrawberryField(dataclasses.Field):
     @base_resolver.setter
     def base_resolver(self, resolver: StrawberryResolver) -> None:
         self._base_resolver = resolver
-        self.docstring = docstrings.get(resolver.wrapped_func)
+        self.docstring = Docstring.get(resolver.wrapped_func)
 
         # Don't add field to __init__, __repr__ and __eq__ once it has a resolver
         self.init = False
