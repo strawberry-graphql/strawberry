@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+import enum
 from typing import TYPE_CHECKING, List, Optional, Union
 
 from typing_extensions import Protocol
 
 from strawberry.custom_scalar import ScalarDefinition
 from strawberry.directive import StrawberryDirective
-from strawberry.enum import EnumDefinition
+from strawberry.enum import EnumDefinition, EnumValue
 from strawberry.lazy_type import LazyType
 from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
@@ -25,7 +26,14 @@ class HasGraphQLName(Protocol):
     graphql_name: Optional[str]
 
 
+class EnumValueFrom(enum.Enum):
+    ENUM_MEMBER = "enum_member"
+    ENUM_VALUE = "enum_value"
+
+
 class NameConverter:
+    enum_values_from = EnumValueFrom.ENUM_VALUE
+
     def __init__(self, auto_camel_case: bool = True) -> None:
         self.auto_camel_case = auto_camel_case
 
@@ -69,6 +77,12 @@ class NameConverter:
 
     def from_enum(self, enum: EnumDefinition) -> str:
         return enum.name
+
+    def from_enum_value(self, enum_value: EnumValue) -> str:
+        if self.enum_values_from == EnumValueFrom.ENUM_MEMBER:
+            return enum_value.name
+
+        return enum_value.value
 
     def from_directive(
         self, directive: Union[StrawberryDirective, StrawberrySchemaDirective]

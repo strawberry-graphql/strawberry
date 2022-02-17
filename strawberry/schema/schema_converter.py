@@ -1,12 +1,10 @@
 from __future__ import annotations
 
-from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union, cast
 
 from graphql import (
     GraphQLArgument,
     GraphQLDirective,
-    GraphQLEnumType,
     GraphQLEnumValue,
     GraphQLField,
     GraphQLInputField,
@@ -42,18 +40,8 @@ from strawberry.union import StrawberryUnion
 from strawberry.utils.await_maybe import await_maybe
 
 from . import compat
+from .enum import CustomGraphQLEnumType
 from .types.concrete_type import ConcreteType
-
-
-# graphql-core expects a resolver for an Enum type to return
-# the enum's *value* (not its name or an instance of the enum). We have to
-# subclass the GraphQLEnumType class to enable returning Enum members from
-# resolvers.
-class CustomGraphQLEnumType(GraphQLEnumType):
-    def serialize(self, output_value: Any) -> str:
-        if isinstance(output_value, Enum):
-            return output_value.name
-        return super().serialize(output_value)
 
 
 class GraphQLCoreConverter:
@@ -96,10 +84,17 @@ class GraphQLCoreConverter:
             assert isinstance(graphql_enum, CustomGraphQLEnumType)  # For mypy
             return graphql_enum
 
+        # TODO: not sure if name_converter should know about enum values vs members
+        values = {
+            self.config.name_converter.from_enum_value(item): self.from_enum_value(item)
+            for item in enum.values
+        }
+
         graphql_enum = CustomGraphQLEnumType(
             name=enum_name,
-            values={item.name: self.from_enum_value(item) for item in enum.values},
+            values=values,
             description=enum.description,
+            enum_values_from=self.config.enum_values_from,
         )
 
         self.type_map[enum_name] = ConcreteType(
@@ -109,7 +104,11 @@ class GraphQLCoreConverter:
         return graphql_enum
 
     def from_enum_value(self, enum_value: EnumValue) -> GraphQLEnumValue:
-        return GraphQLEnumValue(enum_value.value)
+        return GraphQLEnumValue("LOL")
+
+        # if self.config.enum_values_from == self.config.ENUM_MEMBER:
+
+        # return GraphQLEnumValue(enum_value.name)
 
     def from_directive(self, directive: StrawberryDirective) -> GraphQLDirective:
         graphql_arguments = {}
