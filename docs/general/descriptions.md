@@ -59,7 +59,9 @@ Additionally it is possible to add descriptions to enum values and resolver argu
 one of the [supported syntaxes is used](https://pypi.org/project/docstring-parser/)
 
 <Note>
+
 This needs to be explicitly enabled with `StrawberryConfig(description_from_docstrings=True)`
+
 </Note>
 
 Example:
