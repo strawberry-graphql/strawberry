@@ -57,3 +57,27 @@ example we might want to return an error if the book already exists.
 You can checkout our documentation on
 [dealing with errors](/docs/guides/errors#expected-errors) to learn how to return a
 union of types from a mutation.
+
+## Mutations without returned data
+
+It is also possible to write a mutation that doesn't return anything.
+
+This is mapped to a `Void` GraphQL scalar, and always returns `null`
+
+```python+schema
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    def restart() -> None:
+        print(f'Restarting the server')
+---
+type Mutation {
+  restart: Void
+}
+```
+
+<Note>
+
+Mutations with void-result go against [GQL best practices](https://graphql-rules.com/rules/mutation-payload)
+
+</Note>

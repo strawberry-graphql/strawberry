@@ -37,6 +37,7 @@ There are several built-in scalars, and you can define custom scalars too.
 - `Time`, an ISO-8601 encoded [time](https://docs.python.org/3/library/datetime.html#time-objects)
 - `Decimal`, a [Decimal](https://docs.python.org/3/library/decimal.html#decimal.Decimal) value serialized as a string
 - `UUID`, a [UUID](https://docs.python.org/3/library/uuid.html#uuid.UUID) value serialized as a string
+- `Void`, always null, maps to Python’s `None`
 
 Fields can return built-in scalars by using the Python equivalent:
 
@@ -56,6 +57,7 @@ class Product:
     same_day_shipping_before: datetime.time
     created_at: datetime.datetime
     price: decimal.Decimal
+    void: None
 ---
 type Product {
   id: UUID!
@@ -66,6 +68,7 @@ type Product {
   sameDayShippingBefore: Time!
   createdAt: DateTime!
   price: Decimal!
+  void: Void
 }
 ```
 
