@@ -111,8 +111,16 @@ class BaseGraphQLTransportWSHandler(ABC):
             return
 
         self.connection_init_received = True
-        await self.send_message(ConnectionAckMessage())
+        ack = ConnectionAckMessage()
+        payload = await self.process_connection_payload(message.payload)
+        if payload:
+            ack.payload = payload
+        await self.send_message(ack)
         self.connection_acknowledged = True
+
+    async def process_connection_payload(self,  payload: Optional[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
+        """Can be overridden to validate connection payload and provide response payload"""
+        return None
 
     async def handle_ping(self, message: PingMessage) -> None:
         await self.send_message(PongMessage())
