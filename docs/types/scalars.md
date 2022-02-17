@@ -119,6 +119,7 @@ assert results.data  == {"base64": "aGk="}
 ```
 
 <Note>
+
 The `Base16`, `Base32` and `Base64` scalar types are available in `strawberry.scalars`
 
 ```python
@@ -171,6 +172,7 @@ query ExampleDataQuery {
 ```
 
 <Note>
+
 The `JSON` scalar type is available in `strawberry.scalars`
 
 ```python
