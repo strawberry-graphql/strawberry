@@ -49,13 +49,12 @@ class InterfaceType:
     var_a: int
 
     @strawberry.field
-    def var_b(self, arg_1: int = 1, arg_2: str = 2) -> str:
+    def var_b(self, documented: int = 1, undocumented: str = 2) -> str:
         """
         A complex field with a resolver and args
 
         Args:
-            arg_1 (int): Something
-            arg_2 (str): Another thing
+            documented (int): Something
         """
         return ""
 
@@ -69,9 +68,12 @@ class ObjectType(InterfaceType):
         var_a (int): A field that doesn't need a resolver
         var_b (int): A complex field with a resolver
         var_c (str): Something to differentiate ObjectType from InterfaceType
+        var_d:
     """
 
     var_c: EnumType
+    var_d: float  # Empty description is ignored
+    var_e: int  # No description
 
 
 @strawberry.input
@@ -171,10 +173,8 @@ def test_docstrings_enabled():
           """A complex field with a resolver and args"""
           varB(
             """Something"""
-            arg1: Int! = 1
-
-            """Another thing"""
-            arg2: String! = "2"
+            documented: Int! = 1
+            undocumented: String! = "2"
           ): String!
         }
 
@@ -196,14 +196,14 @@ def test_docstrings_enabled():
           """A complex field with a resolver and args"""
           varB(
             """Something"""
-            arg1: Int! = 1
-
-            """Another thing"""
-            arg2: String! = "2"
+            documented: Int! = 1
+            undocumented: String! = "2"
           ): String!
 
           """Something to differentiate ObjectType from InterfaceType"""
           varC: EnumType!
+          varD: Float!
+          varE: Int!
         }
 
         """Main entrypoint to the GraphQL reads"""
@@ -238,7 +238,7 @@ def test_docstrings_disabled():
 
         interface InterfaceType {
           varA: Int!
-          varB(arg1: Int! = 1, arg2: String! = "2"): String!
+          varB(documented: Int! = 1, undocumented: String! = "2"): String!
         }
 
         type Mutation {
@@ -247,8 +247,10 @@ def test_docstrings_disabled():
 
         type ObjectType implements InterfaceType {
           varA: Int!
-          varB(arg1: Int! = 1, arg2: String! = "2"): String!
+          varB(documented: Int! = 1, undocumented: String! = "2"): String!
           varC: EnumType!
+          varD: Float!
+          varE: Int!
         }
 
         type Query {
