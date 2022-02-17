@@ -13,8 +13,10 @@ class Mutation:
     @strawberry.field
     def do_something(self, arg: int) -> None:
         return
+```
 results in this schema:
 ```grapqhl
 type Mutation {
     doSomething(arg: Int!): Void
 }
+```
