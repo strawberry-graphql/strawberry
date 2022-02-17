@@ -46,7 +46,7 @@ class Query:
 
 Produces this GraphQL schema:
 
-```
+```graphql
 """Example enum"""
 enum EnumType {
   """Some description"""
