@@ -11,14 +11,15 @@ from graphql import (
     GraphQLField,
     GraphQLInputField,
     GraphQLInputObjectType,
+    GraphQLInputType,
     GraphQLInterfaceType,
     GraphQLList,
     GraphQLNonNull,
     GraphQLNullableType,
     GraphQLObjectType,
+    GraphQLOutputType,
     GraphQLResolveInfo,
     GraphQLScalarType,
-    GraphQLType,
     GraphQLUnionType,
     Undefined,
 )
@@ -69,13 +70,7 @@ class GraphQLCoreConverter:
         self.scalar_registry = scalar_registry
 
     def from_argument(self, argument: StrawberryArgument) -> GraphQLArgument:
-        argument_type: GraphQLType
-
-        if isinstance(argument.type, StrawberryOptional):
-            argument_type = self.from_optional(argument.type)
-        else:
-            argument_type = self.from_non_optional(argument.type)
-
+        argument_type = cast(GraphQLInputType, self.from_maybe_optional(argument.type))
         default_value = Undefined if argument.default is UNSET else argument.default
 
         return GraphQLArgument(
@@ -128,12 +123,7 @@ class GraphQLCoreConverter:
         )
 
     def from_field(self, field: StrawberryField) -> GraphQLField:
-        field_type: GraphQLType
-
-        if isinstance(field.type, StrawberryOptional):
-            field_type = self.from_optional(field.type)
-        else:
-            field_type = self.from_non_optional(field.type)
+        field_type = cast(GraphQLOutputType, self.from_maybe_optional(field.type))
 
         resolver = self.from_resolver(field)
         subscribe = None
@@ -158,13 +148,7 @@ class GraphQLCoreConverter:
         )
 
     def from_input_field(self, field: StrawberryField) -> GraphQLInputField:
-        field_type: GraphQLType
-
-        if isinstance(field.type, StrawberryOptional):
-            field_type = self.from_optional(field.type)
-        else:
-            field_type = self.from_non_optional(field.type)
-
+        field_type = cast(GraphQLInputType, self.from_maybe_optional(field.type))
         default_value: object
 
         if is_unset(field.default_value):
@@ -245,21 +229,9 @@ class GraphQLCoreConverter:
         return graphql_interface
 
     def from_list(self, type_: StrawberryList) -> GraphQLList:
-        of_type: GraphQLType
-
-        if isinstance(type_.of_type, StrawberryOptional):
-            of_type = self.from_optional(type_.of_type)
-        else:
-            of_type = self.from_non_optional(type_.of_type)
+        of_type = self.from_maybe_optional(type_.of_type)
 
         return GraphQLList(of_type)
-
-    def from_optional(self, type_: StrawberryOptional) -> GraphQLNullableType:
-        return self.from_type(type_.of_type)
-
-    def from_non_optional(self, type_: Union[StrawberryType, type]) -> GraphQLNonNull:
-        of_type = self.from_type(type_)
-        return GraphQLNonNull(of_type)
 
     def from_object(self, object_type: TypeDefinition) -> GraphQLObjectType:
         # TODO: Use StrawberryObjectType when it's implemented in another PR
@@ -435,6 +407,17 @@ class GraphQLCoreConverter:
             )
 
         return implementation
+
+    def from_maybe_optional(
+        self, type_: Union[StrawberryType, type]
+    ) -> Union[GraphQLNullableType, GraphQLNonNull]:
+        NoneType = type(None)
+        if type_ is None or type_ is NoneType:
+            return self.from_type(type_)
+        elif isinstance(type_, StrawberryOptional):
+            return self.from_type(type_.of_type)
+        else:
+            return GraphQLNonNull(self.from_type(type_))
 
     def from_type(self, type_: Union[StrawberryType, type]) -> GraphQLNullableType:
         if compat.is_generic(type_):

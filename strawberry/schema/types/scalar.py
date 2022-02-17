@@ -40,6 +40,8 @@ def _make_scalar_definition(scalar_type: GraphQLScalarType) -> ScalarDefinition:
 
 
 DEFAULT_SCALAR_REGISTRY: Dict[object, ScalarDefinition] = {
+    type(None): base_scalars.Void._scalar_definition,
+    None: base_scalars.Void._scalar_definition,
     str: _make_scalar_definition(GraphQLString),
     int: _make_scalar_definition(GraphQLInt),
     float: _make_scalar_definition(GraphQLFloat),

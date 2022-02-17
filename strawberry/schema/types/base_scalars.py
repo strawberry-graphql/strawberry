@@ -67,3 +67,17 @@ UUID = scalar(
     serialize=str,
     parse_value=wrap_parser(uuid.UUID, "UUID"),
 )
+
+
+def _verify_void(x) -> None:
+    if x is not None:
+        raise ValueError(f"Expected 'None', got '{x}'")
+
+
+Void = scalar(
+    type(None),
+    name="Void",
+    serialize=_verify_void,
+    parse_value=_verify_void,
+    description="Represents NULL values",
+)
