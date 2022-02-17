@@ -8,7 +8,7 @@ It is now possible to use python docstrings to provide GraphQL descriptions.
 
 Here is an example of using docstrings in types and fields:
 
-```
+```python
 @strawberry.enum
 class EnumType(Enum):
     """
