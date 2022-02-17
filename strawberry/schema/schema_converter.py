@@ -554,7 +554,7 @@ class GraphQLCoreConverter:
         child_name: Optional[str] = None,
     ) -> Optional[str]:
         ret: Optional[str] = description
-        if self.config.description_from_docstrings:
+        if self.config.descriptions_from_docstrings:
             if ret is None and docstring is not None:
                 ret = docstring.main_description
             if ret is None and parent_docstring is not None and child_name is not None:

@@ -127,7 +127,7 @@ def test_docstrings_enabled():
         query=Query,
         mutation=Mutation,
         directives=[replace],
-        config=StrawberryConfig(description_from_docstrings=True),
+        config=StrawberryConfig(descriptions_from_docstrings=True),
     )
 
     expected = '''
@@ -220,7 +220,7 @@ def test_docstrings_disabled():
         query=Query,
         mutation=Mutation,
         directives=[replace],
-        config=StrawberryConfig(description_from_docstrings=False),
+        config=StrawberryConfig(descriptions_from_docstrings=False),
     )
 
     expected = """

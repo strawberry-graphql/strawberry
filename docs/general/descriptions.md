@@ -60,7 +60,7 @@ one of the [supported syntaxes is used](https://pypi.org/project/docstring-parse
 
 <Note>
 
-This needs to be explicitly enabled with `StrawberryConfig(description_from_docstrings=True)`
+This needs to be explicitly enabled with `StrawberryConfig(descriptions_from_docstrings=True)`
 
 </Note>
 
@@ -101,7 +101,7 @@ class Query:
         """
         return 1
 
-schema = strawberry.Schema(query=Query, config=StrawberryConfig(description_from_docstrings=True))
+schema = strawberry.Schema(query=Query, config=StrawberryConfig(descriptions_from_docstrings=True))
 ---
 """Example enum"""
 enum EnumType {

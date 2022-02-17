@@ -12,7 +12,7 @@ class Docstring:
     @property
     def parsed_docstring(self) -> Optional[docstring_parser.Docstring]:
         # Parse docstrings lazily, to avoid extra processing if
-        # config description_from_docstrings is disabled
+        # config descriptions_from_docstrings is disabled
         if not self._resolved:
             self._docstring = docstring_parser.parse(self.target.__doc__)
             self._resolved = True
