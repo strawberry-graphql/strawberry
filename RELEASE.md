@@ -15,8 +15,7 @@ and will always send `null` in the response
             return
 ```
 results in this schema:
-```
-   type Mutation {
-       doSomething(arg: Int!): Void
-    }
-```
+```grapqhl
+type Mutation {
+    doSomething(arg: Int!): Void
+}
