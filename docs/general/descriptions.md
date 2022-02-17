@@ -15,20 +15,20 @@ The preferred way of adding description in strawberry is using the
 `description=` argument in strawberry decorators:
 
 ```python+schema
-    @strawberry.enum(description="Example enum")
-    class EnumType(Enum):
-        FOO = "foo"
-        BAR = "bar"
+@strawberry.enum(description="Example enum")
+class EnumType(Enum):
+    FOO = "foo"
+    BAR = "bar"
 
-    @strawberry.type(description="The main GraphQL type")
-    class Query:
-        enum: EnumType = strawberry.field(default=EnumType.BAR, description="A dataclass field")
+@strawberry.type(description="The main GraphQL type")
+class Query:
+    enum: EnumType = strawberry.field(default=EnumType.BAR, description="A dataclass field")
 
-        @strawberry.field(description="A GraphQL field with a resolver and arguments")
-        def resolver(self, arg1: str, arg2: int) -> int:
-            return 1
+    @strawberry.field(description="A GraphQL field with a resolver and arguments")
+    def resolver(self, arg1: str, arg2: int) -> int:
+        return 1
 
-    schema = strawberry.Schema(query=Query)
+schema = strawberry.Schema(query=Query)
 ---
 """Example enum"""
 enum EnumType {
