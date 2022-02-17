@@ -7,13 +7,12 @@ and will always send `null` in the response
 
 ## Exampe
 
-```
-    @strawberry.type
-    class Mutation:
-        @strawberry.field
-        def do_something(self, arg: int) -> None:
-            return
-```
+```python
+@strawberry.type
+class Mutation:
+    @strawberry.field
+    def do_something(self, arg: int) -> None:
+        return
 results in this schema:
 ```grapqhl
 type Mutation {
