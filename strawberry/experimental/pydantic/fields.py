@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import Optional
+from typing import List, Optional
 from uuid import UUID
 
 import pydantic
@@ -16,10 +16,6 @@ ATTR_TO_TYPE_MAP = {
     "StrictStr": str,
     "ConstrainedBytes": bytes,
     "conbytes": bytes,
-    "ConstrainedList": None,
-    "conlist": None,
-    "ConstrainedSet": None,
-    "conset": None,
     "ConstrainedStr": str,
     "constr": str,
     "EmailStr": str,
@@ -70,6 +66,14 @@ def get_basic_type(type_):
             return int
         if issubclass(type_, pydantic.ConstrainedStr):
             return str
+
+    if "ConstrainedListValue" in type_.__name__:
+        # pydantic ConstrainedListValue is created dynamically
+        # it isn't wrapped in a list, so we need to do it ourselves
+        return List[type_.item_type]
+    if "ConstrainedSetValue" in type_.__name__:
+        # sets don't exist in graphql
+        return List[type_.item_type]
 
     if type_ in FIELDS_MAP:
         type_ = FIELDS_MAP.get(type_)
