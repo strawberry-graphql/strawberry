@@ -278,7 +278,7 @@ import strawberry
 class Example(BaseModel):
     friends: conlist(str, min_items=1)
 
-@strawberry.experimental.pydantic.type(model=Example, all_fields=True, is_input=True)
+@strawberry.experimental.pydantic.input(model=Example, all_fields=True)
 class ExampleGQL:
     ...
 
@@ -286,9 +286,11 @@ class ExampleGQL:
 class Query:
     @strawberry.field()
     def test(self, example: ExampleGQL) -> None:
-        # if to_pydantic() is not called, there will be no validation that
-        # friends has at least one item
-        print(example.to_pydantic())
+        # friends may be an empty list here
+        print(example.friends)
+        # calling to_pydantic() runs the validation and raises
+        # an error if friends is empty
+        print(example.to_pydantic().friends)
 
 schema = strawberry.Schema(query=Query)
 

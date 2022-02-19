@@ -66,14 +66,9 @@ def get_basic_type(type_) -> Type[Any]:
             return int
         if issubclass(type_, pydantic.ConstrainedStr):
             return str
-
-    if hasattr(type_, "__name__"):
-        if "ConstrainedListValue" in type_.__name__:
-            # pydantic ConstrainedListValue is created dynamically
-            # it isn't wrapped in a list, so we need to do it ourselves
+        if issubclass(type_, pydantic.ConstrainedList):
             return List[get_basic_type(type_.item_type)]  # type: ignore
-        if "ConstrainedSetValue" in type_.__name__:
-            # sets don't exist in graphql
+        if issubclass(type_, pydantic.ConstrainedSet):
             return List[get_basic_type(type_.item_type)]  # type: ignore
 
     if type_ in FIELDS_MAP:
