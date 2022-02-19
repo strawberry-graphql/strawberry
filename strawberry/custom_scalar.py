@@ -104,7 +104,7 @@ def scalar(
 # here or else it won't let us use any custom scalar to annotate attributes in
 # dataclasses/types. This should be properly solved when implementing StrawberryScalar
 def scalar(
-    cls=None,
+    cls: T = None,
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
