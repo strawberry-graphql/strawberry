@@ -1,10 +1,12 @@
+Release type: patch
+
 Adds support for converting pydantic conlist.
 Note that constraint is not enforced in the graphql type.
 Thus, we recommend always working on the pydantic type such that the validated is enforced.
 
 ```python
-from pydantic import BaseModel, conlist
 import strawberry
+from pydantic import BaseModel, conlist
 
 class Example(BaseModel):
     friends: conlist(str, min_items=1)
