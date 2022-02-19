@@ -265,6 +265,39 @@ input_data = UserInput(id='abc', name='Jake')
 instance = input_data.to_pydantic()
 ```
 
+### Constrained types
+
+Strawberry supports [pydantic constrained types](https://pydantic-docs.helpmanual.io/usage/types/#constrained-types).
+Note that constraint is not enforced in the graphql type. Thus, we recommend always working on the pydantic
+type such that the validated is enforced.
+
+```python+schema
+from pydantic import BaseModel, conlist
+import strawberry
+
+class Example(BaseModel):
+    friends: conlist(str, min_items=1)
+
+@strawberry.experimental.pydantic.type(model=Example, all_fields=True, is_input=True)
+class ExampleGQL:
+    ...
+
+@strawberry.type
+class Query:
+    @strawberry.field()
+    def test(self, example: ExampleGQL) -> None:
+        # if to_pydantic() is not called, there will be no validation that
+        # friends has at least one item
+        print(example.to_pydantic())
+
+schema = strawberry.Schema(query=Query)
+
+---
+input ExampleGQL {
+  friends: [String!]!
+}
+```
+
 ### Classes with `__get_validators__`
 
 Pydantic BaseModels may define a custom type with [`__get_validators__`](https://pydantic-docs.helpmanual.io/usage/types/#classes-with-__get_validators__)

@@ -5,7 +5,7 @@ from typing import Any, Dict, List, NewType, Optional, Union, cast
 
 import pytest
 
-from pydantic import BaseConfig, BaseModel, Field, ValidationError, conlist, conset
+from pydantic import BaseConfig, BaseModel, Field
 from pydantic.fields import ModelField
 from pydantic.typing import NoArgAnyCallable
 
@@ -1137,42 +1137,3 @@ def test_can_convert_input_types_to_pydantic_with_dict():
     assert user.age == 1
     assert user.password is None
     assert user.work["Monday"].hours == 1
-
-
-def test_can_convert_constrained_containers():
-    class User(BaseModel):
-        friends: conlist(str, min_items=1)
-        enemies: conset(str, min_items=1)
-
-    @strawberry.experimental.pydantic.type(model=User, all_fields=True)
-    class UserType:
-        ...
-
-    assert UserType._type_definition.fields[0].name == "friends"
-    assert UserType._type_definition.fields[0].type_annotation.annotation == List[str]
-    assert UserType._type_definition.fields[1].name == "enemies"
-    assert UserType._type_definition.fields[1].type_annotation.annotation == List[str]
-
-    data = UserType(friends=[], enemies=[])
-
-    with pytest.raises(
-        ValidationError,
-        match=re.escape(
-            "ensure this value has at least 1 items "
-            "(type=value_error.list.min_items; limit_value=1)",
-        ),
-    ):
-        # validation errors should happen when converting to pydantic
-        data.to_pydantic()
-
-
-def test_can_convert_constrained_containers_nested():
-    class User(BaseModel):
-        friends: conlist(conlist(str, min_items=1), min_items=1)
-
-    @strawberry.experimental.pydantic.type(model=User, all_fields=True)
-    class UserType:
-        ...
-
-    assert UserType._type_definition.fields[0].name == "friends"
-    assert UserType._type_definition.fields[0].type_annotation.annotation == List[str]

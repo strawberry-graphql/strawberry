@@ -52,6 +52,7 @@ def replace_pydantic_types(type_: Any, is_input: bool):
         # Literal does not have types in its __args__ so we return early
         return type_
     if hasattr(type_, "__args__"):
+
         replaced_type = type_.copy_with(
             tuple(replace_pydantic_types(t, is_input) for t in type_.__args__)
         )
@@ -101,7 +102,6 @@ def _build_dataclass_creation_fields(
         if field.name in auto_fields_set
         else existing_fields[field.name].type
     )
-    print("ok")
     if (
         field.name in existing_fields
         and existing_fields[field.name].base_resolver is not None
