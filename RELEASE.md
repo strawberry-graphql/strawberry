@@ -2,7 +2,7 @@ Release type: patch
 
 Adds support for converting pydantic conlist.
 Note that constraint is not enforced in the graphql type.
-Thus, we recommend always working on the pydantic type such that the validated is enforced.
+Thus, we recommend always working on the pydantic type such that the validation is enforced.
 
 ```python
 import strawberry

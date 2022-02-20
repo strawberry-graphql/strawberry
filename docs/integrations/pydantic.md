@@ -269,7 +269,7 @@ instance = input_data.to_pydantic()
 
 Strawberry supports [pydantic constrained types](https://pydantic-docs.helpmanual.io/usage/types/#constrained-types).
 Note that constraint is not enforced in the graphql type. Thus, we recommend always working on the pydantic
-type such that the validated is enforced.
+type such that the validation is enforced.
 
 ```python+schema
 from pydantic import BaseModel, conlist
