@@ -1,6 +1,7 @@
 import sys
 
-from django.core.management import BaseCommand, CommandParser, CommandError
+from django.core.management import BaseCommand, CommandError, CommandParser
+
 from strawberry import Schema
 from strawberry.printer import print_schema
 from strawberry.utils.importer import import_module_symbol
@@ -21,15 +22,20 @@ def export_schema(schema: str, app_dir):
 
 
 class Command(BaseCommand):
-    help = 'Exports the strawberry graphql schema'
+    help = "Exports the strawberry graphql schema"
 
     def add_arguments(self, parser: CommandParser) -> None:
         parser.add_argument("schema", type=str)
-        parser.add_argument("--app-dir", action="store_true", default=".", help=(
-            "Look for the module in the specified directory, by adding this to the "
-            "PYTHONPATH. Defaults to the current working directory. "
-            "Works the same as `--app-dir` in uvicorn."
-        ))
+        parser.add_argument(
+            "--app-dir",
+            action="store_true",
+            default=".",
+            help=(
+                "Look for the module in the specified directory, by adding this to the "
+                "PYTHONPATH. Defaults to the current working directory. "
+                "Works the same as `--app-dir` in uvicorn."
+            ),
+        )
 
     def handle(self, *args, **options):
         schema = options["schema"]
