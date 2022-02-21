@@ -196,7 +196,7 @@ Types = TypeVar("Types", bound=Type)
 # See https://www.python.org/dev/peps/pep-0646/ for more information
 def union(
     name: str, types: Tuple[Types, ...], *, description: str = None
-) -> Union[Types]:  # type: ignore
+) -> Union[Types]:
     """Creates a new named Union type.
 
     Example usages:

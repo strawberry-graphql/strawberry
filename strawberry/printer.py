@@ -134,12 +134,12 @@ def print_schema(schema: BaseSchema) -> str:
     )
     type_map = graphql_core_schema.type_map
 
-    types = filter(is_defined_type, map(type_map.get, sorted(type_map)))  # type: ignore
+    types = filter(is_defined_type, map(type_map.get, sorted(type_map)))
 
     return "\n\n".join(
         chain(
             filter(None, [print_schema_definition(graphql_core_schema)]),
             (print_directive(directive) for directive in directives),
-            (_print_type(type_, schema) for type_ in types),  # type: ignore
+            (_print_type(type_, schema) for type_ in types),
         )
     )

@@ -7,7 +7,7 @@ from .name_converter import NameConverter
 
 @dataclass
 class StrawberryConfig:
-    auto_camel_case: InitVar[bool] = None  # type: ignore
+    auto_camel_case: InitVar[bool] = None
     name_converter: NameConverter = field(default_factory=NameConverter)
 
     def __post_init__(

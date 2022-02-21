@@ -18,7 +18,7 @@ class DirectivesExtension(Extension):
     ) -> AwaitableOrValue[Any]:
         result = await await_maybe(_next(root, info, *args, **kwargs))
 
-        for directive in info.field_nodes[0].directives:  # type: ignore
+        for directive in info.field_nodes[0].directives:
             directive_name = directive.name.value
 
             if directive_name in SPECIFIED_DIRECTIVES:
@@ -56,11 +56,11 @@ class DirectivesExtensionSync(Extension):
 
             # TODO: support converting lists
             arguments = {
-                argument.name.value: argument.value.value  # type: ignore
+                argument.name.value: argument.value.value
                 for argument in directive.arguments
             }
 
-            schema: Schema = info.schema._strawberry_schema  # type: ignore
+            schema: Schema = info.schema._strawberry_schema
             strawberry_directive = schema.get_directive_by_name(directive_name)
             assert (
                 strawberry_directive is not None

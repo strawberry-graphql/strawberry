@@ -15,7 +15,7 @@ from typing import (  # type: ignore
 
 
 try:
-    from typing import ForwardRef  # type: ignore
+    from typing import ForwardRef
 except ImportError:  # pragma: no cover
     # ForwardRef is private in python 3.6 and 3.7
     from typing import _ForwardRef as ForwardRef  # type: ignore
@@ -234,7 +234,7 @@ class StrawberryAnnotation:
         # don't have a `__origin__` property on them, but they are instances of
         # `UnionType`, which is only available in Python 3.10+
         if sys.version_info >= (3, 10):
-            from types import UnionType  # type: ignore
+            from types import UnionType
 
             if isinstance(annotation, UnionType):
                 return True

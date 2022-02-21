@@ -261,7 +261,7 @@ def type(
             model._strawberry_input_type = cls  # type: ignore
         else:
             model._strawberry_type = cls  # type: ignore
-        cls._pydantic_type = model  # type: ignore
+        cls._pydantic_type = model
 
         def from_pydantic_default(
             instance: PydanticModel, extra: Dict[str, Any] = None
