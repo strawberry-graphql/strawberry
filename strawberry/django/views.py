@@ -40,7 +40,6 @@ class TemporalHttpResponse(JsonResponse):
 class BaseView(View):
     subscriptions_enabled = False
     graphiql = True
-    schema: Optional[BaseSchema] = None
     json_encoder: Type[json.JSONEncoder] = DjangoJSONEncoder
     json_dumps_params: Optional[Dict[str, Any]] = None
 
@@ -181,7 +180,7 @@ class AsyncGraphQLView(BaseView):
         # https://docs.djangoproject.com/en/3.1/topics/async/#async-views
 
         view = super().as_view(**initkwargs)
-        view._is_coroutine = asyncio.coroutines._is_coroutine
+        view._is_coroutine = asyncio.coroutines._is_coroutine  # type: ignore[attr-defined] # noqa: E501
         return view
 
     @method_decorator(csrf_exempt)

@@ -9,7 +9,7 @@
     User(name="Patrick")
     User(n="Patrick")
   out: |
-    main:8: error: Unexpected keyword argument "n" for "User"
+    main:8: error: Unexpected keyword argument "n" for "User"  [call-arg]
 
 - case: test_all_field_usage
   main: |
@@ -66,7 +66,7 @@
             return self.age.trim()
   out: |
     main:13: note: Revealed type is "builtins.int"
-    main:14: error: "int" has no attribute "trim"
+    main:14: error: "int" has no attribute "trim"  [attr-defined]
 
 - case: test_field_with_default_cannot_be_before_non_default
   main: |
@@ -78,7 +78,7 @@
         b: str
 
   out: |
-    main:6: error: Attributes without a default cannot follow attributes with one
+    main:6: error: Attributes without a default cannot follow attributes with one  [misc]
 
 - case: test_using_strawberry_field_does_not_break
   main: |

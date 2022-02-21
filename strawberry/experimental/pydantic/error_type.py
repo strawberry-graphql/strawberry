@@ -87,7 +87,7 @@ def error_type(
             (
                 name,
                 get_type_for_field(field),
-                dataclasses.field(default=None),
+                dataclasses.field(default=None),  # type: ignore[arg-type]
             )
             for name, field in model_fields.items()
             if name in fields_set
@@ -124,7 +124,7 @@ def error_type(
             directives=directives,
         )
 
-        model._strawberry_type = cls
+        model._strawberry_type = cls  # type: ignore[attr-defined]
         cls._pydantic_type = model
         return cls
 

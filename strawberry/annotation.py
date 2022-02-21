@@ -2,7 +2,7 @@ import sys
 import typing
 from collections.abc import AsyncGenerator as AsyncGenerator_abc
 from enum import Enum
-from typing import (  # type: ignore
+from typing import (  # type: ignore[attr-defined]
     TYPE_CHECKING,
     Any,
     AsyncGenerator as AsyncGenerator_typing,
