@@ -40,6 +40,7 @@ class TemporalHttpResponse(JsonResponse):
 class BaseView(View):
     subscriptions_enabled = False
     graphiql = True
+    schema: Optional[BaseSchema] = None
     json_encoder: Type[json.JSONEncoder] = DjangoJSONEncoder
     json_dumps_params: Optional[Dict[str, Any]] = None
 
@@ -158,6 +159,8 @@ class GraphQLView(BaseView):
         sub_response = TemporalHttpResponse()
         context = self.get_context(request, response=sub_response)
 
+        assert self.schema
+
         result = self.schema.execute_sync(
             request_data.query,
             root_value=self.get_root_value(request),
@@ -198,6 +201,8 @@ class AsyncGraphQLView(BaseView):
         sub_response = TemporalHttpResponse()
         context = await self.get_context(request, response=sub_response)
         root_value = await self.get_root_value(request)
+
+        assert self.schema
 
         result = await self.schema.execute(
             request_data.query,

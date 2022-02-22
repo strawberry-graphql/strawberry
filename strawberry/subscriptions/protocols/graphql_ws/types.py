@@ -24,10 +24,7 @@ class DataPayload(TypedDict, total=False):
     errors: Optional[List[GraphQLFormattedError]]
 
 
-class ErrorPayload(TypedDict):
-    id: str
-
-    payload: GraphQLFormattedError
+ErrorPayload = GraphQLFormattedError
 
 
 OperationMessagePayload = Union[
