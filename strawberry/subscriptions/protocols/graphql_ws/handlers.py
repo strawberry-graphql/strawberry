@@ -114,14 +114,14 @@ class BaseGraphQLWSHandler(ABC):
             )
         except GraphQLError as error:
             error_payload = format_graphql_error(error)
-            await self.send_message(GQL_ERROR, operation_id, error_payload)  # type: ignore # noqa: E501
+            await self.send_message(GQL_ERROR, operation_id, error_payload)
             self.schema.process_errors([error])
             return
 
         if isinstance(result_source, GraphQLExecutionResult):
             assert result_source.errors
             error_payload = format_graphql_error(result_source.errors[0])
-            await self.send_message(GQL_ERROR, operation_id, error_payload)  # type: ignore # noqa: E501
+            await self.send_message(GQL_ERROR, operation_id, error_payload)
             self.schema.process_errors(result_source.errors)
             return
 
