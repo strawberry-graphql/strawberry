@@ -73,10 +73,9 @@ class PythonCodegenPlugin(CodegenPlugin):
     ...
 
 
-generator = QueryCodegen(schema, plugins=[PythonCodegenPlugin])
-
-
 def test_codegen_basic():
+    generator = QueryCodegen(schema, plugins=[PythonCodegenPlugin])
+
     input_query = """
     query OperationName {
         id
@@ -98,6 +97,8 @@ def test_codegen_basic():
 
 
 def test_list_and_optional():
+    generator = QueryCodegen(schema, plugins=[PythonCodegenPlugin])
+
     input_query = """
     query OperationName {
         optionalInt
@@ -119,6 +120,8 @@ def test_list_and_optional():
 
 
 def test_multiple_types():
+    generator = QueryCodegen(schema, plugins=[PythonCodegenPlugin])
+
     input_query = """
     query OperationName {
         person {
@@ -141,6 +144,8 @@ def test_multiple_types():
 
 
 def test_multiple_types_optional():
+    generator = QueryCodegen(schema, plugins=[PythonCodegenPlugin])
+
     input_query = """
     query OperationName {
         optionalPerson {
@@ -165,6 +170,8 @@ def test_multiple_types_optional():
 
 
 def test_enum():
+    generator = QueryCodegen(schema, plugins=[PythonCodegenPlugin])
+
     input_query = """
     query OperationName {
         enum
@@ -189,6 +196,8 @@ def test_enum():
 
 
 def test_scalar():
+    generator = QueryCodegen(schema, plugins=[PythonCodegenPlugin])
+
     input_query = """
     query OperationName {
         json
@@ -210,6 +219,8 @@ def test_scalar():
 
 
 def test_union():
+    generator = QueryCodegen(schema, plugins=[PythonCodegenPlugin])
+
     input_query = """
     query OperationName {
         union {
@@ -242,6 +253,8 @@ def test_union():
 
 
 def test_interface():
+    generator = QueryCodegen(schema, plugins=[PythonCodegenPlugin])
+
     input_query = """
     query OperationName {
         interface {
@@ -264,6 +277,8 @@ def test_interface():
 
 
 def test_interface_fragment():
+    generator = QueryCodegen(schema, plugins=[PythonCodegenPlugin])
+
     input_query = """
     query OperationName {
         interface {
