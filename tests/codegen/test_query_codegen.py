@@ -5,7 +5,6 @@
 # 7. test input objects
 # 13. test mutations (raise?)
 # 14. test subscriptions (raise)
-# 15. imports
 # 16. plugins for output
 
 
@@ -107,6 +106,8 @@ def test_list_and_optional():
     """
 
     expected_output = """
+    from typing import List, Optional
+
     class OperationNameResult:
         optional_int: Optional[int]
         list_of_optional_int: List[Optional[int]]
@@ -149,6 +150,8 @@ def test_multiple_types_optional():
     """
 
     expected_output = """
+    from typing import Optional
+
     class OperationNameResultOptionalPerson:
         name: str
 
@@ -169,7 +172,9 @@ def test_enum():
     """
 
     expected_output = """
-    class OperationNameResultEnum(enum.Enum):
+    from enum import Enum
+
+    class OperationNameResultEnum(Enum):
         red = "red"
         green = "green"
         blue = "blue"
@@ -191,6 +196,8 @@ def test_scalar():
     """
 
     expected_output = """
+    from typing import NewType
+
     JSON = NewType("JSON", str)
 
     class OperationNameResult:
@@ -217,6 +224,8 @@ def test_union():
     """
 
     expected_output = """
+    from typing import Union
+
     class OperationNameResultUnionAnimal:
         age: int
 

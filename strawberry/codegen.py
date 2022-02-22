@@ -1,6 +1,7 @@
 import textwrap
+from collections import defaultdict
 from dataclasses import dataclass
-from typing import List, Tuple, Type, Union
+from typing import Dict, List, Set, Tuple, Type, Union
 
 from graphql import (
     FieldNode,
@@ -53,6 +54,8 @@ class QueryCodegen:
         self.plugins = plugins
 
     def codegen(self, query: str) -> str:
+        self.imports: Dict[str, Set[str]] = defaultdict(set)
+
         ast = parse(query)
 
         # assuming we have document definition
@@ -71,7 +74,17 @@ class QueryCodegen:
             class_name=result_class_name,
         )
 
-        return "\n\n".join(self._print_type(type) for type in types)
+        imports = self._print_imports()
+
+        return imports + "\n\n" + "\n\n".join(self._print_type(type) for type in types)
+
+    def _print_imports(self) -> str:
+        imports = [
+            f'from {import_} import {", ".join(sorted(types))}'
+            for import_, types in self.imports.items()
+        ]
+
+        return "\n".join(imports)
 
     def _print_field(self, field: GraphQLField) -> str:
         return f"{field.name}: {field.type}"
@@ -94,7 +107,7 @@ class QueryCodegen:
 
         return "\n".join(
             [
-                f"class {type_.name}(enum.Enum):",
+                f"class {type_.name}(Enum):",
                 textwrap.indent(values, " " * 4),
             ]
         )
@@ -171,6 +184,8 @@ class QueryCodegen:
             field_type = field_type.replace(unwrapped_type, field_type_)
 
             if len(sub_types) > 1 and isinstance(field.type, StrawberryUnion):
+                self.imports["typing"].add("Union")
+
                 field_type = f"Union[{', '.join(t.name for t in sub_types)}]"
 
         return GraphQLField(field.name, field_type)
@@ -207,7 +222,6 @@ class QueryCodegen:
             for selection in fragment.selection_set.selections:
                 # TODO: recurse, use existing method ?
                 assert isinstance(selection, FieldNode)
-                print(fragment_class_name)
 
                 current_type.fields = list(common_fields)
 
@@ -270,10 +284,14 @@ class QueryCodegen:
     ) -> None:
         type_name = self._get_type_name(scalar.wrap)[0]
 
+        self.imports["typing"].add("NewType")
+
         types.append(GraphQLScalar(scalar._scalar_definition.name, type_name))
 
     def _collect_enum(self, enum: EnumDefinition, types: List, class_name: str) -> None:
         # TODO: enum don't really need to have a custom name as they are unique
+        self.imports["enum"].add("Enum")
+
         types.append(GraphQLEnum(class_name, [value.value for value in enum.values]))
 
     def _get_type_name(
@@ -300,6 +318,8 @@ class QueryCodegen:
                 StrawberryList: "List",
                 StrawberryOptional: "Optional",
             }[container_class]
+
+            self.imports["typing"].add(wrapper_name)
 
             return f"{wrapper_name}[{type_name}]", unwrapped_type
 
