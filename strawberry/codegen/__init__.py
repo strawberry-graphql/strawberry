@@ -1,7 +1,7 @@
-import textwrap
-from collections import defaultdict
+from __future__ import annotations
+
 from dataclasses import dataclass
-from typing import Dict, List, Set, Tuple, Type, Union
+from typing import List, Tuple, Union
 
 from graphql import (
     FieldNode,
@@ -12,7 +12,7 @@ from graphql import (
 )
 
 import strawberry
-from strawberry.custom_scalar import ScalarWrapper
+from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.enum import EnumDefinition
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
 from strawberry.union import StrawberryUnion
@@ -20,9 +20,25 @@ from strawberry.utils.str_converters import capitalize_first, to_camel_case
 
 
 @dataclass
+class GraphQLOptional:
+    of_type: GraphQLType
+
+
+@dataclass
+class GraphQLList:
+    of_type: GraphQLType
+
+
+@dataclass
+class GraphQLUnion:
+    types: List[GraphQLObjectType]
+    name: str
+
+
+@dataclass
 class GraphQLField:
     name: str
-    type: str
+    type: GraphQLType
 
 
 @dataclass
@@ -44,7 +60,13 @@ class GraphQLScalar:
     type: str
 
 
-GraphQLType = Union[GraphQLObjectType, GraphQLEnum, GraphQLScalar]
+GraphQLType = Union[
+    GraphQLObjectType,
+    GraphQLEnum,
+    GraphQLScalar,
+    GraphQLOptional,
+    GraphQLList,
+]
 
 
 class CodegenPlugin:
@@ -65,80 +87,6 @@ class CodegenPlugin:
 
     def print(self, types: List[GraphQLType]) -> str:
         return ""
-
-
-class PythonPlugin(CodegenPlugin):
-    def __init__(self) -> None:
-        self.imports: Dict[str, Set[str]] = defaultdict(set)
-
-    def print(self, types: List[GraphQLType]) -> str:
-        imports = self._print_imports()
-
-        return imports + "\n\n" + "\n\n".join(self._print_type(type) for type in types)
-
-    def _print_imports(self) -> str:
-        imports = [
-            f'from {import_} import {", ".join(sorted(types))}'
-            for import_, types in self.imports.items()
-        ]
-
-        return "\n".join(imports)
-
-    def _print_field(self, field: GraphQLField) -> str:
-        return f"{field.name}: {field.type}"
-
-    def _print_enum_value(self, value: str) -> str:
-        return f'{value} = "{value}"'
-
-    def _print_object_type(self, type_: GraphQLObjectType) -> str:
-        fields = "\n".join(self._print_field(field) for field in type_.fields)
-
-        return "\n".join(
-            [
-                f"class {type_.name}:",
-                textwrap.indent(fields, " " * 4),
-            ]
-        )
-
-    def _print_enum_type(self, type_: GraphQLEnum) -> str:
-        values = "\n".join(self._print_enum_value(value) for value in type_.values)
-
-        return "\n".join(
-            [
-                f"class {type_.name}(Enum):",
-                textwrap.indent(values, " " * 4),
-            ]
-        )
-
-    def _print_scalar_type(self, type_: GraphQLScalar) -> str:
-        return f'{type_.name} = NewType("{type_.name}", {type_.type})'
-
-    def _print_type(self, type_: GraphQLType) -> str:
-        if isinstance(type_, GraphQLObjectType):
-            return self._print_object_type(type_)
-
-        if isinstance(type_, GraphQLEnum):
-            return self._print_enum_type(type_)
-
-        if isinstance(type_, GraphQLScalar):
-            return self._print_scalar_type(type_)
-
-        raise ValueError(f"Unknown type: {type}")
-
-    def on_union(self) -> None:
-        self.imports["typing"].add("Union")
-
-    def on_enum(self) -> None:
-        self.imports["enum"].add("Enum")
-
-    def on_optional(self) -> None:
-        self.imports["typing"].add("Optional")
-
-    def on_list(self) -> None:
-        self.imports["typing"].add("List")
-
-    def on_scalar(self) -> None:
-        self.imports["typing"].add("NewType")
 
 
 class QueryCodegenPluginManager:
@@ -170,9 +118,9 @@ class QueryCodegenPluginManager:
 
 
 class QueryCodegen:
-    def __init__(self, schema: strawberry.Schema, plugins: List[Type[CodegenPlugin]]):
+    def __init__(self, schema: strawberry.Schema, plugins: List[CodegenPlugin]):
         self.schema = schema
-        self.plugin_manager = QueryCodegenPluginManager([PythonPlugin()])
+        self.plugin_manager = QueryCodegenPluginManager(plugins)
 
     def codegen(self, query: str) -> str:
         ast = parse(query)
@@ -232,17 +180,29 @@ class QueryCodegen:
         field = self.schema.get_field_for_type(selection.name.value, parent_type)
         assert field is not None, f"{selection.name.value} {parent_type}"
 
-        field_type, unwrapped_type = self._get_type_name(field.type)
-
+        # field_type, unwrapped_type = self._get_type_name(field_type)
         name = capitalize_first(to_camel_case(selection.name.value))
         field_type_ = f"{class_name}{name}"
 
-        if isinstance(field.type, ScalarWrapper):
-            self._collect_scalar(field.type, types, class_name=field_type_)
+        field_type = field.type
 
-        if isinstance(field.type, EnumDefinition):
-            self._collect_enum(field.type, types, class_name=field_type_)
-            field_type = field_type.replace(unwrapped_type, field_type_)
+        if (
+            not isinstance(field_type, StrawberryType)
+            and field_type in self.schema.schema_converter.scalar_registry
+        ):
+            field_type = self.schema.schema_converter.scalar_registry[field_type]
+
+        if isinstance(field_type, ScalarDefinition):
+            field_type = self._collect_scalar(field_type, types, class_name=field_type_)
+
+        # if isinstance(field_type, ScalarWrapper):
+        #     field_type = self._collect_scalar(field_type, types, class_name=field_type_)
+
+        elif isinstance(field_type, EnumDefinition):
+            field_type = self._collect_enum(field_type, types, class_name=field_type_)
+            # field_type = (
+            #     GraphQLEnum()
+            # )  # field_type.replace(unwrapped_type, field_type_)
 
         if selection.selection_set:
             sub_types = self._collect_types(
@@ -254,10 +214,14 @@ class QueryCodegen:
 
             field_type = field_type.replace(unwrapped_type, field_type_)
 
-            if len(sub_types) > 1 and isinstance(field.type, StrawberryUnion):
+            if len(sub_types) > 1 and isinstance(field_type, StrawberryUnion):
                 self.plugin_manager.on_union()
 
-                field_type = f"Union[{', '.join(t.name for t in sub_types)}]"
+                assert all(isinstance(t, GraphQLObjectType) for t in sub_types)
+
+                field_type = GraphQLUnion(name="TODO", types=sub_types)
+
+        print(field_type)
 
         return GraphQLField(field.name, field_type)
 
@@ -351,19 +315,26 @@ class QueryCodegen:
         return types
 
     def _collect_scalar(
-        self, scalar: ScalarWrapper, types: List, class_name: str
-    ) -> None:
-        type_name = self._get_type_name(scalar.wrap)[0]
+        self, scalar_definition: ScalarDefinition, types: List, class_name: str
+    ) -> GraphQLScalar:
+        # type_name = self._get_type_name(scalar.wrap)[0]
 
+        graphql_scalar = GraphQLScalar(scalar_definition.name, scalar_definition.name)
         self.plugin_manager.on_scalar()
 
-        types.append(GraphQLScalar(scalar._scalar_definition.name, type_name))
+        types.append(graphql_scalar)
 
-    def _collect_enum(self, enum: EnumDefinition, types: List, class_name: str) -> None:
-        # TODO: enum don't really need to have a custom name as they are unique
+        return graphql_scalar
+
+    def _collect_enum(
+        self, enum: EnumDefinition, types: List, class_name: str
+    ) -> GraphQLEnum:
         self.plugin_manager.on_enum()
 
-        types.append(GraphQLEnum(class_name, [value.value for value in enum.values]))
+        # TODO: enum don't really need to have a custom name as they are unique
+        graphql_enum = GraphQLEnum(class_name, [value.value for value in enum.values])
+        types.append(graphql_enum)
+        return graphql_enum
 
     def _get_type_name(
         self, field_type: Union[StrawberryType, type]

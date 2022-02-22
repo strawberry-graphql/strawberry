@@ -7,78 +7,20 @@
 # 14. test subscriptions (raise)
 # 16. plugins for output
 
-
-import enum
 import textwrap
-from typing import List, NewType, Optional
 
-import strawberry
-from strawberry.codegen import CodegenPlugin, QueryCodegen
-
-
-JSON = strawberry.scalar(NewType("JSON", str))
+from strawberry.codegen import QueryCodegen
+from strawberry.codegen.plugins.python import PythonPlugin
 
 
-@strawberry.enum
-class Color(enum.Enum):
-    RED = "red"
-    GREEN = "green"
-    BLUE = "blue"
+# TODO: add id back in
 
 
-@strawberry.type
-class Person:
-    name: str
-    age: int
-
-
-@strawberry.type
-class Animal:
-    name: str
-    age: int
-
-
-PersonOrAnimal = strawberry.union("PersonOrAnimal", (Person, Animal))
-
-
-@strawberry.interface
-class Node:
-    id: str
-
-
-@strawberry.type
-class BlogPost(Node):
-    title: str
-
-
-@strawberry.type
-class Query:
-    id: strawberry.ID
-    integer: int
-    another_integer: int
-    optional_int: Optional[int]
-    list_of_optional_int: List[Optional[int]]
-    person: Person
-    optional_person: Optional[Person]
-    enum: Color
-    json: JSON
-    union: PersonOrAnimal
-    interface: Node
-
-
-schema = strawberry.Schema(query=Query, types=[BlogPost])
-
-
-class PythonCodegenPlugin(CodegenPlugin):
-    ...
-
-
-def test_codegen_basic():
-    generator = QueryCodegen(schema, plugins=[PythonCodegenPlugin])
+def test_codegen_basic(schema):
+    generator = QueryCodegen(schema, plugins=[PythonPlugin()])
 
     input_query = """
     query OperationName {
-        id
         integer
         anotherInteger
     }
@@ -86,7 +28,6 @@ def test_codegen_basic():
 
     expected_output = """
     class OperationNameResult:
-        id: str
         integer: int
         another_integer: int
     """
@@ -96,8 +37,8 @@ def test_codegen_basic():
     assert textwrap.dedent(result).strip() == textwrap.dedent(expected_output).strip()
 
 
-def test_list_and_optional():
-    generator = QueryCodegen(schema, plugins=[PythonCodegenPlugin])
+def test_list_and_optional(schema):
+    generator = QueryCodegen(schema, plugins=[PythonPlugin()])
 
     input_query = """
     query OperationName {
@@ -119,8 +60,8 @@ def test_list_and_optional():
     assert textwrap.dedent(result).strip() == textwrap.dedent(expected_output).strip()
 
 
-def test_multiple_types():
-    generator = QueryCodegen(schema, plugins=[PythonCodegenPlugin])
+def test_multiple_types(schema):
+    generator = QueryCodegen(schema, plugins=[PythonPlugin()])
 
     input_query = """
     query OperationName {
@@ -143,8 +84,8 @@ def test_multiple_types():
     assert textwrap.dedent(result).strip() == textwrap.dedent(expected_output).strip()
 
 
-def test_multiple_types_optional():
-    generator = QueryCodegen(schema, plugins=[PythonCodegenPlugin])
+def test_multiple_types_optional(schema):
+    generator = QueryCodegen(schema, plugins=[PythonPlugin()])
 
     input_query = """
     query OperationName {
@@ -169,8 +110,8 @@ def test_multiple_types_optional():
     assert textwrap.dedent(result).strip() == textwrap.dedent(expected_output).strip()
 
 
-def test_enum():
-    generator = QueryCodegen(schema, plugins=[PythonCodegenPlugin])
+def test_enum(schema):
+    generator = QueryCodegen(schema, plugins=[PythonPlugin()])
 
     input_query = """
     query OperationName {
@@ -195,8 +136,8 @@ def test_enum():
     assert textwrap.dedent(result).strip() == textwrap.dedent(expected_output).strip()
 
 
-def test_scalar():
-    generator = QueryCodegen(schema, plugins=[PythonCodegenPlugin])
+def test_scalar(schema):
+    generator = QueryCodegen(schema, plugins=[PythonPlugin()])
 
     input_query = """
     query OperationName {
@@ -218,8 +159,8 @@ def test_scalar():
     assert textwrap.dedent(result).strip() == textwrap.dedent(expected_output).strip()
 
 
-def test_union():
-    generator = QueryCodegen(schema, plugins=[PythonCodegenPlugin])
+def test_union(schema):
+    generator = QueryCodegen(schema, plugins=[PythonPlugin()])
 
     input_query = """
     query OperationName {
@@ -252,8 +193,8 @@ def test_union():
     assert textwrap.dedent(result).strip() == textwrap.dedent(expected_output).strip()
 
 
-def test_interface():
-    generator = QueryCodegen(schema, plugins=[PythonCodegenPlugin])
+def test_interface(schema):
+    generator = QueryCodegen(schema, plugins=[PythonPlugin()])
 
     input_query = """
     query OperationName {
@@ -276,8 +217,8 @@ def test_interface():
     assert textwrap.dedent(result).strip() == textwrap.dedent(expected_output).strip()
 
 
-def test_interface_fragment():
-    generator = QueryCodegen(schema, plugins=[PythonCodegenPlugin])
+def test_interface_fragment(schema):
+    generator = QueryCodegen(schema, plugins=[PythonPlugin()])
 
     input_query = """
     query OperationName {
