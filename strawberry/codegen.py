@@ -19,23 +19,6 @@ from strawberry.union import StrawberryUnion
 from strawberry.utils.str_converters import capitalize_first, to_camel_case
 
 
-class CodegenPlugin:
-    def on_union(self) -> None:
-        ...
-
-    def on_enum(self) -> None:
-        ...
-
-    def on_optional(self) -> None:
-        ...
-
-    def on_list(self) -> None:
-        ...
-
-    def on_scalar(self) -> None:
-        ...
-
-
 @dataclass
 class GraphQLField:
     name: str
@@ -62,6 +45,26 @@ class GraphQLScalar:
 
 
 GraphQLType = Union[GraphQLObjectType, GraphQLEnum, GraphQLScalar]
+
+
+class CodegenPlugin:
+    def on_union(self) -> None:
+        ...
+
+    def on_enum(self) -> None:
+        ...
+
+    def on_optional(self) -> None:
+        ...
+
+    def on_list(self) -> None:
+        ...
+
+    def on_scalar(self) -> None:
+        ...
+
+    def print(self, types: List[GraphQLType]) -> str:
+        return ""
 
 
 class PythonPlugin(CodegenPlugin):
@@ -162,6 +165,9 @@ class QueryCodegenPluginManager:
         for plugin in self.plugins:
             plugin.on_scalar()
 
+    def print(self, types: List[GraphQLType]) -> str:
+        return "\n\n".join(plugin.print(types) for plugin in self.plugins)
+
 
 class QueryCodegen:
     def __init__(self, schema: strawberry.Schema, plugins: List[Type[CodegenPlugin]]):
@@ -190,7 +196,7 @@ class QueryCodegen:
         return self.print(types)
 
     def print(self, types: List[GraphQLType]) -> str:
-        return self.plugin_manager.plugins[-1].print(types)
+        return self.plugin_manager.print(types)
 
     def _collect_inline_fragment(
         self,
