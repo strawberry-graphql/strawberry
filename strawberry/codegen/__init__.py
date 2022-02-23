@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import List, Type, Union, cast
+from typing import List, Optional, Type, Union, cast
 
 from typing_extensions import Protocol
 
@@ -28,8 +28,8 @@ from strawberry.union import StrawberryUnion
 from strawberry.utils.str_converters import capitalize_first, to_camel_case
 
 
-class HasTypeDefinition(Protocol):
-    _type_definition: TypeDefinition
+class HasSelectionSet(Protocol):
+    selection_set: Optional[SelectionSetNode]
 
 
 @dataclass
@@ -235,7 +235,9 @@ class QueryCodegen:
 
             return GraphQLField(selection.name.value, union)
 
-        parent_type = cast(TypeDefinition, selected_field_type._type_definition)  # type: ignore
+        parent_type = cast(
+            TypeDefinition, selected_field_type._type_definition  # type: ignore
+        )
 
         name = capitalize_first(to_camel_case(selection.name.value))
         class_name = f"{class_name}{(name)}"
@@ -283,10 +285,10 @@ class QueryCodegen:
 
     def _collect_types(
         self,
-        selection: SelectionNode,
+        selection: HasSelectionSet,
         parent_type: TypeDefinition,
         class_name: str,
-    ) -> GraphQLObjectType:
+    ) -> GraphQLType:
         assert selection.selection_set is not None
         selection_set = selection.selection_set
 
@@ -316,32 +318,32 @@ class QueryCodegen:
 
     def _collect_types_using_fragments(
         self,
-        selection: SelectionNode,
+        selection: HasSelectionSet,
         parent_type: TypeDefinition,
         class_name: str,
     ) -> List[GraphQLObjectType]:
+        assert selection.selection_set
+
         common_fields: List[GraphQLField] = []
         fragments: List[InlineFragmentNode] = []
         sub_types: List[GraphQLObjectType] = []
 
-        for selection in selection.selection_set.selections:
-            if isinstance(selection, FieldNode):
+        for sub_selection in selection.selection_set.selections:
+            if isinstance(sub_selection, FieldNode):
                 common_fields.append(
-                    self._get_field(selection, class_name, parent_type)
+                    self._get_field(sub_selection, class_name, parent_type)
                 )
 
-            if isinstance(selection, InlineFragmentNode):
-                fragments.append(selection)
+            if isinstance(sub_selection, InlineFragmentNode):
+                fragments.append(sub_selection)
 
         for fragment in fragments:
             fragment_class_name = class_name + fragment.type_condition.name.value
             current_type = GraphQLObjectType(fragment_class_name, [])
 
-            for selection in fragment.selection_set.selections:
+            for sub_selection in fragment.selection_set.selections:
                 # TODO: recurse, use existing method ?
-                assert isinstance(selection, FieldNode)
-
-                # parent_type = fragment.type_condition.name.value
+                assert isinstance(sub_selection, FieldNode)
 
                 current_type.fields = list(common_fields)
 
@@ -353,7 +355,7 @@ class QueryCodegen:
 
                 current_type.fields.append(
                     self._get_field(
-                        selection=selection,
+                        selection=sub_selection,
                         class_name=fragment_class_name,
                         parent_type=parent_type,
                     )

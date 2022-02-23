@@ -1,231 +1,286 @@
-# def test_codegen_basic(schema):
-#     generator = QueryCodegen(schema, plugins=[TypeScriptPlugin()])
+import textwrap
 
-#     input_query = """
-#     query OperationName {
-#         id
-#         integer
-#         anotherInteger
-#     }
-#     """
+from strawberry.codegen import QueryCodegen
+from strawberry.codegen.plugins.typescript import TypeScriptPlugin
 
-#     expected_output = """
-#     type OperationNameResult = {
-#         id: string
-#         integer: number
-#         another_integer: number
-#     }
-#     """
 
-#     result = generator.codegen(input_query)
+def test_codegen_basic(schema):
+    generator = QueryCodegen(schema, plugins=[TypeScriptPlugin()])
 
-#     assert textwrap.dedent(result).strip() == textwrap.dedent(expected_output).strip()
+    input_query = """
+    query OperationName {
+        integer
+        anotherInteger
+    }
+    """
 
+    expected_output = """
+    type OperationNameResult = {
+        integer: number
+        another_integer: number
+    }
+    """
 
-# def test_list_and_optional(schema):
-#     generator = QueryCodegen(schema, plugins=[TypeScriptPlugin()])
+    result = generator.codegen(input_query)
 
-#     input_query = """
-#     query OperationName {
-#         optionalInt
-#         listOfOptionalInt
-#     }
-#     """
+    assert textwrap.dedent(result).strip() == textwrap.dedent(expected_output).strip()
 
-#     expected_output = """
-#     from typing import List, Optional
 
-#     class OperationNameResult:
-#         optional_int: Optional[int]
-#         list_of_optional_int: List[Optional[int]]
-#     """
+def test_list_and_optional(schema):
+    generator = QueryCodegen(schema, plugins=[TypeScriptPlugin()])
 
-#     result = generator.codegen(input_query)
+    input_query = """
+    query OperationName {
+        optionalInt
+        listOfOptionalInt
+    }
+    """
 
-#     assert textwrap.dedent(result).strip() == textwrap.dedent(expected_output).strip()
+    expected_output = """
+    type OperationNameResult = {
+        optional_int: number | undefined
+        list_of_optional_int: (number | undefined)[]
+    }
+    """
 
+    result = generator.codegen(input_query)
 
-# def test_multiple_types(schema):
-#     generator = QueryCodegen(schema, plugins=[TypeScriptPlugin()])
+    assert textwrap.dedent(result).strip() == textwrap.dedent(expected_output).strip()
 
-#     input_query = """
-#     query OperationName {
-#         person {
-#             name
-#         }
-#     }
-#     """
 
-#     expected_output = """
-#     class OperationNameResultPerson:
-#         name: str
+def test_multiple_types(schema):
+    generator = QueryCodegen(schema, plugins=[TypeScriptPlugin()])
 
-#     class OperationNameResult:
-#         person: OperationNameResultPerson
-#     """
+    input_query = """
+    query OperationName {
+        person {
+            name
+        }
+    }
+    """
 
-#     result = generator.codegen(input_query)
+    expected_output = """
+    type OperationNameResultPerson = {
+        name: string
+    }
 
-#     assert textwrap.dedent(result).strip() == textwrap.dedent(expected_output).strip()
+    type OperationNameResult = {
+        person: OperationNameResultPerson
+    }
+    """
 
+    result = generator.codegen(input_query)
 
-# def test_multiple_types_optional(schema):
-#     generator = QueryCodegen(schema, plugins=[TypeScriptPlugin()])
+    assert textwrap.dedent(result).strip() == textwrap.dedent(expected_output).strip()
 
-#     input_query = """
-#     query OperationName {
-#         optionalPerson {
-#             name
-#         }
-#     }
-#     """
 
-#     expected_output = """
-#     from typing import Optional
+def test_multiple_types_optional(schema):
+    generator = QueryCodegen(schema, plugins=[TypeScriptPlugin()])
 
-#     class OperationNameResultOptionalPerson:
-#         name: str
+    input_query = """
+    query OperationName {
+        optionalPerson {
+            name
+        }
+    }
+    """
 
-#     class OperationNameResult:
-#         optional_person: Optional[OperationNameResultOptionalPerson]
-#     """
+    expected_output = """
+    type OperationNameResultOptionalPerson = {
+        name: string
+    }
 
-#     result = generator.codegen(input_query)
+    type OperationNameResult = {
+        optional_person: OperationNameResultOptionalPerson | undefined
+    }
+    """
 
-#     assert textwrap.dedent(result).strip() == textwrap.dedent(expected_output).strip()
+    result = generator.codegen(input_query)
 
+    assert textwrap.dedent(result).strip() == textwrap.dedent(expected_output).strip()
 
-# def test_enum(schema):
-#     generator = QueryCodegen(schema, plugins=[TypeScriptPlugin()])
 
-#     input_query = """
-#     query OperationName {
-#         enum
-#     }
-#     """
+def test_enum(schema):
+    generator = QueryCodegen(schema, plugins=[TypeScriptPlugin()])
 
-#     expected_output = """
-#     from enum import Enum
+    input_query = """
+    query OperationName {
+        enum
+    }
+    """
 
-#     class OperationNameResultEnum(Enum):
-#         red = "red"
-#         green = "green"
-#         blue = "blue"
+    expected_output = """
+    enum Color {
+        red = "red",
+        green = "green",
+        blue = "blue",
+    }
 
-#     class OperationNameResult:
-#         enum: OperationNameResultEnum
-#     """
+    type OperationNameResult = {
+        enum: Color
+    }
+    """
 
-#     result = generator.codegen(input_query)
+    result = generator.codegen(input_query)
 
-#     assert textwrap.dedent(result).strip() == textwrap.dedent(expected_output).strip()
+    assert textwrap.dedent(result).strip() == textwrap.dedent(expected_output).strip()
 
 
-# def test_scalar(schema):
-#     generator = QueryCodegen(schema, plugins=[TypeScriptPlugin()])
+def test_scalar(schema):
+    generator = QueryCodegen(schema, plugins=[TypeScriptPlugin()])
 
-#     input_query = """
-#     query OperationName {
-#         json
-#     }
-#     """
+    input_query = """
+    query OperationName {
+        json
+    }
+    """
 
-#     expected_output = """
-#     from typing import NewType
+    expected_output = """
+    type JSON = string
 
-#     JSON = NewType("JSON", str)
+    type OperationNameResult = {
+        json: JSON
+    }
+    """
 
-#     class OperationNameResult:
-#         json: JSON
-#     """
+    result = generator.codegen(input_query)
 
-#     result = generator.codegen(input_query)
+    assert textwrap.dedent(result).strip() == textwrap.dedent(expected_output).strip()
 
-#     assert textwrap.dedent(result).strip() == textwrap.dedent(expected_output).strip()
 
+def test_union(schema):
+    generator = QueryCodegen(schema, plugins=[TypeScriptPlugin()])
 
-# def test_union(schema):
-#     generator = QueryCodegen(schema, plugins=[TypeScriptPlugin()])
+    input_query = """
+    query OperationName {
+        union {
+            ... on Animal {
+                age
+            }
+            ... on Person {
+                name
+            }
+        }
+    }
+    """
 
-#     input_query = """
-#     query OperationName {
-#         union {
-#             ... on Animal {
-#                 age
-#             }
-#             ... on Person {
-#                 name
-#             }
-#         }
-#     }
-#     """
+    expected_output = """
+    type OperationNameResultUnionAnimal = {
+        age: number
+    }
 
-#     expected_output = """
-#     from typing import Union
+    type OperationNameResultUnionPerson = {
+        name: string
+    }
 
-#     class OperationNameResultUnionAnimal:
-#         age: int
+    type OperationNameResultUnion = OperationNameResultUnionAnimal | OperationNameResultUnionPerson
 
-#     class OperationNameResultUnionPerson:
-#         name: str
+    type OperationNameResult = {
+        union: OperationNameResultUnion
+    }
+    """
 
-#     class OperationNameResult:
-#         union: Union[OperationNameResultUnionAnimal, OperationNameResultUnionPerson]
-#     """
+    result = generator.codegen(input_query)
 
-#     result = generator.codegen(input_query)
+    assert textwrap.dedent(result).strip() == textwrap.dedent(expected_output).strip()
 
-#     assert textwrap.dedent(result).strip() == textwrap.dedent(expected_output).strip()
 
+def test_interface(schema):
+    generator = QueryCodegen(schema, plugins=[TypeScriptPlugin()])
 
-# def test_interface(schema):
-#     generator = QueryCodegen(schema, plugins=[TypeScriptPlugin()])
+    input_query = """
+    query OperationName {
+        interface {
+            id
+        }
+    }
+    """
 
-#     input_query = """
-#     query OperationName {
-#         interface {
-#             id
-#         }
-#     }
-#     """
+    expected_output = """
+    type OperationNameResultInterface = {
+        id: string
+    }
 
-#     expected_output = """
-#     class OperationNameResultInterface:
-#         id: str
+    type OperationNameResult = {
+        interface: OperationNameResultInterface
+    }
+    """
 
-#     class OperationNameResult:
-#         interface: OperationNameResultInterface
-#     """
+    result = generator.codegen(input_query)
 
-#     result = generator.codegen(input_query)
+    assert textwrap.dedent(result).strip() == textwrap.dedent(expected_output).strip()
 
-#     assert textwrap.dedent(result).strip() == textwrap.dedent(expected_output).strip()
 
+def test_interface_fragment_single_fragment(schema):
+    generator = QueryCodegen(schema, plugins=[TypeScriptPlugin()])
 
-# def test_interface_fragment(schema):
-#     generator = QueryCodegen(schema, plugins=[TypeScriptPlugin()])
+    input_query = """
+    query OperationName {
+        interface {
+            id
 
-#     input_query = """
-#     query OperationName {
-#         interface {
-#             id
+            ... on BlogPost {
+                title
+            }
+        }
+    }
+    """
 
-#             ... on BlogPost {
-#                 title
-#             }
-#         }
-#     }
-#     """
+    expected_output = """
+    type OperationNameResultInterfaceBlogPost = {
+        id: string
+        title: string
+    }
 
-#     expected_output = """
-#     class OperationNameResultInterfaceBlogPost:
-#         id: str
-#         title: str
+    type OperationNameResult = {
+        interface: OperationNameResultInterfaceBlogPost
+    }
+    """
 
-#     class OperationNameResult:
-#         interface: OperationNameResultInterface
-#     """
+    # TODO: do we need the verbosity here?
 
-#     result = generator.codegen(input_query)
+    result = generator.codegen(input_query)
 
-#     assert textwrap.dedent(result).strip() == textwrap.dedent(expected_output).strip()
+    assert textwrap.dedent(result).strip() == textwrap.dedent(expected_output).strip()
+
+
+def test_interface_fragment(schema):
+    generator = QueryCodegen(schema, plugins=[TypeScriptPlugin()])
+
+    input_query = """
+    query OperationName {
+        interface {
+            id
+
+            ... on BlogPost {
+                title
+            }
+
+            ... on Image {
+                url
+            }
+        }
+    }
+    """
+
+    expected_output = """
+    type OperationNameResultInterfaceBlogPost = {
+        id: string
+        title: string
+    }
+
+    type OperationNameResultInterfaceImage = {
+        id: string
+        url: string
+    }
+
+    type OperationNameResultInterface = OperationNameResultInterfaceBlogPost | OperationNameResultInterfaceImage
+
+    type OperationNameResult = {
+        interface: OperationNameResultInterface
+    }
+    """
+
+    result = generator.codegen(input_query)
+
+    assert textwrap.dedent(result).strip() == textwrap.dedent(expected_output).strip()
