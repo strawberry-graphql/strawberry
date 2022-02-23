@@ -163,6 +163,13 @@ the newer recommended
 [graphql-transport-ws](https://github.com/enisdenjo/graphql-ws) WebSocket
 sub-protocols.
 
+<Note>
+
+The `graphql-transport-ws` protocols repository is called `graphql-ws`.
+However, `graphql-ws` is also the name of the legacy protocol.
+
+</Note>
+
 Note that the `graphql-ws` sub-protocol is mainly supported for backwards
 compatibility. Read the
 [graphql-ws-transport protocols announcement](https://the-guild.dev/blog/graphql-over-websockets)
