@@ -21,6 +21,7 @@ def test_codegen_basic(schema):
 
     input_query = """
     query OperationName {
+        id
         integer
         anotherInteger
     }
@@ -28,6 +29,7 @@ def test_codegen_basic(schema):
 
     expected_output = """
     class OperationNameResult:
+        id: str
         integer: int
         another_integer: int
     """
@@ -43,6 +45,7 @@ def test_list_and_optional(schema):
     input_query = """
     query OperationName {
         optionalInt
+        listOfInt
         listOfOptionalInt
     }
     """
@@ -52,6 +55,7 @@ def test_list_and_optional(schema):
 
     class OperationNameResult:
         optional_int: Optional[int]
+        list_of_int: List[int]
         list_of_optional_int: List[Optional[int]]
     """
 
@@ -68,15 +72,24 @@ def test_multiple_types(schema):
         person {
             name
         }
+        listOfPeople {
+            name
+        }
     }
     """
 
     expected_output = """
+    from typing import List
+
     class OperationNameResultPerson:
+        name: str
+
+    class OperationNameResultListOfPeople:
         name: str
 
     class OperationNameResult:
         person: OperationNameResultPerson
+        list_of_people: List[OperationNameResultListOfPeople]
     """
 
     result = generator.codegen(input_query)

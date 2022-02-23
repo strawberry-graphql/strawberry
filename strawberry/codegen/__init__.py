@@ -167,8 +167,6 @@ class QueryCodegen:
 
         return GraphQLField(field.name, field_type)
 
-    # def _get_field_with_subselection(selection: FieldNode) -> GraphQLField:
-
     def _field_from_selection_set(
         self, selection: FieldNode, class_name: str, parent_type: TypeDefinition
     ) -> GraphQLField:
@@ -212,8 +210,11 @@ class QueryCodegen:
         # TODO: this is ugly :D
 
         while isinstance(selected_field_type, StrawberryContainer):
-            # TODO: this doesn't support lists :'D
-            field_type = GraphQLOptional(field_type)
+            wrap = {StrawberryList: GraphQLList, StrawberryOptional: GraphQLOptional}[
+                type(selected_field_type)
+            ]  # type: ignore
+
+            field_type = wrap(field_type)
 
             selected_field_type = selected_field_type.of_type
 

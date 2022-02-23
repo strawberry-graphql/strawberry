@@ -16,6 +16,7 @@ from strawberry.codegen import (
 
 class TypeScriptPlugin(CodegenPlugin):
     SCALARS_TO_TS_TYPE = {
+        "ID": "string",
         "Int": "number",
         "String": "string",
         str: "string",

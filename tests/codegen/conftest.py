@@ -52,9 +52,11 @@ class Query:
     integer: int
     another_integer: int
     optional_int: Optional[int]
+    list_of_int: List[int]
     list_of_optional_int: List[Optional[int]]
     person: Person
     optional_person: Optional[Person]
+    list_of_people: List[Person]
     enum: Color
     json: JSON
     union: PersonOrAnimal

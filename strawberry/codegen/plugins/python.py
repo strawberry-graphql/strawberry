@@ -17,6 +17,7 @@ from strawberry.codegen import (
 
 class PythonPlugin(CodegenPlugin):
     SCALARS_TO_PYTHON_TYPES = {
+        "ID": "str",
         "Int": "int",
         "String": "str",
     }

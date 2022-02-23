@@ -9,6 +9,7 @@ def test_codegen_basic(schema):
 
     input_query = """
     query OperationName {
+        id
         integer
         anotherInteger
     }
@@ -16,6 +17,7 @@ def test_codegen_basic(schema):
 
     expected_output = """
     type OperationNameResult = {
+        id: string
         integer: number
         another_integer: number
     }
@@ -32,6 +34,7 @@ def test_list_and_optional(schema):
     input_query = """
     query OperationName {
         optionalInt
+        listOfInt
         listOfOptionalInt
     }
     """
@@ -39,6 +42,7 @@ def test_list_and_optional(schema):
     expected_output = """
     type OperationNameResult = {
         optional_int: number | undefined
+        list_of_int: number[]
         list_of_optional_int: (number | undefined)[]
     }
     """

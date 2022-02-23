@@ -1,11 +1,13 @@
 import click
 
 from strawberry.cli.utils import load_schema
-from strawberry.printer import print_schema
+from strawberry.codegen import QueryCodegen
+from strawberry.codegen.plugins.python import PythonPlugin
 
 
-@click.command(short_help="Exports the schema")
+@click.command(short_help="Generate code from a query")
 @click.argument("schema", type=str)
+@click.argument("query", type=str)
 @click.option(
     "--app-dir",
     default=".",
@@ -17,7 +19,12 @@ from strawberry.printer import print_schema
         "Works the same as `--app-dir` in uvicorn."
     ),
 )
-def export_schema(schema: str, app_dir: str):
+def codegen(schema: str, query: str, app_dir: str):
     schema_symbol = load_schema(schema, app_dir)
 
-    print(print_schema(schema_symbol))
+    code_generator = QueryCodegen(schema_symbol, plugins=[PythonPlugin()])
+
+    with open(query) as f:
+        code = code_generator.codegen(f.read())
+
+    print(code)
