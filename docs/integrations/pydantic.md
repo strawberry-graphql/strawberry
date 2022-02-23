@@ -298,6 +298,10 @@ schema = strawberry.Schema(query=Query)
 input ExampleGQL {
   friends: [String!]!
 }
+
+type Query {
+  test(example: ExampleGQL!): Void
+}
 ```
 
 ### Classes with `__get_validators__`
