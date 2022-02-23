@@ -72,7 +72,7 @@ def sort_creation_fields(
     def has_default(model_field: DataclassCreationFields) -> bool:
         """Check if field has defaults."""
         return (model_field.field.default is not dataclasses.MISSING) or (
-            model_field.field.default_factory is not dataclasses.MISSING  # type: ignore
+            model_field.field.default_factory is not dataclasses.MISSING
         )
 
     return sorted(fields, key=has_default)

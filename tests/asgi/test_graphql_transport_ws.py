@@ -265,7 +265,7 @@ def test_subscription_syntax_error(test_client):
         assert response["type"] == ErrorMessage.type
         assert response["id"] == "sub1"
         assert len(response["payload"]) == 1
-        assert response["payload"][0]["path"] is None
+        assert response["payload"][0].get("path") is None
         assert response["payload"][0]["locations"] == [{"line": 1, "column": 31}]
         assert (
             response["payload"][0]["message"]
@@ -295,7 +295,7 @@ def test_subscription_field_errors(test_client):
         assert response["type"] == ErrorMessage.type
         assert response["id"] == "sub1"
         assert len(response["payload"]) == 1
-        assert response["payload"][0]["path"] is None
+        assert response["payload"][0].get("path") is None
         assert response["payload"][0]["locations"] == [{"line": 1, "column": 16}]
         assert (
             response["payload"][0]["message"]
@@ -412,8 +412,8 @@ def test_subscription_exceptions(test_client):
         assert response["type"] == ErrorMessage.type
         assert response["id"] == "sub1"
         assert len(response["payload"]) == 1
-        assert response["payload"][0]["path"] is None
-        assert response["payload"][0]["locations"] is None
+        assert response["payload"][0].get("path") is None
+        assert response["payload"][0].get("locations") is None
         assert response["payload"][0]["message"] == "TEST EXC"
 
         ws.close()

@@ -10,7 +10,7 @@ Note Python dicts maintain ordering (for all supported versions).
 """
 
 import dataclasses
-from typing import Any, Dict, Iterable, List, Optional, Union
+from typing import Any, Collection, Dict, Iterable, List, Optional, Union
 
 from graphql import GraphQLResolveInfo
 from graphql.language import (
@@ -62,7 +62,7 @@ def convert_directives(
 
 
 def convert_selections(
-    info: GraphQLResolveInfo, field_nodes: List[GQLFieldNode]
+    info: GraphQLResolveInfo, field_nodes: Collection[GQLFieldNode]
 ) -> List[Selection]:
     """Return typed `Selection` based on node type."""
     selections: List[Selection] = []

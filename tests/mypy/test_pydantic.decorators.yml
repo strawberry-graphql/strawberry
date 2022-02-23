@@ -67,7 +67,7 @@
 
     UserStrawberry.from_pydantic(AnotherModel(age=123))
   out: |
-     main:14: error: Argument 1 to "from_pydantic" of "UserStrawberry" has incompatible type "AnotherModel"; expected "UserPydantic"
+     main:14: error: Argument 1 to "from_pydantic" of "UserStrawberry" has incompatible type "AnotherModel"; expected "UserPydantic"  [arg-type]
 
 - case: test_converted_from_pydantic_chained
   main: |

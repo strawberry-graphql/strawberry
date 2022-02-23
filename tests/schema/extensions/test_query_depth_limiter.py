@@ -71,7 +71,7 @@ def run_query(query: str, max_depth: int, ignore=None):
     errors = validate(
         schema._schema,
         document,
-        rules=(specified_rules + [validation_rule]),
+        rules=specified_rules + (validation_rule,),
     )
 
     return errors, result

@@ -72,9 +72,9 @@ class Schema(BaseSchema):
             else None
         )
 
-        graphql_directives = [
+        graphql_directives = tuple(
             self.schema_converter.from_directive(directive) for directive in directives
-        ]
+        )
 
         graphql_types = []
         for type_ in types:

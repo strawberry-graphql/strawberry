@@ -5,7 +5,7 @@ from datetime import timedelta
 from typing import Any, AsyncGenerator, Dict, Optional
 
 from graphql import ExecutionResult as GraphQLExecutionResult, GraphQLError
-from graphql.error import format_error as format_graphql_error
+from graphql.error.graphql_error import format_error as format_graphql_error
 
 from strawberry.schema import BaseSchema
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import (

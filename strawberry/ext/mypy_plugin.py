@@ -64,7 +64,7 @@ from mypy.util import get_unique_redefinition_name
 try:
     from mypy.types import TypeVarDef  # type: ignore
 except ImportError:
-    TypeVarDef = TypeVarType  # type: ignore
+    TypeVarDef = TypeVarType
 
 
 class MypyVersion:
@@ -104,7 +104,7 @@ def strawberry_field_hook(ctx: FunctionContext) -> Type:
 
 def _get_named_type(name: str, api: SemanticAnalyzerPluginInterface):
     if "." in name:
-        return api.named_type_or_none(name)  # type: ignore
+        return api.named_type_or_none(name)
 
     return api.named_type(name)
 

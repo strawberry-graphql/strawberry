@@ -119,7 +119,7 @@ class StrawberryTypeVar(StrawberryType):
     def __init__(self, type_var: TypeVar):
         self.type_var = type_var
 
-    def copy_with(  # type: ignore[override]
+    def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
     ) -> Union[StrawberryType, type]:
         return type_var_map[self.type_var]
