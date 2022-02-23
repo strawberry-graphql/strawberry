@@ -56,6 +56,9 @@ class PythonPlugin(CodegenPlugin):
             return type_.name
 
         if isinstance(type_, (GraphQLObjectType, GraphQLEnum)):
+            if isinstance(type_, GraphQLEnum):
+                self.imports["enum"].add("Enum")
+
             return type_.name
 
         if (
@@ -99,6 +102,8 @@ class PythonPlugin(CodegenPlugin):
         if type_.name in self.SCALARS_TO_PYTHON_TYPES:
             return ""
 
+        assert type_.python_type is not None
+
         return f'{type_.name} = NewType("{type_.name}", {type_.python_type.__name__})'
 
     def _print_union_type(self, type_: GraphQLUnion) -> str:
@@ -118,9 +123,3 @@ class PythonPlugin(CodegenPlugin):
             return self._print_scalar_type(type_)
 
         raise ValueError(f"Unknown type: {type}")
-
-    def on_union(self) -> None:
-        self.imports["typing"].add("Union")
-
-    def on_enum(self) -> None:
-        self.imports["enum"].add("Enum")
