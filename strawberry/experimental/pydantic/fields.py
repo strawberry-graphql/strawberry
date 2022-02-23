@@ -68,8 +68,6 @@ def get_basic_type(type_) -> Type[Any]:
             return str
         if issubclass(type_, pydantic.ConstrainedList):
             return List[get_basic_type(type_.item_type)]  # type: ignore
-        if issubclass(type_, pydantic.ConstrainedSet):
-            return List[get_basic_type(type_.item_type)]  # type: ignore
 
     if type_ in FIELDS_MAP:
         type_ = FIELDS_MAP.get(type_)

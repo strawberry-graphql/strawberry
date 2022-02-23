@@ -4,7 +4,7 @@ from typing import List
 import pytest
 
 import pydantic
-from pydantic import BaseModel, ValidationError, conlist, conset
+from pydantic import BaseModel, ValidationError, conlist
 from typing_extensions import Literal
 
 import strawberry
@@ -106,10 +106,9 @@ def test_constr():
     assert field.type is str
 
 
-def test_constrained_containers():
+def test_constrained_list():
     class User(BaseModel):
         friends: conlist(str, min_items=1)
-        enemies: conset(str, min_items=1)
 
     @strawberry.experimental.pydantic.type(model=User, all_fields=True)
     class UserType:
@@ -117,10 +116,8 @@ def test_constrained_containers():
 
     assert UserType._type_definition.fields[0].name == "friends"
     assert UserType._type_definition.fields[0].type_annotation.annotation == List[str]
-    assert UserType._type_definition.fields[1].name == "enemies"
-    assert UserType._type_definition.fields[1].type_annotation.annotation == List[str]
 
-    data = UserType(friends=[], enemies=[])
+    data = UserType(friends=[])
 
     with pytest.raises(
         ValidationError,
@@ -133,10 +130,9 @@ def test_constrained_containers():
         data.to_pydantic()
 
 
-def test_constrained_containers_nested():
+def test_constrained_list_nested():
     class User(BaseModel):
         friends: conlist(conlist(int, min_items=1), min_items=1)
-        enemies: conset(conset(int, min_items=1), min_items=1)
 
     @strawberry.experimental.pydantic.type(model=User, all_fields=True)
     class UserType:
@@ -145,11 +141,6 @@ def test_constrained_containers_nested():
     assert UserType._type_definition.fields[0].name == "friends"
     assert (
         UserType._type_definition.fields[0].type_annotation.annotation
-        == List[List[int]]
-    )
-    assert UserType._type_definition.fields[1].name == "enemies"
-    assert (
-        UserType._type_definition.fields[1].type_annotation.annotation
         == List[List[int]]
     )
 
