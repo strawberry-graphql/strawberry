@@ -167,6 +167,7 @@ sub-protocols.
 
 The `graphql-transport-ws` protocols repository is called `graphql-ws`.
 However, `graphql-ws` is also the name of the legacy protocol.
+This documentation always refers to the protocol names.
 
 </Note>
 
