@@ -19,4 +19,3 @@ class Example:
     c: Base64
     d: JSON
 ```
-
