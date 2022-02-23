@@ -103,7 +103,7 @@ class Schema(BaseSchema):
         self.query = self.schema_converter.type_map[query_type.name]
 
     @lru_cache()
-    def get_type_by_name(
+    def get_type_by_name(  # type: ignore  # lru_cache makes mypy complain
         self, name: str
     ) -> Optional[
         Union[TypeDefinition, ScalarDefinition, EnumDefinition, StrawberryUnion]
@@ -120,7 +120,7 @@ class Schema(BaseSchema):
         type_ = self.get_type_by_name(type_name)
 
         if not type_:
-            return
+            return None
 
         assert isinstance(type_, TypeDefinition)
 

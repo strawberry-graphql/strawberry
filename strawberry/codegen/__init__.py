@@ -9,7 +9,6 @@ from graphql import (
     FieldNode,
     InlineFragmentNode,
     OperationDefinitionNode,
-    SelectionNode,
     SelectionSetNode,
     parse,
 )
@@ -69,7 +68,7 @@ class GraphQLEnum:
 @dataclass
 class GraphQLScalar:
     name: str
-    python_type: Type
+    python_type: Optional[Type]
 
 
 GraphQLType = Union[
@@ -83,21 +82,6 @@ GraphQLType = Union[
 
 
 class CodegenPlugin:
-    def on_union(self) -> None:
-        ...
-
-    def on_enum(self) -> None:
-        ...
-
-    def on_optional(self) -> None:
-        ...
-
-    def on_list(self) -> None:
-        ...
-
-    def on_scalar(self) -> None:
-        ...
-
     def print(self, types: List[GraphQLType]) -> str:
         return ""
 
@@ -105,26 +89,6 @@ class CodegenPlugin:
 class QueryCodegenPluginManager:
     def __init__(self, plugins: List[CodegenPlugin]) -> None:
         self.plugins = plugins
-
-    def on_union(self) -> None:
-        for plugin in self.plugins:
-            plugin.on_union()
-
-    def on_enum(self) -> None:
-        for plugin in self.plugins:
-            plugin.on_enum()
-
-    def on_optional(self) -> None:
-        for plugin in self.plugins:
-            plugin.on_optional()
-
-    def on_list(self) -> None:
-        for plugin in self.plugins:
-            plugin.on_list()
-
-    def on_scalar(self) -> None:
-        for plugin in self.plugins:
-            plugin.on_scalar()
 
     def print(self, types: List[GraphQLType]) -> str:
         return "\n\n".join(plugin.print(types) for plugin in self.plugins)
@@ -155,7 +119,7 @@ class QueryCodegen:
         assert isinstance(query_type, TypeDefinition)
 
         self._collect_types(
-            operation,
+            cast(HasSelectionSet, operation),
             parent_type=query_type,
             class_name=result_class_name,
         )
@@ -176,12 +140,12 @@ class QueryCodegen:
             not isinstance(field_type, StrawberryType)
             and field_type in self.schema.schema_converter.scalar_registry
         ):
-            field_type = self.schema.schema_converter.scalar_registry[field_type]
+            field_type = self.schema.schema_converter.scalar_registry[field_type]  # type: ignore  # noqa: E501
 
         if isinstance(field_type, ScalarWrapper):
             python_type = field_type.wrap
             if hasattr(python_type, "__supertype__"):
-                python_type = python_type.__supertype__  # type: ignore
+                python_type = python_type.__supertype__
 
             return self._collect_scalar(field_type._scalar_definition, python_type)
 
@@ -266,7 +230,7 @@ class QueryCodegen:
 
     def _collect_types_with_inline_fragments(
         self,
-        selection: SelectionNode,
+        selection: HasSelectionSet,
         parent_type: TypeDefinition,
         class_name: str,
     ) -> Union[GraphQLObjectType, GraphQLUnion]:
@@ -302,10 +266,10 @@ class QueryCodegen:
 
         current_type = GraphQLObjectType(class_name, [])
 
-        for selection in selection_set.selections:
-            assert isinstance(selection, FieldNode)
+        for sub_selection in selection_set.selections:
+            assert isinstance(sub_selection, FieldNode)
 
-            field = self._get_field(selection, class_name, parent_type)
+            field = self._get_field(sub_selection, class_name, parent_type)
 
             current_type.fields.append(field)
 
@@ -347,8 +311,9 @@ class QueryCodegen:
 
                 current_type.fields = list(common_fields)
 
-                parent_type = self.schema.get_type_by_name(
-                    fragment.type_condition.name.value
+                parent_type = cast(
+                    TypeDefinition,
+                    self.schema.get_type_by_name(fragment.type_condition.name.value),
                 )
 
                 assert parent_type
@@ -368,17 +333,15 @@ class QueryCodegen:
         return sub_types
 
     def _collect_scalar(
-        self, scalar_definition: ScalarDefinition, python_type: Type
+        self, scalar_definition: ScalarDefinition, python_type: Optional[Type]
     ) -> GraphQLScalar:
         graphql_scalar = GraphQLScalar(scalar_definition.name, python_type=python_type)
-        self.plugin_manager.on_scalar()
 
         self.types.append(graphql_scalar)
 
         return graphql_scalar
 
     def _collect_enum(self, enum: EnumDefinition) -> GraphQLEnum:
-        self.plugin_manager.on_enum()
         graphql_enum = GraphQLEnum(enum.name, [value.value for value in enum.values])
         self.types.append(graphql_enum)
         return graphql_enum
