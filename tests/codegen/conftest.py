@@ -42,6 +42,11 @@ class BlogPost(Node):
 
 
 @strawberry.type
+class Image(Node):
+    url: str
+
+
+@strawberry.type
 class Query:
     id: strawberry.ID
     integer: int
@@ -58,4 +63,4 @@ class Query:
 
 @pytest.fixture
 def schema():
-    return strawberry.Schema(query=Query, types=[BlogPost])
+    return strawberry.Schema(query=Query, types=[BlogPost, Image])

@@ -6,6 +6,7 @@ from strawberry.codegen import (
     CodegenPlugin,
     GraphQLEnum,
     GraphQLField,
+    GraphQLList,
     GraphQLObjectType,
     GraphQLOptional,
     GraphQLScalar,
@@ -24,9 +25,7 @@ class PythonPlugin(CodegenPlugin):
         self.imports: Dict[str, Set[str]] = defaultdict(set)
 
     def print(self, types: List[GraphQLType]) -> str:
-        printed_types = (self._print_type(type) for type in types)
-        printed_types = filter(None, printed_types)
-
+        printed_types = list(filter(None, (self._print_type(type) for type in types)))
         imports = self._print_imports()
 
         return imports + "\n\n" + "\n\n".join(printed_types)
@@ -41,9 +40,28 @@ class PythonPlugin(CodegenPlugin):
 
     def _get_type_name(self, type_: GraphQLType) -> str:
         if isinstance(type_, GraphQLOptional):
+            self.imports["typing"].add("Optional")
+
             return f"Optional[{self._get_type_name(type_.of_type)}]"
 
-        if isinstance(type_, GraphQLScalar):
+        if isinstance(type_, GraphQLList):
+            self.imports["typing"].add("List")
+
+            return f"List[{self._get_type_name(type_.of_type)}]"
+
+        if isinstance(type_, GraphQLUnion):
+            # TODO: wrong place for this
+            self.imports["typing"].add("Union")
+
+            return type_.name
+
+        if isinstance(type_, (GraphQLObjectType, GraphQLEnum)):
+            return type_.name
+
+        if (
+            isinstance(type_, GraphQLScalar)
+            and type_.name in self.SCALARS_TO_PYTHON_TYPES
+        ):
             return self.SCALARS_TO_PYTHON_TYPES[type_.name]
 
         self.imports["typing"].add("NewType")
@@ -81,7 +99,7 @@ class PythonPlugin(CodegenPlugin):
         if type_.name in self.SCALARS_TO_PYTHON_TYPES:
             return ""
 
-        return f'{type_.name} = NewType("{type_.name}", {type_.type})'
+        return f'{type_.name} = NewType("{type_.name}", {type_.python_type.__name__})'
 
     def _print_union_type(self, type_: GraphQLUnion) -> str:
         return f"{type_.name} = Union[{', '.join([t.name for t in type_.types])}]"
@@ -106,9 +124,3 @@ class PythonPlugin(CodegenPlugin):
 
     def on_enum(self) -> None:
         self.imports["enum"].add("Enum")
-
-    def on_optional(self) -> None:
-        self.imports["typing"].add("Optional")
-
-    def on_list(self) -> None:
-        self.imports["typing"].add("List")

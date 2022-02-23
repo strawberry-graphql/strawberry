@@ -122,13 +122,13 @@ def test_enum(schema):
     expected_output = """
     from enum import Enum
 
-    class OperationNameResultEnum(Enum):
+    class Color(Enum):
         red = "red"
         green = "green"
         blue = "blue"
 
     class OperationNameResult:
-        enum: OperationNameResultEnum
+        enum: Color
     """
 
     result = generator.codegen(input_query)
@@ -184,8 +184,10 @@ def test_union(schema):
     class OperationNameResultUnionPerson:
         name: str
 
+    OperationNameResultUnion = Union[OperationNameResultUnionAnimal, OperationNameResultUnionPerson]
+
     class OperationNameResult:
-        union: Union[OperationNameResultUnionAnimal, OperationNameResultUnionPerson]
+        union: OperationNameResultUnion
     """
 
     result = generator.codegen(input_query)
@@ -217,7 +219,7 @@ def test_interface(schema):
     assert textwrap.dedent(result).strip() == textwrap.dedent(expected_output).strip()
 
 
-def test_interface_fragment(schema):
+def test_interface_fragment_single_fragment(schema):
     generator = QueryCodegen(schema, plugins=[PythonPlugin()])
 
     input_query = """
@@ -236,6 +238,49 @@ def test_interface_fragment(schema):
     class OperationNameResultInterfaceBlogPost:
         id: str
         title: str
+
+    class OperationNameResult:
+        interface: OperationNameResultInterfaceBlogPost
+    """
+
+    # TODO: do we need the verbosity here?
+
+    result = generator.codegen(input_query)
+
+    assert textwrap.dedent(result).strip() == textwrap.dedent(expected_output).strip()
+
+
+def test_interface_fragment(schema):
+    generator = QueryCodegen(schema, plugins=[PythonPlugin()])
+
+    input_query = """
+    query OperationName {
+        interface {
+            id
+
+            ... on BlogPost {
+                title
+            }
+
+            ... on Image {
+                url
+            }
+        }
+    }
+    """
+
+    expected_output = """
+    from typing import Union
+
+    class OperationNameResultInterfaceBlogPost:
+        id: str
+        title: str
+
+    class OperationNameResultInterfaceImage:
+        id: str
+        url: str
+
+    OperationNameResultInterface = Union[OperationNameResultInterfaceBlogPost, OperationNameResultInterfaceImage]
 
     class OperationNameResult:
         interface: OperationNameResultInterface
