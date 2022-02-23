@@ -1,7 +1,22 @@
 Release type: minor
 
-There was a bug with the JSON custom scalar example.
+This release adds the following scalar types:
 
-This release fixes the example and adds JSON scalar type into `strawberry.scalars`.
+- `JSON`
+- `Base16`
+- `Base32`
+- `Base64`
 
-The same happens with `Base64`: We now have Base16, Base32 and Base64 into `strawberry.scalars`
+they can be used like so:
+
+```python
+from strawberry.scalar import Base16, Base32, Base64, JSON
+
+@strawberry.type
+class Example:
+    a: Base16
+    b: Base32
+    c: Base64
+    d: JSON
+```
+
