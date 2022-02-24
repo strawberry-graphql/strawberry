@@ -15,11 +15,13 @@ repos:
     hooks:
       - id: flake8
         additional_dependencies: ["flake8-eradicate==1.2.0"]
+        exclude: ^tests/codegen/snapshots/python/
 
   - repo: https://github.com/pycqa/isort
     rev: 5.10.1
     hooks:
       - id: isort
+        exclude: ^tests/codegen/snapshots/python/
 
   - repo: https://github.com/patrick91/pre-commit-alex
     rev: aa5da9e54b92ab7284feddeaf52edf14b1690de3
@@ -41,13 +43,8 @@ repos:
       - id: end-of-file-fixer
       - id: check-toml
 
-  - repo: https://github.com/humitos/mirrors-autoflake.git
-    rev: v1.1
-    hooks:
-      - id: autoflake
-        args: ['--in-place', '--remove-all-unused-imports', '--remove-unused-variable']
-
   - repo: https://github.com/psf/black
     rev: 22.1.0
     hooks:
       - id: black
+        exclude: ^tests/codegen/snapshots/python/

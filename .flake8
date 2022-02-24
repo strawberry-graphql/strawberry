@@ -1,6 +1,6 @@
 [flake8]
 max-line-length = 89
-exclude=.venv,.git
+exclude=.venv,.git,tests/codegen/snapshots,dist,build,__pycache__
 ignore = W503
 extend-ignore =
     # See https://github.com/PyCQA/pycodestyle/issues/373
@@ -11,6 +11,4 @@ per-file-ignores =
     tests/test_forward_references.py:E800
     tests/schema/test_resolvers.py:E800
     tests/types/test_string_annotations.py:E800
-    tests/codegen/test_query_codegen.py:E501
-    tests/codegen/test_query_codegen_typescript.py:E501
     tests/federation/test_printer.py:E800

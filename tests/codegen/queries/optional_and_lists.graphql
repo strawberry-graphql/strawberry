@@ -1,0 +1,5 @@
+query OperationName {
+  optionalInt
+  listOfInt
+  listOfOptionalInt
+}

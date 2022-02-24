@@ -279,7 +279,7 @@ class QueryCodegen:
         return current_type
 
     def print(self) -> str:
-        return self.plugin_manager.print(self.types)
+        return self.plugin_manager.print(self.types).strip() + "\n"
 
     def _collect_types_using_fragments(
         self,
