@@ -343,6 +343,6 @@ class QueryCodegen:
         return graphql_scalar
 
     def _collect_enum(self, enum: EnumDefinition) -> GraphQLEnum:
-        graphql_enum = GraphQLEnum(enum.name, [value.value for value in enum.values])
+        graphql_enum = GraphQLEnum(enum.name, [value.name for value in enum.values])
         self.types.append(graphql_enum)
         return graphql_enum
