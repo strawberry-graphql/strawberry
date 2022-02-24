@@ -39,8 +39,7 @@ input ExampleGQL {
 }
 ```
 
-Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1683](https://github.com/strawberry-graphql/strawberry/pull/1683/)
-
+Contributed by [James Chua](https://github.com/thejaminator) [PR #1656](https://github.com/strawberry-graphql/strawberry/pull/1656/)
 
 0.98.1 - 2022-02-24
 -------------------
