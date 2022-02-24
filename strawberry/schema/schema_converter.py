@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import contextvars
+import functools
 from enum import Enum
 from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union, cast
 
@@ -25,6 +27,7 @@ from graphql import (
 )
 
 from strawberry.arguments import UNSET, StrawberryArgument, convert_arguments, is_unset
+from strawberry.context import context
 from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.directive import StrawberryDirective
 from strawberry.enum import EnumDefinition, EnumValue
@@ -347,6 +350,10 @@ class GraphQLCoreConverter:
             )
 
         def _get_result(_source: Any, info: Info, **kwargs):
+            # Set the field's context so it can be retrieved by the resolver
+            context.root = _source
+            context.info = info
+
             field_args, field_kwargs = _get_arguments(
                 source=_source, info=info, kwargs=kwargs
             )
@@ -369,10 +376,13 @@ class GraphQLCoreConverter:
 
         if field.is_async:
             _async_resolver._is_default = not field.base_resolver  # type: ignore
-            return _async_resolver
+            resolver = _async_resolver
         else:
             _resolver._is_default = not field.base_resolver  # type: ignore
-            return _resolver
+            resolver = _resolver
+
+        ctx = contextvars.copy_context()
+        return functools.partial(ctx.run, resolver)
 
     def from_scalar(self, scalar: Type) -> GraphQLScalarType:
         scalar_definition: ScalarDefinition
