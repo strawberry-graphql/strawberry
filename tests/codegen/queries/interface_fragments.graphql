@@ -1,11 +1,9 @@
 query OperationName {
   interface {
     id
-
     ... on BlogPost {
       title
     }
-
     ... on Image {
       url
     }

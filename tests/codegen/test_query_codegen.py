@@ -1,5 +1,4 @@
 # # TODO:
-# # 1. test anonymous operations
 # # 2. test fragments
 # # 3. test variables
 # # 7. test input objects
@@ -49,7 +48,7 @@ def test_codegen(
     result = generator.codegen(query.read_text())
 
     snapshot.snapshot_dir = HERE / "snapshots" / plugin_name
-    snapshot.assert_match(result, f"{query.name}.{extension}")
+    snapshot.assert_match(result, f"{query.with_suffix('').stem}.{extension}")
 
 
 def test_codegen_fails_if_no_operation_name(schema):

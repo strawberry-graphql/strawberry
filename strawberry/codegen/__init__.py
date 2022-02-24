@@ -10,6 +10,7 @@ from graphql import (
     FieldNode,
     InlineFragmentNode,
     OperationDefinitionNode,
+    SelectionNode,
     SelectionSetNode,
     parse,
 )
@@ -89,10 +90,19 @@ GraphQLType = Union[
 
 
 @dataclass
-class GraphQLSelection:
+class GraphQLFieldSelection:
     # TODO: alias, arguments, directives
     field: str
     selections: List[GraphQLSelection]
+
+
+@dataclass
+class GraphQLInlineFragment:
+    type_condition: str
+    selections: List[GraphQLSelection]
+
+
+GraphQLSelection = Union[GraphQLFieldSelection, GraphQLInlineFragment]
 
 
 @dataclass
@@ -157,7 +167,21 @@ class QueryCodegen:
 
         return self.print()
 
-    def _convert_selection(
+    def _convert_selection(self, selection: SelectionNode) -> GraphQLSelection:
+        if isinstance(selection, FieldNode):
+            return GraphQLFieldSelection(
+                selection.name.value,
+                self._convert_selection_set(selection.selection_set),
+            )
+
+        if isinstance(selection, InlineFragmentNode):
+
+            return GraphQLInlineFragment(
+                selection.type_condition.name.value,
+                self._convert_selection_set(selection.selection_set),
+            )
+
+    def _convert_selection_set(
         self, selection_set: Optional[SelectionSetNode]
     ) -> List[GraphQLSelection]:
 
@@ -165,10 +189,7 @@ class QueryCodegen:
             return []
 
         return [
-            GraphQLSelection(
-                selection.name.value, self._convert_selection(selection.selection_set)
-            )
-            for selection in selection_set.selections
+            self._convert_selection(selection) for selection in selection_set.selections
         ]
 
     def _convert_operation(
@@ -183,7 +204,7 @@ class QueryCodegen:
         return GraphQLOperation(
             operation_definition.name.value,
             kind=operation_kind,
-            selections=self._convert_selection(operation_definition.selection_set),
+            selections=self._convert_selection_set(operation_definition.selection_set),
         )
 
     def _get_operations(self, ast: DocumentNode) -> List[OperationDefinitionNode]:
