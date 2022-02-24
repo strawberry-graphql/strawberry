@@ -14,6 +14,11 @@ import pytest
 from pytest_snapshot.plugin import Snapshot
 
 from strawberry.codegen import CodegenPlugin, QueryCodegen
+from strawberry.codegen.exceptions import (
+    MultipleOperationsProvidedError,
+    NoOperationNameProvidedError,
+    NoOperationProvidedError,
+)
 from strawberry.codegen.plugins.python import PythonPlugin
 from strawberry.codegen.plugins.typescript import TypeScriptPlugin
 
@@ -45,3 +50,24 @@ def test_codegen(
 
     snapshot.snapshot_dir = HERE / "snapshots" / plugin_name
     snapshot.assert_match(result, f"{query.name}.{extension}")
+
+
+def test_codegen_fails_if_no_operation_name(schema):
+    generator = QueryCodegen(schema, plugins=[PythonPlugin()])
+
+    with pytest.raises(NoOperationNameProvidedError):
+        generator.codegen("query { hello }")
+
+
+def test_codegen_fails_if_no_operation(schema):
+    generator = QueryCodegen(schema, plugins=[PythonPlugin()])
+
+    with pytest.raises(NoOperationProvidedError):
+        generator.codegen("type X { hello: String }")
+
+
+def test_fails_with_multiple_operations(schema):
+    generator = QueryCodegen(schema, plugins=[PythonPlugin()])
+
+    with pytest.raises(MultipleOperationsProvidedError):
+        generator.codegen("query { hello } query { world }")

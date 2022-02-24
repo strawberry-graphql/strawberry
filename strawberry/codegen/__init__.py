@@ -6,6 +6,7 @@ from typing import List, Optional, Type, Union, cast
 from typing_extensions import Protocol
 
 from graphql import (
+    DocumentNode,
     FieldNode,
     InlineFragmentNode,
     OperationDefinitionNode,
@@ -25,6 +26,12 @@ from strawberry.type import (
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 from strawberry.utils.str_converters import capitalize_first, to_camel_case
+
+from .exceptions import (
+    MultipleOperationsProvidedError,
+    NoOperationNameProvidedError,
+    NoOperationProvidedError,
+)
 
 
 class HasSelectionSet(Protocol):
@@ -103,12 +110,18 @@ class QueryCodegen:
     def codegen(self, query: str) -> str:
         ast = parse(query)
 
-        # assuming we have one document definition
-        # TODO: throw error if there are multiple definitions
-        operation = ast.definitions[0]
-        # TODO: convert these in nice errors
-        assert isinstance(operation, OperationDefinitionNode)
-        assert operation.name is not None
+        operations = self._get_operations(ast)
+
+        if not operations:
+            raise NoOperationProvidedError()
+
+        if len(operations) > 1:
+            raise MultipleOperationsProvidedError()
+
+        operation = operations[0]
+
+        if operation.name is None:
+            raise NoOperationNameProvidedError()
 
         operation_name = operation.name.value
 
@@ -125,6 +138,13 @@ class QueryCodegen:
         )
 
         return self.print()
+
+    def _get_operations(self, ast: DocumentNode) -> List[OperationDefinitionNode]:
+        return [
+            definition
+            for definition in ast.definitions
+            if isinstance(definition, OperationDefinitionNode)
+        ]
 
     def _get_field_type(
         self,
