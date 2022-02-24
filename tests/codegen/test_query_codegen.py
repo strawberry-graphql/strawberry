@@ -136,9 +136,9 @@ def test_enum(schema):
     from enum import Enum
 
     class Color(Enum):
-        red = "red"
-        green = "green"
-        blue = "blue"
+        RED = "RED"
+        GREEN = "GREEN"
+        BLUE = "BLUE"
 
     class OperationNameResult:
         enum: Color

@@ -115,9 +115,9 @@ def test_enum(schema):
 
     expected_output = """
     enum Color {
-        red = "red",
-        green = "green",
-        blue = "blue",
+        RED = "RED",
+        GREEN = "GREEN",
+        BLUE = "BLUE",
     }
 
     type OperationNameResult = {
