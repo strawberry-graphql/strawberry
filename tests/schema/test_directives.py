@@ -116,15 +116,17 @@ def test_can_declare_directives():
 
 def test_directive_arguments_without_value_param():
     """regression test for https://github.com/strawberry-graphql/strawberry/issues/1666"""
+
     @strawberry.type
     class Query:
         cake: str = "victoria sponge"
 
     @strawberry.directive(
-        locations=[DirectiveLocation.FIELD], description="Don't actually like cake? try ice cream instead"
+        locations=[DirectiveLocation.FIELD],
+        description="Don't actually like cake? try ice cream instead",
     )
     def ice_cream(flavor: str):
-        return f'{flavor} ice cream'
+        return f"{flavor} ice cream"
 
     schema = strawberry.Schema(query=Query, directives=[ice_cream])
 
