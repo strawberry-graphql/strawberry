@@ -4,7 +4,7 @@ CHANGELOG
 0.98.1 - 2022-02-24
 -------------------
 
-This release didn't endup on PyPI
+This release wasn't published on PyPI
 
 0.98.0 - 2022-02-23
 -------------------
