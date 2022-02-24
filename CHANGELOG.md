@@ -4,43 +4,7 @@ CHANGELOG
 0.98.1 - 2022-02-24
 -------------------
 
-Adds support for converting pydantic conlist.
-Note that constraint is not enforced in the graphql type.
-Thus, we recommend always working on the pydantic type such that the validation is enforced.
-
-```python
-import strawberry
-from pydantic import BaseModel, conlist
-
-class Example(BaseModel):
-    friends: conlist(str, min_items=1)
-
-@strawberry.experimental.pydantic.input(model=Example, all_fields=True)
-class ExampleGQL:
-    ...
-
-@strawberry.type
-class Query:
-    @strawberry.field()
-    def test(self, example: ExampleGQL) -> None:
-        # friends may be an empty list here
-        print(example.friends)
-        # calling to_pydantic() runs the validation and raises
-        # an error if friends is empty
-        print(example.to_pydantic().friends)
-
-schema = strawberry.Schema(query=Query)
-```
-
-The converted graphql type is
-```
-input ExampleGQL {
-  friends: [String!]!
-}
-```
-
-Contributed by [James Chua](https://github.com/thejaminator) [PR #1656](https://github.com/strawberry-graphql/strawberry/pull/1656/)
-
+This release wasn't published on PyPI
 
 0.98.0 - 2022-02-23
 -------------------
