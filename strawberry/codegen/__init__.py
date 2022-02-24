@@ -210,11 +210,10 @@ class QueryCodegen:
         # TODO: this is ugly :D
 
         while isinstance(selected_field_type, StrawberryContainer):
-            wrap = {StrawberryList: GraphQLList, StrawberryOptional: GraphQLOptional}[
-                type(selected_field_type)
-            ]  # type: ignore
-
-            field_type = wrap(field_type)
+            if isinstance(selected_field_type, StrawberryList):
+                field_type = GraphQLList(field_type)
+            else:
+                field_type = GraphQLOptional(field_type)
 
             selected_field_type = selected_field_type.of_type
 
