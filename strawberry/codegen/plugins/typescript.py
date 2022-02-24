@@ -7,6 +7,7 @@ from strawberry.codegen import (
     GraphQLField,
     GraphQLList,
     GraphQLObjectType,
+    GraphQLOperation,
     GraphQLOptional,
     GraphQLScalar,
     GraphQLType,
@@ -22,7 +23,7 @@ class TypeScriptPlugin(CodegenPlugin):
         str: "string",
     }
 
-    def print(self, types: List[GraphQLType]) -> str:
+    def print(self, types: List[GraphQLType], operation: GraphQLOperation) -> str:
         printed_types = list(filter(None, (self._print_type(type) for type in types)))
 
         return "\n\n".join(printed_types)

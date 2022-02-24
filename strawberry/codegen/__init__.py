@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import List, Optional, Type, Union, cast
 
-from typing_extensions import Protocol
+from typing_extensions import Literal, Protocol
 
 from graphql import (
     DocumentNode,
@@ -88,8 +88,22 @@ GraphQLType = Union[
 ]
 
 
+@dataclass
+class GraphQLSelection:
+    # TODO: alias, arguments, directives
+    field: str
+    selections: List[GraphQLSelection]
+
+
+@dataclass
+class GraphQLOperation:
+    name: str
+    kind: Literal["query", "mutation", "subscription"]
+    selections: List[GraphQLSelection]
+
+
 class CodegenPlugin:
-    def print(self, types: List[GraphQLType]) -> str:
+    def print(self, types: List[GraphQLType], operation: GraphQLOperation) -> str:
         return ""
 
 
@@ -97,8 +111,10 @@ class QueryCodegenPluginManager:
     def __init__(self, plugins: List[CodegenPlugin]) -> None:
         self.plugins = plugins
 
-    def print(self, types: List[GraphQLType]) -> str:
-        return "\n\n".join(plugin.print(types) for plugin in self.plugins)
+    def print(self, types: List[GraphQLType], operation: GraphQLOperation) -> str:
+        return "\n\n".join(
+            plugin.print(types=types, operation=operation) for plugin in self.plugins
+        )
 
 
 class QueryCodegen:
@@ -131,6 +147,8 @@ class QueryCodegen:
 
         assert isinstance(query_type, TypeDefinition)
 
+        self.operation = self._convert_operation(operation)
+
         self._collect_types(
             cast(HasSelectionSet, operation),
             parent_type=query_type,
@@ -138,6 +156,35 @@ class QueryCodegen:
         )
 
         return self.print()
+
+    def _convert_selection(
+        self, selection_set: Optional[SelectionSetNode]
+    ) -> List[GraphQLSelection]:
+
+        if selection_set is None:
+            return []
+
+        return [
+            GraphQLSelection(
+                selection.name.value, self._convert_selection(selection.selection_set)
+            )
+            for selection in selection_set.selections
+        ]
+
+    def _convert_operation(
+        self, operation_definition: OperationDefinitionNode
+    ) -> GraphQLOperation:
+        assert operation_definition.name is not None
+
+        operation_kind = cast(
+            Literal["query", "mutation", "subscription"],
+            operation_definition.operation.value,
+        )
+        return GraphQLOperation(
+            operation_definition.name.value,
+            kind=operation_kind,
+            selections=self._convert_selection(operation_definition.selection_set),
+        )
 
     def _get_operations(self, ast: DocumentNode) -> List[OperationDefinitionNode]:
         return [
@@ -298,7 +345,12 @@ class QueryCodegen:
         return current_type
 
     def print(self) -> str:
-        return self.plugin_manager.print(self.types).strip() + "\n"
+        return (
+            self.plugin_manager.print(
+                types=self.types, operation=self.operation
+            ).strip()
+            + "\n"
+        )
 
     def _collect_types_using_fragments(
         self,

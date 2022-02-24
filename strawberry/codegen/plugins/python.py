@@ -8,6 +8,7 @@ from strawberry.codegen import (
     GraphQLField,
     GraphQLList,
     GraphQLObjectType,
+    GraphQLOperation,
     GraphQLOptional,
     GraphQLScalar,
     GraphQLType,
@@ -25,7 +26,7 @@ class PythonPlugin(CodegenPlugin):
     def __init__(self) -> None:
         self.imports: Dict[str, Set[str]] = defaultdict(set)
 
-    def print(self, types: List[GraphQLType]) -> str:
+    def print(self, types: List[GraphQLType], operation: GraphQLOperation) -> str:
         printed_types = list(filter(None, (self._print_type(type) for type in types)))
         imports = self._print_imports()
 
