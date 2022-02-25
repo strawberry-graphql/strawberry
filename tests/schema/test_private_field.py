@@ -1,4 +1,3 @@
-from logging import root
 import pytest
 
 import strawberry
