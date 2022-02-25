@@ -76,7 +76,7 @@ freezegun = "^1.1.0"
 opentelemetry-api = "<2"
 opentelemetry-sdk = "<2"
 flake8-isort = "^4.1.1"
-flake8-black = "^0.2.1"
+flake8-black = "^0.2.5"
 Django = [
     {version = ">=2.2,<4", python = "<3.8", optional = false},
     {version = ">=2.2,<5", python = ">=3.8", optional = false}
