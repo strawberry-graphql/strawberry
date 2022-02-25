@@ -1,3 +1,4 @@
+from logging import root
 import pytest
 
 import strawberry
@@ -55,3 +56,29 @@ def test_private_field_access_in_resolver():
     assert result.data == {
         "ageInMonths": 84,
     }
+
+
+def test_private_field_with_str_annotations():
+    """Check compatibility of strawberry.Private with annotations as string."""
+
+    from dataclasses import dataclass
+
+    @strawberry.type
+    class Query:
+        not_seen: "strawberry.Private[SensitiveData]"
+
+        @strawberry.field
+        def accesible_info(self) -> str:
+            return self.not_seen.info
+
+    @dataclass
+    class SensitiveData:
+        value: int
+        info: str
+
+    schema = strawberry.Schema(query=Query)
+
+    result = schema.execute_sync(
+        "query { accesibleInfo }", root_value=Query(not_seen=SensitiveData(1, "foo"))
+    )
+    assert result.data == {"accesibleInfo": "foo"}
