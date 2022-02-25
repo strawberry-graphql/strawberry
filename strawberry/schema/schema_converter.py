@@ -195,6 +195,7 @@ class GraphQLCoreConverter:
             TypeError: If the type of a field in ``fields`` is `UNRESOLVED`
         """
         thunk_mapping = {}
+
         for f in fields:
             if f.type is UNRESOLVED:
                 raise TypeError(
