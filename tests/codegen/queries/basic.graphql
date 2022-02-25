@@ -1,5 +1,11 @@
 query OperationName {
   id
   integer
-  anotherInteger
+  float
+  boolean
+  uuid
+  date
+  datetime
+  time
+  decimal
 }

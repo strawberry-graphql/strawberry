@@ -21,6 +21,13 @@ class PythonPlugin(CodegenPlugin):
         "ID": "str",
         "Int": "int",
         "String": "str",
+        "Float": "float",
+        "Boolean": "bool",
+        "UUID": "UUID",
+        "Date": "datetime.date",
+        "DateTime": "datetime.datetime",
+        "Time": "datetime.time",
+        "Decimal": "decimal.Decimal",
     }
 
     def __init__(self) -> None:
@@ -104,7 +111,9 @@ class PythonPlugin(CodegenPlugin):
         if type_.name in self.SCALARS_TO_PYTHON_TYPES:
             return ""
 
-        assert type_.python_type is not None
+        assert (
+            type_.python_type is not None
+        ), f"Scalar type must have a python type: {type_.name}"
 
         return f'{type_.name} = NewType("{type_.name}", {type_.python_type.__name__})'
 

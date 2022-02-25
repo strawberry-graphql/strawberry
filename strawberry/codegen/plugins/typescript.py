@@ -20,7 +20,15 @@ class TypeScriptPlugin(CodegenPlugin):
         "ID": "string",
         "Int": "number",
         "String": "string",
+        "Float": "number",
+        "Boolean": "boolean",
+        "UUID": "string",
+        "Date": "string",
+        "DateTime": "string",
+        "Time": "string",
+        "Decimal": "string",
         str: "string",
+        float: "number",
     }
 
     def print(self, types: List[GraphQLType], operation: GraphQLOperation) -> str:

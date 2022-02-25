@@ -1,5 +1,8 @@
+import datetime
+import decimal
 import enum
 from typing import List, NewType, Optional
+from uuid import UUID
 
 import pytest
 
@@ -50,10 +53,17 @@ class Image(Node):
 class Query:
     id: strawberry.ID
     integer: int
-    another_integer: int
+    float: float
+    boolean: bool
+    uuid: UUID
+    date: datetime.date
+    datetime: datetime.datetime
+    time: datetime.time
+    decimal: decimal.Decimal
     optional_int: Optional[int]
     list_of_int: List[int]
     list_of_optional_int: List[Optional[int]]
+    optional_list_of_optional_int: Optional[List[Optional[int]]]
     person: Person
     optional_person: Optional[Person]
     list_of_people: List[Person]

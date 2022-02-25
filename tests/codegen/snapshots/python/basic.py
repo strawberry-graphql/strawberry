@@ -1,4 +1,10 @@
 class OperationNameResult:
     id: str
     integer: int
-    another_integer: int
+    float: float
+    boolean: bool
+    uuid: UUID
+    date: datetime.date
+    datetime: datetime.datetime
+    time: datetime.time
+    decimal: decimal.Decimal

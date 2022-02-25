@@ -2,4 +2,5 @@ query OperationName {
   optionalInt
   listOfInt
   listOfOptionalInt
+  optionalListOfOptionalInt
 }
