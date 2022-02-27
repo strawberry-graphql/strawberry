@@ -8,11 +8,14 @@ ID = NewType("ID", str)
 
 JSON = scalar(
     NewType("JSON", object),  # mypy doesn't like `NewType("name", Any)`
-    description="The `JSON` scalar type represents JSON values as specified by"
-    " [ECMA-404](http://www.ecma-international.org"
-    "/publications/files/ECMA-ST/ECMA-404.pdf).",
-    specified_by_url="http://www.ecma-international.org"
-    "/publications/files/ECMA-ST/ECMA-404.pdf",
+    description=(
+        "The `JSON` scalar type represents JSON values as specified by "
+        "[ECMA-404]"
+        "(http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf)."
+    ),
+    specified_by_url=(
+        "http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf"
+    ),
     serialize=lambda v: v,
     parse_value=lambda v: v,
 )
