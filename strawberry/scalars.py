@@ -40,8 +40,9 @@ Base32 = scalar(
 
 Base64 = scalar(
     NewType("Base64", bytes),
-    description="Represents binary data as Base64-encoded strings,"
-    " using the standard alphabet.",
+    description=(
+        "Represents binary data as Base64-encoded strings, using the standard alphabet."
+    ),
     specified_by_url="https://datatracker.ietf.org/doc/html/rfc4648.html#section-4",
     serialize=lambda v: base64.b64encode(v).decode("utf-8"),
     parse_value=lambda v: base64.b64decode(v.encode("utf-8")),
