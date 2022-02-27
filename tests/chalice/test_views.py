@@ -4,8 +4,9 @@ from http import HTTPStatus
 import pytest
 
 from chalice.test import Client, HTTPResponse
+from strawberry.chalice.views import GraphQLView
 
-from .app import app
+from .app import app, schema
 
 
 def test_chalice_server_index_route_returns():
@@ -102,3 +103,13 @@ def test_deprecated_render_graphiql():
         response = client.http.get("/deprecated-graphql", headers=headers)
         assert response.status_code == HTTPStatus.OK
         assert response_is_of_error_type(response)
+
+
+def test_using_deprecated_render_graphiql_raise_warning():
+    with pytest.deprecated_call() as record:
+        GraphQLView(schema=schema, render_graphiql=True)
+
+    assert record[0].message.args == [
+        "`render_graphiql` is deprecated and it will stop working in releases "
+        "of strawberry made after 2022-05-28. Use `graphiql` instead",
+    ]
