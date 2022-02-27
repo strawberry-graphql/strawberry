@@ -30,8 +30,9 @@ Base16 = scalar(
 
 Base32 = scalar(
     NewType("Base32", bytes),
-    description="Represents binary data as Base32-encoded strings,"
-    " using the standard alphabet.",
+    description=(
+        "Represents binary data as Base32-encoded strings, using the standard alphabet."
+    ),
     specified_by_url=("https://datatracker.ietf.org/doc/html/rfc4648.html#section-6"),
     serialize=lambda v: base64.b32encode(v).decode("utf-8"),
     parse_value=lambda v: base64.b32decode(v.encode("utf-8"), casefold=True),
