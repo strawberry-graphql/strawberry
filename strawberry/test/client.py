@@ -1,7 +1,7 @@
 import json
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Dict, List, Mapping, Optional
+from typing import Any, Coroutine, Dict, List, Mapping, Optional, Union
 
 from typing_extensions import Literal, TypedDict
 
@@ -29,7 +29,7 @@ class BaseGraphQLTestClient(ABC):
         headers: Optional[Dict[str, object]] = None,
         asserts_errors: Optional[bool] = True,
         files: Optional[Dict[str, object]] = None,
-    ) -> Response:
+    ) -> Union[Coroutine[Any, Any, Response], Response]:
         body = self._build_body(query, variables, files)
 
         resp = self.request(body, headers, files)
