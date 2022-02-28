@@ -183,6 +183,14 @@ class GraphQLCoreConverter:
         name_converter: Callable[[StrawberryField], str],
         field_converter: Callable[[StrawberryField], FieldType],
     ) -> Dict[str, FieldType]:
+        """Create a GraphQL core `ThunkMapping` mapping of field names to field types.
+
+        This method filters out remaining `strawberry.Private` annotated fields that
+        could not be filtered during the initialization of a `TypeDefinition` due to
+        postponed type-hint evaluation (PEP-563). Performing this filtering now (at
+        schema conversion time) ensures that all types to be included in the schema
+        should have already been resolved.
+        """
         return {
             name_converter(f): field_converter(f)
             for f in fields
