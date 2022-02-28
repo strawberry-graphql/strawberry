@@ -114,22 +114,21 @@ def test_json():
 
     schema = strawberry.Schema(query=Query)
 
-    assert (
-        str(schema)
-        == dedent(
-            '''
-            """
-            The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
-            """
-            scalar JSON @specifiedBy(url: "http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf")
+    expected_schema = dedent(
+        '''
+        """
+        The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+        """
+        scalar JSON @specifiedBy(url: "http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf")
 
-            type Query {
-            echoJson(data: JSON!): JSON!
-            echoJsonNullable(data: JSON): JSON
-            }
-            '''  # noqa: E501
-        ).strip()
-    )
+        type Query {
+          echoJson(data: JSON!): JSON!
+          echoJsonNullable(data: JSON): JSON
+        }
+        '''  # noqa: E501
+    ).strip()
+
+    assert str(schema) == expected_schema
 
     result = schema.execute_sync(
         """
