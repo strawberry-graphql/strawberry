@@ -1,6 +1,32 @@
 CHANGELOG
 =========
 
+0.99.0 - 2022-02-28
+-------------------
+
+This release adds the following scalar types:
+
+- `JSON`
+- `Base16`
+- `Base32`
+- `Base64`
+
+they can be used like so:
+
+```python
+from strawberry.scalar import Base16, Base32, Base64, JSON
+
+@strawberry.type
+class Example:
+    a: Base16
+    b: Base32
+    c: Base64
+    d: JSON
+```
+
+Contributed by [Paulo Costa](https://github.com/paulo-raca) [PR #1647](https://github.com/strawberry-graphql/strawberry/pull/1647/)
+
+
 0.98.2 - 2022-02-24
 -------------------
 
