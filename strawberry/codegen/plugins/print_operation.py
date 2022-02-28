@@ -1,8 +1,5 @@
 import textwrap
-from pathlib import Path
 from typing import List
-
-import pytest
 
 from strawberry.codegen import (
     CodegenPlugin,
@@ -16,12 +13,7 @@ from strawberry.codegen import (
     GraphQLSelection,
     GraphQLStringValue,
     GraphQLType,
-    QueryCodegen,
 )
-
-
-HERE = Path(__file__).parent
-QUERIES = list(HERE.glob("queries/*.graphql"))
 
 
 class PrintOperationPlugin(CodegenPlugin):
@@ -99,16 +91,3 @@ class PrintOperationPlugin(CodegenPlugin):
         )
 
         return textwrap.indent(selections_text, " " * 2)
-
-
-@pytest.mark.parametrize("query", QUERIES, ids=[x.name for x in QUERIES])
-def test_codegen(
-    query: Path,
-    schema,
-):
-    generator = QueryCodegen(schema, plugins=[PrintOperationPlugin()])
-    query_content = query.read_text()
-
-    result = generator.codegen(query_content)
-
-    assert result == query_content
