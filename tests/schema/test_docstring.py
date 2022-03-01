@@ -35,6 +35,8 @@ class EnumType(Enum):
     VANILLA = "vanilla"
     STRAWBERRY = "strawberry"
     CHOCOLATE = "chocolate"
+    ROCKY_ROAD = "rocky_road"
+    """Chocolate ice cream with nuts and marshmallows"""
 
 
 @strawberry.interface
@@ -43,7 +45,7 @@ class InterfaceType:
     This is a graphQL interface type
 
     Attributes:
-        var_a (int): A fields that doesn't need a resolver
+        var_a (int): A field that doesn't need a resolver
         var_b (int): A complex field with a resolver
     """
 
@@ -66,8 +68,6 @@ class ObjectType(InterfaceType):
     This is a graphQL object type
 
     Attributes:
-        var_a (int): A field that doesn't need a resolver
-        var_b (int): A complex field with a resolver
         var_c (str): Something to differentiate ObjectType from InterfaceType
         var_d:
     """
@@ -75,6 +75,8 @@ class ObjectType(InterfaceType):
     var_c: EnumType
     var_d: float  # Empty description is ignored
     var_e: int  # No description
+    var_f: str
+    """ PEP 257 description """
 
 
 @strawberry.input
@@ -153,6 +155,9 @@ def test_docstrings_enabled():
 
           """Chocolate is a food product made from roasted and ground cacao pods"""
           CHOCOLATE
+
+          """Chocolate ice cream with nuts and marshmallows"""
+          ROCKY_ROAD
         }
 
         """
@@ -168,7 +173,7 @@ def test_docstrings_enabled():
 
         """This is a graphQL interface type"""
         interface InterfaceType {
-          """A fields that doesn't need a resolver"""
+          """A field that doesn't need a resolver"""
           varA: Int!
 
           """A complex field with a resolver and args"""
@@ -205,6 +210,9 @@ def test_docstrings_enabled():
           varC: EnumType!
           varD: Float!
           varE: Int!
+
+          """PEP 257 description"""
+          varF: String!
         }
 
         """Main entrypoint to the GraphQL reads"""
@@ -231,6 +239,7 @@ def test_docstrings_disabled():
           VANILLA
           STRAWBERRY
           CHOCOLATE
+          ROCKY_ROAD
         }
 
         input InputType {
@@ -252,6 +261,7 @@ def test_docstrings_disabled():
           varC: EnumType!
           varD: Float!
           varE: Int!
+          varF: String!
         }
 
         type Query {

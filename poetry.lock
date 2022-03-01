@@ -107,6 +107,17 @@ optional = false
 python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*"
 
 [[package]]
+name = "attributes-doc"
+version = "0.2.0"
+description = "PEP 224 implementation"
+category = "main"
+optional = false
+python-versions = "*"
+
+[package.extras]
+test = ["coverage", "pytest-cov", "pytest (<5)", "pytest", "mypy", "pycodestyle", "pylint"]
+
+[[package]]
 name = "attrs"
 version = "21.4.0"
 description = "Classes Without Boilerplate"
@@ -1548,7 +1559,7 @@ sanic = ["sanic"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "166eb7afa1dd7e0c98d936c7592e527080035743c6b271617a2e58e153fc201e"
+content-hash = "4079ba8fe1662c6eab09d068f48013e1630b843d7647d6e2a939f8a4e7e1073f"
 
 [metadata.files]
 aiofiles = [
@@ -1656,6 +1667,10 @@ asynctest = [
 atomicwrites = [
     {file = "atomicwrites-1.4.0-py2.py3-none-any.whl", hash = "sha256:6d1784dea7c0c8d4a5172b6c620f40b6e4cbfdf96d783691f2e1302a7b88e197"},
     {file = "atomicwrites-1.4.0.tar.gz", hash = "sha256:ae70396ad1a434f9c7046fd2dd196fc04b12f9e91ffb859164193be8b6168a7a"},
+]
+attributes-doc = [
+    {file = "attributes-doc-0.2.0.tar.gz", hash = "sha256:0b4cc49746172ba174bde445fd3414e1cb808bb335f4d5faaf0f880191869a5e"},
+    {file = "attributes_doc-0.2.0-py2.py3-none-any.whl", hash = "sha256:254090776a8745f34491a41e0777e7e82138d7c688b026524d4973939fac86aa"},
 ]
 attrs = [
     {file = "attrs-21.4.0-py2.py3-none-any.whl", hash = "sha256:2d27e3784d7a565d36ab851fe94887c5eccd6a463168875832a1be79c82828b4"},

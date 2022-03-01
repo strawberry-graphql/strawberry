@@ -644,11 +644,23 @@ class GraphQLCoreConverter:
                         type_docstring,
                         parent_type_docstring,
                     )
+                elif source == DescriptionSource.ATTRIBUTE_DOCSTRING:
+                    if parent_type_docstring is not None:
+                        docstring, parent_docstring = (
+                            parent_type_docstring.attribute_docstring(child_name),
+                            None,
+                        )
                 elif source == DescriptionSource.ENUM_DOCSTRINGS:
                     docstring, parent_docstring = (
                         enum_docstring,
                         parent_enum_docstring,
                     )
+                elif source == DescriptionSource.ENUM_ATTRIBUTE_DOCSTRING:
+                    if parent_enum_docstring is not None:
+                        docstring, parent_docstring = (
+                            parent_enum_docstring.attribute_docstring(child_name),
+                            None,
+                        )
                 elif source == DescriptionSource.RESOLVER_DOCSTRINGS:
                     docstring, parent_docstring = (
                         resolver_docstring,
