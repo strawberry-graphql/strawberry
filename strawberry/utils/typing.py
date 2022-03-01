@@ -1,16 +1,7 @@
 import sys
 from collections.abc import AsyncGenerator
 from typing import _GenericAlias  # type: ignore
-from typing import (  # type: ignore
-    Any,
-    Callable,
-    ClassVar,
-    Generic,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-)
+from typing import Any, Callable, ClassVar, Generic, Tuple, Type, TypeVar, Union
 
 
 def is_list(annotation: Type) -> bool:
@@ -28,7 +19,7 @@ def is_union(annotation: Type) -> bool:
     # don't have a `__origin__` property on them, but they are instances of
     # `UnionType`, which is only available in Python 3.10+
     if sys.version_info >= (3, 10):
-        from types import UnionType  # type: ignore
+        from types import UnionType
 
         if isinstance(annotation, UnionType):
             return True
@@ -75,7 +66,7 @@ def get_list_annotation(annotation: Type) -> Type:
 def is_concrete_generic(annotation: type) -> bool:
     ignored_generics = (list, tuple, Union, ClassVar, AsyncGenerator)
     return (
-        isinstance(annotation, _GenericAlias)  # type:ignore
+        isinstance(annotation, _GenericAlias)
         and annotation.__origin__ not in ignored_generics
     )
 
@@ -100,12 +91,12 @@ def is_generic(annotation: type) -> bool:
 def is_type_var(annotation: Type) -> bool:
     """Returns True if the annotation is a TypeVar."""
 
-    return isinstance(annotation, TypeVar)  # type:ignore
+    return isinstance(annotation, TypeVar)
 
 
 def get_parameters(annotation: Type):
     if (
-        isinstance(annotation, _GenericAlias)  # type:ignore
+        isinstance(annotation, _GenericAlias)
         or isinstance(annotation, type)
         and issubclass(annotation, Generic)  # type:ignore
         and annotation is not Generic

@@ -68,7 +68,7 @@ class StrawberryField(dataclasses.Field):
         if sys.version_info >= (3, 10):
             kwargs["kw_only"] = False
 
-        super().__init__(  # type: ignore
+        super().__init__(
             default=(default if default is not UNSET else dataclasses.MISSING),
             default_factory=(
                 # mypy is not able to understand that default factory
@@ -272,7 +272,7 @@ class StrawberryField(dataclasses.Field):
             permission_classes=self.permission_classes,
             default=self.default_value,
             # ignored because of https://github.com/python/mypy/issues/6910
-            default_factory=self.default_factory,  # type: ignore[misc]
+            default_factory=self.default_factory,
             deprecation_reason=self.deprecation_reason,
         )
 

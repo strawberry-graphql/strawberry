@@ -64,7 +64,7 @@ class StrawberryArgument:
         default: object = UNSET,
         deprecation_reason: Optional[str] = None,
     ) -> None:
-        self.python_name = python_name  # type: ignore
+        self.python_name = python_name
         self.graphql_name = graphql_name
         self.is_subscription = is_subscription
         self.description = description

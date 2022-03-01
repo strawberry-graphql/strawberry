@@ -94,7 +94,7 @@ It needs to return an object of `GraphQLHTTPResponse` and accepts the execution 
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
 
-from graphql.error import format_error as format_graphql_error
+from graphql.error.graphql_error import format_error as format_graphql_error
 
 class MyGraphQLView(GraphQLView):
     def process_result(

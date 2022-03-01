@@ -30,7 +30,6 @@ def test_returns_errors(graphql_client):
         {
             "locations": [{"column": 3, "line": 1}],
             "message": "Cannot query field 'donut' on type 'Query'.",
-            "path": None,
         }
     ]
 

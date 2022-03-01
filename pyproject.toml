@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "strawberry-graphql"
 packages = [ { include = "strawberry" } ]
-version = "0.97.0"
+version = "0.99.0"
 description = "A library for creating GraphQL APIs"
 authors = ["Patrick Arminio <patrick.arminio@gmail.com>"]
 license = "MIT"
@@ -35,7 +35,7 @@ Django = [
     {version = ">=2.2,<4", markers = "python_version < '3.8' and extra == 'django'", optional = true},
     {version = ">=2.2,<5", markers = "python_version >= '3.8' and extra == 'django'", optional = true}
 ]
-graphql-core = "~3.1.0"
+graphql-core = "~3.2.0"
 asgiref = {version = "^3.2", optional = true}
 flask = {version = "^1.1", optional = true}
 typing_extensions = ">=3.7.4,<5.0.0"
@@ -77,7 +77,7 @@ freezegun = "^1.1.0"
 opentelemetry-api = "<2"
 opentelemetry-sdk = "<2"
 flake8-isort = "^4.1.1"
-flake8-black = "^0.2.1"
+flake8-black = "^0.2.5"
 Django = [
     {version = ">=2.2,<4", python = "<3.8", optional = false},
     {version = ">=2.2,<5", python = ">=3.8", optional = false}
@@ -102,6 +102,7 @@ types-aiofiles = "^0.8.3"
 sanic-testing = "^0.8"
 fastapi = {version = ">=0.65.0", optional = false}
 pytest-xprocess = "^0.18.1"
+MarkupSafe = "2.0.1"
 
 [tool.poetry.extras]
 aiohttp = ["aiohttp", "pytest-aiohttp"]
@@ -132,7 +133,7 @@ known_first_party = ["strawberry"]
 sections = ["FUTURE", "STDLIB", "PYTEST", "THIRDPARTY", "DJANGO", "GRAPHQL", "FIRSTPARTY", "LOCALFOLDER"]
 
 [tool.pytest.ini_options]
-addopts = "-s --emoji --mypy-ini-file=mypy_tests.ini --benchmark-disable"
+addopts = "-s --emoji --mypy-ini-file=mypy.ini --benchmark-disable"
 DJANGO_SETTINGS_MODULE = "tests.django.django_settings"
 testpaths = ["tests/"]
 markers = ["django"]

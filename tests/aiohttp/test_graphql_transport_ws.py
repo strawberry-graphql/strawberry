@@ -341,7 +341,7 @@ async def test_subscription_syntax_error(aiohttp_client):
         assert response["type"] == ErrorMessage.type
         assert response["id"] == "sub1"
         assert len(response["payload"]) == 1
-        assert response["payload"][0]["path"] is None
+        assert response["payload"][0].get("path") is None
         assert response["payload"][0]["locations"] == [{"line": 1, "column": 31}]
         assert (
             response["payload"][0]["message"]
@@ -377,7 +377,7 @@ async def test_subscription_field_errors(aiohttp_client):
         assert response["type"] == ErrorMessage.type
         assert response["id"] == "sub1"
         assert len(response["payload"]) == 1
-        assert response["payload"][0]["path"] is None
+        assert response["payload"][0].get("path") is None
         assert response["payload"][0]["locations"] == [{"line": 1, "column": 16}]
         assert (
             response["payload"][0]["message"]
@@ -480,7 +480,7 @@ async def test_subscription_errors(aiohttp_client):
         assert response["type"] == ErrorMessage.type
         assert response["id"] == "sub1"
         assert len(response["payload"]) == 1
-        assert response["payload"][0]["path"] == ["error"]
+        assert response["payload"][0].get("path") == ["error"]
         assert response["payload"][0]["message"] == "TEST ERR"
 
         await ws.close()
@@ -512,8 +512,8 @@ async def test_subscription_exceptions(aiohttp_client):
         assert response["type"] == ErrorMessage.type
         assert response["id"] == "sub1"
         assert len(response["payload"]) == 1
-        assert response["payload"][0]["path"] is None
-        assert response["payload"][0]["locations"] is None
+        assert response["payload"][0].get("path") is None
+        assert response["payload"][0].get("locations") is None
         assert response["payload"][0]["message"] == "TEST EXC"
 
         await ws.close()

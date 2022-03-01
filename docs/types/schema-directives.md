@@ -31,7 +31,7 @@ class Keys:
 
 from .directives import Keys
 
-@strawberry.type(directives=Keys(fields="id"))
+@strawberry.type(directives=[Keys(fields="id")])
 class User:
     id: strawberry.ID
     name: str

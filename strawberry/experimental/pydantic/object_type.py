@@ -80,14 +80,14 @@ def replace_pydantic_types(type_: Any, is_input: bool):
 
 
 def get_type_for_field(field: ModelField, is_input: bool):
-    type_ = field.outer_type_
-    type_ = get_basic_type(type_)
-    type_ = replace_pydantic_types(type_, is_input)
+    outer_type = field.outer_type_
+    basic_type = get_basic_type(outer_type)
+    replaced_type = replace_pydantic_types(basic_type, is_input)
 
     if not field.required:
-        type_ = Optional[type_]
-
-    return type_
+        return Optional[replaced_type]
+    else:
+        return replaced_type
 
 
 def _build_dataclass_creation_fields(
@@ -264,7 +264,7 @@ def type(
             model._strawberry_input_type = cls  # type: ignore
         else:
             model._strawberry_type = cls  # type: ignore
-        cls._pydantic_type = model  # type: ignore
+        cls._pydantic_type = model
 
         def from_pydantic_default(
             instance: PydanticModel, extra: Dict[str, Any] = None
