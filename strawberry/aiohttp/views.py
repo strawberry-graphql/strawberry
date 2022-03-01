@@ -90,4 +90,4 @@ class GraphQLView:
 
 # Mark the view as coroutine so that AIOHTTP does not confuse it with a deprecated bare
 # handler function.
-GraphQLView._is_coroutine = asyncio.coroutines._is_coroutine
+GraphQLView._is_coroutine = asyncio.coroutines._is_coroutine  # type: ignore[attr-defined] # noqa: E501
