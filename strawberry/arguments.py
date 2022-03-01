@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+from dataclasses import dataclass
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -17,6 +18,7 @@ from typing_extensions import Annotated, get_args, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
+from strawberry.description_source import DescriptionSource
 from strawberry.enum import EnumDefinition
 from strawberry.lazy_type import LazyType
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
@@ -37,20 +39,12 @@ def is_unset(value: Any) -> bool:
     return type(value) is _Unset
 
 
+@dataclass
 class StrawberryArgumentAnnotation:
+    description_sources: Optional[list[DescriptionSource]]
     description: Optional[str]
     name: Optional[str]
     deprecation_reason: Optional[str]
-
-    def __init__(
-        self,
-        description: Optional[str] = None,
-        name: Optional[str] = None,
-        deprecation_reason: Optional[str] = None,
-    ):
-        self.description = description
-        self.name = name
-        self.deprecation_reason = deprecation_reason
 
 
 class StrawberryArgument:
@@ -60,6 +54,7 @@ class StrawberryArgument:
         graphql_name: Optional[str],
         type_annotation: StrawberryAnnotation,
         is_subscription: bool = False,
+        description_sources: Optional[list[DescriptionSource]] = None,
         description: Optional[str] = None,
         default: object = UNSET,
         deprecation_reason: Optional[str] = None,
@@ -67,6 +62,7 @@ class StrawberryArgument:
         self.python_name = python_name
         self.graphql_name = graphql_name
         self.is_subscription = is_subscription
+        self.description_sources = description_sources
         self.description = description
         self._type: Optional[StrawberryType] = None
         self.type_annotation = type_annotation
@@ -105,6 +101,7 @@ class StrawberryArgument:
 
                 argument_annotation_seen = True
 
+                self.description_sources = arg.description_sources
                 self.description = arg.description
                 self.graphql_name = arg.name
                 self.deprecation_reason = arg.deprecation_reason
@@ -200,12 +197,17 @@ def convert_arguments(
 
 
 def argument(
+    *,
+    description_sources: Optional[list[DescriptionSource]] = None,
     description: Optional[str] = None,
     name: Optional[str] = None,
     deprecation_reason: Optional[str] = None,
 ) -> StrawberryArgumentAnnotation:
     return StrawberryArgumentAnnotation(
-        description=description, name=name, deprecation_reason=deprecation_reason
+        description_sources=description_sources,
+        description=description,
+        name=name,
+        deprecation_reason=deprecation_reason,
     )
 
 

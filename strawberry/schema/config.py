@@ -1,15 +1,19 @@
 from __future__ import annotations
 
 from dataclasses import InitVar, dataclass, field
+from typing import List
 
-from .name_converter import NameConverter
+from strawberry.description_source import DescriptionSource
+from strawberry.schema.name_converter import NameConverter
 
 
 @dataclass
 class StrawberryConfig:
     auto_camel_case: InitVar[bool] = None
     name_converter: NameConverter = field(default_factory=NameConverter)
-    descriptions_from_docstrings: bool = False
+    description_sources: List[DescriptionSource] = field(
+        default_factory=lambda: [DescriptionSource.STRAWBERRY_DESCRIPTIONS]
+    )
 
     def __post_init__(
         self,

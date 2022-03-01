@@ -3,6 +3,7 @@ import inspect
 import types
 from typing import Callable, List, Optional, Sequence, Type, TypeVar, cast, overload
 
+from strawberry.description_source import DescriptionSource
 from strawberry.schema_directive import StrawberrySchemaDirective
 
 from .exceptions import (
@@ -100,6 +101,7 @@ def _process_type(
     name: Optional[str] = None,
     is_input: bool = False,
     is_interface: bool = False,
+    description_sources: Optional[List[DescriptionSource]] = None,
     description: Optional[str] = None,
     docstring: Optional[Docstring] = None,
     directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
@@ -116,6 +118,7 @@ def _process_type(
         is_input=is_input,
         is_interface=is_interface,
         interfaces=interfaces,
+        description_sources=description_sources,
         description=description,
         docstring=docstring,
         directives=directives,
@@ -160,6 +163,7 @@ def type(
     name: str = None,
     is_input: bool = False,
     is_interface: bool = False,
+    description_sources: Optional[List[DescriptionSource]] = None,
     description: str = None,
     directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
     extend: bool = False,
@@ -174,6 +178,7 @@ def type(
     name: str = None,
     is_input: bool = False,
     is_interface: bool = False,
+    description_sources: Optional[List[DescriptionSource]] = None,
     description: str = None,
     directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
     extend: bool = False,
@@ -187,6 +192,7 @@ def type(
     name=None,
     is_input=False,
     is_interface=False,
+    description_sources=None,
     description=None,
     directives=(),
     extend=False,
@@ -217,6 +223,7 @@ def type(
             name=name,
             is_input=is_input,
             is_interface=is_interface,
+            description_sources=description_sources,
             description=description,
             docstring=docstring,
             directives=directives,
@@ -256,6 +263,7 @@ def input(
     cls=None,
     *,
     name=None,
+    description_sources: Optional[List[DescriptionSource]] = None,
     description=None,
     directives=(),
 ):
@@ -267,7 +275,12 @@ def input(
     """
 
     return type(
-        cls, name=name, description=description, directives=directives, is_input=True
+        cls,
+        name=name,
+        description_sources=description_sources,
+        description=description,
+        directives=directives,
+        is_input=True,
     )
 
 
@@ -276,6 +289,7 @@ def interface(
     cls: Type = None,
     *,
     name: str = None,
+    description_sources: Optional[List[DescriptionSource]] = None,
     description: str = None,
     directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
 ):
@@ -289,6 +303,7 @@ def interface(
     return type(
         cls,
         name=name,
+        description_sources=description_sources,
         description=description,
         directives=directives,
         is_interface=True,

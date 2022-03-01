@@ -25,6 +25,7 @@ from graphql import GraphQLResolveInfo
 
 import strawberry
 from strawberry.arguments import UNSET
+from strawberry.description_source import DescriptionSource
 from strawberry.experimental.pydantic.conversion import (
     convert_pydantic_model_to_strawberry_class,
     convert_strawberry_class_to_pydantic_model,
@@ -144,6 +145,7 @@ def type(
     name: Optional[str] = None,
     is_input: bool = False,
     is_interface: bool = False,
+    description_sources: Optional[List[DescriptionSource]] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
     all_fields: bool = False,
@@ -255,6 +257,7 @@ def type(
             name=name,
             is_input=is_input,
             is_interface=is_interface,
+            description_sources=description_sources,
             description=description,
             docstring=docstring,
             directives=directives,

@@ -2,17 +2,16 @@ import dataclasses
 from enum import EnumMeta
 from typing import Any, Callable, List, Mapping, Optional, TypeVar, Union, overload
 
+from strawberry.description_source import DescriptionSource
+from strawberry.exceptions import ObjectIsNotAnEnumError
 from strawberry.type import StrawberryType
 from strawberry.utils.docstrings import Docstring
-
-from .exceptions import ObjectIsNotAnEnumError
 
 
 @dataclasses.dataclass
 class EnumValue:
     name: str
     value: Any
-    description: Optional[str] = None
 
 
 @dataclasses.dataclass
@@ -20,6 +19,7 @@ class EnumDefinition(StrawberryType):
     wrapped_cls: EnumMeta
     name: str
     values: List[EnumValue]
+    description_sources: Optional[List[DescriptionSource]] = None
     description: Optional[str] = None
     docstring: Optional[Docstring] = None
 
@@ -41,7 +41,10 @@ EnumType = TypeVar("EnumType", bound=EnumMeta)
 
 
 def _process_enum(
-    cls: EnumType, name: Optional[str] = None, description: Optional[str] = None
+    cls: EnumType,
+    name: Optional[str] = None,
+    description_sources: Optional[List[DescriptionSource]] = None,
+    description: Optional[str] = None,
 ) -> EnumType:
     if not isinstance(cls, EnumMeta):
         raise ObjectIsNotAnEnumError(cls)
@@ -55,6 +58,7 @@ def _process_enum(
         wrapped_cls=cls,
         name=name,
         values=values,
+        description_sources=description_sources,
         description=description,
         docstring=Docstring.get(cls),
     )
@@ -75,7 +79,11 @@ def enum(
 
 
 def enum(
-    _cls: Optional[EnumType] = None, *, name=None, description=None
+    _cls: Optional[EnumType] = None,
+    *,
+    name=None,
+    description_sources: Optional[List[DescriptionSource]] = None,
+    description=None,
 ) -> Union[EnumType, Callable[[EnumType], EnumType]]:
     """Registers the enum in the GraphQL type system.
 
@@ -84,7 +92,7 @@ def enum(
     """
 
     def wrap(cls: EnumType) -> EnumType:
-        return _process_enum(cls, name, description)
+        return _process_enum(cls, name, description_sources, description)
 
     if not _cls:
         return wrap

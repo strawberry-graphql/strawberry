@@ -23,6 +23,7 @@ from typing_extensions import Literal
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import UNSET, StrawberryArgument
+from strawberry.description_source import DescriptionSource
 from strawberry.exceptions import InvalidDefaultFactoryError, InvalidFieldArgument
 from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.type import StrawberryType
@@ -51,6 +52,7 @@ class StrawberryField(dataclasses.Field):
         type_annotation: Optional[StrawberryAnnotation] = None,
         origin: Optional[Union[Type, Callable, staticmethod, classmethod]] = None,
         is_subscription: bool = False,
+        description_sources: Optional[List[DescriptionSource]] = None,
         description: Optional[str] = None,
         base_resolver: Optional[StrawberryResolver] = None,
         permission_classes: List[Type[BasePermission]] = (),  # type: ignore
@@ -91,11 +93,12 @@ class StrawberryField(dataclasses.Field):
 
         self.type_annotation = type_annotation
 
+        self.description_sources = description_sources
         self.description: Optional[str] = description
         self.origin = origin
 
         self._base_resolver: Optional[StrawberryResolver] = None
-        self.docstring: Optional[Docstring] = None
+        self.resolver_docstring: Optional[Docstring] = None
         if base_resolver is not None:
             self.base_resolver = base_resolver
 
@@ -176,7 +179,7 @@ class StrawberryField(dataclasses.Field):
     @base_resolver.setter
     def base_resolver(self, resolver: StrawberryResolver) -> None:
         self._base_resolver = resolver
-        self.docstring = Docstring.get(resolver.wrapped_func)
+        self.resolver_docstring = Docstring.get(resolver.wrapped_func)
 
         # Don't add field to __init__, __repr__ and __eq__ once it has a resolver
         self.init = False
@@ -314,6 +317,7 @@ def field(
     resolver: Callable[[], T],
     name: Optional[str] = None,
     is_subscription: bool = False,
+    description_sources: Optional[List[DescriptionSource]] = None,
     description: Optional[str] = None,
     init: Literal[False] = False,
     permission_classes: Optional[List[Type[BasePermission]]] = None,
@@ -330,6 +334,7 @@ def field(
     *,
     name: Optional[str] = None,
     is_subscription: bool = False,
+    description_sources: Optional[List[DescriptionSource]] = None,
     description: Optional[str] = None,
     init: Literal[True] = True,
     permission_classes: Optional[List[Type[BasePermission]]] = None,
@@ -347,6 +352,7 @@ def field(
     *,
     name: Optional[str] = None,
     is_subscription: bool = False,
+    description_sources: Optional[List[DescriptionSource]] = None,
     description: Optional[str] = None,
     permission_classes: Optional[List[Type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
@@ -362,6 +368,7 @@ def field(
     *,
     name=None,
     is_subscription=False,
+    description_sources: Optional[List[DescriptionSource]] = None,
     description=None,
     permission_classes=None,
     deprecation_reason=None,
@@ -392,6 +399,7 @@ def field(
         python_name=None,
         graphql_name=name,
         type_annotation=None,
+        description_sources=description_sources,
         description=description,
         is_subscription=is_subscription,
         permission_classes=permission_classes or [],

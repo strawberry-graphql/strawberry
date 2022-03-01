@@ -4,6 +4,7 @@ from enum import Enum
 from graphql import DirectiveLocation
 
 import strawberry
+from strawberry.description_source import DescriptionSource
 from strawberry.schema.config import StrawberryConfig
 
 
@@ -129,7 +130,7 @@ def test_docstrings_enabled():
         query=Query,
         mutation=Mutation,
         directives=[replace],
-        config=StrawberryConfig(descriptions_from_docstrings=True),
+        config=StrawberryConfig(description_sources=DescriptionSource),
     )
 
     expected = '''
@@ -220,7 +221,7 @@ def test_docstrings_disabled():
         query=Query,
         mutation=Mutation,
         directives=[replace],
-        config=StrawberryConfig(descriptions_from_docstrings=False),
+        config=StrawberryConfig(),
     )
 
     expected = """

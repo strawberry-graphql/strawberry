@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from pydantic.fields import ModelField
 
 import strawberry
+from strawberry.description_source import DescriptionSource
 from strawberry.experimental.pydantic.utils import (
     get_private_fields,
     get_strawberry_type_from_model,
@@ -53,6 +54,7 @@ def error_type(
     *,
     fields: List[str] = None,
     name: Optional[str] = None,
+    description_sources: Optional[List[DescriptionSource]] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
     all_fields: bool = False
@@ -122,6 +124,7 @@ def error_type(
             name=name,
             is_input=False,
             is_interface=False,
+            description_sources=description_sources,
             description=description,
             docstring=docstring,
             directives=directives,
