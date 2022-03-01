@@ -11,7 +11,7 @@ import pytest
 from typing_extensions import Literal
 
 
-ResultType = Literal["error", "info"]
+ResultType = Literal["error", "information"]
 
 
 @dataclass

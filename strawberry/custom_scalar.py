@@ -1,11 +1,14 @@
 from dataclasses import dataclass
-from typing import Callable, Mapping, Optional, TypeVar, Union
+from typing import Any, Callable, Mapping, Optional, TypeVar, Union, overload
 
 from graphql import GraphQLScalarType
 
 from strawberry.type import StrawberryType
 
 from .utils.str_converters import to_camel_case
+
+
+_T = TypeVar("_T", bound=type)
 
 
 def identity(x):
@@ -71,16 +74,46 @@ def _process_scalar(
     return wrapper
 
 
+@overload
 def scalar(
-    cls=None,
     *,
-    name: str = None,
+    name: Optional[str] = None,
     description: Optional[str] = None,
     specified_by_url: Optional[str] = None,
     serialize: Callable = identity,
     parse_value: Optional[Callable] = None,
     parse_literal: Optional[Callable] = None,
-):
+) -> Callable[[_T], _T]:
+    ...
+
+
+@overload
+def scalar(
+    cls: _T,
+    *,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    specified_by_url: Optional[str] = None,
+    serialize: Callable = identity,
+    parse_value: Optional[Callable] = None,
+    parse_literal: Optional[Callable] = None,
+) -> _T:
+    ...
+
+
+# FIXME: We are tricking pyright into thinking that we are returning the given type
+# here or else it won't let us use any custom scalar to annotate attributes in
+# dataclasses/types. This should be properly solved when implementing StrawberryScalar
+def scalar(
+    cls=None,
+    *,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    specified_by_url: Optional[str] = None,
+    serialize: Callable = identity,
+    parse_value: Optional[Callable] = None,
+    parse_literal: Optional[Callable] = None,
+) -> Any:
     """Annotates a class or type as a GraphQL custom scalar.
 
     Example usages:
