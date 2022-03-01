@@ -1,3 +1,4 @@
+import asyncio
 from datetime import timedelta
 
 from aiohttp import web
@@ -85,3 +86,8 @@ class GraphQLView:
         self, request: web.Request, result: ExecutionResult
     ) -> GraphQLHTTPResponse:
         return process_result(result)
+
+
+# Mark the view as coroutine so that AIOHTTP does not confuse it with a deprecated bare
+# handler function.
+GraphQLView._is_coroutine = asyncio.coroutines._is_coroutine
