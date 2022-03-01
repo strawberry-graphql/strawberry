@@ -14,6 +14,10 @@ from strawberry.types import ExecutionResult
 
 
 class GraphQLView:
+    # Mark the view as coroutine so that AIOHTTP does not confuse it with a deprecated
+    # bare handler function.
+    _is_coroutine = asyncio.coroutines._is_coroutine  # type: ignore[attr-defined]
+
     graphql_transport_ws_handler_class = GraphQLTransportWSHandler
     graphql_ws_handler_class = GraphQLWSHandler
     http_handler_class = HTTPHandler
@@ -86,8 +90,3 @@ class GraphQLView:
         self, request: web.Request, result: ExecutionResult
     ) -> GraphQLHTTPResponse:
         return process_result(result)
-
-
-# Mark the view as coroutine so that AIOHTTP does not confuse it with a deprecated bare
-# handler function.
-GraphQLView._is_coroutine = asyncio.coroutines._is_coroutine  # type: ignore[attr-defined] # noqa: E501
