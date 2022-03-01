@@ -5,7 +5,6 @@ from typing import List, Optional, Union
 import pytest
 
 import pydantic
-import sentinel
 
 import strawberry
 from strawberry.enum import EnumDefinition
@@ -106,7 +105,8 @@ def test_basic_type_auto_fields():
 
 
 def test_auto_fields_other_sentinel():
-    other_sentinel = sentinel.create("other_sentinel")
+    class other_sentinel:
+        pass
 
     class User(pydantic.BaseModel):
         age: int
