@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.99.1 - 2022-03-02
+-------------------
+
+This release fixed a false positive deprecation warning related to our AIOHTTP class based view.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) [PR #1691](https://github.com/strawberry-graphql/strawberry/pull/1691/)
+
+
 0.99.0 - 2022-02-28
 -------------------
 
