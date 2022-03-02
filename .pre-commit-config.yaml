@@ -9,6 +9,7 @@ repos:
       language: python
       'types': [python]
       require_serial: true
+      exclude: ^tests/codegen/snapshots/python/
 
   - repo: https://github.com/PyCQA/flake8
     rev: 4.0.1

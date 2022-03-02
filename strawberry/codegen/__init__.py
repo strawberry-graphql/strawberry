@@ -20,6 +20,7 @@ from graphql import (
     StringValueNode,
     TypeNode,
     ValueNode,
+    VariableDefinitionNode,
     VariableNode,
     parse,
 )
@@ -106,21 +107,7 @@ class QueryCodegen:
         if operation.name is None:
             raise NoOperationNameProvidedError()
 
-        operation_name = operation.name.value
-
-        result_class_name = f"{operation_name}Result"
-
-        query_type = self.schema.get_type_by_name("Query")
-
-        assert isinstance(query_type, TypeDefinition)
-
         self.operation = self._convert_operation(operation)
-
-        self._collect_types(
-            cast(HasSelectionSet, operation),
-            parent_type=query_type,
-            class_name=result_class_name,
-        )
 
         return self.print()
 
@@ -192,20 +179,27 @@ class QueryCodegen:
     def _convert_operation(
         self, operation_definition: OperationDefinitionNode
     ) -> GraphQLOperation:
+        query_type = self.schema.get_type_by_name("Query")
+        assert isinstance(query_type, TypeDefinition)
+
         assert operation_definition.name is not None
+        operation_name = operation_definition.name.value
+        result_class_name = f"{operation_name}Result"
+
+        self._collect_types(
+            cast(HasSelectionSet, operation_definition),
+            parent_type=query_type,
+            class_name=result_class_name,
+        )
 
         operation_kind = cast(
             Literal["query", "mutation", "subscription"],
             operation_definition.operation.value,
         )
 
-        variables = [
-            GraphQLVariable(
-                variable.variable.name.value,
-                self._collect_type_from_variable(variable.type),
-            )
-            for variable in operation_definition.variable_definitions
-        ]
+        variables = self._convert_variable_definitions(
+            operation_definition.variable_definitions, operation_name=operation_name
+        )
 
         return GraphQLOperation(
             operation_definition.name.value,
@@ -214,6 +208,33 @@ class QueryCodegen:
             directives=self._convert_directives(operation_definition.directives),
             variables=variables,
         )
+
+    def _convert_variable_definitions(
+        self,
+        variable_definitions: Optional[Iterable[VariableDefinitionNode]],
+        operation_name: str,
+    ) -> List[GraphQLVariable]:
+        if not variable_definitions:
+            return []
+
+        type_ = GraphQLObjectType(f"{operation_name}Variables", [])
+
+        self.types.append(type_)
+
+        variables: List[GraphQLVariable] = []
+
+        for variable_definition in variable_definitions:
+            variable_type = self._collect_type_from_variable(variable_definition.type)
+            variable = GraphQLVariable(
+                variable_definition.variable.name.value,
+                variable_type,
+            )
+
+            type_.fields.append(GraphQLField(variable.name, variable_type))
+
+            variables.append(variable)
+
+        return variables
 
     def _get_operations(self, ast: DocumentNode) -> List[OperationDefinitionNode]:
         return [
@@ -259,7 +280,9 @@ class QueryCodegen:
         type_: Optional[GraphQLType] = None
 
         if isinstance(variable_type, ListTypeNode):
-            type_ = GraphQLList(self._collect_type_from_variable(variable_type))
+            type_ = GraphQLList(
+                self._collect_type_from_variable(variable_type.type, variable_type)
+            )
 
         elif isinstance(variable_type, NonNullTypeNode):
             return self._collect_type_from_variable(variable_type.type, variable_type)

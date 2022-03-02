@@ -1,5 +1,5 @@
 import textwrap
-from typing import List
+from typing import List, Optional
 
 from strawberry.codegen import (
     CodegenPlugin,
@@ -44,17 +44,21 @@ class PrintOperationPlugin(CodegenPlugin):
 
         return f"({variables})"
 
-    def _print_graphql_type(self, type: GraphQLType) -> str:
-        if isinstance(type, GraphQLList):
-            return f"[{self._print_graphql_type(type.of_type)}]"
-
+    def _print_graphql_type(
+        self, type: GraphQLType, parent_type: Optional[GraphQLType] = None
+    ) -> str:
         if isinstance(type, GraphQLOptional):
-            if hasattr(type.of_type, "name"):
-                return type.of_type.name
+            return self._print_graphql_type(type.of_type, type)
 
-            return self._print_graphql_type(type.of_type)
+        if isinstance(type, GraphQLList):
+            type_name = f"[{self._print_graphql_type(type.of_type, type)}]"
+        else:
+            type_name = type.name
 
-        return f"{type.name}!"
+        if parent_type and isinstance(parent_type, GraphQLOptional):
+            return type_name
+
+        return f"{type_name}!"
 
     def _print_argument_value(self, value: GraphQLArgumentValue) -> str:
         if isinstance(value, GraphQLStringValue):
