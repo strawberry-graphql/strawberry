@@ -50,9 +50,18 @@ class Image(Node):
 
 
 @strawberry.input
+class PersonInput:
+    name: str
+
+
+@strawberry.input
 class ExampleInput:
+    id: strawberry.ID
     name: str
     age: int
+    person: Optional[PersonInput]
+    people: List[PersonInput]
+    optional_people: Optional[List[PersonInput]]
 
 
 @strawberry.type

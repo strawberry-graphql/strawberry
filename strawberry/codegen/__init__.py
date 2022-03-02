@@ -111,6 +111,12 @@ class QueryCodegen:
 
         return self.print()
 
+    def _collect_type(self, type_: GraphQLType) -> None:
+        if type_ in self.types:
+            return
+
+        self.types.append(type_)
+
     def _convert_selection(self, selection: SelectionNode) -> GraphQLSelection:
         if isinstance(selection, FieldNode):
             return GraphQLFieldSelection(
@@ -219,7 +225,7 @@ class QueryCodegen:
 
         type_ = GraphQLObjectType(f"{operation_name}Variables", [])
 
-        self.types.append(type_)
+        self._collect_type(type_)
 
         variables: List[GraphQLVariable] = []
 
@@ -274,6 +280,40 @@ class QueryCodegen:
 
         assert False, field_type
 
+    def _collect_type_from_strawberry_type(
+        self, strawberry_type: Union[type, StrawberryType]
+    ) -> GraphQLType:
+        type_: GraphQLType
+
+        if isinstance(strawberry_type, StrawberryOptional):
+            return GraphQLOptional(
+                self._collect_type_from_strawberry_type(strawberry_type.of_type)
+            )
+
+        if isinstance(strawberry_type, StrawberryList):
+            return GraphQLOptional(
+                self._collect_type_from_strawberry_type(strawberry_type.of_type)
+            )
+
+        if hasattr(strawberry_type, "_type_definition"):
+            strawberry_type = strawberry_type._type_definition
+
+        if isinstance(strawberry_type, TypeDefinition):
+            type_ = GraphQLObjectType(
+                strawberry_type.name,
+                [],
+            )
+
+            for field in strawberry_type.fields:
+                field_type = self._collect_type_from_strawberry_type(field.type)
+                type_.fields.append(GraphQLField(field.name, field_type))
+
+            self._collect_type(type_)
+        else:
+            type_ = self._get_field_type(strawberry_type)
+
+        return type_
+
     def _collect_type_from_variable(
         self, variable_type: TypeNode, parent_type: Optional[TypeNode] = None
     ) -> GraphQLType:
@@ -288,7 +328,9 @@ class QueryCodegen:
             return self._collect_type_from_variable(variable_type.type, variable_type)
 
         elif isinstance(variable_type, NamedTypeNode):
-            type_ = self.schema.get_type_by_name(variable_type.name.value)
+            strawberry_type = self.schema.get_type_by_name(variable_type.name.value)
+
+            type_ = self._collect_type_from_strawberry_type(strawberry_type)
 
         assert type_
 
@@ -333,7 +375,7 @@ class QueryCodegen:
 
             union = GraphQLUnion(class_name, sub_types)
 
-            self.types.append(union)
+            self._collect_type(union)
 
             return GraphQLField(selection.name.value, union)
 
@@ -383,7 +425,7 @@ class QueryCodegen:
 
         union = GraphQLUnion(class_name, sub_types)
 
-        self.types.append(union)
+        self._collect_type(union)
 
         return union
 
@@ -413,7 +455,7 @@ class QueryCodegen:
 
             current_type.fields.append(field)
 
-        self.types.append(current_type)
+        self._collect_type(current_type)
 
         return current_type
 
@@ -482,11 +524,11 @@ class QueryCodegen:
     ) -> GraphQLScalar:
         graphql_scalar = GraphQLScalar(scalar_definition.name, python_type=python_type)
 
-        self.types.append(graphql_scalar)
+        self._collect_type(graphql_scalar)
 
         return graphql_scalar
 
     def _collect_enum(self, enum: EnumDefinition) -> GraphQLEnum:
         graphql_enum = GraphQLEnum(enum.name, [value.name for value in enum.values])
-        self.types.append(graphql_enum)
+        self._collect_type(graphql_enum)
         return graphql_enum
