@@ -49,6 +49,12 @@ class Image(Node):
     url: str
 
 
+@strawberry.input
+class ExampleInput:
+    name: str
+    age: int
+
+
 @strawberry.type
 class Query:
     id: strawberry.ID
@@ -71,6 +77,10 @@ class Query:
     json: JSON
     union: PersonOrAnimal
     interface: Node
+
+    @strawberry.field
+    def with_inputs(self, id: Optional[strawberry.ID], input: ExampleInput) -> bool:
+        return True
 
 
 @pytest.fixture

@@ -9,10 +9,13 @@ from strawberry.codegen import (
     GraphQLFieldSelection,
     GraphQLInlineFragment,
     GraphQLIntValue,
+    GraphQLList,
     GraphQLOperation,
+    GraphQLOptional,
     GraphQLSelection,
     GraphQLStringValue,
     GraphQLType,
+    GraphQLVariableReference,
 )
 
 
@@ -20,11 +23,38 @@ class PrintOperationPlugin(CodegenPlugin):
     def print(self, types: List[GraphQLType], operation: GraphQLOperation) -> str:
         return "\n".join(
             [
-                f"{operation.kind} {operation.name}{self._print_directives(operation.directives)} {{",  # noqa: E501
+                (
+                    f"{operation.kind} {operation.name}"
+                    f"{self._print_operation_variables(operation)}"
+                    f"{self._print_directives(operation.directives)} {{"
+                ),
                 self._print_selections(operation.selections),
                 "}",
             ]
         )
+
+    def _print_operation_variables(self, operation: GraphQLOperation) -> str:
+        if not operation.variables:
+            return ""
+
+        variables = ", ".join(
+            f"${v.name}: {self._print_graphql_type(v.type)}"
+            for v in operation.variables
+        )
+
+        return f"({variables})"
+
+    def _print_graphql_type(self, type: GraphQLType) -> str:
+        if isinstance(type, GraphQLList):
+            return f"[{self._print_graphql_type(type.of_type)}]"
+
+        if isinstance(type, GraphQLOptional):
+            if hasattr(type.of_type, "name"):
+                return type.of_type.name
+
+            return self._print_graphql_type(type.of_type)
+
+        return f"{type.name}!"
 
     def _print_argument_value(self, value: GraphQLArgumentValue) -> str:
         if isinstance(value, GraphQLStringValue):
@@ -32,6 +62,9 @@ class PrintOperationPlugin(CodegenPlugin):
 
         if isinstance(value, GraphQLIntValue):
             return str(value.value)
+
+        if isinstance(value, GraphQLVariableReference):
+            return f"${value.value}"
 
         raise ValueError(f"not supported: {type(value)}")
 
@@ -62,7 +95,11 @@ class PrintOperationPlugin(CodegenPlugin):
         )
 
     def _print_field_selection(self, selection: GraphQLFieldSelection) -> str:
-        field = f"{selection.field}{self._print_directives(selection.directives)}"
+        field = (
+            f"{selection.field}"
+            f"{self._print_arguments(selection.arguments)}"
+            f"{self._print_directives(selection.directives)}"
+        )
 
         if selection.selections:
             return field + f" {{\n{self._print_selections(selection.selections)}\n}}"

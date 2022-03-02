@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
 from typing import Iterable, List, Optional, Type, Union, cast
 
 from typing_extensions import Literal, Protocol
@@ -12,11 +11,16 @@ from graphql import (
     FieldNode,
     InlineFragmentNode,
     IntValueNode,
+    ListTypeNode,
+    NamedTypeNode,
+    NonNullTypeNode,
     OperationDefinitionNode,
     SelectionNode,
     SelectionSetNode,
     StringValueNode,
+    TypeNode,
     ValueNode,
+    VariableNode,
     parse,
 )
 
@@ -38,110 +42,31 @@ from .exceptions import (
     NoOperationNameProvidedError,
     NoOperationProvidedError,
 )
+from .types import (
+    GraphQLArgument,
+    GraphQLArgumentValue,
+    GraphQLDirective,
+    GraphQLEnum,
+    GraphQLField,
+    GraphQLFieldSelection,
+    GraphQLInlineFragment,
+    GraphQLIntValue,
+    GraphQLList,
+    GraphQLObjectType,
+    GraphQLOperation,
+    GraphQLOptional,
+    GraphQLScalar,
+    GraphQLSelection,
+    GraphQLStringValue,
+    GraphQLType,
+    GraphQLUnion,
+    GraphQLVariable,
+    GraphQLVariableReference,
+)
 
 
 class HasSelectionSet(Protocol):
     selection_set: Optional[SelectionSetNode]
-
-
-@dataclass
-class GraphQLOptional:
-    of_type: GraphQLType
-
-
-@dataclass
-class GraphQLList:
-    of_type: GraphQLType
-
-
-@dataclass
-class GraphQLUnion:
-    name: str
-    types: List[GraphQLObjectType]
-
-
-@dataclass
-class GraphQLField:
-    name: str
-    type: GraphQLType
-
-
-@dataclass
-class GraphQLObjectType:
-    name: str
-    fields: List[GraphQLField]
-
-
-@dataclass
-class GraphQLEnum:
-    name: str
-    values: List[str]
-
-
-@dataclass
-class GraphQLScalar:
-    name: str
-    python_type: Optional[Type]
-
-
-GraphQLType = Union[
-    GraphQLObjectType,
-    GraphQLEnum,
-    GraphQLScalar,
-    GraphQLOptional,
-    GraphQLList,
-    GraphQLUnion,
-]
-
-
-@dataclass
-class GraphQLFieldSelection:
-    # TODO: alias, arguments
-    field: str
-    selections: List[GraphQLSelection]
-    directives: List[GraphQLDirective]
-
-
-@dataclass
-class GraphQLInlineFragment:
-    type_condition: str
-    selections: List[GraphQLSelection]
-
-
-GraphQLSelection = Union[GraphQLFieldSelection, GraphQLInlineFragment]
-
-
-@dataclass
-class GraphQLStringValue:
-    value: str
-
-
-@dataclass
-class GraphQLIntValue:
-    value: int
-
-
-GraphQLArgumentValue = Union[GraphQLStringValue, GraphQLIntValue]
-
-
-@dataclass
-class GraphQLArgument:
-    name: str
-    value: GraphQLArgumentValue
-
-
-@dataclass
-class GraphQLDirective:
-    name: str
-    arguments: List[GraphQLArgument]
-
-
-@dataclass
-class GraphQLOperation:
-    name: str
-    kind: Literal["query", "mutation", "subscription"]
-    selections: List[GraphQLSelection]
-    directives: List[GraphQLDirective]
 
 
 class CodegenPlugin:
@@ -205,6 +130,7 @@ class QueryCodegen:
                 selection.name.value,
                 selections=self._convert_selection_set(selection.selection_set),
                 directives=self._convert_directives(selection.directives),
+                arguments=self._convert_arguments(selection.arguments),
             )
 
         if isinstance(selection, InlineFragmentNode):
@@ -232,6 +158,9 @@ class QueryCodegen:
 
         if isinstance(value, IntValueNode):
             return GraphQLIntValue(int(value.value))
+
+        if isinstance(value, VariableNode):
+            return GraphQLVariableReference(value.name.value)
 
         raise ValueError(f"Unsupported type: {type(value)}")
 
@@ -269,11 +198,21 @@ class QueryCodegen:
             Literal["query", "mutation", "subscription"],
             operation_definition.operation.value,
         )
+
+        variables = [
+            GraphQLVariable(
+                variable.variable.name.value,
+                self._collect_type_from_variable(variable.type),
+            )
+            for variable in operation_definition.variable_definitions
+        ]
+
         return GraphQLOperation(
             operation_definition.name.value,
             kind=operation_kind,
             selections=self._convert_selection_set(operation_definition.selection_set),
             directives=self._convert_directives(operation_definition.directives),
+            variables=variables,
         )
 
     def _get_operations(self, ast: DocumentNode) -> List[OperationDefinitionNode]:
@@ -313,6 +252,27 @@ class QueryCodegen:
             return self._collect_enum(field_type)
 
         assert False, field_type
+
+    def _collect_type_from_variable(
+        self, variable_type: TypeNode, parent_type: Optional[TypeNode] = None
+    ) -> GraphQLType:
+        type_: Optional[GraphQLType] = None
+
+        if isinstance(variable_type, ListTypeNode):
+            type_ = GraphQLList(self._collect_type_from_variable(variable_type))
+
+        elif isinstance(variable_type, NonNullTypeNode):
+            return self._collect_type_from_variable(variable_type.type, variable_type)
+
+        elif isinstance(variable_type, NamedTypeNode):
+            type_ = self.schema.get_type_by_name(variable_type.name.value)
+
+        assert type_
+
+        if parent_type is not None and isinstance(parent_type, NonNullTypeNode):
+            return type_
+
+        return GraphQLOptional(type_)
 
     def _field_from_selection(
         self, selection: FieldNode, parent_type: TypeDefinition
