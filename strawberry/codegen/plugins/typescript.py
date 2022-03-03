@@ -1,8 +1,8 @@
 import textwrap
 from typing import List
 
-from strawberry.codegen import (
-    CodegenPlugin,
+from strawberry.codegen import QueryCodegenPlugin
+from strawberry.codegen.types import (
     GraphQLEnum,
     GraphQLField,
     GraphQLList,
@@ -15,7 +15,7 @@ from strawberry.codegen import (
 )
 
 
-class TypeScriptPlugin(CodegenPlugin):
+class TypeScriptPlugin(QueryCodegenPlugin):
     SCALARS_TO_TS_TYPE = {
         "ID": "string",
         "Int": "number",

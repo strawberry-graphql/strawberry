@@ -1,23 +1,23 @@
 import importlib
 import inspect
 import sys
-from typing import List, Optional
+from typing import List, Optional, Type
 
 import click
 
 from strawberry.cli.utils import load_schema
-from strawberry.codegen import CodegenPlugin, QueryCodegen
+from strawberry.codegen import QueryCodegen, QueryCodegenPlugin
 
 
 def _is_codegen_plugin(obj: object) -> bool:
     return (
         inspect.isclass(obj)
-        and issubclass(obj, CodegenPlugin)
-        and obj is not CodegenPlugin
+        and issubclass(obj, QueryCodegenPlugin)
+        and obj is not QueryCodegenPlugin
     )
 
 
-def _import_plugin(plugin: str) -> Optional[CodegenPlugin]:
+def _import_plugin(plugin: str) -> Optional[Type[QueryCodegenPlugin]]:
     module_name = plugin
     symbol_name: Optional[str] = None
 
@@ -30,11 +30,11 @@ def _import_plugin(plugin: str) -> Optional[CodegenPlugin]:
         return None
 
     if symbol_name:
-        plugin = getattr(module, symbol_name)
+        obj = getattr(module, symbol_name)
 
-        if plugin:
-            assert isinstance(plugin, CodegenPlugin)
-            return plugin
+        if obj:
+            assert _is_codegen_plugin(obj)
+            return obj
     else:
         symbols = {
             key: value
@@ -53,8 +53,12 @@ def _import_plugin(plugin: str) -> Optional[CodegenPlugin]:
             if _is_codegen_plugin(obj):
                 return obj
 
+    # TODO: should this raise an error?
 
-def _load_plugin(plugin_path: str) -> CodegenPlugin:
+    return None
+
+
+def _load_plugin(plugin_path: str) -> Type[QueryCodegenPlugin]:
     # try to import plugin_name from current folder
     # then try to import from strawberry.codegen.plugins
 
@@ -69,7 +73,7 @@ def _load_plugin(plugin_path: str) -> CodegenPlugin:
     return plugin
 
 
-def _load_plugins(plugins: List[str]) -> List[CodegenPlugin]:
+def _load_plugins(plugins: List[str]) -> List[QueryCodegenPlugin]:
     return [_load_plugin(plugin)() for plugin in plugins]
 
 

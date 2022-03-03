@@ -2,8 +2,8 @@ import textwrap
 from collections import defaultdict
 from typing import Dict, List, Set
 
-from strawberry.codegen import (
-    CodegenPlugin,
+from strawberry.codegen import QueryCodegenPlugin
+from strawberry.codegen.types import (
     GraphQLEnum,
     GraphQLField,
     GraphQLList,
@@ -16,7 +16,7 @@ from strawberry.codegen import (
 )
 
 
-class PythonPlugin(CodegenPlugin):
+class PythonPlugin(QueryCodegenPlugin):
     SCALARS_TO_PYTHON_TYPES = {
         "ID": "str",
         "Int": "int",

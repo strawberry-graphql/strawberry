@@ -1,8 +1,8 @@
 import textwrap
 from typing import List, Optional
 
-from strawberry.codegen import (
-    CodegenPlugin,
+from strawberry.codegen import QueryCodegenPlugin
+from strawberry.codegen.types import (
     GraphQLArgument,
     GraphQLArgumentValue,
     GraphQLDirective,
@@ -19,7 +19,7 @@ from strawberry.codegen import (
 )
 
 
-class PrintOperationPlugin(CodegenPlugin):
+class PrintOperationPlugin(QueryCodegenPlugin):
     def print(self, types: List[GraphQLType], operation: GraphQLOperation) -> str:
         return "\n".join(
             [

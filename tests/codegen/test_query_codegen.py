@@ -12,7 +12,7 @@ import pytest
 
 from pytest_snapshot.plugin import Snapshot
 
-from strawberry.codegen import CodegenPlugin, QueryCodegen
+from strawberry.codegen import QueryCodegen, QueryCodegenPlugin
 from strawberry.codegen.exceptions import (
     MultipleOperationsProvidedError,
     NoOperationNameProvidedError,
@@ -37,7 +37,7 @@ QUERIES = list(HERE.glob("queries/*.graphql"))
 @pytest.mark.parametrize("query", QUERIES, ids=[x.name for x in QUERIES])
 def test_codegen(
     query: Path,
-    plugin_class: Type[CodegenPlugin],
+    plugin_class: Type[QueryCodegenPlugin],
     plugin_name: str,
     extension: str,
     snapshot: Snapshot,
