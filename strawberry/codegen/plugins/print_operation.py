@@ -22,7 +22,7 @@ from strawberry.codegen.types import (
 class PrintOperationPlugin(QueryCodegenPlugin):
     def generate_code(
         self, types: List[GraphQLType], operation: GraphQLOperation
-    ) -> Optional[CodegenFile]:
+    ) -> List[CodegenFile]:
         code = "\n".join(
             [
                 (
@@ -34,7 +34,7 @@ class PrintOperationPlugin(QueryCodegenPlugin):
                 "}",
             ]
         )
-        return CodegenFile("query.graphql", code)
+        return [CodegenFile("query.graphql", code)]
 
     def _print_operation_variables(self, operation: GraphQLOperation) -> str:
         if not operation.variables:

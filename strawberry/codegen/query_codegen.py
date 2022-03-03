@@ -88,8 +88,8 @@ class HasSelectionSet(Protocol):
 class QueryCodegenPlugin:
     def generate_code(
         self, types: List[GraphQLType], operation: GraphQLOperation
-    ) -> Optional[CodegenFile]:
-        return None
+    ) -> List[CodegenFile]:
+        return []
 
 
 class QueryCodegenPluginManager:
@@ -102,9 +102,9 @@ class QueryCodegenPluginManager:
         result = CodegenResult(files=[])
 
         for plugin in self.plugins:
-            file = plugin.generate_code(types, operation)
-            if file:
-                result.files.append(file)
+            files = plugin.generate_code(types, operation)
+
+            result.files.extend(files)
 
         return result
 

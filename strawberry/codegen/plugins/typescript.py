@@ -1,5 +1,5 @@
 import textwrap
-from typing import List, Optional
+from typing import List
 
 from strawberry.codegen import CodegenFile, QueryCodegenPlugin
 from strawberry.codegen.types import (
@@ -33,10 +33,10 @@ class TypeScriptPlugin(QueryCodegenPlugin):
 
     def generate_code(
         self, types: List[GraphQLType], operation: GraphQLOperation
-    ) -> Optional[CodegenFile]:
+    ) -> List[CodegenFile]:
         printed_types = list(filter(None, (self._print_type(type) for type in types)))
 
-        return CodegenFile("types.ts", "\n\n".join(printed_types))
+        return [CodegenFile("types.ts", "\n\n".join(printed_types))]
 
     def _get_type_name(self, type_: GraphQLType) -> str:
         if isinstance(type_, GraphQLOptional):
