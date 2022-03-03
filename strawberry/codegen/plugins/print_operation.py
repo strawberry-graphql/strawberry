@@ -1,7 +1,7 @@
 import textwrap
 from typing import List, Optional
 
-from strawberry.codegen import QueryCodegenPlugin
+from strawberry.codegen import CodegenFile, QueryCodegenPlugin
 from strawberry.codegen.types import (
     GraphQLArgument,
     GraphQLArgumentValue,
@@ -20,8 +20,10 @@ from strawberry.codegen.types import (
 
 
 class PrintOperationPlugin(QueryCodegenPlugin):
-    def print(self, types: List[GraphQLType], operation: GraphQLOperation) -> str:
-        return "\n".join(
+    def generate_code(
+        self, types: List[GraphQLType], operation: GraphQLOperation
+    ) -> Optional[CodegenFile]:
+        code = "\n".join(
             [
                 (
                     f"{operation.kind} {operation.name}"
@@ -32,6 +34,7 @@ class PrintOperationPlugin(QueryCodegenPlugin):
                 "}",
             ]
         )
+        return CodegenFile("query.graphql", code)
 
     def _print_operation_variables(self, operation: GraphQLOperation) -> str:
         if not operation.variables:

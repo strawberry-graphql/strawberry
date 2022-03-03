@@ -1,8 +1,8 @@
 import textwrap
 from collections import defaultdict
-from typing import Dict, List, Set
+from typing import Dict, List, Optional, Set
 
-from strawberry.codegen import QueryCodegenPlugin
+from strawberry.codegen import CodegenFile, QueryCodegenPlugin
 from strawberry.codegen.types import (
     GraphQLEnum,
     GraphQLField,
@@ -33,11 +33,15 @@ class PythonPlugin(QueryCodegenPlugin):
     def __init__(self) -> None:
         self.imports: Dict[str, Set[str]] = defaultdict(set)
 
-    def print(self, types: List[GraphQLType], operation: GraphQLOperation) -> str:
+    def generate_code(
+        self, types: List[GraphQLType], operation: GraphQLOperation
+    ) -> Optional[CodegenFile]:
         printed_types = list(filter(None, (self._print_type(type) for type in types)))
         imports = self._print_imports()
 
-        return imports + "\n\n" + "\n\n".join(printed_types)
+        code = imports + "\n\n" + "\n\n".join(printed_types)
+
+        return CodegenFile("types.py", code.strip())
 
     def _print_imports(self) -> str:
         imports = [

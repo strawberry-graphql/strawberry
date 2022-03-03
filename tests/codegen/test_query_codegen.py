@@ -47,8 +47,10 @@ def test_codegen(
 
     result = generator.codegen(query.read_text())
 
+    code = result.to_string()
+
     snapshot.snapshot_dir = HERE / "snapshots" / plugin_name
-    snapshot.assert_match(result, f"{query.with_suffix('').stem}.{extension}")
+    snapshot.assert_match(code, f"{query.with_suffix('').stem}.{extension}")
 
 
 def test_codegen_fails_if_no_operation_name(schema):

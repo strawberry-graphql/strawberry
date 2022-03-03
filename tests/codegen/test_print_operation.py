@@ -20,4 +20,4 @@ def test_codegen(
 
     result = generator.codegen(query_content)
 
-    assert result == query_content
+    assert result.to_string() == query_content

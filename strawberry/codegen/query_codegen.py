@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from dataclasses import dataclass
 from typing import Iterable, List, Optional, Type, Union, cast
 
 from typing_extensions import Literal, Protocol
@@ -66,23 +67,46 @@ from .types import (
 )
 
 
+@dataclass
+class CodegenFile:
+    path: str
+    content: str
+
+
+@dataclass
+class CodegenResult:
+    files: List[CodegenFile]
+
+    def to_string(self) -> str:
+        return "\n".join(f.content for f in self.files) + "\n"
+
+
 class HasSelectionSet(Protocol):
     selection_set: Optional[SelectionSetNode]
 
 
 class QueryCodegenPlugin:
-    def print(self, types: List[GraphQLType], operation: GraphQLOperation) -> str:
-        return ""
+    def generate_code(
+        self, types: List[GraphQLType], operation: GraphQLOperation
+    ) -> Optional[CodegenFile]:
+        return None
 
 
 class QueryCodegenPluginManager:
     def __init__(self, plugins: List[QueryCodegenPlugin]) -> None:
         self.plugins = plugins
 
-    def print(self, types: List[GraphQLType], operation: GraphQLOperation) -> str:
-        return "\n\n".join(
-            plugin.print(types=types, operation=operation) for plugin in self.plugins
-        )
+    def generate_code(
+        self, types: List[GraphQLType], operation: GraphQLOperation
+    ) -> CodegenResult:
+        result = CodegenResult(files=[])
+
+        for plugin in self.plugins:
+            file = plugin.generate_code(types, operation)
+            if file:
+                result.files.append(file)
+
+        return result
 
 
 class QueryCodegen:
@@ -91,7 +115,7 @@ class QueryCodegen:
         self.plugin_manager = QueryCodegenPluginManager(plugins)
         self.types: List[GraphQLType] = []
 
-    def codegen(self, query: str) -> str:
+    def codegen(self, query: str) -> CodegenResult:
         ast = parse(query)
 
         operations = self._get_operations(ast)
@@ -109,7 +133,7 @@ class QueryCodegen:
 
         self.operation = self._convert_operation(operation)
 
-        return self.print()
+        return self.generate_code()
 
     def _collect_type(self, type_: GraphQLType) -> None:
         if type_ in self.types:
@@ -461,12 +485,9 @@ class QueryCodegen:
 
         return current_type
 
-    def print(self) -> str:
-        return (
-            self.plugin_manager.print(
-                types=self.types, operation=self.operation
-            ).strip()
-            + "\n"
+    def generate_code(self) -> CodegenResult:
+        return self.plugin_manager.generate_code(
+            types=self.types, operation=self.operation
         )
 
     def _collect_types_using_fragments(
