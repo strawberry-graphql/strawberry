@@ -444,3 +444,59 @@ def test_subscription_exceptions(test_client):
         assert response["payload"][0]["message"] == "TEST EXC"
 
         ws.close()
+
+
+def test_single_result_query_operation(test_client):
+    with test_client.websocket_connect(
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+    ) as ws:
+        ws.send_json(ConnectionInitMessage().as_dict())
+
+        response = ws.receive_json()
+        assert response == ConnectionAckMessage().as_dict()
+
+        ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(query="query { hello }"),
+            ).as_dict()
+        )
+
+        response = ws.receive_json()
+        assert (
+            response
+            == NextMessage(
+                id="sub1", payload={"data": {"hello": "Hello world"}}
+            ).as_dict()
+        )
+
+        response = ws.receive_json()
+        assert response == CompleteMessage(id="sub1").as_dict()
+
+
+def test_single_result_mutation_operation(test_client):
+    with test_client.websocket_connect(
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+    ) as ws:
+        ws.send_json(ConnectionInitMessage().as_dict())
+
+        response = ws.receive_json()
+        assert response == ConnectionAckMessage().as_dict()
+
+        ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(query="mutation { hello }"),
+            ).as_dict()
+        )
+
+        response = ws.receive_json()
+        assert (
+            response
+            == NextMessage(
+                id="sub1", payload={"data": {"hello": "strawberry"}}
+            ).as_dict()
+        )
+
+        response = ws.receive_json()
+        assert response == CompleteMessage(id="sub1").as_dict()

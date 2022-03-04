@@ -509,3 +509,71 @@ async def test_subscription_exceptions(aiohttp_client):
 
         await ws.close()
         assert ws.closed
+
+
+async def test_single_result_query_operation(aiohttp_client):
+    app = create_app()
+    aiohttp_app_client = await aiohttp_client(app)
+
+    async with aiohttp_app_client.ws_connect(
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
+    ) as ws:
+        await ws.send_json(ConnectionInitMessage().as_dict())
+
+        response = await ws.receive_json()
+        assert response == ConnectionAckMessage().as_dict()
+
+        await ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(query="query { hello }"),
+            ).as_dict()
+        )
+
+        response = await ws.receive_json()
+        assert (
+            response
+            == NextMessage(
+                id="sub1", payload={"data": {"hello": "strawberry"}}
+            ).as_dict()
+        )
+
+        response = await ws.receive_json()
+        assert response == CompleteMessage(id="sub1").as_dict()
+
+        await ws.close()
+        assert ws.closed
+
+
+async def test_single_result_mutation_operation(aiohttp_client):
+    app = create_app()
+    aiohttp_app_client = await aiohttp_client(app)
+
+    async with aiohttp_app_client.ws_connect(
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
+    ) as ws:
+        await ws.send_json(ConnectionInitMessage().as_dict())
+
+        response = await ws.receive_json()
+        assert response == ConnectionAckMessage().as_dict()
+
+        await ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(query="mutation { hello }"),
+            ).as_dict()
+        )
+
+        response = await ws.receive_json()
+        assert (
+            response
+            == NextMessage(
+                id="sub1", payload={"data": {"hello": "strawberry"}}
+            ).as_dict()
+        )
+
+        response = await ws.receive_json()
+        assert response == CompleteMessage(id="sub1").as_dict()
+
+        await ws.close()
+        assert ws.closed
