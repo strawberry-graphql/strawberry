@@ -138,3 +138,6 @@ class PythonPlugin(QueryCodegenPlugin):
             return self._print_scalar_type(type_)
 
         raise ValueError(f"Unknown type: {type}")
+
+
+__all__ = ["PythonPlugin"]

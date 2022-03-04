@@ -32,9 +32,8 @@ def _import_plugin(plugin: str) -> Optional[Type[QueryCodegenPlugin]]:
     if symbol_name:
         obj = getattr(module, symbol_name)
 
-        if obj:
-            assert _is_codegen_plugin(obj)
-            return obj
+        assert _is_codegen_plugin(obj)
+        return obj
     else:
         symbols = {
             key: value
