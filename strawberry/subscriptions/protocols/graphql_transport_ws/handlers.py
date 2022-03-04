@@ -8,11 +8,12 @@ from graphql import (
     ExecutionResult as GraphQLExecutionResult,
     GraphQLError,
     GraphQLSyntaxError,
+    OperationType,
     parse,
 )
 from graphql.error.graphql_error import format_error as format_graphql_error
 
-from strawberry.schema import Schema
+from strawberry.schema import BaseSchema
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     CompleteMessage,
     ConnectionAckMessage,
@@ -25,14 +26,14 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     SubscribeMessage,
     SubscribeMessagePayload,
 )
-from strawberry.types.execution import ExecutionContext
 from strawberry.utils.debug import pretty_print_graphql_operation
+from strawberry.utils.get_operation_type import get_operation_type
 
 
 class BaseGraphQLTransportWSHandler(ABC):
     def __init__(
         self,
-        schema: Schema,
+        schema: BaseSchema,
         debug: bool,
         connection_init_wait_timeout: timedelta,
     ):
@@ -137,20 +138,15 @@ class BaseGraphQLTransportWSHandler(ABC):
             await self.close(code=4400, reason=exc.message)
             return
 
-        execution_context = ExecutionContext(
-            query=message.payload.query,
-            schema=self.schema,
-            provided_operation_name=message.payload.operationName,
-            graphql_document=graphql_document,
-        )
-
         try:
-            operation_type = execution_context.operation_type
+            operation_type = get_operation_type(
+                graphql_document, message.payload.operationName
+            )
         except RuntimeError:
             await self.close(code=4400, reason="Can't get GraphQL operation type")
             return
 
-        if operation_type == "SUBSCRIPTION":
+        if operation_type == OperationType.SUBSCRIPTION:
             return await self.handle_streaming_operation(message)
         else:
             return await self.handle_single_result_operation(message)
