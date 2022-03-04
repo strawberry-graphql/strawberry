@@ -51,7 +51,15 @@ def test_codegen(cli_runner, query_file_path: str, tmp_path: Path):
     selector = "tests.fixtures.sample_package.sample_module:schema"
     result = cli_runner.invoke(
         cmd_codegen,
-        ["-p", "tests.cli.test_codegen", "-o", tmp_path, selector, query_file_path],
+        [
+            "-p",
+            "tests.cli.test_codegen",
+            "-o",
+            tmp_path,
+            "--schema",
+            selector,
+            query_file_path,
+        ],
     )
 
     assert result.exit_code == 0
@@ -73,6 +81,7 @@ def test_codegen_passing_plugin_symbol(
             "tests.cli.test_codegen:EmptyPlugin",
             "-o",
             tmp_path,
+            "--schema",
             selector,
             query_file_path,
         ],
@@ -92,7 +101,13 @@ def test_codegen_returns_error_when_symbol_does_not_exist(
     selector = "tests.fixtures.sample_package.sample_module:schema"
     result = cli_runner.invoke(
         cmd_codegen,
-        ["-p", "tests.cli.test_codegen:SomePlugin", selector, query_file_path],
+        [
+            "-p",
+            "tests.cli.test_codegen:SomePlugin",
+            "--schema",
+            selector,
+            query_file_path,
+        ],
     )
 
     assert result.exit_code == 1
@@ -107,7 +122,7 @@ def test_codegen_returns_error_when_module_does_not_exist(
     selector = "tests.fixtures.sample_package.sample_module:schema"
     result = cli_runner.invoke(
         cmd_codegen,
-        ["-p", "fake_module_plugin", selector, query_file_path],
+        ["-p", "fake_module_plugin", "--schema", selector, query_file_path],
     )
 
     assert result.exit_code == 1
@@ -120,7 +135,7 @@ def test_codegen_returns_error_when_does_not_find_plugin(
     selector = "tests.fixtures.sample_package.sample_module:schema"
     result = cli_runner.invoke(
         cmd_codegen,
-        ["-p", "tests.cli.test_server", selector, query_file_path],
+        ["-p", "tests.cli.test_server", "--schema", selector, query_file_path],
     )
 
     assert result.exit_code == 1
@@ -130,7 +145,8 @@ def test_codegen_returns_error_when_does_not_find_plugin(
 def test_codegen_finds_our_plugins(cli_runner, query_file_path: str, tmp_path: Path):
     selector = "tests.fixtures.sample_package.sample_module:schema"
     result = cli_runner.invoke(
-        cmd_codegen, ["-p", "python", selector, "-o", tmp_path, query_file_path]
+        cmd_codegen,
+        ["-p", "python", "--schema", selector, "-o", tmp_path, query_file_path],
     )
 
     assert result.exit_code == 0

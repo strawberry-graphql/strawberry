@@ -76,8 +76,8 @@ def _load_plugins(plugins: List[str]) -> List[QueryCodegenPlugin]:
 
 @click.command(short_help="Generate code from a query")
 @click.option("--plugin", "-p", multiple=True)
-@click.option("--out", "-o", default=".", help="Output directory")
-@click.argument("schema", type=str)
+@click.option("--output-dir", "-o", default=".", help="Output directory")
+@click.option("--schema", type=str, required=True)
 @click.argument("query", type=str)
 @click.option(
     "--app-dir",
@@ -90,7 +90,7 @@ def _load_plugins(plugins: List[str]) -> List[QueryCodegenPlugin]:
         "Works the same as `--app-dir` in uvicorn."
     ),
 )
-def codegen(schema: str, query: str, app_dir: str, out: str, plugin: List[str]):
+def codegen(schema: str, query: str, app_dir: str, output_dir: str, plugin: List[str]):
     click.echo(
         click.style(
             "The codegen is experimental. Please submit any bug at "
@@ -119,7 +119,9 @@ def codegen(schema: str, query: str, app_dir: str, out: str, plugin: List[str]):
         result = code_generator.codegen(f.read())
 
     for file in result.files:
-        with open(f"{out}/{file.path}", "w") as f:
+        with open(f"{output_dir}/{file.path}", "w") as f:
             f.write(file.content)
 
-    click.echo(click.style(f"Generated {len(result.files)} files in {out}", fg="green"))
+    click.echo(
+        click.style(f"Generated {len(result.files)} files in {output_dir}", fg="green")
+    )
