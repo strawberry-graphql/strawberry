@@ -337,19 +337,10 @@ async def test_subscription_syntax_error(aiohttp_client):
             ).as_dict()
         )
 
-        response = await ws.receive_json()
-        assert response["type"] == ErrorMessage.type
-        assert response["id"] == "sub1"
-        assert len(response["payload"]) == 1
-        assert response["payload"][0].get("path") is None
-        assert response["payload"][0]["locations"] == [{"line": 1, "column": 31}]
-        assert (
-            response["payload"][0]["message"]
-            == "Syntax Error: Expected Name, found <EOF>."
-        )
-
-        await ws.close()
+        data = await ws.receive(timeout=2)
         assert ws.closed
+        assert ws.close_code == 4400
+        assert data.extra == "Syntax Error: Expected Name, found <EOF>."
 
 
 async def test_subscription_field_errors(aiohttp_client):

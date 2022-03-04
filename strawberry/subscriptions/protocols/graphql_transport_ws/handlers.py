@@ -131,18 +131,21 @@ class BaseGraphQLTransportWSHandler(ABC):
             await self.close(code=4401, reason="Unauthorized")
             return
 
+        try:
+            graphql_document = parse(message.payload.query)
+        except GraphQLSyntaxError as exc:
+            await self.close(code=4400, reason=exc.message)
+            return
+
         execution_context = ExecutionContext(
             query=message.payload.query,
             schema=self.schema,
             provided_operation_name=message.payload.operationName,
-            graphql_document=parse(message.payload.query),
+            graphql_document=graphql_document,
         )
 
         try:
             operation_type = execution_context.operation_type
-        except GraphQLSyntaxError as exc:
-            await self.close(code=4400, reason=exc.message)
-            return
         except RuntimeError:
             await self.close(code=4400, reason="Can't get GraphQL operation type")
             return

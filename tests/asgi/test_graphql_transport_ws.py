@@ -261,18 +261,9 @@ def test_subscription_syntax_error(test_client):
             ).as_dict()
         )
 
-        response = ws.receive_json()
-        assert response["type"] == ErrorMessage.type
-        assert response["id"] == "sub1"
-        assert len(response["payload"]) == 1
-        assert response["payload"][0].get("path") is None
-        assert response["payload"][0]["locations"] == [{"line": 1, "column": 31}]
-        assert (
-            response["payload"][0]["message"]
-            == "Syntax Error: Expected Name, found <EOF>."
-        )
-
-        ws.close()
+        data = ws.receive()
+        assert data["type"] == "websocket.close"
+        assert data["code"] == 4400
 
 
 def test_subscription_field_errors(test_client):
