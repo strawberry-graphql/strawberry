@@ -4,7 +4,12 @@ from contextlib import suppress
 from datetime import timedelta
 from typing import Any, AsyncGenerator, Dict, Optional
 
-from graphql import ExecutionResult as GraphQLExecutionResult, GraphQLError
+from graphql import (
+    ExecutionResult as GraphQLExecutionResult,
+    GraphQLError,
+    GraphQLSyntaxError,
+    parse,
+)
 from graphql.error.graphql_error import format_error as format_graphql_error
 
 from strawberry.schema import Schema
@@ -130,10 +135,14 @@ class BaseGraphQLTransportWSHandler(ABC):
             query=message.payload.query,
             schema=self.schema,
             provided_operation_name=message.payload.operationName,
+            graphql_document=parse(message.payload.query),
         )
 
         try:
             operation_type = execution_context.operation_type
+        except GraphQLSyntaxError as exc:
+            await self.close(code=4400, reason=exc.message)
+            return
         except RuntimeError:
             await self.close(code=4400, reason="Can't get GraphQL operation type")
             return
