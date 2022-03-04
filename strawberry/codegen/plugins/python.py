@@ -1,6 +1,7 @@
 import textwrap
 from collections import defaultdict
-from typing import Dict, List, Set
+from dataclasses import dataclass
+from typing import Dict, List, Optional, Set
 
 from strawberry.codegen import CodegenFile, QueryCodegenPlugin
 from strawberry.codegen.types import (
@@ -16,18 +17,24 @@ from strawberry.codegen.types import (
 )
 
 
+@dataclass
+class PythonType:
+    type: str
+    module: Optional[str] = None
+
+
 class PythonPlugin(QueryCodegenPlugin):
     SCALARS_TO_PYTHON_TYPES = {
-        "ID": "str",
-        "Int": "int",
-        "String": "str",
-        "Float": "float",
-        "Boolean": "bool",
-        "UUID": "UUID",
-        "Date": "datetime.date",
-        "DateTime": "datetime.datetime",
-        "Time": "datetime.time",
-        "Decimal": "decimal.Decimal",
+        "ID": PythonType("str"),
+        "Int": PythonType("int"),
+        "String": PythonType("str"),
+        "Float": PythonType("float"),
+        "Boolean": PythonType("bool"),
+        "UUID": PythonType("UUID", "uuid"),
+        "Date": PythonType("date", "datetime"),
+        "DateTime": PythonType("datetime", "datetime"),
+        "Time": PythonType("time", "datetime"),
+        "Decimal": PythonType("Decimal", "decimal"),
     }
 
     def __init__(self) -> None:
@@ -78,7 +85,12 @@ class PythonPlugin(QueryCodegenPlugin):
             isinstance(type_, GraphQLScalar)
             and type_.name in self.SCALARS_TO_PYTHON_TYPES
         ):
-            return self.SCALARS_TO_PYTHON_TYPES[type_.name]
+            python_type = self.SCALARS_TO_PYTHON_TYPES[type_.name]
+
+            if python_type.module is not None:
+                self.imports[python_type.module].add(python_type.type)
+
+            return python_type.type
 
         self.imports["typing"].add("NewType")
 
