@@ -197,19 +197,13 @@ class BaseGraphQLTransportWSHandler(ABC):
         context = await self.get_context()
         root_value = await self.get_root_value()
 
-        try:
-            result_source = await self.schema.subscribe(
-                query=message.payload.query,
-                variable_values=message.payload.variables,
-                operation_name=message.payload.operationName,
-                context_value=context,
-                root_value=root_value,
-            )
-        except GraphQLError as error:
-            payload = [format_graphql_error(error)]
-            await self.send_message(ErrorMessage(id=message.id, payload=payload))
-            self.schema.process_errors([error])
-            return
+        result_source = await self.schema.subscribe(
+            query=message.payload.query,
+            variable_values=message.payload.variables,
+            operation_name=message.payload.operationName,
+            context_value=context,
+            root_value=root_value,
+        )
 
         if isinstance(result_source, GraphQLExecutionResult):
             assert result_source.errors
