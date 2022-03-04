@@ -100,6 +100,6 @@ def codegen(schema: str, query: str, app_dir: str, plugin: List[str]):
     code_generator = QueryCodegen(schema_symbol, plugins=_load_plugins(plugin))
 
     with open(query) as f:
-        code = code_generator.codegen(f.read())
+        result = code_generator.codegen(f.read())
 
-    print(code)
+    print(result.to_string())
