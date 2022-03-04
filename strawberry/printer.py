@@ -152,7 +152,7 @@ def _print_input_object(type_, schema: BaseSchema) -> str:
 
 
 def _print_type(type_, schema: BaseSchema) -> str:
-    # prevents us trying to print a scalar as an input type
+    # prevents us from trying to print a scalar as an input type
     if is_scalar_type(type_):
         return print_scalar(type_)
 
