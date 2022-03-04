@@ -16,7 +16,7 @@ from strawberry.exceptions import InvalidCustomContext, MissingQueryError
 from strawberry.fastapi.handlers import GraphQLTransportWSHandler, GraphQLWSHandler
 from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import GraphQLHTTPResponse, parse_request_data, process_result
-from strawberry.schema import BaseSchema
+from strawberry.schema import Schema
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 from strawberry.types import ExecutionResult
 from strawberry.utils.debug import pretty_print_graphql_operation
@@ -92,7 +92,7 @@ class GraphQLRouter(APIRouter):
 
     def __init__(
         self,
-        schema: BaseSchema,
+        schema: Schema,
         path: str = "",
         graphiql: bool = True,
         keep_alive: bool = False,

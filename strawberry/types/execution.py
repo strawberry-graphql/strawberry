@@ -13,7 +13,7 @@ from graphql.language import DocumentNode, OperationDefinitionNode
 
 
 if TYPE_CHECKING:
-    from strawberry.schema import BaseSchema
+    from strawberry.schema import Schema
 
 
 GraphqlOperationTypes = Literal["QUERY", "MUTATION", "SUBSCRIPTION"]
@@ -22,7 +22,7 @@ GraphqlOperationTypes = Literal["QUERY", "MUTATION", "SUBSCRIPTION"]
 @dataclasses.dataclass
 class ExecutionContext:
     query: str
-    schema: "BaseSchema"
+    schema: "Schema"
     context: Any = None
     variables: Optional[Dict[str, Any]] = None
     root_value: Optional[Any] = None
