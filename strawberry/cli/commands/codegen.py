@@ -91,11 +91,29 @@ def _load_plugins(plugins: List[str]) -> List[QueryCodegenPlugin]:
     ),
 )
 def codegen(schema: str, query: str, app_dir: str, out: str, plugin: List[str]):
+    click.echo(
+        click.style(
+            "The codegen is experimental. Please submit any bug at "
+            "https://github.com/strawberry-graphql/strawberry\n",
+            fg="yellow",
+            bold=True,
+        )
+    )
+
     schema_symbol = load_schema(schema, app_dir)
 
     sys.path.insert(0, app_dir)
 
-    code_generator = QueryCodegen(schema_symbol, plugins=_load_plugins(plugin))
+    plugins = _load_plugins(plugin)
+
+    click.echo(
+        click.style(
+            f"Generating code for {query} using {', '.join(plugin)} plugin(s)",
+            fg="green",
+        )
+    )
+
+    code_generator = QueryCodegen(schema_symbol, plugins=plugins)
 
     with open(query) as f:
         result = code_generator.codegen(f.read())
@@ -103,3 +121,5 @@ def codegen(schema: str, query: str, app_dir: str, out: str, plugin: List[str]):
     for file in result.files:
         with open(f"{out}/{file.path}", "w") as f:
             f.write(file.content)
+
+    click.echo(click.style(f"Generated {len(result.files)} files in {out}", fg="green"))

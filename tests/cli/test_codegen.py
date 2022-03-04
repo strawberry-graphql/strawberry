@@ -55,7 +55,6 @@ def test_codegen(cli_runner, query_file_path: str, tmp_path: Path):
     )
 
     assert result.exit_code == 0
-    assert result.output.strip() == ""
 
     code_path = tmp_path / "test.py"
 
@@ -80,7 +79,6 @@ def test_codegen_passing_plugin_symbol(
     )
 
     assert result.exit_code == 0
-    assert result.output.strip() == ""
 
     code_path = tmp_path / "test.py"
 
@@ -113,7 +111,7 @@ def test_codegen_returns_error_when_module_does_not_exist(
     )
 
     assert result.exit_code == 1
-    assert result.output == "Error: Plugin fake_module_plugin not found\n"
+    assert "Error: Plugin fake_module_plugin not found" in result.output
 
 
 def test_codegen_returns_error_when_does_not_find_plugin(
@@ -126,7 +124,7 @@ def test_codegen_returns_error_when_does_not_find_plugin(
     )
 
     assert result.exit_code == 1
-    assert result.output == "Error: Plugin tests.cli.test_server not found\n"
+    assert "Error: Plugin tests.cli.test_server not found" in result.output
 
 
 def test_codegen_finds_our_plugins(cli_runner, query_file_path: str, tmp_path: Path):
