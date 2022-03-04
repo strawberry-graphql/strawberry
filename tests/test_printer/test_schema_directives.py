@@ -43,3 +43,45 @@ def test_print_directive_with_name():
     schema = strawberry.Schema(query=Query)
 
     assert print_schema(schema) == textwrap.dedent(expected_type).strip()
+
+
+def test_directive_on_types():
+    @strawberry.schema_directive(locations=[Location.OBJECT])
+    class SensitiveData:
+        reason: str
+
+    @strawberry.schema_directive(locations=[Location.INPUT_OBJECT])
+    class SensitiveInput:
+        reason: str
+
+    @strawberry.input(directives=[SensitiveInput(reason="GDPR")])
+    class Input:
+        first_name: str
+
+    @strawberry.type(directives=[SensitiveData(reason="GDPR")])
+    class User:
+        first_name: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self, input: Input) -> User:
+            return User(first_name=input.first_name)
+
+    expected_type = """
+    input Input @sensitiveInput(reason: "GDPR") {
+      firstName: String!
+    }
+
+    type Query {
+      user(input: Input!): User!
+    }
+
+    type User @sensitiveData(reason: "GDPR") {
+      firstName: String!
+    }
+    """
+
+    schema = strawberry.Schema(query=Query)
+
+    assert print_schema(schema) == textwrap.dedent(expected_type).strip()
