@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.99.2 - 2022-03-04
+-------------------
+
+This fixes the schema printer to add support for schema
+directives on input types.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1697](https://github.com/strawberry-graphql/strawberry/pull/1697/)
+
+
 0.99.1 - 2022-03-02
 -------------------
 
