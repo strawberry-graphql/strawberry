@@ -52,8 +52,6 @@ def _import_plugin(plugin: str) -> Optional[Type[QueryCodegenPlugin]]:
             if _is_codegen_plugin(obj):
                 return obj
 
-    # TODO: should this raise an error?
-
     return None
 
 
@@ -78,6 +76,7 @@ def _load_plugins(plugins: List[str]) -> List[QueryCodegenPlugin]:
 
 @click.command(short_help="Generate code from a query")
 @click.option("--plugin", "-p", multiple=True)
+@click.option("--out", "-o", default=".", help="Output directory")
 @click.argument("schema", type=str)
 @click.argument("query", type=str)
 @click.option(
@@ -91,7 +90,7 @@ def _load_plugins(plugins: List[str]) -> List[QueryCodegenPlugin]:
         "Works the same as `--app-dir` in uvicorn."
     ),
 )
-def codegen(schema: str, query: str, app_dir: str, plugin: List[str]):
+def codegen(schema: str, query: str, app_dir: str, out: str, plugin: List[str]):
     schema_symbol = load_schema(schema, app_dir)
 
     sys.path.insert(0, app_dir)
@@ -101,4 +100,6 @@ def codegen(schema: str, query: str, app_dir: str, plugin: List[str]):
     with open(query) as f:
         result = code_generator.codegen(f.read())
 
-    print(result.to_string())
+    for file in result.files:
+        with open(f"{out}/{file.path}", "w") as f:
+            f.write(file.content)
