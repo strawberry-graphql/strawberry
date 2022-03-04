@@ -16,7 +16,7 @@ async def test_graphql_query(aiohttp_app_client):
     response = await aiohttp_app_client.post("/graphql", json=query)
     data = await response.json()
     assert response.status == 200
-    assert data["data"]["hello"] == "strawberry"
+    assert data["data"]["hello"] == "Hello world"
 
 
 async def test_custom_context(aiohttp_client):
