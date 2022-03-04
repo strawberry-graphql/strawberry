@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import abc
 from dataclasses import dataclass
 from typing import Iterable, List, Optional, Type, Union, cast
 
@@ -85,11 +86,12 @@ class HasSelectionSet(Protocol):
     selection_set: Optional[SelectionSetNode]
 
 
-class QueryCodegenPlugin:
+class QueryCodegenPlugin(abc.ABC):
+    @abc.abstractmethod
     def generate_code(
         self, types: List[GraphQLType], operation: GraphQLOperation
     ) -> List[CodegenFile]:
-        return []
+        raise NotImplementedError()
 
 
 class QueryCodegenPluginManager:
@@ -156,7 +158,7 @@ class QueryCodegen:
                 self._convert_selection_set(selection.selection_set),
             )
 
-        raise ValueError(f"Unsupported type: {type(selection)}")
+        raise ValueError(f"Unsupported type: {type(selection)}")  # pragma: no cover
 
     def _convert_selection_set(
         self, selection_set: Optional[SelectionSetNode]
@@ -179,25 +181,19 @@ class QueryCodegen:
         if isinstance(value, VariableNode):
             return GraphQLVariableReference(value.name.value)
 
-        raise ValueError(f"Unsupported type: {type(value)}")
+        raise ValueError(f"Unsupported type: {type(value)}")  # pragma: no cover
 
     def _convert_arguments(
-        self, arguments: Optional[Iterable[ArgumentNode]]
+        self, arguments: Iterable[ArgumentNode]
     ) -> List[GraphQLArgument]:
-        if arguments is None:
-            return []
-
         return [
             GraphQLArgument(argument.name.value, self._convert_value(argument.value))
             for argument in arguments
         ]
 
     def _convert_directives(
-        self, directives: Optional[Iterable[DirectiveNode]]
+        self, directives: Iterable[DirectiveNode]
     ) -> List[GraphQLDirective]:
-        if directives is None:
-            return []
-
         return [
             GraphQLDirective(
                 directive.name.value,
@@ -302,7 +298,7 @@ class QueryCodegen:
         elif isinstance(field_type, EnumDefinition):
             return self._collect_enum(field_type)
 
-        assert False, field_type
+        raise ValueError(f"Unsupported type: {field_type}")  # pragma: no cover
 
     def _collect_type_from_strawberry_type(
         self, strawberry_type: Union[type, StrawberryType]

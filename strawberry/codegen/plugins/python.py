@@ -137,7 +137,7 @@ class PythonPlugin(QueryCodegenPlugin):
         if isinstance(type_, GraphQLScalar):
             return self._print_scalar_type(type_)
 
-        raise ValueError(f"Unknown type: {type}")
+        raise ValueError(f"Unknown type: {type}")  # pragma: no cover
 
 
 __all__ = ["PythonPlugin"]

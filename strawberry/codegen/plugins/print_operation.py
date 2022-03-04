@@ -73,7 +73,7 @@ class PrintOperationPlugin(QueryCodegenPlugin):
         if isinstance(value, GraphQLVariableReference):
             return f"${value.value}"
 
-        raise ValueError(f"not supported: {type(value)}")
+        raise ValueError(f"not supported: {type(value)}")  # pragma: no cover
 
     def _print_arguments(self, arguments: List[GraphQLArgument]) -> str:
         if not arguments:
@@ -128,6 +128,8 @@ class PrintOperationPlugin(QueryCodegenPlugin):
 
         if isinstance(selection, GraphQLInlineFragment):
             return self._print_inline_fragment(selection)
+
+        raise ValueError(f"Unsupported selection: {selection}")  # pragma: no cover
 
     def _print_selections(self, selections: List[GraphQLSelection]) -> str:
         selections_text = "\n".join(

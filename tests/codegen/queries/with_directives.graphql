@@ -1,4 +1,4 @@
-query OperationName @owner(name: "Patrick") {
+query OperationName @owner(name: "Patrick", age: 30) {
   person {
     name @root
   }

@@ -120,7 +120,7 @@ class Schema(BaseSchema):
         type_ = self.get_type_by_name(type_name)
 
         if not type_:
-            return None
+            return None  # pragma: no cover
 
         assert isinstance(type_, TypeDefinition)
 
