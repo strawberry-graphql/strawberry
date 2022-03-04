@@ -20,6 +20,7 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     SubscribeMessage,
     SubscribeMessagePayload,
 )
+from strawberry.types.execution import ExecutionContext
 from strawberry.utils.debug import pretty_print_graphql_operation
 
 
@@ -125,13 +126,64 @@ class BaseGraphQLTransportWSHandler(ABC):
             await self.close(code=4401, reason="Unauthorized")
             return
 
+        execution_context = ExecutionContext(
+            query=message.payload.query,
+            schema=self.schema,
+            provided_operation_name=message.payload.operationName,
+        )
+
+        try:
+            operation_type = execution_context.operation_type
+        except RuntimeError:
+            await self.close(code=4400, reason="Can't get GraphQL operation type")
+            return
+
+        if operation_type == "SUBSCRIPTION":
+            return await self.handle_streaming_operation(message)
+        else:
+            return await self.handle_single_result_operation(message)
+
+    async def handle_single_result_operation(self, message: SubscribeMessage):
+        if self.debug:  # pragma: no cover
+            pretty_print_graphql_operation(
+                message.payload.operationName,
+                message.payload.query,
+                message.payload.variables,
+            )
+
+        context = await self.get_context()
+        root_value = await self.get_root_value()
+
+        try:
+            result = await self.schema.execute(
+                query=message.payload.query,
+                variable_values=message.payload.variables,
+                context_value=context,
+                root_value=root_value,
+                operation_name=message.payload.operationName,
+            )
+        except GraphQLError as error:
+            payload = [format_graphql_error(error)]
+            await self.send_message(ErrorMessage(id=message.id, payload=payload))
+            self.schema.process_errors([error])
+            return
+
+        if result.errors:
+            payload = [format_graphql_error(result.errors[0])]
+            await self.send_message(ErrorMessage(id=message.id, payload=payload))
+            self.schema.process_errors(result.errors)
+            return
+
+        await self.send_message(
+            NextMessage(id=message.id, payload={"data": result.data})
+        )
+        await self.send_message(CompleteMessage(id=message.id))
+
+    async def handle_streaming_operation(self, message: SubscribeMessage) -> None:
         if message.id in self.subscriptions.keys():
             reason = f"Subscriber for {message.id} already exists"
             await self.close(code=4409, reason=reason)
             return
-
-        context = await self.get_context()
-        root_value = await self.get_root_value()
 
         if self.debug:  # pragma: no cover
             pretty_print_graphql_operation(
@@ -139,6 +191,9 @@ class BaseGraphQLTransportWSHandler(ABC):
                 message.payload.query,
                 message.payload.variables,
             )
+
+        context = await self.get_context()
+        root_value = await self.get_root_value()
 
         try:
             result_source = await self.schema.subscribe(
