@@ -49,7 +49,7 @@ class GraphQLView(View):
             data = replace_placeholders_with_files(operations, files_map, request.files)
 
         else:
-            data = request.json
+            data = request.json  # type: ignore
 
         try:
             request_data = parse_request_data(data)
