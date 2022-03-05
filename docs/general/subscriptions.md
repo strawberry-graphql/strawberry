@@ -207,3 +207,15 @@ app = GraphQL(schema, subscription_protocols=[
     GRAPHQL_WS_PROTOCOL,
 ])
 ```
+
+### Single result operations
+
+In addition to *streaming operations* (i.e. subscriptions),
+the `graphql-transport-ws` protocol supports so called *single result operations* (i.e. queries and mutations).
+
+This enables clients to use one protocol and one connection for queries, mutations and subscriptions.
+Take a look at the [protocols repository](https://github.com/enisdenjo/graphql-ws)
+to learn how to correctly set up the graphql client of your choice.
+
+Strawberry supports single result operations out of the box when the `graphql-transport-ws` protocol is enabled.
+Single result operations are normal queries and mutations, so there is no need to adjust any resolvers.
