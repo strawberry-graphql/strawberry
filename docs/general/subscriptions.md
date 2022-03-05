@@ -210,8 +210,8 @@ app = GraphQL(schema, subscription_protocols=[
 
 ### Single result operations
 
-In addition to *streaming operations* (i.e. subscriptions),
-the `graphql-transport-ws` protocol supports so called *single result operations* (i.e. queries and mutations).
+In addition to _streaming operations_ (i.e. subscriptions),
+the `graphql-transport-ws` protocol supports so called _single result operations_ (i.e. queries and mutations).
 
 This enables clients to use one protocol and one connection for queries, mutations and subscriptions.
 Take a look at the [protocols repository](https://github.com/enisdenjo/graphql-ws)
