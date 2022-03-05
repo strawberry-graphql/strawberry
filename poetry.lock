@@ -479,11 +479,11 @@ dotenv = ["python-dotenv"]
 
 [[package]]
 name = "freezegun"
-version = "1.1.0"
+version = "1.2.0"
 description = "Let your Python tests travel through time"
 category = "dev"
 optional = false
-python-versions = ">=3.5"
+python-versions = ">=3.6"
 
 [package.dependencies]
 python-dateutil = ">=2.7"
@@ -1539,7 +1539,7 @@ sanic = ["sanic"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "59474371cc4bc20a7dd901998f9ff24ae738a4f450d67b4c71e9db67f8cc1255"
+content-hash = "0fdf4ac8b1617ff077bcd0693d061a0a190d1b910bc4a157beea1ae120efe435"
 
 [metadata.files]
 aiofiles = [
@@ -1799,8 +1799,8 @@ flask = [
     {file = "Flask-2.0.3.tar.gz", hash = "sha256:e1120c228ca2f553b470df4a5fa927ab66258467526069981b3eb0a91902687d"},
 ]
 freezegun = [
-    {file = "freezegun-1.1.0-py2.py3-none-any.whl", hash = "sha256:2ae695f7eb96c62529f03a038461afe3c692db3465e215355e1bb4b0ab408712"},
-    {file = "freezegun-1.1.0.tar.gz", hash = "sha256:177f9dd59861d871e27a484c3332f35a6e3f5d14626f2bf91be37891f18927f3"},
+    {file = "freezegun-1.2.0-py3-none-any.whl", hash = "sha256:93e90676da387a241a7c2ae7ae68af7b95bfe80e952d0bbf3e088342de90a38d"},
+    {file = "freezegun-1.2.0.tar.gz", hash = "sha256:e19563d0b05dcab6dc8ad21c05269004a96998ce2b6b1b8131f1297ae20dd038"},
 ]
 frozenlist = [
     {file = "frozenlist-1.3.0-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:d2257aaba9660f78c7b1d8fea963b68f3feffb1a9d5d05a18401ca9eb3e8d0a3"},
