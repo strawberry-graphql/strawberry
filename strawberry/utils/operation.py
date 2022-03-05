@@ -2,7 +2,15 @@ from typing import Optional, cast
 
 from graphql.language import DocumentNode, OperationDefinitionNode, OperationType
 
-from .get_first_operation import get_first_operation
+
+def get_first_operation(
+    graphql_document: DocumentNode,
+) -> Optional[OperationDefinitionNode]:
+    for definition in graphql_document.definitions:
+        if isinstance(definition, OperationDefinitionNode):
+            return definition
+
+    return None
 
 
 def get_operation_type(

@@ -27,7 +27,7 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     SubscribeMessagePayload,
 )
 from strawberry.utils.debug import pretty_print_graphql_operation
-from strawberry.utils.get_operation_type import get_operation_type
+from strawberry.utils.operation import get_operation_type
 
 
 class BaseGraphQLTransportWSHandler(ABC):

@@ -1,6 +1,6 @@
 from graphql import OperationType, parse
 
-from strawberry.utils.get_first_operation import get_first_operation
+from strawberry.utils.operation import get_first_operation
 
 
 def test_document_without_operation_definition_notes():

@@ -11,8 +11,7 @@ from graphql import (
 from graphql.error.graphql_error import GraphQLError
 from graphql.language import DocumentNode, OperationDefinitionNode
 
-from strawberry.utils.get_first_operation import get_first_operation
-from strawberry.utils.get_operation_type import get_operation_type
+from strawberry.utils.operation import get_first_operation, get_operation_type
 
 
 if TYPE_CHECKING:
