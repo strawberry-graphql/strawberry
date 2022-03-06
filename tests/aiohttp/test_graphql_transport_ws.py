@@ -337,19 +337,10 @@ async def test_subscription_syntax_error(aiohttp_client):
             ).as_dict()
         )
 
-        response = await ws.receive_json()
-        assert response["type"] == ErrorMessage.type
-        assert response["id"] == "sub1"
-        assert len(response["payload"]) == 1
-        assert response["payload"][0].get("path") is None
-        assert response["payload"][0]["locations"] == [{"line": 1, "column": 31}]
-        assert (
-            response["payload"][0]["message"]
-            == "Syntax Error: Expected Name, found <EOF>."
-        )
-
-        await ws.close()
+        data = await ws.receive(timeout=2)
         assert ws.closed
+        assert ws.close_code == 4400
+        assert data.extra == "Syntax Error: Expected Name, found <EOF>."
 
 
 async def test_subscription_field_errors(aiohttp_client):
@@ -515,6 +506,179 @@ async def test_subscription_exceptions(aiohttp_client):
         assert response["payload"][0].get("path") is None
         assert response["payload"][0].get("locations") is None
         assert response["payload"][0]["message"] == "TEST EXC"
+
+        await ws.close()
+        assert ws.closed
+
+
+async def test_single_result_query_operation(aiohttp_client):
+    app = create_app()
+    aiohttp_app_client = await aiohttp_client(app)
+
+    async with aiohttp_app_client.ws_connect(
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
+    ) as ws:
+        await ws.send_json(ConnectionInitMessage().as_dict())
+
+        response = await ws.receive_json()
+        assert response == ConnectionAckMessage().as_dict()
+
+        await ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(query="query { hello }"),
+            ).as_dict()
+        )
+
+        response = await ws.receive_json()
+        assert (
+            response
+            == NextMessage(
+                id="sub1", payload={"data": {"hello": "Hello world"}}
+            ).as_dict()
+        )
+
+        response = await ws.receive_json()
+        assert response == CompleteMessage(id="sub1").as_dict()
+
+        await ws.close()
+        assert ws.closed
+
+
+async def test_single_result_mutation_operation(aiohttp_client):
+    app = create_app()
+    aiohttp_app_client = await aiohttp_client(app)
+
+    async with aiohttp_app_client.ws_connect(
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
+    ) as ws:
+        await ws.send_json(ConnectionInitMessage().as_dict())
+
+        response = await ws.receive_json()
+        assert response == ConnectionAckMessage().as_dict()
+
+        await ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(query="mutation { hello }"),
+            ).as_dict()
+        )
+
+        response = await ws.receive_json()
+        assert (
+            response
+            == NextMessage(
+                id="sub1", payload={"data": {"hello": "strawberry"}}
+            ).as_dict()
+        )
+
+        response = await ws.receive_json()
+        assert response == CompleteMessage(id="sub1").as_dict()
+
+        await ws.close()
+        assert ws.closed
+
+
+async def test_single_result_operation_selection(aiohttp_client):
+    app = create_app()
+    aiohttp_app_client = await aiohttp_client(app)
+
+    async with aiohttp_app_client.ws_connect(
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
+    ) as ws:
+        await ws.send_json(ConnectionInitMessage().as_dict())
+
+        response = await ws.receive_json()
+        assert response == ConnectionAckMessage().as_dict()
+
+        query = """
+            query Query1 {
+                hello
+            }
+            query Query2 {
+                hello(name: "Strawberry")
+            }
+        """
+
+        await ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(query=query, operationName="Query2"),
+            ).as_dict()
+        )
+
+        response = await ws.receive_json()
+        assert (
+            response
+            == NextMessage(
+                id="sub1", payload={"data": {"hello": "Hello Strawberry"}}
+            ).as_dict()
+        )
+
+        response = await ws.receive_json()
+        assert response == CompleteMessage(id="sub1").as_dict()
+
+        await ws.close()
+        assert ws.closed
+
+
+async def test_single_result_invalid_operation_selection(aiohttp_client):
+    app = create_app()
+    aiohttp_app_client = await aiohttp_client(app)
+
+    async with aiohttp_app_client.ws_connect(
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
+    ) as ws:
+        await ws.send_json(ConnectionInitMessage().as_dict())
+
+        response = await ws.receive_json()
+        assert response == ConnectionAckMessage().as_dict()
+
+        query = """
+            query Query1 {
+                hello
+            }
+        """
+
+        await ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(query=query, operationName="Query2"),
+            ).as_dict()
+        )
+
+        data = await ws.receive(timeout=2)
+        assert ws.closed
+        assert ws.close_code == 4400
+        assert data.extra == "Can't get GraphQL operation type"
+
+
+async def test_single_result_operation_error(aiohttp_client):
+    app = create_app()
+    aiohttp_app_client = await aiohttp_client(app)
+
+    async with aiohttp_app_client.ws_connect(
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
+    ) as ws:
+        await ws.send_json(ConnectionInitMessage().as_dict())
+
+        response = await ws.receive_json()
+        assert response == ConnectionAckMessage().as_dict()
+
+        await ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(
+                    query="query { alwaysFail }",
+                ),
+            ).as_dict()
+        )
+
+        response = await ws.receive_json()
+        assert response["type"] == ErrorMessage.type
+        assert response["id"] == "sub1"
+        assert len(response["payload"]) == 1
+        assert response["payload"][0]["message"] == "You are not authorized"
 
         await ws.close()
         assert ws.closed

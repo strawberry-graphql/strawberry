@@ -4,7 +4,13 @@ from contextlib import suppress
 from datetime import timedelta
 from typing import Any, AsyncGenerator, Dict, Optional
 
-from graphql import ExecutionResult as GraphQLExecutionResult, GraphQLError
+from graphql import (
+    ExecutionResult as GraphQLExecutionResult,
+    GraphQLError,
+    GraphQLSyntaxError,
+    OperationType,
+    parse,
+)
 from graphql.error.graphql_error import format_error as format_graphql_error
 
 from strawberry.schema import BaseSchema
@@ -21,6 +27,7 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     SubscribeMessagePayload,
 )
 from strawberry.utils.debug import pretty_print_graphql_operation
+from strawberry.utils.operation import get_operation_type
 
 
 class BaseGraphQLTransportWSHandler(ABC):
@@ -125,13 +132,60 @@ class BaseGraphQLTransportWSHandler(ABC):
             await self.close(code=4401, reason="Unauthorized")
             return
 
+        try:
+            graphql_document = parse(message.payload.query)
+        except GraphQLSyntaxError as exc:
+            await self.close(code=4400, reason=exc.message)
+            return
+
+        try:
+            operation_type = get_operation_type(
+                graphql_document, message.payload.operationName
+            )
+        except RuntimeError:
+            await self.close(code=4400, reason="Can't get GraphQL operation type")
+            return
+
+        if operation_type == OperationType.SUBSCRIPTION:
+            return await self.handle_streaming_operation(message)
+        else:
+            return await self.handle_single_result_operation(message)
+
+    async def handle_single_result_operation(self, message: SubscribeMessage):
+        if self.debug:  # pragma: no cover
+            pretty_print_graphql_operation(
+                message.payload.operationName,
+                message.payload.query,
+                message.payload.variables,
+            )
+
+        context = await self.get_context()
+        root_value = await self.get_root_value()
+
+        result = await self.schema.execute(
+            query=message.payload.query,
+            variable_values=message.payload.variables,
+            context_value=context,
+            root_value=root_value,
+            operation_name=message.payload.operationName,
+        )
+
+        if result.errors:
+            payload = [format_graphql_error(result.errors[0])]
+            await self.send_message(ErrorMessage(id=message.id, payload=payload))
+            self.schema.process_errors(result.errors)
+            return
+
+        await self.send_message(
+            NextMessage(id=message.id, payload={"data": result.data})
+        )
+        await self.send_message(CompleteMessage(id=message.id))
+
+    async def handle_streaming_operation(self, message: SubscribeMessage) -> None:
         if message.id in self.subscriptions.keys():
             reason = f"Subscriber for {message.id} already exists"
             await self.close(code=4409, reason=reason)
             return
-
-        context = await self.get_context()
-        root_value = await self.get_root_value()
 
         if self.debug:  # pragma: no cover
             pretty_print_graphql_operation(
@@ -140,19 +194,16 @@ class BaseGraphQLTransportWSHandler(ABC):
                 message.payload.variables,
             )
 
-        try:
-            result_source = await self.schema.subscribe(
-                query=message.payload.query,
-                variable_values=message.payload.variables,
-                operation_name=message.payload.operationName,
-                context_value=context,
-                root_value=root_value,
-            )
-        except GraphQLError as error:
-            payload = [format_graphql_error(error)]
-            await self.send_message(ErrorMessage(id=message.id, payload=payload))
-            self.schema.process_errors([error])
-            return
+        context = await self.get_context()
+        root_value = await self.get_root_value()
+
+        result_source = await self.schema.subscribe(
+            query=message.payload.query,
+            variable_values=message.payload.variables,
+            operation_name=message.payload.operationName,
+            context_value=context,
+            root_value=root_value,
+        )
 
         if isinstance(result_source, GraphQLExecutionResult):
             assert result_source.errors
