@@ -40,11 +40,11 @@ We allow to extend the base `GraphQLView`, by overriding the following methods:
 
 `get_context` allows to provide a custom context object that can be used in your
 resolver. You can return anything here, by default we return a dictionary with
-the request.
+the request. By default; the `Response` object from `flask` is injected via the parameters. 
 
 ```python
 class MyGraphQLView(GraphQLView):
-    def get_context(self) -> Any:
+    def get_context(self, response: Response) -> Any:
         return {"example": 1}
 
 
