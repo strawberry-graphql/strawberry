@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.101.0 - 2022-03-06
+--------------------
+
+This release adds support for `graphql-transport-ws` single result operations.
+
+Single result operations allow clients to execute queries and mutations over an existing WebSocket connection.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) [PR #1698](https://github.com/strawberry-graphql/strawberry/pull/1698/)
+
+
 0.100.0 - 2022-03-05
 --------------------
 
