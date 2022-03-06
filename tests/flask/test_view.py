@@ -1,8 +1,7 @@
 import json
 
 import strawberry
-from flask import Flask, request, Response
-
+from flask import Flask, Response, request
 from strawberry.flask.views import GraphQLView as BaseGraphQLView
 from strawberry.types import ExecutionResult, Info
 
