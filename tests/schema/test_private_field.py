@@ -109,5 +109,8 @@ def test_private_field_defined_outside_module_scope():
         value: int
         info: str
 
-    schema = strawberry.Schema(query=LocallyScopedQuery)
-    assert "notSeen" not in str(schema)
+    with pytest.raises(TypeError, match=r"Could not resolve the type of 'not_seen'."):
+        schema = strawberry.Schema(query=LocallyScopedQuery)
+
+        # If schema-conversion does not raise, check if private field is visible
+        assert "notSeen" not in str(schema)

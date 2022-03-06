@@ -18,6 +18,7 @@ from typing import (
     overload,
 )
 
+import sentinel
 from backports.cached_property import cached_property
 from typing_extensions import Literal
 
@@ -38,6 +39,8 @@ if TYPE_CHECKING:
 
 
 _RESOLVER_TYPE = Union[StrawberryResolver, Callable, staticmethod, classmethod]
+
+UNRESOLVED = sentinel.create("UNRESOLVED")
 
 
 class StrawberryField(dataclasses.Field):
@@ -212,7 +215,7 @@ class StrawberryField(dataclasses.Field):
 
             return self.type_annotation.resolve()
         except NameError:
-            return None  # type: ignore
+            return UNRESOLVED
 
     @type.setter
     def type(self, type_: Any) -> None:

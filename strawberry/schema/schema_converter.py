@@ -43,7 +43,7 @@ from strawberry.exceptions import (
     MissingTypesForGenericError,
     ScalarAlreadyRegisteredError,
 )
-from strawberry.field import StrawberryField
+from strawberry.field import UNRESOLVED, StrawberryField
 from strawberry.lazy_type import LazyType
 from strawberry.private import is_private
 from strawberry.schema.config import StrawberryConfig
@@ -190,12 +190,21 @@ class GraphQLCoreConverter:
         postponed type-hint evaluation (PEP-563). Performing this filtering now (at
         schema conversion time) ensures that all types to be included in the schema
         should have already been resolved.
+
+        Raises:
+            TypeError: If the type of a field in ``fields`` is `UNRESOLVED`
         """
-        return {
-            name_converter(f): field_converter(f)
-            for f in fields
-            if not is_private(f.type)
-        }
+        thunk_mapping = {}
+        for f in fields:
+            if f.type is UNRESOLVED:
+                raise TypeError(
+                    f"Could not resolve the type of '{f.name}'. Check that the class "
+                    "is accessible from the global module scope."
+                )
+            else:
+                if not is_private(f.type):
+                    thunk_mapping[name_converter(f)] = field_converter(f)
+        return thunk_mapping
 
     def get_graphql_fields(
         self, type_definition: TypeDefinition
