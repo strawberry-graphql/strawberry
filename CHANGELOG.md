@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.102.1 - 2022-03-07
+--------------------
+
+This PR improves the support for scalars when using MyPy.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #1205](https://github.com/strawberry-graphql/strawberry/pull/1205/)
+
+
 0.102.0 - 2022-03-07
 --------------------
 
