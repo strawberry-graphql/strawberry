@@ -51,7 +51,7 @@ fastapi = {version = ">=0.65.2", optional = true}
 pytest = "^7.0"
 pytest-emoji = "^0.2.0"
 flake8 = "^4.0"
-black = {version = "^21.12b0", allow-prereleases = true}
+black = "^22"
 isort = "^5.10.1"
 pytest-asyncio = "^0.18.2"
 pytest-cov = "^3.0"
