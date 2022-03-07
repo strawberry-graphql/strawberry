@@ -8,7 +8,7 @@ from strawberry.type import StrawberryType
 from .utils.str_converters import to_camel_case
 
 
-_T = TypeVar("_T")
+_T = TypeVar("_T", bound=type)
 
 
 def identity(x):
