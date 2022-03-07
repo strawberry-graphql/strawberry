@@ -272,7 +272,7 @@ def test_overriding_process_errors(caplog):
     assert result.errors == execution_errors
 
     # Exception wasn't logged
-    assert len(caplog.records) == 0
+    assert caplog.records == []
 
 
 def test_adding_custom_validation_rules():
