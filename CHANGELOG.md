@@ -1,6 +1,20 @@
 CHANGELOG
 =========
 
+0.102.0 - 2022-03-07
+--------------------
+
+Added the response object to `get_context` on the `flask` view. This means that in fields, something like this can be used;
+
+```python
+@strawberry.field
+def response_check(self, info: Info) -> bool:
+    response: Response = info.context["response"]
+    response.status_code = 401
+
+    return True
+```
+
 0.101.0 - 2022-03-06
 --------------------
 
