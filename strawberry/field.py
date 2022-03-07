@@ -18,7 +18,6 @@ from typing import (
     overload,
 )
 
-import sentinel
 from backports.cached_property import cached_property
 from typing_extensions import Literal
 
@@ -40,7 +39,12 @@ if TYPE_CHECKING:
 
 _RESOLVER_TYPE = Union[StrawberryResolver, Callable, staticmethod, classmethod]
 
-UNRESOLVED = sentinel.create("UNRESOLVED")
+
+class UnresolvedType(type):
+    pass
+
+
+UNRESOLVED = UnresolvedType()
 
 
 class StrawberryField(dataclasses.Field):
