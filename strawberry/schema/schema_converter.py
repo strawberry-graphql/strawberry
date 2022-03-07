@@ -42,6 +42,7 @@ from strawberry.enum import EnumDefinition, EnumValue
 from strawberry.exceptions import (
     MissingTypesForGenericError,
     ScalarAlreadyRegisteredError,
+    UnresolvedFieldTypeError,
 )
 from strawberry.field import UNRESOLVED, StrawberryField
 from strawberry.lazy_type import LazyType
@@ -198,10 +199,7 @@ class GraphQLCoreConverter:
 
         for f in fields:
             if f.type is UNRESOLVED:
-                raise TypeError(
-                    f"Could not resolve the type of '{f.name}'. Check that the class "
-                    "is accessible from the global module scope."
-                )
+                raise UnresolvedFieldTypeError(f.name)
             else:
                 if not is_private(f.type):
                     thunk_mapping[name_converter(f)] = field_converter(f)
