@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Callable, Mapping, Optional, TypeVar, Union, overload
+from typing import Any, Callable, Mapping, Optional, Type, TypeVar, Union, overload
 
 from graphql import GraphQLScalarType
 
@@ -49,7 +49,7 @@ class ScalarWrapper:
 
 
 def _process_scalar(
-    cls,
+    cls: Type[_T],
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
@@ -58,7 +58,6 @@ def _process_scalar(
     parse_value: Optional[Callable] = None,
     parse_literal: Optional[Callable] = None,
 ):
-
     name = name or to_camel_case(cls.__name__)
 
     wrapper = ScalarWrapper(cls)

@@ -12,14 +12,14 @@ class External:
 
 @schema_directive(locations=[Location.FIELD_DEFINITION], name="requires")
 class Requires:
-    fields: FieldSet  # type: ignore
+    fields: FieldSet
 
 
 @schema_directive(locations=[Location.FIELD_DEFINITION], name="provides")
 class Provides:
-    fields: FieldSet  # type: ignore
+    fields: FieldSet
 
 
 @schema_directive(locations=[Location.OBJECT, Location.INTERFACE], name="key")
 class Key:
-    fields: FieldSet  # type: ignore
+    fields: FieldSet
