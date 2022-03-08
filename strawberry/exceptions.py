@@ -131,6 +131,15 @@ class UnsupportedTypeError(Exception):
         super().__init__(message)
 
 
+class UnresolvedFieldTypeError(Exception):
+    def __init__(self, field_name: str):
+        message = (
+            f"Could not resolve the type of '{field_name}'. Check that the class is "
+            "accessible from the global module scope."
+        )
+        super().__init__(message)
+
+
 class MissingFieldAnnotationError(Exception):
     def __init__(self, field_name: str):
         message = (
