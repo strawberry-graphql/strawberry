@@ -11,7 +11,6 @@ This release fixes Issue #1586 using schema-conversion time filtering of
 supported:
 
 ```python
-
 @strawberry.type
 class Query:
     foo: "strawberry.Private[int]"
@@ -20,7 +19,6 @@ class Query:
 Forward references are supported as well:
 
 ```python
-
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -35,7 +33,6 @@ class Query:
 
 @dataclass
 class SensitiveData:
-
     visible: int
     not_visible int
 ```

@@ -40,11 +40,7 @@ if TYPE_CHECKING:
 _RESOLVER_TYPE = Union[StrawberryResolver, Callable, staticmethod, classmethod]
 
 
-class UnresolvedType(type):
-    pass
-
-
-UNRESOLVED = UnresolvedType()
+UNRESOLVED = object()
 
 
 class StrawberryField(dataclasses.Field):
@@ -199,7 +195,7 @@ class StrawberryField(dataclasses.Field):
         _ = resolver.arguments
 
     @property  # type: ignore
-    def type(self) -> Union[StrawberryType, type]:  # type: ignore
+    def type(self) -> Union[StrawberryType, type, Literal[UNRESOLVED]]:  # type: ignore
         # We are catching NameError because dataclasses tries to fetch the type
         # of the field from the class before the class is fully defined.
         # This triggers a NameError error when using forward references because

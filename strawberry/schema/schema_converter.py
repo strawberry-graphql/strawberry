@@ -200,9 +200,9 @@ class GraphQLCoreConverter:
         for f in fields:
             if f.type is UNRESOLVED:
                 raise UnresolvedFieldTypeError(f.name)
-            else:
-                if not is_private(f.type):
-                    thunk_mapping[name_converter(f)] = field_converter(f)
+
+            if not is_private(f.type):
+                thunk_mapping[name_converter(f)] = field_converter(f)
         return thunk_mapping
 
     def get_graphql_fields(
