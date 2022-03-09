@@ -341,14 +341,16 @@ class GraphQLCoreConverter:
             args = []
 
             if field.base_resolver:
-                if field.base_resolver.has_self_arg:
+                if field.base_resolver.self_parameter:
                     args.append(source)
 
-                if field.base_resolver.has_root_arg:
-                    kwargs["root"] = source
+                root_parameter = field.base_resolver.root_parameter
+                if root_parameter:
+                    kwargs[root_parameter.name] = source
 
-                if field.base_resolver.has_info_arg:
-                    kwargs["info"] = info
+                info_parameter = field.base_resolver.info_parameter
+                if info_parameter:
+                    kwargs[info_parameter.name] = info
 
             return args, kwargs
 
