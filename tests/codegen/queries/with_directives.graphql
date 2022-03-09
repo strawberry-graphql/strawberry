@@ -1,4 +1,4 @@
-query OperationName @owner(name: "Patrick", age: 30, items: [1, 2, 3]) {
+query OperationName @owner(name: "Patrick", age: 30, items: [1, 2, 3], enum: NAME) {
   person {
     name @root
   }

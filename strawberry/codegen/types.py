@@ -85,6 +85,11 @@ class GraphQLIntValue:
 
 
 @dataclass
+class GraphQLEnumValue:
+    name: str
+
+
+@dataclass
 class GraphQLListValue:
     values: List[GraphQLArgumentValue]
 
@@ -95,7 +100,11 @@ class GraphQLVariableReference:
 
 
 GraphQLArgumentValue = Union[
-    GraphQLStringValue, GraphQLIntValue, GraphQLVariableReference, GraphQLListValue
+    GraphQLStringValue,
+    GraphQLIntValue,
+    GraphQLVariableReference,
+    GraphQLListValue,
+    GraphQLEnumValue,
 ]
 
 

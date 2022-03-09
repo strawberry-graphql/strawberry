@@ -10,6 +10,7 @@ from graphql import (
     ArgumentNode,
     DirectiveNode,
     DocumentNode,
+    EnumValueNode,
     FieldNode,
     InlineFragmentNode,
     IntValueNode,
@@ -51,6 +52,7 @@ from .types import (
     GraphQLArgumentValue,
     GraphQLDirective,
     GraphQLEnum,
+    GraphQLEnumValue,
     GraphQLField,
     GraphQLFieldSelection,
     GraphQLInlineFragment,
@@ -187,6 +189,9 @@ class QueryCodegen:
             return GraphQLListValue(
                 [self._convert_value(item) for item in value.values]
             )
+
+        if isinstance(value, EnumValueNode):
+            return GraphQLEnumValue(value.value)
 
         raise ValueError(f"Unsupported type: {type(value)}")  # pragma: no cover
 
