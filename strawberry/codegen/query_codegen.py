@@ -14,6 +14,7 @@ from graphql import (
     InlineFragmentNode,
     IntValueNode,
     ListTypeNode,
+    ListValueNode,
     NamedTypeNode,
     NonNullTypeNode,
     OperationDefinitionNode,
@@ -55,6 +56,7 @@ from .types import (
     GraphQLInlineFragment,
     GraphQLIntValue,
     GraphQLList,
+    GraphQLListValue,
     GraphQLObjectType,
     GraphQLOperation,
     GraphQLOptional,
@@ -180,6 +182,11 @@ class QueryCodegen:
 
         if isinstance(value, VariableNode):
             return GraphQLVariableReference(value.name.value)
+
+        if isinstance(value, ListValueNode):
+            return GraphQLListValue(
+                [self._convert_value(item) for item in value.values]
+            )
 
         raise ValueError(f"Unsupported type: {type(value)}")  # pragma: no cover
 

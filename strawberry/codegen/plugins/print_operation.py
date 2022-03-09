@@ -10,6 +10,7 @@ from strawberry.codegen.types import (
     GraphQLInlineFragment,
     GraphQLIntValue,
     GraphQLList,
+    GraphQLListValue,
     GraphQLOperation,
     GraphQLOptional,
     GraphQLSelection,
@@ -72,6 +73,9 @@ class PrintOperationPlugin(QueryCodegenPlugin):
 
         if isinstance(value, GraphQLVariableReference):
             return f"${value.value}"
+
+        if isinstance(value, GraphQLListValue):
+            return f"[{', '.join(self._print_argument_value(v) for v in value.values)}]"
 
         raise ValueError(f"not supported: {type(value)}")  # pragma: no cover
 
