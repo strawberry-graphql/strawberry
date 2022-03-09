@@ -70,7 +70,7 @@ class ExtensionsRunner:
 
         for extension in self.extensions:
             results = await await_maybe(extension.get_results())
-            data.update(results)  # type: ignore
+            data.update(results)
 
         return data
 

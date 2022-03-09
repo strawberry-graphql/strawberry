@@ -2,7 +2,7 @@ import sys
 import typing
 from collections.abc import AsyncGenerator as AsyncGenerator_abc
 from enum import Enum
-from typing import (  # type: ignore
+from typing import (  # type: ignore[attr-defined]
     TYPE_CHECKING,
     Any,
     AsyncGenerator as AsyncGenerator_typing,
@@ -15,7 +15,7 @@ from typing import (  # type: ignore
 
 
 try:
-    from typing import ForwardRef  # type: ignore
+    from typing import ForwardRef
 except ImportError:  # pragma: no cover
     # ForwardRef is private in python 3.6 and 3.7
     from typing import _ForwardRef as ForwardRef  # type: ignore
@@ -59,8 +59,6 @@ class StrawberryAnnotation:
             annotation = self.annotation
 
         evaled_type = _eval_type(annotation, self.namespace, None)
-        if evaled_type is None:
-            raise ValueError("Annotation cannot be plain None type")
         if self._is_async_generator(evaled_type):
             evaled_type = self._strip_async_generator(evaled_type)
         if self._is_lazy_type(evaled_type):
@@ -236,7 +234,7 @@ class StrawberryAnnotation:
         # don't have a `__origin__` property on them, but they are instances of
         # `UnionType`, which is only available in Python 3.10+
         if sys.version_info >= (3, 10):
-            from types import UnionType  # type: ignore
+            from types import UnionType
 
             if isinstance(annotation, UnionType):
                 return True

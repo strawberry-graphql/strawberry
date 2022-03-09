@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "strawberry-graphql"
 packages = [ { include = "strawberry" } ]
-version = "0.95.4"
+version = "0.102.2"
 description = "A library for creating GraphQL APIs"
 authors = ["Patrick Arminio <patrick.arminio@gmail.com>"]
 license = "MIT"
@@ -31,13 +31,10 @@ starlette = {version = ">=0.13.6,<0.17.0", optional = true}
 click = {version = ">=7.0,<9.0", optional = true}
 pygments = "^2.3"
 uvicorn = {version = ">=0.11.6,<0.18.0", optional = true}
-Django = [
-    {version = ">=2.2,<4", markers = "python_version < '3.8' and extra == 'django'", optional = true},
-    {version = ">=2.2,<5", markers = "python_version >= '3.8' and extra == 'django'", optional = true}
-]
-graphql-core = "~3.1.0"
+Django = {version = ">=2.2", optional = true}
+graphql-core = "~3.2.0"
 asgiref = {version = "^3.2", optional = true}
-flask = {version = "^1.1", optional = true}
+flask = {version = ">=1.1", optional = true}
 typing_extensions = ">=3.7.4,<5.0.0"
 opentelemetry-api = {version = "<2", optional = true}
 opentelemetry-sdk = {version = "<2", optional = true}
@@ -48,16 +45,15 @@ python-multipart = "^0.0.5"
 sanic = {version = ">=20.12.2,<22.0.0", optional = true}
 aiohttp = {version = "^3.7.4.post0", optional = true}
 fastapi = {version = ">=0.65.2", optional = true}
-sentinel = "^0.3.0"
 "backports.cached-property" = "^1.0.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.0"
 pytest-emoji = "^0.2.0"
 flake8 = "^4.0"
-black = {version = "^21.12b0", allow-prereleases = true}
+black = "^22"
 isort = "^5.10.1"
-pytest-asyncio = "^0.17.2"
+pytest-asyncio = "^0.18.2"
 pytest-cov = "^3.0"
 mypy = "^0.931"
 flake8-bugbear = "^22.1.11"
@@ -67,20 +63,17 @@ pytest-mock = "^3.7"
 pytest-django = {version = "^4.5"}
 asgiref = "^3.2"
 pytest-flask = {version = "^1.2.0"}
-flask = {version = "^1.1"}
+flask = ">=1.1"
 chalice = {version = "^1.22"}
 requests = "^2.27.1"
 pre-commit = "^2.16.0"
 pytest-benchmark = "^3.4.1"
-freezegun = "^1.1.0"
+freezegun = "^1.2.0"
 opentelemetry-api = "<2"
 opentelemetry-sdk = "<2"
 flake8-isort = "^4.1.1"
-flake8-black = "^0.2.1"
-Django = [
-    {version = ">=2.2,<4", python = "<3.8", optional = false},
-    {version = ">=2.2,<5", python = ">=3.8", optional = false}
-]
+flake8-black = "^0.3"
+Django = ">=2.2"
 pydantic = {version = "<2", optional = false}
 email-validator = {version = "^1.1.3", optional = false}
 starlette = ">=0.13.6,<0.17.0"
@@ -89,10 +82,10 @@ sanic = ">=20.12.2,<22.0.0"
 aiohttp = "^3.7.4.post0"
 pytest-aiohttp = "^1.0.3"
 types-typed-ast = "^1.5.2"
-types-toml = "^0.10.3"
+types-toml = "^0.10.4"
 types-ujson = "^4.2.1"
-types-setuptools = "^57.4.8"
-types-requests = "^2.27.8"
+types-setuptools = "^57.4.9"
+types-requests = "^2.27.10"
 types-python-dateutil = "^2.8.9"
 types-freezegun = "^1.1.6"
 types-chardet = "^4.0.3"
@@ -101,6 +94,7 @@ types-aiofiles = "^0.8.3"
 sanic-testing = "^0.8"
 fastapi = {version = ">=0.65.0", optional = false}
 pytest-xprocess = "^0.18.1"
+MarkupSafe = "2.0.1"
 
 [tool.poetry.extras]
 aiohttp = ["aiohttp", "pytest-aiohttp"]
@@ -131,7 +125,7 @@ known_first_party = ["strawberry"]
 sections = ["FUTURE", "STDLIB", "PYTEST", "THIRDPARTY", "DJANGO", "GRAPHQL", "FIRSTPARTY", "LOCALFOLDER"]
 
 [tool.pytest.ini_options]
-addopts = "-s --emoji --mypy-ini-file=mypy_tests.ini --benchmark-disable"
+addopts = "-s --emoji --mypy-ini-file=mypy.ini --benchmark-disable"
 DJANGO_SETTINGS_MODULE = "tests.django.django_settings"
 testpaths = ["tests/"]
 markers = ["django"]

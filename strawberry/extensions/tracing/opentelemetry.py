@@ -28,7 +28,7 @@ class RequestStage(enum.Enum):
 
 class OpenTelemetryExtension(Extension):
     _arg_filter: Optional[ArgFilter]
-    _span_holder: Dict[str, Span] = dict()
+    _span_holder: Dict[RequestStage, Span] = dict()
     _tracer: Tracer
 
     def __init__(

@@ -163,6 +163,14 @@ the newer recommended
 [graphql-transport-ws](https://github.com/enisdenjo/graphql-ws) WebSocket
 sub-protocols.
 
+<Note>
+
+The `graphql-transport-ws` protocols repository is called `graphql-ws`.
+However, `graphql-ws` is also the name of the legacy protocol.
+This documentation always refers to the protocol names.
+
+</Note>
+
 Note that the `graphql-ws` sub-protocol is mainly supported for backwards
 compatibility. Read the
 [graphql-ws-transport protocols announcement](https://the-guild.dev/blog/graphql-over-websockets)
@@ -199,3 +207,15 @@ app = GraphQL(schema, subscription_protocols=[
     GRAPHQL_WS_PROTOCOL,
 ])
 ```
+
+### Single result operations
+
+In addition to _streaming operations_ (i.e. subscriptions),
+the `graphql-transport-ws` protocol supports so called _single result operations_ (i.e. queries and mutations).
+
+This enables clients to use one protocol and one connection for queries, mutations and subscriptions.
+Take a look at the [protocols repository](https://github.com/enisdenjo/graphql-ws)
+to learn how to correctly set up the graphql client of your choice.
+
+Strawberry supports single result operations out of the box when the `graphql-transport-ws` protocol is enabled.
+Single result operations are normal queries and mutations, so there is no need to adjust any resolvers.

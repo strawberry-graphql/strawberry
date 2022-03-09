@@ -25,8 +25,8 @@ class GraphQLView(View):
     def get_root_value(self):
         return None
 
-    def get_context(self):
-        return {"request": request}
+    def get_context(self, response: Response):
+        return {"request": request, "response": response}
 
     def render_template(self, template=None):
         return render_template_string(template)
@@ -49,14 +49,15 @@ class GraphQLView(View):
             data = replace_placeholders_with_files(operations, files_map, request.files)
 
         else:
-            data = request.json
+            data = request.json  # type: ignore
 
         try:
             request_data = parse_request_data(data)
         except MissingQueryError:
             return Response("No valid query was provided for the request", 400)
 
-        context = self.get_context()
+        response = Response(status=200, content_type="application/json")
+        context = self.get_context(response)
 
         result = self.schema.execute_sync(
             request_data.query,
@@ -67,9 +68,6 @@ class GraphQLView(View):
         )
 
         response_data = self.process_result(result)
+        response.set_data(json.dumps(response_data))
 
-        return Response(
-            json.dumps(response_data),
-            status=200,
-            content_type="application/json",
-        )
+        return response

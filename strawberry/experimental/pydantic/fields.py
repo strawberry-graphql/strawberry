@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import Optional
+from typing import Any, List, Optional, Type
 from uuid import UUID
 
 import pydantic
@@ -16,10 +16,6 @@ ATTR_TO_TYPE_MAP = {
     "StrictStr": str,
     "ConstrainedBytes": bytes,
     "conbytes": bytes,
-    "ConstrainedList": None,
-    "conlist": None,
-    "ConstrainedSet": None,
-    "conset": None,
     "ConstrainedStr": str,
     "constr": str,
     "EmailStr": str,
@@ -64,12 +60,14 @@ FIELDS_MAP = {
 }
 
 
-def get_basic_type(type_):
+def get_basic_type(type_) -> Type[Any]:
     if isinstance(type_, type):
         if issubclass(type_, pydantic.ConstrainedInt):
             return int
         if issubclass(type_, pydantic.ConstrainedStr):
             return str
+        if issubclass(type_, pydantic.ConstrainedList):
+            return List[get_basic_type(type_.item_type)]  # type: ignore
 
     if type_ in FIELDS_MAP:
         type_ = FIELDS_MAP.get(type_)

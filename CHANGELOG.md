@@ -1,6 +1,289 @@
 CHANGELOG
 =========
 
+0.102.2 - 2022-03-08
+--------------------
+
+Add support for postponed evaluation of annotations
+([PEP-563](https://www.python.org/dev/peps/pep-0563/)) to `strawberry.Private`
+annotated fields.
+
+## Example
+
+This release fixes Issue #1586 using schema-conversion time filtering of
+`strawberry.Private` fields for PEP-563. This means the following is now
+supported:
+
+```python
+@strawberry.type
+class Query:
+    foo: "strawberry.Private[int]"
+```
+
+Forward references are supported as well:
+
+```python
+from __future__ import annotations
+
+from dataclasses import dataclass
+
+@strawberry.type
+class Query:
+    private_foo: strawberry.Private[SensitiveData]
+
+    @strawberry.field
+    def foo(self) -> int:
+        return self.private_foo.visible
+
+@dataclass
+class SensitiveData:
+    visible: int
+    not_visible int
+```
+
+Contributed by [San Kilkis](https://github.com/skilkis) via [PR #1684](https://github.com/strawberry-graphql/strawberry/pull/1684/)
+
+
+0.102.1 - 2022-03-07
+--------------------
+
+This PR improves the support for scalars when using MyPy.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #1205](https://github.com/strawberry-graphql/strawberry/pull/1205/)
+
+
+0.102.0 - 2022-03-07
+--------------------
+
+Added the response object to `get_context` on the `flask` view. This means that in fields, something like this can be used;
+
+```python
+@strawberry.field
+def response_check(self, info: Info) -> bool:
+    response: Response = info.context["response"]
+    response.status_code = 401
+
+    return True
+```
+
+0.101.0 - 2022-03-06
+--------------------
+
+This release adds support for `graphql-transport-ws` single result operations.
+
+Single result operations allow clients to execute queries and mutations over an existing WebSocket connection.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) [PR #1698](https://github.com/strawberry-graphql/strawberry/pull/1698/)
+
+
+0.100.0 - 2022-03-05
+--------------------
+
+Change `strawberry.auto` to be a type instead of a sentinel.
+This not only removes the dependency on sentinel from the project, but also fixes
+some related issues, like the fact that only types can be used with `Annotated`.
+
+Also, custom scalars will now trick static type checkers into thinking they
+returned their wrapped type. This should fix issues with pyright 1.1.224+ where
+it doesn't allow non-type objects to be used as annotations for dataclasses and
+dataclass-alike classes (which is strawberry's case). The change to `strawberry.auto`
+also fixes this issue for it.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) [PR #1690](https://github.com/strawberry-graphql/strawberry/pull/1690/)
+
+
+0.99.3 - 2022-03-05
+-------------------
+
+This release adds support for flask 2.x and also relaxes the requirements for Django, allowing to install newer version of Django without having to wait for Strawberry to update its supported dependencies list.
+
+Contributed by [Guillaume Andreu Sabater](https://github.com/g-as) [PR #1687](https://github.com/strawberry-graphql/strawberry/pull/1687/)
+
+
+0.99.2 - 2022-03-04
+-------------------
+
+This fixes the schema printer to add support for schema
+directives on input types.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1697](https://github.com/strawberry-graphql/strawberry/pull/1697/)
+
+
+0.99.1 - 2022-03-02
+-------------------
+
+This release fixed a false positive deprecation warning related to our AIOHTTP class based view.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) [PR #1691](https://github.com/strawberry-graphql/strawberry/pull/1691/)
+
+
+0.99.0 - 2022-02-28
+-------------------
+
+This release adds the following scalar types:
+
+- `JSON`
+- `Base16`
+- `Base32`
+- `Base64`
+
+they can be used like so:
+
+```python
+from strawberry.scalar import Base16, Base32, Base64, JSON
+
+@strawberry.type
+class Example:
+    a: Base16
+    b: Base32
+    c: Base64
+    d: JSON
+```
+
+Contributed by [Paulo Costa](https://github.com/paulo-raca) [PR #1647](https://github.com/strawberry-graphql/strawberry/pull/1647/)
+
+
+0.98.2 - 2022-02-24
+-------------------
+
+Adds support for converting pydantic conlist.
+Note that constraint is not enforced in the graphql type.
+Thus, we recommend always working on the pydantic type such that the validation is enforced.
+
+```python
+import strawberry
+from pydantic import BaseModel, conlist
+
+class Example(BaseModel):
+    friends: conlist(str, min_items=1)
+
+@strawberry.experimental.pydantic.input(model=Example, all_fields=True)
+class ExampleGQL:
+    ...
+
+@strawberry.type
+class Query:
+    @strawberry.field()
+    def test(self, example: ExampleGQL) -> None:
+        # friends may be an empty list here
+        print(example.friends)
+        # calling to_pydantic() runs the validation and raises
+        # an error if friends is empty
+        print(example.to_pydantic().friends)
+
+schema = strawberry.Schema(query=Query)
+```
+
+The converted graphql type is
+```
+input ExampleGQL {
+  friends: [String!]!
+}
+```
+
+Contributed by [James Chua](https://github.com/thejaminator) [PR #1656](https://github.com/strawberry-graphql/strawberry/pull/1656/)
+
+0.98.1 - 2022-02-24
+-------------------
+
+This release wasn't published on PyPI
+
+0.98.0 - 2022-02-23
+-------------------
+
+This release updates `graphql-core` to `3.2.0`
+
+Make sure you take a look at [`graphql-core`'s release notes](https://github.com/graphql-python/graphql-core/releases/tag/v3.2.0)
+for any potential breaking change that might affect you if you're importing things
+from the `graphql` package directly.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #1601](https://github.com/strawberry-graphql/strawberry/pull/1601/)
+
+
+0.97.0 - 2022-02-17
+-------------------
+
+Support "void" functions
+
+It is now possible to have a resolver that returns "None". Strawberry will automatically assign the new `Void` scalar in the schema
+and will always send `null` in the response
+
+## Exampe
+
+```python
+@strawberry.type
+class Mutation:
+    @strawberry.field
+    def do_something(self, arg: int) -> None:
+        return
+```
+results in this schema:
+```grapqhl
+type Mutation {
+    doSomething(arg: Int!): Void
+}
+```
+
+Contributed by [Paulo Costa](https://github.com/paulo-raca) [PR #1648](https://github.com/strawberry-graphql/strawberry/pull/1648/)
+
+
+0.96.0 - 2022-02-07
+-------------------
+
+Add better support for custom Pydantic conversion logic and standardize the
+behavior when not using `strawberry.auto` as the type.
+
+See https://strawberry.rocks/docs/integrations/pydantic#custom-conversion-logic for details and examples.
+
+Note that this release fixes a bug related to Pydantic aliases in schema
+generation. If you have a field with the same name as an aliased Pydantic field
+but with a different type than `strawberry.auto`, the generated field will now
+use the alias name. This may cause schema changes on upgrade in these cases, so
+care should be taken. The alias behavior can be disabled by setting the
+`use_pydantic_alias` option of the decorator to false.
+
+Contributed by [Matt Allen](https://github.com/Matt343) [PR #1629](https://github.com/strawberry-graphql/strawberry/pull/1629/)
+
+
+0.95.5 - 2022-02-07
+-------------------
+
+Adds support for `use_pydantic_alias` parameter in pydantic model conversion.
+Decides if the all the GraphQL field names for the generated type should use the alias name or not.
+
+```python
+from pydantic import BaseModel, Field
+import strawberry
+
+class UserModel(BaseModel):
+      id: int = Field(..., alias="my_alias_name")
+
+@strawberry.experimental.pydantic.type(
+    UserModel, use_pydantic_alias=False
+)
+class User:
+    id: strawberry.auto
+```
+
+If `use_pydantic_alias` is `False`, the GraphQL type User will use `id` for the name of the `id` field coming from the Pydantic model.
+```
+type User {
+      id: Int!
+}
+```
+
+With `use_pydantic_alias` set to `True` (the default behaviour) the GraphQL type user will use `myAliasName` for the `id` field coming from the Pydantic models (since the field has a `alias` specified`)
+```
+type User {
+      myAliasName: Int!
+}
+```
+
+`use_pydantic_alias` is set to `True` for backwards compatibility.
+
+Contributed by [James Chua](https://github.com/thejaminator) [PR #1546](https://github.com/strawberry-graphql/strawberry/pull/1546/)
+
+
 0.95.4 - 2022-02-06
 -------------------
 

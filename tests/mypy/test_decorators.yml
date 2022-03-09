@@ -9,7 +9,7 @@
     User(name="Patrick")
     User(n="Patrick")
   out: |
-    main:8: error: Unexpected keyword argument "n" for "User"
+    main:8: error: Unexpected keyword argument "n" for "User"  [call-arg]
 
 - case: test_input
   main: |
@@ -22,7 +22,7 @@
     EditUserInput(name="Patrick")
     EditUserInput(n="Patrick")
   out: |
-    main:8: error: Unexpected keyword argument "n" for "EditUserInput"
+    main:8: error: Unexpected keyword argument "n" for "EditUserInput"  [call-arg]
 
 - case: test_interface
   main: |
@@ -35,7 +35,7 @@
     NameInterface(name="Patrick")
     NameInterface(n="Patrick")
   out: |
-    main:8: error: Unexpected keyword argument "n" for "NameInterface"
+    main:8: error: Unexpected keyword argument "n" for "NameInterface"  [call-arg]
 
 - case: test_federation_type
   main: |
@@ -48,7 +48,7 @@
     User(name="Patrick")
     User(n="Patrick")
   out: |
-    main:8: error: Unexpected keyword argument "n" for "User"
+    main:8: error: Unexpected keyword argument "n" for "User"  [call-arg]
 
 - case: test_federation_input
   main: |
@@ -61,4 +61,4 @@
     EditUserInput(name="Patrick")
     EditUserInput(n="Patrick")
   out: |
-    main:8: error: Unexpected keyword argument "n" for "EditUserInput"
+    main:8: error: Unexpected keyword argument "n" for "EditUserInput"  [call-arg]

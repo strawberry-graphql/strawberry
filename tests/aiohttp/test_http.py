@@ -6,14 +6,14 @@ from strawberry.types import ExecutionResult, Info
 
 async def test_graphql_query(graphql_client):
     query = """
-        query {
-            hello
+        query ($name: String) {
+            hello(name: $name)
         }
     """
 
-    response = await graphql_client.query(query=query)
+    response = await graphql_client.query(query=query, variables={"name": "strawberry"})
 
-    assert response.data["hello"] == "strawberry"
+    assert response.data["hello"] == "Hello strawberry"
 
 
 async def test_custom_context(aiohttp_client):
