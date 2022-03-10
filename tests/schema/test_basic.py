@@ -7,6 +7,7 @@ from typing import Optional
 import pytest
 
 import strawberry
+from strawberry import ID
 from strawberry.exceptions import (
     FieldWithResolverAndDefaultFactoryError,
     FieldWithResolverAndDefaultValueError,
@@ -514,7 +515,9 @@ def test_with_types():
     class Query:
         foo: int
 
-    schema = strawberry.Schema(query=Query, types=[Type, Interface, Input, Base64])
+    schema = strawberry.Schema(
+        query=Query, types=[Type, Interface, Input, Base64, ID, str]
+    )
     expected = '''
         """
         Represents binary data as Base64-encoded strings, using the standard alphabet.
