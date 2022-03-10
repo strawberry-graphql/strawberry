@@ -3,6 +3,7 @@ from typing import Any, Dict, Optional, Sequence, Type, Union
 
 from graphql import (
     ExecutionContext as GraphQLExecutionContext,
+    GraphQLNamedType,
     GraphQLSchema,
     get_introspection_query,
     parse,
@@ -78,8 +79,9 @@ class Schema(BaseSchema):
 
         graphql_types = []
         for type_ in types:
-            graphql_type = self.schema_converter.from_object(type_._type_definition)
-            graphql_types.append(graphql_type)
+            graphql_type = self.schema_converter.from_type(type_)
+            if isinstance(graphql_type, GraphQLNamedType):
+                graphql_types.append(graphql_type)
 
         self._schema = GraphQLSchema(
             query=query_type,
