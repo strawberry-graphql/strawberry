@@ -1,4 +1,4 @@
-from .query_codegen import CodegenFile, QueryCodegen, QueryCodegenPlugin
+from .query_codegen import CodegenFile, CodegenResult, QueryCodegen, QueryCodegenPlugin
 
 
-__all__ = ["QueryCodegen", "QueryCodegenPlugin", "CodegenFile"]
+__all__ = ["QueryCodegen", "QueryCodegenPlugin", "CodegenFile", "CodegenResult"]

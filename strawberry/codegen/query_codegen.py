@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import abc
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Iterable, List, Optional, Type, Union, cast
@@ -96,12 +95,17 @@ class HasSelectionSet(Protocol):
     selection_set: Optional[SelectionSetNode]
 
 
-class QueryCodegenPlugin(abc.ABC):
-    @abc.abstractmethod
+class QueryCodegenPlugin:
+    def on_start(self) -> None:
+        ...
+
+    def on_end(self, result: CodegenResult) -> None:
+        ...
+
     def generate_code(
         self, types: List[GraphQLType], operation: GraphQLOperation
     ) -> List[CodegenFile]:
-        raise NotImplementedError()
+        return []
 
 
 class QueryCodegenPluginManager:
@@ -120,6 +124,14 @@ class QueryCodegenPluginManager:
 
         return result
 
+    def on_start(self) -> None:
+        for plugin in self.plugins:
+            plugin.on_start()
+
+    def on_end(self, result: CodegenResult) -> None:
+        for plugin in self.plugins:
+            plugin.on_end(result)
+
 
 class QueryCodegen:
     def __init__(self, schema: strawberry.Schema, plugins: List[QueryCodegenPlugin]):
@@ -128,6 +140,8 @@ class QueryCodegen:
         self.types: List[GraphQLType] = []
 
     def codegen(self, query: str) -> CodegenResult:
+        self.plugin_manager.on_start()
+
         ast = parse(query)
 
         operations = self._get_operations(ast)
@@ -145,7 +159,10 @@ class QueryCodegen:
 
         self.operation = self._convert_operation(operation)
 
-        return self.generate_code()
+        result = self.generate_code()
+        self.plugin_manager.on_end(result)
+
+        return result
 
     def _collect_type(self, type_: GraphQLType) -> None:
         if type_ in self.types:
