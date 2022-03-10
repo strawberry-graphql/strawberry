@@ -1,6 +1,7 @@
 import importlib
 import inspect
 import sys
+from pathlib import Path
 from typing import List, Optional, Type
 
 import click
@@ -76,9 +77,15 @@ def _load_plugins(plugins: List[str]) -> List[QueryCodegenPlugin]:
 
 @click.command(short_help="Generate code from a query")
 @click.option("--plugin", "-p", multiple=True)
-@click.option("--output-dir", "-o", default=".", help="Output directory")
+@click.option(
+    "--output-dir",
+    "-o",
+    default=".",
+    help="Output directory",
+    type=click.Path(path_type=Path, exists=False, dir_okay=True, file_okay=False),
+)
 @click.option("--schema", type=str, required=True)
-@click.argument("query", type=str)
+@click.argument("query", type=click.Path(path_type=Path, exists=True))
 @click.option(
     "--app-dir",
     default=".",
@@ -90,7 +97,9 @@ def _load_plugins(plugins: List[str]) -> List[QueryCodegenPlugin]:
         "Works the same as `--app-dir` in uvicorn."
     ),
 )
-def codegen(schema: str, query: str, app_dir: str, output_dir: str, plugin: List[str]):
+def codegen(
+    schema: str, query: Path, app_dir: str, output_dir: Path, plugin: List[str]
+):
     click.echo(
         click.style(
             "The codegen is experimental. Please submit any bug at "
@@ -115,12 +124,10 @@ def codegen(schema: str, query: str, app_dir: str, output_dir: str, plugin: List
 
     code_generator = QueryCodegen(schema_symbol, plugins=plugins)
 
-    with open(query) as f:
-        result = code_generator.codegen(f.read())
+    result = code_generator.codegen(query.read_text())
+    output_dir.mkdir(parents=True, exist_ok=True)
 
-    for file in result.files:
-        with open(f"{output_dir}/{file.path}", "w") as f:
-            f.write(file.content)
+    result.write(output_dir)
 
     click.echo(
         click.style(f"Generated {len(result.files)} files in {output_dir}", fg="green")

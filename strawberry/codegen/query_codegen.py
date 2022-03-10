@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import abc
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Iterable, List, Optional, Type, Union, cast
 
 from typing_extensions import Literal, Protocol
@@ -84,6 +85,11 @@ class CodegenResult:
 
     def to_string(self) -> str:
         return "\n".join(f.content for f in self.files) + "\n"
+
+    def write(self, folder: Path) -> None:
+        for file in self.files:
+            destination = folder / file.path
+            destination.write_text(file.content)
 
 
 class HasSelectionSet(Protocol):

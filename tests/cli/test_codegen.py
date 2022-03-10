@@ -33,7 +33,7 @@ class EmptyPlugin(QueryCodegenPlugin):
 
 
 @pytest.fixture
-def query_file_path(tmp_path: Path) -> str:
+def query_file_path(tmp_path: Path) -> Path:
     output_path = tmp_path / "query.graphql"
     output_path.write_text(
         """
@@ -44,10 +44,10 @@ def query_file_path(tmp_path: Path) -> str:
         }
         """
     )
-    return str(output_path)
+    return output_path
 
 
-def test_codegen(cli_runner, query_file_path: str, tmp_path: Path):
+def test_codegen(cli_runner, query_file_path: Path, tmp_path: Path):
     selector = "tests.fixtures.sample_package.sample_module:schema"
     result = cli_runner.invoke(
         cmd_codegen,
@@ -55,10 +55,10 @@ def test_codegen(cli_runner, query_file_path: str, tmp_path: Path):
             "-p",
             "tests.cli.test_codegen",
             "-o",
-            tmp_path,
+            str(tmp_path),
             "--schema",
             selector,
-            query_file_path,
+            str(query_file_path),
         ],
     )
 
@@ -71,7 +71,7 @@ def test_codegen(cli_runner, query_file_path: str, tmp_path: Path):
 
 
 def test_codegen_passing_plugin_symbol(
-    cli_runner, query_file_path: str, tmp_path: Path
+    cli_runner, query_file_path: Path, tmp_path: Path
 ):
     selector = "tests.fixtures.sample_package.sample_module:schema"
     result = cli_runner.invoke(
@@ -80,10 +80,10 @@ def test_codegen_passing_plugin_symbol(
             "-p",
             "tests.cli.test_codegen:EmptyPlugin",
             "-o",
-            tmp_path,
+            str(tmp_path),
             "--schema",
             selector,
-            query_file_path,
+            str(query_file_path),
         ],
     )
 
@@ -96,7 +96,7 @@ def test_codegen_passing_plugin_symbol(
 
 
 def test_codegen_returns_error_when_symbol_does_not_exist(
-    cli_runner, query_file_path: str
+    cli_runner, query_file_path: Path
 ):
     selector = "tests.fixtures.sample_package.sample_module:schema"
     result = cli_runner.invoke(
@@ -106,7 +106,7 @@ def test_codegen_returns_error_when_symbol_does_not_exist(
             "tests.cli.test_codegen:SomePlugin",
             "--schema",
             selector,
-            query_file_path,
+            str(query_file_path),
         ],
     )
 
@@ -117,12 +117,12 @@ def test_codegen_returns_error_when_symbol_does_not_exist(
 
 
 def test_codegen_returns_error_when_module_does_not_exist(
-    cli_runner, query_file_path: str
+    cli_runner, query_file_path: Path
 ):
     selector = "tests.fixtures.sample_package.sample_module:schema"
     result = cli_runner.invoke(
         cmd_codegen,
-        ["-p", "fake_module_plugin", "--schema", selector, query_file_path],
+        ["-p", "fake_module_plugin", "--schema", selector, str(query_file_path)],
     )
 
     assert result.exit_code == 1
@@ -130,23 +130,23 @@ def test_codegen_returns_error_when_module_does_not_exist(
 
 
 def test_codegen_returns_error_when_does_not_find_plugin(
-    cli_runner, query_file_path: str
+    cli_runner, query_file_path: Path
 ):
     selector = "tests.fixtures.sample_package.sample_module:schema"
     result = cli_runner.invoke(
         cmd_codegen,
-        ["-p", "tests.cli.test_server", "--schema", selector, query_file_path],
+        ["-p", "tests.cli.test_server", "--schema", selector, str(query_file_path)],
     )
 
     assert result.exit_code == 1
     assert "Error: Plugin tests.cli.test_server not found" in result.output
 
 
-def test_codegen_finds_our_plugins(cli_runner, query_file_path: str, tmp_path: Path):
+def test_codegen_finds_our_plugins(cli_runner, query_file_path: Path, tmp_path: Path):
     selector = "tests.fixtures.sample_package.sample_module:schema"
     result = cli_runner.invoke(
         cmd_codegen,
-        ["-p", "python", "--schema", selector, "-o", tmp_path, query_file_path],
+        ["-p", "python", "--schema", selector, "-o", tmp_path, str(query_file_path)],
     )
 
     assert result.exit_code == 0
