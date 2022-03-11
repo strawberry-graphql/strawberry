@@ -9,7 +9,8 @@ Strawberry supports code generation for GraphQL queries.
 
 <Note>
 
-Schema codegen will be supported in future releases.
+Schema codegen will be supported in future releases. We are testing the query
+codegen in order to come up with a nice API.
 
 </Note>
 
@@ -93,3 +94,43 @@ GraphQL APIs.
 Tools like [GraphQL Codegen](https://www.graphql-code-generator.com/) exist in
 order to create types and code for your clients. Strawberry's codegen feature
 aims to address the similar problem without needing to install a separate tool.
+
+## Plugin system
+
+Strawberry's codegen supports plugins, in the example above for example, we are
+using the `python` plugin. To pass more plugins to the codegen tool, you can use
+the `-p` flag, for example:
+
+```bash
+strawberry codegen --schema schema.py --output-dir ./output -p python -p typescript query.graphql
+```
+
+the plugin can be specified as a python path.
+
+### Custom plugins
+
+The interface for plugins looks like this:
+
+```python
+from strawberry.codegen import CodegenPlugin, CodegenFile, CodegenResult
+from strawberry.codegen.types import GraphQLType, GraphQLOperation
+
+class QueryCodegenPlugin:
+    def on_start(self) -> None:
+        ...
+
+    def on_end(self, result: CodegenResult) -> None:
+        ...
+
+    def generate_code(
+        self, types: List[GraphQLType], operation: GraphQLOperation
+    ) -> List[CodegenFile]:
+        return []
+```
+
+- `on_start` is called before the codegen starts.
+- `on_end` is called after the codegen ends and it receives the result of the
+  codegen. You can use this to format code, or add licenses to files and so on.
+- `generated_code` is called when the codegen starts and it receives the types
+  and the operation. You cans use this to generate code for each type and
+  operation.
