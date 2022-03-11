@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, List, Optional, Type, Union, cast
+from typing import Iterable, List, Optional, Tuple, Type, Union, cast
 
 from typing_extensions import Literal, Protocol
 
@@ -247,7 +247,7 @@ class QueryCodegen:
         operation_name = operation_definition.name.value
         result_class_name = f"{operation_name}Result"
 
-        self._collect_types(
+        operation_type = self._collect_types(
             cast(HasSelectionSet, operation_definition),
             parent_type=query_type,
             class_name=result_class_name,
@@ -258,7 +258,7 @@ class QueryCodegen:
             operation_definition.operation.value,
         )
 
-        variables = self._convert_variable_definitions(
+        variables, variables_type = self._convert_variable_definitions(
             operation_definition.variable_definitions, operation_name=operation_name
         )
 
@@ -268,15 +268,17 @@ class QueryCodegen:
             selections=self._convert_selection_set(operation_definition.selection_set),
             directives=self._convert_directives(operation_definition.directives),
             variables=variables,
+            type=operation_type,
+            variables_type=variables_type,
         )
 
     def _convert_variable_definitions(
         self,
         variable_definitions: Optional[Iterable[VariableDefinitionNode]],
         operation_name: str,
-    ) -> List[GraphQLVariable]:
+    ) -> Tuple[List[GraphQLVariable], Optional[GraphQLType]]:
         if not variable_definitions:
-            return []
+            return [], None
 
         type_ = GraphQLObjectType(f"{operation_name}Variables", [])
 
@@ -295,7 +297,7 @@ class QueryCodegen:
 
             variables.append(variable)
 
-        return variables
+        return variables, type_
 
     def _get_operations(self, ast: DocumentNode) -> List[OperationDefinitionNode]:
         return [
