@@ -18,6 +18,6 @@ def test_codegen(
     generator = QueryCodegen(schema, plugins=[PrintOperationPlugin()])
     query_content = query.read_text()
 
-    result = generator.codegen(query_content)
+    result = generator.run(query_content)
 
     assert result.to_string() == query_content

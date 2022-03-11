@@ -1,13 +1,12 @@
 import importlib
 import inspect
-import sys
 from pathlib import Path
 from typing import List, Optional, Type
 
 import click
 
 from strawberry.cli.utils import load_schema
-from strawberry.codegen import QueryCodegen, QueryCodegenPlugin
+from strawberry.codegen import CodegenResult, QueryCodegen, QueryCodegenPlugin
 
 
 def _is_codegen_plugin(obj: object) -> bool:
@@ -75,8 +74,47 @@ def _load_plugins(plugins: List[str]) -> List[QueryCodegenPlugin]:
     return [_load_plugin(plugin)() for plugin in plugins]
 
 
+class ConsolePlugin(QueryCodegenPlugin):
+    def __init__(
+        self, query: Path, output_dir: Path, plugins: List[QueryCodegenPlugin]
+    ):
+        self.query = query
+        self.output_dir = output_dir
+        self.plugins = plugins
+
+    def on_start(self):
+        click.echo(
+            click.style(
+                "The codegen is experimental. Please submit any bug at "
+                "https://github.com/strawberry-graphql/strawberry\n",
+                fg="yellow",
+                bold=True,
+            )
+        )
+
+        plugin_names = [plugin.__class__.__name__ for plugin in self.plugins]
+
+        click.echo(
+            click.style(
+                f"Generating code for {self.query} using "
+                f"{', '.join(plugin_names)} plugin(s)",
+                fg="green",
+            )
+        )
+
+    def on_end(self, result: CodegenResult):
+        self.output_dir.mkdir(parents=True, exist_ok=True)
+        result.write(self.output_dir)
+
+        click.echo(
+            click.style(
+                f"Generated {len(result.files)} files in {self.output_dir}", fg="green"
+            )
+        )
+
+
 @click.command(short_help="Generate code from a query")
-@click.option("--plugin", "-p", multiple=True)
+@click.option("--plugins", "-p", "selected_plugins", multiple=True, required=True)
 @click.option(
     "--output-dir",
     "-o",
@@ -98,43 +136,16 @@ def _load_plugins(plugins: List[str]) -> List[QueryCodegenPlugin]:
     ),
 )
 def codegen(
-    schema: str, query: Path, app_dir: str, output_dir: Path, plugin: List[str]
+    schema: str,
+    query: Path,
+    app_dir: str,
+    output_dir: Path,
+    selected_plugins: List[str],
 ):
-    class ConsolePlugin(QueryCodegenPlugin):
-        def on_start(self):
-            click.echo(
-                click.style(
-                    "The codegen is experimental. Please submit any bug at "
-                    "https://github.com/strawberry-graphql/strawberry\n",
-                    fg="yellow",
-                    bold=True,
-                )
-            )
-
-        def on_end(self, result):
-            output_dir.mkdir(parents=True, exist_ok=True)
-            result.write(output_dir)
-
-            click.echo(
-                click.style(
-                    f"Generated {len(result.files)} files in {output_dir}", fg="green"
-                )
-            )
-
-    sys.path.insert(0, app_dir)
-
     schema_symbol = load_schema(schema, app_dir)
-    plugins = _load_plugins(plugin)
 
-    click.echo(
-        click.style(
-            f"Generating code for {query} using {', '.join(plugin)} plugin(s)",
-            fg="green",
-        )
-    )
-
-    plugins.insert(0, ConsolePlugin())
+    plugins = _load_plugins(selected_plugins)
+    plugins.insert(0, ConsolePlugin(query, output_dir, plugins))
 
     code_generator = QueryCodegen(schema_symbol, plugins=plugins)
-
-    code_generator.codegen(query.read_text())
+    code_generator.run(query.read_text())

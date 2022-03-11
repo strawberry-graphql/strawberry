@@ -45,7 +45,7 @@ def test_codegen(
 ):
     generator = QueryCodegen(schema, plugins=[plugin_class()])
 
-    result = generator.codegen(query.read_text())
+    result = generator.run(query.read_text())
 
     code = result.to_string()
 
@@ -57,18 +57,18 @@ def test_codegen_fails_if_no_operation_name(schema):
     generator = QueryCodegen(schema, plugins=[PythonPlugin()])
 
     with pytest.raises(NoOperationNameProvidedError):
-        generator.codegen("query { hello }")
+        generator.run("query { hello }")
 
 
 def test_codegen_fails_if_no_operation(schema):
     generator = QueryCodegen(schema, plugins=[PythonPlugin()])
 
     with pytest.raises(NoOperationProvidedError):
-        generator.codegen("type X { hello: String }")
+        generator.run("type X { hello: String }")
 
 
 def test_fails_with_multiple_operations(schema):
     generator = QueryCodegen(schema, plugins=[PythonPlugin()])
 
     with pytest.raises(MultipleOperationsProvidedError):
-        generator.codegen("query { hello } query { world }")
+        generator.run("query { hello } query { world }")

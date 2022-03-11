@@ -139,7 +139,7 @@ class QueryCodegen:
         self.plugin_manager = QueryCodegenPluginManager(plugins)
         self.types: List[GraphQLType] = []
 
-    def codegen(self, query: str) -> CodegenResult:
+    def run(self, query: str) -> CodegenResult:
         self.plugin_manager.on_start()
 
         ast = parse(query)
