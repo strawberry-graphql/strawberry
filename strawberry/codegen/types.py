@@ -133,5 +133,5 @@ class GraphQLOperation:
     selections: List[GraphQLSelection]
     directives: List[GraphQLDirective]
     variables: List[GraphQLVariable]
-    type: GraphQLType
-    variables_type: Optional[GraphQLType]
+    type: GraphQLObjectType
+    variables_type: Optional[GraphQLObjectType]

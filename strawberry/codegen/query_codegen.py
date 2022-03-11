@@ -268,7 +268,7 @@ class QueryCodegen:
             selections=self._convert_selection_set(operation_definition.selection_set),
             directives=self._convert_directives(operation_definition.directives),
             variables=variables,
-            type=operation_type,
+            type=cast(GraphQLObjectType, operation_type),
             variables_type=variables_type,
         )
 
@@ -276,7 +276,7 @@ class QueryCodegen:
         self,
         variable_definitions: Optional[Iterable[VariableDefinitionNode]],
         operation_name: str,
-    ) -> Tuple[List[GraphQLVariable], Optional[GraphQLType]]:
+    ) -> Tuple[List[GraphQLVariable], Optional[GraphQLObjectType]]:
         if not variable_definitions:
             return [], None
 
