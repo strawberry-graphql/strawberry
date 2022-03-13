@@ -40,3 +40,7 @@ type User {
   age: Int!
 }
 ```
+
+## How can I deal with circular imports?
+
+TODO...
