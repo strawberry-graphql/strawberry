@@ -346,7 +346,7 @@ def test_multiple_keys():
     schema = strawberry.federation.Schema(query=Query)
 
     expected = """
-        extend type Product @key(fields: "upc", resolvable: "True") {
+        extend type Product @key(fields: "upc", resolvable: true) {
           upc: String! @external
           reviews: [Review!]!
         }
