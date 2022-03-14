@@ -1,10 +1,7 @@
-import sys
-
 import click
 
-from strawberry import Schema
+from strawberry.cli.utils import load_schema
 from strawberry.printer import print_schema
-from strawberry.utils.importer import import_module_symbol
 
 
 @click.command(short_help="Exports the schema")
@@ -20,15 +17,7 @@ from strawberry.utils.importer import import_module_symbol
         "Works the same as `--app-dir` in uvicorn."
     ),
 )
-def export_schema(schema: str, app_dir):
-    sys.path.insert(0, app_dir)
+def export_schema(schema: str, app_dir: str):
+    schema_symbol = load_schema(schema, app_dir)
 
-    try:
-        schema_symbol = import_module_symbol(schema, default_symbol_name="schema")
-    except (ImportError, AttributeError) as exc:
-        message = str(exc)
-        raise click.BadArgumentUsage(message)
-    if not isinstance(schema_symbol, Schema):
-        message = "The `schema` must be an instance of strawberry.Schema"
-        raise click.BadArgumentUsage(message)
     print(print_schema(schema_symbol))
