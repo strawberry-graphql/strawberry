@@ -48,7 +48,7 @@ fastapi = {version = ">=0.65.2", optional = true}
 "backports.cached-property" = "^1.0.1"
 
 [tool.poetry.dev-dependencies]
-pytest = "^7.0"
+pytest = "^7.1"
 pytest-emoji = "^0.2.0"
 flake8 = "^4.0"
 black = "^22"
