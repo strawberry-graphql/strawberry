@@ -6,8 +6,8 @@ Python types or TypeScript types.
 
 You can use the following command:
 
-```
-strawberry codegen -p python api.schema query.graphql
+```bash
+strawberry codegen --schema schema --output-dir ./output -p python query.graphql
 ```
 
 to generate python types that correspond to your GraphQL query.
