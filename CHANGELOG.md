@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.102.3 - 2022-03-14
+--------------------
+
+This release makes StrawberryOptional and StrawberryList hashable,
+allowing to use strawberry types with libraries like dacite and
+dataclasses_json.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #1726](https://github.com/strawberry-graphql/strawberry/pull/1726/)
+
+
 0.102.2 - 2022-03-08
 --------------------
 
