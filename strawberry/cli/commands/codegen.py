@@ -115,6 +115,7 @@ class ConsolePlugin(QueryCodegenPlugin):
 
 @click.command(short_help="Generate code from a query")
 @click.option("--plugins", "-p", "selected_plugins", multiple=True, required=True)
+@click.option("--cli-plugin", "cli_plugin", required=False)
 @click.option(
     "--output-dir",
     "-o",
@@ -141,11 +142,17 @@ def codegen(
     app_dir: str,
     output_dir: Path,
     selected_plugins: List[str],
+    cli_plugin: Optional[str] = None,
 ):
     schema_symbol = load_schema(schema, app_dir)
 
+    console_plugin = ConsolePlugin
+
+    if cli_plugin:
+        console_plugin = _load_plugin(cli_plugin)
+
     plugins = _load_plugins(selected_plugins)
-    plugins.insert(0, ConsolePlugin(query, output_dir, plugins))
+    plugins.insert(0, console_plugin(query, output_dir, plugins))
 
     code_generator = QueryCodegen(schema_symbol, plugins=plugins)
     code_generator.run(query.read_text())

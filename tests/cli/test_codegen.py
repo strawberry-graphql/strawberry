@@ -3,9 +3,16 @@ from typing import List
 
 import pytest
 
-from strawberry.cli.commands.codegen import codegen as cmd_codegen
-from strawberry.codegen import CodegenFile, QueryCodegenPlugin
+from strawberry.cli.commands.codegen import ConsolePlugin, codegen as cmd_codegen
+from strawberry.codegen import CodegenFile, CodegenResult, QueryCodegenPlugin
 from strawberry.codegen.types import GraphQLOperation, GraphQLType
+
+
+class TestConsolePlugin(ConsolePlugin):
+    def on_end(self, result: CodegenResult):
+        result.files[0].path = "renamed.py"
+
+        return super().on_end(result)
 
 
 class TestPlugin(QueryCodegenPlugin):
@@ -53,7 +60,7 @@ def test_codegen(cli_runner, query_file_path: Path, tmp_path: Path):
         cmd_codegen,
         [
             "-p",
-            "tests.cli.test_codegen",
+            "tests.cli.test_codegen:TestPlugin",
             "-o",
             str(tmp_path),
             "--schema",
@@ -152,6 +159,31 @@ def test_codegen_finds_our_plugins(cli_runner, query_file_path: Path, tmp_path: 
     assert result.exit_code == 0
 
     code_path = tmp_path / "types.py"
+
+    assert code_path.exists()
+    assert "class GetUserResult" in code_path.read_text()
+
+
+def test_can_use_custom_cli_plugin(cli_runner, query_file_path: Path, tmp_path: Path):
+    selector = "tests.fixtures.sample_package.sample_module:schema"
+    result = cli_runner.invoke(
+        cmd_codegen,
+        [
+            "--cli-plugin",
+            "tests.cli.test_codegen:TestConsolePlugin",
+            "-p",
+            "python",
+            "--schema",
+            selector,
+            "-o",
+            tmp_path,
+            str(query_file_path),
+        ],
+    )
+
+    assert result.exit_code == 0
+
+    code_path = tmp_path / "renamed.py"
 
     assert code_path.exists()
     assert "class GetUserResult" in code_path.read_text()
