@@ -1,6 +1,24 @@
 CHANGELOG
 =========
 
+0.103.0 - 2022-03-14
+--------------------
+
+This release adds an experimental codegen feature for queries.
+It allows to combine a graphql query and Strawberry schema to generate
+Python types or TypeScript types.
+
+You can use the following command:
+
+```bash
+strawberry codegen --schema schema --output-dir ./output -p python query.graphql
+```
+
+to generate python types that correspond to your GraphQL query.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #1655](https://github.com/strawberry-graphql/strawberry/pull/1655/)
+
+
 0.102.3 - 2022-03-14
 --------------------
 
