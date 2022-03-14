@@ -13,6 +13,7 @@ from strawberry.exceptions import (
     FieldWithResolverAndDefaultValueError,
 )
 from strawberry.scalars import Base64
+from strawberry.type import StrawberryList
 
 
 def test_raises_exception_with_unsupported_types():
@@ -516,7 +517,7 @@ def test_with_types():
         foo: int
 
     schema = strawberry.Schema(
-        query=Query, types=[Type, Interface, Input, Base64, ID, str]
+        query=Query, types=[Type, Interface, Input, Base64, ID, str, int]
     )
     expected = '''
         """
@@ -542,3 +543,12 @@ def test_with_types():
     '''  # noqa: E501
 
     assert str(schema) == textwrap.dedent(expected).strip()
+
+
+def test_with_types_non_named():
+    @strawberry.type
+    class Query:
+        foo: int
+
+    with pytest.raises(AssertionError, match=r"\[Int!\] is not a named GraphQL Type"):
+        strawberry.Schema(query=Query, types=[StrawberryList(int)])

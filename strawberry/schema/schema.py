@@ -4,6 +4,7 @@ from typing import Any, Dict, Optional, Sequence, Type, Union
 from graphql import (
     ExecutionContext as GraphQLExecutionContext,
     GraphQLNamedType,
+    GraphQLNonNull,
     GraphQLSchema,
     get_introspection_query,
     parse,
@@ -79,9 +80,13 @@ class Schema(BaseSchema):
 
         graphql_types = []
         for type_ in types:
-            graphql_type = self.schema_converter.from_type(type_)
-            if isinstance(graphql_type, GraphQLNamedType):
-                graphql_types.append(graphql_type)
+            graphql_type = self.schema_converter.from_maybe_optional(type_)
+            if isinstance(graphql_type, GraphQLNonNull):
+                graphql_type = graphql_type.of_type
+            assert isinstance(
+                graphql_type, GraphQLNamedType
+            ), f"{graphql_type} is not a named GraphQL Type"
+            graphql_types.append(graphql_type)
 
         self._schema = GraphQLSchema(
             query=query_type,
