@@ -146,10 +146,7 @@ def codegen(
 ):
     schema_symbol = load_schema(schema, app_dir)
 
-    console_plugin = ConsolePlugin
-
-    if cli_plugin:
-        console_plugin = _load_plugin(cli_plugin)
+    console_plugin = _load_plugin(cli_plugin) if cli_plugin else ConsolePlugin
 
     plugins = _load_plugins(selected_plugins)
     plugins.insert(0, console_plugin(query, output_dir, plugins))
