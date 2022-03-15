@@ -419,6 +419,11 @@ async def test_subscription_cancellation(aiohttp_client):
 
         response = await ws.receive_json()
         assert response == CompleteMessage(id="sub2").as_dict()
+        
+        # Issue #1731
+        # Check that a racing complete message to an already completed subscription
+        # is ignored by server
+        await ws.send_json(CompleteMessage(id="sub2").as_dict())
 
         await ws.send_json(CompleteMessage(id="sub1").as_dict())
 
