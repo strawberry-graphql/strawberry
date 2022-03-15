@@ -256,7 +256,10 @@ class BaseGraphQLTransportWSHandler(ABC):
         await self.send_message(CompleteMessage(id=operation_id))
 
     async def handle_complete(self, message: CompleteMessage) -> None:
-        await self.cleanup_operation(operation_id=message.id)
+        # Due to how complete messages can originate simultaneously from both sides, allow
+        # for complete messages for stale subscriptions to be ignored.
+        if message.id in self.subscriptions:
+            await self.cleanup_operation(operation_id=message.id)
 
     async def handle_invalid_message(self, error_message: str) -> None:
         await self.close(code=4400, reason=error_message)
