@@ -83,9 +83,8 @@ class Schema(BaseSchema):
             graphql_type = self.schema_converter.from_maybe_optional(type_)
             if isinstance(graphql_type, GraphQLNonNull):
                 graphql_type = graphql_type.of_type
-            assert isinstance(
-                graphql_type, GraphQLNamedType
-            ), f"{graphql_type} is not a named GraphQL Type"
+            if not isinstance(graphql_type, GraphQLNamedType):
+                raise TypeError(f"{graphql_type} is not a named GraphQL Type")
             graphql_types.append(graphql_type)
 
         self._schema = GraphQLSchema(

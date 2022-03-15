@@ -550,5 +550,5 @@ def test_with_types_non_named():
     class Query:
         foo: int
 
-    with pytest.raises(AssertionError, match=r"\[Int!\] is not a named GraphQL Type"):
+    with pytest.raises(TypeError, match=r"\[Int!\] is not a named GraphQL Type"):
         strawberry.Schema(query=Query, types=[StrawberryList(int)])
