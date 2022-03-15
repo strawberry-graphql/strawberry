@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.103.1 - 2022-03-15
+--------------------
+
+This release adds support for MyPy 0.941 under Python 3.10
+
+Contributed by [dependabot](https://github.com/dependabot) via [PR #1728](https://github.com/strawberry-graphql/strawberry/pull/1728/)
+
+
 0.103.0 - 2022-03-14
 --------------------
 
