@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, List, Mapping, TypeVar, Union
+from typing import TYPE_CHECKING, Any, List, Mapping, Tuple, TypeVar, Union, cast
+
+from typing_extensions import Annotated, get_args, get_origin
 
 
 if TYPE_CHECKING:
@@ -53,12 +55,22 @@ class StrawberryContainer(StrawberryType):
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, StrawberryType):
-            if isinstance(other, StrawberryContainer):
+            if type(self) == type(other):
+                other = cast(StrawberryContainer, other)
                 return self.of_type == other.of_type
             else:
                 return False
 
         return super().__eq__(other)
+
+    def __hash__(self) -> int:
+        return hash((type(self), self.of_type))
+
+    def __str__(self) -> str:
+        return f"{type(self).__name__}({self.of_type})"
+
+    def __repr__(self) -> str:
+        return f"{type(self).__name__}({repr(self.of_type)})"
 
     @property
     def type_params(self) -> List[TypeVar]:
@@ -113,6 +125,66 @@ class StrawberryList(StrawberryContainer):
 
 class StrawberryOptional(StrawberryContainer):
     ...
+
+
+class StrawberryAnnotated(StrawberryContainer):
+    """
+    Equivalent to typing.Annotated for strawberry types
+    """
+
+    def __init__(self, of_type: Union[StrawberryType, type], *args):
+        of_type, base_args = StrawberryAnnotated.get_type_and_args(of_type)
+        super().__init__(of_type)
+        self.args = base_args + list(args)
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, StrawberryType):
+            if type(self) == type(other):
+                other = cast(StrawberryAnnotated, other)
+                return (self.of_type, self.args) == (other.of_type, other.args)
+            else:
+                return False
+
+        return super().__eq__(other)
+
+    def __hash__(self) -> int:
+        return hash((type(self), self.of_type, self.args))
+
+    def __str__(self) -> str:
+        args = ", ".join(map(str, [self.of_type] + self.args))
+        return f"{type(self).__name__}({args})"
+
+    def __repr__(self) -> str:
+        args = ", ".join(map(repr, [self.of_type] + self.args))
+        return f"{type(self).__name__}({args})"
+
+    def copy_with(
+        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
+    ) -> StrawberryType:
+        # Parent implementation handles the nested type,
+        # but discards the arguments
+        ret = cast(StrawberryAnnotated, super().copy_with(type_var_map))
+        return StrawberryAnnotated(ret.of_type, self.args)
+
+    @staticmethod
+    def get_type_and_args(
+        type: Union[StrawberryType, type]
+    ) -> Tuple[Union[StrawberryType, type], List[Any]]:
+        """
+        Splits a possibly-annotated type in the actual type and the list of annotations
+        Supports both StrawberryAnnotated and typing.Annotated
+        """
+        args: List[Any] = []
+        while True:
+            if isinstance(type, StrawberryAnnotated):
+                args = type.args + args
+                type = type.of_type
+            elif get_origin(type) is Annotated:
+                base_args = get_args(type)
+                type = base_args[0]
+                args = list(base_args[1:]) + args
+            else:
+                return type, args
 
 
 class StrawberryTypeVar(StrawberryType):

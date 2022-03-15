@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import sys
 import typing
 from collections.abc import AsyncGenerator as AsyncGenerator_abc
@@ -24,6 +26,7 @@ from strawberry.custom_scalar import ScalarDefinition
 from strawberry.enum import EnumDefinition
 from strawberry.lazy_type import LazyType
 from strawberry.type import (
+    StrawberryAnnotated,
     StrawberryList,
     StrawberryOptional,
     StrawberryType,
@@ -59,36 +62,42 @@ class StrawberryAnnotation:
             annotation = self.annotation
 
         evaled_type = _eval_type(annotation, self.namespace, None)
+        evaled_type, evaled_args = StrawberryAnnotated.get_type_and_args(evaled_type)
+
         if self._is_async_generator(evaled_type):
             evaled_type = self._strip_async_generator(evaled_type)
+
         if self._is_lazy_type(evaled_type):
-            return evaled_type
-
-        if self._is_generic(evaled_type):
+            ret = evaled_type
+        elif self._is_generic(evaled_type):
             if any(is_type_var(type_) for type_ in evaled_type.__args__):
-                return evaled_type
-            return self.create_concrete_type(evaled_type)
-
+                ret = evaled_type
+            else:
+                ret = self.create_concrete_type(evaled_type)
         # Simply return objects that are already StrawberryTypes
-        if self._is_strawberry_type(evaled_type):
-            return evaled_type
+        elif self._is_strawberry_type(evaled_type):
+            ret = evaled_type
 
         # Everything remaining should be a raw annotation that needs to be turned into
         # a StrawberryType
-        if self._is_enum(evaled_type):
-            return self.create_enum(evaled_type)
-        if self._is_list(evaled_type):
-            return self.create_list(evaled_type)
+        elif self._is_enum(evaled_type):
+            ret = self.create_enum(evaled_type)
+        elif self._is_list(evaled_type):
+            ret = self.create_list(evaled_type)
         elif self._is_optional(evaled_type):
-            return self.create_optional(evaled_type)
+            ret = self.create_optional(evaled_type)
         elif self._is_union(evaled_type):
-            return self.create_union(evaled_type)
+            ret = self.create_union(evaled_type)
         elif is_type_var(evaled_type):
-            return self.create_type_var(evaled_type)
+            ret = self.create_type_var(evaled_type)
+        else:
+            # TODO: Raise exception now, or later?
+            # ... raise NotImplementedError(f"Unknown type {evaled_type}")
+            ret = evaled_type
 
-        # TODO: Raise exception now, or later?
-        # ... raise NotImplementedError(f"Unknown type {evaled_type}")
-        return evaled_type
+        if evaled_args:
+            ret = StrawberryAnnotated(ret, *evaled_args)
+        return ret
 
     def create_concrete_type(self, evaled_type: type) -> type:
         if _is_object_type(evaled_type):

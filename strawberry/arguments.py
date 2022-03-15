@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import dataclasses
 import inspect
 from typing import (
     TYPE_CHECKING,
@@ -19,7 +20,12 @@ from strawberry.annotation import StrawberryAnnotation
 from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.enum import EnumDefinition
 from strawberry.lazy_type import LazyType
-from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
+from strawberry.type import (
+    StrawberryAnnotated,
+    StrawberryList,
+    StrawberryOptional,
+    StrawberryType,
+)
 
 from .exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError
 from .scalars import is_scalar
@@ -37,20 +43,11 @@ def is_unset(value: Any) -> bool:
     return type(value) is _Unset
 
 
+@dataclasses.dataclass
 class StrawberryArgumentAnnotation:
-    description: Optional[str]
-    name: Optional[str]
-    deprecation_reason: Optional[str]
-
-    def __init__(
-        self,
-        description: Optional[str] = None,
-        name: Optional[str] = None,
-        deprecation_reason: Optional[str] = None,
-    ):
-        self.description = description
-        self.name = name
-        self.deprecation_reason = deprecation_reason
+    description: Optional[str] = None
+    name: Optional[str] = None
+    deprecation_reason: Optional[str] = None
 
 
 class StrawberryArgument:
@@ -89,9 +86,6 @@ class StrawberryArgument:
     def _parse_annotated(self):
         annotated_args = get_args(self.type_annotation.annotation)
 
-        # The first argument to Annotated is always the underlying type
-        self.type_annotation = StrawberryAnnotation(annotated_args[0])
-
         # Find any instances of StrawberryArgumentAnnotation
         # in the other Annotated args, raising an exception if there
         # are multiple StrawberryArgumentAnnotations
@@ -122,7 +116,7 @@ def convert_argument(
     if is_unset(value):
         return value
 
-    if isinstance(type_, StrawberryOptional):
+    if isinstance(type_, (StrawberryOptional, StrawberryAnnotated)):
         return convert_argument(value, type_.of_type, scalar_registry, config)
 
     if isinstance(type_, StrawberryList):

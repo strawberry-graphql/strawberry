@@ -49,7 +49,12 @@ from strawberry.lazy_type import LazyType
 from strawberry.private import is_private
 from strawberry.schema.config import StrawberryConfig
 from strawberry.schema.types.scalar import _make_scalar_type
-from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
+from strawberry.type import (
+    StrawberryAnnotated,
+    StrawberryList,
+    StrawberryOptional,
+    StrawberryType,
+)
 from strawberry.types.info import Info
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
@@ -444,6 +449,8 @@ class GraphQLCoreConverter:
         self, type_: Union[StrawberryType, type]
     ) -> Union[GraphQLNullableType, GraphQLNonNull]:
         NoneType = type(None)
+        type_, _ = StrawberryAnnotated.get_type_and_args(type_)
+
         if type_ is None or type_ is NoneType:
             return self.from_type(type_)
         elif isinstance(type_, StrawberryOptional):
@@ -452,6 +459,8 @@ class GraphQLCoreConverter:
             return GraphQLNonNull(self.from_type(type_))
 
     def from_type(self, type_: Union[StrawberryType, type]) -> GraphQLNullableType:
+        type_, _ = StrawberryAnnotated.get_type_and_args(type_)
+
         if compat.is_generic(type_):
             raise MissingTypesForGenericError(type_)
 

@@ -8,7 +8,7 @@ from typing_extensions import Annotated
 import strawberry
 from strawberry.arguments import UNSET
 from strawberry.exceptions import InvalidFieldArgument, MultipleStrawberryArgumentsError
-from strawberry.type import StrawberryList, StrawberryOptional
+from strawberry.type import StrawberryAnnotated, StrawberryList, StrawberryOptional
 
 
 def test_basic_arguments():
@@ -269,7 +269,9 @@ def test_annotated_argument_on_resolver():
     assert argument.python_name == "argument"
     assert argument.graphql_name is None
     assert argument.description == "This is a description"
-    assert argument.type is str
+    assert argument.type == StrawberryAnnotated(
+        str, strawberry.argument(description="This is a description")
+    )
 
 
 def test_annotated_optional_arguments_on_resolver():
@@ -293,8 +295,10 @@ def test_annotated_optional_arguments_on_resolver():
     assert argument.python_name == "argument"
     assert argument.graphql_name is None
     assert argument.description == "This is a description"
-    assert isinstance(argument.type, StrawberryOptional)
-    assert argument.type.of_type is str
+    assert argument.type == StrawberryAnnotated(
+        StrawberryOptional(str),
+        strawberry.argument(description="This is a description"),
+    )
 
 
 def test_annotated_argument_with_default_value():
@@ -318,7 +322,9 @@ def test_annotated_argument_with_default_value():
     assert argument.python_name == "argument"
     assert argument.graphql_name is None
     assert argument.description == "This is a description"
-    assert argument.type is str
+    assert argument.type == StrawberryAnnotated(
+        str, strawberry.argument(description="This is a description")
+    )
     assert argument.default == "Patrick"
 
 
@@ -344,7 +350,9 @@ def test_annotated_argument_with_rename():
 
     assert argument.python_name == "arg"
     assert argument.graphql_name == "argument"
-    assert argument.type is str
+    assert argument.type == StrawberryAnnotated(
+        str, strawberry.argument(name="argument")
+    )
     assert argument.description is None
     assert argument.default == "Patrick"
 
@@ -388,7 +396,7 @@ def test_annotated_with_other_information():
     assert argument.python_name == "argument"
     assert argument.graphql_name is None
     assert argument.description is None
-    assert argument.type is str
+    assert argument.type == StrawberryAnnotated(str, "Some other info")
 
 
 @pytest.mark.skipif(
@@ -417,9 +425,10 @@ def test_annotated_python_39():
 
     assert argument.python_name == "argument"
     assert argument.graphql_name is None
-    assert argument.type == str
     assert argument.description == "This is a description"
-    assert argument.type is str
+    assert argument.type == StrawberryAnnotated(
+        str, strawberry.argument(description="This is a description")
+    )
 
 
 def test_union_as_an_argument_type():
