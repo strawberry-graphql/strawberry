@@ -682,3 +682,64 @@ async def test_single_result_operation_error(aiohttp_client):
 
         await ws.close()
         assert ws.closed
+
+
+async def test_single_result_complete(aiohttp_client):
+    """
+    #issue #1731 - Make sure we can `complete` a single result operation
+    """
+    app = create_app()
+    aiohttp_app_client = await aiohttp_client(app)
+
+    async with aiohttp_app_client.ws_connect(
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
+    ) as ws:
+        await ws.send_json(ConnectionInitMessage().as_dict())
+
+        response = await ws.receive_json()
+        assert response == ConnectionAckMessage().as_dict()
+
+        await ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(query="query { hello }"),
+            ).as_dict()
+        )
+        # complete it before getting a result
+        await ws.send_json(CompleteMessage(id="sub1").as_dict())
+
+        # send another request, to make sure we get a response and
+        # the socket doesn't stay silent
+        await ws.send_json(
+            SubscribeMessage(
+                id="sub2",
+                payload=SubscribeMessagePayload(query="query { hello }"),
+            ).as_dict()
+        )
+
+        # discard stale `next` or `complete` messages from sub1
+        # (in case our `complete` was too late)
+        response = await ws.receive_json()
+        next1 = NextMessage(
+            id="sub1", payload={"data": {"hello": "Hello world"}}
+        ).as_dict()
+        comp1 = CompleteMessage(id="sub1").as_dict()
+        if response == next1:
+            response = await ws.receive_json()
+        if response == comp1:
+            response = await ws.receive_json()
+
+        assert (
+            response
+            == NextMessage(
+                id="sub2", payload={"data": {"hello": "Hello world"}}
+            ).as_dict()
+        )
+
+        # discard stale sub1 messages that may be arriving here
+        response = await ws.receive_json()
+        if response == next1:
+            response = await ws.receive_json()
+        if response == comp1:
+            response = await ws.receive_json()
+        assert response == CompleteMessage(id="sub2").as_dict()

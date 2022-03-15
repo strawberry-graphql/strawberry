@@ -589,3 +589,61 @@ def test_single_result_operation_error(test_client):
         assert response["id"] == "sub1"
         assert len(response["payload"]) == 1
         assert response["payload"][0]["message"] == "You are not authorized"
+
+
+def test_single_result_complete(test_client):
+    """
+    #issue #1731 - Make sure we can `complete` a single result operation
+    """
+    with test_client.websocket_connect(
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+    ) as ws:
+        ws.send_json(ConnectionInitMessage().as_dict())
+
+        response = ws.receive_json()
+        assert response == ConnectionAckMessage().as_dict()
+
+        ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(query="query { hello }"),
+            ).as_dict()
+        )
+        # complete it before getting a result
+        ws.send_json(CompleteMessage(id="sub1").as_dict())
+
+        # send another request, to make sure we get a response and
+        # the socket doesn't stay silent
+        ws.send_json(
+            SubscribeMessage(
+                id="sub2",
+                payload=SubscribeMessagePayload(query="query { hello }"),
+            ).as_dict()
+        )
+
+        # discard stale `next` or `complete` messages from sub1
+        # (in case our `complete` was too late)
+        response = ws.receive_json()
+        next1 = NextMessage(
+            id="sub1", payload={"data": {"hello": "Hello world"}}
+        ).as_dict()
+        comp1 = CompleteMessage(id="sub1").as_dict()
+        if response == next1:
+            response = ws.receive_json()
+        if response == comp1:
+            response = ws.receive_json()
+
+        assert (
+            response
+            == NextMessage(
+                id="sub2", payload={"data": {"hello": "Hello world"}}
+            ).as_dict()
+        )
+
+        # discard stale sub1 messages that may be arriving here
+        response = ws.receive_json()
+        if response == next1:
+            response = ws.receive_json()
+        if response == comp1:
+            response = ws.receive_json()
+        assert response == CompleteMessage(id="sub2").as_dict()
