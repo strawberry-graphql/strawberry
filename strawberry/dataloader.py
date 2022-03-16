@@ -12,7 +12,10 @@ from typing import (
     Iterable,
     List,
     Optional,
+    Sequence,
     TypeVar,
+    Union,
+    overload,
 )
 
 from .exceptions import WrongNumberOfResultsReturned
@@ -47,9 +50,31 @@ class DataLoader(Generic[K, T]):
     cache: bool = False
     cache_map: Dict[K, Future]
 
+    @overload
+    def __init__(
+        self: "DataLoader[K, T]",
+        # any BaseException is rethrown in 'load', so should be excluded from the T type
+        load_fn: Callable[[List[K]], Awaitable[Sequence[Union[T, BaseException]]]],
+        max_batch_size: Optional[int] = None,
+        cache: bool = True,
+        loop: AbstractEventLoop = None,
+    ) -> None:
+        ...
+
+    # fallback if load_fn is untyped and there's no other info for inference
+    @overload
+    def __init__(
+        self: "DataLoader[K, Any]",
+        load_fn: Callable[[List[K]], Awaitable[List[Any]]],
+        max_batch_size: Optional[int] = None,
+        cache: bool = True,
+        loop: AbstractEventLoop = None,
+    ) -> None:
+        ...
+
     def __init__(
         self,
-        load_fn: Callable[[List[K]], Awaitable[List[T]]],
+        load_fn: Callable[[List[K]], Awaitable[Sequence[Union[T, BaseException]]]],
         max_batch_size: Optional[int] = None,
         cache: bool = True,
         loop: AbstractEventLoop = None,
