@@ -284,6 +284,53 @@ async def test_duplicated_operation_ids(aiohttp_client):
         assert ws.close_code == 4409
         assert data.extra == "Subscriber for sub1 already exists"
 
+async def test_reused_operation_ids(aiohttp_client):
+    app = create_app()
+    aiohttp_app_client = await aiohttp_client(app)
+
+    async with aiohttp_app_client.ws_connect(
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
+    ) as ws:
+        await ws.send_json(ConnectionInitMessage().as_dict())
+
+        response = await  ws.receive_json()
+        assert response == ConnectionAckMessage().as_dict()
+
+        await ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(
+                    query='subscription { echo(message: "Hi") }'
+                ),
+            ).as_dict()
+        )
+
+        response = await ws.receive_json()
+        assert (
+            response
+            == NextMessage(id="sub1", payload={"data": {"echo": "Hi"}}).as_dict()
+        )
+
+        response = await ws.receive_json()
+        assert response == CompleteMessage(id="sub1").as_dict()
+
+        # now the ID should be free for re-use
+        await ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(
+                    query='subscription { echo(message: "Hi") }'
+                ),
+            ).as_dict()
+        )
+
+        response = await ws.receive_json()
+        assert (
+            response
+            == NextMessage(id="sub1", payload={"data": {"echo": "Hi"}}).as_dict()
+        )
+        await ws.close()
+        assert ws.closed
 
 async def test_simple_subscription(aiohttp_client):
     app = create_app()

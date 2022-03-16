@@ -10,3 +10,7 @@ This release fixes a number of problems with single-result-operations over
   to them can be overlapped with other messages on the websocket.
 
 - single-result-operations can be cancelled with the `complete` message.
+
+- IDs for single result and streaming result operations are now released
+  once the operation is done, allowing them to be re-used later, as well as
+  freeing up resources related to previous requests.
