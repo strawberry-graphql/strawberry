@@ -2,7 +2,7 @@ import asyncio
 from abc import ABC, abstractmethod
 from contextlib import suppress
 from datetime import timedelta
-from typing import Any, AsyncGenerator, Dict, Optional
+from typing import Any, AsyncGenerator, Dict, List, Optional
 
 from graphql import (
     ExecutionResult as GraphQLExecutionResult,
@@ -43,8 +43,9 @@ class BaseGraphQLTransportWSHandler(ABC):
         self.connection_init_timeout_task: Optional[asyncio.Task] = None
         self.connection_init_received = False
         self.connection_acknowledged = False
-        self.subscriptions: Dict[str, AsyncGenerator] = {}
+        self.subscriptions: Dict[str, Optional[AsyncGenerator]] = {}
         self.tasks: Dict[str, asyncio.Task] = {}
+        self.complete_tasks: List[asyncio.Task] = []
 
     @abstractmethod
     async def get_context(self) -> Any:
@@ -152,6 +153,11 @@ class BaseGraphQLTransportWSHandler(ABC):
             return await self.handle_single_result_operation(message)
 
     async def handle_single_result_operation(self, message: SubscribeMessage):
+        if message.id in self.subscriptions:
+            reason = f"Subscriber for {message.id} already exists"
+            await self.close(code=4409, reason=reason)
+            return
+
         if self.debug:  # pragma: no cover
             pretty_print_graphql_operation(
                 message.payload.operationName,
@@ -162,27 +168,39 @@ class BaseGraphQLTransportWSHandler(ABC):
         context = await self.get_context()
         root_value = await self.get_root_value()
 
-        result = await self.schema.execute(
-            query=message.payload.query,
-            variable_values=message.payload.variables,
-            context_value=context,
-            root_value=root_value,
-            operation_name=message.payload.operationName,
-        )
+        async def task_handler():
+            try:
+                result = await self.schema.execute(
+                    query=message.payload.query,
+                    variable_values=message.payload.variables,
+                    context_value=context,
+                    root_value=root_value,
+                    operation_name=message.payload.operationName,
+                )
 
-        if result.errors:
-            payload = [format_graphql_error(result.errors[0])]
-            await self.send_message(ErrorMessage(id=message.id, payload=payload))
-            self.schema.process_errors(result.errors)
-            return
+                if result.errors:
+                    payload = [format_graphql_error(result.errors[0])]
+                    await self.send_message(
+                        ErrorMessage(id=message.id, payload=payload)
+                    )
+                    self.schema.process_errors(result.errors)
+                    return
 
-        await self.send_message(
-            NextMessage(id=message.id, payload={"data": result.data})
-        )
-        await self.send_message(CompleteMessage(id=message.id))
+                await self.send_message(
+                    NextMessage(id=message.id, payload={"data": result.data})
+                )
+                await self.send_message(CompleteMessage(id=message.id))
+            finally:
+                self.subscriptions.pop(message.id, None)
+                task = self.tasks.pop(message.id, None)
+                if task is not None:
+                    self.complete_tasks.append(task)
+
+        self.subscriptions[message.id] = None
+        self.tasks[message.id] = asyncio.create_task(task_handler())
 
     async def handle_streaming_operation(self, message: SubscribeMessage) -> None:
-        if message.id in self.subscriptions.keys():
+        if message.id in self.subscriptions:
             reason = f"Subscriber for {message.id} already exists"
             await self.close(code=4409, reason=reason)
             return
@@ -259,10 +277,21 @@ class BaseGraphQLTransportWSHandler(ABC):
         await self.send_json(data)
 
     async def cleanup_operation(self, operation_id: str) -> None:
-        await self.subscriptions[operation_id].aclose()
-        del self.subscriptions[operation_id]
+        generator = self.subscriptions.pop(operation_id)
+        if generator is not None:
+            await generator.aclose()
 
-        self.tasks[operation_id].cancel()
-        with suppress(BaseException):
-            await self.tasks[operation_id]
-        del self.tasks[operation_id]
+        task = self.tasks.pop(operation_id, None)
+        if task:
+            task.cancel()
+            with suppress(BaseException):
+                await task
+
+    async def cleanup_complete(self) -> None:
+        """
+        Await tasks that have completed
+        """
+        tasks, self.complete_tasks = self.complete_tasks, []
+        for task in tasks:
+            with suppress(BaseException):
+                await task
