@@ -43,6 +43,11 @@ class Query:
     def hello(self, name: typing.Optional[str] = None) -> str:
         return f"Hello {name or 'world'}"
 
+    @strawberry.field
+    async def async_hello(self, name: str, delay: float = 0) -> str:
+        await asyncio.sleep(delay)
+        return f"Hello {name or 'world'}"
+
     @strawberry.field(permission_classes=[AlwaysFailPermission])
     def always_fail(self) -> Optional[str]:
         return "Hey"
