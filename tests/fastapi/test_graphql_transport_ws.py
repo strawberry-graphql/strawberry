@@ -473,6 +473,33 @@ def test_single_result_query_operation(test_client):
         response = ws.receive_json()
         assert response == CompleteMessage(id="sub1").as_dict()
 
+def test_single_result_query_operation_async(test_client):
+    with test_client.websocket_connect(
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+    ) as ws:
+        ws.send_json(ConnectionInitMessage().as_dict())
+
+        response = ws.receive_json()
+        assert response == ConnectionAckMessage().as_dict()
+
+        ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(query='query { asyncHello(name: "Dolly", delay:0.01)}'),
+            ).as_dict()
+        )
+
+        response = ws.receive_json()
+        assert (
+            response
+            == NextMessage(
+                id="sub1", payload={"data": {"asyncHello": "Hello Dolly"}}
+            ).as_dict()
+        )
+
+        response = ws.receive_json()
+        assert response == CompleteMessage(id="sub1").as_dict()
+
 
 def test_single_result_mutation_operation(test_client):
     with test_client.websocket_connect(
@@ -589,3 +616,70 @@ def test_single_result_operation_error(test_client):
         assert response["id"] == "sub1"
         assert len(response["payload"]) == 1
         assert response["payload"][0]["message"] == "You are not authorized"
+
+
+def test_single_result_duplicate_ids_sub(test_client):
+    with test_client.websocket_connect(
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+    ) as ws:
+        ws.send_json(ConnectionInitMessage().as_dict())
+
+        response = ws.receive_json()
+        assert response == ConnectionAckMessage().as_dict()
+
+        # regular subscription
+        ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(
+                    query='subscription { echo(message: "Hi", delay: 5) }'
+                ),
+            ).as_dict()
+        )
+        # single result subscription with duplicate id
+        ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(
+                    query="query { hello }",
+                ),
+            ).as_dict()
+        )
+
+        data = ws.receive()
+        assert data["type"] == "websocket.close"
+        assert data["code"] == 4409
+
+def test_single_result_duplicate_ids_query(test_client):
+    with test_client.websocket_connect(
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+    ) as ws:
+        ws.send_json(ConnectionInitMessage().as_dict())
+
+        response = ws.receive_json()
+        assert response == ConnectionAckMessage().as_dict()
+
+        # single result subscription 1
+        ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(
+                    query='query { asyncHello(name: "Hi", delay: 5) }'
+                ),
+            ).as_dict()
+        )
+        # single result subscription with duplicate id
+        ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(
+                    query="query { hello }",
+                ),
+            ).as_dict()
+        )
+
+        # We expect the remote to close the socket due to duplicate ID in use
+        data = ws.receive()
+        assert data["type"] == "websocket.close"
+        assert data["code"] == 4409
+        
