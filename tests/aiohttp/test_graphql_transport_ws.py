@@ -545,6 +545,91 @@ async def test_single_result_query_operation(aiohttp_client):
         assert ws.closed
 
 
+async def test_single_result_query_operation_async(aiohttp_client):
+    app = create_app()
+    aiohttp_app_client = await aiohttp_client(app)
+
+    async with aiohttp_app_client.ws_connect(
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
+    ) as ws:
+        await ws.send_json(ConnectionInitMessage().as_dict())
+
+        response = await ws.receive_json()
+        assert response == ConnectionAckMessage().as_dict()
+
+        await ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(
+                    query='query { asyncHello(name: "Dolly", delay:0.01)}'
+                ),
+            ).as_dict()
+        )
+
+        response = await ws.receive_json()
+        assert (
+            response
+            == NextMessage(
+                id="sub1", payload={"data": {"asyncHello": "Hello Dolly"}}
+            ).as_dict()
+        )
+
+        response = await ws.receive_json()
+        assert response == CompleteMessage(id="sub1").as_dict()
+
+        await ws.close()
+        assert ws.closed
+
+
+async def test_single_result_query_operation_overlapped(aiohttp_client):
+    """
+    Test that two single result queries can be in flight at the same time
+    """
+    app = create_app()
+    aiohttp_app_client = await aiohttp_client(app)
+
+    async with aiohttp_app_client.ws_connect(
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
+    ) as ws:
+        await ws.send_json(ConnectionInitMessage().as_dict())
+
+        response = await ws.receive_json()
+        assert response == ConnectionAckMessage().as_dict()
+
+        # first query
+        await ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(
+                    query='query { asyncHello(name: "Dolly", delay:1)}'
+                ),
+            ).as_dict()
+        )
+        # second query
+        await ws.send_json(
+            SubscribeMessage(
+                id="sub2",
+                payload=SubscribeMessagePayload(
+                    query='query { asyncHello(name: "Dolly", delay:0)}'
+                ),
+            ).as_dict()
+        )
+
+        # we expect the response to the second query to arrive first
+        response = await ws.receive_json()
+        assert (
+            response
+            == NextMessage(
+                id="sub2", payload={"data": {"asyncHello": "Hello Dolly"}}
+            ).as_dict()
+        )
+        response = await ws.receive_json()
+        assert response == CompleteMessage(id="sub2").as_dict()
+
+        await ws.close()
+        assert ws.closed
+
+
 async def test_single_result_mutation_operation(aiohttp_client):
     app = create_app()
     aiohttp_app_client = await aiohttp_client(app)
@@ -679,6 +764,87 @@ async def test_single_result_operation_error(aiohttp_client):
         assert response["id"] == "sub1"
         assert len(response["payload"]) == 1
         assert response["payload"][0]["message"] == "You are not authorized"
+
+        await ws.close()
+        assert ws.closed
+
+
+async def test_single_result_duplicate_ids_sub(aiohttp_client):
+    app = create_app()
+    aiohttp_app_client = await aiohttp_client(app)
+
+    async with aiohttp_app_client.ws_connect(
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
+    ) as ws:
+        await ws.send_json(ConnectionInitMessage().as_dict())
+
+        response = await ws.receive_json()
+        assert response == ConnectionAckMessage().as_dict()
+
+        # regular subscription
+        await ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(
+                    query='subscription { echo(message: "Hi", delay: 5) }'
+                ),
+            ).as_dict()
+        )
+        # single result subscription with duplicate id
+        await ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(
+                    query="query { hello }",
+                ),
+            ).as_dict()
+        )
+
+        data = await ws.receive(timeout=2)
+        assert ws.closed
+        assert ws.close_code == 4409
+        assert data.extra == "Subscriber for sub1 already exists"
+
+        await ws.close()
+        assert ws.closed
+
+
+async def test_single_result_duplicate_ids_query(aiohttp_client):
+    app = create_app()
+    aiohttp_app_client = await aiohttp_client(app)
+
+    async with aiohttp_app_client.ws_connect(
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
+    ) as ws:
+        await ws.send_json(ConnectionInitMessage().as_dict())
+
+        response = await ws.receive_json()
+        assert response == ConnectionAckMessage().as_dict()
+
+        # single result subscription 1
+        await ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(
+                    query='query { asyncHello(name: "Hi", delay: 5) }'
+                ),
+            ).as_dict()
+        )
+        # single result subscription with duplicate id
+        await ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(
+                    query="query { hello }",
+                ),
+            ).as_dict()
+        )
+
+        # We expect the remote to close the socket due to duplicate ID in use
+        data = await ws.receive(timeout=2)
+        assert ws.closed
+        assert ws.close_code == 4409
+        assert data.extra == "Subscriber for sub1 already exists"
 
         await ws.close()
         assert ws.closed
