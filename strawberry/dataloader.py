@@ -52,7 +52,7 @@ class DataLoader(Generic[K, T]):
 
     @overload
     def __init__(
-        self: "DataLoader[K, T]",
+        self,
         # any BaseException is rethrown in 'load', so should be excluded from the T type
         load_fn: Callable[[List[K]], Awaitable[Sequence[Union[T, BaseException]]]],
         max_batch_size: Optional[int] = None,
