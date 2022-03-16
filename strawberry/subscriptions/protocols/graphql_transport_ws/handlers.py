@@ -248,31 +248,44 @@ class BaseGraphQLTransportWSHandler(ABC):
         operation_id: str,
     ) -> None:
         try:
-            async for result in result_source:
-                if result.errors:
-                    error_payload = [format_graphql_error(err) for err in result.errors]
-                    error_message = ErrorMessage(id=operation_id, payload=error_payload)
-                    await self.send_message(error_message)
-                    self.schema.process_errors(result.errors)
-                    return
-                else:
-                    next_payload = {"data": result.data}
-                    next_message = NextMessage(id=operation_id, payload=next_payload)
-                    await self.send_message(next_message)
-        except asyncio.CancelledError:
-            # CancelledErrors are expected during task cleanup.
-            return
-        except Exception as error:
-            # GraphQLErrors are handled by graphql-core and included in the
-            # ExecutionResult
-            error = GraphQLError(str(error), original_error=error)
-            error_payload = [format_graphql_error(error)]
-            error_message = ErrorMessage(id=operation_id, payload=error_payload)
-            await self.send_message(error_message)
-            self.schema.process_errors([error])
-            return
+            try:
+                async for result in result_source:
+                    if result.errors:
+                        error_payload = [
+                            format_graphql_error(err) for err in result.errors
+                        ]
+                        error_message = ErrorMessage(
+                            id=operation_id, payload=error_payload
+                        )
+                        await self.send_message(error_message)
+                        self.schema.process_errors(result.errors)
+                        return
+                    else:
+                        next_payload = {"data": result.data}
+                        next_message = NextMessage(
+                            id=operation_id, payload=next_payload
+                        )
+                        await self.send_message(next_message)
+            except asyncio.CancelledError:
+                # CancelledErrors are expected during task cleanup.
+                return
+            except Exception as error:
+                # GraphQLErrors are handled by graphql-core and included in the
+                # ExecutionResult
+                error = GraphQLError(str(error), original_error=error)
+                error_payload = [format_graphql_error(error)]
+                error_message = ErrorMessage(id=operation_id, payload=error_payload)
+                await self.send_message(error_message)
+                self.schema.process_errors([error])
+                return
 
-        await self.send_message(CompleteMessage(id=operation_id))
+            self.subscriptions.pop(operation_id)
+            await self.send_message(CompleteMessage(id=operation_id))
+        finally:
+            self.subscriptions.pop(operation_id, None)
+            task = self.tasks.pop(operation_id, None)
+            if task is not None:
+                self.complete_tasks.append(task)
 
     async def handle_complete(self, message: CompleteMessage) -> None:
         await self.cleanup_operation(operation_id=message.id)
@@ -285,6 +298,8 @@ class BaseGraphQLTransportWSHandler(ABC):
         await self.send_json(data)
 
     async def cleanup_operation(self, operation_id: str) -> None:
+        if operation_id not in self.subscriptions:
+            return
         generator = self.subscriptions.pop(operation_id)
         if generator is not None:
             await generator.aclose()

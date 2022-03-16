@@ -244,6 +244,50 @@ def test_duplicated_operation_ids(test_client):
         assert data["code"] == 4409
 
 
+def test_reused_operation_ids(test_client):
+    with test_client.websocket_connect(
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+    ) as ws:
+        ws.send_json(ConnectionInitMessage().as_dict())
+
+        response = ws.receive_json()
+        assert response == ConnectionAckMessage().as_dict()
+
+        ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(
+                    query='subscription { echo(message: "Hi") }'
+                ),
+            ).as_dict()
+        )
+
+        response = ws.receive_json()
+        assert (
+            response
+            == NextMessage(id="sub1", payload={"data": {"echo": "Hi"}}).as_dict()
+        )
+
+        response = ws.receive_json()
+        assert response == CompleteMessage(id="sub1").as_dict()
+
+        # now the ID should be free for re-use
+        ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(
+                    query='subscription { echo(message: "Hi") }'
+                ),
+            ).as_dict()
+        )
+
+        response = ws.receive_json()
+        assert (
+            response
+            == NextMessage(id="sub1", payload={"data": {"echo": "Hi"}}).as_dict()
+        )
+
+
 def test_simple_subscription(test_client):
     with test_client.websocket_connect(
         "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
