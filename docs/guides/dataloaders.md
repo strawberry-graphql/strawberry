@@ -109,13 +109,13 @@ async def load_users(keys: List[int]) -> List[Union[User, ValueError]]:
 loader = DataLoader(load_fn=load_users)
 ```
 
-For this loader, a uses like `await loader.load(1)` will return `User(id=1)`, while
-`await loader.load(3)` will raise `ValueError("not found")`.
+For this loader, calls like `await loader.load(1)` will return `User(id=1)`,
+while `await loader.load(3)` will raise `ValueError("not found")`.
 
 It's important that the `load_users` function returns exception values within
 the list for each incorrect key. A call with `keys == [1, 3]` returns
 `[User(id=1), ValueError("not found")]`, and doesn't raise the `ValueError`
-directly. If the `load_users` function raises an exception, even a call with an
+directly. If the `load_users` function raises an exception, even `load`s with an
 otherwise valid key, like `await loader.load(1)`, will raise that exception.
 
 ## Usage with GraphQL
