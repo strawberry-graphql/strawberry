@@ -473,6 +473,7 @@ def test_single_result_query_operation(test_client):
         response = ws.receive_json()
         assert response == CompleteMessage(id="sub1").as_dict()
 
+
 def test_single_result_query_operation_async(test_client):
     with test_client.websocket_connect(
         "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
@@ -485,7 +486,9 @@ def test_single_result_query_operation_async(test_client):
         ws.send_json(
             SubscribeMessage(
                 id="sub1",
-                payload=SubscribeMessagePayload(query='query { asyncHello(name: "Dolly", delay:0.01)}'),
+                payload=SubscribeMessagePayload(
+                    query='query { asyncHello(name: "Dolly", delay:0.01)}'
+                ),
             ).as_dict()
         )
 
@@ -499,6 +502,49 @@ def test_single_result_query_operation_async(test_client):
 
         response = ws.receive_json()
         assert response == CompleteMessage(id="sub1").as_dict()
+
+
+def test_single_result_query_operation_overlapped(test_client):
+    """
+    Test that two single result queries can be in flight at the same time
+    """
+    with test_client.websocket_connect(
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+    ) as ws:
+        ws.send_json(ConnectionInitMessage().as_dict())
+
+        response = ws.receive_json()
+        assert response == ConnectionAckMessage().as_dict()
+
+        # first query
+        ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(
+                    query='query { asyncHello(name: "Dolly", delay:1)}'
+                ),
+            ).as_dict()
+        )
+        # second query
+        ws.send_json(
+            SubscribeMessage(
+                id="sub2",
+                payload=SubscribeMessagePayload(
+                    query='query { asyncHello(name: "Dolly", delay:0)}'
+                ),
+            ).as_dict()
+        )
+
+        # we expect the response to the second query to arrive first
+        response = ws.receive_json()
+        assert (
+            response
+            == NextMessage(
+                id="sub2", payload={"data": {"asyncHello": "Hello Dolly"}}
+            ).as_dict()
+        )
+        response = ws.receive_json()
+        assert response == CompleteMessage(id="sub2").as_dict()
 
 
 def test_single_result_mutation_operation(test_client):
@@ -650,6 +696,7 @@ def test_single_result_duplicate_ids_sub(test_client):
         assert data["type"] == "websocket.close"
         assert data["code"] == 4409
 
+
 def test_single_result_duplicate_ids_query(test_client):
     with test_client.websocket_connect(
         "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
@@ -682,4 +729,3 @@ def test_single_result_duplicate_ids_query(test_client):
         data = ws.receive()
         assert data["type"] == "websocket.close"
         assert data["code"] == 4409
-        
