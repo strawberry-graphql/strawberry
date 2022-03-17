@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, List, Optional, Tuple, Type, Union, cast
+from typing import Callable, Iterable, List, Optional, Tuple, Type, Union, cast
 
 from typing_extensions import Literal, Protocol
 
@@ -34,12 +34,7 @@ import strawberry
 from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.enum import EnumDefinition
 from strawberry.lazy_type import LazyType
-from strawberry.type import (
-    StrawberryContainer,
-    StrawberryList,
-    StrawberryOptional,
-    StrawberryType,
-)
+from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 from strawberry.utils.str_converters import capitalize_first, to_camel_case
@@ -416,17 +411,31 @@ class QueryCodegen:
 
     def _unwrap_type(
         self, type_: Union[type, StrawberryType]
-    ) -> Union[type, StrawberryType]:
+    ) -> Tuple[
+        Union[type, StrawberryType], Optional[Callable[[GraphQLType], GraphQLType]]
+    ]:
+        wrapper = None
+
         if isinstance(type_, StrawberryOptional):
-            return self._unwrap_type(type_.of_type)
+            type_, wrapper = self._unwrap_type(type_.of_type)
+            wrapper = (
+                GraphQLOptional
+                if wrapper is None
+                else lambda t: GraphQLOptional(wrapper(t))  # type: ignore[misc]
+            )
 
-        if isinstance(type_, StrawberryList):
-            return self._unwrap_type(type_.of_type)
+        elif isinstance(type_, StrawberryList):
+            type_, wrapper = self._unwrap_type(type_.of_type)
+            wrapper = (
+                GraphQLList
+                if wrapper is None
+                else lambda t: GraphQLList(wrapper(t))  # type: ignore[misc]
+            )
 
-        if isinstance(type_, LazyType):
+        elif isinstance(type_, LazyType):
             return self._unwrap_type(type_.resolve_type())
 
-        return type_
+        return type_, wrapper
 
     def _field_from_selection_set(
         self, selection: FieldNode, class_name: str, parent_type: TypeDefinition
@@ -438,7 +447,9 @@ class QueryCodegen:
         )
         assert selected_field
 
-        selected_field_type = self._unwrap_type(selected_field.type)
+        selected_field_type, wrapper = self._unwrap_type(selected_field.type)
+
+        print(wrapper)
 
         if isinstance(selected_field_type, StrawberryUnion):
             # TODO: remove duplication
@@ -463,17 +474,8 @@ class QueryCodegen:
         class_name = f"{class_name}{(name)}"
         field_type = self._collect_types(selection, parent_type, class_name)
 
-        selected_field_type = selected_field.type  # type: ignore
-
-        # TODO: this is ugly :D
-
-        while isinstance(selected_field_type, StrawberryContainer):
-            if isinstance(selected_field_type, StrawberryList):
-                field_type = GraphQLList(field_type)
-            else:
-                field_type = GraphQLOptional(field_type)
-
-            selected_field_type = selected_field_type.of_type  # type: ignore
+        if wrapper:
+            field_type = wrapper(field_type)
 
         return GraphQLField(selected_field.name, field_type)
 
