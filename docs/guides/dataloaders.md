@@ -81,6 +81,43 @@ cases we can use the `load_many` method.
 [user_a, user_b, user_c] = await loader.load_many([1, 2, 3])
 ```
 
+### Errors
+
+An error associated with a particular key can be indicated by including an
+exception value in the corresponding position in the returned list. This
+exception will be thrown by the `load` call for that key. With the same `User`
+class from above:
+
+```python
+from typing import List, Union
+from strawberry.dataloader import DataLoader
+
+users_database = {
+    1: User(id=1),
+    2: User(id=2),
+}
+
+async def load_users(keys: List[int]) -> List[Union[User, ValueError]]:
+    def lookup(key: int) -> Union[User, ValueError]:
+       if user := users_database.get(key):
+           return user
+
+       return ValueError("not found")
+
+    return [lookup(key) for key in keys]
+
+loader = DataLoader(load_fn=load_users)
+```
+
+For this loader, calls like `await loader.load(1)` will return `User(id=1)`,
+while `await loader.load(3)` will raise `ValueError("not found")`.
+
+It's important that the `load_users` function returns exception values within
+the list for each incorrect key. A call with `keys == [1, 3]` returns
+`[User(id=1), ValueError("not found")]`, and doesn't raise the `ValueError`
+directly. If the `load_users` function raises an exception, even `load`s with an
+otherwise valid key, like `await loader.load(1)`, will raise that exception.
+
 ## Usage with GraphQL
 
 Let's see an example of how you can use DataLoaders with GraphQL:
