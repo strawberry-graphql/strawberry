@@ -243,6 +243,7 @@ def test_duplicated_operation_ids(test_client):
         assert data["type"] == "websocket.close"
         assert data["code"] == 4409
 
+
 def test_reused_operation_ids(test_client):
     with test_client.websocket_connect(
         "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
@@ -268,10 +269,7 @@ def test_reused_operation_ids(test_client):
         )
 
         response = ws.receive_json()
-        assert (
-            response
-            == CompleteMessage(id="sub1").as_dict()
-        )
+        assert response == CompleteMessage(id="sub1").as_dict()
 
         # now the ID should be free for re-use
         ws.send_json(

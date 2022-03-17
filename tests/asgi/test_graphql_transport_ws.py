@@ -219,6 +219,7 @@ def test_duplicated_operation_ids(test_client):
         assert data["type"] == "websocket.close"
         assert data["code"] == 4409
 
+
 def test_reused_operation_ids(test_client):
     with test_client.websocket_connect(
         "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
@@ -261,6 +262,7 @@ def test_reused_operation_ids(test_client):
             response
             == NextMessage(id="sub1", payload={"data": {"echo": "Hi"}}).as_dict()
         )
+
 
 def test_simple_subscription(test_client):
     with test_client.websocket_connect("/", [GRAPHQL_TRANSPORT_WS_PROTOCOL]) as ws:

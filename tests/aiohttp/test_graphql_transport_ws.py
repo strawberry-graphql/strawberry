@@ -284,6 +284,7 @@ async def test_duplicated_operation_ids(aiohttp_client):
         assert ws.close_code == 4409
         assert data.extra == "Subscriber for sub1 already exists"
 
+
 async def test_reused_operation_ids(aiohttp_client):
     app = create_app()
     aiohttp_app_client = await aiohttp_client(app)
@@ -293,7 +294,7 @@ async def test_reused_operation_ids(aiohttp_client):
     ) as ws:
         await ws.send_json(ConnectionInitMessage().as_dict())
 
-        response = await  ws.receive_json()
+        response = await ws.receive_json()
         assert response == ConnectionAckMessage().as_dict()
 
         await ws.send_json(
@@ -331,6 +332,7 @@ async def test_reused_operation_ids(aiohttp_client):
         )
         await ws.close()
         assert ws.closed
+
 
 async def test_simple_subscription(aiohttp_client):
     app = create_app()
