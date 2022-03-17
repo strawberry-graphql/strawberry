@@ -414,7 +414,9 @@ class QueryCodegen:
 
         return GraphQLField(field.name, field_type)
 
-    def _unwrap_type(self, type_: Union[type, StrawberryType]) -> StrawberryType:
+    def _unwrap_type(
+        self, type_: Union[type, StrawberryType]
+    ) -> Union[type, StrawberryType]:
         if isinstance(type_, StrawberryOptional):
             return self._unwrap_type(type_.of_type)
 
