@@ -8,4 +8,7 @@ query OperationName {
   datetime
   time
   decimal
+  lazy {
+    something
+  }
 }

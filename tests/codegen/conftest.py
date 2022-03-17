@@ -86,6 +86,7 @@ class Query:
     json: JSON
     union: PersonOrAnimal
     interface: Node
+    lazy: strawberry.LazyType["LaziestType", "tests.codegen.lazy_type"]  # noqa
 
     @strawberry.field
     def with_inputs(self, id: Optional[strawberry.ID], input: ExampleInput) -> bool:

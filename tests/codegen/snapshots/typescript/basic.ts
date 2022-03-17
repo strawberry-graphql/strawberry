@@ -1,3 +1,7 @@
+type OperationNameResultLazy = {
+    something: boolean
+}
+
 type OperationNameResult = {
     id: string
     integer: number
@@ -8,4 +12,5 @@ type OperationNameResult = {
     datetime: string
     time: string
     decimal: string
+    lazy: OperationNameResultLazy
 }
