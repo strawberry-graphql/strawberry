@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.103.2 - 2022-03-17
+--------------------
+
+This release add supports for `LazyType`s in the codegen command
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #1745](https://github.com/strawberry-graphql/strawberry/pull/1745/)
+
+
 0.103.1 - 2022-03-15
 --------------------
 
