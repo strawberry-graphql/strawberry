@@ -8,6 +8,7 @@ from typing_extensions import Literal, Protocol
 
 from graphql import (
     ArgumentNode,
+    BooleanValueNode,
     DirectiveNode,
     DocumentNode,
     EnumValueNode,
@@ -51,6 +52,7 @@ from .exceptions import (
 from .types import (
     GraphQLArgument,
     GraphQLArgumentValue,
+    GraphQLBoolValue,
     GraphQLDirective,
     GraphQLEnum,
     GraphQLEnumValue,
@@ -216,6 +218,9 @@ class QueryCodegen:
 
         if isinstance(value, EnumValueNode):
             return GraphQLEnumValue(value.value)
+
+        if isinstance(value, BooleanValueNode):
+            return GraphQLBoolValue(value.value)
 
         raise ValueError(f"Unsupported type: {type(value)}")  # pragma: no cover
 
