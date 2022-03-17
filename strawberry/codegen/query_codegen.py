@@ -448,30 +448,21 @@ class QueryCodegen:
         assert selected_field
 
         selected_field_type, wrapper = self._unwrap_type(selected_field.type)
+        name = capitalize_first(to_camel_case(selection.name.value))
+        class_name = f"{class_name}{(name)}"
 
-        print(wrapper)
+        field_type: GraphQLType
 
         if isinstance(selected_field_type, StrawberryUnion):
-            # TODO: remove duplication
-            name = capitalize_first(to_camel_case(selection.name.value))
-            class_name = f"{class_name}{name}"
-
-            sub_types = self._collect_types_using_fragments(
+            field_type = self._collect_types_with_inline_fragments(
                 selection, parent_type, class_name
             )
-
-            union = GraphQLUnion(class_name, sub_types)
-
-            self._collect_type(union)
-
-            return GraphQLField(selection.name.value, union)
+            return GraphQLField(selected_field.name, field_type)
 
         parent_type = cast(
             TypeDefinition, selected_field_type._type_definition  # type: ignore
         )
 
-        name = capitalize_first(to_camel_case(selection.name.value))
-        class_name = f"{class_name}{(name)}"
         field_type = self._collect_types(selection, parent_type, class_name)
 
         if wrapper:
