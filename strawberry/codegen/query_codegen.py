@@ -32,6 +32,7 @@ from graphql import (
 import strawberry
 from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.enum import EnumDefinition
+from strawberry.lazy_type import LazyType
 from strawberry.type import (
     StrawberryContainer,
     StrawberryList,
@@ -437,6 +438,9 @@ class QueryCodegen:
             self._collect_type(union)
 
             return GraphQLField(selection.name.value, union)
+
+        if isinstance(selected_field_type, LazyType):
+            selected_field_type = selected_field_type.resolve_type()
 
         parent_type = cast(
             TypeDefinition, selected_field_type._type_definition  # type: ignore
