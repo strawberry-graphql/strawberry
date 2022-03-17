@@ -409,6 +409,18 @@ class QueryCodegen:
 
         return GraphQLField(field.name, field_type)
 
+    def _unwrap_type(self, type_: Union[type, StrawberryType]) -> StrawberryType:
+        if isinstance(type_, StrawberryOptional):
+            return self._unwrap_type(type_.of_type)
+
+        if isinstance(type_, StrawberryList):
+            return self._unwrap_type(type_.of_type)
+
+        if isinstance(type_, LazyType):
+            return self._unwrap_type(type_.resolve_type())
+
+        return type_
+
     def _field_from_selection_set(
         self, selection: FieldNode, class_name: str, parent_type: TypeDefinition
     ) -> GraphQLField:
@@ -419,10 +431,7 @@ class QueryCodegen:
         )
         assert selected_field
 
-        selected_field_type = selected_field.type
-
-        while isinstance(selected_field_type, StrawberryContainer):
-            selected_field_type = selected_field_type.of_type
+        selected_field_type = self._unwrap_type(selected_field.type)
 
         if isinstance(selected_field_type, StrawberryUnion):
             # TODO: remove duplication
@@ -439,9 +448,6 @@ class QueryCodegen:
 
             return GraphQLField(selection.name.value, union)
 
-        if isinstance(selected_field_type, LazyType):
-            selected_field_type = selected_field_type.resolve_type()
-
         parent_type = cast(
             TypeDefinition, selected_field_type._type_definition  # type: ignore
         )
@@ -450,7 +456,7 @@ class QueryCodegen:
         class_name = f"{class_name}{(name)}"
         field_type = self._collect_types(selection, parent_type, class_name)
 
-        selected_field_type = selected_field.type
+        selected_field_type = selected_field.type  # type: ignore
 
         # TODO: this is ugly :D
 
@@ -460,7 +466,7 @@ class QueryCodegen:
             else:
                 field_type = GraphQLOptional(field_type)
 
-            selected_field_type = selected_field_type.of_type
+            selected_field_type = selected_field_type.of_type  # type: ignore
 
         return GraphQLField(selected_field.name, field_type)
 
