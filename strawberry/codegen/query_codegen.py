@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Iterable, List, Optional, Tuple, Type, Union, cast
+from typing import Callable, Iterable, List, Optional, Tuple, Type, Union, cast
 
 from typing_extensions import Literal, Protocol
 
 from graphql import (
     ArgumentNode,
+    BooleanValueNode,
     DirectiveNode,
     DocumentNode,
     EnumValueNode,
@@ -33,12 +34,7 @@ import strawberry
 from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.enum import EnumDefinition
 from strawberry.lazy_type import LazyType
-from strawberry.type import (
-    StrawberryContainer,
-    StrawberryList,
-    StrawberryOptional,
-    StrawberryType,
-)
+from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 from strawberry.utils.str_converters import capitalize_first, to_camel_case
@@ -51,6 +47,7 @@ from .exceptions import (
 from .types import (
     GraphQLArgument,
     GraphQLArgumentValue,
+    GraphQLBoolValue,
     GraphQLDirective,
     GraphQLEnum,
     GraphQLEnumValue,
@@ -216,6 +213,9 @@ class QueryCodegen:
 
         if isinstance(value, EnumValueNode):
             return GraphQLEnumValue(value.value)
+
+        if isinstance(value, BooleanValueNode):
+            return GraphQLBoolValue(value.value)
 
         raise ValueError(f"Unsupported type: {type(value)}")  # pragma: no cover
 
@@ -409,6 +409,34 @@ class QueryCodegen:
 
         return GraphQLField(field.name, field_type)
 
+    def _unwrap_type(
+        self, type_: Union[type, StrawberryType]
+    ) -> Tuple[
+        Union[type, StrawberryType], Optional[Callable[[GraphQLType], GraphQLType]]
+    ]:
+        wrapper = None
+
+        if isinstance(type_, StrawberryOptional):
+            type_, wrapper = self._unwrap_type(type_.of_type)
+            wrapper = (
+                GraphQLOptional
+                if wrapper is None
+                else lambda t: GraphQLOptional(wrapper(t))  # type: ignore[misc]
+            )
+
+        elif isinstance(type_, StrawberryList):
+            type_, wrapper = self._unwrap_type(type_.of_type)
+            wrapper = (
+                GraphQLList
+                if wrapper is None
+                else lambda t: GraphQLList(wrapper(t))  # type: ignore[misc]
+            )
+
+        elif isinstance(type_, LazyType):
+            return self._unwrap_type(type_.resolve_type())
+
+        return type_, wrapper
+
     def _field_from_selection_set(
         self, selection: FieldNode, class_name: str, parent_type: TypeDefinition
     ) -> GraphQLField:
@@ -419,48 +447,26 @@ class QueryCodegen:
         )
         assert selected_field
 
-        selected_field_type = selected_field.type
+        selected_field_type, wrapper = self._unwrap_type(selected_field.type)
+        name = capitalize_first(to_camel_case(selection.name.value))
+        class_name = f"{class_name}{(name)}"
 
-        while isinstance(selected_field_type, StrawberryContainer):
-            selected_field_type = selected_field_type.of_type
+        field_type: GraphQLType
 
         if isinstance(selected_field_type, StrawberryUnion):
-            # TODO: remove duplication
-            name = capitalize_first(to_camel_case(selection.name.value))
-            class_name = f"{class_name}{name}"
-
-            sub_types = self._collect_types_using_fragments(
+            field_type = self._collect_types_with_inline_fragments(
                 selection, parent_type, class_name
             )
-
-            union = GraphQLUnion(class_name, sub_types)
-
-            self._collect_type(union)
-
-            return GraphQLField(selection.name.value, union)
-
-        if isinstance(selected_field_type, LazyType):
-            selected_field_type = selected_field_type.resolve_type()
+            return GraphQLField(selected_field.name, field_type)
 
         parent_type = cast(
             TypeDefinition, selected_field_type._type_definition  # type: ignore
         )
 
-        name = capitalize_first(to_camel_case(selection.name.value))
-        class_name = f"{class_name}{(name)}"
         field_type = self._collect_types(selection, parent_type, class_name)
 
-        selected_field_type = selected_field.type
-
-        # TODO: this is ugly :D
-
-        while isinstance(selected_field_type, StrawberryContainer):
-            if isinstance(selected_field_type, StrawberryList):
-                field_type = GraphQLList(field_type)
-            else:
-                field_type = GraphQLOptional(field_type)
-
-            selected_field_type = selected_field_type.of_type
+        if wrapper:
+            field_type = wrapper(field_type)
 
         return GraphQLField(selected_field.name, field_type)
 

@@ -90,6 +90,11 @@ class GraphQLEnumValue:
 
 
 @dataclass
+class GraphQLBoolValue:
+    value: bool
+
+
+@dataclass
 class GraphQLListValue:
     values: List[GraphQLArgumentValue]
 
@@ -105,6 +110,7 @@ GraphQLArgumentValue = Union[
     GraphQLVariableReference,
     GraphQLListValue,
     GraphQLEnumValue,
+    GraphQLBoolValue,
 ]
 
 

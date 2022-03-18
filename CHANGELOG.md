@@ -1,6 +1,37 @@
 CHANGELOG
 =========
 
+0.103.5 - 2022-03-18
+--------------------
+
+This release fixes an issue that prevented using generic types
+with interfaces.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #1701](https://github.com/strawberry-graphql/strawberry/pull/1701/)
+
+
+0.103.4 - 2022-03-18
+--------------------
+
+This release fixes a couple of more issues with codegen:
+
+1. Adds support for boolean values in input fields
+2. Changes how we unwrap types in order to add full support for LazyTypes, Optionals and Lists
+3. Improve also how we generate types for unions, now we don't generate a Union type if the selection is for only one type
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #1746](https://github.com/strawberry-graphql/strawberry/pull/1746/)
+
+
+0.103.3 - 2022-03-17
+--------------------
+
+The return type annotation for `DataLoader.load` and `load_many` no longer
+includes any exceptions directly returned by the `load_fn`. The ability to
+handle errors by returning them as elements from `load_fn` is now documented too.
+
+Contributed by [Huon Wilson](https://github.com/huonw) via [PR #1737](https://github.com/strawberry-graphql/strawberry/pull/1737/)
+
+
 0.103.2 - 2022-03-17
 --------------------
 
