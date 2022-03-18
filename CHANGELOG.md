@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.103.6 - 2022-03-18
+--------------------
+
+This release adds a missing `__init__.py` inside `cli/commands`
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #1751](https://github.com/strawberry-graphql/strawberry/pull/1751/)
+
+
 0.103.5 - 2022-03-18
 --------------------
 
