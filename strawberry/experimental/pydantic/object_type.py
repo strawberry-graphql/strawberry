@@ -110,6 +110,7 @@ def _build_dataclass_creation_fields(
         strawberry_field = existing_fields[field.name]
     else:
         # otherwise we build an appropriate strawberry field that resolves it
+        existing_field = existing_fields.get(field.name)
         strawberry_field = StrawberryField(
             python_name=field.name,
             graphql_name=field.alias
@@ -120,6 +121,13 @@ def _build_dataclass_creation_fields(
             default_factory=get_default_factory_for_field(field),
             type_annotation=type_annotation,
             description=field.field_info.description,
+            deprecation_reason=(
+                existing_field.deprecation_reason if existing_field else None
+            ),
+            permission_classes=(
+                existing_field.permission_classes if existing_field else []
+            ),
+            directives=existing_field.directives if existing_field else (),
         )
 
     return DataclassCreationFields(
