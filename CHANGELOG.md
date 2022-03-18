@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.103.5 - 2022-03-18
+--------------------
+
+This release fixes an issue that prevented using generic types
+with interfaces.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #1701](https://github.com/strawberry-graphql/strawberry/pull/1701/)
+
+
 0.103.4 - 2022-03-18
 --------------------
 
