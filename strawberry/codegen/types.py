@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from enum import Enum
+from enum import EnumMeta
 from typing import List, Optional, Type, Union
 
 from typing_extensions import Literal
@@ -39,7 +39,7 @@ class GraphQLObjectType:
 class GraphQLEnum:
     name: str
     values: List[str]
-    python_type: Type[Enum]
+    python_type: EnumMeta
 
 
 @dataclass
