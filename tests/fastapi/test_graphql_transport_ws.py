@@ -708,6 +708,32 @@ def test_single_result_operation_error(test_client):
         assert response["payload"][0]["message"] == "You are not authorized"
 
 
+def test_single_result_operation_exception(test_client):
+    with test_client.websocket_connect(
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+    ) as ws:
+        ws.send_json(ConnectionInitMessage().as_dict())
+
+        response = ws.receive_json()
+        assert response == ConnectionAckMessage().as_dict()
+
+        ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(
+                    query='query { exception(message: "bummer") }',
+                ),
+            ).as_dict()
+        )
+
+        response = ws.receive_json()
+        assert response["type"] == ErrorMessage.type
+        assert response["id"] == "sub1"
+        assert len(response["payload"]) == 1
+        assert response["payload"][0].get("path") == ["exception"]
+        assert response["payload"][0]["message"] == "bummer"
+
+
 def test_single_result_duplicate_ids_sub(test_client):
     with test_client.websocket_connect(
         "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
