@@ -45,7 +45,7 @@ class BaseGraphQLTransportWSHandler(ABC):
         self.connection_acknowledged = False
         self.subscriptions: Dict[str, Optional[AsyncGenerator]] = {}
         self.tasks: Dict[str, asyncio.Task] = {}
-        self.complete_tasks: List[asyncio.Task] = []
+        self.completed_tasks: List[asyncio.Task] = []
 
     @abstractmethod
     async def get_context(self) -> Any:
@@ -111,7 +111,7 @@ class BaseGraphQLTransportWSHandler(ABC):
         except (KeyError, TypeError):
             error_message = "Failed to parse message"
             await self.handle_invalid_message(error_message)
-        await self.cleanup_complete()
+        await self.reap_completed_tasks()
 
     async def handle_connection_init(self, message: ConnectionInitMessage) -> None:
         if self.connection_init_received:
@@ -195,7 +195,7 @@ class BaseGraphQLTransportWSHandler(ABC):
                 self.subscriptions.pop(message.id, None)
                 task = self.tasks.pop(message.id, None)
                 if task is not None:
-                    self.complete_tasks.append(task)
+                    self.completed.tasks.append(task)
 
         self.subscriptions[message.id] = None
         self.tasks[message.id] = asyncio.create_task(task_handler())
@@ -278,7 +278,7 @@ class BaseGraphQLTransportWSHandler(ABC):
             self.subscriptions.pop(operation_id, None)
             task = self.tasks.pop(operation_id, None)
             if task is not None:
-                self.complete_tasks.append(task)
+                self.completed.tasks.append(task)
 
     async def handle_complete(self, message: CompleteMessage) -> None:
         await self.cleanup_operation(operation_id=message.id)
@@ -301,11 +301,11 @@ class BaseGraphQLTransportWSHandler(ABC):
             with suppress(BaseException):
                 await task
 
-    async def cleanup_complete(self) -> None:
+    async def reap_completed_tasks(self) -> None:
         """
         Await tasks that have completed
         """
-        tasks, self.complete_tasks = self.complete_tasks, []
+        tasks, self.completed_tasks = self.completed_tasks, []
         for task in tasks:
             with suppress(BaseException):
                 await task

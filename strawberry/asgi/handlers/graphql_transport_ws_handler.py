@@ -56,4 +56,4 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
 
             for operation_id in list(self.subscriptions.keys()):
                 await self.cleanup_operation(operation_id)
-            await self.cleanup_complete()
+            await self.reap_completed_tasks()
