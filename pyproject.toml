@@ -68,7 +68,7 @@ chalice = {version = "^1.22"}
 requests = "^2.27.1"
 pre-commit = "^2.16.0"
 pytest-benchmark = "^3.4.1"
-freezegun = "^1.2.0"
+freezegun = "^1.2.1"
 opentelemetry-api = "<2"
 opentelemetry-sdk = "<2"
 flake8-isort = "^4.1.1"
