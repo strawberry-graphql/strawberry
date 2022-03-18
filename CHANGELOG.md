@@ -1,6 +1,32 @@
 CHANGELOG
 =========
 
+0.103.7 - 2022-03-18
+--------------------
+
+Fix an issue where there was no clean way to mark a Pydantic field as deprecated, add permission classes, or add directives. Now you can use the short field syntax to do all three.
+
+```python
+import pydantic
+import strawberry
+
+class MyModel(pydantic.BaseModel):
+    age: int
+    name: str
+
+@strawberry.experimental.pydantic.type(MyModel)
+class MyType:
+    age: strawberry.auto
+    name: strawberry.auto = strawberry.field(
+        deprecation_reason="Because",
+        permission_classes=[MyPermission],
+        directives=[MyDirective],
+    )
+```
+
+Contributed by [Matt Allen](https://github.com/Matt343) via [PR #1748](https://github.com/strawberry-graphql/strawberry/pull/1748/)
+
+
 0.103.6 - 2022-03-18
 --------------------
 
