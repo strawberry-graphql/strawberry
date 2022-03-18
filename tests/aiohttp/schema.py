@@ -50,6 +50,11 @@ class Query:
     def always_fail(self) -> typing.Optional[str]:
         return "Hey"
 
+    @strawberry.field
+    async def exception(self, message: str) -> str:
+        raise ValueError(message)
+        return message
+
 
 @strawberry.type
 class Mutation:

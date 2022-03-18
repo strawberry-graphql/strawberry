@@ -56,6 +56,11 @@ class Query:
     def root_name(root) -> str:
         return type(root).__name__
 
+    @strawberry.field
+    async def exception(self, message: str) -> str:
+        raise ValueError(message)
+        return message
+
 
 @strawberry.type
 class Mutation:

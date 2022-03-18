@@ -818,6 +818,35 @@ async def test_single_result_operation_error(aiohttp_client):
         assert ws.closed
 
 
+async def test_single_result_operation_exception(aiohttp_client):
+    app = create_app()
+    aiohttp_app_client = await aiohttp_client(app)
+
+    async with aiohttp_app_client.ws_connect(
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
+    ) as ws:
+        await ws.send_json(ConnectionInitMessage().as_dict())
+
+        response = await ws.receive_json()
+        assert response == ConnectionAckMessage().as_dict()
+
+        await ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(
+                    query='query { exception(message: "bummer") }',
+                ),
+            ).as_dict()
+        )
+
+        response = await ws.receive_json()
+        assert response["type"] == ErrorMessage.type
+        assert response["id"] == "sub1"
+        assert len(response["payload"]) == 1
+        assert response["payload"][0].get("path") == ["exception"]
+        assert response["payload"][0]["message"] == "bummer"
+
+
 async def test_single_result_duplicate_ids_sub(aiohttp_client):
     app = create_app()
     aiohttp_app_client = await aiohttp_client(app)
