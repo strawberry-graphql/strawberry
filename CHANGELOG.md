@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.103.8 - 2022-03-18
+--------------------
+
+This release adds a `python_type` to the codegen `GraphQLEnum` class
+to allow access to the original python enum when generating code
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #1752](https://github.com/strawberry-graphql/strawberry/pull/1752/)
+
+
 0.103.7 - 2022-03-18
 --------------------
 
