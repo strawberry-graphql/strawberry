@@ -126,7 +126,7 @@ def _build_dataclass_creation_fields(
             else None,
             permission_classes=existing_field.permission_classes
             if existing_field
-            else (),
+            else [],
             directives=existing_field.directives if existing_field else (),
         )
 
