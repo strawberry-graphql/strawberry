@@ -3,7 +3,7 @@ from typing import Any, cast
 from typing_extensions import Annotated, get_args
 
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.auto import StrawberryAuto, auto, is_auto
+from strawberry.auto import StrawberryAuto, auto
 
 
 def test_singleton():
@@ -18,19 +18,27 @@ def test_annotated():
     assert get_args(new_annotated) == (Any, StrawberryAuto(), some_obj)
 
 
-def test_is_auto():
-    assert is_auto(auto) is True
-    assert is_auto(object) is False
-    assert is_auto(cast(Any, object())) is False
+def test_str():
+    assert str(StrawberryAuto()) == "auto"
 
 
-def test_is_auto_with_annotation():
+def test_repr():
+    assert repr(StrawberryAuto()) == "<auto>"
+
+
+def test_isinstance():
+    assert isinstance(auto, StrawberryAuto)
+    assert not isinstance(object, StrawberryAuto)
+    assert not isinstance(cast(Any, object()), StrawberryAuto)
+
+
+def test_isinstance_with_annotation():
     annotation = StrawberryAnnotation(auto)
-    assert is_auto(annotation) is True
+    assert isinstance(annotation, StrawberryAuto)
     str_annotation = StrawberryAnnotation("auto", namespace=globals())
-    assert is_auto(str_annotation) is True
+    assert isinstance(str_annotation, StrawberryAuto)
 
 
-def test_is_auto_with_annotated():
-    assert is_auto(Annotated[auto, object()]) is True
-    assert is_auto(Annotated[str, auto]) is False
+def test_isinstance_with_annotated():
+    assert isinstance(Annotated[auto, object()], StrawberryAuto)
+    assert not isinstance(Annotated[str, auto], StrawberryAuto)

@@ -24,7 +24,7 @@ from typing_extensions import Literal
 from graphql import GraphQLResolveInfo
 
 from strawberry.arguments import UNSET
-from strawberry.auto import is_auto
+from strawberry.auto import StrawberryAuto
 from strawberry.experimental.pydantic.conversion import (
     convert_pydantic_model_to_strawberry_class,
     convert_strawberry_class_to_pydantic_model,
@@ -175,7 +175,11 @@ def type(
         # these are the fields that were marked with strawberry.auto and
         # should copy their type from the pydantic model
         auto_fields_set = original_fields_set.union(
-            set(name for name, typ in existing_fields.items() if is_auto(typ))
+            set(
+                name
+                for name, type_ in existing_fields.items()
+                if isinstance(type_, StrawberryAuto)
+            )
         )
 
         if all_fields:

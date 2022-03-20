@@ -5,7 +5,7 @@ from typing import Any, List, Optional, Sequence, Tuple, Type, cast
 from pydantic import BaseModel
 from pydantic.fields import ModelField
 
-from strawberry.auto import is_auto
+from strawberry.auto import StrawberryAuto
 from strawberry.experimental.pydantic.utils import (
     get_private_fields,
     get_strawberry_type_from_model,
@@ -68,7 +68,11 @@ def error_type(
 
         existing_fields = getattr(cls, "__annotations__", {})
         fields_set = fields_set.union(
-            set(name for name, typ in existing_fields.items() if is_auto(typ))
+            set(
+                name
+                for name, type_ in existing_fields.items()
+                if isinstance(type_, StrawberryAuto)
+            )
         )
 
         if all_fields:
@@ -105,7 +109,7 @@ def error_type(
                     field,
                 )
                 for field in extra_fields + private_fields
-                if not is_auto(field.type)
+                if not isinstance(field.type, StrawberryAuto)
             )
         )
 
