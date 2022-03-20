@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, cast
 
 from typing_extensions import Annotated, get_args
 
@@ -21,7 +21,7 @@ def test_annotated():
 def test_is_auto():
     assert is_auto(auto) is True
     assert is_auto(object) is False
-    assert is_auto(object()) is False
+    assert is_auto(cast(Any, object())) is False
 
 
 def test_is_auto_with_annotation():

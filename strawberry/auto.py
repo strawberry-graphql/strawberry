@@ -1,6 +1,8 @@
-from typing import Any, ClassVar, Optional
+from typing import Any, ClassVar, Optional, Union, cast
 
 from typing_extensions import Annotated, Final, get_args, get_origin
+
+from strawberry.type import StrawberryType
 
 from .annotation import StrawberryAnnotation
 
@@ -25,14 +27,15 @@ class StrawberryAuto:
 auto: Final = Annotated[Any, StrawberryAuto()]
 
 
-def is_auto(type_):
+def is_auto(type_: Union[StrawberryAnnotation, StrawberryType, type]):
     if isinstance(type_, StrawberryAnnotation):
-        annotation = type_.annotation
-        if isinstance(annotation, str):
+        resolved = type_.annotation
+        if isinstance(resolved, str):
             namespace = type_.namespace
-            type_ = namespace and namespace.get(annotation)
-        else:
-            type_ = annotation
+            resolved = namespace and namespace.get(resolved)
+
+        if resolved is not None:
+            type_ = cast(type, resolved)
 
     if type_ is auto:
         return True
