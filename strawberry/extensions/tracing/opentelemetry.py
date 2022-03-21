@@ -3,7 +3,6 @@ from copy import deepcopy
 from inspect import isawaitable
 from typing import Any, Callable, Dict, Optional
 
-
 from graphql import GraphQLResolveInfo
 
 from strawberry.extensions import Extension
@@ -12,7 +11,8 @@ from strawberry.types.execution import ExecutionContext
 
 from .utils import should_skip_tracing
 
-is_opentelemetry_installed =True
+
+is_opentelemetry_installed = True
 try:
     from opentelemetry import trace
     from opentelemetry.trace import Span, SpanKind, Tracer
@@ -150,9 +150,12 @@ class OpenTelemetryExtensionSync(OpenTelemetryExtension):
 
             return result
 
+
 if not is_opentelemetry_installed:
+
     class OpenTelemetryExtension(Extension):
         def __init__(self, *args, **kwargs):
-            raise ImportError('To use OpenTelemetryExtension install opentelemetry')
+            raise ImportError("To use OpenTelemetryExtension install opentelemetry")
+
     class OpenTelemetryExtensionSync(OpenTelemetryExtension):
         pass
