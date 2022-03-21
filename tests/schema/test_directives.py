@@ -543,12 +543,12 @@ def test_name_first_directive_value():
             return "Hi"
 
     @strawberry.directive(locations=[DirectiveLocation.FIELD])
-    def personalize_greeting(name: str, v: DirectiveValue[str]):
+    def personalize_greeting(value: str, v: DirectiveValue[str]):
         assert v == "Hi"
-        return f"{v} {name}"
+        return f"{v} {value}"
 
     schema = strawberry.Schema(Query, directives=[personalize_greeting])
-    result = schema.execute_sync('{ greeting @personalizeGreeting(name: "Bar")}')
+    result = schema.execute_sync('{ greeting @personalizeGreeting(value: "Bar")}')
 
     assert result.data is not None
     assert not result.errors
