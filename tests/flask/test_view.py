@@ -158,3 +158,39 @@ def test_get_query_queryargs(flask_client: FlaskClient):
 
     assert response.status_code == 200
     assert data["data"]["hello"] == "strawberry"
+
+
+def test_get_query_variables():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hi(self, name: str) -> str:
+            return f"Hi {name}"
+
+    schema = strawberry.Schema(query=Query)
+
+    app = Flask(__name__)
+    app.debug = True
+
+    app.add_url_rule(
+        "/graphql",
+        view_func=BaseGraphQLView.as_view("graphql_view", schema=schema),
+    )
+
+    with app.test_client() as client:
+        # query = "{ abc }"
+        query = """
+        query ($name: String!) {
+            hi(name: $name)
+        }
+        """
+
+        # Variables are sent from an JSON string
+        response = client.get(
+            "/graphql",
+            query_string={"query": query, "variables": json.dumps({"name": "Bas"})},
+        )
+        data = json.loads(response.data.decode())
+
+        assert response.status_code == 200
+        assert data["data"]["hi"] == "Hi Bas"

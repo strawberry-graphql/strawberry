@@ -1,3 +1,5 @@
+import json
+
 from dataclasses import dataclass
 from typing import Any, Dict, List, Optional
 
@@ -37,9 +39,14 @@ def parse_request_data(data: Dict) -> GraphQLRequestData:
     if "query" not in data:
         raise MissingQueryError()
 
+    variables = data.get("variables")
+
+    if type(variables) == str:
+        variables = json.loads(variables)
+
     result = GraphQLRequestData(
         query=data["query"],
-        variables=data.get("variables"),
+        variables=variables,
         operation_name=data.get("operationName"),
     )
 
