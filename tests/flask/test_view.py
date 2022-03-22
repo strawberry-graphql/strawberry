@@ -178,7 +178,6 @@ def test_get_query_variables():
     )
 
     with app.test_client() as client:
-        # query = "{ abc }"
         query = """
         query ($name: String!) {
             hi(name: $name)
