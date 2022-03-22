@@ -53,7 +53,8 @@ class GraphQLView(View):
             data = replace_placeholders_with_files(operations, files_map, request.files)
 
         else:
-            data = request.args if request.method == "GET" else request.json  # type: ignore
+            attr = "args" if request.method == "GET" else "json"
+            data = getattr(request, attr)  # type: ignore
         try:
             request_data = parse_request_data(data)
         except MissingQueryError:
