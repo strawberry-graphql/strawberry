@@ -19,7 +19,7 @@ def test_graphql_query(flask_client):
         """
     }
 
-    response = flask_client.get("/graphql", json=query)
+    response = flask_client.get("/graphql", query_string=query)
     data = json.loads(response.data.decode())
 
     assert response.status_code == 200
@@ -81,7 +81,7 @@ def test_custom_context():
     with app.test_client() as client:
         query = "{ customContextValue }"
 
-        response = client.get("/graphql", json={"query": query})
+        response = client.get("/graphql", query_string={"query": query})
         data = json.loads(response.data.decode())
 
         assert response.status_code == 200
@@ -112,7 +112,7 @@ def test_custom_process_result():
     with app.test_client() as client:
         query = "{ abc }"
 
-        response = client.get("/graphql", json={"query": query})
+        response = client.get("/graphql", query_string={"query": query})
         data = json.loads(response.data.decode())
 
         assert response.status_code == 200
@@ -142,7 +142,7 @@ def test_context_with_response():
     with app.test_client() as client:
         query = "{ response }"
 
-        response = client.get("/graphql", json={"query": query})
+        response = client.get("/graphql", query_string={"query": query})
         assert response.status_code == 401
 
 
