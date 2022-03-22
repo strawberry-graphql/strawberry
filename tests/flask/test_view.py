@@ -5,6 +5,8 @@ from flask import Flask, Response, request
 from strawberry.flask.views import GraphQLView as BaseGraphQLView
 from strawberry.types import ExecutionResult, Info
 
+from flask.testing import FlaskClient
+
 from .app import create_app
 
 
@@ -142,3 +144,17 @@ def test_context_with_response():
 
         response = client.get("/graphql", json={"query": query})
         assert response.status_code == 401
+
+
+def test_get_query_queryargs(flask_client: FlaskClient):
+    query = """
+    query {
+        hello
+    }
+    """
+
+    response = flask_client.get("/graphql", query_string={"query": query})
+    data = json.loads(response.data.decode())
+
+    assert response.status_code == 200
+    assert data["data"]["hello"] == "strawberry"

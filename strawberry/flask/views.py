@@ -42,14 +42,18 @@ class GraphQLView(View):
             template = render_graphiql_page()
             return self.render_template(template=template)
 
-        if request.content_type.startswith("multipart/form-data"):
+        # GET requests doesn't have content types
+        # https://stackoverflow.com/a/16693884/2989034
+        if request.content_type is not None and request.content_type.startswith(
+            "multipart/form-data"
+        ):
             operations = json.loads(request.form.get("operations", "{}"))
             files_map = json.loads(request.form.get("map", "{}"))
 
             data = replace_placeholders_with_files(operations, files_map, request.files)
 
         else:
-            data = request.json  # type: ignore
+            data = request.args if request.method == "GET" else request.json  # type: ignore
 
         try:
             request_data = parse_request_data(data)
