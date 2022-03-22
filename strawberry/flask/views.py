@@ -54,7 +54,7 @@ class GraphQLView(View):
 
         else:
             attr = "args" if request.method == "GET" else "json"
-            data = getattr(request, attr)  # type: ignore
+            data = getattr(request, attr)
         try:
             request_data = parse_request_data(data)
         except MissingQueryError:
