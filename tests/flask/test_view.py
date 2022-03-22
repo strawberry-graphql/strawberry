@@ -2,10 +2,9 @@ import json
 
 import strawberry
 from flask import Flask, Response, request
+from flask.testing import FlaskClient
 from strawberry.flask.views import GraphQLView as BaseGraphQLView
 from strawberry.types import ExecutionResult, Info
-
-from flask.testing import FlaskClient
 
 from .app import create_app
 
