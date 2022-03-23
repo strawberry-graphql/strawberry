@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.103.9 - 2022-03-23
+--------------------
+
+This release moves the console plugin for the codegen command
+to be last one, allowing to run code before writing files to
+disk.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #1760](https://github.com/strawberry-graphql/strawberry/pull/1760/)
+
+
 0.103.8 - 2022-03-18
 --------------------
 
