@@ -19,6 +19,8 @@ from strawberry.schema.types import base_scalars
 
 
 def _make_scalar_type(definition: ScalarDefinition) -> GraphQLScalarType:
+    from strawberry.schema.schema_converter import STRAWBERRY_DEFINITION
+
     return GraphQLScalarType(
         name=definition.name,
         description=definition.description,
@@ -26,6 +28,7 @@ def _make_scalar_type(definition: ScalarDefinition) -> GraphQLScalarType:
         serialize=definition.serialize,
         parse_value=definition.parse_value,
         parse_literal=definition.parse_literal,
+        extensions={STRAWBERRY_DEFINITION: definition},
     )
 
 

@@ -20,7 +20,10 @@ from strawberry.extensions.directives import (
     DirectivesExtensionSync,
 )
 from strawberry.field import StrawberryField
-from strawberry.schema.schema_converter import GraphQLCoreConverter
+from strawberry.schema.schema_converter import (
+    STRAWBERRY_DEFINITION,
+    GraphQLCoreConverter,
+)
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
 from strawberry.types import ExecutionContext, ExecutionResult
 from strawberry.types.types import TypeDefinition
@@ -88,6 +91,9 @@ class Schema(BaseSchema):
             subscription=subscription_type if subscription else None,
             directives=specified_directives + graphql_directives,
             types=graphql_types,
+            extensions={
+                STRAWBERRY_DEFINITION: self,
+            },
         )
 
         # attach our schema to the GraphQL schema instance

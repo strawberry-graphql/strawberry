@@ -68,12 +68,10 @@ class Schema(BaseSchema):
 
         query_type = cast(GraphQLObjectType, self._schema.query_type)
         fields.update(query_type.fields)
+        query_type_kwargs = query_type.to_kwargs()
+        query_type_kwargs["fields"] = fields
 
-        self._schema.query_type = GraphQLObjectType(
-            name=query_type.name,
-            description=query_type.description,
-            fields=fields,
-        )
+        self._schema.query_type = GraphQLObjectType(**query_type_kwargs)
 
         self._schema.type_map["_Service"] = self._service_type
         self._schema.type_map[self._schema.query_type.name] = self._schema.query_type

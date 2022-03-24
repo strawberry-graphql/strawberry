@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from itertools import chain
-from typing import TYPE_CHECKING, Dict, Optional, cast
+from typing import TYPE_CHECKING, Dict, Optional
 
 from graphql.type import (
     is_enum_type,
@@ -26,8 +26,8 @@ from graphql.utilities.print_schema import (
 )
 
 from strawberry.field import StrawberryField
+from strawberry.schema.schema_converter import STRAWBERRY_DEFINITION
 from strawberry.schema_directive import Location, StrawberrySchemaDirective
-from strawberry.types.types import TypeDefinition
 
 
 if TYPE_CHECKING:
@@ -70,17 +70,11 @@ def print_field_directives(field: Optional[StrawberryField], schema: BaseSchema)
 
 
 def print_fields(type_, schema: BaseSchema) -> str:
-    strawberry_type = cast(TypeDefinition, schema.get_type_by_name(type_.name))
-
     fields = []
 
     for i, (name, field) in enumerate(type_.fields.items()):
-        python_name = field.extensions and field.extensions.get("python_name")
-
-        strawberry_field = (
-            strawberry_type.get_field(python_name)
-            if strawberry_type and python_name
-            else None
+        strawberry_field = field.extensions and field.extensions.get(
+            STRAWBERRY_DEFINITION
         )
 
         args = print_args(field.args, "  ") if hasattr(field, "args") else ""
@@ -98,7 +92,7 @@ def print_fields(type_, schema: BaseSchema) -> str:
 
 
 def print_extends(type_, schema: BaseSchema):
-    strawberry_type = cast(TypeDefinition, schema.get_type_by_name(type_.name))
+    strawberry_type = type_.extensions and type_.extensions.get(STRAWBERRY_DEFINITION)
 
     if strawberry_type and strawberry_type.extend:
         return "extend "
@@ -107,7 +101,7 @@ def print_extends(type_, schema: BaseSchema):
 
 
 def print_type_directives(type_, schema: BaseSchema) -> str:
-    strawberry_type = cast(TypeDefinition, schema.get_type_by_name(type_.name))
+    strawberry_type = type_.extensions and type_.extensions.get(STRAWBERRY_DEFINITION)
 
     if not strawberry_type:
         return ""

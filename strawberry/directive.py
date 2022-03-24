@@ -6,6 +6,8 @@ import sys
 from itertools import islice
 from typing import Callable, List, Optional, TypeVar
 
+from backports.cached_property import cached_property
+
 from graphql import DirectiveLocation
 
 from strawberry.annotation import StrawberryAnnotation
@@ -20,7 +22,7 @@ class StrawberryDirective:
     locations: List[DirectiveLocation]
     description: Optional[str] = None
 
-    @property
+    @cached_property
     def arguments(self) -> List[StrawberryArgument]:
         annotations = self.resolver.__annotations__
         annotations = dict(islice(annotations.items(), 1, None))

@@ -59,6 +59,10 @@ from . import compat
 from .types.concrete_type import ConcreteType
 
 
+# Extension key used to link a GraphQLType back into the Strawberry definition
+STRAWBERRY_DEFINITION = "strawberry-definition"
+
+
 # graphql-core expects a resolver for an Enum type to return
 # the enum's *value* (not its name or an instance of the enum). We have to
 # subclass the GraphQLEnumType class to enable returning Enum members from
@@ -91,6 +95,9 @@ class GraphQLCoreConverter:
             default_value=default_value,
             description=argument.description,
             deprecation_reason=argument.deprecation_reason,
+            extensions={
+                STRAWBERRY_DEFINITION: argument,
+            },
         )
 
     def from_enum(self, enum: EnumDefinition) -> CustomGraphQLEnumType:
@@ -108,6 +115,9 @@ class GraphQLCoreConverter:
             name=enum_name,
             values={item.name: self.from_enum_value(item) for item in enum.values},
             description=enum.description,
+            extensions={
+                STRAWBERRY_DEFINITION: enum,
+            },
         )
 
         self.type_map[enum_name] = ConcreteType(
@@ -117,7 +127,12 @@ class GraphQLCoreConverter:
         return graphql_enum
 
     def from_enum_value(self, enum_value: EnumValue) -> GraphQLEnumValue:
-        return GraphQLEnumValue(enum_value.value)
+        return GraphQLEnumValue(
+            enum_value.value,
+            extensions={
+                STRAWBERRY_DEFINITION: enum_value,
+            },
+        )
 
     def from_directive(self, directive: StrawberryDirective) -> GraphQLDirective:
         graphql_arguments = {}
@@ -133,6 +148,9 @@ class GraphQLCoreConverter:
             locations=directive.locations,
             args=graphql_arguments,
             description=directive.description,
+            extensions={
+                STRAWBERRY_DEFINITION: directive,
+            },
         )
 
     def from_field(self, field: StrawberryField) -> GraphQLField:
@@ -157,7 +175,9 @@ class GraphQLCoreConverter:
             subscribe=subscribe,
             description=field.description,
             deprecation_reason=field.deprecation_reason,
-            extensions={"python_name": field.python_name},
+            extensions={
+                STRAWBERRY_DEFINITION: field,
+            },
         )
 
     def from_input_field(self, field: StrawberryField) -> GraphQLInputField:
@@ -174,6 +194,9 @@ class GraphQLCoreConverter:
             default_value=default_value,
             description=field.description,
             deprecation_reason=field.deprecation_reason,
+            extensions={
+                STRAWBERRY_DEFINITION: field,
+            },
         )
 
     FieldType = TypeVar("FieldType", GraphQLField, GraphQLInputField)
@@ -238,6 +261,9 @@ class GraphQLCoreConverter:
             name=type_name,
             fields=lambda: self.get_graphql_input_fields(type_definition),
             description=type_definition.description,
+            extensions={
+                STRAWBERRY_DEFINITION: type_definition,
+            },
         )
 
         self.type_map[type_name] = ConcreteType(
@@ -262,6 +288,9 @@ class GraphQLCoreConverter:
             fields=lambda: self.get_graphql_fields(interface),
             interfaces=list(map(self.from_interface, interface.interfaces)),
             description=interface.description,
+            extensions={
+                STRAWBERRY_DEFINITION: interface,
+            },
         )
 
         self.type_map[interface_name] = ConcreteType(
@@ -309,6 +338,9 @@ class GraphQLCoreConverter:
             interfaces=list(map(self.from_interface, object_type.interfaces)),
             description=object_type.description,
             is_type_of=_get_is_type_of(),
+            extensions={
+                STRAWBERRY_DEFINITION: object_type,
+            },
         )
 
         self.type_map[object_type_name] = ConcreteType(
@@ -512,6 +544,9 @@ class GraphQLCoreConverter:
             types=graphql_types,
             description=union.description,
             resolve_type=union.get_type_resolver(self.type_map),
+            extensions={
+                STRAWBERRY_DEFINITION: union,
+            },
         )
 
         self.type_map[union_name] = ConcreteType(
