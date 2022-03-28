@@ -812,17 +812,20 @@ def test_can_convert_pydantic_type_to_strawberry_newtype():
     class User(BaseModel):
         age: int
         password: Optional[Password]
+        passwords: List[Password]
 
     @strawberry.experimental.pydantic.type(User)
     class UserType:
         age: strawberry.auto
         password: strawberry.auto
+        passwords: strawberry.auto
 
-    origin_user = User(age=1, password="abc")
+    origin_user = User(age=1, password="abc", passwords=["hunter2"])
     user = UserType.from_pydantic(origin_user)
 
     assert user.age == 1
     assert user.password == "abc"
+    assert user.passwords == ["hunter2"]
 
 
 def test_sort_creation_fields():
