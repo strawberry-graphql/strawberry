@@ -120,6 +120,9 @@ class PrintOperationPlugin(QueryCodegenPlugin):
             f"{self._print_directives(selection.directives)}"
         )
 
+        if selection.alias:
+            field = f"{selection.alias}: {field}"
+
         if selection.selections:
             return field + f" {{\n{self._print_selections(selection.selections)}\n}}"
 
