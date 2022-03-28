@@ -1,11 +1,10 @@
 import sys
 import typing
-from collections.abc import AsyncGenerator as AsyncGenerator_abc
+from collections import abc
 from enum import Enum
 from typing import (  # type: ignore[attr-defined]
     TYPE_CHECKING,
     Any,
-    AsyncGenerator as AsyncGenerator_typing,
     Dict,
     Optional,
     TypeVar,
@@ -38,6 +37,17 @@ if TYPE_CHECKING:
     from strawberry.union import StrawberryUnion
 
 
+ASYNC_TYPES = (
+    abc.AsyncGenerator,
+    abc.AsyncIterable,
+    abc.AsyncIterator,
+    typing.AsyncContextManager,
+    typing.AsyncGenerator,
+    typing.AsyncIterable,
+    typing.AsyncIterator,
+)
+
+
 class StrawberryAnnotation:
     def __init__(
         self, annotation: Union[object, str], *, namespace: Optional[Dict] = None
@@ -59,8 +69,8 @@ class StrawberryAnnotation:
             annotation = self.annotation
 
         evaled_type = _eval_type(annotation, self.namespace, None)
-        if self._is_async_generator(evaled_type):
-            evaled_type = self._strip_async_generator(evaled_type)
+        if self._is_async_type(evaled_type):
+            evaled_type = self._strip_async_type(evaled_type)
         if self._is_lazy_type(evaled_type):
             return evaled_type
 
@@ -150,14 +160,9 @@ class StrawberryAnnotation:
         return union
 
     @classmethod
-    def _is_async_generator(cls, annotation: type) -> bool:
+    def _is_async_type(cls, annotation: type) -> bool:
         origin = getattr(annotation, "__origin__", None)
-        if origin is AsyncGenerator_abc:
-            return True
-        if origin is AsyncGenerator_typing:
-            # deprecated in Python 3.9 and above
-            return True
-        return False
+        return origin in ASYNC_TYPES
 
     @classmethod
     def _is_enum(cls, annotation: Any) -> bool:
@@ -246,7 +251,7 @@ class StrawberryAnnotation:
         return annotation_origin is typing.Union
 
     @classmethod
-    def _strip_async_generator(cls, annotation) -> type:
+    def _strip_async_type(cls, annotation) -> type:
         return annotation.__args__[0]
 
     @classmethod
