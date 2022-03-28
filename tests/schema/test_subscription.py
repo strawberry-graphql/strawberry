@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sys
 import typing
+from collections import abc  # noqa: F401
 
 import pytest
 
@@ -72,7 +73,7 @@ requires_builtin_generics = pytest.mark.skipif(
     ),
 )
 @pytest.mark.asyncio
-async def test_subscription_return_typing_annotations(return_annotation: str):
+async def test_subscription_return_annotations(return_annotation: str):
     async def async_resolver():
         yield "Hi"
 
