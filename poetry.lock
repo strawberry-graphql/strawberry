@@ -413,7 +413,7 @@ tomli = "*"
 
 [[package]]
 name = "flake8-bugbear"
-version = "22.3.20"
+version = "22.3.23"
 description = "A plugin for flake8 finding likely bugs and design problems in your program. Contains warnings that don't belong in pyflakes and pycodestyle."
 category = "dev"
 optional = false
@@ -1536,7 +1536,7 @@ sanic = ["sanic"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "cc0a39494110c52b6779043cfd1a31c5487b11d75eba9f4b07ac6bf8be73917b"
+content-hash = "19704944e6c49636387d5754fc3307d94ee82928ef07a5b36388ebb1faee6a82"
 
 [metadata.files]
 aiofiles = [
@@ -1801,8 +1801,8 @@ flake8-black = [
     {file = "flake8_black-0.3.2-py3-none-any.whl", hash = "sha256:9c86b24ede16a80555808c6c4779d81bc54cff57d0dd1980029c0e4b39ac8b45"},
 ]
 flake8-bugbear = [
-    {file = "flake8-bugbear-22.3.20.tar.gz", hash = "sha256:152e64a86f6bff6e295d630ccc993f62434c1fd2b20d2fae47547cb1c1b868e0"},
-    {file = "flake8_bugbear-22.3.20-py3-none-any.whl", hash = "sha256:19fe179ee3286e16198603c438788e2949e79f31d653f0bdb56d53fb69217bd0"},
+    {file = "flake8-bugbear-22.3.23.tar.gz", hash = "sha256:e0dc2a36474490d5b1a2d57f9e4ef570abc09f07cbb712b29802e28a2367ff19"},
+    {file = "flake8_bugbear-22.3.23-py3-none-any.whl", hash = "sha256:ec5ec92195720cee1589315416b844ffa5e82f73a78e65329e8055322df1e939"},
 ]
 flake8-eradicate = [
     {file = "flake8-eradicate-1.2.0.tar.gz", hash = "sha256:acaa1b6839ff00d284b805c432fdfa6047262bd15a5504ec945797e87b4de1fa"},
