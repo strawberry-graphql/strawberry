@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.104.1 - 2022-03-28
+--------------------
+
+This release adds support for aliased fields when doing codegen.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #1772](https://github.com/strawberry-graphql/strawberry/pull/1772/)
+
+
 0.104.0 - 2022-03-28
 --------------------
 
