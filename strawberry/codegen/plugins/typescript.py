@@ -63,8 +63,12 @@ class TypeScriptPlugin(QueryCodegenPlugin):
         return type_.name
 
     def _print_field(self, field: GraphQLField) -> str:
+        name = field.name
 
-        return f"{field.name}: {self._get_type_name(field.type)}"
+        if field.alias:
+            name = f"// alias for {field.name}\n{field.alias}"
+
+        return f"{name}: {self._get_type_name(field.type)}"
 
     def _print_enum_value(self, value: str) -> str:
         return f'{value} = "{value}",'
