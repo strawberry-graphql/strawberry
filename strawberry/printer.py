@@ -26,7 +26,7 @@ from graphql.utilities.print_schema import (
 )
 
 from strawberry.field import StrawberryField
-from strawberry.schema.schema_converter import STRAWBERRY_DEFINITION
+from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema_directive import Location, StrawberrySchemaDirective
 
 
@@ -74,7 +74,7 @@ def print_fields(type_, schema: BaseSchema) -> str:
 
     for i, (name, field) in enumerate(type_.fields.items()):
         strawberry_field = field.extensions and field.extensions.get(
-            STRAWBERRY_DEFINITION
+            GraphQLCoreConverter.DEFINITION_BACKREF
         )
 
         args = print_args(field.args, "  ") if hasattr(field, "args") else ""
@@ -92,7 +92,9 @@ def print_fields(type_, schema: BaseSchema) -> str:
 
 
 def print_extends(type_, schema: BaseSchema):
-    strawberry_type = type_.extensions and type_.extensions.get(STRAWBERRY_DEFINITION)
+    strawberry_type = type_.extensions and type_.extensions.get(
+        GraphQLCoreConverter.DEFINITION_BACKREF
+    )
 
     if strawberry_type and strawberry_type.extend:
         return "extend "
@@ -101,7 +103,9 @@ def print_extends(type_, schema: BaseSchema):
 
 
 def print_type_directives(type_, schema: BaseSchema) -> str:
-    strawberry_type = type_.extensions and type_.extensions.get(STRAWBERRY_DEFINITION)
+    strawberry_type = type_.extensions and type_.extensions.get(
+        GraphQLCoreConverter.DEFINITION_BACKREF
+    )
 
     if not strawberry_type:
         return ""

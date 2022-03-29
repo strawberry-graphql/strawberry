@@ -59,10 +59,6 @@ from . import compat
 from .types.concrete_type import ConcreteType
 
 
-# Extension key used to link a GraphQLType back into the Strawberry definition
-STRAWBERRY_DEFINITION = "strawberry-definition"
-
-
 # graphql-core expects a resolver for an Enum type to return
 # the enum's *value* (not its name or an instance of the enum). We have to
 # subclass the GraphQLEnumType class to enable returning Enum members from
@@ -76,6 +72,9 @@ class CustomGraphQLEnumType(GraphQLEnumType):
 
 class GraphQLCoreConverter:
     # TODO: Make abstract
+
+    # Extension key used to link a GraphQLType back into the Strawberry definition
+    DEFINITION_BACKREF = "strawberry-definition"
 
     def __init__(
         self,
@@ -96,7 +95,7 @@ class GraphQLCoreConverter:
             description=argument.description,
             deprecation_reason=argument.deprecation_reason,
             extensions={
-                STRAWBERRY_DEFINITION: argument,
+                GraphQLCoreConverter.DEFINITION_BACKREF: argument,
             },
         )
 
@@ -116,7 +115,7 @@ class GraphQLCoreConverter:
             values={item.name: self.from_enum_value(item) for item in enum.values},
             description=enum.description,
             extensions={
-                STRAWBERRY_DEFINITION: enum,
+                GraphQLCoreConverter.DEFINITION_BACKREF: enum,
             },
         )
 
@@ -130,7 +129,7 @@ class GraphQLCoreConverter:
         return GraphQLEnumValue(
             enum_value.value,
             extensions={
-                STRAWBERRY_DEFINITION: enum_value,
+                GraphQLCoreConverter.DEFINITION_BACKREF: enum_value,
             },
         )
 
@@ -149,7 +148,7 @@ class GraphQLCoreConverter:
             args=graphql_arguments,
             description=directive.description,
             extensions={
-                STRAWBERRY_DEFINITION: directive,
+                GraphQLCoreConverter.DEFINITION_BACKREF: directive,
             },
         )
 
@@ -176,7 +175,7 @@ class GraphQLCoreConverter:
             description=field.description,
             deprecation_reason=field.deprecation_reason,
             extensions={
-                STRAWBERRY_DEFINITION: field,
+                GraphQLCoreConverter.DEFINITION_BACKREF: field,
             },
         )
 
@@ -195,7 +194,7 @@ class GraphQLCoreConverter:
             description=field.description,
             deprecation_reason=field.deprecation_reason,
             extensions={
-                STRAWBERRY_DEFINITION: field,
+                GraphQLCoreConverter.DEFINITION_BACKREF: field,
             },
         )
 
@@ -262,7 +261,7 @@ class GraphQLCoreConverter:
             fields=lambda: self.get_graphql_input_fields(type_definition),
             description=type_definition.description,
             extensions={
-                STRAWBERRY_DEFINITION: type_definition,
+                GraphQLCoreConverter.DEFINITION_BACKREF: type_definition,
             },
         )
 
@@ -289,7 +288,7 @@ class GraphQLCoreConverter:
             interfaces=list(map(self.from_interface, interface.interfaces)),
             description=interface.description,
             extensions={
-                STRAWBERRY_DEFINITION: interface,
+                GraphQLCoreConverter.DEFINITION_BACKREF: interface,
             },
         )
 
@@ -339,7 +338,7 @@ class GraphQLCoreConverter:
             description=object_type.description,
             is_type_of=_get_is_type_of(),
             extensions={
-                STRAWBERRY_DEFINITION: object_type,
+                GraphQLCoreConverter.DEFINITION_BACKREF: object_type,
             },
         )
 
@@ -545,7 +544,7 @@ class GraphQLCoreConverter:
             description=union.description,
             resolve_type=union.get_type_resolver(self.type_map),
             extensions={
-                STRAWBERRY_DEFINITION: union,
+                GraphQLCoreConverter.DEFINITION_BACKREF: union,
             },
         )
 

@@ -11,7 +11,7 @@ from graphql import (
 
 import strawberry
 from strawberry.scalars import JSON
-from strawberry.schema.schema_converter import STRAWBERRY_DEFINITION
+from strawberry.schema.schema_converter import GraphQLCoreConverter
 
 
 def test_extensions():
@@ -59,67 +59,93 @@ def test_extensions():
     print(strawberry_schema)
 
     # Schema
-    assert graphql_schema.extensions[STRAWBERRY_DEFINITION] is strawberry_schema
+    assert (
+        graphql_schema.extensions[GraphQLCoreConverter.DEFINITION_BACKREF]
+        is strawberry_schema
+    )
 
     # Directive
     graphql_directive = graphql_schema.get_directive("uppercase")
-    assert graphql_directive.extensions[STRAWBERRY_DEFINITION] is uppercase
     assert (
-        graphql_directive.args["foo"].extensions[STRAWBERRY_DEFINITION]
+        graphql_directive.extensions[GraphQLCoreConverter.DEFINITION_BACKREF]
+        is uppercase
+    )
+    assert (
+        graphql_directive.args["foo"].extensions[
+            GraphQLCoreConverter.DEFINITION_BACKREF
+        ]
         is uppercase.arguments[0]
     )
 
     # Leaf types: Enums and scalars
     assert (
-        graphql_schema.get_type("JSON").extensions[STRAWBERRY_DEFINITION]
+        graphql_schema.get_type("JSON").extensions[
+            GraphQLCoreConverter.DEFINITION_BACKREF
+        ]
         is JSON._scalar_definition
     )
     graphql_thing_type = cast(GraphQLEnumType, graphql_schema.get_type("ThingType"))
     assert (
-        graphql_thing_type.extensions[STRAWBERRY_DEFINITION]
+        graphql_thing_type.extensions[GraphQLCoreConverter.DEFINITION_BACKREF]
         is ThingType._enum_definition
     )
     assert (
-        graphql_thing_type.values["JSON"].extensions[STRAWBERRY_DEFINITION]
+        graphql_thing_type.values["JSON"].extensions[
+            GraphQLCoreConverter.DEFINITION_BACKREF
+        ]
         is ThingType._enum_definition.values[0]
     )
     assert (
-        graphql_thing_type.values["STR"].extensions[STRAWBERRY_DEFINITION]
+        graphql_thing_type.values["STR"].extensions[
+            GraphQLCoreConverter.DEFINITION_BACKREF
+        ]
         is ThingType._enum_definition.values[1]
     )
 
     # Abstract types: Interfaces and Unions
     assert (
-        graphql_schema.get_type("Thing").extensions[STRAWBERRY_DEFINITION]
+        graphql_schema.get_type("Thing").extensions[
+            GraphQLCoreConverter.DEFINITION_BACKREF
+        ]
         is Thing._type_definition
     )
     assert (
-        graphql_schema.get_type("SomeThing").extensions[STRAWBERRY_DEFINITION]
+        graphql_schema.get_type("SomeThing").extensions[
+            GraphQLCoreConverter.DEFINITION_BACKREF
+        ]
         is SomeThing
     )
 
     # Object types
     assert (
-        graphql_schema.get_type("JsonThing").extensions[STRAWBERRY_DEFINITION]
+        graphql_schema.get_type("JsonThing").extensions[
+            GraphQLCoreConverter.DEFINITION_BACKREF
+        ]
         is JsonThing._type_definition
     )
     assert (
-        graphql_schema.get_type("StrThing").extensions[STRAWBERRY_DEFINITION]
+        graphql_schema.get_type("StrThing").extensions[
+            GraphQLCoreConverter.DEFINITION_BACKREF
+        ]
         is StrThing._type_definition
     )
     assert (
-        graphql_schema.get_type("Input").extensions[STRAWBERRY_DEFINITION]
+        graphql_schema.get_type("Input").extensions[
+            GraphQLCoreConverter.DEFINITION_BACKREF
+        ]
         is Input._type_definition
     )
     assert (
-        graphql_schema.get_type("Query").extensions[STRAWBERRY_DEFINITION]
+        graphql_schema.get_type("Query").extensions[
+            GraphQLCoreConverter.DEFINITION_BACKREF
+        ]
         is Query._type_definition
     )
 
     # Fields
     graphql_query = cast(GraphQLObjectType, graphql_schema.get_type("Query"))
     graphql_query.fields["getThingIface"].extensions[
-        STRAWBERRY_DEFINITION
+        GraphQLCoreConverter.DEFINITION_BACKREF
     ] is Query._type_definition.get_field("get_thing_iface")
     graphql_query.fields["getThingIface"].args[
         "input"
@@ -127,5 +153,5 @@ def test_extensions():
 
     graphql_input = cast(GraphQLInputType, graphql_schema.get_type("Input"))
     graphql_input.fields["type"].extensions[
-        STRAWBERRY_DEFINITION
+        GraphQLCoreConverter.DEFINITION_BACKREF
     ] is Input._type_definition.get_field("type")
