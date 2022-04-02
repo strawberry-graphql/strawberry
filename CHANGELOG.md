@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.104.2 - 2022-04-02
+--------------------
+
+Drop support for Django < 3.2.
+
+Contributed by [Guillaume Andreu Sabater](https://github.com/g-as) via [PR #1787](https://github.com/strawberry-graphql/strawberry/pull/1787/)
+
+
 0.104.1 - 2022-03-28
 --------------------
 
