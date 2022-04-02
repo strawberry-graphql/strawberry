@@ -1319,7 +1319,7 @@ python-versions = "*"
 
 [[package]]
 name = "types-freezegun"
-version = "1.1.7"
+version = "1.1.8"
 description = "Typing stubs for freezegun"
 category = "dev"
 optional = false
@@ -1537,7 +1537,7 @@ sanic = ["sanic"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "d20232e62fbebed5a8f421ce57439e6cac0487b52711b9fd69641bd92c55335e"
+content-hash = "86f562d63e2bad07513f836d60291080014494ea126eaca7b0f06fb3b276c2e5"
 
 [metadata.files]
 aiofiles = [
@@ -2263,6 +2263,7 @@ pytest-aiohttp = [
 ]
 pytest-asyncio = [
     {file = "pytest-asyncio-0.18.3.tar.gz", hash = "sha256:7659bdb0a9eb9c6e3ef992eef11a2b3e69697800ad02fb06374a210d85b29f91"},
+    {file = "pytest_asyncio-0.18.3-1-py3-none-any.whl", hash = "sha256:16cf40bdf2b4fb7fc8e4b82bd05ce3fbcd454cbf7b92afc445fe299dabb88213"},
     {file = "pytest_asyncio-0.18.3-py3-none-any.whl", hash = "sha256:8fafa6c52161addfd41ee7ab35f11836c5a16ec208f93ee388f752bea3493a84"},
 ]
 pytest-benchmark = [
@@ -2521,8 +2522,8 @@ types-chardet = [
     {file = "types_chardet-4.0.3-py3-none-any.whl", hash = "sha256:8990a86d4c7cfa6c6c5889fc49e456e477851e75b5adb396d42ae106d0ae02ea"},
 ]
 types-freezegun = [
-    {file = "types-freezegun-1.1.7.tar.gz", hash = "sha256:e9d1327e98c6caa8f65de0018ded274347e8e34198d59aa9a5c24ad9265d5e5e"},
-    {file = "types_freezegun-1.1.7-py3-none-any.whl", hash = "sha256:efa02341ad35e4f24b3346d09b60332e967586a5bc495a56b1c9c927b4c788b6"},
+    {file = "types-freezegun-1.1.8.tar.gz", hash = "sha256:f4bb08c54aa46816c77a1b5c7a2a54f5393c3ce58e7d4002e67f9081b411e921"},
+    {file = "types_freezegun-1.1.8-py3-none-any.whl", hash = "sha256:59dd99a6d168bdb5bf884fda6daebd68c35bc86383df183cf182abc6dfcbb7b7"},
 ]
 types-python-dateutil = [
     {file = "types-python-dateutil-2.8.10.tar.gz", hash = "sha256:6bcf3aae7242e5793bafd7b2bcfb4e255eb7b2b3144acd0df0e182dce58ccad3"},
