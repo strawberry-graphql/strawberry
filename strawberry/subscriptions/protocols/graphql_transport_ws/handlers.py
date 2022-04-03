@@ -2,7 +2,7 @@ import asyncio
 from abc import ABC, abstractmethod
 from contextlib import suppress
 from datetime import timedelta
-from typing import Any, AsyncGenerator, Dict, Optional
+from typing import Any, AsyncGenerator, Callable, Dict, Optional
 
 from graphql import (
     ExecutionResult as GraphQLExecutionResult,
@@ -82,6 +82,8 @@ class BaseGraphQLTransportWSHandler(ABC):
         await self.close(code=4408, reason=reason)
 
     async def handle_message(self, message: dict):
+        handler: Callable
+        handler_arg: Any
         try:
             message_type = message.pop("type")
 
