@@ -243,8 +243,8 @@ class BaseGraphQLTransportWSHandler(ABC):
                 self.schema.process_errors([error])
                 return
 
-        except BaseException:
-            # cleanup
+        except BaseException:  # pragma: no cover
+            # cleanup in case of something really unexpected
             del self.subscriptions[operation_id]
             del self.tasks[operation_id]
             raise
