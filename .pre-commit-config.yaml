@@ -31,7 +31,7 @@ repos:
         exclude: CHANGELOG.md
 
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v2.6.1
+    rev: v2.6.2
     hooks:
       - id: prettier
         files: '^docs/.*\.mdx?$'
@@ -45,7 +45,7 @@ repos:
       - id: check-toml
 
   - repo: https://github.com/psf/black
-    rev: 22.1.0
+    rev: 22.3.0
     hooks:
       - id: black
         exclude: ^tests/codegen/snapshots/python/
