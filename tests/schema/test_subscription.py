@@ -57,7 +57,7 @@ async def test_subscription_with_arguments():
 
 requires_builtin_generics = pytest.mark.skipif(
     sys.version_info < (3, 9),
-    reason="built-in generic annotations where added in python 3.9",
+    reason="built-in generic annotations were added in python 3.9",
 )
 
 
