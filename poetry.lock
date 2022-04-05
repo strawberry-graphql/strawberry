@@ -1346,7 +1346,7 @@ types-urllib3 = "<1.27"
 
 [[package]]
 name = "types-setuptools"
-version = "57.4.11"
+version = "57.4.12"
 description = "Typing stubs for setuptools"
 category = "dev"
 optional = false
@@ -1537,7 +1537,7 @@ sanic = ["sanic"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "d20232e62fbebed5a8f421ce57439e6cac0487b52711b9fd69641bd92c55335e"
+content-hash = "624d740ec2270e733fdfd7a41192e4d9f17e05aed7b7d7acb0646304ed094a70"
 
 [metadata.files]
 aiofiles = [
@@ -2263,6 +2263,7 @@ pytest-aiohttp = [
 ]
 pytest-asyncio = [
     {file = "pytest-asyncio-0.18.3.tar.gz", hash = "sha256:7659bdb0a9eb9c6e3ef992eef11a2b3e69697800ad02fb06374a210d85b29f91"},
+    {file = "pytest_asyncio-0.18.3-1-py3-none-any.whl", hash = "sha256:16cf40bdf2b4fb7fc8e4b82bd05ce3fbcd454cbf7b92afc445fe299dabb88213"},
     {file = "pytest_asyncio-0.18.3-py3-none-any.whl", hash = "sha256:8fafa6c52161addfd41ee7ab35f11836c5a16ec208f93ee388f752bea3493a84"},
 ]
 pytest-benchmark = [
@@ -2533,8 +2534,8 @@ types-requests = [
     {file = "types_requests-2.27.15-py3-none-any.whl", hash = "sha256:77d09182a68e447e9e8b0ffc21abf54618b96f07689dffbb6a41cf0356542969"},
 ]
 types-setuptools = [
-    {file = "types-setuptools-57.4.11.tar.gz", hash = "sha256:262f7406e0c7d705ad6bb4526b5b761fa500bf99eab74de85ac3592187d62935"},
-    {file = "types_setuptools-57.4.11-py3-none-any.whl", hash = "sha256:fbb0647569d6fb2f6bc472402265250c0ffa53e60180d2cbfee9e84f085921f0"},
+    {file = "types-setuptools-57.4.12.tar.gz", hash = "sha256:415a1c23101a05da17eb66bed5d5a865702e5a69f74c66dbf1af643dce9492ab"},
+    {file = "types_setuptools-57.4.12-py3-none-any.whl", hash = "sha256:c3aa952535dedc78654459dfdee49c66974a6c67bdd8026e7e69ae39f80d590b"},
 ]
 types-toml = [
     {file = "types-toml-0.10.4.tar.gz", hash = "sha256:9340e7c1587715581bb13905b3af30b79fe68afaccfca377665d5e63b694129a"},
