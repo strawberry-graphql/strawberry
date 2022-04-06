@@ -1,12 +1,18 @@
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Union
 
-from typing_extensions import TypedDict
+from typing_extensions import Required, TypedDict
 
 from graphql.error.graphql_error import format_error as format_graphql_error
 
 from strawberry.exceptions import MissingQueryError
 from strawberry.types import ExecutionResult
+
+
+class GraphQLRequestData(TypedDict, total=False):
+    query: Required[str]
+    variables: Optional[Dict[str, Any]]
+    operation_name: Optional[str]
 
 
 class GraphQLHTTPResponse(TypedDict, total=False):
@@ -27,20 +33,27 @@ def process_result(result: ExecutionResult) -> GraphQLHTTPResponse:
 
 
 @dataclass
-class GraphQLRequestData:
+class GraphQLRequest:
     query: str
     variables: Optional[Dict[str, Any]]
     operation_name: Optional[str]
 
+    @classmethod
+    def from_dict(cls, data: GraphQLRequestData) -> "GraphQLRequest":
+        if "query" not in data:
+            raise MissingQueryError()
 
-def parse_request_data(data: Dict) -> GraphQLRequestData:
-    if "query" not in data:
-        raise MissingQueryError()
+        return GraphQLRequest(
+            query=data["query"],
+            variables=data.get("variables"),
+            operation_name=data.get("operation_name"),
+        )
 
-    result = GraphQLRequestData(
-        query=data["query"],
-        variables=data.get("variables"),
-        operation_name=data.get("operationName"),
-    )
 
-    return result
+def parse_request_data(
+    data: Union[GraphQLRequestData, List[GraphQLRequestData]],
+) -> Union[GraphQLRequest, List[GraphQLRequest]]:
+    if isinstance(data, list):
+        return [GraphQLRequest.from_dict(d) for d in data]
+
+    return GraphQLRequest.from_dict(data)

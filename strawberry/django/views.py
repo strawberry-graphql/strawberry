@@ -20,6 +20,7 @@ from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import (
     GraphQLHTTPResponse,
+    GraphQLRequest,
     GraphQLRequestData,
     parse_request_data,
     process_result,
@@ -56,7 +57,7 @@ class BaseView(View):
         self.subscriptions_enabled = subscriptions_enabled
         super().__init__(**kwargs)
 
-    def parse_body(self, request) -> Dict[str, Any]:
+    def parse_body(self, request) -> GraphQLRequestData:
         if request.content_type.startswith("multipart/form-data"):
             data = json.loads(request.POST.get("operations", "{}"))
             files_map = json.loads(request.POST.get("map", "{}"))
@@ -73,7 +74,7 @@ class BaseView(View):
     def should_render_graphiql(self, request: HttpRequest) -> bool:
         return "text/html" in request.headers.get("Accept", "")
 
-    def get_request_data(self, request: HttpRequest) -> GraphQLRequestData:
+    def get_request_data(self, request: HttpRequest) -> GraphQLRequest:
         try:
             data = self.parse_body(request)
         except json.decoder.JSONDecodeError:
@@ -118,6 +119,7 @@ class BaseView(View):
             response_data,
             encoder=self.json_encoder,
             json_dumps_params=self.json_dumps_params,
+            safe=False,
         )
 
         for name, value in sub_response.items():
@@ -146,6 +148,8 @@ class GraphQLView(BaseView):
 
     @method_decorator(csrf_exempt)
     def dispatch(self, request, *args, **kwargs):
+        assert self.schema
+
         if not self.is_request_allowed(request):
             return HttpResponseNotAllowed(
                 ["GET", "POST"], "GraphQL only supports GET and POST requests."
@@ -159,17 +163,31 @@ class GraphQLView(BaseView):
         sub_response = TemporalHttpResponse()
         context = self.get_context(request, response=sub_response)
 
-        assert self.schema
+        if isinstance(request_data, list):
+            response_data = [
+                self.process_result(
+                    request=request,
+                    result=self.schema.execute_sync(
+                        data.query,
+                        root_value=self.get_root_value(request),
+                        variable_values=data.variables,
+                        context_value=context,
+                        operation_name=data.operation_name,
+                    ),
+                )
+                for data in request_data
+            ]
+        else:
 
-        result = self.schema.execute_sync(
-            request_data.query,
-            root_value=self.get_root_value(request),
-            variable_values=request_data.variables,
-            context_value=context,
-            operation_name=request_data.operation_name,
-        )
+            result = self.schema.execute_sync(
+                request_data.query,
+                root_value=self.get_root_value(request),
+                variable_values=request_data.variables,
+                context_value=context,
+                operation_name=request_data.operation_name,
+            )
 
-        response_data = self.process_result(request=request, result=result)
+            response_data = self.process_result(request=request, result=result)
 
         return self._create_response(
             response_data=response_data, sub_response=sub_response

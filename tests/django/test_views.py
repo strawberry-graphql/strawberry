@@ -374,3 +374,24 @@ def test_json_dumps_params():
 
     response2 = CustomGraphQLView.as_view(schema=schema)(request)
     assert response1.content == response2.content
+
+
+def test_supports_batch_queries():
+    query = "{ hello }"
+
+    factory = RequestFactory()
+    request = factory.post(
+        "/graphql/",
+        [{"query": query}, {"query": query}],
+        content_type="application/json",
+    )
+
+    response = GraphQLView.as_view(schema=schema)(request)
+
+    data = json.loads(response.content.decode())
+
+    assert response.status_code == 200
+    assert data == [
+        {"data": {"hello": "strawberry"}},
+        {"data": {"hello": "strawberry"}},
+    ]
