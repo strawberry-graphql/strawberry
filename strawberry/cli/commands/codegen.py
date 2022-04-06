@@ -149,7 +149,7 @@ def codegen(
     console_plugin = _load_plugin(cli_plugin) if cli_plugin else ConsolePlugin
 
     plugins = _load_plugins(selected_plugins)
-    plugins.insert(0, console_plugin(query, output_dir, plugins))
+    plugins.append(console_plugin(query, output_dir, plugins))
 
     code_generator = QueryCodegen(schema_symbol, plugins=plugins)
     code_generator.run(query.read_text())
