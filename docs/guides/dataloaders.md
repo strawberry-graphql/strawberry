@@ -237,7 +237,7 @@ In case you choose uvicorn you can install it wih
 pip install uvicorn
 ```
 
-and then, asumming we named our file above `schema.py` we start the app with
+and then, assuming we named our file above `schema.py` we start the app with
 
 ```
 uvicorn schema:app
