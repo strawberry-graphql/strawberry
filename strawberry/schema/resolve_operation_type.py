@@ -1,4 +1,5 @@
 from typing import Optional
+
 from graphql import DocumentNode, OperationDefinitionNode, OperationType, parse
 
 

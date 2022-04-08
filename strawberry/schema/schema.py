@@ -1,20 +1,16 @@
 from functools import lru_cache
-from lib2to3.pgen2.token import OP
 from typing import Any, Dict, List, Optional, Sequence, Type, Union
 
 from graphql import (
-    DefinitionNode,
-    DocumentNode,
     ExecutionContext as GraphQLExecutionContext,
     GraphQLSchema,
-    OperationDefinitionNode,
     get_introspection_query,
     parse,
     validate_schema,
 )
+from graphql.language.ast import OperationType
 from graphql.subscription import subscribe
 from graphql.type.directives import specified_directives
-from graphql.language.ast import OperationType
 
 from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.directive import StrawberryDirective
@@ -25,20 +21,20 @@ from strawberry.extensions.directives import (
     DirectivesExtensionSync,
 )
 from strawberry.field import StrawberryField
+from strawberry.schema.resolve_operation_type import resolve_operation_type
 from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
 from strawberry.types import ExecutionContext, ExecutionResult
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 
-from strawberry.schema.resolve_operation_type import resolve_operation_type
-
-# from strawberry.schema.operation_type import OperationType
-
 from ..printer import print_schema
 from .base import BaseSchema
 from .config import StrawberryConfig
 from .execute import execute, execute_sync
+
+
+# from strawberry.schema.operation_type import OperationType
 
 
 class Schema(BaseSchema):
