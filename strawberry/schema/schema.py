@@ -160,7 +160,19 @@ class Schema(BaseSchema):
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
+        allowed_operation_types: List[OperationType] = [
+            OperationType.MUTATION,
+            OperationType.QUERY,
+            OperationType.SUBSCRIPTION,
+        ],
     ) -> ExecutionResult:
+        operation_type: OperationType = resolve_operation_type(query, operation_name)
+
+        # Check the operation type and check if it exists in the allowed
+        if operation_type not in allowed_operation_types:
+            # Set error in results
+            raise TypeError(f"{operation_type} is not allowed.")
+        
         # Create execution context
         execution_context = ExecutionContext(
             query=query,
