@@ -16,8 +16,9 @@ from graphql.validation import ASTValidationRule, validate
 
 from strawberry.extensions import Extension
 from strawberry.extensions.runner import ExtensionsRunner
-from strawberry.schema.resolve_operation_type import resolve_operation_type
 from strawberry.types import ExecutionContext, ExecutionResult
+
+from strawberry.utils.operation import get_operation_type
 
 
 def parse_document(query: str) -> DocumentNode:
@@ -69,11 +70,8 @@ async def execute(
                 if not execution_context.graphql_document:
                     execution_context.graphql_document = parse_document(query)
 
-                document: DocumentNode = execution_context.graphql_document
-
-                # # can be replaced with get_operation type
-                operation_type: OperationTypeDefinitionNode = resolve_operation_type(
-                    document, execution_context.operation_name
+                operation_type: OperationTypeDefinitionNode = get_operation_type(
+                    execution_context.graphql_document, execution_context.operation_name
                 )
 
                 # # Check the operation type and check if it exists in the allowed
@@ -154,14 +152,12 @@ def execute_sync(
                 if not execution_context.graphql_document:
                     execution_context.graphql_document = parse_document(query)
 
-                document: DocumentNode = execution_context.graphql_document
-
-                # # can be replaced with get_operation type
-                operation_type: OperationTypeDefinitionNode = resolve_operation_type(
-                    document, execution_context.operation_name
+                # If above raises an error, this wont be executed
+                operation_type: OperationTypeDefinitionNode = get_operation_type(
+                    execution_context.graphql_document, execution_context.operation_name
                 )
 
-                # # Check the operation type and check if it exists in the allowed
+                # Check the operation type and check if it exists in the allowed list
                 if operation_type not in execution_context.allowed_operation_types:
                     raise TypeError(f"{operation_type} is not allowed.")
 
