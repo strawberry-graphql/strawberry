@@ -42,6 +42,7 @@ class GraphQLView(View):
             template = render_graphiql_page()
             return self.render_template(template=template)
 
+        using_get: bool = request.method == "GET"
         # GET requests doesn't have content types
         # https://stackoverflow.com/a/16693884/2989034
         if request.content_type is not None and request.content_type.startswith(
@@ -53,12 +54,19 @@ class GraphQLView(View):
             data = replace_placeholders_with_files(operations, files_map, request.files)
 
         else:
-            attr = "args" if request.method == "GET" else "json"
+            attr = "args" if using_get else "json"
             data = getattr(request, attr)
+
+        # Shorthand for using it
+
         try:
             request_data = parse_request_data(data)
         except MissingQueryError:
             return Response("No valid query was provided for the request", 400)
+
+        # Move to the @mutation annotation later?
+        if using_get and "mutation" in request_data.query:
+            return Response("GET requests don't support mutations", 400)
 
         response = Response(status=200, content_type="application/json")
         context = self.get_context(response)

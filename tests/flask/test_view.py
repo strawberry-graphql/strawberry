@@ -192,3 +192,20 @@ def test_get_query_variables():
 
         assert response.status_code == 200
         assert data["data"]["hi"] == "Hi Bas"
+
+
+def test_get_mutation_getrequest():
+    app = create_app(graphiql=False)
+
+    with app.test_client() as client:
+        # It's a invalid mutation, but we can't alllow since it's get a GET request
+        mutation = """mutation {
+            read_text
+        }
+        """
+
+        response = client.get("/graphql", query_string={"query": mutation})
+        message = response.data.decode()
+
+        assert response.status_code == 400
+        assert message == "GET requests don't support mutations"
