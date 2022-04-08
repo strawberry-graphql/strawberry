@@ -168,7 +168,7 @@ class Schema(BaseSchema):
         if operation_type not in allowed_operation_types:
             # Set error in results
             raise TypeError(f"{operation_type} is not allowed.")
-        
+
         # Create execution context
         execution_context = ExecutionContext(
             query=query,
