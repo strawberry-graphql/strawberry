@@ -8,7 +8,6 @@ from graphql import (
     GraphQLError,
     GraphQLSchema,
     OperationType,
-    OperationTypeDefinitionNode,
     execute as original_execute,
     parse,
 )
