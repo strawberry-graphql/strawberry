@@ -182,7 +182,7 @@ Even if this query is fetching two users, it still results in one call to
 As you have seen in the code above, the dataloader is instantiated outside the
 resolver, since we need to share it between multiple resolvers or even between
 multiple resolver calls. However this is a not a recommended pattern when using
-your schema inside a server because the dataloader will so cache results for as
+your schema inside a server because the dataloader will cache results for as
 long as the server is running.
 
 Instead a common pattern is to create the dataloader when creating the GraphQL
@@ -237,7 +237,7 @@ In case you choose uvicorn you can install it wih
 pip install uvicorn
 ```
 
-and then, asumming we named our file above `schema.py` we start the app with
+and then, assuming we named our file above `schema.py` we start the app with
 
 ```
 uvicorn schema:app
