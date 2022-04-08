@@ -7,6 +7,7 @@ from graphql import (
     ExecutionResult as GraphQLExecutionResult,
     GraphQLError,
     GraphQLSchema,
+    OperationType,
     OperationTypeDefinitionNode,
     execute as original_execute,
     parse,
@@ -70,7 +71,7 @@ async def execute(
                 if not execution_context.graphql_document:
                     execution_context.graphql_document = parse_document(query)
 
-                operation_type: OperationTypeDefinitionNode = get_operation_type(
+                operation_type: OperationType = get_operation_type(
                     execution_context.graphql_document, execution_context.operation_name
                 )
 
@@ -153,7 +154,7 @@ def execute_sync(
                     execution_context.graphql_document = parse_document(query)
 
                 # If above raises an error, this wont be executed
-                operation_type: OperationTypeDefinitionNode = get_operation_type(
+                operation_type: OperationType = get_operation_type(
                     execution_context.graphql_document, execution_context.operation_name
                 )
 

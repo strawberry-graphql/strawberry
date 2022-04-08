@@ -33,9 +33,6 @@ from .config import StrawberryConfig
 from .execute import execute, execute_sync
 
 
-# from strawberry.schema.operation_type import OperationType
-
-
 class Schema(BaseSchema):
     def __init__(
         self,
