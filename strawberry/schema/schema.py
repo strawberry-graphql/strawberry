@@ -21,7 +21,6 @@ from strawberry.extensions.directives import (
     DirectivesExtensionSync,
 )
 from strawberry.field import StrawberryField
-from strawberry.schema.resolve_operation_type import resolve_operation_type
 from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
 from strawberry.types import ExecutionContext, ExecutionResult

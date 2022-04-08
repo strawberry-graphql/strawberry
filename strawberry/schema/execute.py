@@ -1,7 +1,6 @@
 from asyncio import ensure_future
 from inspect import isawaitable
 from typing import Awaitable, List, Optional, Sequence, Tuple, Type, Union, cast
-from xml.dom.minidom import Document
 
 from graphql import (
     ExecutionContext as GraphQLExecutionContext,
@@ -17,9 +16,8 @@ from graphql.validation import ASTValidationRule, validate
 
 from strawberry.extensions import Extension
 from strawberry.extensions.runner import ExtensionsRunner
-from strawberry.types import ExecutionContext, ExecutionResult
-
 from strawberry.schema.resolve_operation_type import resolve_operation_type
+from strawberry.types import ExecutionContext, ExecutionResult
 
 
 def parse_document(query: str) -> DocumentNode:

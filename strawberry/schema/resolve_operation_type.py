@@ -1,6 +1,6 @@
 from typing import Optional
 
-from graphql import DocumentNode, OperationDefinitionNode, OperationType, parse
+from graphql import DocumentNode, OperationDefinitionNode, OperationType
 
 
 # Move this. Query is already being parsed
