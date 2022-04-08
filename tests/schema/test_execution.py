@@ -5,7 +5,7 @@ from unittest.mock import patch
 
 import pytest
 
-from graphql import GraphQLError, ValidationRule, validate
+from graphql import GraphQLError, OperationType, ValidationRule, validate
 
 import strawberry
 from strawberry.extensions import AddValidationRules, DisableValidation
@@ -305,3 +305,25 @@ def test_adding_custom_validation_rules():
         root_value=Query(),
     )
     assert not result.errors
+
+
+def test_using_unallowed_operation_type():
+    @strawberry.type
+    class Query:
+        example: Optional[str] = "hi"
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """
+    {
+        example
+    }
+    """
+
+    with pytest.raises(TypeError) as e:
+        result = schema.execute_sync(
+            query, root_value=Query(), allowed_operation_types=[OperationType.MUTATION]
+        )
+
+    error_msg: str = str(e.value)
+    assert error_msg == "OperationType.QUERY is not allowed."

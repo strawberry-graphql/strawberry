@@ -1,15 +1,20 @@
 from functools import lru_cache
-from typing import Any, Dict, Optional, Sequence, Type, Union
+from lib2to3.pgen2.token import OP
+from typing import Any, Dict, List, Optional, Sequence, Type, Union
 
 from graphql import (
+    DefinitionNode,
+    DocumentNode,
     ExecutionContext as GraphQLExecutionContext,
     GraphQLSchema,
+    OperationDefinitionNode,
     get_introspection_query,
     parse,
     validate_schema,
 )
 from graphql.subscription import subscribe
 from graphql.type.directives import specified_directives
+from graphql.language.ast import OperationType
 
 from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.directive import StrawberryDirective
@@ -25,6 +30,10 @@ from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
 from strawberry.types import ExecutionContext, ExecutionResult
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
+
+from strawberry.schema.resolve_operation_type import resolve_operation_type
+
+# from strawberry.schema.operation_type import OperationType
 
 from ..printer import print_schema
 from .base import BaseSchema
@@ -182,7 +191,19 @@ class Schema(BaseSchema):
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
+        allowed_operation_types: List[OperationType] = [
+            OperationType.MUTATION,
+            OperationType.QUERY,
+            OperationType.SUBSCRIPTION,
+        ],
     ) -> ExecutionResult:
+        operation_type: OperationType = resolve_operation_type(query, operation_name)
+
+        # Check the operation type and check if it exists in the allowed
+        if operation_type not in allowed_operation_types:
+            # Set error in results
+            raise TypeError(f"{operation_type} is not allowed.")
+
         execution_context = ExecutionContext(
             query=query,
             schema=self,
