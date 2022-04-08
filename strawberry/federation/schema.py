@@ -1,3 +1,4 @@
+from copy import copy
 from typing import Any, Union, cast
 
 from graphql import (
@@ -63,18 +64,17 @@ class Schema(BaseSchema):
 
         if entity_type:
             self._schema.type_map[entity_type.name] = entity_type
-
             fields["_entities"] = self._get_entities_field(entity_type)
 
+        # Copy the query type, update it to use the modified fields
         query_type = cast(GraphQLObjectType, self._schema.query_type)
         fields.update(query_type.fields)
-        query_type_kwargs = query_type.to_kwargs()
-        query_type_kwargs["fields"] = fields
+        query_type = copy(query_type)
+        query_type._fields = fields
 
-        self._schema.query_type = GraphQLObjectType(**query_type_kwargs)
-
+        self._schema.query_type = query_type
         self._schema.type_map["_Service"] = self._service_type
-        self._schema.type_map[self._schema.query_type.name] = self._schema.query_type
+        self._schema.type_map[query_type.name] = query_type
 
     def _get_entities_field(self, entity_type: GraphQLUnionType) -> GraphQLField:
         return GraphQLField(
