@@ -263,11 +263,16 @@ def test_enum_as_argument():
     assert str(schema) == expected
 
     query = "{ createFlavour(flavour: CHOCOLATE) }"
-
     result = schema.execute_sync(query)
-
     assert not result.errors
     assert result.data["createFlavour"] == "CHOCOLATE"
+
+    # Explicitly using `variable_values` now so that the enum is parsed using
+    # `CustomGraphQLEnumType.parse_value()` instead of `.parse_literal`
+    query = "query ($flavour: IceCreamFlavour!) { createFlavour(flavour: $flavour) }"
+    result = schema.execute_sync(query, variable_values={"flavour": "VANILLA"})
+    assert not result.errors
+    assert result.data["createFlavour"] == "VANILLA"
 
 
 def test_enum_as_default_argument():
