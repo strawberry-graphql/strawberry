@@ -71,7 +71,7 @@ class BaseView(View):
         return request.method.lower() in ("get", "post")
 
     def should_render_graphiql(self, request: HttpRequest) -> bool:
-        return "text/html" in request.META.get("HTTP_ACCEPT", "")
+        return "text/html" in request.headers.get("Accept", "")
 
     def get_request_data(self, request: HttpRequest) -> GraphQLRequestData:
         try:

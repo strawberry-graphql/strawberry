@@ -1,5 +1,5 @@
 import json
-from typing import Any
+from typing import Any, Dict, Optional, Type
 
 from sanic.exceptions import SanicException, ServerError
 from sanic.request import Request
@@ -28,6 +28,8 @@ class GraphQLView(HTTPMethodView):
     Args:
         schema: strawberry.Schema
         graphiql: bool, default is True
+        json_encoder: json.JSONEncoder, default is JSONEncoder
+        json_dumps_params: dict, default is None
 
     Returns:
         None
@@ -39,9 +41,17 @@ class GraphQLView(HTTPMethodView):
         )
     """
 
-    def __init__(self, schema: BaseSchema, graphiql: bool = True):
+    def __init__(
+        self,
+        schema: BaseSchema,
+        graphiql: bool = True,
+        json_encoder: Type[json.JSONEncoder] = json.JSONEncoder,
+        json_dumps_params: Optional[Dict[str, Any]] = None,
+    ):
         self.graphiql = graphiql
         self.schema = schema
+        self.json_encoder = json_encoder
+        self.json_dumps_params = json_dumps_params
 
     def get_root_value(self):
         return None
@@ -62,6 +72,17 @@ class GraphQLView(HTTPMethodView):
         template = render_graphiql_page()
         return self.render_template(template=template)
 
+    async def get_response(self, response_data: GraphQLHTTPResponse) -> HTTPResponse:
+        data = json.dumps(
+            response_data, cls=self.json_encoder, **(self.json_dumps_params or {})
+        )
+
+        return HTTPResponse(
+            data,
+            status=200,
+            content_type="application/json",
+        )
+
     async def post(self, request: Request) -> HTTPResponse:
         request_data = self.get_request_data(request)
         context = await self.get_context(request)
@@ -74,11 +95,10 @@ class GraphQLView(HTTPMethodView):
             root_value=root_value,
             operation_name=request_data.operation_name,
         )
+
         response_data = self.process_result(result)
 
-        return HTTPResponse(
-            json.dumps(response_data), status=200, content_type="application/json"
-        )
+        return await self.get_response(response_data)
 
     def get_request_data(self, request: Request) -> GraphQLRequestData:
         try:

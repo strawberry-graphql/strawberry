@@ -21,6 +21,7 @@ from strawberry.extensions.directives import (
     DirectivesExtension,
     DirectivesExtensionSync,
 )
+from strawberry.field import StrawberryField
 from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
 from strawberry.types import ExecutionContext, ExecutionResult
@@ -107,15 +108,36 @@ class Schema(BaseSchema):
 
         self.query = self.schema_converter.type_map[query_type.name]
 
-    def get_type_by_name(
+    @lru_cache()
+    def get_type_by_name(  # type: ignore  # lru_cache makes mypy complain
         self, name: str
     ) -> Optional[
         Union[TypeDefinition, ScalarDefinition, EnumDefinition, StrawberryUnion]
     ]:
+        # TODO: respect auto_camel_case
         if name in self.schema_converter.type_map:
             return self.schema_converter.type_map[name].definition
 
         return None
+
+    def get_field_for_type(
+        self, field_name: str, type_name: str
+    ) -> Optional[StrawberryField]:
+        type_ = self.get_type_by_name(type_name)
+
+        if not type_:
+            return None  # pragma: no cover
+
+        assert isinstance(type_, TypeDefinition)
+
+        return next(
+            (
+                field
+                for field in type_.fields
+                if self.config.name_converter.get_graphql_name(field) == field_name
+            ),
+            None,
+        )
 
     @lru_cache()
     def get_directive_by_name(self, graphql_name: str) -> Optional[StrawberryDirective]:

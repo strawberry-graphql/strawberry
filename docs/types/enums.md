@@ -4,7 +4,7 @@ title: Enums
 
 # Enums
 
-Enums are a special kind of type that is restrict to a particular set of values.
+Enums are a special kind of type that is restricted to a particular set of values.
 
 For example, we have a few options of ice cream available, and we want to allow
 user to choose only from those options.
