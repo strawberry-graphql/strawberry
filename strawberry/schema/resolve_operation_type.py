@@ -5,9 +5,8 @@ from graphql import DocumentNode, OperationDefinitionNode, OperationType, parse
 
 # Move this. Query is already being parsed
 def resolve_operation_type(
-    query: str, operation_name: Optional[str] = None
+    document: DocumentNode, operation_name: Optional[str] = None
 ) -> OperationType:
-    node: DocumentNode = parse(query)
-    definition: OperationDefinitionNode = node.definitions[0]
+    definition: OperationDefinitionNode = document.definitions[0]
 
     return definition.operation

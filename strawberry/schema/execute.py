@@ -1,12 +1,14 @@
 from asyncio import ensure_future
 from inspect import isawaitable
 from typing import Awaitable, List, Optional, Sequence, Tuple, Type, Union, cast
+from xml.dom.minidom import Document
 
 from graphql import (
     ExecutionContext as GraphQLExecutionContext,
     ExecutionResult as GraphQLExecutionResult,
     GraphQLError,
     GraphQLSchema,
+    OperationTypeDefinitionNode,
     execute as original_execute,
     parse,
 )
@@ -16,6 +18,8 @@ from graphql.validation import ASTValidationRule, validate
 from strawberry.extensions import Extension
 from strawberry.extensions.runner import ExtensionsRunner
 from strawberry.types import ExecutionContext, ExecutionResult
+
+from strawberry.schema.resolve_operation_type import resolve_operation_type
 
 
 def parse_document(query: str) -> DocumentNode:
@@ -66,6 +70,18 @@ async def execute(
             try:
                 if not execution_context.graphql_document:
                     execution_context.graphql_document = parse_document(query)
+
+                document: DocumentNode = execution_context.graphql_document
+
+                # # can be replaced with get_operation type
+                operation_type: OperationTypeDefinitionNode = resolve_operation_type(
+                    document, execution_context.operation_name
+                )
+
+                # # Check the operation type and check if it exists in the allowed
+                if operation_type not in execution_context.allowed_operation_types:
+                    raise TypeError(f"{operation_type} is not allowed.")
+
             except GraphQLError as error:
                 execution_context.errors = [error]
                 return ExecutionResult(
@@ -139,6 +155,18 @@ def execute_sync(
             try:
                 if not execution_context.graphql_document:
                     execution_context.graphql_document = parse_document(query)
+
+                document: DocumentNode = execution_context.graphql_document
+
+                # # can be replaced with get_operation type
+                operation_type: OperationTypeDefinitionNode = resolve_operation_type(
+                    document, execution_context.operation_name
+                )
+
+                # # Check the operation type and check if it exists in the allowed
+                if operation_type not in execution_context.allowed_operation_types:
+                    raise TypeError(f"{operation_type} is not allowed.")
+
             except GraphQLError as error:
                 execution_context.errors = [error]
                 return ExecutionResult(

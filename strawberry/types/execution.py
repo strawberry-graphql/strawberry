@@ -6,6 +6,7 @@ from typing_extensions import Literal
 from graphql import (
     ASTValidationRule,
     ExecutionResult as GraphQLExecutionResult,
+    OperationType,
     specified_rules,
 )
 from graphql.error.graphql_error import GraphQLError
@@ -40,6 +41,9 @@ class ExecutionContext:
     graphql_document: Optional[DocumentNode] = None
     errors: Optional[List[GraphQLError]] = None
     result: Optional[GraphQLExecutionResult] = None
+    allowed_operation_types: List[OperationType] = dataclasses.field(
+        default_factory=list
+    )
 
     def __post_init__(self, provided_operation_name):
         self._provided_operation_name = provided_operation_name

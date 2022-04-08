@@ -162,12 +162,6 @@ class Schema(BaseSchema):
             OperationType.SUBSCRIPTION,
         ],
     ) -> ExecutionResult:
-        operation_type: OperationType = resolve_operation_type(query, operation_name)
-
-        # Check the operation type and check if it exists in the allowed
-        if operation_type not in allowed_operation_types:
-            # Set error in results
-            raise TypeError(f"{operation_type} is not allowed.")
 
         # Create execution context
         execution_context = ExecutionContext(
@@ -205,13 +199,6 @@ class Schema(BaseSchema):
             OperationType.SUBSCRIPTION,
         ],
     ) -> ExecutionResult:
-        operation_type: OperationType = resolve_operation_type(query, operation_name)
-
-        # Check the operation type and check if it exists in the allowed
-        if operation_type not in allowed_operation_types:
-            # Set error in results
-            raise TypeError(f"{operation_type} is not allowed.")
-
         execution_context = ExecutionContext(
             query=query,
             schema=self,
@@ -219,6 +206,7 @@ class Schema(BaseSchema):
             root_value=root_value,
             variables=variable_values,
             provided_operation_name=operation_name,
+            allowed_operation_types=allowed_operation_types,
         )
 
         result = execute_sync(

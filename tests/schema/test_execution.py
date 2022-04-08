@@ -315,12 +315,11 @@ def test_using_unallowed_operation_type_sync():
     schema = strawberry.Schema(query=Query)
 
     query = "{ example }"
-    with pytest.raises(TypeError) as e:
-        result = schema.execute_sync(
-            query, root_value=Query(), allowed_operation_types=[OperationType.MUTATION]
-        )
-
-    error_msg: str = str(e.value)
+    # with pytest.raises(TypeError) as e:
+    result = schema.execute_sync(
+        query, root_value=Query(), allowed_operation_types=[OperationType.MUTATION]
+    )
+    error_msg: str = result.errors[0].message
     assert error_msg == "OperationType.QUERY is not allowed."
 
 
@@ -333,10 +332,9 @@ async def test_using_unallowed_operation_type_async():
     schema = strawberry.Schema(query=Query)
 
     query = "{ example }"
-    with pytest.raises(TypeError) as e:
-        result = await schema.execute(
-            query, root_value=Query(), allowed_operation_types=[OperationType.MUTATION]
-        )
+    result = await schema.execute(
+        query, root_value=Query(), allowed_operation_types=[OperationType.MUTATION]
+    )
 
-    error_msg: str = str(e.value)
+    error_msg: str = result.errors[0].message
     assert error_msg == "OperationType.QUERY is not allowed."
