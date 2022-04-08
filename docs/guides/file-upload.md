@@ -21,9 +21,9 @@ The type passed at runtime depends on the integration:
 | [Sanic](/docs/integrations/sanic)         | [`sanic.request.File`](https://sanic.readthedocs.io/en/stable/sanic/api/core.html#sanic.request.File)                                                 |
 | [Starlette](/docs/integrations/starlette) | [`starlette.datastructures.UploadFile`](https://www.starlette.io/requests/#request-files)                                                             |
 
-## ASGI
+## ASGI / FastAPI / Starlette
 
-Since ASGI uses asyncio for communication the resolver _must_ be async as well.
+Since these integrations use asyncio for communication, the resolver _must_ be async.
 
 Example:
 
@@ -31,6 +31,11 @@ Example:
 import typing
 import strawberry
 from strawberry.file_uploads import Upload
+
+
+@strawberry.input
+class FolderInput:
+    files: typing.List[Upload]
 
 
 @strawberry.type
@@ -46,6 +51,14 @@ class Mutation:
             content = (await file.read()).decode()
             contents.append(content)
         return contents
+
+    @strawberry.mutation
+    async def read_folder(self, folder: FolderInput) -> typing.List[str]:
+        contents = []
+        for file in folder.files:
+            content = (await file.read()).decode()
+            contents.append(content)
+        return contents
 ```
 
 ## Sanic / Flask / Django / AIOHTTP
@@ -56,6 +69,11 @@ Example:
 import typing
 import strawberry
 from strawberry.file_uploads import Upload
+
+
+@strawberry.input
+class FolderInput:
+    files: typing.List[Upload]
 
 
 @strawberry.type
@@ -71,4 +89,52 @@ class Mutation:
             content = file.read().decode()
             contents.append(content)
         return contents
+
+    @strawberry.mutation
+    def read_folder(self, folder: FolderInput) -> typing.List[str]:
+        contents = []
+        for file in folder.files:
+            contents.append(file.read().decode())
+        return contents
+```
+
+## Sending file upload requests
+
+The tricky part is sending the HTTP request from the client because it must follow the GraphQL multipart request specifications mentioned above.
+
+The `multipart/form-data` POST request's data must include:
+
+- `operations` key for GraphQL request with query and variables
+- `map` key with mapping some multipart-data to exact GraphQL variable
+- and other keys for multipart-data which contains binary data of files
+
+Assuming you have your schema up and running, here there are some requests examples:
+
+### Sending one file
+
+```bash
+curl localhost:8000/graphql \
+  -F operations='{ "query": "mutation($textFile: Upload!){ readText(textFile: $textFile) }", "variables": { "textFile": null } }' \
+  -F map='{ "textFile": ["variables.textFile"] }' \
+  -F textFile=@a.txt
+```
+
+### Sending a list of files
+
+```bash
+curl localhost:8000/graphql \
+  -F operations='{ "query": "mutation($files: [Upload!]!) { readFiles(files: $files) }", "variables": { "files": [null, null] } }' \
+  -F map='{"file1": ["variables.files.0"], "file2": ["variables.files.1"]}' \
+  -F file1=@b.txt \
+  -F file2=@c.txt
+```
+
+### Sending nested files
+
+```bash
+curl localhost:8000/graphql \
+  -F operations='{ "query": "mutation($folder: FolderInput!) { readFolder(folder: $folder) }", "variables": {"folder": {"files": [null, null]}} }' \
+  -F map='{"file1": ["variables.folder.files.0"], "file2": ["variables.folder.files.1"]}' \
+  -F file1=@b.txt \
+  -F file2=@c.txt
 ```

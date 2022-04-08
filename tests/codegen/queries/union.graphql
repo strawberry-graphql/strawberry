@@ -1,0 +1,10 @@
+query OperationName {
+  union {
+    ... on Animal {
+      age
+    }
+    ... on Person {
+      name
+    }
+  }
+}

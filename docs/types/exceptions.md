@@ -27,7 +27,7 @@ class Query:
 
 ### FieldWithResolverAndDefaultValueError
 
-This exception is raised when in `strawberry.field` is used with both `resolver` and
+This exception is raised when `strawberry.field` is used with both `resolver` and
 `default` arguments.
 
 ```python

@@ -1,5 +1,16 @@
+import sys
 from dataclasses import dataclass
-from typing import Any, Callable, Mapping, Optional, Type, TypeVar, Union, overload
+from typing import (
+    Any,
+    Callable,
+    Mapping,
+    NewType,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+    overload,
+)
 
 from graphql import GraphQLScalarType
 
@@ -8,7 +19,11 @@ from strawberry.type import StrawberryType
 from .utils.str_converters import to_camel_case
 
 
-_T = TypeVar("_T", bound=type)
+# in python 3.10+ NewType is a class
+if sys.version_info >= (3, 10):
+    _T = TypeVar("_T", bound=Union[type, NewType])
+else:
+    _T = TypeVar("_T", bound=type)
 
 
 def identity(x):

@@ -23,8 +23,8 @@ from typing_extensions import Literal
 
 from graphql import GraphQLResolveInfo
 
-import strawberry
 from strawberry.arguments import UNSET
+from strawberry.auto import StrawberryAuto
 from strawberry.experimental.pydantic.conversion import (
     convert_pydantic_model_to_strawberry_class,
     convert_strawberry_class_to_pydantic_model,
@@ -110,6 +110,7 @@ def _build_dataclass_creation_fields(
         strawberry_field = existing_fields[field.name]
     else:
         # otherwise we build an appropriate strawberry field that resolves it
+        existing_field = existing_fields.get(field.name)
         strawberry_field = StrawberryField(
             python_name=field.name,
             graphql_name=field.alias
@@ -120,6 +121,13 @@ def _build_dataclass_creation_fields(
             default_factory=get_default_factory_for_field(field),
             type_annotation=type_annotation,
             description=field.field_info.description,
+            deprecation_reason=(
+                existing_field.deprecation_reason if existing_field else None
+            ),
+            permission_classes=(
+                existing_field.permission_classes if existing_field else []
+            ),
+            directives=existing_field.directives if existing_field else (),
         )
 
     return DataclassCreationFields(
@@ -167,7 +175,11 @@ def type(
         # these are the fields that were marked with strawberry.auto and
         # should copy their type from the pydantic model
         auto_fields_set = original_fields_set.union(
-            set(name for name, typ in existing_fields.items() if typ == strawberry.auto)
+            set(
+                name
+                for name, type_ in existing_fields.items()
+                if isinstance(type_, StrawberryAuto)
+            )
         )
 
         if all_fields:

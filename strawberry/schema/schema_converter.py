@@ -290,23 +290,30 @@ class GraphQLCoreConverter:
             assert isinstance(graphql_object_type, GraphQLObjectType)  # For mypy
             return graphql_object_type
 
-        is_type_of: Optional[Callable[[Any, GraphQLResolveInfo], bool]]
-        if object_type.is_type_of:
-            is_type_of = object_type.is_type_of
-        elif object_type.interfaces:
+        def _get_is_type_of() -> Optional[Callable[[Any, GraphQLResolveInfo], bool]]:
+            if object_type.is_type_of:
+                return object_type.is_type_of
+
+            if not object_type.interfaces:
+                return None
 
             def is_type_of(obj: Any, _info: GraphQLResolveInfo) -> bool:
+                if object_type.concrete_of and (
+                    hasattr(obj, "_type_definition")
+                    and obj._type_definition.origin is object_type.concrete_of.origin
+                ):
+                    return True
+
                 return isinstance(obj, object_type.origin)
 
-        else:
-            is_type_of = None
+            return is_type_of
 
         graphql_object_type = GraphQLObjectType(
             name=object_type_name,
             fields=lambda: self.get_graphql_fields(object_type),
             interfaces=list(map(self.from_interface, object_type.interfaces)),
             description=object_type.description,
-            is_type_of=is_type_of,
+            is_type_of=_get_is_type_of(),
         )
 
         self.type_map[object_type_name] = ConcreteType(
@@ -521,3 +528,25 @@ class GraphQLCoreConverter:
         )
 
         return graphql_union
+
+    def _get_is_type_of(
+        self,
+        object_type: TypeDefinition,
+    ) -> Optional[Callable[[Any, GraphQLResolveInfo], bool]]:
+        if object_type.is_type_of:
+            return object_type.is_type_of
+
+        if object_type.interfaces:
+
+            def is_type_of(obj: Any, _info: GraphQLResolveInfo) -> bool:
+                if object_type.concrete_of and (
+                    hasattr(obj, "_type_definition")
+                    and obj._type_definition.origin is object_type.concrete_of.origin
+                ):
+                    return True
+
+                return isinstance(obj, object_type.origin)
+
+            return is_type_of
+
+        return None

@@ -24,6 +24,10 @@
 - [Union types](./types/union.md)
 - [Exceptions](./types/exceptions.md)
 
+## Codegen
+
+- [Query codegen](./codegen/query-codegen.md)
+
 ## [Extensions](./extensions)
 
 ## Guides
