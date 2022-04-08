@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from typing_extensions import Protocol
 
-from graphql import GraphQLError
+from graphql import GraphQLError, OperationType
 
 from strawberry.custom_scalar import ScalarDefinition
 from strawberry.directive import StrawberryDirective
@@ -28,6 +28,11 @@ class BaseSchema(Protocol):
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
+        allowed_operation_types: List[OperationType] = [
+            OperationType.MUTATION,
+            OperationType.QUERY,
+            OperationType.SUBSCRIPTION,
+        ],
     ) -> ExecutionResult:
         raise NotImplementedError
 
@@ -39,6 +44,11 @@ class BaseSchema(Protocol):
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
+        allowed_operation_types: List[OperationType] = [
+            OperationType.MUTATION,
+            OperationType.QUERY,
+            OperationType.SUBSCRIPTION,
+        ],
     ) -> ExecutionResult:
         raise NotImplementedError
 

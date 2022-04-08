@@ -1,7 +1,9 @@
 import json
+from typing import List
 
 from flask import Response, abort, render_template_string, request
 from flask.views import View
+from graphql import OperationType
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import GraphQLHTTPResponse, parse_request_data, process_result
@@ -71,12 +73,23 @@ class GraphQLView(View):
         response = Response(status=200, content_type="application/json")
         context = self.get_context(response)
 
+        allowed_operation_types: List[OperationType] = (
+            [OperationType.QUERY]
+            if using_get
+            else [
+                OperationType.QUERY,
+                OperationType.MUTATION,
+                OperationType.SUBSCRIPTION,
+            ]
+        )
+
         result = self.schema.execute_sync(
             request_data.query,
             variable_values=request_data.variables,
             context_value=context,
             operation_name=request_data.operation_name,
             root_value=self.get_root_value(),
+            allowed_operation_types=allowed_operation_types,
         )
 
         response_data = self.process_result(result)
