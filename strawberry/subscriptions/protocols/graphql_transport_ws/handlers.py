@@ -2,7 +2,7 @@ import asyncio
 from abc import ABC, abstractmethod
 from contextlib import suppress
 from datetime import timedelta
-from typing import Any, AsyncGenerator, Dict, Optional
+from typing import Any, AsyncGenerator, Callable, Dict, Optional
 
 from graphql import (
     ExecutionResult as GraphQLExecutionResult,
@@ -82,34 +82,41 @@ class BaseGraphQLTransportWSHandler(ABC):
         await self.close(code=4408, reason=reason)
 
     async def handle_message(self, message: dict):
+        handler: Callable
+        handler_arg: Any
         try:
             message_type = message.pop("type")
 
             if message_type == ConnectionInitMessage.type:
-                await self.handle_connection_init(ConnectionInitMessage(**message))
+                handler = self.handle_connection_init
+                handler_arg = ConnectionInitMessage(**message)
 
             elif message_type == PingMessage.type:
-                await self.handle_ping(PingMessage(**message))
+                handler = self.handle_ping
+                handler_arg = PingMessage(**message)
 
             elif message_type == PongMessage.type:
-                await self.handle_pong(PongMessage(**message))
+                handler = self.handle_pong
+                handler_arg = PongMessage(**message)
 
             elif message_type == SubscribeMessage.type:
+                handler = self.handle_subscribe
                 payload = SubscribeMessagePayload(**message.pop("payload"))
-                await self.handle_subscribe(
-                    SubscribeMessage(payload=payload, **message)
-                )
+                handler_arg = SubscribeMessage(payload=payload, **message)
 
             elif message_type == CompleteMessage.type:
-                await self.handle_complete(CompleteMessage(**message))
+                handler = self.handle_complete
+                handler_arg = CompleteMessage(**message)
 
             else:
-                error_message = f"Unknown message type: {message_type}"
-                await self.handle_invalid_message(error_message)
+                handler = self.handle_invalid_message
+                handler_arg = f"Unknown message type: {message_type}"
 
         except (KeyError, TypeError):
-            error_message = "Failed to parse message"
-            await self.handle_invalid_message(error_message)
+            handler = self.handle_invalid_message
+            handler_arg = "Failed to parse message"
+
+        await handler(handler_arg)
 
     async def handle_connection_init(self, message: ConnectionInitMessage) -> None:
         if self.connection_init_received:

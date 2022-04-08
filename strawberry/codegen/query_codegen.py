@@ -172,6 +172,7 @@ class QueryCodegen:
         if isinstance(selection, FieldNode):
             return GraphQLFieldSelection(
                 selection.name.value,
+                selection.alias.value if selection.alias else None,
                 selections=self._convert_selection_set(selection.selection_set),
                 directives=self._convert_directives(selection.directives),
                 arguments=self._convert_arguments(selection.arguments),
@@ -294,7 +295,7 @@ class QueryCodegen:
                 variable_type,
             )
 
-            type_.fields.append(GraphQLField(variable.name, variable_type))
+            type_.fields.append(GraphQLField(variable.name, None, variable_type))
 
             variables.append(variable)
 
@@ -364,7 +365,7 @@ class QueryCodegen:
 
             for field in strawberry_type.fields:
                 field_type = self._collect_type_from_strawberry_type(field.type)
-                type_.fields.append(GraphQLField(field.name, field_type))
+                type_.fields.append(GraphQLField(field.name, None, field_type))
 
             self._collect_type(type_)
         else:
@@ -407,7 +408,9 @@ class QueryCodegen:
 
         field_type = self._get_field_type(field.type)
 
-        return GraphQLField(field.name, field_type)
+        return GraphQLField(
+            field.name, selection.alias.value if selection.alias else None, field_type
+        )
 
     def _unwrap_type(
         self, type_: Union[type, StrawberryType]
@@ -457,7 +460,11 @@ class QueryCodegen:
             field_type = self._collect_types_with_inline_fragments(
                 selection, parent_type, class_name
             )
-            return GraphQLField(selected_field.name, field_type)
+            return GraphQLField(
+                selected_field.name,
+                selection.alias.value if selection.alias else None,
+                field_type,
+            )
 
         parent_type = cast(
             TypeDefinition, selected_field_type._type_definition  # type: ignore
@@ -468,7 +475,11 @@ class QueryCodegen:
         if wrapper:
             field_type = wrapper(field_type)
 
-        return GraphQLField(selected_field.name, field_type)
+        return GraphQLField(
+            selected_field.name,
+            selection.alias.value if selection.alias else None,
+            field_type,
+        )
 
     def _get_field(
         self, selection: FieldNode, class_name: str, parent_type: TypeDefinition

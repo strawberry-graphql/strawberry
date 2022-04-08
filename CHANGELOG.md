@@ -1,6 +1,77 @@
 CHANGELOG
 =========
 
+0.105.0 - 2022-04-05
+--------------------
+
+This release adds support for passing `json_encoder` and `json_dumps_params` to Sanic's view.
+
+
+```python
+from strawberry.sanic.views import GraphQLView
+
+from api.schema import Schema
+
+app = Sanic(__name__)
+
+app.add_route(
+    GraphQLView.as_view(
+        schema=schema,
+        graphiql=True,
+        json_encoder=CustomEncoder,
+        json_dumps_params={},
+    ),
+    "/graphql",
+)
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #1797](https://github.com/strawberry-graphql/strawberry/pull/1797/)
+
+
+0.104.4 - 2022-04-05
+--------------------
+
+Allow use of `AsyncIterator` and `AsyncIterable` generics to annotate return
+type of subscription resolvers.
+
+Contributed by [San Kilkis](https://github.com/skilkis) via [PR #1771](https://github.com/strawberry-graphql/strawberry/pull/1771/)
+
+
+0.104.3 - 2022-04-03
+--------------------
+
+Exeptions from handler functions in graphql_transport_ws are no longer
+incorrectly caught and classified as message parsing errors.
+
+Contributed by [Kristján Valur Jónsson](https://github.com/kristjanvalur) via [PR #1761](https://github.com/strawberry-graphql/strawberry/pull/1761/)
+
+
+0.104.2 - 2022-04-02
+--------------------
+
+Drop support for Django < 3.2.
+
+Contributed by [Guillaume Andreu Sabater](https://github.com/g-as) via [PR #1787](https://github.com/strawberry-graphql/strawberry/pull/1787/)
+
+
+0.104.1 - 2022-03-28
+--------------------
+
+This release adds support for aliased fields when doing codegen.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #1772](https://github.com/strawberry-graphql/strawberry/pull/1772/)
+
+
+0.104.0 - 2022-03-28
+--------------------
+
+Add `is_auto` utility for checking if a type is `strawberry.auto`,
+considering the possibility of it being a `StrawberryAnnotation` or
+even being used inside `Annotated`.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #1721](https://github.com/strawberry-graphql/strawberry/pull/1721/)
+
+
 0.103.9 - 2022-03-23
 --------------------
 
