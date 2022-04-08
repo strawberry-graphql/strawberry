@@ -17,7 +17,6 @@ from graphql.validation import ASTValidationRule, validate
 from strawberry.extensions import Extension
 from strawberry.extensions.runner import ExtensionsRunner
 from strawberry.types import ExecutionContext, ExecutionResult
-
 from strawberry.utils.operation import get_operation_type
 
 
