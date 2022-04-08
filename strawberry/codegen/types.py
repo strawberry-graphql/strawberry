@@ -26,6 +26,7 @@ class GraphQLUnion:
 @dataclass
 class GraphQLField:
     name: str
+    alias: Optional[str]
     type: GraphQLType
 
 
@@ -60,8 +61,8 @@ GraphQLType = Union[
 
 @dataclass
 class GraphQLFieldSelection:
-    # TODO: alias
     field: str
+    alias: Optional[str]
     selections: List[GraphQLSelection]
     directives: List[GraphQLDirective]
     arguments: List[GraphQLArgument]
