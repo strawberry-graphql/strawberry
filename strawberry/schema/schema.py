@@ -171,6 +171,7 @@ class Schema(BaseSchema):
             root_value=root_value,
             variables=variable_values,
             provided_operation_name=operation_name,
+            allowed_operation_types=allowed_operation_types,
         )
 
         result = await execute(
