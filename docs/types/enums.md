@@ -126,6 +126,20 @@ type.
 
 </Note>
 
+You can also deprecate enum value. To do so you need more verbose syntax using
+`strawberry.enum_value` and `deprecation_reason`. You can mix and match string
+and verbose syntax.
+
+```python
+@strawberry.enum
+class IceCreamFlavour(Enum):
+    VANILLA = strawberry.enum_value("vanilla")
+    STRAWBERRY = strawberry.enum_value(
+        "strawberry", deprecation_reason="We ran out"
+    )
+    CHOCOLATE = "chocolate"
+```
+
 <AdditionalResources
   title="Enums"
   spec="https://spec.graphql.org/June2018/#sec-Enums"

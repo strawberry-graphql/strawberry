@@ -117,7 +117,10 @@ class GraphQLCoreConverter:
         return graphql_enum
 
     def from_enum_value(self, enum_value: EnumValue) -> GraphQLEnumValue:
-        return GraphQLEnumValue(enum_value.value)
+        return GraphQLEnumValue(
+            enum_value.value,
+            deprecation_reason=enum_value.deprecation_reason,
+        )
 
     def from_directive(self, directive: StrawberryDirective) -> GraphQLDirective:
         graphql_arguments = {}
