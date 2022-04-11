@@ -221,6 +221,10 @@ def test_duplicated_operation_ids(test_client):
 
 
 def test_reused_operation_ids(test_client):
+    """
+    Test that an operation id can be re-used after it has been
+    previously used for a completed operation
+    """
     with test_client.websocket_connect(
         "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
@@ -229,6 +233,7 @@ def test_reused_operation_ids(test_client):
         response = ws.receive_json()
         assert response == ConnectionAckMessage().as_dict()
 
+        # Use sub1 as an id for an operation
         ws.send_json(
             SubscribeMessage(
                 id="sub1",
@@ -247,7 +252,8 @@ def test_reused_operation_ids(test_client):
         response = ws.receive_json()
         assert response == CompleteMessage(id="sub1").as_dict()
 
-        # now the ID should be free for re-use
+        # operation is now complete.  Create a new operation using
+        # the same ID
         ws.send_json(
             SubscribeMessage(
                 id="sub1",
@@ -483,6 +489,11 @@ def test_single_result_query_operation(test_client):
 
 
 def test_single_result_query_operation_async(test_client):
+    """
+    Test a single result query operation on an
+    `async` method in the schema, including an artificial
+    async delay
+    """
     with test_client.websocket_connect(
         "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
@@ -514,7 +525,10 @@ def test_single_result_query_operation_async(test_client):
 
 def test_single_result_query_operation_overlapped(test_client):
     """
-    Test that two single result queries can be in flight at the same time
+    Test that two single result queries can be in flight at the same time,
+    just like regular queries.  Start two queries with separate ids. The
+    first query has a delay, so we expect the response to the second
+    query to be delivered first.
     """
     with test_client.websocket_connect(
         "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
@@ -673,6 +687,10 @@ def test_single_result_operation_error(test_client):
 
 
 def test_single_result_operation_exception(test_client):
+    """
+    Test that single-result-operations which raise exceptions
+    behave in the same way as streaming operations
+    """
     with test_client.websocket_connect(
         "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
@@ -699,6 +717,12 @@ def test_single_result_operation_exception(test_client):
 
 
 def test_single_result_duplicate_ids_sub(test_client):
+    """
+    Test that single-result-operations and streaming operations
+    share the same ID namespace.  Start a regular subscription,
+    then issue a single-result operation with same ID and expect an
+    error due to already existing ID
+    """
     with test_client.websocket_connect(
         "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
@@ -732,6 +756,11 @@ def test_single_result_duplicate_ids_sub(test_client):
 
 
 def test_single_result_duplicate_ids_query(test_client):
+    """
+    Test that single-result-operations don't allow duplicate
+    IDs for two asynchronous queries.  Issue one async query
+    with delay, then another with same id.  Expect error.
+    """
     with test_client.websocket_connect(
         "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:

@@ -286,6 +286,10 @@ async def test_duplicated_operation_ids(aiohttp_client):
 
 
 async def test_reused_operation_ids(aiohttp_client):
+    """
+    Test that an operation id can be re-used after it has been
+    previously used for a completed operation
+    """
     app = create_app()
     aiohttp_app_client = await aiohttp_client(app)
 
@@ -297,6 +301,7 @@ async def test_reused_operation_ids(aiohttp_client):
         response = await ws.receive_json()
         assert response == ConnectionAckMessage().as_dict()
 
+        # Use sub1 as an id for an operation
         await ws.send_json(
             SubscribeMessage(
                 id="sub1",
@@ -315,7 +320,8 @@ async def test_reused_operation_ids(aiohttp_client):
         response = await ws.receive_json()
         assert response == CompleteMessage(id="sub1").as_dict()
 
-        # now the ID should be free for re-use
+        # operation is now complete.  Create a new operation using
+        # the same ID
         await ws.send_json(
             SubscribeMessage(
                 id="sub1",
@@ -595,6 +601,11 @@ async def test_single_result_query_operation(aiohttp_client):
 
 
 async def test_single_result_query_operation_async(aiohttp_client):
+    """
+    Test a single result query operation on an
+    `async` method in the schema, including an artificial
+    async delay
+    """
     app = create_app()
     aiohttp_app_client = await aiohttp_client(app)
 
@@ -632,7 +643,10 @@ async def test_single_result_query_operation_async(aiohttp_client):
 
 async def test_single_result_query_operation_overlapped(aiohttp_client):
     """
-    Test that two single result queries can be in flight at the same time
+    Test that two single result queries can be in flight at the same time,
+    just like regular queries.  Start two queries with separate ids. The
+    first query has a delay, so we expect the response to the second
+    query to be delivered first.
     """
     app = create_app()
     aiohttp_app_client = await aiohttp_client(app)
@@ -819,6 +833,10 @@ async def test_single_result_operation_error(aiohttp_client):
 
 
 async def test_single_result_operation_exception(aiohttp_client):
+    """
+    Test that single-result-operations which raise exceptions
+    behave in the same way as streaming operations
+    """
     app = create_app()
     aiohttp_app_client = await aiohttp_client(app)
 
@@ -848,6 +866,12 @@ async def test_single_result_operation_exception(aiohttp_client):
 
 
 async def test_single_result_duplicate_ids_sub(aiohttp_client):
+    """
+    Test that single-result-operations and streaming operations
+    share the same ID namespace.  Start a regular subscription,
+    then issue a single-result operation with same ID and expect an
+    error due to already existing ID
+    """
     app = create_app()
     aiohttp_app_client = await aiohttp_client(app)
 
@@ -888,6 +912,11 @@ async def test_single_result_duplicate_ids_sub(aiohttp_client):
 
 
 async def test_single_result_duplicate_ids_query(aiohttp_client):
+    """
+    Test that single-result-operations don't allow duplicate
+    IDs for two asynchronous queries.  Issue one async query
+    with delay, then another with same id.  Expect error.
+    """
     app = create_app()
     aiohttp_app_client = await aiohttp_client(app)
 
