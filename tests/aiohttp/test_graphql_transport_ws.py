@@ -420,11 +420,6 @@ async def test_subscription_cancellation(aiohttp_client):
         response = await ws.receive_json()
         assert response == CompleteMessage(id="sub2").as_dict()
 
-        # Issue #1731
-        # Check that a racing complete message to an already completed subscription
-        # is ignored by server
-        await ws.send_json(CompleteMessage(id="sub2").as_dict())
-
         await ws.send_json(CompleteMessage(id="sub1").as_dict())
 
         await ws.send_json(
@@ -689,9 +684,72 @@ async def test_single_result_operation_error(aiohttp_client):
         assert ws.closed
 
 
-async def test_single_result_complete(aiohttp_client):
+async def test_subscription_complete_race(aiohttp_client):
+    """Issue #1731
+    Test that sending a complete message after server
+    has already completed doesn't cause problems.
     """
-    #issue #1731 - Make sure we can `complete` a single result operation
+    app = create_app()
+    aiohttp_app_client = await aiohttp_client(app)
+
+    async with aiohttp_app_client.ws_connect(
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
+    ) as ws:
+        await ws.send_json(ConnectionInitMessage().as_dict())
+
+        response = await ws.receive_json()
+        assert response == ConnectionAckMessage().as_dict()
+
+        await ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(
+                    query="subscription { debug { numActiveResultHandlers } }",
+                ),
+            ).as_dict()
+        )
+
+        response = await ws.receive_json()
+        assert (
+            response
+            == NextMessage(
+                id="sub1", payload={"data": {"debug": {"numActiveResultHandlers": 1}}}
+            ).as_dict()
+        )
+
+        response = await ws.receive_json()
+        assert response == CompleteMessage(id="sub1").as_dict()
+
+        # Imagine that we didn'r receive the CompleteMessage from server and
+        # issue one of our own.  It should be ignored by the server.
+        # Verify this by making a new subscription
+        await ws.send_json(CompleteMessage(id="sub1").as_dict())
+
+        # make a new subscription
+        await ws.send_json(
+            SubscribeMessage(
+                id="sub2",
+                payload=SubscribeMessagePayload(
+                    query="subscription { debug { numActiveResultHandlers } }",
+                ),
+            ).as_dict()
+        )
+
+        response = await ws.receive_json()
+        assert (
+            response
+            == NextMessage(
+                id="sub2", payload={"data": {"debug": {"numActiveResultHandlers": 1}}}
+            ).as_dict()
+        )
+
+        await ws.close()
+        assert ws.closed
+
+
+async def test_single_result_complete(aiohttp_client):
+    """Issue #1731
+    Make sure we can `complete` a single result operation
     """
     app = create_app()
     aiohttp_app_client = await aiohttp_client(app)
