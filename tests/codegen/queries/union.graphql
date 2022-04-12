@@ -7,4 +7,12 @@ query OperationName {
       name
     }
   }
+  optionalUnion {
+    ... on Animal {
+      age
+    }
+    ... on Person {
+      name
+    }
+  }
 }
