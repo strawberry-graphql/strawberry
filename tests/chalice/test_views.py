@@ -129,9 +129,15 @@ def test_graphiql_query_unsupported_method():
         headers = {"Accept": "application/json", "Content-Type": "application/json"}
 
         query = {"query": "query GreetMe {greetings}"}
-        response = client.http.put("/graphql", headers=headers, body=json.dumps(query))
+        response = client.http.put(
+            "/graphql-no-graphiql", headers=headers, body=json.dumps(query)
+        )
 
         assert response.status_code == 405
+        assert (
+            response.json_body["Message"]
+            == "Unsupported method, must be of request type POST or GET"
+        )
 
 
 @pytest.mark.parametrize("header_value", ["text/html", "*/*"])

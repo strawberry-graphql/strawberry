@@ -36,7 +36,9 @@ def handle_graphql():
 
 
 @app.route(
-    "/graphql-no-graphiql", methods=["GET", "POST"], content_types=["application/json"]
+    "/graphql-no-graphiql",
+    methods=["GET", "POST", "PUT"],
+    content_types=["application/json"],
 )
 def handle_graphql_without_graphiql():
     return view_no_graphiql.execute_request(app.current_request)
