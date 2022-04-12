@@ -111,5 +111,5 @@ def test_using_deprecated_render_graphiql_raise_warning():
 
     assert record[0].message.args == [
         "`render_graphiql` is deprecated and it will stop working in releases "
-        "of strawberry made after 2022-06-07. Use `graphiql` instead",
+        "of strawberry made after 2022-07-13. Use `graphiql` instead",
     ]
