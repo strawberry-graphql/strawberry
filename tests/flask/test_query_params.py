@@ -1,7 +1,5 @@
 import json
 
-from werkzeug.urls import url_encode, url_unparse
-
 
 def test_no_graphiql_empty_get(flask_client_no_graphiql):
 
@@ -19,8 +17,7 @@ def test_no_graphiql_no_query(flask_client_no_graphiql):
         """
     }
 
-    query_url = url_unparse(("", "", "/graphql", url_encode(params), ""))
-    response = flask_client_no_graphiql.get(query_url)
+    response = flask_client_no_graphiql.get("/graphql", query_string=params)
 
     assert response.status_code == 400
 
@@ -34,8 +31,7 @@ def test_no_graphiql_get_with_query_params(flask_client_no_graphiql):
         """
     }
 
-    query_url = url_unparse(("", "", "/graphql", url_encode(params), ""))
-    response = flask_client_no_graphiql.get(query_url)
+    response = flask_client_no_graphiql.get("/graphql", query_string=params)
     data = json.loads(response.data.decode())
 
     assert response.status_code == 200
@@ -51,7 +47,6 @@ def test_no_graphiql_post_fails_with_query_params(flask_client):
         """
     }
 
-    query_url = url_unparse(("", "", "/graphql", url_encode(params), ""))
-    response = flask_client.post(query_url)
+    response = flask_client.post("/graphql", query_string=params)
 
     assert response.status_code == 415
