@@ -106,3 +106,38 @@ def test_graphiql_query_with_query_params():
         response = client.http.get(query_url)
 
         assert response.status_code == 200
+
+
+def test_graphiql_query_with_missing_query():
+    with Client(app) as client:
+        params = {
+            "abc": """
+                query GreetMe {
+                    greetings
+                }
+            """
+        }
+        query_url = url_unparse(("", "", "/graphql", url_encode(params), ""))
+        response = client.http.get(query_url)
+
+        assert response.status_code == 400
+        assert response.json_body["Message"] == "No GraphQL query found in the request"
+
+
+def test_graphiql_query_unsupported_method():
+    with Client(app) as client:
+        headers = {"Accept": "application/json", "Content-Type": "application/json"}
+
+        query = {"query": "query GreetMe {greetings}"}
+        response = client.http.put("/graphql", headers=headers, body=json.dumps(query))
+
+        assert response.status_code == 405
+
+
+@pytest.mark.parametrize("header_value", ["text/html", "*/*"])
+def test_no_graphiql_view_is_returned_if_false(header_value):
+    with Client(app) as client:
+        headers = {"Accept": header_value}
+        response = client.http.get("/graphql-no-graphiql", headers=headers)
+
+        assert response.status_code == 415

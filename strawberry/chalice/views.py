@@ -90,9 +90,8 @@ class GraphQLView:
         elif request.method == "GET" and self.should_render_graphiql(
             self.graphiql, request
         ):
-            graphiql_page: str = self.render_graphiql()
             return Response(
-                body=graphiql_page,
+                body=self.render_graphiql(),
                 headers={"content-type": "text/html"},
                 status_code=200,
             )
