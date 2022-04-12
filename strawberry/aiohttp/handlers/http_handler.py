@@ -38,8 +38,8 @@ class HTTPHandler:
         if request.query:
             try:
                 request_data = parse_request_data(
-                    request.query
-                )  # type:ignore[arg-type]
+                    request.query  # type:ignore[arg-type]
+                )
             except MissingQueryError:
                 raise web.HTTPBadRequest(reason="No GraphQL query found in the request")
 
