@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.105.1 - 2022-04-12
+--------------------
+
+This release fixes a bug in the codegen that marked optional unions
+as non optional.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #1806](https://github.com/strawberry-graphql/strawberry/pull/1806/)
+
+
 0.105.0 - 2022-04-05
 --------------------
 
