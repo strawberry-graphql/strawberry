@@ -73,7 +73,7 @@ class HTTPHandler:
     ) -> Response:
         if request.method == "GET":
             if request.query_params:
-                data = request.query_params
+                data = request.query_params._dict
             elif self.should_render_graphiql(request):
                 return self.get_graphiql_response()
             else:

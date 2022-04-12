@@ -37,7 +37,9 @@ class HTTPHandler:
     async def get(self, request: web.Request) -> web.StreamResponse:
         if request.query:
             try:
-                request_data = parse_request_data(request.query)
+                request_data = parse_request_data(
+                    request.query
+                )  # type:ignore[arg-type]
             except MissingQueryError:
                 raise web.HTTPBadRequest(reason="No GraphQL query found in the request")
 

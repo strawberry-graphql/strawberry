@@ -146,7 +146,7 @@ class GraphQLRouter(APIRouter):
                 return await self.execute_request(
                     request=request,
                     response=response,
-                    data=request.query_params,
+                    data=request.query_params._dict,
                     context=context,
                     root_value=root_value,
                 )
@@ -289,11 +289,11 @@ class GraphQLRouter(APIRouter):
         try:
             request_data = parse_request_data(data)
         except MissingQueryError:
-            actual_response = PlainTextResponse(
+            missing_query_response = PlainTextResponse(
                 "No GraphQL query found in the request",
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
-            return self._merge_responses(response, actual_response)
+            return self._merge_responses(response, missing_query_response)
 
         result = await self.execute(
             request_data.query,
@@ -305,7 +305,7 @@ class GraphQLRouter(APIRouter):
 
         response_data = await self.process_result(request, result)
 
-        actual_response = JSONResponse(
+        actual_response: JSONResponse = JSONResponse(
             response_data,
             status_code=status.HTTP_200_OK,
         )

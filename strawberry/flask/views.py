@@ -38,14 +38,14 @@ class GraphQLView(View):
         content_type = request.content_type or ""
 
         if "application/json" in content_type:
-            data = request.json
+            data: dict = request.json  # type:ignore[assignment]
         elif content_type.startswith("multipart/form-data"):
             operations = json.loads(request.form.get("operations", "{}"))
             files_map = json.loads(request.form.get("map", "{}"))
 
             data = replace_placeholders_with_files(operations, files_map, request.files)
         elif request.method == "GET" and request.args:
-            data = request.args
+            data = request.args.to_dict()
         elif request.method == "GET" and should_render_graphiql(self.graphiql, request):
             template = render_graphiql_page()
             return self.render_template(template=template)
