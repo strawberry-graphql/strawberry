@@ -22,7 +22,7 @@ class GraphQLView:
         if render_graphiql is not None:
             warnings.warn(
                 "`render_graphiql` is deprecated and it will stop working in releases "
-                "of strawberry made after 2022-06-07. Use `graphiql` instead",
+                "of strawberry made after 2022-07-13. Use `graphiql` instead",
                 DeprecationWarning,
             )
             self.graphiql = render_graphiql
