@@ -355,8 +355,9 @@ def test_enum_deprecated_value():
 
     query = """
     {
-        __type(name:"IceCreamFlavour") {
-            enumValues {
+        __type(name: "IceCreamFlavour") {
+            enumValues(includeDeprecated: true) {
+                name
                 isDeprecated
                 deprecationReason
             }
@@ -367,5 +368,9 @@ def test_enum_deprecated_value():
     result = schema.execute_sync(query)
 
     assert not result.errors
-    # deprecated value dissapears
-    assert len(result.data["__type"]["enumValues"]) == 2
+    assert result.data
+    assert result.data["__type"]["enumValues"] == [
+        {"deprecationReason": None, "isDeprecated": False, "name": "VANILLA"},
+        {"deprecationReason": "We ran out", "isDeprecated": True, "name": "STRAWBERRY"},
+        {"deprecationReason": None, "isDeprecated": False, "name": "CHOCOLATE"},
+    ]
