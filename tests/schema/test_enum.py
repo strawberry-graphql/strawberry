@@ -343,7 +343,7 @@ def test_enum_deprecated_value():
         STRAWBERRY = strawberry.enum_value(
             "strawberry", deprecation_reason="We ran out"
         )
-        CHOCOLATE = "chocolate"
+        CHOCOLATE = strawberry.enum_value("chocolate")
 
     @strawberry.type
     class Query:
@@ -367,8 +367,5 @@ def test_enum_deprecated_value():
     result = schema.execute_sync(query)
 
     assert not result.errors
-    assert result.data["__type"]["enumValues"] == [
-        {"isDeprecated": False, "deprecationReason": None},
-        {"isDeprecated": True, "deprecationReason": "We ran out"},
-        {"isDeprecated": False, "deprecationReason": None},
-    ]
+    # deprecated value dissapears
+    assert len(result.data["__type"]["enumValues"]) == 2
