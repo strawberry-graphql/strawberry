@@ -349,7 +349,7 @@ def test_enum_deprecated_value():
     class Query:
         @strawberry.field
         def best_flavour(self) -> IceCreamFlavour:
-            return "strawberry"  # type: ignore
+            return IceCreamFlavour.STRAWBERRY
 
     schema = strawberry.Schema(query=Query)
 

@@ -74,9 +74,8 @@ def _process_enum(
             deprecation_reason = item_value.deprecation_reason
             item_value = item_value.value
 
-        values.append(
-            EnumValue(item_name, item_value, deprecation_reason=deprecation_reason)
-        )
+        value = EnumValue(item_name, item_value, deprecation_reason=deprecation_reason)
+        values.append(value)
 
     cls._enum_definition = EnumDefinition(  # type: ignore
         wrapped_cls=cls,
