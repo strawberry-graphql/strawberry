@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.106.2 - 2022-04-14
+--------------------
+
+Allow all data types in `Schema(types=[...])`
+
+Contributed by [Paulo Costa](https://github.com/paulo-raca) via [PR #1714](https://github.com/strawberry-graphql/strawberry/pull/1714/)
+
+
 0.106.1 - 2022-04-14
 --------------------
 
