@@ -2,7 +2,7 @@ import asyncio
 from abc import ABC, abstractmethod
 from contextlib import suppress
 from datetime import timedelta
-from typing import Any, AsyncGenerator, Callable, Dict, Optional
+from typing import Any, AsyncGenerator, Callable, Dict, List, Optional
 
 from graphql import (
     ExecutionResult as GraphQLExecutionResult,
@@ -45,6 +45,7 @@ class BaseGraphQLTransportWSHandler(ABC):
         self.connection_acknowledged = False
         self.subscriptions: Dict[str, AsyncGenerator] = {}
         self.tasks: Dict[str, asyncio.Task] = {}
+        self.completed_tasks: List[asyncio.Task] = []
 
     @abstractmethod
     async def get_context(self) -> Any:
@@ -117,6 +118,7 @@ class BaseGraphQLTransportWSHandler(ABC):
             handler_arg = "Failed to parse message"
 
         await handler(handler_arg)
+        await self.reap_completed_tasks()
 
     async def handle_connection_init(self, message: ConnectionInitMessage) -> None:
         if self.connection_init_received:
@@ -153,43 +155,7 @@ class BaseGraphQLTransportWSHandler(ABC):
             await self.close(code=4400, reason="Can't get GraphQL operation type")
             return
 
-        if operation_type == OperationType.SUBSCRIPTION:
-            return await self.handle_streaming_operation(message)
-        else:
-            return await self.handle_single_result_operation(message)
-
-    async def handle_single_result_operation(self, message: SubscribeMessage):
-        if self.debug:  # pragma: no cover
-            pretty_print_graphql_operation(
-                message.payload.operationName,
-                message.payload.query,
-                message.payload.variables,
-            )
-
-        context = await self.get_context()
-        root_value = await self.get_root_value()
-
-        result = await self.schema.execute(
-            query=message.payload.query,
-            variable_values=message.payload.variables,
-            context_value=context,
-            root_value=root_value,
-            operation_name=message.payload.operationName,
-        )
-
-        if result.errors:
-            payload = [format_graphql_error(result.errors[0])]
-            await self.send_message(ErrorMessage(id=message.id, payload=payload))
-            self.schema.process_errors(result.errors)
-            return
-
-        await self.send_message(
-            NextMessage(id=message.id, payload={"data": result.data})
-        )
-        await self.send_message(CompleteMessage(id=message.id))
-
-    async def handle_streaming_operation(self, message: SubscribeMessage) -> None:
-        if message.id in self.subscriptions.keys():
+        if message.id in self.subscriptions:
             reason = f"Subscriber for {message.id} already exists"
             await self.close(code=4409, reason=reason)
             return
@@ -204,14 +170,29 @@ class BaseGraphQLTransportWSHandler(ABC):
         context = await self.get_context()
         root_value = await self.get_root_value()
 
-        result_source = await self.schema.subscribe(
-            query=message.payload.query,
-            variable_values=message.payload.variables,
-            operation_name=message.payload.operationName,
-            context_value=context,
-            root_value=root_value,
-        )
+        # Get an AsyncGenerator yielding the results
+        if operation_type == OperationType.SUBSCRIPTION:
+            result_source = await self.schema.subscribe(
+                query=message.payload.query,
+                variable_values=message.payload.variables,
+                operation_name=message.payload.operationName,
+                context_value=context,
+                root_value=root_value,
+            )
+        else:
+            # create AsyncGenerator returning a single result
+            async def get_result_source():
+                yield await self.schema.execute(
+                    query=message.payload.query,
+                    variable_values=message.payload.variables,
+                    context_value=context,
+                    root_value=root_value,
+                    operation_name=message.payload.operationName,
+                )
 
+            result_source = get_result_source()
+
+        # Handle initial validation errors
         if isinstance(result_source, GraphQLExecutionResult):
             assert result_source.errors
             payload = [format_graphql_error(result_source.errors[0])]
@@ -219,9 +200,37 @@ class BaseGraphQLTransportWSHandler(ABC):
             self.schema.process_errors(result_source.errors)
             return
 
-        handler = self.handle_async_results(result_source, message.id)
+        # Create task to handle this subscription, reserve the operation ID
         self.subscriptions[message.id] = result_source
-        self.tasks[message.id] = asyncio.create_task(handler)
+        self.tasks[message.id] = asyncio.create_task(
+            self.operation_task(result_source, message.id)
+        )
+
+    async def operation_task(
+        self, result_source: AsyncGenerator, operation_id: str
+    ) -> None:
+        """
+        Operation task top level method.  Cleans up and de-registers the operation
+        once it is done.
+        """
+        try:
+            await self.handle_async_results(result_source, operation_id)
+        except BaseException:  # pragma: no cover
+            # cleanup in case of something really unexpected
+            del self.subscriptions[operation_id]
+            del self.tasks[operation_id]
+            raise
+        else:
+            # de-register the operation _before_ sending the `Complete` message
+            # to make the `operation_id` immediately available for re-use
+            del self.subscriptions[operation_id]
+            del self.tasks[operation_id]
+            await self.send_message(CompleteMessage(id=operation_id))
+        finally:
+            # add this task to a list to be reaped later
+            task = asyncio.current_task()
+            assert task is not None
+            self.completed_tasks.append(task)
 
     async def handle_async_results(
         self,
@@ -253,8 +262,6 @@ class BaseGraphQLTransportWSHandler(ABC):
             self.schema.process_errors([error])
             return
 
-        await self.send_message(CompleteMessage(id=operation_id))
-
     async def handle_complete(self, message: CompleteMessage) -> None:
         await self.cleanup_operation(operation_id=message.id)
 
@@ -266,10 +273,22 @@ class BaseGraphQLTransportWSHandler(ABC):
         await self.send_json(data)
 
     async def cleanup_operation(self, operation_id: str) -> None:
-        await self.subscriptions[operation_id].aclose()
-        del self.subscriptions[operation_id]
-
-        self.tasks[operation_id].cancel()
+        if operation_id not in self.subscriptions:
+            return
+        generator = self.subscriptions.pop(operation_id)
+        task = self.tasks.pop(operation_id)
+        # since python 3.8, generators cannot be reliably closed
+        with suppress(RuntimeError):
+            await generator.aclose()
+        task.cancel()
         with suppress(BaseException):
-            await self.tasks[operation_id]
-        del self.tasks[operation_id]
+            await task
+
+    async def reap_completed_tasks(self) -> None:
+        """
+        Await tasks that have completed
+        """
+        tasks, self.completed_tasks = self.completed_tasks, []
+        for task in tasks:
+            with suppress(BaseException):
+                await task
