@@ -12,19 +12,20 @@ This is how you define a subscription-capable resolver:
 
 ```python
 import asyncio
+from typing import AsyncGenerator
 
 import strawberry
 
 @strawberry.type
 class Query:
     @strawberry.field
-    def hello() -> str:
+    def hello(self) -> str:
         return "world"
 
 @strawberry.type
 class Subscription:
     @strawberry.subscription
-    async def count(self, target: int = 100) -> int:
+    async def count(self, target: int = 100) -> AsyncGenerator[int, None]:
         for i in range(target):
             yield i
             await asyncio.sleep(0.5)
@@ -35,6 +36,13 @@ schema = strawberry.Schema(query=Query, subscription=Subscription)
 Like queries and mutations, subscriptions are defined in a class and passed to
 the Schema function. Here we create a rudimentary counting function which counts
 from 0 to the target sleeping between each loop iteration.
+
+<Note>
+The return type of `count` is `AsyncGenerator` where the first generic
+argument is the actual type of the response, in most cases the second argument
+should be left as `None` (more about Generator typing [here](https://docs.python.org/3/library/typing.html#typing.AsyncGenerator)).
+</Note>
+
 
 We would send the following GraphQL document to our server to subscribe to this
 data stream:
