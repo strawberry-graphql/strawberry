@@ -46,3 +46,33 @@ def test_post_fails_with_query_params(sanic_client):
     request, response = sanic_client.test_client.post("/graphql", params=query)
 
     assert response.status == 415
+
+
+def test_does_not_allow_mutation(sanic_client):
+    query = {
+        "query": """
+            mutation {
+                hello
+            }
+        """
+    }
+
+    request, response = sanic_client.test_client.get("/graphql", params=query)
+
+    assert response.status == 400
+    assert "mutations are not allowed when using GET" in response.text
+
+
+def test_fails_if_allow_queries_via_get_false(sanic_client_no_get):
+    query = {
+        "query": """
+            query {
+                hello
+            }
+        """
+    }
+
+    request, response = sanic_client_no_get.test_client.get("/graphql", params=query)
+
+    assert response.status == 400
+    assert "queries are not allowed when using GET" in response.text

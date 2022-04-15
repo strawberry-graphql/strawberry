@@ -66,7 +66,7 @@ class HTTPHandler:
         self,
         request: web.Request,
         request_data: GraphQLRequestData,
-        method=Union[Literal["GET"], Literal["POST"]],
+        method: Union[Literal["GET"], Literal["POST"]],
     ) -> web.StreamResponse:
         response = web.Response()
         context = await self.get_context(request, response)
