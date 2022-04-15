@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.106.3 - 2022-04-15
+--------------------
+
+Correctly parse Decimal scalar types to avoid floating point errors
+
+Contributed by [Marco Acierno](https://github.com/marcoacierno) via [PR #1811](https://github.com/strawberry-graphql/strawberry/pull/1811/)
+
+
 0.106.2 - 2022-04-14
 --------------------
 
