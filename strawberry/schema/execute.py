@@ -1,6 +1,16 @@
 from asyncio import ensure_future
 from inspect import isawaitable
-from typing import Awaitable, List, Optional, Sequence, Tuple, Type, Union, cast
+from typing import (
+    Awaitable,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    Union,
+    cast,
+)
 
 from graphql import (
     ExecutionContext as GraphQLExecutionContext,
@@ -53,7 +63,7 @@ async def execute(
     schema: GraphQLSchema,
     query: str,
     *,
-    allowed_operation_types: Sequence[OperationType],
+    allowed_operation_types: Iterable[OperationType],
     extensions: Sequence[Union[Type[Extension], Extension]],
     execution_context: ExecutionContext,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
@@ -132,7 +142,7 @@ def execute_sync(
     schema: GraphQLSchema,
     query: str,
     *,
-    allowed_operation_types: Sequence[OperationType],
+    allowed_operation_types: Iterable[OperationType],
     extensions: Sequence[Union[Type[Extension], Extension]],
     execution_context: ExecutionContext,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,

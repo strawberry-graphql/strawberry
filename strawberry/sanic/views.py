@@ -136,7 +136,7 @@ class GraphQLView(HTTPMethodView):
                 context_value=context,
                 root_value=root_value,
                 operation_name=request_data.operation_name,
-                allowed_operation_types=list(allowed_operation_types),
+                allowed_operation_types=allowed_operation_types,
             )
         except InvalidOperationTypeError as e:
             raise ServerError(

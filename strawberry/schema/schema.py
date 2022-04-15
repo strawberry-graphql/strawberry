@@ -1,5 +1,5 @@
 from functools import lru_cache
-from typing import Any, Dict, Optional, Sequence, Type, Union
+from typing import Any, Dict, Iterable, Optional, Sequence, Type, Union
 
 from graphql import (
     ExecutionContext as GraphQLExecutionContext,
@@ -165,7 +165,7 @@ class Schema(BaseSchema):
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
-        allowed_operation_types: Optional[Sequence[OperationType]] = None,
+        allowed_operation_types: Optional[Iterable[OperationType]] = None,
     ) -> ExecutionResult:
         if allowed_operation_types is None:
             allowed_operation_types = DEFAULT_ALLOWED_OPERATION_TYPES
@@ -201,7 +201,7 @@ class Schema(BaseSchema):
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
-        allowed_operation_types: Optional[Sequence[OperationType]] = None,
+        allowed_operation_types: Optional[Iterable[OperationType]] = None,
     ) -> ExecutionResult:
         if allowed_operation_types is None:
             allowed_operation_types = DEFAULT_ALLOWED_OPERATION_TYPES

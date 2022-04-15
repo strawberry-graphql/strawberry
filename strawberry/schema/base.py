@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from functools import lru_cache
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import Any, Dict, Iterable, List, Optional, Union
 
 from typing_extensions import Protocol
 
@@ -29,7 +29,7 @@ class BaseSchema(Protocol):
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
-        allowed_operation_types: Optional[Sequence[OperationType]] = None,
+        allowed_operation_types: Optional[Iterable[OperationType]] = None,
     ) -> ExecutionResult:
         raise NotImplementedError
 
@@ -41,7 +41,7 @@ class BaseSchema(Protocol):
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
-        allowed_operation_types: Optional[Sequence[OperationType]] = None,
+        allowed_operation_types: Optional[Iterable[OperationType]] = None,
     ) -> ExecutionResult:
         raise NotImplementedError
 

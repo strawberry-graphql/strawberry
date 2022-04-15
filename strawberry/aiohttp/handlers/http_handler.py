@@ -83,7 +83,7 @@ class HTTPHandler:
                 root_value=root_value,
                 variable_values=request_data.variables,
                 context_value=context,
-                allowed_operation_types=list(allowed_operation_types),
+                allowed_operation_types=allowed_operation_types,
             )
         except InvalidOperationTypeError as e:
             raise web.HTTPBadRequest(
