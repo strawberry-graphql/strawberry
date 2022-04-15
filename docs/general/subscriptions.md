@@ -43,7 +43,6 @@ argument is the actual type of the response, in most cases the second argument
 should be left as `None` (more about Generator typing [here](https://docs.python.org/3/library/typing.html#typing.AsyncGenerator)).
 </Note>
 
-
 We would send the following GraphQL document to our server to subscribe to this
 data stream:
 
