@@ -1,7 +1,7 @@
 import json
 from datetime import timedelta
 from inspect import signature
-from typing import Any, Callable, Dict, Optional, Sequence, Union
+from typing import Any, Callable, Dict, Iterable, Optional, Sequence, Union
 
 from starlette import status
 from starlette.background import BackgroundTasks
@@ -17,8 +17,10 @@ from strawberry.fastapi.handlers import GraphQLTransportWSHandler, GraphQLWSHand
 from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import GraphQLHTTPResponse, parse_request_data, process_result
 from strawberry.schema import BaseSchema
+from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 from strawberry.types import ExecutionResult
+from strawberry.types.graphql import OperationType
 from strawberry.utils.debug import pretty_print_graphql_operation
 
 
@@ -95,6 +97,7 @@ class GraphQLRouter(APIRouter):
         schema: BaseSchema,
         path: str = "",
         graphiql: bool = True,
+        allow_queries_via_get: bool = True,
         keep_alive: bool = False,
         keep_alive_interval: float = 1,
         debug: bool = False,
@@ -113,6 +116,7 @@ class GraphQLRouter(APIRouter):
         )
         self.schema = schema
         self.graphiql = graphiql
+        self.allow_queries_via_get = allow_queries_via_get
         self.keep_alive = keep_alive
         self.keep_alive_interval = keep_alive_interval
         self.debug = debug
@@ -264,7 +268,13 @@ class GraphQLRouter(APIRouter):
         return actual_response
 
     async def execute(
-        self, query, variables=None, context=None, operation_name=None, root_value=None
+        self,
+        query: str,
+        variables: Dict[str, Any] = None,
+        context: Any = None,
+        operation_name: Optional[str] = None,
+        root_value: Any = None,
+        allowed_operation_types: Optional[Iterable[OperationType]] = None,
     ):
         if self.debug:
             pretty_print_graphql_operation(operation_name, query, variables)
@@ -275,6 +285,7 @@ class GraphQLRouter(APIRouter):
             variable_values=variables,
             operation_name=operation_name,
             context_value=context,
+            allowed_operation_types=allowed_operation_types,
         )
 
     async def process_result(
@@ -285,7 +296,6 @@ class GraphQLRouter(APIRouter):
     async def execute_request(
         self, request: Request, response: Response, data: dict, context, root_value
     ) -> Response:
-
         try:
             request_data = parse_request_data(data)
         except MissingQueryError:
@@ -295,13 +305,26 @@ class GraphQLRouter(APIRouter):
             )
             return self._merge_responses(response, missing_query_response)
 
-        result = await self.execute(
-            request_data.query,
-            variables=request_data.variables,
-            context=context,
-            operation_name=request_data.operation_name,
-            root_value=root_value,
-        )
+        method = request.method
+        allowed_operation_types = set(OperationType.from_http(method))
+
+        if not self.allow_queries_via_get and method == "GET":
+            allowed_operation_types = allowed_operation_types - {OperationType.QUERY}
+
+        try:
+            result = await self.execute(
+                request_data.query,
+                variables=request_data.variables,
+                context=context,
+                operation_name=request_data.operation_name,
+                root_value=root_value,
+                allowed_operation_types=allowed_operation_types,
+            )
+        except InvalidOperationTypeError as e:
+            return PlainTextResponse(
+                e.as_http_error_reason(method),
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
 
         response_data = await self.process_result(request, result)
 
