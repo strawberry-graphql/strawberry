@@ -38,3 +38,19 @@ async def test_post_fails_with_query_params(aiohttp_app_client):
     response = await aiohttp_app_client.post("/graphql", params=query)
 
     assert response.status == 400
+
+
+async def test_does_not_allow_mutation(aiohttp_app_client):
+    query = {
+        "query": """
+            mutation {
+                hello
+            }
+        """
+    }
+
+    response = await aiohttp_app_client.get("/graphql", params=query)
+    assert response.status == 400
+
+    data = await response.text()
+    assert data == "400: mutations are not allowed when using GET"

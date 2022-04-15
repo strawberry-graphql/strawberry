@@ -1,6 +1,8 @@
 from typing import Optional, cast
 
-from graphql.language import DocumentNode, OperationDefinitionNode, OperationType
+from graphql.language import DocumentNode, OperationDefinitionNode
+
+from strawberry.types.graphql import OperationType
 
 
 def get_first_operation(
@@ -30,4 +32,4 @@ def get_operation_type(
     if not definition:
         raise RuntimeError("Can't get GraphQL operation type")
 
-    return definition.operation
+    return OperationType(definition.operation.value)

@@ -1,13 +1,17 @@
 import json
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Union
+
+from typing_extensions import Literal
 
 from aiohttp import web
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import GraphQLRequestData, parse_request_data
 from strawberry.schema import BaseSchema
+from strawberry.schema.exceptions import InvalidOperationTypeError
+from strawberry.types.graphql import OperationType
 
 
 class HTTPHandler:
@@ -37,14 +41,12 @@ class HTTPHandler:
     async def get(self, request: web.Request) -> web.StreamResponse:
         if request.query:
             try:
-                request_data = parse_request_data(
-                    request.query  # type:ignore[arg-type]
-                )
+                request_data = parse_request_data(request.query)
             except MissingQueryError:
                 raise web.HTTPBadRequest(reason="No GraphQL query found in the request")
 
             return await self.execute_request(
-                request=request, request_data=request_data
+                request=request, request_data=request_data, method="GET"
             )
 
         elif self.should_render_graphiql(request):
@@ -54,22 +56,32 @@ class HTTPHandler:
     async def post(self, request: web.Request) -> web.StreamResponse:
         request_data = await self.get_request_data(request)
 
-        return await self.execute_request(request=request, request_data=request_data)
+        return await self.execute_request(
+            request=request, request_data=request_data, method="POST"
+        )
 
     async def execute_request(
-        self, request: web.Request, request_data: GraphQLRequestData
+        self,
+        request: web.Request,
+        request_data: GraphQLRequestData,
+        method=Union[Literal["GET"], Literal["POST"]],
     ) -> web.StreamResponse:
         response = web.Response()
         context = await self.get_context(request, response)
         root_value = await self.get_root_value(request)
 
-        result = await self.schema.execute(
-            query=request_data.query,
-            root_value=root_value,
-            variable_values=request_data.variables,
-            context_value=context,
-            operation_name=request_data.operation_name,
-        )
+        try:
+            result = await self.schema.execute(
+                query=request_data.query,
+                root_value=root_value,
+                variable_values=request_data.variables,
+                context_value=context,
+                allowed_operation_types=OperationType.from_http(method),
+            )
+        except InvalidOperationTypeError as e:
+            raise web.HTTPBadRequest(
+                reason=f"{e.operation_type.value}s are not allowed when using {method}"
+            )
 
         response_data = await self.process_result(request, result)
         response.text = json.dumps(response_data)

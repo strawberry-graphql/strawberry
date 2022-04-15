@@ -16,6 +16,9 @@ from graphql.validation import ASTValidationRule, validate
 from strawberry.extensions import Extension
 from strawberry.extensions.runner import ExtensionsRunner
 from strawberry.types import ExecutionContext, ExecutionResult
+from strawberry.types.graphql import OperationType
+
+from .exceptions import InvalidOperationTypeError
 
 
 def parse_document(query: str) -> DocumentNode:
@@ -49,6 +52,8 @@ def _run_validation(execution_context: ExecutionContext) -> None:
 async def execute(
     schema: GraphQLSchema,
     query: str,
+    *,
+    allowed_operation_types: Sequence[OperationType],
     extensions: Sequence[Union[Type[Extension], Extension]],
     execution_context: ExecutionContext,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
@@ -66,6 +71,7 @@ async def execute(
             try:
                 if not execution_context.graphql_document:
                     execution_context.graphql_document = parse_document(query)
+
             except GraphQLError as error:
                 execution_context.errors = [error]
                 return ExecutionResult(
@@ -83,6 +89,9 @@ async def execute(
                     errors=[error],
                     extensions=await extensions_runner.get_extensions_results(),
                 )
+
+        if execution_context.operation_type not in allowed_operation_types:
+            raise InvalidOperationTypeError(execution_context.operation_type)
 
         async with extensions_runner.validation():
             _run_validation(execution_context)
@@ -122,6 +131,8 @@ async def execute(
 def execute_sync(
     schema: GraphQLSchema,
     query: str,
+    *,
+    allowed_operation_types: Sequence[OperationType],
     extensions: Sequence[Union[Type[Extension], Extension]],
     execution_context: ExecutionContext,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
@@ -139,6 +150,7 @@ def execute_sync(
             try:
                 if not execution_context.graphql_document:
                     execution_context.graphql_document = parse_document(query)
+
             except GraphQLError as error:
                 execution_context.errors = [error]
                 return ExecutionResult(
@@ -156,6 +168,9 @@ def execute_sync(
                     errors=[error],
                     extensions=extensions_runner.get_extensions_results_sync(),
                 )
+
+        if execution_context.operation_type not in allowed_operation_types:
+            raise InvalidOperationTypeError(execution_context.operation_type)
 
         with extensions_runner.validation():
             _run_validation(execution_context)
