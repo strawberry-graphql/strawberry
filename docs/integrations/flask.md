@@ -24,9 +24,11 @@ app.add_url_rule(
 
 The `GraphQLView` accepts two options at the moment:
 
-- schema: mandatory, the schema created by `strawberry.Schema`.
-- graphiql: optional, defaults to `True`, whether to enable the GraphiQL
+- `schema`: mandatory, the schema created by `strawberry.Schema`.
+- `graphiql:` optional, defaults to `True`, whether to enable the GraphiQL
   interface.
+- `allow_queries_via_get`: optional, defaults to `True`, whether to enable
+  queries via `GET` requests
 
 ## Extending the view
 

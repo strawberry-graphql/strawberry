@@ -7,7 +7,9 @@ from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.flask.graphiql import render_graphiql_page, should_render_graphiql
 from strawberry.http import GraphQLHTTPResponse, parse_request_data, process_result
 from strawberry.schema.base import BaseSchema
+from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types import ExecutionResult
+from strawberry.types.graphql import OperationType
 
 
 class GraphQLView(View):
@@ -17,9 +19,11 @@ class GraphQLView(View):
         self,
         schema: BaseSchema,
         graphiql: bool = True,
+        allow_queries_via_get: bool = True,
     ):
-        self.graphiql = graphiql
         self.schema = schema
+        self.graphiql = graphiql
+        self.allow_queries_via_get = allow_queries_via_get
 
     def get_root_value(self):
         return None
@@ -34,7 +38,7 @@ class GraphQLView(View):
         return process_result(result)
 
     def dispatch_request(self):
-
+        method = request.method
         content_type = request.content_type or ""
 
         if "application/json" in content_type:
@@ -44,9 +48,9 @@ class GraphQLView(View):
             files_map = json.loads(request.form.get("map", "{}"))
 
             data = replace_placeholders_with_files(operations, files_map, request.files)
-        elif request.method == "GET" and request.args:
+        elif method == "GET" and request.args:
             data = request.args.to_dict()
-        elif request.method == "GET" and should_render_graphiql(self.graphiql, request):
+        elif method == "GET" and should_render_graphiql(self.graphiql, request):
             template = render_graphiql_page()
             return self.render_template(template=template)
 
@@ -61,13 +65,22 @@ class GraphQLView(View):
         response = Response(status=200, content_type="application/json")
         context = self.get_context(response)
 
-        result = self.schema.execute_sync(
-            request_data.query,
-            variable_values=request_data.variables,
-            context_value=context,
-            operation_name=request_data.operation_name,
-            root_value=self.get_root_value(),
-        )
+        allowed_operation_types = set(OperationType.from_http(method))
+
+        if not self.allow_queries_via_get and method == "GET":
+            allowed_operation_types = allowed_operation_types - {OperationType.QUERY}
+
+        try:
+            result = self.schema.execute_sync(
+                request_data.query,
+                variable_values=request_data.variables,
+                context_value=context,
+                operation_name=request_data.operation_name,
+                root_value=self.get_root_value(),
+                allowed_operation_types=allowed_operation_types,
+            )
+        except InvalidOperationTypeError as e:
+            return Response(e.as_http_error_reason(method), 400)
 
         response_data = self.process_result(result)
         response.set_data(json.dumps(response_data))

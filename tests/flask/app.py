@@ -18,6 +18,10 @@ def create_app(**kwargs):
     @strawberry.type
     class Mutation:
         @strawberry.mutation
+        def hello(self) -> str:
+            return "strawberry"
+
+        @strawberry.mutation
         def read_text(self, text_file: Upload) -> str:
             return text_file.read().decode()
 
