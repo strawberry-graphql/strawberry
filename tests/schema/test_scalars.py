@@ -1,4 +1,5 @@
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal
 from textwrap import dedent
 from typing import Optional
 from uuid import UUID
@@ -383,3 +384,34 @@ def test_override_unknown_scalars():
 
     assert not result.errors
     assert result.data == {"duration": 10}
+
+
+def test_decimal():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def decimal(value: Decimal) -> Decimal:
+            return value
+
+    schema = strawberry.Schema(query=Query)
+
+    result = schema.execute_sync(
+        """
+        query {
+            floatDecimal: decimal(value: 3.14)
+            floatDecimal2: decimal(value: 3.14509999)
+            floatDecimal3: decimal(value: 0.000001)
+            stringDecimal: decimal(value: "3.14")
+            stringDecimal2: decimal(value: "3.1499999991")
+        }
+    """
+    )
+
+    assert not result.errors
+    assert result.data == {
+        "floatDecimal": "3.14",
+        "floatDecimal2": "3.14509999",
+        "floatDecimal3": "0.000001",
+        "stringDecimal": "3.14",
+        "stringDecimal2": "3.1499999991",
+    }
