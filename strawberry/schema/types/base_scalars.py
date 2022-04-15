@@ -23,7 +23,7 @@ def wrap_parser(parser: Callable, type_: str) -> Callable:
 
 def parse_decimal(value: str) -> decimal.Decimal:
     try:
-        return decimal.Decimal(value)
+        return decimal.Decimal(str(value))
     except decimal.DecimalException:
         raise GraphQLError(f'Value cannot represent a Decimal: "{value}".')
 
