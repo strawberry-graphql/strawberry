@@ -19,6 +19,7 @@ class HTTPHandler:
         self,
         schema: BaseSchema,
         graphiql: bool,
+        allow_queries_via_get: bool,
         get_context,
         get_root_value,
         process_result,
@@ -26,6 +27,7 @@ class HTTPHandler:
     ):
         self.schema = schema
         self.graphiql = graphiql
+        self.allow_queries_via_get = allow_queries_via_get
         self.get_context = get_context
         self.get_root_value = get_root_value
         self.process_result = process_result
@@ -70,18 +72,23 @@ class HTTPHandler:
         context = await self.get_context(request, response)
         root_value = await self.get_root_value(request)
 
+        allowed_operation_types = set(OperationType.from_http(method))
+
+        if not self.allow_queries_via_get and method == "GET":
+            allowed_operation_types = allowed_operation_types - {OperationType.QUERY}
+
         try:
             result = await self.schema.execute(
                 query=request_data.query,
                 root_value=root_value,
                 variable_values=request_data.variables,
                 context_value=context,
-                allowed_operation_types=OperationType.from_http(method),
+                allowed_operation_types=list(allowed_operation_types),
             )
         except InvalidOperationTypeError as e:
             raise web.HTTPBadRequest(
-                reason=f"{e.operation_type.value}s are not allowed when using {method}"
-            )
+                reason=e.as_http_error_reason(method=method)
+            ) from e
 
         response_data = await self.process_result(request, result)
         response.text = json.dumps(response_data)
