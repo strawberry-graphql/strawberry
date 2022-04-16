@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import enum
-from typing import Tuple
+from typing import Set
 
 
 class OperationType(enum.Enum):
@@ -10,15 +10,15 @@ class OperationType(enum.Enum):
     SUBSCRIPTION = "subscription"
 
     @staticmethod
-    def from_http(method: str) -> Tuple[OperationType, ...]:
+    def from_http(method: str) -> Set[OperationType]:
         if method == "GET":
-            return (OperationType.QUERY,)
+            return {OperationType.QUERY}
 
         if method == "POST":
-            return (
+            return {
                 OperationType.QUERY,
                 OperationType.MUTATION,
                 OperationType.SUBSCRIPTION,
-            )
+            }
 
         raise ValueError(f"Unsupported HTTP method: {method}")  # pragma: no cover

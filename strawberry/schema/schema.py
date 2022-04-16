@@ -35,11 +35,11 @@ from .config import StrawberryConfig
 from .execute import execute, execute_sync
 
 
-DEFAULT_ALLOWED_OPERATION_TYPES = (
+DEFAULT_ALLOWED_OPERATION_TYPES = {
     OperationType.QUERY,
     OperationType.MUTATION,
     OperationType.SUBSCRIPTION,
-)
+}
 
 
 class Schema(BaseSchema):

@@ -1,4 +1,5 @@
 import json
+from typing import Mapping
 
 from flask import Response, render_template_string, request
 from flask.views import View
@@ -25,19 +26,19 @@ class GraphQLView(View):
         self.graphiql = graphiql
         self.allow_queries_via_get = allow_queries_via_get
 
-    def get_root_value(self):
+    def get_root_value(self) -> object:
         return None
 
-    def get_context(self, response: Response):
+    def get_context(self, response: Response) -> Mapping[str, object]:
         return {"request": request, "response": response}
 
-    def render_template(self, template=None):
+    def render_template(self, template: str) -> str:
         return render_template_string(template)
 
     def process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse:
         return process_result(result)
 
-    def dispatch_request(self):
+    def dispatch_request(self) -> Response:
         method = request.method
         content_type = request.content_type or ""
 
@@ -52,8 +53,8 @@ class GraphQLView(View):
             data = request.args.to_dict()
         elif method == "GET" and should_render_graphiql(self.graphiql, request):
             template = render_graphiql_page()
-            return self.render_template(template=template)
 
+            return self.render_template(template=template)
         else:
             return Response("Unsupported Media Type", 415)
 
@@ -65,7 +66,7 @@ class GraphQLView(View):
         response = Response(status=200, content_type="application/json")
         context = self.get_context(response)
 
-        allowed_operation_types = set(OperationType.from_http(method))
+        allowed_operation_types = OperationType.from_http(method)
 
         if not self.allow_queries_via_get and method == "GET":
             allowed_operation_types = allowed_operation_types - {OperationType.QUERY}

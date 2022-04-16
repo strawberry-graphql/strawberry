@@ -121,7 +121,7 @@ class HTTPHandler:
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
 
-        allowed_operation_types = set(OperationType.from_http(method))
+        allowed_operation_types = OperationType.from_http(method)
 
         if not self.allow_queries_via_get and method == "GET":
             allowed_operation_types = allowed_operation_types - {OperationType.QUERY}

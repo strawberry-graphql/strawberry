@@ -72,7 +72,7 @@ class HTTPHandler:
         context = await self.get_context(request, response)
         root_value = await self.get_root_value(request)
 
-        allowed_operation_types = set(OperationType.from_http(method))
+        allowed_operation_types = OperationType.from_http(method)
 
         if not self.allow_queries_via_get and method == "GET":
             allowed_operation_types = allowed_operation_types - {OperationType.QUERY}
