@@ -131,7 +131,6 @@ Optional or nullable arguments can be expressed using `Optional`. If you need to
 ```python+schema
 from typing import Optional
 import strawberry
-from strawberry.unset import is_unset
 
 @strawberry.type
 class Query:
@@ -143,7 +142,7 @@ class Query:
     
     @strawberry.field
     def greet(self, name: Optional[str] = strawberry.UNSET) -> str:
-        if is_unset(name):
+        if name is strawberry.UNSET:
             return "Name was not set!"
         if name is None:
             return "Name was null!"

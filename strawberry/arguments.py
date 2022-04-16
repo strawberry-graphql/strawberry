@@ -113,8 +113,8 @@ def convert_argument(
     if value is None:
         return None
 
-    if is_unset(value):
-        return value
+    if value is UNSET:
+        return UNSET
 
     if isinstance(type_, StrawberryOptional):
         return convert_argument(value, type_.of_type, scalar_registry, config)
@@ -209,5 +209,5 @@ __all__ = [
     "StrawberryArgumentAnnotation",
     "UNSET",
     "argument",
-    "is_unset",
+    "is_unset",  # for backwards compatibility
 ]

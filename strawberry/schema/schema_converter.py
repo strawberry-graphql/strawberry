@@ -36,7 +36,6 @@ from graphql import (
 )
 
 from strawberry.arguments import StrawberryArgument, convert_arguments
-from strawberry.unset import UNSET, is_unset
 from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.directive import StrawberryDirective
 from strawberry.enum import EnumDefinition, EnumValue
@@ -54,6 +53,7 @@ from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
 from strawberry.types.info import Info
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
+from strawberry.unset import UNSET
 from strawberry.utils.await_maybe import await_maybe
 
 from . import compat
@@ -165,7 +165,7 @@ class GraphQLCoreConverter:
         field_type = cast(GraphQLInputType, self.from_maybe_optional(field.type))
         default_value: object
 
-        if is_unset(field.default_value):
+        if field.default_value is UNSET:
             default_value = Undefined
         else:
             default_value = field.default_value

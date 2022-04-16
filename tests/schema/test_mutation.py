@@ -3,7 +3,7 @@ import typing
 from textwrap import dedent
 
 import strawberry
-from strawberry.unset import UNSET, is_unset
+from strawberry.unset import UNSET
 
 
 def test_mutation():
@@ -97,14 +97,14 @@ def test_unset_types():
     class Mutation:
         @strawberry.mutation
         def say(self, name: typing.Optional[str] = UNSET) -> str:  # type: ignore
-            if is_unset(name):
+            if name is UNSET:
                 return "Name is unset"
 
             return f"Hello {name}!"
 
         @strawberry.mutation
         def say_age(self, input: InputExample) -> str:
-            age = "unset" if is_unset(input.age) else input.age
+            age = "unset" if input.age is UNSET else input.age
 
             return f"Hello {input.name} of age {age}!"
 
@@ -133,7 +133,7 @@ def test_unset_types_name_with_underscore():
     class Mutation:
         @strawberry.mutation
         def say(self, first_name: typing.Optional[str] = UNSET) -> str:  # type: ignore
-            if is_unset(first_name):
+            if first_name is UNSET:
                 return "Name is unset"
 
             if first_name == "":
@@ -143,7 +143,7 @@ def test_unset_types_name_with_underscore():
 
         @strawberry.mutation
         def say_age(self, input: InputExample) -> str:
-            age = "unset" if is_unset(input.age) else input.age
+            age = "unset" if input.age is UNSET else input.age
             age = "empty" if age == "" else age
 
             return f"Hello {input.first_name} of age {age}!"
@@ -217,7 +217,7 @@ def test_converting_to_dict_with_unset():
         def say(self, input: Input) -> str:
             data = dataclasses.asdict(input)
 
-            if is_unset(data["name"]):
+            if data["name"] is UNSET:
                 return "Hello 🤨"
 
             return f"Hello {data['name']}!"

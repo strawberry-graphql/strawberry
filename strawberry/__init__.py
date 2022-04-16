@@ -11,10 +11,10 @@ from .object_type import input, interface, type
 from .permission import BasePermission
 from .private import Private
 from .scalars import ID
-from .unset import UNSET
 from .schema import Schema
 from .schema_directive import schema_directive
 from .union import union
+from .unset import UNSET
 
 
 __all__ = [
