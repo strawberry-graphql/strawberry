@@ -270,7 +270,7 @@ class GraphQLRouter(APIRouter):
     async def execute(
         self,
         query: str,
-        variables: Dict[str, Any] = None,
+        variables: Optional[Dict[str, Any]] = None,
         context: Any = None,
         operation_name: Optional[str] = None,
         root_value: Any = None,
