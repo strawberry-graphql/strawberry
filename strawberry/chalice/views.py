@@ -1,3 +1,5 @@
+from typing import Dict, List, Union
+
 from chalice.app import BadRequestError, Request, Response
 from strawberry.chalice.graphiql import render_graphiql_page
 from strawberry.exceptions import MissingQueryError
@@ -19,8 +21,7 @@ class GraphQLView:
         Returns:
             The GraphiQL html page as a string
         """
-        result = render_graphiql_page()
-        return result
+        return render_graphiql_page()
 
     @staticmethod
     def should_render_graphiql(graphiql: bool, request: Request) -> bool:
@@ -34,22 +35,27 @@ class GraphQLView:
         """
         if not graphiql:
             return False
+
         return any(
             supported_header in request.headers.get("accept", "")
-            for supported_header in ("text/html", "*/*")
+            for supported_header in {"text/html", "*/*"}
         )
 
     @staticmethod
-    def error_response(message, error_code, http_status_code, headers=None) -> Response:
+    def error_response(
+        message: str,
+        error_code: str,
+        http_status_code: int,
+        headers: Dict[str, Union[str, List[str]]] = None,
+    ) -> Response:
         """
         A wrapper for error responses
         Returns:
         An errors response
         """
         body = {"Code": error_code, "Message": message}
-        response = Response(body=body, status_code=http_status_code, headers=headers)
 
-        return response
+        return Response(body=body, status_code=http_status_code, headers=headers)
 
     def execute_request(self, request: Request) -> Response:
         """
@@ -61,7 +67,7 @@ class GraphQLView:
             A chalice response
         """
 
-        if request.method not in ["POST", "GET"]:
+        if request.method not in {"POST", "GET"}:
             return self.error_response(
                 error_code="MethodNotAllowedError",
                 message="Unsupported method, must be of request type POST or GET",
@@ -74,8 +80,10 @@ class GraphQLView:
                 if not (isinstance(data, dict)):
                     return self.error_response(
                         error_code="BadRequestError",
-                        message="""Provide a valid graphql query
-                         in the body of your request""",
+                        message=(
+                            "Provide a valid graphql query "
+                            "in the body of your request"
+                        ),
                         http_status_code=400,
                     )
             except BadRequestError:
