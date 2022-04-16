@@ -26,3 +26,11 @@ def test_fails_mutation_using_get(test_client):
     response = test_client.get("/graphql", params={"query": "mutation { hello }"})
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.text == "mutations are not allowed when using GET"
+
+
+def test_fails_query_using_params_when_disabled(test_client_no_get):
+    response = test_client_no_get.get("/graphql", params={"query": "{ hello }"})
+
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
+    assert response.text == "queries are not allowed when using GET"
