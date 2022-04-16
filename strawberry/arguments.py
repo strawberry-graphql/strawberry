@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -24,11 +25,15 @@ from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
 from .exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError
 from .scalars import is_scalar
 from .types.types import TypeDefinition
-from .unset import UNSET, is_unset
+from .unset import UNSET, _deprecated_is_unset  # noqa
 
 
 if TYPE_CHECKING:
     from strawberry.schema.config import StrawberryConfig
+
+DEPRECATED_NAMES: Dict[str, str] = {
+    "is_unset": "`is_unset` is deprecated use `value is UNSET` instead",
+}
 
 
 class StrawberryArgumentAnnotation:
@@ -203,11 +208,18 @@ def argument(
     )
 
 
+def __getattr__(name: str) -> Any:
+    if name in DEPRECATED_NAMES:
+        warnings.warn(DEPRECATED_NAMES[name])
+        return globals()[f"_deprecated_{name}"]
+    raise AttributeError(f"module {__name__} has no attribute {name}")
+
+
 # TODO: check exports
-__all__ = [
+__all__ = [  # noqa: F822
     "StrawberryArgument",
     "StrawberryArgumentAnnotation",
-    "UNSET",
+    "UNSET",  # for backwards compatibility
     "argument",
     "is_unset",  # for backwards compatibility
 ]

@@ -1,5 +1,10 @@
 import warnings
-from typing import Any, Optional, Type
+from typing import Any, Dict, Optional, Type
+
+
+DEPRECATED_NAMES: Dict[str, str] = {
+    "is_unset": "`is_unset` is deprecated use `value is UNSET` instead",
+}
 
 
 class UnsetType:
@@ -26,9 +31,16 @@ class UnsetType:
 UNSET: Any = UnsetType()
 
 
-def is_unset(value: Any) -> bool:
-    warnings.warn("`is_unset` is deprecated use `value is UNSET` instead")
+def _deprecated_is_unset(value: Any) -> bool:
+    warnings.warn(DEPRECATED_NAMES["is_unset"])
     return value is UNSET
+
+
+def __getattr__(name: str) -> Any:
+    if name in DEPRECATED_NAMES:
+        warnings.warn(DEPRECATED_NAMES[name])
+        return globals()[f"_deprecated_{name}"]
+    raise AttributeError(f"module {__name__} has no attribute {name}")
 
 
 __all__ = [
