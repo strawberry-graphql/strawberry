@@ -6,7 +6,7 @@ from pydantic.fields import ModelField
 from pydantic.typing import NoArgAnyCallable
 from pydantic.utils import smart_deepcopy
 
-from strawberry.arguments import UNSET, _Unset, is_unset  # type: ignore
+from strawberry.unset import UNSET, _Unset, is_unset
 from strawberry.experimental.pydantic.exceptions import (
     AutoFieldsNotInBaseModelError,
     BothDefaultAndDefaultFactoryDefinedError,

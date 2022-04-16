@@ -35,7 +35,8 @@ from graphql import (
     Undefined,
 )
 
-from strawberry.arguments import UNSET, StrawberryArgument, convert_arguments, is_unset
+from strawberry.arguments import StrawberryArgument, convert_arguments
+from strawberry.unset import UNSET, is_unset
 from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.directive import StrawberryDirective
 from strawberry.enum import EnumDefinition, EnumValue

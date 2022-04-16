@@ -23,7 +23,7 @@ from typing_extensions import Literal
 
 from graphql import GraphQLResolveInfo
 
-from strawberry.arguments import UNSET
+from strawberry.unset import UNSET
 from strawberry.auto import StrawberryAuto
 from strawberry.experimental.pydantic.conversion import (
     convert_pydantic_model_to_strawberry_class,

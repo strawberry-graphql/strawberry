@@ -3,7 +3,7 @@ import typing
 from textwrap import dedent
 
 import strawberry
-from strawberry.arguments import UNSET, is_unset
+from strawberry.unset import UNSET, is_unset
 
 
 def test_mutation():

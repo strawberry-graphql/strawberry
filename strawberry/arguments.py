@@ -24,17 +24,11 @@ from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
 from .exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError
 from .scalars import is_scalar
 from .types.types import TypeDefinition
-from .unset import _Unset
+from .unset import UNSET, is_unset
 
 
 if TYPE_CHECKING:
     from strawberry.schema.config import StrawberryConfig
-
-UNSET: Any = _Unset()
-
-
-def is_unset(value: Any) -> bool:
-    return type(value) is _Unset
 
 
 class StrawberryArgumentAnnotation:

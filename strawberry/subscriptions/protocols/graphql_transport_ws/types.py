@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional
 
 from graphql import GraphQLFormattedError
 
-from strawberry.arguments import UNSET
+from strawberry.unset import UNSET
 
 
 @dataclass

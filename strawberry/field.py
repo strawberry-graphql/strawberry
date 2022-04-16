@@ -22,7 +22,8 @@ from backports.cached_property import cached_property
 from typing_extensions import Literal
 
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.arguments import UNSET, StrawberryArgument
+from strawberry.arguments import StrawberryArgument
+from strawberry.unset import UNSET
 from strawberry.exceptions import InvalidDefaultFactoryError, InvalidFieldArgument
 from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.type import StrawberryType

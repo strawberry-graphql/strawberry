@@ -10,7 +10,7 @@ from pydantic.fields import ModelField
 from pydantic.typing import NoArgAnyCallable
 
 import strawberry
-from strawberry.arguments import UNSET
+from strawberry.unset import UNSET
 from strawberry.experimental.pydantic.exceptions import (
     AutoFieldsNotInBaseModelError,
     BothDefaultAndDefaultFactoryDefinedError,

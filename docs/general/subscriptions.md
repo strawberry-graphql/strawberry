@@ -38,9 +38,11 @@ the Schema function. Here we create a rudimentary counting function which counts
 from 0 to the target sleeping between each loop iteration.
 
 <Note>
+
 The return type of `count` is `AsyncGenerator` where the first generic
 argument is the actual type of the response, in most cases the second argument
 should be left as `None` (more about Generator typing [here](https://docs.python.org/3/library/typing.html#typing.AsyncGenerator)).
+
 </Note>
 
 We would send the following GraphQL document to our server to subscribe to this
