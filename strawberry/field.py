@@ -23,12 +23,12 @@ from typing_extensions import Literal
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import StrawberryArgument
-from strawberry.unset import UNSET
 from strawberry.exceptions import InvalidDefaultFactoryError, InvalidFieldArgument
 from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.type import StrawberryType
 from strawberry.types.info import Info
 from strawberry.union import StrawberryUnion
+from strawberry.unset import UNSET
 
 from .permission import BasePermission
 from .types.fields.resolver import StrawberryResolver

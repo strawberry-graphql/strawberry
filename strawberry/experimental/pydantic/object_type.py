@@ -23,7 +23,6 @@ from typing_extensions import Literal
 
 from graphql import GraphQLResolveInfo
 
-from strawberry.unset import UNSET
 from strawberry.auto import StrawberryAuto
 from strawberry.experimental.pydantic.conversion import (
     convert_pydantic_model_to_strawberry_class,
@@ -42,6 +41,7 @@ from strawberry.object_type import _process_type, _wrap_dataclass
 from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.types.type_resolver import _get_fields
 from strawberry.types.types import TypeDefinition
+from strawberry.unset import UNSET
 
 from .exceptions import MissingFieldsListError, UnregisteredTypeException
 

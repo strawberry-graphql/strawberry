@@ -4,10 +4,10 @@ from typing import List, Optional
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import StrawberryArgument, convert_arguments
-from strawberry.unset import UNSET
 from strawberry.lazy_type import LazyType
 from strawberry.schema.config import StrawberryConfig
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
+from strawberry.unset import UNSET
 
 
 def test_simple_types():

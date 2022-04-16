@@ -140,7 +140,7 @@ class Query:
         if name is None:
             return "Hello world!"
         return f"Hello {name}!"
-    
+
     @strawberry.field
     def greet(self, name: Optional[str] = strawberry.UNSET) -> str:
         if is_unset(name):
