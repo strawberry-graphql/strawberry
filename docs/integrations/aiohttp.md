@@ -15,7 +15,9 @@ from strawberry.aiohttp.views import GraphQLView
 
 @strawberry.type
 class Query:
-    pass
+    @strawberry.field
+    def hello(self, name: str = "World") -> str:
+        return f"Hello, {name}!"
 
 
 schema = strawberry.Schema(query=Query)

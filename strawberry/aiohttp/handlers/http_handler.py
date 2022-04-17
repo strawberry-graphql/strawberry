@@ -100,8 +100,10 @@ class HTTPHandler:
 
         try:
             request_data = parse_request_data(data)
-        except MissingQueryError:
-            raise web.HTTPBadRequest(reason="No GraphQL query found in the request")
+        except MissingQueryError as e:
+            raise web.HTTPBadRequest(
+                reason="No GraphQL query found in the request"
+            ) from e
 
         return request_data
 
@@ -110,8 +112,10 @@ class HTTPHandler:
             return await self.parse_multipart_body(request)
         try:
             return await request.json()
-        except json.JSONDecodeError:
-            raise web.HTTPBadRequest(reason="Unable to parse request body as JSON")
+        except json.JSONDecodeError as e:
+            raise web.HTTPBadRequest(
+                reason="Unable to parse request body as JSON"
+            ) from e
 
     async def parse_multipart_body(self, request: web.Request) -> dict:
         reader = await request.multipart()
