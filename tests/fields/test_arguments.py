@@ -6,9 +6,9 @@ import pytest
 from typing_extensions import Annotated
 
 import strawberry
+from strawberry import UNSET
 from strawberry.exceptions import InvalidFieldArgument, MultipleStrawberryArgumentsError
 from strawberry.type import StrawberryList, StrawberryOptional
-from strawberry.unset import UNSET
 
 
 def test_basic_arguments():
