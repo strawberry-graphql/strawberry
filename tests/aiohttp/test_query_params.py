@@ -1,17 +1,11 @@
-async def test_no_graphiql_no_query(aiohttp_app_client):
-    params = {
-        "variables": """
-            query {
-                hello
-            }
-        """
-    }
+async def test_no_query(aiohttp_app_client):
+    params = {"variables": '{"name": "James"}'}
 
     response = await aiohttp_app_client.get("/graphql", params=params)
     assert response.status == 400
 
 
-async def test_no_graphiql_get_with_query_params(aiohttp_app_client):
+async def test_get_with_query_params(aiohttp_app_client):
     query = {
         "query": """
             query {
@@ -24,6 +18,18 @@ async def test_no_graphiql_get_with_query_params(aiohttp_app_client):
     data = await response.json()
     assert response.status == 200
     assert data["data"]["hello"] == "Hello world"
+
+
+async def test_can_pass_variables_with_query_params(aiohttp_app_client):
+    query = {
+        "query": "query Hello($name: String!) { hello(name: $name) }",
+        "variables": '{"name": "James"}',
+    }
+
+    response = await aiohttp_app_client.get("/graphql", params=query)
+    data = await response.json()
+    assert response.status == 200
+    assert data["data"]["hello"] == "Hello James"
 
 
 async def test_post_fails_with_query_params(aiohttp_app_client):

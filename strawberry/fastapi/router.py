@@ -15,7 +15,12 @@ from strawberry.asgi.utils import get_graphiql_html
 from strawberry.exceptions import InvalidCustomContext, MissingQueryError
 from strawberry.fastapi.handlers import GraphQLTransportWSHandler, GraphQLWSHandler
 from strawberry.file_uploads.utils import replace_placeholders_with_files
-from strawberry.http import GraphQLHTTPResponse, parse_request_data, process_result
+from strawberry.http import (
+    GraphQLHTTPResponse,
+    parse_query_params,
+    parse_request_data,
+    process_result,
+)
 from strawberry.schema import BaseSchema
 from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
@@ -147,10 +152,11 @@ class GraphQLRouter(APIRouter):
             actual_response: Response
 
             if request.query_params:
+                query_data = parse_query_params(request.query_params._dict)
                 return await self.execute_request(
                     request=request,
                     response=response,
-                    data=request.query_params._dict,
+                    data=query_data,
                     context=context,
                     root_value=root_value,
                 )

@@ -53,9 +53,8 @@ def test_malformed_unparsable_json_query_returns_error():
 
 
 # These tests are checking that graphql is getting routed through the endpoint
-# correctly to the strawberry execute_sync command, so just test one happy path case of a
-# query and a mutation
-def test_graphiql_query():
+# correctly to the strawberry execute_sync command
+def test_query():
     with Client(app) as client:
         headers = {"Accept": "application/json", "Content-Type": "application/json"}
 
@@ -63,10 +62,24 @@ def test_graphiql_query():
         response = client.http.post("/graphql", headers=headers, body=json.dumps(query))
 
         assert response.status_code == 200
-        assert "hello" == response.json_body["data"]["greetings"]
+        assert response.json_body["data"]["greetings"] == "hello"
 
 
-def test_graphiql_mutation():
+def test_can_pass_variables():
+    with Client(app) as client:
+        headers = {"Accept": "application/json", "Content-Type": "application/json"}
+
+        query = {
+            "query": "query Hello($name: String!) { hello(name: $name) }",
+            "variables": {"name": "James"},
+        }
+        response = client.http.post("/graphql", headers=headers, body=json.dumps(query))
+
+        assert response.status_code == 200
+        assert response.json_body["data"]["hello"] == "Hello James"
+
+
+def test_mutation():
     with Client(app) as client:
         headers = {"Accept": "application/json", "Content-Type": "application/json"}
         query = {"query": """mutation EchoMutation { echo(stringToEcho: "mark")} """}
@@ -76,7 +89,7 @@ def test_graphiql_mutation():
         assert "mark" == response.json_body["data"]["echo"]
 
 
-def test_graphiql_query_with_malformed_json_returns_bad_request():
+def test_query_with_malformed_json_returns_bad_request():
     with Client(app) as client:
         headers = {"Accept": "application/json", "Content-Type": "application/json"}
 
@@ -85,7 +98,7 @@ def test_graphiql_query_with_malformed_json_returns_bad_request():
         assert response.status_code == 400
 
 
-def test_graphiql_query_with_no_request_body():
+def test_query_with_no_request_body():
     with Client(app) as client:
         headers = {"Accept": "application/json"}
         response = client.http.post("/graphql", headers=headers, body="")
@@ -93,7 +106,7 @@ def test_graphiql_query_with_no_request_body():
         assert response.status_code == 415
 
 
-def test_graphiql_query_with_query_params():
+def test_query_with_query_params():
     with Client(app) as client:
         params = {
             "query": """
@@ -106,9 +119,23 @@ def test_graphiql_query_with_query_params():
         response = client.http.get(query_url)
 
         assert response.status_code == 200
+        assert response.json_body["data"]["greetings"] == "hello"
 
 
-def test_graphiql_query_with_missing_query():
+def test_can_pass_variables_with_query_params():
+    with Client(app) as client:
+        params = {
+            "query": "query Hello($name: String!) { hello(name: $name) }",
+            "variables": '{"name": "James"}',
+        }
+        query_url = url_unparse(("", "", "/graphql", url_encode(params), ""))
+        response = client.http.get(query_url)
+
+        assert response.status_code == 200
+        assert response.json_body["data"]["hello"] == "Hello James"
+
+
+def test_query_with_missing_query():
     with Client(app) as client:
         params = {
             "abc": """
@@ -124,7 +151,7 @@ def test_graphiql_query_with_missing_query():
         assert response.json_body["Message"] == "No GraphQL query found in the request"
 
 
-def test_graphiql_query_unsupported_method():
+def test_query_unsupported_method():
     with Client(app) as client:
         headers = {"Accept": "application/json", "Content-Type": "application/json"}
 

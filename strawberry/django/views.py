@@ -21,6 +21,7 @@ from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import (
     GraphQLHTTPResponse,
     GraphQLRequestData,
+    parse_query_params,
     parse_request_data,
     process_result,
 )
@@ -74,7 +75,7 @@ class BaseView(View):
 
             return data
         elif request.method.lower() == "get" and request.META.get("QUERY_STRING"):
-            return request.GET
+            return parse_query_params(request.GET.copy())
 
         return json.loads(request.body)
 

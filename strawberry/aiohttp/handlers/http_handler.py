@@ -8,7 +8,7 @@ from typing_extensions import Literal
 from aiohttp import web
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
-from strawberry.http import GraphQLRequestData, parse_request_data
+from strawberry.http import GraphQLRequestData, parse_query_params, parse_request_data
 from strawberry.schema import BaseSchema
 from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types.graphql import OperationType
@@ -43,7 +43,11 @@ class HTTPHandler:
     async def get(self, request: web.Request) -> web.StreamResponse:
         if request.query:
             try:
-                request_data = parse_request_data(request.query)
+                query_params = {
+                    key: request.query.getone(key) for key in set(request.query.keys())
+                }
+                query_data = parse_query_params(query_params)
+                request_data = parse_request_data(query_data)
             except MissingQueryError:
                 raise web.HTTPBadRequest(reason="No GraphQL query found in the request")
 

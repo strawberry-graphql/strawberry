@@ -4,20 +4,14 @@ def test_no_graphiql_empty_get(sanic_client_no_graphiql):
     assert response.status == 404
 
 
-def test_no_graphiql_no_query(sanic_client_no_graphiql):
-    params = {
-        "variables": """
-            hello
-        """
-    }
+def test_no_query(sanic_client):
+    params = {"variables": '{"name": "James"}'}
 
-    request, response = sanic_client_no_graphiql.test_client.get(
-        "/graphql", params=params
-    )
+    request, response = sanic_client.test_client.get("/graphql", params=params)
     assert response.status == 400
 
 
-def test_no_graphiql_get_with_query_params(sanic_client_no_graphiql):
+def test_get_with_query_params(sanic_client):
     params = {
         "query": """
             query {
@@ -26,12 +20,22 @@ def test_no_graphiql_get_with_query_params(sanic_client_no_graphiql):
         """
     }
 
-    request, response = sanic_client_no_graphiql.test_client.get(
-        "/graphql", params=params
-    )
+    request, response = sanic_client.test_client.get("/graphql", params=params)
     data = response.json
     assert response.status == 200
-    assert data["data"]["hello"] == "strawberry"
+    assert data["data"]["hello"] == "Hello world"
+
+
+def test_can_pass_variables_with_query_params(sanic_client):
+    params = {
+        "query": "query Hello($name: String!) { hello(name: $name) }",
+        "variables": '{"name": "James"}',
+    }
+
+    request, response = sanic_client.test_client.get("/graphql", params=params)
+    data = response.json
+    assert response.status == 200
+    assert data["data"]["hello"] == "Hello James"
 
 
 def test_post_fails_with_query_params(sanic_client):

@@ -9,7 +9,7 @@ from starlette.types import Receive, Scope, Send
 from strawberry.asgi.utils import get_graphiql_html
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
-from strawberry.http import parse_request_data
+from strawberry.http import parse_query_params, parse_request_data
 from strawberry.schema import BaseSchema
 from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types.graphql import OperationType
@@ -79,7 +79,7 @@ class HTTPHandler:
 
         if method == "GET":
             if request.query_params:
-                data = request.query_params._dict
+                data = parse_query_params(request.query_params._dict)
             elif self.should_render_graphiql(request):
                 return self.get_graphiql_response()
             else:
