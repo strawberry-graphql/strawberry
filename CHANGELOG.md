@@ -1,6 +1,19 @@
 CHANGELOG
 =========
 
+0.107.0 - 2022-04-18
+--------------------
+
+This release adds support in all our integration for queries via GET requests.
+This behavior is enabled by default, but you can disable it by passing
+`allow_queries_via_get=False` to the constructor of the integration of your
+choice.
+
+For security reason only queries are allowed via `GET` requests.
+
+Contributed by [Matt Exact](https://github.com/MattExact) via [PR #1686](https://github.com/strawberry-graphql/strawberry/pull/1686/)
+
+
 0.106.3 - 2022-04-15
 --------------------
 
