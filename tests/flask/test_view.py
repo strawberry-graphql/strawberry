@@ -48,7 +48,7 @@ def test_graphiql_disabled_view():
         client.environ_base["HTTP_ACCEPT"] = "text/html"
         response = client.get("/graphql")
 
-        assert response.status_code == 404
+        assert response.status_code == 415
 
 
 def test_custom_context():

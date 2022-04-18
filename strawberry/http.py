@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Mapping, Optional
 
 from typing_extensions import TypedDict
 
@@ -33,7 +33,7 @@ class GraphQLRequestData:
     operation_name: Optional[str]
 
 
-def parse_request_data(data: Dict) -> GraphQLRequestData:
+def parse_request_data(data: Mapping) -> GraphQLRequestData:
     if "query" not in data:
         raise MissingQueryError()
 

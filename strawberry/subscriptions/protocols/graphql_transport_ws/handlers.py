@@ -8,7 +8,6 @@ from graphql import (
     ExecutionResult as GraphQLExecutionResult,
     GraphQLError,
     GraphQLSyntaxError,
-    OperationType,
     parse,
 )
 from graphql.error.graphql_error import format_error as format_graphql_error
@@ -26,6 +25,7 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     SubscribeMessage,
     SubscribeMessagePayload,
 )
+from strawberry.types.graphql import OperationType
 from strawberry.utils.debug import pretty_print_graphql_operation
 from strawberry.utils.operation import get_operation_type
 

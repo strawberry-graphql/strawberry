@@ -3,7 +3,7 @@ import json
 import os
 from typing import Any, Dict, Optional, Type
 
-from django.core.exceptions import SuspiciousOperation
+from django.core.exceptions import BadRequest, SuspiciousOperation
 from django.core.serializers.json import DjangoJSONEncoder
 from django.http import Http404, HttpRequest, HttpResponseNotAllowed, JsonResponse
 from django.http.response import HttpResponse
@@ -24,7 +24,9 @@ from strawberry.http import (
     parse_request_data,
     process_result,
 )
+from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types import ExecutionResult
+from strawberry.types.graphql import OperationType
 
 from ..schema import BaseSchema
 from .context import StrawberryDjangoContext
@@ -40,6 +42,7 @@ class TemporalHttpResponse(JsonResponse):
 class BaseView(View):
     subscriptions_enabled = False
     graphiql = True
+    allow_queries_via_get = True
     schema: Optional[BaseSchema] = None
     json_encoder: Type[json.JSONEncoder] = DjangoJSONEncoder
     json_dumps_params: Optional[Dict[str, Any]] = None
@@ -48,22 +51,30 @@ class BaseView(View):
         self,
         schema: BaseSchema,
         graphiql=True,
+        allow_queries_via_get=True,
         subscriptions_enabled=False,
         **kwargs: Any,
     ):
         self.schema = schema
         self.graphiql = graphiql
+        self.allow_queries_via_get = allow_queries_via_get
         self.subscriptions_enabled = subscriptions_enabled
         super().__init__(**kwargs)
 
-    def parse_body(self, request) -> Dict[str, Any]:
-        if request.content_type.startswith("multipart/form-data"):
+    def parse_body(self, request: HttpRequest) -> Dict[str, Any]:
+        content_type = request.content_type or ""
+
+        if "application/json" in content_type:
+            return json.loads(request.body)
+        elif content_type.startswith("multipart/form-data"):
             data = json.loads(request.POST.get("operations", "{}"))
             files_map = json.loads(request.POST.get("map", "{}"))
 
             data = replace_placeholders_with_files(data, files_map, request.FILES)
 
             return data
+        elif request.method.lower() == "get" and request.META.get("QUERY_STRING"):
+            return request.GET
 
         return json.loads(request.body)
 
@@ -71,7 +82,16 @@ class BaseView(View):
         return request.method.lower() in ("get", "post")
 
     def should_render_graphiql(self, request: HttpRequest) -> bool:
-        return "text/html" in request.headers.get("Accept", "")
+        if request.method.lower() != "get":
+            return False
+
+        if request.META.get("QUERY_STRING"):
+            return False
+
+        return any(
+            supported_header in request.META.get("HTTP_ACCEPT", "")
+            for supported_header in ("text/html", "*/*")
+        )
 
     def get_request_data(self, request: HttpRequest) -> GraphQLRequestData:
         try:
@@ -158,16 +178,27 @@ class GraphQLView(BaseView):
 
         sub_response = TemporalHttpResponse()
         context = self.get_context(request, response=sub_response)
+        root_value = self.get_root_value(request)
+
+        method = request.method
+        allowed_operation_types = OperationType.from_http(method)
+
+        if not self.allow_queries_via_get and method == "GET":
+            allowed_operation_types = allowed_operation_types - {OperationType.QUERY}
 
         assert self.schema
 
-        result = self.schema.execute_sync(
-            request_data.query,
-            root_value=self.get_root_value(request),
-            variable_values=request_data.variables,
-            context_value=context,
-            operation_name=request_data.operation_name,
-        )
+        try:
+            result = self.schema.execute_sync(
+                request_data.query,
+                root_value=root_value,
+                variable_values=request_data.variables,
+                context_value=context,
+                operation_name=request_data.operation_name,
+                allowed_operation_types=allowed_operation_types,
+            )
+        except InvalidOperationTypeError as e:
+            raise BadRequest(e.as_http_error_reason(method)) from e
 
         response_data = self.process_result(request=request, result=result)
 
@@ -202,15 +233,26 @@ class AsyncGraphQLView(BaseView):
         context = await self.get_context(request, response=sub_response)
         root_value = await self.get_root_value(request)
 
+        method = request.method
+
+        allowed_operation_types = OperationType.from_http(method)
+
+        if not self.allow_queries_via_get and method == "GET":
+            allowed_operation_types = allowed_operation_types - {OperationType.QUERY}
+
         assert self.schema
 
-        result = await self.schema.execute(
-            request_data.query,
-            root_value=root_value,
-            variable_values=request_data.variables,
-            context_value=context,
-            operation_name=request_data.operation_name,
-        )
+        try:
+            result = await self.schema.execute(
+                request_data.query,
+                root_value=root_value,
+                variable_values=request_data.variables,
+                context_value=context,
+                operation_name=request_data.operation_name,
+                allowed_operation_types=allowed_operation_types,
+            )
+        except InvalidOperationTypeError as e:
+            raise BadRequest(e.as_http_error_reason(method)) from e
 
         response_data = await self.process_result(request=request, result=result)
 

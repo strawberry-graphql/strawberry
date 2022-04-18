@@ -3,9 +3,10 @@ from typing import Any, Optional
 
 import pytest
 
-from django.core.exceptions import SuspiciousOperation
+from django.core.exceptions import BadRequest, SuspiciousOperation
 from django.http import Http404
 from django.test.client import RequestFactory
+from django.utils.http import urlencode
 
 import strawberry
 from strawberry.django.views import GraphQLView as BaseGraphQLView
@@ -134,6 +135,63 @@ def test_graphql_query():
 
     assert response["content-type"] == "application/json"
     assert data["data"]["hello"] == "strawberry"
+
+
+def test_graphql_get_query_using_params():
+    params = {"query": "{ hello }"}
+
+    factory = RequestFactory()
+    request = factory.get(
+        "/graphql",
+        data=params,
+    )
+
+    response = GraphQLView.as_view(schema=schema)(request)
+    data = json.loads(response.content.decode())
+
+    assert data["data"]["hello"] == "strawberry"
+
+
+def test_graphql_post_query_fails_using_params():
+    params = {"query": "{ hello }"}
+
+    factory = RequestFactory()
+    request = factory.post(
+        "/graphql",
+        **{"QUERY_STRING": urlencode(params, doseq=True)},
+        content_type="application/x-www-form-urlencoded"
+    )
+
+    with pytest.raises(SuspiciousOperation) as e:
+        GraphQLView.as_view(schema=schema)(request)
+
+    assert e.value.args == ("No GraphQL query found in the request",)
+
+
+def test_graphql_get_does_not_allow_mutation():
+    params = {"query": "mutation { hello }"}
+
+    factory = RequestFactory()
+    request = factory.get(
+        "/graphql",
+        data=params,
+    )
+
+    with pytest.raises(BadRequest, match="mutations are not allowed when using GET"):
+        GraphQLView.as_view(schema=schema)(request)
+
+
+def test_graphql_get_does_get_when_disabled():
+    params = {"query": "{ hell }"}
+
+    factory = RequestFactory()
+    request = factory.get(
+        "/graphql",
+        data=params,
+    )
+
+    with pytest.raises(BadRequest, match="queries are not allowed when using GET"):
+        GraphQLView.as_view(schema=schema, allow_queries_via_get=False)(request)
 
 
 @pytest.mark.django_db
