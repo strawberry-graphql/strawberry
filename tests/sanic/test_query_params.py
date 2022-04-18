@@ -5,11 +5,7 @@ def test_no_graphiql_empty_get(sanic_client_no_graphiql):
 
 
 def test_no_query(sanic_client):
-    params = {
-        "variables": """
-            hello
-        """
-    }
+    params = {"variables": '{"name": "James"}'}
 
     request, response = sanic_client.test_client.get("/graphql", params=params)
     assert response.status == 400
@@ -33,7 +29,7 @@ def test_get_with_query_params(sanic_client):
 def test_can_pass_variables_with_query_params(sanic_client):
     params = {
         "query": "query Hello($name: String!) { hello(name: $name) }",
-        "variables": {"name": "James"},
+        "variables": '{"name": "James"}',
     }
 
     request, response = sanic_client.test_client.get("/graphql", params=params)

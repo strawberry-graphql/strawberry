@@ -3,7 +3,12 @@ from typing import Dict, List, Union
 from chalice.app import BadRequestError, Request, Response
 from strawberry.chalice.graphiql import render_graphiql_page
 from strawberry.exceptions import MissingQueryError
-from strawberry.http import GraphQLHTTPResponse, parse_request_data, process_result
+from strawberry.http import (
+    GraphQLHTTPResponse,
+    parse_query_params,
+    parse_request_data,
+    process_result,
+)
 from strawberry.schema import BaseSchema
 from strawberry.types import ExecutionResult
 
@@ -93,7 +98,7 @@ class GraphQLView:
                     http_status_code=400,
                 )
         elif request.method == "GET" and request.query_params:
-            data = request.query_params
+            data = parse_query_params(request.query_params)
 
         elif request.method == "GET" and self.should_render_graphiql(
             self.graphiql, request

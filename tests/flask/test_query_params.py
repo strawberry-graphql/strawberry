@@ -9,13 +9,7 @@ def test_no_graphiql_empty_get(flask_client_no_graphiql):
 
 
 def test_no_query(flask_client):
-    params = {
-        "variables": """
-            query {
-                hello
-            }
-        """
-    }
+    params = {"variables": '{"name": "James"}'}
 
     response = flask_client.get("/graphql", query_string=params)
 

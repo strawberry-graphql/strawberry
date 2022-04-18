@@ -6,7 +6,12 @@ from flask.views import View
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.flask.graphiql import render_graphiql_page, should_render_graphiql
-from strawberry.http import GraphQLHTTPResponse, parse_request_data, process_result
+from strawberry.http import (
+    GraphQLHTTPResponse,
+    parse_query_params,
+    parse_request_data,
+    process_result,
+)
 from strawberry.schema.base import BaseSchema
 from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types import ExecutionResult
@@ -50,7 +55,7 @@ class GraphQLView(View):
 
             data = replace_placeholders_with_files(operations, files_map, request.files)
         elif method == "GET" and request.args:
-            data = request.args.to_dict()
+            data = parse_query_params(request.args.to_dict())
         elif method == "GET" and should_render_graphiql(self.graphiql, request):
             template = render_graphiql_page()
 

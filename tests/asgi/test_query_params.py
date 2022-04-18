@@ -2,7 +2,7 @@ from starlette import status
 
 
 def test_no_query(test_client):
-    response = test_client.get("/graphql", params={"variables": "{ hello }"})
+    response = test_client.get("/graphql", params={"variables": '{"name": "James"}'})
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST
 

@@ -1,3 +1,4 @@
+import json
 from dataclasses import dataclass
 from typing import Any, Dict, List, Mapping, Optional
 
@@ -31,6 +32,13 @@ class GraphQLRequestData:
     query: str
     variables: Optional[Dict[str, Any]]
     operation_name: Optional[str]
+
+
+def parse_query_params(params: Dict[str, str]) -> Dict[str, Any]:
+    if "variables" in params:
+        params["variables"] = json.loads(params["variables"])
+
+    return params
 
 
 def parse_request_data(data: Mapping) -> GraphQLRequestData:

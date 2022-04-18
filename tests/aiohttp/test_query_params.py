@@ -1,11 +1,5 @@
 async def test_no_query(aiohttp_app_client):
-    params = {
-        "variables": """
-            query {
-                hello
-            }
-        """
-    }
+    params = {"variables": '{"name": "James"}'}
 
     response = await aiohttp_app_client.get("/graphql", params=params)
     assert response.status == 400

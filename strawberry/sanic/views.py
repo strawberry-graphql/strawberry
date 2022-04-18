@@ -12,6 +12,7 @@ from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import (
     GraphQLHTTPResponse,
     GraphQLRequestData,
+    parse_query_params,
     parse_request_data,
     process_result,
 )
@@ -73,12 +74,14 @@ class GraphQLView(HTTPMethodView):
 
     async def get(self, request: Request) -> HTTPResponse:
         if request.args:
-            # Sanic uses urllib to parse
-            # This returns a list of values for each variable name
-            # Enforcing only one value
-            data = {
+            # Sanic request.args uses urllib.parse.parse_qs
+            # returns a dictionary where the keys are the unique variable names
+            # and the values are a list of values for each variable name
+            # Enforcing using the first value
+            query_data = {
                 variable_name: value[0] for variable_name, value in request.args.items()
             }
+            data = parse_query_params(query_data)
 
             try:
                 request_data = parse_request_data(data)

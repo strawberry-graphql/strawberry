@@ -19,7 +19,7 @@ def test_no_graphiql_no_query():
     app.include_router(graphql_app, prefix="/graphql")
 
     test_client = TestClient(app)
-    response = test_client.get("/graphql", params={"variables": "{ abc }"})
+    response = test_client.get("/graphql", params={"variables": '{"name": "James"}'})
 
     assert response.status_code == status.HTTP_400_BAD_REQUEST
 
