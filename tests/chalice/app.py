@@ -1,3 +1,5 @@
+from typing import Optional
+
 import strawberry
 from chalice import Chalice  # type: ignore
 from strawberry.chalice.views import GraphQLView
@@ -11,6 +13,10 @@ class Query:
     @strawberry.field
     def greetings(self) -> str:
         return "hello"
+
+    @strawberry.field
+    def hello(self, name: Optional[str] = None) -> str:
+        return f"Hello {name or 'world'}"
 
 
 @strawberry.type

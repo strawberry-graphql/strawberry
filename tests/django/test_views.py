@@ -27,6 +27,10 @@ class AlwaysFailPermission(BasePermission):
 class Query:
     hello: str = "strawberry"
 
+    @strawberry.field
+    def hi(self, name: Optional[str] = None) -> str:
+        return f"Hello {name or 'world'}"
+
     @strawberry.field(permission_classes=[AlwaysFailPermission])
     def always_fail(self) -> Optional[str]:
         return "Hey"
@@ -137,6 +141,24 @@ def test_graphql_query():
     assert data["data"]["hello"] == "strawberry"
 
 
+def test_graphql_can_pass_variables():
+    query = "query Hi($name: String!) { hi(name: $name) }"
+    variables = {"name": "James"}
+
+    factory = RequestFactory()
+    request = factory.post(
+        "/graphql/",
+        {"query": query, "variables": variables},
+        content_type="application/json",
+    )
+
+    response = GraphQLView.as_view(schema=schema)(request)
+    data = json.loads(response.content.decode())
+
+    assert response["content-type"] == "application/json"
+    assert data["data"]["hi"] == "Hello James"
+
+
 def test_graphql_get_query_using_params():
     params = {"query": "{ hello }"}
 
@@ -152,6 +174,24 @@ def test_graphql_get_query_using_params():
     assert data["data"]["hello"] == "strawberry"
 
 
+def test_graphql_can_pass_variables_using_params():
+    params = {
+        "query": "query Hi($name: String!) { hi(name: $name) }",
+        "variables": '{"name": "James"}',
+    }
+
+    factory = RequestFactory()
+    request = factory.get(
+        "/graphql",
+        data=params,
+    )
+
+    response = GraphQLView.as_view(schema=schema)(request)
+    data = json.loads(response.content.decode())
+
+    assert data["data"]["hi"] == "Hello James"
+
+
 def test_graphql_post_query_fails_using_params():
     params = {"query": "{ hello }"}
 
@@ -159,7 +199,7 @@ def test_graphql_post_query_fails_using_params():
     request = factory.post(
         "/graphql",
         **{"QUERY_STRING": urlencode(params, doseq=True)},
-        content_type="application/x-www-form-urlencoded"
+        content_type="application/x-www-form-urlencoded",
     )
 
     with pytest.raises(SuspiciousOperation) as e:

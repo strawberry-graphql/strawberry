@@ -21,7 +21,19 @@ def test_graphql_query(sanic_client):
     request, response = sanic_client.test_client.post("/graphql", json=query)
     data = response.json
     assert response.status == 200
-    assert data["data"]["hello"] == "strawberry"
+    assert data["data"]["hello"] == "Hello world"
+
+
+def test_can_pass_variables(sanic_client):
+    query = {
+        "query": "query Hello($name: String!) { hello(name: $name) }",
+        "variables": {"name": "James"},
+    }
+
+    request, response = sanic_client.test_client.post("/graphql", json=query)
+    data = response.json
+    assert response.status == 200
+    assert data["data"]["hello"] == "Hello James"
 
 
 def test_graphiql_view(sanic_client):
