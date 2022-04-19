@@ -334,3 +334,43 @@ def test_enum_resolver_plain_value():
 
     assert not result.errors
     assert result.data["bestFlavour"] == "STRAWBERRY"
+
+
+def test_enum_deprecated_value():
+    @strawberry.enum
+    class IceCreamFlavour(Enum):
+        VANILLA = "vanilla"
+        STRAWBERRY = strawberry.enum_value(
+            "strawberry", deprecation_reason="We ran out"
+        )
+        CHOCOLATE = strawberry.enum_value("chocolate")
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def best_flavour(self) -> IceCreamFlavour:
+            return IceCreamFlavour.STRAWBERRY
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """
+    {
+        __type(name: "IceCreamFlavour") {
+            enumValues(includeDeprecated: true) {
+                name
+                isDeprecated
+                deprecationReason
+            }
+        }
+    }
+    """
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data
+    assert result.data["__type"]["enumValues"] == [
+        {"deprecationReason": None, "isDeprecated": False, "name": "VANILLA"},
+        {"deprecationReason": "We ran out", "isDeprecated": True, "name": "STRAWBERRY"},
+        {"deprecationReason": None, "isDeprecated": False, "name": "CHOCOLATE"},
+    ]
