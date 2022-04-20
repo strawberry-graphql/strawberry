@@ -26,6 +26,7 @@ from strawberry.experimental.pydantic.conversion import (
     convert_pydantic_model_to_strawberry_class,
     convert_strawberry_class_to_pydantic_model,
 )
+from strawberry.experimental.pydantic.exceptions import MissingFieldsListError
 from strawberry.experimental.pydantic.fields import replace_types_recursively
 from strawberry.experimental.pydantic.utils import (
     DataclassCreationFields,
@@ -38,8 +39,6 @@ from strawberry.field import StrawberryField
 from strawberry.object_type import _process_type, _wrap_dataclass
 from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.types.type_resolver import _get_fields
-
-from .exceptions import MissingFieldsListError
 
 
 def get_type_for_field(field: ModelField, is_input: bool):
