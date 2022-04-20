@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from enum import Enum
 from typing import (
     Any,
     Callable,
@@ -33,6 +32,7 @@ from graphql import (
     GraphQLScalarType,
     GraphQLUnionType,
     Undefined,
+    ValueNode,
 )
 
 from strawberry.arguments import UNSET, StrawberryArgument, convert_arguments, is_unset
@@ -64,10 +64,22 @@ from .types.concrete_type import ConcreteType
 # subclass the GraphQLEnumType class to enable returning Enum members from
 # resolvers.
 class CustomGraphQLEnumType(GraphQLEnumType):
+    def __init__(self, enum: EnumDefinition, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.wrapped_cls = enum.wrapped_cls
+
     def serialize(self, output_value: Any) -> str:
-        if isinstance(output_value, Enum):
+        if isinstance(output_value, self.wrapped_cls):
             return output_value.name
         return super().serialize(output_value)
+
+    def parse_value(self, input_value: str) -> Any:
+        return self.wrapped_cls(super().parse_value(input_value))
+
+    def parse_literal(
+        self, value_node: ValueNode, _variables: Optional[Dict[str, Any]] = None
+    ) -> Any:
+        return self.wrapped_cls(super().parse_literal(value_node, _variables))
 
 
 class GraphQLCoreConverter:
@@ -105,6 +117,7 @@ class GraphQLCoreConverter:
             return graphql_enum
 
         graphql_enum = CustomGraphQLEnumType(
+            enum=enum,
             name=enum_name,
             values={item.name: self.from_enum_value(item) for item in enum.values},
             description=enum.description,

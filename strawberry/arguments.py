@@ -135,10 +135,8 @@ def convert_argument(
     if is_scalar(type_, scalar_registry):
         return value
 
-    # Convert Enum fields to instances using the value. This is safe
-    # because graphql-core has already validated the input.
     if isinstance(type_, EnumDefinition):
-        return type_.wrapped_cls(value)
+        return value
 
     if isinstance(type_, LazyType):
         return convert_argument(value, type_.resolve_type(), scalar_registry, config)
