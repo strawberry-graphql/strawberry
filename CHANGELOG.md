@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.108.1 - 2022-04-20
+--------------------
+
+Refactoring: Move enum deserialization logic from convert_arguments to CustomGraphQLEnumType
+
+Contributed by [Paulo Costa](https://github.com/paulo-raca) via [PR #1765](https://github.com/strawberry-graphql/strawberry/pull/1765/)
+
+
 0.108.0 - 2022-04-19
 --------------------
 
