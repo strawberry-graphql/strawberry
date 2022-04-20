@@ -8,8 +8,11 @@ from pydantic import BaseModel
 from pydantic.typing import is_new_type, new_type_supertype
 from typing_extensions import Literal
 
-from ...types.types import TypeDefinition
-from .exceptions import UnregisteredTypeException, UnsupportedTypeError
+from strawberry.experimental.pydantic.exceptions import (
+    UnregisteredTypeException,
+    UnsupportedTypeError,
+)
+from strawberry.types.types import TypeDefinition
 
 
 ATTR_TO_TYPE_MAP = {
@@ -86,6 +89,8 @@ def get_basic_type(type_) -> Type[Any]:
 
 
 def replace_pydantic_types(type_: Any, is_input: bool):
+    # NewType is a function <= python 3.9. Therefore isinstance guard is needed otherwise
+    # to ignore NewType instances. Otherwise, issubclass will except
     if isinstance(type_, type):
         if issubclass(type_, BaseModel):
             attr = "_strawberry_input_type" if is_input else "_strawberry_type"
