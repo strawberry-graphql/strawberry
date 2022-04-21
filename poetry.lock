@@ -1335,7 +1335,7 @@ python-versions = "*"
 
 [[package]]
 name = "types-requests"
-version = "2.27.19"
+version = "2.27.20"
 description = "Typing stubs for requests"
 category = "dev"
 optional = false
@@ -1537,7 +1537,7 @@ sanic = ["sanic"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "570df28e21ff30e077fd3450dbf50d1ed96657ccfaa91b1f936f2c5820551489"
+content-hash = "9bac783f680cc4fc725a5e83b5e7bcbad175b0884ba9a4c496e4cecb57ad07ee"
 
 [metadata.files]
 aiofiles = [
@@ -2530,8 +2530,8 @@ types-python-dateutil = [
     {file = "types_python_dateutil-2.8.12-py3-none-any.whl", hash = "sha256:3a49b238d95ff1ae5c92d058b0eeb57a0a79798178ecc784adfba18d1a645e20"},
 ]
 types-requests = [
-    {file = "types-requests-2.27.19.tar.gz", hash = "sha256:795e378117088d1e4bf41a2c01a153b73d6ea40aa9d7c0ac753abde84c0d3a8f"},
-    {file = "types_requests-2.27.19-py3-none-any.whl", hash = "sha256:c6c5384677d98f212516de50c4b2c38ef659b93008fbc5bb4b81726138bc8485"},
+    {file = "types-requests-2.27.20.tar.gz", hash = "sha256:63344573cde6c4efd44d867c0158d9fb7e6beb95721cbe9882f3f857ee8a5398"},
+    {file = "types_requests-2.27.20-py3-none-any.whl", hash = "sha256:68b8de86552116424ec23b77afc925e111afb6496d3821b183b7d151b3b834d4"},
 ]
 types-setuptools = [
     {file = "types-setuptools-57.4.14.tar.gz", hash = "sha256:df02fe1dd244f58cf4e67cfc3d0a97930a2d61a72dd89f21d81c71017cd83f9a"},
