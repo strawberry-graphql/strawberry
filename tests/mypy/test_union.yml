@@ -76,3 +76,37 @@
     main:16: note: Revealed type is "builtins.object"
     main:17: note: Revealed type is "Union[main.User, main.Error]"
     main:20: note: Revealed type is "main.User"
+
+- case: test_union_unpacking
+  main: |
+    import strawberry
+
+    @strawberry.type
+    class User:
+        name: str
+
+    @strawberry.type
+    class Error:
+        message: str
+
+    @strawberry.type
+    class AnotherError:
+        message: str
+
+    UserErrors = (
+        Error,
+        AnotherError,
+    )
+
+    Response = strawberry.union(types=(User, *UserErrors), name="Response")
+
+    a: Response
+    reveal_type(Response)
+    reveal_type(a)
+
+    a = User("abc")
+    reveal_type(a)
+  out: |
+    main:23: note: Revealed type is "builtins.object"
+    main:24: note: Revealed type is "Union[main.User, Any]"
+    main:27: note: Revealed type is "main.User"

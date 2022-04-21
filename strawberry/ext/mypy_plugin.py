@@ -1,4 +1,5 @@
 from decimal import Decimal
+from itertools import chain
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union, cast
 
 from typing_extensions import Final
@@ -24,6 +25,7 @@ from mypy.nodes import (
     PassStmt,
     PlaceholderNode,
     RefExpr,
+    StarExpr,
     SymbolTableNode,
     TempNode,
     TupleExpr,
@@ -167,6 +169,24 @@ def create_type_hook(ctx: DynamicClassDefContext) -> None:
     return
 
 
+def _get_types_for_expr(
+    expr: Expression, api: SemanticAnalyzerPluginInterface
+) -> Optional[Tuple[Type, ...]]:
+    if isinstance(expr, StarExpr):
+        assert isinstance(expr.expr, NameExpr)
+        var = api.lookup_current_scope(expr.expr.name)
+
+        if var is None:
+            return None
+
+        if isinstance(var.node, PlaceholderNode):
+            return None
+
+        return (var.node.type or AnyType(TypeOfAny.implementation_artifact),)
+
+    return (_get_type_for_expr(expr, api),)
+
+
 def union_hook(ctx: DynamicClassDefContext) -> None:
     try:
         # Check if types is passed as a keyword argument
@@ -177,9 +197,13 @@ def union_hook(ctx: DynamicClassDefContext) -> None:
 
     if isinstance(types, TupleExpr):
         try:
-            type_ = UnionType(
-                tuple(_get_type_for_expr(x, ctx.api) for x in types.items)
-            )
+            types = tuple(_get_types_for_expr(x, ctx.api) for x in types.items)
+
+            if any(x is None for x in types):
+                ctx.api.defer()
+                return
+
+            type_ = UnionType(tuple(chain.from_iterable(types)))
         except InvalidNodeTypeException:
             type_alias = TypeAlias(
                 AnyType(TypeOfAny.from_error),
