@@ -3,7 +3,6 @@ from __future__ import annotations
 import builtins
 import dataclasses
 import warnings
-from functools import partial
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -329,4 +328,29 @@ def input(
     )
 
 
-interface = partial(type, is_interface=True)
+def interface(
+    model: Type[PydanticModel],
+    *,
+    fields: Optional[List[str]] = None,
+    name: Optional[str] = None,
+    is_input: bool = False,
+    description: Optional[str] = None,
+    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    all_fields: bool = False,
+    use_pydantic_alias: bool = True,
+) -> Callable[..., Type[StrawberryTypeFromPydantic[PydanticModel]]]:
+    """Convenience decorator for creating an interface type from a Pydantic model.
+    Equal to partial(type, is_interface=True)
+    See https://github.com/strawberry-graphql/strawberry/issues/1830
+    """
+    return type(
+        model=model,
+        fields=fields,
+        name=name,
+        is_input=is_input,
+        is_interface=True,
+        description=description,
+        directives=directives,
+        all_fields=all_fields,
+        use_pydantic_alias=use_pydantic_alias,
+    )
