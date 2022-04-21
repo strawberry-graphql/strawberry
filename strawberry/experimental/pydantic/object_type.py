@@ -301,6 +301,32 @@ def type(
     return wrap
 
 
-input = partial(type, is_input=True)
+def input(
+    model: Type[PydanticModel],
+    *,
+    fields: Optional[List[str]] = None,
+    name: Optional[str] = None,
+    is_interface: bool = False,
+    description: Optional[str] = None,
+    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    all_fields: bool = False,
+    use_pydantic_alias: bool = True,
+) -> Callable[..., Type[StrawberryTypeFromPydantic[PydanticModel]]]:
+    """Convenience decorator for creating an input type from a Pydantic model.
+    Equal to partial(type, is_input=True)
+    See https://github.com/strawberry-graphql/strawberry/issues/1830
+    """
+    return type(
+        model=model,
+        fields=fields,
+        name=name,
+        is_input=True,
+        is_interface=is_interface,
+        description=description,
+        directives=directives,
+        all_fields=all_fields,
+        use_pydantic_alias=use_pydantic_alias,
+    )
+
 
 interface = partial(type, is_interface=True)
