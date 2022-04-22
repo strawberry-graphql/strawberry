@@ -47,9 +47,15 @@ The `GraphQLRouter` accepts the following options:
   interface.
 - `allow_queries_via_get`: optional, defaults to `True`, whether to enable
   queries via `GET` requests
-- `context_getter`: optional FastAPI dependency for providing custom context
-  value.
-- `root_value_getter`: optional FastAPI dependency for providing custom root
+- `context_getter`: optional, default FastAPI dependency for providing custom
+  context value.
+- `http_get_context_getter`: optional, override `context_getter` for queries
+  executed via HTTP GET.
+- `http_post_context_getter`: optional, override `context_getter` for queries
+  executed via HTTP POST.
+- `ws_context_getter`: optional, override `context_getter` for queries executed
+  via WebSockets.
+- `root_value_getter`: optional, FastAPI dependency for providing custom root
   value.
 
 ## context_getter

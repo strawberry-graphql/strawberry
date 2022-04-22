@@ -8,6 +8,15 @@ import strawberry
 from fastapi import Depends, FastAPI
 from strawberry.exceptions import InvalidCustomContext
 from strawberry.fastapi import BaseContext, GraphQLRouter
+from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL
+from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
+    CompleteMessage,
+    ConnectionAckMessage,
+    ConnectionInitMessage,
+    NextMessage,
+    SubscribeMessage,
+    SubscribeMessagePayload,
+)
 from strawberry.types import Info
 
 
@@ -126,3 +135,64 @@ def test_with_invalid_context_getter():
         ),
     ):
         test_client.post("/graphql", json={"query": "{ abc }"})
+
+
+def test_transport_specific_context_getter():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def transport(self, info: Info) -> str:
+            return info.context.get("transport", "")
+
+    def http_get_context_getter() -> Dict[str, str]:
+        return {"transport": "get"}
+
+    def http_post_context_getter() -> Dict[str, str]:
+        return {"transport": "post"}
+
+    def ws_context_getter() -> Dict[str, str]:
+        return {"transport": "ws"}
+
+    app = FastAPI()
+    schema = strawberry.Schema(query=Query)
+    graphql_app = GraphQLRouter(
+        schema=schema,
+        http_get_context_getter=http_get_context_getter,
+        http_post_context_getter=http_post_context_getter,
+        ws_context_getter=ws_context_getter,
+    )
+    app.include_router(graphql_app, prefix="/graphql")
+
+    test_client = TestClient(app)
+
+    response = test_client.post("/graphql", json={"query": "{ transport }"})
+    assert response.status_code == 200
+    assert response.json() == {"data": {"transport": "post"}}
+
+    response = test_client.get("/graphql", params={"query": "{ transport }"})
+    assert response.status_code == 200
+    assert response.json() == {"data": {"transport": "get"}}
+
+    with test_client.websocket_connect(
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+    ) as ws:
+        ws.send_json(ConnectionInitMessage().as_dict())
+
+        response = ws.receive_json()
+        assert response == ConnectionAckMessage().as_dict()
+
+        ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(query="query { transport }"),
+            ).as_dict()
+        )
+
+        response = ws.receive_json()
+        assert (
+            response
+            == NextMessage(id="sub1", payload={"data": {"transport": "ws"}}).as_dict()
+        )
+
+        response = ws.receive_json()
+        assert response == CompleteMessage(id="sub1").as_dict()

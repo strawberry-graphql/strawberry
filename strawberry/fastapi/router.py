@@ -107,7 +107,14 @@ class GraphQLRouter(APIRouter):
         keep_alive_interval: float = 1,
         debug: bool = False,
         root_value_getter=None,
-        context_getter=None,
+        context_getter: Optional[Callable[..., Optional[CustomContext]]] = None,
+        http_get_context_getter: Optional[
+            Callable[..., Optional[CustomContext]]
+        ] = None,
+        http_post_context_getter: Optional[
+            Callable[..., Optional[CustomContext]]
+        ] = None,
+        ws_context_getter: Optional[Callable[..., Optional[CustomContext]]] = None,
         subscription_protocols=(GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL),
         connection_init_wait_timeout: timedelta = timedelta(minutes=1),
         default: Optional[ASGIApp] = None,
@@ -126,8 +133,14 @@ class GraphQLRouter(APIRouter):
         self.keep_alive_interval = keep_alive_interval
         self.debug = debug
         self.root_value_getter = root_value_getter or self.__get_root_value
-        self.context_getter = self.__get_context_getter(
-            context_getter or (lambda: None)
+        self.http_get_context_getter = self.__get_context_getter(
+            http_get_context_getter or context_getter or (lambda: None)
+        )
+        self.http_post_context_getter = self.__get_context_getter(
+            http_post_context_getter or context_getter or (lambda: None)
+        )
+        self.ws_context_getter = self.__get_context_getter(
+            ws_context_getter or context_getter or (lambda: None)
         )
         self.protocols = subscription_protocols
         self.connection_init_wait_timeout = connection_init_wait_timeout
@@ -146,7 +159,7 @@ class GraphQLRouter(APIRouter):
         async def handle_http_get(
             request: Request,
             response: Response,
-            context=Depends(self.context_getter),
+            context=Depends(self.http_get_context_getter),
             root_value=Depends(self.root_value_getter),
         ) -> Response:
             actual_response: Response
@@ -168,7 +181,7 @@ class GraphQLRouter(APIRouter):
         async def handle_http_post(
             request: Request,
             response: Response,
-            context=Depends(self.context_getter),
+            context=Depends(self.http_post_context_getter),
             root_value=Depends(self.root_value_getter),
         ) -> Response:
             actual_response: Response
@@ -211,7 +224,7 @@ class GraphQLRouter(APIRouter):
         @self.websocket(path)
         async def websocket_endpoint(
             websocket: WebSocket,
-            context=Depends(self.context_getter),
+            context=Depends(self.ws_context_getter),
             root_value=Depends(self.root_value_getter),
         ):
             async def _get_context():
