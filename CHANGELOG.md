@@ -1,6 +1,32 @@
 CHANGELOG
 =========
 
+0.108.3 - 2022-04-22
+--------------------
+
+Fixes a bug when converting pydantic models with NewTypes in a List.
+This no longers causes an exception.
+
+ ```python
+from typing import List, NewType
+from pydantic import BaseModel
+import strawberry
+
+password = NewType("password", str)
+
+class User(BaseModel):
+    passwords: List[password]
+
+
+@strawberry.experimental.pydantic.type(User)
+class UserType:
+    passwords: strawberry.auto
+
+ ```
+
+Contributed by [James Chua](https://github.com/thejaminator) via [PR #1770](https://github.com/strawberry-graphql/strawberry/pull/1770/)
+
+
 0.108.2 - 2022-04-21
 --------------------
 
