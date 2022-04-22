@@ -8,6 +8,7 @@ Strawberry comes with a basic Flask integration. It provides a view that you can
 use to serve your GraphQL schema:
 
 ```python
+from flask import Flask
 from strawberry.flask.views import GraphQLView
 
 from api.schema import schema
@@ -18,6 +19,9 @@ app.add_url_rule(
     "/graphql",
     view_func=GraphQLView.as_view("graphql_view", schema=schema),
 )
+
+if __name__ == "__main__":
+    app.run()
 ```
 
 ## Options
