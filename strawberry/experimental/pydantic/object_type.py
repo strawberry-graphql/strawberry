@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import builtins
 import dataclasses
 import warnings
 from typing import (
@@ -16,9 +15,7 @@ from typing import (
     cast,
 )
 
-from pydantic import BaseModel
 from pydantic.fields import ModelField
-from typing_extensions import Literal
 
 from graphql import GraphQLResolveInfo
 
@@ -28,7 +25,8 @@ from strawberry.experimental.pydantic.conversion import (
     convert_pydantic_model_to_strawberry_class,
     convert_strawberry_class_to_pydantic_model,
 )
-from strawberry.experimental.pydantic.fields import get_basic_type
+from strawberry.experimental.pydantic.exceptions import MissingFieldsListError
+from strawberry.experimental.pydantic.fields import replace_types_recursively
 from strawberry.experimental.pydantic.utils import (
     DataclassCreationFields,
     ensure_all_auto_fields_in_pydantic,
@@ -40,47 +38,11 @@ from strawberry.field import StrawberryField
 from strawberry.object_type import _process_type, _wrap_dataclass
 from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.types.type_resolver import _get_fields
-from strawberry.types.types import TypeDefinition
-
-from .exceptions import MissingFieldsListError, UnregisteredTypeException
-
-
-def replace_pydantic_types(type_: Any, is_input: bool):
-    origin = getattr(type_, "__origin__", None)
-    if origin is Literal:
-        # Literal does not have types in its __args__ so we return early
-        return type_
-    if hasattr(type_, "__args__"):
-        replaced_type = type_.copy_with(
-            tuple(replace_pydantic_types(t, is_input) for t in type_.__args__)
-        )
-
-        if isinstance(replaced_type, TypeDefinition):
-            # TODO: Not sure if this is necessary. No coverage in tests
-            # TODO: Unnecessary with StrawberryObject
-
-            replaced_type = builtins.type(
-                replaced_type.name,
-                (),
-                {"_type_definition": replaced_type},
-            )
-
-        return replaced_type
-
-    if issubclass(type_, BaseModel):
-        attr = "_strawberry_input_type" if is_input else "_strawberry_type"
-        if hasattr(type_, attr):
-            return getattr(type_, attr)
-        else:
-            raise UnregisteredTypeException(type_)
-
-    return type_
 
 
 def get_type_for_field(field: ModelField, is_input: bool):
     outer_type = field.outer_type_
-    basic_type = get_basic_type(outer_type)
-    replaced_type = replace_pydantic_types(basic_type, is_input)
+    replaced_type = replace_types_recursively(outer_type, is_input)
 
     if not field.required:
         return Optional[replaced_type]

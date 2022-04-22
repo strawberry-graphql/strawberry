@@ -825,6 +825,25 @@ def test_can_convert_pydantic_type_to_strawberry_newtype():
     assert user.password == "abc"
 
 
+def test_can_convert_pydantic_type_to_strawberry_newtype_list():
+    Password = NewType("Password", str)
+
+    class User(BaseModel):
+        age: int
+        passwords: List[Password]
+
+    @strawberry.experimental.pydantic.type(User)
+    class UserType:
+        age: strawberry.auto
+        passwords: strawberry.auto
+
+    origin_user = User(age=1, passwords=["hunter2"])
+    user = UserType.from_pydantic(origin_user)
+
+    assert user.age == 1
+    assert user.passwords == ["hunter2"]
+
+
 def test_sort_creation_fields():
     has_default = DataclassCreationFields(
         name="has_default",
