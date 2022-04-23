@@ -1,6 +1,7 @@
+from typing import Optional
+
 import strawberry
 from chalice import Chalice  # type: ignore
-from chalice.app import Request
 from strawberry.chalice.views import GraphQLView
 
 
@@ -13,6 +14,10 @@ class Query:
     def greetings(self) -> str:
         return "hello"
 
+    @strawberry.field
+    def hello(self, name: Optional[str] = None) -> str:
+        return f"Hello {name or 'world'}"
+
 
 @strawberry.type
 class Mutation:
@@ -23,6 +28,7 @@ class Mutation:
 
 schema = strawberry.Schema(query=Query, mutation=Mutation)
 view = GraphQLView(schema=schema, render_graphiql=True)
+view_no_graphiql = GraphQLView(schema=schema, render_graphiql=False)
 
 
 @app.route("/")
@@ -32,6 +38,13 @@ def index():
 
 @app.route("/graphql", methods=["GET", "POST"], content_types=["application/json"])
 def handle_graphql():
-    request: Request = app.current_request
-    result = view.execute_request(request)
-    return result
+    return view.execute_request(app.current_request)
+
+
+@app.route(
+    "/graphql-no-graphiql",
+    methods=["GET", "POST", "PUT"],
+    content_types=["application/json"],
+)
+def handle_graphql_without_graphiql():
+    return view_no_graphiql.execute_request(app.current_request)

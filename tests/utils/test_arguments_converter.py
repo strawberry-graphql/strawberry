@@ -230,9 +230,9 @@ def test_nested_input_types():
     args = {
         "input": {
             "prNumber": 12,
-            "status": ReleaseFileStatus.OK.value,
+            "status": ReleaseFileStatus.OK,
             "releaseInfo": {
-                "changeType": ChangeType.MAJOR.value,
+                "changeType": ChangeType.MAJOR,
                 "changelog": "example",
             },
         }
@@ -262,7 +262,7 @@ def test_nested_input_types():
     args = {
         "input": {
             "prNumber": 12,
-            "status": ReleaseFileStatus.OK.value,
+            "status": ReleaseFileStatus.OK,
             "releaseInfo": None,
         }
     }

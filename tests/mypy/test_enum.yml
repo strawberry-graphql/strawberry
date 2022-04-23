@@ -137,3 +137,21 @@
   out: |
     main:10: note: Revealed type is "def (value: builtins.object) -> main.Flavour*"
     main:11: note: Revealed type is "Literal[main.Flavour.VANILLA]?"
+- case: test_enum_with_deprecation_reason
+  main: |
+    from enum import Enum
+
+    import strawberry
+
+    class Flavour(Enum):
+        VANILLA = strawberry.enum_value("vanilla")
+        STRAWBERRY = strawberry.enum_value(
+            "strawberry", deprecation_reason="We ran out"
+        )
+        CHOCOLATE = "chocolate"
+
+    reveal_type(strawberry.enum(name="IceCreamFlavour")(Flavour))
+    reveal_type(strawberry.enum(name="IceCreamFlavour")(Flavour).STRAWBERRY)
+  out: |
+    main:12: note: Revealed type is "def (value: builtins.object) -> main.Flavour*"
+    main:13: note: Revealed type is "Literal[main.Flavour.STRAWBERRY]?"

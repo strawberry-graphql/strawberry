@@ -808,11 +808,11 @@ testing = ["pytest", "pytest-benchmark"]
 
 [[package]]
 name = "pre-commit"
-version = "2.17.0"
+version = "2.18.1"
 description = "A framework for managing and maintaining multi-language pre-commit hooks."
 category = "dev"
 optional = false
-python-versions = ">=3.6.1"
+python-versions = ">=3.7"
 
 [package.dependencies]
 cfgv = ">=2.0.0"
@@ -1295,7 +1295,7 @@ python-versions = ">=3.6"
 
 [[package]]
 name = "types-aiofiles"
-version = "0.8.6"
+version = "0.8.8"
 description = "Typing stubs for aiofiles"
 category = "dev"
 optional = false
@@ -1319,7 +1319,7 @@ python-versions = "*"
 
 [[package]]
 name = "types-freezegun"
-version = "1.1.7"
+version = "1.1.9"
 description = "Typing stubs for freezegun"
 category = "dev"
 optional = false
@@ -1327,7 +1327,7 @@ python-versions = "*"
 
 [[package]]
 name = "types-python-dateutil"
-version = "2.8.10"
+version = "2.8.12"
 description = "Typing stubs for python-dateutil"
 category = "dev"
 optional = false
@@ -1335,7 +1335,7 @@ python-versions = "*"
 
 [[package]]
 name = "types-requests"
-version = "2.27.15"
+version = "2.27.20"
 description = "Typing stubs for requests"
 category = "dev"
 optional = false
@@ -1346,7 +1346,7 @@ types-urllib3 = "<1.27"
 
 [[package]]
 name = "types-setuptools"
-version = "57.4.11"
+version = "57.4.14"
 description = "Typing stubs for setuptools"
 category = "dev"
 optional = false
@@ -1354,7 +1354,7 @@ python-versions = "*"
 
 [[package]]
 name = "types-toml"
-version = "0.10.4"
+version = "0.10.5"
 description = "Typing stubs for toml"
 category = "dev"
 optional = false
@@ -1362,7 +1362,7 @@ python-versions = "*"
 
 [[package]]
 name = "types-typed-ast"
-version = "1.5.2"
+version = "1.5.3"
 description = "Typing stubs for typed-ast"
 category = "dev"
 optional = false
@@ -1537,7 +1537,7 @@ sanic = ["sanic"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "d20232e62fbebed5a8f421ce57439e6cac0487b52711b9fd69641bd92c55335e"
+content-hash = "9bac783f680cc4fc725a5e83b5e7bcbad175b0884ba9a4c496e4cecb57ad07ee"
 
 [metadata.files]
 aiofiles = [
@@ -2156,8 +2156,8 @@ pluggy = [
     {file = "pluggy-1.0.0.tar.gz", hash = "sha256:4224373bacce55f955a878bf9cfa763c1e360858e330072059e10bad68531159"},
 ]
 pre-commit = [
-    {file = "pre_commit-2.17.0-py2.py3-none-any.whl", hash = "sha256:725fa7459782d7bec5ead072810e47351de01709be838c2ce1726b9591dad616"},
-    {file = "pre_commit-2.17.0.tar.gz", hash = "sha256:c1a8040ff15ad3d648c70cc3e55b93e4d2d5b687320955505587fd79bbaed06a"},
+    {file = "pre_commit-2.18.1-py2.py3-none-any.whl", hash = "sha256:02226e69564ebca1a070bd1f046af866aa1c318dbc430027c50ab832ed2b73f2"},
+    {file = "pre_commit-2.18.1.tar.gz", hash = "sha256:5d445ee1fa8738d506881c5d84f83c62bb5be6b2838e32207433647e8e5ebe10"},
 ]
 psutil = [
     {file = "psutil-5.9.0-cp27-cp27m-manylinux2010_i686.whl", hash = "sha256:55ce319452e3d139e25d6c3f85a1acf12d1607ddedea5e35fb47a552c051161b"},
@@ -2510,8 +2510,8 @@ typed-ast = [
     {file = "typed_ast-1.5.2.tar.gz", hash = "sha256:525a2d4088e70a9f75b08b3f87a51acc9cde640e19cc523c7e41aa355564ae27"},
 ]
 types-aiofiles = [
-    {file = "types-aiofiles-0.8.6.tar.gz", hash = "sha256:ebf8b9a17f4128d095cbb7c523379b0764bd2dc0b3b4c79ec9dbb753561e07fb"},
-    {file = "types_aiofiles-0.8.6-py3-none-any.whl", hash = "sha256:40990251efa28ba60cac411221eb35ebb4b34cfef2b56f4d5f01054b06fbbbe8"},
+    {file = "types-aiofiles-0.8.8.tar.gz", hash = "sha256:62942901b44dd8fb14b5581e8389fa0fe5c03b8aef7a1f86ac08e7b550d7dc11"},
+    {file = "types_aiofiles-0.8.8-py3-none-any.whl", hash = "sha256:64846425bc267beec45ddf50b14fb532e6612b9d74c976761cc5e1c47a88a06b"},
 ]
 types-certifi = [
     {file = "types-certifi-2021.10.8.1.tar.gz", hash = "sha256:546cd3ca4466855959fbc8868fd7139a50eb55a2d1fae497e13b60af439597a3"},
@@ -2522,28 +2522,28 @@ types-chardet = [
     {file = "types_chardet-4.0.3-py3-none-any.whl", hash = "sha256:8990a86d4c7cfa6c6c5889fc49e456e477851e75b5adb396d42ae106d0ae02ea"},
 ]
 types-freezegun = [
-    {file = "types-freezegun-1.1.7.tar.gz", hash = "sha256:e9d1327e98c6caa8f65de0018ded274347e8e34198d59aa9a5c24ad9265d5e5e"},
-    {file = "types_freezegun-1.1.7-py3-none-any.whl", hash = "sha256:efa02341ad35e4f24b3346d09b60332e967586a5bc495a56b1c9c927b4c788b6"},
+    {file = "types-freezegun-1.1.9.tar.gz", hash = "sha256:6f05108d468baecadf999873bd37e57b25ceb35d35d3f83e7a742f25d6fe8b0e"},
+    {file = "types_freezegun-1.1.9-py3-none-any.whl", hash = "sha256:fe1dd73372d96358dcb93e3aeb66d39f6ac63749e0724f13554cc145e2120efe"},
 ]
 types-python-dateutil = [
-    {file = "types-python-dateutil-2.8.10.tar.gz", hash = "sha256:6bcf3aae7242e5793bafd7b2bcfb4e255eb7b2b3144acd0df0e182dce58ccad3"},
-    {file = "types_python_dateutil-2.8.10-py3-none-any.whl", hash = "sha256:1f6d2305513d54da353a9dde7ed8a9ef46e8987377291612a0e2b9aac2d2b875"},
+    {file = "types-python-dateutil-2.8.12.tar.gz", hash = "sha256:ef3053b745f01c4443b512b6b3d5b04fbaf2d476aa503b6cc932046a1edfa56a"},
+    {file = "types_python_dateutil-2.8.12-py3-none-any.whl", hash = "sha256:3a49b238d95ff1ae5c92d058b0eeb57a0a79798178ecc784adfba18d1a645e20"},
 ]
 types-requests = [
-    {file = "types-requests-2.27.15.tar.gz", hash = "sha256:2d371183c535208d2cc8fe7473d9b49c344c7077eb70302eb708638fb86086a8"},
-    {file = "types_requests-2.27.15-py3-none-any.whl", hash = "sha256:77d09182a68e447e9e8b0ffc21abf54618b96f07689dffbb6a41cf0356542969"},
+    {file = "types-requests-2.27.20.tar.gz", hash = "sha256:63344573cde6c4efd44d867c0158d9fb7e6beb95721cbe9882f3f857ee8a5398"},
+    {file = "types_requests-2.27.20-py3-none-any.whl", hash = "sha256:68b8de86552116424ec23b77afc925e111afb6496d3821b183b7d151b3b834d4"},
 ]
 types-setuptools = [
-    {file = "types-setuptools-57.4.11.tar.gz", hash = "sha256:262f7406e0c7d705ad6bb4526b5b761fa500bf99eab74de85ac3592187d62935"},
-    {file = "types_setuptools-57.4.11-py3-none-any.whl", hash = "sha256:fbb0647569d6fb2f6bc472402265250c0ffa53e60180d2cbfee9e84f085921f0"},
+    {file = "types-setuptools-57.4.14.tar.gz", hash = "sha256:df02fe1dd244f58cf4e67cfc3d0a97930a2d61a72dd89f21d81c71017cd83f9a"},
+    {file = "types_setuptools-57.4.14-py3-none-any.whl", hash = "sha256:828f7e7e51e157876f47c80518b23ba0c3c36aa8081efd39d5d39f393938aec9"},
 ]
 types-toml = [
-    {file = "types-toml-0.10.4.tar.gz", hash = "sha256:9340e7c1587715581bb13905b3af30b79fe68afaccfca377665d5e63b694129a"},
-    {file = "types_toml-0.10.4-py3-none-any.whl", hash = "sha256:4a9ffd47bbcec49c6fde6351a889b2c1bd3c0ef309fa0eed60dc28e58c8b9ea6"},
+    {file = "types-toml-0.10.5.tar.gz", hash = "sha256:f949463a388200be392ef9399dbad3e1e3bbe6d4543d84ad93d96c3fda028080"},
+    {file = "types_toml-0.10.5-py3-none-any.whl", hash = "sha256:c1bed5926538aa9c4725cd369c250c47310f16f47d20611b7baef5988fed8634"},
 ]
 types-typed-ast = [
-    {file = "types-typed-ast-1.5.2.tar.gz", hash = "sha256:6d8fd2ea90836cb43111ac8aae7cd864e098593c93ecceba90fe46d6b7b0c73e"},
-    {file = "types_typed_ast-1.5.2-py3-none-any.whl", hash = "sha256:8f459097ad11d2efc0c7e31f3adce45dc94e1c8950d55e1fe502aeff4b528d9a"},
+    {file = "types-typed-ast-1.5.3.tar.gz", hash = "sha256:6a946115f7e2b960e3db1120d0ca99c493d6b624f67d0fc4f43d2b0478cac867"},
+    {file = "types_typed_ast-1.5.3-py3-none-any.whl", hash = "sha256:0fe41cb82c28a07a8c8180f20b92f56049f07df5cb31bbf2333b57daafd834b6"},
 ]
 types-ujson = [
     {file = "types-ujson-4.2.1.tar.gz", hash = "sha256:9e7576316914151f4e7086fae4c5aea3a17ae2d66c2edea6525f4c82354c364d"},

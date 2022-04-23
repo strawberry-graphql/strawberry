@@ -3,7 +3,7 @@ from .arguments import argument
 from .auto import auto
 from .custom_scalar import scalar
 from .directive import directive
-from .enum import enum
+from .enum import enum, enum_value
 from .field import field
 from .lazy_type import LazyType
 from .mutation import mutation, subscription
@@ -29,6 +29,7 @@ __all__ = [
     "directive",
     "schema_directive",
     "enum",
+    "enum_value",
     "federation",
     "field",
     "input",

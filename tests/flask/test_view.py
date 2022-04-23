@@ -21,7 +21,20 @@ def test_graphql_query(flask_client):
     data = json.loads(response.data.decode())
 
     assert response.status_code == 200
-    assert data["data"]["hello"] == "strawberry"
+    assert data["data"]["hello"] == "Hello world"
+
+
+def test_can_pass_variables(flask_client):
+    query = {
+        "query": "query Hello($name: String!) { hello(name: $name) }",
+        "variables": {"name": "James"},
+    }
+
+    response = flask_client.get("/graphql", json=query)
+    data = json.loads(response.data.decode())
+
+    assert response.status_code == 200
+    assert data["data"]["hello"] == "Hello James"
 
 
 def test_fails_when_request_body_has_invalid_json(flask_client):
@@ -48,7 +61,7 @@ def test_graphiql_disabled_view():
         client.environ_base["HTTP_ACCEPT"] = "text/html"
         response = client.get("/graphql")
 
-        assert response.status_code == 404
+        assert response.status_code == 415
 
 
 def test_custom_context():

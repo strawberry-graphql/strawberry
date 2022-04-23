@@ -25,5 +25,11 @@ def test_client_no_graphiql():
 
 
 @pytest.fixture
+def test_client_no_get():
+    app = create_app(allow_queries_via_get=False)
+    return TestClient(app)
+
+
+@pytest.fixture
 def graphql_client(test_client):
     yield GraphQLTestClient(test_client)

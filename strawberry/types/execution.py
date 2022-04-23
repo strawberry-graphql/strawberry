@@ -1,7 +1,5 @@
 import dataclasses
-from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type, cast
-
-from typing_extensions import Literal
+from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type
 
 from graphql import (
     ASTValidationRule,
@@ -13,12 +11,11 @@ from graphql.language import DocumentNode, OperationDefinitionNode
 
 from strawberry.utils.operation import get_first_operation, get_operation_type
 
+from .graphql import OperationType
+
 
 if TYPE_CHECKING:
     from strawberry.schema import Schema
-
-
-GraphqlOperationTypes = Literal["QUERY", "MUTATION", "SUBSCRIPTION"]
 
 
 @dataclasses.dataclass
@@ -59,14 +56,12 @@ class ExecutionContext:
         return definition.name.value
 
     @property
-    def operation_type(self) -> GraphqlOperationTypes:
+    def operation_type(self) -> OperationType:
         graphql_document = self.graphql_document
         if not graphql_document:
             raise RuntimeError("No GraphQL document available")
 
-        operation_type = get_operation_type(graphql_document, self.operation_name)
-
-        return cast(GraphqlOperationTypes, operation_type.name)
+        return get_operation_type(graphql_document, self.operation_name)
 
     def _get_first_operation(self) -> Optional[OperationDefinitionNode]:
         graphql_document = self.graphql_document

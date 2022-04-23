@@ -1,6 +1,88 @@
 CHANGELOG
 =========
 
+0.108.3 - 2022-04-22
+--------------------
+
+Fixes a bug when converting pydantic models with NewTypes in a List.
+This no longers causes an exception.
+
+ ```python
+from typing import List, NewType
+from pydantic import BaseModel
+import strawberry
+
+password = NewType("password", str)
+
+class User(BaseModel):
+    passwords: List[password]
+
+
+@strawberry.experimental.pydantic.type(User)
+class UserType:
+    passwords: strawberry.auto
+
+ ```
+
+Contributed by [James Chua](https://github.com/thejaminator) via [PR #1770](https://github.com/strawberry-graphql/strawberry/pull/1770/)
+
+
+0.108.2 - 2022-04-21
+--------------------
+
+Fixes mypy type inference when using @strawberry.experimental.pydantic.input
+ and @strawberry.experimental.pydantic.interface decorators
+
+Contributed by [James Chua](https://github.com/thejaminator) via [PR #1832](https://github.com/strawberry-graphql/strawberry/pull/1832/)
+
+
+0.108.1 - 2022-04-20
+--------------------
+
+Refactoring: Move enum deserialization logic from convert_arguments to CustomGraphQLEnumType
+
+Contributed by [Paulo Costa](https://github.com/paulo-raca) via [PR #1765](https://github.com/strawberry-graphql/strawberry/pull/1765/)
+
+
+0.108.0 - 2022-04-19
+--------------------
+
+Added support for deprecating Enum values with `deprecation_reason` while using `strawberry.enum_value` instead of string definition.
+
+```python
+@strawberry.enum
+class IceCreamFlavour(Enum):
+    VANILLA = strawberry.enum_value("vanilla")
+    STRAWBERRY = strawberry.enum_value(
+        "strawberry", deprecation_reason="We ran out"
+    )
+    CHOCOLATE = "chocolate"
+```
+
+Contributed by [Mateusz Sobas](https://github.com/msobas) via [PR #1720](https://github.com/strawberry-graphql/strawberry/pull/1720/)
+
+
+0.107.1 - 2022-04-18
+--------------------
+
+This release fixes an issue in the previous release where requests using query params did not support passing variable values. Variables passed by query params are now parsed from a string to a dictionary.
+
+Contributed by [Matt Exact](https://github.com/MattExact) via [PR #1820](https://github.com/strawberry-graphql/strawberry/pull/1820/)
+
+
+0.107.0 - 2022-04-18
+--------------------
+
+This release adds support in all our integration for queries via GET requests.
+This behavior is enabled by default, but you can disable it by passing
+`allow_queries_via_get=False` to the constructor of the integration of your
+choice.
+
+For security reason only queries are allowed via `GET` requests.
+
+Contributed by [Matt Exact](https://github.com/MattExact) via [PR #1686](https://github.com/strawberry-graphql/strawberry/pull/1686/)
+
+
 0.106.3 - 2022-04-15
 --------------------
 
