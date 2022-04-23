@@ -14,12 +14,14 @@ from .scalars import ID
 from .schema import Schema
 from .schema_directive import schema_directive
 from .union import union
+from .unset import UNSET
 
 
 __all__ = [
     "BasePermission",
     "experimental",
     "ID",
+    "UNSET",
     "LazyType",
     "Private",
     "Schema",

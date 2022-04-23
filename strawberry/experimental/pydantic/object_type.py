@@ -19,7 +19,6 @@ from pydantic.fields import ModelField
 
 from graphql import GraphQLResolveInfo
 
-from strawberry.arguments import UNSET
 from strawberry.auto import StrawberryAuto
 from strawberry.experimental.pydantic.conversion import (
     convert_pydantic_model_to_strawberry_class,
@@ -38,6 +37,7 @@ from strawberry.field import StrawberryField
 from strawberry.object_type import _process_type, _wrap_dataclass
 from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.types.type_resolver import _get_fields
+from strawberry.unset import UNSET
 
 
 def get_type_for_field(field: ModelField, is_input: bool):

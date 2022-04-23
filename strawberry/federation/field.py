@@ -12,10 +12,10 @@ from typing import (
 
 from typing_extensions import Literal
 
-from strawberry.arguments import UNSET
 from strawberry.field import _RESOLVER_TYPE, StrawberryField, field as base_field
 from strawberry.permission import BasePermission
 from strawberry.schema_directive import StrawberrySchemaDirective
+from strawberry.unset import UNSET
 
 from .schema_directives import External, Provides, Requires
 

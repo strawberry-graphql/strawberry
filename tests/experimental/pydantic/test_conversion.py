@@ -10,7 +10,6 @@ from pydantic.fields import ModelField
 from pydantic.typing import NoArgAnyCallable
 
 import strawberry
-from strawberry.arguments import UNSET
 from strawberry.experimental.pydantic.exceptions import (
     AutoFieldsNotInBaseModelError,
     BothDefaultAndDefaultFactoryDefinedError,
@@ -23,6 +22,7 @@ from strawberry.experimental.pydantic.utils import (
 from strawberry.field import StrawberryField
 from strawberry.type import StrawberryOptional
 from strawberry.types.types import TypeDefinition
+from strawberry.unset import UNSET
 
 
 def test_can_use_type_standalone():

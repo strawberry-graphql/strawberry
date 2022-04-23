@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -24,17 +25,19 @@ from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
 from .exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError
 from .scalars import is_scalar
 from .types.types import TypeDefinition
-from .unset import _Unset
+from .unset import UNSET as _deprecated_UNSET, _deprecated_is_unset  # noqa
 
 
 if TYPE_CHECKING:
     from strawberry.schema.config import StrawberryConfig
 
-UNSET: Any = _Unset()
-
-
-def is_unset(value: Any) -> bool:
-    return type(value) is _Unset
+DEPRECATED_NAMES: Dict[str, str] = {
+    "UNSET": (
+        "importing `UNSET` from `strawberry.arguments` is deprecated,"
+        "import instead from `strawberry` or from `strawberry.unset`"
+    ),
+    "is_unset": "`is_unset` is deprecated use `value is UNSET` instead",
+}
 
 
 class StrawberryArgumentAnnotation:
@@ -61,7 +64,7 @@ class StrawberryArgument:
         type_annotation: StrawberryAnnotation,
         is_subscription: bool = False,
         description: Optional[str] = None,
-        default: object = UNSET,
+        default: object = _deprecated_UNSET,
         deprecation_reason: Optional[str] = None,
     ) -> None:
         self.python_name = python_name
@@ -73,7 +76,9 @@ class StrawberryArgument:
         self.deprecation_reason = deprecation_reason
 
         # TODO: Consider moving this logic to a function
-        self.default = UNSET if default is inspect.Parameter.empty else default
+        self.default = (
+            _deprecated_UNSET if default is inspect.Parameter.empty else default
+        )
 
         if self._annotation_is_annotated(type_annotation):
             self._parse_annotated()
@@ -119,8 +124,8 @@ def convert_argument(
     if value is None:
         return None
 
-    if is_unset(value):
-        return value
+    if value is _deprecated_UNSET:
+        return _deprecated_UNSET
 
     if isinstance(type_, StrawberryOptional):
         return convert_argument(value, type_.of_type, scalar_registry, config)
@@ -207,11 +212,18 @@ def argument(
     )
 
 
+def __getattr__(name: str) -> Any:
+    if name in DEPRECATED_NAMES:
+        warnings.warn(DEPRECATED_NAMES[name], DeprecationWarning, stacklevel=2)
+        return globals()[f"_deprecated_{name}"]
+    raise AttributeError(f"module {__name__} has no attribute {name}")
+
+
 # TODO: check exports
-__all__ = [
+__all__ = [  # noqa: F822
     "StrawberryArgument",
     "StrawberryArgumentAnnotation",
-    "UNSET",
+    "UNSET",  # for backwards compatibility
     "argument",
-    "is_unset",
+    "is_unset",  # for backwards compatibility
 ]
