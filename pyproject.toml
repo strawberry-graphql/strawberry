@@ -95,7 +95,7 @@ sanic-testing = "^0.8"
 fastapi = {version = ">=0.65.0", optional = false}
 pytest-xprocess = "^0.18.1"
 MarkupSafe = "2.1.1"
-pytest-snapshot = "^0.8.1"
+pytest-snapshot = "^0.9.0"
 
 [tool.poetry.extras]
 aiohttp = ["aiohttp", "pytest-aiohttp"]

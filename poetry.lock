@@ -1059,7 +1059,7 @@ regex = "*"
 
 [[package]]
 name = "pytest-snapshot"
-version = "0.8.1"
+version = "0.9.0"
 description = "A plugin for snapshot testing with pytest."
 category = "dev"
 optional = false
@@ -1537,7 +1537,7 @@ sanic = ["sanic"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "9bac783f680cc4fc725a5e83b5e7bcbad175b0884ba9a4c496e4cecb57ad07ee"
+content-hash = "ad1983af446886b0d9a7af0591ce126d9cca8ec7be53c226dcea21795bda317a"
 
 [metadata.files]
 aiofiles = [
@@ -2295,8 +2295,8 @@ pytest-mypy-plugins = [
     {file = "pytest_mypy_plugins-1.9.3-py3-none-any.whl", hash = "sha256:10e60bd59a2b043ebda70f9a0ad1a8c9324ce6d0b46b93cae3b1172df2d4d81b"},
 ]
 pytest-snapshot = [
-    {file = "pytest-snapshot-0.8.1.tar.gz", hash = "sha256:0f8872d56bc3ceacb465967072b059a36714898a37c9eb1c75cd4054110106f2"},
-    {file = "pytest_snapshot-0.8.1-py3-none-any.whl", hash = "sha256:ccb72c8e40dd1ec96b40caf0d328a9e9124b91d6a06204ad47d67403d83a4fd2"},
+    {file = "pytest-snapshot-0.9.0.tar.gz", hash = "sha256:c7013c3abc3e860f9feff899f8b4debe3708650d8d8242a61bf2625ff64db7f3"},
+    {file = "pytest_snapshot-0.9.0-py3-none-any.whl", hash = "sha256:4b9fe1c21c868fe53a545e4e3184d36bc1c88946e3f5c1d9dd676962a9b3d4ab"},
 ]
 pytest-xprocess = [
     {file = "pytest-xprocess-0.18.1.tar.gz", hash = "sha256:fd9f30ed1584b5833bc34494748adf0fb9de3ca7bacc4e88ad71989c21cba266"},
