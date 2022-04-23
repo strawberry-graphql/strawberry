@@ -214,7 +214,7 @@ def argument(
 
 def __getattr__(name: str) -> Any:
     if name in DEPRECATED_NAMES:
-        warnings.warn(DEPRECATED_NAMES[name])
+        warnings.warn(DEPRECATED_NAMES[name], DeprecationWarning, stacklevel=2)
         return globals()[f"_deprecated_{name}"]
     raise AttributeError(f"module {__name__} has no attribute {name}")
 

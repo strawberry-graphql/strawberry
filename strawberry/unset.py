@@ -32,13 +32,13 @@ UNSET: Any = UnsetType()
 
 
 def _deprecated_is_unset(value: Any) -> bool:
-    warnings.warn(DEPRECATED_NAMES["is_unset"])
+    warnings.warn(DEPRECATED_NAMES["is_unset"], DeprecationWarning, stacklevel=2)
     return value is UNSET
 
 
 def __getattr__(name: str) -> Any:
     if name in DEPRECATED_NAMES:
-        warnings.warn(DEPRECATED_NAMES[name])
+        warnings.warn(DEPRECATED_NAMES[name], DeprecationWarning, stacklevel=2)
         return globals()[f"_deprecated_{name}"]
     raise AttributeError(f"module {__name__} has no attribute {name}")
 
