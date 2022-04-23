@@ -1,5 +1,9 @@
 from __future__ import annotations
 
+from typing import Dict, Optional
+
+from typing_extensions import Literal
+
 from fastapi import BackgroundTasks, Depends, FastAPI, Request, WebSocket
 from fastapi.testclient import TestClient
 from strawberry.fastapi import GraphQLRouter as BaseGraphQLRouter
@@ -34,11 +38,12 @@ class GraphQLRouter(BaseGraphQLRouter):
 
 
 class FastAPIHttpClient(HttpClient):
-    def __init__(self):
+    def __init__(self, graphiql: bool = True):
         self.app = FastAPI()
 
         graphql_app = GraphQLRouter(
             schema,
+            graphiql=graphiql,
             context_getter=get_context,
             root_value_getter=get_root_value,
         )
@@ -46,7 +51,17 @@ class FastAPIHttpClient(HttpClient):
 
         self.client = TestClient(self.app)
 
-    async def post(self, url: str, json: JSON) -> Response:
-        response = self.client.post(url, json=json)
+    async def _request(
+        self, method: Literal["get", "post"], url: str, **kwargs
+    ) -> Response:
+        response = getattr(self.client, method)(url, **kwargs)
 
         return Response(status_code=response.status_code, data=response.content)
+
+    async def get(self, url: str, headers: Optional[Dict[str, str]] = None) -> Response:
+        return await self._request("get", url, headers=headers)
+
+    async def post(
+        self, url: str, json: JSON, headers: Optional[Dict[str, str]] = None
+    ) -> Response:
+        return await self._request("post", url, json=json, headers=headers)

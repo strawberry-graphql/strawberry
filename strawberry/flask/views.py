@@ -54,12 +54,15 @@ class GraphQLView(View):
             files_map = json.loads(request.form.get("map", "{}"))
 
             data = replace_placeholders_with_files(operations, files_map, request.files)
-        elif method == "GET" and request.args:
-            data = parse_query_params(request.args.to_dict())
-        elif method == "GET" and should_render_graphiql(self.graphiql, request):
-            template = render_graphiql_page()
+        elif method == "GET":
+            if request.args:
+                data = parse_query_params(request.args.to_dict())
+            elif should_render_graphiql(self.graphiql, request):
+                template = render_graphiql_page()
 
-            return self.render_template(template=template)
+                return self.render_template(template=template)
+            else:
+                return Response(status=404, response="Not found")
         else:
             return Response("Unsupported Media Type", 415)
 
