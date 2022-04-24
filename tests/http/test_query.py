@@ -1,11 +1,6 @@
-import json
-
-import pytest
-
 from .clients import HttpClient
 
 
-@pytest.mark.asyncio
 async def test_graphql_query(http_client: HttpClient):
     response = await http_client.query(
         query="{ hello }",
@@ -13,7 +8,21 @@ async def test_graphql_query(http_client: HttpClient):
             "Content-Type": "application/json",
         },
     )
-    data = json.loads(response.data.decode())
+    data = response.json["data"]
 
     assert response.status_code == 200
-    assert data["data"]["hello"] == "Hello world"
+    assert data["hello"] == "Hello world"
+
+
+async def test_graphql_can_pass_variables(http_client: HttpClient):
+    response = await http_client.query(
+        query="query hello($name: String!) { hello(name: $name) }",
+        variables={"name": "Jake"},
+        headers={
+            "Content-Type": "application/json",
+        },
+    )
+    data = response.json["data"]
+
+    assert response.status_code == 200
+    assert data["hello"] == "Hello Jake"

@@ -26,7 +26,7 @@ class AioHttpClient(HttpClient):
             "*", "/graphql", GraphQLView(schema=schema, graphiql=graphiql)
         )
 
-    async def _request(
+    async def _graphql_request(
         self,
         method: Literal["get", "post"],
         query: Optional[str] = None,
@@ -55,18 +55,26 @@ class AioHttpClient(HttpClient):
                 data=(await response.text()).encode(),
             )
 
-    async def get(
+    async def request(
         self,
         url: str,
+        method: Literal["get", "post", "patch", "put", "delete"],
         headers: Optional[Dict[str, str]] = None,
     ) -> Response:
         async with TestClient(TestServer(self.app)) as client:
-            response = await client.get("/graphql", headers=headers)
+            response = await getattr(client, method)(url, headers=headers)
 
             return Response(
                 status_code=response.status,
                 data=(await response.text()).encode(),
             )
+
+    async def get(
+        self,
+        url: str,
+        headers: Optional[Dict[str, str]] = None,
+    ) -> Response:
+        return await self.request(url, "get", headers=headers)
 
     async def post(
         self,

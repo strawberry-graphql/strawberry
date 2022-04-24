@@ -33,7 +33,7 @@ class SanicHttpClient(HttpClient):
             GraphQLView.as_view(schema=schema, graphiql=graphiql), "/graphql"
         )
 
-    async def _request(
+    async def _graphql_request(
         self,
         method: Literal["get", "post"],
         query: Optional[str] = None,
@@ -55,18 +55,26 @@ class SanicHttpClient(HttpClient):
 
         return Response(status_code=response.status_code, data=response.content)
 
+    async def request(
+        self,
+        url: str,
+        method: Literal["get", "post", "patch", "put", "delete"],
+        headers: Optional[Dict[str, str]] = None,
+    ) -> Response:
+        request, response = await self.app.asgi_client.request(
+            method,
+            url,
+            headers=headers,
+        )
+
+        return Response(status_code=response.status_code, data=response.content)
+
     async def get(
         self,
         url: str,
         headers: Optional[Dict[str, str]] = None,
     ) -> Response:
-        request, response = await self.app.asgi_client.request(
-            "get",
-            "/graphql",
-            headers=headers,
-        )
-
-        return Response(status_code=response.status_code, data=response.content)
+        return await self.request(url, "get", headers=headers)
 
     async def post(
         self,
@@ -77,7 +85,7 @@ class SanicHttpClient(HttpClient):
     ) -> Response:
         body = data or dumps(json)
         request, response = await self.app.asgi_client.request(
-            "post", "/graphql", data=body, headers=headers
+            "post", url, data=body, headers=headers
         )
 
         return Response(status_code=response.status_code, data=response.content)

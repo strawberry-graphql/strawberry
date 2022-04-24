@@ -69,30 +69,6 @@ class GraphQLView(BaseGraphQLView):
         return Query()
 
 
-def test_graphiql_view():
-    factory = RequestFactory()
-
-    request = factory.get("/graphql/", HTTP_ACCEPT="text/html")
-
-    response = GraphQLView.as_view(schema=schema)(request)
-    body = response.content.decode()
-
-    assert "GraphiQL" in body
-
-
-@pytest.mark.parametrize("method", ["DELETE", "HEAD", "PUT", "PATCH"])
-def test_disabled_methods(method):
-    factory = RequestFactory()
-
-    rf = getattr(factory, method.lower())
-
-    request = rf("/graphql/")
-
-    response = GraphQLView.as_view(schema=schema, graphiql=False)(request)
-
-    assert response.status_code == 405
-
-
 def test_fails_when_not_sending_query():
     factory = RequestFactory()
 
@@ -124,39 +100,6 @@ def test_graphiql_disabled_view():
 
     with pytest.raises(Http404):
         GraphQLView.as_view(schema=schema, graphiql=False)(request)
-
-
-def test_graphql_query():
-    query = "{ hello }"
-
-    factory = RequestFactory()
-    request = factory.post(
-        "/graphql/", {"query": query}, content_type="application/json"
-    )
-
-    response = GraphQLView.as_view(schema=schema)(request)
-    data = json.loads(response.content.decode())
-
-    assert response["content-type"] == "application/json"
-    assert data["data"]["hello"] == "strawberry"
-
-
-def test_graphql_can_pass_variables():
-    query = "query Hi($name: String!) { hi(name: $name) }"
-    variables = {"name": "James"}
-
-    factory = RequestFactory()
-    request = factory.post(
-        "/graphql/",
-        {"query": query, "variables": variables},
-        content_type="application/json",
-    )
-
-    response = GraphQLView.as_view(schema=schema)(request)
-    data = json.loads(response.content.decode())
-
-    assert response["content-type"] == "application/json"
-    assert data["data"]["hi"] == "Hello James"
 
 
 def test_graphql_get_query_using_params():

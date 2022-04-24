@@ -31,7 +31,7 @@ class HttpClient(abc.ABC):
         ...
 
     @abc.abstractmethod
-    async def _request(
+    async def _graphql_request(
         self,
         method: Literal["get", "post"],
         query: Optional[str] = None,
@@ -39,6 +39,15 @@ class HttpClient(abc.ABC):
         files: Optional[Dict[str, BytesIO]] = None,
         headers: Optional[Dict[str, str]] = None,
         **kwargs,
+    ) -> Response:
+        ...
+
+    @abc.abstractmethod
+    async def request(
+        self,
+        url: str,
+        method: Literal["get", "post", "patch", "put", "delete"],
+        headers: Optional[Dict[str, str]] = None,
     ) -> Response:
         ...
 
@@ -68,7 +77,7 @@ class HttpClient(abc.ABC):
         files: Optional[Dict[str, BytesIO]] = None,
         headers: Optional[Dict[str, str]] = None,
     ) -> Response:
-        return await self._request(
+        return await self._graphql_request(
             method, query=query, headers=headers, variables=variables, files=files
         )
 

@@ -47,6 +47,11 @@ class GraphQLView(View):
         method = request.method
         content_type = request.content_type or ""
 
+        if request.method not in {"POST", "GET"}:
+            return Response(
+                "Unsupported method, must be of request type POST or GET", 405
+            )
+
         if "application/json" in content_type:
             data: dict = request.json  # type:ignore[assignment]
         elif content_type.startswith("multipart/form-data"):

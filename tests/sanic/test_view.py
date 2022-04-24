@@ -6,49 +6,6 @@ from sanic import Sanic
 from strawberry.sanic.views import GraphQLView as BaseGraphQLView
 from strawberry.types import ExecutionResult, Info
 
-from .app import create_app
-
-
-def test_graphql_query(sanic_client):
-    query = {
-        "query": """
-            query {
-                hello
-            }
-        """
-    }
-
-    request, response = sanic_client.test_client.post("/graphql", json=query)
-    data = response.json
-    assert response.status == 200
-    assert data["data"]["hello"] == "Hello world"
-
-
-def test_can_pass_variables(sanic_client):
-    query = {
-        "query": "query Hello($name: String!) { hello(name: $name) }",
-        "variables": {"name": "James"},
-    }
-
-    request, response = sanic_client.test_client.post("/graphql", json=query)
-    data = response.json
-    assert response.status == 200
-    assert data["data"]["hello"] == "Hello James"
-
-
-def test_graphiql_view(sanic_client):
-    request, response = sanic_client.test_client.get("/graphql")
-    body = response.body.decode()
-
-    assert "GraphiQL" in body
-
-
-def test_graphiql_disabled_view():
-    app = create_app(graphiql=False)
-
-    request, response = app.test_client.get("/graphql")
-    assert response.status == 404
-
 
 def test_custom_context():
     class CustomGraphQLView(BaseGraphQLView):

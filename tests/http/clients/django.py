@@ -44,7 +44,7 @@ class DjangoHttpClient(HttpClient):
         else:
             return Response(status_code=response.status_code, data=response.content)
 
-    async def _request(
+    async def _graphql_request(
         self,
         method: Literal["get", "post"],
         query: Optional[str] = None,
@@ -81,20 +81,25 @@ class DjangoHttpClient(HttpClient):
 
         return self._do_request(request)
 
-    async def get(
+    async def request(
         self,
         url: str,
+        method: Literal["get", "post", "patch", "put", "delete"],
         headers: Optional[Dict[str, str]] = None,
     ) -> Response:
         headers = self._get_headers(headers or {})
 
         factory = RequestFactory()
-        request = factory.get(
-            url,
-            **headers,
-        )
+        request = getattr(factory, method)(url, **headers)
 
         return self._do_request(request)
+
+    async def get(
+        self,
+        url: str,
+        headers: Optional[Dict[str, str]] = None,
+    ) -> Response:
+        return await self.request(url, "get", headers=headers)
 
     async def post(
         self,

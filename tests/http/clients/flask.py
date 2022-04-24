@@ -30,7 +30,7 @@ class FlaskHttpClient(HttpClient):
             ),
         )
 
-    async def _request(
+    async def _graphql_request(
         self,
         method: Literal["get", "post"],
         query: Optional[str] = None,
@@ -62,18 +62,26 @@ class FlaskHttpClient(HttpClient):
             data=response.data,
         )
 
-    async def get(
+    async def request(
         self,
         url: str,
+        method: Literal["get", "post", "patch", "put", "delete"],
         headers: Optional[Dict[str, str]] = None,
     ) -> Response:
         with self.app.test_client() as client:
-            response = client.get("/graphql", headers=headers)
+            response = getattr(client, method)(url, headers=headers)
 
         return Response(
             status_code=response.status_code,
             data=response.data,
         )
+
+    async def get(
+        self,
+        url: str,
+        headers: Optional[Dict[str, str]] = None,
+    ) -> Response:
+        return await self.request(url, "get", headers=headers)
 
     async def post(
         self,
@@ -83,7 +91,7 @@ class FlaskHttpClient(HttpClient):
         headers: Optional[Dict[str, str]] = None,
     ) -> Response:
         with self.app.test_client() as client:
-            response = client.post("/graphql", headers=headers, data=data, json=json)
+            response = client.post(url, headers=headers, data=data, json=json)
 
         return Response(
             status_code=response.status_code,

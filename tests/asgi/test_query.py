@@ -34,14 +34,6 @@ def test_returns_errors(graphql_client):
     ]
 
 
-def test_can_pass_variables(graphql_client):
-    query = "query Hello($name: String!) { hello(name: $name) }"
-
-    response = graphql_client.query(query=query, variables={"name": "James"})
-
-    assert response.data == {"hello": "Hello James"}
-
-
 def test_returns_errors_and_data(graphql_client):
     query = "{ hello, alwaysFail }"
 

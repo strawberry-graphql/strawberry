@@ -53,7 +53,7 @@ class FastAPIHttpClient(HttpClient):
 
         self.client = TestClient(self.app)
 
-    async def _request(
+    async def _graphql_request(
         self,
         method: Literal["get", "post"],
         query: Optional[str] = None,
@@ -75,17 +75,25 @@ class FastAPIHttpClient(HttpClient):
 
         return Response(status_code=response.status_code, data=response.content)
 
-    async def get(
+    async def request(
         self,
         url: str,
+        method: Literal["get", "post", "patch", "put", "delete"],
         headers: Optional[Dict[str, str]] = None,
     ) -> Response:
-        response = self.client.get("/graphql", headers=headers)
+        response = getattr(self.client, method)(url, headers=headers)
 
         return Response(
             status_code=response.status_code,
             data=response.content,
         )
+
+    async def get(
+        self,
+        url: str,
+        headers: Optional[Dict[str, str]] = None,
+    ) -> Response:
+        return await self.request(url, "get", headers=headers)
 
     async def post(
         self,
@@ -94,7 +102,7 @@ class FastAPIHttpClient(HttpClient):
         json: Optional[JSON] = None,
         headers: Optional[Dict[str, str]] = None,
     ) -> Response:
-        response = self.client.post("/graphql", headers=headers, data=data, json=json)
+        response = self.client.post(url, headers=headers, data=data, json=json)
 
         return Response(
             status_code=response.status_code,
