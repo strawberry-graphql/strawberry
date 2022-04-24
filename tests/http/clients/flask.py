@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from typing import Dict, Optional
+import json
+from io import BytesIO
+from typing import Dict, Optional, Union
 
 from typing_extensions import Literal
 
@@ -8,7 +10,7 @@ from flask import Flask
 from strawberry.flask.views import GraphQLView as BaseGraphQLView
 
 from ..schema import Query, schema
-from . import JSON, HttpClient, Response
+from . import HttpClient, Response
 
 
 class GraphQLView(BaseGraphQLView):
@@ -29,20 +31,33 @@ class FlaskHttpClient(HttpClient):
         )
 
     async def _request(
-        self, method: Literal["get", "post"], url: str, **kwargs
+        self,
+        method: Literal["get", "post"],
+        query: Optional[str] = None,
+        variables: Optional[Dict[str, object]] = None,
+        files: Optional[Dict[str, BytesIO]] = None,
+        headers: Optional[Dict[str, str]] = None,
+        **kwargs,
     ) -> Response:
+        body = self._build_body(query, variables, files)
+
+        data: Union[Dict[str, object], str, None] = None
+
+        if body and files:
+            body.update({name: (file, name) for name, file in files.items()})
+
+        if body:
+            data = body if files else json.dumps(body)
+
         with self.app.test_client() as client:
-            response = getattr(client, method)(url, **kwargs)
+            response = getattr(client, method)(
+                "/graphql",
+                data=data,
+                headers=headers,
+                **kwargs,
+            )
 
             return Response(
                 status_code=response.status_code,
                 data=response.data,
             )
-
-    async def get(self, url: str, headers: Optional[Dict[str, str]] = None) -> Response:
-        return await self._request("get", url, headers=headers)
-
-    async def post(
-        self, url: str, json: JSON, headers: Optional[Dict[str, str]] = None
-    ) -> Response:
-        return await self._request("post", url, json=json, headers=headers)

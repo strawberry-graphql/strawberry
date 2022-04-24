@@ -1,6 +1,8 @@
 from __future__ import annotations
 
-from typing import Dict, Optional
+import json
+from io import BytesIO
+from typing import Dict, Optional, Union
 
 from typing_extensions import Literal
 
@@ -9,7 +11,7 @@ from fastapi.testclient import TestClient
 from strawberry.fastapi import GraphQLRouter as BaseGraphQLRouter
 
 from ..schema import Query, schema
-from . import JSON, HttpClient, Response
+from . import HttpClient, Response
 
 
 def custom_context_dependency() -> str:
@@ -52,16 +54,23 @@ class FastAPIHttpClient(HttpClient):
         self.client = TestClient(self.app)
 
     async def _request(
-        self, method: Literal["get", "post"], url: str, **kwargs
+        self,
+        method: Literal["get", "post"],
+        query: Optional[str] = None,
+        variables: Optional[Dict[str, object]] = None,
+        files: Optional[Dict[str, BytesIO]] = None,
+        headers: Optional[Dict[str, str]] = None,
+        **kwargs,
     ) -> Response:
-        response = getattr(self.client, method)(url, **kwargs)
+        body = self._build_body(query, variables, files)
+
+        data: Union[Dict[str, object], str, None] = None
+
+        if body:
+            data = body if files else json.dumps(body)
+
+        response = getattr(self.client, method)(
+            "/graphql", data=data, headers=headers, files=files, **kwargs
+        )
 
         return Response(status_code=response.status_code, data=response.content)
-
-    async def get(self, url: str, headers: Optional[Dict[str, str]] = None) -> Response:
-        return await self._request("get", url, headers=headers)
-
-    async def post(
-        self, url: str, json: JSON, headers: Optional[Dict[str, str]] = None
-    ) -> Response:
-        return await self._request("post", url, json=json, headers=headers)

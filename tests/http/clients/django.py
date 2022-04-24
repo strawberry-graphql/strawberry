@@ -1,16 +1,19 @@
 from __future__ import annotations
 
-from typing import Dict, Optional
+import json
+from io import BytesIO
+from typing import Dict, Optional, Union
 
 from typing_extensions import Literal
 
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.http.response import Http404
 from django.test.client import RequestFactory
 
 from strawberry.django.views import GraphQLView as BaseGraphQLView
 
 from ..schema import Query, schema
-from . import JSON, HttpClient, Response
+from . import HttpClient, Response
 
 
 class GraphQLView(BaseGraphQLView):
@@ -22,25 +25,46 @@ class DjangoHttpClient(HttpClient):
     def __init__(self, graphiql: bool = True):
         self.graphiql = graphiql
 
+    def _get_header_name(self, key: str) -> str:
+        return f"HTTP_{key.upper().replace('-', '_')}"
+
+    def _get_headers(self, headers: Dict[str, str]) -> Dict[str, str]:
+        return {self._get_header_name(key): value for key, value in headers.items()}
+
     async def _request(
         self,
         method: Literal["get", "post"],
-        url: str,
+        query: Optional[str] = None,
+        variables: Optional[Dict[str, object]] = None,
+        files: Optional[Dict[str, BytesIO]] = None,
         headers: Optional[Dict[str, str]] = None,
         **kwargs,
     ) -> Response:
-        headers = (
-            {
-                f"HTTP_{key.upper().replace('-', '_')}": value
-                for key, value in headers.items()
-            }
-            if headers
-            else {}
-        )
+        headers = self._get_headers(headers or {})
         additional_arguments = {**kwargs, **headers}
 
+        body = self._build_body(query, variables, files)
+
+        data: Union[Dict[str, object], str, None] = None
+
+        if body and files:
+            files = {
+                name: SimpleUploadedFile(name, file.read())
+                for name, file in files.items()
+            }
+            body.update(files)
+        else:
+            additional_arguments["content_type"] = "application/json"
+
+        if body:
+            data = body if files else json.dumps(body)
+
         factory = RequestFactory()
-        request = getattr(factory, method)(url, **additional_arguments)
+        request = getattr(factory, method)(
+            "/graphql",
+            data=data,
+            **additional_arguments,
+        )
 
         try:
             response = GraphQLView.as_view(schema=schema, graphiql=self.graphiql)(
@@ -50,13 +74,3 @@ class DjangoHttpClient(HttpClient):
             return Response(status_code=404, data=b"Not found")
         else:
             return Response(status_code=response.status_code, data=response.content)
-
-    async def get(self, url: str, headers: Optional[Dict[str, str]] = None) -> Response:
-        return await self._request("get", url, headers=headers)
-
-    async def post(
-        self, url: str, json: JSON, headers: Optional[Dict[str, str]] = None
-    ) -> Response:
-        return await self._request(
-            "post", url, data=json, content_type="application/json", headers=headers
-        )
