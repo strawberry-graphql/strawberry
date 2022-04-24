@@ -1,5 +1,5 @@
 import warnings
-from typing import Dict, List, Union
+from typing import Dict, List, Optional, Union
 
 from chalice.app import BadRequestError, Request, Response
 from strawberry.chalice.graphiql import render_graphiql_page
@@ -27,6 +27,9 @@ class GraphQLView:
             self.graphiql = graphiql
 
         self._schema = schema
+
+    def get_root_value(self, request: Request) -> Optional[object]:
+        return None
 
     @staticmethod
     def render_graphiql() -> str:
@@ -140,7 +143,7 @@ class GraphQLView:
             variable_values=request_data.variables,
             context_value=request,
             operation_name=request_data.operation_name,
-            root_value=None,
+            root_value=self.get_root_value(request),
         )
 
         http_result: GraphQLHTTPResponse = process_result(result)

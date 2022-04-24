@@ -4,6 +4,8 @@ from starlette.datastructures import UploadFile
 
 import strawberry
 from strawberry.file_uploads import Upload
+from strawberry.permission import BasePermission
+from strawberry.types import Info
 
 
 def _read_file(text_file: Upload) -> str:
@@ -22,11 +24,26 @@ class FolderInput:
     files: List[Upload]
 
 
+class AlwaysFailPermission(BasePermission):
+    message = "You are not authorized"
+
+    def has_permission(self, source: object, info: Info, **kwargs) -> bool:
+        return False
+
+
 @strawberry.type
 class Query:
     @strawberry.field
     def hello(self, name: Optional[str] = None) -> str:
         return f"Hello {name or 'world'}"
+
+    @strawberry.field(permission_classes=[AlwaysFailPermission])
+    def always_fail(self) -> Optional[str]:
+        return "Hey"
+
+    @strawberry.field
+    def root_name(self) -> str:
+        return type(self).__name__
 
 
 @strawberry.type

@@ -6,57 +6,6 @@ from strawberry.asgi import GraphQL as BaseGraphQL
 from strawberry.types import ExecutionResult, Info
 
 
-def test_simple_query(graphql_client):
-    query = "{ hello }"
-
-    response = graphql_client.query(query=query)
-
-    assert response.data == {"hello": "Hello world"}
-
-
-def test_fails_when_request_body_has_invalid_json(test_client):
-    response = test_client.post(
-        "/", data='{"qeury": "{__typena"', headers={"content-type": "application/json"}
-    )
-    assert response.status_code == 400
-
-
-def test_returns_errors(graphql_client):
-    query = "{ donut }"
-
-    response = graphql_client.query(query=query, asserts_errors=False)
-
-    assert response.errors == [
-        {
-            "locations": [{"column": 3, "line": 1}],
-            "message": "Cannot query field 'donut' on type 'Query'.",
-        }
-    ]
-
-
-def test_returns_errors_and_data(graphql_client):
-    query = "{ hello, alwaysFail }"
-
-    response = graphql_client.query(query=query, asserts_errors=False)
-
-    assert response.data == {"hello": "Hello world", "alwaysFail": None}
-    assert response.errors == [
-        {
-            "locations": [{"column": 10, "line": 1}],
-            "message": "You are not authorized",
-            "path": ["alwaysFail"],
-        }
-    ]
-
-
-def test_root_value(graphql_client):
-    query = "{ rootName }"
-
-    response = graphql_client.query(query=query)
-
-    assert response.data == {"rootName": "Query"}
-
-
 def test_context_response():
     @strawberry.type
     class Query:

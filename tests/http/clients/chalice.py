@@ -6,12 +6,17 @@ from typing import Dict, Optional, Union
 
 from typing_extensions import Literal
 
-from chalice import Chalice  # type: ignore[attr-defined]
+from chalice.app import Chalice, Request as ChaliceRequest
 from chalice.test import Client
-from strawberry.chalice.views import GraphQLView
+from strawberry.chalice.views import GraphQLView as BaseGraphQLView
 
-from ..schema import schema
+from ..schema import Query, schema
 from . import JSON, HttpClient, Response
+
+
+class GraphQLView(BaseGraphQLView):
+    def get_root_value(self, request: ChaliceRequest) -> Query:
+        return Query()
 
 
 class ChaliceHttpClient(HttpClient):
