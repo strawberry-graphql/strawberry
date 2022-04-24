@@ -6,6 +6,7 @@ from strawberry.fastapi import GraphQLRouter
 from strawberry.types import Info
 
 
+# TODO: move this to common tests
 def test_set_response_headers():
     @strawberry.type
     class Query:

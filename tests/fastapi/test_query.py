@@ -6,57 +6,6 @@ from strawberry.types import ExecutionResult, Info
 from tests.fastapi.app import create_app
 
 
-def test_simple_query(test_client):
-    response = test_client.post("/graphql", json={"query": "{ hello }"})
-
-    assert response.json() == {"data": {"hello": "Hello world"}}
-
-
-def test_fails_when_request_body_has_invalid_json(test_client):
-    response = test_client.post(
-        "/graphql",
-        data='{"qeury": "{__typena"',
-        headers={"content-type": "application/json"},
-    )
-    assert response.status_code == 400
-
-
-def test_returns_errors(test_client):
-    response = test_client.post("/graphql", json={"query": "{ donut }"})
-
-    assert response.json() == {
-        "data": None,
-        "errors": [
-            {
-                "locations": [{"column": 3, "line": 1}],
-                "message": "Cannot query field 'donut' on type 'Query'.",
-            }
-        ],
-    }
-
-
-def test_returns_errors_and_data(test_client):
-    response = test_client.post("/graphql", json={"query": "{ hello, alwaysFail }"})
-
-    assert response.status_code == 200
-    assert response.json() == {
-        "data": {"hello": "Hello world", "alwaysFail": None},
-        "errors": [
-            {
-                "locations": [{"column": 10, "line": 1}],
-                "message": "You are not authorized",
-                "path": ["alwaysFail"],
-            }
-        ],
-    }
-
-
-def test_root_value(test_client):
-    response = test_client.post("/graphql", json={"query": "{ rootName }"})
-
-    assert response.json() == {"data": {"rootName": "Request"}}
-
-
 def test_can_set_background_task():
     task_complete = False
 

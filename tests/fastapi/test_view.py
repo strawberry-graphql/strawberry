@@ -1,25 +1,10 @@
 import pytest
 
-from starlette import status
 from starlette.testclient import TestClient
 from starlette.websockets import WebSocketDisconnect
 
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 from tests.fastapi.app import create_app
-
-
-def test_renders_graphiql(test_client):
-    response = test_client.get("/graphql")
-
-    assert response.status_code == status.HTTP_200_OK
-
-    assert "<title>Strawberry GraphiQL</title>" in response.text
-
-
-def test_renders_graphiql_disabled(test_client_no_graphiql):
-    response = test_client_no_graphiql.get("/graphql")
-
-    assert response.status_code == status.HTTP_400_BAD_REQUEST
 
 
 def test_turning_off_graphql_ws():
