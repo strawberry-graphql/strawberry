@@ -71,11 +71,14 @@ class AioHttpClient(HttpClient):
     async def post(
         self,
         url: str,
-        json: JSON,
+        data: Optional[bytes] = None,
+        json: Optional[JSON] = None,
         headers: Optional[Dict[str, str]] = None,
     ) -> Response:
         async with TestClient(TestServer(self.app)) as client:
-            response = await client.post("/graphql", headers=headers, json=json)
+            response = await client.post(
+                "/graphql", headers=headers, data=data, json=json
+            )
 
             return Response(
                 status_code=response.status,

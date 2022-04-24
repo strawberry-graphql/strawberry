@@ -78,11 +78,12 @@ class FlaskHttpClient(HttpClient):
     async def post(
         self,
         url: str,
-        json: JSON,
+        data: Optional[bytes] = None,
+        json: Optional[JSON] = None,
         headers: Optional[Dict[str, str]] = None,
     ) -> Response:
         with self.app.test_client() as client:
-            response = client.post("/graphql", headers=headers, json=json)
+            response = client.post("/graphql", headers=headers, data=data, json=json)
 
         return Response(
             status_code=response.status_code,

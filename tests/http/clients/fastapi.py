@@ -90,10 +90,11 @@ class FastAPIHttpClient(HttpClient):
     async def post(
         self,
         url: str,
-        json: JSON,
+        data: Optional[bytes] = None,
+        json: Optional[JSON] = None,
         headers: Optional[Dict[str, str]] = None,
     ) -> Response:
-        response = self.client.post("/graphql", headers=headers, json=json)
+        response = self.client.post("/graphql", headers=headers, data=data, json=json)
 
         return Response(
             status_code=response.status_code,

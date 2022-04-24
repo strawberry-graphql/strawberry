@@ -54,7 +54,8 @@ class HttpClient(abc.ABC):
     async def post(
         self,
         url: str,
-        json: JSON,
+        data: Optional[bytes] = None,
+        json: Optional[JSON] = None,
         headers: Optional[Dict[str, str]] = None,
     ) -> Response:
         ...

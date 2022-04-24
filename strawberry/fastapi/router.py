@@ -189,8 +189,16 @@ class GraphQLRouter(APIRouter):
                     return self._merge_responses(response, actual_response)
             elif content_type.startswith("multipart/form-data"):
                 multipart_data = await request.form()
-                operations = json.loads(multipart_data.get("operations", {}))
-                files_map = json.loads(multipart_data.get("map", {}))
+                try:
+                    operations = json.loads(multipart_data.get("operations", "{}"))
+                    files_map = json.loads(multipart_data.get("map", "{}"))
+                except json.JSONDecodeError:
+                    actual_response = PlainTextResponse(
+                        "Unable to parse request body as JSON",
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                    return self._merge_responses(response, actual_response)
 
                 try:
                     data = replace_placeholders_with_files(

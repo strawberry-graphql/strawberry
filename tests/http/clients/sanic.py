@@ -71,11 +71,13 @@ class SanicHttpClient(HttpClient):
     async def post(
         self,
         url: str,
-        json: JSON,
+        data: Optional[bytes] = None,
+        json: Optional[JSON] = None,
         headers: Optional[Dict[str, str]] = None,
     ) -> Response:
+        body = data or dumps(json)
         request, response = await self.app.asgi_client.request(
-            "post", "/graphql", data=dumps(json), headers=headers
+            "post", "/graphql", data=body, headers=headers
         )
 
         return Response(status_code=response.status_code, data=response.content)

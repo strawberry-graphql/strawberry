@@ -50,8 +50,13 @@ class GraphQLView(View):
         if "application/json" in content_type:
             data: dict = request.json  # type:ignore[assignment]
         elif content_type.startswith("multipart/form-data"):
-            operations = json.loads(request.form.get("operations", "{}"))
-            files_map = json.loads(request.form.get("map", "{}"))
+            try:
+                operations = json.loads(request.form.get("operations", "{}"))
+                files_map = json.loads(request.form.get("map", "{}"))
+            except json.JSONDecodeError:
+                return Response(
+                    status=400, response="Unable to parse request body as JSON"
+                )
 
             try:
                 data = replace_placeholders_with_files(

@@ -6,7 +6,7 @@ from typing import Dict, Optional, Union
 
 from typing_extensions import Literal
 
-from django.core.exceptions import BadRequest
+from django.core.exceptions import BadRequest, SuspiciousOperation
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.http.response import Http404
 from django.test.client import RequestFactory
@@ -39,7 +39,7 @@ class DjangoHttpClient(HttpClient):
             )
         except Http404:
             return Response(status_code=404, data=b"Not found")
-        except BadRequest as e:
+        except (BadRequest, SuspiciousOperation) as e:
             return Response(status_code=400, data=e.args[0].encode())
         else:
             return Response(status_code=response.status_code, data=response.content)
@@ -99,16 +99,24 @@ class DjangoHttpClient(HttpClient):
     async def post(
         self,
         url: str,
-        json: JSON,
+        data: Optional[bytes] = None,
+        json: Optional[JSON] = None,
         headers: Optional[Dict[str, str]] = None,
     ) -> Response:
         headers = self._get_headers(headers or {})
 
+        additional_arguments = {**headers}
+
+        body = data or dumps(json)
+
+        if headers.get("HTTP_CONTENT_TYPE"):
+            additional_arguments["content_type"] = headers["HTTP_CONTENT_TYPE"]
+
         factory = RequestFactory()
-        request = factory.get(
+        request = factory.post(
             url,
-            data=dumps(json),
-            **headers,
+            data=body,
+            **additional_arguments,
         )
 
         return self._do_request(request)

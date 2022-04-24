@@ -1,4 +1,7 @@
+import json
 from io import BytesIO
+
+import aiohttp
 
 from .clients import HttpClient
 
@@ -125,3 +128,89 @@ async def test_upload_missing_file(http_client: HttpClient):
 
     assert response.status_code == 400
     assert "File(s) missing in form data" in response.text
+
+
+class FakeWriter:
+    def __init__(self):
+        self.buffer = BytesIO()
+
+    async def write(self, data: bytes):
+        self.buffer.write(data)
+
+    @property
+    def value(self) -> bytes:
+        return self.buffer.getvalue()
+
+
+async def test_extra_form_data_fields_are_ignored(http_client: HttpClient):
+    query = """mutation($textFile: Upload!) {
+        readText(textFile: $textFile)
+    }"""
+
+    f = BytesIO(b"strawberry")
+    operations = json.dumps({"query": query, "variables": {"textFile": None}})
+    file_map = json.dumps({"textFile": ["variables.textFile"]})
+    extra_field_data = json.dumps({})
+
+    form_data = aiohttp.FormData()
+    form_data.add_field("textFile", f, filename="textFile.txt")
+    form_data.add_field("operations", operations)
+    form_data.add_field("map", file_map)
+    form_data.add_field("extra_field", extra_field_data)
+
+    buffer = FakeWriter()
+    writer = form_data()
+
+    await (writer.write(buffer))  # type: ignore
+
+    response = await http_client.post(
+        url="/graphql",
+        data=buffer.value,
+        headers={"content-type": writer.content_type},
+    )
+
+    assert response.status_code == 200
+    assert response.json["data"] == {"readText": "strawberry"}
+
+
+async def test_sending_invalid_form_data(http_client: HttpClient):
+    headers = {"content-type": "multipart/form-data; boundary=----fake"}
+    response = await http_client.post("/graphql", headers=headers)
+
+    assert response.status_code == 400
+    # TODO: can we consolidate this?
+    # - aiohttp returns "Unable to parse the multipart body"
+    # - fastapi returns "No valid query was provided for the request"
+    assert (
+        "Unable to parse the multipart body" in response.text
+        or "No GraphQL query found in the request" in response.text
+        or "No valid query was provided for the request" in response.text
+    )
+
+
+async def test_sending_invalid_json_body(http_client: HttpClient):
+    f = BytesIO(b"strawberry")
+    operations = "}"
+    file_map = json.dumps({"textFile": ["variables.textFile"]})
+
+    form_data = aiohttp.FormData()
+    form_data.add_field("textFile", f, filename="textFile.txt")
+    form_data.add_field("operations", operations)
+    form_data.add_field("map", file_map)
+
+    buffer = FakeWriter()
+    writer = form_data()
+
+    await (writer.write(buffer))  # type: ignore
+
+    response = await http_client.post(
+        "/graphql",
+        data=buffer.value,
+        headers={"content-type": writer.content_type},
+    )
+
+    assert response.status_code == 400
+    assert (
+        "Unable to parse the multipart body" in response.text
+        or "Unable to parse request body as JSON" in response.text
+    )
