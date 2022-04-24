@@ -1,11 +1,8 @@
 from io import BytesIO
 
-import pytest
-
 from .clients import HttpClient
 
 
-@pytest.mark.asyncio
 async def test_upload(http_client: HttpClient):
     f = BytesIO(b"strawberry")
 
@@ -81,3 +78,50 @@ async def test_upload_single_and_list_file_together(http_client: HttpClient):
     assert data["readFiles"][0] == "strawberry1"
     assert data["readFiles"][1] == "strawberry2"
     assert data["readText"] == "strawberry3"
+
+
+async def test_upload_invalid_query(http_client: HttpClient):
+    f = BytesIO(b"strawberry")
+
+    query = """
+    mutation($textFile: Upload!) {
+        readT
+    """
+
+    response = await http_client.post(
+        query,
+        variables={"textFile": None},
+        files={"textFile": f},
+    )
+
+    assert response.status_code == 200
+    assert response.json == {
+        "data": None,
+        "errors": [
+            {
+                "locations": [{"column": 5, "line": 4}],
+                "message": "Syntax Error: Expected Name, found <EOF>.",
+            }
+        ],
+    }
+
+
+async def test_upload_missing_file(http_client: HttpClient):
+    f = BytesIO(b"strawberry")
+
+    query = """
+    mutation($textFile: Upload!) {
+        readText(textFile: $textFile)
+    }
+    """
+
+    response = await http_client.post(
+        query,
+        variables={"textFile": None},
+        # using the wrong name to simulate a missing file
+        # this is to make it easier to run tests with our client
+        files={"a": f},
+    )
+
+    assert response.status_code == 400
+    assert "File(s) missing in form data" in response.text

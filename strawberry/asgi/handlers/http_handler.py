@@ -99,9 +99,15 @@ class HTTPHandler:
                 operations = json.loads(multipart_data.get("operations", "{}"))
                 files_map = json.loads(multipart_data.get("map", "{}"))
 
-                data = replace_placeholders_with_files(
-                    operations, files_map, multipart_data
-                )
+                try:
+                    data = replace_placeholders_with_files(
+                        operations, files_map, multipart_data
+                    )
+                except KeyError:
+                    return PlainTextResponse(
+                        "File(s) missing in form data",
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                    )
             else:
                 return PlainTextResponse(
                     "Unsupported Media Type",

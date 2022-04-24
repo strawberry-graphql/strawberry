@@ -99,6 +99,8 @@ class BaseView(View):
             data = self.parse_body(request)
         except json.decoder.JSONDecodeError:
             raise SuspiciousOperation("Unable to parse request body as JSON")
+        except KeyError:
+            raise BadRequest("File(s) missing in form data")
 
         try:
             request_data = parse_request_data(data)

@@ -191,9 +191,18 @@ class GraphQLRouter(APIRouter):
                 multipart_data = await request.form()
                 operations = json.loads(multipart_data.get("operations", {}))
                 files_map = json.loads(multipart_data.get("map", {}))
-                data = replace_placeholders_with_files(
-                    operations, files_map, multipart_data
-                )
+
+                try:
+                    data = replace_placeholders_with_files(
+                        operations, files_map, multipart_data
+                    )
+                except KeyError:
+                    actual_response = PlainTextResponse(
+                        "File(s) missing in form data",
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                    return self._merge_responses(response, actual_response)
             else:
                 actual_response = PlainTextResponse(
                     "Unsupported Media Type",
