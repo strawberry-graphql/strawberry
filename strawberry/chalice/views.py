@@ -1,3 +1,4 @@
+import warnings
 from typing import Dict, List, Union
 
 from chalice.app import BadRequestError, Request, Response
@@ -14,9 +15,18 @@ from strawberry.types import ExecutionResult
 
 
 class GraphQLView:
-    def __init__(self, schema: BaseSchema, render_graphiql: bool = True):
+    def __init__(self, schema: BaseSchema, graphiql: bool = True, **kwargs):
+        if "render_graphiql" in kwargs:
+            self.graphiql = kwargs.pop("render_graphiql")
+            warnings.warn(
+                "The `render_graphiql` argument is deprecated. "
+                "Use `graphiql` instead.",
+                DeprecationWarning,
+            )
+        else:
+            self.graphiql = graphiql
+
         self._schema = schema
-        self.graphiql = render_graphiql
 
     @staticmethod
     def render_graphiql() -> str:
@@ -111,9 +121,9 @@ class GraphQLView:
 
         else:
             return self.error_response(
-                error_code="UnsupportedMediaType",
-                message="Unsupported Media Type",
-                http_status_code=415,
+                error_code="NotFoundError",
+                message="Not found",
+                http_status_code=404,
             )
 
         try:

@@ -1,9 +1,43 @@
 import json
 from io import BytesIO
+from typing import Type
+
+import pytest
 
 import aiohttp
 
 from .clients import HttpClient
+from .clients.aiohttp import AioHttpClient
+from .clients.asgi import AsgiHttpClient
+from .clients.chalice import ChaliceHttpClient
+from .clients.django import DjangoHttpClient
+from .clients.fastapi import FastAPIHttpClient
+from .clients.flask import FlaskHttpClient
+from .clients.sanic import SanicHttpClient
+
+
+# redefining the fixtures to mark chalice tests as failing
+@pytest.fixture(
+    params=[
+        AioHttpClient,
+        AsgiHttpClient,
+        DjangoHttpClient,
+        FastAPIHttpClient,
+        FlaskHttpClient,
+        SanicHttpClient,
+        pytest.param(
+            ChaliceHttpClient,
+            marks=pytest.mark.xfail(reason="Chalice does not support uploads"),
+        ),
+    ]
+)
+def http_client_class(request) -> Type[HttpClient]:
+    return request.param
+
+
+@pytest.fixture()
+def http_client(http_client_class) -> HttpClient:
+    return http_client_class()
 
 
 async def test_upload(http_client: HttpClient):

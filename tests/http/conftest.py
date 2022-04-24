@@ -5,6 +5,7 @@ import pytest
 from .clients import HttpClient
 from .clients.aiohttp import AioHttpClient
 from .clients.asgi import AsgiHttpClient
+from .clients.chalice import ChaliceHttpClient
 from .clients.django import DjangoHttpClient
 from .clients.fastapi import FastAPIHttpClient
 from .clients.flask import FlaskHttpClient
@@ -15,6 +16,7 @@ from .clients.sanic import SanicHttpClient
     params=[
         AioHttpClient,
         AsgiHttpClient,
+        ChaliceHttpClient,
         DjangoHttpClient,
         FastAPIHttpClient,
         FlaskHttpClient,
