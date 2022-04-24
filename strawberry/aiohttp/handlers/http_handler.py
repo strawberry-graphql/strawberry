@@ -151,6 +151,7 @@ class HTTPHandler:
     def should_render_graphiql(self, request: web.Request) -> bool:
         if not self.graphiql:
             return False
+
         return any(
             supported_header in request.headers.get("Accept", "")
             for supported_header in ("text/html", "*/*")

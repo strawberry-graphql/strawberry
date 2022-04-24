@@ -3,7 +3,7 @@ from typing import Any, Dict, Optional, Type, Union
 
 from typing_extensions import Literal
 
-from sanic.exceptions import SanicException, ServerError
+from sanic.exceptions import NotFound, SanicException, ServerError
 from sanic.request import Request
 from sanic.response import HTTPResponse, html
 from sanic.views import HTTPMethodView
@@ -98,7 +98,7 @@ class GraphQLView(HTTPMethodView):
             template = render_graphiql_page()
             return self.render_template(template=template)
 
-        raise SanicException(status_code=404)
+        raise NotFound()
 
     async def get_response(self, response_data: GraphQLHTTPResponse) -> HTTPResponse:
         data = json.dumps(
@@ -167,7 +167,7 @@ class GraphQLView(HTTPMethodView):
         content_type = request.content_type or ""
 
         if "application/json" in content_type:
-            return request.json
+            return json.loads(request.body)
         elif content_type.startswith("multipart/form-data"):
             files = convert_request_to_files_dict(request)
             operations = json.loads(request.form.get("operations", "{}"))

@@ -104,7 +104,7 @@ class GraphQLView:
             except BadRequestError:
                 return self.error_response(
                     error_code="BadRequestError",
-                    message="Provide a valid graphql query in the body of your request",
+                    message="Unable to parse request body as JSON",
                     http_status_code=400,
                 )
         elif request.method == "GET" and request.query_params:
