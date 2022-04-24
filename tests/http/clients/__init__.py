@@ -42,23 +42,33 @@ class HttpClient(abc.ABC):
     ) -> Response:
         ...
 
+    @abc.abstractmethod
     async def get(
         self,
-        query: Optional[str] = None,
-        variables: Optional[Dict[str, object]] = None,
+        url: str,
         headers: Optional[Dict[str, str]] = None,
     ) -> Response:
-        return await self._request("get", query=query, headers=headers)
+        ...
 
+    @abc.abstractmethod
     async def post(
         self,
+        url: str,
+        json: JSON,
+        headers: Optional[Dict[str, str]] = None,
+    ) -> Response:
+        ...
+
+    async def query(
+        self,
         query: Optional[str] = None,
+        method: Literal["get", "post"] = "post",
         variables: Optional[Dict[str, object]] = None,
         files: Optional[Dict[str, BytesIO]] = None,
         headers: Optional[Dict[str, str]] = None,
     ) -> Response:
         return await self._request(
-            "post", query=query, variables=variables, files=files, headers=headers
+            method, query=query, headers=headers, variables=variables, files=files
         )
 
     def _build_body(

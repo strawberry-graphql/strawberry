@@ -10,7 +10,7 @@ from flask import Flask
 from strawberry.flask.views import GraphQLView as BaseGraphQLView
 
 from ..schema import Query, schema
-from . import HttpClient, Response
+from . import JSON, HttpClient, Response
 
 
 class GraphQLView(BaseGraphQLView):
@@ -57,7 +57,34 @@ class FlaskHttpClient(HttpClient):
                 **kwargs,
             )
 
-            return Response(
-                status_code=response.status_code,
-                data=response.data,
-            )
+        return Response(
+            status_code=response.status_code,
+            data=response.data,
+        )
+
+    async def get(
+        self,
+        url: str,
+        headers: Optional[Dict[str, str]] = None,
+    ) -> Response:
+        with self.app.test_client() as client:
+            response = client.get("/graphql", headers=headers)
+
+        return Response(
+            status_code=response.status_code,
+            data=response.data,
+        )
+
+    async def post(
+        self,
+        url: str,
+        json: JSON,
+        headers: Optional[Dict[str, str]] = None,
+    ) -> Response:
+        with self.app.test_client() as client:
+            response = client.post("/graphql", headers=headers, json=json)
+
+        return Response(
+            status_code=response.status_code,
+            data=response.data,
+        )

@@ -12,7 +12,7 @@ from typing_extensions import Literal
 from strawberry.asgi import GraphQL as BaseGraphQLView
 
 from ..schema import Query, schema
-from . import HttpClient, Response
+from . import JSON, HttpClient, Response
 
 
 class GraphQLView(BaseGraphQLView):
@@ -44,6 +44,31 @@ class AsgiHttpClient(HttpClient):
         response = getattr(self.client, method)(
             "/graphql", data=data, headers=headers, files=files, **kwargs
         )
+
+        return Response(
+            status_code=response.status_code,
+            data=response.content,
+        )
+
+    async def get(
+        self,
+        url: str,
+        headers: Optional[Dict[str, str]] = None,
+    ) -> Response:
+        response = self.client.get("/graphql", headers=headers)
+
+        return Response(
+            status_code=response.status_code,
+            data=response.content,
+        )
+
+    async def post(
+        self,
+        url: str,
+        json: JSON,
+        headers: Optional[Dict[str, str]] = None,
+    ) -> Response:
+        response = self.client.post("/graphql", headers=headers, json=json)
 
         return Response(
             status_code=response.status_code,

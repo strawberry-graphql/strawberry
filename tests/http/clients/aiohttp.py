@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+from io import BytesIO
 from typing import Dict, Optional, Union
 
 from typing_extensions import Literal
@@ -10,7 +11,7 @@ from aiohttp.test_utils import TestClient, TestServer
 from strawberry.aiohttp.views import GraphQLView as BaseGraphQLView
 
 from ..schema import Query, schema
-from . import HttpClient, Response
+from . import JSON, HttpClient, Response
 
 
 class GraphQLView(BaseGraphQLView):
@@ -30,7 +31,7 @@ class AioHttpClient(HttpClient):
         method: Literal["get", "post"],
         query: Optional[str] = None,
         variables: Optional[Dict[str, object]] = None,
-        files: Optional[Dict[str, object]] = None,
+        files: Optional[Dict[str, BytesIO]] = None,
         headers: Optional[Dict[str, str]] = None,
         **kwargs,
     ) -> Response:
@@ -48,6 +49,33 @@ class AioHttpClient(HttpClient):
             response = await getattr(client, method)(
                 "/graphql", data=data, headers=headers, **kwargs
             )
+
+            return Response(
+                status_code=response.status,
+                data=(await response.text()).encode(),
+            )
+
+    async def get(
+        self,
+        url: str,
+        headers: Optional[Dict[str, str]] = None,
+    ) -> Response:
+        async with TestClient(TestServer(self.app)) as client:
+            response = await client.get("/graphql", headers=headers)
+
+            return Response(
+                status_code=response.status,
+                data=(await response.text()).encode(),
+            )
+
+    async def post(
+        self,
+        url: str,
+        json: JSON,
+        headers: Optional[Dict[str, str]] = None,
+    ) -> Response:
+        async with TestClient(TestServer(self.app)) as client:
+            response = await client.post("/graphql", headers=headers, json=json)
 
             return Response(
                 status_code=response.status,

@@ -12,7 +12,7 @@ async def test_upload(http_client: HttpClient):
     }
     """
 
-    response = await http_client.post(
+    response = await http_client.query(
         query,
         variables={"textFile": None},
         files={"textFile": f},
@@ -26,7 +26,7 @@ async def test_file_list_upload(http_client: HttpClient):
     file1 = BytesIO(b"strawberry1")
     file2 = BytesIO(b"strawberry2")
 
-    response = await http_client.post(
+    response = await http_client.query(
         query=query,
         variables={"files": [None, None]},
         files={"file1": file1, "file2": file2},
@@ -44,7 +44,7 @@ async def test_nested_file_list(http_client: HttpClient):
     file1 = BytesIO(b"strawberry1")
     file2 = BytesIO(b"strawberry2")
 
-    response = await http_client.post(
+    response = await http_client.query(
         query=query,
         variables={"folder": {"files": [None, None]}},
         files={"file1": file1, "file2": file2},
@@ -67,7 +67,7 @@ async def test_upload_single_and_list_file_together(http_client: HttpClient):
     file2 = BytesIO(b"strawberry2")
     file3 = BytesIO(b"strawberry3")
 
-    response = await http_client.post(
+    response = await http_client.query(
         query=query,
         variables={"files": [None, None], "textFile": None},
         files={"file1": file1, "file2": file2, "textFile": file3},
@@ -88,7 +88,7 @@ async def test_upload_invalid_query(http_client: HttpClient):
         readT
     """
 
-    response = await http_client.post(
+    response = await http_client.query(
         query,
         variables={"textFile": None},
         files={"textFile": f},
@@ -115,7 +115,7 @@ async def test_upload_missing_file(http_client: HttpClient):
     }
     """
 
-    response = await http_client.post(
+    response = await http_client.query(
         query,
         variables={"textFile": None},
         # using the wrong name to simulate a missing file

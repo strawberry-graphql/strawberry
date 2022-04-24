@@ -7,7 +7,7 @@ from .clients import HttpClient
 
 @pytest.mark.asyncio
 async def test_graphql_query(http_client: HttpClient):
-    response = await http_client.post(
+    response = await http_client.query(
         query="{ hello }",
         headers={
             "Content-Type": "application/json",

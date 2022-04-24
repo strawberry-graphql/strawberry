@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import json
 from io import BytesIO
+from json import dumps
 from random import randint
 from typing import Dict, Optional, Union
 
@@ -11,7 +11,7 @@ from sanic import Sanic
 from strawberry.sanic.views import GraphQLView as BaseGraphQLView
 
 from ..schema import Query, schema
-from . import HttpClient, Response
+from . import JSON, HttpClient, Response
 
 
 class GraphQLView(BaseGraphQLView):
@@ -47,10 +47,35 @@ class SanicHttpClient(HttpClient):
         data: Union[Dict[str, object], str, None] = None
 
         if body:
-            data = body if files else json.dumps(body)
+            data = body if files else dumps(body)
 
         request, response = await self.app.asgi_client.request(
             method, "/graphql", data=data, headers=headers, files=files, **kwargs
+        )
+
+        return Response(status_code=response.status_code, data=response.content)
+
+    async def get(
+        self,
+        url: str,
+        headers: Optional[Dict[str, str]] = None,
+    ) -> Response:
+        request, response = await self.app.asgi_client.request(
+            "get",
+            "/graphql",
+            headers=headers,
+        )
+
+        return Response(status_code=response.status_code, data=response.content)
+
+    async def post(
+        self,
+        url: str,
+        json: JSON,
+        headers: Optional[Dict[str, str]] = None,
+    ) -> Response:
+        request, response = await self.app.asgi_client.request(
+            "post", "/graphql", data=dumps(json), headers=headers
         )
 
         return Response(status_code=response.status_code, data=response.content)

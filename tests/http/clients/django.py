@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import json
 from io import BytesIO
+from json import dumps
 from typing import Dict, Optional, Union
 
 from typing_extensions import Literal
@@ -14,7 +14,7 @@ from django.test.client import RequestFactory
 from strawberry.django.views import GraphQLView as BaseGraphQLView
 
 from ..schema import Query, schema
-from . import HttpClient, Response
+from . import JSON, HttpClient, Response
 
 
 class GraphQLView(BaseGraphQLView):
@@ -31,6 +31,18 @@ class DjangoHttpClient(HttpClient):
 
     def _get_headers(self, headers: Dict[str, str]) -> Dict[str, str]:
         return {self._get_header_name(key): value for key, value in headers.items()}
+
+    def _do_request(self, request: RequestFactory) -> Response:
+        try:
+            response = GraphQLView.as_view(schema=schema, graphiql=self.graphiql)(
+                request
+            )
+        except Http404:
+            return Response(status_code=404, data=b"Not found")
+        except BadRequest as e:
+            return Response(status_code=400, data=e.args[0].encode())
+        else:
+            return Response(status_code=response.status_code, data=response.content)
 
     async def _request(
         self,
@@ -58,7 +70,7 @@ class DjangoHttpClient(HttpClient):
             additional_arguments["content_type"] = "application/json"
 
         if body:
-            data = body if files else json.dumps(body)
+            data = body if files else dumps(body)
 
         factory = RequestFactory()
         request = getattr(factory, method)(
@@ -67,13 +79,36 @@ class DjangoHttpClient(HttpClient):
             **additional_arguments,
         )
 
-        try:
-            response = GraphQLView.as_view(schema=schema, graphiql=self.graphiql)(
-                request
-            )
-        except Http404:
-            return Response(status_code=404, data=b"Not found")
-        except BadRequest as e:
-            return Response(status_code=400, data=e.args[0].encode())
-        else:
-            return Response(status_code=response.status_code, data=response.content)
+        return self._do_request(request)
+
+    async def get(
+        self,
+        url: str,
+        headers: Optional[Dict[str, str]] = None,
+    ) -> Response:
+        headers = self._get_headers(headers or {})
+
+        factory = RequestFactory()
+        request = factory.get(
+            url,
+            **headers,
+        )
+
+        return self._do_request(request)
+
+    async def post(
+        self,
+        url: str,
+        json: JSON,
+        headers: Optional[Dict[str, str]] = None,
+    ) -> Response:
+        headers = self._get_headers(headers or {})
+
+        factory = RequestFactory()
+        request = factory.get(
+            url,
+            data=dumps(json),
+            **headers,
+        )
+
+        return self._do_request(request)

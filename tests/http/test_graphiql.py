@@ -8,7 +8,7 @@ from .clients import HttpClient
 @pytest.mark.asyncio
 async def test_renders_graphiql(http_client_class: Type[HttpClient]):
     http_client = http_client_class()
-    response = await http_client.get(query=None, headers={"Accept": "text/html"})
+    response = await http_client.get("/graphql", headers={"Accept": "text/html"})
 
     assert response.status_code == 200
 
@@ -18,6 +18,6 @@ async def test_renders_graphiql(http_client_class: Type[HttpClient]):
 @pytest.mark.asyncio
 async def test_renders_graphiql_disabled(http_client_class: Type[HttpClient]):
     http_client = http_client_class(graphiql=False)
-    response = await http_client.get(query=None, headers={"Accept": "text/html"})
+    response = await http_client.get("/graphql", headers={"Accept": "text/html"})
 
     assert response.status_code == 404
