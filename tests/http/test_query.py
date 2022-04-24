@@ -1,5 +1,4 @@
 import json
-from typing import Type
 
 import pytest
 
@@ -7,9 +6,7 @@ from .clients import HttpClient
 
 
 @pytest.mark.asyncio
-async def test_graphql_query(http_client_class: Type[HttpClient]):
-    http_client = http_client_class()
-
+async def test_graphql_query(http_client: HttpClient):
     response = await http_client.post(
         query="{ hello }",
         headers={
