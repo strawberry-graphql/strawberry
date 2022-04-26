@@ -5,7 +5,6 @@ import sys
 from typing import (
     TYPE_CHECKING,
     Any,
-    Awaitable,
     Callable,
     Dict,
     List,
@@ -194,6 +193,15 @@ class StrawberryField(dataclasses.Field):
         #       removed.
         _ = resolver.arguments
 
+    @property
+    def resolver(
+        self,
+    ) -> Callable[[StrawberryType, Info, List[Any], Dict[str, Any]], Any]:
+        if self.base_resolver:
+            return self.base_resolver.compiled_resolver
+        else:
+            return lambda source, info, args, kwargs: getattr(source, self.python_name)
+
     @property  # type: ignore
     def type(self) -> Union[StrawberryType, type, Literal[UNRESOLVED]]:  # type: ignore
         # We are catching NameError because dataclasses tries to fetch the type
@@ -275,19 +283,6 @@ class StrawberryField(dataclasses.Field):
             default_factory=self.default_factory,
             deprecation_reason=self.deprecation_reason,
         )
-
-    def get_result(
-        self, source: Any, info: Info, args: List[Any], kwargs: Dict[str, Any]
-    ) -> Union[Awaitable[Any], Any]:
-        """
-        Calls the resolver defined for the StrawberryField. If the field doesn't have a
-        resolver defined we default to using getattr on `source`.
-        """
-
-        if self.base_resolver:
-            return self.base_resolver(*args, **kwargs)
-
-        return getattr(source, self.python_name)
 
     @property
     def _has_async_permission_classes(self) -> bool:

@@ -1,18 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union, cast
 
 from graphql import (
     GraphQLArgument,
@@ -320,40 +309,6 @@ class GraphQLCoreConverter:
     def from_resolver(
         self, field: StrawberryField
     ) -> Callable:  # TODO: Take StrawberryResolver
-        def _get_arguments(
-            source: Any,
-            info: Info,
-            kwargs: Dict[str, Any],
-        ) -> Tuple[List[Any], Dict[str, Any]]:
-            kwargs = convert_arguments(
-                kwargs,
-                field.arguments,
-                scalar_registry=self.scalar_registry,
-                config=self.config,
-            )
-
-            # the following code allows to omit info and root arguments
-            # by inspecting the original resolver arguments,
-            # if it asks for self, the source will be passed as first argument
-            # if it asks for root, the source it will be passed as kwarg
-            # if it asks for info, the info will be passed as kwarg
-
-            args = []
-
-            if field.base_resolver:
-                if field.base_resolver.self_parameter:
-                    args.append(source)
-
-                root_parameter = field.base_resolver.root_parameter
-                if root_parameter:
-                    kwargs[root_parameter.name] = source
-
-                info_parameter = field.base_resolver.info_parameter
-                if info_parameter:
-                    kwargs[info_parameter.name] = info
-
-            return args, kwargs
-
         def _check_permissions(source: Any, info: Info, kwargs: Dict[str, Any]):
             """
             Checks if the permission should be accepted and
@@ -387,14 +342,18 @@ class GraphQLCoreConverter:
                 _field=field,
             )
 
+        base_args: List[Any] = []
+        resolver = field.resolver
+
         def _get_result(_source: Any, info: Info, **kwargs):
-            field_args, field_kwargs = _get_arguments(
-                source=_source, info=info, kwargs=kwargs
+            kwargs = convert_arguments(
+                kwargs,
+                field.arguments,
+                scalar_registry=self.scalar_registry,
+                config=self.config,
             )
 
-            return field.get_result(
-                _source, info=info, args=field_args, kwargs=field_kwargs
-            )
+            return resolver(_source, info, base_args, kwargs)
 
         def _resolver(_source: Any, info: GraphQLResolveInfo, **kwargs):
             strawberry_info = _strawberry_info_from_graphql(info)

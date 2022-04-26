@@ -3,6 +3,8 @@ from __future__ import annotations as _
 import builtins
 import inspect
 import sys
+import textwrap
+import types
 import warnings
 from functools import lru_cache
 from inspect import isasyncgenfunction, iscoroutinefunction
@@ -208,6 +210,42 @@ class StrawberryResolver(Generic[T]):
                 annotation=return_annotation, namespace=self._namespace
             )
         return type_annotation
+
+    INFO_ARG = "{python_name}=info"
+    SELF_ARG = "self"
+    ROOT_ARG = "{python_name}=self"
+    DYNAMIC_ARGS = "*args"
+
+    RESOLVER_SRC = """
+    def compiled_resolver(self, info, args, kwargs):
+        return resolver({arguments})
+    """
+
+    @cached_property
+    def compiled_resolver(
+        self: StrawberryResolver,
+    ) -> Callable[[StrawberryType, Info, List[Any], Dict[str, Any]], Any]:
+        args = []
+        kwargs = []
+
+        if self.self_parameter:
+            args.append(self.SELF_ARG)
+        if self.root_parameter:
+            kwargs.append(self.ROOT_ARG.format(python_name=self.root_parameter.name))
+        if self.info_parameter:
+            kwargs.append(self.INFO_ARG.format(python_name=self.info_parameter.name))
+
+        args.append("*args")
+        kwargs.append("**kwargs")
+
+        arguments = ", ".join((*args, *kwargs))
+        src = textwrap.dedent(self.RESOLVER_SRC.format(arguments=arguments))
+
+        module_code = compile(src, filename="<compiled_resolver>", mode="exec")
+        function_code = module_code.co_consts[0]
+        return types.FunctionType(
+            function_code, globals={"resolver": self._unbound_wrapped_func}
+        )
 
     @property
     def type(self) -> Optional[Union[StrawberryType, type]]:
