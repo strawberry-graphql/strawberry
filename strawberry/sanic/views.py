@@ -81,7 +81,12 @@ class GraphQLView(HTTPMethodView):
             query_data = {
                 variable_name: value[0] for variable_name, value in request.args.items()
             }
-            data = parse_query_params(query_data)
+            try:
+                data = parse_query_params(query_data)
+            except json.JSONDecodeError:
+                raise ServerError(
+                    "Unable to parse request body as JSON", status_code=400
+                )
 
             try:
                 request_data = parse_request_data(data)

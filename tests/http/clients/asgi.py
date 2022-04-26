@@ -21,8 +21,10 @@ class GraphQLView(BaseGraphQLView):
 
 
 class AsgiHttpClient(HttpClient):
-    def __init__(self, graphiql: bool = True):
-        self.app = GraphQLView(schema, graphiql=graphiql)
+    def __init__(self, graphiql: bool = True, allow_queries_via_get: bool = True):
+        self.app = GraphQLView(
+            schema, graphiql=graphiql, allow_queries_via_get=allow_queries_via_get
+        )
         self.client = TestClient(self.app)
 
     async def _graphql_request(
@@ -34,15 +36,20 @@ class AsgiHttpClient(HttpClient):
         headers: Optional[Dict[str, str]] = None,
         **kwargs,
     ) -> Response:
-        body = self._build_body(query, variables, files)
+        body = self._build_body(
+            query=query, variables=variables, files=files, method=method
+        )
 
-        data: Union[Dict[str, object], str, None] = None
-
-        if body:
-            data = body if files else json.dumps(body)
+        if method == "get":
+            kwargs["params"] = body
+        elif body:
+            kwargs["data"] = body if files else json.dumps(body)
 
         response = getattr(self.client, method)(
-            "/graphql", data=data, headers=headers, files=files, **kwargs
+            "/graphql",
+            headers=self._get_headers(method=method, headers=headers, files=files),
+            files=files,
+            **kwargs,
         )
 
         return Response(

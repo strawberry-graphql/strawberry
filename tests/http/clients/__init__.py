@@ -27,7 +27,7 @@ class Response:
 
 class HttpClient(abc.ABC):
     @abc.abstractmethod
-    def __init__(self, graphiql: bool = True):
+    def __init__(self, graphiql: bool = True, allow_queries_via_get: bool = True):
         ...
 
     @abc.abstractmethod
@@ -81,11 +81,31 @@ class HttpClient(abc.ABC):
             method, query=query, headers=headers, variables=variables, files=files
         )
 
+    def _get_headers(
+        self,
+        method: Literal["get", "post"],
+        headers: Optional[Dict[str, str]],
+        files: Optional[Dict[str, BytesIO]],
+    ) -> Dict[str, str]:
+        addition_headers = (
+            {
+                "Content-Type": "application/json",
+            }
+            if method == "post" and not files
+            else {}
+        )
+
+        if headers is None:
+            return addition_headers
+
+        return {**addition_headers, **headers}
+
     def _build_body(
         self,
         query: Optional[str] = None,
         variables: Optional[Dict[str, object]] = None,
         files: Optional[Dict[str, BytesIO]] = None,
+        method: Literal["get", "post"] = "post",
     ) -> Optional[Dict[str, object]]:
         if query is None:
             assert files is None
@@ -107,6 +127,9 @@ class HttpClient(abc.ABC):
                 "operations": json.dumps(body),
                 "map": json.dumps(file_map),
             }
+
+        if method == "get" and variables:
+            body["variables"] = json.dumps(variables)
 
         return body
 

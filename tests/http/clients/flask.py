@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import urllib.parse
 from io import BytesIO
 from typing import Dict, Optional, Union
 
@@ -19,14 +20,17 @@ class GraphQLView(BaseGraphQLView):
 
 
 class FlaskHttpClient(HttpClient):
-    def __init__(self, graphiql: bool = True):
+    def __init__(self, graphiql: bool = True, allow_queries_via_get: bool = True):
         self.app = Flask(__name__)
         self.app.debug = True
 
         self.app.add_url_rule(
             "/graphql",
             view_func=GraphQLView.as_view(
-                "graphql_view", schema=schema, graphiql=graphiql
+                "graphql_view",
+                schema=schema,
+                graphiql=graphiql,
+                allow_queries_via_get=allow_queries_via_get,
             ),
         )
 
@@ -39,21 +43,29 @@ class FlaskHttpClient(HttpClient):
         headers: Optional[Dict[str, str]] = None,
         **kwargs,
     ) -> Response:
-        body = self._build_body(query, variables, files)
+        body = self._build_body(
+            query=query, variables=variables, files=files, method=method
+        )
 
         data: Union[Dict[str, object], str, None] = None
 
         if body and files:
             body.update({name: (file, name) for name, file in files.items()})
 
-        if body:
-            data = body if files else json.dumps(body)
+        url = "/graphql"
+
+        if method == "get":
+            body_encoded = urllib.parse.urlencode(body or {})
+            url = f"{url}?{body_encoded}"
+        else:
+            if body:
+                data = body if files else json.dumps(body)
+            kwargs["data"] = data
 
         with self.app.test_client() as client:
             response = getattr(client, method)(
-                "/graphql",
-                data=data,
-                headers=headers,
+                url,
+                headers=self._get_headers(method=method, headers=headers, files=files),
                 **kwargs,
             )
 

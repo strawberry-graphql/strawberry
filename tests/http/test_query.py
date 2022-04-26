@@ -1,12 +1,15 @@
+import pytest
+
+from typing_extensions import Literal
+
 from .clients import HttpClient
 
 
-async def test_graphql_query(http_client: HttpClient):
+@pytest.mark.parametrize("method", ["get", "post"])
+async def test_graphql_query(method: Literal["get", "post"], http_client: HttpClient):
     response = await http_client.query(
+        method=method,
         query="{ hello }",
-        headers={
-            "Content-Type": "application/json",
-        },
     )
     data = response.json["data"]
 
@@ -14,13 +17,14 @@ async def test_graphql_query(http_client: HttpClient):
     assert data["hello"] == "Hello world"
 
 
-async def test_graphql_can_pass_variables(http_client: HttpClient):
+@pytest.mark.parametrize("method", ["get", "post"])
+async def test_graphql_can_pass_variables(
+    method: Literal["get", "post"], http_client: HttpClient
+):
     response = await http_client.query(
+        method=method,
         query="query hello($name: String!) { hello(name: $name) }",
         variables={"name": "Jake"},
-        headers={
-            "Content-Type": "application/json",
-        },
     )
     data = response.json["data"]
 
@@ -28,12 +32,11 @@ async def test_graphql_can_pass_variables(http_client: HttpClient):
     assert data["hello"] == "Hello Jake"
 
 
-async def test_root_value(http_client: HttpClient):
+@pytest.mark.parametrize("method", ["get", "post"])
+async def test_root_value(method: Literal["get", "post"], http_client: HttpClient):
     response = await http_client.query(
+        method=method,
         query="{ rootName }",
-        headers={
-            "Content-Type": "application/json",
-        },
     )
     data = response.json["data"]
 
@@ -41,12 +44,13 @@ async def test_root_value(http_client: HttpClient):
     assert data["rootName"] == "Query"
 
 
-async def test_passing_invalid_query(http_client: HttpClient):
+@pytest.mark.parametrize("method", ["get", "post"])
+async def test_passing_invalid_query(
+    method: Literal["get", "post"], http_client: HttpClient
+):
     response = await http_client.query(
+        method=method,
         query="{ h",
-        headers={
-            "Content-Type": "application/json",
-        },
     )
 
     assert response.status_code == 200
@@ -58,12 +62,11 @@ async def test_passing_invalid_query(http_client: HttpClient):
     ]
 
 
-async def test_returns_errors(http_client: HttpClient):
+@pytest.mark.parametrize("method", ["get", "post"])
+async def test_returns_errors(method: Literal["get", "post"], http_client: HttpClient):
     response = await http_client.query(
+        method=method,
         query="{ maya }",
-        headers={
-            "Content-Type": "application/json",
-        },
     )
 
     assert response.status_code == 200
@@ -75,12 +78,13 @@ async def test_returns_errors(http_client: HttpClient):
     ]
 
 
-async def test_returns_errors_and_data(http_client: HttpClient):
+@pytest.mark.parametrize("method", ["get", "post"])
+async def test_returns_errors_and_data(
+    method: Literal["get", "post"], http_client: HttpClient
+):
     response = await http_client.query(
+        method=method,
         query="{ hello, alwaysFail }",
-        headers={
-            "Content-Type": "application/json",
-        },
     )
 
     assert response.status_code == 200
@@ -97,13 +101,20 @@ async def test_returns_errors_and_data(http_client: HttpClient):
     assert data == {"hello": "Hello world", "alwaysFail": None}
 
 
-async def test_passing_invalid_json(http_client: HttpClient):
+async def test_passing_invalid_json_post(http_client: HttpClient):
     response = await http_client.post(
         url="/graphql",
         data=b"{ h",
-        headers={
-            "Content-Type": "application/json",
-        },
+        headers={"Content-Type": "application/json"},
+    )
+
+    assert response.status_code == 400
+    assert "Unable to parse request body as JSON" in response.text
+
+
+async def test_passing_invalid_json_get(http_client: HttpClient):
+    response = await http_client.get(
+        url="/graphql?query={ hello }&variables='{'",
     )
 
     assert response.status_code == 400
@@ -114,9 +125,7 @@ async def test_missing_query(http_client: HttpClient):
     response = await http_client.post(
         url="/graphql",
         json={},
-        headers={
-            "Content-Type": "application/json",
-        },
+        headers={"Content-Type": "application/json"},
     )
 
     assert response.status_code == 400

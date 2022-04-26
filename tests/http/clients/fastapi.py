@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from io import BytesIO
-from typing import Dict, Optional, Union
+from typing import Dict, Optional
 
 from typing_extensions import Literal
 
@@ -40,7 +40,7 @@ class GraphQLRouter(BaseGraphQLRouter):
 
 
 class FastAPIHttpClient(HttpClient):
-    def __init__(self, graphiql: bool = True):
+    def __init__(self, graphiql: bool = True, allow_queries_via_get: bool = True):
         self.app = FastAPI()
 
         graphql_app = GraphQLRouter(
@@ -48,6 +48,7 @@ class FastAPIHttpClient(HttpClient):
             graphiql=graphiql,
             context_getter=get_context,
             root_value_getter=get_root_value,
+            allow_queries_via_get=allow_queries_via_get,
         )
         self.app.include_router(graphql_app, prefix="/graphql")
 
@@ -62,15 +63,21 @@ class FastAPIHttpClient(HttpClient):
         headers: Optional[Dict[str, str]] = None,
         **kwargs,
     ) -> Response:
-        body = self._build_body(query, variables, files)
-
-        data: Union[Dict[str, object], str, None] = None
+        body = self._build_body(
+            query=query, variables=variables, files=files, method=method
+        )
 
         if body:
-            data = body if files else json.dumps(body)
+            if method == "get":
+                kwargs["params"] = body
+            else:
+                kwargs["data"] = body if files else json.dumps(body)
 
         response = getattr(self.client, method)(
-            "/graphql", data=data, headers=headers, files=files, **kwargs
+            "/graphql",
+            headers=self._get_headers(method=method, headers=headers, files=files),
+            files=files,
+            **kwargs,
         )
 
         return Response(status_code=response.status_code, data=response.content)

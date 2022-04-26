@@ -1,3 +1,4 @@
+import json
 import warnings
 from typing import Dict, List, Optional, Union
 
@@ -11,11 +12,19 @@ from strawberry.http import (
     process_result,
 )
 from strawberry.schema import BaseSchema
+from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types import ExecutionResult
+from strawberry.types.graphql import OperationType
 
 
 class GraphQLView:
-    def __init__(self, schema: BaseSchema, graphiql: bool = True, **kwargs):
+    def __init__(
+        self,
+        schema: BaseSchema,
+        graphiql: bool = True,
+        allow_queries_via_get: bool = True,
+        **kwargs
+    ):
         if "render_graphiql" in kwargs:
             self.graphiql = kwargs.pop("render_graphiql")
             warnings.warn(
@@ -26,6 +35,7 @@ class GraphQLView:
         else:
             self.graphiql = graphiql
 
+        self.allow_queries_via_get = allow_queries_via_get
         self._schema = schema
 
     def get_root_value(self, request: Request) -> Optional[object]:
@@ -85,7 +95,9 @@ class GraphQLView:
             A chalice response
         """
 
-        if request.method not in {"POST", "GET"}:
+        method = request.method
+
+        if method not in {"POST", "GET"}:
             return self.error_response(
                 error_code="MethodNotAllowedError",
                 message="Unsupported method, must be of request type POST or GET",
@@ -110,12 +122,17 @@ class GraphQLView:
                     message="Unable to parse request body as JSON",
                     http_status_code=400,
                 )
-        elif request.method == "GET" and request.query_params:
-            data = parse_query_params(request.query_params)
+        elif method == "GET" and request.query_params:
+            try:
+                data = parse_query_params(request.query_params)
+            except json.JSONDecodeError:
+                return self.error_response(
+                    error_code="BadRequestError",
+                    message="Unable to parse request body as JSON",
+                    http_status_code=400,
+                )
 
-        elif request.method == "GET" and self.should_render_graphiql(
-            self.graphiql, request
-        ):
+        elif method == "GET" and self.should_render_graphiql(self.graphiql, request):
             return Response(
                 body=self.render_graphiql(),
                 headers={"content-type": "text/html"},
@@ -138,13 +155,27 @@ class GraphQLView:
                 http_status_code=400,
             )
 
-        result: ExecutionResult = self._schema.execute_sync(
-            request_data.query,
-            variable_values=request_data.variables,
-            context_value=request,
-            operation_name=request_data.operation_name,
-            root_value=self.get_root_value(request),
-        )
+        allowed_operation_types = OperationType.from_http(method)
+
+        if not self.allow_queries_via_get and method == "GET":
+            allowed_operation_types = allowed_operation_types - {OperationType.QUERY}
+
+        try:
+            result: ExecutionResult = self._schema.execute_sync(
+                request_data.query,
+                variable_values=request_data.variables,
+                context_value=request,
+                operation_name=request_data.operation_name,
+                root_value=self.get_root_value(request),
+                allowed_operation_types=allowed_operation_types,
+            )
+
+        except InvalidOperationTypeError as e:
+            return self.error_response(
+                error_code="BadRequestError",
+                message=e.as_http_error_reason(method),
+                http_status_code=400,
+            )
 
         http_result: GraphQLHTTPResponse = process_result(result)
 

@@ -79,7 +79,14 @@ class HTTPHandler:
 
         if method == "GET":
             if request.query_params:
-                data = parse_query_params(request.query_params._dict)
+                try:
+                    data = parse_query_params(request.query_params._dict)
+                except json.JSONDecodeError:
+                    return PlainTextResponse(
+                        "Unable to parse request body as JSON",
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                    )
+
             elif self.should_render_graphiql(request):
                 return self.get_graphiql_response()
             else:
@@ -127,6 +134,11 @@ class HTTPHandler:
 
         try:
             request_data = parse_request_data(data)
+        except json.JSONDecodeError:
+            return PlainTextResponse(
+                "Unable to parse request body as JSON",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
         except MissingQueryError:
             return PlainTextResponse(
                 "No GraphQL query found in the request",

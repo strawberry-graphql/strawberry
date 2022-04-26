@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import urllib.parse
 from io import BytesIO
 from json import dumps
 from typing import Dict, Optional, Union
@@ -20,10 +21,14 @@ class GraphQLView(BaseGraphQLView):
 
 
 class ChaliceHttpClient(HttpClient):
-    def __init__(self, graphiql: bool = True):
+    def __init__(self, graphiql: bool = True, allow_queries_via_get: bool = True):
         self.app = Chalice(app_name="TheStackBadger")
 
-        view = GraphQLView(schema=schema, graphiql=graphiql)
+        view = GraphQLView(
+            schema=schema,
+            graphiql=graphiql,
+            allow_queries_via_get=allow_queries_via_get,
+        )
 
         @self.app.route(
             "/graphql", methods=["GET", "POST"], content_types=["application/json"]
@@ -40,21 +45,29 @@ class ChaliceHttpClient(HttpClient):
         headers: Optional[Dict[str, str]] = None,
         **kwargs,
     ) -> Response:
-        body = self._build_body(query, variables, files)
+        body = self._build_body(
+            query=query, variables=variables, files=files, method=method
+        )
 
         data: Union[Dict[str, object], str, None] = None
 
         if body and files:
             body.update({name: (file, name) for name, file in files.items()})
 
-        if body:
-            data = body if files else dumps(body)
+        url = "/graphql"
+
+        if method == "get":
+            body_encoded = urllib.parse.urlencode(body or {})
+            url = f"{url}?{body_encoded}"
+        else:
+            if body:
+                data = body if files else dumps(body)
+            kwargs["body"] = data
 
         with Client(self.app) as client:
             response = getattr(client.http, method)(
-                "/graphql",
-                body=data,
-                headers=headers,
+                url,
+                headers=self._get_headers(method=method, headers=headers, files=files),
                 **kwargs,
             )
 

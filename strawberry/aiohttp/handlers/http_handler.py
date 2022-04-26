@@ -48,6 +48,8 @@ class HTTPHandler:
                 }
                 query_data = parse_query_params(query_params)
                 request_data = parse_request_data(query_data)
+            except json.JSONDecodeError:
+                raise web.HTTPBadRequest(reason="Unable to parse request body as JSON")
             except MissingQueryError:
                 raise web.HTTPBadRequest(reason="No GraphQL query found in the request")
 

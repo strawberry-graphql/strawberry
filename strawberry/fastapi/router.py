@@ -154,7 +154,15 @@ class GraphQLRouter(APIRouter):
             actual_response: Response
 
             if request.query_params:
-                query_data = parse_query_params(request.query_params._dict)
+                try:
+                    query_data = parse_query_params(request.query_params._dict)
+
+                except json.JSONDecodeError:
+                    return PlainTextResponse(
+                        "Unable to parse request body as JSON",
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                    )
+
                 return await self.execute_request(
                     request=request,
                     response=response,

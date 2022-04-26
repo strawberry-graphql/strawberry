@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 from io import BytesIO
-from typing import Dict, Optional, Union
+from typing import Dict, Optional
 
 from typing_extensions import Literal
 
@@ -20,10 +20,16 @@ class GraphQLView(BaseGraphQLView):
 
 
 class AioHttpClient(HttpClient):
-    def __init__(self, graphiql: bool = True):
+    def __init__(self, graphiql: bool = True, allow_queries_via_get: bool = True):
         self.app = web.Application()
         self.app.router.add_route(
-            "*", "/graphql", GraphQLView(schema=schema, graphiql=graphiql)
+            "*",
+            "/graphql",
+            GraphQLView(
+                schema=schema,
+                graphiql=graphiql,
+                allow_queries_via_get=allow_queries_via_get,
+            ),
         )
 
     async def _graphql_request(
@@ -36,18 +42,22 @@ class AioHttpClient(HttpClient):
         **kwargs,
     ) -> Response:
         async with TestClient(TestServer(self.app)) as client:
-            body = self._build_body(query, variables, files)
-
-            data: Union[Dict[str, object], str, None] = None
+            body = self._build_body(
+                query=query, variables=variables, files=files, method=method
+            )
 
             if body and files:
                 body.update(files)
-                data = body
-            elif body:
-                data = json.dumps(body)
+
+            if method == "get":
+                kwargs["params"] = body
+            else:
+                kwargs["data"] = body if files else json.dumps(body)
 
             response = await getattr(client, method)(
-                "/graphql", data=data, headers=headers, **kwargs
+                "/graphql",
+                headers=self._get_headers(method=method, headers=headers, files=files),
+                **kwargs,
             )
 
             return Response(
