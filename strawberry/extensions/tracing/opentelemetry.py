@@ -12,12 +12,12 @@ from strawberry.types.execution import ExecutionContext
 from .utils import should_skip_tracing
 
 
-is_opentelemetry_installed = True
 try:
     from opentelemetry import trace
     from opentelemetry.trace import Span, SpanKind, Tracer
 except ModuleNotFoundError:
-    is_opentelemetry_installed = False
+    print('WARNING: opentelemetry module is not installed') # I didn't find how to do it with strawberry logger
+
 
 DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 
@@ -149,13 +149,3 @@ class OpenTelemetryExtensionSync(OpenTelemetryExtension):
             result = _next(root, info, *args, **kwargs)
 
             return result
-
-
-if not is_opentelemetry_installed:
-
-    class OpenTelemetryExtension(Extension):
-        def __init__(self, *args, **kwargs):
-            raise ImportError("To use OpenTelemetryExtension install opentelemetry")
-
-    class OpenTelemetryExtensionSync(OpenTelemetryExtension):
-        pass
