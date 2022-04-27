@@ -16,7 +16,9 @@ try:
     from opentelemetry import trace
     from opentelemetry.trace import Span, SpanKind, Tracer
 except ModuleNotFoundError:
-    print('WARNING: opentelemetry module is not installed') # I didn't find how to do it with strawberry logger
+    print(
+        "WARNING: opentelemetry module is not installed"
+    )  # I didn't find how to do it with strawberry logger
 
 
 DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
