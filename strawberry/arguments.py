@@ -33,7 +33,7 @@ if TYPE_CHECKING:
 
 DEPRECATED_NAMES: Dict[str, str] = {
     "UNSET": (
-        "importing `UNSET` from `strawberry.arguments` is deprecated,"
+        "importing `UNSET` from `strawberry.arguments` is deprecated, "
         "import instead from `strawberry` or from `strawberry.unset`"
     ),
     "is_unset": "`is_unset` is deprecated use `value is UNSET` instead",
