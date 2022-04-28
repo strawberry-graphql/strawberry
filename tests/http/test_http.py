@@ -4,7 +4,7 @@ from .clients import HttpClient
 
 
 @pytest.mark.parametrize("method", ["delete", "head", "put", "patch"])
-async def test_graphql_query(
+async def test_does_only_allow_get_and_post(
     method: str,
     http_client: HttpClient,
 ):

@@ -15,6 +15,11 @@ from . import JSON, HttpClient, Response
 
 
 class GraphQLView(BaseGraphQLView):
+    # this allows to test our code path for checking the request type
+    # TODO: we might want to remove our check since it is done by flask
+    # already
+    methods = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD"]
+
     def get_root_value(self):
         return Query()
 

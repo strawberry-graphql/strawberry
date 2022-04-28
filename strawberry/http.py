@@ -42,13 +42,13 @@ def parse_query_params(params: Dict[str, str]) -> Dict[str, Any]:
 
 
 def parse_request_data(data: Mapping) -> GraphQLRequestData:
-    if "query" not in data:
+    query = data.get("query")
+
+    if not query:
         raise MissingQueryError()
 
-    result = GraphQLRequestData(
+    return GraphQLRequestData(
         query=data["query"],
         variables=data.get("variables"),
         operation_name=data.get("operationName"),
     )
-
-    return result

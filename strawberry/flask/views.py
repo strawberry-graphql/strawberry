@@ -94,7 +94,7 @@ class GraphQLView(View):
         try:
             request_data = parse_request_data(data)
         except MissingQueryError:
-            return Response("No valid query was provided for the request", 400)
+            return Response("No GraphQL query found in the request", 400)
 
         response = Response(status=200, content_type="application/json")
         context = self.get_context(response)
