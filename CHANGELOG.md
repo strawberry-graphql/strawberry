@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.109.1 - 2022-04-28
+--------------------
+
+This release adds support for Mypy 0.950
+
+Contributed by [dependabot](https://github.com/dependabot) via [PR #1855](https://github.com/strawberry-graphql/strawberry/pull/1855/)
+
+
 0.109.0 - 2022-04-23
 --------------------
 
