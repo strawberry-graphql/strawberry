@@ -92,7 +92,7 @@ from typing import Any, AsyncGenerator, AsyncIterator, Coroutine, Optional
 
 async def wait_for_call(coro: Coroutine[Any, Any, bytes]) -> Optional[bytes]:
     """
-    wait_for_call calls the the supplied coroutine in a wait_for block.
+    wait_for_call calls the supplied coroutine in a wait_for block.
 
     This mitigates cases where the coroutine doesn't yield until it has
     completed its task. In this case, reading a line from a StreamReader; if
