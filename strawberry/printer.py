@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from itertools import chain
-from typing import TYPE_CHECKING, Dict, Optional, cast
+from typing import TYPE_CHECKING, Any, Dict, Optional, cast
 
 from graphql.type import (
     is_enum_type,
@@ -26,7 +26,7 @@ from graphql.utilities.print_schema import (
 )
 
 from strawberry.field import StrawberryField
-from strawberry.schema_directive import Location, StrawberrySchemaDirective
+from strawberry.schema_directive import Location
 from strawberry.types.types import TypeDefinition
 
 
@@ -41,12 +41,15 @@ def print_schema_directive_params(params: Dict) -> str:
     return "(" + ", ".join(f'{name}: "{value}"' for name, value in params.items()) + ")"
 
 
-def print_schema_directive(
-    directive: StrawberrySchemaDirective, schema: BaseSchema
-) -> str:
-    params = directive.instance.__dict__ if directive.instance else {}
+def print_schema_directive(directive: Any, schema: BaseSchema) -> str:
+    name_converter = schema.config.name_converter
 
-    directive_name = schema.config.name_converter.from_directive(directive)
+    params = {
+        name_converter.get_graphql_name(field): getattr(directive, field.python_name)
+        for field in directive.__strawberry_directive__.fields
+    }
+
+    directive_name = name_converter.from_directive(directive.__strawberry_directive__)
 
     return f" @{directive_name}{print_schema_directive_params(params)}"
 
@@ -60,7 +63,7 @@ def print_field_directives(field: Optional[StrawberryField], schema: BaseSchema)
         for directive in field.directives
         if any(
             location in [Location.FIELD_DEFINITION, Location.INPUT_FIELD_DEFINITION]
-            for location in directive.locations
+            for location in directive.__strawberry_directive__.locations  # type: ignore
         )
     )
 
@@ -119,7 +122,10 @@ def print_type_directives(type_, schema: BaseSchema) -> str:
     directives = (
         directive
         for directive in strawberry_type.directives or []
-        if any(location in allowed_locations for location in directive.locations)
+        if any(
+            location in allowed_locations
+            for location in directive.__strawberry_directive__.locations  # type: ignore
+        )
     )
 
     return "".join(

@@ -1,9 +1,17 @@
 import dataclasses
 import inspect
 import types
-from typing import Callable, List, Optional, Sequence, Type, TypeVar, cast, overload
-
-from strawberry.schema_directive import StrawberrySchemaDirective
+from typing import (
+    TYPE_CHECKING,
+    Callable,
+    List,
+    Optional,
+    Sequence,
+    Type,
+    TypeVar,
+    cast,
+    overload,
+)
 
 from .exceptions import (
     MissingFieldAnnotationError,
@@ -15,6 +23,10 @@ from .types.type_resolver import _get_fields
 from .types.types import TypeDefinition
 from .utils.str_converters import to_camel_case
 from .utils.typing import __dataclass_transform__
+
+
+if TYPE_CHECKING:
+    from strawberry.schema_directive import StrawberrySchemaDirective
 
 
 def _get_interfaces(cls: Type) -> List[TypeDefinition]:
@@ -100,7 +112,7 @@ def _process_type(
     is_input: bool = False,
     is_interface: bool = False,
     description: Optional[str] = None,
-    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    directives: Optional[Sequence["StrawberrySchemaDirective"]] = (),
     extend: bool = False,
 ):
     name = name or to_camel_case(cls.__name__)
@@ -158,7 +170,7 @@ def type(
     is_input: bool = False,
     is_interface: bool = False,
     description: str = None,
-    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    directives: Optional[Sequence["StrawberrySchemaDirective"]] = (),
     extend: bool = False,
 ) -> T:
     ...
@@ -172,7 +184,7 @@ def type(
     is_input: bool = False,
     is_interface: bool = False,
     description: str = None,
-    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    directives: Optional[Sequence["StrawberrySchemaDirective"]] = (),
     extend: bool = False,
 ) -> Callable[[T], T]:
     ...
@@ -231,7 +243,7 @@ def input(
     *,
     name: str = None,
     description: str = None,
-    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    directives: Optional[Sequence["StrawberrySchemaDirective"]] = (),
 ) -> T:
     ...
 
@@ -242,7 +254,7 @@ def input(
     *,
     name: str = None,
     description: str = None,
-    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    directives: Optional[Sequence["StrawberrySchemaDirective"]] = (),
 ) -> Callable[[T], T]:
     ...
 
@@ -272,7 +284,7 @@ def interface(
     *,
     name: str = None,
     description: str = None,
-    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    directives: Optional[Sequence["StrawberrySchemaDirective"]] = (),
 ):
     """Annotates a class as a GraphQL Interface.
     Example usage:

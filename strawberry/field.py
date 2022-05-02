@@ -24,7 +24,6 @@ from typing_extensions import Literal
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import StrawberryArgument
 from strawberry.exceptions import InvalidDefaultFactoryError, InvalidFieldArgument
-from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.type import StrawberryType
 from strawberry.types.info import Info
 from strawberry.union import StrawberryUnion
@@ -35,6 +34,8 @@ from .types.fields.resolver import StrawberryResolver
 
 
 if TYPE_CHECKING:
+    from strawberry.schema_directive import StrawberrySchemaDirective
+
     from .object_type import TypeDefinition
 
 
@@ -60,7 +61,7 @@ class StrawberryField(dataclasses.Field):
         default: object = UNSET,
         default_factory: Union[Callable[[], Any], object] = UNSET,
         deprecation_reason: Optional[str] = None,
-        directives: Sequence[StrawberrySchemaDirective] = (),
+        directives: Sequence["StrawberrySchemaDirective"] = (),
     ):
         # basic fields are fields with no provided resolver
         is_basic_field = not base_resolver
@@ -321,7 +322,7 @@ def field(
     deprecation_reason: Optional[str] = None,
     default: Any = UNSET,
     default_factory: Union[Callable, object] = UNSET,
-    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    directives: Optional[Sequence["StrawberrySchemaDirective"]] = (),
 ) -> T:
     ...
 
@@ -337,7 +338,7 @@ def field(
     deprecation_reason: Optional[str] = None,
     default: Any = UNSET,
     default_factory: Union[Callable, object] = UNSET,
-    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    directives: Optional[Sequence["StrawberrySchemaDirective"]] = (),
 ) -> Any:
     ...
 
@@ -353,7 +354,7 @@ def field(
     deprecation_reason: Optional[str] = None,
     default: Any = UNSET,
     default_factory: Union[Callable, object] = UNSET,
-    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    directives: Optional[Sequence["StrawberrySchemaDirective"]] = (),
 ) -> StrawberryField:
     ...
 

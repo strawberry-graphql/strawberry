@@ -10,6 +10,14 @@ from graphql import DirectiveLocation
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import StrawberryArgument
+from strawberry.field import StrawberryField
+
+
+def directive_field(name: str) -> StrawberryField:
+    return StrawberryField(
+        python_name=None,
+        graphql_name=name,
+    )
 
 
 @dataclasses.dataclass
