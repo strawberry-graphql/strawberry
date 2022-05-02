@@ -7,10 +7,11 @@ from typing import Dict, Optional, Union
 
 from typing_extensions import Literal
 
-from chalice.app import Chalice, Request as ChaliceRequest
+from chalice.app import Chalice, Request as ChaliceRequest, Response as ChaliceResponse
 from chalice.test import Client
 from strawberry.chalice.views import GraphQLView as BaseGraphQLView
 
+from ..context import get_context
 from ..schema import Query, schema
 from . import JSON, HttpClient, Response
 
@@ -18,6 +19,11 @@ from . import JSON, HttpClient, Response
 class GraphQLView(BaseGraphQLView):
     def get_root_value(self, request: ChaliceRequest) -> Query:
         return Query()
+
+    def get_context(self, request: ChaliceRequest, response: ChaliceResponse) -> object:
+        context = super().get_context(request, response)
+
+        return get_context(context)
 
 
 class ChaliceHttpClient(HttpClient):

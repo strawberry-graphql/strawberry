@@ -45,6 +45,10 @@ class Query:
     def root_name(self) -> str:
         return type(self).__name__
 
+    @strawberry.field
+    def value_from_context(self, info: Info) -> str:
+        return info.context["custom_value"]
+
 
 @strawberry.type
 class Mutation:

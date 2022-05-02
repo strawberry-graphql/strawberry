@@ -85,6 +85,9 @@ class GraphQLView:
 
         return Response(body=body, status_code=http_status_code, headers=headers)
 
+    def get_context(self, request: Request, response: Response) -> object:
+        return {"request": request, "response": response}
+
     def execute_request(self, request: Request) -> Response:
         """
         Parse the request process it with strawberry and return a response
@@ -164,7 +167,7 @@ class GraphQLView:
             result: ExecutionResult = self._schema.execute_sync(
                 request_data.query,
                 variable_values=request_data.variables,
-                context_value=request,
+                context_value=self.get_context(request, response=None),
                 operation_name=request_data.operation_name,
                 root_value=self.get_root_value(request),
                 allowed_operation_types=allowed_operation_types,

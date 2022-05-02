@@ -134,3 +134,15 @@ async def test_missing_query(http_client: HttpClient):
         "No GraphQL query found in the request" in response.text
         or "No valid query was provided for the request" in response.text
     )
+
+
+@pytest.mark.parametrize("method", ["get", "post"])
+async def test_query_context(method: Literal["get", "post"], http_client: HttpClient):
+    response = await http_client.query(
+        method=method,
+        query="{ valueFromContext }",
+    )
+    data = response.json["data"]
+
+    assert response.status_code == 200
+    assert data["valueFromContext"] == "a value from context"

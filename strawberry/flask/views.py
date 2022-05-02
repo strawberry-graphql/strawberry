@@ -1,5 +1,5 @@
 import json
-from typing import Mapping
+from typing import Dict
 
 from flask import Response, render_template_string, request
 from flask.views import View
@@ -34,7 +34,7 @@ class GraphQLView(View):
     def get_root_value(self) -> object:
         return None
 
-    def get_context(self, response: Response) -> Mapping[str, object]:
+    def get_context(self, response: Response) -> Dict[str, object]:
         return {"request": request, "response": response}
 
     def render_template(self, template: str) -> str:

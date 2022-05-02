@@ -8,11 +8,12 @@ from typing_extensions import Literal
 
 from django.core.exceptions import BadRequest, SuspiciousOperation
 from django.core.files.uploadedfile import SimpleUploadedFile
-from django.http.response import Http404
+from django.http import Http404, HttpRequest, HttpResponse
 from django.test.client import RequestFactory
 
 from strawberry.django.views import GraphQLView as BaseGraphQLView
 
+from ..context import get_context
 from ..schema import Query, schema
 from . import JSON, HttpClient, Response
 
@@ -20,6 +21,11 @@ from . import JSON, HttpClient, Response
 class GraphQLView(BaseGraphQLView):
     def get_root_value(self, request):
         return Query()
+
+    def get_context(self, request: HttpRequest, response: HttpResponse) -> object:
+        context = {"request": request, "response": response}
+
+        return get_context(context)
 
 
 class DjangoHttpClient(HttpClient):

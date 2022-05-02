@@ -8,8 +8,10 @@ from typing import Dict, Optional
 from typing_extensions import Literal
 
 from sanic import Sanic
+from sanic.request import Request as SanicRequest
 from strawberry.sanic.views import GraphQLView as BaseGraphQLView
 
+from ..context import get_context
 from ..schema import Query, schema
 from . import JSON, HttpClient, Response
 
@@ -17,6 +19,11 @@ from . import JSON, HttpClient, Response
 class GraphQLView(BaseGraphQLView):
     def get_root_value(self):
         return Query()
+
+    async def get_context(self, request: SanicRequest) -> object:
+        context = {"request": request}
+
+        return get_context(context)
 
 
 class SanicHttpClient(HttpClient):

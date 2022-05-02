@@ -7,9 +7,10 @@ from typing import Dict, Optional, Union
 
 from typing_extensions import Literal
 
-from flask import Flask
+from flask import Flask, Response as FlaskResponse
 from strawberry.flask.views import GraphQLView as BaseGraphQLView
 
+from ..context import get_context
 from ..schema import Query, schema
 from . import JSON, HttpClient, Response
 
@@ -22,6 +23,11 @@ class GraphQLView(BaseGraphQLView):
 
     def get_root_value(self):
         return Query()
+
+    def get_context(self, response: FlaskResponse) -> Dict[str, object]:
+        context = super().get_context(response)
+
+        return get_context(context)
 
 
 class FlaskHttpClient(HttpClient):

@@ -1,11 +1,12 @@
 from __future__ import annotations
 
 from django.core.exceptions import BadRequest, SuspiciousOperation
-from django.http.response import Http404
+from django.http import Http404, HttpRequest, HttpResponse
 from django.test.client import RequestFactory
 
 from strawberry.django.views import AsyncGraphQLView as BaseAsyncGraphQLView
 
+from ..context import get_context
 from ..schema import Query, schema
 from . import Response
 from .django import DjangoHttpClient
@@ -14,6 +15,11 @@ from .django import DjangoHttpClient
 class AsyncGraphQLView(BaseAsyncGraphQLView):
     async def get_root_value(self, request):
         return Query()
+
+    async def get_context(self, request: HttpRequest, response: HttpResponse) -> object:
+        context = {"request": request, "response": response}
+
+        return get_context(context)
 
 
 class AsyncDjangoHttpClient(DjangoHttpClient):

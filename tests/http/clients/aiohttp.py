@@ -10,11 +10,19 @@ from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
 from strawberry.aiohttp.views import GraphQLView as BaseGraphQLView
 
+from ..context import get_context
 from ..schema import Query, schema
 from . import JSON, HttpClient, Response
 
 
 class GraphQLView(BaseGraphQLView):
+    async def get_context(
+        self, request: web.Request, response: web.StreamResponse
+    ) -> object:
+        context = await super().get_context(request, response)
+
+        return get_context(context)
+
     async def get_root_value(self, request: web.Request):
         return Query()
 

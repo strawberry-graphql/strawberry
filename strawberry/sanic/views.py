@@ -63,6 +63,7 @@ class GraphQLView(HTTPMethodView):
     def get_root_value(self):
         return None
 
+    # TODO: add response ...
     async def get_context(self, request: Request) -> Any:
         return StrawberrySanicContext(request)
 
