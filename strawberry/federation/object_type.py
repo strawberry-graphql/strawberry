@@ -35,6 +35,7 @@ def type(
     description: str = None,
     keys: List[str] = None,
     extend: bool = False,
+    shareable: bool = False,
 ) -> Callable[[T], T]:
     ...
 
@@ -46,10 +47,13 @@ def type(
     description=None,
     keys=None,
     extend=False,
+    shareable: bool = False,
 ):
-    from strawberry.federation.schema_directives import Key
+    from strawberry.federation.schema_directives import Key, Shareable
 
     directives = [Key(key) for key in keys or []]
+    if shareable:
+        directives.append(Shareable())  # type: ignore
 
     return base_type(
         cls,

@@ -1,4 +1,4 @@
-from typing import Literal
+from typing_extensions import Literal
 
 from strawberry import directive_field
 from strawberry.custom_scalar import scalar
@@ -31,14 +31,6 @@ class Key:
     resolvable: bool = True
 
 
-# @schema_directive(locations=[Location.SCHEMA], name="link")
-# class Link: # todo: address this in some other PR ... it needs to be handled differently than these other directives.
-#     url: str
-#     link_as: str # "as" collides with Python reserved word "as"
-#     link_for: LinkPurpose # "for" collides with Python reserved word "for"
-#     link_import: LinkImport  # "import" is reserved word
-
-
 @schema_directive(
     locations=[Location.FIELD_DEFINITION, Location.OBJECT], name="shareable"
 )
@@ -47,13 +39,13 @@ class Shareable:
 
 
 @schema_directive(locations=[Location.FIELD_DEFINITION], name="tag")
-class Tag:  # todo confirm is in fact a "schema directive" ... confirm properties of "Tag"
+class Tag:
     name: str
 
 
 @schema_directive(locations=[Location.FIELD_DEFINITION], name="override")
 class Override:
-    override_from: str = directive_field(name="from")
+    override_from: str = directive_field(name="from")  # type: ignore
 
 
 @schema_directive(

@@ -1,6 +1,7 @@
 from typing import (
     Any,
     Callable,
+    Iterable,
     List,
     Optional,
     Sequence,
@@ -31,6 +32,10 @@ def field(
     provides: Optional[List[str]] = None,
     requires: Optional[List[str]] = None,
     external: bool = False,
+    shareable: bool = False,
+    tags: Optional[Iterable[str]] = (),
+    override: Optional[str] = None,
+    inaccessible: bool = False,
     init: Literal[False] = False,
     permission_classes: Optional[List[Type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
@@ -51,8 +56,8 @@ def field(
     requires: Optional[List[str]] = None,
     external: bool = False,
     shareable: bool = False,
-    tag: Optional[List[str]] = None,
-    override: Optional[List[str]] = None,
+    tags: Optional[Iterable[str]] = (),
+    override: Optional[str] = None,
     inaccessible: bool = False,
     init: Literal[True] = True,
     permission_classes: Optional[List[Type[BasePermission]]] = None,
@@ -75,8 +80,8 @@ def field(
     requires: Optional[List[str]] = None,
     external: bool = False,
     shareable: bool = False,
-    tag: Optional[List[str]] = None,
-    override: Optional[List[str]] = None,
+    tags: Optional[Iterable[str]] = (),
+    override: Optional[str] = None,
     inaccessible: bool = False,
     permission_classes: Optional[List[Type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
@@ -97,7 +102,7 @@ def field(
     requires=None,
     external=False,
     shareable=False,
-    tag=None,
+    tags=None,
     override=None,
     inaccessible=False,
     permission_classes=None,
@@ -134,11 +139,11 @@ def field(
     if shareable:
         directives.append(Shareable())  # type: ignore
 
-    if tag:
-        directives.append(Tag(" ".join(tag)))  # type: ignore
+    if tags:
+        directives.append(Tag(" ".join(tags)))  # type: ignore
 
     if override:
-        directives.append(Override(" ".join(override)))  # type: ignore
+        directives.append(Override(override))  # type: ignore
 
     if inaccessible:
         directives.append(Inaccessible())  # type: ignore

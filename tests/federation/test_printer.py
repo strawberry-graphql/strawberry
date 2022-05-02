@@ -384,7 +384,7 @@ def test_field_shareable_printed_correctly():
     class SomeInterface:
         id: strawberry.ID
 
-    @strawberry.federation.type(keys=["upc"], extend=True)
+    @strawberry.federation.type(keys=["upc"], extend=True, shareable=True)
     class Product(SomeInterface):
         upc: str = strawberry.federation.field(external=True, shareable=True)
 
@@ -397,7 +397,7 @@ def test_field_shareable_printed_correctly():
     schema = strawberry.federation.Schema(query=Query)
 
     expected = """
-        extend type Product implements SomeInterface @key(fields: "upc", resolvable: "True") {
+        extend type Product implements SomeInterface @key(fields: "upc", resolvable: "True") @shareable {
           id: ID!
           upc: String! @external @shareable
         }
@@ -431,7 +431,7 @@ def test_field_tag_printed_correctly():
 
     @strawberry.federation.type(keys=["upc"], extend=True)
     class Product(SomeInterface):
-        upc: str = strawberry.federation.field(external=True, tag=["myTag"])
+        upc: str = strawberry.federation.field(external=True, tags=["myTag"])
 
     @strawberry.federation.type
     class Query:
@@ -476,7 +476,7 @@ def test_field_override_printed_correctly():
 
     @strawberry.federation.type(keys=["upc"], extend=True)
     class Product(SomeInterface):
-        upc: str = strawberry.federation.field(external=True, override=["mySubGraph"])
+        upc: str = strawberry.federation.field(external=True, override="mySubGraph")
 
     @strawberry.federation.type
     class Query:
