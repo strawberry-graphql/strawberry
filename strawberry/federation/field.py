@@ -1,6 +1,7 @@
 from typing import (
     Any,
     Callable,
+    Iterable,
     List,
     Optional,
     Sequence,
@@ -17,8 +18,6 @@ from strawberry.permission import BasePermission
 from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.unset import UNSET
 
-from .schema_directives import External, Provides, Requires
-
 
 T = TypeVar("T")
 
@@ -33,6 +32,10 @@ def field(
     provides: Optional[List[str]] = None,
     requires: Optional[List[str]] = None,
     external: bool = False,
+    shareable: bool = False,
+    tags: Optional[Iterable[str]] = (),
+    override: Optional[str] = None,
+    inaccessible: bool = False,
     init: Literal[False] = False,
     permission_classes: Optional[List[Type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
@@ -52,6 +55,10 @@ def field(
     provides: Optional[List[str]] = None,
     requires: Optional[List[str]] = None,
     external: bool = False,
+    shareable: bool = False,
+    tags: Optional[Iterable[str]] = (),
+    override: Optional[str] = None,
+    inaccessible: bool = False,
     init: Literal[True] = True,
     permission_classes: Optional[List[Type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
@@ -72,6 +79,10 @@ def field(
     provides: Optional[List[str]] = None,
     requires: Optional[List[str]] = None,
     external: bool = False,
+    shareable: bool = False,
+    tags: Optional[Iterable[str]] = (),
+    override: Optional[str] = None,
+    inaccessible: bool = False,
     permission_classes: Optional[List[Type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
     default: Any = UNSET,
@@ -90,6 +101,10 @@ def field(
     provides=None,
     requires=None,
     external=False,
+    shareable=False,
+    tags=None,
+    override=None,
+    inaccessible=False,
     permission_classes=None,
     deprecation_reason=None,
     default=UNSET,
@@ -100,6 +115,16 @@ def field(
     # any behavior at the moment.
     init=None,
 ) -> Any:
+    from .schema_directives import (
+        External,
+        Inaccessible,
+        Override,
+        Provides,
+        Requires,
+        Shareable,
+        Tag,
+    )
+
     directives = list(directives)
 
     if provides:
@@ -110,6 +135,18 @@ def field(
 
     if external:
         directives.append(External())  # type: ignore
+
+    if shareable:
+        directives.append(Shareable())  # type: ignore
+
+    if tags:
+        directives.append(Tag(" ".join(tags)))  # type: ignore
+
+    if override:
+        directives.append(Override(override))  # type: ignore
+
+    if inaccessible:
+        directives.append(Inaccessible())  # type: ignore
 
     return base_field(
         resolver=resolver,

@@ -20,7 +20,6 @@ from strawberry.utils.inspect import get_func_args
 
 from ..printer import print_schema
 from ..schema import Schema as BaseSchema
-from .schema_directives import Key
 
 
 class Schema(BaseSchema):
@@ -128,6 +127,8 @@ def _get_entity_type(type_map: TypeMap):
 
 
 def _is_key(directive: Any) -> bool:
+    from .schema_directives import Key
+
     return isinstance(directive, Key)
 
 
