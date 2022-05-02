@@ -8,21 +8,21 @@ The file printing is left to the caller which received input and output argument
 from jinja2 import Template
 
 from strawberry.utils import str_converters
-
+from textwrap import dedent
 
 # Jinja2 templates
 # strawberry class
-TEMPLATE = """{{ decorator + description }}
+TYPE_TEMPLATE = """{{ decorator + description }}
 class {{ class_name }}:
     {%- if ast.kind in standard_types -%}
-    {%- for field in ast.fields %}
-    {{ get_field_attribute(field) }}
-    {%- endfor %}
+        {%- for field in ast.fields %}
+            {{ get_field_attribute(field) }}
+        {%- endfor %}
     {%- endif -%}
     {%- if ast.kind == 'enum_type_definition' -%}
-    {%- for value in ast.values %}
-    {{ value.name.value }} = '{{ value.name.value.lower() }}'
-    {%- endfor %}
+        {%- for value in ast.values %}
+            {{ value.name.value }} = '{{ value.name.value.lower() }}'
+        {%- endfor %}
     {%- endif -%}
 """
 
@@ -31,7 +31,8 @@ UNION_TEMPLATE = """{{ class_name }} = {{ get_union(ast) }}"""
 
 # strawberry directives
 # TODO: How do i know which type should first arg(value) be ?
-DIRECTIVE_TEMPLATE = """@strawberry.directive(
+DIRECTIVE_TEMPLATE = dedent("""\
+@strawberry.directive(
     locations=[
         {%- for field in ast.locations %}
         DirectiveLocation.{{ field.value }}
@@ -45,7 +46,7 @@ def {{ class_name }}(
     {%- endfor %}
 ):
     pass
-"""
+""")
 
 # QUESTION: Is there a better way to determine this?
 SCALAR_TYPES = {
@@ -64,7 +65,8 @@ DECORATOR_KINDS = {
     "object_type_definition": "@strawberry.type",
     "directive_definition": "@strawberry.directive",
     "input_object_type_definition": "@strawberry.input",
-    "interface_type_definition": "@strawberry.interface",
+    "interface_type_definition": "@strawberry.interface", 
+    # What about a mutation?
 }
 
 
@@ -80,7 +82,7 @@ def get_decorator(ast):
 
 
 def get_description(ast):
-    """ Creates and returns decorator string """
+    """Creates and returns decorator string"""
     if not hasattr(ast, "description") or ast.description is None:
         return ""
     else:
@@ -179,18 +181,19 @@ def get_strawberry_type(name, description, directives):
 
 
 def get_template(ast):
+    """Get the code template from which to build the strawberry code"""
     if ast.kind == "directive_definition":
         t = DIRECTIVE_TEMPLATE
     elif ast.kind == "union_type_definition":
         t = UNION_TEMPLATE
     else:
-        t = TEMPLATE
+        t = TYPE_TEMPLATE
 
     return Template(t)
 
 
 def transpile(ast):
-    """ Populates templates based on type of graphql object definition """
+    """Populates templates based on type of graphql object definition"""
     template = get_template(ast)
     output = template.render(
         decorator=get_decorator(ast),
@@ -205,4 +208,4 @@ def transpile(ast):
         ],
         ast=ast,
     )
-    return output[1:] if output.startswith("\n") else output
+    return output.lstrip()

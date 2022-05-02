@@ -22,20 +22,20 @@ def import_sdl(sdl: str) -> str:
         # Parse and render specific ast definitions
         templates.add(sdl_transpiler.transpile(d))
 
-    strawberries = "\n\n".join(templates)
-    imports = "from enum import Enum\n\n" if "(Enum)" in strawberries else ""
+    strawberry_code_template = "\n\n".join(templates)
+    imports = "from enum import Enum\n\n" if "(Enum)" in strawberry_code_template else ""
     imports += (
         "from strawberry.directive import DirectiveLocation\n\n"
-        if "DirectiveLocation" in strawberries
+        if "DirectiveLocation" in strawberry_code_template
         else ""
     )
-    imports += "import typing\n\n" if "typing." in strawberries else ""
-    imports += "from typing import Union\n\n" if "Union[" in strawberries else ""
+    imports += "import typing\n\n" if "typing." in strawberry_code_template else ""
+    imports += "from typing import Union\n\n" if "Union[" in strawberry_code_template else ""
     imports += "import strawberry\n\n\n"
 
-    strawberries = imports + strawberries
+    strawberry_code_template = imports + strawberry_code_template
 
-    return strawberries
+    return strawberry_code_template
 
 
 def file_to_string(path: str) -> str:
