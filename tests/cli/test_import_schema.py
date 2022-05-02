@@ -140,7 +140,7 @@ def test_import_int_field():
 
 
 def test_import_optional_int_field():
-    """ Test for a required Int field type with multiline description """
+    """Test for a required Int field type with multiline description"""
     s = '''
     type HolyHandGrenade {
         """
@@ -169,7 +169,7 @@ def test_import_optional_int_field():
 
 # String
 def test_import_str_fields():
-    """ Test for String field types both optional and required """
+    """Test for String field types both optional and required"""
     s = '''
     """
     He who wants to cross the bridge,
@@ -203,7 +203,7 @@ def test_import_str_fields():
 
 # Float
 def test_import_float_field():
-    """ Test for a Float type """
+    """Test for a Float type"""
     s = '''
     type Swallow {
         """
@@ -230,7 +230,7 @@ def test_import_float_field():
 
 
 def test_import_optional_float_field():
-    """ Test for a Float type """
+    """Test for a Float type"""
     s = '''
     type Swallow {
         """
@@ -259,7 +259,7 @@ def test_import_optional_float_field():
 
 # ID
 def test_import_id_field():
-    """ Test for a required ID field type """
+    """Test for a required ID field type"""
     s = """
     type ArgumentClinic {
         id: ID!
@@ -279,7 +279,7 @@ def test_import_id_field():
 
 
 def test_import_optional_id_field():
-    """ Test for a optional ID field type """
+    """Test for a optional ID field type"""
     s = """
     type ArgumentClinic {
         id: ID
@@ -302,7 +302,7 @@ def test_import_optional_id_field():
 # endregion
 # Enum
 def test_import_enum_type():
-    """ Test for an enum type transpilation """
+    """Test for an enum type transpilation"""
     s = """
     enum SwallowSpecies {
         AFRICAN
@@ -370,7 +370,7 @@ def test_import_union_with_description():
 
 # Interface
 def test_import_interface_type():
-    """ Test for an enum type transpilation """
+    """Test for an enum type transpilation"""
     s = """
     interface Monster {
         name: String!
@@ -391,7 +391,7 @@ def test_import_interface_type():
 
 # Input
 def test_import_input_type():
-    """ Test for input type transpilation """
+    """Test for input type transpilation"""
     s = """
     input Monster {
         name: String!
@@ -468,7 +468,7 @@ def test_directives():
 
 
 def test_depricated():
-    """ Test depricated directive both definition and schema directive """
+    """Test depricated directive both definition and schema directive"""
     s = """
     type ExampleType {
     newField: String
@@ -494,7 +494,7 @@ def test_depricated():
 
 # region List types
 def test_import_opt_list_opt_str_field():
-    """ Test for an optional list of optional strings type with field description """
+    """Test for an optional list of optional strings type with field description"""
     s = '''
     type HollyHandGrenade {
         """And the people did feast on:"""
@@ -521,7 +521,7 @@ def test_import_opt_list_opt_str_field():
 
 
 def test_import_list_opt_str_field():
-    """ Test for a required list of optional strings type with field description """
+    """Test for a required list of optional strings type with field description"""
     s = '''
     type HollyHandGrenade {
         """And the people did feast on:"""
@@ -545,7 +545,7 @@ def test_import_list_opt_str_field():
 
 
 def test_import_opt_list_str_field():
-    """ Test for an optional list of required strings type with field description """
+    """Test for an optional list of required strings type with field description"""
     s = '''
     type HollyHandGrenade {
         """And the people did feast on:"""
@@ -569,7 +569,7 @@ def test_import_opt_list_str_field():
 
 
 def test_import_list_str_field():
-    """ Test for an required list of required strings type with field description """
+    """Test for an required list of required strings type with field description"""
     s = '''
     type HollyHandGrenade {
         """And the people did feast on:"""
@@ -596,7 +596,7 @@ def test_import_list_str_field():
 
 # region
 def test_get_field_name():
-    """ test field name attribute acquisition """
+    """test field name attribute acquisition"""
     assert sdl_transpiler.get_field_name("non_camel_ast_name") == "non_camel_ast_name"
     assert sdl_transpiler.get_field_name("camelAstName") == ""
     assert sdl_transpiler.get_field_name("snacamel") == ""

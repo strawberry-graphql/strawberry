@@ -5,10 +5,12 @@ to valid strawberry data class strings.
 The file printing is left to the caller which received input and output arguments.
 """
 
+from textwrap import dedent
+
 from jinja2 import Template
 
 from strawberry.utils import str_converters
-from textwrap import dedent
+
 
 # Jinja2 templates
 # strawberry class
@@ -31,7 +33,8 @@ UNION_TEMPLATE = """{{ class_name }} = {{ get_union(ast) }}"""
 
 # strawberry directives
 # TODO: How do i know which type should first arg(value) be ?
-DIRECTIVE_TEMPLATE = dedent("""\
+DIRECTIVE_TEMPLATE = dedent(
+    """\
 @strawberry.directive(
     locations=[
         {%- for field in ast.locations %}
@@ -46,7 +49,8 @@ def {{ class_name }}(
     {%- endfor %}
 ):
     pass
-""")
+"""
+)
 
 # QUESTION: Is there a better way to determine this?
 SCALAR_TYPES = {
@@ -65,7 +69,7 @@ DECORATOR_KINDS = {
     "object_type_definition": "@strawberry.type",
     "directive_definition": "@strawberry.directive",
     "input_object_type_definition": "@strawberry.input",
-    "interface_type_definition": "@strawberry.interface", 
+    "interface_type_definition": "@strawberry.interface",
     # What about a mutation?
 }
 
@@ -90,7 +94,7 @@ def get_description(ast):
 
 
 def get_directive(ast):
-    """ Format union type """
+    """Format union type"""
     types = "(" + ", ".join((t.name.value for t in ast.types)) + ")"
     description = get_description(ast)
     description = f"{description[1:-1]}" if description else ""
@@ -104,7 +108,7 @@ def get_directive(ast):
 
 
 def get_union(ast):
-    """ Format union type """
+    """Format union type"""
     types = "(" + ", ".join((t.name.value for t in ast.types)) + ")"
     description = get_description(ast)
     description = f"{description[1:-1]}" if description else ""
@@ -132,7 +136,7 @@ def get_field_attribute(field):
 
 
 def get_field_name(field_name):
-    """ Check if name attribute Extract field name """
+    """Check if name attribute Extract field name"""
     snake_name = str_converters.to_snake_case(field_name)
     camel_name = str_converters.to_camel_case(field_name)
     if camel_name == snake_name or camel_name == field_name:
@@ -142,7 +146,7 @@ def get_field_name(field_name):
 
 
 def get_field_type(field, optional=True):
-    """ Go down the tree to find out the type of field """
+    """Go down the tree to find out the type of field"""
     if field.type.kind == "list_type":
         field_type = "typing.List[{}]".format(get_field_type(field.type))
         field_type = f"typing.Optional[{field_type}]" if optional else field_type
@@ -163,7 +167,7 @@ def get_field_type(field, optional=True):
 
 
 def get_strawberry_type(name, description, directives):
-    """ Create strawberry type field as a string """
+    """Create strawberry type field as a string"""
     strawberry_type = ""
     deprecated = [d for d in directives if d.name.value == "deprecated"]
     deprecated = deprecated[0] if deprecated else None

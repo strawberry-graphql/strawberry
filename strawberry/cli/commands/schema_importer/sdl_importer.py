@@ -23,14 +23,18 @@ def import_sdl(sdl: str) -> str:
         templates.add(sdl_transpiler.transpile(d))
 
     strawberry_code_template = "\n\n".join(templates)
-    imports = "from enum import Enum\n\n" if "(Enum)" in strawberry_code_template else ""
+    imports = (
+        "from enum import Enum\n\n" if "(Enum)" in strawberry_code_template else ""
+    )
     imports += (
         "from strawberry.directive import DirectiveLocation\n\n"
         if "DirectiveLocation" in strawberry_code_template
         else ""
     )
     imports += "import typing\n\n" if "typing." in strawberry_code_template else ""
-    imports += "from typing import Union\n\n" if "Union[" in strawberry_code_template else ""
+    imports += (
+        "from typing import Union\n\n" if "Union[" in strawberry_code_template else ""
+    )
     imports += "import strawberry\n\n\n"
 
     strawberry_code_template = imports + strawberry_code_template
@@ -39,7 +43,7 @@ def import_sdl(sdl: str) -> str:
 
 
 def file_to_string(path: str) -> str:
-    """ Reads path and returns SDL string """
+    """Reads path and returns SDL string"""
     with open(path, "r") as f:
         string = f.read()
 
