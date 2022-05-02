@@ -4,6 +4,7 @@ import textwrap
 from typing import List
 
 import strawberry
+from strawberry.federation.schema_directives import Key
 from strawberry.schema.config import StrawberryConfig
 
 
@@ -34,7 +35,7 @@ def test_entities_type_when_no_type_has_keys():
     schema = strawberry.federation.Schema(query=Query)
 
     expected = """
-        extend type Product @key(fields: "upc", resolvable: "True") {
+        extend type Product @key(fields: "upc") {
           upc: String! @external
           reviews: [Review!]!
         }
@@ -87,7 +88,7 @@ def test_entities_extending_interface():
     schema = strawberry.federation.Schema(query=Query)
 
     expected = """
-        extend type Product implements SomeInterface @key(fields: "upc", resolvable: "True") {
+        extend type Product implements SomeInterface @key(fields: "upc") {
           id: ID!
           upc: String! @external
         }
@@ -147,7 +148,7 @@ def test_fields_requires_are_printed_correctly():
     schema = strawberry.federation.Schema(query=Query)
 
     expected = """
-        extend type Product @key(fields: "upc", resolvable: "True") {
+        extend type Product @key(fields: "upc") {
           upc: String! @external
           field1: String! @external
           field2: String! @external
@@ -215,7 +216,7 @@ def test_field_provides_are_printed_correctly_camel_case_on():
     )
 
     expected = """
-        extend type Product @key(fields: "upc", resolvable: "True") {
+        extend type Product @key(fields: "upc") {
           upc: String! @external
           theName: String! @external
           reviews: [Review!]!
@@ -281,7 +282,7 @@ def test_field_provides_are_printed_correctly_camel_case_off():
     )
 
     expected = """
-        extend type Product @key(fields: "upc", resolvable: "True") {
+        extend type Product @key(fields: "upc") {
           upc: String! @external
           the_name: String! @external
           reviews: [Review!]!
@@ -318,13 +319,14 @@ def test_field_provides_are_printed_correctly_camel_case_off():
 
 
 def test_multiple_keys():
+    # also confirm that the "resolvable: True" works
     global Review
 
     @strawberry.federation.type
     class User:
         username: str
 
-    @strawberry.federation.type(keys=["upc"], extend=True)
+    @strawberry.federation.type(keys=[Key("upc", True)], extend=True)
     class Product:
         upc: str = strawberry.federation.field(external=True)
         reviews: List["Review"]
@@ -355,7 +357,7 @@ def test_multiple_keys():
           topProducts(first: Int!): [Product!]!
         }
 
-        type Review @key(fields: "body", resolvable: "True") {
+        type Review @key(fields: "body") {
           body: String!
           author: User!
           product: Product!
@@ -397,7 +399,7 @@ def test_field_shareable_printed_correctly():
     schema = strawberry.federation.Schema(query=Query)
 
     expected = """
-        extend type Product implements SomeInterface @key(fields: "upc", resolvable: "True") @shareable {
+        extend type Product implements SomeInterface @key(fields: "upc") @shareable {
           id: ID!
           upc: String! @external @shareable
         }
@@ -442,7 +444,7 @@ def test_field_tag_printed_correctly():
     schema = strawberry.federation.Schema(query=Query)
 
     expected = """
-        extend type Product implements SomeInterface @key(fields: "upc", resolvable: "True") {
+        extend type Product implements SomeInterface @key(fields: "upc") {
           id: ID!
           upc: String! @external @tag(name: "myTag")
         }
@@ -487,7 +489,7 @@ def test_field_override_printed_correctly():
     schema = strawberry.federation.Schema(query=Query)
 
     expected = """
-        extend type Product implements SomeInterface @key(fields: "upc", resolvable: "True") {
+        extend type Product implements SomeInterface @key(fields: "upc") {
           id: ID!
           upc: String! @external @override(from: "mySubGraph")
         }
@@ -532,7 +534,7 @@ def test_field_inaccessible_printed_correctly():
     schema = strawberry.federation.Schema(query=Query)
 
     expected = """
-        extend type Product implements SomeInterface @key(fields: "upc", resolvable: "True") {
+        extend type Product implements SomeInterface @key(fields: "upc") {
           id: ID!
           upc: String! @external @inaccessible
         }

@@ -28,6 +28,7 @@ from graphql.utilities.print_schema import (
 from strawberry.field import StrawberryField
 from strawberry.schema_directive import Location
 from strawberry.types.types import TypeDefinition
+from strawberry.unset import UNSET
 
 
 if TYPE_CHECKING:
@@ -38,7 +39,13 @@ def print_schema_directive_params(params: Dict) -> str:
     if not params:
         return ""
 
-    return "(" + ", ".join(f'{name}: "{value}"' for name, value in params.items()) + ")"
+    return (
+        "("
+        + ", ".join(
+            f'{name}: "{value}"' for name, value in params.items() if value is not UNSET
+        )
+        + ")"
+    )
 
 
 def print_schema_directive(directive: Any, schema: BaseSchema) -> str:

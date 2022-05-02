@@ -1,10 +1,14 @@
-from typing import Callable, List, TypeVar, overload
+from typing import TYPE_CHECKING, Callable, List, TypeVar, Union, overload
 
 from strawberry.field import StrawberryField, field as base_field
 from strawberry.object_type import type as base_type
 from strawberry.utils.typing import __dataclass_transform__
 
 from .field import field
+
+
+if TYPE_CHECKING:
+    from .schema_directives import Key
 
 
 T = TypeVar("T")
@@ -19,7 +23,7 @@ def type(
     *,
     name: str = None,
     description: str = None,
-    keys: List[str] = None,
+    keys: List[Union["Key", str]] = None,
     extend: bool = False,
 ) -> T:
     ...
@@ -33,7 +37,7 @@ def type(
     *,
     name: str = None,
     description: str = None,
-    keys: List[str] = None,
+    keys: List[Union["Key", str]] = None,
     extend: bool = False,
     shareable: bool = False,
 ) -> Callable[[T], T]:
@@ -45,13 +49,13 @@ def type(
     *,
     name=None,
     description=None,
-    keys=None,
+    keys: List[Union["Key", str]] = None,
     extend=False,
     shareable: bool = False,
 ):
     from strawberry.federation.schema_directives import Key, Shareable
 
-    directives = [Key(key) for key in keys or []]
+    directives = [Key(key) if isinstance(key, str) else key for key in keys or []]
     if shareable:
         directives.append(Shareable())  # type: ignore
 
