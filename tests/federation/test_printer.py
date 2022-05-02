@@ -378,6 +378,7 @@ def test_multiple_keys():
 
     del Review
 
+
 def test_field_shareable_printed_correctly():
     @strawberry.interface
     class SomeInterface:
@@ -421,6 +422,7 @@ def test_field_shareable_printed_correctly():
     """
 
     assert schema.as_str() == textwrap.dedent(expected).strip()
+
 
 def test_field_tag_printed_correctly():
     @strawberry.interface
@@ -466,6 +468,7 @@ def test_field_tag_printed_correctly():
 
     assert schema.as_str() == textwrap.dedent(expected).strip()
 
+
 def test_field_override_printed_correctly():
     @strawberry.interface
     class SomeInterface:
@@ -509,6 +512,7 @@ def test_field_override_printed_correctly():
     """
 
     assert schema.as_str() == textwrap.dedent(expected).strip()
+
 
 def test_field_inaccessible_printed_correctly():
     @strawberry.interface

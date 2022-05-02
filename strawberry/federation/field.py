@@ -18,7 +18,6 @@ from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.unset import UNSET
 
 
-
 T = TypeVar("T")
 
 
@@ -112,8 +111,15 @@ def field(
     init=None,
 ) -> Any:
     from .schema_directives import (
-        External, Provides, Requires, Shareable, Tag, Override, Inaccessible
+        External,
+        Inaccessible,
+        Override,
+        Provides,
+        Requires,
+        Shareable,
+        Tag,
     )
+
     directives = list(directives)
 
     if provides:
@@ -126,16 +132,16 @@ def field(
         directives.append(External())  # type: ignore
 
     if shareable:
-        directives.append(Shareable()) # type: ignore
+        directives.append(Shareable())  # type: ignore
 
     if tag:
-        directives.append(Tag(" ".join(tag))) # type: ignore
+        directives.append(Tag(" ".join(tag)))  # type: ignore
 
     if override:
-        directives.append(Override(" ".join(override))) # type: ignore
+        directives.append(Override(" ".join(override)))  # type: ignore
 
     if inaccessible:
-        directives.append(Inaccessible()) # type: ignore
+        directives.append(Inaccessible())  # type: ignore
 
     return base_field(
         resolver=resolver,
