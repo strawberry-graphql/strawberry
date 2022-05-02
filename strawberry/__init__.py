@@ -2,7 +2,7 @@ from . import experimental, federation
 from .arguments import argument
 from .auto import auto
 from .custom_scalar import scalar
-from .directive import directive
+from .directive import directive, directive_field
 from .enum import enum, enum_value
 from .field import field
 from .lazy_type import LazyType
@@ -27,6 +27,7 @@ __all__ = [
     "Schema",
     "argument",
     "directive",
+    "directive_field",
     "schema_directive",
     "enum",
     "enum_value",

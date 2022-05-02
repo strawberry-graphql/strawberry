@@ -95,9 +95,9 @@ def test_directive_on_types():
 def test_using_different_names_for_directive_field():
     @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
     class Sensitive:
-        reason: str = strawberry.field(name="as")
-        real_age: str = strawberry.field()
-        real_age_2: str = strawberry.field(name="real_age")
+        reason: str = strawberry.directive_field(name="as")
+        real_age: str
+        real_age_2: str = strawberry.directive_field(name="real_age")
 
     @strawberry.type
     class Query:
@@ -119,7 +119,7 @@ def test_using_different_names_for_directive_field():
 def test_respects_schema_config_for_names():
     @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
     class Sensitive:
-        real_age: str = strawberry.field()
+        real_age: str
 
     @strawberry.type
     class Query:
