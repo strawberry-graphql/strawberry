@@ -38,7 +38,21 @@ class Shareable:
     ...
 
 
-@schema_directive(locations=[Location.FIELD_DEFINITION], name="tag")
+@schema_directive(
+    locations=[
+        Location.FIELD_DEFINITION,
+        Location.INTERFACE,
+        Location.OBJECT,
+        Location.UNION,
+        Location.ARGUMENT_DEFINITION,
+        Location.SCALAR,
+        Location.ENUM,
+        Location.ENUM_VALUE,
+        Location.INPUT_OBJECT,
+        Location.INPUT_FIELD_DEFINITION,
+    ],
+    name="tag",
+)
 class Tag:
     name: str
 
