@@ -163,11 +163,13 @@ class GraphQLView:
         if not self.allow_queries_via_get and method == "GET":
             allowed_operation_types = allowed_operation_types - {OperationType.QUERY}
 
+        sub_response = Response(body=None)
+
         try:
             result: ExecutionResult = self._schema.execute_sync(
                 request_data.query,
                 variable_values=request_data.variables,
-                context_value=self.get_context(request, response=None),
+                context_value=self.get_context(request, response=sub_response),
                 operation_name=request_data.operation_name,
                 root_value=self.get_root_value(request),
                 allowed_operation_types=allowed_operation_types,
