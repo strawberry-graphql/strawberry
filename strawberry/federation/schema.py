@@ -128,7 +128,7 @@ def _get_entity_type(type_map: TypeMap):
 
 
 def _is_key(directive: Any) -> bool:
-    return directive.wrap is Key.wrap  # type: ignore
+    return isinstance(directive, Key)
 
 
 def _has_federation_keys(
