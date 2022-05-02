@@ -17,14 +17,14 @@ from strawberry.utils import str_converters
 TYPE_TEMPLATE = """{{ decorator + description }}
 class {{ class_name }}:
     {%- if ast.kind in standard_types -%}
-        {%- for field in ast.fields %}
-            {{ get_field_attribute(field) }}
-        {%- endfor %}
+    {%- for field in ast.fields %}
+    {{ get_field_attribute(field) }}
+    {%- endfor %}
     {%- endif -%}
     {%- if ast.kind == 'enum_type_definition' -%}
-        {%- for value in ast.values %}
-            {{ value.name.value }} = '{{ value.name.value.lower() }}'
-        {%- endfor %}
+    {%- for value in ast.values %}
+    {{ value.name.value }} = '{{ value.name.value.lower() }}'
+    {%- endfor %}
     {%- endif -%}
 """
 
