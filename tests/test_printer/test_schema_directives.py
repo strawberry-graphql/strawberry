@@ -2,6 +2,7 @@ import textwrap
 
 import strawberry
 from strawberry.printer import print_schema
+from strawberry.schema.config import StrawberryConfig
 from strawberry.schema_directive import Location
 
 
@@ -26,17 +27,21 @@ def test_print_simple_directive():
 
 
 def test_print_directive_with_name():
-    @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
-    class SensitiveField:
+    @strawberry.schema_directive(
+        name="sensitive", locations=[Location.FIELD_DEFINITION]
+    )
+    class SensitiveDirective:
         reason: str
 
     @strawberry.type
     class Query:
-        first_name: str = strawberry.field(directives=[SensitiveField(reason="GDPR")])
+        first_name: str = strawberry.field(
+            directives=[SensitiveDirective(reason="GDPR")]
+        )
 
     expected_type = """
     type Query {
-      firstName: String! @sensitiveField(reason: "GDPR")
+      firstName: String! @sensitive(reason: "GDPR")
     }
     """
 
@@ -83,5 +88,51 @@ def test_directive_on_types():
     """
 
     schema = strawberry.Schema(query=Query)
+
+    assert print_schema(schema) == textwrap.dedent(expected_type).strip()
+
+
+def test_using_different_names_for_directive_field():
+    @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
+    class Sensitive:
+        reason: str = strawberry.field(name="as")
+        real_age: str = strawberry.field()
+        real_age_2: str = strawberry.field(name="real_age")
+
+    @strawberry.type
+    class Query:
+        first_name: str = strawberry.field(
+            directives=[Sensitive(reason="GDPR", real_age="42", real_age_2="42")]
+        )
+
+    expected_type = """
+    type Query {
+      firstName: String! @sensitive(as: "GDPR", realAge: "42", real_age: "42")
+    }
+    """
+
+    schema = strawberry.Schema(query=Query)
+
+    assert print_schema(schema) == textwrap.dedent(expected_type).strip()
+
+
+def test_respects_schema_config_for_names():
+    @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
+    class Sensitive:
+        real_age: str = strawberry.field()
+
+    @strawberry.type
+    class Query:
+        first_name: str = strawberry.field(directives=[Sensitive(real_age="42")])
+
+    expected_type = """
+    type Query {
+      first_name: String! @Sensitive(real_age: "42")
+    }
+    """
+
+    schema = strawberry.Schema(
+        query=Query, config=StrawberryConfig(auto_camel_case=False)
+    )
 
     assert print_schema(schema) == textwrap.dedent(expected_type).strip()

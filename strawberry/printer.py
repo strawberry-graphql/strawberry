@@ -44,9 +44,14 @@ def print_schema_directive_params(params: Dict) -> str:
 def print_schema_directive(
     directive: StrawberrySchemaDirective, schema: BaseSchema
 ) -> str:
-    params = directive.instance.__dict__ if directive.instance else {}
+    name_converter = schema.config.name_converter
 
-    directive_name = schema.config.name_converter.from_directive(directive)
+    params = {
+        name_converter.get_graphql_name(field): getattr(directive, field.python_name)
+        for field in directive.__strawberry_directive__.fields
+    }
+
+    directive_name = name_converter.from_directive(directive.__strawberry_directive__)
 
     return f" @{directive_name}{print_schema_directive_params(params)}"
 
@@ -60,7 +65,7 @@ def print_field_directives(field: Optional[StrawberryField], schema: BaseSchema)
         for directive in field.directives
         if any(
             location in [Location.FIELD_DEFINITION, Location.INPUT_FIELD_DEFINITION]
-            for location in directive.locations
+            for location in directive.__strawberry_directive__.locations
         )
     )
 
@@ -119,7 +124,10 @@ def print_type_directives(type_, schema: BaseSchema) -> str:
     directives = (
         directive
         for directive in strawberry_type.directives or []
-        if any(location in allowed_locations for location in directive.locations)
+        if any(
+            location in allowed_locations
+            for location in directive.__strawberry_directive__.locations
+        )
     )
 
     return "".join(
