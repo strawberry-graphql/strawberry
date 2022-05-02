@@ -17,9 +17,6 @@ from strawberry.permission import BasePermission
 from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.unset import UNSET
 
-from .schema_directives import (
-    External, Provides, Requires, Link, Shareable, Tag, Override, Inaccessible
-)
 
 
 T = TypeVar("T")
@@ -54,7 +51,10 @@ def field(
     provides: Optional[List[str]] = None,
     requires: Optional[List[str]] = None,
     external: bool = False,
-    link: Optional[List[str]] = None,
+    shareable: bool = False,
+    tag: Optional[List[str]] = None,
+    override: Optional[List[str]] = None,
+    inaccessible: bool = False,
     init: Literal[True] = True,
     permission_classes: Optional[List[Type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
@@ -75,7 +75,10 @@ def field(
     provides: Optional[List[str]] = None,
     requires: Optional[List[str]] = None,
     external: bool = False,
-    link: Optional[List[str]] = None,
+    shareable: bool = False,
+    tag: Optional[List[str]] = None,
+    override: Optional[List[str]] = None,
+    inaccessible: bool = False,
     permission_classes: Optional[List[Type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
     default: Any = UNSET,
@@ -94,7 +97,6 @@ def field(
     provides=None,
     requires=None,
     external=False,
-    link=None,
     shareable=False,
     tag=None,
     override=None,
@@ -109,6 +111,9 @@ def field(
     # any behavior at the moment.
     init=None,
 ) -> Any:
+    from .schema_directives import (
+        External, Provides, Requires, Shareable, Tag, Override, Inaccessible
+    )
     directives = list(directives)
 
     if provides:
@@ -119,9 +124,6 @@ def field(
 
     if external:
         directives.append(External())  # type: ignore
-
-    if link:
-        directives.append(Link(" ".join(link))) # type: ignore
 
     if shareable:
         directives.append(Shareable()) # type: ignore

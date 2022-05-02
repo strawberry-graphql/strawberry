@@ -34,7 +34,7 @@ def test_entities_type_when_no_type_has_keys():
     schema = strawberry.federation.Schema(query=Query)
 
     expected = """
-        extend type Product @key(fields: "upc") {
+        extend type Product @key(fields: "upc", resolvable: "True") {
           upc: String! @external
           reviews: [Review!]!
         }
@@ -87,7 +87,7 @@ def test_entities_extending_interface():
     schema = strawberry.federation.Schema(query=Query)
 
     expected = """
-        extend type Product implements SomeInterface @key(fields: "upc") {
+        extend type Product implements SomeInterface @key(fields: "upc", resolvable: "True") {
           id: ID!
           upc: String! @external
         }
@@ -147,7 +147,7 @@ def test_fields_requires_are_printed_correctly():
     schema = strawberry.federation.Schema(query=Query)
 
     expected = """
-        extend type Product @key(fields: "upc") {
+        extend type Product @key(fields: "upc", resolvable: "True") {
           upc: String! @external
           field1: String! @external
           field2: String! @external
@@ -215,7 +215,7 @@ def test_field_provides_are_printed_correctly_camel_case_on():
     )
 
     expected = """
-        extend type Product @key(fields: "upc") {
+        extend type Product @key(fields: "upc", resolvable: "True") {
           upc: String! @external
           theName: String! @external
           reviews: [Review!]!
@@ -281,7 +281,7 @@ def test_field_provides_are_printed_correctly_camel_case_off():
     )
 
     expected = """
-        extend type Product @key(fields: "upc") {
+        extend type Product @key(fields: "upc", resolvable: "True") {
           upc: String! @external
           the_name: String! @external
           reviews: [Review!]!
@@ -344,7 +344,7 @@ def test_multiple_keys():
     schema = strawberry.federation.Schema(query=Query)
 
     expected = """
-        extend type Product @key(fields: "upc") {
+        extend type Product @key(fields: "upc", resolvable: "True") {
           upc: String! @external
           reviews: [Review!]!
         }
@@ -355,7 +355,7 @@ def test_multiple_keys():
           topProducts(first: Int!): [Product!]!
         }
 
-        type Review @key(fields: "body") {
+        type Review @key(fields: "body", resolvable: "True") {
           body: String!
           author: User!
           product: Product!
@@ -377,3 +377,179 @@ def test_multiple_keys():
     assert schema.as_str() == textwrap.dedent(expected).strip()
 
     del Review
+
+def test_field_shareable_printed_correctly():
+    @strawberry.interface
+    class SomeInterface:
+        id: strawberry.ID
+
+    @strawberry.federation.type(keys=["upc"], extend=True)
+    class Product(SomeInterface):
+        upc: str = strawberry.federation.field(external=True, shareable=True)
+
+    @strawberry.federation.type
+    class Query:
+        @strawberry.field
+        def top_products(self, first: int) -> List[Product]:
+            return []
+
+    schema = strawberry.federation.Schema(query=Query)
+
+    expected = """
+        extend type Product implements SomeInterface @key(fields: "upc", resolvable: "True") {
+          id: ID!
+          upc: String! @external @shareable
+        }
+
+        type Query {
+          _service: _Service!
+          _entities(representations: [_Any!]!): [_Entity]!
+          topProducts(first: Int!): [Product!]!
+        }
+
+        interface SomeInterface {
+          id: ID!
+        }
+
+        scalar _Any
+
+        union _Entity = Product
+
+        type _Service {
+          sdl: String!
+        }
+    """
+
+    assert schema.as_str() == textwrap.dedent(expected).strip()
+
+def test_field_tag_printed_correctly():
+    @strawberry.interface
+    class SomeInterface:
+        id: strawberry.ID
+
+    @strawberry.federation.type(keys=["upc"], extend=True)
+    class Product(SomeInterface):
+        upc: str = strawberry.federation.field(external=True, tag=["myTag"])
+
+    @strawberry.federation.type
+    class Query:
+        @strawberry.field
+        def top_products(self, first: int) -> List[Product]:
+            return []
+
+    schema = strawberry.federation.Schema(query=Query)
+
+    expected = """
+        extend type Product implements SomeInterface @key(fields: "upc", resolvable: "True") {
+          id: ID!
+          upc: String! @external @tag(name: "myTag")
+        }
+
+        type Query {
+          _service: _Service!
+          _entities(representations: [_Any!]!): [_Entity]!
+          topProducts(first: Int!): [Product!]!
+        }
+
+        interface SomeInterface {
+          id: ID!
+        }
+
+        scalar _Any
+
+        union _Entity = Product
+
+        type _Service {
+          sdl: String!
+        }
+    """
+
+    assert schema.as_str() == textwrap.dedent(expected).strip()
+
+def test_field_override_printed_correctly():
+    @strawberry.interface
+    class SomeInterface:
+        id: strawberry.ID
+
+    @strawberry.federation.type(keys=["upc"], extend=True)
+    class Product(SomeInterface):
+        upc: str = strawberry.federation.field(external=True, override=["mySubGraph"])
+
+    @strawberry.federation.type
+    class Query:
+        @strawberry.field
+        def top_products(self, first: int) -> List[Product]:
+            return []
+
+    schema = strawberry.federation.Schema(query=Query)
+
+    expected = """
+        extend type Product implements SomeInterface @key(fields: "upc", resolvable: "True") {
+          id: ID!
+          upc: String! @external @override(from: "mySubGraph")
+        }
+
+        type Query {
+          _service: _Service!
+          _entities(representations: [_Any!]!): [_Entity]!
+          topProducts(first: Int!): [Product!]!
+        }
+
+        interface SomeInterface {
+          id: ID!
+        }
+
+        scalar _Any
+
+        union _Entity = Product
+
+        type _Service {
+          sdl: String!
+        }
+    """
+
+    assert schema.as_str() == textwrap.dedent(expected).strip()
+
+def test_field_inaccessible_printed_correctly():
+    @strawberry.interface
+    class SomeInterface:
+        id: strawberry.ID
+
+    @strawberry.federation.type(keys=["upc"], extend=True)
+    class Product(SomeInterface):
+        upc: str = strawberry.federation.field(external=True, inaccessible=True)
+
+    @strawberry.federation.type
+    class Query:
+        @strawberry.field
+        def top_products(self, first: int) -> List[Product]:
+            return []
+
+    schema = strawberry.federation.Schema(query=Query)
+
+    expected = """
+        extend type Product implements SomeInterface @key(fields: "upc", resolvable: "True") {
+          id: ID!
+          upc: String! @external @inaccessible
+        }
+
+        type Query {
+          _service: _Service!
+          _entities(representations: [_Any!]!): [_Entity]!
+          topProducts(first: Int!): [Product!]!
+        }
+
+        interface SomeInterface {
+          id: ID!
+        }
+
+        scalar _Any
+
+        union _Entity = Product
+
+        type _Service {
+          sdl: String!
+        }
+    """
+
+    assert schema.as_str() == textwrap.dedent(expected).strip()

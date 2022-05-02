@@ -1,6 +1,5 @@
 from typing import Callable, List, TypeVar, overload
 
-from strawberry.federation.schema_directives import Key
 from strawberry.field import StrawberryField, field as base_field
 from strawberry.object_type import type as base_type
 from strawberry.utils.typing import __dataclass_transform__
@@ -48,6 +47,8 @@ def type(
     keys=None,
     extend=False,
 ):
+    from strawberry.federation.schema_directives import Key
+
     directives = [Key(key) for key in keys or []]
 
     return base_type(
