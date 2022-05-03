@@ -597,6 +597,11 @@ def test_get_field_name():
     assert sdl_transpiler.get_field_name("camelAstName") == ""
     assert sdl_transpiler.get_field_name("snacamel") == ""
 
+
+def test_simple_directive():
+    pass
+
+
 def test_click_entrypoint():
     path_to_schema = Path(__file__).parent / 'data' / 'simple_schema.gql'
     expected_code_path = Path(__file__).parent / 'data' / 'simple_schema.py'
