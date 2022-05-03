@@ -141,19 +141,19 @@ def test_import_int_field():
 
 def test_import_optional_int_field():
     """Test for a required Int field type with multiline description"""
-    s = '''
+    s = """
     type HolyHandGrenade {
         numberThouShaltCount: Int
     }
-    '''
+    """
     output = sdl_importer.import_sdl(s)
     what_it_should_be = dedent(
         """\
         import typing
 
         import strawberry
-        
-        
+
+
         @strawberry.type
         class HolyHandGrenade:
             number_thou_shalt_count: typing.Optional[int]
@@ -174,9 +174,10 @@ def test_import_str_fields():
     }
     '''
     output = sdl_importer.import_sdl(s)
-    what_it_should_be = dedent("""\
+    what_it_should_be = dedent(
+        """\
         import typing
-        
+
         import strawberry
 
 
@@ -189,24 +190,23 @@ def test_import_str_fields():
         """
     )
 
-
     assert output == what_it_should_be
 
 
 # Float
 def test_import_float_field():
     """Test for a Float type"""
-    s = '''
+    s = """
     type Swallow {
         speed: Float!
     }
-    '''
+    """
     output = sdl_importer.import_sdl(s)
     what_it_should_be = dedent(
         """\
         import strawberry
-        
-        
+
+
         @strawberry.type
         class Swallow:
             speed: float
@@ -233,8 +233,8 @@ def test_import_optional_float_field():
         import typing
 
         import strawberry
-        
-        
+
+
         @strawberry.type
         class Swallow:
             speed: typing.Optional[float] = strawberry.field(
@@ -259,8 +259,8 @@ def test_import_id_field():
     what_it_should_be = dedent(
         """\
         import strawberry
-        
-        
+
+
         @strawberry.type
         class ArgumentClinic:
             id: strawberry.ID
@@ -278,16 +278,18 @@ def test_import_optional_id_field():
     }
     """
     output = sdl_importer.import_sdl(s)
-    what_it_should_be = dedent("""\
+    what_it_should_be = dedent(
+        """\
         import typing
 
         import strawberry
-        
-        
+
+
         @strawberry.type
         class ArgumentClinic:
             id: typing.Optional[strawberry.ID]
-    """)
+    """
+    )
 
     assert output == what_it_should_be
 
@@ -303,16 +305,18 @@ def test_import_enum_type():
     }
     """
     output = sdl_importer.import_sdl(s)
-    what_it_should_be = dedent("""\
+    what_it_should_be = dedent(
+        """\
         from enum import Enum\n
         import strawberry
-        
-        
+
+
         @strawberry.enum
         class SwallowSpecies(Enum):
             AFRICAN = 'african'
             EUROPEAN = 'european'
-    """)
+    """
+    )
 
     assert output == what_it_should_be
 
@@ -325,8 +329,8 @@ def test_import_union_type():
     what_it_should_be = dedent(
         """\
        import strawberry
-       
-       
+
+
        Result = strawberry.union(
            'Result',
            (Book, Author),
@@ -351,8 +355,8 @@ def test_import_union_with_description():
     what_it_should_be = dedent(
         """\
         import strawberry
-       
-       
+
+
         Result = strawberry.union(
             'Result',
             (Orange, Bannana),
@@ -374,14 +378,16 @@ def test_import_interface_type():
     }
     """
     output = sdl_importer.import_sdl(s)
-    what_it_should_be = dedent("""\
+    what_it_should_be = dedent(
+        """\
        import strawberry
-       
-       
+
+
        @strawberry.interface
        class Monster:
            name: str
-    """)
+    """
+    )
 
     assert output == what_it_should_be
 
@@ -395,14 +401,16 @@ def test_import_input_type():
     }
     """
     output = sdl_importer.import_sdl(s)
-    what_it_should_be = dedent("""\
+    what_it_should_be = dedent(
+        """\
        import strawberry
-       
-       
+
+
        @strawberry.input
        class Monster:
            name: str
-    """)
+    """
+    )
 
     assert output == what_it_should_be
 
@@ -419,10 +427,10 @@ def test_directives_description():
     what_it_should_be = dedent(
         """\
         from strawberry.directive import DirectiveLocation
-        
+
         import strawberry
-        
-        
+
+
         @strawberry.directive(
             locations=[
                 DirectiveLocation.FIELD_DEFINITION
@@ -446,12 +454,13 @@ def test_directives():
 
     output = sdl_importer.import_sdl(s)
 
-    what_it_should_be = dedent("""\
+    what_it_should_be = dedent(
+        """\
        from strawberry.directive import DirectiveLocation
-       
+
        import strawberry
-       
-       
+
+
        @strawberry.directive(
            locations=[
                DirectiveLocation.FIELD_DEFINITION
@@ -461,7 +470,8 @@ def test_directives():
            example: str
        ):
            pass
-    """)
+    """
+    )
 
     assert output == what_it_should_be
 
@@ -478,17 +488,18 @@ def test_depricated():
     what_it_should_be = dedent(
         """\
        import typing
-       
+
        import strawberry
-       
-       
+
+
        @strawberry.type
        class ExampleType:
            new_field: typing.Optional[str]
            old_field: typing.Optional[str] = strawberry.field(
                derpecation_reason='Use `newField`.',
            )
-        """)
+        """
+    )
     assert output == what_it_should_be
 
 
@@ -507,8 +518,8 @@ def test_import_opt_list_opt_str_field():
         import typing
 
         import strawberry
-        
-        
+
+
         @strawberry.type
         class HollyHandGrenade:
             animals: typing.Optional[typing.List[typing.Optional[str]]] = strawberry.field(
@@ -528,12 +539,13 @@ def test_import_list_opt_str_field():
     }
     '''
     output = sdl_importer.import_sdl(s)
-    what_it_should_be = dedent("""\
+    what_it_should_be = dedent(
+        """\
        import typing
 
        import strawberry
-       
-       
+
+
        @strawberry.type
        class HollyHandGrenade:
            animals: typing.List[typing.Optional[str]] = strawberry.field(
@@ -554,12 +566,13 @@ def test_import_opt_list_str_field():
     }
     '''
     output = sdl_importer.import_sdl(s)
-    what_it_should_be = dedent("""\
+    what_it_should_be = dedent(
+        """\
        import typing
 
        import strawberry
-       
-       
+
+
        @strawberry.type
        class HollyHandGrenade:
            animals: typing.Optional[typing.List[str]] = strawberry.field(
@@ -580,18 +593,20 @@ def test_import_list_str_field():
     }
     '''
     output = sdl_importer.import_sdl(s)
-    what_it_should_be = dedent("""\
+    what_it_should_be = dedent(
+        """\
        import typing
 
        import strawberry
-       
-       
+
+
        @strawberry.type
        class HollyHandGrenade:
            animals: typing.List[str] = strawberry.field(
                description='''And the people did feast on:''',
            )
-    """)
+    """
+    )
     assert output == what_it_should_be
 
 
