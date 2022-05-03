@@ -102,12 +102,12 @@ def test_using_different_names_for_directive_field():
     @strawberry.type
     class Query:
         first_name: str = strawberry.field(
-            directives=[Sensitive(reason="GDPR", real_age="42", real_age_2="42")]
+            directives=[Sensitive(reason="GDPR", real_age="1", real_age_2="2")]
         )
 
     expected_type = """
     type Query {
-      firstName: String! @sensitive(as: "GDPR", realAge: "42", real_age: "42")
+      firstName: String! @sensitive(as: "GDPR", realAge: "1", real_age: "2")
     }
     """
 
