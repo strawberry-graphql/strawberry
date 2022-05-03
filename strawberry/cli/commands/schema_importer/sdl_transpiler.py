@@ -6,6 +6,9 @@ The file printing is left to the caller which received input and output argument
 """
 
 from textwrap import dedent
+from typing import Any, Union
+from graphql import DefinitionNode, ExecutableDefinitionNode, FieldDefinitionNode, InputValueDefinitionNode
+#from typing_extensions import reveal_type
 
 from jinja2 import Template
 
@@ -121,7 +124,7 @@ def get_union(ast):
     return union_type
 
 
-def get_field_attribute(field):
+def get_field_attribute(field: Union[FieldDefinitionNode, InputValueDefinitionNode]):
     """
     Format and return a whole attribute string
     consists of attribute name in snake case and field type
@@ -167,12 +170,11 @@ def get_field_type(field, optional=True):
     return field_type
 
 
-def get_strawberry_type(name, description, directives):
+def get_strawberry_type(name, description, directives)-> str:
     """Create strawberry type field as a string"""
     strawberry_type = ""
-    deprecated = [d for d in directives if d.name.value == "deprecated"]
-    deprecated = deprecated[0] if deprecated else None
-    if name or description is not None or directives or deprecated:
+    deprecated= next((d for d in directives if d.name.value == "deprecated"), None)
+    if name or (description is not None) or directives or deprecated:
         strawberry_type = " = strawberry.field({}{}{}    )".format(
             f"\n        name='{name}'," if name else "",
             f"\n        description='''{description.value}''',\n"
@@ -197,7 +199,7 @@ def get_template(ast):
     return Template(t)
 
 
-def transpile(ast):
+def transpile(ast: DefinitionNode) -> str:
     """Populates templates based on type of graphql object definition"""
     template = get_template(ast)
     output = template.render(
