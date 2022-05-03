@@ -4,7 +4,9 @@ from strawberry.cli.commands.schema_importer import (
     sdl_importer,
     sdl_transpiler,
 )
-from strawberry.cli.commands.schema_importer.import_schema import import_schema as cmd_import_schema, transform_sdl_into_code
+from strawberry.cli.commands.schema_importer.import_schema import transform_sdl_into_code
+
+from strawberry.cli.commands.schema_importer import sdl_importer, sdl_transpiler
 
 
 # Complex object
@@ -66,7 +68,8 @@ def test_simple_type_output_correct_code():
     }
     '''
     code_output = sdl_importer.import_sdl(s)
-    expected_code = dedent("""\
+    expected_code = dedent(
+        """\
     import strawberry
 
 
