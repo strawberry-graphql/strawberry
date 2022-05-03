@@ -139,7 +139,8 @@ def get_field_name(field_name):
     """Check if name attribute Extract field name"""
     snake_name = str_converters.to_snake_case(field_name)
     camel_name = str_converters.to_camel_case(field_name)
-    if camel_name == snake_name or camel_name == field_name:
+    if field_name in (snake_name, camel_name):
+        # Don't add name attribute to strawberry.type as it matches the field name
         return ""
     else:
         return field_name
@@ -212,4 +213,4 @@ def transpile(ast):
         ],
         ast=ast,
     )
-    return output.lstrip()
+    return output
