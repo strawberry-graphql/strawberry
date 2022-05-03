@@ -1,5 +1,10 @@
+from pathlib import Path
 from textwrap import dedent
-from strawberry.cli.commands.schema_importer import sdl_importer, sdl_transpiler
+from strawberry.cli.commands.schema_importer import (
+    sdl_importer,
+    sdl_transpiler,
+)
+from strawberry.cli.commands.schema_importer.import_schema import import_schema as cmd_import_schema, transform_sdl_into_code
 
 
 # Complex object
@@ -68,9 +73,9 @@ def test_simple_type_output_correct_code():
     @strawberry.type
     class Monster:
         is_scary: bool = strawberry.field(
-            name='is_scary',
             description='''Is the monster scary?''',
-        )"""
+        )
+"""
     )
 
     assert code_output == expected_code
@@ -101,7 +106,7 @@ def test_import_optional_bool_field():
         "    is_witch: typing.Optional[bool] = strawberry.field(\n"
         "        description='''If a woman weighs less than a duck,\n"
         "then she is a witch ?''',\n"
-        "    )"
+        "    )\n"
     )
 
     assert output == what_it_should_be
@@ -129,7 +134,7 @@ def test_import_int_field():
         "    number_thou_shalt_count: int = strawberry.field(\n"
         "        description='''First shalt thou take out the Holy Pin.\n"
         "Then shalt thou count to...''',\n"
-        "    )"
+        "    )\n"
     )
 
     assert output == what_it_should_be
@@ -157,7 +162,7 @@ def test_import_optional_int_field():
         "    number_thou_shalt_count: typing.Optional[int] = strawberry.field(\n"
         "        description='''First shalt thou take out the Holy Pin.\n"
         "Then shalt thou count to...''',\n"
-        "    )"
+        "    )\n"
     )
 
     assert output == what_it_should_be
@@ -191,7 +196,7 @@ def test_import_str_fields():
         "    question: str = strawberry.field(\n"
         "        description='''What is your name?''',\n"
         "    )\n"
-        "    answer: typing.Optional[str]"
+        "    answer: typing.Optional[str]\n"
     )
 
     assert output == what_it_should_be
@@ -219,7 +224,7 @@ def test_import_float_field():
         "    speed: float = strawberry.field(\n"
         "        description='''What is the airbourn speed\n"
         "of unladen african swallow?''',\n"
-        "    )"
+        "    )\n"
     )
 
     assert output == what_it_should_be
@@ -247,7 +252,7 @@ def test_import_optional_float_field():
         "    speed: typing.Optional[float] = strawberry.field(\n"
         "        description='''What is the airbourn speed\n"
         "of unladen african swallow?''',\n"
-        "    )"
+        "    )\n"
     )
 
     assert output == what_it_should_be
@@ -268,7 +273,7 @@ def test_import_id_field():
         "\n"
         "@strawberry.type\n"
         "class ArgumentClinic:\n"
-        "    id: strawberry.ID"
+        "    id: strawberry.ID\n"
     )
 
     assert output == what_it_should_be
@@ -289,7 +294,7 @@ def test_import_optional_id_field():
         "\n"
         "@strawberry.type\n"
         "class ArgumentClinic:\n"
-        "    id: typing.Optional[strawberry.ID]"
+        "    id: typing.Optional[strawberry.ID]\n"
     )
 
     assert output == what_it_should_be
@@ -314,7 +319,7 @@ def test_import_enum_type():
         "@strawberry.enum\n"
         "class SwallowSpecies(Enum):\n"
         "    AFRICAN = 'african'\n"
-        "    EUROPEAN = 'european'"
+        "    EUROPEAN = 'european'\n"
     )
 
     assert output == what_it_should_be
@@ -332,7 +337,7 @@ def test_import_union_type():
         "Result = strawberry.union(\n"
         "    'Result',\n"
         "    (Book, Author),\n"
-        ")"
+        ")\n"
     )
 
     assert output == what_it_should_be
@@ -358,7 +363,7 @@ def test_import_union_with_description():
         "    (Orange, Bannana),\n"
         "    description='''How do you defend yourself\n"
         "against an attacker armed with fruit?'''\n"
-        ")"
+        ")\n"
     )
 
     assert output == what_it_should_be
@@ -379,7 +384,7 @@ def test_import_interface_type():
         "\n"
         "@strawberry.interface\n"
         "class Monster:\n"
-        "    name: str"
+        "    name: str\n"
     )
 
     assert output == what_it_should_be
@@ -400,7 +405,7 @@ def test_import_input_type():
         "\n"
         "@strawberry.input\n"
         "class Monster:\n"
-        "    name: str"
+        "    name: str\n"
     )
 
     assert output == what_it_should_be
@@ -430,7 +435,7 @@ def test_directives_description():
         "def uppercase(\n"
         "    example: str\n"
         "):\n"
-        "    pass"
+        "    pass\n"
     )
 
     assert output == what_it_should_be
@@ -457,7 +462,7 @@ def test_directives():
         "def uppercase(\n"
         "    example: str\n"
         "):\n"
-        "    pass"
+        "    pass\n"
     )
 
     assert output == what_it_should_be
@@ -483,7 +488,7 @@ def test_depricated():
         "    new_field: typing.Optional[str]\n"
         "    old_field: typing.Optional[str] = strawberry.field(\n"
         "        derpecation_reason='Use `newField`.',\n"
-        "    )"
+        "    )\n"
     )
     assert output == what_it_should_be
 
@@ -510,7 +515,7 @@ def test_import_opt_list_opt_str_field():
         f"class HollyHandGrenade:\n"
         f"{stringField}"
         f"        description='''And the people did feast on:''',\n"
-        f"    )"
+        f"    )\n"
     )
 
     assert output == what_it_should_be
@@ -534,7 +539,7 @@ def test_import_list_opt_str_field():
         "class HollyHandGrenade:\n"
         "    animals: typing.List[typing.Optional[str]] = strawberry.field(\n"
         "        description='''And the people did feast on:''',\n"
-        "    )"
+        "    )\n"
     )
 
     assert output == what_it_should_be
@@ -558,7 +563,7 @@ def test_import_opt_list_str_field():
         "class HollyHandGrenade:\n"
         "    animals: typing.Optional[typing.List[str]] = strawberry.field(\n"
         "        description='''And the people did feast on:''',\n"
-        "    )"
+        "    )\n"
     )
 
     assert output == what_it_should_be
@@ -582,7 +587,7 @@ def test_import_list_str_field():
         "class HollyHandGrenade:\n"
         "    animals: typing.List[str] = strawberry.field(\n"
         "        description='''And the people did feast on:''',\n"
-        "    )"
+        "    )\n"
     )
 
     assert output == what_it_should_be
@@ -593,13 +598,9 @@ def test_import_list_str_field():
 # region
 def test_get_field_name():
     """test field name attribute acquisition"""
-    assert sdl_transpiler.get_field_name("non_camel_ast_name") == "non_camel_ast_name"
+#    assert sdl_transpiler.get_field_name("non_camel_ast_name") == "non_camel_ast_name"
     assert sdl_transpiler.get_field_name("camelAstName") == ""
     assert sdl_transpiler.get_field_name("snacamel") == ""
-
-
-def test_simple_directive():
-    pass
 
 
 def test_click_entrypoint():
