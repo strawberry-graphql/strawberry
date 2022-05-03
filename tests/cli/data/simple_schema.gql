@@ -1,0 +1,3 @@
+type Query {
+    a_field: String!
+}
