@@ -1,6 +1,6 @@
 import re
-from graphql import DocumentNode
 
+from graphql import DocumentNode
 from graphql.language import parse
 
 
