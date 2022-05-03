@@ -88,7 +88,9 @@ class GraphQLRouter(APIRouter):
         sig = sig.replace(
             parameters=[
                 *list(sig.parameters.values())[1:],
-                sig.parameters["custom_context"].replace(default=Depends(custom_getter)),
+                sig.parameters["custom_context"].replace(
+                    default=Depends(custom_getter)
+                ),
             ],
         )
         # there is an ongoing issue with types and .__signature__ applied to Callables:
