@@ -7,16 +7,14 @@ The file printing is left to the caller which received input and output argument
 
 from textwrap import dedent
 from typing import Any, Union
-from graphql import DefinitionNode, ExecutableDefinitionNode, FieldDefinitionNode, InputValueDefinitionNode
-#from typing_extensions import reveal_type
+from graphql import DefinitionNode, FieldDefinitionNode, InputValueDefinitionNode
+from typing_extensions import reveal_type
 
 from jinja2 import Template
 
 from strawberry.utils import str_converters
 
 
-# Jinja2 templates
-# strawberry class
 TYPE_TEMPLATE = """{{ decorator + description }}
 class {{ class_name }}:
     {%- if ast.kind in standard_types -%}

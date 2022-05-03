@@ -599,7 +599,6 @@ def test_import_list_str_field():
 # region
 def test_get_field_name():
     """test field name attribute acquisition"""
-    #    assert sdl_transpiler.get_field_name("non_camel_ast_name") == "non_camel_ast_name"
     assert sdl_transpiler.get_field_name("camelAstName") == ""
     assert sdl_transpiler.get_field_name("snacamel") == ""
 
