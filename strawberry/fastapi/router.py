@@ -55,7 +55,7 @@ class GraphQLRouter(APIRouter):
         custom_getter: Callable[..., Optional[CustomContext]]
     ) -> Callable[..., CustomContext]:
         def dependency(
-            custom_getter: Optional[CustomContext],
+            custom_context: Optional[CustomContext],
             background_tasks: BackgroundTasks,
             request: Request = None,
             response: Response = None,
@@ -66,17 +66,17 @@ class GraphQLRouter(APIRouter):
                 "background_tasks": background_tasks,
                 "response": response,
             }
-            if isinstance(custom_getter, BaseContext):
-                custom_getter.request = request or ws
-                custom_getter.background_tasks = background_tasks
-                custom_getter.response = response
-                return custom_getter
-            elif isinstance(custom_getter, dict):
+            if isinstance(custom_context, BaseContext):
+                custom_context.request = request or ws
+                custom_context.background_tasks = background_tasks
+                custom_context.response = response
+                return custom_context
+            elif isinstance(custom_context, dict):
                 return {
                     **default_context,
-                    **custom_getter,
+                    **custom_context,
                 }
-            elif custom_getter is None:
+            elif custom_context is None:
                 return default_context
             else:
                 raise InvalidCustomContext()
@@ -88,7 +88,9 @@ class GraphQLRouter(APIRouter):
         sig = sig.replace(
             parameters=[
                 *list(sig.parameters.values())[1:],
-                sig.parameters["custom_getter"].replace(default=Depends(custom_getter)),
+                sig.parameters["custom_context"].replace(
+                    default=Depends(custom_getter)
+                ),
             ],
         )
         # there is an ongoing issue with types and .__signature__ applied to Callables:
