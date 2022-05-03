@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.111.1 - 2022-05-03
+--------------------
+
+Rename internal variable `custom_getter` in FastAPI router implementation.
+
+Contributed by [Gary Donovan](https://github.com/garyd203) via [PR #1875](https://github.com/strawberry-graphql/strawberry/pull/1875/)
+
+
 0.111.0 - 2022-05-02
 --------------------
 
