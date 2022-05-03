@@ -1,4 +1,5 @@
 from textwrap import dedent
+
 from strawberry.cli.commands.schema_importer import sdl_importer, sdl_transpiler
 
 
@@ -61,7 +62,8 @@ def test_simple_type_output_correct_code():
     }
     '''
     code_output = sdl_importer.import_sdl(s)
-    expected_code = dedent("""\
+    expected_code = dedent(
+        """\
     import strawberry
 
 
