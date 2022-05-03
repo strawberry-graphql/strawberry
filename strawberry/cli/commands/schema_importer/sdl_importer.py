@@ -9,7 +9,7 @@ Handles argument:
 from strawberry.cli.commands.schema_importer import ast_converter, sdl_transpiler
 
 
-def import_sdl(sdl: str) -> str:
+def import_sdl(sdl: str) -> str:  # TODO: Perhaps, transform_sdl_to_code?
     """
     Determine if filepath or string input.
     Read in or use directly, respectively.
@@ -18,28 +18,33 @@ def import_sdl(sdl: str) -> str:
     """
     ast = ast_converter.convert_to_ast(sdl)
     templates = set({})
-    for d in ast.definitions:
+    for definition in ast.definitions:
         # Parse and render specific ast definitions
-        templates.add(sdl_transpiler.transpile(d))
+        templates.add(sdl_transpiler.transpile(definition))
 
     strawberry_code_template = "\n\n".join(templates)
-    imports = (
-        "from enum import Enum\n\n" if "(Enum)" in strawberry_code_template else ""
-    )
-    imports += (
-        "from strawberry.directive import DirectiveLocation\n\n"
-        if "DirectiveLocation" in strawberry_code_template
-        else ""
-    )
-    imports += "import typing\n\n" if "typing." in strawberry_code_template else ""
-    imports += (
-        "from typing import Union\n\n" if "Union[" in strawberry_code_template else ""
-    )
-    imports += "import strawberry\n\n\n"
 
-    strawberry_code_template = imports + strawberry_code_template
+    imports = []
 
-    return strawberry_code_template
+    if "(Enum)" in strawberry_code_template:
+        imports.append("from enum import Enum")
+
+    if "typing." in strawberry_code_template:
+        imports.append("import typing")
+
+    if "Union[" in strawberry_code_template:
+        imports.append("from typing import Union")
+
+    if "DirectiveLocation" in strawberry_code_template: 
+        imports.append("from strawberry.directive import DirectiveLocation")
+
+
+    imports.append("import strawberry")  # Append last because it's a third party package
+
+    imports_string = '\n\n'.join(imports)
+
+    code = f"{imports_string}\n\n\n{strawberry_code_template}\n"
+    return code
 
 
 def file_to_string(path: str) -> str:
