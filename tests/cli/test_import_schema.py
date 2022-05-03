@@ -1,3 +1,4 @@
+from textwrap import dedent
 from strawberry.cli.commands.schema_importer import sdl_importer, sdl_transpiler
 
 
@@ -48,36 +49,31 @@ def test_import_specific_object_type(mocker):
     assert output
 
 
-# region Scalars
-# Boolean
-def test_import_bool_field():
+def test_simple_type_output_correct_code():
     """
-    Test for a required Boolean field type
     with a field description and case change
+    Test for a required Boolean field type
     """
     s = '''
-    type Woman {
-        """
-        If a woman weighs less than a duck,
-        then she is a...?
-        """
-        isWitch: Boolean!
+    type Monster {
+        """Is the monster scary?"""
+        is_scary: Boolean!
     }
     '''
-    output = sdl_importer.import_sdl(s)
-    what_it_should_be = (
-        "import strawberry\n"
-        "\n"
-        "\n"
-        "@strawberry.type\n"
-        "class Woman:\n"
-        "    is_witch: bool = strawberry.field(\n"
-        "        description='''If a woman weighs less than a duck,\n"
-        "then she is a...?''',\n"
-        "    )"
+    code_output = sdl_importer.import_sdl(s)
+    expected_code = dedent("""\
+    import strawberry
+
+
+    @strawberry.type
+    class Monster:
+        is_scary: bool = strawberry.field(
+            name='is_scary',
+            description='''Is the monster scary?''',
+        )"""
     )
 
-    assert output == what_it_should_be
+    assert code_output == expected_code
 
 
 def test_import_optional_bool_field():
