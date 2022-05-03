@@ -1,12 +1,10 @@
 from pathlib import Path
 from textwrap import dedent
-from strawberry.cli.commands.schema_importer import (
-    sdl_importer,
-    sdl_transpiler,
-)
-from strawberry.cli.commands.schema_importer.import_schema import transform_sdl_into_code
 
 from strawberry.cli.commands.schema_importer import sdl_importer, sdl_transpiler
+from strawberry.cli.commands.schema_importer.import_schema import (
+    transform_sdl_into_code,
+)
 
 
 # Complex object
@@ -601,14 +599,14 @@ def test_import_list_str_field():
 # region
 def test_get_field_name():
     """test field name attribute acquisition"""
-#    assert sdl_transpiler.get_field_name("non_camel_ast_name") == "non_camel_ast_name"
+    #    assert sdl_transpiler.get_field_name("non_camel_ast_name") == "non_camel_ast_name"
     assert sdl_transpiler.get_field_name("camelAstName") == ""
     assert sdl_transpiler.get_field_name("snacamel") == ""
 
 
 def test_click_entrypoint():
-    path_to_schema = Path(__file__).parent / 'data' / 'simple_schema.gql'
-    expected_code_path = Path(__file__).parent / 'data' / 'simple_schema.py'
+    path_to_schema = Path(__file__).parent / "data" / "simple_schema.gql"
+    expected_code_path = Path(__file__).parent / "data" / "simple_schema.py"
 
     code = transform_sdl_into_code(str(path_to_schema))
     assert code == expected_code_path.read_text(), print(code)

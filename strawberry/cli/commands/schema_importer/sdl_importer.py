@@ -35,13 +35,14 @@ def import_sdl(sdl: str) -> str:  # TODO: Perhaps, transform_sdl_to_code?
     if "Union[" in strawberry_code_template:
         imports.append("from typing import Union")
 
-    if "DirectiveLocation" in strawberry_code_template: 
+    if "DirectiveLocation" in strawberry_code_template:
         imports.append("from strawberry.directive import DirectiveLocation")
 
+    imports.append(
+        "import strawberry"
+    )  # Append last because it's a third party package
 
-    imports.append("import strawberry")  # Append last because it's a third party package
-
-    imports_string = '\n\n'.join(imports)
+    imports_string = "\n\n".join(imports)
 
     code = f"{imports_string}\n\n\n{strawberry_code_template}\n"
     return code
