@@ -6,13 +6,16 @@ The file printing is left to the caller which received input and output argument
 """
 
 from textwrap import dedent
-from typing import Any, Union
-from graphql import DefinitionNode, ExecutableDefinitionNode, FieldDefinitionNode, InputValueDefinitionNode
-#from typing_extensions import reveal_type
+from typing import Union
 
 from jinja2 import Template
 
+from graphql import DefinitionNode, FieldDefinitionNode, InputValueDefinitionNode
+
 from strawberry.utils import str_converters
+
+
+# from typing_extensions import reveal_type
 
 
 # Jinja2 templates
@@ -170,10 +173,10 @@ def get_field_type(field, optional=True):
     return field_type
 
 
-def get_strawberry_type(name, description, directives)-> str:
+def get_strawberry_type(name, description, directives) -> str:
     """Create strawberry type field as a string"""
     strawberry_type = ""
-    deprecated= next((d for d in directives if d.name.value == "deprecated"), None)
+    deprecated = next((d for d in directives if d.name.value == "deprecated"), None)
     if name or (description is not None) or directives or deprecated:
         strawberry_type = " = strawberry.field({}{}{}    )".format(
             f"\n        name='{name}'," if name else "",
