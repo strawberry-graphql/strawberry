@@ -1,5 +1,5 @@
 import json
-from typing import Any, Dict, Optional, Type, Union
+from typing import Any, Dict, Mapping, Optional, Type, Union
 
 from typing_extensions import Literal
 
@@ -16,6 +16,7 @@ from strawberry.http import (
     parse_request_data,
     process_result,
 )
+from strawberry.http.temporal_response import TemporalResponse
 from strawberry.sanic.context import StrawberrySanicContext
 from strawberry.sanic.graphiql import render_graphiql_page, should_render_graphiql
 from strawberry.sanic.utils import convert_request_to_files_dict
@@ -63,9 +64,8 @@ class GraphQLView(HTTPMethodView):
     def get_root_value(self):
         return None
 
-    # TODO: add response ...
-    async def get_context(self, request: Request) -> Any:
-        return StrawberrySanicContext(request)
+    async def get_context(self, request: Request, response: TemporalResponse) -> Any:
+        return StrawberrySanicContext(request, response)
 
     def render_template(self, template=None):
         return html(template)
@@ -106,14 +106,21 @@ class GraphQLView(HTTPMethodView):
 
         raise NotFound()
 
-    async def get_response(self, response_data: GraphQLHTTPResponse) -> HTTPResponse:
+    async def get_response(
+        self, response_data: GraphQLHTTPResponse, context: Mapping[str, object]
+    ) -> HTTPResponse:
+        status_code = 200
+
+        if "response" in context:
+            status_code = context["response"].status_code  # type: ignore[attr-defined]
+
         data = json.dumps(
             response_data, cls=self.json_encoder, **(self.json_dumps_params or {})
         )
 
         return HTTPResponse(
             data,
-            status=200,
+            status=status_code,
             content_type="application/json",
         )
 
@@ -130,7 +137,7 @@ class GraphQLView(HTTPMethodView):
         request_data: GraphQLRequestData,
         method: Union[Literal["GET"], Literal["POST"]],
     ) -> HTTPResponse:
-        context = await self.get_context(request)
+        context = await self.get_context(request, TemporalResponse())
         root_value = self.get_root_value()
 
         allowed_operation_types = OperationType.from_http(method)
@@ -154,7 +161,7 @@ class GraphQLView(HTTPMethodView):
 
         response_data = self.process_result(result)
 
-        return await self.get_response(response_data)
+        return await self.get_response(response_data, context)
 
     def get_request_data(self, request: Request) -> GraphQLRequestData:
         try:

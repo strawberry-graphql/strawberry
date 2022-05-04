@@ -1,6 +1,6 @@
 import json
 import warnings
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Mapping, Optional, Union
 
 from chalice.app import BadRequestError, Request, Response
 from strawberry.chalice.graphiql import render_graphiql_page
@@ -11,6 +11,7 @@ from strawberry.http import (
     parse_request_data,
     process_result,
 )
+from strawberry.http.temporal_response import TemporalResponse
 from strawberry.schema import BaseSchema
 from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types import ExecutionResult
@@ -85,7 +86,9 @@ class GraphQLView:
 
         return Response(body=body, status_code=http_status_code, headers=headers)
 
-    def get_context(self, request: Request, response: Response) -> object:
+    def get_context(
+        self, request: Request, response: TemporalResponse
+    ) -> Mapping[str, object]:
         return {"request": request, "response": response}
 
     def execute_request(self, request: Request) -> Response:
@@ -163,13 +166,13 @@ class GraphQLView:
         if not self.allow_queries_via_get and method == "GET":
             allowed_operation_types = allowed_operation_types - {OperationType.QUERY}
 
-        sub_response = Response(body=None)
+        context = self.get_context(request, response=TemporalResponse())
 
         try:
             result: ExecutionResult = self._schema.execute_sync(
                 request_data.query,
                 variable_values=request_data.variables,
-                context_value=self.get_context(request, response=sub_response),
+                context_value=context,
                 operation_name=request_data.operation_name,
                 root_value=self.get_root_value(request),
                 allowed_operation_types=allowed_operation_types,
@@ -184,4 +187,10 @@ class GraphQLView:
 
         http_result: GraphQLHTTPResponse = process_result(result)
 
-        return Response(body=http_result)
+        status_code = 200
+
+        if "response" in context:
+            # TODO: we might want to use typed dict for context
+            status_code = context["response"].status_code  # type: ignore[attr-defined]
+
+        return Response(body=http_result, status_code=status_code)

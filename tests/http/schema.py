@@ -49,6 +49,13 @@ class Query:
     def value_from_context(self, info: Info) -> str:
         return info.context["custom_value"]
 
+    @strawberry.field
+    def returns_401(self, info: Info) -> str:
+        response = info.context["response"]
+        response.status_code = 401
+
+        return "hey"
+
 
 @strawberry.type
 class Mutation:

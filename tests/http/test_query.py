@@ -146,3 +146,16 @@ async def test_query_context(method: Literal["get", "post"], http_client: HttpCl
 
     assert response.status_code == 200
     assert data["valueFromContext"] == "a value from context"
+
+
+@pytest.mark.parametrize("method", ["get", "post"])
+async def test_returning_status_code(
+    method: Literal["get", "post"], http_client: HttpClient
+):
+    response = await http_client.query(
+        method=method,
+        query="{ returns401 }",
+    )
+
+    assert response.status_code == 401
+    assert response.json == {"data": {"returns401": "hey"}}
