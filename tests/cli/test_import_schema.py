@@ -191,9 +191,15 @@ def test_depricated():
 
 
 @pytest.mark.parametrize(
-    "file", [
-        "list_of", "simple_schema", "data_types", "with_enum", "custom_type", "with_union"
-    ]
+    "file",
+    [
+        "list_of",
+        "simple_schema",
+        "data_types",
+        "with_enum",
+        "custom_type",
+        "with_union",
+    ],
 )
 def test_list_of(file):
     path_to_schema = Path(__file__).parent / "data" / f"{file}.gql"

@@ -130,7 +130,8 @@ def get_field_attribute(field: Union[FieldDefinitionNode, InputValueDefinitionNo
     field_name = get_field_name(field.name.value)
     field_type = get_field_type(field)
     is_custom_type = not any(
-        builtin_type in field_type for builtin_type in ("str", "int", "float", "ID", "bool")
+        builtin_type in field_type
+        for builtin_type in ("str", "int", "float", "ID", "bool")
     )
     strawberry_field_annotation = get_strawberry_type(
         field_name, field.description, field.directives
