@@ -27,5 +27,5 @@ def import_schema(schema):
 
 def transform_sdl_into_code(schema_path):
     sdl_string = sdl_importer.file_to_string(schema_path)
-    strawberry_code = sdl_importer.import_sdl(sdl_string)
+    strawberry_code = sdl_importer.generate_code_from_sdl(sdl_string)
     return strawberry_code

@@ -51,7 +51,7 @@ def test_import_specific_object_type(mocker):
     id: ID!
     }
     '''
-    output = sdl_importer.import_sdl(s)
+    output = sdl_importer.generate_code_from_sdl(s)
     assert output
 
 
@@ -65,7 +65,7 @@ def test_import_union_with_description():
     union Result = Orange | Bannana
     '''
 
-    output = sdl_importer.import_sdl(s)
+    output = sdl_importer.generate_code_from_sdl(s)
 
     what_it_should_be = dedent(
         """\
@@ -92,7 +92,7 @@ def test_import_interface_type():
         name: String!
     }
     """
-    output = sdl_importer.import_sdl(s)
+    output = sdl_importer.generate_code_from_sdl(s)
     what_it_should_be = dedent(
         """\
        import strawberry
@@ -115,7 +115,7 @@ def test_import_input_type():
         name: String!
     }
     """
-    output = sdl_importer.import_sdl(s)
+    output = sdl_importer.generate_code_from_sdl(s)
     what_it_should_be = dedent(
         """\
        import strawberry
@@ -137,7 +137,7 @@ def test_directives_description():
     directive @uppercase(example: String!) on FIELD_DEFINITION
     '''
 
-    output = sdl_importer.import_sdl(s)
+    output = sdl_importer.generate_code_from_sdl(s)
 
     what_it_should_be = dedent(
         """\
@@ -167,7 +167,7 @@ def test_directives():
     directive @uppercase(example: String!) on FIELD_DEFINITION
     """
 
-    output = sdl_importer.import_sdl(s)
+    output = sdl_importer.generate_code_from_sdl(s)
 
     what_it_should_be = dedent(
         """\
@@ -199,7 +199,7 @@ def test_depricated():
     oldField: String @deprecated(reason: "Use `newField`.")
     }"""
 
-    output = sdl_importer.import_sdl(s)
+    output = sdl_importer.generate_code_from_sdl(s)
     what_it_should_be = dedent(
         """\
        import typing
