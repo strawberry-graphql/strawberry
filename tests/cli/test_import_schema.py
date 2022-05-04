@@ -55,35 +55,6 @@ def test_import_specific_object_type(mocker):
     assert output
 
 
-
-def test_import_union_with_description():
-    s = '''
-    """
-    How do you defend yourself
-    against an attacker armed with fruit?
-    """
-    union Result = Orange | Bannana
-    '''
-
-    output = sdl_importer.generate_code_from_sdl(s)
-
-    what_it_should_be = dedent(
-        """\
-        import strawberry
-
-
-        Result = strawberry.union(
-            'Result',
-            (Orange, Bannana),
-            description='''How do you defend yourself
-        against an attacker armed with fruit?'''
-        )
-        """
-    )
-
-    assert output == what_it_should_be
-
-
 # Interface
 def test_import_interface_type():
     """Test for an enum type transpilation"""
