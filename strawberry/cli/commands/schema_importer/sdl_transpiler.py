@@ -23,8 +23,8 @@ class {{ class_name }}:
     {%- endfor %}
     {%- endif -%}
     {%- if ast.kind == 'enum_type_definition' -%}
-    {%- for value in ast.values %}
-    {{ value.name.value }} = '{{ value.name.value.lower() }}'
+    {%- for enum in ast.values %}
+    {{ enum.name.value }} = '{{ enum.name.value.lower() }}'
     {%- endfor %}
     {%- endif -%}
 """
@@ -194,7 +194,7 @@ def get_template(ast):
     else:
         t = TYPE_TEMPLATE
 
-    return Template(t)
+    return Template(t, trim_blocks=False, lstrip_blocks=True)  # TODO: Fix this to improve template indentation
 
 
 def transpile(ast: DefinitionNode) -> str:

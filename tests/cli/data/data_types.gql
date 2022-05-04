@@ -1,0 +1,18 @@
+type Query {
+    string: String!
+    stringop: String
+    int: Int!
+    intop: Int
+    boolean: Boolean!
+    booleanop: Boolean
+    float: Float!
+    floatop: float
+    id: ID!
+
+    """My description"""
+    with_description: String
+
+    """With multiline
+    description"""
+    with_multiline_description: String!
+}

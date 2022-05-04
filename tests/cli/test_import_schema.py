@@ -616,9 +616,18 @@ def test_get_field_name():
     assert sdl_transpiler.get_field_name("snacamel") == ""
 
 
-def test_click_entrypoint():
+def test_transformation_of_simple_schema():
     path_to_schema = Path(__file__).parent / "data" / "simple_schema.gql"
     expected_code_path = Path(__file__).parent / "data" / "simple_schema.py"
 
     code = transform_sdl_into_code(str(path_to_schema))
     assert code == expected_code_path.read_text(), print(code)
+
+
+def test_transformation_of_basic_types_schema():
+    path_to_schema = Path(__file__).parent / "data" / "data_types.gql"
+    expected_code_path = Path(__file__).parent / "data" / "data_types.py"
+
+    code = transform_sdl_into_code(str(path_to_schema))
+    assert code == expected_code_path.read_text(), print(code)
+
