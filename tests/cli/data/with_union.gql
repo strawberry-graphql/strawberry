@@ -1,4 +1,5 @@
 type Query {
+    "Was my attempt successful?"
     attempt: Attempt!
 }
 

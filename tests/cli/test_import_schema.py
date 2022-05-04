@@ -55,25 +55,6 @@ def test_import_specific_object_type(mocker):
     assert output
 
 
-# Union
-def test_import_union_type():
-    s = "union Result = Book | Author"
-    output = sdl_importer.import_sdl(s)
-
-    what_it_should_be = dedent(
-        """\
-       import strawberry
-
-
-       Result = strawberry.union(
-           'Result',
-           (Book, Author),
-       )
-       """
-    )
-
-    assert output == what_it_should_be
-
 
 def test_import_union_with_description():
     s = '''
@@ -238,7 +219,9 @@ def test_depricated():
 
 
 @pytest.mark.parametrize(
-    "file", ["list_of", "simple_schema", "data_types", "enums", "custom_type", "union"]
+    "file", [
+        "list_of", "simple_schema", "data_types", "with_enum", "custom_type", "with_union"
+    ]
 )
 def test_list_of(file):
     path_to_schema = Path(__file__).parent / "data" / f"{file}.gql"
