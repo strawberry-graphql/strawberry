@@ -194,7 +194,9 @@ def get_template(ast):
     else:
         t = TYPE_TEMPLATE
 
-    return Template(t, trim_blocks=False, lstrip_blocks=True)  # TODO: Fix this to improve template indentation
+    return Template(
+        t, trim_blocks=False, lstrip_blocks=True
+    )  # TODO: Fix this to improve template indentation
 
 
 def transpile(ast: DefinitionNode) -> str:

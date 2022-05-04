@@ -630,4 +630,3 @@ def test_transformation_of_basic_types_schema():
 
     code = transform_sdl_into_code(str(path_to_schema))
     assert code == expected_code_path.read_text(), print(code)
-
