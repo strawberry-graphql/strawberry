@@ -5,8 +5,8 @@ import pytest
 
 from strawberry.cli.commands.schema_importer import sdl_importer
 from strawberry.cli.commands.schema_importer.import_schema import (
+    import_schema as cmd_import_schema,
     transform_sdl_into_code,
-    import_schema as cmd_import_schema
 )
 
 
@@ -210,10 +210,10 @@ def test_list_of(file):
 
 
 def test_file_not_found_error(cli_runner):
-    result = cli_runner.invoke(cmd_import_schema, ['abc.sdl'])
+    result = cli_runner.invoke(cmd_import_schema, ["abc.sdl"])
 
     assert result.exit_code == 1
-    assert result.output == 'File not found on path: abc.sdl\n'
+    assert result.output == "File not found on path: abc.sdl\n"
 
 
 def test_invalid_gql_file_error(cli_runner):
@@ -222,14 +222,13 @@ def test_invalid_gql_file_error(cli_runner):
     result = cli_runner.invoke(cmd_import_schema, [str(invalid_schema)])
 
     assert result.exit_code == 1
-    assert 'syntax errors' in result.output
+    assert "syntax errors" in result.output
 
 
 def test_valid_cli_invocation(cli_runner):
     invalid_schema = Path(__file__).parent / "data" / "simple_schema.gql"
 
     result = cli_runner.invoke(cmd_import_schema, [str(invalid_schema)])
-    print(result.output)
     assert result.exit_code == 0
     assert result.output == dedent(
         """\
