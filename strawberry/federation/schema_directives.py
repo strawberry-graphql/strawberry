@@ -62,7 +62,7 @@ class Tag:
 
 @schema_directive(locations=[Location.FIELD_DEFINITION], name="override")
 class Override:
-    override_from: str = directive_field(name="from")  # type: ignore
+    override_from: str = directive_field(name="from")
 
 
 @schema_directive(

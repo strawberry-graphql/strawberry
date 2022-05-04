@@ -15,7 +15,6 @@ from typing_extensions import Literal
 
 from strawberry.field import _RESOLVER_TYPE, StrawberryField, field as base_field
 from strawberry.permission import BasePermission
-from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.unset import UNSET
 
 
@@ -41,7 +40,7 @@ def field(
     deprecation_reason: Optional[str] = None,
     default: Any = UNSET,
     default_factory: Union[Callable, object] = UNSET,
-    directives: Sequence[StrawberrySchemaDirective] = (),
+    directives: Sequence[object] = (),
 ) -> T:
     ...
 
@@ -64,7 +63,7 @@ def field(
     deprecation_reason: Optional[str] = None,
     default: Any = UNSET,
     default_factory: Union[Callable, object] = UNSET,
-    directives: Sequence[StrawberrySchemaDirective] = (),
+    directives: Sequence[object] = (),
 ) -> Any:
     ...
 
@@ -87,7 +86,7 @@ def field(
     deprecation_reason: Optional[str] = None,
     default: Any = UNSET,
     default_factory: Union[Callable, object] = UNSET,
-    directives: Sequence[StrawberrySchemaDirective] = (),
+    directives: Sequence[object] = (),
 ) -> StrawberryField:
     ...
 
@@ -109,7 +108,7 @@ def field(
     deprecation_reason=None,
     default=UNSET,
     default_factory=UNSET,
-    directives: Sequence[StrawberrySchemaDirective] = (),
+    directives: Sequence[object] = (),
     # This init parameter is used by PyRight to determine whether this field
     # is added in the constructor or not. It is not used to change
     # any behavior at the moment.
@@ -128,25 +127,25 @@ def field(
     directives = list(directives)
 
     if provides:
-        directives.append(Provides(" ".join(provides)))  # type: ignore
+        directives.append(Provides(" ".join(provides)))
 
     if requires:
-        directives.append(Requires(" ".join(requires)))  # type: ignore
+        directives.append(Requires(" ".join(requires)))
 
     if external:
-        directives.append(External())  # type: ignore
+        directives.append(External())
 
     if shareable:
-        directives.append(Shareable())  # type: ignore
+        directives.append(Shareable())
 
     if tags:
-        directives.append(Tag(" ".join(tags)))  # type: ignore
+        directives.append(Tag(" ".join(tags)))
 
     if override:
-        directives.append(Override(override))  # type: ignore
+        directives.append(Override(override))
 
     if inaccessible:
-        directives.append(Inaccessible())  # type: ignore
+        directives.append(Inaccessible())
 
     return base_field(
         resolver=resolver,
