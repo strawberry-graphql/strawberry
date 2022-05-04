@@ -1,0 +1,13 @@
+type Query {
+    attempt: Attempt!
+}
+
+union Attempt = Success | Failure
+
+type Success {
+    data: str
+}
+
+type Failure {
+    error: str
+}

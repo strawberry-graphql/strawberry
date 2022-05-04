@@ -55,33 +55,6 @@ def test_import_specific_object_type(mocker):
     assert output
 
 
-# endregion
-# Enum
-def test_import_enum_type():
-    """Test for an enum type transpilation"""
-    s = """
-    enum SwallowSpecies {
-        AFRICAN
-        EUROPEAN
-    }
-    """
-    output = sdl_importer.import_sdl(s)
-    what_it_should_be = dedent(
-        """\
-        from enum import Enum\n
-        import strawberry
-
-
-        @strawberry.enum
-        class SwallowSpecies(Enum):
-            AFRICAN = 'african'
-            EUROPEAN = 'european'
-    """
-    )
-
-    assert output == what_it_should_be
-
-
 # Union
 def test_import_union_type():
     s = "union Result = Book | Author"
@@ -264,122 +237,8 @@ def test_depricated():
     assert output == what_it_should_be
 
 
-# region List types
-def test_import_opt_list_opt_str_field():
-    """Test for an optional list of optional strings type with field description"""
-    s = '''
-    type HollyHandGrenade {
-        """And the people did feast on:"""
-        animals: [String]
-    }
-    '''
-    output = sdl_importer.import_sdl(s)
-    what_it_should_be = dedent(
-        """\
-        import typing
-
-        import strawberry
-
-
-        @strawberry.type
-        class HollyHandGrenade:
-            animals: typing.Optional[typing.List[typing.Optional[str]]] = strawberry.field(
-                description='''And the people did feast on:''',
-            )
-        """
-    )
-    assert output == what_it_should_be
-
-
-def test_import_list_opt_str_field():
-    """Test for a required list of optional strings type with field description"""
-    s = '''
-    type HollyHandGrenade {
-        """And the people did feast on:"""
-        animals: [String]!
-    }
-    '''
-    output = sdl_importer.import_sdl(s)
-    what_it_should_be = dedent(
-        """\
-       import typing
-
-       import strawberry
-
-
-       @strawberry.type
-       class HollyHandGrenade:
-           animals: typing.List[typing.Optional[str]] = strawberry.field(
-               description='''And the people did feast on:''',
-           )
-        """
-    )
-
-    assert output == what_it_should_be
-
-
-def test_import_opt_list_str_field():
-    """Test for an optional list of required strings type with field description"""
-    s = '''
-    type HollyHandGrenade {
-        """And the people did feast on:"""
-        animals: [String!]
-    }
-    '''
-    output = sdl_importer.import_sdl(s)
-    what_it_should_be = dedent(
-        """\
-       import typing
-
-       import strawberry
-
-
-       @strawberry.type
-       class HollyHandGrenade:
-           animals: typing.Optional[typing.List[str]] = strawberry.field(
-               description='''And the people did feast on:''',
-           )
-        """
-    )
-
-    assert output == what_it_should_be
-
-
-def test_import_list_str_field():
-    """Test for an required list of required strings type with field description"""
-    s = '''
-    type HollyHandGrenade {
-        """And the people did feast on:"""
-        animals: [String!]!
-    }
-    '''
-    output = sdl_importer.import_sdl(s)
-    what_it_should_be = dedent(
-        """\
-       import typing
-
-       import strawberry
-
-
-       @strawberry.type
-       class HollyHandGrenade:
-           animals: typing.List[str] = strawberry.field(
-               description='''And the people did feast on:''',
-           )
-    """
-    )
-    assert output == what_it_should_be
-
-
-def test_get_field_name():
-    """test field name attribute acquisition"""
-    assert sdl_transpiler.get_field_name("camelAstName") == ""
-    assert sdl_transpiler.get_field_name("snacamel") == ""
-
-
 @pytest.mark.parametrize("file", [
-    'list_of', 'simple_schema', 'data_types',
-    'enums',
+    'list_of', 'simple_schema', 'data_types', 'enums', 'custom_type', 'union'
 ])
 def test_list_of(file):
     path_to_schema = Path(__file__).parent / "data" / f"{file}.gql"
