@@ -177,7 +177,7 @@ def get_strawberry_type(name, description, directives) -> str:
     if name or (description is not None) or directives or deprecated:
         strawberry_type = " = strawberry.field({}{}{}    )".format(
             f"\n        name='{name}'," if name else "",
-            f"\n        description='''{description.value}''',\n"
+            f'\n        description="""{description.value}""",\n'
             if description is not None
             else "",
             f"\n        derpecation_reason='{deprecated.arguments[0].value.value}',\n"
