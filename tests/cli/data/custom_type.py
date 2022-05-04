@@ -5,8 +5,7 @@ import strawberry
 
 @strawberry.type
 class Query:
-    a: "MyType"
-
+    a: 'MyType'
 
 @strawberry.type
 class MyType:
