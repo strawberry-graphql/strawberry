@@ -7,16 +7,16 @@ Handles argument:
     * ast conversion preparation
 """
 from graphql import DefinitionNode
+
 from strawberry.cli.commands.schema_importer import ast_converter, sdl_transpiler
 
 
 def definition_order(ast_definition: DefinitionNode):
     order = {
-        'union_type_definition': 2,
-        'enum_type_definition': 1,
-    }    
+        "union_type_definition": 2,
+        "enum_type_definition": 1,
+    }
     return order.get(ast_definition.kind, 0)
-
 
 
 def import_sdl(sdl: str) -> str:  # TODO: Perhaps, transform_sdl_to_code?
