@@ -5,10 +5,9 @@ import strawberry
 
 @strawberry.type
 class Query:
-    attempt: "Attempt" = strawberry.field(
+    attempt: 'Attempt' = strawberry.field(
         description="""Was my attempt successful?""",
     )
-
 
 @strawberry.type
 class Success:
