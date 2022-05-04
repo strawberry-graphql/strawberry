@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 from itertools import chain
-from typing import TYPE_CHECKING, Any, Dict, Optional, cast
+from typing import TYPE_CHECKING, Any, Dict, Optional, Set, cast
 
 from graphql.language.printer import print_ast
 from graphql.type import (
@@ -31,12 +31,19 @@ from graphql.utilities.print_schema import (
 
 from strawberry.field import StrawberryField
 from strawberry.schema_directive import Location, StrawberrySchemaDirective
+from strawberry.type import StrawberryContainer
 from strawberry.types.types import TypeDefinition
 from strawberry.unset import UNSET
 
 
 if TYPE_CHECKING:
     from strawberry.schema import BaseSchema
+
+
+@dataclasses.dataclass
+class PrintExtras:
+    directives: Set[str] = dataclasses.field(default_factory=set)
+    types: Set[type] = dataclasses.field(default_factory=set)
 
 
 def _serialize_dataclasses(value: Any) -> Any:
@@ -71,7 +78,9 @@ def print_schema_directive_params(
     return "(" + ", ".join(params) + ")"
 
 
-def print_schema_directive(directive: Any, schema: BaseSchema) -> str:
+def print_schema_directive(
+    directive: Any, schema: BaseSchema, *, extras: PrintExtras
+) -> str:
     strawberry_directive = cast(
         StrawberrySchemaDirective, directive.__class__.__strawberry_directive__
     )
@@ -87,10 +96,21 @@ def print_schema_directive(directive: Any, schema: BaseSchema) -> str:
         },
     )
 
+    extras.directives.add(print_directive(gql_directive))
+    for field in strawberry_directive.fields:
+        f_type = field.type
+        while isinstance(f_type, StrawberryContainer):
+            f_type = f_type.of_type
+
+        if hasattr(f_type, "_type_definition"):
+            extras.types.add(cast(type, f_type))
+
     return f" @{gql_directive.name}{params}"
 
 
-def print_field_directives(field: Optional[StrawberryField], schema: BaseSchema) -> str:
+def print_field_directives(
+    field: Optional[StrawberryField], schema: BaseSchema, *, extras: PrintExtras
+) -> str:
     if not field:
         return ""
 
@@ -104,11 +124,14 @@ def print_field_directives(field: Optional[StrawberryField], schema: BaseSchema)
     )
 
     return "".join(
-        (print_schema_directive(directive, schema=schema) for directive in directives)
+        (
+            print_schema_directive(directive, schema=schema, extras=extras)
+            for directive in directives
+        )
     )
 
 
-def print_fields(type_, schema: BaseSchema) -> str:
+def print_fields(type_, schema: BaseSchema, *, extras: PrintExtras) -> str:
     strawberry_type = cast(TypeDefinition, schema.get_type_by_name(type_.name))
 
     fields = []
@@ -129,7 +152,7 @@ def print_fields(type_, schema: BaseSchema) -> str:
             + f"  {name}"
             + args
             + f": {field.type}"
-            + print_field_directives(strawberry_field, schema=schema)
+            + print_field_directives(strawberry_field, schema=schema, extras=extras)
             + print_deprecated(field.deprecation_reason)
         )
 
@@ -145,7 +168,7 @@ def print_extends(type_, schema: BaseSchema):
     return ""
 
 
-def print_type_directives(type_, schema: BaseSchema) -> str:
+def print_type_directives(type_, schema: BaseSchema, *, extras: PrintExtras) -> str:
     strawberry_type = cast(TypeDefinition, schema.get_type_by_name(type_.name))
 
     if not strawberry_type:
@@ -165,22 +188,25 @@ def print_type_directives(type_, schema: BaseSchema) -> str:
     )
 
     return "".join(
-        (print_schema_directive(directive, schema=schema) for directive in directives)
+        (
+            print_schema_directive(directive, schema=schema, extras=extras)
+            for directive in directives
+        )
     )
 
 
-def _print_object(type_, schema: BaseSchema) -> str:
+def _print_object(type_, schema: BaseSchema, *, extras: PrintExtras) -> str:
     return (
         print_description(type_)
         + print_extends(type_, schema)
         + f"type {type_.name}"
         + print_implemented_interfaces(type_)
-        + print_type_directives(type_, schema)
-        + print_fields(type_, schema)
+        + print_type_directives(type_, schema, extras=extras)
+        + print_fields(type_, schema, extras=extras)
     )
 
 
-def _print_input_object(type_, schema: BaseSchema) -> str:
+def _print_input_object(type_, schema: BaseSchema, *, extras: PrintExtras) -> str:
     fields = [
         print_description(field, "  ", not i) + "  " + print_input_value(name, field)
         for i, (name, field) in enumerate(type_.fields.items())
@@ -188,12 +214,12 @@ def _print_input_object(type_, schema: BaseSchema) -> str:
     return (
         print_description(type_)
         + f"input {type_.name}"
-        + print_type_directives(type_, schema)
+        + print_type_directives(type_, schema, extras=extras)
         + print_block(fields)
     )
 
 
-def _print_type(type_, schema: BaseSchema) -> str:
+def _print_type(type_, schema: BaseSchema, *, extras: PrintExtras) -> str:
     # prevents us from trying to print a scalar as an input type
     if is_scalar_type(type_):
         return print_scalar(type_)
@@ -202,28 +228,37 @@ def _print_type(type_, schema: BaseSchema) -> str:
         return print_enum(type_)
 
     if is_object_type(type_):
-        return _print_object(type_, schema)
+        return _print_object(type_, schema, extras=extras)
 
     if is_input_type(type_):
-        return _print_input_object(type_, schema)
+        return _print_input_object(type_, schema, extras=extras)
 
     return original_print_type(type_)
 
 
 def print_schema(schema: BaseSchema) -> str:
     graphql_core_schema = schema._schema  # type: ignore
+    extras = PrintExtras()
 
     directives = filter(
         lambda n: not is_specified_directive(n), graphql_core_schema.directives
     )
     type_map = graphql_core_schema.type_map
-
     types = filter(is_defined_type, map(type_map.get, sorted(type_map)))
+
+    types_printed = [_print_type(type_, schema, extras=extras) for type_ in types]
 
     return "\n\n".join(
         chain(
             filter(None, [print_schema_definition(graphql_core_schema)]),
+            sorted(extras.directives),
             (print_directive(directive) for directive in directives),
-            (_print_type(type_, schema) for type_ in types),
+            types_printed,
+            (
+                _print_type(
+                    schema.schema_converter.from_type(type_), schema, extras=extras
+                )
+                for type_ in extras.types
+            ),
         )
     )

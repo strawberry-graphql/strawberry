@@ -18,6 +18,8 @@ def test_print_simple_directive():
         first_name: str = strawberry.field(directives=[Sensitive(reason="GDPR")])
 
     expected_type = """
+    directive @sensitive(reason: String!) on FIELD_DEFINITION
+
     type Query {
       firstName: String! @sensitive(reason: "GDPR")
     }
@@ -42,6 +44,8 @@ def test_print_directive_with_name():
         )
 
     expected_type = """
+    directive @sensitive(reason: String!) on FIELD_DEFINITION
+
     type Query {
       firstName: String! @sensitive(reason: "GDPR")
     }
@@ -100,6 +104,10 @@ def test_directive_on_types():
             )
 
     expected_type = """
+    directive @sensitiveData(reason: String!, meta: [SensitiveValue!]) on OBJECT | FIELD_DEFINITION
+
+    directive @sensitiveInput(reason: String!, meta: [SensitiveValue!]) on INPUT_OBJECT
+
     input Input @sensitiveInput(reason: "GDPR") {
       firstName: String!
     }
@@ -112,6 +120,11 @@ def test_directive_on_types():
       firstName: String!
       phone: String! @sensitiveData(reason: "PRIVATE", meta: [{key: "can_share_field", value: "phone_share_accepted"}])
       phoneShareAccepted: Boolean!
+    }
+
+    input SensitiveValue {
+      key: String!
+      value: String!
     }
     """  # noqa:E501
 
@@ -134,10 +147,12 @@ def test_using_different_names_for_directive_field():
         )
 
     expected_type = """
+    directive @sensitive(as: String!, realAge: String!, real_age: String!) on FIELD_DEFINITION
+
     type Query {
       firstName: String! @sensitive(as: "GDPR", realAge: "1", real_age: "2")
     }
-    """
+    """  # noqa:E501
 
     schema = strawberry.Schema(query=Query)
 
@@ -154,6 +169,8 @@ def test_respects_schema_config_for_names():
         first_name: str = strawberry.field(directives=[Sensitive(real_age="42")])
 
     expected_type = """
+    directive @Sensitive(real_age: String!) on FIELD_DEFINITION
+
     type Query {
       first_name: String! @Sensitive(real_age: "42")
     }
