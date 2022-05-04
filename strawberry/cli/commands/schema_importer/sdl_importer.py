@@ -19,7 +19,7 @@ def definition_order(ast_definition: DefinitionNode):
     return order.get(ast_definition.kind, 0)
 
 
-def generate_code_from_sdl(sdl: str) -> str:  # TODO: Perhaps, transform_sdl_to_code?
+def generate_code_from_sdl(sdl: str) -> str:
     """
     Determine if filepath or string input.
     Read in or use directly, respectively.
