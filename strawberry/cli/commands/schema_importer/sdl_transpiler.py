@@ -133,6 +133,8 @@ def get_field_attribute(field: Union[FieldDefinitionNode, InputValueDefinitionNo
         field_name, field.description, field.directives
     )
     field_type += strawberry_type if strawberry_type else ""
+    has_custom_type = not any(builtin_type in field_type for builtin_type in ('str', 'int', 'float', 'ID', 'bool'))
+    field_type = f"'{field_type}'" if has_custom_type else field_type
     return f"{str_converters.to_snake_case(field.name.value)}: {field_type}"
 
 

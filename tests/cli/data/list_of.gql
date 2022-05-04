@@ -1,0 +1,6 @@
+type Query {
+    non_nullable: [String!]!
+    both_nullable: [String]
+    list_can_be_null: [String!]
+    list_can_never_be_null: [String]!
+}

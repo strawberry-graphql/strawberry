@@ -17,25 +17,20 @@ def import_sdl(sdl: str) -> str:  # TODO: Perhaps, transform_sdl_to_code?
     Pass the whole thing to ast_converter.
     """
     ast = ast_converter.convert_to_ast(sdl)
-    templates = set({})
-    for definition in ast.definitions:
-        # Parse and render specific ast definitions
-        templates.add(sdl_transpiler.transpile(definition))
-
-    strawberry_code_template = "\n\n".join(templates)
+    strawberry_code = "\n\n".join(map(sdl_transpiler.transpile, ast.definitions))
 
     imports = []
 
-    if "(Enum)" in strawberry_code_template:
+    if "(Enum)" in strawberry_code:
         imports.append("from enum import Enum")
 
-    if "typing." in strawberry_code_template:
+    if "typing." in strawberry_code:
         imports.append("import typing")
 
-    if "Union[" in strawberry_code_template:
+    if "Union[" in strawberry_code:
         imports.append("from typing import Union")
 
-    if "DirectiveLocation" in strawberry_code_template:
+    if "DirectiveLocation" in strawberry_code:
         imports.append("from strawberry.directive import DirectiveLocation")
 
     imports.append(
@@ -44,7 +39,7 @@ def import_sdl(sdl: str) -> str:  # TODO: Perhaps, transform_sdl_to_code?
 
     imports_string = "\n\n".join(imports)
 
-    code = f"{imports_string}\n\n\n{strawberry_code_template}\n"
+    code = f"{imports_string}\n\n\n{strawberry_code}\n"
     return code
 
 

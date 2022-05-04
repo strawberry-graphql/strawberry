@@ -1,0 +1,11 @@
+type Query {
+    options: Options!
+}
+
+
+enum Options {
+    TRUE
+    FALSE
+    MAYBE
+    NO_IDEA
+}

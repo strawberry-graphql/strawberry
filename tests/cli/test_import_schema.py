@@ -1,13 +1,14 @@
 from pathlib import Path
 from textwrap import dedent
 
+import pytest
+
 from strawberry.cli.commands.schema_importer import sdl_importer, sdl_transpiler
 from strawberry.cli.commands.schema_importer.import_schema import (
     transform_sdl_into_code,
 )
 
 
-# Complex object
 def test_import_specific_object_type(mocker):
     s = '''
     """A single film."""
@@ -52,246 +53,6 @@ def test_import_specific_object_type(mocker):
     '''
     output = sdl_importer.import_sdl(s)
     assert output
-
-
-def test_simple_type_output_correct_code():
-    """
-    with a field description and case change
-    Test for a required Boolean field type
-    """
-    s = '''
-    type Monster {
-        """Is the monster scary?"""
-        is_scary: Boolean!
-    }
-    '''
-    code_output = sdl_importer.import_sdl(s)
-    expected_code = dedent(
-        """\
-        import strawberry
-
-
-        @strawberry.type
-        class Monster:
-            is_scary: bool = strawberry.field(
-                description='''Is the monster scary?''',
-            )
-        """
-    )
-
-    assert code_output == expected_code
-
-
-def test_simple_optional_boolean_outputs_correct_code():
-    """
-    with a field description and case change
-    Test for a required Boolean field type
-    """
-    s = '''
-    type Monster {
-        """Is the monster scary?
-        We don't know yet
-        """
-        is_scary_optional: Boolean
-    }
-    '''
-    code_output = sdl_importer.import_sdl(s)
-    expected_code = dedent(
-        """\
-        import typing
-
-        import strawberry
-
-
-        @strawberry.type
-        class Monster:
-            is_scary_optional: typing.Optional[bool] = strawberry.field(
-                description='''Is the monster scary?
-        We don't know yet''',
-            )
-        """
-    )
-    assert code_output == expected_code
-
-
-def test_import_int_field():
-    """Test for a required Int field type with multiline description here"""
-    s = '''
-    type HolyHandGrenade {
-        """Some desc"""
-        numberThouShaltCount: Int!
-    }
-    '''
-    output = sdl_importer.import_sdl(s)
-    what_it_should_be = dedent(
-        """\
-        import strawberry
-
-
-        @strawberry.type
-        class HolyHandGrenade:
-            number_thou_shalt_count: int = strawberry.field(
-                description='''Some desc''',
-            )
-        """
-    )
-
-    assert output == what_it_should_be
-
-
-def test_import_optional_int_field():
-    """Test for a required Int field type with multiline description"""
-    s = """
-    type HolyHandGrenade {
-        numberThouShaltCount: Int
-    }
-    """
-    output = sdl_importer.import_sdl(s)
-    what_it_should_be = dedent(
-        """\
-        import typing
-
-        import strawberry
-
-
-        @strawberry.type
-        class HolyHandGrenade:
-            number_thou_shalt_count: typing.Optional[int]
-        """
-    )
-
-    assert output == what_it_should_be
-
-
-# String
-def test_import_str_fields():
-    """Test for String field types both optional and required"""
-    s = '''
-    type BridgeOfDeath {
-        """What is your name?"""
-        question: String!
-        answer: String
-    }
-    '''
-    output = sdl_importer.import_sdl(s)
-    what_it_should_be = dedent(
-        """\
-        import typing
-
-        import strawberry
-
-
-        @strawberry.type
-        class BridgeOfDeath:
-            question: str = strawberry.field(
-                description='''What is your name?''',
-            )
-            answer: typing.Optional[str]
-        """
-    )
-
-    assert output == what_it_should_be
-
-
-# Float
-def test_import_float_field():
-    """Test for a Float type"""
-    s = """
-    type Swallow {
-        speed: Float!
-    }
-    """
-    output = sdl_importer.import_sdl(s)
-    what_it_should_be = dedent(
-        """\
-        import strawberry
-
-
-        @strawberry.type
-        class Swallow:
-            speed: float
-        """
-    )
-
-    assert output == what_it_should_be
-
-
-def test_import_optional_float_field():
-    """Test for a Float type"""
-    s = '''
-    type Swallow {
-        """
-        What is the airbourn speed
-        of unladen african swallow?
-        """
-        speed: Float
-    }
-    '''
-    output = sdl_importer.import_sdl(s)
-    what_it_should_be = dedent(
-        """\
-        import typing
-
-        import strawberry
-
-
-        @strawberry.type
-        class Swallow:
-            speed: typing.Optional[float] = strawberry.field(
-                description='''What is the airbourn speed
-        of unladen african swallow?''',
-            )
-        """
-    )
-
-    assert output == what_it_should_be
-
-
-# ID
-def test_import_id_field():
-    """Test for a required ID field type"""
-    s = """
-    type ArgumentClinic {
-        id: ID!
-    }
-    """
-    output = sdl_importer.import_sdl(s)
-    what_it_should_be = dedent(
-        """\
-        import strawberry
-
-
-        @strawberry.type
-        class ArgumentClinic:
-            id: strawberry.ID
-        """
-    )
-
-    assert output == what_it_should_be
-
-
-def test_import_optional_id_field():
-    """Test for a optional ID field type"""
-    s = """
-    type ArgumentClinic {
-        id: ID
-    }
-    """
-    output = sdl_importer.import_sdl(s)
-    what_it_should_be = dedent(
-        """\
-        import typing
-
-        import strawberry
-
-
-        @strawberry.type
-        class ArgumentClinic:
-            id: typing.Optional[strawberry.ID]
-    """
-    )
-
-    assert output == what_it_should_be
 
 
 # endregion
@@ -616,18 +377,13 @@ def test_get_field_name():
     assert sdl_transpiler.get_field_name("snacamel") == ""
 
 
-def test_transformation_of_simple_schema():
-    path_to_schema = Path(__file__).parent / "data" / "simple_schema.gql"
-    expected_code_path = Path(__file__).parent / "data" / "simple_schema.py"
+@pytest.mark.parametrize("file", [
+    'list_of', 'simple_schema', 'data_types',
+    'enums',
+])
+def test_list_of(file):
+    path_to_schema = Path(__file__).parent / "data" / f"{file}.gql"
+    expected_code = (Path(__file__).parent / "data" / f"{file}.py").read_text()
 
     code = transform_sdl_into_code(str(path_to_schema))
-    assert code == expected_code_path.read_text(), print(code)
-
-
-def test_transformation_of_basic_types_schema():
-    path_to_schema = Path(__file__).parent / "data" / "data_types.gql"
-    expected_code_path = Path(__file__).parent / "data" / "data_types.py"
-
-    code = transform_sdl_into_code(str(path_to_schema))
-    assert code == expected_code_path.read_text(), print(code)
-
+    assert code == expected_code, print(code)
