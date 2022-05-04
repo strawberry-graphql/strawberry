@@ -1,3 +1,5 @@
+exclude:
+  '^tests/cli/data/*.py'
 repos:
   - repo: https://github.com/ambv/black
     rev: 20.8b1
