@@ -3,7 +3,7 @@ from textwrap import dedent
 
 import pytest
 
-from strawberry.cli.commands.schema_importer import sdl_importer, sdl_transpiler
+from strawberry.cli.commands.schema_importer import sdl_importer
 from strawberry.cli.commands.schema_importer.import_schema import (
     transform_sdl_into_code,
 )
@@ -237,9 +237,9 @@ def test_depricated():
     assert output == what_it_should_be
 
 
-@pytest.mark.parametrize("file", [
-    'list_of', 'simple_schema', 'data_types', 'enums', 'custom_type', 'union'
-])
+@pytest.mark.parametrize(
+    "file", ["list_of", "simple_schema", "data_types", "enums", "custom_type", "union"]
+)
 def test_list_of(file):
     path_to_schema = Path(__file__).parent / "data" / f"{file}.gql"
     expected_code = (Path(__file__).parent / "data" / f"{file}.py").read_text()
