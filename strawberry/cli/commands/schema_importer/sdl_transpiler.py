@@ -94,20 +94,6 @@ def get_description(ast):
         return f"(description='''{ast.description.value}''')"
 
 
-def get_directive(ast):
-    """Format union type"""
-    types = "(" + ", ".join((t.name.value for t in ast.types)) + ")"
-    description = get_description(ast)
-    description = f"{description[1:-1]}" if description else ""
-    union_type = "strawberry.union({}{}{})".format(
-        f"\n    '{get_class_name(ast)}',",
-        f"\n    {types},",
-        f"\n    {description}\n" if description else "\n",
-    )
-
-    return union_type
-
-
 def get_union(ast):
     """Format union type"""
     types = "(" + ", ".join((t.name.value for t in ast.types)) + ")"
