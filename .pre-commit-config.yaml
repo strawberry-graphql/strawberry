@@ -1,16 +1,15 @@
-exclude:
-  '^tests/cli/data/*.py'
 repos:
   - repo: https://github.com/ambv/black
     rev: 20.8b1
     hooks:
       - id: black
-
+        exclude: ^tests/cli/data/
   - repo: https://gitlab.com/pycqa/flake8
     rev: 3.9.0
     hooks:
       - id: flake8
         additional_dependencies: ["flake8-eradicate==0.4.0"]
+        exclude: ^tests/cli/data/
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v0.812
