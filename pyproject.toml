@@ -66,7 +66,7 @@ pytest-flask = {version = "^1.2.0"}
 flask = ">=1.1"
 chalice = {version = "^1.22"}
 requests = "^2.27.1"
-pre-commit = "^2.18.1"
+pre-commit = "^2.19.0"
 pytest-benchmark = "^3.4.1"
 freezegun = "^1.2.1"
 opentelemetry-api = "<2"
