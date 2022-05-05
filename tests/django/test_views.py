@@ -8,7 +8,7 @@ from django.test.client import RequestFactory
 import strawberry
 from strawberry.django.views import GraphQLView as BaseGraphQLView
 from strawberry.permission import BasePermission
-from strawberry.types import ExecutionResult, Info
+from strawberry.types import Info
 
 from .app.models import Example
 
@@ -84,33 +84,6 @@ def test_graphql_query_model():
     assert data["data"]["example"] == "This is a demo"
 
     Example.objects.all().delete()
-
-
-def test_custom_process_result():
-    class CustomGraphQLView(BaseGraphQLView):
-        def process_result(self, request, result: ExecutionResult):
-            return {}
-
-    factory = RequestFactory()
-
-    @strawberry.type
-    class Query:
-        @strawberry.field
-        def abc(self) -> str:
-            return "ABC"
-
-    schema = strawberry.Schema(query=Query)
-
-    query = "{ abc }"
-    request = factory.post(
-        "/graphql/", {"query": query}, content_type="application/json"
-    )
-
-    response = CustomGraphQLView.as_view(schema=schema)(request)
-    data = json.loads(response.content.decode())
-
-    assert response.status_code == 200
-    assert data == {}
 
 
 def test_can_set_cookies():
