@@ -201,7 +201,7 @@ def test_depricated():
         "with_union",
     ],
 )
-def test_list_of(file):
+def test_code_generation(file):
     path_to_schema = Path(__file__).parent / "data" / f"{file}.gql"
     expected_code = (Path(__file__).parent / "data" / f"{file}.py").read_text()
 
