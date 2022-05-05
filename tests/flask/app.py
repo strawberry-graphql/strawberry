@@ -13,10 +13,16 @@ def create_app(**kwargs):
 
     @strawberry.type
     class Query:
-        hello: str = "strawberry"
+        @strawberry.field
+        def hello(self, name: typing.Optional[str] = None) -> str:
+            return f"Hello {name or 'world'}"
 
     @strawberry.type
     class Mutation:
+        @strawberry.mutation
+        def hello(self) -> str:
+            return "strawberry"
+
         @strawberry.mutation
         def read_text(self, text_file: Upload) -> str:
             return text_file.read().decode()

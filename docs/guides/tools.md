@@ -42,3 +42,37 @@ type Query {
   myName: String!
 }
 ```
+
+---
+
+### `merge_types`
+
+Merge multiple Strawberry types into one. Example:
+
+```python+schema
+import strawberry
+from strawberry.tools import merge_types
+
+
+@strawberry.type
+class QueryA:
+    @strawberry.field
+    def perform_a(self) -> str:
+        ...
+
+
+@strawberry.type
+class QueryB:
+    @strawberry.field
+    def perform_b(self) -> str:
+        ...
+
+
+ComboQuery = merge_types("ComboQuery", (QueryB, QueryA))
+schema = strawberry.Schema(query=ComboQuery)
+---
+type ComboQuery {
+  performB: String!
+  performA: String!
+}
+```

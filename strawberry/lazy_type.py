@@ -21,7 +21,9 @@ class LazyType(Generic[TypeName, Module]):
 
         if module.startswith("."):
             current_frame = inspect.currentframe()
-            package = current_frame.f_back.f_globals["__package__"]  # type: ignore
+            assert current_frame is not None
+            assert current_frame.f_back is not None
+            package = current_frame.f_back.f_globals["__package__"]
 
         return cls(type_name, module, package)
 

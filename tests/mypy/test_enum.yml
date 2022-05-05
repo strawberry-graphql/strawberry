@@ -15,7 +15,7 @@
     reveal_type(Flavour)
     reveal_type(a)
   out: |
-    main:13: note: Revealed type is "def (value: builtins.object) -> main.IceCreamFlavour"
+    main:13: note: Revealed type is "def (value: Any) -> main.IceCreamFlavour"
     main:14: note: Revealed type is "main.IceCreamFlavour"
 
 - case: test_enum_from_var
@@ -80,10 +80,11 @@
     a: IceCreamFlavour
     reveal_type(IceCreamFlavour)
     reveal_type(a)
+    reveal_type(IceCreamFlavour.VANILLA)
   out: |
-    main:12: note: Revealed type is "def (value: builtins.object) -> main.IceCreamFlavour*"
+    main:12: note: Revealed type is "def (value: Any) -> main.IceCreamFlavour"
     main:13: note: Revealed type is "main.IceCreamFlavour"
-
+    main:14: note: Revealed type is "Literal[main.IceCreamFlavour.VANILLA]?"
 - case: test_enum_with_decorator_and_name
   main: |
     from enum import Enum
@@ -99,6 +100,58 @@
     a: Flavour
     reveal_type(Flavour)
     reveal_type(a)
+    reveal_type(Flavour.VANILLA)
   out: |
-    main:12: note: Revealed type is "def (value: builtins.object) -> main.Flavour*"
+    main:12: note: Revealed type is "def (value: Any) -> main.Flavour"
     main:13: note: Revealed type is "main.Flavour"
+    main:14: note: Revealed type is "Literal[main.Flavour.VANILLA]?"
+- case: test_enum_with_manual_decorator
+  main: |
+    from enum import Enum
+
+    import strawberry
+
+    class IceCreamFlavour(Enum):
+        VANILLA = "vanilla"
+        STRAWBERRY = "strawberry"
+        CHOCOLATE = "chocolate"
+
+    reveal_type(strawberry.enum(IceCreamFlavour))
+    reveal_type(strawberry.enum(IceCreamFlavour).VANILLA)
+  out: |
+    main:10: note: Revealed type is "def (value: Any) -> main.IceCreamFlavour"
+    main:11: note: Revealed type is "Literal[main.IceCreamFlavour.VANILLA]?"
+- case: test_enum_with_manual_decorator_and_name
+  main: |
+    from enum import Enum
+
+    import strawberry
+
+    class Flavour(Enum):
+        VANILLA = "vanilla"
+        STRAWBERRY = "strawberry"
+        CHOCOLATE = "chocolate"
+
+    reveal_type(strawberry.enum(name="IceCreamFlavour")(Flavour))
+    reveal_type(strawberry.enum(name="IceCreamFlavour")(Flavour).VANILLA)
+  out: |
+    main:10: note: Revealed type is "def (value: Any) -> main.Flavour"
+    main:11: note: Revealed type is "Literal[main.Flavour.VANILLA]?"
+- case: test_enum_with_deprecation_reason
+  main: |
+    from enum import Enum
+
+    import strawberry
+
+    class Flavour(Enum):
+        VANILLA = strawberry.enum_value("vanilla")
+        STRAWBERRY = strawberry.enum_value(
+            "strawberry", deprecation_reason="We ran out"
+        )
+        CHOCOLATE = "chocolate"
+
+    reveal_type(strawberry.enum(name="IceCreamFlavour")(Flavour))
+    reveal_type(strawberry.enum(name="IceCreamFlavour")(Flavour).STRAWBERRY)
+  out: |
+    main:12: note: Revealed type is "def (value: Any) -> main.Flavour"
+    main:13: note: Revealed type is "Literal[main.Flavour.STRAWBERRY]?"

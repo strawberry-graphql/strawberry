@@ -6,6 +6,15 @@ from graphql import GraphQLError
 
 import strawberry
 from strawberry.file_uploads import Upload
+from strawberry.permission import BasePermission
+from strawberry.subscriptions.protocols.graphql_transport_ws.types import PingMessage
+
+
+class AlwaysFailPermission(BasePermission):
+    message = "You are not authorized"
+
+    def has_permission(self, source, info, **kwargs) -> bool:
+        return False
 
 
 @strawberry.enum
@@ -23,15 +32,36 @@ class FolderInput:
 @strawberry.type
 class DebugInfo:
     num_active_result_handlers: int
+    is_connection_init_timeout_task_done: typing.Optional[bool]
 
 
 @strawberry.type
 class Query:
-    hello: str = "strawberry"
+    @strawberry.field
+    def hello(self, name: typing.Optional[str] = None) -> str:
+        return f"Hello {name or 'world'}"
+
+    @strawberry.field
+    async def async_hello(self, name: str, delay: float = 0) -> str:
+        await asyncio.sleep(delay)
+        return f"Hello {name or 'world'}"
+
+    @strawberry.field(permission_classes=[AlwaysFailPermission])
+    def always_fail(self) -> typing.Optional[str]:
+        return "Hey"
+
+    @strawberry.field
+    async def exception(self, message: str) -> str:
+        raise ValueError(message)
+        return message
 
 
 @strawberry.type
 class Mutation:
+    @strawberry.mutation
+    def hello(self) -> str:
+        return "strawberry"
+
     @strawberry.mutation
     def read_text(self, text_file: Upload) -> str:
         return text_file.read().decode()
@@ -59,6 +89,12 @@ class Subscription:
     ) -> typing.AsyncGenerator[str, None]:
         await asyncio.sleep(delay)
         yield message
+
+    @strawberry.subscription
+    async def request_ping(self, info) -> typing.AsyncGenerator[bool, None]:
+        ws = info.context["ws"]
+        await ws.send_json(PingMessage().as_dict())
+        yield True
 
     @strawberry.subscription
     async def infinity(self, message: str) -> typing.AsyncGenerator[str, None]:
@@ -89,11 +125,21 @@ class Subscription:
 
     @strawberry.subscription
     async def debug(self, info) -> typing.AsyncGenerator[DebugInfo, None]:
-        request = info.context["request"]
         active_result_handlers = [
-            task for task in request["tasks"].values() if not task.done()
+            task for task in info.context["tasks"].values() if not task.done()
         ]
-        yield DebugInfo(num_active_result_handlers=len(active_result_handlers))
+
+        connection_init_timeout_task = info.context["connectionInitTimeoutTask"]
+        is_connection_init_timeout_task_done = (
+            connection_init_timeout_task.done()
+            if connection_init_timeout_task
+            else None
+        )
+
+        yield DebugInfo(
+            num_active_result_handlers=len(active_result_handlers),
+            is_connection_init_timeout_task_done=is_connection_init_timeout_task_done,
+        )
 
 
 schema = strawberry.Schema(query=Query, mutation=Mutation, subscription=Subscription)

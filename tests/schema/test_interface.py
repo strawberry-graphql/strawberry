@@ -1,4 +1,7 @@
+from dataclasses import dataclass
 from typing import List
+
+import pytest
 
 import strawberry
 
@@ -93,3 +96,105 @@ def test_interfaces_can_implement_other_interfaces():
         "field": "Password",
         "fix": "Choose more characters",
     }
+
+
+def test_interface_duck_typing():
+    @strawberry.interface
+    class Entity:
+        id: int
+
+    @strawberry.type
+    class Anime(Entity):
+        name: str
+
+        @classmethod
+        def is_type_of(cls, obj, _info) -> bool:
+            return isinstance(obj, AnimeORM)
+
+    @dataclass
+    class AnimeORM:
+        id: int
+        name: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def anime(self) -> Anime:
+            return AnimeORM(id=1, name="One Piece")  # type: ignore
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        anime { name }
+    }"""
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data == {"anime": {"name": "One Piece"}}
+
+
+def test_interface_explicit_type_resolution():
+    @dataclass
+    class AnimeORM:
+        id: int
+        name: str
+
+    @strawberry.interface
+    class Node:
+        id: int
+
+    @strawberry.type
+    class Anime(Node):
+        name: str
+
+        @classmethod
+        def is_type_of(cls, obj, _info) -> bool:
+            return isinstance(obj, AnimeORM)
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def node(self) -> Node:
+            return AnimeORM(id=1, name="One Piece")  # type: ignore
+
+    schema = strawberry.Schema(query=Query, types=[Anime])
+
+    query = "{ node { __typename, id } }"
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data == {"node": {"__typename": "Anime", "id": 1}}
+
+
+@pytest.mark.xfail(reason="We don't support returning dictionaries yet")
+def test_interface_duck_typing_returning_dict():
+    @strawberry.interface
+    class Entity:
+        id: int
+
+    @strawberry.type
+    class Anime(Entity):
+        name: str
+
+    @dataclass
+    class AnimeORM:
+        id: int
+        name: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def anime(self) -> Anime:
+            return dict(id=1, name="One Piece")  # type: ignore
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        anime { name }
+    }"""
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data == {"anime": {"name": "One Piece"}}

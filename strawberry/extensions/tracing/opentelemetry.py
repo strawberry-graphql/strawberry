@@ -1,3 +1,4 @@
+import enum
 from copy import deepcopy
 from inspect import isawaitable
 from typing import Any, Callable, Dict, Optional
@@ -8,9 +9,10 @@ from opentelemetry.trace import Span, SpanKind, Tracer
 from graphql import GraphQLResolveInfo
 
 from strawberry.extensions import Extension
+from strawberry.extensions.utils import get_path_from_info
 from strawberry.types.execution import ExecutionContext
 
-from .utils import get_path_from_info, should_skip_tracing
+from .utils import should_skip_tracing
 
 
 DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
@@ -18,34 +20,73 @@ DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 ArgFilter = Callable[[Dict[str, Any], GraphQLResolveInfo], Dict[str, Any]]
 
 
+class RequestStage(enum.Enum):
+    REQUEST = enum.auto()
+    PARSING = enum.auto()
+    VALIDATION = enum.auto()
+
+
 class OpenTelemetryExtension(Extension):
     _arg_filter: Optional[ArgFilter]
-    _root_span: Span
+    _span_holder: Dict[RequestStage, Span] = dict()
     _tracer: Tracer
 
     def __init__(
         self,
         *,
-        execution_context: ExecutionContext,
+        execution_context: Optional[ExecutionContext] = None,
         arg_filter: Optional[ArgFilter] = None,
     ):
         self._arg_filter = arg_filter
         self._tracer = trace.get_tracer("strawberry")
-        self.execution_context = execution_context
+        if execution_context:
+            self.execution_context = execution_context
 
     def on_request_start(self):
+        self._operation_name = self.execution_context.operation_name
         span_name = (
-            f"GraphQL Query: {self.execution_context.operation_name}"
-            if self.execution_context.operation_name
+            f"GraphQL Query: {self._operation_name}"
+            if self._operation_name
             else "GraphQL Query"
         )
 
-        self._root_span = self._tracer.start_span(span_name, kind=SpanKind.SERVER)
-        self._root_span.set_attribute("component", "graphql")
-        self._root_span.set_attribute("query", self.execution_context.query)
+        self._span_holder[RequestStage.REQUEST] = self._tracer.start_span(
+            span_name, kind=SpanKind.SERVER
+        )
+        self._span_holder[RequestStage.REQUEST].set_attribute("component", "graphql")
+        self._span_holder[RequestStage.REQUEST].set_attribute(
+            "query", self.execution_context.query
+        )
 
     def on_request_end(self):
-        self._root_span.end()
+        # If the client doesn't provide an operation name then GraphQL will
+        # execute the first operation in the query string. This might be a named
+        # operation but we don't know until the parsing stage has finished. If
+        # that's the case we want to update the span name so that we have a more
+        # useful name in our trace.
+        if not self._operation_name and self.execution_context.operation_name:
+            span_name = f"GraphQL Query: {self.execution_context.operation_name}"
+            self._span_holder[RequestStage.REQUEST].update_name(span_name)
+        self._span_holder[RequestStage.REQUEST].end()
+
+    def on_validation_start(self):
+        ctx = trace.set_span_in_context(self._span_holder[RequestStage.REQUEST])
+        self._span_holder[RequestStage.VALIDATION] = self._tracer.start_span(
+            "GraphQL Validation",
+            context=ctx,
+        )
+
+    def on_validation_end(self):
+        self._span_holder[RequestStage.VALIDATION].end()
+
+    def on_parsing_start(self):
+        ctx = trace.set_span_in_context(self._span_holder[RequestStage.REQUEST])
+        self._span_holder[RequestStage.PARSING] = self._tracer.start_span(
+            "GraphQL Parsing", context=ctx
+        )
+
+    def on_parsing_end(self):
+        self._span_holder[RequestStage.PARSING].end()
 
     def filter_resolver_args(
         self, args: Dict[str, Any], info: GraphQLResolveInfo
@@ -76,15 +117,17 @@ class OpenTelemetryExtension(Extension):
 
             return result
 
-        with self._tracer.use_span(self._root_span):
-            with self._tracer.start_span(info.field_name, kind=SpanKind.SERVER) as span:
-                self.add_tags(span, info, kwargs)
-                result = _next(root, info, *args, **kwargs)
+        with self._tracer.start_as_current_span(
+            f"GraphQL Resolving: {info.field_name}",
+            context=trace.set_span_in_context(self._span_holder[RequestStage.REQUEST]),
+        ) as span:
+            self.add_tags(span, info, kwargs)
+            result = _next(root, info, *args, **kwargs)
 
-                if isawaitable(result):
-                    result = await result
+            if isawaitable(result):
+                result = await result
 
-                return result
+            return result
 
 
 class OpenTelemetryExtensionSync(OpenTelemetryExtension):
@@ -94,9 +137,11 @@ class OpenTelemetryExtensionSync(OpenTelemetryExtension):
 
             return result
 
-        with self._tracer.use_span(self._root_span):
-            with self._tracer.start_span(info.field_name, kind=SpanKind.SERVER) as span:
-                self.add_tags(span, info, kwargs)
-                result = _next(root, info, *args, **kwargs)
+        with self._tracer.start_as_current_span(
+            f"GraphQL Resolving: {info.field_name}",
+            context=trace.set_span_in_context(self._span_holder[RequestStage.REQUEST]),
+        ) as span:
+            self.add_tags(span, info, kwargs)
+            result = _next(root, info, *args, **kwargs)
 
-                return result
+            return result

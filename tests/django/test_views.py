@@ -3,9 +3,10 @@ from typing import Any, Optional
 
 import pytest
 
-from django.core.exceptions import SuspiciousOperation
+from django.core.exceptions import BadRequest, SuspiciousOperation
 from django.http import Http404
 from django.test.client import RequestFactory
+from django.utils.http import urlencode
 
 import strawberry
 from strawberry.django.views import GraphQLView as BaseGraphQLView
@@ -25,6 +26,10 @@ class AlwaysFailPermission(BasePermission):
 @strawberry.type
 class Query:
     hello: str = "strawberry"
+
+    @strawberry.field
+    def hi(self, name: Optional[str] = None) -> str:
+        return f"Hello {name or 'world'}"
 
     @strawberry.field(permission_classes=[AlwaysFailPermission])
     def always_fail(self) -> Optional[str]:
@@ -134,6 +139,99 @@ def test_graphql_query():
 
     assert response["content-type"] == "application/json"
     assert data["data"]["hello"] == "strawberry"
+
+
+def test_graphql_can_pass_variables():
+    query = "query Hi($name: String!) { hi(name: $name) }"
+    variables = {"name": "James"}
+
+    factory = RequestFactory()
+    request = factory.post(
+        "/graphql/",
+        {"query": query, "variables": variables},
+        content_type="application/json",
+    )
+
+    response = GraphQLView.as_view(schema=schema)(request)
+    data = json.loads(response.content.decode())
+
+    assert response["content-type"] == "application/json"
+    assert data["data"]["hi"] == "Hello James"
+
+
+def test_graphql_get_query_using_params():
+    params = {"query": "{ hello }"}
+
+    factory = RequestFactory()
+    request = factory.get(
+        "/graphql",
+        data=params,
+    )
+
+    response = GraphQLView.as_view(schema=schema)(request)
+    data = json.loads(response.content.decode())
+
+    assert data["data"]["hello"] == "strawberry"
+
+
+def test_graphql_can_pass_variables_using_params():
+    params = {
+        "query": "query Hi($name: String!) { hi(name: $name) }",
+        "variables": '{"name": "James"}',
+    }
+
+    factory = RequestFactory()
+    request = factory.get(
+        "/graphql",
+        data=params,
+    )
+
+    response = GraphQLView.as_view(schema=schema)(request)
+    data = json.loads(response.content.decode())
+
+    assert data["data"]["hi"] == "Hello James"
+
+
+def test_graphql_post_query_fails_using_params():
+    params = {"query": "{ hello }"}
+
+    factory = RequestFactory()
+    request = factory.post(
+        "/graphql",
+        **{"QUERY_STRING": urlencode(params, doseq=True)},
+        content_type="application/x-www-form-urlencoded",
+    )
+
+    with pytest.raises(SuspiciousOperation) as e:
+        GraphQLView.as_view(schema=schema)(request)
+
+    assert e.value.args == ("No GraphQL query found in the request",)
+
+
+def test_graphql_get_does_not_allow_mutation():
+    params = {"query": "mutation { hello }"}
+
+    factory = RequestFactory()
+    request = factory.get(
+        "/graphql",
+        data=params,
+    )
+
+    with pytest.raises(BadRequest, match="mutations are not allowed when using GET"):
+        GraphQLView.as_view(schema=schema)(request)
+
+
+def test_graphql_get_does_get_when_disabled():
+    params = {"query": "{ hell }"}
+
+    factory = RequestFactory()
+    request = factory.get(
+        "/graphql",
+        data=params,
+    )
+
+    with pytest.raises(BadRequest, match="queries are not allowed when using GET"):
+        GraphQLView.as_view(schema=schema, allow_queries_via_get=False)(request)
 
 
 @pytest.mark.django_db
@@ -329,3 +427,48 @@ def test_can_change_status_code():
 
     assert response.status_code == 418
     assert data == {"data": {"abc": "ABC"}}
+
+
+def test_json_encoder():
+    query = "{ hello }"
+
+    factory = RequestFactory()
+    request = factory.post(
+        "/graphql/", {"query": query}, content_type="application/json"
+    )
+
+    class CustomEncoder(json.JSONEncoder):
+        def encode(self, o: Any) -> str:
+            # Reverse the result.
+            return super().encode(o)[::-1]
+
+    response1 = GraphQLView.as_view(schema=schema, json_encoder=CustomEncoder)(request)
+    assert response1.content.decode() == '{"data": {"hello": "strawberry"}}'[::-1]
+
+    class CustomGraphQLView(GraphQLView):
+        json_encoder = CustomEncoder
+
+    response2 = CustomGraphQLView.as_view(schema=schema)(request)
+    assert response1.content == response2.content
+
+
+def test_json_dumps_params():
+    query = "{ hello }"
+
+    factory = RequestFactory()
+    request = factory.post(
+        "/graphql/", {"query": query}, content_type="application/json"
+    )
+
+    dumps_params = {"separators": (",", ":")}
+
+    response1 = GraphQLView.as_view(schema=schema, json_dumps_params=dumps_params)(
+        request
+    )
+    assert response1.content.decode() == '{"data":{"hello":"strawberry"}}'
+
+    class CustomGraphQLView(GraphQLView):
+        json_dumps_params = dumps_params
+
+    response2 = CustomGraphQLView.as_view(schema=schema)(request)
+    assert response1.content == response2.content

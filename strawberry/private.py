@@ -1,27 +1,31 @@
-class Private:
-    """Represent a private field that won't be converted into a GraphQL field
+from typing import TypeVar
 
-    Example:
+from typing_extensions import Annotated, get_args, get_origin
 
-    >>> import strawberry
-    >>> @strawberry.type
-    ... class User:
-    ...     name: str
-    ...     age: strawberry.Private[int]
-    """
 
-    __slots__ = ("type",)
+class StrawberryPrivate:
+    ...
 
-    def __init__(self, type):
-        self.type = type
 
-    def __repr__(self):
-        if isinstance(self.type, type):
-            type_name = self.type.__name__
-        else:
-            # typing objects, e.g. List[int]
-            type_name = repr(self.type)
-        return f"strawberry.Private[{type_name}]"
+T = TypeVar("T")
 
-    def __class_getitem__(cls, type):
-        return Private(type)
+Private = Annotated[T, StrawberryPrivate()]
+Private.__doc__ = """Represent a private field that won't be converted into a GraphQL field
+
+Example:
+
+>>> import strawberry
+>>> @strawberry.type
+... class User:
+...     name: str
+...     age: strawberry.Private[int]
+"""
+
+
+def is_private(type_: object) -> bool:
+    if get_origin(type_) is Annotated:
+        return any(
+            isinstance(argument, StrawberryPrivate) for argument in get_args(type_)
+        )
+
+    return False

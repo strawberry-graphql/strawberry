@@ -1,8 +1,29 @@
+import sys
 from dataclasses import dataclass
-from typing import Callable, Dict, Optional, Type
+from typing import (
+    Any,
+    Callable,
+    Mapping,
+    NewType,
+    Optional,
+    Type,
+    TypeVar,
+    Union,
+    overload,
+)
 
-from .exceptions import ScalarAlreadyRegisteredError
+from graphql import GraphQLScalarType
+
+from strawberry.type import StrawberryType
+
 from .utils.str_converters import to_camel_case
+
+
+# in python 3.10+ NewType is a class
+if sys.version_info >= (3, 10):
+    _T = TypeVar("_T", bound=Union[type, NewType])
+else:
+    _T = TypeVar("_T", bound=type)
 
 
 def identity(x):
@@ -10,15 +31,26 @@ def identity(x):
 
 
 @dataclass
-class ScalarDefinition:
+class ScalarDefinition(StrawberryType):
     name: str
     description: Optional[str]
+    specified_by_url: Optional[str]
     serialize: Optional[Callable]
     parse_value: Optional[Callable]
     parse_literal: Optional[Callable]
 
+    # Optionally store the GraphQLScalarType instance so that we don't get
+    # duplicates
+    implementation: Optional[GraphQLScalarType] = None
 
-SCALAR_REGISTRY: Dict[Type, ScalarDefinition] = {}
+    def copy_with(
+        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
+    ) -> Union[StrawberryType, type]:
+        return super().copy_with(type_var_map)
+
+    @property
+    def is_generic(self) -> bool:
+        return False
 
 
 class ScalarWrapper:
@@ -32,43 +64,70 @@ class ScalarWrapper:
 
 
 def _process_scalar(
-    cls,
+    cls: Type[_T],
     *,
-    name: str = None,
-    description: str = None,
-    serialize: Callable = None,
-    parse_value: Callable = None,
-    parse_literal: Callable = None
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    specified_by_url: Optional[str] = None,
+    serialize: Optional[Callable] = None,
+    parse_value: Optional[Callable] = None,
+    parse_literal: Optional[Callable] = None,
 ):
-
     name = name or to_camel_case(cls.__name__)
-
-    if cls in SCALAR_REGISTRY:
-        raise ScalarAlreadyRegisteredError(name)
 
     wrapper = ScalarWrapper(cls)
     wrapper._scalar_definition = ScalarDefinition(
         name=name,
         description=description,
+        specified_by_url=specified_by_url,
         serialize=serialize,
         parse_literal=parse_literal,
         parse_value=parse_value,
     )
 
-    SCALAR_REGISTRY[cls] = wrapper._scalar_definition
-
     return wrapper
 
 
+@overload
+def scalar(
+    *,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    specified_by_url: Optional[str] = None,
+    serialize: Callable = identity,
+    parse_value: Optional[Callable] = None,
+    parse_literal: Optional[Callable] = None,
+) -> Callable[[_T], _T]:
+    ...
+
+
+@overload
+def scalar(
+    cls: _T,
+    *,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    specified_by_url: Optional[str] = None,
+    serialize: Callable = identity,
+    parse_value: Optional[Callable] = None,
+    parse_literal: Optional[Callable] = None,
+) -> _T:
+    ...
+
+
+# FIXME: We are tricking pyright into thinking that we are returning the given type
+# here or else it won't let us use any custom scalar to annotate attributes in
+# dataclasses/types. This should be properly solved when implementing StrawberryScalar
 def scalar(
     cls=None,
     *,
-    name: str = None,
-    description: str = None,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    specified_by_url: Optional[str] = None,
     serialize: Callable = identity,
     parse_value: Optional[Callable] = None,
-    parse_literal: Optional[Callable] = None
-):
+    parse_literal: Optional[Callable] = None,
+) -> Any:
     """Annotates a class or type as a GraphQL custom scalar.
 
     Example usages:
@@ -103,6 +162,7 @@ def scalar(
             cls,
             name=name,
             description=description,
+            specified_by_url=specified_by_url,
             serialize=serialize,
             parse_value=parse_value,
             parse_literal=parse_literal,

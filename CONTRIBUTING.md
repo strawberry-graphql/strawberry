@@ -32,14 +32,11 @@ possible. Make sure you include the Python and Strawberry versions.
 
 #### Before submitting a bug report
 
-- Check that your issue does not already exist in the
-  [issue tracker](https://github.com/strawberry-graphql/strawberry/issues).
+- Check that your issue does not already exist in the issue tracker on GitHub.
 
 #### How do I submit a bug report?
 
-Bugs are tracked on the
-[official issue tracker](https://github.com/strawberry-graphql/strawberry/issues)
-where you can create a new one.
+Bugs are tracked on the issue tracker on GitHub where you can create a new one.
 
 Explain the problem and include additional details to help maintainers reproduce
 the problem:
@@ -82,13 +79,11 @@ suggestion, please
 
 #### Before submitting an enhancement suggestion
 
-- Check that your issue does not already exist in the
-  [issue tracker](https://github.com/strawberry-graphql/strawberry/issues).
+- Check that your issue does not already exist in the issue tracker on GitHub.
 
 #### How do I submit an enhancement suggestion?
 
-Enhancement suggestions are tracked on the
-[official issue tracker](https://github.com/strawberry-graphql/strawberry/issues)
+Enhancement suggestions are tracked on the project's issue tracker on GitHub
 where you can create a new one and provide the following information:
 
 - **Use a clear and descriptive title** for the issue to identify the
@@ -100,6 +95,9 @@ where you can create a new one and provide the following information:
   see instead** and why.
 
 ### Contributing to code
+
+> This section is about contributing to
+[Strawberry Python library](https://github.com/strawberry-graphql/strawberry).
 
 #### Local development
 
@@ -143,3 +141,19 @@ present, your code will not be merged.
   code.
 - If your changes warrant a documentation change, the pull request must also
   update the documentation.
+
+##### RELEASE.md files
+
+When you submit a PR, make sure to include a RELEASE.md file. We use that to automatically do releases here on GitHub and, most importantly, to PyPI!
+
+So as soon as your PR is merged, a release will be made.
+
+Here's an example of RELEASE.md:
+
+```
+Release type: patch
+
+Description of the changes, ideally with some examples, if adding a new feature.
+```
+
+Release type can be one of patch, minor or major. We use [semver](https://semver.org/), so make sure to pick the appropriate type. If in doubt feel free to ask :)

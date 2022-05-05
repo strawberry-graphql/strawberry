@@ -1,0 +1,32 @@
+- case: test_create_type
+  main: |
+    import strawberry
+    from strawberry.tools import create_type
+
+    @strawberry.field
+    def name() -> str:
+      return "foo"
+
+    MyType = create_type("MyType", [name])
+
+    reveal_type(MyType)
+  out: |
+    main:10: note: Revealed type is "Any"
+
+- case: test_can_extend
+  main: |
+    import strawberry
+    from strawberry.tools import create_type
+
+    @strawberry.field
+    def name() -> str:
+      return "foo"
+
+    MyType = create_type("MyType", [name])
+
+    class Query(MyType):
+      ...
+
+    reveal_type(Query)
+  out: |
+    main:13: note: Revealed type is "def (*_args: Any, **_kwds: Any) -> main.Query"

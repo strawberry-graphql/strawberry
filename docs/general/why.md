@@ -13,9 +13,13 @@ community with people using GraphQL in Python.
 
 # Why should you use Strawberry?
 
-> Note: at the moment Strawberry is still in early development, so there's a
-> chance of things suddenly changing, but hopefully the public API is stable
-> enough.
+<Note>
+
+At the moment Strawberry is still in early development, so there's a
+chance of things suddenly changing, but hopefully the public API is stable
+enough.
+
+</Note>
 
 Thanks to type hints and the decorator syntax inspired by dataclasses,
 Strawberry provides a nice developer experience that will help writing better

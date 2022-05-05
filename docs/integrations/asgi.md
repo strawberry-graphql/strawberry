@@ -5,23 +5,37 @@ title: ASGI
 # ASGI
 
 Strawberry comes with a basic ASGI integration. It provides an app that you can
-use to serve your GraphQL schema:
+use to serve your GraphQL schema. Before using Strawberry's ASGI support make
+sure you install all the required dependencies by running:
+
+```
+pip install 'strawberry-graphql[asgi]'
+```
+
+Once that's done you can use Strawberry with ASGI like so:
 
 ```python
+# server.py
 from strawberry.asgi import GraphQL
 
-from api.schema import Schema
+from api.schema import schema
 
 app = GraphQL(schema)
 ```
+
+Every ASGI server will accept this `app` instance to start the server. For
+example if you're using [uvicorn](https://pypi.org/project/uvicorn/) you run the
+app with `uvicorn server:app`
 
 ## Options
 
 The `GraphQL` app accepts two options at the moment:
 
-- schema: mandatory, the schema created by `strawberry.Schema`.
-- graphiql: optional, defaults to `True`, whether to enable the GraphiQL
+- `schema`: mandatory, the schema created by `strawberry.Schema`.
+- `graphiql`: optional, defaults to `True`, whether to enable the GraphiQL
   interface.
+- `allow_queries_via_get`: optional, defaults to `True`, whether to enable
+  queries via `GET` requests
 
 ## Extending the view
 
@@ -39,7 +53,7 @@ the request and the response.
 
 ```python
 class MyGraphQL(GraphQL):
-    async def get_context(self, request: Union[Request, WebSocket], response: Optional[Response]) -> Any:
+    async def get_context(self, request: Union[Request, WebSocket], response: Optional[Response] = None) -> Any:
         return {"example": 1}
 
 
@@ -58,10 +72,12 @@ case.
 
 ### Setting response headers
 
-It is possible to use `get_context` to set response headers. A common use case might be cookie-based user authentication,
-where your login mutation resolver needs to set a cookie on the response.
+It is possible to use `get_context` to set response headers. A common use case
+might be cookie-based user authentication, where your login mutation resolver
+needs to set a cookie on the response.
 
-This is possible by updating the response object contained inside the context of the `Info` object.
+This is possible by updating the response object contained inside the context of
+the `Info` object.
 
 ```python
 @strawberry.type
@@ -71,6 +87,24 @@ class Mutation:
         token = do_login()
         info.context["response"].set_cookie(key="token", value=token)
         return True
+```
+
+### Setting background tasks
+
+Similarly, [background tasks](https://www.starlette.io/background/) can be set
+on the response via the context:
+
+```python
+from starlette.background import BackgroundTask
+
+async def notify_new_flavour(name: str):
+    ...
+
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    def create_flavour(self, name: str, info: Info) -> bool:
+        info.context["response"].background = BackgroundTask(notify_new_flavour, name)
 ```
 
 ## get_root_value
@@ -107,7 +141,7 @@ and the execution results.
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
 
-from graphql.error import format_error as format_graphql_error
+from graphql.error.graphql_error import format_error as format_graphql_error
 
 class MyGraphQL(GraphQL):
     async def process_result(

@@ -1,16 +1,26 @@
 from abc import abstractmethod
-from typing import Any, Dict, Optional, Union
+from functools import lru_cache
+from typing import Any, Dict, Iterable, List, Optional, Union
 
 from typing_extensions import Protocol
 
+from graphql import GraphQLError
+
 from strawberry.custom_scalar import ScalarDefinition
+from strawberry.directive import StrawberryDirective
 from strawberry.enum import EnumDefinition
-from strawberry.types import ExecutionResult
+from strawberry.types import ExecutionContext, ExecutionResult
+from strawberry.types.graphql import OperationType
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
+from strawberry.utils.logging import StrawberryLogger
+
+from .config import StrawberryConfig
 
 
 class BaseSchema(Protocol):
+    config: StrawberryConfig
+
     @abstractmethod
     async def execute(
         self,
@@ -19,6 +29,7 @@ class BaseSchema(Protocol):
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
+        allowed_operation_types: Optional[Iterable[OperationType]] = None,
     ) -> ExecutionResult:
         raise NotImplementedError
 
@@ -30,6 +41,7 @@ class BaseSchema(Protocol):
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
+        allowed_operation_types: Optional[Iterable[OperationType]] = None,
     ) -> ExecutionResult:
         raise NotImplementedError
 
@@ -53,5 +65,18 @@ class BaseSchema(Protocol):
         raise NotImplementedError
 
     @abstractmethod
+    @lru_cache()
+    def get_directive_by_name(self, graphql_name: str) -> Optional[StrawberryDirective]:
+        raise NotImplementedError
+
+    @abstractmethod
     def as_str(self) -> str:
         raise NotImplementedError
+
+    def process_errors(
+        self,
+        errors: List[GraphQLError],
+        execution_context: Optional[ExecutionContext] = None,
+    ) -> None:
+        for error in errors:
+            StrawberryLogger.error(error, execution_context)
