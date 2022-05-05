@@ -12,13 +12,17 @@ from django.http import Http404, HttpRequest, HttpResponse
 from django.test.client import RequestFactory
 
 from strawberry.django.views import GraphQLView as BaseGraphQLView
+from strawberry.http import GraphQLHTTPResponse
+from strawberry.types import ExecutionResult
 
 from ..context import get_context
 from ..schema import Query, schema
-from . import JSON, HttpClient, Response
+from . import JSON, HttpClient, Response, ResultOverrideFunction
 
 
 class GraphQLView(BaseGraphQLView):
+    result_override: ResultOverrideFunction = None
+
     def get_root_value(self, request):
         return Query()
 
@@ -27,11 +31,25 @@ class GraphQLView(BaseGraphQLView):
 
         return get_context(context)
 
+    def process_result(
+        self, request: HttpRequest, result: ExecutionResult
+    ) -> GraphQLHTTPResponse:
+        if self.result_override:
+            return self.result_override(result)
+
+        return super().process_result(request, result)
+
 
 class DjangoHttpClient(HttpClient):
-    def __init__(self, graphiql: bool = True, allow_queries_via_get: bool = True):
+    def __init__(
+        self,
+        graphiql: bool = True,
+        allow_queries_via_get: bool = True,
+        result_override: ResultOverrideFunction = None,
+    ):
         self.graphiql = graphiql
         self.allow_queries_via_get = allow_queries_via_get
+        self.result_override = result_override
 
     def _get_header_name(self, key: str) -> str:
         return f"HTTP_{key.upper().replace('-', '_')}"
@@ -48,12 +66,15 @@ class DjangoHttpClient(HttpClient):
         return super()._get_headers(method=method, headers=headers, files=files)
 
     async def _do_request(self, request: RequestFactory) -> Response:
+        view = GraphQLView.as_view(
+            schema=schema,
+            graphiql=self.graphiql,
+            allow_queries_via_get=self.allow_queries_via_get,
+            result_override=self.result_override,
+        )
+
         try:
-            response = GraphQLView.as_view(
-                schema=schema,
-                graphiql=self.graphiql,
-                allow_queries_via_get=self.allow_queries_via_get,
-            )(request)
+            response = view(request)
         except Http404:
             return Response(status_code=404, data=b"Not found")
         except (BadRequest, SuspiciousOperation) as e:

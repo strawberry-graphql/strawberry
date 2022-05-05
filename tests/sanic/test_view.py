@@ -7,33 +7,6 @@ from strawberry.sanic.views import GraphQLView as BaseGraphQLView
 from strawberry.types import ExecutionResult, Info
 
 
-def test_custom_context():
-    class CustomGraphQLView(BaseGraphQLView):
-        async def get_context(self, request):
-            return {"request": request, "custom_value": "Hi!"}
-
-    @strawberry.type
-    class Query:
-        @strawberry.field
-        def custom_context_value(self, info: Info) -> str:
-            return info.context["custom_value"]
-
-    schema = strawberry.Schema(query=Query)
-
-    app = Sanic("test-app-custom_context")
-    app.debug = True
-
-    app.add_route(CustomGraphQLView.as_view(schema=schema, graphiql=True), "/graphql")
-
-    query = "{ customContextValue }"
-
-    request, response = app.test_client.post("/graphql", json={"query": query})
-    data = response.json
-
-    assert response.status == 200
-    assert data["data"] == {"customContextValue": "Hi!"}
-
-
 def test_custom_process_result():
     class CustomGraphQLView(BaseGraphQLView):
         def process_result(self, result: ExecutionResult):
@@ -59,19 +32,6 @@ def test_custom_process_result():
 
     assert response.status == 200
     assert data == {}
-
-
-def test_malformed_query(sanic_client):
-    query = {
-        "qwary": """
-            qwary {
-                hello
-            }
-        """
-    }
-
-    request, response = sanic_client.test_client.post("/graphql", json=query)
-    assert response.status == 400
 
 
 def test_json_encoder():

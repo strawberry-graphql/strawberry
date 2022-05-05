@@ -2,12 +2,16 @@ import abc
 import json
 from dataclasses import dataclass
 from io import BytesIO
-from typing import Any, Dict, List, Optional
+from typing import Any, Callable, Dict, List, Optional
 
 from typing_extensions import Literal
 
+from strawberry.http import GraphQLHTTPResponse
+from strawberry.types import ExecutionResult
+
 
 JSON = Dict[str, Any]
+ResultOverrideFunction = Optional[Callable[[ExecutionResult], GraphQLHTTPResponse]]
 
 
 @dataclass
@@ -27,7 +31,12 @@ class Response:
 
 class HttpClient(abc.ABC):
     @abc.abstractmethod
-    def __init__(self, graphiql: bool = True, allow_queries_via_get: bool = True):
+    def __init__(
+        self,
+        graphiql: bool = True,
+        allow_queries_via_get: bool = True,
+        result_override: ResultOverrideFunction = None,
+    ):
         ...
 
     @abc.abstractmethod

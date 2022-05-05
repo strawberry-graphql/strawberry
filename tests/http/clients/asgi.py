@@ -11,13 +11,17 @@ from starlette.websockets import WebSocket
 from typing_extensions import Literal
 
 from strawberry.asgi import GraphQL as BaseGraphQLView
+from strawberry.http import GraphQLHTTPResponse
+from strawberry.types import ExecutionResult
 
 from ..context import get_context
 from ..schema import Query, schema
-from . import JSON, HttpClient, Response
+from . import JSON, HttpClient, Response, ResultOverrideFunction
 
 
 class GraphQLView(BaseGraphQLView):
+    result_override: ResultOverrideFunction = None
+
     async def get_root_value(self, request: Union[WebSocket, Request]) -> Query:
         return Query()
 
@@ -30,13 +34,28 @@ class GraphQLView(BaseGraphQLView):
 
         return get_context(context)
 
+    async def process_result(
+        self, request: Request, result: ExecutionResult
+    ) -> GraphQLHTTPResponse:
+        if self.result_override:
+            return self.result_override(result)
+
+        return await super().process_result(request, result)
+
 
 class AsgiHttpClient(HttpClient):
-    def __init__(self, graphiql: bool = True, allow_queries_via_get: bool = True):
-        self.app = GraphQLView(
+    def __init__(
+        self,
+        graphiql: bool = True,
+        allow_queries_via_get: bool = True,
+        result_override: ResultOverrideFunction = None,
+    ):
+        view = GraphQLView(
             schema, graphiql=graphiql, allow_queries_via_get=allow_queries_via_get
         )
-        self.client = TestClient(self.app)
+        view.result_override = result_override
+
+        self.client = TestClient(view)
 
     async def _graphql_request(
         self,

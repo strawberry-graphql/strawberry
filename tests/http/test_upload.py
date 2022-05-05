@@ -9,6 +9,7 @@ import aiohttp
 from .clients import HttpClient
 from .clients.aiohttp import AioHttpClient
 from .clients.asgi import AsgiHttpClient
+from .clients.async_django import AsyncDjangoHttpClient
 from .clients.chalice import ChaliceHttpClient
 from .clients.django import DjangoHttpClient
 from .clients.fastapi import FastAPIHttpClient
@@ -21,6 +22,7 @@ from .clients.sanic import SanicHttpClient
     params=[
         AioHttpClient,
         AsgiHttpClient,
+        AsyncDjangoHttpClient,
         DjangoHttpClient,
         FastAPIHttpClient,
         FlaskHttpClient,

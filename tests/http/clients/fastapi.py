@@ -9,10 +9,12 @@ from typing_extensions import Literal
 from fastapi import BackgroundTasks, Depends, FastAPI, Request, WebSocket
 from fastapi.testclient import TestClient
 from strawberry.fastapi import GraphQLRouter as BaseGraphQLRouter
+from strawberry.http import GraphQLHTTPResponse
+from strawberry.types import ExecutionResult
 
 from ..context import get_context
 from ..schema import Query, schema
-from . import JSON, HttpClient, Response
+from . import JSON, HttpClient, Response, ResultOverrideFunction
 
 
 def custom_context_dependency() -> str:
@@ -38,11 +40,24 @@ async def get_root_value(request: Request = None, ws: WebSocket = None):
 
 
 class GraphQLRouter(BaseGraphQLRouter):
-    ...
+    result_override: ResultOverrideFunction = None
+
+    async def process_result(
+        self, request: Request, result: ExecutionResult
+    ) -> GraphQLHTTPResponse:
+        if self.result_override:
+            return self.result_override(result)
+
+        return await super().process_result(request, result)
 
 
 class FastAPIHttpClient(HttpClient):
-    def __init__(self, graphiql: bool = True, allow_queries_via_get: bool = True):
+    def __init__(
+        self,
+        graphiql: bool = True,
+        allow_queries_via_get: bool = True,
+        result_override: ResultOverrideFunction = None,
+    ):
         self.app = FastAPI()
 
         graphql_app = GraphQLRouter(
@@ -52,6 +67,7 @@ class FastAPIHttpClient(HttpClient):
             root_value_getter=get_root_value,
             allow_queries_via_get=allow_queries_via_get,
         )
+        graphql_app.result_override = result_override
         self.app.include_router(graphql_app, prefix="/graphql")
 
         self.client = TestClient(self.app)

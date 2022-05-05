@@ -9,13 +9,17 @@ from typing_extensions import Literal
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
 from strawberry.aiohttp.views import GraphQLView as BaseGraphQLView
+from strawberry.http import GraphQLHTTPResponse
+from strawberry.types import ExecutionResult
 
 from ..context import get_context
 from ..schema import Query, schema
-from . import JSON, HttpClient, Response
+from . import JSON, HttpClient, Response, ResultOverrideFunction
 
 
 class GraphQLView(BaseGraphQLView):
+    result_override: ResultOverrideFunction = None
+
     async def get_context(
         self, request: web.Request, response: web.StreamResponse
     ) -> object:
@@ -26,18 +30,34 @@ class GraphQLView(BaseGraphQLView):
     async def get_root_value(self, request: web.Request):
         return Query()
 
+    async def process_result(
+        self, request: web.Request, result: ExecutionResult
+    ) -> GraphQLHTTPResponse:
+        if self.result_override:
+            return self.result_override(result)
+
+        return await super().process_result(request, result)
+
 
 class AioHttpClient(HttpClient):
-    def __init__(self, graphiql: bool = True, allow_queries_via_get: bool = True):
+    def __init__(
+        self,
+        graphiql: bool = True,
+        allow_queries_via_get: bool = True,
+        result_override: ResultOverrideFunction = None,
+    ):
+        view = GraphQLView(
+            schema=schema,
+            graphiql=graphiql,
+            allow_queries_via_get=allow_queries_via_get,
+        )
+        view.result_override = result_override
+
         self.app = web.Application()
         self.app.router.add_route(
             "*",
             "/graphql",
-            GraphQLView(
-                schema=schema,
-                graphiql=graphiql,
-                allow_queries_via_get=allow_queries_via_get,
-            ),
+            view,
         )
 
     async def _graphql_request(

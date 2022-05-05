@@ -70,7 +70,9 @@ class GraphQLView(HTTPMethodView):
     def render_template(self, template=None):
         return html(template)
 
-    def process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse:
+    async def process_result(
+        self, request: Request, result: ExecutionResult
+    ) -> GraphQLHTTPResponse:
         return process_result(result)
 
     async def get(self, request: Request) -> HTTPResponse:
@@ -159,7 +161,7 @@ class GraphQLView(HTTPMethodView):
                 e.as_http_error_reason(method=method), status_code=400
             ) from e
 
-        response_data = self.process_result(result)
+        response_data = await self.process_result(request, result)
 
         return await self.get_response(response_data, context)
 

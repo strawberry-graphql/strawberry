@@ -91,6 +91,11 @@ class GraphQLView:
     ) -> Mapping[str, object]:
         return {"request": request, "response": response}
 
+    def process_result(
+        self, request: Request, result: ExecutionResult
+    ) -> GraphQLHTTPResponse:
+        return process_result(result)
+
     def execute_request(self, request: Request) -> Response:
         """
         Parse the request process it with strawberry and return a response
@@ -185,7 +190,7 @@ class GraphQLView:
                 http_status_code=400,
             )
 
-        http_result: GraphQLHTTPResponse = process_result(result)
+        http_result: GraphQLHTTPResponse = self.process_result(request, result)
 
         status_code = 200
 

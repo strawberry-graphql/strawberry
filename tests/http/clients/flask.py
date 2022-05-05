@@ -9,10 +9,12 @@ from typing_extensions import Literal
 
 from flask import Flask, Response as FlaskResponse
 from strawberry.flask.views import GraphQLView as BaseGraphQLView
+from strawberry.http import GraphQLHTTPResponse
+from strawberry.types import ExecutionResult
 
 from ..context import get_context
 from ..schema import Query, schema
-from . import JSON, HttpClient, Response
+from . import JSON, HttpClient, Response, ResultOverrideFunction
 
 
 class GraphQLView(BaseGraphQLView):
@@ -20,6 +22,12 @@ class GraphQLView(BaseGraphQLView):
     # TODO: we might want to remove our check since it is done by flask
     # already
     methods = ["GET", "POST", "PUT", "PATCH", "DELETE", "HEAD"]
+
+    result_override: ResultOverrideFunction = None
+
+    def __init__(self, *args, **kwargs):
+        self.result_override = kwargs.pop("result_override")
+        super().__init__(*args, **kwargs)
 
     def get_root_value(self):
         return Query()
@@ -29,20 +37,34 @@ class GraphQLView(BaseGraphQLView):
 
         return get_context(context)
 
+    def process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse:
+        if self.result_override:
+            return self.result_override(result)
+
+        return super().process_result(result)
+
 
 class FlaskHttpClient(HttpClient):
-    def __init__(self, graphiql: bool = True, allow_queries_via_get: bool = True):
+    def __init__(
+        self,
+        graphiql: bool = True,
+        allow_queries_via_get: bool = True,
+        result_override: ResultOverrideFunction = None,
+    ):
         self.app = Flask(__name__)
         self.app.debug = True
 
+        view = GraphQLView.as_view(
+            "graphql_view",
+            schema=schema,
+            graphiql=graphiql,
+            allow_queries_via_get=allow_queries_via_get,
+            result_override=result_override,
+        )
+
         self.app.add_url_rule(
             "/graphql",
-            view_func=GraphQLView.as_view(
-                "graphql_view",
-                schema=schema,
-                graphiql=graphiql,
-                allow_queries_via_get=allow_queries_via_get,
-            ),
+            view_func=view,
         )
 
     async def _graphql_request(

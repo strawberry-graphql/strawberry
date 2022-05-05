@@ -7,27 +7,47 @@ from typing import Dict, Optional, Union
 
 from typing_extensions import Literal
 
-from chalice.app import Chalice, Request as ChaliceRequest, Response as ChaliceResponse
+from chalice.app import Chalice, Request as ChaliceRequest
 from chalice.test import Client
 from strawberry.chalice.views import GraphQLView as BaseGraphQLView
+from strawberry.http import GraphQLHTTPResponse
+from strawberry.http.temporal_response import TemporalResponse
+from strawberry.types import ExecutionResult
 
 from ..context import get_context
 from ..schema import Query, schema
-from . import JSON, HttpClient, Response
+from . import JSON, HttpClient, Response, ResultOverrideFunction
 
 
 class GraphQLView(BaseGraphQLView):
+    result_override: ResultOverrideFunction = None
+
     def get_root_value(self, request: ChaliceRequest) -> Query:
         return Query()
 
-    def get_context(self, request: ChaliceRequest, response: ChaliceResponse) -> object:
+    def get_context(
+        self, request: ChaliceRequest, response: TemporalResponse
+    ) -> object:
         context = super().get_context(request, response)
 
         return get_context(context)
 
+    def process_result(
+        self, request: ChaliceRequest, result: ExecutionResult
+    ) -> GraphQLHTTPResponse:
+        if self.result_override:
+            return self.result_override(result)
+
+        return super().process_result(request, result)
+
 
 class ChaliceHttpClient(HttpClient):
-    def __init__(self, graphiql: bool = True, allow_queries_via_get: bool = True):
+    def __init__(
+        self,
+        graphiql: bool = True,
+        allow_queries_via_get: bool = True,
+        result_override: ResultOverrideFunction = None,
+    ):
         self.app = Chalice(app_name="TheStackBadger")
 
         view = GraphQLView(
@@ -35,6 +55,7 @@ class ChaliceHttpClient(HttpClient):
             graphiql=graphiql,
             allow_queries_via_get=allow_queries_via_get,
         )
+        view.result_override = result_override
 
         @self.app.route(
             "/graphql", methods=["GET", "POST"], content_types=["application/json"]
