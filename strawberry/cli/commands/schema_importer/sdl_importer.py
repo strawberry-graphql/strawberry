@@ -27,7 +27,7 @@ def generate_code_from_sdl(sdl: str) -> str:
     Pass the whole thing to ast_converter.
     """
     ast = ast_converter.convert_to_ast(sdl)
-    # Sort definitions to generate code for unions or enums 
+    # Sort definitions to generate code for unions or enums
     # when all references have been resolved.
     ordered_definitions = sorted(ast.definitions, key=definition_order)
     strawberry_code = "\n\n".join(map(sdl_transpiler.transpile, ordered_definitions))
