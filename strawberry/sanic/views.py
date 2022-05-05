@@ -17,7 +17,6 @@ from strawberry.http import (
     process_result,
 )
 from strawberry.http.temporal_response import TemporalResponse
-from strawberry.sanic.context import StrawberrySanicContext
 from strawberry.sanic.graphiql import render_graphiql_page, should_render_graphiql
 from strawberry.sanic.utils import convert_request_to_files_dict
 from strawberry.schema import BaseSchema
@@ -65,7 +64,7 @@ class GraphQLView(HTTPMethodView):
         return None
 
     async def get_context(self, request: Request, response: TemporalResponse) -> Any:
-        return StrawberrySanicContext(request, response)
+        return {"request": request, "response": response}
 
     def render_template(self, template=None):
         return html(template)
