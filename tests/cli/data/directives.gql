@@ -1,0 +1,5 @@
+directive @uppercase(example: String!) on FIELD_DEFINITION
+
+type Query {
+    a: String!
+}

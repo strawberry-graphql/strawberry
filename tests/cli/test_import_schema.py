@@ -9,6 +9,12 @@ from strawberry.cli.commands.schema_importer.import_schema import (
     transform_sdl_into_code,
 )
 
+from strawberry.cli.commands.schema_importer.sdl_transpiler import get_field_name
+
+
+def test_get_field_name():
+    assert get_field_name('camelCase') == 'camelCase'
+    assert get_field_name('snake_case') == ''
 
 def test_import_specific_object_type(mocker):
     s = '''
@@ -163,33 +169,6 @@ def test_directives():
     assert output == what_it_should_be
 
 
-def test_depricated():
-    """Test depricated directive both definition and schema directive"""
-    s = """
-    type ExampleType {
-    newField: String
-    oldField: String @deprecated(reason: "Use `newField`.")
-    }"""
-
-    output = sdl_importer.generate_code_from_sdl(s)
-    what_it_should_be = dedent(
-        """\
-       import typing
-
-       import strawberry
-
-
-       @strawberry.type
-       class ExampleType:
-           new_field: typing.Optional[str]
-           old_field: typing.Optional[str] = strawberry.field(
-               derpecation_reason='Use `newField`.',
-           )
-        """
-    )
-    assert output == what_it_should_be
-
-
 @pytest.mark.parametrize(
     "file",
     [
@@ -199,6 +178,9 @@ def test_depricated():
         "with_enum",
         "custom_type",
         "with_union",
+        "directives",
+        "different_name",
+        "deprecated",
     ],
 )
 def test_code_generation(file):

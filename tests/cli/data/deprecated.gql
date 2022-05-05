@@ -1,0 +1,4 @@
+type Query {
+    old: String @deprecated(reason: "Replaced by `new` field")
+    new: String!
+}

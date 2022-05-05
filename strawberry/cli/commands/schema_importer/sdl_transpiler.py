@@ -144,12 +144,10 @@ def get_field_attribute(field: Union[FieldDefinitionNode, InputValueDefinitionNo
 def get_field_name(field_name):
     """Check if name attribute Extract field name"""
     snake_name = str_converters.to_snake_case(field_name)
-    camel_name = str_converters.to_camel_case(field_name)
-    if field_name in (snake_name, camel_name):
-        # Don't add name attribute to strawberry.type as it matches the field name
-        return ""
-    else:
+    if snake_name != field_name:
         return field_name
+    else:
+        return ''
 
 
 def get_field_type(field, optional=True):
@@ -179,7 +177,7 @@ def get_strawberry_type(name, description, directives) -> str:
     deprecated = next((d for d in directives if d.name.value == "deprecated"), None)
     if name or (description is not None) or directives or deprecated:
         strawberry_type = " = strawberry.field({}{}{}    )".format(
-            f"\n        name='{name}'," if name else "",
+            f"\n        name='{name}',\n" if name else "",
             f'\n        description="""{description.value}""",\n'
             if description is not None
             else "",
