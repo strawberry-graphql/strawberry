@@ -161,13 +161,14 @@ def get_strawberry_type(name, description, directives) -> str:
     """Create strawberry type field as a string"""
     strawberry_type = ""
     deprecated = next((d for d in directives if d.name.value == "deprecated"), None)
-    if name or (description is not None) or directives or deprecated:
+    field_that_demands_strawberry_field = name or description or directives or deprecated
+    if field_that_demands_strawberry_field:
         strawberry_type = " = strawberry.field({}{}{}    )".format(
             f"\n        name='{name}',\n" if name else "",
             f'\n        description="""{description.value}""",\n'
             if description is not None
             else "",
-            f"\n        derpecation_reason='{deprecated.arguments[0].value.value}',\n"
+            f"\n        deprecation_reason='{deprecated.arguments[0].value.value}',\n"
             if deprecated
             else "",
         )
