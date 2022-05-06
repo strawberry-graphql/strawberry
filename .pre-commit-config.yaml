@@ -9,8 +9,11 @@ repos:
       language: python
       'types': [python]
       require_serial: true
-      exclude: ^tests/codegen/snapshots/python/
-
+      exclude: |
+            (?x)^(
+                tests/codegen/snapshots/python/|
+                tests/cli/data/
+            )
   - repo: https://github.com/PyCQA/flake8
     rev: 4.0.1
     hooks:
