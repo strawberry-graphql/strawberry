@@ -1,5 +1,6 @@
-import strawberry
 from strawberry.directive import DirectiveLocation
+
+import strawberry
 
 
 @strawberry.directive(
