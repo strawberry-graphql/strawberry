@@ -133,7 +133,7 @@ def get_field_name(field_name):
     if snake_name != field_name:
         return field_name
     else:
-        return ''
+        return ""
 
 
 def get_field_type(field, optional=True):
@@ -161,7 +161,9 @@ def get_strawberry_type(name, description, directives) -> str:
     """Create strawberry type field as a string"""
     strawberry_type = ""
     deprecated = next((d for d in directives if d.name.value == "deprecated"), None)
-    field_that_demands_strawberry_field = name or description or directives or deprecated
+    field_that_demands_strawberry_field = (
+        name or description or directives or deprecated
+    )
     if field_that_demands_strawberry_field:
         strawberry_type = " = strawberry.field({}{}{}    )".format(
             f"\n        name='{name}',\n" if name else "",

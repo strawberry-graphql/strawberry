@@ -8,13 +8,13 @@ from strawberry.cli.commands.schema_importer.import_schema import (
     import_schema as cmd_import_schema,
     transform_sdl_into_code,
 )
-
 from strawberry.cli.commands.schema_importer.sdl_transpiler import get_field_name
 
 
 def test_get_field_name():
-    assert get_field_name('camelCase') == 'camelCase'
-    assert get_field_name('snake_case') == ''
+    assert get_field_name("camelCase") == "camelCase"
+    assert get_field_name("snake_case") == ""
+
 
 def test_import_specific_object_type(mocker):
     s = '''
