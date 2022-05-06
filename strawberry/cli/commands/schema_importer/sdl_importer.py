@@ -39,9 +39,6 @@ def generate_code_from_sdl(sdl: str) -> str:
     if "typing." in strawberry_code:
         imports.append("import typing")
 
-    if "Union[" in strawberry_code:
-        imports.append("from typing import Union")
-
     if "DirectiveLocation" in strawberry_code:
         imports.append("from strawberry.directive import DirectiveLocation")
 
