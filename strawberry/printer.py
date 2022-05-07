@@ -2,7 +2,19 @@ from __future__ import annotations
 
 import dataclasses
 from itertools import chain
-from typing import TYPE_CHECKING, Any, Dict, Optional, Set, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Optional,
+    Set,
+    Tuple,
+    TypeVar,
+    Union,
+    cast,
+    overload,
+)
 
 from graphql.language.printer import print_ast
 from graphql.type import (
@@ -40,13 +52,31 @@ if TYPE_CHECKING:
     from strawberry.schema import BaseSchema
 
 
+_T = TypeVar("_T")
+
+
 @dataclasses.dataclass
 class PrintExtras:
     directives: Set[str] = dataclasses.field(default_factory=set)
     types: Set[type] = dataclasses.field(default_factory=set)
 
 
-def _serialize_dataclasses(value: Any) -> Any:
+@overload
+def _serialize_dataclasses(value: Dict[_T, object]) -> Dict[_T, object]:
+    ...
+
+
+@overload
+def _serialize_dataclasses(value: Union[List[object], Tuple[object]]) -> List[object]:
+    ...
+
+
+@overload
+def _serialize_dataclasses(value: object) -> object:
+    ...
+
+
+def _serialize_dataclasses(value):
     if dataclasses.is_dataclass(value):
         return dataclasses.asdict(value)
     if isinstance(value, (list, tuple)):
