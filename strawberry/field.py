@@ -24,7 +24,7 @@ from typing_extensions import Literal
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import StrawberryArgument
 from strawberry.exceptions import InvalidDefaultFactoryError, InvalidFieldArgument
-from strawberry.type import StrawberryType
+from strawberry.type import StrawberryType, StrawberryTypeVar
 from strawberry.types.info import Info
 from strawberry.union import StrawberryUnion
 from strawberry.unset import UNSET
@@ -207,7 +207,10 @@ class StrawberryField(dataclasses.Field):
             if self.base_resolver is not None:
                 # Handle unannotated functions (such as lambdas)
                 if self.base_resolver.type is not None:
-                    return self.base_resolver.type
+                    # This will raise a MissingTypesForGenericErrorlater on if
+                    # we let it be returned. Use `type_annotation` instead.
+                    if not isinstance(self.base_resolver.type, StrawberryTypeVar):
+                        return self.base_resolver.type
 
             assert self.type_annotation is not None
 
