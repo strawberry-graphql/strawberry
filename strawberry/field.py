@@ -209,8 +209,8 @@ class StrawberryField(dataclasses.Field):
                 if self.base_resolver.type is not None:
 
                     # StrawberryTypeVar will raise MissingTypesForGenericError later
-                    # on if we let it be returned. So use `type_annotation` isntead
-                    # which is the same behaviour as no type information.
+                    # on if we let it be returned. So use `type_annotation` instead
+                    # which is the same behaviour as having no type information.
                     if not isinstance(self.base_resolver.type, StrawberryTypeVar):
                         return self.base_resolver.type
 
