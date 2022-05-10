@@ -1,6 +1,6 @@
 # type: ignore
 import typing
-from typing import List, Type, TypeVar
+from typing import Generic, List, Optional, Type, TypeVar
 
 import pytest
 
@@ -351,7 +351,7 @@ def test_can_use_source_as_argument_name():
     assert result.data["hello"] == "I'm a resolver for 🍓"
 
 
-def test_typed_resolver_factory():
+def test_generic_resolver_factory():
     @strawberry.type
     class AType:
         some: int
@@ -378,3 +378,59 @@ def test_typed_resolver_factory():
 
     assert not result.errors
     assert result.data == {"aType": {"some": 1}}
+
+
+def test_generic_resolver_optional():
+    @strawberry.type
+    class AType:
+        some: int
+
+    T = TypeVar("T")
+
+    def resolver() -> Optional[T]:
+        return AType(1)
+
+    @strawberry.type
+    class Query:
+        a_type: Optional[AType] = strawberry.field(resolver)
+
+    strawberry.Schema(query=Query)
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ aType { some } }"
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data == {"aType": {"some": 1}}
+
+
+def test_generic_resolver_container():
+    T = TypeVar("T")
+
+    @strawberry.type
+    class Container(Generic[T]):
+        item: T
+
+    @strawberry.type
+    class AType:
+        some: int
+
+    def resolver() -> Container[T]:
+        return Container(AType(1))
+
+    @strawberry.type
+    class Query:
+        a_type_in_container: Container[AType] = strawberry.field(resolver)
+
+    strawberry.Schema(query=Query)
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ aTypeInContainer { item { some } } }"
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data == {"aTypeInContainer": {"item": {"some": 1}}}
