@@ -3,7 +3,8 @@ from __future__ import annotations
 import json
 import urllib.parse
 from io import BytesIO
-from typing import Dict, Optional, Union
+from json import JSONEncoder
+from typing import Dict, Optional, Type, Union
 
 from typing_extensions import Literal
 
@@ -50,6 +51,7 @@ class FlaskHttpClient(HttpClient):
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
+        json_encoder: Type[JSONEncoder] = None,
     ):
         self.app = Flask(__name__)
         self.app.debug = True
@@ -60,6 +62,7 @@ class FlaskHttpClient(HttpClient):
             graphiql=graphiql,
             allow_queries_via_get=allow_queries_via_get,
             result_override=result_override,
+            json_encoder=json_encoder,
         )
 
         self.app.add_url_rule(

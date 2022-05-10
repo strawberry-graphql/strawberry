@@ -1,7 +1,7 @@
 import json
 from io import BytesIO
 from pathlib import Path
-from typing import Any, Dict, Union
+from typing import Any, Dict, Type, Union
 
 from typing_extensions import Literal
 
@@ -25,6 +25,7 @@ class HTTPHandler:
         get_root_value,
         process_result,
         request: web.Request,
+        json_encoder: Type[json.JSONEncoder] = json.JSONEncoder,
     ):
         self.schema = schema
         self.graphiql = graphiql
@@ -33,6 +34,7 @@ class HTTPHandler:
         self.get_root_value = get_root_value
         self.process_result = process_result
         self.request = request
+        self.json_encoder = json_encoder
 
     async def handle(self) -> web.StreamResponse:
         if self.request.method == "GET":
@@ -103,7 +105,7 @@ class HTTPHandler:
 
         response = web.Response(status=status_code)
         response_data = await self.process_result(request, result)
-        response.text = json.dumps(response_data)
+        response.text = self.json_encoder().encode(response_data)
         response.content_type = "application/json"
         return response
 

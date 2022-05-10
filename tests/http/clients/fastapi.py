@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import json
 from io import BytesIO
-from typing import Dict, Optional
+from json import JSONEncoder
+from typing import Dict, Optional, Type
 
 from typing_extensions import Literal
 
@@ -57,6 +58,7 @@ class FastAPIHttpClient(HttpClient):
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
+        json_encoder: Type[JSONEncoder] = None,
     ):
         self.app = FastAPI()
 
@@ -66,6 +68,7 @@ class FastAPIHttpClient(HttpClient):
             context_getter=fastapi_get_context,
             root_value_getter=get_root_value,
             allow_queries_via_get=allow_queries_via_get,
+            json_encoder=json_encoder,
         )
         graphql_app.result_override = result_override
         self.app.include_router(graphql_app, prefix="/graphql")

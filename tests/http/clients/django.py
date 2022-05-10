@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from io import BytesIO
-from json import dumps
-from typing import Dict, Optional, Union
+from json import JSONEncoder, dumps
+from typing import Dict, Optional, Type, Union
 
 from typing_extensions import Literal
 
@@ -46,10 +46,12 @@ class DjangoHttpClient(HttpClient):
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
+        json_encoder: Type[JSONEncoder] = None,
     ):
         self.graphiql = graphiql
         self.allow_queries_via_get = allow_queries_via_get
         self.result_override = result_override
+        self.json_encoder = json_encoder
 
     def _get_header_name(self, key: str) -> str:
         return f"HTTP_{key.upper().replace('-', '_')}"
@@ -71,6 +73,7 @@ class DjangoHttpClient(HttpClient):
             graphiql=self.graphiql,
             allow_queries_via_get=self.allow_queries_via_get,
             result_override=self.result_override,
+            json_encoder=self.json_encoder,
         )
 
         try:

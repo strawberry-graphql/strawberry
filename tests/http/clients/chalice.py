@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import urllib.parse
 from io import BytesIO
-from json import dumps
-from typing import Dict, Optional, Union
+from json import JSONEncoder, dumps
+from typing import Dict, Optional, Type, Union
 
 from typing_extensions import Literal
 
@@ -47,6 +47,7 @@ class ChaliceHttpClient(HttpClient):
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
+        json_encoder: Type[JSONEncoder] = None,
     ):
         self.app = Chalice(app_name="TheStackBadger")
 
@@ -54,6 +55,7 @@ class ChaliceHttpClient(HttpClient):
             schema=schema,
             graphiql=graphiql,
             allow_queries_via_get=allow_queries_via_get,
+            json_encoder=json_encoder,
         )
         view.result_override = result_override
 

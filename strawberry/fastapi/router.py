@@ -1,7 +1,7 @@
 import json
 from datetime import timedelta
 from inspect import signature
-from typing import Any, Callable, Dict, Iterable, Optional, Sequence, Union
+from typing import Any, Callable, Dict, Iterable, Optional, Sequence, Type, Union
 
 from starlette import status
 from starlette.background import BackgroundTasks
@@ -11,6 +11,7 @@ from starlette.types import ASGIApp
 from starlette.websockets import WebSocket
 
 from fastapi import APIRouter, Depends
+from strawberry.asgi.handlers.http_handler import CustomJSONResponse
 from strawberry.asgi.utils import get_graphiql_html
 from strawberry.exceptions import InvalidCustomContext, MissingQueryError
 from strawberry.fastapi.handlers import GraphQLTransportWSHandler, GraphQLWSHandler
@@ -115,6 +116,7 @@ class GraphQLRouter(APIRouter):
         default: Optional[ASGIApp] = None,
         on_startup: Optional[Sequence[Callable[[], Any]]] = None,
         on_shutdown: Optional[Sequence[Callable[[], Any]]] = None,
+        json_encoder: Type[json.JSONEncoder] = json.JSONEncoder,
     ):
         super().__init__(
             default=default,
@@ -133,6 +135,7 @@ class GraphQLRouter(APIRouter):
         )
         self.protocols = subscription_protocols
         self.connection_init_wait_timeout = connection_init_wait_timeout
+        self.json_encoder = json_encoder
 
         @self.get(
             path,
@@ -361,9 +364,10 @@ class GraphQLRouter(APIRouter):
 
         response_data = await self.process_result(request, result)
 
-        actual_response: JSONResponse = JSONResponse(
+        actual_response: JSONResponse = CustomJSONResponse(
             response_data,
             status_code=status.HTTP_200_OK,
+            json_encoder=self.json_encoder,
         )
 
         return self._merge_responses(response, actual_response)

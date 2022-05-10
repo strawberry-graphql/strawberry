@@ -1,5 +1,5 @@
 import json
-from typing import Dict
+from typing import Dict, Type
 
 from flask import Response, render_template_string, request
 from flask.views import View
@@ -26,10 +26,12 @@ class GraphQLView(View):
         schema: BaseSchema,
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
+        json_encoder: Type[json.JSONEncoder] = json.JSONEncoder,
     ):
         self.schema = schema
         self.graphiql = graphiql
         self.allow_queries_via_get = allow_queries_via_get
+        self.json_encoder = json_encoder
 
     def get_root_value(self) -> object:
         return None
@@ -117,7 +119,7 @@ class GraphQLView(View):
             return Response(e.as_http_error_reason(method), 400)
 
         response_data = self.process_result(result)
-        response.set_data(json.dumps(response_data))
+        response.set_data(self.json_encoder().encode(response_data))
 
         return response
 

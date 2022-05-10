@@ -1,6 +1,6 @@
 import json
 import warnings
-from typing import Dict, List, Mapping, Optional, Union
+from typing import Dict, List, Mapping, Optional, Type, Union
 
 from chalice.app import BadRequestError, Request, Response
 from strawberry.chalice.graphiql import render_graphiql_page
@@ -24,6 +24,7 @@ class GraphQLView:
         schema: BaseSchema,
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
+        json_encoder: Type[json.JSONEncoder] = json.JSONEncoder,
         **kwargs
     ):
         if "render_graphiql" in kwargs:
@@ -38,6 +39,7 @@ class GraphQLView:
 
         self.allow_queries_via_get = allow_queries_via_get
         self._schema = schema
+        self.json_encoder = json_encoder
 
     def get_root_value(self, request: Request) -> Optional[object]:
         return None
@@ -198,4 +200,6 @@ class GraphQLView:
             # TODO: we might want to use typed dict for context
             status_code = context["response"].status_code  # type: ignore[attr-defined]
 
-        return Response(body=http_result, status_code=status_code)
+        body = self.json_encoder().encode(http_result)
+
+        return Response(body=body, status_code=status_code)

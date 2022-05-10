@@ -1,5 +1,6 @@
+import json
 from datetime import timedelta
-from typing import Any, Optional, Union
+from typing import Any, Optional, Type, Union
 
 from starlette.requests import Request
 from starlette.responses import Response
@@ -32,6 +33,7 @@ class GraphQL:
         debug: bool = False,
         subscription_protocols=(GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL),
         connection_init_wait_timeout: timedelta = timedelta(minutes=1),
+        json_encoder: Type[json.JSONEncoder] = json.JSONEncoder,
     ) -> None:
         self.schema = schema
         self.graphiql = graphiql
@@ -41,6 +43,7 @@ class GraphQL:
         self.debug = debug
         self.protocols = subscription_protocols
         self.connection_init_wait_timeout = connection_init_wait_timeout
+        self.json_encoder = json_encoder
 
     async def __call__(self, scope: Scope, receive: Receive, send: Send):
         if scope["type"] == "http":
@@ -52,6 +55,7 @@ class GraphQL:
                 get_context=self.get_context,
                 get_root_value=self.get_root_value,
                 process_result=self.process_result,
+                json_encoder=self.json_encoder,
             ).handle(scope=scope, receive=receive, send=send)
 
         elif scope["type"] == "websocket":

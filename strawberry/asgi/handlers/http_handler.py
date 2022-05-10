@@ -1,5 +1,5 @@
 import json
-from typing import Any, Callable, Dict, Iterable, Optional
+from typing import Any, Callable, Dict, Iterable, Optional, Type
 
 from starlette import status
 from starlette.requests import Request
@@ -16,6 +16,16 @@ from strawberry.types.graphql import OperationType
 from strawberry.utils.debug import pretty_print_graphql_operation
 
 
+class CustomJSONResponse(JSONResponse):
+    def __init__(self, *args, **kwargs):
+        self.json_encoder = kwargs.pop("json_encoder")
+
+        super().__init__(*args, **kwargs)
+
+    def render(self, content: Any) -> bytes:
+        return self.json_encoder().encode(content).encode("utf-8")
+
+
 class HTTPHandler:
     def __init__(
         self,
@@ -26,6 +36,7 @@ class HTTPHandler:
         get_context,
         get_root_value,
         process_result,
+        json_encoder: Type[json.JSONEncoder] = json.JSONEncoder,
     ):
         self.schema = schema
         self.graphiql = graphiql
@@ -34,6 +45,7 @@ class HTTPHandler:
         self.get_context = get_context
         self.get_root_value = get_root_value
         self.process_result = process_result
+        self.json_encoder = json_encoder
 
     async def handle(self, scope: Scope, receive: Receive, send: Send):
         request = Request(scope=scope, receive=receive)
@@ -167,7 +179,11 @@ class HTTPHandler:
 
         response_data = await process_result(request=request, result=result)
 
-        return JSONResponse(response_data, status_code=status.HTTP_200_OK)
+        return CustomJSONResponse(
+            response_data,
+            status_code=status.HTTP_200_OK,
+            json_encoder=self.json_encoder,
+        )
 
     def should_render_graphiql(self, request: Request) -> bool:
         if not self.graphiql:

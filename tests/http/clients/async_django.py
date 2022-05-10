@@ -41,6 +41,7 @@ class AsyncDjangoHttpClient(DjangoHttpClient):
             graphiql=self.graphiql,
             allow_queries_via_get=self.allow_queries_via_get,
             result_override=self.result_override,
+            json_encoder=self.json_encoder,
         )
 
         try:

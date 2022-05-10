@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import json
 from io import BytesIO
-from typing import Dict, Optional, Union
+from json import JSONEncoder
+from typing import Dict, Optional, Type, Union
 
 from starlette.requests import Request
 from starlette.responses import Response as StarletteResponse
@@ -49,9 +50,13 @@ class AsgiHttpClient(HttpClient):
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
+        json_encoder: Type[JSONEncoder] = None,
     ):
         view = GraphQLView(
-            schema, graphiql=graphiql, allow_queries_via_get=allow_queries_via_get
+            schema,
+            graphiql=graphiql,
+            allow_queries_via_get=allow_queries_via_get,
+            json_encoder=json_encoder,
         )
         view.result_override = result_override
 

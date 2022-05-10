@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from io import BytesIO
-from json import dumps
+from json import JSONEncoder, dumps
 from random import randint
-from typing import Dict, Optional
+from typing import Dict, Optional, Type
 
 from typing_extensions import Literal
 
@@ -51,6 +51,7 @@ class SanicHttpClient(HttpClient):
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
+        json_encoder: Type[JSONEncoder] = None,
     ):
         self.app = Sanic(
             f"test_{int(randint(0, 1000))}",
@@ -65,6 +66,7 @@ class SanicHttpClient(HttpClient):
             graphiql=graphiql,
             allow_queries_via_get=allow_queries_via_get,
             result_override=result_override,
+            json_encoder=json_encoder,
         )
         self.app.add_route(
             view,
