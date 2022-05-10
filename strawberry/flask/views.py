@@ -1,7 +1,8 @@
 import json
-from typing import Dict, Type
+from typing import Dict, Optional, Type
 
 from flask import Response, render_template_string, request
+from flask.typing import ResponseReturnValue
 from flask.views import View
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
@@ -12,6 +13,7 @@ from strawberry.http import (
     parse_request_data,
     process_result,
 )
+from strawberry.http.json_dumps_params import JSONDumpsParams
 from strawberry.schema.base import BaseSchema
 from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types import ExecutionResult
@@ -27,11 +29,13 @@ class GraphQLView(View):
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
         json_encoder: Type[json.JSONEncoder] = json.JSONEncoder,
+        json_dumps_params: Optional[JSONDumpsParams] = None,
     ):
         self.schema = schema
         self.graphiql = graphiql
         self.allow_queries_via_get = allow_queries_via_get
         self.json_encoder = json_encoder
+        self.json_dumps_params = json_dumps_params or {}
 
     def get_root_value(self) -> object:
         return None
@@ -45,7 +49,7 @@ class GraphQLView(View):
     def process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse:
         return process_result(result)
 
-    def dispatch_request(self) -> Response:
+    def dispatch_request(self) -> ResponseReturnValue:
         method = request.method
         content_type = request.content_type or ""
 
@@ -119,7 +123,9 @@ class GraphQLView(View):
             return Response(e.as_http_error_reason(method), 400)
 
         response_data = self.process_result(result)
-        response.set_data(self.json_encoder().encode(response_data))
+        response.set_data(
+            self.json_encoder(**self.json_dumps_params).encode(response_data)
+        )
 
         return response
 

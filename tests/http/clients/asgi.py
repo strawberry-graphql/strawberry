@@ -13,6 +13,7 @@ from typing_extensions import Literal
 
 from strawberry.asgi import GraphQL as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
+from strawberry.http.json_dumps_params import JSONDumpsParams
 from strawberry.types import ExecutionResult
 
 from ..context import get_context
@@ -50,13 +51,15 @@ class AsgiHttpClient(HttpClient):
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
-        json_encoder: Type[JSONEncoder] = None,
+        json_encoder: Type[JSONEncoder] = JSONEncoder,
+        json_dumps_params: Optional[JSONDumpsParams] = None,
     ):
         view = GraphQLView(
             schema,
             graphiql=graphiql,
             allow_queries_via_get=allow_queries_via_get,
             json_encoder=json_encoder,
+            json_dumps_params=json_dumps_params,
         )
         view.result_override = result_override
 

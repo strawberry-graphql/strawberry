@@ -42,6 +42,7 @@ class AsyncDjangoHttpClient(DjangoHttpClient):
             allow_queries_via_get=self.allow_queries_via_get,
             result_override=self.result_override,
             json_encoder=self.json_encoder,
+            json_dumps_params=self.json_dumps_params,
         )
 
         try:

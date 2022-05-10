@@ -11,6 +11,7 @@ from chalice.app import Chalice, Request as ChaliceRequest
 from chalice.test import Client
 from strawberry.chalice.views import GraphQLView as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
+from strawberry.http.json_dumps_params import JSONDumpsParams
 from strawberry.http.temporal_response import TemporalResponse
 from strawberry.types import ExecutionResult
 
@@ -47,7 +48,8 @@ class ChaliceHttpClient(HttpClient):
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
-        json_encoder: Type[JSONEncoder] = None,
+        json_encoder: Type[JSONEncoder] = JSONEncoder,
+        json_dumps_params: Optional[JSONDumpsParams] = None,
     ):
         self.app = Chalice(app_name="TheStackBadger")
 
@@ -56,6 +58,7 @@ class ChaliceHttpClient(HttpClient):
             graphiql=graphiql,
             allow_queries_via_get=allow_queries_via_get,
             json_encoder=json_encoder,
+            json_dumps_params=json_dumps_params,
         )
         view.result_override = result_override
 

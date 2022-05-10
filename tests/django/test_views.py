@@ -136,25 +136,3 @@ def test_can_set_headers():
     assert response.status_code == 200
     assert response["my-header"] == "header value"
     assert data == {"data": {"abc": "ABC"}}
-
-
-def test_json_dumps_params():
-    query = "{ hello }"
-
-    factory = RequestFactory()
-    request = factory.post(
-        "/graphql/", {"query": query}, content_type="application/json"
-    )
-
-    dumps_params = {"separators": (",", ":")}
-
-    response1 = GraphQLView.as_view(schema=schema, json_dumps_params=dumps_params)(
-        request
-    )
-    assert response1.content.decode() == '{"data":{"hello":"strawberry"}}'
-
-    class CustomGraphQLView(GraphQLView):
-        json_dumps_params = dumps_params
-
-    response2 = CustomGraphQLView.as_view(schema=schema)(request)
-    assert response1.content == response2.content

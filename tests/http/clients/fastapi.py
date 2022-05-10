@@ -11,6 +11,7 @@ from fastapi import BackgroundTasks, Depends, FastAPI, Request, WebSocket
 from fastapi.testclient import TestClient
 from strawberry.fastapi import GraphQLRouter as BaseGraphQLRouter
 from strawberry.http import GraphQLHTTPResponse
+from strawberry.http.json_dumps_params import JSONDumpsParams
 from strawberry.types import ExecutionResult
 
 from ..context import get_context
@@ -58,7 +59,8 @@ class FastAPIHttpClient(HttpClient):
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
-        json_encoder: Type[JSONEncoder] = None,
+        json_encoder: Type[JSONEncoder] = JSONEncoder,
+        json_dumps_params: Optional[JSONDumpsParams] = None,
     ):
         self.app = FastAPI()
 
@@ -69,6 +71,7 @@ class FastAPIHttpClient(HttpClient):
             root_value_getter=get_root_value,
             allow_queries_via_get=allow_queries_via_get,
             json_encoder=json_encoder,
+            json_dumps_params=json_dumps_params,
         )
         graphql_app.result_override = result_override
         self.app.include_router(graphql_app, prefix="/graphql")

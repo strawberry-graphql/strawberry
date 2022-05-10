@@ -10,6 +10,7 @@ from typing_extensions import Literal
 from sanic import Sanic
 from sanic.request import Request as SanicRequest
 from strawberry.http import GraphQLHTTPResponse
+from strawberry.http.json_dumps_params import JSONDumpsParams
 from strawberry.http.temporal_response import TemporalResponse
 from strawberry.sanic.views import GraphQLView as BaseGraphQLView
 from strawberry.types import ExecutionResult
@@ -52,6 +53,7 @@ class SanicHttpClient(HttpClient):
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
         json_encoder: Type[JSONEncoder] = None,
+        json_dumps_params: Optional[JSONDumpsParams] = None,
     ):
         self.app = Sanic(
             f"test_{int(randint(0, 1000))}",
@@ -67,6 +69,7 @@ class SanicHttpClient(HttpClient):
             allow_queries_via_get=allow_queries_via_get,
             result_override=result_override,
             json_encoder=json_encoder,
+            json_dumps_params=json_dumps_params,
         )
         self.app.add_route(
             view,

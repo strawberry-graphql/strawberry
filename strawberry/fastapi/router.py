@@ -22,6 +22,7 @@ from strawberry.http import (
     parse_request_data,
     process_result,
 )
+from strawberry.http.json_dumps_params import JSONDumpsParams
 from strawberry.schema import BaseSchema
 from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
@@ -117,6 +118,7 @@ class GraphQLRouter(APIRouter):
         on_startup: Optional[Sequence[Callable[[], Any]]] = None,
         on_shutdown: Optional[Sequence[Callable[[], Any]]] = None,
         json_encoder: Type[json.JSONEncoder] = json.JSONEncoder,
+        json_dumps_params: Optional[JSONDumpsParams] = None,
     ):
         super().__init__(
             default=default,
@@ -136,6 +138,7 @@ class GraphQLRouter(APIRouter):
         self.protocols = subscription_protocols
         self.connection_init_wait_timeout = connection_init_wait_timeout
         self.json_encoder = json_encoder
+        self.json_dumps_params = json_dumps_params or {}
 
         @self.get(
             path,
@@ -368,6 +371,7 @@ class GraphQLRouter(APIRouter):
             response_data,
             status_code=status.HTTP_200_OK,
             json_encoder=self.json_encoder,
+            json_dumps_params=self.json_dumps_params,
         )
 
         return self._merge_responses(response, actual_response)

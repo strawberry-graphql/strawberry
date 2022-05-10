@@ -7,6 +7,7 @@ from typing import Callable, Dict, List, Optional, Type
 from typing_extensions import Literal
 
 from strawberry.http import GraphQLHTTPResponse
+from strawberry.http.json_dumps_params import JSONDumpsParams
 from strawberry.types import ExecutionResult
 
 
@@ -37,6 +38,7 @@ class HttpClient(abc.ABC):
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
         json_encoder: Type[json.JSONEncoder] = None,
+        json_dumps_params: Optional[JSONDumpsParams] = None,
     ):
         ...
 

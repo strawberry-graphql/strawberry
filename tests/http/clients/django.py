@@ -13,6 +13,7 @@ from django.test.client import RequestFactory
 
 from strawberry.django.views import GraphQLView as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
+from strawberry.http.json_dumps_params import JSONDumpsParams
 from strawberry.types import ExecutionResult
 
 from ..context import get_context
@@ -47,11 +48,13 @@ class DjangoHttpClient(HttpClient):
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
         json_encoder: Type[JSONEncoder] = None,
+        json_dumps_params: Optional[JSONDumpsParams] = None,
     ):
         self.graphiql = graphiql
         self.allow_queries_via_get = allow_queries_via_get
         self.result_override = result_override
         self.json_encoder = json_encoder
+        self.json_dumps_params = json_dumps_params
 
     def _get_header_name(self, key: str) -> str:
         return f"HTTP_{key.upper().replace('-', '_')}"
@@ -74,6 +77,7 @@ class DjangoHttpClient(HttpClient):
             allow_queries_via_get=self.allow_queries_via_get,
             result_override=self.result_override,
             json_encoder=self.json_encoder,
+            json_dumps_params=self.json_dumps_params,
         )
 
         try:

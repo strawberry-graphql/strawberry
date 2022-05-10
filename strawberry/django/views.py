@@ -25,6 +25,7 @@ from strawberry.http import (
     parse_request_data,
     process_result,
 )
+from strawberry.http.json_dumps_params import JSONDumpsParams
 from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types import ExecutionResult
 from strawberry.types.graphql import OperationType
@@ -46,7 +47,7 @@ class BaseView(View):
     allow_queries_via_get = True
     schema: Optional[BaseSchema] = None
     json_encoder: Type[json.JSONEncoder] = DjangoJSONEncoder
-    json_dumps_params: Optional[Dict[str, Any]] = None
+    json_dumps_params: Optional[JSONDumpsParams] = None
 
     def __init__(
         self,

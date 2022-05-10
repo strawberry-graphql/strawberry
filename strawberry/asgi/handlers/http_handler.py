@@ -10,6 +10,7 @@ from strawberry.asgi.utils import get_graphiql_html
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import parse_query_params, parse_request_data
+from strawberry.http.json_dumps_params import JSONDumpsParams
 from strawberry.schema import BaseSchema
 from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types.graphql import OperationType
@@ -19,11 +20,14 @@ from strawberry.utils.debug import pretty_print_graphql_operation
 class CustomJSONResponse(JSONResponse):
     def __init__(self, *args, **kwargs):
         self.json_encoder = kwargs.pop("json_encoder")
+        self.json_dumps_params = kwargs.pop("json_dumps_params", {})
 
         super().__init__(*args, **kwargs)
 
     def render(self, content: Any) -> bytes:
-        return self.json_encoder().encode(content).encode("utf-8")
+        return (
+            self.json_encoder(**self.json_dumps_params).encode(content).encode("utf-8")
+        )
 
 
 class HTTPHandler:
@@ -37,6 +41,7 @@ class HTTPHandler:
         get_root_value,
         process_result,
         json_encoder: Type[json.JSONEncoder] = json.JSONEncoder,
+        json_dumps_params: Optional[JSONDumpsParams] = None,
     ):
         self.schema = schema
         self.graphiql = graphiql
@@ -46,6 +51,7 @@ class HTTPHandler:
         self.get_root_value = get_root_value
         self.process_result = process_result
         self.json_encoder = json_encoder
+        self.json_dumps_params = json_dumps_params or {}
 
     async def handle(self, scope: Scope, receive: Receive, send: Send):
         request = Request(scope=scope, receive=receive)
@@ -183,6 +189,7 @@ class HTTPHandler:
             response_data,
             status_code=status.HTTP_200_OK,
             json_encoder=self.json_encoder,
+            json_dumps_params=self.json_dumps_params,
         )
 
     def should_render_graphiql(self, request: Request) -> bool:
