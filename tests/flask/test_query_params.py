@@ -16,7 +16,7 @@ def test_no_query(flask_client):
     assert response.status_code == 400
 
 
-def test_get_with_query_params(flask_client):
+def test_get_with_query_params(flask_client, async_flask_client):
     params = {
         "query": """
             query {
@@ -31,14 +31,26 @@ def test_get_with_query_params(flask_client):
     assert response.status_code == 200
     assert data["data"]["hello"] == "Hello world"
 
+    response = async_flask_client.get("/graphql", query_string=params)
+    data = json.loads(response.data.decode())
 
-def test_can_pass_variables_with_query_params(flask_client):
+    assert response.status_code == 200
+    assert data["data"]["hello"] == "Hello world"
+
+
+def test_can_pass_variables_with_query_params(flask_client, async_flask_client):
     params = {
         "query": "query Hello($name: String!) { hello(name: $name) }",
         "variables": '{"name": "James"}',
     }
 
     response = flask_client.get("/graphql", query_string=params)
+    data = json.loads(response.data.decode())
+
+    assert response.status_code == 200
+    assert data["data"]["hello"] == "Hello James"
+
+    response = async_flask_client.get("/graphql", query_string=params)
     data = json.loads(response.data.decode())
 
     assert response.status_code == 200

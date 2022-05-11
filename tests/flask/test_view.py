@@ -8,7 +8,7 @@ from strawberry.types import ExecutionResult, Info
 from .app import create_app
 
 
-def test_graphql_query(flask_client):
+def test_graphql_query(flask_client, async_flask_client):
     query = {
         "query": """
             query {
@@ -23,8 +23,14 @@ def test_graphql_query(flask_client):
     assert response.status_code == 200
     assert data["data"]["hello"] == "Hello world"
 
+    response = async_flask_client.get("/graphql", json=query)
+    data = json.loads(response.data.decode())
 
-def test_can_pass_variables(flask_client):
+    assert response.status_code == 200
+    assert data["data"]["hello"] == "Hello world"
+
+
+def test_can_pass_variables(flask_client, async_flask_client):
     query = {
         "query": "query Hello($name: String!) { hello(name: $name) }",
         "variables": {"name": "James"},
@@ -36,8 +42,14 @@ def test_can_pass_variables(flask_client):
     assert response.status_code == 200
     assert data["data"]["hello"] == "Hello James"
 
+    response = async_flask_client.get("/graphql", json=query)
+    data = json.loads(response.data.decode())
 
-def test_fails_when_request_body_has_invalid_json(flask_client):
+    assert response.status_code == 200
+    assert data["data"]["hello"] == "Hello James"
+
+
+def test_fails_when_request_body_has_invalid_json(flask_client, async_flask_client):
     response = flask_client.post(
         "/graphql",
         data='{"qeury": "{__typena"',
@@ -45,16 +57,21 @@ def test_fails_when_request_body_has_invalid_json(flask_client):
     )
     assert response.status_code == 400
 
+    response = async_flask_client.post(
+        "/graphql",
+        data='{"qeury": "{__typena"',
+        headers={"content-type": "application/json"},
+    )
+    assert response.status_code == 400
 
-def test_graphiql_view(flask_client):
+
+def test_graphiql_view(flask_client, async_flask_client):
     flask_client.environ_base["HTTP_ACCEPT"] = "text/html"
     response = flask_client.get("/graphql")
     body = response.data.decode()
 
     assert "GraphiQL" in body
 
-
-def test_async_graphiql_view(async_flask_client):
     async_flask_client.environ_base["HTTP_ACCEPT"] = "text/html"
     response = async_flask_client.get("/graphql")
     body = response.data.decode()
