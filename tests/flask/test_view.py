@@ -54,6 +54,14 @@ def test_graphiql_view(flask_client):
     assert "GraphiQL" in body
 
 
+def test_async_graphiql_view(async_flask_client):
+    async_flask_client.environ_base["HTTP_ACCEPT"] = "text/html"
+    response = async_flask_client.get("/graphql")
+    body = response.data.decode()
+
+    assert "GraphiQL" in body
+
+
 def test_graphiql_disabled_view():
     app = create_app(graphiql=False)
 
