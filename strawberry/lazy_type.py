@@ -1,7 +1,9 @@
 import importlib
 import inspect
 from dataclasses import dataclass
-from typing import Generic, Optional, Type, TypeVar
+from typing import TYPE_CHECKING, Generic, Optional, Type, TypeVar
+
+from typing_extensions import Annotated
 
 
 TypeName = TypeVar("TypeName")
@@ -37,3 +39,14 @@ class LazyType(Generic[TypeName, Module]):
 
     def __call__(self):  # pragma: no cover
         return None
+
+
+if TYPE_CHECKING:  # pragma: nocover
+    # Static types like pyright expects a type to be passed to generic classes, which
+    # means that if we pass a string it will say the type is unknown, and if we import
+    # the module they will say a module can't be used in place of a type.
+    # This will tricky it into thinking that LazyType is Annotated, not only avoiding
+    # the issue but also statically typing it correctly.
+    Lazy = Annotated
+else:
+    Lazy = LazyType
