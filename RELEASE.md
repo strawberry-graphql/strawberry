@@ -1,6 +1,6 @@
-Release type: patch
+Release type: minor
 
-This release adds a new flask view to allow for aysn dispatching of requests.
+This release adds a new flask view to allow for aysnc dispatching of requests.
 
 This is especially useful when using dataloaders with flask.
 

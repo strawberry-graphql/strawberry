@@ -57,7 +57,7 @@ def test_can_pass_variables_with_query_params(flask_client, async_flask_client):
     assert data["data"]["hello"] == "Hello James"
 
 
-def test_post_fails_with_query_params(flask_client):
+def test_post_fails_with_query_params(flask_client, async_flask_client):
     params = {
         "query": """
             query {
@@ -70,8 +70,12 @@ def test_post_fails_with_query_params(flask_client):
 
     assert response.status_code == 415
 
+    response = async_flask_client.post("/graphql", query_string=params)
 
-def test_does_not_allow_mutation(flask_client):
+    assert response.status_code == 415
+
+
+def test_does_not_allow_mutation(flask_client, async_flask_client):
     query = {
         "query": """
             mutation {
@@ -81,6 +85,11 @@ def test_does_not_allow_mutation(flask_client):
     }
 
     response = flask_client.get("/graphql", query_string=query)
+
+    assert response.status_code == 400
+    assert "mutations are not allowed when using GET" in response.text
+
+    response = async_flask_client.get("/graphql", query_string=query)
 
     assert response.status_code == 400
     assert "mutations are not allowed when using GET" in response.text
