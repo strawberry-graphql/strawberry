@@ -30,7 +30,6 @@ If you'd prefer to use an asynchronous view you can instead use the following im
 from strawberry.flask.views import GraphQLView
 ```
 
-
 ## Options
 
 The `GraphQLView` accepts two options at the moment:
