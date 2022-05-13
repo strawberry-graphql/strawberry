@@ -20,11 +20,12 @@
 
         #graphiql {
             height: 100vh;
+            display: flex;
         }
     </style>
 
-    <script crossorigin src="https://unpkg.com/react@16.14.0/umd/react.production.min.js"></script>
-    <script crossorigin src="https://unpkg.com/react-dom@16.14.0/umd/react-dom.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react@16.14.0/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@16.14.0/umd/react-dom.development.js"></script>
 
     <script crossorigin src="https://unpkg.com/js-cookie@3.0.1/dist/js.cookie.min.js"></script>
 
@@ -32,8 +33,10 @@
 </head>
 
 <body>
-    <div id="graphiql">Loading...</div>
+    <div id="graphiql" class="graphiql-container">Loading...</div>
     <script crossorigin src="https://unpkg.com/graphiql@1.8.8/graphiql.min.js" type="application/javascript"></script>
+    <script crossorigin src="https://unpkg.com/graphiql-explorer@0.9.0/graphiqlExplorer.min.js"
+        type="application/javascript"></script>
     <script>
         const fetchURL = window.location.href;
 
@@ -56,15 +59,58 @@
             ? httpUrlToWebSockeUrl(fetchURL)
             : null;
 
-        ReactDOM.render(
-            React.createElement(GraphiQL, {
-                fetcher: GraphiQL.createFetcher({
-                    url: fetchURL,
-                    subscriptionUrl,
-                    headers,
+
+        function AppComponent() {
+
+            var [schema, setSchema] = React.useState(undefined);
+
+            var [explorerIsOpen, toggleExplorer] = React.useState(false);
+
+            var [query, setQuery] = React.useState("");
+
+            const fetcher = GraphiQL.createFetcher({
+                url: fetchURL,
+                subscriptionUrl,
+                headers,
+            })
+
+            const onToggleExplorerClick = () => {
+                if (!explorerIsOpen) {
+                    setSchema(_graphiql.state.schema)
+                    setQuery(_graphiql.state.query)
+                }
+                toggleExplorer(!explorerIsOpen)
+            }
+
+            return [
+                React.createElement(GraphiQLExplorer.Explorer, {
+                    schema,
+                    query,
+                    onEdit: (q) => {setQuery(q); _graphiql.state.query= q;},
+                    onRunOperation: (operationName) => _graphiql.handleRunQuery(operationName),
+                    explorerIsOpen,
+                    onToggleExplorer: () => toggleExplorer(!explorerIsOpen),
+                    key: "GraphiQLExplorer",
                 }),
-                defaultVariableEditorOpen: true,
-            }),
+                React.createElement(GraphiQL, {
+                    fetcher,
+                    defaultVariableEditorOpen: true,
+                    ref: (ref) => { window._graphiql = ref },
+                    onEditQuery: setQuery,
+                    toolbar: {
+                        "additionalContent": React.createElement(GraphiQL.Button, {
+                            onClick: () => onToggleExplorerClick(),
+                            label: "Explorer",
+                            title: "Toggle Explorer"
+                        })
+                    },
+                    key: "GraphiQL",
+                }),
+            ]
+        }
+
+        ReactDOM.render(
+            React.createElement(AppComponent),
             document.getElementById("graphiql")
         );
     </script>
