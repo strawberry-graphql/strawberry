@@ -40,7 +40,7 @@ class HTTPHandler:
         root_value = await self.get_root_value(request)
 
         sub_response = Response()
-        sub_response.status_code = None  # typing: ignore
+        sub_response.status_code = None  # type: ignore
         del sub_response.headers["content-length"]
 
         context = await self.get_context(request=request, response=sub_response)
