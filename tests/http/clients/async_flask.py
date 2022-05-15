@@ -27,21 +27,19 @@ class GraphQLView(BaseAsyncGraphQLView):
         self.result_override = kwargs.pop("result_override")
         super().__init__(*args, **kwargs)
 
-    # TODO: convert all of these to be async
-
-    def get_root_value(self):
+    async def get_root_value(self):
         return Query()
 
-    def get_context(self, response: FlaskResponse) -> Dict[str, object]:
-        context = super().get_context(response)
+    async def get_context(self, response: FlaskResponse) -> Dict[str, object]:
+        context = await super().get_context(response)
 
         return get_context(context)
 
-    def process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse:
+    async def process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse:
         if self.result_override:
             return self.result_override(result)
 
-        return super().process_result(result)
+        return await super().process_result(result)
 
 
 class AsyncFlaskHttpClient(FlaskHttpClient):

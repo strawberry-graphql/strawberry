@@ -20,7 +20,7 @@ from strawberry.types import ExecutionResult
 from strawberry.types.graphql import OperationType
 
 
-class GraphQLView(View):
+class BaseGraphQLView(View):
     methods = ["GET", "POST"]
 
     def __init__(
@@ -37,14 +37,16 @@ class GraphQLView(View):
         self.json_encoder = json_encoder
         self.json_dumps_params = json_dumps_params or {}
 
+    def render_template(self, template: str) -> str:
+        return render_template_string(template)
+
+
+class GraphQLView(BaseGraphQLView):
     def get_root_value(self) -> object:
         return None
 
     def get_context(self, response: Response) -> Dict[str, object]:
         return {"request": request, "response": response}
-
-    def render_template(self, template: str) -> str:
-        return render_template_string(template)
 
     def process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse:
         return process_result(result)
@@ -130,8 +132,17 @@ class GraphQLView(View):
         return response
 
 
-class AsyncGraphQLView(GraphQLView):
+class AsyncGraphQLView(BaseGraphQLView):
     methods = ["GET", "POST"]
+
+    async def get_root_value(self) -> object:
+        return None
+
+    async def get_context(self, response: Response) -> Dict[str, object]:
+        return {"request": request, "response": response}
+
+    async def process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse:
+        return process_result(result)
 
     async def dispatch_request(self):
         method = request.method
@@ -187,12 +198,14 @@ class AsyncGraphQLView(GraphQLView):
             return Response("No GraphQL query found in the request", 400)
 
         response = Response(status=200, content_type="application/json")
-        context = self.get_context(response)
+        context = await self.get_context(response)
 
         allowed_operation_types = OperationType.from_http(method)
 
         if not self.allow_queries_via_get and method == "GET":
             allowed_operation_types = allowed_operation_types - {OperationType.QUERY}
+
+        root_value = await self.get_root_value()
 
         try:
             result = await self.schema.execute(
@@ -200,13 +213,13 @@ class AsyncGraphQLView(GraphQLView):
                 variable_values=request_data.variables,
                 context_value=context,
                 operation_name=request_data.operation_name,
-                root_value=self.get_root_value(),
+                root_value=root_value,
                 allowed_operation_types=allowed_operation_types,
             )
         except InvalidOperationTypeError as e:
             return Response(e.as_http_error_reason(method), 400)
 
-        response_data = self.process_result(result)
+        response_data = await self.process_result(result)
         response.set_data(
             self.json_encoder(**self.json_dumps_params).encode(response_data)
         )
