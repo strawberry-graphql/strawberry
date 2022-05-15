@@ -27,7 +27,7 @@ if __name__ == "__main__":
 If you'd prefer to use an asynchronous view you can instead use the following import which has the same interface as `GraphQLView`. This is helpful if using a dataloader.
 
 ```python
-from strawberry.flask.views import GraphQLView
+from strawberry.flask.views import AsyncGraphQLView
 ```
 
 ## Options
