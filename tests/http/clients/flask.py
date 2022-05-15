@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import json
 import urllib.parse
 from io import BytesIO
@@ -101,12 +102,19 @@ class FlaskHttpClient(HttpClient):
                 data = body if files else json.dumps(body)
             kwargs["data"] = data
 
+        headers = self._get_headers(method=method, headers=headers, files=files)
+
+        return await self.request(url, method, headers=headers, **kwargs)
+
+    def _do_request(
+        self,
+        url: str,
+        method: Literal["get", "post", "patch", "put", "delete"],
+        headers: Optional[Dict[str, str]] = None,
+        **kwargs,
+    ):
         with self.app.test_client() as client:
-            response = getattr(client, method)(
-                url,
-                headers=self._get_headers(method=method, headers=headers, files=files),
-                **kwargs,
-            )
+            response = getattr(client, method)(url, headers=headers, **kwargs)
 
         return Response(
             status_code=response.status_code,
@@ -118,13 +126,10 @@ class FlaskHttpClient(HttpClient):
         url: str,
         method: Literal["get", "post", "patch", "put", "delete"],
         headers: Optional[Dict[str, str]] = None,
+        **kwargs,
     ) -> Response:
-        with self.app.test_client() as client:
-            response = getattr(client, method)(url, headers=headers)
-
-        return Response(
-            status_code=response.status_code,
-            data=response.data,
+        return await asyncio.to_thread(
+            self._do_request, url=url, method=method, headers=headers, **kwargs
         )
 
     async def get(
@@ -141,10 +146,4 @@ class FlaskHttpClient(HttpClient):
         json: Optional[JSON] = None,
         headers: Optional[Dict[str, str]] = None,
     ) -> Response:
-        with self.app.test_client() as client:
-            response = client.post(url, headers=headers, data=data, json=json)
-
-        return Response(
-            status_code=response.status_code,
-            data=response.data,
-        )
+        return await self.request(url, "post", headers=headers, data=data, json=json)
