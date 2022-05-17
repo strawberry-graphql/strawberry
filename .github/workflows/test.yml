@@ -39,7 +39,9 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
           architecture: x64
+          cache: 'poetry'
 
+      # TODO: move this in another test hob
       - uses: actions/setup-node@v2
         with:
           node-version: '14'
@@ -47,18 +49,7 @@ jobs:
       - run: npm install -g --no-package-lock --no-save pyright
       - run: pip install poetry
       - run: poetry config experimental.new-installer false
-
-      - name: "Python dependencies cache"
-        id: cache-poetry-dependencies
-        uses: actions/cache@v2
-        with:
-          path: ${{ matrix.cache-path }}
-          key: ${{ runner.os }}-py-${{ steps.setup-python.outputs.python-version }}-poetry-${{ hashFiles('poetry.lock') }}
-          restore-keys: ${{ runner.os }}-py-${{ steps.setup-python.outputs.python-version }}-poetry-
-
-      - name: Install dependencies
-        run: poetry install
-        if: steps.cache-poetry-dependencies.outputs.cache-hit != 'true'
+      - run: poetry install
 
       - name: pytest
         run: poetry run pytest --cov-report xml --cov=. --showlocals -vv -m "not django"
@@ -84,28 +75,17 @@ jobs:
       - uses: actions/setup-python@v2
         id: setup-python
         with:
-          # Pin to 3.9 because Django 2.2 does not support 3.10
-          python-version: '3.9'
+          python-version: '3.10'
           architecture: x64
+          cache: 'poetry'
 
       - run: pip install poetry
       - run: poetry config experimental.new-installer false
-
-      - name: "Python dependencies cache"
-        id: cache-poetry-dependencies
-        uses: actions/cache@v2
-        with:
-          path: ~/.cache/pypoetry/virtualenvs
-          key: ${{ runner.os }}-py-${{ steps.setup-python.outputs.python-version }}-poetry-${{ hashFiles('poetry.lock') }}
-          restore-keys: ${{ runner.os }}-py-${{ steps.setup-python.outputs.python-version }}-poetry-
-
-      - name: Install dependencies
-        run: poetry install
-        if: steps.cache-poetry-dependencies.outputs.cache-hit != 'true'
+      - run: poetry install
 
       - name: Install django ${{ matrix.django }}
         # Add --python ^3.9 marker because django 4.0 does not support 3.7
-        run: poetry add --python ^3.9 django@^${{ matrix.django }}
+        run: poetry add --python ^3.10 django@^${{ matrix.django }}
 
       - name: pytest
         run: poetry run pytest --cov-report xml --cov=. --showlocals -vv -m django
