@@ -16,41 +16,43 @@ on:
       - "poetry.lock"
       - ".github/workflows/test.yml"
 
+# TODO: run tests on windows
+
 jobs:
   unit-tests:
     strategy:
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10']
-        os: [ubuntu-latest, windows-latest]
-        include:
-          - os: ubuntu-latest
-            cache-path: ~/.cache/pypoetry/virtualenvs
-          - os: windows-latest
-            cache-path: ~\AppData\Local\pypoetry\Cache
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
 
-    name: Test ${{ matrix.os }} - Python ${{ matrix.python-version }}
-    runs-on: ${{ matrix.os }}
+    name: Test Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v3
       - run: pipx install poetry
-      - run: poetry config experimental.new-installer false
       - uses: actions/setup-python@v3.1.2
         id: setup-python
         with:
           python-version: ${{ matrix.python-version }}
-          cache: 'poetry'
+          cache: "poetry"
 
-      # TODO: move this in another test hob
+      # TODO: move this in another test job
       - uses: actions/setup-node@v2
         with:
-          node-version: '14'
+          node-version: "14"
 
       - run: npm install -g --no-package-lock --no-save pyright
+
+      - run: poetry env use ${{ matrix.python-version }}
+      - run: poetry run python --version
+      - run: poetry show -v
+      - run: poetry run pip freeze
       - run: poetry install
+        if: steps.setup-python.outputs.cache-hit != 'true'
 
       - name: pytest
-        run: poetry run pytest --cov-report xml --cov=. --showlocals -vv -m "not django"
+        run:
+          poetry run pytest --cov-report xml --cov=. --showlocals -vv -m "not django"
 
       - uses: codecov/codecov-action@v1
         if: ${{ always() }}
@@ -70,20 +72,21 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - run: pipx install poetry
-      - run: poetry config experimental.new-installer false
       - uses: actions/setup-python@v3.1.2
         id: setup-python
         with:
-          python-version: '3.10'
-          cache: 'poetry'
+          python-version: "3.10"
+          cache: "poetry"
 
+      - run: poetry env use python3.10
       - run: poetry install
 
       - name: Install django ${{ matrix.django }}
-        run: poetry add django@^${{ matrix.django }}
+        run: poetry add --python ^3.10 django@^${{ matrix.django }}
 
       - name: pytest
-        run: poetry run pytest --cov-report xml --cov=. --showlocals -vv -m django
+        run:
+          poetry run pytest --cov-report xml --cov=. --showlocals -vv -m django
 
       - uses: codecov/codecov-action@v1
         if: ${{ always() }}
