@@ -33,6 +33,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
+      - run: pipx install poetry
+      - run: poetry config experimental.new-installer false
       - uses: actions/setup-python@v3.1.2
         id: setup-python
         with:
@@ -45,8 +47,6 @@ jobs:
           node-version: '14'
 
       - run: npm install -g --no-package-lock --no-save pyright
-      - run: pip install poetry
-      - run: poetry config experimental.new-installer false
       - run: poetry install
 
       - name: pytest
@@ -69,15 +69,14 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-
+      - run: pipx install poetry
+      - run: poetry config experimental.new-installer false
       - uses: actions/setup-python@v3.1.2
         id: setup-python
         with:
           python-version: '3.10'
           cache: 'poetry'
 
-      - run: pip install poetry
-      - run: poetry config experimental.new-installer false
       - run: poetry install
 
       - name: Install django ${{ matrix.django }}
