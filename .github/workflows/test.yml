@@ -1,4 +1,4 @@
-name: Backend tests
+name: Unit tests
 
 concurrency:
   group: ${{ github.head_ref || github.run_id }}
@@ -50,7 +50,7 @@ jobs:
 
       - name: pytest
         run:
-          poetry run pytest --cov-report xml --cov=. --showlocals -vv -m "not django"
+          poetry run pytest --cov-report xml --cov=. --showlocals -vv -m "not django" --ignore=tests/mypy
 
       - uses: codecov/codecov-action@v1
         if: ${{ always() }}
