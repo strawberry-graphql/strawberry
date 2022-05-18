@@ -36,13 +36,6 @@ jobs:
           python-version: ${{ matrix.python-version }}
           cache: "poetry"
 
-      # TODO: move this in another test job
-      - uses: actions/setup-node@v2
-        with:
-          node-version: "14"
-
-      - run: npm install -g --no-package-lock --no-save pyright
-
       - run: poetry env use ${{ matrix.python-version }}
       - run: poetry run python --version
       - run: poetry install
@@ -50,7 +43,7 @@ jobs:
 
       - name: pytest
         run:
-          poetry run pytest --cov-report xml --cov=. --showlocals -vv -m "not django" --ignore=tests/mypy
+          poetry run pytest --cov-report xml --cov=. --showlocals -vv -m "not django" --ignore=tests/mypy --ignore=tests/pyright
 
       - uses: codecov/codecov-action@v1
         if: ${{ always() }}
