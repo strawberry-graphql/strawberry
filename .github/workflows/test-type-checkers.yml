@@ -1,4 +1,4 @@
-name: Type checkers tests
+name: 🦺 Type checkers tests
 
 concurrency:
   group: type-checkers-${{ github.head_ref || github.run_id }}
@@ -23,7 +23,7 @@ jobs:
       matrix:
         python-version: ["3.7", "3.8", "3.9", "3.10"]
 
-    name: Mypy tests on Python ${{ matrix.python-version }}
+    name: Mypy on Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
 
     steps:
@@ -49,7 +49,7 @@ jobs:
       matrix:
         python-version: ["3.7", "3.8", "3.9", "3.10"]
 
-    name: Poetry tests on Python ${{ matrix.python-version }}
+    name: Pyright on Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
 
     steps:

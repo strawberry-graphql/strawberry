@@ -1,4 +1,4 @@
-name: Unit tests
+name: 🔂 Unit tests
 
 concurrency:
   group: ${{ github.head_ref || github.run_id }}
@@ -16,15 +16,13 @@ on:
       - "poetry.lock"
       - ".github/workflows/test.yml"
 
-# TODO: run tests on windows
-
 jobs:
   unit-tests:
     strategy:
       matrix:
         python-version: ["3.7", "3.8", "3.9", "3.10"]
 
-    name: Test Python ${{ matrix.python-version }}
+    name: Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
 
     steps:
@@ -43,7 +41,38 @@ jobs:
 
       - name: pytest
         run:
-          poetry run pytest --cov-report xml --cov=. --showlocals -vv -m "not django" --ignore=tests/mypy --ignore=tests/pyright
+          poetry run pytest --cov-report xml --cov=. --showlocals -vv -m "not
+          django" --ignore=tests/mypy --ignore=tests/pyright
+
+      - uses: codecov/codecov-action@v1
+        if: ${{ always() }}
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+          verbose: true
+
+  unit-tests-on-windows:
+    name: Python 3.10 on Windows
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - run: pipx install poetry
+      - uses: actions/setup-python@v3.1.2
+        id: setup-python
+        with:
+          python-version: "3.10"
+          cache: "poetry"
+
+      - run: poetry env use C:\hostedtoolcache\windows\Python\3.8.10\x86\python.exe
+      - run: poetry run python --version
+      - run: poetry install
+        if: steps.setup-python.outputs.cache-hit != 'true'
+
+      - name: pytest
+        run:
+          poetry run pytest --cov-report xml --cov=. --showlocals -vv -m "not
+          django" --ignore=tests/mypy --ignore=tests/pyright
 
       - uses: codecov/codecov-action@v1
         if: ${{ always() }}
@@ -57,7 +86,7 @@ jobs:
       matrix:
         django: ["4.0", "3.2"]
 
-    name: Test Django ${{ matrix.django }}
+    name: Django ${{ matrix.django }}
     runs-on: ubuntu-latest
 
     steps:
