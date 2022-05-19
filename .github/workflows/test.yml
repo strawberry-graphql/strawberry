@@ -120,9 +120,7 @@ jobs:
   starlette-unit-tests:
     strategy:
       matrix:
-        # starlette: ["0.17.1", "0.18.0", "0.19.1", "0.20.0"]
-        # fastapi doesn't support starlette 0.20.0 just yet
-        starlette: ["0.17.1", "0.18.0", "0.19.1"]
+        starlette: ["0.17.1", "0.18.0", "0.19.1", "0.20.0"]
 
     name: Starlette ${{ matrix.starlette }}
     runs-on: ubuntu-latest
@@ -140,6 +138,9 @@ jobs:
       - run: poetry install
         if: steps.setup-python.outputs.cache-hit != 'true'
 
+      # this allows us to test on any version of starlette
+      - name: Remove fastapi
+        run: poetry remove fastapi --dev
       - name: Install starlette ${{ matrix.starlette }}
         run: poetry add --python ^3.10 starlette@^${{ matrix.starlette }}
 
