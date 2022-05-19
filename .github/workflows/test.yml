@@ -138,7 +138,7 @@ jobs:
       - run: poetry install
         if: steps.setup-python.outputs.cache-hit != 'true'
 
-      - name: Install django ${{ matrix.starlette }}
+      - name: Install starlette ${{ matrix.starlette }}
         run: poetry add --python ^3.10 starlette@^${{ matrix.starlette }}
 
       - name: pytest
