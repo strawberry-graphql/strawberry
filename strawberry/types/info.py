@@ -41,6 +41,7 @@ class Info(Generic[ContextType, RootValueType]):
             "`info.field_nodes` is deprecated, use `selected_fields` instead",
             DeprecationWarning,
         )
+
         return self._raw_info.field_nodes
 
     @cached_property
