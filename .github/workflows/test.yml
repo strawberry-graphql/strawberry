@@ -42,7 +42,7 @@ jobs:
       - name: pytest
         run:
           poetry run pytest --cov-report xml --cov=. --showlocals -vv -m "not
-          django" --ignore=tests/mypy --ignore=tests/pyright
+          starlette" -m "not django" --ignore=tests/mypy --ignore=tests/pyright
 
       - uses: codecov/codecov-action@v1
         if: ${{ always() }}
@@ -64,7 +64,8 @@ jobs:
           python-version: "3.10"
           cache: "poetry"
 
-      - run: poetry env use C:\hostedtoolcache\windows\Python\3.8.10\x86\python.exe
+      - run:
+          poetry env use C:\hostedtoolcache\windows\Python\3.8.10\x86\python.exe
       - run: poetry run python --version
       - run: poetry install
         if: steps.setup-python.outputs.cache-hit != 'true'
@@ -108,6 +109,42 @@ jobs:
       - name: pytest
         run:
           poetry run pytest --cov-report xml --cov=. --showlocals -vv -m django
+
+      - uses: codecov/codecov-action@v1
+        if: ${{ always() }}
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+          verbose: true
+
+  starlette-unit-tests:
+    strategy:
+      matrix:
+        starlette: ["0.17.1", "0.18.0", "0.19.1", "0.20.0"]
+
+    name: Starlette ${{ matrix.starlette }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - run: pipx install poetry
+      - uses: actions/setup-python@v3.1.2
+        id: setup-python
+        with:
+          python-version: "3.10"
+          cache: "poetry"
+
+      - run: poetry env use python3.10
+      - run: poetry install
+        if: steps.setup-python.outputs.cache-hit != 'true'
+
+      - name: Install django ${{ matrix.starlette }}
+        run: poetry add --python ^3.10 starlette@^${{ matrix.starlette }}
+
+      - name: pytest
+        run:
+          poetry run pytest --cov-report xml --cov=. --showlocals -vv -m
+          starlette
 
       - uses: codecov/codecov-action@v1
         if: ${{ always() }}
