@@ -35,7 +35,6 @@ from strawberry.experimental.pydantic.utils import (
 )
 from strawberry.field import StrawberryField
 from strawberry.object_type import _process_type, _wrap_dataclass
-from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.types.type_resolver import _get_fields
 from strawberry.unset import UNSET
 
@@ -113,7 +112,7 @@ def type(
     is_input: bool = False,
     is_interface: bool = False,
     description: Optional[str] = None,
-    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    directives: Optional[Sequence[object]] = (),
     all_fields: bool = False,
     use_pydantic_alias: bool = True,
 ) -> Callable[..., Type[StrawberryTypeFromPydantic[PydanticModel]]]:
@@ -269,7 +268,7 @@ def input(
     name: Optional[str] = None,
     is_interface: bool = False,
     description: Optional[str] = None,
-    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    directives: Optional[Sequence[object]] = (),
     all_fields: bool = False,
     use_pydantic_alias: bool = True,
 ) -> Callable[..., Type[StrawberryTypeFromPydantic[PydanticModel]]]:
@@ -297,7 +296,7 @@ def interface(
     name: Optional[str] = None,
     is_input: bool = False,
     description: Optional[str] = None,
-    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    directives: Optional[Sequence[object]] = (),
     all_fields: bool = False,
     use_pydantic_alias: bool = True,
 ) -> Callable[..., Type[StrawberryTypeFromPydantic[PydanticModel]]]:
