@@ -1,6 +1,7 @@
 import textwrap
 from typing import List, Optional
 
+
 import strawberry
 from strawberry.printer import print_schema
 from strawberry.schema.config import StrawberryConfig
@@ -173,6 +174,78 @@ def test_respects_schema_config_for_names():
 
     type Query {
       first_name: String! @Sensitive(real_age: "42")
+    }
+    """
+
+    schema = strawberry.Schema(
+        query=Query, config=StrawberryConfig(auto_camel_case=False)
+    )
+
+    assert print_schema(schema) == textwrap.dedent(expected_type).strip()
+
+
+def test_respects_schema_paraemeter_types_for_arguments_int():
+    @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
+    class Sensitive:
+        real_age: int
+
+    @strawberry.type
+    class Query:
+        first_name: str = strawberry.field(directives=[Sensitive(real_age=42)])
+
+    expected_type = """
+    directive @Sensitive(real_age: Int!) on FIELD_DEFINITION
+    
+    type Query {
+      first_name: String! @Sensitive(real_age: 42)
+    }
+    """
+
+    schema = strawberry.Schema(
+        query=Query, config=StrawberryConfig(auto_camel_case=False)
+    )
+
+    assert print_schema(schema) == textwrap.dedent(expected_type).strip()
+
+
+def test_respects_schema_paraemeter_types_for_arguments_list_of_ints():
+    @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
+    class Sensitive:
+        real_age: List[int]
+
+    @strawberry.type
+    class Query:
+        first_name: str = strawberry.field(directives=[Sensitive(real_age=[42])])
+
+    expected_type = """
+    directive @Sensitive(real_age: [Int!]!) on FIELD_DEFINITION
+    
+    type Query {
+      first_name: String! @Sensitive(real_age: [42])
+    }
+    """
+
+    schema = strawberry.Schema(
+        query=Query, config=StrawberryConfig(auto_camel_case=False)
+    )
+
+    assert print_schema(schema) == textwrap.dedent(expected_type).strip()
+
+
+def test_respects_schema_paraemeter_types_for_arguments_list_of_strings():
+    @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
+    class Sensitive:
+        real_age: List[str]
+
+    @strawberry.type
+    class Query:
+        first_name: str = strawberry.field(directives=[Sensitive(real_age=["42"])])
+
+    expected_type = """
+    directive @Sensitive(real_age: [String!]!) on FIELD_DEFINITION
+    
+    type Query {
+      first_name: String! @Sensitive(real_age: ["42"])
     }
     """
 
