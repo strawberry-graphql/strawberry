@@ -1,6 +1,19 @@
 CHANGELOG
 =========
 
+0.114.0 - 2022-05-27
+--------------------
+
+Improve schema directives typing and printing after latest refactor.
+
+- Support for printing schema directives for non-scalars (e.g. types) and null values.
+- Also print the schema directive itself and any extra types defined in it
+- Fix typing for apis expecting directives (e.g. `strawberry.field`, `strawberry.type`, etc)
+  to expect an object instead of a `StrawberrySchemaDirective`, which is now an internal type.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #1723](https://github.com/strawberry-graphql/strawberry/pull/1723/)
+
+
 0.113.0 - 2022-05-19
 --------------------
 
