@@ -1,7 +1,6 @@
 import textwrap
 from typing import List, Optional
 
-
 import strawberry
 from strawberry.printer import print_schema
 from strawberry.schema.config import StrawberryConfig
@@ -195,7 +194,7 @@ def test_respects_schema_paraemeter_types_for_arguments_int():
 
     expected_type = """
     directive @Sensitive(real_age: Int!) on FIELD_DEFINITION
-    
+
     type Query {
       first_name: String! @Sensitive(real_age: 42)
     }
@@ -219,7 +218,7 @@ def test_respects_schema_paraemeter_types_for_arguments_list_of_ints():
 
     expected_type = """
     directive @Sensitive(real_age: [Int!]!) on FIELD_DEFINITION
-    
+
     type Query {
       first_name: String! @Sensitive(real_age: [42])
     }
@@ -243,7 +242,7 @@ def test_respects_schema_paraemeter_types_for_arguments_list_of_strings():
 
     expected_type = """
     directive @Sensitive(real_age: [String!]!) on FIELD_DEFINITION
-    
+
     type Query {
       first_name: String! @Sensitive(real_age: ["42"])
     }
