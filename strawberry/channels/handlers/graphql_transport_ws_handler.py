@@ -43,3 +43,5 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
     async def handle_disconnect(self, code):
         for operation_id in list(self.subscriptions.keys()):
             await self.cleanup_operation(operation_id)
+
+        await self.reap_completed_tasks()
