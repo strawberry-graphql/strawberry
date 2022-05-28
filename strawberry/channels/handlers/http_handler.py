@@ -6,7 +6,7 @@ import json
 from pathlib import Path
 from typing import Any, Optional
 
-from cached_property import cached_property
+from backports.cached_property import cached_property
 
 from channels.generic.http import AsyncHttpConsumer
 from strawberry.exceptions import MissingQueryError

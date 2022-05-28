@@ -153,8 +153,6 @@ async def test_connection_init_timeout_cancellation():
         ).as_dict()
     )
 
-    await client.disconnect()
-
 
 async def test_too_many_initialisation_requests(ws):
     await ws.send_json_to(ConnectionInitMessage().as_dict())
@@ -179,8 +177,6 @@ async def test_ping_pong(ws):
 
     response = await ws.receive_json_from()
     assert response == PongMessage().as_dict()
-
-    await ws.disconnect()
 
 
 async def test_server_sent_ping(ws):
@@ -209,8 +205,6 @@ async def test_server_sent_ping(ws):
 
     response = await ws.receive_json_from()
     assert response == CompleteMessage(id="sub1").as_dict()
-
-    await ws.disconnect()
 
 
 async def test_unauthorized_subscriptions(ws):
@@ -279,8 +273,6 @@ async def test_simple_subscription(ws):
 
     await ws.send_json_to(CompleteMessage(id="sub1").as_dict())
 
-    await ws.disconnect()
-
 
 async def test_subscription_syntax_error(ws):
     await ws.send_json_to(ConnectionInitMessage().as_dict())
@@ -295,17 +287,13 @@ async def test_subscription_syntax_error(ws):
         ).as_dict()
     )
 
-    response = await ws.receive_json_from()
-    assert response["type"] == ErrorMessage.type
-    assert response["id"] == "sub1"
-    assert len(response["payload"]) == 1
-    assert response["payload"][0]["path"] is None
-    assert response["payload"][0]["locations"] == [{"line": 1, "column": 31}]
-    assert (
-        response["payload"][0]["message"] == "Syntax Error: Expected Name, found <EOF>."
-    )
-
-    await ws.disconnect()
+    # An invalid syntax will close the websocket
+    response = await ws.receive_output(timeout=2)
+    assert response == {
+        "type": "websocket.close",
+        "code": 4400,
+        "reason": "Syntax Error: Expected Name, found <EOF>.",
+    }
 
 
 async def test_subscription_field_errors(ws):
@@ -327,14 +315,11 @@ async def test_subscription_field_errors(ws):
     assert response["type"] == ErrorMessage.type
     assert response["id"] == "sub1"
     assert len(response["payload"]) == 1
-    assert response["payload"][0]["path"] is None
     assert response["payload"][0]["locations"] == [{"line": 1, "column": 16}]
     assert (
         response["payload"][0]["message"]
         == "The subscription field 'notASubscriptionField' is not defined."
     )
-
-    await ws.disconnect()
 
 
 async def test_subscription_cancellation(ws):
@@ -394,8 +379,6 @@ async def test_subscription_cancellation(ws):
     response = await ws.receive_json_from()
     assert response == CompleteMessage(id="sub3").as_dict()
 
-    await ws.disconnect()
-
 
 async def test_subscription_errors(ws):
     await ws.send_json_to(ConnectionInitMessage().as_dict())
@@ -419,8 +402,6 @@ async def test_subscription_errors(ws):
     assert response["payload"][0]["path"] == ["error"]
     assert response["payload"][0]["message"] == "TEST ERR"
 
-    await ws.disconnect()
-
 
 async def test_subscription_exceptions(ws):
     await ws.send_json_to(ConnectionInitMessage().as_dict())
@@ -441,8 +422,4 @@ async def test_subscription_exceptions(ws):
     assert response["type"] == ErrorMessage.type
     assert response["id"] == "sub1"
     assert len(response["payload"]) == 1
-    assert response["payload"][0]["path"] is None
-    assert response["payload"][0]["locations"] is None
-    assert response["payload"][0]["message"] == "TEST EXC"
-
-    await ws.disconnect()
+    assert response["payload"][0] == {"message": "TEST EXC"}

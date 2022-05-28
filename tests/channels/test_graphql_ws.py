@@ -273,9 +273,7 @@ async def test_subscription_exceptions(ws):
     assert response["type"] == GQL_DATA
     assert response["id"] == "demo"
     assert response["payload"]["data"] is None
-    assert response["payload"]["errors"] == [
-        {"locations": None, "message": "TEST EXC", "path": None}
-    ]
+    assert response["payload"]["errors"] == [{"message": "TEST EXC"}]
 
     await ws.send_json_to({"type": GQL_STOP, "id": "demo"})
     response = await ws.receive_json_from()
@@ -307,7 +305,6 @@ async def test_subscription_field_error(ws):
     assert response["id"] == "invalid-field"
     assert response["payload"] == {
         "locations": [{"line": 1, "column": 16}],
-        "path": None,
         "message": ("The subscription field 'notASubscriptionField' is not defined."),
     }
 
@@ -336,7 +333,6 @@ async def test_subscription_syntax_error(ws):
     assert response["id"] == "syntax-error"
     assert response["payload"] == {
         "locations": [{"line": 1, "column": 24}],
-        "path": None,
         "message": "Syntax Error: Expected Name, found <EOF>.",
     }
 
@@ -348,10 +344,10 @@ async def test_subscription_syntax_error(ws):
 
 
 async def test_non_text_ws_messages_are_ignored(ws):
-    ws.send_to(bytes_data=b"")
+    await ws.send_to(bytes_data=b"foo")
     await ws.send_json_to({"type": GQL_CONNECTION_INIT})
 
-    ws.send_to(bytes_data=b"")
+    await ws.send_to(bytes_data=b"foo")
     await ws.send_json_to(
         {
             "type": GQL_START,
@@ -370,13 +366,13 @@ async def test_non_text_ws_messages_are_ignored(ws):
     assert response["id"] == "demo"
     assert response["payload"]["data"] == {"echo": "Hi"}
 
-    ws.send_to(bytes_data=b"")
+    await ws.send_to(bytes_data=b"foo")
     await ws.send_json_to({"type": GQL_STOP, "id": "demo"})
     response = await ws.receive_json_from()
     assert response["type"] == GQL_COMPLETE
     assert response["id"] == "demo"
 
-    ws.send_to(bytes_data=b"")
+    await ws.send_to(bytes_data=b"foo")
     await ws.send_json_to({"type": GQL_CONNECTION_TERMINATE})
 
     # make sure the websocket is disconnected now
