@@ -1,11 +1,9 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Optional, Union
-
-from django.http import HttpRequest, HttpResponse
+from typing import TYPE_CHECKING, Union, cast
 
 
 if TYPE_CHECKING:
-    from strawberry.channels import GraphQLWSConsumer
+    from strawberry.channels import GraphQLHTTPConsumer, GraphQLWSConsumer
 
 
 @dataclass
@@ -14,12 +12,12 @@ class StrawberryChannelsContext:
     A Channels context for GraphQL
     """
 
-    request: Optional[Union[HttpRequest, "GraphQLWSConsumer"]]
-    response: Optional[HttpResponse]
+    request: Union["GraphQLHTTPConsumer", "GraphQLWSConsumer"]
+    response: None = None
 
     @property
     def ws(self):
-        return self.request
+        return cast("GraphQLWSConsumer", self.request)
 
     def __getitem__(self, key):
         # __getitem__ override needed to avoid issues for who's

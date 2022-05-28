@@ -5,9 +5,9 @@ It's a simple "SubProtocolRouter" that selects the websocket subprotocol based
 on preferences and client support. Then it hands off to the appropriate consumer.
 """
 from datetime import timedelta
-from typing import Any, Optional, Sequence, Union
+from typing import Any, Optional, Sequence, TypeVar, Union
 
-from django.http import HttpRequest, HttpResponse
+from django.http import HttpRequest
 from django.urls import re_path
 
 from channels.generic.websocket import (
@@ -26,6 +26,9 @@ from .handlers.graphql_ws_handler import GraphQLWSHandler
 from .handlers.http_handler import GraphQLHTTPConsumer
 
 
+_T = TypeVar("_T")
+
+
 class GraphQLWSConsumer(AsyncJsonWebsocketConsumer):
     """A channels websocket consumer for GraphQL
 
@@ -38,14 +41,17 @@ class GraphQLWSConsumer(AsyncJsonWebsocketConsumer):
     from strawberry.channels import GraphQLHttpRouter
     from channels.routing import ProtocolTypeRouter
     from django.core.asgi import get_asgi_application
+
     application = ProtocolTypeRouter({
-      "http": URLRouter([
-        re_path("^graphql", GraphQLHTTPConsumer(schema=schema)),
-        re_path("^", get_asgi_application()),
-      "websocket": URLRouter([
-        re_path("^ws/graphql", GraphQLWSConsumer(schema=schema))
-      ]),
+        "http": URLRouter([
+            re_path("^graphql", GraphQLHTTPRouter(schema=schema)),
+            re_path("^", get_asgi_application()),
+        ]),
+        "websocket": URLRouter([
+            re_path("^ws/graphql", GraphQLWebSocketRouter(schema=schema)),
+        ]),
     })
+    ```
     """
 
     graphql_transport_ws_handler_class = GraphQLTransportWSHandler
@@ -130,10 +136,9 @@ class GraphQLWSConsumer(AsyncJsonWebsocketConsumer):
 
     async def get_context(
         self,
-        request: Optional[Union[HttpRequest, "GraphQLWSConsumer"]] = None,
-        response: Optional[HttpResponse] = None,
-    ) -> Optional[Any]:
-        return StrawberryChannelsContext(request=request or self, response=response)
+        request: Optional["GraphQLWSConsumer"] = None,
+    ) -> Any:
+        return StrawberryChannelsContext(request=request or self)
 
     async def process_result(
         self,

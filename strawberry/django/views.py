@@ -86,7 +86,7 @@ class BaseView(View):
         if request.method.lower() != "get":
             return False
 
-        if request.META.get("QUERY_STRING"):
+        if self.allow_queries_via_get and request.META.get("QUERY_STRING"):
             return False
 
         return any(

@@ -54,6 +54,10 @@ class Query:
 
 @strawberry.type
 class Mutation:
+    @strawberry.field
+    def hello(self, name: typing.Optional[str] = None) -> str:
+        return f"Hello {name or 'world'}"
+
     @strawberry.mutation
     async def read_text(self, text_file: Upload) -> str:
         return (await text_file.read()).decode()

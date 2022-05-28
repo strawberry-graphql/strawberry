@@ -263,6 +263,10 @@ class BaseGraphQLTransportWSHandler(ABC):
             return
 
     async def handle_complete(self, message: CompleteMessage) -> None:
+        timeout_task = self.connection_init_timeout_task
+        if timeout_task and not timeout_task.done() and not timeout_task.cancelled():
+            timeout_task.cancel()
+
         await self.cleanup_operation(operation_id=message.id)
 
     async def handle_invalid_message(self, error_message: str) -> None:
