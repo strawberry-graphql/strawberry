@@ -112,10 +112,8 @@ class GraphQLWSConsumer(AsyncJsonWebsocketConsumer):
     async def receive(self, text_data=None, bytes_data=None, **kwargs):
         try:
             await super().receive(text_data=text_data, bytes_data=bytes_data, **kwargs)
-        except ValueError:
-            await self._handler.handle_invalid_message(
-                "WebSocket message type must be text"
-            )
+        except ValueError as e:
+            await self._handler.handle_invalid_message(str(e))
 
     async def receive_json(self, content, **kwargs):
         await self._handler.handle_message(content)
