@@ -166,7 +166,10 @@ class GraphQLProtocolTypeRouter(ProtocolTypeRouter):
     """
 
     def __init__(
-        self, schema: BaseSchema, django_application=None, url_pattern="^graph"
+        self,
+        schema: BaseSchema,
+        django_application=None,
+        url_pattern="^graphql",
     ):
         http_urls = [re_path(url_pattern, GraphQLHTTPConsumer.as_asgi(schema=schema))]
         if django_application is not None:
