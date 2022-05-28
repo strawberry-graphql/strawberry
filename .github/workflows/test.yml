@@ -1,5 +1,9 @@
 name: Backend tests
 
+concurrency:
+  group: ${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
 on:
   push:
     branches: [main]
@@ -69,7 +73,7 @@ jobs:
   django-unit-tests:
     strategy:
       matrix:
-        django: ["4.0", "3.2", "2.2"]
+        django: ["4.0", "3.2"]
 
     name: Test Django ${{ matrix.django }}
     runs-on: ubuntu-latest

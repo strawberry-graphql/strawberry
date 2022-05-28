@@ -25,13 +25,13 @@ def test_enum_with_decorator():
 
     assert results == [
         Result(
-            type="info",
+            type="information",
             message='Type of "IceCreamFlavour" is "Type[IceCreamFlavour]"',
             line=12,
             column=13,
         ),
         Result(
-            type="info",
+            type="information",
             message=(
                 'Type of "IceCreamFlavour.VANILLA" is '
                 '"Literal[IceCreamFlavour.VANILLA]"'
@@ -63,13 +63,13 @@ def test_enum_with_decorator_and_name():
 
     assert results == [
         Result(
-            type="info",
+            type="information",
             message='Type of "Flavour" is "Type[Flavour]"',
             line=12,
             column=13,
         ),
         Result(
-            type="info",
+            type="information",
             message='Type of "Flavour.VANILLA" is "Literal[Flavour.VANILLA]"',
             line=13,
             column=13,
@@ -97,7 +97,7 @@ def test_enum_with_manual_decorator():
 
     assert results == [
         Result(
-            type="info",
+            type="information",
             message=(
                 'Type of "strawberry.enum(IceCreamFlavour)" '
                 'is "Type[IceCreamFlavour]"'
@@ -106,7 +106,7 @@ def test_enum_with_manual_decorator():
             column=13,
         ),
         Result(
-            type="info",
+            type="information",
             message=(
                 'Type of "strawberry.enum(IceCreamFlavour).VANILLA" '
                 'is "Literal[IceCreamFlavour.VANILLA]"'
@@ -137,7 +137,7 @@ def test_enum_with_manual_decorator_and_name():
 
     assert results == [
         Result(
-            type="info",
+            type="information",
             message=(
                 'Type of "strawberry.enum(name="IceCreamFlavour")(Flavour)" '
                 'is "Type[Flavour]"'
@@ -146,12 +146,52 @@ def test_enum_with_manual_decorator_and_name():
             column=13,
         ),
         Result(
-            type="info",
+            type="information",
             message=(
                 'Type of "strawberry.enum(name="IceCreamFlavour")(Flavour).VANILLA" '
                 'is "Literal[Flavour.VANILLA]"'
             ),
             line=12,
+            column=13,
+        ),
+    ]
+
+
+CODE_WITH_DEPRECATION_REASON = """
+from enum import Enum
+
+import strawberry
+
+@strawberry.enum
+class IceCreamFlavour(Enum):
+    VANILLA = "vanilla"
+    STRAWBERRY = strawberry.enum_value(
+        "strawberry", deprecation_reason="We ran out"
+    )
+    CHOCOLATE = "chocolate"
+
+reveal_type(IceCreamFlavour)
+reveal_type(IceCreamFlavour.STRAWBERRY)
+"""
+
+
+def test_enum_deprecated():
+    results = run_pyright(CODE_WITH_DEPRECATION_REASON)
+
+    assert results == [
+        Result(
+            type="information",
+            message='Type of "IceCreamFlavour" is "Type[IceCreamFlavour]"',
+            line=14,
+            column=13,
+        ),
+        Result(
+            type="information",
+            message=(
+                'Type of "IceCreamFlavour.STRAWBERRY" is '
+                '"Literal[IceCreamFlavour.STRAWBERRY]"'
+            ),
+            line=15,
             column=13,
         ),
     ]

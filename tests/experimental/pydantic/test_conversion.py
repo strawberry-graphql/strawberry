@@ -1,6 +1,7 @@
+import base64
 import re
 from enum import Enum
-from typing import Any, List, NewType, Optional, Union, cast
+from typing import Any, Dict, List, NewType, Optional, Union, cast
 
 import pytest
 
@@ -9,7 +10,6 @@ from pydantic.fields import ModelField
 from pydantic.typing import NoArgAnyCallable
 
 import strawberry
-from strawberry.arguments import UNSET
 from strawberry.experimental.pydantic.exceptions import (
     AutoFieldsNotInBaseModelError,
     BothDefaultAndDefaultFactoryDefinedError,
@@ -22,6 +22,7 @@ from strawberry.experimental.pydantic.utils import (
 from strawberry.field import StrawberryField
 from strawberry.type import StrawberryOptional
 from strawberry.types.types import TypeDefinition
+from strawberry.unset import UNSET
 
 
 def test_can_use_type_standalone():
@@ -134,6 +135,44 @@ def test_can_convert_alias_pydantic_field_to_strawberry():
 
     assert user.age_ == 1
     assert user.password == "abc"
+
+
+def test_convert_alias_name():
+    class UserModel(BaseModel):
+        age_: int = Field(..., alias="age")
+        password: Optional[str]
+
+    @strawberry.experimental.pydantic.type(
+        UserModel, all_fields=True, use_pydantic_alias=True
+    )
+    class User:
+        ...
+
+    origin_user = UserModel(age=1, password="abc")
+    user = User.from_pydantic(origin_user)
+    assert user.age_ == 1
+    definition = User._type_definition
+
+    assert definition.fields[0].graphql_name == "age"
+
+
+def test_do_not_convert_alias_name():
+    class UserModel(BaseModel):
+        age_: int = Field(..., alias="age")
+        password: Optional[str]
+
+    @strawberry.experimental.pydantic.type(
+        UserModel, all_fields=True, use_pydantic_alias=False
+    )
+    class User:
+        ...
+
+    origin_user = UserModel(age=1, password="abc")
+    user = User.from_pydantic(origin_user)
+    assert user.age_ == 1
+    definition = User._type_definition
+
+    assert definition.fields[0].graphql_name is None
 
 
 def test_can_pass_pydantic_field_description_to_strawberry():
@@ -786,6 +825,25 @@ def test_can_convert_pydantic_type_to_strawberry_newtype():
     assert user.password == "abc"
 
 
+def test_can_convert_pydantic_type_to_strawberry_newtype_list():
+    Password = NewType("Password", str)
+
+    class User(BaseModel):
+        age: int
+        passwords: List[Password]
+
+    @strawberry.experimental.pydantic.type(User)
+    class UserType:
+        age: strawberry.auto
+        passwords: strawberry.auto
+
+    origin_user = User(age=1, passwords=["hunter2"])
+    user = UserType.from_pydantic(origin_user)
+
+    assert user.age == 1
+    assert user.passwords == ["hunter2"]
+
+
 def test_sort_creation_fields():
     has_default = DataclassCreationFields(
         name="has_default",
@@ -908,5 +966,193 @@ def test_can_convert_pydantic_type_to_strawberry_with_additional_field_resolvers
     origin_user = UserModel(password="abc", new_age=21)
     user = User.from_pydantic(origin_user)
     assert user.password == "abc"
+    assert User._type_definition.fields[0].name == "new_age"
     assert User._type_definition.fields[0].base_resolver() == 84
+    assert User._type_definition.fields[1].name == "age"
     assert User._type_definition.fields[1].base_resolver() == 42
+
+
+def test_can_convert_both_output_and_input_type():
+    class Work(BaseModel):
+        time: float
+
+    class User(BaseModel):
+        name: str
+        work: Optional[Work]
+
+    class Group(BaseModel):
+        users: List[User]
+
+    # Test both definition orders
+    @strawberry.experimental.pydantic.input(Work)
+    class WorkInput:
+        time: strawberry.auto
+
+    @strawberry.experimental.pydantic.type(Work)
+    class WorkOutput:
+        time: strawberry.auto
+
+    @strawberry.experimental.pydantic.type(User)
+    class UserOutput:
+        name: strawberry.auto
+        work: strawberry.auto
+
+    @strawberry.experimental.pydantic.input(User)
+    class UserInput:
+        name: strawberry.auto
+        work: strawberry.auto
+
+    @strawberry.experimental.pydantic.input(Group)
+    class GroupInput:
+        users: strawberry.auto
+
+    @strawberry.experimental.pydantic.type(Group)
+    class GroupOutput:
+        users: strawberry.auto
+
+    origin_group = Group(
+        users=[
+            User(name="Alice", work=Work(time=10.0)),
+            User(name="Bob", work=Work(time=5.0)),
+        ]
+    )
+    group = GroupOutput.from_pydantic(origin_group)
+    final_group = group.to_pydantic()
+    assert origin_group == final_group
+
+    group_input = GroupInput.from_pydantic(origin_group)
+    final_group = group_input.to_pydantic()
+    assert origin_group == final_group
+
+
+def test_custom_conversion_functions():
+    class User(BaseModel):
+        age: int
+        password: Optional[str]
+
+    @strawberry.experimental.pydantic.type(User)
+    class UserType:
+        age: str
+        password: strawberry.auto
+
+        @staticmethod
+        def from_pydantic(instance: User, extra: Dict[str, Any] = None) -> "UserType":
+            return UserType(
+                age=str(instance.age),
+                password=base64.b64encode(instance.password.encode()).decode()
+                if instance.password
+                else None,
+            )
+
+        def to_pydantic(self) -> User:
+            return User(
+                age=int(self.age),
+                password=base64.b64decode(self.password.encode()).decode()
+                if self.password
+                else None,
+            )
+
+    user = User(age=1, password="abc")
+    user_strawberry = UserType.from_pydantic(user)
+
+    assert user_strawberry.age == "1"
+    assert user_strawberry.password == "YWJj"
+
+    user_pydantic = user_strawberry.to_pydantic()
+    assert user == user_pydantic
+
+
+def test_nested_custom_conversion_functions():
+    class User(BaseModel):
+        age: int
+        password: Optional[str]
+
+    class Parent(BaseModel):
+        user: User
+
+    @strawberry.experimental.pydantic.type(User)
+    class UserType:
+        age: str
+        password: strawberry.auto
+
+        @staticmethod
+        def from_pydantic(instance: User, extra: Dict[str, Any] = None) -> "UserType":
+            return UserType(
+                age=str(instance.age),
+                password=base64.b64encode(instance.password.encode()).decode()
+                if instance.password
+                else None,
+            )
+
+        def to_pydantic(self) -> User:
+            return User(
+                age=int(self.age),
+                password=base64.b64decode(self.password.encode()).decode()
+                if self.password
+                else None,
+            )
+
+    @strawberry.experimental.pydantic.type(Parent)
+    class ParentType:
+        user: strawberry.auto
+
+    user = User(age=1, password="abc")
+    parent = Parent(user=user)
+    parent_strawberry = ParentType.from_pydantic(parent)
+
+    assert parent_strawberry.user.age == "1"
+    assert parent_strawberry.user.password == "YWJj"
+
+    parent_pydantic = parent_strawberry.to_pydantic()
+    assert parent == parent_pydantic
+
+
+def test_can_convert_input_types_to_pydantic_with_non_pydantic_dataclass():
+    @strawberry.type
+    class Work:
+        hours: int
+
+    class User(BaseModel):
+        age: int
+        password: Optional[str]
+        work: Work
+
+    @strawberry.experimental.pydantic.input(User)
+    class UserInput:
+        age: strawberry.auto
+        password: strawberry.auto
+        work: strawberry.auto
+
+    data = UserInput(age=1, password=None, work=Work(hours=1))
+    user = data.to_pydantic()
+
+    assert user.age == 1
+    assert user.password is None
+    assert user.work.hours == 1
+
+
+def test_can_convert_input_types_to_pydantic_with_dict():
+    class Work(BaseModel):
+        hours: int
+
+    class User(BaseModel):
+        age: int
+        password: Optional[str]
+        work: Dict[str, Work]
+
+    @strawberry.experimental.pydantic.input(Work)
+    class WorkInput:
+        hours: strawberry.auto
+
+    @strawberry.experimental.pydantic.input(User)
+    class UserInput:
+        age: strawberry.auto
+        password: strawberry.auto
+        work: strawberry.auto
+
+    data = UserInput(age=1, password=None, work={"Monday": Work(hours=1)})
+    user = data.to_pydantic()
+
+    assert user.age == 1
+    assert user.password is None
+    assert user.work["Monday"].hours == 1

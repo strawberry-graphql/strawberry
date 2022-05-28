@@ -1,3 +1,5 @@
+import copy
+import dataclasses
 from typing import Union, cast
 
 from strawberry.enum import EnumDefinition
@@ -45,8 +47,11 @@ def _convert_from_pydantic_to_strawberry_type(
     if hasattr(type_, "_type_definition"):
         # in the case of an interface, the concrete type may be more specific
         # than the type in the field definition
+        # don't check _strawberry_input_type because inputs can't be interfaces
         if hasattr(type(data), "_strawberry_type"):
             type_ = type(data)._strawberry_type
+        if hasattr(type_, "from_pydantic"):
+            return type_.from_pydantic(data_from_model, extra)  # type: ignore
         return convert_pydantic_model_to_strawberry_class(
             type_, model_instance=data_from_model, extra=extra
         )
@@ -75,3 +80,28 @@ def convert_pydantic_model_to_strawberry_class(cls, *, model_instance=None, extr
             )
 
     return cls(**kwargs)
+
+
+def convert_strawberry_class_to_pydantic_model(obj):
+    if hasattr(obj, "to_pydantic"):
+        return obj.to_pydantic()
+    elif dataclasses.is_dataclass(obj):
+        result = []
+        for f in dataclasses.fields(obj):
+            value = convert_strawberry_class_to_pydantic_model(getattr(obj, f.name))
+            result.append((f.name, value))
+        return dict(result)
+    elif isinstance(obj, (list, tuple)):
+        # Assume we can create an object of this type by passing in a
+        # generator (which is not true for namedtuples, not supported).
+        return type(obj)(convert_strawberry_class_to_pydantic_model(v) for v in obj)
+    elif isinstance(obj, dict):
+        return type(obj)(
+            (
+                convert_strawberry_class_to_pydantic_model(k),
+                convert_strawberry_class_to_pydantic_model(v),
+            )
+            for k, v in obj.items()
+        )
+    else:
+        return copy.deepcopy(obj)

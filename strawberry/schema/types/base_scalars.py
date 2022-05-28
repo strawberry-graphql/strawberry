@@ -21,9 +21,9 @@ def wrap_parser(parser: Callable, type_: str) -> Callable:
     return inner
 
 
-def parse_decimal(value: str) -> decimal.Decimal:
+def parse_decimal(value: object) -> decimal.Decimal:
     try:
-        return decimal.Decimal(value)
+        return decimal.Decimal(str(value))
     except decimal.DecimalException:
         raise GraphQLError(f'Value cannot represent a Decimal: "{value}".')
 
@@ -66,4 +66,18 @@ UUID = scalar(
     name="UUID",
     serialize=str,
     parse_value=wrap_parser(uuid.UUID, "UUID"),
+)
+
+
+def _verify_void(x) -> None:
+    if x is not None:
+        raise ValueError(f"Expected 'None', got '{x}'")
+
+
+Void = scalar(
+    type(None),
+    name="Void",
+    serialize=_verify_void,
+    parse_value=_verify_void,
+    description="Represents NULL values",
 )

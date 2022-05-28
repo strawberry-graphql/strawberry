@@ -1,7 +1,17 @@
 from __future__ import annotations
 
-from enum import Enum
-from typing import Any, Callable, Dict, List, Optional, Tuple, Type, Union, cast
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 
 from graphql import (
     GraphQLArgument,
@@ -11,34 +21,39 @@ from graphql import (
     GraphQLField,
     GraphQLInputField,
     GraphQLInputObjectType,
+    GraphQLInputType,
     GraphQLInterfaceType,
     GraphQLList,
     GraphQLNonNull,
     GraphQLNullableType,
     GraphQLObjectType,
+    GraphQLOutputType,
     GraphQLResolveInfo,
     GraphQLScalarType,
-    GraphQLType,
     GraphQLUnionType,
     Undefined,
+    ValueNode,
 )
 
-from strawberry.arguments import UNSET, StrawberryArgument, convert_arguments, is_unset
+from strawberry.arguments import StrawberryArgument, convert_arguments
 from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.directive import StrawberryDirective
 from strawberry.enum import EnumDefinition, EnumValue
 from strawberry.exceptions import (
     MissingTypesForGenericError,
     ScalarAlreadyRegisteredError,
+    UnresolvedFieldTypeError,
 )
-from strawberry.field import StrawberryField
+from strawberry.field import UNRESOLVED, StrawberryField
 from strawberry.lazy_type import LazyType
+from strawberry.private import is_private
 from strawberry.schema.config import StrawberryConfig
 from strawberry.schema.types.scalar import _make_scalar_type
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
 from strawberry.types.info import Info
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
+from strawberry.unset import UNSET
 from strawberry.utils.await_maybe import await_maybe
 
 from . import compat
@@ -50,10 +65,22 @@ from .types.concrete_type import ConcreteType
 # subclass the GraphQLEnumType class to enable returning Enum members from
 # resolvers.
 class CustomGraphQLEnumType(GraphQLEnumType):
+    def __init__(self, enum: EnumDefinition, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.wrapped_cls = enum.wrapped_cls
+
     def serialize(self, output_value: Any) -> str:
-        if isinstance(output_value, Enum):
+        if isinstance(output_value, self.wrapped_cls):
             return output_value.name
         return super().serialize(output_value)
+
+    def parse_value(self, input_value: str) -> Any:
+        return self.wrapped_cls(super().parse_value(input_value))
+
+    def parse_literal(
+        self, value_node: ValueNode, _variables: Optional[Dict[str, Any]] = None
+    ) -> Any:
+        return self.wrapped_cls(super().parse_literal(value_node, _variables))
 
 
 class GraphQLCoreConverter:
@@ -69,13 +96,7 @@ class GraphQLCoreConverter:
         self.scalar_registry = scalar_registry
 
     def from_argument(self, argument: StrawberryArgument) -> GraphQLArgument:
-        argument_type: GraphQLType
-
-        if isinstance(argument.type, StrawberryOptional):
-            argument_type = self.from_optional(argument.type)
-        else:
-            argument_type = self.from_non_optional(argument.type)
-
+        argument_type = cast(GraphQLInputType, self.from_maybe_optional(argument.type))
         default_value = Undefined if argument.default is UNSET else argument.default
 
         return GraphQLArgument(
@@ -97,6 +118,7 @@ class GraphQLCoreConverter:
             return graphql_enum
 
         graphql_enum = CustomGraphQLEnumType(
+            enum=enum,
             name=enum_name,
             values={item.name: self.from_enum_value(item) for item in enum.values},
             description=enum.description,
@@ -109,7 +131,10 @@ class GraphQLCoreConverter:
         return graphql_enum
 
     def from_enum_value(self, enum_value: EnumValue) -> GraphQLEnumValue:
-        return GraphQLEnumValue(enum_value.value)
+        return GraphQLEnumValue(
+            enum_value.value,
+            deprecation_reason=enum_value.deprecation_reason,
+        )
 
     def from_directive(self, directive: StrawberryDirective) -> GraphQLDirective:
         graphql_arguments = {}
@@ -128,12 +153,7 @@ class GraphQLCoreConverter:
         )
 
     def from_field(self, field: StrawberryField) -> GraphQLField:
-        field_type: GraphQLType
-
-        if isinstance(field.type, StrawberryOptional):
-            field_type = self.from_optional(field.type)
-        else:
-            field_type = self.from_non_optional(field.type)
+        field_type = cast(GraphQLOutputType, self.from_maybe_optional(field.type))
 
         resolver = self.from_resolver(field)
         subscribe = None
@@ -158,16 +178,10 @@ class GraphQLCoreConverter:
         )
 
     def from_input_field(self, field: StrawberryField) -> GraphQLInputField:
-        field_type: GraphQLType
-
-        if isinstance(field.type, StrawberryOptional):
-            field_type = self.from_optional(field.type)
-        else:
-            field_type = self.from_non_optional(field.type)
-
+        field_type = cast(GraphQLInputType, self.from_maybe_optional(field.type))
         default_value: object
 
-        if is_unset(field.default_value):
+        if field.default_value is UNSET:
             default_value = Undefined
         else:
             default_value = field.default_value
@@ -177,6 +191,53 @@ class GraphQLCoreConverter:
             default_value=default_value,
             description=field.description,
             deprecation_reason=field.deprecation_reason,
+        )
+
+    FieldType = TypeVar("FieldType", GraphQLField, GraphQLInputField)
+
+    @staticmethod
+    def _get_thunk_mapping(
+        fields: List[StrawberryField],
+        name_converter: Callable[[StrawberryField], str],
+        field_converter: Callable[[StrawberryField], FieldType],
+    ) -> Dict[str, FieldType]:
+        """Create a GraphQL core `ThunkMapping` mapping of field names to field types.
+
+        This method filters out remaining `strawberry.Private` annotated fields that
+        could not be filtered during the initialization of a `TypeDefinition` due to
+        postponed type-hint evaluation (PEP-563). Performing this filtering now (at
+        schema conversion time) ensures that all types to be included in the schema
+        should have already been resolved.
+
+        Raises:
+            TypeError: If the type of a field in ``fields`` is `UNRESOLVED`
+        """
+        thunk_mapping = {}
+
+        for f in fields:
+            if f.type is UNRESOLVED:
+                raise UnresolvedFieldTypeError(f.name)
+
+            if not is_private(f.type):
+                thunk_mapping[name_converter(f)] = field_converter(f)
+        return thunk_mapping
+
+    def get_graphql_fields(
+        self, type_definition: TypeDefinition
+    ) -> Dict[str, GraphQLField]:
+        return self._get_thunk_mapping(
+            fields=type_definition.fields,
+            name_converter=self.config.name_converter.from_field,
+            field_converter=self.from_field,
+        )
+
+    def get_graphql_input_fields(
+        self, type_definition: TypeDefinition
+    ) -> Dict[str, GraphQLInputField]:
+        return self._get_thunk_mapping(
+            fields=type_definition.fields,
+            name_converter=self.config.name_converter.from_field,
+            field_converter=self.from_input_field,
         )
 
     def from_input_object(self, object_type: type) -> GraphQLInputObjectType:
@@ -190,18 +251,9 @@ class GraphQLCoreConverter:
             assert isinstance(graphql_object_type, GraphQLInputObjectType)  # For mypy
             return graphql_object_type
 
-        def get_graphql_fields() -> Dict[str, GraphQLInputField]:
-            graphql_fields = {}
-            for field in type_definition.fields:
-                field_name = self.config.name_converter.from_field(field)
-
-                graphql_fields[field_name] = self.from_input_field(field)
-
-            return graphql_fields
-
         graphql_object_type = GraphQLInputObjectType(
             name=type_name,
-            fields=get_graphql_fields,
+            fields=lambda: self.get_graphql_input_fields(type_definition),
             description=type_definition.description,
         )
 
@@ -222,18 +274,9 @@ class GraphQLCoreConverter:
             assert isinstance(graphql_interface, GraphQLInterfaceType)  # For mypy
             return graphql_interface
 
-        def get_graphql_fields() -> Dict[str, GraphQLField]:
-            graphql_fields = {}
-
-            for field in interface.fields:
-                field_name = self.config.name_converter.from_field(field)
-                graphql_fields[field_name] = self.from_field(field)
-
-            return graphql_fields
-
         graphql_interface = GraphQLInterfaceType(
             name=interface_name,
-            fields=get_graphql_fields,
+            fields=lambda: self.get_graphql_fields(interface),
             interfaces=list(map(self.from_interface, interface.interfaces)),
             description=interface.description,
         )
@@ -245,21 +288,9 @@ class GraphQLCoreConverter:
         return graphql_interface
 
     def from_list(self, type_: StrawberryList) -> GraphQLList:
-        of_type: GraphQLType
-
-        if isinstance(type_.of_type, StrawberryOptional):
-            of_type = self.from_optional(type_.of_type)
-        else:
-            of_type = self.from_non_optional(type_.of_type)
+        of_type = self.from_maybe_optional(type_.of_type)
 
         return GraphQLList(of_type)
-
-    def from_optional(self, type_: StrawberryOptional) -> GraphQLNullableType:
-        return self.from_type(type_.of_type)
-
-    def from_non_optional(self, type_: Union[StrawberryType, type]) -> GraphQLNonNull:
-        of_type = self.from_type(type_)
-        return GraphQLNonNull(of_type)
 
     def from_object(self, object_type: TypeDefinition) -> GraphQLObjectType:
         # TODO: Use StrawberryObjectType when it's implemented in another PR
@@ -271,33 +302,30 @@ class GraphQLCoreConverter:
             assert isinstance(graphql_object_type, GraphQLObjectType)  # For mypy
             return graphql_object_type
 
-        def get_graphql_fields() -> Dict[str, GraphQLField]:
-            graphql_fields = {}
+        def _get_is_type_of() -> Optional[Callable[[Any, GraphQLResolveInfo], bool]]:
+            if object_type.is_type_of:
+                return object_type.is_type_of
 
-            for field in object_type.fields:
-                field_name = self.config.name_converter.from_field(field)
-
-                graphql_fields[field_name] = self.from_field(field)
-
-            return graphql_fields
-
-        is_type_of: Optional[Callable[[Any, GraphQLResolveInfo], bool]]
-        if object_type.is_type_of:
-            is_type_of = object_type.is_type_of
-        elif object_type.interfaces:
+            if not object_type.interfaces:
+                return None
 
             def is_type_of(obj: Any, _info: GraphQLResolveInfo) -> bool:
+                if object_type.concrete_of and (
+                    hasattr(obj, "_type_definition")
+                    and obj._type_definition.origin is object_type.concrete_of.origin
+                ):
+                    return True
+
                 return isinstance(obj, object_type.origin)
 
-        else:
-            is_type_of = None
+            return is_type_of
 
         graphql_object_type = GraphQLObjectType(
             name=object_type_name,
-            fields=get_graphql_fields,
+            fields=lambda: self.get_graphql_fields(object_type),
             interfaces=list(map(self.from_interface, object_type.interfaces)),
             description=object_type.description,
-            is_type_of=is_type_of,
+            is_type_of=_get_is_type_of(),
         )
 
         self.type_map[object_type_name] = ConcreteType(
@@ -436,6 +464,17 @@ class GraphQLCoreConverter:
 
         return implementation
 
+    def from_maybe_optional(
+        self, type_: Union[StrawberryType, type]
+    ) -> Union[GraphQLNullableType, GraphQLNonNull]:
+        NoneType = type(None)
+        if type_ is None or type_ is NoneType:
+            return self.from_type(type_)
+        elif isinstance(type_, StrawberryOptional):
+            return self.from_type(type_.of_type)
+        else:
+            return GraphQLNonNull(self.from_type(type_))
+
     def from_type(self, type_: Union[StrawberryType, type]) -> GraphQLNullableType:
         if compat.is_generic(type_):
             raise MissingTypesForGenericError(type_)
@@ -497,3 +536,25 @@ class GraphQLCoreConverter:
         )
 
         return graphql_union
+
+    def _get_is_type_of(
+        self,
+        object_type: TypeDefinition,
+    ) -> Optional[Callable[[Any, GraphQLResolveInfo], bool]]:
+        if object_type.is_type_of:
+            return object_type.is_type_of
+
+        if object_type.interfaces:
+
+            def is_type_of(obj: Any, _info: GraphQLResolveInfo) -> bool:
+                if object_type.concrete_of and (
+                    hasattr(obj, "_type_definition")
+                    and obj._type_definition.origin is object_type.concrete_of.origin
+                ):
+                    return True
+
+                return isinstance(obj, object_type.origin)
+
+            return is_type_of
+
+        return None

@@ -131,6 +131,15 @@ class UnsupportedTypeError(Exception):
         super().__init__(message)
 
 
+class UnresolvedFieldTypeError(Exception):
+    def __init__(self, field_name: str):
+        message = (
+            f"Could not resolve the type of '{field_name}'. Check that the class is "
+            "accessible from the global module scope."
+        )
+        super().__init__(message)
+
+
 class MissingFieldAnnotationError(Exception):
     def __init__(self, field_name: str):
         message = (
@@ -219,4 +228,15 @@ class InvalidDefaultFactoryError(Exception):
     def __init__(self):
         message = "`default_factory` must be a callable that requires no arguments"
 
+        super().__init__(message)
+
+
+class InvalidCustomContext(Exception):
+    """Raised when a custom context object is of the wrong python type"""
+
+    def __init__(self):
+        message = (
+            "The custom context must be either a class "
+            "that inherits from BaseContext or a dictionary"
+        )
         super().__init__(message)

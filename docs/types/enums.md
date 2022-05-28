@@ -4,7 +4,7 @@ title: Enums
 
 # Enums
 
-Enums are a special kind of type that is restrict to a particular set of values.
+Enums are a special kind of type that is restricted to a particular set of values.
 
 For example, we have a few options of ice cream available, and we want to allow
 user to choose only from those options.
@@ -125,6 +125,20 @@ Strawberry uses the name of the members of the enum to create the GraphQL
 type.
 
 </Note>
+
+You can also deprecate enum value. To do so you need more verbose syntax using
+`strawberry.enum_value` and `deprecation_reason`. You can mix and match string
+and verbose syntax.
+
+```python
+@strawberry.enum
+class IceCreamFlavour(Enum):
+    VANILLA = strawberry.enum_value("vanilla")
+    STRAWBERRY = strawberry.enum_value(
+        "strawberry", deprecation_reason="We ran out"
+    )
+    CHOCOLATE = "chocolate"
+```
 
 <AdditionalResources
   title="Enums"

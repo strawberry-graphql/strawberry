@@ -43,6 +43,11 @@ class Query:
     def hello(self, name: typing.Optional[str] = None) -> str:
         return f"Hello {name or 'world'}"
 
+    @strawberry.field
+    async def async_hello(self, name: str, delay: float = 0) -> str:
+        await asyncio.sleep(delay)
+        return f"Hello {name or 'world'}"
+
     @strawberry.field(permission_classes=[AlwaysFailPermission])
     def always_fail(self) -> Optional[str]:
         return "Hey"
@@ -51,9 +56,18 @@ class Query:
     def root_name(root) -> str:
         return type(root).__name__
 
+    @strawberry.field
+    async def exception(self, message: str) -> str:
+        raise ValueError(message)
+        return message
+
 
 @strawberry.type
 class Mutation:
+    @strawberry.mutation
+    async def hello(self) -> str:
+        return "strawberry"
+
     @strawberry.mutation
     async def read_text(self, text_file: Upload) -> str:
         return (await text_file.read()).decode()

@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from functools import lru_cache
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Iterable, List, Optional, Union
 
 from typing_extensions import Protocol
 
@@ -10,6 +10,7 @@ from strawberry.custom_scalar import ScalarDefinition
 from strawberry.directive import StrawberryDirective
 from strawberry.enum import EnumDefinition
 from strawberry.types import ExecutionContext, ExecutionResult
+from strawberry.types.graphql import OperationType
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 from strawberry.utils.logging import StrawberryLogger
@@ -28,6 +29,7 @@ class BaseSchema(Protocol):
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
+        allowed_operation_types: Optional[Iterable[OperationType]] = None,
     ) -> ExecutionResult:
         raise NotImplementedError
 
@@ -39,6 +41,7 @@ class BaseSchema(Protocol):
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
+        allowed_operation_types: Optional[Iterable[OperationType]] = None,
     ) -> ExecutionResult:
         raise NotImplementedError
 

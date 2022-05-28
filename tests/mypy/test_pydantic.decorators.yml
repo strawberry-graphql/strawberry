@@ -1,0 +1,149 @@
+
+- case: test_converted_pydantic_init_any_kwargs
+  main: |
+    from pydantic import BaseModel
+    import strawberry
+
+    class UserPydantic(BaseModel):
+        age: int
+
+    @strawberry.experimental.pydantic.type(UserPydantic)
+    class UserStrawberry:
+        age: strawberry.auto
+
+    reveal_type(UserStrawberry)
+    reveal_type(UserStrawberry(age=123))
+  out: |
+     main:11: note: Revealed type is "def (**kwargs: Any) -> main.UserStrawberry"
+     main:12: note: Revealed type is "main.UserStrawberry"
+
+- case: test_converted_to_pydantic
+  main: |
+    from pydantic import BaseModel
+    import strawberry
+
+    class UserPydantic(BaseModel):
+        age: int
+
+    @strawberry.experimental.pydantic.type(UserPydantic)
+    class UserStrawberry:
+        age: strawberry.auto
+
+    reveal_type(UserStrawberry(age=123).to_pydantic())
+  out: |
+     main:11: note: Revealed type is "main.UserPydantic"
+
+- case: test_converted_from_pydantic
+  main: |
+    from pydantic import BaseModel
+    import strawberry
+
+    class UserPydantic(BaseModel):
+        age: int
+
+    @strawberry.experimental.pydantic.type(UserPydantic)
+    class UserStrawberry:
+        age: strawberry.auto
+
+    reveal_type(UserStrawberry.from_pydantic(UserPydantic(age=123)))
+  out: |
+     main:11: note: Revealed type is "main.UserStrawberry"
+
+- case: test_converted_to_pydantic_input
+  main: |
+    from pydantic import BaseModel
+    import strawberry
+
+    class UserPydantic(BaseModel):
+        age: int
+
+    @strawberry.experimental.pydantic.input(UserPydantic)
+    class UserStrawberry:
+        age: strawberry.auto
+
+    reveal_type(UserStrawberry(age=123).to_pydantic())
+  out: |
+     main:11: note: Revealed type is "main.UserPydantic"
+
+- case: test_converted_from_pydantic_input
+  main: |
+    from pydantic import BaseModel
+    import strawberry
+
+    class UserPydantic(BaseModel):
+        age: int
+
+    @strawberry.experimental.pydantic.input(UserPydantic)
+    class UserStrawberry:
+        age: strawberry.auto
+
+    reveal_type(UserStrawberry.from_pydantic(UserPydantic(age=123)))
+  out: |
+     main:11: note: Revealed type is "main.UserStrawberry"
+
+- case: test_converted_to_pydantic_interface
+  main: |
+    from pydantic import BaseModel
+    import strawberry
+
+    class UserPydantic(BaseModel):
+        age: int
+
+    @strawberry.experimental.pydantic.interface(UserPydantic)
+    class UserStrawberry:
+        age: strawberry.auto
+
+    reveal_type(UserStrawberry(age=123).to_pydantic())
+  out: |
+     main:11: note: Revealed type is "main.UserPydantic"
+
+- case: test_converted_from_pydantic_interface
+  main: |
+    from pydantic import BaseModel
+    import strawberry
+
+    class UserPydantic(BaseModel):
+        age: int
+
+    @strawberry.experimental.pydantic.interface(UserPydantic)
+    class UserStrawberry:
+        age: strawberry.auto
+
+    reveal_type(UserStrawberry.from_pydantic(UserPydantic(age=123)))
+  out: |
+     main:11: note: Revealed type is "main.UserStrawberry"
+
+- case: test_converted_from_pydantic_raise_error_wrong_instance
+  main: |
+    from pydantic import BaseModel
+    import strawberry
+
+    class UserPydantic(BaseModel):
+        age: int
+
+    @strawberry.experimental.pydantic.type(UserPydantic)
+    class UserStrawberry:
+        age: strawberry.auto
+
+    class AnotherModel(BaseModel):
+        age: int
+
+    UserStrawberry.from_pydantic(AnotherModel(age=123))
+  out: |
+     main:14: error: Argument 1 to "from_pydantic" of "UserStrawberry" has incompatible type "AnotherModel"; expected "UserPydantic"  [arg-type]
+
+- case: test_converted_from_pydantic_chained
+  main: |
+    from pydantic import BaseModel
+    import strawberry
+
+    class UserPydantic(BaseModel):
+        age: int
+
+    @strawberry.experimental.pydantic.type(UserPydantic)
+    class UserStrawberry:
+        age: strawberry.auto
+
+    reveal_type(UserStrawberry.from_pydantic(UserPydantic(age=123)).to_pydantic())
+  out: |
+     main:11: note: Revealed type is "main.UserPydantic"

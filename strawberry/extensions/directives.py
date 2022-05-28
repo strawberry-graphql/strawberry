@@ -56,11 +56,11 @@ class DirectivesExtensionSync(Extension):
 
             # TODO: support converting lists
             arguments = {
-                argument.name.value: argument.value.value  # type: ignore
+                argument.name.value: argument.value.value
                 for argument in directive.arguments
             }
 
-            schema: Schema = info.schema._strawberry_schema  # type: ignore
+            schema: Schema = info.schema._strawberry_schema
             strawberry_directive = schema.get_directive_by_name(directive_name)
             assert (
                 strawberry_directive is not None

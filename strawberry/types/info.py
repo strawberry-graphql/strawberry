@@ -1,8 +1,18 @@
 import dataclasses
 import warnings
-from typing import TYPE_CHECKING, Any, Dict, Generic, List, Optional, TypeVar, Union
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    Generic,
+    List,
+    Optional,
+    TypeVar,
+    Union,
+    cast,
+)
 
-from cached_property import cached_property
+from backports.cached_property import cached_property
 
 from graphql import GraphQLResolveInfo, OperationDefinitionNode
 from graphql.language import FieldNode
@@ -41,7 +51,8 @@ class Info(Generic[ContextType, RootValueType]):
             "`info.field_nodes` is deprecated, use `selected_fields` instead",
             DeprecationWarning,
         )
-        return self._raw_info.field_nodes
+        # TODO: remove cast when GraphQL-core > 3.2.0 is release
+        return cast(List[FieldNode], self._raw_info.field_nodes)
 
     @cached_property
     def selected_fields(self) -> List[Selection]:

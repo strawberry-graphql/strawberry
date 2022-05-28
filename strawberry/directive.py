@@ -10,6 +10,14 @@ from graphql import DirectiveLocation
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import StrawberryArgument
+from strawberry.field import StrawberryField
+
+
+def directive_field(name: str) -> StrawberryField:
+    return StrawberryField(
+        python_name=None,
+        graphql_name=name,
+    )
 
 
 @dataclasses.dataclass
@@ -55,7 +63,7 @@ def directive(
     *,
     locations: List[DirectiveLocation],
     description: Optional[str] = None,
-    name: Optional[str] = None
+    name: Optional[str] = None,
 ) -> Callable[[Callable[..., T]], T]:
     def _wrap(f: Callable[..., T]) -> T:
         return StrawberryDirective(  # type: ignore

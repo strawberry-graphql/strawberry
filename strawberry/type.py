@@ -51,6 +51,9 @@ class StrawberryContainer(StrawberryType):
     def __init__(self, of_type: Union[StrawberryType, type]):
         self.of_type = of_type
 
+    def __hash__(self) -> int:
+        return hash((self.__class__, self.of_type))
+
     def __eq__(self, other: object) -> bool:
         if isinstance(other, StrawberryType):
             if isinstance(other, StrawberryContainer):
@@ -119,7 +122,7 @@ class StrawberryTypeVar(StrawberryType):
     def __init__(self, type_var: TypeVar):
         self.type_var = type_var
 
-    def copy_with(  # type: ignore[override]
+    def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
     ) -> Union[StrawberryType, type]:
         return type_var_map[self.type_var]

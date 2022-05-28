@@ -1,3 +1,5 @@
+from dataclasses import dataclass
+
 import pytest
 
 import strawberry
@@ -55,3 +57,60 @@ def test_private_field_access_in_resolver():
     assert result.data == {
         "ageInMonths": 84,
     }
+
+
+@strawberry.type
+class Query:
+    not_seen: "strawberry.Private[SensitiveData]"
+
+    @strawberry.field
+    def accessible_info(self) -> str:
+        return self.not_seen.info
+
+
+@dataclass
+class SensitiveData:
+    value: int
+    info: str
+
+
+def test_private_field_with_str_annotations():
+    """Check compatibility of strawberry.Private with annotations as string."""
+
+    schema = strawberry.Schema(query=Query)
+
+    result = schema.execute_sync(
+        "query { accessibleInfo }",
+        root_value=Query(not_seen=SensitiveData(1, "foo")),
+    )
+    assert result.data == {"accessibleInfo": "foo"}
+
+    # Check if querying `notSeen` raises error and no data is returned
+    assert "notSeen" not in str(schema)
+    failed_result = schema.execute_sync(
+        "query { notSeen }", root_value=Query(not_seen=SensitiveData(1, "foo"))
+    )
+    assert failed_result.data is None
+
+
+def test_private_field_defined_outside_module_scope():
+    """Check compatibility of strawberry.Private when defined outside module scope."""
+
+    @strawberry.type
+    class LocallyScopedQuery:
+        not_seen: "strawberry.Private[LocallyScopedSensitiveData]"
+
+        @strawberry.field
+        def accessible_info(self) -> str:
+            return self.not_seen.info
+
+    @dataclass
+    class LocallyScopedSensitiveData:
+        value: int
+        info: str
+
+    with pytest.raises(TypeError, match=r"Could not resolve the type of 'not_seen'."):
+        schema = strawberry.Schema(query=LocallyScopedQuery)
+
+        # If schema-conversion does not raise, check if private field is visible
+        assert "notSeen" not in str(schema)

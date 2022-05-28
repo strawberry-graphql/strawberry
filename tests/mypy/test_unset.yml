@@ -2,7 +2,7 @@
   main: |
     import strawberry
     from typing import Optional
-    from strawberry.arguments import UNSET
+    from strawberry import UNSET
 
     @strawberry.type
     class User:

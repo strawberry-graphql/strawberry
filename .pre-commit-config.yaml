@@ -9,17 +9,20 @@ repos:
       language: python
       'types': [python]
       require_serial: true
+      exclude: ^tests/codegen/snapshots/python/
 
   - repo: https://github.com/PyCQA/flake8
     rev: 4.0.1
     hooks:
       - id: flake8
         additional_dependencies: ["flake8-eradicate==1.2.0"]
+        exclude: ^tests/codegen/snapshots/python/
 
   - repo: https://github.com/pycqa/isort
     rev: 5.10.1
     hooks:
       - id: isort
+        exclude: ^tests/codegen/snapshots/python/
 
   - repo: https://github.com/patrick91/pre-commit-alex
     rev: aa5da9e54b92ab7284feddeaf52edf14b1690de3
@@ -28,26 +31,21 @@ repos:
         exclude: CHANGELOG.md
 
   - repo: https://github.com/pre-commit/mirrors-prettier
-    rev: v2.5.1
+    rev: v2.6.2
     hooks:
       - id: prettier
         files: '^docs/.*\.mdx?$'
 
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.1.0
+    rev: v4.2.0
     hooks:
       - id: trailing-whitespace
       - id: check-merge-conflict
       - id: end-of-file-fixer
       - id: check-toml
 
-  - repo: https://github.com/humitos/mirrors-autoflake.git
-    rev: v1.1
-    hooks:
-      - id: autoflake
-        args: ['--in-place', '--remove-all-unused-imports', '--remove-unused-variable']
-
   - repo: https://github.com/psf/black
-    rev: 21.12b0
+    rev: 22.3.0
     hooks:
       - id: black
+        exclude: ^tests/codegen/snapshots/python/
