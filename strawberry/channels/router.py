@@ -60,7 +60,7 @@ class GraphQLWSConsumer(AsyncJsonWebsocketConsumer):
         keep_alive_interval: float = 1,
         debug: bool = False,
         subscription_protocols=(GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL),
-        connection_init_wait_timeout: timedelta = None,
+        connection_init_wait_timeout: Optional[timedelta] = None,
     ):
         if connection_init_wait_timeout is None:
             connection_init_wait_timeout = timedelta(minutes=1)
@@ -124,13 +124,15 @@ class GraphQLWSConsumer(AsyncJsonWebsocketConsumer):
         await self._handler.handle_disconnect(code)
 
     async def get_root_value(
-        self, request: HttpRequest = None, consumer: AsyncWebsocketConsumer = None
+        self,
+        request: Optional[HttpRequest] = None,
+        consumer: Optional[AsyncWebsocketConsumer] = None,
     ) -> Optional[Any]:
         return None
 
     async def get_context(
         self,
-        request: Union[HttpRequest, AsyncJsonWebsocketConsumer] = None,
+        request: Optional[Union[HttpRequest, "GraphQLWSConsumer"]] = None,
         response: Optional[HttpResponse] = None,
     ) -> Optional[Any]:
         return StrawberryChannelsContext(request=request or self, response=response)
@@ -139,7 +141,7 @@ class GraphQLWSConsumer(AsyncJsonWebsocketConsumer):
         self,
         request: HttpRequest,
         result: ExecutionResult,
-        consumer: AsyncWebsocketConsumer = None,
+        consumer: Optional[AsyncWebsocketConsumer] = None,
     ) -> GraphQLHTTPResponse:
         return process_result(result)
 
