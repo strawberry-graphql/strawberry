@@ -1,7 +1,7 @@
 from contextlib import suppress
 from typing import Any, Optional
 
-from channels.generic.websocket import AsyncJsonWebsocketConsumer
+from strawberry.channels.handlers.base import ChannelsWSConsumer
 from strawberry.schema import BaseSchema
 from strawberry.subscriptions import GRAPHQL_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_ws.handlers import BaseGraphQLWSHandler
@@ -17,7 +17,7 @@ class GraphQLWSHandler(BaseGraphQLWSHandler):
         keep_alive_interval: float,
         get_context,
         get_root_value,
-        ws: AsyncJsonWebsocketConsumer,
+        ws: ChannelsWSConsumer,
     ):
         super().__init__(schema, debug, keep_alive, keep_alive_interval)
         self._get_context = get_context

@@ -3,12 +3,11 @@
 A consumer to provide a graphql endpoint, and optionally graphiql.
 """
 
+import dataclasses
 import json
 from pathlib import Path
 from typing import Any, Optional
 from urllib.parse import parse_qs
-
-from backports.cached_property import cached_property
 
 from channels.db import database_sync_to_async
 from channels.generic.http import AsyncHttpConsumer
@@ -26,8 +25,25 @@ from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types import ExecutionResult
 from strawberry.types.graphql import OperationType
 
+from .base import ChannelsConsumer
 
-class GraphQLHTTPConsumer(AsyncHttpConsumer):
+
+class MethodNotAllowed(Exception):
+    ...
+
+
+class ExecutionError(Exception):
+    ...
+
+
+@dataclasses.dataclass
+class Result:
+    response: Any
+    status: int = 200
+    content_type: str = "application/json"
+
+
+class GraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
     """A consumer to provide a view for GraphQL over HTTP.
 
     To use this, place it in your ProtocolTypeRouter for your channels project:
@@ -49,6 +65,10 @@ class GraphQLHTTPConsumer(AsyncHttpConsumer):
     ```
     """
 
+    graphiql_html_file_path = (
+        Path(__file__).parent.parent.parent / "static" / "graphiql.html"
+    )
+
     def __init__(
         self,
         schema: BaseSchema,
@@ -63,52 +83,76 @@ class GraphQLHTTPConsumer(AsyncHttpConsumer):
         self.subscriptions_enabled = subscriptions_enabled
         super().__init__(**kwargs)
 
-    @cached_property
-    def headers(self):
-        return {
-            header_name.decode("utf-8").lower(): header_value.decode("utf-8")
-            for header_name, header_value in self.scope["headers"]
-        }
-
-    async def parse_multipart_body(self, body):
-        await self.send_response(500, "Unable to parse the multipart body")
-        return None
-
-    async def get_request_data(self, body) -> Optional[GraphQLRequestData]:
-        if self.headers.get("content-type", "").startswith("multipart/form-data"):
-            data = await self.parse_multipart_body(body)
-            if data is None:
-                return None
+    async def handle(self, body: bytes):
+        try:
+            if self.scope["method"] == "GET":
+                result = await self.get(body)
+            elif self.scope["method"] == "POST":
+                result = await self.post(body)
+            else:
+                raise MethodNotAllowed()
+        except MethodNotAllowed:
+            await self.send_response(
+                405,
+                b"Method not allowed",
+                headers=[b"Allow", b"GET, POST"],
+            )
+        except ExecutionError as e:
+            await self.send_response(
+                500,
+                str(e).encode(),
+            )
         else:
+            await self.send_response(
+                result.status,
+                json.dumps(result.response).encode(),
+                headers=[(b"Content-Type", result.content_type.encode())],
+            )
+
+    async def get(self, body: bytes) -> Result:
+        if self.should_render_graphiql():
+            return await self.render_graphiql(body)
+        elif self.scope.get("query_string"):
+            params = parse_query_params(
+                {
+                    k: v[0]
+                    for k, v in parse_qs(self.scope["query_string"].decode()).items()
+                }
+            )
+            if "query" not in params:
+                raise ExecutionError("No GraphQL query found in the request")
+
             try:
-                data = json.loads(body)
-            except json.JSONDecodeError:
-                await self.send_response(500, b"Unable to parse request body as JSON")
-                return None
+                return Result(response=await self.execute(parse_request_data(params)))
+            except InvalidOperationTypeError as e:
+                error_str = e.as_http_error_reason(self.scope["method"])
+                raise ExecutionError(error_str) from e
+        else:
+            raise MethodNotAllowed()
+
+    async def post(self, body: bytes) -> Result:
+        request_data = await self.parse_body(body)
+        try:
+            return Result(response=await self.execute(request_data))
+        except InvalidOperationTypeError as e:
+            raise ExecutionError(e.as_http_error_reason(self.scope["method"])) from e
+
+    async def parse_body(self, body: bytes) -> GraphQLRequestData:
+        if self.headers.get("content-type", "").startswith("multipart/form-data"):
+            return await self.parse_multipart_body(body)
+
+        try:
+            data = json.loads(body)
+        except json.JSONDecodeError as e:
+            raise ExecutionError("Unable to parse request body as JSON") from e
+
         try:
             return parse_request_data(data)
-        except MissingQueryError:
-            await self.send_response(500, b"No GraphQL query found in the request")
-            return None
+        except MissingQueryError as e:
+            raise ExecutionError("No GraphQL query found in the request") from e
 
-    async def post(self, body):
-        request_data = await self.get_request_data(body)
-        if request_data is None:
-            return None
-
-        try:
-            response = await self.execute(request_data)
-        except InvalidOperationTypeError as e:
-            await self.send_response(
-                500, str(e.as_http_error_reason(self.scope["method"])).encode()
-            )
-            return None
-
-        await self.send_response(
-            200,
-            json.dumps(response).encode("utf-8"),
-            headers=[(b"Content-Type", b"application/json")],
-        )
+    async def parse_multipart_body(self, body: bytes) -> GraphQLRequestData:
+        raise ExecutionError("Unable to parse the multipart body")
 
     async def execute(self, request_data: GraphQLRequestData):
         context = await self.get_context()
@@ -129,9 +173,8 @@ class GraphQLHTTPConsumer(AsyncHttpConsumer):
         )
         return await self.process_result(result)
 
-    @cached_property
-    def graphiql_html_file_path(self) -> Path:
-        return Path(__file__).parent.parent.parent / "static" / "graphiql.html"
+    async def process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse:
+        return process_result(result)
 
     async def render_graphiql(self, body):
         html_string = self.graphiql_html_file_path.read_text()
@@ -139,66 +182,10 @@ class GraphQLHTTPConsumer(AsyncHttpConsumer):
             "{{ SUBSCRIPTION_ENABLED }}",
             json.dumps(self.subscriptions_enabled),
         )
-        await self.send_response(
-            200, html_string.encode("utf-8"), headers=[(b"Content-Type", b"text/html")]
-        )
+        return Result(response=html_string, content_type="text/html")
 
     def should_render_graphiql(self):
-        return bool(
-            self.graphiql and self.headers.get("accept", "") in ["text/html", "*/*"]
-        )
-
-    async def get(self, body):
-        if self.should_render_graphiql():
-            await self.render_graphiql(body)
-        elif self.scope.get("query_string"):
-            params = parse_query_params(
-                {
-                    k: v[0]
-                    for k, v in parse_qs(self.scope["query_string"].decode()).items()
-                }
-            )
-
-            if "query" not in params:
-                await self.send_response(500, b"No GraphQL query found in the request")
-                return
-
-            request_data = parse_request_data(params)
-            try:
-                response = await self.execute(request_data)
-            except InvalidOperationTypeError as e:
-                await self.send_response(
-                    500, str(e.as_http_error_reason(self.scope["method"])).encode()
-                )
-                return None
-
-            await self.send_response(
-                200,
-                json.dumps(response).encode("utf-8"),
-                headers=[(b"Content-Type", b"application/json")],
-            )
-        else:
-            await self.send_response(
-                405, b"Method not allowed", headers=[b"Allow", b"GET, POST"]
-            )
-
-    async def handle(self, body):
-        if self.scope["method"] == "GET":
-            return await self.get(body)
-        if self.scope["method"] == "POST":
-            return await self.post(body)
-        await self.send_response(
-            405, b"Method not allowed", headers=[b"Allow", b"GET, POST"]
-        )
-
-    async def get_root_value(self) -> Any:
-        return None
-
-    async def get_context(self) -> Any:
-        return StrawberryChannelsContext(request=self)
-
-    async def process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse:
-        return process_result(result)
+        return self.graphiql and self.headers.get("accept", "") in ["text/html", "*/*"]
 
 
 class SyncGraphQLHTTPConsumer(GraphQLHTTPConsumer):
@@ -209,11 +196,14 @@ class SyncGraphQLHTTPConsumer(GraphQLHTTPConsumer):
     synchronous and not asynchronous).
     """
 
-    def get_root_value(self) -> Any:
+    def get_root_value(self, request: Optional["ChannelsConsumer"] = None) -> Any:
         return None
 
-    def get_context(self) -> Any:
-        return StrawberryChannelsContext(request=self)
+    def get_context(
+        self,
+        request: Optional["ChannelsConsumer"] = None,
+    ) -> StrawberryChannelsContext:
+        return StrawberryChannelsContext(request=request or self)
 
     def process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse:
         return process_result(result)
@@ -223,8 +213,8 @@ class SyncGraphQLHTTPConsumer(GraphQLHTTPConsumer):
     # https://github.com/django/channels/blob/main/channels/consumer.py#L104
     @database_sync_to_async
     def execute(self, request_data: GraphQLRequestData):
-        context = self.get_context()
-        root_value = self.get_root_value()
+        context = self.get_context(self)
+        root_value = self.get_root_value(self)
 
         method = self.scope["method"]
         allowed_operation_types = OperationType.from_http(method)

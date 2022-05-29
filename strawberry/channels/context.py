@@ -1,9 +1,9 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Union, cast
+from typing import TYPE_CHECKING
 
 
 if TYPE_CHECKING:
-    from strawberry.channels import GraphQLHTTPConsumer, GraphQLWSConsumer
+    from strawberry.channels.handlers.base import ChannelsConsumer
 
 
 @dataclass
@@ -12,12 +12,11 @@ class StrawberryChannelsContext:
     A Channels context for GraphQL
     """
 
-    request: Union["GraphQLHTTPConsumer", "GraphQLWSConsumer"]
-    response: None = None
+    request: "ChannelsConsumer"
 
     @property
     def ws(self):
-        return cast("GraphQLWSConsumer", self.request)
+        return self.request
 
     def __getitem__(self, key):
         # __getitem__ override needed to avoid issues for who's

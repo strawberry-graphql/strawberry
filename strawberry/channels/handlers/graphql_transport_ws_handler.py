@@ -1,7 +1,7 @@
 from datetime import timedelta
 from typing import Any, Optional
 
-from channels.generic.websocket import AsyncJsonWebsocketConsumer
+from strawberry.channels.handlers.base import ChannelsWSConsumer
 from strawberry.schema import BaseSchema
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_transport_ws.handlers import (
@@ -17,7 +17,7 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
         connection_init_wait_timeout: timedelta,
         get_context,
         get_root_value,
-        ws: AsyncJsonWebsocketConsumer,
+        ws: ChannelsWSConsumer,
     ):
         super().__init__(schema, debug, connection_init_wait_timeout)
         self._get_context = get_context
