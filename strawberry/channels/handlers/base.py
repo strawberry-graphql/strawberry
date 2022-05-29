@@ -1,10 +1,27 @@
-from typing import Any, Dict, List, Optional, Protocol
+import asyncio
+import contextlib
+from collections import defaultdict
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    DefaultDict,
+    Dict,
+    List,
+    Optional,
+    Protocol,
+    Sequence,
+)
 
-from typing_extensions import Literal
+from typing_extensions import Literal, TypedDict
 
 from channels.consumer import AsyncConsumer
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from strawberry.channels.context import StrawberryChannelsContext
+
+
+class ChannelsMessage(TypedDict, total=False):
+    type: str
 
 
 class ChannelsLayer(Protocol):
@@ -50,6 +67,11 @@ class ChannelsConsumer(AsyncConsumer):
 
     channel_name: str
     channel_layer: ChannelsLayer
+    channel_receive: Callable[[], Awaitable[dict]]
+
+    def __init__(self, *args, **kwargs):
+        self.listen_queues: DefaultDict[str, asyncio.Queue] = defaultdict(asyncio.Queue)
+        super().__init__(*args, **kwargs)
 
     @property
     def headers(self) -> Dict[str, str]:
@@ -66,6 +88,64 @@ class ChannelsConsumer(AsyncConsumer):
         request: Optional["ChannelsConsumer"] = None,
     ) -> StrawberryChannelsContext:
         return StrawberryChannelsContext(request=request or self)
+
+    async def dispatch(self, message: ChannelsMessage):
+        # AsyncConsumer will try to get a function for message["type"] to handle
+        # for both http/websocket types and also for layers communication.
+        # In case the type isn't one of those, pass it to the listen queue so
+        # that it can be consumed by self.channel_listen
+        type_ = message.get("type", "")
+        if type_ and not type_.startswith(("http.", "websocket.")):
+            self.listen_queues[type_].put_nowait(message)
+            return
+
+        await super().dispatch(message)
+
+    async def channel_listen(
+        self,
+        type: str,
+        *,
+        timeout: Optional[float] = None,
+        groups: Optional[Sequence[str]] = None,
+    ):
+        """Listen for messages sent to this consumer.
+
+        Utility to listen for channels messages for this consumer inside
+        a resolver (usually inside a subscription).
+
+        Parameters:
+            type:
+                The type of the message to wait for.
+            timeout:
+                An optional timeout to wait for each subsequent message
+            groups:
+                An optional sequence of groups to receive messages from.
+                When passing this parameter, the groups will be registered
+                using `self.channel_layer.group_add` at the beggining of the
+                execution and then discarded using `self.channel_layer.group_discard`
+                at the end of the execution.
+
+        """
+        added_groups = []
+        try:
+            if groups:
+                for group in groups:
+                    await self.channel_layer.group_add(group, self.channel_name)
+                    added_groups.append(group)
+
+            queue = self.listen_queues[type]
+            while True:
+                awaitable = queue.get()
+                if timeout is not None:
+                    awaitable = asyncio.wait_for(awaitable, timeout)
+                try:
+                    yield await awaitable
+                except asyncio.TimeoutError:
+                    return
+        finally:
+            for group in added_groups:
+                with contextlib.suppress(Exception):
+                    await self.channel_layer.group_discard(group, self.channel_name)
 
 
 class ChannelsWSConsumer(ChannelsConsumer, AsyncJsonWebsocketConsumer):

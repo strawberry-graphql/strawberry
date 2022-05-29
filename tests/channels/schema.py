@@ -1,11 +1,12 @@
 import asyncio
 import typing
 from enum import Enum
-from typing import Optional
+from typing import Any, Optional
 
 from graphql import GraphQLError
 
 import strawberry
+from strawberry.channels.context import StrawberryChannelsContext
 from strawberry.file_uploads import Upload
 from strawberry.permission import BasePermission
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import PingMessage
@@ -138,6 +139,22 @@ class Subscription:
             num_active_result_handlers=len(active_result_handlers),
             is_connection_init_timeout_task_done=is_connection_init_timeout_task_done,
         )
+
+    @strawberry.subscription
+    async def listener(
+        self,
+        info: Info[StrawberryChannelsContext, Any],
+        timeout: Optional[float] = None,
+        group: Optional[str] = None,
+    ) -> typing.AsyncGenerator[str, None]:
+        yield info.context.request.channel_name
+
+        async for message in info.context.request.channel_listen(
+            type="test.message",
+            timeout=timeout,
+            groups=[group] if group is not None else None,
+        ):
+            yield message["text"]
 
 
 schema = strawberry.Schema(Query, mutation=Mutation, subscription=Subscription)
