@@ -256,3 +256,9 @@ class MyGraphQLView(AsyncGraphQLView):
 
 In this case we are doing the default processing of the result, but it can be
 tweaked based on your needs.
+
+## Subscriptions
+
+Subscriptions runs over websockets and thus depends on
+[channels](https://channels.readthedocs.io/). Take a look at our
+[channels integraton](/docs/integrations/channels.md) page for more information regarding it.

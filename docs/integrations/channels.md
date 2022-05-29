@@ -41,9 +41,7 @@ instructions to look something like this:
 import os
 
 from django.core.asgi import get_asgi_application
-
 from strawberry.channels import GraphQLProtocolTypeRouter
-
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mysite.settings')
 django_asgi_app = get_asgi_application()
@@ -54,7 +52,10 @@ django_asgi_app = get_asgi_application()
 from mysite.graphql import schema
 
 
-application = GraphQLProtocolTypeRouter(schema, django_application=django_asgi_app)
+application = GraphQLProtocolTypeRouter(
+    schema,
+    django_application=django_asgi_app,
+)
 ```
 
 The above code is not very flexible, taking away some of the useful capabilities
@@ -122,14 +123,24 @@ like Redis or RabbitMQ.
 
 To set this up, you'll need to make sure Channel Layers is configured as per the
 [documentation](https://channels.readthedocs.io/en/stable/topics/channel_layers.html).
+
 Then you'll want to add a subscription that accesses the channel layer and joins
-one or more broadcast groups:
+one or more broadcast groups.
+
+Since listening for events and passing them along to the client is a common use case,
+the base consumer provides a high level API for that using a generator pattern.
+
+For example, a basic chat room implementation might look like this:
 
 ```python
 
+from typing import AsyncGenerator
+
+from channels.layers import get_channel_layer
 import strawberry
 from strawberry.channels import StrawberryChannelsContext
 from strawberry.types import Info
+
 
 @strawberry.input
 class ChatRoom:
@@ -137,23 +148,58 @@ class ChatRoom:
 
 
 @strawberry.type
-class Subscription:
-    @strawberry.subscription
-    async def join_chat_room(
+class ChatRoomMessage:
+    id: str
+    message: str
+
+
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    async def send_chat_message(
         self,
-        info: Info[StrawberryChannelsContext],
         room: ChatRoom,
+        message: str,
     ):
-        """
-        Subscribe to an event broadcasted by the server.
-        """
-        channel_layer = info.context.request.channel_layer
-        channel_layer.group_add(
+        channel_layer = get_channel_layer()
+        await channel_layer.group_send(
             f"chat-room-{room.id}",
-            channel_layer.channel_name,
+            {
+                "type": "chat.message",
+                "room_id": room.id,
+                "message": message,
+            }
         )
 
-        return True
+
+@strawberry.type
+class Subscription:
+    @strawberry.subscription
+    async def join_chat_rooms(
+        self,
+        info: Info[StrawberryChannelsContext],
+        rooms: list[ChatRoom],
+    ) -> AsyncGenerator[CharRoomMessage, None]:
+        """Join and subscribe to messages sent to the given rooms."""
+        ws = info.context.request
+        rooms = [f"chat-room-{room.id}" for room in rooms]
+
+        channel_layer = ws.channel_layer
+        for group in channel_layer.groups:
+            await channel_layer.group_send(
+                group,
+                {
+                    "type": "chat.message",
+                    "room_id": group.split("-")[-1]
+                    "message": f"{self.channel_name} just joined the room!",
+                },
+            )
+
+        async for message in ws.channel_listen("chat.message", groups=rooms):
+            yield ChatRoomMessage(
+                id=message["room_id"],
+                message=message["message"],
+            )
 ```
 
 Look here for some much more complete examples:
