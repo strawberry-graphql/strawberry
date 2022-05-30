@@ -1,6 +1,74 @@
 CHANGELOG
 =========
 
+0.114.0 - 2022-05-27
+--------------------
+
+Improve schema directives typing and printing after latest refactor.
+
+- Support for printing schema directives for non-scalars (e.g. types) and null values.
+- Also print the schema directive itself and any extra types defined in it
+- Fix typing for apis expecting directives (e.g. `strawberry.field`, `strawberry.type`, etc)
+  to expect an object instead of a `StrawberrySchemaDirective`, which is now an internal type.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #1723](https://github.com/strawberry-graphql/strawberry/pull/1723/)
+
+
+0.113.0 - 2022-05-19
+--------------------
+
+This release adds support for Starlette 0.18 to 0.20
+
+It also removes upper bound dependencies limit for starlette,
+allowing you to install the latest version without having to
+wait for a new release of Strawberry
+
+Contributed by [Timothy Pansino](https://github.com/TimPansino) via [PR #1594](https://github.com/strawberry-graphql/strawberry/pull/1594/)
+
+
+0.112.0 - 2022-05-15
+--------------------
+
+This release adds a new flask view to allow for aysnc dispatching of requests.
+
+This is especially useful when using dataloaders with flask.
+
+```python
+from strawberry.flask.views import AsyncGraphQLView
+
+...
+
+app.add_url_rule("/graphql", view_func=AsyncGraphQLView.as_view("graphql_view", schema=schema, **kwargs))
+```
+
+Contributed by [Scott Weitzner](https://github.com/scottweitzner) via [PR #1907](https://github.com/strawberry-graphql/strawberry/pull/1907/)
+
+
+0.111.2 - 2022-05-09
+--------------------
+
+This release fixes resolvers using functions with generic type variables raising a `MissingTypesForGenericError` error.
+
+For example a resolver factory like the below can now be used:
+
+```python
+import strawberry
+from typing import Type, TypeVar
+
+T = TypeVar("T")  # or TypeVar("T", bound=StrawberryType) etc
+
+
+def resolver_factory(strawberry_type: Type[T]):
+    def resolver(id: strawberry.ID) -> T:
+        # some actual logic here
+        return strawberry_type(...)
+
+    return resolver
+```
+
+Contributed by [Tim OSullivan](https://github.com/invokermain) via [PR #1891](https://github.com/strawberry-graphql/strawberry/pull/1891/)
+
+
 0.111.1 - 2022-05-03
 --------------------
 

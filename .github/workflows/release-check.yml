@@ -1,4 +1,4 @@
-name: Release file check
+name: 🆙 Release file check
 
 on:
   pull_request_target:
