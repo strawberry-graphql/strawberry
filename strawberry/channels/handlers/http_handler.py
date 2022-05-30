@@ -205,7 +205,9 @@ class SyncGraphQLHTTPConsumer(GraphQLHTTPConsumer):
     ) -> StrawberryChannelsContext:
         return StrawberryChannelsContext(request=request or self)
 
-    def process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse:
+    def process_result(  # type:ignore [override]
+        self, result: ExecutionResult
+    ) -> GraphQLHTTPResponse:
         return process_result(result)
 
     # Sync channels is actually async, but it uses database_sync_to_async to call
