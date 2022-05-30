@@ -1,5 +1,7 @@
 import json
+import sys
 from typing import Any, Dict, Optional
+from unittest import mock
 
 import pytest
 
@@ -94,6 +96,68 @@ async def test_disabled_methods(consumer, method: str):
         "headers": [b"Allow", b"GET, POST"],
         "status": 405,
         "body": b"Method not allowed",
+    }
+
+
+# FIXME: Why does this fail on windows? Is it because of the mock?
+@pytest.mark.skipif(
+    sys.platform == "win32",
+    reason="failing on windows for some reason",
+)
+@pytest.mark.parametrize("consumer", [GraphQLHTTPConsumer, SyncGraphQLHTTPConsumer])
+async def test_fails_on_invalid_operation(consumer):
+    with mock.patch(
+        "strawberry.channels.handlers.http_handler.OperationType.from_http"
+    ) as from_http:
+        # Mock available operation types to test the possibility of post
+        # not being allowed to execute "query" operations
+        from_http.return_value = set()
+
+        client = HttpCommunicator(
+            consumer.as_asgi(schema=schema),
+            "POST",
+            "/graphql",
+            body=generate_body("{ hello }"),
+        )
+        response = await client.get_response()
+        assert response == {
+            "status": 500,
+            "headers": [],
+            "body": b"queries are not allowed when using POST",
+        }
+
+
+@pytest.mark.parametrize("consumer", [GraphQLHTTPConsumer, SyncGraphQLHTTPConsumer])
+async def test_fails_on_multipart_body(consumer):
+    client = HttpCommunicator(
+        consumer.as_asgi(schema=schema),
+        "POST",
+        "/graphql",
+        body=generate_body("{ hello }"),
+        headers=[(b"content-type", b"multipart/form-data")],
+    )
+    response = await client.get_response()
+    assert response == {
+        "status": 500,
+        "headers": [],
+        "body": b"Unable to parse the multipart body",
+    }
+
+
+@pytest.mark.parametrize("consumer", [GraphQLHTTPConsumer, SyncGraphQLHTTPConsumer])
+@pytest.mark.parametrize("body", [b"{}", b'{"foo": "bar"}'])
+async def test_fails_on_missing_query(consumer, body: bytes):
+    client = HttpCommunicator(
+        consumer.as_asgi(schema=schema),
+        "POST",
+        "/graphql",
+        body=body,
+    )
+    response = await client.get_response()
+    assert response == {
+        "status": 500,
+        "headers": [],
+        "body": b"No GraphQL query found in the request",
     }
 
 

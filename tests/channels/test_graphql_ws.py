@@ -161,6 +161,8 @@ async def test_sends_keep_alive():
 
     await client.send_json_to({"type": GQL_CONNECTION_TERMINATE})
 
+    await client.disconnect()
+
 
 async def test_subscription_cancellation(ws):
     await ws.send_json_to({"type": GQL_CONNECTION_INIT})

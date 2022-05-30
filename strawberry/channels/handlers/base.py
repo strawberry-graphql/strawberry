@@ -14,7 +14,7 @@ class ChannelsMessage(TypedDict, total=False):
     type: str
 
 
-class ChannelsLayer(Protocol):
+class ChannelsLayer(Protocol):  # pragma: no cover
     """Channels layer spec.
 
     Based on: https://channels.readthedocs.io/en/stable/channel_layer_spec.html
