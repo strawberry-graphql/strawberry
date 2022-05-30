@@ -1,19 +1,9 @@
 import asyncio
 import contextlib
 from collections import defaultdict
-from typing import (
-    Any,
-    Awaitable,
-    Callable,
-    DefaultDict,
-    Dict,
-    List,
-    Optional,
-    Protocol,
-    Sequence,
-)
+from typing import Any, Awaitable, Callable, DefaultDict, Dict, List, Optional, Sequence
 
-from typing_extensions import Literal, TypedDict
+from typing_extensions import Literal, Protocol, TypedDict
 
 from channels.consumer import AsyncConsumer
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
