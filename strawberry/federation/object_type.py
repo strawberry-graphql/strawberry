@@ -1,4 +1,4 @@
-from typing import TYPE_CHECKING, Callable, List, TypeVar, Union, overload
+from typing import TYPE_CHECKING, Callable, List, TypeVar, Union, overload, Sequence
 
 from strawberry.field import StrawberryField, field as base_field
 from strawberry.object_type import type as base_type
@@ -49,20 +49,22 @@ def type(
     *,
     name=None,
     description=None,
+    directives: Sequence[object] = (),
     keys: List[Union["Key", str]] = None,
     extend=False,
     shareable: bool = False,
 ):
     from strawberry.federation.schema_directives import Key, Shareable
 
-    directives = [Key(key) if isinstance(key, str) else key for key in keys or []]
+    all_directives = [Key(key) if isinstance(key, str) else key for key in keys or []]
     if shareable:
-        directives.append(Shareable())  # type: ignore
+        all_directives.append(Shareable())  # type: ignore
+    all_directives.extend(directives)  # type: ignore
 
     return base_type(
         cls,
         name=name,
         description=description,
-        directives=directives,
+        directives=all_directives,
         extend=extend,
     )
