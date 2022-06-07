@@ -239,3 +239,57 @@ def test_duplicated_interface_in_multi_inheritance():
     assert origins == [InterfaceA, InterfaceB, Base]
 
     strawberry.Schema(Query)  # Final sanity check to ensure schema compiles
+
+
+def test_interface_resolve_type():
+    """Check that the default implemenetation of `resolve_type` functions as expected.
+
+    In this test-case the default implementation of `resolve_type` defined in
+    `GraphQLCoreConverter.from_interface`, should immediately resolve the type of the
+    returned concrete object. A concrete object is defined as one that is an instance of
+    the interface it implements.
+
+    Before the default implementation of `resolve_type`, the `is_type_of` methods of all
+    specializations of an interface (in this case Anime & Movie) would be called. As
+    this needlessly reduces performance, this test checks if only `Anime.is_type_of` is
+    called when `Query.node` returns an `Anime` object.
+    """
+
+    n_calls = 0
+
+    @strawberry.interface
+    class Node:
+        id: int
+
+    @strawberry.type
+    class Anime(Node):
+        name: str
+
+        @classmethod
+        def is_type_of(cls, obj, _info) -> bool:
+            nonlocal n_calls
+            n_calls += 1
+            return isinstance(obj, cls)
+
+    @strawberry.type
+    class Movie(Node):
+        title: str
+
+        @classmethod
+        def is_type_of(cls, obj, _info) -> bool:
+            raise RuntimeError("Movie.is_type_of shouldn't have been called")
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def node(self) -> Node:
+            return Anime(id=1, name="One Pierce")
+
+    schema = strawberry.Schema(query=Query, types=[Anime, Movie])
+
+    query = "{ node {  __typename, id } }"
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data == {"node": {"__typename": "Anime", "id": 1}}
+    assert n_calls == 1  # Ensure that only Anime.is_type_of is called once
