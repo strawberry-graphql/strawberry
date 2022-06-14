@@ -24,6 +24,6 @@ Example:
 """
 
 
-def is_private(type: Union[StrawberryType, type]) -> bool:
-    type, args = StrawberryAnnotated.get_type_and_args(type)
+def is_private(type_: Union[StrawberryType, type]) -> bool:
+    _, args = StrawberryAnnotated.get_type_and_args(type_)
     return any(isinstance(argument, StrawberryPrivate) for argument in args)

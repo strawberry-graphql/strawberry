@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional, Union, cast
+from typing import Any, Optional, Union
 
 from typing_extensions import Annotated
 
@@ -39,26 +39,13 @@ class StrawberryAutoMeta(type):
         self,
         instance: Union[StrawberryAnnotation, StrawberryType, type],
     ):
+        # resolve StrawberryAnnotations
         if isinstance(instance, StrawberryAnnotation):
-            resolved = instance.annotation
-            if isinstance(resolved, str):
-                namespace = instance.namespace
-                resolved = namespace and namespace.get(resolved)
+            instance = instance.resolve()
 
-            if resolved is None:
-                return False
-
-            instance = cast(type, resolved)
-
-        if instance is auto:
-            return True
-
-        # Support uses of Annotated[auto, something()]
+        # Look for Annotated[Any, StrawberryAuto, ...]
         instance, args = StrawberryAnnotated.get_type_and_args(instance)
-        if instance is Any:
-            return any(isinstance(arg, StrawberryAuto) for arg in args)
-
-        return False
+        return instance is Any and any(isinstance(arg, StrawberryAuto) for arg in args)
 
 
 class StrawberryAuto(metaclass=StrawberryAutoMeta):

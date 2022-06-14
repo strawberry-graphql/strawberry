@@ -50,7 +50,7 @@ def test_annotated_field():
     assert (
         generic_type.__name__ == "GenericData"
     )  # Strawberry auto-generates generic classes, cannot be compared directly
-    assert generic_args == ["generic int"]
+    assert generic_args == ("generic int",)
 
     assert definition.fields[3].python_name == "resolver"
     assert definition.fields[3].graphql_name is None

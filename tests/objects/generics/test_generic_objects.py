@@ -3,8 +3,15 @@ from typing import Generic, List, Optional, TypeVar, Union
 
 import pytest
 
+from typing_extensions import Annotated
+
 import strawberry
-from strawberry.type import StrawberryList, StrawberryOptional, StrawberryTypeVar
+from strawberry.type import (
+    StrawberryAnnotated,
+    StrawberryList,
+    StrawberryOptional,
+    StrawberryTypeVar,
+)
 from strawberry.union import StrawberryUnion
 
 
@@ -22,6 +29,7 @@ def test_basic_generic():
 
     [field] = definition.fields
     assert field.python_name == "node_field"
+    assert str(field.type) == "StrawberryTypeVar[T]"
     assert isinstance(field.type, StrawberryTypeVar)
     assert field.type.type_var is T
 
@@ -168,6 +176,34 @@ def test_generic_with_optional():
     assert field_copy.python_name == "node"
     assert isinstance(field_copy.type, StrawberryOptional)
     assert field_copy.type.of_type is str
+
+
+def test_generic_with_annotation():
+    @strawberry.type
+    class Edge(Generic[T]):
+        node: Annotated[T, "Hi"]
+
+    definition = Edge._type_definition
+    assert definition.is_generic
+    assert definition.type_params == [T]
+
+    [field] = definition.fields
+    assert field.python_name == "node"
+    assert isinstance(field.type, StrawberryAnnotated)
+    assert isinstance(field.type.of_type, StrawberryTypeVar)
+    assert field.type.of_type.type_var is T
+
+    # let's make a copy of this generic type
+    definition_copy = Edge._type_definition.copy_with({T: str})._type_definition
+
+    assert not definition_copy.is_generic
+    assert definition_copy.type_params == []
+
+    [field_copy] = definition_copy.fields
+    assert field_copy.python_name == "node"
+    assert isinstance(field_copy.type, StrawberryAnnotated)
+    assert field_copy.type.of_type is str
+    assert field_copy.type.args == ("Hi",)
 
 
 def test_generic_with_list():
