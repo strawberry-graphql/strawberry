@@ -19,7 +19,7 @@ import base64
 from typing import List, Generic, TypeVar, Optional
 
 import strawberry
-from strawberry.arguments import UNSET
+from strawberry import UNSET
 
 
 GenericType = TypeVar("GenericType")

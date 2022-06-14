@@ -32,14 +32,11 @@ possible. Make sure you include the Python and Strawberry versions.
 
 #### Before submitting a bug report
 
-- Check that your issue does not already exist in the
-  [issue tracker](https://github.com/strawberry-graphql/strawberry/issues).
+- Check that your issue does not already exist in the issue tracker on GitHub.
 
 #### How do I submit a bug report?
 
-Bugs are tracked on the
-[official issue tracker](https://github.com/strawberry-graphql/strawberry/issues)
-where you can create a new one.
+Bugs are tracked on the issue tracker on GitHub where you can create a new one.
 
 Explain the problem and include additional details to help maintainers reproduce
 the problem:
@@ -82,13 +79,11 @@ suggestion, please
 
 #### Before submitting an enhancement suggestion
 
-- Check that your issue does not already exist in the
-  [issue tracker](https://github.com/strawberry-graphql/strawberry/issues).
+- Check that your issue does not already exist in the issue tracker on GitHub.
 
 #### How do I submit an enhancement suggestion?
 
-Enhancement suggestions are tracked on the
-[official issue tracker](https://github.com/strawberry-graphql/strawberry/issues)
+Enhancement suggestions are tracked on the project's issue tracker on GitHub
 where you can create a new one and provide the following information:
 
 - **Use a clear and descriptive title** for the issue to identify the
@@ -100,6 +95,9 @@ where you can create a new one and provide the following information:
   see instead** and why.
 
 ### Contributing to code
+
+> This section is about contributing to
+[Strawberry Python library](https://github.com/strawberry-graphql/strawberry).
 
 #### Local development
 

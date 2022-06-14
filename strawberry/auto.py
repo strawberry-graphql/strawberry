@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Optional, Union, cast
 
-from typing_extensions import Annotated, Final
+from typing_extensions import Annotated
 
 from strawberry.type import StrawberryAnnotated, StrawberryType
 
@@ -69,4 +69,4 @@ class StrawberryAuto(metaclass=StrawberryAutoMeta):
         return "<auto>"
 
 
-auto: Final = Annotated[Any, StrawberryAuto()]
+auto = Annotated[Any, StrawberryAuto()]

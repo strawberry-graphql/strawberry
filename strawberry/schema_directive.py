@@ -1,7 +1,13 @@
 import dataclasses
-from dataclasses import dataclass
 from enum import Enum
-from typing import List, Optional, Type
+from typing import List, Optional, Type, TypeVar
+
+from strawberry.object_type import _wrap_dataclass
+from strawberry.types.type_resolver import _get_fields
+
+from .directive import directive_field
+from .field import StrawberryField, field
+from .utils.typing import __dataclass_transform__
 
 
 class Location(Enum):
@@ -20,37 +26,38 @@ class Location(Enum):
 
 @dataclasses.dataclass
 class StrawberrySchemaDirective:
-    wrap: Type
     python_name: str
     graphql_name: Optional[str]
     locations: List[Location]
+    fields: List["StrawberryField"]
     description: Optional[str] = None
-    instance: Optional[object] = dataclasses.field(init=False)
-
-    def __call__(self, *args, **kwargs):
-        # TODO: this should be implemented differently
-
-        x = StrawberrySchemaDirective(
-            wrap=self.wrap,
-            python_name=self.python_name,
-            graphql_name=self.graphql_name,
-            locations=self.locations,
-            description=self.description,
-        )
-        x.instance = self.wrap(*args, **kwargs)
-
-        return x
 
 
-def schema_directive(*, locations: List[Location], description=None, name=None):
-    def _wrap(cls: Type) -> StrawberrySchemaDirective:
-        return StrawberrySchemaDirective(
+T = TypeVar("T", bound=Type)
+
+
+@__dataclass_transform__(
+    order_default=True, field_descriptors=(directive_field, field, StrawberryField)
+)
+def schema_directive(
+    *,
+    locations: List[Location],
+    description: Optional[str] = None,
+    name: Optional[str] = None
+):
+    def _wrap(cls: T) -> T:
+        cls = _wrap_dataclass(cls)
+        fields = _get_fields(cls)
+
+        cls.__strawberry_directive__ = StrawberrySchemaDirective(
             python_name=cls.__name__,
-            wrap=dataclass(cls),
             graphql_name=name,
             locations=locations,
             description=description,
+            fields=fields,
         )
+
+        return cls
 
     return _wrap
 

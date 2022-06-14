@@ -32,7 +32,7 @@ from strawberry.type import (
     StrawberryTypeVar,
 )
 from strawberry.types.types import TypeDefinition
-from strawberry.unset import _Unset
+from strawberry.unset import UNSET
 from strawberry.utils.typing import is_generic, is_type_var
 
 
@@ -79,6 +79,7 @@ class StrawberryAnnotation:
 
         if self._is_lazy_type(evaled_type):
             ret = evaled_type
+
         elif self._is_generic(evaled_type):
             if any(is_type_var(type_) for type_ in evaled_type.__args__):
                 ret = evaled_type
@@ -132,7 +133,7 @@ class StrawberryAnnotation:
         types = evaled_type.__args__
         non_optional_types = tuple(
             filter(
-                lambda x: x is not type(None) and x is not _Unset,  # noqa: E721
+                lambda x: x is not type(None) and x is not type(UNSET),  # noqa: E721
                 types,
             )
         )

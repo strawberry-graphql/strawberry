@@ -85,6 +85,7 @@ class Query:
     enum: Color
     json: JSON
     union: PersonOrAnimal
+    optional_union: Optional[PersonOrAnimal]
     interface: Node
     lazy: strawberry.LazyType["LaziestType", "tests.codegen.lazy_type"]  # noqa
 

@@ -3,8 +3,6 @@ import inspect
 import types
 from typing import Callable, List, Optional, Sequence, Type, TypeVar, cast, overload
 
-from strawberry.schema_directive import StrawberrySchemaDirective
-
 from .exceptions import (
     MissingFieldAnnotationError,
     MissingReturnAnnotationError,
@@ -100,7 +98,7 @@ def _process_type(
     is_input: bool = False,
     is_interface: bool = False,
     description: Optional[str] = None,
-    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    directives: Optional[Sequence[object]] = (),
     extend: bool = False,
 ):
     name = name or to_camel_case(cls.__name__)
@@ -158,7 +156,7 @@ def type(
     is_input: bool = False,
     is_interface: bool = False,
     description: str = None,
-    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    directives: Optional[Sequence[object]] = (),
     extend: bool = False,
 ) -> T:
     ...
@@ -172,7 +170,7 @@ def type(
     is_input: bool = False,
     is_interface: bool = False,
     description: str = None,
-    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    directives: Optional[Sequence[object]] = (),
     extend: bool = False,
 ) -> Callable[[T], T]:
     ...
@@ -231,7 +229,7 @@ def input(
     *,
     name: str = None,
     description: str = None,
-    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    directives: Optional[Sequence[object]] = (),
 ) -> T:
     ...
 
@@ -242,7 +240,7 @@ def input(
     *,
     name: str = None,
     description: str = None,
-    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    directives: Optional[Sequence[object]] = (),
 ) -> Callable[[T], T]:
     ...
 
@@ -272,7 +270,7 @@ def interface(
     *,
     name: str = None,
     description: str = None,
-    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    directives: Optional[Sequence[object]] = (),
 ):
     """Annotates a class as a GraphQL Interface.
     Example usage:

@@ -6,13 +6,13 @@ from pydantic.fields import ModelField
 from pydantic.typing import NoArgAnyCallable
 from pydantic.utils import smart_deepcopy
 
-from strawberry.arguments import UNSET, _Unset, is_unset  # type: ignore
 from strawberry.experimental.pydantic.exceptions import (
     AutoFieldsNotInBaseModelError,
     BothDefaultAndDefaultFactoryDefinedError,
     UnregisteredTypeException,
 )
 from strawberry.private import is_private
+from strawberry.unset import UNSET, UnsetType
 from strawberry.utils.typing import (
     get_list_annotation,
     get_optional_annotation,
@@ -78,7 +78,9 @@ def sort_creation_fields(
     return sorted(fields, key=has_default)
 
 
-def get_default_factory_for_field(field: ModelField) -> Union[NoArgAnyCallable, _Unset]:
+def get_default_factory_for_field(
+    field: ModelField,
+) -> Union[NoArgAnyCallable, UnsetType]:
     """
     Gets the default factory for a pydantic field.
 
@@ -89,8 +91,8 @@ def get_default_factory_for_field(field: ModelField) -> Union[NoArgAnyCallable, 
     default_factory = field.default_factory
     default = field.default
 
-    has_factory = default_factory is not None and not is_unset(default_factory)
-    has_default = default is not None and not is_unset(default)
+    has_factory = default_factory is not None and default_factory is not UNSET
+    has_default = default is not None and default is not UNSET
 
     # defining both default and default_factory is not supported
 

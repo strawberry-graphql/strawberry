@@ -53,6 +53,9 @@ class StrawberryContainer(StrawberryType):
     def __init__(self, of_type: Union[StrawberryType, type]):
         self.of_type = of_type
 
+    def __hash__(self) -> int:
+        return hash((type(self), self.of_type))
+
     def __eq__(self, other: object) -> bool:
         if isinstance(other, StrawberryType):
             if type(self) == type(other):
@@ -62,12 +65,6 @@ class StrawberryContainer(StrawberryType):
                 return False
 
         return super().__eq__(other)
-
-    def __hash__(self) -> int:
-        return hash((type(self), self.of_type))
-
-    def __str__(self) -> str:
-        return f"{type(self).__name__}({self.of_type})"
 
     def __repr__(self) -> str:
         return f"{type(self).__name__}({repr(self.of_type)})"
@@ -137,6 +134,9 @@ class StrawberryAnnotated(StrawberryContainer):
         super().__init__(of_type)
         self.args = base_args + list(args)
 
+    def __hash__(self) -> int:
+        return hash((type(self), self.of_type, self.args))
+
     def __eq__(self, other: object) -> bool:
         if isinstance(other, StrawberryType):
             if type(self) == type(other):
@@ -146,13 +146,6 @@ class StrawberryAnnotated(StrawberryContainer):
                 return False
 
         return super().__eq__(other)
-
-    def __hash__(self) -> int:
-        return hash((type(self), self.of_type, self.args))
-
-    def __str__(self) -> str:
-        args = ", ".join(map(str, [self.of_type] + self.args))
-        return f"{type(self).__name__}({args})"
 
     def __repr__(self) -> str:
         args = ", ".join(map(repr, [self.of_type] + self.args))
