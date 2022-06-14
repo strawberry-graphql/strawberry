@@ -10,7 +10,7 @@ class Docstring:
         self.target = target
         self._docstring: Optional[docstring_parser.Docstring] = None
         self._attribute_raw_docstrings: Optional[dict[str, str]] = None
-        self._attribute_docstrings: Optional[dict[str, Docstring]] = None
+        self._attribute_docstrings: dict[str, Optional[str]] = {}
 
     @property
     def parsed_docstring(self) -> Optional[docstring_parser.Docstring]:
@@ -65,13 +65,14 @@ class Docstring:
         return None
 
     def attribute_docstring(self, name: str) -> Optional[str]:
-        if self._attribute_raw_docstrings is None:
-            self._attribute_raw_docstrings = get_attributes_doc(self.target)
-            self._attribute_docstrings = {}
         if name not in self._attribute_docstrings:
-            raw_docstring = self._attribute_raw_docstrings.get(name)
-            docstring = None if raw_docstring is None else Docstring(raw_docstring)
-            self._attribute_docstrings[name] = docstring
+            if self._attribute_raw_docstrings is None:
+                self._attribute_raw_docstrings = get_attributes_doc(self.target)
+
+            attr_docstring = self._attribute_raw_docstrings.get(name)
+            if attr_docstring:
+                attr_docstring = Docstring(attr_docstring).main_description
+            self._attribute_docstrings[name] = attr_docstring
 
         return self._attribute_docstrings[name]
 

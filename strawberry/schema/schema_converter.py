@@ -634,53 +634,47 @@ class GraphQLCoreConverter:
         parent_directive_docstring: Optional[Docstring] = None,
         child_name: Optional[str] = None,
     ) -> Optional[str]:
-        for source in sources:
-            if source == DescriptionSource.STRAWBERRY_DESCRIPTIONS:
-                if description is not None:
-                    return description
-            else:
-                if source == DescriptionSource.TYPE_DOCSTRINGS:
-                    docstring, parent_docstring = (
-                        type_docstring,
-                        parent_type_docstring,
-                    )
-                elif source == DescriptionSource.ATTRIBUTE_DOCSTRING:
-                    if parent_type_docstring is not None:
-                        docstring, parent_docstring = (
-                            parent_type_docstring.attribute_docstring(child_name),
-                            None,
-                        )
-                elif source == DescriptionSource.ENUM_DOCSTRINGS:
-                    docstring, parent_docstring = (
-                        enum_docstring,
-                        parent_enum_docstring,
-                    )
-                elif source == DescriptionSource.ENUM_ATTRIBUTE_DOCSTRING:
-                    if parent_enum_docstring is not None:
-                        docstring, parent_docstring = (
-                            parent_enum_docstring.attribute_docstring(child_name),
-                            None,
-                        )
-                elif source == DescriptionSource.RESOLVER_DOCSTRINGS:
-                    docstring, parent_docstring = (
-                        resolver_docstring,
-                        parent_resolver_docstring,
-                    )
-                elif source == DescriptionSource.DIRECTIVE_DOCSTRINGS:
-                    docstring, parent_docstring = (
-                        directive_docstring,
-                        parent_directive_docstring,
-                    )
-                else:
-                    continue
 
-                if docstring is not None:
-                    ret = docstring.main_description
-                    if ret is not None:
-                        return ret
-                if parent_docstring is not None and child_name is not None:
-                    ret = parent_docstring.child_description(child_name)
-                    if ret is not None:
-                        return ret
+        def gen_candidates():
+            for source in sources:
+                if source == DescriptionSource.STRAWBERRY_DESCRIPTIONS:
+                    yield description
+
+                elif source == DescriptionSource.TYPE_DOCSTRINGS:
+                    if type_docstring is not None:
+                        yield type_docstring.main_description
+
+                    if parent_type_docstring is not None and child_name is not None:
+                        yield parent_type_docstring.child_description(child_name)
+
+                elif source == DescriptionSource.TYPE_ATTRIBUTE_DOCSTRING:
+                    if parent_type_docstring is not None and child_name is not None:
+                        yield parent_type_docstring.attribute_docstring(child_name)
+
+                elif source == DescriptionSource.ENUM_DOCSTRINGS:
+                    if enum_docstring:
+                        yield enum_docstring.main_description
+                    if parent_enum_docstring is not None and child_name is not None:
+                        yield parent_enum_docstring.child_description(child_name)
+
+                elif source == DescriptionSource.ENUM_ATTRIBUTE_DOCSTRING:
+                    if parent_enum_docstring is not None and child_name is not None:
+                        yield parent_enum_docstring.attribute_docstring(child_name)
+
+                elif source == DescriptionSource.RESOLVER_DOCSTRINGS:
+                    if resolver_docstring is not None:
+                        yield resolver_docstring.main_description
+                    if parent_resolver_docstring is not None and child_name is not None:
+                        yield parent_resolver_docstring.child_description(child_name)
+
+                elif source == DescriptionSource.DIRECTIVE_DOCSTRINGS:
+                    if directive_docstring is not None:
+                        yield directive_docstring.main_description
+                    if parent_directive_docstring is not None and child_name is not None:
+                        yield parent_directive_docstring.child_description(child_name)
+
+        for candidate in gen_candidates():
+            if candidate is not None:
+                return candidate
 
         return None
