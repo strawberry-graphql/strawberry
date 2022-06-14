@@ -3,10 +3,11 @@ from typing import List, Optional
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.arguments import UNSET, StrawberryArgument, convert_arguments
+from strawberry.arguments import StrawberryArgument, convert_arguments
 from strawberry.lazy_type import LazyType
 from strawberry.schema.config import StrawberryConfig
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
+from strawberry.unset import UNSET
 
 
 def test_simple_types():
@@ -229,9 +230,9 @@ def test_nested_input_types():
     args = {
         "input": {
             "prNumber": 12,
-            "status": ReleaseFileStatus.OK.value,
+            "status": ReleaseFileStatus.OK,
             "releaseInfo": {
-                "changeType": ChangeType.MAJOR.value,
+                "changeType": ChangeType.MAJOR,
                 "changelog": "example",
             },
         }
@@ -261,7 +262,7 @@ def test_nested_input_types():
     args = {
         "input": {
             "prNumber": 12,
-            "status": ReleaseFileStatus.OK.value,
+            "status": ReleaseFileStatus.OK,
             "releaseInfo": None,
         }
     }

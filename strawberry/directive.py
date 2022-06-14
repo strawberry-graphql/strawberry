@@ -4,7 +4,7 @@ import dataclasses
 import inspect
 import sys
 from itertools import islice
-from typing import Callable, List, Optional, TypeVar
+from typing import Any, Callable, List, Optional, TypeVar
 
 from backports.cached_property import cached_property
 
@@ -12,6 +12,14 @@ from graphql import DirectiveLocation
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import StrawberryArgument
+from strawberry.field import StrawberryField
+
+
+def directive_field(name: str) -> Any:
+    return StrawberryField(
+        python_name=None,
+        graphql_name=name,
+    )
 
 
 @dataclasses.dataclass

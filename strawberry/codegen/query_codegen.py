@@ -460,17 +460,12 @@ class QueryCodegen:
             field_type = self._collect_types_with_inline_fragments(
                 selection, parent_type, class_name
             )
-            return GraphQLField(
-                selected_field.name,
-                selection.alias.value if selection.alias else None,
-                field_type,
+        else:
+            parent_type = cast(
+                TypeDefinition, selected_field_type._type_definition  # type: ignore
             )
 
-        parent_type = cast(
-            TypeDefinition, selected_field_type._type_definition  # type: ignore
-        )
-
-        field_type = self._collect_types(selection, parent_type, class_name)
+            field_type = self._collect_types(selection, parent_type, class_name)
 
         if wrapper:
             field_type = wrapper(field_type)

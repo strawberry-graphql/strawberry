@@ -5,9 +5,9 @@ from typing import List, Optional
 import pytest
 
 import strawberry
-from strawberry.arguments import UNSET
 from strawberry.types import Info
 from strawberry.types.nodes import FragmentSpread, InlineFragment, SelectedField
+from strawberry.unset import UNSET
 
 
 def test_info_has_the_correct_shape():

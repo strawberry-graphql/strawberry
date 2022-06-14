@@ -8,14 +8,14 @@ from strawberry.codegen import CodegenFile, CodegenResult, QueryCodegenPlugin
 from strawberry.codegen.types import GraphQLOperation, GraphQLType
 
 
-class TestConsolePlugin(ConsolePlugin):
+class ConsoleTestPlugin(ConsolePlugin):
     def on_end(self, result: CodegenResult):
         result.files[0].path = "renamed.py"
 
         return super().on_end(result)
 
 
-class TestPlugin(QueryCodegenPlugin):
+class QueryCodegenTestPlugin(QueryCodegenPlugin):
     def generate_code(
         self, types: List[GraphQLType], operation: GraphQLOperation
     ) -> List[CodegenFile]:
@@ -60,7 +60,7 @@ def test_codegen(cli_runner, query_file_path: Path, tmp_path: Path):
         cmd_codegen,
         [
             "-p",
-            "tests.cli.test_codegen:TestPlugin",
+            "tests.cli.test_codegen:QueryCodegenTestPlugin",
             "-o",
             str(tmp_path),
             "--schema",
@@ -170,7 +170,7 @@ def test_can_use_custom_cli_plugin(cli_runner, query_file_path: Path, tmp_path: 
         cmd_codegen,
         [
             "--cli-plugin",
-            "tests.cli.test_codegen:TestConsolePlugin",
+            "tests.cli.test_codegen:ConsoleTestPlugin",
             "-p",
             "python",
             "--schema",

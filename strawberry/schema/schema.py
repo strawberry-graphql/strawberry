@@ -1,8 +1,10 @@
 from functools import lru_cache
-from typing import Any, Dict, Optional, Sequence, Type, Union
+from typing import Any, Dict, Iterable, Optional, Sequence, Type, Union
 
 from graphql import (
     ExecutionContext as GraphQLExecutionContext,
+    GraphQLNamedType,
+    GraphQLNonNull,
     GraphQLSchema,
     get_introspection_query,
     parse,
@@ -23,6 +25,7 @@ from strawberry.field import StrawberryField
 from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
 from strawberry.types import ExecutionContext, ExecutionResult
+from strawberry.types.graphql import OperationType
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 
@@ -30,6 +33,13 @@ from ..printer import print_schema
 from .base import BaseSchema
 from .config import StrawberryConfig
 from .execute import execute, execute_sync
+
+
+DEFAULT_ALLOWED_OPERATION_TYPES = {
+    OperationType.QUERY,
+    OperationType.MUTATION,
+    OperationType.SUBSCRIPTION,
+}
 
 
 class Schema(BaseSchema):
@@ -79,7 +89,11 @@ class Schema(BaseSchema):
 
         graphql_types = []
         for type_ in types:
-            graphql_type = self.schema_converter.from_object(type_._type_definition)
+            graphql_type = self.schema_converter.from_maybe_optional(type_)
+            if isinstance(graphql_type, GraphQLNonNull):
+                graphql_type = graphql_type.of_type
+            if not isinstance(graphql_type, GraphQLNamedType):
+                raise TypeError(f"{graphql_type} is not a named GraphQL Type")
             graphql_types.append(graphql_type)
 
         self._schema = GraphQLSchema(
@@ -154,7 +168,11 @@ class Schema(BaseSchema):
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
+        allowed_operation_types: Optional[Iterable[OperationType]] = None,
     ) -> ExecutionResult:
+        if allowed_operation_types is None:
+            allowed_operation_types = DEFAULT_ALLOWED_OPERATION_TYPES
+
         # Create execution context
         execution_context = ExecutionContext(
             query=query,
@@ -171,6 +189,7 @@ class Schema(BaseSchema):
             extensions=list(self.extensions) + [DirectivesExtension],
             execution_context_class=self.execution_context_class,
             execution_context=execution_context,
+            allowed_operation_types=allowed_operation_types,
         )
 
         if result.errors:
@@ -185,7 +204,11 @@ class Schema(BaseSchema):
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
+        allowed_operation_types: Optional[Iterable[OperationType]] = None,
     ) -> ExecutionResult:
+        if allowed_operation_types is None:
+            allowed_operation_types = DEFAULT_ALLOWED_OPERATION_TYPES
+
         execution_context = ExecutionContext(
             query=query,
             schema=self,
@@ -201,6 +224,7 @@ class Schema(BaseSchema):
             extensions=list(self.extensions) + [DirectivesExtensionSync],
             execution_context_class=self.execution_context_class,
             execution_context=execution_context,
+            allowed_operation_types=allowed_operation_types,
         )
 
         if result.errors:

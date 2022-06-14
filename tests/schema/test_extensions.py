@@ -144,14 +144,17 @@ def test_extensions():
 
     # Fields
     graphql_query = cast(GraphQLObjectType, graphql_schema.get_type("Query"))
-    graphql_query.fields["getThingIface"].extensions[
+    assert graphql_query.fields["getThingIface"].extensions[
         GraphQLCoreConverter.DEFINITION_BACKREF
     ] is Query._type_definition.get_field("get_thing_iface")
-    graphql_query.fields["getThingIface"].args[
-        "input"
-    ] is Query._type_definition.get_field("get_thing_iface").arguments[0]
+    assert (
+        graphql_query.fields["getThingIface"]
+        .args["input"]
+        .extensions[GraphQLCoreConverter.DEFINITION_BACKREF]
+        is Query._type_definition.get_field("get_thing_iface").arguments[0]
+    )
 
     graphql_input = cast(GraphQLInputType, graphql_schema.get_type("Input"))
-    graphql_input.fields["type"].extensions[
+    assert graphql_input.fields["type"].extensions[
         GraphQLCoreConverter.DEFINITION_BACKREF
     ] is Input._type_definition.get_field("type")

@@ -1,4 +1,4 @@
-name: Release test pre-release version
+name: 🎁 Release test pre-release version
 
 on:
   repository_dispatch:

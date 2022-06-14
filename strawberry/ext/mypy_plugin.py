@@ -922,6 +922,7 @@ class StrawberryPlugin(Plugin):
             for strawberry_decorator in {
                 "strawberry.experimental.pydantic.object_type.type",
                 "strawberry.experimental.pydantic.object_type.input",
+                "strawberry.experimental.pydantic.object_type.interface",
                 "strawberry.experimental.pydantic.error_type",
             }
         ):

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from enum import Enum
+import dataclasses
+import sys
 from typing import (
     Any,
     Callable,
@@ -33,9 +34,12 @@ from graphql import (
     GraphQLScalarType,
     GraphQLUnionType,
     Undefined,
+    ValueNode,
 )
+from graphql.language.directive_locations import DirectiveLocation
 
-from strawberry.arguments import UNSET, StrawberryArgument, convert_arguments, is_unset
+from strawberry.annotation import StrawberryAnnotation
+from strawberry.arguments import StrawberryArgument, convert_arguments
 from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.directive import StrawberryDirective
 from strawberry.enum import EnumDefinition, EnumValue
@@ -49,10 +53,12 @@ from strawberry.lazy_type import LazyType
 from strawberry.private import is_private
 from strawberry.schema.config import StrawberryConfig
 from strawberry.schema.types.scalar import _make_scalar_type
+from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
 from strawberry.types.info import Info
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
+from strawberry.unset import UNSET
 from strawberry.utils.await_maybe import await_maybe
 
 from . import compat
@@ -64,10 +70,22 @@ from .types.concrete_type import ConcreteType
 # subclass the GraphQLEnumType class to enable returning Enum members from
 # resolvers.
 class CustomGraphQLEnumType(GraphQLEnumType):
+    def __init__(self, enum: EnumDefinition, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.wrapped_cls = enum.wrapped_cls
+
     def serialize(self, output_value: Any) -> str:
-        if isinstance(output_value, Enum):
+        if isinstance(output_value, self.wrapped_cls):
             return output_value.name
         return super().serialize(output_value)
+
+    def parse_value(self, input_value: str) -> Any:
+        return self.wrapped_cls(super().parse_value(input_value))
+
+    def parse_literal(
+        self, value_node: ValueNode, _variables: Optional[Dict[str, Any]] = None
+    ) -> Any:
+        return self.wrapped_cls(super().parse_literal(value_node, _variables))
 
 
 class GraphQLCoreConverter:
@@ -111,6 +129,7 @@ class GraphQLCoreConverter:
             return graphql_enum
 
         graphql_enum = CustomGraphQLEnumType(
+            enum=enum,
             name=enum_name,
             values={item.name: self.from_enum_value(item) for item in enum.values},
             description=enum.description,
@@ -128,6 +147,7 @@ class GraphQLCoreConverter:
     def from_enum_value(self, enum_value: EnumValue) -> GraphQLEnumValue:
         return GraphQLEnumValue(
             enum_value.value,
+            deprecation_reason=enum_value.deprecation_reason,
             extensions={
                 GraphQLCoreConverter.DEFINITION_BACKREF: enum_value,
             },
@@ -150,6 +170,42 @@ class GraphQLCoreConverter:
             extensions={
                 GraphQLCoreConverter.DEFINITION_BACKREF: directive,
             },
+        )
+
+    def from_schema_directive(self, directive: Any) -> GraphQLDirective:
+        cls = directive.__class__
+        strawberry_directive = cast(
+            StrawberrySchemaDirective, cls.__strawberry_directive__
+        )
+        module = sys.modules[cls.__module__]
+
+        args: Dict[str, GraphQLArgument] = {}
+        for field in strawberry_directive.fields:
+            default = field.default
+            if default == dataclasses.MISSING:
+                default = UNSET
+
+            name = self.config.name_converter.get_graphql_name(field)
+            args[name] = self.from_argument(
+                StrawberryArgument(
+                    python_name=field.python_name or field.name,
+                    graphql_name=None,
+                    type_annotation=StrawberryAnnotation(
+                        annotation=field.type,
+                        namespace=module.__dict__,
+                    ),
+                    default=default,
+                )
+            )
+
+        return GraphQLDirective(
+            name=self.config.name_converter.from_directive(strawberry_directive),
+            locations=[
+                DirectiveLocation(loc.value) for loc in strawberry_directive.locations
+            ],
+            is_repeatable=False,
+            args=args,
+            description=strawberry_directive.description,
         )
 
     def from_field(self, field: StrawberryField) -> GraphQLField:
@@ -183,7 +239,7 @@ class GraphQLCoreConverter:
         field_type = cast(GraphQLInputType, self.from_maybe_optional(field.type))
         default_value: object
 
-        if is_unset(field.default_value):
+        if field.default_value is UNSET:
             default_value = Undefined
         else:
             default_value = field.default_value

@@ -1,6 +1,6 @@
 # type: ignore
 import typing
-from typing import List
+from typing import List, Type, TypeVar
 
 import pytest
 
@@ -349,3 +349,32 @@ def test_can_use_source_as_argument_name():
 
     assert not result.errors
     assert result.data["hello"] == "I'm a resolver for 🍓"
+
+
+def test_typed_resolver_factory():
+    @strawberry.type
+    class AType:
+        some: int
+
+    T = TypeVar("T")
+
+    def resolver_factory(strawberry_type: Type[T]):
+        def resolver() -> T:
+            return strawberry_type(1)
+
+        return resolver
+
+    @strawberry.type
+    class Query:
+        a_type: AType = strawberry.field(resolver_factory(AType))
+
+    strawberry.Schema(query=Query)
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ aType { some } }"
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data == {"aType": {"some": 1}}
