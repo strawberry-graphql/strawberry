@@ -19,7 +19,7 @@ class UnsupportedTypeError(Exception):
 
 
 class UnregisteredTypeException(Exception):
-    def __init__(self, type: BaseModel):
+    def __init__(self, type: Type[BaseModel]):
         message = (
             f"Cannot find a Strawberry Type for {type} did you forget to register it?"
         )

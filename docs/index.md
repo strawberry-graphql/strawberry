@@ -6,7 +6,7 @@ title: Getting started with Strawberry
 
 This tutorial will help you:
 
-- Obtain a basic understanding of GraphQL principle
+- Obtain a basic understanding of GraphQL principles
 - Define a GraphQL schema using Strawberry
 - Run the Strawberry server that lets you execute queries against your schema
 

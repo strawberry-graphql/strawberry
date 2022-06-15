@@ -19,7 +19,7 @@ def test_renders_graphiql(test_client):
 def test_renders_graphiql_disabled(test_client_no_graphiql):
     response = test_client_no_graphiql.get("/graphql")
 
-    assert response.status_code == status.HTTP_404_NOT_FOUND
+    assert response.status_code == status.HTTP_400_BAD_REQUEST
 
 
 def test_turning_off_graphql_ws():

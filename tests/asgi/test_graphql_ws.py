@@ -234,9 +234,7 @@ def test_subscription_exceptions(test_client):
         assert response["type"] == GQL_DATA
         assert response["id"] == "demo"
         assert response["payload"]["data"] is None
-        assert response["payload"]["errors"] == [
-            {"locations": None, "message": "TEST EXC", "path": None}
-        ]
+        assert response["payload"]["errors"] == [{"message": "TEST EXC"}]
 
         ws.send_json({"type": GQL_STOP, "id": "demo"})
         response = ws.receive_json()
@@ -269,7 +267,6 @@ def test_subscription_field_error(test_client):
         assert response["id"] == "invalid-field"
         assert response["payload"] == {
             "locations": [{"line": 1, "column": 16}],
-            "path": None,
             "message": (
                 "The subscription field 'notASubscriptionField' is not defined."
             ),
@@ -301,7 +298,6 @@ def test_subscription_syntax_error(test_client):
         assert response["id"] == "syntax-error"
         assert response["payload"] == {
             "locations": [{"line": 1, "column": 24}],
-            "path": None,
             "message": "Syntax Error: Expected Name, found <EOF>.",
         }
 

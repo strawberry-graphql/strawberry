@@ -18,16 +18,16 @@ from typing import (
     overload,
 )
 
-from cached_property import cached_property  # type: ignore
+from backports.cached_property import cached_property
 from typing_extensions import Literal
 
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.arguments import UNSET, StrawberryArgument
+from strawberry.arguments import StrawberryArgument
 from strawberry.exceptions import InvalidDefaultFactoryError, InvalidFieldArgument
-from strawberry.schema_directive import StrawberrySchemaDirective
-from strawberry.type import StrawberryType
+from strawberry.type import StrawberryType, StrawberryTypeVar
 from strawberry.types.info import Info
 from strawberry.union import StrawberryUnion
+from strawberry.unset import UNSET
 
 from .permission import BasePermission
 from .types.fields.resolver import StrawberryResolver
@@ -38,6 +38,9 @@ if TYPE_CHECKING:
 
 
 _RESOLVER_TYPE = Union[StrawberryResolver, Callable, staticmethod, classmethod]
+
+
+UNRESOLVED = object()
 
 
 class StrawberryField(dataclasses.Field):
@@ -56,7 +59,7 @@ class StrawberryField(dataclasses.Field):
         default: object = UNSET,
         default_factory: Union[Callable[[], Any], object] = UNSET,
         deprecation_reason: Optional[str] = None,
-        directives: Sequence[StrawberrySchemaDirective] = (),
+        directives: Sequence[object] = (),
     ):
         # basic fields are fields with no provided resolver
         is_basic_field = not base_resolver
@@ -67,7 +70,7 @@ class StrawberryField(dataclasses.Field):
         if sys.version_info >= (3, 10):
             kwargs["kw_only"] = False
 
-        super().__init__(  # type: ignore
+        super().__init__(
             default=(default if default is not UNSET else dataclasses.MISSING),
             default_factory=(
                 # mypy is not able to understand that default factory
@@ -132,7 +135,7 @@ class StrawberryField(dataclasses.Field):
                     "Union",
                 )
             elif getattr(argument.type, "_type_definition", False):
-                if argument.type._type_definition.is_interface:
+                if argument.type._type_definition.is_interface:  # type: ignore
                     raise InvalidFieldArgument(
                         resolver.name,
                         argument.python_name,
@@ -192,7 +195,7 @@ class StrawberryField(dataclasses.Field):
         _ = resolver.arguments
 
     @property  # type: ignore
-    def type(self) -> Union[StrawberryType, type]:  # type: ignore
+    def type(self) -> Union[StrawberryType, type, Literal[UNRESOLVED]]:  # type: ignore
         # We are catching NameError because dataclasses tries to fetch the type
         # of the field from the class before the class is fully defined.
         # This triggers a NameError error when using forward references because
@@ -202,7 +205,12 @@ class StrawberryField(dataclasses.Field):
             if self.base_resolver is not None:
                 # Handle unannotated functions (such as lambdas)
                 if self.base_resolver.type is not None:
-                    return self.base_resolver.type
+
+                    # StrawberryTypeVar will raise MissingTypesForGenericError later
+                    # on if we let it be returned. So use `type_annotation` instead
+                    # which is the same behaviour as having no type information.
+                    if not isinstance(self.base_resolver.type, StrawberryTypeVar):
+                        return self.base_resolver.type
 
             assert self.type_annotation is not None
 
@@ -212,7 +220,7 @@ class StrawberryField(dataclasses.Field):
 
             return self.type_annotation.resolve()
         except NameError:
-            return None  # type: ignore
+            return UNRESOLVED
 
     @type.setter
     def type(self, type_: Any) -> None:
@@ -269,7 +277,7 @@ class StrawberryField(dataclasses.Field):
             permission_classes=self.permission_classes,
             default=self.default_value,
             # ignored because of https://github.com/python/mypy/issues/6910
-            default_factory=self.default_factory,  # type: ignore[misc]
+            default_factory=self.default_factory,
             deprecation_reason=self.deprecation_reason,
         )
 
@@ -317,7 +325,7 @@ def field(
     deprecation_reason: Optional[str] = None,
     default: Any = UNSET,
     default_factory: Union[Callable, object] = UNSET,
-    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    directives: Optional[Sequence[object]] = (),
 ) -> T:
     ...
 
@@ -333,7 +341,7 @@ def field(
     deprecation_reason: Optional[str] = None,
     default: Any = UNSET,
     default_factory: Union[Callable, object] = UNSET,
-    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    directives: Optional[Sequence[object]] = (),
 ) -> Any:
     ...
 
@@ -349,7 +357,7 @@ def field(
     deprecation_reason: Optional[str] = None,
     default: Any = UNSET,
     default_factory: Union[Callable, object] = UNSET,
-    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    directives: Optional[Sequence[object]] = (),
 ) -> StrawberryField:
     ...
 

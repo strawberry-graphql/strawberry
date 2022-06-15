@@ -1,5 +1,5 @@
 import json
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Dict, Iterable, Optional
 
 from starlette import status
 from starlette.requests import Request
@@ -9,8 +9,10 @@ from starlette.types import Receive, Scope, Send
 from strawberry.asgi.utils import get_graphiql_html
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
-from strawberry.http import parse_request_data
+from strawberry.http import parse_query_params, parse_request_data
 from strawberry.schema import BaseSchema
+from strawberry.schema.exceptions import InvalidOperationTypeError
+from strawberry.types.graphql import OperationType
 from strawberry.utils.debug import pretty_print_graphql_operation
 
 
@@ -19,6 +21,7 @@ class HTTPHandler:
         self,
         schema: BaseSchema,
         graphiql: bool,
+        allow_queries_via_get: bool,
         debug: bool,
         get_context,
         get_root_value,
@@ -26,6 +29,7 @@ class HTTPHandler:
     ):
         self.schema = schema
         self.graphiql = graphiql
+        self.allow_queries_via_get = allow_queries_via_get
         self.debug = debug
         self.get_context = get_context
         self.get_root_value = get_root_value
@@ -35,13 +39,9 @@ class HTTPHandler:
         request = Request(scope=scope, receive=receive)
         root_value = await self.get_root_value(request)
 
-        sub_response = Response(
-            content=None,
-            status_code=None,  # type: ignore
-            headers=None,
-            media_type=None,
-            background=None,
-        )
+        sub_response = Response()
+        sub_response.status_code = None  # type: ignore
+        del sub_response.headers["content-length"]
 
         context = await self.get_context(request=request, response=sub_response)
 
@@ -49,7 +49,6 @@ class HTTPHandler:
             request=request,
             execute=self.execute,
             process_result=self.process_result,
-            graphiql=self.graphiql,
             root_value=root_value,
             context=context,
         )
@@ -69,17 +68,19 @@ class HTTPHandler:
         request: Request,
         execute: Callable,
         process_result: Callable,
-        graphiql: bool,
         root_value: Optional[Any],
         context: Optional[Any],
     ) -> Response:
-        if request.method == "GET":
-            if not graphiql:
+        method = request.method
+
+        if method == "GET":
+            if request.query_params:
+                data = parse_query_params(request.query_params._dict)
+            elif self.should_render_graphiql(request):
+                return self.get_graphiql_response()
+            else:
                 return HTMLResponse(status_code=status.HTTP_404_NOT_FOUND)
-
-            return self.get_graphiql_response()
-
-        if request.method == "POST":
+        elif method == "POST":
             content_type = request.headers.get("Content-Type", "")
             if "application/json" in content_type:
                 try:
@@ -97,7 +98,6 @@ class HTTPHandler:
                 data = replace_placeholders_with_files(
                     operations, files_map, multipart_data
                 )
-
             else:
                 return PlainTextResponse(
                     "Unsupported Media Type",
@@ -117,17 +117,38 @@ class HTTPHandler:
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
 
-        result = await execute(
-            request_data.query,
-            variables=request_data.variables,
-            context=context,
-            operation_name=request_data.operation_name,
-            root_value=root_value,
-        )
+        allowed_operation_types = OperationType.from_http(method)
+
+        if not self.allow_queries_via_get and method == "GET":
+            allowed_operation_types = allowed_operation_types - {OperationType.QUERY}
+
+        try:
+            result = await execute(
+                request_data.query,
+                variables=request_data.variables,
+                context=context,
+                operation_name=request_data.operation_name,
+                root_value=root_value,
+                allowed_operation_types=allowed_operation_types,
+            )
+        except InvalidOperationTypeError as e:
+            return PlainTextResponse(
+                e.as_http_error_reason(method),
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
 
         response_data = await process_result(request=request, result=result)
 
         return JSONResponse(response_data, status_code=status.HTTP_200_OK)
+
+    def should_render_graphiql(self, request: Request) -> bool:
+        if not self.graphiql:
+            return False
+
+        return any(
+            supported_header in request.headers.get("accept", "")
+            for supported_header in ("text/html", "*/*")
+        )
 
     def get_graphiql_response(self) -> HTMLResponse:
         html = get_graphiql_html()
@@ -135,7 +156,13 @@ class HTTPHandler:
         return HTMLResponse(html)
 
     async def execute(
-        self, query, variables=None, context=None, operation_name=None, root_value=None
+        self,
+        query: str,
+        variables: Optional[Dict[str, Any]] = None,
+        context: Any = None,
+        operation_name: Optional[str] = None,
+        root_value: Any = None,
+        allowed_operation_types: Optional[Iterable[OperationType]] = None,
     ):
         if self.debug:
             pretty_print_graphql_operation(operation_name, query, variables)
@@ -146,4 +173,5 @@ class HTTPHandler:
             variable_values=variables,
             operation_name=operation_name,
             context_value=context,
+            allowed_operation_types=allowed_operation_types,
         )

@@ -23,7 +23,7 @@ def test_execution_context_operation_name_and_type():
             execution_context = self.execution_context
 
             operation_name = execution_context.operation_name
-            operation_type = execution_context.operation_type
+            operation_type = execution_context.operation_type.value
 
     schema = strawberry.Schema(Query, extensions=[MyExtension])
 
@@ -31,14 +31,14 @@ def test_execution_context_operation_name_and_type():
     assert not result.errors
 
     assert operation_name is None
-    assert operation_type == "QUERY"
+    assert operation_type == "query"
 
     # Try again with an operation_name
     result = schema.execute_sync("query MyOperation { ping }")
     assert not result.errors
 
     assert operation_name == "MyOperation"
-    assert operation_type == "QUERY"
+    assert operation_type == "query"
 
     # Try again with an operation_name override
     result = schema.execute_sync(
@@ -51,7 +51,7 @@ def test_execution_context_operation_name_and_type():
     assert not result.errors
 
     assert operation_name == "MyOperation2"
-    assert operation_type == "QUERY"
+    assert operation_type == "query"
 
 
 def test_execution_context_operation_type_mutation():
@@ -66,7 +66,7 @@ def test_execution_context_operation_type_mutation():
             execution_context = self.execution_context
 
             operation_name = execution_context.operation_name
-            operation_type = execution_context.operation_type
+            operation_type = execution_context.operation_type.value
 
     @strawberry.type
     class Mutation:
@@ -80,14 +80,14 @@ def test_execution_context_operation_type_mutation():
     assert not result.errors
 
     assert operation_name is None
-    assert operation_type == "MUTATION"
+    assert operation_type == "mutation"
 
     # Try again with an operation_name
     result = schema.execute_sync("mutation MyMutation { myMutation }")
     assert not result.errors
 
     assert operation_name == "MyMutation"
-    assert operation_type == "MUTATION"
+    assert operation_type == "mutation"
 
     # Try again with an operation_name override
     result = schema.execute_sync(
@@ -100,10 +100,10 @@ def test_execution_context_operation_type_mutation():
     assert not result.errors
 
     assert operation_name == "MyMutation2"
-    assert operation_type == "MUTATION"
+    assert operation_type == "mutation"
 
 
-def test_execution_context_operation_name_and_type_with_fragmenets():
+def test_execution_context_operation_name_and_type_with_fragments():
     operation_name = None
     operation_type = None
 
@@ -115,7 +115,7 @@ def test_execution_context_operation_name_and_type_with_fragmenets():
             execution_context = self.execution_context
 
             operation_name = execution_context.operation_name
-            operation_type = execution_context.operation_type
+            operation_type = execution_context.operation_type.value
 
     schema = strawberry.Schema(Query, extensions=[MyExtension])
 
@@ -134,7 +134,7 @@ def test_execution_context_operation_name_and_type_with_fragmenets():
     assert not result.errors
 
     assert operation_name == "MyOperation"
-    assert operation_type == "QUERY"
+    assert operation_type == "query"
 
 
 def test_error_when_accessing_operation_type_before_parsing():

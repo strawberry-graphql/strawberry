@@ -1,8 +1,14 @@
-from http import HTTPStatus
+from typing import Dict, List, Union
 
-from chalice.app import BadRequestError, CaseInsensitiveMapping, Request, Response
+from chalice.app import BadRequestError, Request, Response
 from strawberry.chalice.graphiql import render_graphiql_page
-from strawberry.http import GraphQLHTTPResponse, process_result
+from strawberry.exceptions import MissingQueryError
+from strawberry.http import (
+    GraphQLHTTPResponse,
+    parse_query_params,
+    parse_request_data,
+    process_result,
+)
 from strawberry.schema import BaseSchema
 from strawberry.types import ExecutionResult
 
@@ -20,11 +26,10 @@ class GraphQLView:
         Returns:
             The GraphiQL html page as a string
         """
-        result = render_graphiql_page()
-        return result
+        return render_graphiql_page()
 
     @staticmethod
-    def has_html_been_asked_for(headers: CaseInsensitiveMapping) -> bool:
+    def should_render_graphiql(graphiql: bool, request: Request) -> bool:
         """
         Do the headers indicate that the invoker has requested html?
         Args:
@@ -33,44 +38,29 @@ class GraphQLView:
         Returns:
             Whether html has been requested True for yes, False for no
         """
-        accept_headers = headers.get("accept", None)
-
-        if accept_headers is None:
+        if not graphiql:
             return False
 
-        if "text/html" in accept_headers:
-            return True
-
-        if "*/*" in accept_headers:
-            return True
-
-        return False
+        return any(
+            supported_header in request.headers.get("accept", "")
+            for supported_header in {"text/html", "*/*"}
+        )
 
     @staticmethod
-    def invalid_query_response() -> Response:
+    def error_response(
+        message: str,
+        error_code: str,
+        http_status_code: int,
+        headers: Dict[str, Union[str, List[str]]] = None,
+    ) -> Response:
         """
-        A response for malformed queries
+        A wrapper for error responses
         Returns:
         An errors response
         """
-        return Response(
-            body={
-                "errors": ["Provide a valid graphql query in the body of your request"]
-            },
-            status_code=HTTPStatus.OK,
-        )
+        body = {"Code": error_code, "Message": message}
 
-    @staticmethod
-    def invalid_rest_verb_response() -> Response:
-        """
-        A response for calling the graphql endpoint with a non POST request
-        Returns:
-
-        """
-        return Response(
-            body={"errors": ["GraphQL queries must be of request type POST"]},
-            status_code=HTTPStatus.OK,
-        )
+        return Response(body=body, status_code=http_status_code, headers=headers)
 
     def execute_request(self, request: Request) -> Response:
         """
@@ -81,41 +71,65 @@ class GraphQLView:
         Returns:
             A chalice response
         """
-        if self.graphiql:
-            if (
-                self.has_html_been_asked_for(request.headers)
-                and request.method == "GET"
-            ):
-                graphiql_page: str = self.render_graphiql()
-                return Response(
-                    body=graphiql_page,
-                    headers={"content-type": "text/html"},
-                    status_code=200,
+
+        if request.method not in {"POST", "GET"}:
+            return self.error_response(
+                error_code="MethodNotAllowedError",
+                message="Unsupported method, must be of request type POST or GET",
+                http_status_code=405,
+            )
+        content_type = request.headers.get("content-type", "")
+        if "application/json" in content_type:
+            try:
+                data = request.json_body
+                if not (isinstance(data, dict)):
+                    return self.error_response(
+                        error_code="BadRequestError",
+                        message=(
+                            "Provide a valid graphql query "
+                            "in the body of your request"
+                        ),
+                        http_status_code=400,
+                    )
+            except BadRequestError:
+                return self.error_response(
+                    error_code="BadRequestError",
+                    message="Provide a valid graphql query in the body of your request",
+                    http_status_code=400,
                 )
+        elif request.method == "GET" and request.query_params:
+            data = parse_query_params(request.query_params)
 
-        if not request.method == "POST":
-            return self.invalid_rest_verb_response()
+        elif request.method == "GET" and self.should_render_graphiql(
+            self.graphiql, request
+        ):
+            return Response(
+                body=self.render_graphiql(),
+                headers={"content-type": "text/html"},
+                status_code=200,
+            )
+
+        else:
+            return self.error_response(
+                error_code="UnsupportedMediaType",
+                message="Unsupported Media Type",
+                http_status_code=415,
+            )
 
         try:
-            request_data = request.json_body
-        except BadRequestError:
-            return self.invalid_query_response()
-
-        if request_data is None:
-            return self.invalid_query_response()
-        try:
-            query = request_data["query"]
-            variables = request_data.get("variables")
-            operation_name = request_data.get("operationName")
-
-        except (KeyError, TypeError):
-            return self.invalid_query_response()
+            request_data = parse_request_data(data)
+        except MissingQueryError:
+            return self.error_response(
+                error_code="BadRequestError",
+                message="No GraphQL query found in the request",
+                http_status_code=400,
+            )
 
         result: ExecutionResult = self._schema.execute_sync(
-            query,
-            variable_values=variables,
+            request_data.query,
+            variable_values=request_data.variables,
             context_value=request,
-            operation_name=operation_name,
+            operation_name=request_data.operation_name,
             root_value=None,
         )
 

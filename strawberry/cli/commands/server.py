@@ -3,9 +3,8 @@ import sys
 
 import click
 
-from strawberry import Schema
 from strawberry.cli.constants import DEBUG_SERVER_SCHEMA_ENV_VAR_KEY
-from strawberry.utils.importer import import_module_symbol
+from strawberry.cli.utils import load_schema
 
 
 @click.command("server", short_help="Starts debug server")
@@ -42,15 +41,7 @@ def server(schema, host, port, log_level, app_dir):
         )
         raise click.ClickException(message)
 
-    try:
-        schema_symbol = import_module_symbol(schema, default_symbol_name="schema")
-    except (ImportError, AttributeError) as exc:
-        message = str(exc)
-        raise click.BadArgumentUsage(message)
-
-    if not isinstance(schema_symbol, Schema):
-        message = "The `schema` must be an instance of strawberry.Schema"
-        raise click.BadArgumentUsage(message)
+    load_schema(schema, app_dir=app_dir)
 
     os.environ[DEBUG_SERVER_SCHEMA_ENV_VAR_KEY] = schema
     app = "strawberry.cli.debug_server:app"

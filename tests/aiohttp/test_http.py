@@ -4,19 +4,16 @@ from strawberry.aiohttp.views import GraphQLView
 from strawberry.types import ExecutionResult, Info
 
 
-async def test_graphql_query(aiohttp_app_client):
-    query = {
-        "query": """
-            query {
-                hello
-            }
-        """
-    }
+async def test_graphql_query(graphql_client):
+    query = """
+        query ($name: String) {
+            hello(name: $name)
+        }
+    """
 
-    response = await aiohttp_app_client.post("/graphql", json=query)
-    data = await response.json()
-    assert response.status == 200
-    assert data["data"]["hello"] == "strawberry"
+    response = await graphql_client.query(query=query, variables={"name": "strawberry"})
+
+    assert response.data["hello"] == "Hello strawberry"
 
 
 async def test_custom_context(aiohttp_client):
@@ -90,20 +87,16 @@ async def test_setting_cookies_via_context(aiohttp_client):
     assert response.cookies.get("TEST_COOKIE").value == "TEST_VALUE"
 
 
-async def test_malformed_query(aiohttp_app_client):
-    query = {
-        "qwary": """
-            qwary {
-                hello
-            }
-        """
-    }
+async def test_malformed_query(graphql_client):
+    query = """
+        qwary {
+            hello
+        }
+    """
 
-    response = await aiohttp_app_client.post("/graphql", json=query)
-    reason = await response.text()
+    response = await graphql_client.query(query=query, asserts_errors=False)
 
-    assert response.status == 400
-    assert reason == "400: No GraphQL query found in the request"
+    assert response.errors[0]["message"] == "Syntax Error: Unexpected Name 'qwary'."
 
 
 async def test_sending_invalid_json_body(aiohttp_app_client):

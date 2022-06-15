@@ -1,7 +1,5 @@
 from typing import Optional, Union
 
-import pytest
-
 from strawberry.annotation import StrawberryAnnotation
 
 
@@ -35,8 +33,10 @@ def test_str():
 
 def test_none():
     annotation = StrawberryAnnotation(None)
-    with pytest.raises(ValueError, match="Annotation cannot be plain None type"):
-        annotation.resolve()
+    annotation.resolve()
+
+    annotation = StrawberryAnnotation(type(None))
+    annotation.resolve()
 
     annotation = StrawberryAnnotation(Optional[int])
     annotation.resolve()

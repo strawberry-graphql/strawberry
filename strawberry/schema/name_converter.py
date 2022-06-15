@@ -138,6 +138,9 @@ class NameConverter:
             if strawberry_type.is_generic:
                 types = type_.__args__  # type: ignore
                 name = self.from_generic(strawberry_type, types)
+            elif strawberry_type.concrete_of:
+                types = list(strawberry_type.type_var_map.values())
+                name = self.from_generic(strawberry_type, types)
             else:
                 name = strawberry_type.name
         else:

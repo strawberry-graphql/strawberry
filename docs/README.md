@@ -13,6 +13,7 @@
 ## Types
 
 - [Schema](./types/schema.md)
+- [Schema Directives](./types/schema-directives.md)
 - [Schema configurations](./types/schema-configurations.md)
 - [Scalars](./types/scalars.md)
 - [Object types](./types/object-types.md)
@@ -23,6 +24,10 @@
 - [Resolvers](./types/resolvers.md)
 - [Union types](./types/union.md)
 - [Exceptions](./types/exceptions.md)
+
+## Codegen
+
+- [Query codegen](./codegen/query-codegen.md)
 
 ## [Extensions](./extensions)
 

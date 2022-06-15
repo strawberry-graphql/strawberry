@@ -3,10 +3,11 @@ from typing import List, Optional
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.arguments import UNSET, StrawberryArgument, convert_arguments
+from strawberry.arguments import StrawberryArgument, convert_arguments
 from strawberry.lazy_type import LazyType
 from strawberry.schema.config import StrawberryConfig
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
+from strawberry.unset import UNSET
 
 
 def test_simple_types():
@@ -98,15 +99,12 @@ def test_lazy():
         ),
     ]
 
-    assert (
-        convert_arguments(
-            args,
-            arguments,
-            scalar_registry=DEFAULT_SCALAR_REGISTRY,
-            config=StrawberryConfig(),
-        )
-        == {"lazy_arg": LaziestType(something=True)}
-    )
+    assert convert_arguments(
+        args,
+        arguments,
+        scalar_registry=DEFAULT_SCALAR_REGISTRY,
+        config=StrawberryConfig(),
+    ) == {"lazy_arg": LaziestType(something=True)}
 
 
 def test_input_types():
@@ -129,15 +127,12 @@ def test_input_types():
         ),
     ]
 
-    assert (
-        convert_arguments(
-            args,
-            arguments,
-            scalar_registry=DEFAULT_SCALAR_REGISTRY,
-            config=StrawberryConfig(),
-        )
-        == {"input": MyInput(abc="example", say_hello_to="Patrick", was=10, fun="yes")}
-    )
+    assert convert_arguments(
+        args,
+        arguments,
+        scalar_registry=DEFAULT_SCALAR_REGISTRY,
+        config=StrawberryConfig(),
+    ) == {"input": MyInput(abc="example", say_hello_to="Patrick", was=10, fun="yes")}
 
 
 def test_optional_input_types():
@@ -155,15 +150,12 @@ def test_optional_input_types():
         ),
     ]
 
-    assert (
-        convert_arguments(
-            args,
-            arguments,
-            scalar_registry=DEFAULT_SCALAR_REGISTRY,
-            config=StrawberryConfig(),
-        )
-        == {"input": MyInput(abc="example")}
-    )
+    assert convert_arguments(
+        args,
+        arguments,
+        scalar_registry=DEFAULT_SCALAR_REGISTRY,
+        config=StrawberryConfig(),
+    ) == {"input": MyInput(abc="example")}
 
 
 def test_list_of_input_types():
@@ -181,15 +173,12 @@ def test_list_of_input_types():
         ),
     ]
 
-    assert (
-        convert_arguments(
-            args,
-            arguments,
-            scalar_registry=DEFAULT_SCALAR_REGISTRY,
-            config=StrawberryConfig(),
-        )
-        == {"input_list": [MyInput(abc="example")]}
-    )
+    assert convert_arguments(
+        args,
+        arguments,
+        scalar_registry=DEFAULT_SCALAR_REGISTRY,
+        config=StrawberryConfig(),
+    ) == {"input_list": [MyInput(abc="example")]}
 
 
 def test_optional_list_of_input_types():
@@ -206,15 +195,12 @@ def test_optional_list_of_input_types():
             type_annotation=StrawberryAnnotation(Optional[List[MyInput]]),
         ),
     ]
-    assert (
-        convert_arguments(
-            args,
-            arguments,
-            scalar_registry=DEFAULT_SCALAR_REGISTRY,
-            config=StrawberryConfig(),
-        )
-        == {"input_list": [MyInput(abc="example")]}
-    )
+    assert convert_arguments(
+        args,
+        arguments,
+        scalar_registry=DEFAULT_SCALAR_REGISTRY,
+        config=StrawberryConfig(),
+    ) == {"input_list": [MyInput(abc="example")]}
 
 
 def test_nested_input_types():
@@ -244,9 +230,9 @@ def test_nested_input_types():
     args = {
         "input": {
             "prNumber": 12,
-            "status": ReleaseFileStatus.OK.value,
+            "status": ReleaseFileStatus.OK,
             "releaseInfo": {
-                "changeType": ChangeType.MAJOR.value,
+                "changeType": ChangeType.MAJOR,
                 "changelog": "example",
             },
         }
@@ -276,7 +262,7 @@ def test_nested_input_types():
     args = {
         "input": {
             "prNumber": 12,
-            "status": ReleaseFileStatus.OK.value,
+            "status": ReleaseFileStatus.OK,
             "releaseInfo": None,
         }
     }
@@ -320,15 +306,12 @@ def test_nested_list_of_complex_types():
         ),
     ]
 
-    assert (
-        convert_arguments(
-            args,
-            arguments,
-            scalar_registry=DEFAULT_SCALAR_REGISTRY,
-            config=StrawberryConfig(),
-        )
-        == {"input": Input(numbers=[Number(1), Number(2)])}
-    )
+    assert convert_arguments(
+        args,
+        arguments,
+        scalar_registry=DEFAULT_SCALAR_REGISTRY,
+        config=StrawberryConfig(),
+    ) == {"input": Input(numbers=[Number(1), Number(2)])}
 
 
 def test_uses_default_for_optional_types_when_nothing_is_passed():
@@ -352,15 +335,12 @@ def test_uses_default_for_optional_types_when_nothing_is_passed():
         ),
     ]
 
-    assert (
-        convert_arguments(
-            args,
-            arguments,
-            scalar_registry=DEFAULT_SCALAR_REGISTRY,
-            config=StrawberryConfig(),
-        )
-        == {"input": Input(UNSET, UNSET)}
-    )
+    assert convert_arguments(
+        args,
+        arguments,
+        scalar_registry=DEFAULT_SCALAR_REGISTRY,
+        config=StrawberryConfig(),
+    ) == {"input": Input(UNSET, UNSET)}
 
     # case 2
     args = {"input": {"numbersSecond": None}}
@@ -373,15 +353,12 @@ def test_uses_default_for_optional_types_when_nothing_is_passed():
         ),
     ]
 
-    assert (
-        convert_arguments(
-            args,
-            arguments,
-            scalar_registry=DEFAULT_SCALAR_REGISTRY,
-            config=StrawberryConfig(),
-        )
-        == {"input": Input(UNSET, None)}
-    )
+    assert convert_arguments(
+        args,
+        arguments,
+        scalar_registry=DEFAULT_SCALAR_REGISTRY,
+        config=StrawberryConfig(),
+    ) == {"input": Input(UNSET, None)}
 
 
 def test_when_optional():

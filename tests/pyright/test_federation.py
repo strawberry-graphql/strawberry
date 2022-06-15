@@ -43,10 +43,13 @@ def test_pyright():
             column=1,
         ),
         Result(
-            type="info", message='Type of "User" is "Type[User]"', line=18, column=13
+            type="information",
+            message='Type of "User" is "Type[User]"',
+            line=18,
+            column=13,
         ),
         Result(
-            type="info",
+            type="information",
             message='Type of "User.__init__" is "(self: User, name: str) -> None"',
             line=19,
             column=13,

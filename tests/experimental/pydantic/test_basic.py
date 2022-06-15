@@ -1,15 +1,15 @@
 import dataclasses
 from enum import Enum
-from typing import List, Optional, Union
+from typing import Any, List, Optional, Union
 
 import pytest
 
 import pydantic
-import sentinel
 
 import strawberry
 from strawberry.enum import EnumDefinition
 from strawberry.experimental.pydantic.exceptions import MissingFieldsListError
+from strawberry.schema_directive import Location
 from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
@@ -106,7 +106,8 @@ def test_basic_type_auto_fields():
 
 
 def test_auto_fields_other_sentinel():
-    other_sentinel = sentinel.create("other_sentinel")
+    class other_sentinel:
+        pass
 
     class User(pydantic.BaseModel):
         age: int
@@ -154,6 +155,31 @@ def test_referencing_other_models_fails_when_not_registered():
 
         @strawberry.experimental.pydantic.type(User)
         class UserType:
+            age: strawberry.auto
+            password: strawberry.auto
+            group: strawberry.auto
+
+
+def test_referencing_other_input_models_fails_when_not_registered():
+    class Group(pydantic.BaseModel):
+        name: str
+
+    class User(pydantic.BaseModel):
+        age: int
+        password: Optional[str]
+        group: Group
+
+    @strawberry.experimental.pydantic.type(Group)
+    class GroupType:
+        name: strawberry.auto
+
+    with pytest.raises(
+        strawberry.experimental.pydantic.UnregisteredTypeException,
+        match=("Cannot find a Strawberry Type for (.*) did you forget to register it?"),
+    ):
+
+        @strawberry.experimental.pydantic.input(User)
+        class UserInputType:
             age: strawberry.auto
             password: strawberry.auto
             group: strawberry.auto
@@ -426,6 +452,7 @@ def test_type_with_aliased_pydantic_field():
 
     assert field1.python_name == "age_"
     assert field1.type is int
+    assert field1.graphql_name == "age"
 
     assert field2.python_name == "password"
     assert isinstance(field2.type, StrawberryOptional)
@@ -539,3 +566,232 @@ def test_interface():
 
     assert field2.python_name == "interface_field"
     assert field2.type is BaseType
+
+
+def test_both_output_and_input_type():
+    class Work(pydantic.BaseModel):
+        time: float
+
+    class User(pydantic.BaseModel):
+        name: str
+        work: Optional[Work]
+
+    class Group(pydantic.BaseModel):
+        users: List[User]
+
+    # Test both definition orders
+    @strawberry.experimental.pydantic.input(Work)
+    class WorkInput:
+        time: strawberry.auto
+
+    @strawberry.experimental.pydantic.type(Work)
+    class WorkOutput:
+        time: strawberry.auto
+
+    @strawberry.experimental.pydantic.type(User)
+    class UserOutput:
+        name: strawberry.auto
+        work: strawberry.auto
+
+    @strawberry.experimental.pydantic.input(User)
+    class UserInput:
+        name: strawberry.auto
+        work: strawberry.auto
+
+    @strawberry.experimental.pydantic.input(Group)
+    class GroupInput:
+        users: strawberry.auto
+
+    @strawberry.experimental.pydantic.type(Group)
+    class GroupOutput:
+        users: strawberry.auto
+
+    @strawberry.type
+    class Query:
+        groups: List[GroupOutput]
+
+    @strawberry.type
+    class Mutation:
+        @strawberry.mutation
+        def updateGroup(group: GroupInput) -> GroupOutput:
+            pass
+
+    # This triggers the exception from #1504
+    schema = strawberry.Schema(query=Query, mutation=Mutation)
+    expected_schema = """
+input GroupInput {
+  users: [UserInput!]!
+}
+
+type GroupOutput {
+  users: [UserOutput!]!
+}
+
+type Mutation {
+  updateGroup(group: GroupInput!): GroupOutput!
+}
+
+type Query {
+  groups: [GroupOutput!]!
+}
+
+input UserInput {
+  name: String!
+  work: WorkInput = null
+}
+
+type UserOutput {
+  name: String!
+  work: WorkOutput
+}
+
+input WorkInput {
+  time: Float!
+}
+
+type WorkOutput {
+  time: Float!
+}"""
+    assert schema.as_str().strip() == expected_schema.strip()
+
+    assert Group._strawberry_type == GroupOutput
+    assert Group._strawberry_input_type == GroupInput
+    assert User._strawberry_type == UserOutput
+    assert User._strawberry_input_type == UserInput
+    assert Work._strawberry_type == WorkOutput
+    assert Work._strawberry_input_type == WorkInput
+
+
+def test_single_field_changed_type():
+    class User(pydantic.BaseModel):
+        age: int
+
+    @strawberry.experimental.pydantic.type(User)
+    class UserType:
+        age: str
+
+    definition: TypeDefinition = UserType._type_definition
+    assert definition.name == "UserType"
+
+    [field1] = definition.fields
+
+    assert field1.python_name == "age"
+    assert field1.graphql_name is None
+    assert field1.type is str
+
+
+def test_type_with_aliased_pydantic_field_changed_type():
+    class UserModel(pydantic.BaseModel):
+        age_: int = pydantic.Field(..., alias="age")
+        password: Optional[str]
+
+    @strawberry.experimental.pydantic.type(UserModel)
+    class User:
+        age_: str
+        password: strawberry.auto
+
+    definition: TypeDefinition = User._type_definition
+    assert definition.name == "User"
+
+    [field1, field2] = definition.fields
+
+    assert field1.python_name == "age_"
+    assert field1.type is str
+    assert field1.graphql_name == "age"
+
+    assert field2.python_name == "password"
+    assert isinstance(field2.type, StrawberryOptional)
+    assert field2.type.of_type is str
+
+
+def test_deprecated_fields():
+    class User(pydantic.BaseModel):
+        age: int
+        password: Optional[str]
+        other: float
+
+    @strawberry.experimental.pydantic.type(User)
+    class UserType:
+        age: strawberry.auto = strawberry.field(deprecation_reason="Because")
+        password: strawberry.auto
+
+    definition: TypeDefinition = UserType._type_definition
+    assert definition.name == "UserType"
+
+    [field1, field2] = definition.fields
+
+    assert field1.python_name == "age"
+    assert field1.graphql_name is None
+    assert field1.type is int
+    assert field1.deprecation_reason == "Because"
+
+    assert field2.python_name == "password"
+    assert field2.graphql_name is None
+    assert isinstance(field2.type, StrawberryOptional)
+    assert field2.type.of_type is str
+
+
+def test_permission_classes():
+    class IsAuthenticated(strawberry.BasePermission):
+        message = "User is not authenticated"
+
+        def has_permission(
+            self, source: Any, info: strawberry.types.Info, **kwargs
+        ) -> bool:
+            return False
+
+    class User(pydantic.BaseModel):
+        age: int
+        password: Optional[str]
+        other: float
+
+    @strawberry.experimental.pydantic.type(User)
+    class UserType:
+        age: strawberry.auto = strawberry.field(permission_classes=[IsAuthenticated])
+        password: strawberry.auto
+
+    definition: TypeDefinition = UserType._type_definition
+    assert definition.name == "UserType"
+
+    [field1, field2] = definition.fields
+
+    assert field1.python_name == "age"
+    assert field1.graphql_name is None
+    assert field1.type is int
+    assert field1.permission_classes == [IsAuthenticated]
+
+    assert field2.python_name == "password"
+    assert field2.graphql_name is None
+    assert isinstance(field2.type, StrawberryOptional)
+    assert field2.type.of_type is str
+
+
+def test_field_directives():
+    @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
+    class Sensitive:
+        reason: str
+
+    class User(pydantic.BaseModel):
+        age: int
+        password: Optional[str]
+        other: float
+
+    @strawberry.experimental.pydantic.type(User)
+    class UserType:
+        age: strawberry.auto = strawberry.field(directives=[Sensitive(reason="GDPR")])
+        password: strawberry.auto
+
+    definition: TypeDefinition = UserType._type_definition
+    assert definition.name == "UserType"
+
+    [field1, field2] = definition.fields
+
+    assert field1.python_name == "age"
+    assert field1.graphql_name is None
+    assert field1.type is int
+    assert field1.directives == [Sensitive(reason="GDPR")]
+
+    assert field2.python_name == "password"
+    assert field2.graphql_name is None
+    assert isinstance(field2.type, StrawberryOptional)
+    assert field2.type.of_type is str

@@ -1,0 +1,14 @@
+query OperationName {
+  id
+  integer
+  float
+  boolean
+  uuid
+  date
+  datetime
+  time
+  decimal
+  lazy {
+    something
+  }
+}

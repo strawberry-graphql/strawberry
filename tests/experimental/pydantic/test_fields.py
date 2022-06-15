@@ -1,6 +1,10 @@
+import re
+from typing import List
+
 import pytest
 
 import pydantic
+from pydantic import BaseModel, ValidationError, conlist
 from typing_extensions import Literal
 
 import strawberry
@@ -102,6 +106,45 @@ def test_constr():
     assert field.type is str
 
 
+def test_constrained_list():
+    class User(BaseModel):
+        friends: conlist(str, min_items=1)
+
+    @strawberry.experimental.pydantic.type(model=User, all_fields=True)
+    class UserType:
+        ...
+
+    assert UserType._type_definition.fields[0].name == "friends"
+    assert UserType._type_definition.fields[0].type_annotation.annotation == List[str]
+
+    data = UserType(friends=[])
+
+    with pytest.raises(
+        ValidationError,
+        match=re.escape(
+            "ensure this value has at least 1 items "
+            "(type=value_error.list.min_items; limit_value=1)",
+        ),
+    ):
+        # validation errors should happen when converting to pydantic
+        data.to_pydantic()
+
+
+def test_constrained_list_nested():
+    class User(BaseModel):
+        friends: conlist(conlist(int, min_items=1), min_items=1)
+
+    @strawberry.experimental.pydantic.type(model=User, all_fields=True)
+    class UserType:
+        ...
+
+    assert UserType._type_definition.fields[0].name == "friends"
+    assert (
+        UserType._type_definition.fields[0].type_annotation.annotation
+        == List[List[int]]
+    )
+
+
 @pytest.mark.parametrize(
     "pydantic_type",
     [
@@ -113,8 +156,6 @@ def test_constr():
         pydantic.Json,
         pydantic.PaymentCardNumber,
         pydantic.ByteSize,
-        # pydantic.ConstrainedList,
-        # pydantic.ConstrainedSet,
         # pydantic.JsonWrapper,
     ],
 )

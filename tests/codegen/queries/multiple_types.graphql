@@ -1,0 +1,8 @@
+query OperationName {
+  person {
+    name
+  }
+  listOfPeople {
+    name
+  }
+}

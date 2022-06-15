@@ -132,7 +132,7 @@ def test_mutation_with_validation_of_nested_model():
     result = schema.execute_sync(query)
 
     assert result.errors[0].message == (
-        "1 validation error for CreateUserModel\nhobby -> name\n"
+        "1 validation error for HobbyInputModel\nname\n"
         "  ensure this value has at least 2 characters "
         "(type=value_error.any_str.min_length; limit_value=2)"
     )

@@ -16,12 +16,9 @@ from strawberry.subscriptions.protocols.graphql_ws import (
 )
 from tests.aiohttp.app import create_app
 from tests.aiohttp.schema import schema
-from tests.fixtures.utils import TickEventLoopPolicy
 
 
 async def test_simple_subscription(aiohttp_client):
-    asyncio.set_event_loop_policy(TickEventLoopPolicy())
-
     app = create_app(keep_alive=False)
     aiohttp_app_client = await aiohttp_client(app)
 
@@ -101,9 +98,7 @@ async def test_operation_selection(aiohttp_client):
         assert ws.closed
 
 
-async def test_sends_keep_alive(aiohttp_client):
-    asyncio.set_event_loop_policy(TickEventLoopPolicy())
-
+async def test_sends_keep_alive(aiohttp_client, event_loop):
     app = create_app(keep_alive=True, keep_alive_interval=0.1)
     aiohttp_app_client = await aiohttp_client(app)
 
@@ -268,9 +263,7 @@ async def test_subscription_exceptions(aiohttp_client):
         assert response["type"] == GQL_DATA
         assert response["id"] == "demo"
         assert response["payload"]["data"] is None
-        assert response["payload"]["errors"] == [
-            {"locations": None, "message": "TEST EXC", "path": None}
-        ]
+        assert response["payload"]["errors"] == [{"message": "TEST EXC"}]
 
         await ws.send_json({"type": GQL_STOP, "id": "demo"})
         response = await ws.receive_json()
@@ -308,7 +301,6 @@ async def test_subscription_field_error(aiohttp_client):
         assert response["id"] == "invalid-field"
         assert response["payload"] == {
             "locations": [{"line": 1, "column": 16}],
-            "path": None,
             "message": (
                 "The subscription field 'notASubscriptionField' is not defined."
             ),
@@ -345,7 +337,6 @@ async def test_subscription_syntax_error(aiohttp_client):
         assert response["id"] == "syntax-error"
         assert response["payload"] == {
             "locations": [{"line": 1, "column": 24}],
-            "path": None,
             "message": "Syntax Error: Expected Name, found <EOF>.",
         }
 
