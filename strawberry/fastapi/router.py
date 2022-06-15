@@ -282,7 +282,7 @@ class GraphQLRouter(APIRouter):
         intersection = set(protocols) & set(self.protocols)
         return min(
             intersection,
-            key=lambda i: protocols.index(i),  # type: ignore
+            key=lambda i: protocols.index(i),
             default=None,
         )
 

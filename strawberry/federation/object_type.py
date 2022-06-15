@@ -63,6 +63,6 @@ def type(
         cls,
         name=name,
         description=description,
-        directives=directives,  # type: ignore[arg-type]
+        directives=directives,
         extend=extend,
     )
