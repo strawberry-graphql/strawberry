@@ -1,5 +1,5 @@
 import inspect
-from typing import Any, Optional
+from typing import Any, Dict, Optional
 
 import docstring_parser
 from attributes_doc import get_attributes_doc
@@ -9,8 +9,8 @@ class Docstring:
     def __init__(self, target: Any) -> None:
         self.target = target
         self._docstring: Optional[docstring_parser.Docstring] = None
-        self._attribute_raw_docstrings: Optional[dict[str, str]] = None
-        self._attribute_docstrings: dict[str, Optional[str]] = {}
+        self._attribute_raw_docstrings: Optional[Dict[str, str]] = None
+        self._attribute_docstrings: Dict[str, Optional[str]] = {}
 
     @property
     def parsed_docstring(self) -> Optional[docstring_parser.Docstring]:

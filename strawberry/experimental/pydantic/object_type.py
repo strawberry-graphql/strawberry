@@ -19,7 +19,6 @@ from pydantic.fields import ModelField
 
 from graphql import GraphQLResolveInfo
 
-from strawberry.arguments import UNSET
 from strawberry.auto import StrawberryAuto
 from strawberry.description_source import DescriptionSource
 from strawberry.experimental.pydantic.conversion import (
@@ -38,6 +37,7 @@ from strawberry.experimental.pydantic.utils import (
 from strawberry.field import StrawberryField
 from strawberry.object_type import _process_type, _wrap_dataclass
 from strawberry.types.type_resolver import _get_fields
+from strawberry.unset import UNSET
 from strawberry.utils.docstrings import Docstring
 
 
