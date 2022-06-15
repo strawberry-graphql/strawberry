@@ -3,8 +3,7 @@ from typing import Any, Optional
 
 import pytest
 
-from django.core.exceptions import BadRequest, SuspiciousOperation
-from django.http import Http404, JsonResponse
+from django.http import JsonResponse
 from django.test.client import RequestFactory
 
 import strawberry
