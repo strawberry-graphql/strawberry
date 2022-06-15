@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.114.2 - 2022-06-15
+--------------------
+
+This release fixes an issue in the `GraphQLTestClient` when using both variables and files together.
+
+Contributed by [Etty](https://github.com/estyxx) via [PR #1576](https://github.com/strawberry-graphql/strawberry/pull/1576/)
+
+
 0.114.1 - 2022-06-09
 --------------------
 
