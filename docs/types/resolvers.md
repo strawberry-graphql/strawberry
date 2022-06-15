@@ -124,6 +124,54 @@ type Query {
 }
 ```
 
+### Optional arguments
+
+Optional or nullable arguments can be expressed using `Optional`. If you need to differentiate between `null` (maps to `None` in Python) and no arguments being passed, you can use `UNSET`:
+
+```python+schema
+from typing import Optional
+import strawberry
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self, name: Optional[str] = None) -> str:
+        if name is None:
+            return "Hello world!"
+        return f"Hello {name}!"
+
+    @strawberry.field
+    def greet(self, name: Optional[str] = strawberry.UNSET) -> str:
+        if name is strawberry.UNSET:
+            return "Name was not set!"
+        if name is None:
+            return "Name was null!"
+        return f"Hello {name}!"
+---
+type Query {
+    hello(name: String = null): String!
+    greet(name: String): String!
+}
+```
+
+Like this you will get the following responses:
+
+```graphql+response
+{
+  unset: greet
+  null: greet(name: null)
+  name: greet(name: "Dominique")
+}
+---
+{
+  "data": {
+    "unset": "Name was not set!",
+    "null": "Name was null!",
+    "name": "Hello Dominique!"
+  }
+}
+```
+
 ## Accessing field's parent's data
 
 It is quite common to want to be able to access the data from the field's parent

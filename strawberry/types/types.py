@@ -24,7 +24,6 @@ if TYPE_CHECKING:
     from graphql import GraphQLResolveInfo
 
     from strawberry.field import StrawberryField
-    from strawberry.schema_directive import StrawberrySchemaDirective
 
 
 @dataclasses.dataclass(eq=False)
@@ -38,7 +37,7 @@ class TypeDefinition(StrawberryType):
     docstring: Optional[Docstring]
     interfaces: List["TypeDefinition"]
     extend: bool
-    directives: Optional[Sequence[StrawberrySchemaDirective]]
+    directives: Optional[Sequence[object]]
     is_type_of: Optional[Callable[[Any, GraphQLResolveInfo], bool]]
 
     _fields: List["StrawberryField"]

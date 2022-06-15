@@ -11,7 +11,7 @@ from strawberry.exceptions import (
 from strawberry.field import StrawberryField
 from strawberry.private import is_private
 
-from ..arguments import UNSET
+from ..unset import UNSET
 
 
 def _get_fields(cls: Type) -> List[StrawberryField]:

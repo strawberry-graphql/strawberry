@@ -6,7 +6,15 @@ from graphql import GraphQLError
 
 import strawberry
 from strawberry.file_uploads import Upload
+from strawberry.permission import BasePermission
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import PingMessage
+
+
+class AlwaysFailPermission(BasePermission):
+    message = "You are not authorized"
+
+    def has_permission(self, source, info, **kwargs) -> bool:
+        return False
 
 
 @strawberry.enum
@@ -29,11 +37,31 @@ class DebugInfo:
 
 @strawberry.type
 class Query:
-    hello: str = "strawberry"
+    @strawberry.field
+    def hello(self, name: typing.Optional[str] = None) -> str:
+        return f"Hello {name or 'world'}"
+
+    @strawberry.field
+    async def async_hello(self, name: str, delay: float = 0) -> str:
+        await asyncio.sleep(delay)
+        return f"Hello {name or 'world'}"
+
+    @strawberry.field(permission_classes=[AlwaysFailPermission])
+    def always_fail(self) -> typing.Optional[str]:
+        return "Hey"
+
+    @strawberry.field
+    async def exception(self, message: str) -> str:
+        raise ValueError(message)
+        return message
 
 
 @strawberry.type
 class Mutation:
+    @strawberry.mutation
+    def hello(self) -> str:
+        return "strawberry"
+
     @strawberry.mutation
     def read_text(self, text_file: Upload) -> str:
         return text_file.read().decode()

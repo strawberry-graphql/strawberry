@@ -1,11 +1,25 @@
 import textwrap
 from enum import Enum
+from typing import List
 
 from graphql import DirectiveLocation
 
 import strawberry
 from strawberry.description_source import DescriptionSource
 from strawberry.schema.config import StrawberryConfig
+from strawberry.schema_directive import Location
+
+
+@strawberry.schema_directive(locations=[Location.OBJECT, Location.INPUT_OBJECT])
+class Keys:
+    """
+    Identifies the fields that can be used as primary keys
+
+    Attributes:
+        fields: Names of the fields used as primary keys
+    """
+
+    fields: List[str]
 
 
 @strawberry.directive(locations=[DirectiveLocation.FIELD])
@@ -62,7 +76,7 @@ class InterfaceType:
         return ""
 
 
-@strawberry.type
+@strawberry.type(directives=[Keys(fields=["var_f"])])
 class ObjectType(InterfaceType):
     """
     This is a graphQL object type
@@ -136,6 +150,12 @@ def test_docstrings_enabled():
     )
 
     expected = '''
+         """Identifies the fields that can be used as primary keys"""
+        directive @keys(
+          """Names of the fields used as primary keys"""
+          fields: [String!]!
+        ) on OBJECT | INPUT_OBJECT
+
         """Replaces a character in the string"""
         directive @replace(
           """Character being removed"""
@@ -195,7 +215,7 @@ def test_docstrings_enabled():
         }
 
         """This is a graphQL object type"""
-        type ObjectType implements InterfaceType {
+        type ObjectType implements InterfaceType @keys(fields: ["var_f"]) {
           """A field that doesn't need a resolver"""
           varA: Int!
 
@@ -233,6 +253,8 @@ def test_docstrings_disabled():
     )
 
     expected = """
+        directive @keys(fields: [String!]!) on OBJECT | INPUT_OBJECT
+
         directive @replace(oldChar: String!, newChar: String!) on FIELD
 
         enum EnumType {
@@ -255,7 +277,7 @@ def test_docstrings_disabled():
           setObject(newData: InputType!, undocumented: String!): String!
         }
 
-        type ObjectType implements InterfaceType {
+        type ObjectType implements InterfaceType @keys(fields: ["var_f"]) {
           varA: Int!
           varB(documented: Int! = 1, undocumented: String! = "2"): String!
           varC: EnumType!

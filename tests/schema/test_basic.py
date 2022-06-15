@@ -7,10 +7,13 @@ from typing import Optional
 import pytest
 
 import strawberry
+from strawberry import ID
 from strawberry.exceptions import (
     FieldWithResolverAndDefaultFactoryError,
     FieldWithResolverAndDefaultValueError,
 )
+from strawberry.scalars import Base64
+from strawberry.type import StrawberryList
 
 
 def test_raises_exception_with_unsupported_types():
@@ -493,3 +496,59 @@ def test_field_with_resolver_default_factory():
             @strawberry.field(default_factory=lambda: "Example C")
             def c(self) -> str:
                 return "I'm a resolver"
+
+
+def test_with_types():
+    # Ensures Schema(types=[...]) works with all data types
+    @strawberry.type
+    class Type:
+        foo: int
+
+    @strawberry.interface
+    class Interface:
+        foo: int
+
+    @strawberry.input
+    class Input:
+        foo: int
+
+    @strawberry.type
+    class Query:
+        foo: int
+
+    schema = strawberry.Schema(
+        query=Query, types=[Type, Interface, Input, Base64, ID, str, int]
+    )
+    expected = '''
+        """
+        Represents binary data as Base64-encoded strings, using the standard alphabet.
+        """
+        scalar Base64 @specifiedBy(url: "https://datatracker.ietf.org/doc/html/rfc4648.html#section-4")
+
+        input Input {
+          foo: Int!
+        }
+
+        interface Interface {
+          foo: Int!
+        }
+
+        type Query {
+          foo: Int!
+        }
+
+        type Type {
+          foo: Int!
+        }
+    '''  # noqa: E501
+
+    assert str(schema) == textwrap.dedent(expected).strip()
+
+
+def test_with_types_non_named():
+    @strawberry.type
+    class Query:
+        foo: int
+
+    with pytest.raises(TypeError, match=r"\[Int!\] is not a named GraphQL Type"):
+        strawberry.Schema(query=Query, types=[StrawberryList(int)])

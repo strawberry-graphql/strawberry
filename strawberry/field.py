@@ -22,13 +22,13 @@ from backports.cached_property import cached_property
 from typing_extensions import Literal
 
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.arguments import UNSET, StrawberryArgument
+from strawberry.arguments import StrawberryArgument
 from strawberry.description_source import DescriptionSource
 from strawberry.exceptions import InvalidDefaultFactoryError, InvalidFieldArgument
-from strawberry.schema_directive import StrawberrySchemaDirective
-from strawberry.type import StrawberryType
+from strawberry.type import StrawberryType, StrawberryTypeVar
 from strawberry.types.info import Info
 from strawberry.union import StrawberryUnion
+from strawberry.unset import UNSET
 from strawberry.utils.docstrings import Docstring
 
 from .permission import BasePermission
@@ -40,6 +40,9 @@ if TYPE_CHECKING:
 
 
 _RESOLVER_TYPE = Union[StrawberryResolver, Callable, staticmethod, classmethod]
+
+
+UNRESOLVED = object()
 
 
 class StrawberryField(dataclasses.Field):
@@ -59,7 +62,7 @@ class StrawberryField(dataclasses.Field):
         default: object = UNSET,
         default_factory: Union[Callable[[], Any], object] = UNSET,
         deprecation_reason: Optional[str] = None,
-        directives: Sequence[StrawberrySchemaDirective] = (),
+        directives: Sequence[object] = (),
     ):
         # basic fields are fields with no provided resolver
         is_basic_field = not base_resolver
@@ -198,7 +201,7 @@ class StrawberryField(dataclasses.Field):
         _ = resolver.arguments
 
     @property  # type: ignore
-    def type(self) -> Union[StrawberryType, type]:  # type: ignore
+    def type(self) -> Union[StrawberryType, type, Literal[UNRESOLVED]]:  # type: ignore
         # We are catching NameError because dataclasses tries to fetch the type
         # of the field from the class before the class is fully defined.
         # This triggers a NameError error when using forward references because
@@ -208,7 +211,12 @@ class StrawberryField(dataclasses.Field):
             if self.base_resolver is not None:
                 # Handle unannotated functions (such as lambdas)
                 if self.base_resolver.type is not None:
-                    return self.base_resolver.type
+
+                    # StrawberryTypeVar will raise MissingTypesForGenericError later
+                    # on if we let it be returned. So use `type_annotation` instead
+                    # which is the same behaviour as having no type information.
+                    if not isinstance(self.base_resolver.type, StrawberryTypeVar):
+                        return self.base_resolver.type
 
             assert self.type_annotation is not None
 
@@ -218,7 +226,7 @@ class StrawberryField(dataclasses.Field):
 
             return self.type_annotation.resolve()
         except NameError:
-            return None  # type: ignore
+            return UNRESOLVED
 
     @type.setter
     def type(self, type_: Any) -> None:
@@ -324,7 +332,7 @@ def field(
     deprecation_reason: Optional[str] = None,
     default: Any = UNSET,
     default_factory: Union[Callable, object] = UNSET,
-    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    directives: Optional[Sequence[object]] = (),
 ) -> T:
     ...
 
@@ -341,7 +349,7 @@ def field(
     deprecation_reason: Optional[str] = None,
     default: Any = UNSET,
     default_factory: Union[Callable, object] = UNSET,
-    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    directives: Optional[Sequence[object]] = (),
 ) -> Any:
     ...
 
@@ -358,7 +366,7 @@ def field(
     deprecation_reason: Optional[str] = None,
     default: Any = UNSET,
     default_factory: Union[Callable, object] = UNSET,
-    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    directives: Optional[Sequence[object]] = (),
 ) -> StrawberryField:
     ...
 

@@ -5,7 +5,7 @@ from typing import Any, List, Optional, Sequence, Tuple, Type, cast
 from pydantic import BaseModel
 from pydantic.fields import ModelField
 
-import strawberry
+from strawberry.auto import StrawberryAuto
 from strawberry.description_source import DescriptionSource
 from strawberry.experimental.pydantic.utils import (
     get_private_fields,
@@ -13,7 +13,6 @@ from strawberry.experimental.pydantic.utils import (
     normalize_type,
 )
 from strawberry.object_type import _process_type, _wrap_dataclass
-from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.types.type_resolver import _get_fields
 from strawberry.utils.docstrings import Docstring
 from strawberry.utils.typing import get_list_annotation, is_list
@@ -56,7 +55,7 @@ def error_type(
     name: Optional[str] = None,
     description_sources: Optional[List[DescriptionSource]] = None,
     description: Optional[str] = None,
-    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    directives: Optional[Sequence[object]] = (),
     all_fields: bool = False
 ):
     def wrap(cls):
@@ -71,7 +70,11 @@ def error_type(
 
         existing_fields = getattr(cls, "__annotations__", {})
         fields_set = fields_set.union(
-            set(name for name, typ in existing_fields.items() if typ == strawberry.auto)
+            set(
+                name
+                for name, type_ in existing_fields.items()
+                if isinstance(type_, StrawberryAuto)
+            )
         )
 
         if all_fields:
@@ -109,7 +112,7 @@ def error_type(
                     field,
                 )
                 for field in extra_fields + private_fields
-                if field.type != strawberry.auto
+                if not isinstance(field.type, StrawberryAuto)
             )
         )
 

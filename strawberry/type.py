@@ -51,6 +51,9 @@ class StrawberryContainer(StrawberryType):
     def __init__(self, of_type: Union[StrawberryType, type]):
         self.of_type = of_type
 
+    def __hash__(self) -> int:
+        return hash((self.__class__, self.of_type))
+
     def __eq__(self, other: object) -> bool:
         if isinstance(other, StrawberryType):
             if isinstance(other, StrawberryContainer):

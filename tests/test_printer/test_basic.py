@@ -3,9 +3,9 @@ from typing import List, Optional
 from uuid import UUID
 
 import strawberry
-from strawberry.arguments import UNSET
 from strawberry.printer import print_schema
 from strawberry.schema.config import StrawberryConfig
+from strawberry.unset import UNSET
 
 
 def test_simple_required_types():

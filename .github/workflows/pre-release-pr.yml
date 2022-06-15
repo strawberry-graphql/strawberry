@@ -1,4 +1,4 @@
-name: Release test pre-release version
+name: 🎁 Release test pre-release version
 
 on:
   repository_dispatch:
@@ -60,7 +60,7 @@ jobs:
           POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
         run: |
           autopub prepare
-          poetry version $(poetry version -s)-dev.$(date '+%s')
+          poetry version $(poetry version -s).dev.$(date '+%s')
           poetry build
           poetry publish --username __token__
           echo "::set-output name=version::$(poetry version -s)"

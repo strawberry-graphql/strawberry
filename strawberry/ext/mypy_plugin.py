@@ -255,6 +255,56 @@ def enum_hook(ctx: DynamicClassDefContext) -> None:
     )
 
 
+def scalar_hook(ctx: DynamicClassDefContext) -> None:
+    first_argument = ctx.call.args[0]
+
+    if isinstance(first_argument, NameExpr):
+        if not first_argument.node:
+            ctx.api.defer()
+
+            return
+
+        if isinstance(first_argument.node, Var):
+            var_type = first_argument.node.type or AnyType(
+                TypeOfAny.implementation_artifact
+            )
+
+            type_alias = TypeAlias(
+                var_type,
+                fullname=ctx.api.qualified_name(ctx.name),
+                line=ctx.call.line,
+                column=ctx.call.column,
+            )
+
+            ctx.api.add_symbol_table_node(
+                ctx.name, SymbolTableNode(GDEF, type_alias, plugin_generated=False)
+            )
+            return
+
+    scalar_type: Optional[Type]
+
+    # TODO: add proper support for NewType
+
+    try:
+        scalar_type = _get_type_for_expr(first_argument, ctx.api)
+    except InvalidNodeTypeException:
+        scalar_type = None
+
+    if not scalar_type:
+        scalar_type = AnyType(TypeOfAny.from_error)
+
+    type_alias = TypeAlias(
+        scalar_type,
+        fullname=ctx.api.qualified_name(ctx.name),
+        line=ctx.call.line,
+        column=ctx.call.column,
+    )
+
+    ctx.api.add_symbol_table_node(
+        ctx.name, SymbolTableNode(GDEF, type_alias, plugin_generated=False)
+    )
+
+
 def add_static_method_to_class(
     api: Union[SemanticAnalyzerPluginInterface, CheckerPluginInterface],
     cls: ClassDef,
@@ -760,6 +810,9 @@ class StrawberryPlugin(Plugin):
         if self._is_strawberry_enum(fullname):
             return enum_hook
 
+        if self._is_strawberry_scalar(fullname):
+            return scalar_hook
+
         if self._is_strawberry_create_type(fullname):
             return create_type_hook
 
@@ -815,6 +868,11 @@ class StrawberryPlugin(Plugin):
             "strawberry.enum"
         )
 
+    def _is_strawberry_scalar(self, fullname: str) -> bool:
+        return fullname == "strawberry.custom_scalar.scalar" or fullname.endswith(
+            "strawberry.scalar"
+        )
+
     def _is_strawberry_lazy_type(self, fullname: str) -> bool:
         return fullname == "strawberry.lazy_type.LazyType"
 
@@ -864,6 +922,7 @@ class StrawberryPlugin(Plugin):
             for strawberry_decorator in {
                 "strawberry.experimental.pydantic.object_type.type",
                 "strawberry.experimental.pydantic.object_type.input",
+                "strawberry.experimental.pydantic.object_type.interface",
                 "strawberry.experimental.pydantic.error_type",
             }
         ):

@@ -1,9 +1,7 @@
 from __future__ import annotations
 
-import builtins
 import dataclasses
 import warnings
-from functools import partial
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -17,20 +15,19 @@ from typing import (
     cast,
 )
 
-from pydantic import BaseModel
 from pydantic.fields import ModelField
-from typing_extensions import Literal
 
 from graphql import GraphQLResolveInfo
 
-import strawberry
 from strawberry.arguments import UNSET
+from strawberry.auto import StrawberryAuto
 from strawberry.description_source import DescriptionSource
 from strawberry.experimental.pydantic.conversion import (
     convert_pydantic_model_to_strawberry_class,
     convert_strawberry_class_to_pydantic_model,
 )
-from strawberry.experimental.pydantic.fields import get_basic_type
+from strawberry.experimental.pydantic.exceptions import MissingFieldsListError
+from strawberry.experimental.pydantic.fields import replace_types_recursively
 from strawberry.experimental.pydantic.utils import (
     DataclassCreationFields,
     ensure_all_auto_fields_in_pydantic,
@@ -40,50 +37,13 @@ from strawberry.experimental.pydantic.utils import (
 )
 from strawberry.field import StrawberryField
 from strawberry.object_type import _process_type, _wrap_dataclass
-from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.types.type_resolver import _get_fields
-from strawberry.types.types import TypeDefinition
 from strawberry.utils.docstrings import Docstring
-
-from .exceptions import MissingFieldsListError, UnregisteredTypeException
-
-
-def replace_pydantic_types(type_: Any, is_input: bool):
-    origin = getattr(type_, "__origin__", None)
-    if origin is Literal:
-        # Literal does not have types in its __args__ so we return early
-        return type_
-    if hasattr(type_, "__args__"):
-        replaced_type = type_.copy_with(
-            tuple(replace_pydantic_types(t, is_input) for t in type_.__args__)
-        )
-
-        if isinstance(replaced_type, TypeDefinition):
-            # TODO: Not sure if this is necessary. No coverage in tests
-            # TODO: Unnecessary with StrawberryObject
-
-            replaced_type = builtins.type(
-                replaced_type.name,
-                (),
-                {"_type_definition": replaced_type},
-            )
-
-        return replaced_type
-
-    if issubclass(type_, BaseModel):
-        attr = "_strawberry_input_type" if is_input else "_strawberry_type"
-        if hasattr(type_, attr):
-            return getattr(type_, attr)
-        else:
-            raise UnregisteredTypeException(type_)
-
-    return type_
 
 
 def get_type_for_field(field: ModelField, is_input: bool):
     outer_type = field.outer_type_
-    basic_type = get_basic_type(outer_type)
-    replaced_type = replace_pydantic_types(basic_type, is_input)
+    replaced_type = replace_types_recursively(outer_type, is_input)
 
     if not field.required:
         return Optional[replaced_type]
@@ -112,6 +72,7 @@ def _build_dataclass_creation_fields(
         strawberry_field = existing_fields[field.name]
     else:
         # otherwise we build an appropriate strawberry field that resolves it
+        existing_field = existing_fields.get(field.name)
         strawberry_field = StrawberryField(
             python_name=field.name,
             graphql_name=field.alias
@@ -122,6 +83,13 @@ def _build_dataclass_creation_fields(
             default_factory=get_default_factory_for_field(field),
             type_annotation=type_annotation,
             description=field.field_info.description,
+            deprecation_reason=(
+                existing_field.deprecation_reason if existing_field else None
+            ),
+            permission_classes=(
+                existing_field.permission_classes if existing_field else []
+            ),
+            directives=existing_field.directives if existing_field else (),
         )
 
     return DataclassCreationFields(
@@ -147,7 +115,7 @@ def type(
     is_interface: bool = False,
     description_sources: Optional[List[DescriptionSource]] = None,
     description: Optional[str] = None,
-    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    directives: Optional[Sequence[object]] = (),
     all_fields: bool = False,
     use_pydantic_alias: bool = True,
 ) -> Callable[..., Type[StrawberryTypeFromPydantic[PydanticModel]]]:
@@ -170,7 +138,11 @@ def type(
         # these are the fields that were marked with strawberry.auto and
         # should copy their type from the pydantic model
         auto_fields_set = original_fields_set.union(
-            set(name for name, typ in existing_fields.items() if typ == strawberry.auto)
+            set(
+                name
+                for name, type_ in existing_fields.items()
+                if isinstance(type_, StrawberryAuto)
+            )
         )
 
         if all_fields:
@@ -295,6 +267,57 @@ def type(
     return wrap
 
 
-input = partial(type, is_input=True)
+def input(
+    model: Type[PydanticModel],
+    *,
+    fields: Optional[List[str]] = None,
+    name: Optional[str] = None,
+    is_interface: bool = False,
+    description: Optional[str] = None,
+    directives: Optional[Sequence[object]] = (),
+    all_fields: bool = False,
+    use_pydantic_alias: bool = True,
+) -> Callable[..., Type[StrawberryTypeFromPydantic[PydanticModel]]]:
+    """Convenience decorator for creating an input type from a Pydantic model.
+    Equal to partial(type, is_input=True)
+    See https://github.com/strawberry-graphql/strawberry/issues/1830
+    """
+    return type(
+        model=model,
+        fields=fields,
+        name=name,
+        is_input=True,
+        is_interface=is_interface,
+        description=description,
+        directives=directives,
+        all_fields=all_fields,
+        use_pydantic_alias=use_pydantic_alias,
+    )
 
-interface = partial(type, is_interface=True)
+
+def interface(
+    model: Type[PydanticModel],
+    *,
+    fields: Optional[List[str]] = None,
+    name: Optional[str] = None,
+    is_input: bool = False,
+    description: Optional[str] = None,
+    directives: Optional[Sequence[object]] = (),
+    all_fields: bool = False,
+    use_pydantic_alias: bool = True,
+) -> Callable[..., Type[StrawberryTypeFromPydantic[PydanticModel]]]:
+    """Convenience decorator for creating an interface type from a Pydantic model.
+    Equal to partial(type, is_interface=True)
+    See https://github.com/strawberry-graphql/strawberry/issues/1830
+    """
+    return type(
+        model=model,
+        fields=fields,
+        name=name,
+        is_input=is_input,
+        is_interface=True,
+        description=description,
+        directives=directives,
+        all_fields=all_fields,
+        use_pydantic_alias=use_pydantic_alias,
+    )

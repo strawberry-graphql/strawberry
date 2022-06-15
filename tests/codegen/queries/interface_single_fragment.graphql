@@ -1,0 +1,8 @@
+query OperationName {
+  interface {
+    id
+    ... on BlogPost {
+      title
+    }
+  }
+}

@@ -155,3 +155,43 @@ def test_enum_with_manual_decorator_and_name():
             column=13,
         ),
     ]
+
+
+CODE_WITH_DEPRECATION_REASON = """
+from enum import Enum
+
+import strawberry
+
+@strawberry.enum
+class IceCreamFlavour(Enum):
+    VANILLA = "vanilla"
+    STRAWBERRY = strawberry.enum_value(
+        "strawberry", deprecation_reason="We ran out"
+    )
+    CHOCOLATE = "chocolate"
+
+reveal_type(IceCreamFlavour)
+reveal_type(IceCreamFlavour.STRAWBERRY)
+"""
+
+
+def test_enum_deprecated():
+    results = run_pyright(CODE_WITH_DEPRECATION_REASON)
+
+    assert results == [
+        Result(
+            type="information",
+            message='Type of "IceCreamFlavour" is "Type[IceCreamFlavour]"',
+            line=14,
+            column=13,
+        ),
+        Result(
+            type="information",
+            message=(
+                'Type of "IceCreamFlavour.STRAWBERRY" is '
+                '"Literal[IceCreamFlavour.STRAWBERRY]"'
+            ),
+            line=15,
+            column=13,
+        ),
+    ]

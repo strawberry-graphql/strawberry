@@ -4,7 +4,6 @@ import types
 from typing import Callable, List, Optional, Sequence, Type, TypeVar, cast, overload
 
 from strawberry.description_source import DescriptionSource
-from strawberry.schema_directive import StrawberrySchemaDirective
 
 from .exceptions import (
     MissingFieldAnnotationError,
@@ -104,7 +103,7 @@ def _process_type(
     description_sources: Optional[List[DescriptionSource]] = None,
     description: Optional[str] = None,
     docstring: Optional[Docstring] = None,
-    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    directives: Optional[Sequence[object]] = (),
     extend: bool = False,
 ):
     name = name or to_camel_case(cls.__name__)
@@ -165,7 +164,7 @@ def type(
     is_interface: bool = False,
     description_sources: Optional[List[DescriptionSource]] = None,
     description: str = None,
-    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    directives: Optional[Sequence[object]] = (),
     extend: bool = False,
 ) -> T:
     ...
@@ -180,7 +179,7 @@ def type(
     is_interface: bool = False,
     description_sources: Optional[List[DescriptionSource]] = None,
     description: str = None,
-    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    directives: Optional[Sequence[object]] = (),
     extend: bool = False,
 ) -> Callable[[T], T]:
     ...
@@ -243,7 +242,7 @@ def input(
     *,
     name: str = None,
     description: str = None,
-    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    directives: Optional[Sequence[object]] = (),
 ) -> T:
     ...
 
@@ -254,7 +253,7 @@ def input(
     *,
     name: str = None,
     description: str = None,
-    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    directives: Optional[Sequence[object]] = (),
 ) -> Callable[[T], T]:
     ...
 
@@ -291,7 +290,7 @@ def interface(
     name: str = None,
     description_sources: Optional[List[DescriptionSource]] = None,
     description: str = None,
-    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    directives: Optional[Sequence[object]] = (),
 ):
     """Annotates a class as a GraphQL Interface.
     Example usage:

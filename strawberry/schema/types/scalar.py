@@ -41,18 +41,22 @@ def _make_scalar_definition(scalar_type: GraphQLScalarType) -> ScalarDefinition:
     )
 
 
+def _get_scalar_definition(scalar) -> ScalarDefinition:
+    return scalar._scalar_definition
+
+
 DEFAULT_SCALAR_REGISTRY: Dict[object, ScalarDefinition] = {
-    type(None): base_scalars.Void._scalar_definition,
-    None: base_scalars.Void._scalar_definition,
+    type(None): _get_scalar_definition(base_scalars.Void),
+    None: _get_scalar_definition(base_scalars.Void),
     str: _make_scalar_definition(GraphQLString),
     int: _make_scalar_definition(GraphQLInt),
     float: _make_scalar_definition(GraphQLFloat),
     bool: _make_scalar_definition(GraphQLBoolean),
     ID: _make_scalar_definition(GraphQLID),
-    UUID: base_scalars.UUID._scalar_definition,
-    Upload: Upload._scalar_definition,
-    datetime.date: base_scalars.Date._scalar_definition,
-    datetime.datetime: base_scalars.DateTime._scalar_definition,
-    datetime.time: base_scalars.Time._scalar_definition,
-    decimal.Decimal: base_scalars.Decimal._scalar_definition,
+    UUID: _get_scalar_definition(base_scalars.UUID),
+    Upload: _get_scalar_definition(Upload),
+    datetime.date: _get_scalar_definition(base_scalars.Date),
+    datetime.datetime: _get_scalar_definition(base_scalars.DateTime),
+    datetime.time: _get_scalar_definition(base_scalars.Time),
+    decimal.Decimal: _get_scalar_definition(base_scalars.Decimal),
 }
