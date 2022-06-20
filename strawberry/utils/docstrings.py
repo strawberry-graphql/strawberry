@@ -1,93 +1,118 @@
+from __future__ import annotations
+
+import ast
 import inspect
-from typing import Any, Dict, Optional
+import textwrap
+from typing import Any, Dict, Optional, cast
 
 import docstring_parser
-from attributes_doc import get_attributes_doc
+from backports.cached_property import cached_property
 
 
 class Docstring:
     def __init__(self, target: Any) -> None:
         self.target = target
-        self._docstring: Optional[docstring_parser.Docstring] = None
-        self._attribute_raw_docstrings: Optional[Dict[str, str]] = None
-        self._attribute_docstrings: Dict[str, Optional[str]] = {}
 
-    @property
-    def parsed_docstring(self) -> Optional[docstring_parser.Docstring]:
-        # Parse docstrings lazily, to avoid extra processing if
-        # config descriptions_from_docstrings is disabled
-        if self._docstring is None:
-            if isinstance(self.target, str):
-                self._docstring = docstring_parser.parse(self.target)
-            else:
-                self._docstring = docstring_parser.parse(self.target.__doc__ or "")
+    @cached_property
+    def parsed(self) -> docstring_parser.Docstring:
+        text: Optional[str] = None
+        if isinstance(self.target, str):
+            text = self.target
+        elif hasattr(self.target, "__doc__"):
+            text = self.target.__doc__
+        ret = docstring_parser.parse(text or "")
 
-            # if target is a class, fetch param docstrings from supertypes
-            if inspect.isclass(self.target):
-                for parent in self.target.mro():
-                    if parent is self.target or parent is object:
-                        continue
-                    if parent.__doc__ is None:
-                        continue
-                    parent_docstring = docstring_parser.parse(parent.__doc__)
-                    self._docstring.meta += parent_docstring.params
+        # if target is a class, fetch param docstrings from supertypes
+        if inspect.isclass(self.target):
+            for parent in self.target.mro():
+                if parent is self.target:
+                    # Ignore main class (already processed)
+                    continue
+                if parent is object:
+                    # Ignore generic object superclass
+                    continue
+                if parent.__doc__ is None:
+                    # Ignore classes without __doc__
+                    continue
 
-        return self._docstring
+                # Add docstring data from superclass
+                ret.meta += docstring_parser.parse(parent.__doc__).params
+
+        return ret
+
+    @cached_property
+    def attribute_docstrings(self) -> Dict[str, Docstring]:
+        """
+        Return docstring on class attributes, using PEP 224 syntax
+        Based on attributes-doc package
+        """
+
+        result: Dict[str, Docstring] = {}
+        for parent in reversed(self.target.mro()):
+            if self.target is object:
+                continue
+            try:
+                source = inspect.getsource(parent)
+                source = textwrap.dedent(source)
+                module = ast.parse(source)
+                cls_ast = cast(ast.ClassDef, module.body[0])
+            except Exception:
+                continue
+
+            for stmt1, stmt2 in zip(cls_ast.body, cls_ast.body[1:]):
+                if not isinstance(stmt1, (ast.Assign, ast.AnnAssign)) or not isinstance(
+                    stmt2, ast.Expr
+                ):
+                    continue
+                doc_expr_value = stmt2.value
+                if isinstance(doc_expr_value, ast.JoinedStr):
+                    continue  # raise FStringFound
+                if isinstance(doc_expr_value, ast.Str):
+                    if isinstance(stmt1, ast.AnnAssign):
+                        attr_names = [cast(ast.Name, stmt1.target).id]
+                    else:
+                        attr_names = [
+                            cast(ast.Name, target).id for target in stmt1.targets
+                        ]
+                    for attr_name in attr_names:
+                        result[attr_name] = Docstring(doc_expr_value.s)
+
+        return result
 
     @property
     def main_description(self) -> Optional[str]:
-        docstring = self.parsed_docstring
-        if docstring is None:
-            return None
-
         parts = []
-        if docstring.short_description:
-            parts.append(docstring.short_description)
-        if docstring.blank_after_short_description:
+        if self.parsed.short_description:
+            parts.append(self.parsed.short_description.strip())
+        if self.parsed.blank_after_short_description:
             parts.append("")
-        if docstring.long_description:
-            parts.append(docstring.long_description)
+        if self.parsed.long_description:
+            parts.append(self.parsed.long_description.strip())
 
-        # TODO: Expose other docstring bits (returns, raises, examples, etc)
+        # TODO: Maybe expose other docstring bits (returns, raises, examples, etc)
         return "\n".join(parts).strip() or None
 
-    def child_description(self, child_name: str) -> Optional[str]:
-        docstring = self.parsed_docstring
-        if docstring is None:
-            return None
-
-        for param in docstring.params:
-            if param.arg_name == child_name and param.description:
-                description = param.description.strip()
+    def child_description(self, name: str) -> Optional[str]:
+        """
+        Returns the doctring
+        """
+        for param in self.parsed.params:
+            if param.arg_name == name:
+                description = (param.description or "").strip()
                 if description:
                     return description
 
         return None
 
     def attribute_docstring(self, name: str) -> Optional[str]:
-        if name not in self._attribute_docstrings:
-            if self._attribute_raw_docstrings is None:
-                self._attribute_raw_docstrings = get_attributes_doc(self.target)
-
-            attr_docstring = self._attribute_raw_docstrings.get(name)
-            if attr_docstring:
-                attr_docstring = Docstring(attr_docstring).main_description
-            self._attribute_docstrings[name] = attr_docstring
-
-        return self._attribute_docstrings[name]
+        attr_docstring = self.attribute_docstrings.get(name)
+        if attr_docstring:
+            return attr_docstring.main_description
+        return None
 
     @staticmethod
-    def get(obj: Any) -> Optional["Docstring"]:
-        if obj is None:
-            return None
-
-        if inspect.isclass(obj):
-            # If this is a class and neither it or any of the
-            # other superclasses have docstrings
-            if all([x.__doc__ is None for x in obj.mro()]):
-                return None
+    def get(obj: Any) -> Optional[Docstring]:
+        if isinstance(obj, str) or inspect.isclass(obj) or hasattr(obj, "__doc__"):
+            return Docstring(obj)
         else:
-            # If it doesn't have a docstring
-            if obj.__doc__ is None:
-                return None
-        return Docstring(obj)
+            return None
