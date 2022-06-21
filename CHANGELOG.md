@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.114.3 - 2022-06-21
+--------------------
+
+This release fixes the type annotation of `Response.errors` used in the `GraphQLTestClient` to be a `List` of `GraphQLError`.
+
+Contributed by [Etty](https://github.com/estyxx) via [PR #1959](https://github.com/strawberry-graphql/strawberry/pull/1959/)
+
+
 0.114.2 - 2022-06-15
 --------------------
 
