@@ -5,10 +5,12 @@ from typing import Any, Coroutine, Dict, List, Mapping, Optional, Union
 
 from typing_extensions import Literal, TypedDict
 
+from graphql import GraphQLError
+
 
 @dataclass
 class Response:
-    errors: Optional[Dict[str, object]]
+    errors: Optional[List[GraphQLError]]
     data: Optional[Dict[str, object]]
     extensions: Optional[Dict[str, object]]
 
