@@ -146,7 +146,7 @@ def test_docstrings_enabled():
         query=Query,
         mutation=Mutation,
         directives=[replace],
-        config=StrawberryConfig(description_sources=DescriptionSource),
+        config=StrawberryConfig(description_sources=list(DescriptionSource)),
     )
 
     expected = '''
