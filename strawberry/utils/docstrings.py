@@ -51,15 +51,16 @@ class Docstring:
         for parent in reversed(self.target.mro()):
             if self.target is object:
                 continue
+
             try:
                 source = inspect.getsource(parent)
-                source = textwrap.dedent(source)
-                module = ast.parse(source)
-                cls_ast = cast(ast.ClassDef, module.body[0])
-            except Exception:
+            except (TypeError, IOError):
                 continue
+            source = textwrap.dedent(source)
+            module = ast.parse(source)
+            cls_body = cast(ast.ClassDef, module.body[0]).body
 
-            for stmt1, stmt2 in zip(cls_ast.body, cls_ast.body[1:]):
+            for stmt1, stmt2 in zip(cls_body[:-1], cls_body[1:]):
                 if not isinstance(stmt1, (ast.Assign, ast.AnnAssign)) or not isinstance(
                     stmt2, ast.Expr
                 ):
