@@ -44,7 +44,7 @@ DEPRECATED_NAMES: Dict[str, str] = {
 
 @dataclass
 class StrawberryArgumentAnnotation:
-    description_sources: Optional[list[DescriptionSource]]
+    description_sources: Optional[List[DescriptionSource]]
     description: Optional[str]
     name: Optional[str]
     deprecation_reason: Optional[str]
@@ -57,7 +57,7 @@ class StrawberryArgument:
         graphql_name: Optional[str],
         type_annotation: StrawberryAnnotation,
         is_subscription: bool = False,
-        description_sources: Optional[list[DescriptionSource]] = None,
+        description_sources: Optional[List[DescriptionSource]] = None,
         description: Optional[str] = None,
         default: object = _deprecated_UNSET,
         deprecation_reason: Optional[str] = None,
@@ -201,7 +201,7 @@ def convert_arguments(
 
 def argument(
     *,
-    description_sources: Optional[list[DescriptionSource]] = None,
+    description_sources: Optional[List[DescriptionSource]] = None,
     description: Optional[str] = None,
     name: Optional[str] = None,
     deprecation_reason: Optional[str] = None,
