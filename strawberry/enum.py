@@ -87,7 +87,7 @@ def _process_enum(
         values=values,
         description_sources=description_sources,
         description=description,
-        docstring=Docstring.get(cls),
+        docstring=Docstring(cls),
     )
 
     return cls

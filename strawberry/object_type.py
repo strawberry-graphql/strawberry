@@ -215,7 +215,7 @@ def type(
                 exc = ObjectIsNotClassError.type
             raise exc(cls)
 
-        docstring = Docstring.get(cls)
+        docstring = Docstring(cls)
         wrapped = _wrap_dataclass(cls)
         return _process_type(
             wrapped,

@@ -60,7 +60,7 @@ def schema_directive(
             locations=locations,
             description_sources=description_sources,
             description=description,
-            docstring=Docstring.get(cls),
+            docstring=Docstring(cls),
             fields=fields,
         )
 

@@ -99,7 +99,7 @@ def error_type(
             if name in fields_set
         ]
 
-        docstring = Docstring.get(cls)
+        docstring = Docstring(cls)
         wrapped = _wrap_dataclass(cls)
         extra_fields = cast(List[dataclasses.Field], _get_fields(wrapped))
         private_fields = get_private_fields(wrapped)

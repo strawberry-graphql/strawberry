@@ -77,7 +77,7 @@ def directive(
             locations=locations,
             description_sources=description_sources,
             description=description,
-            docstring=Docstring.get(f),
+            docstring=Docstring(f),
             resolver=f,
         )
 

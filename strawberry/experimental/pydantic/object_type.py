@@ -162,7 +162,7 @@ def type(
             model=model, auto_fields=auto_fields_set, cls_name=cls.__name__
         )
 
-        docstring = Docstring.get(cls)
+        docstring = Docstring(cls)
         wrapped = _wrap_dataclass(cls)
         extra_strawberry_fields = _get_fields(wrapped)
         extra_fields = cast(List[dataclasses.Field], extra_strawberry_fields)

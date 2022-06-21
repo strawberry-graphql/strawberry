@@ -151,10 +151,3 @@ class Docstring:
         if attr_docstring:
             return attr_docstring.main_description
         return None
-
-    @staticmethod
-    def get(obj: Any) -> Optional[Docstring]:
-        if isinstance(obj, str) or inspect.isclass(obj) or hasattr(obj, "__doc__"):
-            return Docstring(obj)
-        else:
-            return None
