@@ -48,19 +48,20 @@ type Query {
 
 ## Formatting
 
-Descriptions should be formatted using Markdown syntax (as specified by
+[The GraphQL specification](https://spec.graphql.org/June2018/#sec-Descriptions)
+requires all descriptions to be formatted using Markdown syntax (as specified by
 [CommonMark](http://commonmark.org/))
 
 ## Docstrings
 
 It is also possible to generate descriptions from Python docstrings.
 
-Additionally it is possible to add descriptions to enum values and resolver arguments when
+Docstrings additionally allow specifying descriptions to enum values and resolver arguments when
 one of the [supported syntaxes is used](https://pypi.org/project/docstring-parser/)
 
 <Note>
 
-This needs to be explicitly enabled with `StrawberryConfig(descriptions_from_docstrings=True)`
+The types of docstring used to produce GraphQL descriptions must be enabled globally with `StrawberryConfig(description_sources=[...])` or on each element (e.g., `strawberry.field(description_sources=[...])`)
 
 </Note>
 
@@ -101,7 +102,71 @@ class Query:
         """
         return 1
 
-schema = strawberry.Schema(query=Query, config=StrawberryConfig(descriptions_from_docstrings=True))
+schema = strawberry.Schema(query=Query, config=StrawberryConfig(description_sources=DescriptionSources.DOCSTRINGS))
+---
+"""Example enum"""
+enum EnumType {
+  """Some description"""
+  FOO
+
+  """Another description"""
+  BAR
+}
+
+"""The main GraphQL type"""
+type Query {
+  """A dataclass field"""
+  enum: EnumType!
+
+  """A GraphQL field with a resolver and arguments"""
+  resolver(
+    """An enum argument"""
+    arg1: String!
+
+    """An int argument"""
+    arg2: Int!
+  ): Int!
+}
+```
+
+## PEP 224 "Attribute Docstrings"
+
+While [PEP 224](https://peps.python.org/pep-0224/) was rejected and attribute
+docstrings are not recommended, specifying docstrings near each attributes
+is sometimes preferrable.
+
+Example:
+
+```python+schema
+@strawberry.enum
+class EnumType(Enum):
+    """Example enum"""
+
+    FOO = "foo"
+    """Some description"""
+
+    BAR = "bar"
+    """Another description"""
+
+@strawberry.type
+class Query:
+    """The main GraphQL type"""
+
+    enum: EnumType = EnumType.BAR
+    """A dataclass field"""
+
+    @strawberry.field
+    def resolver(self, arg1: str, arg2: int) -> int:
+        """
+        A GraphQL field with a resolver and arguments
+
+        Params:
+            arg1: An enum argument
+            arg2: An int argument
+        """
+        return 1
+
+schema = strawberry.Schema(query=Query, config=StrawberryConfig(description_sources=DescriptionSources.DOCSTRINGS + DescriptionSources.ATTRIBUTE_DOCSTRINGS))
 ---
 """Example enum"""
 enum EnumType {

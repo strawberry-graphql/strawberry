@@ -5,7 +5,7 @@ from typing import List
 from graphql import DirectiveLocation
 
 import strawberry
-from strawberry.description_source import DescriptionSource
+from strawberry.description_source import DescriptionSources
 from strawberry.schema.config import StrawberryConfig
 from strawberry.schema_directive import Location
 
@@ -146,7 +146,7 @@ def test_docstrings_enabled():
         query=Query,
         mutation=Mutation,
         directives=[replace],
-        config=StrawberryConfig(description_sources=list(DescriptionSource)),
+        config=StrawberryConfig(description_sources=DescriptionSources.ALL),
     )
 
     expected = '''
