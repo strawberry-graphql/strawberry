@@ -38,7 +38,7 @@ class ExecutionError(Exception):
 
 @dataclasses.dataclass
 class Result:
-    response: Any
+    response: bytes
     status: int = 200
     content_type: str = "application/json"
 
@@ -105,7 +105,7 @@ class GraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
         else:
             await self.send_response(
                 result.status,
-                json.dumps(result.response).encode(),
+                result.response,
                 headers=[(b"Content-Type", result.content_type.encode())],
             )
 
@@ -123,7 +123,8 @@ class GraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
                 raise ExecutionError("No GraphQL query found in the request")
 
             try:
-                return Result(response=await self.execute(parse_request_data(params)))
+                result = await self.execute(parse_request_data(params))
+                return Result(response=json.dumps(result).encode())
             except InvalidOperationTypeError as e:
                 error_str = e.as_http_error_reason(self.scope["method"])
                 raise ExecutionError(error_str) from e
@@ -133,7 +134,8 @@ class GraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
     async def post(self, body: bytes) -> Result:
         request_data = await self.parse_body(body)
         try:
-            return Result(response=await self.execute(request_data))
+            result = await self.execute(request_data)
+            return Result(response=json.dumps(result).encode())
         except InvalidOperationTypeError as e:
             raise ExecutionError(e.as_http_error_reason(self.scope["method"])) from e
 
@@ -182,7 +184,7 @@ class GraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
             "{{ SUBSCRIPTION_ENABLED }}",
             json.dumps(self.subscriptions_enabled),
         )
-        return Result(response=html_string, content_type="text/html")
+        return Result(response=html_string.encode(), content_type="text/html")
 
     def should_render_graphiql(self):
         return self.graphiql and self.headers.get("accept", "") in ["text/html", "*/*"]
