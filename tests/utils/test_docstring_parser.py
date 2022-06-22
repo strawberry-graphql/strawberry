@@ -127,6 +127,13 @@ def test_numpydoc_syntax():
     assert docstring.child_description("attr3") is None
 
 
+def test_none_target():
+    docstring = Docstring(None)
+    assert docstring.main_description is None
+    assert docstring.child_description("arg") is None
+    assert docstring.attribute_docstring("attr") is None
+
+
 def test_no_attribute_docstring():
     def x():
         """Foo"""
@@ -199,7 +206,11 @@ def test_attribute_docstring():
 
 
 def test_docstring_inheritance():
-    class W:
+    class Base:
+        # No docstrings
+        pass
+
+    class W(Base):
         """
         class W
         """
@@ -229,31 +240,37 @@ def test_docstring_inheritance():
             z (int): WXYZ.z
         """
 
+    base_docstring = Docstring(Base)
     w_docstring = Docstring(W)
     wx_docstring = Docstring(WX)
     wxy_docstring = Docstring(WXY)
     wxyz_docstring = Docstring(WXYZ)
 
+    assert base_docstring.main_description is None
     assert "class W" == w_docstring.main_description
     assert wx_docstring.main_description is None
     assert "class WXY" == wxy_docstring.main_description
     assert "class WXYZ" == wxyz_docstring.main_description
 
+    assert base_docstring.child_description("w") is None
     assert w_docstring.child_description("w") is None
     assert "WX.w" == wx_docstring.child_description("w")
     assert "WX.w" == wxy_docstring.child_description("w")
     assert "WX.w" == wxyz_docstring.child_description("w")
 
+    assert base_docstring.child_description("x") is None
     assert w_docstring.child_description("x") is None
     assert "WX.x" == wx_docstring.child_description("x")
     assert "WX.x" == wxy_docstring.child_description("x")
     assert "WX.x" == wxyz_docstring.child_description("x")
 
+    assert base_docstring.child_description("y") is None
     assert w_docstring.child_description("y") is None
     assert wx_docstring.child_description("y") is None
     assert "WXY.y" == wxy_docstring.child_description("y")
     assert "WXYZ.y" == wxyz_docstring.child_description("y")
 
+    assert base_docstring.child_description("z") is None
     assert w_docstring.child_description("z") is None
     assert wx_docstring.child_description("z") is None
     assert wxy_docstring.child_description("z") is None
