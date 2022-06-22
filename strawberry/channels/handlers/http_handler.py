@@ -97,6 +97,12 @@ class GraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
                 b"Method not allowed",
                 headers=[b"Allow", b"GET, POST"],
             )
+        except InvalidOperationTypeError as e:
+            error_str = e.as_http_error_reason(self.scope["method"])
+            await self.send_response(
+                406,
+                error_str.encode(),
+            )
         except ExecutionError as e:
             await self.send_response(
                 500,
@@ -122,22 +128,15 @@ class GraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
             if "query" not in params:
                 raise ExecutionError("No GraphQL query found in the request")
 
-            try:
-                result = await self.execute(parse_request_data(params))
-                return Result(response=json.dumps(result).encode())
-            except InvalidOperationTypeError as e:
-                error_str = e.as_http_error_reason(self.scope["method"])
-                raise ExecutionError(error_str) from e
+            result = await self.execute(parse_request_data(params))
+            return Result(response=json.dumps(result).encode())
         else:
             raise MethodNotAllowed()
 
     async def post(self, body: bytes) -> Result:
         request_data = await self.parse_body(body)
-        try:
-            result = await self.execute(request_data)
-            return Result(response=json.dumps(result).encode())
-        except InvalidOperationTypeError as e:
-            raise ExecutionError(e.as_http_error_reason(self.scope["method"])) from e
+        result = await self.execute(request_data)
+        return Result(response=json.dumps(result).encode())
 
     async def parse_body(self, body: bytes) -> GraphQLRequestData:
         if self.headers.get("content-type", "").startswith("multipart/form-data"):
