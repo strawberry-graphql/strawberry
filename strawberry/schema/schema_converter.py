@@ -6,6 +6,7 @@ from typing import (
     Any,
     Callable,
     Dict,
+    Iterable,
     List,
     Optional,
     Tuple,
@@ -745,7 +746,7 @@ class GraphQLCoreConverter:
     def _get_description(
         self,
         *,
-        sources: List[DescriptionSource],
+        sources: Iterable[DescriptionSource],
         description: Optional[str] = None,
         type_docstring: Optional[Docstring] = None,
         parent_type_docstring: Optional[Docstring] = None,
@@ -759,37 +760,37 @@ class GraphQLCoreConverter:
     ) -> Optional[str]:
         def gen_candidates():
             for source in sources:
-                if source == DescriptionSource.STRAWBERRY_DESCRIPTIONS:
+                if source is DescriptionSource.STRAWBERRY_DESCRIPTIONS:
                     yield description
 
-                elif source == DescriptionSource.TYPE_DOCSTRINGS:
+                elif source is DescriptionSource.TYPE_DOCSTRINGS:
                     if type_docstring is not None:
                         yield type_docstring.main_description
 
                     if parent_type_docstring is not None and child_name is not None:
                         yield parent_type_docstring.child_description(child_name)
 
-                elif source == DescriptionSource.TYPE_ATTRIBUTE_DOCSTRING:
+                elif source is DescriptionSource.TYPE_ATTRIBUTE_DOCSTRING:
                     if parent_type_docstring is not None and child_name is not None:
                         yield parent_type_docstring.attribute_docstring(child_name)
 
-                elif source == DescriptionSource.ENUM_DOCSTRINGS:
+                elif source is DescriptionSource.ENUM_DOCSTRINGS:
                     if enum_docstring:
                         yield enum_docstring.main_description
                     if parent_enum_docstring is not None and child_name is not None:
                         yield parent_enum_docstring.child_description(child_name)
 
-                elif source == DescriptionSource.ENUM_ATTRIBUTE_DOCSTRING:
+                elif source is DescriptionSource.ENUM_ATTRIBUTE_DOCSTRING:
                     if parent_enum_docstring is not None and child_name is not None:
                         yield parent_enum_docstring.attribute_docstring(child_name)
 
-                elif source == DescriptionSource.RESOLVER_DOCSTRINGS:
+                elif source is DescriptionSource.RESOLVER_DOCSTRINGS:
                     if resolver_docstring is not None:
                         yield resolver_docstring.main_description
                     if parent_resolver_docstring is not None and child_name is not None:
                         yield parent_resolver_docstring.child_description(child_name)
 
-                elif source == DescriptionSource.DIRECTIVE_DOCSTRINGS:
+                elif source is DescriptionSource.DIRECTIVE_DOCSTRINGS:
                     if directive_docstring is not None:
                         yield directive_docstring.main_description
                     if (
