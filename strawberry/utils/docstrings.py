@@ -65,16 +65,12 @@ class Docstring:
         # Examine attributes defined in the target class
         # and its superclasses
         for parent in reversed(self.target.mro()):
-
-            if self.target is object:
-                # Ignore generic object superclass
-                continue
-
             # Extract and parse the source of the class
             try:
                 source = inspect.getsource(parent)
             except (TypeError, IOError):
                 continue
+
             source = textwrap.dedent(source)
             module = ast.parse(source)
             cls_body = cast(ast.ClassDef, module.body[0]).body
