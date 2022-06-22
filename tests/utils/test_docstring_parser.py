@@ -275,3 +275,10 @@ def test_docstring_inheritance():
     assert wx_docstring.child_description("z") is None
     assert wxy_docstring.child_description("z") is None
     assert "WXYZ.z" == wxyz_docstring.child_description("z")
+
+
+def test_none():
+    docstring = Docstring(None)
+    assert docstring.main_description is None
+    assert docstring.child_description("a") is None
+    assert docstring.attribute_docstring("a") is None

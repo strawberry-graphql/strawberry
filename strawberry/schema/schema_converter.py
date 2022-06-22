@@ -799,6 +799,13 @@ class GraphQLCoreConverter:
                     ):
                         yield parent_directive_docstring.child_description(child_name)
 
+                elif source is DescriptionSource.DIRECTIVE_ATTRIBUTE_DOCSTRING:
+                    if (
+                        parent_directive_docstring is not None
+                        and child_name is not None
+                    ):
+                        yield parent_directive_docstring.attribute_docstring(child_name)
+
         for candidate in gen_candidates():
             if candidate is not None:
                 return candidate

@@ -10,6 +10,9 @@ from strawberry.schema.config import StrawberryConfig
 from strawberry.schema_directive import Location
 
 
+""" A large example that uses docstrings in all types of GraphQL objects """
+
+
 @strawberry.schema_directive(locations=[Location.OBJECT, Location.INPUT_OBJECT])
 class Keys:
     """
@@ -141,12 +144,218 @@ class Mutation:
         return ""
 
 
-def test_docstrings_enabled():
+def test_docstrings_disabled():
     schema = strawberry.Schema(
         query=Query,
         mutation=Mutation,
         directives=[replace],
-        config=StrawberryConfig(description_sources=DescriptionSources.ALL),
+        config=StrawberryConfig(description_sources=[]),
+    )
+
+    expected = """
+        directive @keys(fields: [String!]!) on OBJECT | INPUT_OBJECT
+
+        directive @replace(oldChar: String!, newChar: String!) on FIELD
+
+        enum EnumType {
+          VANILLA
+          STRAWBERRY
+          CHOCOLATE
+          ROCKY_ROAD
+        }
+
+        input InputType {
+          varA: Int!
+        }
+
+        interface InterfaceType {
+          varA: Int!
+          varB(documented: Int! = 1, undocumented: String! = "2"): String!
+        }
+
+        type Mutation {
+          setObject(newData: InputType!, undocumented: String!): String!
+        }
+
+        type ObjectType implements InterfaceType @keys(fields: ["var_f"]) {
+          varA: Int!
+          varB(documented: Int! = 1, undocumented: String! = "2"): String!
+          varC: EnumType!
+          varD: Float!
+          varE: Int!
+          varF: String!
+        }
+
+        type Query {
+          object: ObjectType!
+        }
+    """
+    assert str(schema) == textwrap.dedent(expected).strip()
+
+
+def test_regular_docstrings():
+    schema = strawberry.Schema(
+        query=Query,
+        mutation=Mutation,
+        directives=[replace],
+        config=StrawberryConfig(description_sources=DescriptionSources.DOCSTRINGS),
+    )
+
+    expected = '''
+         """Identifies the fields that can be used as primary keys"""
+        directive @keys(
+          """Names of the fields used as primary keys"""
+          fields: [String!]!
+        ) on OBJECT | INPUT_OBJECT
+
+        """Replaces a character in the string"""
+        directive @replace(
+          """Character being removed"""
+          oldChar: String!
+
+          """Character being added"""
+          newChar: String!
+        ) on FIELD
+
+        """Enum type description"""
+        enum EnumType {
+          """Vanilla is a spice derived from orchids of the genus Vanilla"""
+          VANILLA
+
+          """The garden strawberry is a widely grown species of the genus Fragaria"""
+          STRAWBERRY
+
+          """Chocolate is a food product made from roasted and ground cacao pods"""
+          CHOCOLATE
+          ROCKY_ROAD
+        }
+
+        """
+        This is a graphQL input type
+
+        Description has many lines.
+        Many, many lines
+        """
+        input InputType {
+          """Something"""
+          varA: Int!
+        }
+
+        """This is a graphQL interface type"""
+        interface InterfaceType {
+          """A field that doesn't need a resolver"""
+          varA: Int!
+
+          """A complex field with a resolver and args"""
+          varB(
+            """Something"""
+            documented: Int! = 1
+            undocumented: String! = "2"
+          ): String!
+        }
+
+        """Main entrypoint to the GraphQL updates"""
+        type Mutation {
+          """Update the object"""
+          setObject(
+            """New data"""
+            newData: InputType!
+            undocumented: String!
+          ): String!
+        }
+
+        """This is a graphQL object type"""
+        type ObjectType implements InterfaceType @keys(fields: ["var_f"]) {
+          """A field that doesn't need a resolver"""
+          varA: Int!
+
+          """A complex field with a resolver and args"""
+          varB(
+            """Something"""
+            documented: Int! = 1
+            undocumented: String! = "2"
+          ): String!
+
+          """Something to differentiate ObjectType from InterfaceType"""
+          varC: EnumType!
+          varD: Float!
+          varE: Int!
+          varF: String!
+        }
+
+        """Main entrypoint to the GraphQL reads"""
+        type Query {
+          """A GraphQL object"""
+          object: ObjectType!
+        }
+    '''
+    assert str(schema) == textwrap.dedent(expected).strip()
+
+
+def test_attribute_docstrings():
+    schema = strawberry.Schema(
+        query=Query,
+        mutation=Mutation,
+        directives=[replace],
+        config=StrawberryConfig(
+            description_sources=DescriptionSources.ATTRIBUTE_DOCSTRINGS
+        ),
+    )
+
+    expected = '''
+        directive @keys(fields: [String!]!) on OBJECT | INPUT_OBJECT
+
+        directive @replace(oldChar: String!, newChar: String!) on FIELD
+
+        enum EnumType {
+          VANILLA
+          STRAWBERRY
+          CHOCOLATE
+
+          """Chocolate ice cream with nuts and marshmallows"""
+          ROCKY_ROAD
+        }
+
+        input InputType {
+          varA: Int!
+        }
+
+        interface InterfaceType {
+          varA: Int!
+          varB(documented: Int! = 1, undocumented: String! = "2"): String!
+        }
+
+        type Mutation {
+          setObject(newData: InputType!, undocumented: String!): String!
+        }
+
+        type ObjectType implements InterfaceType @keys(fields: ["var_f"]) {
+          varA: Int!
+          varB(documented: Int! = 1, undocumented: String! = "2"): String!
+          varC: EnumType!
+          varD: Float!
+          varE: Int!
+
+          """PEP 257 description"""
+          varF: String!
+        }
+
+        type Query {
+          object: ObjectType!
+        }
+    '''
+    assert str(schema) == textwrap.dedent(expected).strip()
+
+
+def test_all_docstrings():
+    schema = strawberry.Schema(
+        query=Query,
+        mutation=Mutation,
+        directives=[replace],
+        config=StrawberryConfig(
+            description_sources=DescriptionSources.DOCSTRINGS
+            + DescriptionSources.ATTRIBUTE_DOCSTRINGS
+        ),
     )
 
     expected = '''
@@ -241,53 +450,4 @@ def test_docstrings_enabled():
           object: ObjectType!
         }
     '''
-    assert str(schema) == textwrap.dedent(expected).strip()
-
-
-def test_docstrings_disabled():
-    schema = strawberry.Schema(
-        query=Query,
-        mutation=Mutation,
-        directives=[replace],
-        config=StrawberryConfig(),
-    )
-
-    expected = """
-        directive @keys(fields: [String!]!) on OBJECT | INPUT_OBJECT
-
-        directive @replace(oldChar: String!, newChar: String!) on FIELD
-
-        enum EnumType {
-          VANILLA
-          STRAWBERRY
-          CHOCOLATE
-          ROCKY_ROAD
-        }
-
-        input InputType {
-          varA: Int!
-        }
-
-        interface InterfaceType {
-          varA: Int!
-          varB(documented: Int! = 1, undocumented: String! = "2"): String!
-        }
-
-        type Mutation {
-          setObject(newData: InputType!, undocumented: String!): String!
-        }
-
-        type ObjectType implements InterfaceType @keys(fields: ["var_f"]) {
-          varA: Int!
-          varB(documented: Int! = 1, undocumented: String! = "2"): String!
-          varC: EnumType!
-          varD: Float!
-          varE: Int!
-          varF: String!
-        }
-
-        type Query {
-          object: ObjectType!
-        }
-    """
     assert str(schema) == textwrap.dedent(expected).strip()

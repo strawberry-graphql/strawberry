@@ -51,6 +51,7 @@ def schema_directive(
     name: Optional[str] = None
 ):
     def _wrap(cls: T) -> T:
+        docstring = Docstring(cls)
         cls = _wrap_dataclass(cls)
         fields = _get_fields(cls)
 
@@ -60,7 +61,7 @@ def schema_directive(
             locations=locations,
             description_sources=description_sources,
             description=description,
-            docstring=Docstring(cls),
+            docstring=docstring,
             fields=fields,
         )
 

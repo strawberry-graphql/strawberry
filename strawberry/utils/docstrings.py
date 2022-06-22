@@ -16,8 +16,17 @@ class Docstring:
     This is used to automatically produce GraphQL descriptions
     """
 
+    target: Any
+    text: Optional[str]
+
     def __init__(self, target: Any) -> None:
         self.target = target
+        if isinstance(self.target, str):
+            self.text = self.target
+        elif hasattr(self.target, "__doc__"):
+            self.text = self.target.__doc__
+        else:
+            self.text = None
 
     @cached_property
     def parsed(self) -> docstring_parser.Docstring:
@@ -26,12 +35,7 @@ class Docstring:
         using the `docstring_parser` package
         """
 
-        text: Optional[str] = None
-        if isinstance(self.target, str):
-            text = self.target
-        elif hasattr(self.target, "__doc__"):
-            text = self.target.__doc__
-        ret = docstring_parser.parse(text or "")
+        ret = docstring_parser.parse(self.text or "")
 
         # if target is a class, fetch param docstrings from supertypes
         if inspect.isclass(self.target):

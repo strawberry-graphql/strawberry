@@ -16,6 +16,7 @@ class DescriptionSource(Enum):
     ENUM_DOCSTRINGS = auto()
     TYPE_ATTRIBUTE_DOCSTRING = auto()  # Using PEP 257 syntax
     ENUM_ATTRIBUTE_DOCSTRING = auto()  # Using PEP 257 syntax
+    DIRECTIVE_ATTRIBUTE_DOCSTRING = auto()  # Using PEP 257 syntax
 
 
 class DescriptionSources:
@@ -35,6 +36,7 @@ class DescriptionSources:
     ATTRIBUTE_DOCSTRINGS = [
         DescriptionSource.TYPE_ATTRIBUTE_DOCSTRING,
         DescriptionSource.ENUM_ATTRIBUTE_DOCSTRING,
+        DescriptionSource.DIRECTIVE_ATTRIBUTE_DOCSTRING,
     ]
 
     ALL = DESCRIPTIONS + DOCSTRINGS + ATTRIBUTE_DOCSTRINGS
