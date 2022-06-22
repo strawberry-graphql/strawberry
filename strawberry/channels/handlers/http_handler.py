@@ -187,7 +187,10 @@ class GraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
         return Result(response=html_string.encode(), content_type="text/html")
 
     def should_render_graphiql(self):
-        return self.graphiql and self.headers.get("accept", "") in ["text/html", "*/*"]
+        accept_list = self.headers.get("accept", "").split(",")
+        return self.graphiql and any(
+            accepted in accept_list for accepted in ["text/html", "*/*"]
+        )
 
 
 class SyncGraphQLHTTPConsumer(GraphQLHTTPConsumer):
