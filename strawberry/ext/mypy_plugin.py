@@ -420,6 +420,7 @@ def is_dataclasses_field_or_strawberry_field(expr: Expression) -> bool:
         if isinstance(expr.callee, RefExpr) and expr.callee.fullname in (
             "dataclasses.field",
             "strawberry.field.field",
+            "strawberry.mutation.mutation",
             "strawberry.federation.field",
             "strawberry.federation.field.field",
         ):
@@ -428,7 +429,7 @@ def is_dataclasses_field_or_strawberry_field(expr: Expression) -> bool:
         if isinstance(expr.callee, MemberExpr) and isinstance(
             expr.callee.expr, NameExpr
         ):
-            return expr.callee.name == "field" and expr.callee.expr.name == "strawberry"
+            return expr.callee.name in {"field", "mutation"} and expr.callee.expr.name == "strawberry"
 
     return False
 
@@ -851,6 +852,7 @@ class StrawberryPlugin(Plugin):
     def _is_strawberry_field(self, fullname: str) -> bool:
         if fullname in {
             "strawberry.field.field",
+            "strawberry.mutation.mutation",
             "strawberry.federation.field",
         }:
             return True
@@ -859,6 +861,7 @@ class StrawberryPlugin(Plugin):
             fullname.endswith(decorator)
             for decorator in {
                 "strawberry.field",
+                "strawberry.mutation",
                 "strawberry.federation.field",
             }
         )
