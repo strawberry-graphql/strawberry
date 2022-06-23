@@ -254,6 +254,8 @@ class GraphQLCoreConverter:
                         namespace=module.__dict__,
                     ),
                     default=default,
+                    description=field.description,
+                    description_sources=field.description_sources,
                 ),
                 description_sources,
                 parent_directive_docstring=strawberry_directive.docstring,

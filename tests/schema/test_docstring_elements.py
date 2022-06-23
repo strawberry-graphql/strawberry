@@ -25,14 +25,20 @@ class SchemaDirective:
     SchemaDirective docstring
 
     Attributes:
-        name: name docstring
+        name1: name1 docstring
+        name2: name2 docstring
     """
 
-    name: Annotated[str, strawberry.argument(description="name description")]
-    """ name attribute docstring """
+    name1: Annotated[str, strawberry.argument(description="name1 description")]
+    """ name1 attribute docstring """
+
+    name2: str = strawberry.field(description="name2 description")
+    """ name2 attribute docstring """
 
 
-@strawberry.type(name="Query", directives=[SchemaDirective(name="name")])
+@strawberry.type(
+    name="Query", directives=[SchemaDirective(name1="name1", name2="name2")]
+)
 class SchemaDirectiveQuery:
     Q: int
 
@@ -47,11 +53,14 @@ def test_schema_directive_description():
     expected = '''
         """SchemaDirective description"""
         directive @schemaDirective(
-          """name description"""
-          name: String!
+          """name1 description"""
+          name1: String!
+
+          """name2 description"""
+          name2: String!
         ) on OBJECT | INPUT_OBJECT
 
-        type Query @schemaDirective(name: "name") {
+        type Query @schemaDirective(name1: "name1", name2: "name2") {
           Q: Int!
         }
     '''
@@ -68,11 +77,14 @@ def test_schema_directive_docstring():
     expected = '''
         """SchemaDirective docstring"""
         directive @schemaDirective(
-          """name docstring"""
-          name: String!
+          """name1 docstring"""
+          name1: String!
+
+          """name2 docstring"""
+          name2: String!
         ) on OBJECT | INPUT_OBJECT
 
-        type Query @schemaDirective(name: "name") {
+        type Query @schemaDirective(name1: "name1", name2: "name2") {
           Q: Int!
         }
     '''
@@ -88,11 +100,14 @@ def test_schema_directive_attr_docstring():
     )
     expected = '''
         directive @schemaDirective(
-          """name attribute docstring"""
-          name: String!
+          """name1 attribute docstring"""
+          name1: String!
+
+          """name2 attribute docstring"""
+          name2: String!
         ) on OBJECT | INPUT_OBJECT
 
-        type Query @schemaDirective(name: "name") {
+        type Query @schemaDirective(name1: "name1", name2: "name2") {
           Q: Int!
         }
     '''
@@ -116,12 +131,12 @@ def test_schema_directive_others():
         ),
     )
     expected = """
-        directive @schemaDirective(name: String!) on OBJECT | INPUT_OBJECT
+        directive @schemaDirective(name1: String!, name2: String!) on OBJECT | INPUT_OBJECT
 
-        type Query @schemaDirective(name: "name") {
+        type Query @schemaDirective(name1: "name1", name2: "name2") {
           Q: Int!
         }
-    """
+    """  # noqa
     assert str(schema) == textwrap.dedent(expected).strip()
 
 
