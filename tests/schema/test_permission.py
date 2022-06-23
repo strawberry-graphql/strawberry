@@ -2,6 +2,8 @@ import typing
 
 import pytest
 
+from typing_extensions import Annotated
+
 import strawberry
 from strawberry.permission import BasePermission
 from strawberry.types import Info
@@ -338,3 +340,39 @@ async def test_mixed_sync_and_async_permission_classes():
     context = {"passAsync": True, "passSync": True}
     result = await schema.execute(query, context_value=context)
     assert result.data["user"]["email"] == "patrick.arminio@gmail.com"
+
+
+def test_annotated_permission():
+    class Denied(BasePermission):
+        message = "Access denied"
+
+        def has_permission(self, source: typing.Any, info: Info, **kwargs) -> bool:
+            return False
+
+    @strawberry.type
+    class Query:
+        field: str = "a"
+
+        field_denied: Annotated[str, Denied] = "b"
+
+        @strawberry.field
+        def resolver(self) -> str:
+            return "c"
+
+        @strawberry.field
+        def resolver_denied(self) -> Denied[str]:
+            return "d"
+
+    schema = strawberry.Schema(query=Query)
+
+    assert schema.execute_sync("{ field }", root_value=Query()).data == {"field": "a"}
+
+    assert schema.execute_sync("{ resolver }", root_value=Query()).data == {
+        "resolver": "c"
+    }
+
+    assert schema.execute_sync("{ fieldDenied }").errors[0].message == "Access denied"
+
+    assert (
+        schema.execute_sync("{ resolverDenied }").errors[0].message == "Access denied"
+    )

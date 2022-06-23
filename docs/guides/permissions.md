@@ -29,6 +29,14 @@ class Query:
     user: str = strawberry.field(permission_classes=[IsAuthenticated])
 ```
 
+Alternatively, the permission class can be used as an annotation on the field type:
+
+```python
+@strawberry.type
+class Query:
+    user: IsAuthenticated[str]
+```
+
 Your `has_permission` method should check if this request has permission to access the
 field. Note that the `has_permission` method can also be asynchronous.
 

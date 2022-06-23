@@ -21,8 +21,9 @@ from typing_extensions import Literal
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import StrawberryArgument
-from strawberry.exceptions import InvalidArgumentTypeError, InvalidDefaultFactoryError
-from strawberry.type import StrawberryType
+from strawberry.exceptions import InvalidDefaultFactoryError
+from strawberry.exceptions.invalid_argument_type import InvalidArgumentTypeError
+from strawberry.type import StrawberryAnnotated, StrawberryType
 from strawberry.types.info import Info
 from strawberry.union import StrawberryUnion
 from strawberry.utils.cached_property import cached_property
@@ -125,10 +126,21 @@ class StrawberryField(dataclasses.Field):
 
         self.is_subscription = is_subscription
 
-        self.permission_classes: List[Type[BasePermission]] = list(permission_classes)
+        self.explicit_permission_classes: List[Type[BasePermission]] = list(
+            permission_classes
+        )
         self.directives = directives
 
         self.deprecation_reason = deprecation_reason
+
+    @cached_property
+    def permission_classes(self):
+        annotated_permissions = [
+            annotation
+            for annotation in StrawberryAnnotated.get_type_and_args(self.type)[1]
+            if inspect.isclass(annotation) and issubclass(annotation, BasePermission)
+        ]
+        return annotated_permissions + self.explicit_permission_classes
 
     def __call__(self, resolver: _RESOLVER_TYPE) -> "StrawberryField":
         """Add a resolver to the field"""
