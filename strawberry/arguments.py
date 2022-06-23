@@ -15,8 +15,6 @@ from typing import (
     cast,
 )
 
-from typing_extensions import Annotated, get_args, get_origin
-
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.enum import EnumDefinition
@@ -77,25 +75,21 @@ class StrawberryArgument:
             _deprecated_UNSET if default is inspect.Parameter.empty else default
         )
 
-        if self._annotation_is_annotated(type_annotation):
-            self._parse_annotated()
+        self._parse_annotated()
 
     @property
     def type(self) -> Union[StrawberryType, type]:
         return self.type_annotation.resolve()
 
-    @classmethod
-    def _annotation_is_annotated(cls, annotation: StrawberryAnnotation) -> bool:
-        return get_origin(annotation.annotation) is Annotated
-
     def _parse_annotated(self):
-        annotated_args = get_args(self.type_annotation.annotation)
-
         # Find any instances of StrawberryArgumentAnnotation
         # in the other Annotated args, raising an exception if there
         # are multiple StrawberryArgumentAnnotations
         argument_annotation_seen = False
-        for arg in annotated_args[1:]:
+
+        for arg in StrawberryAnnotated.get_type_and_args(
+            self.type_annotation.annotation
+        )[1]:
             if isinstance(arg, StrawberryArgumentAnnotation):
                 if argument_annotation_seen:
                     raise MultipleStrawberryArgumentsError(

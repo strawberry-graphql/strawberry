@@ -139,10 +139,12 @@ class StrawberryAnnotated(StrawberryContainer):
         super().__init__(of_type)
         self.args = tuple(base_args) + args
 
+    T = TypeVar("T")
+
     @staticmethod
     def get_type_and_args(
-        type_: Union[StrawberryType, type]
-    ) -> Tuple[Union[StrawberryType, type], Tuple[Any, ...]]:
+        type_: Union[StrawberryType, type, T]
+    ) -> Tuple[Union[StrawberryType, type, T], Tuple[Any, ...]]:
         """
         Splits a possibly-annotated type in the actual type and the list of annotations
         Supports both StrawberryAnnotated and typing.Annotated
