@@ -429,7 +429,10 @@ def is_dataclasses_field_or_strawberry_field(expr: Expression) -> bool:
         if isinstance(expr.callee, MemberExpr) and isinstance(
             expr.callee.expr, NameExpr
         ):
-            return expr.callee.name in {"field", "mutation"} and expr.callee.expr.name == "strawberry"
+            return (
+                expr.callee.name in {"field", "mutation"}
+                and expr.callee.expr.name == "strawberry"
+            )
 
     return False
 
