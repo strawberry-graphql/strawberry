@@ -44,7 +44,7 @@ jobs:
           python -m pip install pip --upgrade
           pip install poetry
           pip install githubrelease
-          pip install "git+https://github.com/patrick91/autopub.git@fix/release-not-found#egg=autopub"
+          pip install autopub
           pip install httpx
       - name: Check if we should release
         id: check_release
