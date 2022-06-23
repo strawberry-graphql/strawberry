@@ -206,6 +206,9 @@ class GraphQLCoreConverter:
             is_repeatable=False,
             args=args,
             description=strawberry_directive.description,
+            extensions={
+                GraphQLCoreConverter.DEFINITION_BACKREF: strawberry_directive,
+            },
         )
 
     def from_field(self, field: StrawberryField) -> GraphQLField:

@@ -12,14 +12,17 @@ from graphql import (
 import strawberry
 from strawberry.scalars import JSON
 from strawberry.schema.schema_converter import GraphQLCoreConverter
+from strawberry.schema_directive import Location
 
 
 def test_extensions():
+    @strawberry.schema_directive(locations=[Location.OBJECT, Location.INPUT_OBJECT])
+    class SchemaDirective:
+        name: str
+
     @strawberry.directive(locations=[DirectiveLocation.FIELD])
     def uppercase(value: str, foo: str):
         return value.upper()
-
-    print("uppercase.args", uppercase.arguments[0])
 
     @strawberry.enum
     class ThingType(Enum):
@@ -44,7 +47,7 @@ def test_extensions():
 
     SomeThing = strawberry.union("SomeThing", types=[JsonThing, StrThing])
 
-    @strawberry.type
+    @strawberry.type(directives=[SchemaDirective(name="Query")])
     class Query:
         @strawberry.field
         def get_thing_iface(input: Input) -> Thing:
@@ -56,12 +59,27 @@ def test_extensions():
 
     strawberry_schema = strawberry.Schema(query=Query, directives=[uppercase])
     graphql_schema: GraphQLSchema = strawberry_schema._schema
-    print(strawberry_schema)
 
     # Schema
     assert (
         graphql_schema.extensions[GraphQLCoreConverter.DEFINITION_BACKREF]
         is strawberry_schema
+    )
+
+    # SchemaDirective
+    """
+    FIXME: Apparently I stumpled on a bug:
+           SchemaDirective are used on strawberry_schema.__str__(),
+           but aren't added to graphql_schema.directives
+
+    graphql_scheme_directive = graphql_schema.get_directive("schemaDirective")
+    """
+    graphql_scheme_directive = strawberry_schema.schema_converter.from_schema_directive(
+        Query._type_definition.directives[0]
+    )
+    assert (
+        graphql_scheme_directive.extensions[GraphQLCoreConverter.DEFINITION_BACKREF]
+        is SchemaDirective.__strawberry_directive__
     )
 
     # Directive
