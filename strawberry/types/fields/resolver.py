@@ -164,7 +164,7 @@ class StrawberryResolver(Generic[T]):
     def arguments(self) -> List[StrawberryArgument]:
         """Resolver arguments exposed in the GraphQL Schema."""
         parameters = self.signature.parameters.values()
-        reserved_parameters = tuple(self.reserved_parameters.values())
+        reserved_parameters = set(self.reserved_parameters.values())
 
         missing_annotations = set()
         arguments = []
