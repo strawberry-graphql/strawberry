@@ -77,11 +77,18 @@ class ReservedType(NamedTuple):
     ) -> Optional[inspect.Parameter]:
         for parameter in parameters:
             annotation = parameter.annotation
-            resolved_annotation = _eval_type(
-                ForwardRef(annotation) if isinstance(annotation, str) else annotation,
-                resolver._namespace,
-                None,
-            )
+            try:
+                resolved_annotation = _eval_type(
+                    ForwardRef(annotation)
+                    if isinstance(annotation, str)
+                    else annotation,
+                    resolver._namespace,
+                    None,
+                )
+                resolver._resolved_annotations[parameter] = resolved_annotation
+            except NameError:
+                # Type-annotation could not be resolved
+                resolved_annotation = annotation
             if self.is_reserved_type(resolved_annotation):
                 return parameter
 
@@ -141,6 +148,11 @@ class StrawberryResolver(Generic[T]):
 
         This is used when creating copies of types w/ generics
         """
+        self._resolved_annotations: Dict[inspect.Parameter, Any] = {}
+        """Populated during reserved parameter determination.
+
+        Caching resolved annotations this way prevents evaling them repeatedly.
+        """
 
     # TODO: Use this when doing the actual resolving? How to deal with async resolvers?
     def __call__(self, *args, **kwargs) -> T:
@@ -169,14 +181,15 @@ class StrawberryResolver(Generic[T]):
         missing_annotations = set()
         arguments = []
         for param in filter(lambda p: p not in reserved_parameters, parameters):
-            if param.annotation is inspect.Signature.empty:
+            annotation = self._resolved_annotations.get(param, param.annotation)
+            if annotation is inspect.Signature.empty:
                 missing_annotations.add(param.name)
             else:
                 argument = StrawberryArgument(
                     python_name=param.name,
                     graphql_name=None,
                     type_annotation=StrawberryAnnotation(
-                        annotation=param.annotation, namespace=self._namespace
+                        annotation=annotation, namespace=self._namespace
                     ),
                     default=param.default,
                 )
