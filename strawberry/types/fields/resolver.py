@@ -10,6 +10,7 @@ from typing import (  # type: ignore[attr-defined]
     Any,
     Callable,
     Dict,
+    ForwardRef,
     Generic,
     List,
     Mapping,
@@ -75,8 +76,11 @@ class ReservedType(NamedTuple):
         self, parameters: Tuple[inspect.Parameter, ...], resolver: StrawberryResolver
     ) -> Optional[inspect.Parameter]:
         for parameter in parameters:
+            annotation = parameter.annotation
             resolved_annotation = _eval_type(
-                parameter.annotation, resolver._namespace, None
+                ForwardRef(annotation) if isinstance(annotation, str) else annotation,
+                resolver._namespace,
+                None,
             )
             if self.is_reserved_type(resolved_annotation):
                 return parameter
