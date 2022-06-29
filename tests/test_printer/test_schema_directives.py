@@ -183,7 +183,7 @@ def test_respects_schema_config_for_names():
     assert print_schema(schema) == textwrap.dedent(expected_type).strip()
 
 
-def test_respects_schema_paraemeter_types_for_arguments_int():
+def test_respects_schema_parameter_types_for_arguments_int():
     @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
     class Sensitive:
         real_age: int
@@ -207,7 +207,7 @@ def test_respects_schema_paraemeter_types_for_arguments_int():
     assert print_schema(schema) == textwrap.dedent(expected_type).strip()
 
 
-def test_respects_schema_paraemeter_types_for_arguments_list_of_ints():
+def test_respects_schema_parameter_types_for_arguments_list_of_ints():
     @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
     class Sensitive:
         real_age: List[int]
@@ -231,7 +231,7 @@ def test_respects_schema_paraemeter_types_for_arguments_list_of_ints():
     assert print_schema(schema) == textwrap.dedent(expected_type).strip()
 
 
-def test_respects_schema_paraemeter_types_for_arguments_list_of_strings():
+def test_respects_schema_parameter_types_for_arguments_list_of_strings():
     @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
     class Sensitive:
         real_age: List[str]
