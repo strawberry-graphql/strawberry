@@ -1071,11 +1071,11 @@ pytest = ">=3.0.0"
 
 [[package]]
 name = "pytest-xprocess"
-version = "0.18.1"
+version = "0.19.0"
 description = "A pytest plugin for managing processes across test runs."
 category = "dev"
 optional = false
-python-versions = ">=3.5"
+python-versions = ">=3.7"
 
 [package.dependencies]
 psutil = "*"
@@ -1538,7 +1538,7 @@ sanic = ["sanic"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "d0cea161d1dcc2360b93ff71431fcea1dd9ee25ecb76658ba3a54fdc5f63133b"
+content-hash = "9d619e7c272eb22dd3677370ad01c7a5b76e49c1d807ce06bfeed29138448ce8"
 
 [metadata.files]
 aiofiles = [
@@ -2301,8 +2301,8 @@ pytest-snapshot = [
     {file = "pytest_snapshot-0.9.0-py3-none-any.whl", hash = "sha256:4b9fe1c21c868fe53a545e4e3184d36bc1c88946e3f5c1d9dd676962a9b3d4ab"},
 ]
 pytest-xprocess = [
-    {file = "pytest-xprocess-0.18.1.tar.gz", hash = "sha256:fd9f30ed1584b5833bc34494748adf0fb9de3ca7bacc4e88ad71989c21cba266"},
-    {file = "pytest_xprocess-0.18.1-py3-none-any.whl", hash = "sha256:6f2aba817d842518d9d9dfb7e9adfe2a6e354a4359f4166bef0822ef4be1c9db"},
+    {file = "pytest-xprocess-0.19.0.tar.gz", hash = "sha256:1820c549d671edb2c89c25ff1e38c70ecda0fefe280f13c45a2c8c6d66d7b50e"},
+    {file = "pytest_xprocess-0.19.0-py3-none-any.whl", hash = "sha256:78b76c8988753873f6e982e977a1d2cf0a2485ace284754116e1ea26ae635229"},
 ]
 python-dateutil = [
     {file = "python-dateutil-2.8.2.tar.gz", hash = "sha256:0123cacc1627ae19ddf3c27a5de5bd67ee4586fbdd6440d9748f8abb483d3e86"},
