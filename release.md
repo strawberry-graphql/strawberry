@@ -1,6 +1,6 @@
 Release type: patch
 
-The federation decorator now allows for a list of additional arbitrary schema directives extending the key/shareable 
+The federation decorator now allows for a list of additional arbitrary schema directives extending the key/shareable
 directives used for federation.
 
 Example Python:
@@ -18,7 +18,7 @@ Example Python:
     )
     class FederatedType:
         id: strawberry.ID
-    
+
 schema = strawberry.Schema(
         query=Query, config=StrawberryConfig(auto_camel_case=False)
     )

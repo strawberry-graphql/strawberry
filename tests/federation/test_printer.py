@@ -621,7 +621,9 @@ def test_additional_schema_directives_printed_correctly_object():
     class CacheControl:
         max_age: int
 
-    @strawberry.federation.type(keys=["id"], shareable=True, extend=True, directives=[CacheControl(max_age=42)])
+    @strawberry.federation.type(
+        keys=["id"], shareable=True, extend=True, directives=[CacheControl(max_age=42)]
+    )
     class FederatedType:
         id: strawberry.ID
 
@@ -664,7 +666,7 @@ def test_additional_schema_directives_printed_in_order_object():
         keys=["id"],
         shareable=True,
         extend=True,
-        directives=[CacheControl0(max_age=42), CacheControl1(min_age=42)]
+        directives=[CacheControl0(max_age=42), CacheControl1(min_age=42)],
     )
     class FederatedType:
         id: strawberry.ID
