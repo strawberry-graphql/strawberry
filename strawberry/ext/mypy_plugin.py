@@ -880,7 +880,10 @@ class StrawberryPlugin(Plugin):
         )
 
     def _is_strawberry_lazy_type(self, fullname: str) -> bool:
-        return fullname == "strawberry.lazy_type.LazyType"
+        return fullname in [
+            "strawberry.lazy_type.LazyType",
+            "strawberry.lazy_type.Lazy",
+        ]
 
     def _is_strawberry_decorator(self, fullname: str) -> bool:
         if any(

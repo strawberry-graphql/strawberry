@@ -41,7 +41,7 @@ class LazyType(Generic[TypeName, Module]):
         return None
 
 
-if TYPE_CHECKING:  # pragma: nocover
+if TYPE_CHECKING:  # pragma: no cover
     # Static types like pyright expects a type to be passed to generic classes, which
     # means that if we pass a string it will say the type is unknown, and if we import
     # the module they will say a module can't be used in place of a type.

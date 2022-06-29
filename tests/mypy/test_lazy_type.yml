@@ -1,0 +1,21 @@
+- case: test_unset
+  main: |
+    from typing import TYPE_CHECKING
+    import strawberry
+    from strawberry.lazy_type import Lazy
+
+
+    @strawberry.type
+    class SomeType:
+        some_var: Lazy[str, "strawberry.scalars"]
+
+
+    obj = SomeType(
+        some_var="foobar",
+    )
+
+    reveal_type(SomeType.some_var)
+    reveal_type(obj.some_var)
+  out: |
+    main:15: note: Revealed type is "builtins.str"
+    main:16: note: Revealed type is "builtins.str"
