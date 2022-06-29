@@ -1416,20 +1416,19 @@ socks = ["PySocks (>=1.5.6,!=1.5.7,<2.0)"]
 
 [[package]]
 name = "uvicorn"
-version = "0.17.6"
+version = "0.18.2"
 description = "The lightning-fast ASGI server."
 category = "main"
 optional = false
 python-versions = ">=3.7"
 
 [package.dependencies]
-asgiref = ">=3.4.0"
 click = ">=7.0"
 h11 = ">=0.8"
 typing-extensions = {version = "*", markers = "python_version < \"3.8\""}
 
 [package.extras]
-standard = ["websockets (>=10.0)", "httptools (>=0.4.0)", "watchgod (>=0.6)", "python-dotenv (>=0.13)", "PyYAML (>=5.1)", "uvloop (>=0.14.0,!=0.15.0,!=0.15.1)", "colorama (>=0.4)"]
+standard = ["websockets (>=10.0)", "httptools (>=0.4.0)", "watchfiles (>=0.13)", "python-dotenv (>=0.13)", "PyYAML (>=5.1)", "uvloop (>=0.14.0,!=0.15.0,!=0.15.1)", "colorama (>=0.4)"]
 
 [[package]]
 name = "uvloop"
@@ -1538,7 +1537,7 @@ sanic = ["sanic"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "9d619e7c272eb22dd3677370ad01c7a5b76e49c1d807ce06bfeed29138448ce8"
+content-hash = "e5ac5b3c9f836be4969b45b41b2d631005cda9fb0a92a8e4016433cd22e03ce7"
 
 [metadata.files]
 aiofiles = [
@@ -2616,8 +2615,8 @@ urllib3 = [
     {file = "urllib3-1.26.9.tar.gz", hash = "sha256:aabaf16477806a5e1dd19aa41f8c2b7950dd3c746362d7e3223dbe6de6ac448e"},
 ]
 uvicorn = [
-    {file = "uvicorn-0.17.6-py3-none-any.whl", hash = "sha256:19e2a0e96c9ac5581c01eb1a79a7d2f72bb479691acd2b8921fce48ed5b961a6"},
-    {file = "uvicorn-0.17.6.tar.gz", hash = "sha256:5180f9d059611747d841a4a4c4ab675edf54c8489e97f96d0583ee90ac3bfc23"},
+    {file = "uvicorn-0.18.2-py3-none-any.whl", hash = "sha256:c19a057deb1c5bb060946e2e5c262fc01590c6529c0af2c3d9ce941e89bc30e0"},
+    {file = "uvicorn-0.18.2.tar.gz", hash = "sha256:cade07c403c397f9fe275492a48c1b869efd175d5d8a692df649e6e7e2ed8f4e"},
 ]
 uvloop = [
     {file = "uvloop-0.16.0-cp310-cp310-macosx_10_9_universal2.whl", hash = "sha256:6224f1401025b748ffecb7a6e2652b17768f30b1a6a3f7b44660e5b5b690b12d"},
