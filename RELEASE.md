@@ -1,19 +1,45 @@
 Release type: minor
 
-This release Closes [#1666] by improving the injection of reserved arguments
-for resolvers and directives through use of an annotation-based approach which
-adds support for:
+This release changes how we declare the `info` argument in resolvers and the
+`value` argument in directives.
 
-1. Defining a directive value argument using a `DirectiveValue`
-annotation.
-2. Defining the resolve/directive `info` argument using the `Info` annotation
+Previously we'd use the name of the argument to determine its value. Now we use
+the type annotation of the argument to determine its value.
 
-**Deprecated:** Declaration of value and info arguments by relying on name-based
-matching without annotations.
-
-# Examples
+Here's an example of how the old syntax works:
 
 ```python
+def some_resolver(info) -> str:
+    return info.context.get("some_key", "default")
+
+@strawberry.type
+class Example:
+    a_field: str = strawberry.resolver(some_resolver)
+```
+
+and here's an example of how the new syntax works:
+
+```python
+from strawberry.types import Info
+
+def some_resolver(info: Info) -> str:
+    return info.context.get("some_key", "default")
+
+@strawberry.type
+class Example:
+    a_field: str = strawberry.resolver(some_resolver)
+```
+
+This means that you can now use a different name for the `info` argument in your
+resolver and the `value` argument in your directive.
+
+Here's an example that uses a custom name for both the value and the info
+parameter in directives:
+
+```python
+from strawberry.types import Info
+from strawberry.directive import DirectiveLocation, DirectiveValue
+
 @strawberry.type
 class Cake:
     frosting: Optional[str] = None
@@ -39,4 +65,5 @@ def add_frosting(value: str, v: DirectiveValue[Cake], my_info: Info):
     return v
 ```
 
-[#1666]: (https://github.com/strawberry-graphql/strawberry/issues/1666)
+**Note:** the old way of passing arguments by name is deprecated and will be
+removed in future releases of Strawberry.
