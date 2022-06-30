@@ -12,7 +12,7 @@ These are often shown by interactive GraphQL clients (Like
 [GraphiQL](https://github.com/graphql/graphiql) and documentation generators.
 
 The preferred way of adding description in strawberry is using the
-`description=` argument in strawberry decorators:
+`description=` argument in strawberry decorators and annotations.
 
 ```python+schema
 @strawberry.enum(description="Example enum")
@@ -25,7 +25,7 @@ class Query:
     enum: EnumType = strawberry.field(default=EnumType.BAR, description="A dataclass field")
 
     @strawberry.field(description="A GraphQL field with a resolver and arguments")
-    def resolver(self, arg1: str, arg2: int) -> int:
+    def resolver(self, arg: Annotated[str, strawberry.argument(description="Argument description")]) -> int:
         return 1
 
 schema = strawberry.Schema(query=Query)
@@ -42,7 +42,10 @@ type Query {
   enum: EnumType!
 
   """A GraphQL field with a resolver and arguments"""
-  resolver(arg1: String!, arg2: Int!): Int!
+  resolver(
+    """Argument description"""
+    arg: String!
+  ): Int!
 }
 ```
 
@@ -61,7 +64,7 @@ one of the [supported syntaxes is used](https://pypi.org/project/docstring-parse
 
 <Note>
 
-The types of docstring used to produce GraphQL descriptions must be enabled globally with `StrawberryConfig(description_sources=[...])` or on each element (e.g., `strawberry.field(description_sources=[...])`)
+The types of docstring used to produce GraphQL descriptions must be enabled globally with `StrawberryConfig(description_sources=[...])`, on the GraphQL type (e.g., `@strawberry.type(description_sources=[...]`) or on each member (e.g., `@strawberry.field(description_sources=[...])`), with the most specific (inner-most) option being used for each GraphQL element.
 
 </Note>
 
