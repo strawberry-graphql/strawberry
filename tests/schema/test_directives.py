@@ -409,12 +409,16 @@ def info_directive_schema() -> strawberry.Schema:
         def greetingTemplate(self, locale: Locale = Locale.EN) -> str:
             return greetings[locale]
 
+    field = Query._type_definition.fields[0]  # type: ignore
+
     @strawberry.directive(
         locations=[DirectiveLocation.FIELD],
         description="Interpolate string on the server from context data",
     )
     def interpolate(value: str, info: Info):
         try:
+            assert isinstance(info, Info)
+            assert info._field is field
             return value.format(**info.context["userdata"])
         except KeyError:
             return value
