@@ -769,6 +769,10 @@ class GraphQLCoreConverter:
                 if parent_resolver_docstring is not None and child_name is not None:
                     yield parent_resolver_docstring.child_description(child_name)
 
+            if sources & DescriptionSources.TYPE_ATTRIBUTE_DOCSTRINGS:
+                if parent_type_docstring is not None and child_name is not None:
+                    yield parent_type_docstring.attribute_docstring(child_name)
+
             if sources & DescriptionSources.TYPE_DOCSTRINGS:
                 if type_docstring is not None:
                     yield type_docstring.main_description
@@ -776,9 +780,9 @@ class GraphQLCoreConverter:
                 if parent_type_docstring is not None and child_name is not None:
                     yield parent_type_docstring.child_description(child_name)
 
-            if sources & DescriptionSources.TYPE_ATTRIBUTE_DOCSTRINGS:
-                if parent_type_docstring is not None and child_name is not None:
-                    yield parent_type_docstring.attribute_docstring(child_name)
+            if sources & DescriptionSources.ENUM_ATTRIBUTE_DOCSTRINGS:
+                if parent_enum_docstring is not None and child_name is not None:
+                    yield parent_enum_docstring.attribute_docstring(child_name)
 
             if sources & DescriptionSources.ENUM_DOCSTRINGS:
                 if enum_docstring:
@@ -786,19 +790,15 @@ class GraphQLCoreConverter:
                 if parent_enum_docstring is not None and child_name is not None:
                     yield parent_enum_docstring.child_description(child_name)
 
-            if sources & DescriptionSources.ENUM_ATTRIBUTE_DOCSTRINGS:
-                if parent_enum_docstring is not None and child_name is not None:
-                    yield parent_enum_docstring.attribute_docstring(child_name)
+            if sources & DescriptionSources.DIRECTIVE_ATTRIBUTE_DOCSTRINGS:
+                if parent_directive_docstring is not None and child_name is not None:
+                    yield parent_directive_docstring.attribute_docstring(child_name)
 
             if sources & DescriptionSources.DIRECTIVE_DOCSTRINGS:
                 if directive_docstring is not None:
                     yield directive_docstring.main_description
                 if parent_directive_docstring is not None and child_name is not None:
                     yield parent_directive_docstring.child_description(child_name)
-
-            if sources & DescriptionSources.DIRECTIVE_ATTRIBUTE_DOCSTRINGS:
-                if parent_directive_docstring is not None and child_name is not None:
-                    yield parent_directive_docstring.attribute_docstring(child_name)
 
         for candidate in gen_candidates():
             if candidate is not None:

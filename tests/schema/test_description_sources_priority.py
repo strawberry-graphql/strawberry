@@ -112,8 +112,8 @@ def test_description_typedoc_attrdoc():
         query=Query,
         config=StrawberryConfig(
             description_sources=DescriptionSources.STRAWBERRY_DESCRIPTIONS
-            | DescriptionSources.TYPE_DOCSTRINGS
             | DescriptionSources.TYPE_ATTRIBUTE_DOCSTRINGS
+            | DescriptionSources.TYPE_DOCSTRINGS
         ),
     )
     expected = '''
@@ -125,7 +125,7 @@ def test_description_typedoc_attrdoc():
           """b description"""
           b: Int!
 
-          """c docstring"""
+          """c attribute docstring"""
           c: Int!
 
           """d docstring"""
