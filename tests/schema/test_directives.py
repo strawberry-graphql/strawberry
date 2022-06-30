@@ -572,3 +572,29 @@ def test_named_based_directive_value_is_deprecated():
             ...
 
         strawberry.Schema(query=Query, directives=[deprecated_value])
+
+
+@pytest.mark.xfail(
+    reason="List arguments are not yet supported", raises=AttributeError, strict=True
+)
+@pytest.mark.asyncio
+async def test_directive_list_argument():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def greeting(self) -> str:
+            return "Hi"
+
+    @strawberry.directive(locations=[DirectiveLocation.FIELD])
+    def append_names(value: DirectiveValue[str], names: List[str]):
+        assert isinstance(names, list)
+        return f"{value} {', '.join(names)}"
+
+    schema = strawberry.Schema(query=Query, directives=[append_names])
+
+    result = await schema.execute(
+        'query { greeting @appendNames(names: ["foo", "bar"])}'
+    )
+
+    assert result.errors
+    raise result.errors[0].original_error  # type: ignore

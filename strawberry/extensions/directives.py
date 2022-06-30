@@ -63,6 +63,7 @@ def process_directive(
     strawberry_directive = schema.get_directive_by_name(directive_name)
     assert strawberry_directive is not None, f"Directive {directive_name} not found"
 
+    # TODO: support converting lists
     arguments = {
         argument.name.value: argument.value.value  # type: ignore
         for argument in directive.arguments
