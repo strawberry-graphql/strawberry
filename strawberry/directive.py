@@ -38,9 +38,8 @@ DirectiveValue.__doc__ = (
     """Represents the ``value`` argument for a GraphQL query directive."""
 )
 
-
+# Registers `DirectiveValue[...]` annotated arguments as reserved
 VALUE_PARAMSPEC = ReservedType(name="value", type=StrawberryDirectiveValue)
-"""Registers `DirectiveValue[...]` annotated arguments as reserved."""
 
 
 class StrawberryDirectiveResolver(StrawberryResolver[T]):
