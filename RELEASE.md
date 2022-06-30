@@ -8,7 +8,7 @@ It is now possible to use python docstrings to provide GraphQL descriptions.
 
 Here is an example of using docstrings in types and fields:
 
-```python
+```python+schema
 @strawberry.enum
 class EnumType(Enum):
     """
@@ -22,6 +22,7 @@ class EnumType(Enum):
     FOO = "foo"
     BAR = "bar"
 
+
 @strawberry.type
 class Query:
     """
@@ -30,10 +31,11 @@ class Query:
     Attributes:
         enum: A dataclass field
     """
+
     enum: EnumType = EnumType.BAR
 
     @strawberry.field
-    def resolver(self, arg1: enum, arg2: int) -> int:
+    def resolver(self, arg1: str, arg2: int) -> int:
         """
         A GraphQL field with a resolver and arguments
 
@@ -42,11 +44,16 @@ class Query:
             arg2: An int argument
         """
         return 1
-```
 
-Produces this GraphQL schema:
 
-```graphql
+schema = strawberry.Schema(
+    query=Query,
+    config=StrawberryConfig(
+        description_sources=DescriptionSources.RESOLVER_DOCSTRINGS
+        | DescriptionSources.CLASS_DOCSTRINGS
+    ),
+)
+---
 """Example enum"""
 enum EnumType {
   """Some description"""
@@ -64,7 +71,7 @@ type Query {
   """A GraphQL field with a resolver and arguments"""
   resolver(
     """An enum argument"""
-    arg1: EnumType!
+    arg1: String!
 
     """An int argument"""
     arg2: Int!
