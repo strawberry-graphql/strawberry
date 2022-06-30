@@ -1,7 +1,7 @@
-from enum import Enum, auto
+from enum import Flag, auto
 
 
-class DescriptionSource(Enum):
+class DescriptionSources(Flag):
     """
     A possible source of the GraphQL description fields.
 
@@ -9,34 +9,29 @@ class DescriptionSource(Enum):
     (STRAWBERRY_DESCRIPTIONS), but it is also possible to use docstrings
     """
 
+    NONE = 0
+
     STRAWBERRY_DESCRIPTIONS = auto()  # e.g., strawberry.type(description="...")
+
     RESOLVER_DOCSTRINGS = auto()
-    DIRECTIVE_DOCSTRINGS = auto()
     TYPE_DOCSTRINGS = auto()
     ENUM_DOCSTRINGS = auto()
-    TYPE_ATTRIBUTE_DOCSTRING = auto()  # Using PEP 257 syntax
-    ENUM_ATTRIBUTE_DOCSTRING = auto()  # Using PEP 257 syntax
-    DIRECTIVE_ATTRIBUTE_DOCSTRING = auto()  # Using PEP 257 syntax
+    DIRECTIVE_DOCSTRINGS = auto()
 
+    REGULAR_DOCSTRINGS = (
+        RESOLVER_DOCSTRINGS | TYPE_DOCSTRINGS | ENUM_DOCSTRINGS | DIRECTIVE_DOCSTRINGS
+    )
 
-class DescriptionSources:
-    """
-    For convenience, this class specified sets of commonly used DescriptionSources
-    """
+    TYPE_ATTRIBUTE_DOCSTRINGS = auto()  # Using PEP 257 syntax
+    ENUM_ATTRIBUTE_DOCSTRINGS = auto()  # Using PEP 257 syntax
+    DIRECTIVE_ATTRIBUTE_DOCSTRINGS = auto()  # Using PEP 257 syntax
 
-    DESCRIPTIONS = [DescriptionSource.STRAWBERRY_DESCRIPTIONS]
+    ATTRIBUTE_DOCSTRINGS = (
+        TYPE_ATTRIBUTE_DOCSTRINGS
+        | ENUM_ATTRIBUTE_DOCSTRINGS
+        | DIRECTIVE_ATTRIBUTE_DOCSTRINGS
+    )
 
-    DOCSTRINGS = [
-        DescriptionSource.RESOLVER_DOCSTRINGS,
-        DescriptionSource.DIRECTIVE_DOCSTRINGS,
-        DescriptionSource.TYPE_DOCSTRINGS,
-        DescriptionSource.ENUM_DOCSTRINGS,
-    ]
+    ALL_DOCSTRINGS = REGULAR_DOCSTRINGS | ATTRIBUTE_DOCSTRINGS
 
-    ATTRIBUTE_DOCSTRINGS = [
-        DescriptionSource.TYPE_ATTRIBUTE_DOCSTRING,
-        DescriptionSource.ENUM_ATTRIBUTE_DOCSTRING,
-        DescriptionSource.DIRECTIVE_ATTRIBUTE_DOCSTRING,
-    ]
-
-    ALL = DESCRIPTIONS + DOCSTRINGS + ATTRIBUTE_DOCSTRINGS
+    ALL = STRAWBERRY_DESCRIPTIONS | ALL_DOCSTRINGS

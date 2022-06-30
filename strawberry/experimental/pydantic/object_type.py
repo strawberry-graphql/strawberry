@@ -20,7 +20,7 @@ from pydantic.fields import ModelField
 from graphql import GraphQLResolveInfo
 
 from strawberry.auto import StrawberryAuto
-from strawberry.description_source import DescriptionSource
+from strawberry.description_source import DescriptionSources
 from strawberry.experimental.pydantic.conversion import (
     convert_pydantic_model_to_strawberry_class,
     convert_strawberry_class_to_pydantic_model,
@@ -113,7 +113,7 @@ def type(
     name: Optional[str] = None,
     is_input: bool = False,
     is_interface: bool = False,
-    description_sources: Optional[List[DescriptionSource]] = None,
+    description_sources: Optional[DescriptionSources] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     all_fields: bool = False,

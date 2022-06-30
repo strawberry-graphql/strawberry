@@ -14,7 +14,7 @@ from typing import (
     Union,
 )
 
-from strawberry.description_source import DescriptionSource
+from strawberry.description_source import DescriptionSources
 from strawberry.type import StrawberryType, StrawberryTypeVar
 from strawberry.utils.docstrings import Docstring
 from strawberry.utils.typing import is_generic as is_type_generic
@@ -32,7 +32,7 @@ class TypeDefinition(StrawberryType):
     is_input: bool
     is_interface: bool
     origin: Type
-    description_sources: Optional[List[DescriptionSource]]
+    description_sources: Optional[DescriptionSources]
     description: Optional[str]
     docstring: Optional[Docstring]
     interfaces: List["TypeDefinition"]

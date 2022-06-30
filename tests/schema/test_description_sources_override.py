@@ -1,7 +1,7 @@
 import textwrap
 
 import strawberry
-from strawberry.description_source import DescriptionSource
+from strawberry.description_source import DescriptionSources
 from strawberry.schema.config import StrawberryConfig
 
 
@@ -28,20 +28,22 @@ class A:
     """ a attribute docstring """
     b: int = strawberry.field(
         description="b description",
-        description_sources=[DescriptionSource.STRAWBERRY_DESCRIPTIONS],
+        description_sources=DescriptionSources.STRAWBERRY_DESCRIPTIONS,
     )
     """ b attribute docstring """
     c: int = strawberry.field(
         description="c description",
-        description_sources=[DescriptionSource.TYPE_DOCSTRINGS],
+        description_sources=DescriptionSources.TYPE_DOCSTRINGS,
     )
     """ c attribute docstring """
     d: int = strawberry.field(
         description="d description",
-        description_sources=[DescriptionSource.TYPE_ATTRIBUTE_DOCSTRING],
+        description_sources=DescriptionSources.TYPE_ATTRIBUTE_DOCSTRINGS,
     )
     """ d attribute docstring """
-    e: int = strawberry.field(description="e description", description_sources=[])
+    e: int = strawberry.field(
+        description="e description", description_sources=DescriptionSources.NONE
+    )
     """ d attribute docstring """
 
     @strawberry.field(description="f1 description")
@@ -55,7 +57,7 @@ class A:
 
     @strawberry.field(
         description="f2 description",
-        description_sources=[DescriptionSource.STRAWBERRY_DESCRIPTIONS],
+        description_sources=DescriptionSources.STRAWBERRY_DESCRIPTIONS,
     )
     def f2(self, arg1: int) -> int:
         """
@@ -67,7 +69,7 @@ class A:
 
     @strawberry.field(
         description="f3 description",
-        description_sources=[DescriptionSource.TYPE_DOCSTRINGS],
+        description_sources=DescriptionSources.TYPE_DOCSTRINGS,
     )
     def f3(self, arg1: int) -> int:
         """
@@ -79,7 +81,7 @@ class A:
 
     @strawberry.field(
         description="f4 description",
-        description_sources=[DescriptionSource.RESOLVER_DOCSTRINGS],
+        description_sources=DescriptionSources.RESOLVER_DOCSTRINGS,
     )
     def f4(self, arg1: int) -> int:
         """
@@ -89,7 +91,9 @@ class A:
         """
         return arg1
 
-    @strawberry.field(description="f5 description", description_sources=[])
+    @strawberry.field(
+        description="f5 description", description_sources=DescriptionSources.NONE
+    )
     def f5(self, arg1: int) -> int:
         """
         f5 resolver docstring
@@ -100,7 +104,7 @@ class A:
 
 
 @strawberry.type(
-    description="B description", description_sources=[DescriptionSource.TYPE_DOCSTRINGS]
+    description="B description", description_sources=DescriptionSources.TYPE_DOCSTRINGS
 )
 class B:
     """
@@ -124,20 +128,22 @@ class B:
     """ a attribute docstring """
     b: int = strawberry.field(
         description="b description",
-        description_sources=[DescriptionSource.STRAWBERRY_DESCRIPTIONS],
+        description_sources=DescriptionSources.STRAWBERRY_DESCRIPTIONS,
     )
     """ b attribute docstring """
     c: int = strawberry.field(
         description="c description",
-        description_sources=[DescriptionSource.TYPE_DOCSTRINGS],
+        description_sources=DescriptionSources.TYPE_DOCSTRINGS,
     )
     """ c attribute docstring """
     d: int = strawberry.field(
         description="d description",
-        description_sources=[DescriptionSource.TYPE_ATTRIBUTE_DOCSTRING],
+        description_sources=DescriptionSources.TYPE_ATTRIBUTE_DOCSTRINGS,
     )
     """ d attribute docstring """
-    e: int = strawberry.field(description="e description", description_sources=[])
+    e: int = strawberry.field(
+        description="e description", description_sources=DescriptionSources.NONE
+    )
     """ d attribute docstring """
 
     @strawberry.field(description="f1 description")
@@ -151,7 +157,7 @@ class B:
 
     @strawberry.field(
         description="f2 description",
-        description_sources=[DescriptionSource.STRAWBERRY_DESCRIPTIONS],
+        description_sources=DescriptionSources.STRAWBERRY_DESCRIPTIONS,
     )
     def f2(self, arg1: int) -> int:
         """
@@ -163,7 +169,7 @@ class B:
 
     @strawberry.field(
         description="f3 description",
-        description_sources=[DescriptionSource.TYPE_DOCSTRINGS],
+        description_sources=DescriptionSources.TYPE_DOCSTRINGS,
     )
     def f3(self, arg1: int) -> int:
         """
@@ -175,7 +181,7 @@ class B:
 
     @strawberry.field(
         description="f4 description",
-        description_sources=[DescriptionSource.RESOLVER_DOCSTRINGS],
+        description_sources=DescriptionSources.RESOLVER_DOCSTRINGS,
     )
     def f4(self, arg1: int) -> int:
         """
@@ -185,7 +191,9 @@ class B:
         """
         return arg1
 
-    @strawberry.field(description="f5 description", description_sources=[])
+    @strawberry.field(
+        description="f5 description", description_sources=DescriptionSources.NONE
+    )
     def f5(self, arg1: int) -> int:
         """
         f5 resolver docstring
@@ -205,7 +213,7 @@ def test_override_description_sources():
     schema = strawberry.Schema(
         query=Query,
         config=StrawberryConfig(
-            description_sources=[DescriptionSource.STRAWBERRY_DESCRIPTIONS]
+            description_sources=DescriptionSources.STRAWBERRY_DESCRIPTIONS
         ),
     )
 

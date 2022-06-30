@@ -6,7 +6,7 @@ from typing_extensions import Annotated
 from graphql import DirectiveLocation
 
 import strawberry
-from strawberry.description_source import DescriptionSource
+from strawberry.description_source import DescriptionSources
 from strawberry.schema.config import StrawberryConfig
 from strawberry.schema_directive import Location
 
@@ -47,7 +47,7 @@ def test_schema_directive_description():
     schema = strawberry.Schema(
         query=SchemaDirectiveQuery,
         config=StrawberryConfig(
-            description_sources=[DescriptionSource.STRAWBERRY_DESCRIPTIONS]
+            description_sources=DescriptionSources.STRAWBERRY_DESCRIPTIONS
         ),
     )
     expected = '''
@@ -71,7 +71,7 @@ def test_schema_directive_docstring():
     schema = strawberry.Schema(
         query=SchemaDirectiveQuery,
         config=StrawberryConfig(
-            description_sources=[DescriptionSource.DIRECTIVE_DOCSTRINGS]
+            description_sources=DescriptionSources.DIRECTIVE_DOCSTRINGS
         ),
     )
     expected = '''
@@ -95,7 +95,7 @@ def test_schema_directive_attr_docstring():
     schema = strawberry.Schema(
         query=SchemaDirectiveQuery,
         config=StrawberryConfig(
-            description_sources=[DescriptionSource.DIRECTIVE_ATTRIBUTE_DOCSTRING]
+            description_sources=DescriptionSources.DIRECTIVE_ATTRIBUTE_DOCSTRINGS
         ),
     )
     expected = '''
@@ -118,16 +118,11 @@ def test_schema_directive_others():
     schema = strawberry.Schema(
         query=SchemaDirectiveQuery,
         config=StrawberryConfig(
-            description_sources=[
-                src
-                for src in DescriptionSource
-                if src
-                not in [
-                    DescriptionSource.STRAWBERRY_DESCRIPTIONS,
-                    DescriptionSource.DIRECTIVE_DOCSTRINGS,
-                    DescriptionSource.DIRECTIVE_ATTRIBUTE_DOCSTRING,
-                ]
-            ]
+            description_sources=~(
+                DescriptionSources.STRAWBERRY_DESCRIPTIONS
+                | DescriptionSources.DIRECTIVE_DOCSTRINGS
+                | DescriptionSources.DIRECTIVE_ATTRIBUTE_DOCSTRINGS
+            )
         ),
     )
     expected = """
@@ -170,7 +165,7 @@ def test_directive_description():
         query=DirectiveQuery,
         directives=[directive],
         config=StrawberryConfig(
-            description_sources=[DescriptionSource.STRAWBERRY_DESCRIPTIONS]
+            description_sources=DescriptionSources.STRAWBERRY_DESCRIPTIONS
         ),
     )
     expected = '''
@@ -192,7 +187,7 @@ def test_directive_docstring():
         query=DirectiveQuery,
         directives=[directive],
         config=StrawberryConfig(
-            description_sources=[DescriptionSource.DIRECTIVE_DOCSTRINGS]
+            description_sources=DescriptionSources.DIRECTIVE_DOCSTRINGS
         ),
     )
     expected = '''
@@ -214,15 +209,10 @@ def test_directive_others():
         query=DirectiveQuery,
         directives=[directive],
         config=StrawberryConfig(
-            description_sources=[
-                src
-                for src in DescriptionSource
-                if src
-                not in [
-                    DescriptionSource.STRAWBERRY_DESCRIPTIONS,
-                    DescriptionSource.DIRECTIVE_DOCSTRINGS,
-                ]
-            ]
+            description_sources=~(
+                DescriptionSources.STRAWBERRY_DESCRIPTIONS
+                | DescriptionSources.DIRECTIVE_DOCSTRINGS
+            )
         ),
     )
     expected = """
@@ -262,7 +252,7 @@ def test_enum_description():
     schema = strawberry.Schema(
         query=EnumQuery,
         config=StrawberryConfig(
-            description_sources=[DescriptionSource.STRAWBERRY_DESCRIPTIONS]
+            description_sources=DescriptionSources.STRAWBERRY_DESCRIPTIONS
         ),
     )
     expected = '''
@@ -281,9 +271,7 @@ def test_enum_description():
 def test_enum_docstring():
     schema = strawberry.Schema(
         query=EnumQuery,
-        config=StrawberryConfig(
-            description_sources=[DescriptionSource.ENUM_DOCSTRINGS]
-        ),
+        config=StrawberryConfig(description_sources=DescriptionSources.ENUM_DOCSTRINGS),
     )
     expected = '''
         """Enum docstring"""
@@ -303,7 +291,7 @@ def test_enum_attr_docstring():
     schema = strawberry.Schema(
         query=EnumQuery,
         config=StrawberryConfig(
-            description_sources=[DescriptionSource.ENUM_ATTRIBUTE_DOCSTRING]
+            description_sources=DescriptionSources.ENUM_ATTRIBUTE_DOCSTRINGS
         ),
     )
     expected = '''
@@ -323,16 +311,11 @@ def test_enum_others():
     schema = strawberry.Schema(
         query=EnumQuery,
         config=StrawberryConfig(
-            description_sources=[
-                src
-                for src in DescriptionSource
-                if src
-                not in [
-                    DescriptionSource.STRAWBERRY_DESCRIPTIONS,
-                    DescriptionSource.ENUM_DOCSTRINGS,
-                    DescriptionSource.ENUM_ATTRIBUTE_DOCSTRING,
-                ]
-            ]
+            description_sources=~(
+                DescriptionSources.STRAWBERRY_DESCRIPTIONS
+                | DescriptionSources.ENUM_DOCSTRINGS
+                | DescriptionSources.ENUM_ATTRIBUTE_DOCSTRINGS
+            )
         ),
     )
     expected = """
@@ -387,7 +370,7 @@ def test_object_description():
     schema = strawberry.Schema(
         query=ObjectQuery,
         config=StrawberryConfig(
-            description_sources=[DescriptionSource.STRAWBERRY_DESCRIPTIONS]
+            description_sources=DescriptionSources.STRAWBERRY_DESCRIPTIONS
         ),
     )
     expected = '''
@@ -413,9 +396,7 @@ def test_object_description():
 def test_object_docstring():
     schema = strawberry.Schema(
         query=ObjectQuery,
-        config=StrawberryConfig(
-            description_sources=[DescriptionSource.TYPE_DOCSTRINGS]
-        ),
+        config=StrawberryConfig(description_sources=DescriptionSources.TYPE_DOCSTRINGS),
     )
     expected = '''
         """ObjectType docstring"""
@@ -438,7 +419,7 @@ def test_object_attr_docstring():
     schema = strawberry.Schema(
         query=ObjectQuery,
         config=StrawberryConfig(
-            description_sources=[DescriptionSource.TYPE_ATTRIBUTE_DOCSTRING]
+            description_sources=DescriptionSources.TYPE_ATTRIBUTE_DOCSTRINGS
         ),
     )
     expected = '''
@@ -459,7 +440,7 @@ def test_object_resolver_docstring():
     schema = strawberry.Schema(
         query=ObjectQuery,
         config=StrawberryConfig(
-            description_sources=[DescriptionSource.RESOLVER_DOCSTRINGS]
+            description_sources=DescriptionSources.RESOLVER_DOCSTRINGS
         ),
     )
     expected = '''
@@ -484,17 +465,12 @@ def test_object_resolver_others():
     schema = strawberry.Schema(
         query=ObjectQuery,
         config=StrawberryConfig(
-            description_sources=[
-                src
-                for src in DescriptionSource
-                if src
-                not in [
-                    DescriptionSource.STRAWBERRY_DESCRIPTIONS,
-                    DescriptionSource.TYPE_DOCSTRINGS,
-                    DescriptionSource.TYPE_ATTRIBUTE_DOCSTRING,
-                    DescriptionSource.RESOLVER_DOCSTRINGS,
-                ]
-            ]
+            description_sources=~(
+                DescriptionSources.STRAWBERRY_DESCRIPTIONS
+                | DescriptionSources.TYPE_DOCSTRINGS
+                | DescriptionSources.TYPE_ATTRIBUTE_DOCSTRINGS
+                | DescriptionSources.RESOLVER_DOCSTRINGS
+            )
         ),
     )
     expected = """
@@ -550,7 +526,7 @@ def test_interface_description():
     schema = strawberry.Schema(
         query=InterfaceQuery,
         config=StrawberryConfig(
-            description_sources=[DescriptionSource.STRAWBERRY_DESCRIPTIONS]
+            description_sources=DescriptionSources.STRAWBERRY_DESCRIPTIONS
         ),
     )
     expected = '''
@@ -584,9 +560,7 @@ def test_interface_description():
 def test_interface_docstring():
     schema = strawberry.Schema(
         query=InterfaceQuery,
-        config=StrawberryConfig(
-            description_sources=[DescriptionSource.TYPE_DOCSTRINGS]
-        ),
+        config=StrawberryConfig(description_sources=DescriptionSources.TYPE_DOCSTRINGS),
     )
     expected = '''
         """InterfaceType docstring"""
@@ -614,7 +588,7 @@ def test_interface_attr_docstring():
     schema = strawberry.Schema(
         query=InterfaceQuery,
         config=StrawberryConfig(
-            description_sources=[DescriptionSource.TYPE_ATTRIBUTE_DOCSTRING]
+            description_sources=DescriptionSources.TYPE_ATTRIBUTE_DOCSTRINGS
         ),
     )
     expected = '''
@@ -638,7 +612,7 @@ def test_interface_resolver_docstring():
     schema = strawberry.Schema(
         query=InterfaceQuery,
         config=StrawberryConfig(
-            description_sources=[DescriptionSource.RESOLVER_DOCSTRINGS]
+            description_sources=DescriptionSources.RESOLVER_DOCSTRINGS
         ),
     )
     expected = '''
@@ -670,17 +644,12 @@ def test_interface_others():
     schema = strawberry.Schema(
         query=InterfaceQuery,
         config=StrawberryConfig(
-            description_sources=[
-                src
-                for src in DescriptionSource
-                if src
-                not in [
-                    DescriptionSource.STRAWBERRY_DESCRIPTIONS,
-                    DescriptionSource.TYPE_DOCSTRINGS,
-                    DescriptionSource.TYPE_ATTRIBUTE_DOCSTRING,
-                    DescriptionSource.RESOLVER_DOCSTRINGS,
-                ]
-            ]
+            description_sources=~(
+                DescriptionSources.STRAWBERRY_DESCRIPTIONS
+                | DescriptionSources.TYPE_DOCSTRINGS
+                | DescriptionSources.TYPE_ATTRIBUTE_DOCSTRINGS
+                | DescriptionSources.RESOLVER_DOCSTRINGS
+            )
         ),
     )
     expected = """
@@ -727,7 +696,7 @@ def test_input_description():
     schema = strawberry.Schema(
         query=InputQuery,
         config=StrawberryConfig(
-            description_sources=[DescriptionSource.STRAWBERRY_DESCRIPTIONS]
+            description_sources=DescriptionSources.STRAWBERRY_DESCRIPTIONS
         ),
     )
     expected = '''
@@ -747,9 +716,7 @@ def test_input_description():
 def test_input_docstring():
     schema = strawberry.Schema(
         query=InputQuery,
-        config=StrawberryConfig(
-            description_sources=[DescriptionSource.TYPE_DOCSTRINGS]
-        ),
+        config=StrawberryConfig(description_sources=DescriptionSources.TYPE_DOCSTRINGS),
     )
     expected = '''
         """InputType docstring"""
@@ -769,7 +736,7 @@ def test_input_attr_docstring():
     schema = strawberry.Schema(
         query=InputQuery,
         config=StrawberryConfig(
-            description_sources=[DescriptionSource.TYPE_ATTRIBUTE_DOCSTRING]
+            description_sources=DescriptionSources.TYPE_ATTRIBUTE_DOCSTRINGS
         ),
     )
     expected = '''
@@ -789,16 +756,11 @@ def test_input_others():
     schema = strawberry.Schema(
         query=InputQuery,
         config=StrawberryConfig(
-            description_sources=[
-                src
-                for src in DescriptionSource
-                if src
-                not in [
-                    DescriptionSource.STRAWBERRY_DESCRIPTIONS,
-                    DescriptionSource.TYPE_DOCSTRINGS,
-                    DescriptionSource.TYPE_ATTRIBUTE_DOCSTRING,
-                ]
-            ]
+            description_sources=~(
+                DescriptionSources.STRAWBERRY_DESCRIPTIONS
+                | DescriptionSources.TYPE_DOCSTRINGS
+                | DescriptionSources.TYPE_ATTRIBUTE_DOCSTRINGS
+            )
         ),
     )
     expected = """

@@ -1,7 +1,7 @@
 import textwrap
 
 import strawberry
-from strawberry.description_source import DescriptionSource
+from strawberry.description_source import DescriptionSources
 from strawberry.schema.config import StrawberryConfig
 
 
@@ -46,7 +46,7 @@ def test_description():
     schema = strawberry.Schema(
         query=Query,
         config=StrawberryConfig(
-            description_sources=[DescriptionSource.STRAWBERRY_DESCRIPTIONS]
+            description_sources=DescriptionSources.STRAWBERRY_DESCRIPTIONS
         ),
     )
     expected = '''
@@ -76,10 +76,8 @@ def test_description_docstring():
     schema = strawberry.Schema(
         query=Query,
         config=StrawberryConfig(
-            description_sources=[
-                DescriptionSource.STRAWBERRY_DESCRIPTIONS,
-                DescriptionSource.TYPE_DOCSTRINGS,
-            ]
+            description_sources=DescriptionSources.STRAWBERRY_DESCRIPTIONS
+            | DescriptionSources.TYPE_DOCSTRINGS
         ),
     )
     expected = '''
@@ -113,11 +111,9 @@ def test_description_typedoc_attrdoc():
     schema = strawberry.Schema(
         query=Query,
         config=StrawberryConfig(
-            description_sources=[
-                DescriptionSource.STRAWBERRY_DESCRIPTIONS,
-                DescriptionSource.TYPE_DOCSTRINGS,
-                DescriptionSource.TYPE_ATTRIBUTE_DOCSTRING,
-            ]
+            description_sources=DescriptionSources.STRAWBERRY_DESCRIPTIONS
+            | DescriptionSources.TYPE_DOCSTRINGS
+            | DescriptionSources.TYPE_ATTRIBUTE_DOCSTRINGS
         ),
     )
     expected = '''
@@ -136,86 +132,6 @@ def test_description_typedoc_attrdoc():
           d: Int!
 
           """e description"""
-          e: Int!
-
-          """f description"""
-          f: Int!
-
-          """g attribute docstring"""
-          g: Int!
-          h: Int!
-        }
-    '''
-    assert str(schema) == textwrap.dedent(expected).strip()
-
-
-def test_description_attrdoc_typedoc():
-    schema = strawberry.Schema(
-        query=Query,
-        config=StrawberryConfig(
-            description_sources=[
-                DescriptionSource.STRAWBERRY_DESCRIPTIONS,
-                DescriptionSource.TYPE_ATTRIBUTE_DOCSTRING,
-                DescriptionSource.TYPE_DOCSTRINGS,
-            ]
-        ),
-    )
-    expected = '''
-        """Query description"""
-        type Query {
-          """a description"""
-          a: Int!
-
-          """b description"""
-          b: Int!
-
-          """c attribute docstring"""
-          c: Int!
-
-          """d docstring"""
-          d: Int!
-
-          """e description"""
-          e: Int!
-
-          """f description"""
-          f: Int!
-
-          """g attribute docstring"""
-          g: Int!
-          h: Int!
-        }
-    '''
-    assert str(schema) == textwrap.dedent(expected).strip()
-
-
-def test_attrdoc_typedoc_description():
-    schema = strawberry.Schema(
-        query=Query,
-        config=StrawberryConfig(
-            description_sources=[
-                DescriptionSource.TYPE_ATTRIBUTE_DOCSTRING,
-                DescriptionSource.TYPE_DOCSTRINGS,
-                DescriptionSource.STRAWBERRY_DESCRIPTIONS,
-            ]
-        ),
-    )
-    expected = '''
-        """Query docstring"""
-        type Query {
-          """a attribute docstring"""
-          a: Int!
-
-          """b docstring"""
-          b: Int!
-
-          """c attribute docstring"""
-          c: Int!
-
-          """d docstring"""
-          d: Int!
-
-          """e attribute docstring"""
           e: Int!
 
           """f description"""

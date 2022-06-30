@@ -6,7 +6,6 @@ from typing import (
     Any,
     Callable,
     Dict,
-    Iterable,
     List,
     Optional,
     Tuple,
@@ -42,7 +41,7 @@ from graphql.language.directive_locations import DirectiveLocation
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import StrawberryArgument, convert_arguments
 from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
-from strawberry.description_source import DescriptionSource
+from strawberry.description_source import DescriptionSources
 from strawberry.directive import StrawberryDirective
 from strawberry.enum import EnumDefinition, EnumValue
 from strawberry.exceptions import (
@@ -107,7 +106,7 @@ class GraphQLCoreConverter:
     def from_argument(
         self,
         argument: StrawberryArgument,
-        description_sources: List[DescriptionSource],
+        description_sources: DescriptionSources,
         *,
         parent_resolver_docstring: Optional[Docstring] = None,
         parent_directive_docstring: Optional[Docstring] = None,
@@ -177,7 +176,7 @@ class GraphQLCoreConverter:
         self,
         enum_value: EnumValue,
         parent_enum_docstring: Optional[Docstring],
-        description_sources: List[DescriptionSource],
+        description_sources: DescriptionSources,
     ) -> GraphQLEnumValue:
         description = self._get_description(
             sources=description_sources,
@@ -274,7 +273,7 @@ class GraphQLCoreConverter:
     def from_field(
         self,
         field: StrawberryField,
-        description_sources: List[DescriptionSource],
+        description_sources: DescriptionSources,
         parent_type_docstring: Optional[Docstring],
     ) -> GraphQLField:
         field_type = cast(GraphQLOutputType, self.from_maybe_optional(field.type))
@@ -319,7 +318,7 @@ class GraphQLCoreConverter:
     def from_input_field(
         self,
         field: StrawberryField,
-        description_sources: List[DescriptionSource],
+        description_sources: DescriptionSources,
         parent_type_docstring: Optional[Docstring],
     ) -> GraphQLInputField:
         field_type = cast(GraphQLInputType, self.from_maybe_optional(field.type))
@@ -356,9 +355,9 @@ class GraphQLCoreConverter:
         fields: List[StrawberryField],
         name_converter: Callable[[StrawberryField], str],
         field_converter: Callable[
-            [StrawberryField, List[DescriptionSource], Optional[Docstring]], FieldType
+            [StrawberryField, DescriptionSources, Optional[Docstring]], FieldType
         ],
-        description_sources: List[DescriptionSource],
+        description_sources: DescriptionSources,
         parent_type_docstring: Optional[Docstring],
     ) -> Dict[str, FieldType]:
         """Create a GraphQL core `ThunkMapping` mapping of field names to field types.
@@ -387,7 +386,7 @@ class GraphQLCoreConverter:
     def get_graphql_fields(
         self,
         type_definition: TypeDefinition,
-        description_sources: List[DescriptionSource],
+        description_sources: DescriptionSources,
         parent_type_docstring: Optional[Docstring],
     ) -> Dict[str, GraphQLField]:
         return self._get_thunk_mapping(
@@ -401,7 +400,7 @@ class GraphQLCoreConverter:
     def get_graphql_input_fields(
         self,
         type_definition: TypeDefinition,
-        description_sources: List[DescriptionSource],
+        description_sources: DescriptionSources,
         parent_type_docstring: Optional[Docstring],
     ) -> Dict[str, GraphQLInputField]:
         return self._get_thunk_mapping(
@@ -748,7 +747,7 @@ class GraphQLCoreConverter:
     def _get_description(
         self,
         *,
-        sources: Iterable[DescriptionSource],
+        sources: DescriptionSources,
         description: Optional[str] = None,
         type_docstring: Optional[Docstring] = None,
         parent_type_docstring: Optional[Docstring] = None,
@@ -761,52 +760,45 @@ class GraphQLCoreConverter:
         child_name: Optional[str] = None,
     ) -> Optional[str]:
         def gen_candidates():
-            for source in sources:
-                if source is DescriptionSource.STRAWBERRY_DESCRIPTIONS:
-                    yield description
+            if sources & DescriptionSources.STRAWBERRY_DESCRIPTIONS:
+                yield description
 
-                elif source is DescriptionSource.TYPE_DOCSTRINGS:
-                    if type_docstring is not None:
-                        yield type_docstring.main_description
+            if sources & DescriptionSources.RESOLVER_DOCSTRINGS:
+                if resolver_docstring is not None:
+                    yield resolver_docstring.main_description
+                if parent_resolver_docstring is not None and child_name is not None:
+                    yield parent_resolver_docstring.child_description(child_name)
 
-                    if parent_type_docstring is not None and child_name is not None:
-                        yield parent_type_docstring.child_description(child_name)
+            if sources & DescriptionSources.TYPE_DOCSTRINGS:
+                if type_docstring is not None:
+                    yield type_docstring.main_description
 
-                elif source is DescriptionSource.TYPE_ATTRIBUTE_DOCSTRING:
-                    if parent_type_docstring is not None and child_name is not None:
-                        yield parent_type_docstring.attribute_docstring(child_name)
+                if parent_type_docstring is not None and child_name is not None:
+                    yield parent_type_docstring.child_description(child_name)
 
-                elif source is DescriptionSource.ENUM_DOCSTRINGS:
-                    if enum_docstring:
-                        yield enum_docstring.main_description
-                    if parent_enum_docstring is not None and child_name is not None:
-                        yield parent_enum_docstring.child_description(child_name)
+            if sources & DescriptionSources.TYPE_ATTRIBUTE_DOCSTRINGS:
+                if parent_type_docstring is not None and child_name is not None:
+                    yield parent_type_docstring.attribute_docstring(child_name)
 
-                elif source is DescriptionSource.ENUM_ATTRIBUTE_DOCSTRING:
-                    if parent_enum_docstring is not None and child_name is not None:
-                        yield parent_enum_docstring.attribute_docstring(child_name)
+            if sources & DescriptionSources.ENUM_DOCSTRINGS:
+                if enum_docstring:
+                    yield enum_docstring.main_description
+                if parent_enum_docstring is not None and child_name is not None:
+                    yield parent_enum_docstring.child_description(child_name)
 
-                elif source is DescriptionSource.RESOLVER_DOCSTRINGS:
-                    if resolver_docstring is not None:
-                        yield resolver_docstring.main_description
-                    if parent_resolver_docstring is not None and child_name is not None:
-                        yield parent_resolver_docstring.child_description(child_name)
+            if sources & DescriptionSources.ENUM_ATTRIBUTE_DOCSTRINGS:
+                if parent_enum_docstring is not None and child_name is not None:
+                    yield parent_enum_docstring.attribute_docstring(child_name)
 
-                elif source is DescriptionSource.DIRECTIVE_DOCSTRINGS:
-                    if directive_docstring is not None:
-                        yield directive_docstring.main_description
-                    if (
-                        parent_directive_docstring is not None
-                        and child_name is not None
-                    ):
-                        yield parent_directive_docstring.child_description(child_name)
+            if sources & DescriptionSources.DIRECTIVE_DOCSTRINGS:
+                if directive_docstring is not None:
+                    yield directive_docstring.main_description
+                if parent_directive_docstring is not None and child_name is not None:
+                    yield parent_directive_docstring.child_description(child_name)
 
-                elif source is DescriptionSource.DIRECTIVE_ATTRIBUTE_DOCSTRING:
-                    if (
-                        parent_directive_docstring is not None
-                        and child_name is not None
-                    ):
-                        yield parent_directive_docstring.attribute_docstring(child_name)
+            if sources & DescriptionSources.DIRECTIVE_ATTRIBUTE_DOCSTRINGS:
+                if parent_directive_docstring is not None and child_name is not None:
+                    yield parent_directive_docstring.attribute_docstring(child_name)
 
         for candidate in gen_candidates():
             if candidate is not None:

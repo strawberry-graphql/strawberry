@@ -3,7 +3,7 @@ import inspect
 import types
 from typing import Callable, List, Optional, Sequence, Type, TypeVar, cast, overload
 
-from strawberry.description_source import DescriptionSource
+from strawberry.description_source import DescriptionSources
 
 from .exceptions import (
     MissingFieldAnnotationError,
@@ -100,7 +100,7 @@ def _process_type(
     name: Optional[str] = None,
     is_input: bool = False,
     is_interface: bool = False,
-    description_sources: Optional[List[DescriptionSource]] = None,
+    description_sources: Optional[DescriptionSources] = None,
     description: Optional[str] = None,
     docstring: Optional[Docstring] = None,
     directives: Optional[Sequence[object]] = (),
@@ -162,7 +162,7 @@ def type(
     name: str = None,
     is_input: bool = False,
     is_interface: bool = False,
-    description_sources: Optional[List[DescriptionSource]] = None,
+    description_sources: Optional[DescriptionSources] = None,
     description: str = None,
     directives: Optional[Sequence[object]] = (),
     extend: bool = False,
@@ -177,7 +177,7 @@ def type(
     name: str = None,
     is_input: bool = False,
     is_interface: bool = False,
-    description_sources: Optional[List[DescriptionSource]] = None,
+    description_sources: Optional[DescriptionSources] = None,
     description: str = None,
     directives: Optional[Sequence[object]] = (),
     extend: bool = False,
@@ -262,7 +262,7 @@ def input(
     cls=None,
     *,
     name=None,
-    description_sources: Optional[List[DescriptionSource]] = None,
+    description_sources: Optional[DescriptionSources] = None,
     description=None,
     directives=(),
 ):
@@ -288,7 +288,7 @@ def interface(
     cls: Type = None,
     *,
     name: str = None,
-    description_sources: Optional[List[DescriptionSource]] = None,
+    description_sources: Optional[DescriptionSources] = None,
     description: str = None,
     directives: Optional[Sequence[object]] = (),
 ):

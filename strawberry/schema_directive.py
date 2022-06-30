@@ -2,7 +2,7 @@ import dataclasses
 from enum import Enum
 from typing import List, Optional, Type, TypeVar
 
-from strawberry.description_source import DescriptionSource
+from strawberry.description_source import DescriptionSources
 from strawberry.object_type import _wrap_dataclass
 from strawberry.types.type_resolver import _get_fields
 from strawberry.utils.docstrings import Docstring
@@ -32,7 +32,7 @@ class StrawberrySchemaDirective:
     graphql_name: Optional[str]
     locations: List[Location]
     fields: List["StrawberryField"]
-    description_sources: Optional[List[DescriptionSource]] = None
+    description_sources: Optional[DescriptionSources] = None
     description: Optional[str] = None
     docstring: Optional[Docstring] = None
 
@@ -46,7 +46,7 @@ T = TypeVar("T", bound=Type)
 def schema_directive(
     *,
     locations: List[Location],
-    description_sources: Optional[List[DescriptionSource]] = None,
+    description_sources: Optional[DescriptionSources] = None,
     description: Optional[str] = None,
     name: Optional[str] = None
 ):

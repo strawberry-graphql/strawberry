@@ -2,7 +2,7 @@ import dataclasses
 from enum import EnumMeta
 from typing import Any, Callable, List, Mapping, Optional, TypeVar, Union, overload
 
-from strawberry.description_source import DescriptionSource
+from strawberry.description_source import DescriptionSources
 from strawberry.exceptions import ObjectIsNotAnEnumError
 from strawberry.type import StrawberryType
 from strawberry.utils.docstrings import Docstring
@@ -20,7 +20,7 @@ class EnumDefinition(StrawberryType):
     wrapped_cls: EnumMeta
     name: str
     values: List[EnumValue]
-    description_sources: Optional[List[DescriptionSource]] = None
+    description_sources: Optional[DescriptionSources] = None
     description: Optional[str] = None
     docstring: Optional[Docstring] = None
 
@@ -59,7 +59,7 @@ EnumType = TypeVar("EnumType", bound=EnumMeta)
 def _process_enum(
     cls: EnumType,
     name: Optional[str] = None,
-    description_sources: Optional[List[DescriptionSource]] = None,
+    description_sources: Optional[DescriptionSources] = None,
     description: Optional[str] = None,
 ) -> EnumType:
     if not isinstance(cls, EnumMeta):
@@ -109,7 +109,7 @@ def enum(
     _cls: Optional[EnumType] = None,
     *,
     name=None,
-    description_sources: Optional[List[DescriptionSource]] = None,
+    description_sources: Optional[DescriptionSources] = None,
     description=None,
 ) -> Union[EnumType, Callable[[EnumType], EnumType]]:
     """Registers the enum in the GraphQL type system.

@@ -23,7 +23,7 @@ from typing_extensions import Literal
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import StrawberryArgument
-from strawberry.description_source import DescriptionSource
+from strawberry.description_source import DescriptionSources
 from strawberry.exceptions import InvalidDefaultFactoryError, InvalidFieldArgument
 from strawberry.type import StrawberryType, StrawberryTypeVar
 from strawberry.types.info import Info
@@ -55,7 +55,7 @@ class StrawberryField(dataclasses.Field):
         type_annotation: Optional[StrawberryAnnotation] = None,
         origin: Optional[Union[Type, Callable, staticmethod, classmethod]] = None,
         is_subscription: bool = False,
-        description_sources: Optional[List[DescriptionSource]] = None,
+        description_sources: Optional[DescriptionSources] = None,
         description: Optional[str] = None,
         base_resolver: Optional[StrawberryResolver] = None,
         permission_classes: List[Type[BasePermission]] = (),  # type: ignore
@@ -325,7 +325,7 @@ def field(
     resolver: Callable[[], T],
     name: Optional[str] = None,
     is_subscription: bool = False,
-    description_sources: Optional[List[DescriptionSource]] = None,
+    description_sources: Optional[DescriptionSources] = None,
     description: Optional[str] = None,
     init: Literal[False] = False,
     permission_classes: Optional[List[Type[BasePermission]]] = None,
@@ -342,7 +342,7 @@ def field(
     *,
     name: Optional[str] = None,
     is_subscription: bool = False,
-    description_sources: Optional[List[DescriptionSource]] = None,
+    description_sources: Optional[DescriptionSources] = None,
     description: Optional[str] = None,
     init: Literal[True] = True,
     permission_classes: Optional[List[Type[BasePermission]]] = None,
@@ -360,7 +360,7 @@ def field(
     *,
     name: Optional[str] = None,
     is_subscription: bool = False,
-    description_sources: Optional[List[DescriptionSource]] = None,
+    description_sources: Optional[DescriptionSources] = None,
     description: Optional[str] = None,
     permission_classes: Optional[List[Type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
@@ -376,7 +376,7 @@ def field(
     *,
     name=None,
     is_subscription=False,
-    description_sources: Optional[List[DescriptionSource]] = None,
+    description_sources: Optional[DescriptionSources] = None,
     description=None,
     permission_classes=None,
     deprecation_reason=None,

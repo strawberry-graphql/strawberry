@@ -19,7 +19,7 @@ from typing_extensions import Annotated, get_args, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
-from strawberry.description_source import DescriptionSource
+from strawberry.description_source import DescriptionSources
 from strawberry.enum import EnumDefinition
 from strawberry.lazy_type import LazyType
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
@@ -44,7 +44,7 @@ DEPRECATED_NAMES: Dict[str, str] = {
 
 @dataclass
 class StrawberryArgumentAnnotation:
-    description_sources: Optional[List[DescriptionSource]]
+    description_sources: Optional[DescriptionSources]
     description: Optional[str]
     name: Optional[str]
     deprecation_reason: Optional[str]
@@ -57,7 +57,7 @@ class StrawberryArgument:
         graphql_name: Optional[str],
         type_annotation: StrawberryAnnotation,
         is_subscription: bool = False,
-        description_sources: Optional[List[DescriptionSource]] = None,
+        description_sources: Optional[DescriptionSources] = None,
         description: Optional[str] = None,
         default: object = _deprecated_UNSET,
         deprecation_reason: Optional[str] = None,
@@ -201,7 +201,7 @@ def convert_arguments(
 
 def argument(
     *,
-    description_sources: Optional[List[DescriptionSource]] = None,
+    description_sources: Optional[DescriptionSources] = None,
     description: Optional[str] = None,
     name: Optional[str] = None,
     deprecation_reason: Optional[str] = None,

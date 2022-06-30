@@ -149,7 +149,7 @@ def test_docstrings_disabled():
         query=Query,
         mutation=Mutation,
         directives=[replace],
-        config=StrawberryConfig(description_sources=[]),
+        config=StrawberryConfig(description_sources=DescriptionSources.NONE),
     )
 
     expected = """
@@ -198,7 +198,9 @@ def test_regular_docstrings():
         query=Query,
         mutation=Mutation,
         directives=[replace],
-        config=StrawberryConfig(description_sources=DescriptionSources.DOCSTRINGS),
+        config=StrawberryConfig(
+            description_sources=DescriptionSources.REGULAR_DOCSTRINGS
+        ),
     )
 
     expected = '''
@@ -353,8 +355,8 @@ def test_all_docstrings():
         mutation=Mutation,
         directives=[replace],
         config=StrawberryConfig(
-            description_sources=DescriptionSources.DOCSTRINGS
-            + DescriptionSources.ATTRIBUTE_DOCSTRINGS
+            description_sources=DescriptionSources.RESOLVER_DOCSTRINGS
+            | DescriptionSources.ALL_DOCSTRINGS
         ),
     )
 
