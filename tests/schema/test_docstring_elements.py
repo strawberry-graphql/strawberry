@@ -6,7 +6,7 @@ from typing_extensions import Annotated
 from graphql import DirectiveLocation
 
 import strawberry
-from strawberry.description_source import DescriptionSources
+from strawberry.description_sources import DescriptionSources
 from strawberry.schema.config import StrawberryConfig
 from strawberry.schema_directive import Location
 
@@ -161,6 +161,17 @@ class DirectiveQuery:
 
 
 def test_directive_description():
+    schema = strawberry.Schema(
+        query=DirectiveQuery,
+        directives=[directive],
+        config=StrawberryConfig(
+            description_sources=DescriptionSources.STRAWBERRY_DESCRIPTIONS
+            | DescriptionSources.RESOLVER_DOCSTRINGS
+            | DescriptionSources.CLASS_DOCSTRINGS
+            | DescriptionSources.ATTRIBUTE_DOCSTRINGS
+        ),
+    )
+
     schema = strawberry.Schema(
         query=DirectiveQuery,
         directives=[directive],

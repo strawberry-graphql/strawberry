@@ -3,7 +3,7 @@ import inspect
 import types
 from typing import Callable, List, Optional, Sequence, Type, TypeVar, cast, overload
 
-from strawberry.description_source import DescriptionSources
+from strawberry.description_sources import DescriptionSources
 
 from .exceptions import (
     MissingFieldAnnotationError,

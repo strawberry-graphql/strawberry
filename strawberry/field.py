@@ -23,7 +23,7 @@ from typing_extensions import Literal
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import StrawberryArgument
-from strawberry.description_source import DescriptionSources
+from strawberry.description_sources import DescriptionSources
 from strawberry.exceptions import InvalidDefaultFactoryError, InvalidFieldArgument
 from strawberry.type import StrawberryType, StrawberryTypeVar
 from strawberry.types.info import Info

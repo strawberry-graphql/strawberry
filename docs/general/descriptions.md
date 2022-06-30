@@ -20,13 +20,20 @@ class EnumType(Enum):
     FOO = "foo"
     BAR = "bar"
 
+
 @strawberry.type(description="The main GraphQL type")
 class Query:
-    enum: EnumType = strawberry.field(default=EnumType.BAR, description="A dataclass field")
+    enum: EnumType = strawberry.field(
+        default=EnumType.BAR, description="A dataclass field"
+    )
 
     @strawberry.field(description="A GraphQL field with a resolver and arguments")
-    def resolver(self, arg: Annotated[str, strawberry.argument(description="Argument description")]) -> int:
+    def resolver(
+        self,
+        arg: Annotated[str, strawberry.argument(description="Argument description")],
+    ) -> int:
         return 1
+
 
 schema = strawberry.Schema(query=Query)
 ---
@@ -84,6 +91,7 @@ class EnumType(Enum):
     FOO = "foo"
     BAR = "bar"
 
+
 @strawberry.type
 class Query:
     """
@@ -92,6 +100,7 @@ class Query:
     Attributes:
         enum: A dataclass field
     """
+
     enum: EnumType = EnumType.BAR
 
     @strawberry.field
@@ -105,7 +114,14 @@ class Query:
         """
         return 1
 
-schema = strawberry.Schema(query=Query, config=StrawberryConfig(description_sources=DescriptionSources.DOCSTRINGS))
+
+schema = strawberry.Schema(
+    query=Query,
+    config=StrawberryConfig(
+        description_sources=DescriptionSources.RESOLVER_DOCSTRINGS
+        | DescriptionSources.CLASS_DOCSTRINGS
+    ),
+)
 ---
 """Example enum"""
 enum EnumType {
@@ -151,6 +167,7 @@ class EnumType(Enum):
     BAR = "bar"
     """Another description"""
 
+
 @strawberry.type
 class Query:
     """The main GraphQL type"""
@@ -169,7 +186,15 @@ class Query:
         """
         return 1
 
-schema = strawberry.Schema(query=Query, config=StrawberryConfig(description_sources=DescriptionSources.DOCSTRINGS + DescriptionSources.ATTRIBUTE_DOCSTRINGS))
+
+schema = strawberry.Schema(
+    query=Query,
+    config=StrawberryConfig(
+        description_sources=DescriptionSources.RESOLVER_DOCSTRINGS
+        | DescriptionSources.CLASS_DOCSTRINGS
+        | DescriptionSources.ATTRIBUTE_DOCSTRINGS
+    ),
+)
 ---
 """Example enum"""
 enum EnumType {

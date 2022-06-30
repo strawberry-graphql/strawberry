@@ -5,7 +5,7 @@ from typing import List
 from graphql import DirectiveLocation
 
 import strawberry
-from strawberry.description_source import DescriptionSources
+from strawberry.description_sources import DescriptionSources
 from strawberry.schema.config import StrawberryConfig
 from strawberry.schema_directive import Location
 
@@ -69,7 +69,7 @@ class InterfaceType:
     var_a: int
 
     @strawberry.field
-    def var_b(self, documented: int = 1, undocumented: str = 2) -> str:
+    def var_b(self, documented: int = 1, undocumented: str = "2") -> str:
         """
         A complex field with a resolver and args
 
@@ -193,18 +193,18 @@ def test_docstrings_disabled():
     assert str(schema) == textwrap.dedent(expected).strip()
 
 
-def test_regular_docstrings():
+def test_class_docstrings():
     schema = strawberry.Schema(
         query=Query,
         mutation=Mutation,
         directives=[replace],
         config=StrawberryConfig(
-            description_sources=DescriptionSources.REGULAR_DOCSTRINGS
+            description_sources=DescriptionSources.CLASS_DOCSTRINGS
         ),
     )
 
     expected = '''
-         """Identifies the fields that can be used as primary keys"""
+        """Identifies the fields that can be used as primary keys"""
         directive @keys(
           """Names of the fields used as primary keys"""
           fields: [String!]!
@@ -248,22 +248,14 @@ def test_regular_docstrings():
           """A field that doesn't need a resolver"""
           varA: Int!
 
-          """A complex field with a resolver and args"""
-          varB(
-            """Something"""
-            documented: Int! = 1
-            undocumented: String! = "2"
-          ): String!
+          """A complex field with a resolver"""
+          varB(documented: Int! = 1, undocumented: String! = "2"): String!
         }
 
         """Main entrypoint to the GraphQL updates"""
         type Mutation {
-          """Update the object"""
-          setObject(
-            """New data"""
-            newData: InputType!
-            undocumented: String!
-          ): String!
+          """A GraphQL object"""
+          setObject(newData: InputType!, undocumented: String!): String!
         }
 
         """This is a graphQL object type"""
@@ -271,12 +263,8 @@ def test_regular_docstrings():
           """A field that doesn't need a resolver"""
           varA: Int!
 
-          """A complex field with a resolver and args"""
-          varB(
-            """Something"""
-            documented: Int! = 1
-            undocumented: String! = "2"
-          ): String!
+          """A complex field with a resolver"""
+          varB(documented: Int! = 1, undocumented: String! = "2"): String!
 
           """Something to differentiate ObjectType from InterfaceType"""
           varC: EnumType!
@@ -288,6 +276,74 @@ def test_regular_docstrings():
         """Main entrypoint to the GraphQL reads"""
         type Query {
           """A GraphQL object"""
+          object: ObjectType!
+        }
+    '''
+    assert str(schema) == textwrap.dedent(expected).strip()
+
+
+def test_resolver_docstrings():
+    schema = strawberry.Schema(
+        query=Query,
+        mutation=Mutation,
+        directives=[replace],
+        config=StrawberryConfig(
+            description_sources=DescriptionSources.RESOLVER_DOCSTRINGS
+        ),
+    )
+
+    expected = '''
+        directive @keys(fields: [String!]!) on OBJECT | INPUT_OBJECT
+
+        directive @replace(oldChar: String!, newChar: String!) on FIELD
+
+        enum EnumType {
+          VANILLA
+          STRAWBERRY
+          CHOCOLATE
+          ROCKY_ROAD
+        }
+
+        input InputType {
+          varA: Int!
+        }
+
+        interface InterfaceType {
+          varA: Int!
+
+          """A complex field with a resolver and args"""
+          varB(
+            """Something"""
+            documented: Int! = 1
+            undocumented: String! = "2"
+          ): String!
+        }
+
+        type Mutation {
+          """Update the object"""
+          setObject(
+            """New data"""
+            newData: InputType!
+            undocumented: String!
+          ): String!
+        }
+
+        type ObjectType implements InterfaceType @keys(fields: ["var_f"]) {
+          varA: Int!
+
+          """A complex field with a resolver and args"""
+          varB(
+            """Something"""
+            documented: Int! = 1
+            undocumented: String! = "2"
+          ): String!
+          varC: EnumType!
+          varD: Float!
+          varE: Int!
+          varF: String!
+        }
+
+        type Query {
           object: ObjectType!
         }
     '''
@@ -361,7 +417,7 @@ def test_all_docstrings():
     )
 
     expected = '''
-         """Identifies the fields that can be used as primary keys"""
+        """Identifies the fields that can be used as primary keys"""
         directive @keys(
           """Names of the fields used as primary keys"""
           fields: [String!]!

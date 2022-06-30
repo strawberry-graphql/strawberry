@@ -2,7 +2,7 @@ import dataclasses
 from enum import Enum
 from typing import List, Optional, Type, TypeVar
 
-from strawberry.description_source import DescriptionSources
+from strawberry.description_sources import DescriptionSources
 from strawberry.object_type import _wrap_dataclass
 from strawberry.types.type_resolver import _get_fields
 from strawberry.utils.docstrings import Docstring

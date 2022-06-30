@@ -14,7 +14,7 @@ from typing import (
     Union,
 )
 
-from strawberry.description_source import DescriptionSources
+from strawberry.description_sources import DescriptionSources
 from strawberry.type import StrawberryType, StrawberryTypeVar
 from strawberry.utils.docstrings import Docstring
 from strawberry.utils.typing import is_generic as is_type_generic

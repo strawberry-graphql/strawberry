@@ -4,7 +4,7 @@ from enum import Enum
 from graphql import DirectiveLocation
 
 import strawberry
-from strawberry.description_source import DescriptionSources
+from strawberry.description_sources import DescriptionSources
 from strawberry.schema.config import StrawberryConfig
 from strawberry.schema_directive import Location
 

@@ -1,7 +1,7 @@
 import textwrap
 
 import strawberry
-from strawberry.description_source import DescriptionSources
+from strawberry.description_sources import DescriptionSources
 from strawberry.schema.config import StrawberryConfig
 
 

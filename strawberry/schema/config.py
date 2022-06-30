@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import InitVar, dataclass, field
 
-from strawberry.description_source import DescriptionSources
+from strawberry.description_sources import DescriptionSources
 from strawberry.schema.name_converter import NameConverter
 
 

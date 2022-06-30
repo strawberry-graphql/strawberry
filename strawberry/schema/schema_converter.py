@@ -41,7 +41,7 @@ from graphql.language.directive_locations import DirectiveLocation
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import StrawberryArgument, convert_arguments
 from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
-from strawberry.description_source import DescriptionSources
+from strawberry.description_sources import DescriptionSources
 from strawberry.directive import StrawberryDirective
 from strawberry.enum import EnumDefinition, EnumValue
 from strawberry.exceptions import (

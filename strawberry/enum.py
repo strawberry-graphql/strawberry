@@ -2,7 +2,7 @@ import dataclasses
 from enum import EnumMeta
 from typing import Any, Callable, List, Mapping, Optional, TypeVar, Union, overload
 
-from strawberry.description_source import DescriptionSources
+from strawberry.description_sources import DescriptionSources
 from strawberry.exceptions import ObjectIsNotAnEnumError
 from strawberry.type import StrawberryType
 from strawberry.utils.docstrings import Docstring

@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from pydantic.fields import ModelField
 
 from strawberry.auto import StrawberryAuto
-from strawberry.description_source import DescriptionSources
+from strawberry.description_sources import DescriptionSources
 from strawberry.experimental.pydantic.utils import (
     get_private_fields,
     get_strawberry_type_from_model,
