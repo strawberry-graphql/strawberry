@@ -137,6 +137,9 @@ DJANGO_SETTINGS_MODULE = "tests.django.django_settings"
 testpaths = ["tests/"]
 markers = ["django", "starlette"]
 asyncio_mode = "auto"
+filterwarnings = [
+    "ignore::DeprecationWarning:strawberry.*.resolver"
+]
 
 [tool.autopub]
 git-username = "Botberry"
