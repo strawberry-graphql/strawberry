@@ -4,7 +4,6 @@ import builtins
 import inspect
 import sys
 import warnings
-from functools import lru_cache
 from inspect import isasyncgenfunction, iscoroutinefunction
 from typing import (  # type: ignore[attr-defined]
     Any,
@@ -122,8 +121,6 @@ INFO_PARAMSPEC = ReservedType("info", Info)
 
 T = TypeVar("T")
 
-cached_signature = lru_cache(maxsize=250)(inspect.signature)
-
 
 class StrawberryResolver(Generic[T]):
 
@@ -162,7 +159,7 @@ class StrawberryResolver(Generic[T]):
 
     @cached_property
     def signature(self) -> inspect.Signature:
-        return cached_signature(self._unbound_wrapped_func)
+        return inspect.signature(self._unbound_wrapped_func)
 
     @cached_property
     def reserved_parameters(
