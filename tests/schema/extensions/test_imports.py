@@ -1,3 +1,6 @@
+import pytest
+
+
 def test_can_import():
     from strawberry.extensions.tracing import (  # noqa
         ApolloTracingExtension,
@@ -15,3 +18,8 @@ def test_can_import():
         OpenTelemetryExtension,
         OpenTelemetryExtensionSync,
     )
+
+
+def test_fails_if_import_is_not_found():
+    with pytest.raises(ImportError):
+        from strawberry.extensions.tracing import Blueberry  # noqa

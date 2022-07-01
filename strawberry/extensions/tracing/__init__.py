@@ -3,7 +3,6 @@ from typing import TYPE_CHECKING
 
 
 if TYPE_CHECKING:
-    from . import apollo, opentelemetry
     from .apollo import ApolloTracingExtension, ApolloTracingExtensionSync  # noqa
     from .opentelemetry import (  # noqa
         OpenTelemetryExtension,
@@ -11,8 +10,6 @@ if TYPE_CHECKING:
     )
 
 __all__ = [
-    "opentelemetry",
-    "apollo",
     "ApolloTracingExtension",
     "ApolloTracingExtensionSync",
     "OpenTelemetryExtension",
@@ -20,10 +17,7 @@ __all__ = [
 ]
 
 
-def __getattr__(name):
-    if name in {"apollo", "opentelemetry"}:
-        return importlib.import_module(f".{name}", __name__)
-
+def __getattr__(name: str):
     if name in {"ApolloTracingExtension", "ApolloTracingExtensionSync"}:
         return getattr(importlib.import_module(".apollo", __name__), name)
 
