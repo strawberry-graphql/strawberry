@@ -4,6 +4,8 @@ def test_can_import():
         ApolloTracingExtensionSync,
         OpenTelemetryExtension,
         OpenTelemetryExtensionSync,
+        apollo,
+        opentelemetry,
     )
     from strawberry.extensions.tracing.apollo import (  # noqa
         ApolloTracingExtension,
