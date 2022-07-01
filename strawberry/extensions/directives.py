@@ -25,9 +25,7 @@ class DirectivesExtension(Extension):
         for directive in info.field_nodes[0].directives:
             if directive.name.value in SPECIFIED_DIRECTIVES:
                 continue
-            strawberry_directive, arguments = process_directive(
-                directive, value, root, info
-            )
+            strawberry_directive, arguments = process_directive(directive, value, info)
             value = await await_maybe(strawberry_directive.resolver(**arguments))
 
         return value
@@ -42,9 +40,7 @@ class DirectivesExtensionSync(Extension):
         for directive in info.field_nodes[0].directives:
             if directive.name.value in SPECIFIED_DIRECTIVES:
                 continue
-            strawberry_directive, arguments = process_directive(
-                directive, value, root, info
-            )
+            strawberry_directive, arguments = process_directive(directive, value, info)
             value = strawberry_directive.resolver(**arguments)
 
         return value
@@ -53,7 +49,6 @@ class DirectivesExtensionSync(Extension):
 def process_directive(
     directive: DirectiveNode,
     value: Any,
-    root: Any,
     info: GraphQLResolveInfo,
 ) -> Tuple[StrawberryDirective, Dict[str, Any]]:
     """Get a `StrawberryDirective` from ``directive` and prepare its arguments."""
@@ -71,7 +66,6 @@ def process_directive(
     resolver = strawberry_directive.resolver
 
     info_parameter = resolver.info_parameter
-    root_parameter = resolver.root_parameter
     value_parameter = resolver.value_parameter
     if info_parameter:
         field: StrawberryField = schema.get_field_for_type(  # type: ignore
@@ -79,8 +73,6 @@ def process_directive(
             type_name=info.parent_type.name,
         )
         arguments[info_parameter.name] = Info(_raw_info=info, _field=field)
-    if root_parameter:
-        arguments[root_parameter.name] = root
     if value_parameter:
         arguments[value_parameter.name] = value
     return strawberry_directive, arguments

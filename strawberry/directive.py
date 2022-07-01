@@ -13,7 +13,6 @@ from strawberry.arguments import StrawberryArgument
 from strawberry.field import StrawberryField
 from strawberry.types.fields.resolver import (
     INFO_PARAMSPEC,
-    ROOT_PARAMSPEC,
     ReservedType,
     StrawberryResolver,
 )
@@ -46,7 +45,6 @@ class StrawberryDirectiveResolver(StrawberryResolver[T]):
 
     RESERVED_PARAMSPEC = (
         INFO_PARAMSPEC,
-        ROOT_PARAMSPEC,
         VALUE_PARAMSPEC,
     )
 
