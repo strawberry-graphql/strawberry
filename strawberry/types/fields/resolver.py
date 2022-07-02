@@ -32,6 +32,29 @@ from strawberry.type import StrawberryType
 from strawberry.types.info import Info
 
 
+class Parameter(inspect.Parameter):
+    def __hash__(self):
+        """Override to exclude default value from hash.
+
+        This adds compatibility for using unhashable default values in resolvers such as
+        list and dict. The present use-case is limited to analyzing parameters from one
+        resolver. Therefore, the name, kind, and annotation combination are guaranteed
+        to be unique since two arguments cannot have the same name in a callable.
+
+        Furthermore, even though it is not currently a use-case to collect parameters
+        from different resolvers, the likelihood of collision from having the same hash
+        value but different defaults is mitigated by Python invoking the
+        :py:meth:`__eq__` method if two items have the same hash. See the verification
+        of this behavior in the `test_parameter_hash_collision` test.
+        """
+        return hash((self.name, self.kind, self.annotation))
+
+
+class Signature(inspect.Signature):
+
+    _parameter_cls = Parameter
+
+
 class ReservedParameterSpecification(Protocol):
     def find(
         self, parameters: Tuple[inspect.Parameter, ...], resolver: StrawberryResolver
@@ -159,7 +182,7 @@ class StrawberryResolver(Generic[T]):
 
     @cached_property
     def signature(self) -> inspect.Signature:
-        return inspect.signature(self._unbound_wrapped_func)
+        return Signature.from_callable(self._unbound_wrapped_func, follow_wrapped=True)
 
     @cached_property
     def reserved_parameters(
