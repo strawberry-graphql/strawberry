@@ -137,7 +137,7 @@ def test_input_defaults():
     @strawberry.type
     class Query:
         @strawberry.field
-        def search(self, input: MyInput) -> int:
+        def search(self, arg: List[int] = [0], input: MyInput = {"l": []}) -> int:
             return input.i
 
     expected_type = """
@@ -149,7 +149,7 @@ def test_input_defaults():
     }
 
     type Query {
-      search(input: MyInput!): Int!
+      search(arg: [Int!]! = [0], input: MyInput! = {l: []}): Int!
     }
     """
 

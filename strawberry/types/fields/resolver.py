@@ -1,7 +1,9 @@
 from __future__ import annotations as _
 
 import builtins
+import functools
 import inspect
+import operator
 import sys
 import warnings
 from inspect import isasyncgenfunction, iscoroutinefunction
@@ -122,6 +124,20 @@ INFO_PARAMSPEC = ReservedType("info", Info)
 T = TypeVar("T")
 
 
+class frozendict(dict):
+    def __hash__(self):
+        hashes = map(hash, self.values())
+        return functools.reduce(operator.xor, hashes, hash(frozenset(self)))
+
+
+def freeze_value(value):
+    if isinstance(value, list):
+        return tuple(map(freeze_value, value))
+    if isinstance(value, dict):
+        return frozendict(zip(value, map(freeze_value, value.values())))
+    return value
+
+
 class StrawberryResolver(Generic[T]):
 
     RESERVED_PARAMSPEC: Tuple[ReservedParameterSpecification, ...] = (
@@ -162,17 +178,24 @@ class StrawberryResolver(Generic[T]):
         return inspect.signature(self._unbound_wrapped_func)
 
     @cached_property
+    def parameters(self) -> tuple:
+        return tuple(
+            param.replace(default=freeze_value(param.default))
+            for param in self.signature.parameters.values()
+        )
+
+    @cached_property
     def reserved_parameters(
         self,
     ) -> Dict[ReservedParameterSpecification, Optional[inspect.Parameter]]:
         """Mapping of reserved parameter specification to parameter."""
-        parameters = tuple(self.signature.parameters.values())
+        parameters = self.parameters
         return {spec: spec.find(parameters, self) for spec in self.RESERVED_PARAMSPEC}
 
     @cached_property
     def arguments(self) -> List[StrawberryArgument]:
         """Resolver arguments exposed in the GraphQL Schema."""
-        parameters = self.signature.parameters.values()
+        parameters = self.parameters
         reserved_parameters = set(self.reserved_parameters.values())
 
         missing_annotations = set()
