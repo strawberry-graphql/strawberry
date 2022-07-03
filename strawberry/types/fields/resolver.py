@@ -214,6 +214,25 @@ class StrawberryResolver(Generic[T]):
         return self._unbound_wrapped_func.__name__
 
     @cached_property
+    def annotations(self) -> Dict[str, object]:
+        """Annotations for the resolver.
+
+        Does not include special args defined in `RESERVED_PARAMSPEC` (e.g. self, root,
+        info)
+        """
+        reserved_parameters = self.reserved_parameters
+        reserved_names = {p.name for p in reserved_parameters.values() if p is not None}
+
+        annotations = self._unbound_wrapped_func.__annotations__
+        annotations = {
+            name: annotation
+            for name, annotation in annotations.items()
+            if name not in reserved_names
+        }
+
+        return annotations
+
+    @cached_property
     def type_annotation(self) -> Optional[StrawberryAnnotation]:
         return_annotation = self.signature.return_annotation
         if return_annotation is inspect.Signature.empty:
