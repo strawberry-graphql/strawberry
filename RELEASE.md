@@ -1,9 +1,10 @@
 Release type: minor
 
-Add link from GraphQL types to Strawberry types
+This release adds a link from generated GraphQLCore types to the Strawberry type
+that generated them.
 
-It is now straightforward to retrieve the strawberry definition that originated any GraphQL definition in the schema:
+From a GraphQLCore type you can now access the Strawberry type by doing:
 
 ```python
-strawberry_type: TypeDefinition = graphql_type.extensions[GraphQLCoreConverter.DEFINITION_BACKREF]
+strawberry_type: TypeDefinition = graphql_core_type.extensions[GraphQLCoreConverter.DEFINITION_BACKREF]
 ```
