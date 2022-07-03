@@ -1,6 +1,17 @@
 CHANGELOG
 =========
 
+0.116.2 - 2022-07-03
+--------------------
+
+Reimplement `StrawberryResolver.annotations` property after removal in v0.115.
+
+Library authors who previously relied on the public `annotations` property
+can continue to do so after this fix.
+
+Contributed by [San Kilkis](https://github.com/skilkis) via [PR #1990](https://github.com/strawberry-graphql/strawberry/pull/1990/)
+
+
 0.116.1 - 2022-07-03
 --------------------
 
