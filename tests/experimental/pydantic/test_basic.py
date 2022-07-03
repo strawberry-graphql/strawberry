@@ -795,3 +795,21 @@ def test_field_directives():
     assert field2.graphql_name is None
     assert isinstance(field2.type, StrawberryOptional)
     assert field2.type.of_type is str
+
+
+def test_alias_fields():
+    class User(pydantic.BaseModel):
+        age: int
+
+    @strawberry.experimental.pydantic.type(User)
+    class UserType:
+        age: strawberry.auto = strawberry.field(name="ageAlias")
+
+    definition: TypeDefinition = UserType._type_definition
+    assert definition.name == "UserType"
+
+    field1 = definition.fields[0]
+
+    assert field1.python_name == "age"
+    assert field1.graphql_name == "ageAlias"
+    assert field1.type is int
