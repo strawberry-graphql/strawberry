@@ -65,6 +65,8 @@ def test_entities_type_when_no_type_has_keys():
 
         union _Entity = Product
 
+        scalar _FieldSet
+
         type _Service {
           sdl: String!
         }
@@ -115,6 +117,8 @@ def test_entities_extending_interface():
         scalar _Any
 
         union _Entity = Product
+
+        scalar _FieldSet
 
         type _Service {
           sdl: String!
@@ -191,6 +195,8 @@ def test_fields_requires_are_printed_correctly():
 
         union _Entity = Product
 
+        scalar _FieldSet
+
         type _Service {
           sdl: String!
         }
@@ -262,6 +268,8 @@ def test_field_provides_are_printed_correctly_camel_case_on():
         scalar _Any
 
         union _Entity = Product
+
+        scalar _FieldSet
 
         type _Service {
           sdl: String!
@@ -335,6 +343,8 @@ def test_field_provides_are_printed_correctly_camel_case_off():
 
         union _Entity = Product
 
+        scalar _FieldSet
+
         type _Service {
           sdl: String!
         }
@@ -402,6 +412,8 @@ def test_multiple_keys():
 
         union _Entity = Product | Review
 
+        scalar _FieldSet
+
         type _Service {
           sdl: String!
         }
@@ -455,6 +467,8 @@ def test_field_shareable_printed_correctly():
 
         union _Entity = Product
 
+        scalar _FieldSet
+
         type _Service {
           sdl: String!
         }
@@ -505,6 +519,8 @@ def test_field_tag_printed_correctly():
         scalar _Any
 
         union _Entity = Product
+
+        scalar _FieldSet
 
         type _Service {
           sdl: String!
@@ -557,6 +573,8 @@ def test_field_override_printed_correctly():
 
         union _Entity = Product
 
+        scalar _FieldSet
+
         type _Service {
           sdl: String!
         }
@@ -607,6 +625,8 @@ def test_field_inaccessible_printed_correctly():
         scalar _Any
 
         union _Entity = Product
+
+        scalar _FieldSet
 
         type _Service {
           sdl: String!
