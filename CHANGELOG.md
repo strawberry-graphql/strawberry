@@ -1,6 +1,212 @@
 CHANGELOG
 =========
 
+0.115.0 - 2022-07-01
+--------------------
+
+This release changes how we declare the `info` argument in resolvers and the
+`value` argument in directives.
+
+Previously we'd use the name of the argument to determine its value. Now we use
+the type annotation of the argument to determine its value.
+
+Here's an example of how the old syntax works:
+
+```python
+def some_resolver(info) -> str:
+    return info.context.get("some_key", "default")
+
+@strawberry.type
+class Example:
+    a_field: str = strawberry.resolver(some_resolver)
+```
+
+and here's an example of how the new syntax works:
+
+```python
+from strawberry.types import Info
+
+def some_resolver(info: Info) -> str:
+    return info.context.get("some_key", "default")
+
+@strawberry.type
+class Example:
+    a_field: str = strawberry.resolver(some_resolver)
+```
+
+This means that you can now use a different name for the `info` argument in your
+resolver and the `value` argument in your directive.
+
+Here's an example that uses a custom name for both the value and the info
+parameter in directives:
+
+```python
+from strawberry.types import Info
+from strawberry.directive import DirectiveLocation, DirectiveValue
+
+@strawberry.type
+class Cake:
+    frosting: Optional[str] = None
+    flavor: str = "Chocolate"
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def cake(self) -> Cake:
+        return Cake()
+
+@strawberry.directive(
+    locations=[DirectiveLocation.FIELD],
+    description="Add frosting with ``value`` to a cake.",
+)
+def add_frosting(value: str, v: DirectiveValue[Cake], my_info: Info):
+    # Arbitrary argument name when using `DirectiveValue` is supported!
+    assert isinstance(v, Cake)
+    if value in my_info.context["allergies"]:  # Info can now be accessed from directives!
+        raise AllergyError("You are allergic to this frosting!")
+    else:
+        v.frosting = value  # Value can now be used as a GraphQL argument name!
+    return v
+```
+
+**Note:** the old way of passing arguments by name is deprecated and will be
+removed in future releases of Strawberry.
+
+Contributed by [San Kilkis](https://github.com/skilkis) via [PR #1713](https://github.com/strawberry-graphql/strawberry/pull/1713/)
+
+
+0.114.7 - 2022-07-01
+--------------------
+
+Allow use of implicit `Any` in `strawberry.Private` annotated Generic types.
+
+For example the following is now supported:
+
+```python
+from __future__ import annotations
+
+from typing import Generic, Sequence, TypeVar
+
+import strawberry
+
+
+T = TypeVar("T")
+
+
+@strawberry.type
+class Foo(Generic[T]):
+
+    private_field: strawberry.Private[Sequence]  # instead of Sequence[Any]
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def foo(self) -> Foo[str]:
+        return Foo(private_field=[1, 2, 3])
+```
+
+See Issue [#1938](https://github.com/strawberry-graphql/strawberry/issues/1938)
+for details.
+
+Contributed by [San Kilkis](https://github.com/skilkis) via [PR #1939](https://github.com/strawberry-graphql/strawberry/pull/1939/)
+
+
+0.114.6 - 2022-06-30
+--------------------
+
+The federation decorator now allows for a list of additional arbitrary schema
+directives extending the key/shareable directives used for federation.
+
+Example Python:
+
+```python
+import strawberry
+from strawberry.schema.config import StrawberryConfig
+from strawberry.schema_directive import Location
+
+@strawberry.schema_directive(locations=[Location.OBJECT])
+class CacheControl:
+    max_age: int
+
+@strawberry.federation.type(
+    keys=["id"], shareable=True, extend=True, directives=[CacheControl(max_age=42)]
+)
+class FederatedType:
+    id: strawberry.ID
+
+schema = strawberry.Schema(
+    query=Query, config=StrawberryConfig(auto_camel_case=False)
+)
+```
+
+Resulting GQL Schema:
+
+```graphql
+directive @CacheControl(max_age: Int!) on OBJECT
+directive @key(fields: _FieldSet!, resolvable: Boolean) on OBJECT | INTERFACE
+directive @shareable on FIELD_DEFINITION | OBJECT
+
+extend type FederatedType
+  @key(fields: "id")
+  @shareable
+  @CacheControl(max_age: 42) {
+  id: ID!
+}
+
+type Query {
+  federatedType: FederatedType!
+}
+```
+
+Contributed by [Jeffrey DeFond](https://github.com/defond0) via [PR #1945](https://github.com/strawberry-graphql/strawberry/pull/1945/)
+
+
+0.114.5 - 2022-06-23
+--------------------
+
+This release adds support in Mypy for using strawberry.mutation
+while passing a resolver, the following now doesn't make Mypy return
+an error:
+
+```python
+import strawberry
+
+def set_name(self, name: str) -> None:
+    self.name = name
+
+@strawberry.type
+class Mutation:
+    set_name: None = strawberry.mutation(resolver=set_name)
+```
+
+Contributed by [Etty](https://github.com/estyxx) via [PR #1966](https://github.com/strawberry-graphql/strawberry/pull/1966/)
+
+
+0.114.4 - 2022-06-23
+--------------------
+
+This release fixes the type annotation of `Response.errors` used in the `GraphQLTestClient` to be a `List` of `GraphQLFormattedError`.
+
+Contributed by [Etty](https://github.com/estyxx) via [PR #1961](https://github.com/strawberry-graphql/strawberry/pull/1961/)
+
+
+0.114.3 - 2022-06-21
+--------------------
+
+This release fixes the type annotation of `Response.errors` used in the `GraphQLTestClient` to be a `List` of `GraphQLError`.
+
+Contributed by [Etty](https://github.com/estyxx) via [PR #1959](https://github.com/strawberry-graphql/strawberry/pull/1959/)
+
+
+0.114.2 - 2022-06-15
+--------------------
+
+This release fixes an issue in the `GraphQLTestClient` when using both variables and files together.
+
+Contributed by [Etty](https://github.com/estyxx) via [PR #1576](https://github.com/strawberry-graphql/strawberry/pull/1576/)
+
+
 0.114.1 - 2022-06-09
 --------------------
 

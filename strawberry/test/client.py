@@ -5,10 +5,12 @@ from typing import Any, Coroutine, Dict, List, Mapping, Optional, Union
 
 from typing_extensions import Literal, TypedDict
 
+from graphql import GraphQLFormattedError
+
 
 @dataclass
 class Response:
-    errors: Optional[Dict[str, object]]
+    errors: Optional[List[GraphQLFormattedError]]
     data: Optional[Dict[str, object]]
     extensions: Optional[Dict[str, object]]
 
@@ -149,7 +151,11 @@ class BaseGraphQLTestClient(ABC):
             else:
                 map[key] = [f"variables.{reference}"]
 
-        return map
+        # Variables can be mixed files and other data, we don't want to map non-files
+        # vars so we need to remove them, we can't remove them before
+        # because they can be part of a list of files or folder
+        map_without_vars = {k: v for k, v in map.items() if k in files.keys()}
+        return map_without_vars
 
     def _decode(self, response, type: Literal["multipart", "json"]):
         if type == "multipart":
