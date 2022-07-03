@@ -42,9 +42,9 @@ from graphql.utilities.print_schema import (
 )
 
 from strawberry.field import StrawberryField
+from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema_directive import Location, StrawberrySchemaDirective
 from strawberry.type import StrawberryContainer
-from strawberry.types.types import TypeDefinition
 from strawberry.unset import UNSET
 
 
@@ -162,17 +162,11 @@ def print_field_directives(
 
 
 def print_fields(type_, schema: BaseSchema, *, extras: PrintExtras) -> str:
-    strawberry_type = cast(TypeDefinition, schema.get_type_by_name(type_.name))
-
     fields = []
 
     for i, (name, field) in enumerate(type_.fields.items()):
-        python_name = field.extensions and field.extensions.get("python_name")
-
-        strawberry_field = (
-            strawberry_type.get_field(python_name)
-            if strawberry_type and python_name
-            else None
+        strawberry_field = field.extensions and field.extensions.get(
+            GraphQLCoreConverter.DEFINITION_BACKREF
         )
 
         args = print_args(field.args, "  ") if hasattr(field, "args") else ""
@@ -190,7 +184,9 @@ def print_fields(type_, schema: BaseSchema, *, extras: PrintExtras) -> str:
 
 
 def print_extends(type_, schema: BaseSchema):
-    strawberry_type = cast(TypeDefinition, schema.get_type_by_name(type_.name))
+    strawberry_type = type_.extensions and type_.extensions.get(
+        GraphQLCoreConverter.DEFINITION_BACKREF
+    )
 
     if strawberry_type and strawberry_type.extend:
         return "extend "
@@ -199,7 +195,9 @@ def print_extends(type_, schema: BaseSchema):
 
 
 def print_type_directives(type_, schema: BaseSchema, *, extras: PrintExtras) -> str:
-    strawberry_type = cast(TypeDefinition, schema.get_type_by_name(type_.name))
+    strawberry_type = type_.extensions and type_.extensions.get(
+        GraphQLCoreConverter.DEFINITION_BACKREF
+    )
 
     if not strawberry_type:
         return ""
@@ -213,7 +211,7 @@ def print_type_directives(type_, schema: BaseSchema, *, extras: PrintExtras) -> 
         for directive in strawberry_type.directives or []
         if any(
             location in allowed_locations
-            for location in directive.__strawberry_directive__.locations  # type: ignore
+            for location in directive.__strawberry_directive__.locations
         )
     )
 

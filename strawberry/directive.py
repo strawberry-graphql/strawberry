@@ -61,7 +61,7 @@ class StrawberryDirective:
     locations: List[DirectiveLocation]
     description: Optional[str] = None
 
-    @property
+    @cached_property
     def arguments(self) -> List[StrawberryArgument]:
         return self.resolver.arguments
 
