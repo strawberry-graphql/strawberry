@@ -124,3 +124,17 @@
     reveal_type(Example.a)
   out: |
     main:8: note: Revealed type is "builtins.str"
+
+- case: test_positional_arguments_in_field
+  main: |
+    import strawberry
+
+    def resolver() -> str:
+      return 'Hello, World!'
+
+    @strawberry.type
+    class Example:
+      passed: str = strawberry.field(resolver=resolver)
+      failed: str = strawberry.field(resolver)
+  out: |
+    main:9: error: "field()" or "mutation()" only takes keyword arguments  [misc]
