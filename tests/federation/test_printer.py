@@ -38,7 +38,7 @@ def test_entities_type_when_no_type_has_keys():
     expected = """
         directive @external on FIELD_DEFINITION
 
-        directive @key(fields: _FieldSet!, resolvable: Boolean) on OBJECT | INTERFACE
+        directive @key(fields: _FieldSet!, resolvable: Boolean = true) on OBJECT | INTERFACE
 
         extend type Product @key(fields: "upc") {
           upc: String! @external
@@ -97,7 +97,7 @@ def test_entities_extending_interface():
     expected = """
         directive @external on FIELD_DEFINITION
 
-        directive @key(fields: _FieldSet!, resolvable: Boolean) on OBJECT | INTERFACE
+        directive @key(fields: _FieldSet!, resolvable: Boolean = true) on OBJECT | INTERFACE
 
         extend type Product implements SomeInterface @key(fields: "upc") {
           id: ID!
@@ -163,7 +163,7 @@ def test_fields_requires_are_printed_correctly():
     expected = """
         directive @external on FIELD_DEFINITION
 
-        directive @key(fields: _FieldSet!, resolvable: Boolean) on OBJECT | INTERFACE
+        directive @key(fields: _FieldSet!, resolvable: Boolean = true) on OBJECT | INTERFACE
 
         directive @requires(fields: _FieldSet!) on FIELD_DEFINITION
 
@@ -239,7 +239,7 @@ def test_field_provides_are_printed_correctly_camel_case_on():
     expected = """
         directive @external on FIELD_DEFINITION
 
-        directive @key(fields: _FieldSet!, resolvable: Boolean) on OBJECT | INTERFACE
+        directive @key(fields: _FieldSet!, resolvable: Boolean = true) on OBJECT | INTERFACE
 
         directive @provides(fields: _FieldSet!) on FIELD_DEFINITION
 
@@ -313,7 +313,7 @@ def test_field_provides_are_printed_correctly_camel_case_off():
     expected = """
         directive @external on FIELD_DEFINITION
 
-        directive @key(fields: _FieldSet!, resolvable: Boolean) on OBJECT | INTERFACE
+        directive @key(fields: _FieldSet!, resolvable: Boolean = true) on OBJECT | INTERFACE
 
         directive @provides(fields: _FieldSet!) on FIELD_DEFINITION
 
@@ -385,7 +385,7 @@ def test_multiple_keys():
     expected = """
         directive @external on FIELD_DEFINITION
 
-        directive @key(fields: _FieldSet!, resolvable: Boolean) on OBJECT | INTERFACE
+        directive @key(fields: _FieldSet!, resolvable: Boolean = true) on OBJECT | INTERFACE
 
         extend type Product @key(fields: "upc", resolvable: true) {
           upc: String! @external
@@ -444,7 +444,7 @@ def test_field_shareable_printed_correctly():
     expected = """
         directive @external on FIELD_DEFINITION
 
-        directive @key(fields: _FieldSet!, resolvable: Boolean) on OBJECT | INTERFACE
+        directive @key(fields: _FieldSet!, resolvable: Boolean = true) on OBJECT | INTERFACE
 
         directive @shareable on FIELD_DEFINITION | OBJECT
 
@@ -497,7 +497,7 @@ def test_field_tag_printed_correctly():
     expected = """
         directive @external on FIELD_DEFINITION
 
-        directive @key(fields: _FieldSet!, resolvable: Boolean) on OBJECT | INTERFACE
+        directive @key(fields: _FieldSet!, resolvable: Boolean = true) on OBJECT | INTERFACE
 
         directive @tag(name: String!) on FIELD_DEFINITION | INTERFACE | OBJECT | UNION | ARGUMENT_DEFINITION | SCALAR | ENUM | ENUM_VALUE | INPUT_OBJECT | INPUT_FIELD_DEFINITION
 
@@ -550,7 +550,7 @@ def test_field_override_printed_correctly():
     expected = """
         directive @external on FIELD_DEFINITION
 
-        directive @key(fields: _FieldSet!, resolvable: Boolean) on OBJECT | INTERFACE
+        directive @key(fields: _FieldSet!, resolvable: Boolean = true) on OBJECT | INTERFACE
 
         directive @override(from: String!) on FIELD_DEFINITION
 
@@ -605,7 +605,7 @@ def test_field_inaccessible_printed_correctly():
 
         directive @inaccessible on FIELD_DEFINITION | OBJECT | INTERFACE | UNION
 
-        directive @key(fields: _FieldSet!, resolvable: Boolean) on OBJECT | INTERFACE
+        directive @key(fields: _FieldSet!, resolvable: Boolean = true) on OBJECT | INTERFACE
 
         extend type Product implements SomeInterface @key(fields: "upc") {
           id: ID!
@@ -654,7 +654,7 @@ def test_additional_schema_directives_printed_correctly_object():
     expected_type = """
     directive @CacheControl(max_age: Int!) on OBJECT
 
-    directive @key(fields: _FieldSet!, resolvable: Boolean) on OBJECT | INTERFACE
+    directive @key(fields: _FieldSet!, resolvable: Boolean = true) on OBJECT | INTERFACE
 
     directive @shareable on FIELD_DEFINITION | OBJECT
 
@@ -700,7 +700,7 @@ def test_additional_schema_directives_printed_in_order_object():
 
     directive @CacheControl1(min_age: Int!) on OBJECT
 
-    directive @key(fields: _FieldSet!, resolvable: Boolean) on OBJECT | INTERFACE
+    directive @key(fields: _FieldSet!, resolvable: Boolean = true) on OBJECT | INTERFACE
 
     directive @shareable on FIELD_DEFINITION | OBJECT
 

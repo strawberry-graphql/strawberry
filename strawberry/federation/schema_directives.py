@@ -4,7 +4,6 @@ from typing_extensions import Literal
 
 from strawberry import directive_field
 from strawberry.schema_directive import Location, schema_directive
-from strawberry.unset import UNSET
 
 from .types import FieldSet
 
@@ -30,7 +29,7 @@ class Provides:
 @schema_directive(locations=[Location.OBJECT, Location.INTERFACE], name="key")
 class Key:
     fields: FieldSet
-    resolvable: Optional[bool] = UNSET
+    resolvable: Optional[bool] = True
 
 
 @schema_directive(

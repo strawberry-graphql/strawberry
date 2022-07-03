@@ -2,6 +2,7 @@ from typing import TYPE_CHECKING, Callable, List, Sequence, TypeVar, Union, over
 
 from strawberry.field import StrawberryField, field as base_field
 from strawberry.object_type import type as base_type
+from strawberry.unset import UNSET
 from strawberry.utils.typing import __dataclass_transform__
 
 from .field import field
@@ -56,7 +57,9 @@ def type(
 ):
     from strawberry.federation.schema_directives import Key, Shareable
 
-    all_directives = [Key(key) if isinstance(key, str) else key for key in keys or []]
+    all_directives = [
+        Key(key, UNSET) if isinstance(key, str) else key for key in keys or []
+    ]
     if shareable:
         all_directives.append(Shareable())  # type: ignore
     all_directives.extend(directives)  # type: ignore
