@@ -1,6 +1,20 @@
 CHANGELOG
 =========
 
+0.116.3 - 2022-07-04
+--------------------
+
+This release fixes the following error when trying to use Strawberry
+with Apollo Federation:
+
+```
+Error: A valid schema couldn't be composed. The following composition errors were found:
+	[burro-api] Unknown type _FieldSet
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #1988](https://github.com/strawberry-graphql/strawberry/pull/1988/)
+
+
 0.116.2 - 2022-07-03
 --------------------
 
