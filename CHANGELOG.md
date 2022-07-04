@@ -1,6 +1,28 @@
 CHANGELOG
 =========
 
+0.116.4 - 2022-07-04
+--------------------
+
+Fix regression caused by the new resolver argument handling mechanism
+introduced in v0.115.0. This release restores the ability to use unhashable
+default values in resolvers such as dict and list. See example below:
+
+```python
+@strawberry.type
+class Query:
+    @strawberry.field
+    def field(
+        self, x: List[str] = ["foo"], y: JSON = {"foo": 42}  # noqa: B006
+    ) -> str:
+        return f"{x} {y}"
+```
+
+Thanks to @coady for the regression report!
+
+Contributed by [San Kilkis](https://github.com/skilkis) via [PR #1985](https://github.com/strawberry-graphql/strawberry/pull/1985/)
+
+
 0.116.3 - 2022-07-04
 --------------------
 
