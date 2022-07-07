@@ -1,6 +1,23 @@
 CHANGELOG
 =========
 
+0.117.1 - 2022-07-07
+--------------------
+
+Allow to add alias to fields generated from pydantic with `strawberry.field(name="ageAlias")`.
+
+```
+class User(pydantic.BaseModel):
+    age: int
+
+@strawberry.experimental.pydantic.type(User)
+class UserType:
+    age: strawberry.auto = strawberry.field(name="ageAlias")
+```
+
+Contributed by [Alex](https://github.com/benzolium) via [PR #1986](https://github.com/strawberry-graphql/strawberry/pull/1986/)
+
+
 0.117.0 - 2022-07-06
 --------------------
 
