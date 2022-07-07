@@ -813,3 +813,30 @@ def test_alias_fields():
     assert field1.python_name == "age"
     assert field1.graphql_name == "ageAlias"
     assert field1.type is int
+
+
+def test_alias_fields_with_use_pydantic_alias():
+    class User(pydantic.BaseModel):
+        age: int
+        state: str = pydantic.Field(alias="statePydantic")
+        country: str = pydantic.Field(alias="countryPydantic")
+
+    @strawberry.experimental.pydantic.type(User, use_pydantic_alias=True)
+    class UserType:
+        age: strawberry.auto = strawberry.field(name="ageAlias")
+        state: strawberry.auto = strawberry.field(name="state")
+        country: strawberry.auto
+
+    definition: TypeDefinition = UserType._type_definition
+    assert definition.name == "UserType"
+
+    [field1, field2, field3] = definition.fields
+
+    assert field1.python_name == "age"
+    assert field1.graphql_name == "ageAlias"
+
+    assert field2.python_name == "state"
+    assert field2.graphql_name == "state"
+
+    assert field3.python_name == "country"
+    assert field3.graphql_name == "countryPydantic"
