@@ -15,6 +15,7 @@ from strawberry.exceptions import (
 from strawberry.scalars import Base64
 from strawberry.type import StrawberryList
 
+
 @pytest.mark.parametrize(
     "slots",
     (
@@ -105,6 +106,7 @@ def test_basic_schema_types(slots: bool):
     assert not result.errors
     assert result.data["user"] is None
 
+
 @pytest.mark.parametrize(
     "slots",
     (
@@ -129,6 +131,7 @@ def test_does_camel_case_conversion(slots: bool):
 
     assert not result.errors
     assert result.data["helloWorld"] == "hi"
+
 
 @pytest.mark.parametrize(
     "slots",
@@ -199,6 +202,7 @@ def test_type_description(slots: bool):
         "description": "Decorator argument description",
     }
 
+
 @pytest.mark.parametrize(
     "slots",
     (
@@ -240,6 +244,7 @@ def test_field_description(slots: bool):
         {"name": "c", "description": "Example C"},
     ]
 
+
 @pytest.mark.parametrize(
     "slots",
     (
@@ -279,6 +284,7 @@ def test_field_deprecated_reason(slots: bool):
         {"name": "b", "deprecationReason": None},
         {"name": "c", "deprecationReason": "Deprecated B"},
     ]
+
 
 @pytest.mark.parametrize(
     "slots",
@@ -368,6 +374,7 @@ def test_enum_description(slots: bool):
 
     assert result.data["pizzas"]["description"] is None
 
+
 @pytest.mark.parametrize(
     "slots",
     (
@@ -449,6 +456,7 @@ def test_can_return_compatible_type(slots: bool):
 
     assert not result.errors
     assert result.data["assortment"]["name"] == "Asiago"
+
 
 @pytest.mark.parametrize(
     "slots",
@@ -534,6 +542,7 @@ def test_multiple_fields_with_same_type(slots: bool):
     assert result.data["me"] is None
     assert result.data["you"] is None
 
+
 @pytest.mark.parametrize(
     "slots",
     (
@@ -617,6 +626,7 @@ def test_field_with_separate_resolver_default(slots: bool):
         @strawberry.type(slots=slots)
         class Query:
             c: str = strawberry.field(default="Example C", resolver=test_resolver)
+
 
 @pytest.mark.parametrize(
     "slots",
