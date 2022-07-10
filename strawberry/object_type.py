@@ -81,14 +81,14 @@ def _check_field_annotations(cls: Type):
             raise MissingFieldAnnotationError(field_name)
 
 
-def _wrap_dataclass(cls: Type):
+def _wrap_dataclass(cls: Type, slots: bool = False):
     """Wrap a strawberry.type class with a dataclass and check for any issues
     before doing so"""
 
     # Ensure all Fields have been properly type-annotated
     _check_field_annotations(cls)
 
-    return dataclasses.dataclass(cls)
+    return dataclasses.dataclass(slots=slots)(cls)
 
 
 def _process_type(
@@ -185,6 +185,7 @@ def type(
     description=None,
     directives=(),
     extend=False,
+    slots=False,
 ):
     """Annotates a class as a GraphQL type.
 
@@ -205,7 +206,7 @@ def type(
                 exc = ObjectIsNotClassError.type
             raise exc(cls)
 
-        wrapped = _wrap_dataclass(cls)
+        wrapped = _wrap_dataclass(cls, slots=slots)
         return _process_type(
             wrapped,
             name=name,

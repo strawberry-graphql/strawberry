@@ -15,12 +15,18 @@ from strawberry.exceptions import (
 from strawberry.scalars import Base64
 from strawberry.type import StrawberryList
 
-
-def test_raises_exception_with_unsupported_types():
+@pytest.mark.parametrize(
+    "slots",
+    (
+        True,
+        False,
+    ),
+)
+def test_raises_exception_with_unsupported_types(slots: bool):
     class SomeType:
         ...
 
-    @strawberry.type
+    @strawberry.type(slots=slots)
     class Query:
         example: SomeType
 
@@ -30,8 +36,15 @@ def test_raises_exception_with_unsupported_types():
         strawberry.Schema(query=Query)
 
 
-def test_basic_schema():
-    @strawberry.type
+@pytest.mark.parametrize(
+    "slots",
+    (
+        True,
+        False,
+    ),
+)
+def test_basic_schema(slots: bool):
+    @strawberry.type(slots=slots)
     class Query:
         example: str = "Example"
 
@@ -45,8 +58,15 @@ def test_basic_schema():
     assert result.data["example"] == "Example"
 
 
-def test_basic_schema_optional():
-    @strawberry.type
+@pytest.mark.parametrize(
+    "slots",
+    (
+        True,
+        False,
+    ),
+)
+def test_basic_schema_optional(slots: bool):
+    @strawberry.type(slots=slots)
     class Query:
         example: typing.Optional[str] = None
 
@@ -60,12 +80,19 @@ def test_basic_schema_optional():
     assert result.data["example"] is None
 
 
-def test_basic_schema_types():
-    @strawberry.type
+@pytest.mark.parametrize(
+    "slots",
+    (
+        True,
+        False,
+    ),
+)
+def test_basic_schema_types(slots: bool):
+    @strawberry.type(slots=slots)
     class User:
         name: str
 
-    @strawberry.type
+    @strawberry.type(slots=slots)
     class Query:
         user: typing.Optional[User] = None
 
@@ -78,9 +105,15 @@ def test_basic_schema_types():
     assert not result.errors
     assert result.data["user"] is None
 
-
-def test_does_camel_case_conversion():
-    @strawberry.type
+@pytest.mark.parametrize(
+    "slots",
+    (
+        True,
+        False,
+    ),
+)
+def test_does_camel_case_conversion(slots: bool):
+    @strawberry.type(slots=slots)
     class Query:
         @strawberry.field
         def hello_world(self, query_param: str) -> str:
@@ -97,13 +130,19 @@ def test_does_camel_case_conversion():
     assert not result.errors
     assert result.data["helloWorld"] == "hi"
 
-
-def test_can_rename_fields():
-    @strawberry.type
+@pytest.mark.parametrize(
+    "slots",
+    (
+        True,
+        False,
+    ),
+)
+def test_can_rename_fields(slots: bool):
+    @strawberry.type(slots=slots)
     class Hello:
         value: typing.Optional[str] = strawberry.field(name="name")
 
-    @strawberry.type
+    @strawberry.type(slots=slots)
     class Query:
         @strawberry.field
         def hello(self) -> Hello:
@@ -127,12 +166,19 @@ def test_can_rename_fields():
     assert result.data["example1"] == "hi"
 
 
-def test_type_description():
-    @strawberry.type(description="Decorator argument description")
+@pytest.mark.parametrize(
+    "slots",
+    (
+        True,
+        False,
+    ),
+)
+def test_type_description(slots: bool):
+    @strawberry.type(description="Decorator argument description", slots=slots)
     class TypeA:
         a: str
 
-    @strawberry.type
+    @strawberry.type(slots=slots)
     class Query:
         a: TypeA
 
@@ -153,9 +199,15 @@ def test_type_description():
         "description": "Decorator argument description",
     }
 
-
-def test_field_description():
-    @strawberry.type
+@pytest.mark.parametrize(
+    "slots",
+    (
+        True,
+        False,
+    ),
+)
+def test_field_description(slots: bool):
+    @strawberry.type(slots=slots)
     class Query:
         a: str = strawberry.field(description="Example")
 
@@ -188,9 +240,15 @@ def test_field_description():
         {"name": "c", "description": "Example C"},
     ]
 
-
-def test_field_deprecated_reason():
-    @strawberry.type
+@pytest.mark.parametrize(
+    "slots",
+    (
+        True,
+        False,
+    ),
+)
+def test_field_deprecated_reason(slots: bool):
+    @strawberry.type(slots=slots)
     class Query:
         a: str = strawberry.field(deprecation_reason="Deprecated A")
 
@@ -222,13 +280,19 @@ def test_field_deprecated_reason():
         {"name": "c", "deprecationReason": "Deprecated B"},
     ]
 
-
-def test_field_deprecated_reason_subscription():
-    @strawberry.type
+@pytest.mark.parametrize(
+    "slots",
+    (
+        True,
+        False,
+    ),
+)
+def test_field_deprecated_reason_subscription(slots: bool):
+    @strawberry.type(slots=slots)
     class Query:
         a: str
 
-    @strawberry.type
+    @strawberry.type(slots=slots)
     class Subscription:
         @strawberry.subscription(deprecation_reason="Deprecated A")
         def a(self) -> str:
@@ -253,7 +317,14 @@ def test_field_deprecated_reason_subscription():
     ]
 
 
-def test_enum_description():
+@pytest.mark.parametrize(
+    "slots",
+    (
+        True,
+        False,
+    ),
+)
+def test_enum_description(slots: bool):
     @strawberry.enum(description="We love ice-creams")
     class IceCreamFlavour(Enum):
         VANILLA = "vanilla"
@@ -264,7 +335,7 @@ def test_enum_description():
     class PizzaType(Enum):
         MARGHERITA = "margherita"
 
-    @strawberry.type
+    @strawberry.type(slots=slots)
     class Query:
         favorite_ice_cream: IceCreamFlavour = IceCreamFlavour.STRAWBERRY
         pizza: PizzaType = PizzaType.MARGHERITA
@@ -297,9 +368,15 @@ def test_enum_description():
 
     assert result.data["pizzas"]["description"] is None
 
-
-def test_parent_class_fields_are_inherited():
-    @strawberry.type
+@pytest.mark.parametrize(
+    "slots",
+    (
+        True,
+        False,
+    ),
+)
+def test_parent_class_fields_are_inherited(slots: bool):
+    @strawberry.type(slots=slots)
     class Parent:
         cheese: str = "swiss"
 
@@ -307,7 +384,7 @@ def test_parent_class_fields_are_inherited():
         def friend(self) -> str:
             return "food"
 
-    @strawberry.type
+    @strawberry.type(slots=slots)
     class Schema(Parent):
         cake: str = "made_in_switzerland"
 
@@ -315,7 +392,7 @@ def test_parent_class_fields_are_inherited():
         def hello_this_is(self) -> str:
             return "patrick"
 
-    @strawberry.type
+    @strawberry.type(slots=slots)
     class Query:
         @strawberry.field
         def example(self) -> Schema:
@@ -335,19 +412,26 @@ def test_parent_class_fields_are_inherited():
     assert result.data["example"]["helloThisIs"] == "patrick"
 
 
-def test_can_return_compatible_type():
+@pytest.mark.parametrize(
+    "slots",
+    (
+        True,
+        False,
+    ),
+)
+def test_can_return_compatible_type(slots: bool):
     """Test that we can return a different type that has the same fields,
     for example when returning a Django Model."""
 
-    @dataclass
+    @dataclass(slots=slots)
     class Example:
         name: str
 
-    @strawberry.type
+    @strawberry.type(slots=slots)
     class Cheese:
         name: str
 
-    @strawberry.type
+    @strawberry.type(slots=slots)
     class Query:
         @strawberry.field
         def assortment(self) -> Cheese:
@@ -366,14 +450,20 @@ def test_can_return_compatible_type():
     assert not result.errors
     assert result.data["assortment"]["name"] == "Asiago"
 
-
-def test_init_var():
-    @strawberry.type
+@pytest.mark.parametrize(
+    "slots",
+    (
+        True,
+        False,
+    ),
+)
+def test_init_var(slots: bool):
+    @strawberry.type(slots=slots)
     class Category:
         name: str
         id: InitVar[str]
 
-    @strawberry.type
+    @strawberry.type(slots=slots)
     class Query:
         @strawberry.field
         def category(self) -> Category:
@@ -389,12 +479,19 @@ def test_init_var():
     assert result.data["category"]["name"] == "example"
 
 
-def test_nested_types():
-    @strawberry.type
+@pytest.mark.parametrize(
+    "slots",
+    (
+        True,
+        False,
+    ),
+)
+def test_nested_types(slots: bool):
+    @strawberry.type(slots=slots)
     class User:
         name: str
 
-    @strawberry.type
+    @strawberry.type(slots=slots)
     class Query:
         @strawberry.field
         def user(self) -> User:
@@ -410,12 +507,19 @@ def test_nested_types():
     assert result.data["user"]["name"] == "Patrick"
 
 
-def test_multiple_fields_with_same_type():
-    @strawberry.type
+@pytest.mark.parametrize(
+    "slots",
+    (
+        True,
+        False,
+    ),
+)
+def test_multiple_fields_with_same_type(slots: bool):
+    @strawberry.type(slots=slots)
     class User:
         name: str
 
-    @strawberry.type
+    @strawberry.type(slots=slots)
     class Query:
         me: Optional[User] = None
         you: Optional[User] = None
@@ -430,9 +534,15 @@ def test_multiple_fields_with_same_type():
     assert result.data["me"] is None
     assert result.data["you"] is None
 
-
-def test_str_magic_method_prints_schema_sdl():
-    @strawberry.type
+@pytest.mark.parametrize(
+    "slots",
+    (
+        True,
+        False,
+    ),
+)
+def test_str_magic_method_prints_schema_sdl(slots: bool):
+    @strawberry.type(slots=slots)
     class Query:
         exampleBool: bool
         exampleStr: str = "Example"
@@ -452,8 +562,15 @@ def test_str_magic_method_prints_schema_sdl():
     ), "Repr should not be affected"
 
 
-def test_field_with_default():
-    @strawberry.type
+@pytest.mark.parametrize(
+    "slots",
+    (
+        True,
+        False,
+    ),
+)
+def test_field_with_default(slots: bool):
+    @strawberry.type(slots=slots)
     class Query:
         a: str = strawberry.field(default="Example")
 
@@ -467,40 +584,67 @@ def test_field_with_default():
     assert result.data == {"a": "Example"}
 
 
-def test_field_with_resolver_default():
+@pytest.mark.parametrize(
+    "slots",
+    (
+        True,
+        False,
+    ),
+)
+def test_field_with_resolver_default(slots: bool):
     with pytest.raises(FieldWithResolverAndDefaultValueError):
 
-        @strawberry.type
+        @strawberry.type(slots=slots)
         class Query:
             @strawberry.field(default="Example C")
             def c(self) -> str:
                 return "I'm a resolver"
 
 
-def test_field_with_separate_resolver_default():
+@pytest.mark.parametrize(
+    "slots",
+    (
+        True,
+        False,
+    ),
+)
+def test_field_with_separate_resolver_default(slots: bool):
     with pytest.raises(FieldWithResolverAndDefaultValueError):
 
         def test_resolver() -> str:
             return "I'm a resolver"
 
-        @strawberry.type
+        @strawberry.type(slots=slots)
         class Query:
             c: str = strawberry.field(default="Example C", resolver=test_resolver)
 
-
-def test_field_with_resolver_default_factory():
+@pytest.mark.parametrize(
+    "slots",
+    (
+        True,
+        False,
+    ),
+)
+def test_field_with_resolver_default_factory(slots: bool):
     with pytest.raises(FieldWithResolverAndDefaultFactoryError):
 
-        @strawberry.type
+        @strawberry.type(slots=slots)
         class Query:
             @strawberry.field(default_factory=lambda: "Example C")
             def c(self) -> str:
                 return "I'm a resolver"
 
 
-def test_with_types():
+@pytest.mark.parametrize(
+    "slots",
+    (
+        True,
+        False,
+    ),
+)
+def test_with_types(slots: bool):
     # Ensures Schema(types=[...]) works with all data types
-    @strawberry.type
+    @strawberry.type(slots=slots)
     class Type:
         foo: int
 
@@ -512,7 +656,7 @@ def test_with_types():
     class Input:
         foo: int
 
-    @strawberry.type
+    @strawberry.type(slots=slots)
     class Query:
         foo: int
 
@@ -545,8 +689,15 @@ def test_with_types():
     assert str(schema) == textwrap.dedent(expected).strip()
 
 
-def test_with_types_non_named():
-    @strawberry.type
+@pytest.mark.parametrize(
+    "slots",
+    (
+        True,
+        False,
+    ),
+)
+def test_with_types_non_named(slots: bool):
+    @strawberry.type(slots=slots)
     class Query:
         foo: int
 
