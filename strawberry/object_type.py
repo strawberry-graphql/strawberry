@@ -11,6 +11,7 @@ from .exceptions import (
 from .field import StrawberryField, field
 from .types.type_resolver import _get_fields
 from .types.types import TypeDefinition
+from .utils.slots import _gte_310
 from .utils.str_converters import to_camel_case
 from .utils.typing import __dataclass_transform__
 
@@ -81,7 +82,7 @@ def _check_field_annotations(cls: Type):
             raise MissingFieldAnnotationError(field_name)
 
 
-def _wrap_dataclass(cls: Type, slots: bool = False):
+def _wrap_dataclass(cls: Type, slots: bool = _gte_310()):
     """Wrap a strawberry.type class with a dataclass and check for any issues
     before doing so"""
 
@@ -185,7 +186,7 @@ def type(
     description=None,
     directives=(),
     extend=False,
-    slots=False,
+    slots=_gte_310(),
 ):
     """Annotates a class as a GraphQL type.
 
