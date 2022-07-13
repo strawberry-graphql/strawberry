@@ -245,13 +245,14 @@ def type(
                 cls=cls, model_instance=instance, extra=extra
             )
 
-        def to_pydantic_default(self) -> PydanticModel:
+        def to_pydantic_default(self, **kwargs) -> PydanticModel:
             instance_kwargs = {
                 f.name: convert_strawberry_class_to_pydantic_model(
                     getattr(self, f.name)
                 )
                 for f in dataclasses.fields(self)
             }
+            instance_kwargs.update(kwargs)
             return model(**instance_kwargs)
 
         if not has_custom_from_pydantic:

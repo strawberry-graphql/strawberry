@@ -5,7 +5,7 @@ from typing import Any, Dict, List, NewType, Optional, Union, cast
 
 import pytest
 
-from pydantic import BaseConfig, BaseModel, Field
+from pydantic import BaseConfig, BaseModel, Field, ValidationError
 from pydantic.fields import ModelField
 from pydantic.typing import NoArgAnyCallable
 
@@ -1156,3 +1156,37 @@ def test_can_convert_input_types_to_pydantic_with_dict():
     assert user.age == 1
     assert user.password is None
     assert user.work["Monday"].hours == 1
+
+
+def test_can_add_missing_arguments_to_pydantic():
+    class User(BaseModel):
+        age: int
+        password: str
+
+    @strawberry.experimental.pydantic.type(User)
+    class UserInput:
+        age: strawberry.auto
+
+    data = UserInput(age=1)
+    user = data.to_pydantic(password="hunter2")
+
+    assert user.age == 1
+    assert user.password == "hunter2"
+
+
+def test_raise_missing_arguments_to_pydantic():
+    class User(BaseModel):
+        age: int
+        password: str
+
+    @strawberry.experimental.pydantic.type(User)
+    class UserInput:
+        age: strawberry.auto
+
+    data = UserInput(age=1)
+
+    with pytest.raises(
+        ValidationError,
+        match=("1 validation error for User"),
+    ):
+        data.to_pydantic()
