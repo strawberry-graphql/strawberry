@@ -421,7 +421,6 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
         missing_pydantic_fields: Set[PydanticModelField] = set(
             f for f in pydantic_fields if f.name not in new_strawberry_fields
         )
-        print("Missing fields:", missing_pydantic_fields)
 
         # Add to_pydantic
         # TODO: Only add this if not manually defined
