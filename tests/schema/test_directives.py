@@ -1,12 +1,14 @@
 import textwrap
-from typing import List
+from enum import Enum
+from typing import Dict, List, Optional
 
 import pytest
 
 import strawberry
-from strawberry.directive import DirectiveLocation
+from strawberry.directive import DirectiveLocation, DirectiveValue
 from strawberry.extensions import Extension
 from strawberry.schema.config import StrawberryConfig
+from strawberry.types.info import Info
 from strawberry.utils.await_maybe import await_maybe
 
 
@@ -30,7 +32,11 @@ def test_supports_default_directives():
     }"""
 
     schema = strawberry.Schema(query=Query)
-    result = schema.execute_sync(query, variable_values={"includePoints": False})
+    result = schema.execute_sync(
+        query,
+        variable_values={"includePoints": False},
+        context_value={"username": "foo"},
+    )
 
     assert not result.errors
     assert result.data["person"] == {"name": "Jess"}
@@ -112,6 +118,42 @@ def test_can_declare_directives():
     '''
 
     assert schema.as_str() == textwrap.dedent(expected_schema).strip()
+
+
+def test_directive_arguments_without_value_param():
+    """Regression test for Strawberry Issue #1666.
+
+    https://github.com/strawberry-graphql/strawberry/issues/1666
+    """
+
+    @strawberry.type
+    class Query:
+        cake: str = "victoria sponge"
+
+    @strawberry.directive(
+        locations=[DirectiveLocation.FIELD],
+        description="Don't actually like cake? try ice cream instead",
+    )
+    def ice_cream(flavor: str):
+        return f"{flavor} ice cream"
+
+    schema = strawberry.Schema(query=Query, directives=[ice_cream])
+
+    expected_schema = '''
+    """Don't actually like cake? try ice cream instead"""
+    directive @iceCream(flavor: String!) on FIELD
+
+    type Query {
+      cake: String!
+    }
+    '''
+
+    assert schema.as_str() == textwrap.dedent(expected_schema).strip()
+
+    query = 'query { cake @iceCream(flavor: "strawberry") }'
+    result = schema.execute_sync(query, root_value=Query())
+
+    assert result.data == {"cake": "strawberry ice cream"}
 
 
 def test_runs_directives():
@@ -345,3 +387,214 @@ async def test_runs_directives_with_extensions_async():
     assert not result.errors
     assert result.data
     assert result.data["person"]["name"] == "JESS"
+
+
+@pytest.fixture
+def info_directive_schema() -> strawberry.Schema:
+    """Returns a schema with directive that validates if info is recieved."""
+
+    @strawberry.enum
+    class Locale(Enum):
+        EN: str = "EN"
+        NL: str = "NL"
+
+    greetings: Dict[Locale, str] = {
+        Locale.EN: "Hello {username}",
+        Locale.NL: "Hallo {username}",
+    }
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def greetingTemplate(self, locale: Locale = Locale.EN) -> str:
+            return greetings[locale]
+
+    field = Query._type_definition.fields[0]  # type: ignore
+
+    @strawberry.directive(
+        locations=[DirectiveLocation.FIELD],
+        description="Interpolate string on the server from context data",
+    )
+    def interpolate(value: str, info: Info):
+        try:
+            assert isinstance(info, Info)
+            assert info._field is field
+            return value.format(**info.context["userdata"])
+        except KeyError:
+            return value
+
+    return strawberry.Schema(query=Query, directives=[interpolate])
+
+
+def test_info_directive_schema(info_directive_schema: strawberry.Schema):
+
+    expected_schema = '''
+    """Interpolate string on the server from context data"""
+    directive @interpolate on FIELD
+
+    enum Locale {
+      EN
+      NL
+    }
+
+    type Query {
+      greetingTemplate(locale: Locale! = EN): String!
+    }
+    '''
+
+    assert textwrap.dedent(expected_schema).strip() == str(info_directive_schema)
+
+
+def test_info_directive(info_directive_schema: strawberry.Schema):
+    query = "query { greetingTemplate @interpolate }"
+    result = info_directive_schema.execute_sync(
+        query, context_value={"userdata": {"username": "Foo"}}
+    )
+    assert result.data == {"greetingTemplate": "Hello Foo"}
+
+
+@pytest.mark.asyncio
+async def test_info_directive_async(info_directive_schema: strawberry.Schema):
+    query = "query { greetingTemplate @interpolate }"
+    result = await info_directive_schema.execute(
+        query, context_value={"userdata": {"username": "Foo"}}
+    )
+    assert result.data == {"greetingTemplate": "Hello Foo"}
+
+
+def test_directive_value():
+    """Tests if directive value is detected by type instead of by arg-name `value`."""
+
+    @strawberry.type
+    class Cake:
+        frosting: Optional[str] = None
+        flavor: str = "Chocolate"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def cake(self) -> Cake:
+            return Cake()
+
+    @strawberry.directive(
+        locations=[DirectiveLocation.FIELD],
+        description="Add frostring with ``flavor`` to a cake.",
+    )
+    def add_frosting(flavor: str, v: DirectiveValue[Cake], value: str):
+        assert isinstance(v, Cake)
+        assert value == "foo"  # Check if value can be used as an argument
+        v.frosting = flavor
+        return v
+
+    schema = strawberry.Schema(query=Query, directives=[add_frosting])
+    result = schema.execute_sync(
+        """query {
+            cake @addFrosting(flavor: "Vanilla", value: "foo") {
+                frosting
+                flavor
+            }
+        }
+        """
+    )
+    assert result.data == {"cake": {"frosting": "Vanilla", "flavor": "Chocolate"}}
+
+
+# Defined in module scope to allow the FowardRef to be resolvable with eval
+@strawberry.directive(
+    locations=[DirectiveLocation.FIELD],
+    description="Add frostring with ``flavor`` to a cake.",
+)
+def add_frosting(flavor: str, v: DirectiveValue["Cake"], value: str):
+    assert isinstance(v, Cake)
+    assert value == "foo"
+    v.frosting = flavor
+    return v
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def cake(self) -> "Cake":
+        return Cake()
+
+
+@strawberry.type
+class Cake:
+    frosting: Optional[str] = None
+    flavor: str = "Chocolate"
+
+
+def test_directive_value_forward_ref():
+    """Tests if directive value by type works with PEP-563."""
+    schema = strawberry.Schema(query=Query, directives=[add_frosting])
+    result = schema.execute_sync(
+        """query {
+            cake @addFrosting(flavor: "Vanilla", value: "foo") {
+                frosting
+                flavor
+            }
+        }
+        """
+    )
+    assert result.data == {"cake": {"frosting": "Vanilla", "flavor": "Chocolate"}}
+
+
+def test_name_first_directive_value():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def greeting(self) -> str:
+            return "Hi"
+
+    @strawberry.directive(locations=[DirectiveLocation.FIELD])
+    def personalize_greeting(value: str, v: DirectiveValue[str]):
+        assert v == "Hi"
+        return f"{v} {value}"
+
+    schema = strawberry.Schema(Query, directives=[personalize_greeting])
+    result = schema.execute_sync('{ greeting @personalizeGreeting(value: "Bar")}')
+
+    assert result.data is not None
+    assert not result.errors
+    assert result.data["greeting"] == "Hi Bar"
+
+
+def test_named_based_directive_value_is_deprecated():
+
+    with pytest.deprecated_call(match=r"Argument name-based matching of 'value'"):
+
+        @strawberry.type
+        class Query:
+            hello: str = "hello"
+
+        @strawberry.directive(locations=[DirectiveLocation.FIELD])
+        def deprecated_value(value):
+            ...
+
+        strawberry.Schema(query=Query, directives=[deprecated_value])
+
+
+@pytest.mark.xfail(
+    reason="List arguments are not yet supported", raises=AttributeError, strict=True
+)
+@pytest.mark.asyncio
+async def test_directive_list_argument():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def greeting(self) -> str:
+            return "Hi"
+
+    @strawberry.directive(locations=[DirectiveLocation.FIELD])
+    def append_names(value: DirectiveValue[str], names: List[str]):
+        assert isinstance(names, list)
+        return f"{value} {', '.join(names)}"
+
+    schema = strawberry.Schema(query=Query, directives=[append_names])
+
+    result = await schema.execute(
+        'query { greeting @appendNames(names: ["foo", "bar"])}'
+    )
+
+    assert result.errors
+    raise result.errors[0].original_error  # type: ignore

@@ -463,6 +463,7 @@ def is_dataclasses_field_or_strawberry_field(expr: Expression) -> bool:
         if isinstance(expr.callee, RefExpr) and expr.callee.fullname in (
             "dataclasses.field",
             "strawberry.field.field",
+            "strawberry.mutation.mutation",
             "strawberry.federation.field",
             "strawberry.federation.field.field",
         ):
@@ -471,12 +472,17 @@ def is_dataclasses_field_or_strawberry_field(expr: Expression) -> bool:
         if isinstance(expr.callee, MemberExpr) and isinstance(
             expr.callee.expr, NameExpr
         ):
-            return expr.callee.name == "field" and expr.callee.expr.name == "strawberry"
+            return (
+                expr.callee.name in {"field", "mutation"}
+                and expr.callee.expr.name == "strawberry"
+            )
 
     return False
 
 
-def _collect_field_args(expr: Expression) -> Tuple[bool, Dict[str, Expression]]:
+def _collect_field_args(
+    ctx: ClassDefContext, expr: Expression
+) -> Tuple[bool, Dict[str, Expression]]:
     """Returns a tuple where the first value represents whether or not
     the expression is a call to dataclass.field and the second is a
     dictionary of the keyword arguments that field() was called with.
@@ -485,11 +491,15 @@ def _collect_field_args(expr: Expression) -> Tuple[bool, Dict[str, Expression]]:
     if is_dataclasses_field_or_strawberry_field(expr):
         expr = cast(CallExpr, expr)
 
-        # field() only takes keyword arguments.
         args = {}
 
         for name, arg in zip(expr.arg_names, expr.args):
-            assert name is not None
+            if name is None:
+                ctx.api.fail(
+                    '"field()" or "mutation()" only takes keyword arguments', expr
+                )
+                return False, {}
+
             args[name] = arg
         return True, args
 
@@ -693,7 +703,7 @@ class CustomDataclassTransformer:
                 is_init_var = True
                 node.type = node_type.args[0]
 
-            has_field_call, field_args = _collect_field_args(stmt.rvalue)
+            has_field_call, field_args = _collect_field_args(ctx, stmt.rvalue)
 
             is_in_init_param = field_args.get("init")
             if is_in_init_param is None:
@@ -894,6 +904,7 @@ class StrawberryPlugin(Plugin):
     def _is_strawberry_field(self, fullname: str) -> bool:
         if fullname in {
             "strawberry.field.field",
+            "strawberry.mutation.mutation",
             "strawberry.federation.field",
         }:
             return True
@@ -902,6 +913,7 @@ class StrawberryPlugin(Plugin):
             fullname.endswith(decorator)
             for decorator in {
                 "strawberry.field",
+                "strawberry.mutation",
                 "strawberry.federation.field",
             }
         )

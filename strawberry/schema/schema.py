@@ -102,6 +102,9 @@ class Schema(BaseSchema):
             subscription=subscription_type if subscription else None,
             directives=specified_directives + graphql_directives,
             types=graphql_types,
+            extensions={
+                GraphQLCoreConverter.DEFINITION_BACKREF: self,
+            },
         )
 
         # attach our schema to the GraphQL schema instance
