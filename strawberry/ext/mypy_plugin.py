@@ -395,7 +395,7 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
         # these are the fields that the user added to the strawberry type
         new_strawberry_fields: Set[str] = set()
 
-        # TODO: think about inheritance for strawberryt?
+        # TODO: think about inheritance for strawberry?
         for stmt in ctx.cls.defs.body:
             if isinstance(stmt, AssignmentStmt):
                 lhs: NameExpr = stmt.lvalues[0]
