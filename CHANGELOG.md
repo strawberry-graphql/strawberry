@@ -1,6 +1,37 @@
 CHANGELOG
 =========
 
+0.118.0 - 2022-07-13
+--------------------
+
+You can now pass keyword arguments to `to_pydantic`
+```python
+from pydantic import BaseModel
+import strawberry
+
+class MyModel(BaseModel):
+   email: str
+   password: str
+
+
+@strawberry.experimental.pydantic.input(model=MyModel)
+class MyModelStrawberry:
+   email: strawberry.auto
+   # no password field here
+
+MyModelStrawberry(email="").to_pydantic(password="hunter")
+```
+
+Also if you forget to pass password, mypy will complain
+
+```python
+MyModelStrawberry(email="").to_pydantic()
+# error: Missing named argument "password" for "to_pydantic" of "MyModelStrawberry"
+```
+
+Contributed by [James Chua](https://github.com/thejaminator) via [PR #2012](https://github.com/strawberry-graphql/strawberry/pull/2012/)
+
+
 0.117.1 - 2022-07-07
 --------------------
 
