@@ -390,7 +390,9 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
         ]
         add_method(ctx, "__init__", init_args, NoneType())
 
-        model_type: mypy.types.Instance = _get_type_for_expr(model_expression, ctx.api)
+        model_type = cast(
+            mypy.types.Instance, _get_type_for_expr(model_expression, ctx.api)
+        )
 
         # these are the fields that the user added to the strawberry type
         new_strawberry_fields: Set[str] = set()
@@ -398,7 +400,7 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
         # TODO: think about inheritance for strawberry?
         for stmt in ctx.cls.defs.body:
             if isinstance(stmt, AssignmentStmt):
-                lhs: NameExpr = stmt.lvalues[0]
+                lhs = cast(NameExpr, stmt.lvalues[0])
                 new_strawberry_fields.add(lhs.name)
 
         # grab the fields created from the pydantic plugin
