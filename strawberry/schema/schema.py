@@ -122,12 +122,12 @@ class Schema(BaseSchema):
     def get_extensions(
         self, sync: bool = False
     ) -> List[Union[Type[Extension], Extension]]:
+        extensions = list(self.extensions)
 
         if self.directives:
-            return list(self.extensions) + [
-                DirectivesExtension if not sync else DirectivesExtensionSync
-            ]
-        return list(self.extensions)
+            extensions.append(DirectivesExtensionSync if sync else DirectivesExtension)
+
+        return extensions
 
     @lru_cache()
     def get_type_by_name(  # type: ignore  # lru_cache makes mypy complain
