@@ -439,23 +439,23 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
             potentially_missing_fields if not is_all_fields else set()
         )
 
-        # Add to_pydantic
-        # TODO: Only add this if not manually defined
-        add_method(
-            ctx,
-            "to_pydantic",
-            args=[
-                f.to_argument(
-                    # TODO: use_alias should depend on config?
-                    info=model_type.type,
-                    typed=True,
-                    force_optional=False,
-                    use_alias=True,
-                )
-                for f in missing_pydantic_fields
-            ],
-            return_type=model_type,
-        )
+        # Add the default to_pydantic if undefined by the user
+        if "to_pydantic" not in ctx.cls.info.names:
+            add_method(
+                ctx,
+                "to_pydantic",
+                args=[
+                    f.to_argument(
+                        # TODO: use_alias should depend on config?
+                        info=model_type.type,
+                        typed=True,
+                        force_optional=False,
+                        use_alias=True,
+                    )
+                    for f in missing_pydantic_fields
+                ],
+                return_type=model_type,
+            )
 
         # Add from_pydantic
         model_argument = Argument(
