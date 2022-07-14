@@ -166,7 +166,7 @@
 
     MyModelStrawberry(email="").to_pydantic()
   out: |
-     main:15: error: Missing named argument "passwordss" for "to_pydantic" of "MyModelStrawberry"  [call-arg]
+     main:15: error: Missing named argument "password" for "to_pydantic" of "MyModelStrawberry"  [call-arg]
 - case: test_to_pydantic_kwargs_with_defaults
   main: |
     from pydantic import BaseModel
