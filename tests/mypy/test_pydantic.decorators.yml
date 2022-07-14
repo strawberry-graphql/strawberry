@@ -223,3 +223,26 @@
 
     MyModelStrawberry(email="").to_pydantic()
   out: |
+- case: test_to_pydantic_kwargs_with_all_fields_adding_field
+  main: |
+    from pydantic import BaseModel
+    from typing import Optional
+    import strawberry
+
+
+    class MyModel(BaseModel):
+        email: str
+        password: Optional[str]
+
+        @property
+        def age(self) -> int:
+            return 42
+
+
+    @strawberry.experimental.pydantic.input(model=MyModel, all_fields=True)
+    class MyModelStrawberry:
+        age: int # read from the property
+
+
+    MyModelStrawberry(email="").to_pydantic()
+  out: |
