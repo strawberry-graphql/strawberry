@@ -56,7 +56,7 @@ class MissingFieldAnnotationError(StrawberryException):
         )
 
         return Panel.fit(
-            Group(*content),
+            Group(*content),  # type: ignore
             box=SIMPLE,
         )
 

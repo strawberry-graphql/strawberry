@@ -71,7 +71,7 @@ class StrawberryUnion(StrawberryType):
         # Raise an error in any other case.
         # There is Work in progress to deal with more merging cases, see:
         # https://github.com/strawberry-graphql/strawberry/pull/1455
-        raise InvalidUnionType(other)
+        raise InvalidUnionType("Invalid union type", other)  # type: ignore # TODO: fix this  # noqa
 
     @property
     def types(self) -> Tuple[StrawberryType, ...]:
