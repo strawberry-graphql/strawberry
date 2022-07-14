@@ -71,11 +71,14 @@ def _build_dataclass_creation_fields(
     else:
         # otherwise we build an appropriate strawberry field that resolves it
         existing_field = existing_fields.get(field.name)
+        graphql_name = None
+        if existing_field and existing_field.graphql_name:
+            graphql_name = existing_field.graphql_name
+        elif field.has_alias and use_pydantic_alias:
+            graphql_name = field.alias
         strawberry_field = StrawberryField(
             python_name=field.name,
-            graphql_name=field.alias
-            if field.has_alias and use_pydantic_alias
-            else None,
+            graphql_name=graphql_name,
             # always unset because we use default_factory instead
             default=UNSET,
             default_factory=get_default_factory_for_field(field),
@@ -242,13 +245,14 @@ def type(
                 cls=cls, model_instance=instance, extra=extra
             )
 
-        def to_pydantic_default(self) -> PydanticModel:
+        def to_pydantic_default(self, **kwargs) -> PydanticModel:
             instance_kwargs = {
                 f.name: convert_strawberry_class_to_pydantic_model(
                     getattr(self, f.name)
                 )
                 for f in dataclasses.fields(self)
             }
+            instance_kwargs.update(kwargs)
             return model(**instance_kwargs)
 
         if not has_custom_from_pydantic:

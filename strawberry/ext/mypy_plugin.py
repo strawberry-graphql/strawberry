@@ -3,6 +3,7 @@ from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union, cast
 
 from typing_extensions import Final
 
+import mypy
 from mypy.nodes import (
     ARG_OPT,
     ARG_POS,
@@ -65,6 +66,12 @@ try:
     from mypy.types import TypeVarDef  # type: ignore
 except ImportError:
     TypeVarDef = TypeVarType
+
+# To be compatible with user who don't use pydantic
+try:
+    from pydantic.mypy import METADATA_KEY as PYDANTIC_METADATA_KEY, PydanticModelField
+except ImportError:
+    PYDANTIC_METADATA_KEY = ""
 
 
 class MypyVersion:
@@ -388,13 +395,54 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
         ]
         add_method(ctx, "__init__", init_args, NoneType())
 
-        model_type = _get_type_for_expr(model_expression, ctx.api)
+        model_type = cast(
+            mypy.types.Instance, _get_type_for_expr(model_expression, ctx.api)
+        )
+
+        # these are the fields that the user added to the strawberry type
+        new_strawberry_fields: Set[str] = set()
+
+        # TODO: think about inheritance for strawberry?
+        for stmt in ctx.cls.defs.body:
+            if isinstance(stmt, AssignmentStmt):
+                lhs = cast(NameExpr, stmt.lvalues[0])
+                new_strawberry_fields.add(lhs.name)
+
+        pydantic_fields: Set["PydanticModelField"] = set()
+        try:
+            for name, data in model_type.type.metadata[PYDANTIC_METADATA_KEY][
+                "fields"
+            ].items():
+                field = PydanticModelField.deserialize(ctx.cls.info, data)
+                pydantic_fields.add(field)
+        except KeyError:
+            # this will happen if the user didn't add the pydantic plugin
+            # AND is using the pydantic conversion decorator
+            ctx.api.fail(
+                "Pydantic plugin not installed,"
+                " please add pydantic.mypy your mypy.ini plugins",
+                ctx.reason,
+            )
+
+        missing_pydantic_fields: Set["PydanticModelField"] = set(
+            f for f in pydantic_fields if f.name not in new_strawberry_fields
+        )
 
         # Add to_pydantic
+        # TODO: Only add this if not manually defined
         add_method(
             ctx,
             "to_pydantic",
-            args=[],
+            args=[
+                f.to_argument(
+                    # TODO: use_alias should depend on config?
+                    info=model_type.type,
+                    typed=True,
+                    force_optional=False,
+                    use_alias=True,
+                )
+                for f in missing_pydantic_fields
+            ],
             return_type=model_type,
         )
 
@@ -420,6 +468,7 @@ def is_dataclasses_field_or_strawberry_field(expr: Expression) -> bool:
         if isinstance(expr.callee, RefExpr) and expr.callee.fullname in (
             "dataclasses.field",
             "strawberry.field.field",
+            "strawberry.mutation.mutation",
             "strawberry.federation.field",
             "strawberry.federation.field.field",
         ):
@@ -428,12 +477,17 @@ def is_dataclasses_field_or_strawberry_field(expr: Expression) -> bool:
         if isinstance(expr.callee, MemberExpr) and isinstance(
             expr.callee.expr, NameExpr
         ):
-            return expr.callee.name == "field" and expr.callee.expr.name == "strawberry"
+            return (
+                expr.callee.name in {"field", "mutation"}
+                and expr.callee.expr.name == "strawberry"
+            )
 
     return False
 
 
-def _collect_field_args(expr: Expression) -> Tuple[bool, Dict[str, Expression]]:
+def _collect_field_args(
+    ctx: ClassDefContext, expr: Expression
+) -> Tuple[bool, Dict[str, Expression]]:
     """Returns a tuple where the first value represents whether or not
     the expression is a call to dataclass.field and the second is a
     dictionary of the keyword arguments that field() was called with.
@@ -442,11 +496,15 @@ def _collect_field_args(expr: Expression) -> Tuple[bool, Dict[str, Expression]]:
     if is_dataclasses_field_or_strawberry_field(expr):
         expr = cast(CallExpr, expr)
 
-        # field() only takes keyword arguments.
         args = {}
 
         for name, arg in zip(expr.arg_names, expr.args):
-            assert name is not None
+            if name is None:
+                ctx.api.fail(
+                    '"field()" or "mutation()" only takes keyword arguments', expr
+                )
+                return False, {}
+
             args[name] = arg
         return True, args
 
@@ -650,7 +708,7 @@ class CustomDataclassTransformer:
                 is_init_var = True
                 node.type = node_type.args[0]
 
-            has_field_call, field_args = _collect_field_args(stmt.rvalue)
+            has_field_call, field_args = _collect_field_args(ctx, stmt.rvalue)
 
             is_in_init_param = field_args.get("init")
             if is_in_init_param is None:
@@ -851,6 +909,7 @@ class StrawberryPlugin(Plugin):
     def _is_strawberry_field(self, fullname: str) -> bool:
         if fullname in {
             "strawberry.field.field",
+            "strawberry.mutation.mutation",
             "strawberry.federation.field",
         }:
             return True
@@ -859,6 +918,7 @@ class StrawberryPlugin(Plugin):
             fullname.endswith(decorator)
             for decorator in {
                 "strawberry.field",
+                "strawberry.mutation",
                 "strawberry.federation.field",
             }
         )

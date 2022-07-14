@@ -1,6 +1,364 @@
 CHANGELOG
 =========
 
+0.118.1 - 2022-07-14
+--------------------
+
+Fixes issue where users without pydantic were not able to use the mypy plugin.
+
+Contributed by [James Chua](https://github.com/thejaminator) via [PR #2016](https://github.com/strawberry-graphql/strawberry/pull/2016/)
+
+
+0.118.0 - 2022-07-13
+--------------------
+
+You can now pass keyword arguments to `to_pydantic`
+```python
+from pydantic import BaseModel
+import strawberry
+
+class MyModel(BaseModel):
+   email: str
+   password: str
+
+
+@strawberry.experimental.pydantic.input(model=MyModel)
+class MyModelStrawberry:
+   email: strawberry.auto
+   # no password field here
+
+MyModelStrawberry(email="").to_pydantic(password="hunter")
+```
+
+Also if you forget to pass password, mypy will complain
+
+```python
+MyModelStrawberry(email="").to_pydantic()
+# error: Missing named argument "password" for "to_pydantic" of "MyModelStrawberry"
+```
+
+Contributed by [James Chua](https://github.com/thejaminator) via [PR #2012](https://github.com/strawberry-graphql/strawberry/pull/2012/)
+
+
+0.117.1 - 2022-07-07
+--------------------
+
+Allow to add alias to fields generated from pydantic with `strawberry.field(name="ageAlias")`.
+
+```
+class User(pydantic.BaseModel):
+    age: int
+
+@strawberry.experimental.pydantic.type(User)
+class UserType:
+    age: strawberry.auto = strawberry.field(name="ageAlias")
+```
+
+Contributed by [Alex](https://github.com/benzolium) via [PR #1986](https://github.com/strawberry-graphql/strawberry/pull/1986/)
+
+
+0.117.0 - 2022-07-06
+--------------------
+
+This release fixes an issue that required installing opentelemetry when
+trying to use the ApolloTracing extension
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #1977](https://github.com/strawberry-graphql/strawberry/pull/1977/)
+
+
+0.116.4 - 2022-07-04
+--------------------
+
+Fix regression caused by the new resolver argument handling mechanism
+introduced in v0.115.0. This release restores the ability to use unhashable
+default values in resolvers such as dict and list. See example below:
+
+```python
+@strawberry.type
+class Query:
+    @strawberry.field
+    def field(
+        self, x: List[str] = ["foo"], y: JSON = {"foo": 42}  # noqa: B006
+    ) -> str:
+        return f"{x} {y}"
+```
+
+Thanks to @coady for the regression report!
+
+Contributed by [San Kilkis](https://github.com/skilkis) via [PR #1985](https://github.com/strawberry-graphql/strawberry/pull/1985/)
+
+
+0.116.3 - 2022-07-04
+--------------------
+
+This release fixes the following error when trying to use Strawberry
+with Apollo Federation:
+
+```
+Error: A valid schema couldn't be composed. The following composition errors were found:
+	[burro-api] Unknown type _FieldSet
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #1988](https://github.com/strawberry-graphql/strawberry/pull/1988/)
+
+
+0.116.2 - 2022-07-03
+--------------------
+
+Reimplement `StrawberryResolver.annotations` property after removal in v0.115.
+
+Library authors who previously relied on the public `annotations` property
+can continue to do so after this fix.
+
+Contributed by [San Kilkis](https://github.com/skilkis) via [PR #1990](https://github.com/strawberry-graphql/strawberry/pull/1990/)
+
+
+0.116.1 - 2022-07-03
+--------------------
+
+This release fixes a breaking internal error in mypy plugin for the following case.
+- using positional arguments to pass a resolver for `strawberry.field()` or `strawberry.mutation()`
+
+```python
+failed: str = strawberry.field(resolver)
+successed: str = strawberry.field(resolver=resolver)
+```
+
+now mypy returns an error with `"field()" or "mutation()" only takes keyword arguments` message
+rather than an internal error.
+
+Contributed by [cake-monotone](https://github.com/cake-monotone) via [PR #1987](https://github.com/strawberry-graphql/strawberry/pull/1987/)
+
+
+0.116.0 - 2022-07-03
+--------------------
+
+This release adds a link from generated GraphQLCore types to the Strawberry type
+that generated them.
+
+From a GraphQLCore type you can now access the Strawberry type by doing:
+
+```python
+strawberry_type: TypeDefinition = graphql_core_type.extensions[GraphQLCoreConverter.DEFINITION_BACKREF]
+```
+
+Contributed by [Paulo Costa](https://github.com/paulo-raca) via [PR #1766](https://github.com/strawberry-graphql/strawberry/pull/1766/)
+
+
+0.115.0 - 2022-07-01
+--------------------
+
+This release changes how we declare the `info` argument in resolvers and the
+`value` argument in directives.
+
+Previously we'd use the name of the argument to determine its value. Now we use
+the type annotation of the argument to determine its value.
+
+Here's an example of how the old syntax works:
+
+```python
+def some_resolver(info) -> str:
+    return info.context.get("some_key", "default")
+
+@strawberry.type
+class Example:
+    a_field: str = strawberry.resolver(some_resolver)
+```
+
+and here's an example of how the new syntax works:
+
+```python
+from strawberry.types import Info
+
+def some_resolver(info: Info) -> str:
+    return info.context.get("some_key", "default")
+
+@strawberry.type
+class Example:
+    a_field: str = strawberry.resolver(some_resolver)
+```
+
+This means that you can now use a different name for the `info` argument in your
+resolver and the `value` argument in your directive.
+
+Here's an example that uses a custom name for both the value and the info
+parameter in directives:
+
+```python
+from strawberry.types import Info
+from strawberry.directive import DirectiveLocation, DirectiveValue
+
+@strawberry.type
+class Cake:
+    frosting: Optional[str] = None
+    flavor: str = "Chocolate"
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def cake(self) -> Cake:
+        return Cake()
+
+@strawberry.directive(
+    locations=[DirectiveLocation.FIELD],
+    description="Add frosting with ``value`` to a cake.",
+)
+def add_frosting(value: str, v: DirectiveValue[Cake], my_info: Info):
+    # Arbitrary argument name when using `DirectiveValue` is supported!
+    assert isinstance(v, Cake)
+    if value in my_info.context["allergies"]:  # Info can now be accessed from directives!
+        raise AllergyError("You are allergic to this frosting!")
+    else:
+        v.frosting = value  # Value can now be used as a GraphQL argument name!
+    return v
+```
+
+**Note:** the old way of passing arguments by name is deprecated and will be
+removed in future releases of Strawberry.
+
+Contributed by [San Kilkis](https://github.com/skilkis) via [PR #1713](https://github.com/strawberry-graphql/strawberry/pull/1713/)
+
+
+0.114.7 - 2022-07-01
+--------------------
+
+Allow use of implicit `Any` in `strawberry.Private` annotated Generic types.
+
+For example the following is now supported:
+
+```python
+from __future__ import annotations
+
+from typing import Generic, Sequence, TypeVar
+
+import strawberry
+
+
+T = TypeVar("T")
+
+
+@strawberry.type
+class Foo(Generic[T]):
+
+    private_field: strawberry.Private[Sequence]  # instead of Sequence[Any]
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def foo(self) -> Foo[str]:
+        return Foo(private_field=[1, 2, 3])
+```
+
+See Issue [#1938](https://github.com/strawberry-graphql/strawberry/issues/1938)
+for details.
+
+Contributed by [San Kilkis](https://github.com/skilkis) via [PR #1939](https://github.com/strawberry-graphql/strawberry/pull/1939/)
+
+
+0.114.6 - 2022-06-30
+--------------------
+
+The federation decorator now allows for a list of additional arbitrary schema
+directives extending the key/shareable directives used for federation.
+
+Example Python:
+
+```python
+import strawberry
+from strawberry.schema.config import StrawberryConfig
+from strawberry.schema_directive import Location
+
+@strawberry.schema_directive(locations=[Location.OBJECT])
+class CacheControl:
+    max_age: int
+
+@strawberry.federation.type(
+    keys=["id"], shareable=True, extend=True, directives=[CacheControl(max_age=42)]
+)
+class FederatedType:
+    id: strawberry.ID
+
+schema = strawberry.Schema(
+    query=Query, config=StrawberryConfig(auto_camel_case=False)
+)
+```
+
+Resulting GQL Schema:
+
+```graphql
+directive @CacheControl(max_age: Int!) on OBJECT
+directive @key(fields: _FieldSet!, resolvable: Boolean) on OBJECT | INTERFACE
+directive @shareable on FIELD_DEFINITION | OBJECT
+
+extend type FederatedType
+  @key(fields: "id")
+  @shareable
+  @CacheControl(max_age: 42) {
+  id: ID!
+}
+
+type Query {
+  federatedType: FederatedType!
+}
+```
+
+Contributed by [Jeffrey DeFond](https://github.com/defond0) via [PR #1945](https://github.com/strawberry-graphql/strawberry/pull/1945/)
+
+
+0.114.5 - 2022-06-23
+--------------------
+
+This release adds support in Mypy for using strawberry.mutation
+while passing a resolver, the following now doesn't make Mypy return
+an error:
+
+```python
+import strawberry
+
+def set_name(self, name: str) -> None:
+    self.name = name
+
+@strawberry.type
+class Mutation:
+    set_name: None = strawberry.mutation(resolver=set_name)
+```
+
+Contributed by [Etty](https://github.com/estyxx) via [PR #1966](https://github.com/strawberry-graphql/strawberry/pull/1966/)
+
+
+0.114.4 - 2022-06-23
+--------------------
+
+This release fixes the type annotation of `Response.errors` used in the `GraphQLTestClient` to be a `List` of `GraphQLFormattedError`.
+
+Contributed by [Etty](https://github.com/estyxx) via [PR #1961](https://github.com/strawberry-graphql/strawberry/pull/1961/)
+
+
+0.114.3 - 2022-06-21
+--------------------
+
+This release fixes the type annotation of `Response.errors` used in the `GraphQLTestClient` to be a `List` of `GraphQLError`.
+
+Contributed by [Etty](https://github.com/estyxx) via [PR #1959](https://github.com/strawberry-graphql/strawberry/pull/1959/)
+
+
+0.114.2 - 2022-06-15
+--------------------
+
+This release fixes an issue in the `GraphQLTestClient` when using both variables and files together.
+
+Contributed by [Etty](https://github.com/estyxx) via [PR #1576](https://github.com/strawberry-graphql/strawberry/pull/1576/)
+
+
+0.114.1 - 2022-06-09
+--------------------
+
+Fix crash in Django's `HttpResponse.__repr__` by handling `status_code=None` in `TemporalHttpResponse.__repr__`.
+
+Contributed by [Daniel Hahler](https://github.com/blueyed) via [PR #1950](https://github.com/strawberry-graphql/strawberry/pull/1950/)
+
+
 0.114.0 - 2022-05-27
 --------------------
 
