@@ -1,7 +1,6 @@
 from decimal import Decimal
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union, cast
 
-from pydantic.mypy import METADATA_KEY as PYDANTIC_METADATA_KEY, PydanticModelField
 from typing_extensions import Final
 
 import mypy
@@ -67,6 +66,12 @@ try:
     from mypy.types import TypeVarDef  # type: ignore
 except ImportError:
     TypeVarDef = TypeVarType
+
+# To be compatible with user who don't use pydantic
+try:
+    from pydantic.mypy import METADATA_KEY as PYDANTIC_METADATA_KEY, PydanticModelField
+except ImportError:
+    PYDANTIC_METADATA_KEY = ""
 
 
 class MypyVersion:
@@ -403,8 +408,7 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
                 lhs = cast(NameExpr, stmt.lvalues[0])
                 new_strawberry_fields.add(lhs.name)
 
-        # grab the fields created from the pydantic plugin
-        pydantic_fields: Set[PydanticModelField] = set()
+        pydantic_fields: Set["PydanticModelField"] = set()
         try:
             for name, data in model_type.type.metadata[PYDANTIC_METADATA_KEY][
                 "fields"
@@ -420,7 +424,7 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
                 ctx.reason,
             )
 
-        missing_pydantic_fields: Set[PydanticModelField] = set(
+        missing_pydantic_fields: Set["PydanticModelField"] = set(
             f for f in pydantic_fields if f.name not in new_strawberry_fields
         )
 
