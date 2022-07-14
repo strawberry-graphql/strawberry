@@ -246,3 +246,22 @@
 
     MyModelStrawberry(email="").to_pydantic()
   out: |
+- case: test_to_pydantic_kwargs_private_field
+  main: |
+    from pydantic import BaseModel
+    from typing import Optional
+    import strawberry
+
+
+    class MyModel(BaseModel):
+        email: str
+        _age: int # for pydantic, underscore means private field
+
+
+    @strawberry.experimental.pydantic.input(model=MyModel)
+    class MyModelStrawberry:
+        email: strawberry.auto
+
+
+    MyModelStrawberry(email="").to_pydantic()
+  out: |
