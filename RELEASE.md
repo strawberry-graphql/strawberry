@@ -1,8 +1,10 @@
 Release type: patch
 
- Fixes issue where the mypy plugin would have a false positive error.
- This happened to_pydantic was called on a type that was converted from
- pydantic with all_fields=True
+Fixes false positives with the mypy plugin.
+Happened when `to_pydantic` was called on a type that was converted
+pydantic with all_fields=True.
+
+Also fixes the type signature when `to_pydantic` is defined by the user.
 
 ```python
 from pydantic import BaseModel
