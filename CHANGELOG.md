@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.119.0 - 2022-07-14
+--------------------
+
+This release changes when we add the custom directives extension, previously
+the extension was always enabled, now it is only enabled if you pass custom
+directives to `strawberry.Schema`.
+
+Contributed by [bomtall](https://github.com/bomtall) via [PR #2020](https://github.com/strawberry-graphql/strawberry/pull/2020/)
+
+
 0.118.2 - 2022-07-14
 --------------------
 
