@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.118.1 - 2022-07-14
+--------------------
+
+Fixes issue where users without pydantic were not able to use the mypy plugin.
+
+Contributed by [James Chua](https://github.com/thejaminator) via [PR #2016](https://github.com/strawberry-graphql/strawberry/pull/2016/)
+
+
 0.118.0 - 2022-07-13
 --------------------
 
