@@ -204,3 +204,22 @@
 
     MyModelStrawberry(email="").to_pydantic()
   out: |
+- case: test_to_pydantic_kwargs_with_all_fields
+  main: |
+    from pydantic import BaseModel
+    from typing import Optional
+    import strawberry
+
+
+    class MyModel(BaseModel):
+        email: str
+        password: Optional[str]
+
+
+    @strawberry.experimental.pydantic.input(model=MyModel, all_fields=True)
+    class MyModelStrawberry:
+        ...
+
+
+    MyModelStrawberry(email="").to_pydantic()
+  out: |

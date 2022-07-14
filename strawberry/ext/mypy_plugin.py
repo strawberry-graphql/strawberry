@@ -436,7 +436,7 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
         """
         is_all_fields: bool = len(potentially_missing_fields) == len(pydantic_fields)
         missing_pydantic_fields: Set["PydanticModelField"] = (
-            potentially_missing_fields if is_all_fields else set()
+            potentially_missing_fields if not is_all_fields else set()
         )
 
         # Add to_pydantic
