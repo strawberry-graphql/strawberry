@@ -491,3 +491,6 @@ def test_union_with_input_types():
             @strawberry.field
             def user(self, data: Input) -> User:
                 return User(name=data.name, age=100)
+
+        schema = strawberry.Schema(query=Query)
+        del schema  # Too Hacky?
