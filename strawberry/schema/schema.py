@@ -1,5 +1,5 @@
 from functools import lru_cache
-from typing import Any, Dict, Iterable, Optional, Sequence, Type, Union, List
+from typing import Any, Dict, Iterable, List, Optional, Sequence, Type, Union
 
 from graphql import (
     ExecutionContext as GraphQLExecutionContext,
@@ -119,10 +119,14 @@ class Schema(BaseSchema):
 
         self.query = self.schema_converter.type_map[query_type.name]
 
-    def get_extensions(self, sync:bool=False) -> List[Union[Type[Extension], Extension]]:
+    def get_extensions(
+        self, sync: bool = False
+    ) -> List[Union[Type[Extension], Extension]]:
 
         if self.directives:
-            return list(self.extensions) + [DirectivesExtension if not sync else DirectivesExtensionSync]
+            return list(self.extensions) + [
+                DirectivesExtension if not sync else DirectivesExtensionSync
+            ]
         return list(self.extensions)
 
     @lru_cache()
