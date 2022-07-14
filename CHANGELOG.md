@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.118.2 - 2022-07-14
+--------------------
+
+This release adds an initial fix to make `strawberry.auto` work when using
+`from __future__ import annotations`.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #1994](https://github.com/strawberry-graphql/strawberry/pull/1994/)
+
+
 0.118.1 - 2022-07-14
 --------------------
 
