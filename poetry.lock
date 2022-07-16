@@ -1299,7 +1299,7 @@ python-versions = "*"
 
 [[package]]
 name = "types-ujson"
-version = "5.3.1"
+version = "5.4.0"
 description = "Typing stubs for ujson"
 category = "dev"
 optional = false
@@ -1446,7 +1446,7 @@ sanic = ["sanic"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "f4858f3f6530d6274c030ea6691c2eee58cb3f11d674909138e8b8765e44f9e6"
+content-hash = "46cc62e0548dc3dce322a00c686d0d353c91c85423ab3c2d0c1432edd46f5da0"
 
 [metadata.files]
 aiofiles = [
@@ -2427,8 +2427,8 @@ types-typed-ast = [
     {file = "types_typed_ast-1.5.6-py3-none-any.whl", hash = "sha256:cb11d81b665ff3213436c0a5228952ee20f243bdd0ee2e3e19aef43149dffe05"},
 ]
 types-ujson = [
-    {file = "types-ujson-5.3.1.tar.gz", hash = "sha256:64698711b7b5e21a270213aa491ae3a4e2d75406e9536b1d998c259efb8aa416"},
-    {file = "types_ujson-5.3.1-py3-none-any.whl", hash = "sha256:09a9f1c1b511423c37cda6247492f93bde1157141b5ecff9509a28c920e8c0e4"},
+    {file = "types-ujson-5.4.0.tar.gz", hash = "sha256:c6124cadc36e565a90b01213aeec3447f571d9793d177e1653146a3867c81beb"},
+    {file = "types_ujson-5.4.0-py3-none-any.whl", hash = "sha256:551bb93e13f010cdc17ccc97cab0e44b7891d54acb8977f0ab64fcb9d6e44cc2"},
 ]
 types-urllib3 = [
     {file = "types-urllib3-1.26.15.tar.gz", hash = "sha256:c89283541ef92e344b7f59f83ea9b5a295b16366ceee3f25ecfc5593c79f794e"},
