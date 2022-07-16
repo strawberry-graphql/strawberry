@@ -1,6 +1,8 @@
+import hashlib
 from inspect import isawaitable
 from typing import Optional
 
+from backports.cached_property import cached_property
 from ddtrace import tracer
 
 from strawberry.extensions import Extension
@@ -17,6 +19,19 @@ class DatadogTracingExtension(Extension):
         if execution_context:
             self.execution_context = execution_context
 
+    @cached_property
+    def _resource_name(self):
+        # TODO: is this actually enough?
+        # there might be duplicated operation names with different queries
+        # maybe we can use the query hash?
+        if self.execution_context.operation_name:
+            return self.execution_context.operation_name
+
+        return self.hash_query(self.execution_context.query)
+
+    def hash_query(self, query: str):
+        return hashlib.md5(query.encode("utf-8")).hexdigest()
+
     def on_request_start(self) -> None:
         self._operation_name = self.execution_context.operation_name
         span_name = (
@@ -25,7 +40,7 @@ class DatadogTracingExtension(Extension):
 
         self.request_span = tracer.trace(
             span_name,
-            resource=self.execution_context.query,
+            resource=self._resource_name,
             span_type="graphql",
             service="strawberry",
         )
