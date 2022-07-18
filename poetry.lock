@@ -1299,7 +1299,7 @@ python-versions = "*"
 
 [[package]]
 name = "types-requests"
-version = "2.28.1"
+version = "2.28.2"
 description = "Typing stubs for requests"
 category = "dev"
 optional = false
@@ -1481,7 +1481,7 @@ sanic = ["sanic"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "99a98020ce5df9076326ea3ea0675037b591c9f6a9467d59e279ebae8177fb6b"
+content-hash = "4752298c3353982965a12eff95d07ff0a8dddcd1b8d4115393e747ca387fe195"
 
 [metadata.files]
 aiofiles = [
