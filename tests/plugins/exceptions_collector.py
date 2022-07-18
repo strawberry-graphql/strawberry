@@ -28,7 +28,7 @@ class ExceptionsCollector:
                 # hti = Html2Image()
 
                 # console.print(datum)
-                html += console.export_svg()
+                html += console.export_text()
 
                 # hti.screenshot(html_str=html, save_as="red_page.png", size=(900, 400))
 
