@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.119.1 - 2022-07-18
+--------------------
+
+An explanatory custom exception is raised when union of GraphQL input types is attempted.
+
+Contributed by [Dhanshree Arora](https://github.com/DhanshreeA) via [PR #2019](https://github.com/strawberry-graphql/strawberry/pull/2019/)
+
+
 0.119.0 - 2022-07-14
 --------------------
 
