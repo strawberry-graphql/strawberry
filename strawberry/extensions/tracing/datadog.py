@@ -92,3 +92,19 @@ class DatadogTracingExtension(Extension):
                 result = await result
 
             return result
+
+
+class DatadogTracingExtensionSync(DatadogTracingExtension):
+    def resolve(self, _next, root, info, *args, **kwargs):
+        if should_skip_tracing(_next, info):
+            return _next(root, info, *args, **kwargs)
+
+        field_path = f"{info.parent_type}.{info.field_name}"
+
+        with tracer.trace(f"Resolving: {field_path}", span_type="graphql") as span:
+            span.set_tag("graphql.field_name", info.field_name)
+            span.set_tag("graphql.parent_type", info.parent_type.name)
+            span.set_tag("graphql.field_path", field_path)
+            span.set_tag("graphql.path", ".".join(map(str, info.path.as_list())))
+
+            return _next(root, info, *args, **kwargs)
