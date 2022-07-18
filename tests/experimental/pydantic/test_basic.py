@@ -795,3 +795,48 @@ def test_field_directives():
     assert field2.graphql_name is None
     assert isinstance(field2.type, StrawberryOptional)
     assert field2.type.of_type is str
+
+
+def test_alias_fields():
+    class User(pydantic.BaseModel):
+        age: int
+
+    @strawberry.experimental.pydantic.type(User)
+    class UserType:
+        age: strawberry.auto = strawberry.field(name="ageAlias")
+
+    definition: TypeDefinition = UserType._type_definition
+    assert definition.name == "UserType"
+
+    field1 = definition.fields[0]
+
+    assert field1.python_name == "age"
+    assert field1.graphql_name == "ageAlias"
+    assert field1.type is int
+
+
+def test_alias_fields_with_use_pydantic_alias():
+    class User(pydantic.BaseModel):
+        age: int
+        state: str = pydantic.Field(alias="statePydantic")
+        country: str = pydantic.Field(alias="countryPydantic")
+
+    @strawberry.experimental.pydantic.type(User, use_pydantic_alias=True)
+    class UserType:
+        age: strawberry.auto = strawberry.field(name="ageAlias")
+        state: strawberry.auto = strawberry.field(name="state")
+        country: strawberry.auto
+
+    definition: TypeDefinition = UserType._type_definition
+    assert definition.name == "UserType"
+
+    [field1, field2, field3] = definition.fields
+
+    assert field1.python_name == "age"
+    assert field1.graphql_name == "ageAlias"
+
+    assert field2.python_name == "state"
+    assert field2.graphql_name == "state"
+
+    assert field3.python_name == "country"
+    assert field3.graphql_name == "countryPydantic"

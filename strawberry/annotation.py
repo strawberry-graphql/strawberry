@@ -12,6 +12,8 @@ from typing import (  # type: ignore[attr-defined]
     _eval_type,
 )
 
+from strawberry.private import is_private
+
 
 try:
     from typing import ForwardRef
@@ -69,6 +71,8 @@ class StrawberryAnnotation:
             annotation = self.annotation
 
         evaled_type = _eval_type(annotation, self.namespace, None)
+        if is_private(evaled_type):
+            return evaled_type
         if self._is_async_type(evaled_type):
             evaled_type = self._strip_async_type(evaled_type)
         if self._is_lazy_type(evaled_type):

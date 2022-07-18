@@ -1,3 +1,4 @@
+from copy import copy
 from typing import Any, Union, cast
 
 from graphql import (
@@ -20,10 +21,16 @@ from strawberry.utils.inspect import get_func_args
 
 from ..printer import print_schema
 from ..schema import Schema as BaseSchema
+from .types import FieldSet
 
 
 class Schema(BaseSchema):
     def __init__(self, *args, **kwargs):
+        additional_types = list(kwargs.pop("types", []))
+        additional_types.extend([FieldSet])
+
+        kwargs["types"] = additional_types
+
         super().__init__(*args, **kwargs)
 
         self._add_scalars()
@@ -62,20 +69,17 @@ class Schema(BaseSchema):
 
         if entity_type:
             self._schema.type_map[entity_type.name] = entity_type
-
             fields["_entities"] = self._get_entities_field(entity_type)
 
+        # Copy the query type, update it to use the modified fields
         query_type = cast(GraphQLObjectType, self._schema.query_type)
         fields.update(query_type.fields)
+        query_type = copy(query_type)
+        query_type._fields = fields
 
-        self._schema.query_type = GraphQLObjectType(
-            name=query_type.name,
-            description=query_type.description,
-            fields=fields,
-        )
-
+        self._schema.query_type = query_type
         self._schema.type_map["_Service"] = self._service_type
-        self._schema.type_map[self._schema.query_type.name] = self._schema.query_type
+        self._schema.type_map[query_type.name] = query_type
 
     def _get_entities_field(self, entity_type: GraphQLUnionType) -> GraphQLField:
         return GraphQLField(

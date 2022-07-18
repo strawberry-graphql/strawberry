@@ -35,7 +35,6 @@ from strawberry.experimental.pydantic.utils import (
 )
 from strawberry.field import StrawberryField
 from strawberry.object_type import _process_type, _wrap_dataclass
-from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.types.type_resolver import _get_fields
 from strawberry.unset import UNSET
 
@@ -72,11 +71,14 @@ def _build_dataclass_creation_fields(
     else:
         # otherwise we build an appropriate strawberry field that resolves it
         existing_field = existing_fields.get(field.name)
+        graphql_name = None
+        if existing_field and existing_field.graphql_name:
+            graphql_name = existing_field.graphql_name
+        elif field.has_alias and use_pydantic_alias:
+            graphql_name = field.alias
         strawberry_field = StrawberryField(
             python_name=field.name,
-            graphql_name=field.alias
-            if field.has_alias and use_pydantic_alias
-            else None,
+            graphql_name=graphql_name,
             # always unset because we use default_factory instead
             default=UNSET,
             default_factory=get_default_factory_for_field(field),
@@ -113,7 +115,7 @@ def type(
     is_input: bool = False,
     is_interface: bool = False,
     description: Optional[str] = None,
-    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    directives: Optional[Sequence[object]] = (),
     all_fields: bool = False,
     use_pydantic_alias: bool = True,
 ) -> Callable[..., Type[StrawberryTypeFromPydantic[PydanticModel]]]:
@@ -243,13 +245,14 @@ def type(
                 cls=cls, model_instance=instance, extra=extra
             )
 
-        def to_pydantic_default(self) -> PydanticModel:
+        def to_pydantic_default(self, **kwargs) -> PydanticModel:
             instance_kwargs = {
                 f.name: convert_strawberry_class_to_pydantic_model(
                     getattr(self, f.name)
                 )
                 for f in dataclasses.fields(self)
             }
+            instance_kwargs.update(kwargs)
             return model(**instance_kwargs)
 
         if not has_custom_from_pydantic:
@@ -269,7 +272,7 @@ def input(
     name: Optional[str] = None,
     is_interface: bool = False,
     description: Optional[str] = None,
-    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    directives: Optional[Sequence[object]] = (),
     all_fields: bool = False,
     use_pydantic_alias: bool = True,
 ) -> Callable[..., Type[StrawberryTypeFromPydantic[PydanticModel]]]:
@@ -297,7 +300,7 @@ def interface(
     name: Optional[str] = None,
     is_input: bool = False,
     description: Optional[str] = None,
-    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    directives: Optional[Sequence[object]] = (),
     all_fields: bool = False,
     use_pydantic_alias: bool = True,
 ) -> Callable[..., Type[StrawberryTypeFromPydantic[PydanticModel]]]:
