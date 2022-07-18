@@ -457,3 +457,39 @@ def test_union_optional_with_or_operator():
 
     assert not result.errors
     assert result.data["animal"] is None
+
+
+def test_union_with_input_types():
+    """
+    Verify that union of input types raises an error
+    """
+
+    @strawberry.type
+    class User:
+        name: str
+        age: int
+
+    @strawberry.input
+    class A:
+        a: str
+
+    @strawberry.input
+    class B:
+        b: str
+
+    @strawberry.input
+    class Input:
+        name: str
+        something: Union[A, B]
+
+    with pytest.raises(
+        TypeError, match="Union for A is not supported because it is an Input type"
+    ):
+
+        @strawberry.type
+        class Query:
+            @strawberry.field
+            def user(self, data: Input) -> User:
+                return User(name=data.name, age=100)
+
+        strawberry.Schema(query=Query)

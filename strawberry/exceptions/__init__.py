@@ -6,7 +6,7 @@ from typing import List, Set, Union
 
 import rich
 
-from graphql import GraphQLObjectType
+from graphql import GraphQLInputObjectType, GraphQLObjectType
 
 from strawberry.type import StrawberryType
 
@@ -113,6 +113,12 @@ class UnallowedReturnTypeForUnion(StrawberryException):
 
 class InvalidUnionType(StrawberryException):
     """The union is constructed with an invalid type"""
+
+
+class InvalidTypeInputForUnion(StrawberryException):
+    def __init__(self, annotation: GraphQLInputObjectType):
+        message = f"Union for {annotation} is not supported because it is an Input type"
+        super().__init__(message)
 
 
 class MissingTypesForGenericError(StrawberryException):
