@@ -21,13 +21,12 @@ class DatadogTracingExtension(Extension):
 
     @cached_property
     def _resource_name(self):
-        # TODO: is this actually enough?
-        # there might be duplicated operation names with different queries
-        # maybe we can use the query hash?
-        if self.execution_context.operation_name:
-            return self.execution_context.operation_name
+        query_hash = self.hash_query(self.execution_context.query)
 
-        return self.hash_query(self.execution_context.query)
+        if self.execution_context.operation_name:
+            return f"{self.execution_context.operation_name}:{query_hash}"
+
+        return query_hash
 
     def hash_query(self, query: str):
         return hashlib.md5(query.encode("utf-8")).hexdigest()
@@ -83,7 +82,7 @@ class DatadogTracingExtension(Extension):
 
         with tracer.trace(f"Resolving: {field_path}", span_type="graphql") as span:
             span.set_tag("graphql.field_name", info.field_name)
-            span.set_tag("graphql.parent_type", info.parent_type)
+            span.set_tag("graphql.parent_type", info.parent_type.name)
             span.set_tag("graphql.field_path", field_path)
             span.set_tag("graphql.path", ".".join(map(str, info.path.as_list())))
 
