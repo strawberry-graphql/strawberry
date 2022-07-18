@@ -1,6 +1,33 @@
 CHANGELOG
 =========
 
+0.119.0 - 2022-07-14
+--------------------
+
+This release changes when we add the custom directives extension, previously
+the extension was always enabled, now it is only enabled if you pass custom
+directives to `strawberry.Schema`.
+
+Contributed by [bomtall](https://github.com/bomtall) via [PR #2020](https://github.com/strawberry-graphql/strawberry/pull/2020/)
+
+
+0.118.2 - 2022-07-14
+--------------------
+
+This release adds an initial fix to make `strawberry.auto` work when using
+`from __future__ import annotations`.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #1994](https://github.com/strawberry-graphql/strawberry/pull/1994/)
+
+
+0.118.1 - 2022-07-14
+--------------------
+
+Fixes issue where users without pydantic were not able to use the mypy plugin.
+
+Contributed by [James Chua](https://github.com/thejaminator) via [PR #2016](https://github.com/strawberry-graphql/strawberry/pull/2016/)
+
+
 0.118.0 - 2022-07-13
 --------------------
 

@@ -91,7 +91,7 @@ jobs:
   update-release-on-github:
     name: Update release on github
     runs-on: ubuntu-latest
-    needs: [release-file-check, get-contributor-info]
+    needs: [release-file-check, get-contributor-info, release]
     if: ${{ needs.release-file-check.outputs.status == 'OK' }}
     steps:
       - uses: actions/setup-python@v2
