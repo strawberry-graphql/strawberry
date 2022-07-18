@@ -29,7 +29,11 @@ class ExceptionsCollector:
                     console.print(exception)
 
                     exception_text = console.export_text()
-                    markdown += f"\n\n``````\n{exception_text}\n``````"
+
+                    if "None" in str(exception_text):
+                        markdown += "No exception raised\n"
+                    else:
+                        markdown += f"\n\n``````\n{exception_text}\n``````"
 
         summary_path = os.environ.get("GITHUB_STEP_SUMMARY", None)
 
