@@ -1,6 +1,6 @@
 # type: ignore
 import typing
-from typing import Generic, List, Optional, Type, TypeVar
+from typing import Generic, List, Optional, Type, TypeVar, Union
 
 import pytest
 
@@ -434,3 +434,59 @@ def test_generic_resolver_container():
 
     assert not result.errors
     assert result.data == {"aTypeInContainer": {"item": {"some": 1}}}
+
+
+def test_generic_resolver_union():
+    T = TypeVar("T")
+
+    @strawberry.type
+    class AType:
+        some: int
+
+    @strawberry.type
+    class OtherType:
+        other: int
+
+    def resolver() -> Union[T, OtherType]:
+        return AType(1)
+
+    @strawberry.type
+    class Query:
+        union_type: Union[AType, OtherType] = strawberry.field(resolver)
+
+    strawberry.Schema(query=Query)
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ unionType { ... on AType { some } } }"
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data == {"unionType": {"some": 1}}
+
+
+def test_generic_resolver_list():
+    T = TypeVar("T")
+
+    @strawberry.type
+    class AType:
+        some: int
+
+    def resolver() -> List[T]:
+        return [AType(1)]
+
+    @strawberry.type
+    class Query:
+        list_type: List[AType] = strawberry.field(resolver)
+
+    strawberry.Schema(query=Query)
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ listType { some } }"
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data == {"listType": [{"some": 1}]}
