@@ -380,6 +380,7 @@ def test_generic_resolver_factory():
     assert not result.errors
     assert result.data == {"aType": {"some": 1}}
 
+
 def test_generic_resolver_optional():
     @strawberry.type
     class AType:
