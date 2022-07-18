@@ -15,28 +15,27 @@ class ExceptionsCollector:
         Hook for printing test info at the end of the run
         """
 
-        html = ""
+        markdown = ""
 
         for test, info in self._info.items():
-            html += f"<h1>{test}</h1>"
+            markdown += f"# {test}\n"
 
-            for datum in info:
-                console = rich.console.Console(record=True)
+            for exception in info:
 
-                console.print(datum)
+                if exception is None:
+                    markdown += "No exception raised\n"
+                else:
+                    console = rich.console.Console(record=True)
+                    console.print(exception)
 
-                # hti = Html2Image()
-
-                # console.print(datum)
-                html += console.export_text()
-
-                # hti.screenshot(html_str=html, save_as="red_page.png", size=(900, 400))
+                    exception_text = console.export_text()
+                    markdown += f"\n\n``````\n{exception_text}\n``````"
 
         summary_path = os.environ.get("GITHUB_STEP_SUMMARY", None)
 
         if summary_path:
             with open(summary_path, "w") as f:
-                f.write(html)
+                f.write(markdown)
 
     @pytest.fixture
     def collect_strawberry_exception(self, request):
