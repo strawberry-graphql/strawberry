@@ -1,3 +1,4 @@
+import os
 from collections import defaultdict
 
 import pytest
@@ -17,7 +18,6 @@ class ExceptionsCollector:
         html = ""
 
         for test, info in self._info.items():
-
             html += f"<h1>{test}</h1>"
 
             for datum in info:
@@ -32,9 +32,11 @@ class ExceptionsCollector:
 
                 # hti.screenshot(html_str=html, save_as="red_page.png", size=(900, 400))
 
-        # write html to file
-        with open("red_page.html", "w") as f:
-            f.write(html)
+        summary_path = os.environ.get("GITHUB_STEP_SUMMARY", None)
+
+        if summary_path:
+            with open(summary_path, "w") as f:
+                f.write(html)
 
     @pytest.fixture
     def collect_strawberry_exception(self, request):
