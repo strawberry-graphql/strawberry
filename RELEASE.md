@@ -29,7 +29,7 @@ class TypeTwo:
 
 def resolver_one():
     return Container(items=[TypeOne("one")])
-    
+
 def resolver_two():
     return Container(items=[TypeTwo("two")])
 

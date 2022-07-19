@@ -1,7 +1,7 @@
 import sys
 from dataclasses import dataclass
 from textwrap import dedent
-from typing import Optional, Union, List, TypeVar, Generic
+from typing import Generic, List, Optional, TypeVar, Union
 
 import pytest
 
