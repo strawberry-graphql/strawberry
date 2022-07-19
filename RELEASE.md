@@ -1,9 +1,8 @@
 Release type: patch
 
 Fixed edge case where `Union` types raised an `UnallowedReturnTypeForUnion` error when
-returning the correct type from the resolver due to only being able to partially match
-nested generic types. This is fixed by prioritising the types explicitly listed in the
-Union.
+returning the correct type from the resolver. This also improves performance of
+`StrawberryUnion.get_type_resolver()` from `O(n)` to `O(1)` in the majority of cases.
 
 For example the below ([link to playground](https://play.strawberry.rocks/?gist=f7d88898d127e65b12140fdd763f9ef2))
 would previously raise the error when querying `two` as `StrawberryUnion` would incorrectly
