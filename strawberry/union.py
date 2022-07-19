@@ -1,4 +1,5 @@
 import itertools
+from itertools import chain
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -160,12 +161,9 @@ class StrawberryUnion(StrawberryType):
             # Iterate over all of our known types and find the first concrete
             # type that implements the type. We prioritise checking types named in the
             # Union in case a nested generic object matches against more than one type.
-            union_type_names = tuple(x.name for x in type_.types)
-            types_to_check = sorted(
-                type_map.keys(), key=lambda x: 1 - int(x in union_type_names)
-            )
-            for possible_concrete_type_name in types_to_check:
-                possible_concrete_type = type_map[possible_concrete_type_name]
+            for possible_concrete_type in chain(
+                (type_map[x.name] for x in type_.types), type_map.values()
+            ):
                 possible_type = possible_concrete_type.definition
                 if not isinstance(possible_type, TypeDefinition):
                     continue
