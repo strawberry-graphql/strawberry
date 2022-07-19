@@ -190,7 +190,7 @@ class Subscription:
                 group,
                 {
                     "type": "chat.message",
-                    "room_id": group.split("-")[-1]
+                    "room_id": group.split("-")[-1],
                     "message": f"{self.channel_name} just joined the room!",
                 },
             )
