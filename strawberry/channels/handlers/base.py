@@ -56,7 +56,7 @@ class ChannelsConsumer(AsyncConsumer):
     """Base channels async consumer."""
 
     channel_name: str
-    channel_layer: ChannelsLayer
+    channel_layer: Optional[ChannelsLayer]
     channel_receive: Callable[[], Awaitable[dict]]
 
     def __init__(self, *args, **kwargs):
@@ -116,6 +116,13 @@ class ChannelsConsumer(AsyncConsumer):
                 at the end of the execution.
 
         """
+        if self.channel_layer is None:
+            raise RuntimeError(
+                "Layers integration is required listening for channels.\n"
+                "Check https://channels.readthedocs.io/en/stable/topics/channel_layers.html "  # noqa:E501
+                "for more information"
+            )
+
         added_groups = []
         try:
             if groups:

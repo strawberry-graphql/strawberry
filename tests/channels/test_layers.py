@@ -3,6 +3,7 @@ import pytest
 from channels.layers import get_channel_layer
 from channels.testing import WebsocketCommunicator
 from strawberry.channels import GraphQLWSConsumer
+from strawberry.channels.handlers.base import ChannelsConsumer
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     CompleteMessage,
@@ -28,6 +29,21 @@ async def ws():
     yield client
 
     await client.disconnect()
+
+
+async def test_no_layers():
+    consumer = ChannelsConsumer()
+    # Mimic lack of layers. If layers is not installed/configured in channels,
+    # consumer.channel_layer will be `None`
+    consumer.channel_layer = None
+
+    msg = (
+        "Layers integration is required listening for channels.\n"
+        "Check https://channels.readthedocs.io/en/stable/topics/channel_layers.html "
+        "for more information"
+    )
+    with pytest.raises(RuntimeError, match=msg):
+        await consumer.channel_listen("foobar").__anext__()
 
 
 async def test_channel_listen(ws: WebsocketCommunicator):
