@@ -158,7 +158,8 @@ class StrawberryUnion(StrawberryType):
             return_type: Optional[GraphQLType]
 
             # Iterate over all of our known types and find the first concrete
-            # type that implements the type.
+            # type that implements the type. We prioritise checking types named in the
+            # Union in case a nested generic object matches against more than one type.
             union_type_names = tuple(x.name for x in type_.types)
             types_to_check = sorted(
                 type_map.keys(), key=lambda x: 1 - int(x in union_type_names)
