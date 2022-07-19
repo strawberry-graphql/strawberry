@@ -179,7 +179,7 @@ class Subscription:
         self,
         info: Info[StrawberryChannelsContext],
         rooms: list[ChatRoom],
-    ) -> AsyncGenerator[CharRoomMessage, None]:
+    ) -> AsyncGenerator[ChatRoomMessage, None]:
         """Join and subscribe to messages sent to the given rooms."""
         ws = info.context.request
         rooms = [f"chat-room-{room.id}" for room in rooms]
