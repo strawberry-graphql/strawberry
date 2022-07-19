@@ -1,7 +1,7 @@
 import sys
 from dataclasses import dataclass
 from textwrap import dedent
-from typing import Optional, Union
+from typing import Optional, Union, List, TypeVar, Generic
 
 import pytest
 
@@ -493,3 +493,76 @@ def test_union_with_input_types():
                 return User(name=data.name, age=100)
 
         strawberry.Schema(query=Query)
+
+
+def test_union_with_similar_nested_generic_types():
+    """
+    Previously this failed due to an edge case where Strawberry would choose AContainer
+    as the resolved type for container_b due to the inability to exactly match the
+    nested generic `Container.items`.
+    """
+    T = TypeVar("T")
+
+    @strawberry.type
+    class Container(Generic[T]):
+        items: List[T]
+
+    @strawberry.type
+    class A:
+        a: str
+
+    @strawberry.type
+    class B:
+        b: int
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def container_a(self) -> Union[Container[A], A]:
+            return Container(items=[A("hello")])
+
+        @strawberry.field
+        def container_b(self) -> Union[Container[B], B]:
+            return Container(items=[B(3)])
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """
+     {
+        containerA {
+            __typename
+            ... on AContainer {
+                items {
+                    a
+                }
+            }
+            ... on A {
+                a
+            }
+        }
+    }
+    """
+
+    result = schema.execute_sync(query)
+
+    assert result.data["containerA"]["items"][0]["a"] == "hello"
+
+    query = """
+     {
+        containerB {
+            __typename
+            ... on BContainer {
+                items {
+                    b
+                }
+            }
+            ... on B {
+                b
+            }
+        }
+    }
+    """
+
+    result = schema.execute_sync(query)
+
+    assert result.data["containerB"]["items"][0]["b"] == 3

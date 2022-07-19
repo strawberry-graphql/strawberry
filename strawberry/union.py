@@ -157,9 +157,14 @@ class StrawberryUnion(StrawberryType):
 
             return_type: Optional[GraphQLType]
 
-            # Iterate over all of our known types and find the first concrete type that
-            # implements the type
-            for possible_concrete_type in type_map.values():
+            # Iterate over all of our known types and find the first concrete
+            # type that implements the type.
+            union_type_names = tuple(x.name for x in type_.types)
+            types_to_check = sorted(
+                type_map.keys(), key=lambda x: 1 - int(x in union_type_names)
+            )
+            for possible_concrete_type_name in types_to_check:
+                possible_concrete_type = type_map[possible_concrete_type_name]
                 possible_type = possible_concrete_type.definition
                 if not isinstance(possible_type, TypeDefinition):
                     continue
