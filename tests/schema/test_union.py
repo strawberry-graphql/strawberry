@@ -187,6 +187,42 @@ def test_types_not_included_in_the_union_are_rejected():
     )
 
 
+def test_unknown_types_are_rejected():
+    @strawberry.type
+    class Outside:
+        c: int
+
+    @strawberry.type
+    class A:
+        a: int
+
+    @strawberry.type
+    class B:
+        b: int
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(self) -> Union[A, B]:
+            return Outside(c=5)  # type:ignore
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """
+    {
+        hello {
+            ... on A {
+                a
+            }
+        }
+    }
+    """
+
+    result = schema.execute_sync(query)
+
+    assert "Outside" in result.errors[0].message
+
+
 def test_named_union():
     @strawberry.type
     class A:
