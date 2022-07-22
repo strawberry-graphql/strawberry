@@ -5,7 +5,6 @@ import sys
 from typing import (
     TYPE_CHECKING,
     Any,
-    Awaitable,
     Callable,
     Dict,
     List,
@@ -25,7 +24,6 @@ from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import StrawberryArgument
 from strawberry.exceptions import InvalidDefaultFactoryError, InvalidFieldArgument
 from strawberry.type import StrawberryType, StrawberryTypeVar
-from strawberry.types.info import Info
 from strawberry.union import StrawberryUnion
 from strawberry.unset import UNSET
 
@@ -280,19 +278,6 @@ class StrawberryField(dataclasses.Field):
             default_factory=self.default_factory,
             deprecation_reason=self.deprecation_reason,
         )
-
-    def get_result(
-        self, source: Any, info: Info, args: List[Any], kwargs: Dict[str, Any]
-    ) -> Union[Awaitable[Any], Any]:
-        """
-        Calls the resolver defined for the StrawberryField. If the field doesn't have a
-        resolver defined we default to using getattr on `source`.
-        """
-
-        if self.base_resolver:
-            return self.base_resolver(*args, **kwargs)
-
-        return getattr(source, self.python_name)
 
     @property
     def _has_async_permission_classes(self) -> bool:
