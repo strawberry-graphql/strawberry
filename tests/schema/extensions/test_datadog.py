@@ -1,3 +1,5 @@
+from typing import AsyncGenerator
+
 import pytest
 
 import strawberry
@@ -14,7 +16,7 @@ def tracer_mock(mocker):
 
 @strawberry.type
 class Person:
-    name: str = "Jess"
+    name: str = "Jack"
 
 
 @strawberry.type
@@ -24,13 +26,31 @@ class Query:
         return Person()
 
 
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    def say_hi(self) -> str:
+        return "hello"
+
+
+@strawberry.type
+class Subscription:
+    @strawberry.field
+    async def on_hi(self) -> AsyncGenerator[str, None]:
+        yield "Hello"
+
+
 # TODO: this test could be improved by passing a custom tracer to the datadog extension
 # and maybe we could unify datadog and opentelemetry extensions by doing that
 
 
 @pytest.mark.asyncio
 async def test_datadog_tracer(tracer_mock, mocker):
-    schema = strawberry.Schema(query=Query, extensions=[DatadogTracingExtension])
+    schema = strawberry.Schema(
+        query=Query,
+        mutation=Mutation,
+        extensions=[DatadogTracingExtension],
+    )
 
     query = """
         query {
@@ -72,7 +92,9 @@ async def test_datadog_tracer(tracer_mock, mocker):
 
 @pytest.mark.asyncio
 async def test_uses_operation_name_and_hash(tracer_mock, mocker):
-    schema = strawberry.Schema(query=Query, extensions=[DatadogTracingExtension])
+    schema = strawberry.Schema(
+        query=Query, mutation=Mutation, extensions=[DatadogTracingExtension]
+    )
 
     query = """
         query MyExampleQuery {
@@ -92,8 +114,44 @@ async def test_uses_operation_name_and_hash(tracer_mock, mocker):
     )
 
 
+@pytest.mark.asyncio
+async def test_uses_operation_type(tracer_mock, mocker):
+    schema = strawberry.Schema(
+        query=Query, mutation=Mutation, extensions=[DatadogTracingExtension]
+    )
+
+    query = """
+        mutation MyMutation {
+            sayHi
+        }
+    """
+
+    await schema.execute(query, operation_name="MyMutation")
+    tracer_mock.trace().set_tag.assert_any_call("graphql.operation_type", "mutation"),
+
+
+@pytest.mark.asyncio
+async def test_uses_operation_subscription(tracer_mock, mocker):
+    schema = strawberry.Schema(
+        query=Query, mutation=Mutation, extensions=[DatadogTracingExtension]
+    )
+
+    query = """
+        subscription MySubscription {
+            onHi
+        }
+    """
+
+    await schema.execute(query, operation_name="MySubscription")
+    tracer_mock.trace().set_tag.assert_any_call(
+        "graphql.operation_type", "subscription"
+    ),
+
+
 def test_datadog_tracer_sync(tracer_mock, mocker):
-    schema = strawberry.Schema(query=Query, extensions=[DatadogTracingExtensionSync])
+    schema = strawberry.Schema(
+        query=Query, mutation=Mutation, extensions=[DatadogTracingExtensionSync]
+    )
 
     query = """
         query {
@@ -134,7 +192,9 @@ def test_datadog_tracer_sync(tracer_mock, mocker):
 
 
 def test_uses_operation_name_and_hash_sync(tracer_mock, mocker):
-    schema = strawberry.Schema(query=Query, extensions=[DatadogTracingExtensionSync])
+    schema = strawberry.Schema(
+        query=Query, mutation=Mutation, extensions=[DatadogTracingExtensionSync]
+    )
 
     query = """
         query MyExampleQuery {
@@ -152,3 +212,19 @@ def test_uses_operation_name_and_hash_sync(tracer_mock, mocker):
         span_type="graphql",
         service="strawberry",
     )
+
+
+def test_uses_operation_type_sync(tracer_mock, mocker):
+    schema = strawberry.Schema(
+        query=Query, mutation=Mutation, extensions=[DatadogTracingExtensionSync]
+    )
+
+    query = """
+        mutation MyMutation {
+            sayHi
+        }
+    """
+
+    schema.execute_sync(query, operation_name="MyMutation")
+
+    tracer_mock.trace().set_tag.assert_any_call("graphql.operation_type", "mutation"),
