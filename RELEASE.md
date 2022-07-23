@@ -1,12 +1,14 @@
 Release type: patch
 
-Fixed edge case where `Union` types raised an `UnallowedReturnTypeForUnion` error when
-returning the correct type from the resolver. This also improves performance of
-StrawberryUnion's `_resolve_union_type` from `O(n)` to `O(1)` in the majority of cases.
+Fixed edge case where `Union` types raised an `UnallowedReturnTypeForUnion`
+error when returning the correct type from the resolver. This also improves
+performance of StrawberryUnion's `_resolve_union_type` from `O(n)` to `O(1)` in
+the majority of cases where `n` is the number of types in the schema.
 
-For example the below ([link to playground](https://play.strawberry.rocks/?gist=f7d88898d127e65b12140fdd763f9ef2))
-would previously raise the error when querying `two` as `StrawberryUnion` would incorrectly
-determine that the resolver returns `Container[TypeOne]`.
+For
+[example the below](https://play.strawberry.rocks/?gist=f7d88898d127e65b12140fdd763f9ef2))
+would previously raise the error when querying `two` as `StrawberryUnion` would
+incorrectly determine that the resolver returns `Container[TypeOne]`.
 
 ```python
 import strawberry
