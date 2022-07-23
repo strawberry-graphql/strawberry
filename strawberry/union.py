@@ -153,7 +153,7 @@ class StrawberryUnion(StrawberryType):
                     ):
                         return inner_type.name
 
-                # Couldn't resolve using `is_type_of``
+                # Couldn't resolve using `is_type_of`
                 raise WrongReturnTypeForUnion(info.field_name, str(type(root)))
 
             return_type: Optional[GraphQLType]
@@ -161,8 +161,11 @@ class StrawberryUnion(StrawberryType):
             # Iterate over all of our known types and find the first concrete
             # type that implements the type. We prioritise checking types named in the
             # Union in case a nested generic object matches against more than one type.
+            concrete_types_for_union = (type_map[x.name] for x in type_.types)
+
+            # TODO: do we still need to iterate over all types in `type_map`?
             for possible_concrete_type in chain(
-                (type_map[x.name] for x in type_.types), type_map.values()
+                concrete_types_for_union, type_map.values()
             ):
                 possible_type = possible_concrete_type.definition
                 if not isinstance(possible_type, TypeDefinition):
