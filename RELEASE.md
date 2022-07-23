@@ -2,9 +2,8 @@ Release type: minor
 
 This release adds support for overriding the default resolver for fields.
 
-Currentily the default resolver is `getattr`, but now you can change it to any
+Currently the default resolver is `getattr`, but now you can change it to any
 function you like, for example you can allow returning dictionaries:
-
 
 ```python
 @strawberry.type
