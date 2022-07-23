@@ -25,6 +25,10 @@ class Query:
     def person(self) -> Person:
         return Person()
 
+    @strawberry.field
+    async def person_async(self) -> Person:
+        return Person()
+
 
 @strawberry.type
 class Mutation:
@@ -54,7 +58,7 @@ async def test_datadog_tracer(tracer_mock, mocker):
 
     query = """
         query {
-            person {
+            personAsync {
                 name
             }
         }
@@ -66,7 +70,7 @@ async def test_datadog_tracer(tracer_mock, mocker):
         [
             mocker.call.trace(
                 "Anonymous Query",
-                resource="659edba9e6ac9c20d03da1b2d0f9a956",
+                resource="63a280256ca4e8514e06cf90b30c8c3a",
                 span_type="graphql",
                 service="strawberry",
             ),
@@ -76,14 +80,16 @@ async def test_datadog_tracer(tracer_mock, mocker):
             mocker.call.trace().finish(),
             mocker.call.trace("Validation", span_type="graphql"),
             mocker.call.trace().finish(),
-            mocker.call.trace("Resolving: Query.person", span_type="graphql"),
+            mocker.call.trace("Resolving: Query.personAsync", span_type="graphql"),
             mocker.call.trace().__enter__(),
-            mocker.call.trace().__enter__().set_tag("graphql.field_name", "person"),
+            mocker.call.trace()
+            .__enter__()
+            .set_tag("graphql.field_name", "personAsync"),
             mocker.call.trace().__enter__().set_tag("graphql.parent_type", "Query"),
             mocker.call.trace()
             .__enter__()
-            .set_tag("graphql.field_path", "Query.person"),
-            mocker.call.trace().__enter__().set_tag("graphql.path", "person"),
+            .set_tag("graphql.field_path", "Query.personAsync"),
+            mocker.call.trace().__enter__().set_tag("graphql.path", "personAsync"),
             mocker.call.trace().__exit__(None, None, None),
             mocker.call.trace().finish(),
         ]
