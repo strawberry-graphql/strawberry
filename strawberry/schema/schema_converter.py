@@ -483,6 +483,9 @@ class GraphQLCoreConverter:
                 source=_source, info=info, kwargs=kwargs
             )
 
+            if hasattr(field, "get_result"):
+                return field.get_result(_source, info=info, args=field_args, kwargs=field_kwargs)
+
             if field.base_resolver:
                 return field.base_resolver(*field_args, **field_kwargs)
 
