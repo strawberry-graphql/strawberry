@@ -41,3 +41,11 @@ def test_raises_error_when_using_interface_with_a_not_class_object():
         @strawberry.interface
         def not_a_class():
             pass
+
+
+def test_create_with_slots():
+    @strawberry.type(slots=True)
+    class SlotClass:
+        a: int = strawberry.field()
+
+    assert "a" in SlotClass.__slots__
