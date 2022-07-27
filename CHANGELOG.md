@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.121.1 - 2022-07-27
+--------------------
+
+This release adds a backward compatibility layer with libraries
+that specify a custom `get_result`.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2038](https://github.com/strawberry-graphql/strawberry/pull/2038/)
+
+
 0.121.0 - 2022-07-23
 --------------------
 
