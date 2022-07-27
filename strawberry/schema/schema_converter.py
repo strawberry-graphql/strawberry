@@ -44,6 +44,7 @@ from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.directive import StrawberryDirective
 from strawberry.enum import EnumDefinition, EnumValue
 from strawberry.exceptions import (
+    InvalidTypeInputForUnion,
     MissingTypesForGenericError,
     ScalarAlreadyRegisteredError,
     UnresolvedFieldTypeError,
@@ -498,6 +499,8 @@ class GraphQLCoreConverter:
 
             return await await_maybe(_get_result(_source, strawberry_info, **kwargs))
 
+        field.default_resolver = self.config.default_resolver  # type: ignore
+
         if field.is_async:
             _async_resolver._is_default = not field.base_resolver  # type: ignore
             return _async_resolver
@@ -595,6 +598,8 @@ class GraphQLCoreConverter:
         for type_ in union.types:
             graphql_type = self.from_type(type_)
 
+            if isinstance(graphql_type, GraphQLInputObjectType):
+                raise InvalidTypeInputForUnion(graphql_type)
             assert isinstance(graphql_type, GraphQLObjectType)
 
             graphql_types.append(graphql_type)

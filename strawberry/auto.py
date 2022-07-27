@@ -57,7 +57,7 @@ class StrawberryAutoMeta(type):
             if args[0] is Any:
                 return any(isinstance(arg, StrawberryAuto) for arg in args[1:])
 
-        return False
+        return instance == "strawberry.auto"
 
 
 class StrawberryAuto(metaclass=StrawberryAutoMeta):
