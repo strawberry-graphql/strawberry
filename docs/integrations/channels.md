@@ -269,7 +269,57 @@ However, take care to ensure you run `django.setup()` instead of
 `get_asgi_application()`, if you need any Django ORM or other Django features in
 Strawberry.
 
-Look here for some much more complete examples:
+### Running our example
+
+First run your asgi application _(The ProtocolTypeRouter)_
+using your asgi server. If you are coming from the channels tutorial, there is no difference.
+Then open three different tabs on your browser and go to the following URLs:
+
+1. <address:port>/graphql
+2. <address:port>/graphql
+3. <address:port>/chat
+
+In tab #1 start the subscription:
+
+```gql
+subscription fooChat {
+  joinChatRooms(
+    rooms: [{ roomName: "room1" }, { roomName: "room2" }]
+    user: "foo"
+  ) {
+    roomName
+    message
+    currentUser
+  }
+}
+```
+
+On tab #2 we will run `sendChatMessage` mutation:
+
+```gql
+mutation echo {
+  sendChatMessage(message: "hello room 1", room: { roomName: "room1" })
+}
+```
+
+On tab #3 we will join the room you subscribed to ("room1") and start chatting.
+Before we do that there is a slight change we need to make in the `ChatConsumer`
+you created with channels in order to make it compatible with our `ChatRoomMessage` type.
+
+```python
+        # Send message to room group
+        await self.channel_layer.group_send(
+            self.room_group_name,
+            {
+                "type": "chat.message",
+                "room_id": self.room_group_name,  # <<< here is the change
+                "message": f"process is {os.getpid()}, Thread is {threading.current_thread().name}"
+                f" -> {message}",
+            },
+        )
+```
+
+Look here for some more complete examples:
 
 1. The
    [Strawberry Examples repo](https://github.com/strawberry-graphql/examples)
