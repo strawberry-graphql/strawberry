@@ -415,7 +415,8 @@ and channels [`ChannelsLiveServerTestCase`](https://channels.readthedocs.io/en/l
 
 <Note>
 
-_This example is based on the extended `ChannelsLiveServerTestCase` class from channels tutorial part 4_
+This example is based on the extended `ChannelsLiveServerTestCase` class from channels tutorial part 4.
+**You cannot run this test with a pytest session**
 
 </Note>
 
