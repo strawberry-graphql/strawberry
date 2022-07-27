@@ -151,8 +151,9 @@ class StrawberryField(dataclasses.Field):
         self, source: Any, info: Info, args: List[Any], kwargs: Dict[str, Any]
     ) -> Union[Awaitable[Any], Any]:
         """
-        Calls the resolver defined for the StrawberryField. If the field doesn't have a
-        resolver defined we default to using getattr on `source`.
+        Calls the resolver defined for the StrawberryField.
+        If the field doesn't have a resolver defined we default
+        to using the default resolver specified in StrawberryConfig.
         """
 
         if self.base_resolver:
