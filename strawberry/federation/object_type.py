@@ -1,13 +1,4 @@
-from typing import (
-    TYPE_CHECKING,
-    Callable,
-    Iterable,
-    Optional,
-    Sequence,
-    TypeVar,
-    Union,
-    overload,
-)
+from typing import TYPE_CHECKING, Callable, Iterable, Sequence, TypeVar, Union, overload
 
 from strawberry.field import StrawberryField, field as base_field
 from strawberry.object_type import type as base_type
@@ -25,7 +16,7 @@ T = TypeVar("T")
 
 
 def _impl_type(
-    cls: Optional[T] = None,
+    cls: T,
     *,
     name: str = None,
     description: str = None,
