@@ -584,9 +584,14 @@ def test_field_override_printed_correctly():
 
 
 def test_field_inaccessible_printed_correctly():
+    @strawberry.federation.interface(inaccessible=True)
+    class AnInterface:
+        id: strawberry.ID
+
     @strawberry.interface
     class SomeInterface:
         id: strawberry.ID
+        a_field: str = strawberry.federation.field(inaccessible=True)
 
     @strawberry.federation.type(keys=["upc"], extend=True)
     class Product(SomeInterface):
@@ -598,17 +603,22 @@ def test_field_inaccessible_printed_correctly():
         def top_products(self, first: int) -> List[Product]:
             return []
 
-    schema = strawberry.federation.Schema(query=Query)
+    schema = strawberry.federation.Schema(query=Query, types=[AnInterface])
 
     expected = """
         directive @external on FIELD_DEFINITION
 
-        directive @inaccessible on FIELD_DEFINITION | OBJECT | INTERFACE | UNION
+        directive @inaccessible on FIELD_DEFINITION | OBJECT | INTERFACE | UNION | ARGUMENT_DEFINITION | SCALAR | ENUM | ENUM_VALUE | INPUT_OBJECT | INPUT_FIELD_DEFINITION
 
         directive @key(fields: _FieldSet!, resolvable: Boolean = true) on OBJECT | INTERFACE
 
+        interface AnInterface @inaccessible {
+          id: ID!
+        }
+
         extend type Product implements SomeInterface @key(fields: "upc") {
           id: ID!
+          aField: String! @inaccessible
           upc: String! @external @inaccessible
         }
 
@@ -620,6 +630,7 @@ def test_field_inaccessible_printed_correctly():
 
         interface SomeInterface {
           id: ID!
+          aField: String! @inaccessible
         }
 
         scalar _Any

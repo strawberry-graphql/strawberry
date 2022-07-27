@@ -20,6 +20,7 @@ from graphql.language.printer import print_ast
 from graphql.type import (
     is_enum_type,
     is_input_type,
+    is_interface_type,
     is_object_type,
     is_scalar_type,
     is_specified_directive,
@@ -234,6 +235,17 @@ def _print_object(type_, schema: BaseSchema, *, extras: PrintExtras) -> str:
     )
 
 
+def _print_interface(type_, schema: BaseSchema, *, extras: PrintExtras) -> str:
+    return (
+        print_description(type_)
+        + print_extends(type_, schema)
+        + f"interface {type_.name}"
+        + print_implemented_interfaces(type_)
+        + print_type_directives(type_, schema, extras=extras)
+        + print_fields(type_, schema, extras=extras)
+    )
+
+
 def _print_input_object(type_, schema: BaseSchema, *, extras: PrintExtras) -> str:
     fields = [
         print_description(field, "  ", not i) + "  " + print_input_value(name, field)
@@ -260,6 +272,9 @@ def _print_type(type_, schema: BaseSchema, *, extras: PrintExtras) -> str:
 
     if is_input_type(type_):
         return _print_input_object(type_, schema, extras=extras)
+
+    if is_interface_type(type_):
+        return _print_interface(type_, schema, extras=extras)
 
     return original_print_type(type_)
 

@@ -69,6 +69,12 @@ class Override:
         Location.OBJECT,
         Location.INTERFACE,
         Location.UNION,
+        Location.ARGUMENT_DEFINITION,
+        Location.SCALAR,
+        Location.ENUM,
+        Location.ENUM_VALUE,
+        Location.INPUT_OBJECT,
+        Location.INPUT_FIELD_DEFINITION,
     ],
     name="inaccessible",
 )
