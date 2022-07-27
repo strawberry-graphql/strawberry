@@ -483,10 +483,9 @@ class GraphQLCoreConverter:
                 source=_source, info=info, kwargs=kwargs
             )
 
-            if field.base_resolver:
-                return field.base_resolver(*field_args, **field_kwargs)
-
-            return self.config.default_resolver(_source, field.python_name)
+            return field.get_result(
+                _source, info=info, args=field_args, kwargs=field_kwargs
+            )
 
         def _resolver(_source: Any, info: GraphQLResolveInfo, **kwargs):
             strawberry_info = _strawberry_info_from_graphql(info)
@@ -499,6 +498,8 @@ class GraphQLCoreConverter:
             await _check_permissions_async(_source, strawberry_info, kwargs)
 
             return await await_maybe(_get_result(_source, strawberry_info, **kwargs))
+
+        field.default_resolver = self.config.default_resolver  # type: ignore
 
         if field.is_async:
             _async_resolver._is_default = not field.base_resolver  # type: ignore
