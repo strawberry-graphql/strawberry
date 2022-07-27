@@ -17,7 +17,11 @@ the most common use case will be to run a normal Django project with GraphQL
 subscriptions support, typically taking advantage of the Channel Layers
 functionality which is exposed through the Strawberry integration.
 
+---
+
 ## Getting Started
+
+### Pre-requisites
 
 Make sure you have read the following Channels documentation:
 
@@ -28,7 +32,8 @@ Make sure you have read the following Channels documentation:
 
 If you have read the Channels documentation, You should know by now that:
 
-- ASGI application is a callable function that can handle multiple send / receive operations.
+- ASGI application is a callable function that can handle multiple send / receive operations
+  without the need of a new application instance.
 
 - Channels is all about making ASGI applications instances
   (whether in another processes or in another machine)
@@ -39,11 +44,13 @@ If you have read the Channels documentation, You should know by now that:
   Before using Strawberry's Channels support, make sure you install all the
   required dependencies by running:
 
-## Installation
+### Installation
 
 ```
 pip install 'strawberry-graphql[channels]'
 ```
+
+---
 
 ## Tutorial
 
@@ -133,8 +140,7 @@ class Subscription:
 
 Explanation:
 `Info.context.ws` or `Info.context.request` is a pointer to the
-strawberry extended [`AsyncConsumer`](https://channels.readthedocs.io/en/stable/topics/consumers.html#consumers)
-instance, namely [`ChannelsConsumer`](#ChannelsConsumer).
+[`ChannelsConsumer`](#channelsconsumer) instance.
 Here we have first sent a message to all
 the channel_layer groups (specified in the subscription argument `rooms`)
 that we have joined the chat.
@@ -176,7 +182,7 @@ class Mutation:
 ### Creating the consumers
 
 All we did so far is useless without creating an asgi consumer for our schema.
-The easiest way to do that is to use the [`GraphQLProtocolTypeRouter`](#GraphQLProtocolTypeRouter)
+The easiest way to do that is to use the [`GraphQLProtocolTypeRouter`](#graphqlprotocoltyperouter)
 which will wrap your Django application, and route
 **HTTP and websockets** for /graphql to Strawberry, while sending all other requests
 to Django. You'll need to modify the `myproject.asgi.py` file from the Channels
@@ -306,10 +312,15 @@ and everything else to the Django application.
 
 ### ChannelsConsumer
 
-The [`ChannelsConsumer`](#ChannelsConsumer) have some helpers like
+Strawberries extended [`AsyncConsumer`](https://channels.readthedocs.io/en/stable/topics/consumers.html#consumers).
+
+**Every graphql session will have an instance of this class inside
+`info.ws` which is actually the `info.context.request`.**
+
+The [`ChannelsConsumer`](#channelsconsumer) have some helpers like
 `headers` that returns a map of the headers from `scope['headers']`,
 It also overrides the `dispatch` method of channels
 [`AsyncConsumer`](https://channels.readthedocs.io/en/stable/topics/consumers.html#consumers)
 and if your `scope` type is `http.*` or `websocket.*` it will be appended to a relevant`asyncio.Queue`,
-later to be used by `ws.channel_listen`.
+later to be used by
 `ws.channel_listen` AsyncGenerator, accepts a list of groups to yield messages from.
