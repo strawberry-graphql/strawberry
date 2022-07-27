@@ -12,3 +12,4 @@ per-file-ignores =
     tests/schema/test_resolvers.py:E800
     tests/types/test_string_annotations.py:E800
     tests/federation/printer/*:E501
+    tests/pyright/test_federation.py:E501
