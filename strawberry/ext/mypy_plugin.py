@@ -465,7 +465,6 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
 
 def is_dataclasses_field_or_strawberry_field(expr: Expression) -> bool:
     if isinstance(expr, CallExpr):
-        print(expr.callee.fullname)
         if isinstance(expr.callee, RefExpr) and expr.callee.fullname in (
             "dataclasses.field",
             "strawberry.field.field",
