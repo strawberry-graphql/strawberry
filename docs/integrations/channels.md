@@ -222,7 +222,6 @@ An example of this (continuing from channels tutorial) would be:
 ```python
 from channels.auth import AuthMiddlewareStack
 from channels.routing import ProtocolTypeRouter, URLRouter
-from channels.security.websocket import AllowedHostsOriginValidator
 from django.core.asgi import get_asgi_application
 from django.urls import re_path
 from strawberry.channels import GraphQLHTTPConsumer
@@ -252,9 +251,7 @@ application = ProtocolTypeRouter(
                 re_path("^", django_asgi_app),  # This might be another endpoints in your app
             ]
         ),
-        "websocket": AllowedHostsOriginValidator(
-            AuthMiddlewareStack(URLRouter(websocket_urlpatterns))
-        ),
+        "websocket": AuthMiddlewareStack(URLRouter(websocket_urlpatterns)),
     }
 )
 
@@ -278,6 +275,9 @@ Then open three different tabs on your browser and go to the following URLs:
 1. <address:port>/graphql
 2. <address:port>/graphql
 3. <address:port>/chat
+
+If you want, you can run 3 different instances of your application with different ports
+it should work the same!
 
 In tab #1 start the subscription:
 
@@ -330,6 +330,126 @@ Look here for some more complete examples:
 ## Testing
 
 To test our chat app we can use the Channels [`ApplicationCommunicator`](https://channels.readthedocs.io/en/stable/topics/testing.html#applicationcommunicator).
+Here is an example based on the tutorial above:
+_Make sure you have pytest-async installed_
+
+```python
+from channels.testing import WebsocketCommunicator
+import pytest
+from strawberry.channels import GraphQLWSConsumer
+from strawberry.subscriptions import GRAPHQL_WS_PROTOCOL
+from strawberry.subscriptions.protocols.graphql_ws import (
+    GQL_CONNECTION_ACK,
+    GQL_CONNECTION_INIT,
+    GQL_DATA,
+    GQL_START,
+)
+
+from tserver.tzv5hob.schemas import schema
+
+
+class DebuggableGraphQLWSConsumer(GraphQLWSConsumer):
+    async def get_context(self, *args, **kwargs) -> object:
+        context = await super().get_context(*args, **kwargs)
+        context.tasks = self._handler.tasks
+        context.connectionInitTimeoutTask = None
+        return context
+
+
+@pytest.fixture
+async def ws():
+    client = WebsocketCommunicator(
+        DebuggableGraphQLWSConsumer.as_asgi(
+            schema=schema, subscription_protocols=(GRAPHQL_WS_PROTOCOL,)
+        ),
+        "",
+        subprotocols=[
+            GRAPHQL_WS_PROTOCOL,
+        ],
+    )
+    res = await client.connect()
+    assert res == (True, GRAPHQL_WS_PROTOCOL)
+
+    yield client
+
+    await client.disconnect()
+
+
+chat_subscription_query = """
+                subscription fooChat {
+                joinChatRooms(
+                    rooms: [{ roomName: "room1" }, { roomName: "room2" }]
+                    user: "foo"){
+                        roomName
+                        message
+                        currentUser
+                    }
+                }
+"""
+
+
+@pytest.mark.asyncio
+async def test_joinChatRooms_sends_welcome_message(ws):
+    await ws.send_json_to({"type": GQL_CONNECTION_INIT})
+    await ws.send_json_to(
+        {
+            "type": GQL_START,
+            "id": "demo_consumer",
+            "payload": {"query": f"{chat_subscription_query}"},
+        }
+    )
+    response = await ws.receive_json_from()
+    assert response["type"] == GQL_CONNECTION_ACK
+
+    response = await ws.receive_json_from()
+    assert response["type"] == GQL_DATA
+    assert response["id"] == "demo_consumer"
+    data = response["payload"]["data"]["joinChatRooms"]
+    assert data["currentUser"] == "foo"
+    assert "room1" in data["roomName"]
+    assert "hello" in data["message"]
+```
+
+In order to test a real server connection we can use python [gql client](https://github.com/graphql-python/gql)
+and channels [`ChannelsLiveServerTestCase`](https://channels.readthedocs.io/en/latest/topics/testing.html#channelsliveservertestcase).
+
+<Note>
+
+_This example is based on the extended `ChannelsLiveServerTestCase` class from channels tutorial part 4_
+
+</Note>
+
+Add this test in your class:
+
+```python
+from gql import Client, gql
+from gql.transport.websockets import WebsocketsTransport
+
+def test_send_message_via_channels_chat_joinChatRooms_recieves(self):
+    transport = WebsocketsTransport(url=self.live_server_ws_url + "/graphql")
+
+    client = Client(
+        transport=transport,
+        fetch_schema_from_transport=False,
+    )
+
+    query = gql(chat_subscription_query)
+    for index, result in enumerate(client.subscribe(query)):
+        if index == 0 or 1:
+            print(result)
+        # because we subscribed to 2 rooms we received two welcome messages.
+        elif index == 2:
+            print(result)
+            assert "hello from web browser" in result["joinChatRooms"]["message"]
+            break
+
+        try:
+            self._enter_chat_room("room1")
+            self._post_message("hello from web browser")
+        finally:
+            self._close_all_new_windows()
+
+```
 
 ---
 
