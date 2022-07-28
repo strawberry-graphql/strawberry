@@ -196,6 +196,47 @@ def test_input_defaults_scalars():
     assert print_schema(schema) == textwrap.dedent(expected_type).strip()
 
 
+def test_arguments_scalar():
+    @strawberry.input
+    class MyInput:
+        j: JSON = strawberry.field(default_factory=dict)
+        j2: JSON = strawberry.field(default_factory=lambda: {"hello": "world"})
+        j3: JSON = strawberry.field(
+            default_factory=lambda: {"hello": {"nice": "world"}}
+        )
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def search(self, j: JSON = {}) -> JSON:
+            return j
+
+        @strawberry.field
+        def search2(self, j: JSON = {"hello": "world"}) -> JSON:
+            return j
+
+        @strawberry.field
+        def search3(self, j: JSON = {"hello": {"nice": "world"}}) -> JSON:
+            return j
+
+    expected_type = """
+    \"\"\"
+    The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+    \"\"\"
+    scalar JSON @specifiedBy(url: "http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf")
+
+    type Query {
+      search(j: JSON! = {}): JSON!
+      search2(j: JSON! = {hello: "world"}): JSON!
+      search3(j: JSON! = {hello: {nice: "world"}}): JSON!
+    }
+    """
+
+    schema = strawberry.Schema(query=Query)
+
+    assert print_schema(schema) == textwrap.dedent(expected_type).strip()
+
+
 def test_interface():
     @strawberry.interface
     class Node:
