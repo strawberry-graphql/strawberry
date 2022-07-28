@@ -118,6 +118,7 @@ def ast_from_value(value: Any, type_: GraphQLInputType) -> Optional[ValueNode]:
 
         if value is None or not isinstance(value, Mapping):
             return None
+
         type_ = cast(GraphQLInputObjectType, type_)
         field_items = (
             (field_name, ast_from_value(value[field_name], field.type))

@@ -191,6 +191,7 @@ def test_input_other_inputs():
         nested: Nested
         nested2: Nested = Nested("a")
         nested3: Nested = strawberry.field(default_factory=lambda: {"s": "a"})
+        nested4: Nested = "abc"  # type: ignore - we do this for testing purposes
 
     @strawberry.type
     class Query:
@@ -203,6 +204,7 @@ def test_input_other_inputs():
       nested: Nested!
       nested2: Nested! = {s: "a"}
       nested3: Nested! = {s: "a"}
+      nested4: Nested!
     }
 
     input Nested {
