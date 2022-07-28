@@ -1,14 +1,10 @@
-from typing import Optional
-
-from typing_extensions import Literal
+from typing import List, Optional
 
 from strawberry import directive_field
 from strawberry.schema_directive import Location, schema_directive
+from strawberry.unset import UNSET
 
-from .types import FieldSet
-
-
-LinkPurpose = Literal["SECURITY", "EXECUTION"]
+from .types import FieldSet, LinkImport, LinkPurpose
 
 
 @schema_directive(locations=[Location.FIELD_DEFINITION], name="external")
@@ -37,6 +33,26 @@ class Key:
 )
 class Shareable:
     ...
+
+
+@schema_directive(locations=[Location.SCHEMA], name="link", repeatable=True)
+class Link:
+    url: Optional[str]
+    as_: Optional[str] = directive_field(name="as")
+    for_: Optional[LinkPurpose] = directive_field(name="for")
+    import_: Optional[List[Optional[LinkImport]]] = directive_field(name="import")
+
+    def __init__(
+        self,
+        url: Optional[str] = UNSET,
+        as_: Optional[str] = UNSET,
+        for_: Optional[LinkPurpose] = UNSET,
+        import_: Optional[List[Optional[LinkImport]]] = UNSET,
+    ):
+        self.url = url
+        self.as_ = as_
+        self.for_ = for_
+        self.import_ = import_
 
 
 @schema_directive(

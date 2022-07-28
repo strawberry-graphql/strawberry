@@ -4,6 +4,7 @@ from uuid import UUID
 
 import strawberry
 from strawberry.printer import print_schema
+from strawberry.scalars import JSON
 from strawberry.schema.config import StrawberryConfig
 from strawberry.unset import UNSET
 
@@ -150,6 +151,39 @@ def test_input_defaults():
 
     type Query {
       search(input: MyInput!): Int!
+    }
+    """
+
+    schema = strawberry.Schema(query=Query)
+
+    assert print_schema(schema) == textwrap.dedent(expected_type).strip()
+
+
+def test_input_defaults_scalars():
+    @strawberry.input
+    class MyInput:
+        j: JSON = strawberry.field(default_factory=dict)
+        j2: JSON = strawberry.field(default_factory=lambda: {"hello": "world"})
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def search(self, input: MyInput) -> JSON:
+            return input.j
+
+    expected_type = """
+    \"\"\"
+    The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+    \"\"\"
+    scalar JSON @specifiedBy(url: "http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf")
+
+    input MyInput {
+      j: JSON! = {}
+      j2: JSON! = {hello: "world"}
+    }
+
+    type Query {
+      search(input: MyInput!): JSON!
     }
     """
 
