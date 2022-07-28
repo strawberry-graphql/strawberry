@@ -132,6 +132,8 @@ def test_input_defaults():
     class MyInput:
         s: Optional[str] = None
         i: int = 0
+        b: bool = False
+        f: float = 0.0
         x: Optional[int] = UNSET
         l: List[str] = strawberry.field(default_factory=list)
 
@@ -145,6 +147,8 @@ def test_input_defaults():
     input MyInput {
       s: String = null
       i: Int! = 0
+      b: Boolean! = false
+      f: Float! = 0
       x: Int
       l: [String!]! = []
     }
