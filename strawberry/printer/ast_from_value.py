@@ -125,6 +125,8 @@ def ast_from_value(value: Any, type_: GraphQLInputType) -> Optional[ValueNode]:
         return ObjectValueNode(fields=field_nodes)
 
     if is_leaf_type(type_):
+        # Since value is an internally represented value, it must be serialized to an
+        # externally represented value before converting into an AST.
         serialized = type_.serialize(value)  # type: ignore
 
         if serialized is None or serialized is Undefined:
