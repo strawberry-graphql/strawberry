@@ -128,11 +128,10 @@ def ast_from_value(value: Any, type_: GraphQLInputType) -> Optional[ValueNode]:
         # Since value is an internally represented value, it must be serialized to an
         # externally represented value before converting into an AST.
         serialized = type_.serialize(value)  # type: ignore
-
         if serialized is None or serialized is Undefined:
             return None
 
-        return ast_from_leaf_type(value, type_)
+        return ast_from_leaf_type(serialized, type_)
 
     # Not reachable. All possible input types have been considered.
     raise TypeError(f"Unexpected input type: {inspect(type_)}.")
