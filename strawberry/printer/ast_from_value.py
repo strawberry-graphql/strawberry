@@ -1,3 +1,4 @@
+import dataclasses
 import re
 from math import isfinite
 from typing import Any, Mapping, Optional, cast
@@ -111,6 +112,10 @@ def ast_from_value(value: Any, type_: GraphQLInputType) -> Optional[ValueNode]:
     # Populate the fields of the input object by creating ASTs from each value in the
     # Python dict according to the fields in the input type.
     if is_input_object_type(type_):
+        # TODO: is this the right place?
+        if hasattr(value, "_type_definition"):
+            value = dataclasses.asdict(value)
+
         if value is None or not isinstance(value, Mapping):
             return None
         type_ = cast(GraphQLInputObjectType, type_)

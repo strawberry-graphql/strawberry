@@ -181,6 +181,44 @@ def test_input_defaults():
     assert print_schema(schema) == textwrap.dedent(expected_type).strip()
 
 
+def test_input_other_inputs():
+    @strawberry.input
+    class Nested:
+        s: str
+
+    @strawberry.input
+    class MyInput:
+        nested: Nested
+        nested2: Nested = Nested("a")
+        nested3: Nested = strawberry.field(default_factory=lambda: {"s": "a"})
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def search(self, input: MyInput) -> str:
+            return input.nested.s
+
+    expected_type = """
+    input MyInput {
+      nested: Nested!
+      nested2: Nested! = {s: "a"}
+      nested3: Nested! = {s: "a"}
+    }
+
+    input Nested {
+      s: String!
+    }
+
+    type Query {
+      search(input: MyInput!): String!
+    }
+    """
+
+    schema = strawberry.Schema(query=Query)
+
+    assert print_schema(schema) == textwrap.dedent(expected_type).strip()
+
+
 def test_input_defaults_scalars():
     @strawberry.input
     class MyInput:
