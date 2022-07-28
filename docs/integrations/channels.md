@@ -32,24 +32,21 @@ Make sure you have read the following Channels documentation:
 
 If you have read the Channels documentation, You should know by now that:
 
-- ASGI application is a callable function that can handle multiple send / receive operations
-  without the need of a new application instance.
-
-- Channels is all about making ASGI applications instances
-  (whether in another processes or in another machine)
-  talk to each other seamlessly.
-
-- A `scope` is a single connection represented by a dict, whether
-  it would be a websocket or an HTTP request or another protocol.
-
-- A `Consumer` is an ASGI application abstraction that helps to handle a single scope.
+1. ASGI application is a callable function that can handle multiple send / receive operations
+   without the need of a new application instance.
+2. Channels is all about making ASGI applications instances
+   (whether in another processes or in another machine)
+   talk to each other seamlessly.
+3. A `scope` is a single connection represented by a dict, whether
+   it would be a websocket or an HTTP request or another protocol.
+4. A `Consumer` is an ASGI application abstraction that helps to handle a single scope.
 
 ### Installation
 
 Before using Strawberry's Channels support, make sure you install all the
 required dependencies by running:
 
-```console
+```shell
 pip install 'strawberry-graphql[channels]'
 ```
 
