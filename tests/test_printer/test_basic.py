@@ -164,6 +164,9 @@ def test_input_defaults_scalars():
     class MyInput:
         j: JSON = strawberry.field(default_factory=dict)
         j2: JSON = strawberry.field(default_factory=lambda: {"hello": "world"})
+        j3: JSON = strawberry.field(
+            default_factory=lambda: {"hello": {"nice": "world"}}
+        )
 
     @strawberry.type
     class Query:
@@ -180,6 +183,7 @@ def test_input_defaults_scalars():
     input MyInput {
       j: JSON! = {}
       j2: JSON! = {hello: "world"}
+      j3: JSON! = {hello: {nice: "world"}}
     }
 
     type Query {

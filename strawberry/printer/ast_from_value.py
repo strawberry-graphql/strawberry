@@ -35,6 +35,47 @@ __all__ = ["ast_from_value"]
 _re_integer_string = re.compile("^-?(?:0|[1-9][0-9]*)$")
 
 
+def ast_from_leaf_type(
+    serialized: object, type_: Optional[GraphQLInputType]
+) -> ValueNode:
+    # Others serialize based on their corresponding Python scalar types.
+    if isinstance(serialized, bool):
+        return BooleanValueNode(value=serialized)
+
+    # Python ints and floats correspond nicely to Int and Float values.
+    if isinstance(serialized, int):
+        return IntValueNode(value=str(serialized))
+    if isinstance(serialized, float) and isfinite(serialized):
+        value = str(serialized)
+        if value.endswith(".0"):
+            value = value[:-2]
+        return FloatValueNode(value=value)
+
+    if isinstance(serialized, str):
+        # Enum types use Enum literals.
+        if type_ and is_enum_type(type_):
+            return EnumValueNode(value=serialized)
+
+        # ID types can use Int literals.
+        if type_ is GraphQLID and _re_integer_string.match(serialized):
+            return IntValueNode(value=serialized)
+
+        return StringValueNode(value=serialized)
+
+    if isinstance(serialized, dict):
+        return ObjectValueNode(
+            fields=[
+                ObjectFieldNode(
+                    name=NameNode(value=key),
+                    value=ast_from_leaf_type(value, None),
+                )
+                for key, value in serialized.items()
+            ]
+        )
+
+    raise TypeError(f"Cannot convert value to AST: {inspect(serialized)}.")
+
+
 def ast_from_value(value: Any, type_: GraphQLInputType) -> Optional[ValueNode]:
     # custom ast_from_value that allows to also serialize custom scalar that aren't
     # basic types, namely JSON scalar types
@@ -84,50 +125,12 @@ def ast_from_value(value: Any, type_: GraphQLInputType) -> Optional[ValueNode]:
         return ObjectValueNode(fields=field_nodes)
 
     if is_leaf_type(type_):
-        # Since value is an internally represented value, it must be serialized to an
-        # externally represented value before converting into an AST.
         serialized = type_.serialize(value)  # type: ignore
+
         if serialized is None or serialized is Undefined:
             return None
 
-        # Others serialize based on their corresponding Python scalar types.
-        if isinstance(serialized, bool):
-            return BooleanValueNode(value=serialized)
-
-        # Python ints and floats correspond nicely to Int and Float values.
-        if isinstance(serialized, int):
-            return IntValueNode(value=str(serialized))
-        if isinstance(serialized, float) and isfinite(serialized):
-            value = str(serialized)
-            if value.endswith(".0"):
-                value = value[:-2]
-            return FloatValueNode(value=value)
-
-        if isinstance(serialized, str):
-            # Enum types use Enum literals.
-            if is_enum_type(type_):
-                return EnumValueNode(value=serialized)
-
-            # ID types can use Int literals.
-            if type_ is GraphQLID and _re_integer_string.match(serialized):
-                return IntValueNode(value=serialized)
-
-            return StringValueNode(value=serialized)
-
-        if isinstance(serialized, dict):
-            return ObjectValueNode(
-                fields=[
-                    ObjectFieldNode(
-                        name=NameNode(value=key),
-                        value=StringValueNode(value=value),
-                    )
-                    for key, value in serialized.items()
-                ]
-            )
-
-        breakpoint()
-
-        raise TypeError(f"Cannot convert value to AST: {inspect(serialized)}.")
+        return ast_from_leaf_type(value, type_)
 
     # Not reachable. All possible input types have been considered.
     raise TypeError(f"Unexpected input type: {inspect(type_)}.")
