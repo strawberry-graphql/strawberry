@@ -285,7 +285,7 @@ it should work the same!
 
 On tab #1 start the subscription:
 
-```gql
+```graphql
 subscription fooChat {
   joinChatRooms(
     rooms: [{ roomName: "room1" }, { roomName: "room2" }]
@@ -300,7 +300,7 @@ subscription fooChat {
 
 On tab #2 we will run `sendChatMessage` mutation:
 
-```gql
+```graphql
 mutation echo {
   sendChatMessage(message: "hello room 1", room: { roomName: "room1" })
 }
