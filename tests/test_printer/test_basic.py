@@ -98,6 +98,7 @@ def test_input_simple_required_types():
         f: float
         id: strawberry.ID
         uid: UUID
+        s2: str = None  # type: ignore - we do this for testing purposes
 
     @strawberry.type
     class Query:
@@ -113,6 +114,7 @@ def test_input_simple_required_types():
       f: Float!
       id: ID!
       uid: UUID!
+      s2: String!
     }
 
     type Query {

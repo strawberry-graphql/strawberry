@@ -73,7 +73,7 @@ def ast_from_leaf_type(
             ]
         )
 
-    raise TypeError(f"Cannot convert value to AST: {inspect(serialized)}.")
+    raise TypeError(f"Cannot convert value to AST: {inspect(serialized)}.")   # pragma: no cover
 
 
 def ast_from_value(value: Any, type_: GraphQLInputType) -> Optional[ValueNode]:
