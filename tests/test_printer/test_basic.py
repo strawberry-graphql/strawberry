@@ -144,6 +144,10 @@ def test_input_defaults():
         list_with_values: List[str] = strawberry.field(
             default_factory=lambda: ["a", "b"]
         )
+        list_from_generator: List[str] = strawberry.field(
+            default_factory=lambda: (x for x in ["a", "b"])
+        )
+        list_from_string: List[str] = "ab" # type: ignore - we do this for testing purposes
 
     @strawberry.type
     class Query:
@@ -163,6 +167,8 @@ def test_input_defaults():
       x: Int
       l: [String!]! = []
       listWithValues: [String!]! = ["a", "b"]
+      listFromGenerator: [String!]! = ["a", "b"]
+      listFromString: [String!]! = "ab"
     }
 
     type Query {
