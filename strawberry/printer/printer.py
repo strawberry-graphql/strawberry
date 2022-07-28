@@ -16,16 +16,17 @@ from typing import (
     overload,
 )
 
+from graphql import GraphQLArgument
 from graphql.language.printer import print_ast
 from graphql.type import (
     is_enum_type,
     is_input_type,
+    is_interface_type,
     is_object_type,
     is_scalar_type,
     is_specified_directive,
 )
 from graphql.type.directives import GraphQLDirective
-from graphql.utilities.ast_from_value import ast_from_value
 from graphql.utilities.print_schema import (
     is_defined_type,
     print_args,
@@ -35,7 +36,6 @@ from graphql.utilities.print_schema import (
     print_directive,
     print_enum,
     print_implemented_interfaces,
-    print_input_value,
     print_scalar,
     print_schema_definition,
     print_type as original_print_type,
@@ -46,6 +46,8 @@ from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema_directive import Location, StrawberrySchemaDirective
 from strawberry.type import StrawberryContainer
 from strawberry.unset import UNSET
+
+from .ast_from_value import ast_from_value
 
 
 if TYPE_CHECKING:
@@ -234,6 +236,25 @@ def _print_object(type_, schema: BaseSchema, *, extras: PrintExtras) -> str:
     )
 
 
+def _print_interface(type_, schema: BaseSchema, *, extras: PrintExtras) -> str:
+    return (
+        print_description(type_)
+        + print_extends(type_, schema)
+        + f"interface {type_.name}"
+        + print_implemented_interfaces(type_)
+        + print_type_directives(type_, schema, extras=extras)
+        + print_fields(type_, schema, extras=extras)
+    )
+
+
+def print_input_value(name: str, arg: GraphQLArgument) -> str:
+    default_ast = ast_from_value(arg.default_value, arg.type)
+    arg_decl = f"{name}: {arg.type}"
+    if default_ast:
+        arg_decl += f" = {print_ast(default_ast)}"
+    return arg_decl + print_deprecated(arg.deprecation_reason)
+
+
 def _print_input_object(type_, schema: BaseSchema, *, extras: PrintExtras) -> str:
     fields = [
         print_description(field, "  ", not i) + "  " + print_input_value(name, field)
@@ -260,6 +281,9 @@ def _print_type(type_, schema: BaseSchema, *, extras: PrintExtras) -> str:
 
     if is_input_type(type_):
         return _print_input_object(type_, schema, extras=extras)
+
+    if is_interface_type(type_):
+        return _print_interface(type_, schema, extras=extras)
 
     return original_print_type(type_)
 
