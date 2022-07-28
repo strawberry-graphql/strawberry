@@ -134,6 +134,9 @@ def test_input_defaults():
         i: int = 0
         b: bool = False
         f: float = 0.0
+        id: strawberry.ID = strawberry.ID("some_id")
+        id_number: strawberry.ID = strawberry.ID(123)  # type: ignore
+        id_number_string: strawberry.ID = strawberry.ID("123")
         x: Optional[int] = UNSET
         l: List[str] = strawberry.field(default_factory=list)
 
@@ -149,6 +152,9 @@ def test_input_defaults():
       i: Int! = 0
       b: Boolean! = false
       f: Float! = 0
+      id: ID! = "some_id"
+      idNumber: ID! = 123
+      idNumberString: ID! = 123
       x: Int
       l: [String!]! = []
     }
