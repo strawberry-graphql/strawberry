@@ -139,6 +139,9 @@ def test_input_defaults():
         id_number_string: strawberry.ID = strawberry.ID("123")
         x: Optional[int] = UNSET
         l: List[str] = strawberry.field(default_factory=list)
+        list_with_values: List[str] = strawberry.field(
+            default_factory=lambda: ["a", "b"]
+        )
 
     @strawberry.type
     class Query:
@@ -157,6 +160,7 @@ def test_input_defaults():
       idNumberString: ID! = 123
       x: Int
       l: [String!]! = []
+      listWithValues: [String!]! = ["a", "b"]
     }
 
     type Query {
