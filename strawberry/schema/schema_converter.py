@@ -204,8 +204,8 @@ class GraphQLCoreConverter:
             locations=[
                 DirectiveLocation(loc.value) for loc in strawberry_directive.locations
             ],
-            is_repeatable=False,
             args=args,
+            is_repeatable=strawberry_directive.repeatable,
             description=strawberry_directive.description,
             extensions={
                 GraphQLCoreConverter.DEFINITION_BACKREF: strawberry_directive,

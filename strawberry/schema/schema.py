@@ -57,7 +57,12 @@ class Schema(BaseSchema):
         scalar_overrides: Optional[
             Dict[object, Union[ScalarWrapper, ScalarDefinition]]
         ] = None,
+        schema_directives: Iterable[object] = (),
     ):
+        self.query = query
+        self.mutation = mutation
+        self.subscription = subscription
+
         self.extensions = extensions
         self.execution_context_class = execution_context_class
         self.config = config or StrawberryConfig()
@@ -70,6 +75,7 @@ class Schema(BaseSchema):
 
         self.schema_converter = GraphQLCoreConverter(self.config, scalar_registry)
         self.directives = directives
+        self.schema_directives = schema_directives
 
         query_type = self.schema_converter.from_object(query._type_definition)
         mutation_type = (
