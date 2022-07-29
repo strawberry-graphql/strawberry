@@ -204,3 +204,31 @@ def test_using_generics():
     """
 
     assert result.data == {"_service": {"sdl": textwrap.dedent(sdl).strip()}}
+
+
+def test_input_types():
+    @strawberry.federation.input(inaccessible=True)
+    class ExampleInput:
+        upc: str
+
+    @strawberry.federation.type(extend=True)
+    class Query:
+        @strawberry.field
+        def top_products(self, example: ExampleInput) -> List[str]:
+            return []
+
+    schema = strawberry.federation.Schema(query=Query)
+
+    query = """
+        query {
+            __type(name: "ExampleInput") {
+                kind
+            }
+        }
+    """
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+
+    assert result.data == {"__type": {"kind": "INPUT_OBJECT"}}

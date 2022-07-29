@@ -60,6 +60,7 @@ def type(
     name: str = None,
     description: str = None,
     keys: Iterable[Union["Key", str]] = (),
+    inaccessible: bool = UNSET,
     extend: bool = False,
 ) -> T:
     ...
@@ -74,6 +75,7 @@ def type(
     name: str = None,
     description: str = None,
     keys: Iterable[Union["Key", str]] = (),
+    inaccessible: bool = UNSET,
     extend: bool = False,
     shareable: bool = False,
 ) -> Callable[[T], T]:
@@ -111,6 +113,7 @@ def input(
     name: str = None,
     description: str = None,
     directives: Sequence[object] = (),
+    inaccessible: bool = UNSET,
 ) -> T:
     ...
 
@@ -122,6 +125,7 @@ def input(
     name: str = None,
     description: str = None,
     directives: Sequence[object] = (),
+    inaccessible: bool = UNSET,
 ) -> Callable[[T], T]:
     ...
 
@@ -131,6 +135,7 @@ def input(
     *,
     name=None,
     description=None,
+    inaccessible: bool = UNSET,
     directives=(),
 ):
     return _impl_type(
@@ -138,6 +143,7 @@ def input(
         name=name,
         description=description,
         directives=directives,
+        inaccessible=inaccessible,
         is_input=True,
     )
 

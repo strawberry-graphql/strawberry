@@ -18,13 +18,23 @@ def test_field_inaccessible_printed_correctly():
     class Product(SomeInterface):
         upc: str = strawberry.federation.field(external=True, inaccessible=True)
 
+    @strawberry.federation.input(inaccessible=True)
+    class AnInput:
+        id: strawberry.ID
+
+    @strawberry.federation.type(inaccessible=True)
+    class AnInaccessibleType:
+        id: strawberry.ID
+
     @strawberry.federation.type
     class Query:
         @strawberry.field
         def top_products(self, first: int) -> List[Product]:
             return []
 
-    schema = strawberry.federation.Schema(query=Query, types=[AnInterface])
+    schema = strawberry.federation.Schema(
+        query=Query, types=[AnInterface, AnInput, AnInaccessibleType]
+    )
 
     expected = """
         directive @external on FIELD_DEFINITION
@@ -32,6 +42,14 @@ def test_field_inaccessible_printed_correctly():
         directive @inaccessible on FIELD_DEFINITION | OBJECT | INTERFACE | UNION | ARGUMENT_DEFINITION | SCALAR | ENUM | ENUM_VALUE | INPUT_OBJECT | INPUT_FIELD_DEFINITION
 
         directive @key(fields: _FieldSet!, resolvable: Boolean = true) on OBJECT | INTERFACE
+
+        type AnInaccessibleType @inaccessible {
+          id: ID!
+        }
+
+        input AnInput @inaccessible {
+          id: ID!
+        }
 
         interface AnInterface @inaccessible {
           id: ID!
