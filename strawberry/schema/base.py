@@ -25,7 +25,7 @@ class BaseSchema(Protocol):
     query: Type
     mutation: Optional[Type]
     subscription: Optional[Type]
-    schema_directives: Iterable[Type]
+    schema_directives: Iterable[object]
 
     @abstractmethod
     async def execute(
