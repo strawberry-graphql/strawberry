@@ -329,16 +329,14 @@ def print_schema_directives(schema: BaseSchema, *, extras: PrintExtras) -> str:
 
 
 def _all_root_names_are_common_names(schema: BaseSchema) -> bool:
-    query = schema.query
-    mutation = schema.mutation
-    subscription = schema.subscription
+    query = schema.query._type_definition
+    mutation = schema.mutation._type_definition if schema.mutation else None
+    subscription = schema.subscription._type_definition if schema.subscription else None
 
-    return all(
-        (
-            query.definition.name == "Query",
-            mutation is None or mutation.definition.name == "Mutation",
-            (subscription is None or subscription.definition.name == "Subscription",),
-        )
+    return (
+        query.name == "Query"
+        and (mutation is None or mutation.name == "Mutation")
+        and (subscription is None or subscription.name == "Subscription")
     )
 
 
@@ -350,15 +348,15 @@ def print_schema_definition(
     if _all_root_names_are_common_names(schema) and not schema.schema_directives:
         return None
 
-    query_type = schema.query.definition
+    query_type = schema.query._type_definition
     operation_types = [f"  query: {query_type.name}"]
 
     if schema.mutation:
-        mutation_type = schema.mutation.definition
+        mutation_type = schema.mutation._type_definition
         operation_types.append(f"  mutation: {mutation_type.name}")
 
     if schema.subscription:
-        subscription_type = schema.subscription.definition
+        subscription_type = schema.subscription._type_definition
         operation_types.append(f"  subscription: {subscription_type.name}")
 
     schema_definition = "schema {\n" + "\n".join(operation_types) + "\n}"
