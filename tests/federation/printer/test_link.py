@@ -21,9 +21,9 @@ def test_link_directive():
     expected = """
         directive @link(url: String, as: String, for: link__Purpose, import: [link__Import]) repeatable on SCHEMA
 
-        schema {
+        schema @link(url: "https://specs.apollo.dev/link/v1.0") {
           query: Query
-        } @link(url: "https://specs.apollo.dev/link/v1.0")
+        }
 
         type Query {
           _service: _Service!
@@ -70,9 +70,9 @@ def test_link_directive_imports():
     expected = """
         directive @link(url: String, as: String, for: link__Purpose, import: [link__Import]) repeatable on SCHEMA
 
-        schema {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key", "@requires", "@provides", "@external", {name: "@tag", as: "@mytag"}, "@extends", "@shareable", "@inaccessible", "@override"]) {
           query: Query
-        } @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key", "@requires", "@provides", "@external", {name: "@tag", as: "@mytag"}, "@extends", "@shareable", "@inaccessible", "@override"])
+        }
 
         type Query {
           _service: _Service!

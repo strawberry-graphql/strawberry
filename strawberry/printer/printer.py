@@ -359,9 +359,9 @@ def print_schema_definition(
         subscription_type = schema.subscription._type_definition
         operation_types.append(f"  subscription: {subscription_type.name}")
 
-    schema_definition = "schema {\n" + "\n".join(operation_types) + "\n}"
+    directives = print_schema_directives(schema, extras=extras)
 
-    return schema_definition + print_schema_directives(schema, extras=extras)
+    return f"schema{directives} {{\n" + "\n".join(operation_types) + "\n}"
 
 
 def print_schema(schema: BaseSchema) -> str:
