@@ -123,8 +123,6 @@ class Schema(BaseSchema):
             formatted_errors = "\n\n".join(f"❌ {error.message}" for error in errors)
             raise ValueError(f"Invalid Schema. Errors:\n\n{formatted_errors}")
 
-        self.query = self.schema_converter.type_map[query_type.name]
-
     def get_extensions(
         self, sync: bool = False
     ) -> List[Union[Type[Extension], Extension]]:

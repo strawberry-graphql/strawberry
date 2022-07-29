@@ -29,7 +29,6 @@ from graphql.type import (
 from graphql.type.directives import GraphQLDirective
 from graphql.utilities.print_schema import (
     is_defined_type,
-    print_args,
     print_block,
     print_deprecated,
     print_description,
@@ -159,6 +158,30 @@ def print_field_directives(
             print_schema_directive(directive, schema=schema, extras=extras)
             for directive in directives
         )
+    )
+
+
+def print_args(args: Dict[str, GraphQLArgument], indentation: str = "") -> str:
+    if not args:
+        return ""
+
+    # If every arg does not have a description, print them on one line.
+    if not any(arg.description for arg in args.values()):
+        return (
+            "("
+            + ", ".join(print_input_value(name, arg) for name, arg in args.items())
+            + ")"
+        )
+
+    return (
+        "(\n"
+        + "\n".join(
+            print_description(arg, f"  {indentation}", not i)
+            + f"  {indentation}"
+            + print_input_value(name, arg)
+            for i, (name, arg) in enumerate(args.items())
+        )
+        + f"\n{indentation})"
     )
 
 
