@@ -1,5 +1,5 @@
 from functools import lru_cache
-from typing import Any, Dict, Iterable, List, Optional, Sequence, Type, Union
+from typing import Any, Dict, Iterable, List, Optional, Type, Union
 
 from graphql import (
     ExecutionContext as GraphQLExecutionContext,
@@ -49,9 +49,9 @@ class Schema(BaseSchema):
         query: Type,
         mutation: Optional[Type] = None,
         subscription: Optional[Type] = None,
-        directives: Sequence[StrawberryDirective] = (),
+        directives: Iterable[StrawberryDirective] = (),
         types=(),
-        extensions: Sequence[Union[Type[Extension], Extension]] = (),
+        extensions: Iterable[Union[Type[Extension], Extension]] = (),
         execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
         config: Optional[StrawberryConfig] = None,
         scalar_overrides: Optional[
@@ -116,8 +116,6 @@ class Schema(BaseSchema):
         if errors:
             formatted_errors = "\n\n".join(f"❌ {error.message}" for error in errors)
             raise ValueError(f"Invalid Schema. Errors:\n\n{formatted_errors}")
-
-        self.query = self.schema_converter.type_map[query_type.name]
 
     def get_extensions(
         self, sync: bool = False
