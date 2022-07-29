@@ -136,6 +136,7 @@ def test_input_defaults():
         i: int = 0
         b: bool = False
         f: float = 0.0
+        f2: float = 0.1
         id: strawberry.ID = strawberry.ID("some_id")
         id_number: strawberry.ID = strawberry.ID(123)  # type: ignore
         id_number_string: strawberry.ID = strawberry.ID("123")
@@ -161,6 +162,7 @@ def test_input_defaults():
       i: Int! = 0
       b: Boolean! = false
       f: Float! = 0
+      f2: Float! = 0.1
       id: ID! = "some_id"
       idNumber: ID! = 123
       idNumberString: ID! = 123
