@@ -1,7 +1,17 @@
 import asyncio
 import contextlib
 from collections import defaultdict
-from typing import Any, Awaitable, Callable, DefaultDict, Dict, List, Optional, Sequence
+from typing import (
+    Any,
+    AsyncGenerator,
+    Awaitable,
+    Callable,
+    DefaultDict,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+)
 
 from typing_extensions import Literal, Protocol, TypedDict
 
@@ -97,7 +107,7 @@ class ChannelsConsumer(AsyncConsumer):
         *,
         timeout: Optional[float] = None,
         groups: Optional[Sequence[str]] = None,
-    ):
+    ) -> AsyncGenerator[Any, None]:
         """Listen for messages sent to this consumer.
 
         Utility to listen for channels messages for this consumer inside
