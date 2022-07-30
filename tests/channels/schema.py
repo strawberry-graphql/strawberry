@@ -91,7 +91,7 @@ class Subscription:
 
     @strawberry.subscription
     async def request_ping(self, info) -> typing.AsyncGenerator[bool, None]:
-        ws = info.context["ws"]
+        ws = info.context.ws
         await ws.send_json(PingMessage().as_dict())
         yield True
 
