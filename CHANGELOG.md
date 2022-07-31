@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.122.1 - 2022-07-31
+--------------------
+
+This release fixes that the AIOHTTP integration ignored the `operationName` of query
+operations. This behaviour is a regression introduced in version 0.107.0.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #2055](https://github.com/strawberry-graphql/strawberry/pull/2055/)
+
+
 0.122.0 - 2022-07-29
 --------------------
 
