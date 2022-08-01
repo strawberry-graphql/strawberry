@@ -39,6 +39,7 @@ from graphql.utilities.print_schema import (
     print_type as original_print_type,
 )
 
+from strawberry.enum import EnumDefinition
 from strawberry.field import StrawberryField
 from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema_directive import Location, StrawberrySchemaDirective
@@ -138,6 +139,9 @@ def print_schema_directive(
             extras.types.add(cast(type, f_type))
 
         if hasattr(f_type, "_scalar_definition"):
+            extras.types.add(cast(type, f_type))
+
+        if isinstance(f_type, EnumDefinition):
             extras.types.add(cast(type, f_type))
 
     return f" @{gql_directive.name}{params}"
