@@ -307,3 +307,61 @@ def test_prints_multiple_directives_on_schema():
     """
 
     assert print_schema(schema) == textwrap.dedent(expected_output).strip()
+
+
+def test_prints_with_types():
+    @strawberry.input
+    class SensitiveConfiguration:
+        reason: str
+
+    @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
+    class Sensitive:
+        config: SensitiveConfiguration
+
+    @strawberry.type
+    class Query:
+        first_name: str = strawberry.field(
+            directives=[Sensitive(config=SensitiveConfiguration(reason="example"))]
+        )
+
+    expected_output = """
+    directive @sensitive(config: SensitiveConfiguration!) on FIELD_DEFINITION
+
+    type Query {
+      firstName: String! @sensitive(config: {reason: "example"})
+    }
+
+    input SensitiveConfiguration {
+      reason: String!
+    }
+    """
+
+    schema = strawberry.Schema(query=Query)
+
+    assert print_schema(schema) == textwrap.dedent(expected_output).strip()
+
+
+def test_prints_with_scalar():
+    SensitiveConfiguration = strawberry.scalar(str, name="SensitiveConfiguration")
+
+    @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
+    class Sensitive:
+        config: SensitiveConfiguration
+
+    @strawberry.type
+    class Query:
+        first_name: str = strawberry.field(directives=[Sensitive(config="Some config")])
+
+    expected_output = """
+    directive @sensitive(config: SensitiveConfiguration!) on FIELD_DEFINITION
+
+    type Query {
+      firstName: String! @sensitive(config: "Some config")
+    }
+
+    scalar SensitiveConfiguration
+    """
+
+    schema = strawberry.Schema(query=Query)
+
+    assert print_schema(schema) == textwrap.dedent(expected_output).strip()

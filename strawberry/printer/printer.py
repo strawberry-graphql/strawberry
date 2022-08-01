@@ -127,12 +127,17 @@ def print_schema_directive(
     )
 
     extras.directives.add(print_directive(gql_directive))
+
     for field in strawberry_directive.fields:
         f_type = field.type
+
         while isinstance(f_type, StrawberryContainer):
             f_type = f_type.of_type
 
         if hasattr(f_type, "_type_definition"):
+            extras.types.add(cast(type, f_type))
+
+        if hasattr(f_type, "_scalar_definition"):
             extras.types.add(cast(type, f_type))
 
     return f" @{gql_directive.name}{params}"
