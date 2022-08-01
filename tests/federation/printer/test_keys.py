@@ -64,11 +64,11 @@ def test_multiple_keys():
 
         union _Entity = Product | Review
 
-        scalar _FieldSet
-
         type _Service {
           sdl: String!
         }
+
+        scalar _FieldSet
     """
 
     assert schema.as_str() == textwrap.dedent(expected).strip()

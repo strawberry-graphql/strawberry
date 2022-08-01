@@ -57,8 +57,6 @@ def test_entities_type_when_no_type_has_keys():
 
         scalar _Any
 
-        scalar _FieldSet
-
         type _Service {
           sdl: String!
         }
@@ -125,11 +123,11 @@ def test_entities_type_when_one_type_has_keys():
 
         union _Entity = Product
 
-        scalar _FieldSet
-
         type _Service {
           sdl: String!
         }
+
+        scalar _FieldSet
     """
 
     assert schema.as_str() == textwrap.dedent(expected).strip()

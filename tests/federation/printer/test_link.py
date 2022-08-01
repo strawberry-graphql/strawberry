@@ -32,11 +32,11 @@ def test_link_directive():
 
         scalar _Any
 
-        scalar _FieldSet
-
         type _Service {
           sdl: String!
         }
+
+        scalar link__Import
     """
 
     assert schema.as_str() == textwrap.dedent(expected).strip()
@@ -81,11 +81,11 @@ def test_link_directive_imports():
 
         scalar _Any
 
-        scalar _FieldSet
-
         type _Service {
           sdl: String!
         }
+
+        scalar link__Import
     """
 
     assert schema.as_str() == textwrap.dedent(expected).strip()

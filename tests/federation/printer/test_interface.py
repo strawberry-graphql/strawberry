@@ -45,11 +45,11 @@ def test_entities_extending_interface():
 
         union _Entity = Product
 
-        scalar _FieldSet
-
         type _Service {
           sdl: String!
         }
+
+        scalar _FieldSet
     """
 
     assert schema.as_str() == textwrap.dedent(expected).strip()

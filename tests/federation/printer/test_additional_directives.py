@@ -36,6 +36,8 @@ def test_additional_schema_directives_printed_correctly_object():
     type Query {
       federatedType: FederatedType!
     }
+
+    scalar _FieldSet
     """
 
     schema = strawberry.Schema(
@@ -82,6 +84,8 @@ def test_additional_schema_directives_printed_in_order_object():
     type Query {
       federatedType: FederatedType!
     }
+
+    scalar _FieldSet
     """
 
     schema = strawberry.Schema(
