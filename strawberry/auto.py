@@ -57,6 +57,14 @@ class StrawberryAutoMeta(type):
             if args[0] is Any:
                 return any(isinstance(arg, StrawberryAuto) for arg in args[1:])
 
+        # We can't compare StrawberryType subclasses to str because it will try to
+        # resolve the annotation in its __eq__ method and that might raise a
+        # NameError if "strawberry.auto" is not present in locals()/globals()
+        # It is not a problem though since StrawberryType subclasses for sure are
+        # not auto objects
+        if isinstance(instance, StrawberryType):
+            return False
+
         return instance == "strawberry.auto"
 
 
