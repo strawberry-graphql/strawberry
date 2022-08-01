@@ -65,11 +65,11 @@ def test_entities_type_when_no_type_has_keys():
 
         union _Entity = Product
 
-        scalar _FieldSet
-
         type _Service {
           sdl: String!
         }
+
+        scalar _FieldSet
     """
 
     assert schema.as_str() == textwrap.dedent(expected).strip()
@@ -118,11 +118,11 @@ def test_entities_extending_interface():
 
         union _Entity = Product
 
-        scalar _FieldSet
-
         type _Service {
           sdl: String!
         }
+
+        scalar _FieldSet
     """
 
     assert schema.as_str() == textwrap.dedent(expected).strip()
@@ -195,11 +195,11 @@ def test_fields_requires_are_printed_correctly():
 
         union _Entity = Product
 
-        scalar _FieldSet
-
         type _Service {
           sdl: String!
         }
+
+        scalar _FieldSet
     """
 
     assert schema.as_str() == textwrap.dedent(expected).strip()
@@ -269,11 +269,11 @@ def test_field_provides_are_printed_correctly_camel_case_on():
 
         union _Entity = Product
 
-        scalar _FieldSet
-
         type _Service {
           sdl: String!
         }
+
+        scalar _FieldSet
     """
 
     assert schema.as_str() == textwrap.dedent(expected).strip()
@@ -343,11 +343,11 @@ def test_field_provides_are_printed_correctly_camel_case_off():
 
         union _Entity = Product
 
-        scalar _FieldSet
-
         type _Service {
           sdl: String!
         }
+
+        scalar _FieldSet
     """
 
     assert schema.as_str() == textwrap.dedent(expected).strip()
@@ -412,11 +412,11 @@ def test_multiple_keys():
 
         union _Entity = Product | Review
 
-        scalar _FieldSet
-
         type _Service {
           sdl: String!
         }
+
+        scalar _FieldSet
     """
 
     assert schema.as_str() == textwrap.dedent(expected).strip()
@@ -467,11 +467,11 @@ def test_field_shareable_printed_correctly():
 
         union _Entity = Product
 
-        scalar _FieldSet
-
         type _Service {
           sdl: String!
         }
+
+        scalar _FieldSet
     """
 
     assert schema.as_str() == textwrap.dedent(expected).strip()
@@ -520,11 +520,11 @@ def test_field_tag_printed_correctly():
 
         union _Entity = Product
 
-        scalar _FieldSet
-
         type _Service {
           sdl: String!
         }
+
+        scalar _FieldSet
     """
 
     assert schema.as_str() == textwrap.dedent(expected).strip()
@@ -573,11 +573,11 @@ def test_field_override_printed_correctly():
 
         union _Entity = Product
 
-        scalar _FieldSet
-
         type _Service {
           sdl: String!
         }
+
+        scalar _FieldSet
     """
 
     assert schema.as_str() == textwrap.dedent(expected).strip()
@@ -626,11 +626,11 @@ def test_field_inaccessible_printed_correctly():
 
         union _Entity = Product
 
-        scalar _FieldSet
-
         type _Service {
           sdl: String!
         }
+
+        scalar _FieldSet
     """
 
     assert schema.as_str() == textwrap.dedent(expected).strip()
@@ -665,6 +665,8 @@ def test_additional_schema_directives_printed_correctly_object():
     type Query {
       federatedType: FederatedType!
     }
+
+    scalar _FieldSet
     """
 
     schema = strawberry.Schema(
@@ -711,6 +713,8 @@ def test_additional_schema_directives_printed_in_order_object():
     type Query {
       federatedType: FederatedType!
     }
+
+    scalar _FieldSet
     """
 
     schema = strawberry.Schema(

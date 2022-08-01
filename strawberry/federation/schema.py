@@ -21,13 +21,11 @@ from strawberry.utils.inspect import get_func_args
 
 from ..printer import print_schema
 from ..schema import Schema as BaseSchema
-from .types import FieldSet
 
 
 class Schema(BaseSchema):
     def __init__(self, *args, **kwargs):
         additional_types = list(kwargs.pop("types", []))
-        additional_types.extend([FieldSet])
 
         kwargs["types"] = additional_types
 
