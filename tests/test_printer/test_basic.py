@@ -4,6 +4,7 @@ from uuid import UUID
 
 import strawberry
 from strawberry.printer import print_schema
+from strawberry.scalars import JSON
 from strawberry.schema.config import StrawberryConfig
 from strawberry.unset import UNSET
 
@@ -97,6 +98,7 @@ def test_input_simple_required_types():
         f: float
         id: strawberry.ID
         uid: UUID
+        s2: str = None  # type: ignore - we do this for testing purposes
 
     @strawberry.type
     class Query:
@@ -112,6 +114,7 @@ def test_input_simple_required_types():
       f: Float!
       id: ID!
       uid: UUID!
+      s2: String!
     }
 
     type Query {
@@ -131,8 +134,21 @@ def test_input_defaults():
     class MyInput:
         s: Optional[str] = None
         i: int = 0
+        b: bool = False
+        f: float = 0.0
+        f2: float = 0.1
+        id: strawberry.ID = strawberry.ID("some_id")
+        id_number: strawberry.ID = strawberry.ID(123)  # type: ignore
+        id_number_string: strawberry.ID = strawberry.ID("123")
         x: Optional[int] = UNSET
         l: List[str] = strawberry.field(default_factory=list)
+        list_with_values: List[str] = strawberry.field(
+            default_factory=lambda: ["a", "b"]
+        )
+        list_from_generator: List[str] = strawberry.field(
+            default_factory=lambda: (x for x in ["a", "b"])
+        )
+        list_from_string: List[str] = "ab"  # type: ignore - we do this for testing purposes
 
     @strawberry.type
     class Query:
@@ -144,12 +160,139 @@ def test_input_defaults():
     input MyInput {
       s: String = null
       i: Int! = 0
+      b: Boolean! = false
+      f: Float! = 0
+      f2: Float! = 0.1
+      id: ID! = "some_id"
+      idNumber: ID! = 123
+      idNumberString: ID! = 123
       x: Int
       l: [String!]! = []
+      listWithValues: [String!]! = ["a", "b"]
+      listFromGenerator: [String!]! = ["a", "b"]
+      listFromString: [String!]! = "ab"
     }
 
     type Query {
       search(input: MyInput!): Int!
+    }
+    """
+
+    schema = strawberry.Schema(query=Query)
+
+    assert print_schema(schema) == textwrap.dedent(expected_type).strip()
+
+
+def test_input_other_inputs():
+    @strawberry.input
+    class Nested:
+        s: str
+
+    @strawberry.input
+    class MyInput:
+        nested: Nested
+        nested2: Nested = Nested("a")
+        nested3: Nested = strawberry.field(default_factory=lambda: {"s": "a"})
+        nested4: Nested = "abc"  # type: ignore - we do this for testing purposes
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def search(self, input: MyInput) -> str:
+            return input.nested.s
+
+    expected_type = """
+    input MyInput {
+      nested: Nested!
+      nested2: Nested! = {s: "a"}
+      nested3: Nested! = {s: "a"}
+      nested4: Nested!
+    }
+
+    input Nested {
+      s: String!
+    }
+
+    type Query {
+      search(input: MyInput!): String!
+    }
+    """
+
+    schema = strawberry.Schema(query=Query)
+
+    assert print_schema(schema) == textwrap.dedent(expected_type).strip()
+
+
+def test_input_defaults_scalars():
+    @strawberry.input
+    class MyInput:
+        j: JSON = strawberry.field(default_factory=dict)
+        j2: JSON = strawberry.field(default_factory=lambda: {"hello": "world"})
+        j3: JSON = strawberry.field(
+            default_factory=lambda: {"hello": {"nice": "world"}}
+        )
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def search(self, input: MyInput) -> JSON:
+            return input.j
+
+    expected_type = """
+    \"\"\"
+    The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+    \"\"\"
+    scalar JSON @specifiedBy(url: "http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf")
+
+    input MyInput {
+      j: JSON! = {}
+      j2: JSON! = {hello: "world"}
+      j3: JSON! = {hello: {nice: "world"}}
+    }
+
+    type Query {
+      search(input: MyInput!): JSON!
+    }
+    """
+
+    schema = strawberry.Schema(query=Query)
+
+    assert print_schema(schema) == textwrap.dedent(expected_type).strip()
+
+
+def test_arguments_scalar():
+    @strawberry.input
+    class MyInput:
+        j: JSON = strawberry.field(default_factory=dict)
+        j2: JSON = strawberry.field(default_factory=lambda: {"hello": "world"})
+        j3: JSON = strawberry.field(
+            default_factory=lambda: {"hello": {"nice": "world"}}
+        )
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def search(self, j: JSON = {}) -> JSON:
+            return j
+
+        @strawberry.field
+        def search2(self, j: JSON = {"hello": "world"}) -> JSON:
+            return j
+
+        @strawberry.field
+        def search3(self, j: JSON = {"hello": {"nice": "world"}}) -> JSON:
+            return j
+
+    expected_type = """
+    \"\"\"
+    The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
+    \"\"\"
+    scalar JSON @specifiedBy(url: "http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf")
+
+    type Query {
+      search(j: JSON! = {}): JSON!
+      search2(j: JSON! = {hello: "world"}): JSON!
+      search3(j: JSON! = {hello: {nice: "world"}}): JSON!
     }
     """
 
