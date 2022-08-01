@@ -1,4 +1,5 @@
 import textwrap
+from enum import Enum
 from typing import List, Optional
 
 import strawberry
@@ -360,6 +361,38 @@ def test_prints_with_scalar():
     }
 
     scalar SensitiveConfiguration
+    """
+
+    schema = strawberry.Schema(query=Query)
+
+    assert print_schema(schema) == textwrap.dedent(expected_output).strip()
+
+
+def test_prints_with_enum():
+    @strawberry.enum
+    class Reason(str, Enum):
+        EXAMPLE = "example"
+
+    @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
+    class Sensitive:
+        reason: Reason
+
+    @strawberry.type
+    class Query:
+        first_name: str = strawberry.field(
+            directives=[Sensitive(reason=Reason.EXAMPLE)]
+        )
+
+    expected_output = """
+    directive @sensitive(reason: Reason!) on FIELD_DEFINITION
+
+    type Query {
+      firstName: String! @sensitive(reason: EXAMPLE)
+    }
+
+    enum Reason {
+      EXAMPLE
+    }
     """
 
     schema = strawberry.Schema(query=Query)
