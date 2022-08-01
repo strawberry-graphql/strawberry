@@ -17,7 +17,7 @@ def test_print_simple_directive():
     class Query:
         first_name: str = strawberry.field(directives=[Sensitive(reason="GDPR")])
 
-    expected_type = """
+    expected_output = """
     directive @sensitive(reason: String!) on FIELD_DEFINITION
 
     type Query {
@@ -27,7 +27,7 @@ def test_print_simple_directive():
 
     schema = strawberry.Schema(query=Query)
 
-    assert print_schema(schema) == textwrap.dedent(expected_type).strip()
+    assert print_schema(schema) == textwrap.dedent(expected_output).strip()
 
 
 def test_print_directive_with_name():
@@ -43,7 +43,7 @@ def test_print_directive_with_name():
             directives=[SensitiveDirective(reason="GDPR")]
         )
 
-    expected_type = """
+    expected_output = """
     directive @sensitive(reason: String!) on FIELD_DEFINITION
 
     type Query {
@@ -53,7 +53,7 @@ def test_print_directive_with_name():
 
     schema = strawberry.Schema(query=Query)
 
-    assert print_schema(schema) == textwrap.dedent(expected_type).strip()
+    assert print_schema(schema) == textwrap.dedent(expected_output).strip()
 
 
 def test_directive_on_types():
@@ -103,7 +103,7 @@ def test_directive_on_types():
                 phone_share_accepted=False,
             )
 
-    expected_type = """
+    expected_output = """
     directive @sensitiveData(reason: String!, meta: [SensitiveValue!]) on OBJECT | FIELD_DEFINITION
 
     directive @sensitiveInput(reason: String!, meta: [SensitiveValue!]) on INPUT_OBJECT
@@ -130,7 +130,7 @@ def test_directive_on_types():
 
     schema = strawberry.Schema(query=Query)
 
-    assert print_schema(schema) == textwrap.dedent(expected_type).strip()
+    assert print_schema(schema) == textwrap.dedent(expected_output).strip()
 
 
 def test_using_different_names_for_directive_field():
@@ -146,7 +146,7 @@ def test_using_different_names_for_directive_field():
             directives=[Sensitive(reason="GDPR", real_age="1", real_age_2="2")]
         )
 
-    expected_type = """
+    expected_output = """
     directive @sensitive(as: String!, realAge: String!, real_age: String!) on FIELD_DEFINITION
 
     type Query {
@@ -156,7 +156,7 @@ def test_using_different_names_for_directive_field():
 
     schema = strawberry.Schema(query=Query)
 
-    assert print_schema(schema) == textwrap.dedent(expected_type).strip()
+    assert print_schema(schema) == textwrap.dedent(expected_output).strip()
 
 
 def test_respects_schema_config_for_names():
@@ -168,7 +168,7 @@ def test_respects_schema_config_for_names():
     class Query:
         first_name: str = strawberry.field(directives=[Sensitive(real_age="42")])
 
-    expected_type = """
+    expected_output = """
     directive @Sensitive(real_age: String!) on FIELD_DEFINITION
 
     type Query {
@@ -180,7 +180,7 @@ def test_respects_schema_config_for_names():
         query=Query, config=StrawberryConfig(auto_camel_case=False)
     )
 
-    assert print_schema(schema) == textwrap.dedent(expected_type).strip()
+    assert print_schema(schema) == textwrap.dedent(expected_output).strip()
 
 
 def test_respects_schema_parameter_types_for_arguments_int():
@@ -192,7 +192,7 @@ def test_respects_schema_parameter_types_for_arguments_int():
     class Query:
         first_name: str = strawberry.field(directives=[Sensitive(real_age=42)])
 
-    expected_type = """
+    expected_output = """
     directive @Sensitive(real_age: Int!) on FIELD_DEFINITION
 
     type Query {
@@ -204,7 +204,7 @@ def test_respects_schema_parameter_types_for_arguments_int():
         query=Query, config=StrawberryConfig(auto_camel_case=False)
     )
 
-    assert print_schema(schema) == textwrap.dedent(expected_type).strip()
+    assert print_schema(schema) == textwrap.dedent(expected_output).strip()
 
 
 def test_respects_schema_parameter_types_for_arguments_list_of_ints():
@@ -216,7 +216,7 @@ def test_respects_schema_parameter_types_for_arguments_list_of_ints():
     class Query:
         first_name: str = strawberry.field(directives=[Sensitive(real_age=[42])])
 
-    expected_type = """
+    expected_output = """
     directive @Sensitive(real_age: [Int!]!) on FIELD_DEFINITION
 
     type Query {
@@ -228,7 +228,7 @@ def test_respects_schema_parameter_types_for_arguments_list_of_ints():
         query=Query, config=StrawberryConfig(auto_camel_case=False)
     )
 
-    assert print_schema(schema) == textwrap.dedent(expected_type).strip()
+    assert print_schema(schema) == textwrap.dedent(expected_output).strip()
 
 
 def test_respects_schema_parameter_types_for_arguments_list_of_strings():
@@ -240,7 +240,7 @@ def test_respects_schema_parameter_types_for_arguments_list_of_strings():
     class Query:
         first_name: str = strawberry.field(directives=[Sensitive(real_age=["42"])])
 
-    expected_type = """
+    expected_output = """
     directive @Sensitive(real_age: [String!]!) on FIELD_DEFINITION
 
     type Query {
@@ -252,4 +252,58 @@ def test_respects_schema_parameter_types_for_arguments_list_of_strings():
         query=Query, config=StrawberryConfig(auto_camel_case=False)
     )
 
-    assert print_schema(schema) == textwrap.dedent(expected_type).strip()
+    assert print_schema(schema) == textwrap.dedent(expected_output).strip()
+
+
+def test_prints_directive_on_schema():
+    @strawberry.schema_directive(locations=[Location.SCHEMA])
+    class Tag:
+        name: str
+
+    @strawberry.type
+    class Query:
+        first_name: str = strawberry.field(directives=[Tag(name="team-1")])
+
+    schema = strawberry.Schema(query=Query, schema_directives=[Tag(name="team-1")])
+
+    expected_output = """
+    directive @tag(name: String!) on SCHEMA
+
+    schema @tag(name: "team-1") {
+      query: Query
+    }
+
+    type Query {
+      firstName: String!
+    }
+    """
+
+    assert print_schema(schema) == textwrap.dedent(expected_output).strip()
+
+
+def test_prints_multiple_directives_on_schema():
+    @strawberry.schema_directive(locations=[Location.SCHEMA])
+    class Tag:
+        name: str
+
+    @strawberry.type
+    class Query:
+        first_name: str
+
+    schema = strawberry.Schema(
+        query=Query, schema_directives=[Tag(name="team-1"), Tag(name="team-2")]
+    )
+
+    expected_output = """
+    directive @tag(name: String!) on SCHEMA
+
+    schema @tag(name: "team-1") @tag(name: "team-2") {
+      query: Query
+    }
+
+    type Query {
+      firstName: String!
+    }
+    """
+
+    assert print_schema(schema) == textwrap.dedent(expected_output).strip()

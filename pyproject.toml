@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "strawberry-graphql"
 packages = [ { include = "strawberry" } ]
-version = "0.122.0"
+version = "0.123.0"
 description = "A library for creating GraphQL APIs"
 authors = ["Patrick Arminio <patrick.arminio@gmail.com>"]
 license = "MIT"
@@ -76,7 +76,7 @@ pytest-benchmark = "^3.4.1"
 freezegun = "^1.2.1"
 opentelemetry-api = "<2"
 opentelemetry-sdk = "<2"
-flake8-isort = "^4.1.1"
+flake8-isort = "^4.1.2"
 flake8-black = "^0.3"
 Django = ">=3.2"
 pydantic = {version = "<2", optional = false}
@@ -93,7 +93,7 @@ types-setuptools = "^63.2.2"
 types-requests = "^2.28.5"
 types-python-dateutil = "^2.8.16"
 types-freezegun = "^1.1.9"
-types-chardet = "^5.0.1"
+types-chardet = "^5.0.3"
 types-certifi = "^2021.10.8"
 types-aiofiles = "^0.8.10"
 sanic-testing = "^22.3"
