@@ -1,4 +1,4 @@
-Relase type: patch
+Release type: patch
 
 This release adds support for priting custom scalar used only on
 schema directives, for example the following schema:
