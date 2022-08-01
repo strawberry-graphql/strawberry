@@ -54,7 +54,7 @@ pip install 'strawberry-graphql[channels]'
 
 ## Tutorial
 
-_The following example will pick up where part 3 of the Channels tutorial left off._
+_The following example will pick up where the Channels tutorials left off._
 
 By the end of This tutorial, You will have a graphql chat subscription that will be able to talk
 with the channels chat consumer from the tutorial.
