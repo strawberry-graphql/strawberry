@@ -139,8 +139,6 @@ def test_service():
 
         scalar _Any
 
-        scalar _FieldSet
-
         type _Service {
           sdl: String!
         }
@@ -195,8 +193,6 @@ def test_using_generics():
         }
 
         scalar _Any
-
-        scalar _FieldSet
 
         type _Service {
           sdl: String!

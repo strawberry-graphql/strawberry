@@ -598,3 +598,65 @@ async def test_directive_list_argument():
 
     assert result.errors
     raise result.errors[0].original_error  # type: ignore
+
+
+def test_directives_with_custom_types():
+    @strawberry.input
+    class DirectiveInput:
+        example: str
+
+    @strawberry.type
+    class Query:
+        cake: str = "made_in_switzerland"
+
+    @strawberry.directive(
+        locations=[DirectiveLocation.FIELD], description="Make string uppercase"
+    )
+    def uppercase(value: str, input: DirectiveInput):
+        return value.upper()
+
+    schema = strawberry.Schema(query=Query, directives=[uppercase])
+
+    expected_schema = '''
+    """Make string uppercase"""
+    directive @uppercase(input: DirectiveInput!) on FIELD
+
+    input DirectiveInput {
+      example: String!
+    }
+
+    type Query {
+      cake: String!
+    }
+    '''
+
+    assert schema.as_str() == textwrap.dedent(expected_schema).strip()
+
+
+def test_directives_with_scalar():
+    DirectiveInput = strawberry.scalar(str, name="DirectiveInput")
+
+    @strawberry.type
+    class Query:
+        cake: str = "made_in_switzerland"
+
+    @strawberry.directive(
+        locations=[DirectiveLocation.FIELD], description="Make string uppercase"
+    )
+    def uppercase(value: str, input: DirectiveInput):
+        return value.upper()
+
+    schema = strawberry.Schema(query=Query, directives=[uppercase])
+
+    expected_schema = '''
+    """Make string uppercase"""
+    directive @uppercase(input: DirectiveInput!) on FIELD
+
+    scalar DirectiveInput
+
+    type Query {
+      cake: String!
+    }
+    '''
+
+    assert schema.as_str() == textwrap.dedent(expected_schema).strip()
