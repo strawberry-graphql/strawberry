@@ -398,3 +398,25 @@ def test_prints_with_enum():
     schema = strawberry.Schema(query=Query)
 
     assert print_schema(schema) == textwrap.dedent(expected_output).strip()
+
+
+def test_does_not_print_definition():
+    @strawberry.schema_directive(
+        locations=[Location.FIELD_DEFINITION], print_definition=False
+    )
+    class Sensitive:
+        reason: str
+
+    @strawberry.type
+    class Query:
+        first_name: str = strawberry.field(directives=[Sensitive(reason="GDPR")])
+
+    expected_output = """
+    type Query {
+      firstName: String! @sensitive(reason: "GDPR")
+    }
+    """
+
+    schema = strawberry.Schema(query=Query)
+
+    assert print_schema(schema) == textwrap.dedent(expected_output).strip()

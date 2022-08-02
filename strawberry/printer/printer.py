@@ -32,7 +32,6 @@ from graphql.utilities.print_schema import (
     print_block,
     print_deprecated,
     print_description,
-    print_directive,
     print_enum,
     print_implemented_interfaces,
     print_scalar,
@@ -127,22 +126,25 @@ def print_schema_directive(
         },
     )
 
-    extras.directives.add(print_directive(gql_directive))
+    printed_directive = print_directive(gql_directive)
 
-    for field in strawberry_directive.fields:
-        f_type = field.type
+    if printed_directive is not None:
+        extras.directives.add(printed_directive)
 
-        while isinstance(f_type, StrawberryContainer):
-            f_type = f_type.of_type
+        for field in strawberry_directive.fields:
+            f_type = field.type
 
-        if hasattr(f_type, "_type_definition"):
-            extras.types.add(cast(type, f_type))
+            while isinstance(f_type, StrawberryContainer):
+                f_type = f_type.of_type
 
-        if hasattr(f_type, "_scalar_definition"):
-            extras.types.add(cast(type, f_type))
+            if hasattr(f_type, "_type_definition"):
+                extras.types.add(cast(type, f_type))
 
-        if isinstance(f_type, EnumDefinition):
-            extras.types.add(cast(type, f_type))
+            if hasattr(f_type, "_scalar_definition"):
+                extras.types.add(cast(type, f_type))
+
+            if isinstance(f_type, EnumDefinition):
+                extras.types.add(cast(type, f_type))
 
     return f" @{gql_directive.name}{params}"
 
@@ -373,6 +375,25 @@ def print_schema_definition(
     return f"schema{directives} {{\n" + "\n".join(operation_types) + "\n}"
 
 
+def print_directive(directive: GraphQLDirective) -> Optional[str]:
+    strawberry_directive = directive.extensions["strawberry-definition"]
+
+    if (
+        isinstance(strawberry_directive, StrawberrySchemaDirective)
+        and not strawberry_directive.print_definition
+    ):
+        return None
+
+    return (
+        print_description(directive)
+        + f"directive @{directive.name}"
+        + print_args(directive.args)
+        + (" repeatable" if directive.is_repeatable else "")
+        + " on "
+        + " | ".join(location.name for location in directive.locations)
+    )
+
+
 def print_schema(schema: BaseSchema) -> str:
     graphql_core_schema = schema._schema  # type: ignore
     extras = PrintExtras()
@@ -386,11 +407,13 @@ def print_schema(schema: BaseSchema) -> str:
     types_printed = [_print_type(type_, schema, extras=extras) for type_ in types]
     schema_definition = print_schema_definition(schema, extras=extras)
 
+    directives = filter(None, [print_directive(directive) for directive in directives])
+
     return "\n\n".join(
         chain(
             sorted(extras.directives),
             filter(None, [schema_definition]),
-            (print_directive(directive) for directive in directives),
+            directives,
             types_printed,
             (
                 _print_type(
