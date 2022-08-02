@@ -22,10 +22,6 @@ def test_entities_extending_interface():
     schema = strawberry.federation.Schema(query=Query)
 
     expected = """
-        directive @external on FIELD_DEFINITION
-
-        directive @key(fields: _FieldSet!, resolvable: Boolean = true) on OBJECT | INTERFACE
-
         extend type Product implements SomeInterface @key(fields: "upc") {
           id: ID!
           upc: String! @external
@@ -48,8 +44,6 @@ def test_entities_extending_interface():
         type _Service {
           sdl: String!
         }
-
-        scalar _FieldSet
     """
 
     assert schema.as_str() == textwrap.dedent(expected).strip()

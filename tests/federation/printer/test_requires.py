@@ -39,12 +39,6 @@ def test_fields_requires_are_printed_correctly():
     schema = strawberry.federation.Schema(query=Query)
 
     expected = """
-        directive @external on FIELD_DEFINITION
-
-        directive @key(fields: _FieldSet!, resolvable: Boolean = true) on OBJECT | INTERFACE
-
-        directive @requires(fields: _FieldSet!) on FIELD_DEFINITION
-
         extend type Product @key(fields: "upc") {
           upc: String! @external
           field1: String! @external
@@ -76,8 +70,6 @@ def test_fields_requires_are_printed_correctly():
         type _Service {
           sdl: String!
         }
-
-        scalar _FieldSet
     """
 
     assert schema.as_str() == textwrap.dedent(expected).strip()

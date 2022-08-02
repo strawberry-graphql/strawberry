@@ -24,12 +24,6 @@ def test_field_override_printed_correctly():
     schema = strawberry.federation.Schema(query=Query)
 
     expected = """
-        directive @external on FIELD_DEFINITION
-
-        directive @key(fields: _FieldSet!, resolvable: Boolean = true) on OBJECT | INTERFACE
-
-        directive @override(from: String!) on FIELD_DEFINITION
-
         extend type Product implements SomeInterface @key(fields: "upc") {
           id: ID!
           upc: String! @external @override(from: "mySubGraph")
@@ -52,8 +46,6 @@ def test_field_override_printed_correctly():
         type _Service {
           sdl: String!
         }
-
-        scalar _FieldSet
     """
 
     assert schema.as_str() == textwrap.dedent(expected).strip()

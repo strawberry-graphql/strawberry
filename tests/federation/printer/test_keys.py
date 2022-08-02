@@ -35,10 +35,6 @@ def test_multiple_keys():
     schema = strawberry.federation.Schema(query=Query)
 
     expected = """
-        directive @external on FIELD_DEFINITION
-
-        directive @key(fields: _FieldSet!, resolvable: Boolean = true) on OBJECT | INTERFACE
-
         extend type Product @key(fields: "upc", resolvable: true) {
           upc: String! @external
           reviews: [Review!]!
@@ -67,8 +63,6 @@ def test_multiple_keys():
         type _Service {
           sdl: String!
         }
-
-        scalar _FieldSet
     """
 
     assert schema.as_str() == textwrap.dedent(expected).strip()

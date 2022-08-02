@@ -22,12 +22,6 @@ def test_field_tag_printed_correctly():
     schema = strawberry.federation.Schema(query=Query)
 
     expected = """
-        directive @external on FIELD_DEFINITION
-
-        directive @key(fields: _FieldSet!, resolvable: Boolean = true) on OBJECT | INTERFACE
-
-        directive @tag(name: String!) on FIELD_DEFINITION | INTERFACE | OBJECT | UNION | ARGUMENT_DEFINITION | SCALAR | ENUM | ENUM_VALUE | INPUT_OBJECT | INPUT_FIELD_DEFINITION
-
         extend type Product implements SomeInterface @key(fields: "upc") {
           id: ID!
           upc: String! @external @tag(name: "myTag")
@@ -50,8 +44,6 @@ def test_field_tag_printed_correctly():
         type _Service {
           sdl: String!
         }
-
-        scalar _FieldSet
     """
 
     assert schema.as_str() == textwrap.dedent(expected).strip()

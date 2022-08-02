@@ -7,35 +7,47 @@ from strawberry.unset import UNSET
 from .types import FieldSet, LinkImport, LinkPurpose
 
 
-@schema_directive(locations=[Location.FIELD_DEFINITION], name="external")
+@schema_directive(
+    locations=[Location.FIELD_DEFINITION], name="external", print_definition=False
+)
 class External:
     ...
 
 
-@schema_directive(locations=[Location.FIELD_DEFINITION], name="requires")
+@schema_directive(
+    locations=[Location.FIELD_DEFINITION], name="requires", print_definition=False
+)
 class Requires:
     fields: FieldSet
 
 
-@schema_directive(locations=[Location.FIELD_DEFINITION], name="provides")
+@schema_directive(
+    locations=[Location.FIELD_DEFINITION], name="provides", print_definition=False
+)
 class Provides:
     fields: FieldSet
 
 
-@schema_directive(locations=[Location.OBJECT, Location.INTERFACE], name="key")
+@schema_directive(
+    locations=[Location.OBJECT, Location.INTERFACE], name="key", print_definition=False
+)
 class Key:
     fields: FieldSet
     resolvable: Optional[bool] = True
 
 
 @schema_directive(
-    locations=[Location.FIELD_DEFINITION, Location.OBJECT], name="shareable"
+    locations=[Location.FIELD_DEFINITION, Location.OBJECT],
+    name="shareable",
+    print_definition=False,
 )
 class Shareable:
     ...
 
 
-@schema_directive(locations=[Location.SCHEMA], name="link", repeatable=True)
+@schema_directive(
+    locations=[Location.SCHEMA], name="link", repeatable=True, print_definition=False
+)
 class Link:
     url: Optional[str]
     as_: Optional[str] = directive_field(name="as")
@@ -69,12 +81,15 @@ class Link:
         Location.INPUT_FIELD_DEFINITION,
     ],
     name="tag",
+    print_definition=False,
 )
 class Tag:
     name: str
 
 
-@schema_directive(locations=[Location.FIELD_DEFINITION], name="override")
+@schema_directive(
+    locations=[Location.FIELD_DEFINITION], name="override", print_definition=False
+)
 class Override:
     override_from: str = directive_field(name="from")
 
@@ -93,6 +108,7 @@ class Override:
         Location.INPUT_FIELD_DEFINITION,
     ],
     name="inaccessible",
+    print_definition=False,
 )
 class Inaccessible:
     ...

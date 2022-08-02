@@ -24,12 +24,6 @@ def test_field_shareable_printed_correctly():
     schema = strawberry.federation.Schema(query=Query)
 
     expected = """
-        directive @external on FIELD_DEFINITION
-
-        directive @key(fields: _FieldSet!, resolvable: Boolean = true) on OBJECT | INTERFACE
-
-        directive @shareable on FIELD_DEFINITION | OBJECT
-
         extend type Product implements SomeInterface @key(fields: "upc") @shareable {
           id: ID!
           upc: String! @external @shareable
@@ -52,8 +46,6 @@ def test_field_shareable_printed_correctly():
         type _Service {
           sdl: String!
         }
-
-        scalar _FieldSet
     """
 
     assert schema.as_str() == textwrap.dedent(expected).strip()

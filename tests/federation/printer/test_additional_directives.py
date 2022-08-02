@@ -25,10 +25,6 @@ def test_additional_schema_directives_printed_correctly_object():
     expected_type = """
     directive @CacheControl(max_age: Int!) on OBJECT
 
-    directive @key(fields: _FieldSet!, resolvable: Boolean = true) on OBJECT | INTERFACE
-
-    directive @shareable on FIELD_DEFINITION | OBJECT
-
     extend type FederatedType @key(fields: "id") @shareable @CacheControl(max_age: 42) {
       id: ID!
     }
@@ -36,8 +32,6 @@ def test_additional_schema_directives_printed_correctly_object():
     type Query {
       federatedType: FederatedType!
     }
-
-    scalar _FieldSet
     """
 
     schema = strawberry.Schema(
@@ -73,10 +67,6 @@ def test_additional_schema_directives_printed_in_order_object():
 
     directive @CacheControl1(min_age: Int!) on OBJECT
 
-    directive @key(fields: _FieldSet!, resolvable: Boolean = true) on OBJECT | INTERFACE
-
-    directive @shareable on FIELD_DEFINITION | OBJECT
-
     extend type FederatedType @key(fields: "id") @shareable @CacheControl0(max_age: 42) @CacheControl1(min_age: 42) {
       id: ID!
     }
@@ -84,8 +74,6 @@ def test_additional_schema_directives_printed_in_order_object():
     type Query {
       federatedType: FederatedType!
     }
-
-    scalar _FieldSet
     """
 
     schema = strawberry.Schema(

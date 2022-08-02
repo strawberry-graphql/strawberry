@@ -37,12 +37,6 @@ def test_field_provides_are_printed_correctly_camel_case_on():
     )
 
     expected = """
-        directive @external on FIELD_DEFINITION
-
-        directive @key(fields: _FieldSet!, resolvable: Boolean = true) on OBJECT | INTERFACE
-
-        directive @provides(fields: _FieldSet!) on FIELD_DEFINITION
-
         extend type Product @key(fields: "upc") {
           upc: String! @external
           theName: String! @external
@@ -72,8 +66,6 @@ def test_field_provides_are_printed_correctly_camel_case_on():
         type _Service {
           sdl: String!
         }
-
-        scalar _FieldSet
     """
 
     assert schema.as_str() == textwrap.dedent(expected).strip()
@@ -111,12 +103,6 @@ def test_field_provides_are_printed_correctly_camel_case_off():
     )
 
     expected = """
-        directive @external on FIELD_DEFINITION
-
-        directive @key(fields: _FieldSet!, resolvable: Boolean = true) on OBJECT | INTERFACE
-
-        directive @provides(fields: _FieldSet!) on FIELD_DEFINITION
-
         extend type Product @key(fields: "upc") {
           upc: String! @external
           the_name: String! @external
@@ -146,8 +132,6 @@ def test_field_provides_are_printed_correctly_camel_case_off():
         type _Service {
           sdl: String!
         }
-
-        scalar _FieldSet
     """
 
     assert schema.as_str() == textwrap.dedent(expected).strip()

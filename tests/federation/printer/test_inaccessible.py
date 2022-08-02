@@ -37,12 +37,6 @@ def test_field_inaccessible_printed_correctly():
     )
 
     expected = """
-        directive @external on FIELD_DEFINITION
-
-        directive @inaccessible on FIELD_DEFINITION | OBJECT | INTERFACE | UNION | ARGUMENT_DEFINITION | SCALAR | ENUM | ENUM_VALUE | INPUT_OBJECT | INPUT_FIELD_DEFINITION
-
-        directive @key(fields: _FieldSet!, resolvable: Boolean = true) on OBJECT | INTERFACE
-
         type AnInaccessibleType @inaccessible {
           id: ID!
         }
@@ -79,8 +73,6 @@ def test_field_inaccessible_printed_correctly():
         type _Service {
           sdl: String!
         }
-
-        scalar _FieldSet
     """
 
     assert schema.as_str() == textwrap.dedent(expected).strip()
