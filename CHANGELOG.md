@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.123.3 - 2022-08-02
+--------------------
+
+This release fixes a regression introduced in version 0.118.2 which was
+preventing using circular dependencies in Strawberry django and Strawberry
+django plus.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2062](https://github.com/strawberry-graphql/strawberry/pull/2062/)
+
+
 0.123.2 - 2022-08-01
 --------------------
 
