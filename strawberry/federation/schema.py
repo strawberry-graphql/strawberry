@@ -23,6 +23,19 @@ from ..printer import print_schema
 from ..schema import Schema as BaseSchema
 
 
+def _find_directives(schema):
+    def _find_directives_in_type(type_):
+        ...
+
+    directives = []
+
+    for type_ in schema._schema.type_map.values():
+        directives.extend(_find_directives_in_type(type_))
+
+        for field in type_.fields:
+            ...
+
+
 class Schema(BaseSchema):
     def __init__(self, *args, **kwargs):
         additional_types = list(kwargs.pop("types", []))
@@ -34,15 +47,16 @@ class Schema(BaseSchema):
         self._add_scalars()
         self._create_service_field()
         self._extend_query_type()
+        self._add_link_directives()
 
     def entities_resolver(self, root, info, representations):
         results = []
 
         for representation in representations:
             type_name = representation.pop("__typename")
-            type = self.schema_converter.type_map[type_name]
+            type_ = self.schema_converter.type_map[type_name]
 
-            definition = cast(TypeDefinition, type.definition)
+            definition = cast(TypeDefinition, type_.definition)
             resolve_reference = definition.origin.resolve_reference
 
             func_args = get_func_args(resolve_reference)
@@ -59,6 +73,11 @@ class Schema(BaseSchema):
         self.Any = GraphQLScalarType("_Any")
 
         self._schema.type_map["_Any"] = self.Any
+
+    def _add_link_directives(self):
+        # visit all the types and find federation directives
+
+        all_directives = _find_directives(self)
 
     def _extend_query_type(self):
         fields = {"_service": self._service_field}

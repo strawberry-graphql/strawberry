@@ -33,6 +33,7 @@ class StrawberrySchemaDirective:
     description: Optional[str] = None
     repeatable: bool = False
     print_definition: bool = True
+    origin: Optional[Type] = None
 
 
 T = TypeVar("T", bound=Type)
@@ -61,6 +62,7 @@ def schema_directive(
             repeatable=repeatable,
             fields=fields,
             print_definition=print_definition,
+            origin=cls,
         )
 
         return cls
