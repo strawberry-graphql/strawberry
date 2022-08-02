@@ -1,8 +1,10 @@
+from collections import defaultdict
 from copy import copy
 from typing import Any, Union, cast
 
 from graphql import (
     GraphQLField,
+    GraphQLInterfaceType,
     GraphQLList,
     GraphQLNonNull,
     GraphQLObjectType,
@@ -24,16 +26,20 @@ from ..schema import Schema as BaseSchema
 
 
 def _find_directives(schema):
-    def _find_directives_in_type(type_):
-        ...
+    all_graphql_types = schema._schema.type_map.values()
 
     directives = []
 
-    for type_ in schema._schema.type_map.values():
-        directives.extend(_find_directives_in_type(type_))
+    for type_ in all_graphql_types:
+        strawberry_definition = type_.extensions.get("strawberry-definition")
 
-        for field in type_.fields:
-            ...
+        if not strawberry_definition:
+            continue
+
+        directives.extend(strawberry_definition.directives)
+        # TODO: do this for every field
+
+    return directives
 
 
 class Schema(BaseSchema):
@@ -75,9 +81,27 @@ class Schema(BaseSchema):
         self._schema.type_map["_Any"] = self.Any
 
     def _add_link_directives(self):
-        # visit all the types and find federation directives
+        from .schema_directives import FederationDirective, Link
 
         all_directives = _find_directives(self)
+
+        directive_by_url = defaultdict(set)
+
+        for directive in all_directives:
+            if isinstance(directive, FederationDirective):
+                directive_by_url[directive.imported_from.url].add(
+                    f"@{directive.imported_from.name}"
+                )
+
+        link_directives = tuple(
+            Link(
+                url=url,
+                import_=list(directives),
+            )
+            for url, directives in directive_by_url.items()
+        )
+
+        self.schema_directives = tuple(self.schema_directives) + link_directives
 
     def _extend_query_type(self):
         fields = {"_service": self._service_field}
@@ -130,6 +154,8 @@ def _get_entity_type(type_map: TypeMap):
         type.implementation
         for type in type_map.values()
         if _has_federation_keys(type.definition)
+        # TODO: check this
+        and not isinstance(type.implementation, GraphQLInterfaceType)
     ]
 
     # If no types are annotated with the key directive, then the _Entity

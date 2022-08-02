@@ -148,6 +148,7 @@ def input(
     )
 
 
+# TODO: fix type hints
 @__dataclass_transform__(order_default=True, field_descriptors=(field, StrawberryField))
 def interface(
     cls: T = None,
@@ -156,7 +157,7 @@ def interface(
     description: str = None,
     directives: Iterable[object] = (),
     keys: Iterable[Union["Key", str]] = (),
-    inaccessible: bool = False,
+    inaccessible: bool = UNSET,
 ):
     return _impl_type(
         cls,

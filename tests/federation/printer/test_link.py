@@ -121,3 +121,89 @@ def test_adds_link_directive_automatically():
     """
 
     assert schema.as_str() == textwrap.dedent(expected).strip()
+
+
+def test_adds_link_directive_from_interface():
+    @strawberry.federation.interface(keys=["id"])
+    class SomeInterface:
+        id: strawberry.ID
+
+    @strawberry.type
+    class User:
+        id: strawberry.ID
+
+    @strawberry.type
+    class Query:
+        user: User
+
+    schema = strawberry.federation.Schema(query=Query, types=[SomeInterface])
+
+    expected = """
+        schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key"]) {
+          query: Query
+        }
+
+        type Query {
+          _service: _Service!
+          user: User!
+        }
+
+        interface SomeInterface @key(fields: "id") {
+          id: ID!
+        }
+
+        type User {
+          id: ID!
+        }
+
+        scalar _Any
+
+        type _Service {
+          sdl: String!
+        }
+    """
+
+    assert schema.as_str() == textwrap.dedent(expected).strip()
+
+
+def test_adds_link_directive_from_input_types():
+    @strawberry.federation.input(inaccessible=True)
+    class SomeInput:
+        id: strawberry.ID
+
+    @strawberry.type
+    class User:
+        id: strawberry.ID
+
+    @strawberry.type
+    class Query:
+        user: User
+
+    schema = strawberry.federation.Schema(query=Query, types=[SomeInput])
+
+    expected = """
+        schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@inaccessible"]) {
+          query: Query
+        }
+
+        type Query {
+          _service: _Service!
+          user: User!
+        }
+
+        input SomeInput @inaccessible {
+          id: ID!
+        }
+
+        type User {
+          id: ID!
+        }
+
+        scalar _Any
+
+        type _Service {
+          sdl: String!
+        }
+    """
+
+    assert schema.as_str() == textwrap.dedent(expected).strip()
