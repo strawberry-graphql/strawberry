@@ -35,6 +35,10 @@ def test_multiple_keys():
     schema = strawberry.federation.Schema(query=Query)
 
     expected = """
+        schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@external", "@key"]) {
+          query: Query
+        }
+
         extend type Product @key(fields: "upc", resolvable: true) {
           upc: String! @external
           reviews: [Review!]!

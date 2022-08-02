@@ -37,6 +37,10 @@ def test_field_provides_are_printed_correctly_camel_case_on():
     )
 
     expected = """
+        schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@external", "@key", "@provides"]) {
+          query: Query
+        }
+
         extend type Product @key(fields: "upc") {
           upc: String! @external
           theName: String! @external
@@ -103,6 +107,10 @@ def test_field_provides_are_printed_correctly_camel_case_off():
     )
 
     expected = """
+        schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@external", "@key", "@provides"]) {
+          query: Query
+        }
+
         extend type Product @key(fields: "upc") {
           upc: String! @external
           the_name: String! @external

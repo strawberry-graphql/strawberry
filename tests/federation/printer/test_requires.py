@@ -39,6 +39,10 @@ def test_fields_requires_are_printed_correctly():
     schema = strawberry.federation.Schema(query=Query)
 
     expected = """
+        schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@external", "@key", "@requires"]) {
+          query: Query
+        }
+
         extend type Product @key(fields: "upc") {
           upc: String! @external
           field1: String! @external

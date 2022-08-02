@@ -22,6 +22,10 @@ def test_field_tag_printed_correctly():
     schema = strawberry.federation.Schema(query=Query)
 
     expected = """
+        schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@external", "@key", "@tag"]) {
+          query: Query
+        }
+
         extend type Product implements SomeInterface @key(fields: "upc") {
           id: ID!
           upc: String! @external @tag(name: "myTag")

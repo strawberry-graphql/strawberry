@@ -33,6 +33,10 @@ def test_entities_type_when_no_type_has_keys():
     schema = strawberry.federation.Schema(query=Query)
 
     expected = """
+        schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@external"]) {
+          query: Query
+        }
+
         extend type Product {
           upc: String! @external
           reviews: [Review!]!
@@ -92,6 +96,10 @@ def test_entities_type_when_one_type_has_keys():
     schema = strawberry.federation.Schema(query=Query)
 
     expected = """
+        schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@external", "@key"]) {
+          query: Query
+        }
+
         extend type Product @key(fields: "upc") {
           upc: String! @external
           reviews: [Review!]!

@@ -24,6 +24,10 @@ def test_field_shareable_printed_correctly():
     schema = strawberry.federation.Schema(query=Query)
 
     expected = """
+        schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@external", "@key", "@shareable"]) {
+          query: Query
+        }
+
         extend type Product implements SomeInterface @key(fields: "upc") @shareable {
           id: ID!
           upc: String! @external @shareable

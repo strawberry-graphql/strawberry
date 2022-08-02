@@ -207,3 +207,45 @@ def test_adds_link_directive_from_input_types():
     """
 
     assert schema.as_str() == textwrap.dedent(expected).strip()
+
+
+def test_adds_link_directive_automatically_from_field():
+    @strawberry.federation.type(keys=["id"])
+    class User:
+        id: strawberry.ID
+        age: int = strawberry.federation.field(tags=["private"])
+
+    @strawberry.type
+    class Query:
+        user: User
+
+    schema = strawberry.federation.Schema(
+        query=Query,
+    )
+
+    expected = """
+        schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key", "@tag"]) {
+          query: Query
+        }
+
+        type Query {
+          _service: _Service!
+          _entities(representations: [_Any!]!): [_Entity]!
+          user: User!
+        }
+
+        type User @key(fields: "id") {
+          id: ID!
+          age: Int! @tag(name: "private")
+        }
+
+        scalar _Any
+
+        union _Entity = User
+
+        type _Service {
+          sdl: String!
+        }
+    """
+
+    assert schema.as_str() == textwrap.dedent(expected).strip()

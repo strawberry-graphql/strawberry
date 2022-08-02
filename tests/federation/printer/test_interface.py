@@ -22,6 +22,10 @@ def test_entities_extending_interface():
     schema = strawberry.federation.Schema(query=Query)
 
     expected = """
+        schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@external", "@key"]) {
+          query: Query
+        }
+
         extend type Product implements SomeInterface @key(fields: "upc") {
           id: ID!
           upc: String! @external

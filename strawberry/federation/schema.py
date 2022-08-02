@@ -37,7 +37,9 @@ def _find_directives(schema):
             continue
 
         directives.extend(strawberry_definition.directives)
-        # TODO: do this for every field
+
+        for field in strawberry_definition.fields:
+            directives.extend(field.directives)
 
     return directives
 
@@ -96,7 +98,7 @@ class Schema(BaseSchema):
         link_directives = tuple(
             Link(
                 url=url,
-                import_=list(directives),
+                import_=list(sorted(directives)),
             )
             for url, directives in directive_by_url.items()
         )

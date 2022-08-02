@@ -37,6 +37,10 @@ def test_field_inaccessible_printed_correctly():
     )
 
     expected = """
+        schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@external", "@inaccessible", "@key"]) {
+          query: Query
+        }
+
         type AnInaccessibleType @inaccessible {
           id: ID!
         }
