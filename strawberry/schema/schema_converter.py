@@ -499,6 +499,8 @@ class GraphQLCoreConverter:
 
             return await await_maybe(_get_result(_source, strawberry_info, **kwargs))
 
+        field.default_resolver = self.config.default_resolver  # type: ignore
+
         if field.is_async:
             _async_resolver._is_default = not field.base_resolver  # type: ignore
             return _async_resolver
