@@ -33,7 +33,9 @@ def test_field_inaccessible_printed_correctly():
             return []
 
     schema = strawberry.federation.Schema(
-        query=Query, types=[AnInterface, AnInput, AnInaccessibleType]
+        query=Query,
+        types=[AnInterface, AnInput, AnInaccessibleType],
+        enable_federation_2=True,
     )
 
     expected = """

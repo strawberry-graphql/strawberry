@@ -47,6 +47,7 @@ def _find_directives(schema):
 class Schema(BaseSchema):
     def __init__(self, *args, **kwargs):
         additional_types = list(kwargs.pop("types", []))
+        enable_federation_2 = kwargs.pop("enable_federation_2", False)
 
         kwargs["types"] = additional_types
 
@@ -55,7 +56,9 @@ class Schema(BaseSchema):
         self._add_scalars()
         self._create_service_field()
         self._extend_query_type()
-        self._add_link_directives()
+
+        if enable_federation_2:
+            self._add_link_directives()
 
     def entities_resolver(self, root, info, representations):
         results = []

@@ -19,7 +19,7 @@ def test_entities_extending_interface():
         def top_products(self, first: int) -> List[Product]:
             return []
 
-    schema = strawberry.federation.Schema(query=Query)
+    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
 
     expected = """
         schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@external", "@key"]) {

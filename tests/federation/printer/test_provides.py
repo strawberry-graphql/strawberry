@@ -33,7 +33,9 @@ def test_field_provides_are_printed_correctly_camel_case_on():
             return []
 
     schema = strawberry.federation.Schema(
-        query=Query, config=StrawberryConfig(auto_camel_case=True)
+        query=Query,
+        config=StrawberryConfig(auto_camel_case=True),
+        enable_federation_2=True,
     )
 
     expected = """
@@ -103,7 +105,9 @@ def test_field_provides_are_printed_correctly_camel_case_off():
             return []
 
     schema = strawberry.federation.Schema(
-        query=Query, config=StrawberryConfig(auto_camel_case=False)
+        query=Query,
+        config=StrawberryConfig(auto_camel_case=False),
+        enable_federation_2=True,
     )
 
     expected = """
