@@ -259,6 +259,6 @@ tweaked based on your needs.
 
 ## Subscriptions
 
-Subscriptions runs over websockets and thus depends on
+Subscriptions run over websockets and thus depend on
 [channels](https://channels.readthedocs.io/). Take a look at our
 [channels integraton](/docs/integrations/channels.md) page for more information regarding it.
