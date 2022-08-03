@@ -48,10 +48,6 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
         await self._ws.accept(subprotocol=GRAPHQL_TRANSPORT_WS_PROTOCOL)
 
     async def handle_disconnect(self, code):
-        timeout_task = self.connection_init_timeout_task
-        if timeout_task and not timeout_task.done() and not timeout_task.cancelled():
-            timeout_task.cancel()
-
         for operation_id in list(self.subscriptions.keys()):
             await self.cleanup_operation(operation_id)
 
