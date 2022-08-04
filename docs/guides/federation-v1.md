@@ -1,8 +1,19 @@
 ---
-title: Federation
+title: Federation V1
 ---
 
-# Apollo Federation Guide
+<Warning>
+
+This guide refers to Apollo Federation 1, if you're looking for the 2.0 guide,
+please see the [federation v2](docs/guides/federation.md) guide.
+
+You can also see the
+[What's new in federation 2](https://www.apollographql.com/docs/federation/federation-2/new-in-federation-2/)
+for more details.
+
+</Warning>
+
+# Apollo Federation V1 Guide
 
 Apollo Federation allows you to combine multiple GraphQL APIs into one. This can
 be extremely useful when working with a service oriented architecture.
