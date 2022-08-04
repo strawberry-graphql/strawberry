@@ -1,4 +1,5 @@
 import textwrap
+from enum import Enum
 from typing import List
 
 import strawberry
@@ -77,6 +78,41 @@ def test_field_tag_printed_correctly_on_scalar():
         }
 
         scalar SomeScalar @tag(name: "myTag") @tag(name: "anotherTag")
+
+        scalar _Any
+
+        type _Service {
+          sdl: String!
+        }
+    """
+
+    assert schema.as_str() == textwrap.dedent(expected).strip()
+
+
+def test_field_tag_printed_correctly_on_enum():
+    @strawberry.federation.enum(tags=["myTag", "anotherTag"])
+    class SomeEnum(Enum):
+        A = "A"
+
+    @strawberry.federation.type
+    class Query:
+        hello: SomeEnum
+
+    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+
+    expected = """
+        schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"]) {
+          query: Query
+        }
+
+        type Query {
+          _service: _Service!
+          hello: SomeEnum!
+        }
+
+        enum SomeEnum @tag(name: "myTag") @tag(name: "anotherTag") {
+          A
+        }
 
         scalar _Any
 

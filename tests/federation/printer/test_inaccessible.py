@@ -2,8 +2,6 @@ import textwrap
 from enum import Enum
 from typing import List
 
-import pytest
-
 import strawberry
 
 
@@ -163,10 +161,8 @@ def test_inaccessible_on_scalar():
     assert schema.as_str() == textwrap.dedent(expected).strip()
 
 
-@pytest.mark.xfail(reason="Not implemented")
 def test_inaccessible_on_enum():
-    # TODO, this is a wip test
-    @strawberry.enum
+    @strawberry.federation.enum(inaccessible=True)
     class SomeEnum(Enum):
         A = "A"
 
@@ -189,7 +185,9 @@ def test_inaccessible_on_enum():
           hello: SomeEnum!
         }
 
-        scalar SomeScalar @inaccessible
+        enum SomeEnum @inaccessible {
+          A
+        }
 
         scalar _Any
 
