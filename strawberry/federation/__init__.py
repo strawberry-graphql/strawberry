@@ -1,6 +1,6 @@
 from .field import field
-from .object_type import input, interface, type
 from .mutation import mutation
+from .object_type import input, interface, type
 from .schema import Schema
 
 
