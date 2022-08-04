@@ -36,10 +36,10 @@ from graphql.utilities.print_schema import (
     print_enum,
     print_implemented_interfaces,
     print_scalar,
-    print_schema_definition,
     print_type as original_print_type,
 )
 
+from strawberry.enum import EnumDefinition
 from strawberry.field import StrawberryField
 from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema_directive import Location, StrawberrySchemaDirective
@@ -128,12 +128,20 @@ def print_schema_directive(
     )
 
     extras.directives.add(print_directive(gql_directive))
+
     for field in strawberry_directive.fields:
         f_type = field.type
+
         while isinstance(f_type, StrawberryContainer):
             f_type = f_type.of_type
 
         if hasattr(f_type, "_type_definition"):
+            extras.types.add(cast(type, f_type))
+
+        if hasattr(f_type, "_scalar_definition"):
+            extras.types.add(cast(type, f_type))
+
+        if isinstance(f_type, EnumDefinition):
             extras.types.add(cast(type, f_type))
 
     return f" @{gql_directive.name}{params}"
@@ -311,6 +319,60 @@ def _print_type(type_, schema: BaseSchema, *, extras: PrintExtras) -> str:
     return original_print_type(type_)
 
 
+def print_schema_directives(schema: BaseSchema, *, extras: PrintExtras) -> str:
+    directives = (
+        directive
+        for directive in schema.schema_directives
+        if any(
+            location in [Location.SCHEMA]
+            for location in directive.__strawberry_directive__.locations  # type: ignore
+        )
+    )
+
+    return "".join(
+        (
+            print_schema_directive(directive, schema=schema, extras=extras)
+            for directive in directives
+        )
+    )
+
+
+def _all_root_names_are_common_names(schema: BaseSchema) -> bool:
+    query = schema.query._type_definition
+    mutation = schema.mutation._type_definition if schema.mutation else None
+    subscription = schema.subscription._type_definition if schema.subscription else None
+
+    return (
+        query.name == "Query"
+        and (mutation is None or mutation.name == "Mutation")
+        and (subscription is None or subscription.name == "Subscription")
+    )
+
+
+def print_schema_definition(
+    schema: BaseSchema, *, extras: PrintExtras
+) -> Optional[str]:
+    # TODO: add support for description
+
+    if _all_root_names_are_common_names(schema) and not schema.schema_directives:
+        return None
+
+    query_type = schema.query._type_definition
+    operation_types = [f"  query: {query_type.name}"]
+
+    if schema.mutation:
+        mutation_type = schema.mutation._type_definition
+        operation_types.append(f"  mutation: {mutation_type.name}")
+
+    if schema.subscription:
+        subscription_type = schema.subscription._type_definition
+        operation_types.append(f"  subscription: {subscription_type.name}")
+
+    directives = print_schema_directives(schema, extras=extras)
+
+    return f"schema{directives} {{\n" + "\n".join(operation_types) + "\n}"
+
+
 def print_schema(schema: BaseSchema) -> str:
     graphql_core_schema = schema._schema  # type: ignore
     extras = PrintExtras()
@@ -322,11 +384,12 @@ def print_schema(schema: BaseSchema) -> str:
     types = filter(is_defined_type, map(type_map.get, sorted(type_map)))
 
     types_printed = [_print_type(type_, schema, extras=extras) for type_ in types]
+    schema_definition = print_schema_definition(schema, extras=extras)
 
     return "\n\n".join(
         chain(
-            filter(None, [print_schema_definition(graphql_core_schema)]),
             sorted(extras.directives),
+            filter(None, [schema_definition]),
             (print_directive(directive) for directive in directives),
             types_printed,
             (

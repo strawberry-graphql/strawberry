@@ -332,3 +332,43 @@ def test_interface():
     schema = strawberry.Schema(query=Query)
 
     assert print_schema(schema) == textwrap.dedent(expected_type).strip()
+
+
+def test_root_objects_with_different_names():
+    @strawberry.type
+    class Domanda:
+        name: str
+
+    @strawberry.type
+    class Mutazione:
+        name: str
+
+    @strawberry.type
+    class Abbonamento:
+        name: str
+
+    expected_type = """
+    schema {
+      query: Domanda
+      mutation: Mutazione
+      subscription: Abbonamento
+    }
+
+    type Abbonamento {
+      name: String!
+    }
+
+    type Domanda {
+      name: String!
+    }
+
+    type Mutazione {
+      name: String!
+    }
+    """
+
+    schema = strawberry.Schema(
+        query=Domanda, mutation=Mutazione, subscription=Abbonamento
+    )
+
+    assert print_schema(schema) == textwrap.dedent(expected_type).strip()
