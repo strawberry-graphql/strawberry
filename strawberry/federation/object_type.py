@@ -106,7 +106,9 @@ def type(
 
 
 @overload
-@__dataclass_transform__(order_default=True, field_descriptors=(field, StrawberryField))
+@__dataclass_transform__(
+    order_default=True, field_descriptors=(base_field, field, StrawberryField)
+)
 def input(
     cls: T,
     *,
@@ -119,7 +121,9 @@ def input(
 
 
 @overload
-@__dataclass_transform__(order_default=True, field_descriptors=(field, StrawberryField))
+@__dataclass_transform__(
+    order_default=True, field_descriptors=(base_field, field, StrawberryField)
+)
 def input(
     *,
     name: str = None,
@@ -148,16 +152,42 @@ def input(
     )
 
 
-# TODO: fix type hints
-@__dataclass_transform__(order_default=True, field_descriptors=(field, StrawberryField))
+@overload
+@__dataclass_transform__(
+    order_default=True, field_descriptors=(base_field, field, StrawberryField)
+)
 def interface(
-    cls: T = None,
+    cls: T,
     *,
     name: str = None,
     description: str = None,
-    directives: Iterable[object] = (),
-    keys: Iterable[Union["Key", str]] = (),
+    directives: Sequence[object] = (),
     inaccessible: bool = UNSET,
+) -> T:
+    ...
+
+
+@overload
+@__dataclass_transform__(
+    order_default=True, field_descriptors=(base_field, field, StrawberryField)
+)
+def interface(
+    *,
+    name: str = None,
+    description: str = None,
+    directives: Sequence[object] = (),
+    inaccessible: bool = UNSET,
+) -> Callable[[T], T]:
+    ...
+
+
+def interface(
+    cls=None,
+    *,
+    name=None,
+    description=None,
+    inaccessible: bool = UNSET,
+    directives=(),
 ):
     return _impl_type(
         cls,
