@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import (
     Any,
     Callable,
+    Iterable,
     Mapping,
     NewType,
     Optional,
@@ -38,6 +39,7 @@ class ScalarDefinition(StrawberryType):
     serialize: Optional[Callable]
     parse_value: Optional[Callable]
     parse_literal: Optional[Callable]
+    directives: Iterable[object] = ()
 
     # Optionally store the GraphQLScalarType instance so that we don't get
     # duplicates

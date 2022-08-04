@@ -283,3 +283,50 @@ def test_does_not_add_directive_link_if_federation_two_is_not_enabled():
     """
 
     assert schema.as_str() == textwrap.dedent(expected).strip()
+
+
+def test_adds_link_directive_automatically_from_scalar():
+    # TODO: Federation scalar
+    @strawberry.scalar
+    class X:
+        pass
+
+    @strawberry.federation.type(keys=["id"])
+    class User:
+        id: strawberry.ID
+        age: X
+
+    @strawberry.type
+    class Query:
+        user: User
+
+    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+
+    expected = """
+        schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key"]) {
+          query: Query
+        }
+
+        type Query {
+          _service: _Service!
+          _entities(representations: [_Any!]!): [_Entity]!
+          user: User!
+        }
+
+        type User @key(fields: "id") {
+          id: ID!
+          age: X!
+        }
+
+        scalar X
+
+        scalar _Any
+
+        union _Entity = User
+
+        type _Service {
+          sdl: String!
+        }
+    """
+
+    assert schema.as_str() == textwrap.dedent(expected).strip()

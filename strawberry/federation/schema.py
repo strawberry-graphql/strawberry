@@ -38,7 +38,9 @@ def _find_directives(schema):
 
         directives.extend(strawberry_definition.directives)
 
-        for field in strawberry_definition.fields:
+        fields = getattr(strawberry_definition, "fields", [])
+
+        for field in fields:
             directives.extend(field.directives)
 
     return directives
