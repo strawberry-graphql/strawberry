@@ -85,4 +85,4 @@ def enum(
     if not _cls:
         return wrap
 
-    return wrap(_cls)
+    return wrap(_cls)  # pragma: no cover

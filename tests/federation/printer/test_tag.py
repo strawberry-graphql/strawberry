@@ -57,9 +57,9 @@ def test_field_tag_printed_correctly():
 
 
 def test_field_tag_printed_correctly_on_scalar():
-    SomeScalar = strawberry.federation.scalar(
-        str, name="SomeScalar", tags=["myTag", "anotherTag"]
-    )
+    @strawberry.federation.scalar(tags=["myTag", "anotherTag"])
+    class SomeScalar(str):
+        ...
 
     @strawberry.federation.type
     class Query:
