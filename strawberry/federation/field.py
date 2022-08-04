@@ -139,7 +139,7 @@ def field(
         directives.append(Shareable())
 
     if tags:
-        directives.append(Tag(" ".join(tags)))
+        directives.extend(Tag(tag) for tag in tags)
 
     if override:
         directives.append(Override(override))

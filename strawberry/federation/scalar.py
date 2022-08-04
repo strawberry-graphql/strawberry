@@ -26,6 +26,7 @@ def scalar(
     parse_literal: Optional[Callable] = None,
     directives: Iterable[object] = (),
     inaccessible: bool = False,
+    tags: Optional[Iterable[str]] = (),
 ) -> Callable[[_T], _T]:
     ...
 
@@ -42,6 +43,7 @@ def scalar(
     parse_literal: Optional[Callable] = None,
     directives: Iterable[object] = (),
     inaccessible: bool = False,
+    tags: Optional[Iterable[str]] = (),
 ) -> _T:
     ...
 
@@ -57,6 +59,7 @@ def scalar(
     parse_literal: Optional[Callable] = None,
     directives: Iterable[object] = (),
     inaccessible: bool = False,
+    tags: Optional[Iterable[str]] = (),
 ) -> Any:
     """Annotates a class or type as a GraphQL custom scalar.
 
@@ -83,7 +86,7 @@ def scalar(
     >>>         self.items = items
 
     """
-    from strawberry.federation.schema_directives import Inaccessible
+    from strawberry.federation.schema_directives import Inaccessible, Tag
 
     if parse_value is None:
         parse_value = cls
@@ -92,6 +95,9 @@ def scalar(
 
     if inaccessible:
         directives.append(Inaccessible())
+
+    if tags:
+        directives.extend(Tag(tag) for tag in tags)
 
     def wrap(cls):
         return _process_scalar(

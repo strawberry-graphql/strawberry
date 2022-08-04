@@ -225,7 +225,7 @@ def print_scalar(
     strawberry_type = type_.extensions.get("strawberry-definition")
     directives = strawberry_type.directives if strawberry_type else []
 
-    printed_directives = " ".join(
+    printed_directives = "".join(
         (
             print_schema_directive(directive, schema=schema, extras=extras)
             for directive in directives

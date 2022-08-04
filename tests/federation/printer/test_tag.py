@@ -11,7 +11,9 @@ def test_field_tag_printed_correctly():
 
     @strawberry.federation.type(keys=["upc"], extend=True)
     class Product(SomeInterface):
-        upc: str = strawberry.federation.field(external=True, tags=["myTag"])
+        upc: str = strawberry.federation.field(
+            external=True, tags=["myTag", "anotherTag"]
+        )
 
     @strawberry.federation.type
     class Query:
@@ -28,7 +30,7 @@ def test_field_tag_printed_correctly():
 
         extend type Product implements SomeInterface @key(fields: "upc") {
           id: ID!
-          upc: String! @external @tag(name: "myTag")
+          upc: String! @external @tag(name: "myTag") @tag(name: "anotherTag")
         }
 
         type Query {
@@ -44,6 +46,39 @@ def test_field_tag_printed_correctly():
         scalar _Any
 
         union _Entity = Product
+
+        type _Service {
+          sdl: String!
+        }
+    """
+
+    assert schema.as_str() == textwrap.dedent(expected).strip()
+
+
+def test_field_tag_printed_correctly_on_scalar():
+    SomeScalar = strawberry.federation.scalar(
+        str, name="SomeScalar", tags=["myTag", "anotherTag"]
+    )
+
+    @strawberry.federation.type
+    class Query:
+        hello: SomeScalar
+
+    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+
+    expected = """
+        schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"]) {
+          query: Query
+        }
+
+        type Query {
+          _service: _Service!
+          hello: SomeScalar!
+        }
+
+        scalar SomeScalar @tag(name: "myTag") @tag(name: "anotherTag")
+
+        scalar _Any
 
         type _Service {
           sdl: String!
