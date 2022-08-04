@@ -89,7 +89,7 @@ def _process_enum(
         item_value = item.value
         item_name = item.name
         deprecation_reason = None
-        item_directives = ()
+        item_directives: Iterable[object] = ()
 
         if isinstance(item_value, EnumValueDefinition):
             item_directives = item_value.directives
