@@ -106,7 +106,7 @@ class ChannelsConsumer(AsyncConsumer):
         type: str,
         *,
         timeout: Optional[float] = None,
-        groups: Optional[Sequence[str]] = None,
+        groups: Sequence[str] = (),
     ) -> AsyncGenerator[Any, None]:
         """Listen for messages sent to this consumer.
 
@@ -135,10 +135,9 @@ class ChannelsConsumer(AsyncConsumer):
 
         added_groups = []
         try:
-            if groups:
-                for group in groups:
-                    await self.channel_layer.group_add(group, self.channel_name)
-                    added_groups.append(group)
+            for group in groups:
+                await self.channel_layer.group_add(group, self.channel_name)
+                added_groups.append(group)
 
             queue = self.listen_queues[type]
             while True:
