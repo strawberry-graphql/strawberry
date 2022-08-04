@@ -48,7 +48,10 @@ class Provides(FederationDirective):
 
 
 @schema_directive(
-    locations=[Location.OBJECT, Location.INTERFACE], name="key", print_definition=False
+    locations=[Location.OBJECT, Location.INTERFACE],
+    name="key",
+    repeatable=True,
+    print_definition=False,
 )
 class Key(FederationDirective):
     fields: FieldSet
@@ -105,6 +108,7 @@ class Link:
         Location.INPUT_FIELD_DEFINITION,
     ],
     name="tag",
+    repeatable=True,
     print_definition=False,
 )
 class Tag(FederationDirective):
