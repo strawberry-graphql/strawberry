@@ -22,6 +22,7 @@ class EnumValue:
     name: str
     value: Any
     deprecation_reason: Optional[str] = None
+    directives: Iterable[object] = ()
 
 
 @dataclasses.dataclass
@@ -46,18 +47,23 @@ class EnumDefinition(StrawberryType):
         return False
 
 
+# TODO: remove duplication of EnumValueDefinition and EnumValue
 @dataclasses.dataclass
 class EnumValueDefinition:
     value: Any
     deprecation_reason: Optional[str] = None
+    directives: Iterable[object] = ()
 
 
 def enum_value(
-    value: Any, deprecation_reason: Optional[str] = None
+    value: Any,
+    deprecation_reason: Optional[str] = None,
+    directives: Iterable[object] = (),
 ) -> EnumValueDefinition:
     return EnumValueDefinition(
         value=value,
         deprecation_reason=deprecation_reason,
+        directives=directives,
     )
 
 
@@ -83,12 +89,19 @@ def _process_enum(
         item_value = item.value
         item_name = item.name
         deprecation_reason = None
+        directives = ()
 
         if isinstance(item_value, EnumValueDefinition):
+            item_directives = item_value.directives
             deprecation_reason = item_value.deprecation_reason
             item_value = item_value.value
 
-        value = EnumValue(item_name, item_value, deprecation_reason=deprecation_reason)
+        value = EnumValue(
+            item_name,
+            item_value,
+            deprecation_reason=deprecation_reason,
+            directives=item_directives,
+        )
         values.append(value)
 
     cls._enum_definition = EnumDefinition(  # type: ignore

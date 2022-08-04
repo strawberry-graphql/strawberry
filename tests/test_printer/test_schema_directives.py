@@ -478,3 +478,35 @@ def test_print_directive_on_enum():
     schema = strawberry.Schema(query=Query)
 
     assert print_schema(schema) == textwrap.dedent(expected_output).strip()
+
+
+def test_print_directive_on_enum_value():
+    @strawberry.schema_directive(locations=[Location.ENUM_VALUE])
+    class Sensitive:
+        reason: str
+
+    @strawberry.enum
+    class SomeEnum(Enum):
+        EXAMPLE = strawberry.enum_value(
+            "example", directives=[Sensitive(reason="example")]
+        )
+
+    @strawberry.type
+    class Query:
+        first_name: SomeEnum
+
+    expected_output = """
+    directive @sensitive(reason: String!) on ENUM_VALUE
+
+    type Query {
+      firstName: SomeEnum!
+    }
+
+    enum SomeEnum {
+      EXAMPLE @sensitive(reason: "example")
+    }
+    """
+
+    schema = strawberry.Schema(query=Query)
+
+    assert print_schema(schema) == textwrap.dedent(expected_output).strip()

@@ -16,7 +16,12 @@ from typing import (
     overload,
 )
 
-from graphql import GraphQLArgument, GraphQLEnumType, GraphQLScalarType
+from graphql import (
+    GraphQLArgument,
+    GraphQLEnumType,
+    GraphQLEnumValue,
+    GraphQLScalarType,
+)
 from graphql.language.printer import print_ast
 from graphql.type import (
     is_enum_type,
@@ -239,6 +244,32 @@ def print_scalar(
     ).strip()
 
 
+def print_enum_value(
+    name: str,
+    value: GraphQLEnumValue,
+    first_in_block,
+    *,
+    schema: BaseSchema,
+    extras: PrintExtras,
+) -> str:
+    strawberry_type = value.extensions.get("strawberry-definition")
+    directives = strawberry_type.directives if strawberry_type else []
+
+    printed_directives = "".join(
+        (
+            print_schema_directive(directive, schema=schema, extras=extras)
+            for directive in directives
+        )
+    )
+
+    return (
+        print_description(value, "  ", first_in_block)
+        + f"  {name}"
+        + print_deprecated(value.deprecation_reason)
+        + printed_directives
+    )
+
+
 def print_enum(
     type_: GraphQLEnumType, *, schema: BaseSchema, extras: PrintExtras
 ) -> str:
@@ -253,9 +284,7 @@ def print_enum(
     )
 
     values = [
-        print_description(value, "  ", not i)
-        + f"  {name}"
-        + print_deprecated(value.deprecation_reason)
+        print_enum_value(name, value, not i, schema=schema, extras=extras)
         for i, (name, value) in enumerate(type_.values.items())
     ]
     return (
