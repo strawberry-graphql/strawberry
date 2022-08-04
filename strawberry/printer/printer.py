@@ -16,7 +16,7 @@ from typing import (
     overload,
 )
 
-from graphql import GraphQLArgument
+from graphql import GraphQLArgument, GraphQLScalarType
 from graphql.language.printer import print_ast
 from graphql.type import (
     is_enum_type,
@@ -34,7 +34,7 @@ from graphql.utilities.print_schema import (
     print_description,
     print_enum,
     print_implemented_interfaces,
-    print_scalar,
+    print_specified_by_url,
     print_type as original_print_type,
 )
 
@@ -218,6 +218,28 @@ def print_fields(type_, schema: BaseSchema, *, extras: PrintExtras) -> str:
     return print_block(fields)
 
 
+def print_scalar(
+    type_: GraphQLScalarType, *, schema: BaseSchema, extras: PrintExtras
+) -> str:
+    # TODO: refactor this
+    strawberry_type = type_.extensions.get("strawberry-definition")
+    directives = strawberry_type.directives if strawberry_type else []
+
+    printed_directives = " ".join(
+        (
+            print_schema_directive(directive, schema=schema, extras=extras)
+            for directive in directives
+        )
+    )
+
+    return (
+        print_description(type_)
+        + f"scalar {type_.name}"
+        + print_specified_by_url(type_)
+        + printed_directives
+    ).strip()
+
+
 def print_extends(type_, schema: BaseSchema):
     strawberry_type = type_.extensions and type_.extensions.get(
         GraphQLCoreConverter.DEFINITION_BACKREF
@@ -304,7 +326,7 @@ def _print_input_object(type_, schema: BaseSchema, *, extras: PrintExtras) -> st
 def _print_type(type_, schema: BaseSchema, *, extras: PrintExtras) -> str:
     # prevents us from trying to print a scalar as an input type
     if is_scalar_type(type_):
-        return print_scalar(type_)
+        return print_scalar(type_, schema=schema, extras=extras)
 
     if is_enum_type(type_):
         return print_enum(type_)

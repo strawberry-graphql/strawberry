@@ -74,6 +74,7 @@ def _process_scalar(
     serialize: Optional[Callable] = None,
     parse_value: Optional[Callable] = None,
     parse_literal: Optional[Callable] = None,
+    directives: Iterable[object] = (),
 ):
     name = name or to_camel_case(cls.__name__)
 
@@ -85,6 +86,7 @@ def _process_scalar(
         serialize=serialize,
         parse_literal=parse_literal,
         parse_value=parse_value,
+        directives=directives,
     )
 
     return wrapper
@@ -99,6 +101,7 @@ def scalar(
     serialize: Callable = identity,
     parse_value: Optional[Callable] = None,
     parse_literal: Optional[Callable] = None,
+    directives: Iterable[object] = (),
 ) -> Callable[[_T], _T]:
     ...
 
@@ -113,6 +116,7 @@ def scalar(
     serialize: Callable = identity,
     parse_value: Optional[Callable] = None,
     parse_literal: Optional[Callable] = None,
+    directives: Iterable[object] = (),
 ) -> _T:
     ...
 
@@ -129,6 +133,7 @@ def scalar(
     serialize: Callable = identity,
     parse_value: Optional[Callable] = None,
     parse_literal: Optional[Callable] = None,
+    directives: Iterable[object] = (),
 ) -> Any:
     """Annotates a class or type as a GraphQL custom scalar.
 
@@ -168,6 +173,7 @@ def scalar(
             serialize=serialize,
             parse_value=parse_value,
             parse_literal=parse_literal,
+            directives=directives,
         )
 
     if cls is None:

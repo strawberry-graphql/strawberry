@@ -420,3 +420,31 @@ def test_does_not_print_definition():
     schema = strawberry.Schema(query=Query)
 
     assert print_schema(schema) == textwrap.dedent(expected_output).strip()
+
+
+def test_print_directive_on_scalr():
+    @strawberry.schema_directive(locations=[Location.SCALAR])
+    class Sensitive:
+        reason: str
+
+    SensitiveString = strawberry.scalar(
+        str, name="SensitiveString", directives=[Sensitive(reason="example")]
+    )
+
+    @strawberry.type
+    class Query:
+        first_name: SensitiveString
+
+    expected_output = """
+    directive @sensitive(reason: String!) on SCALAR
+
+    type Query {
+      firstName: SensitiveString!
+    }
+
+    scalar SensitiveString @sensitive(reason: "example")
+    """
+
+    schema = strawberry.Schema(query=Query)
+
+    assert print_schema(schema) == textwrap.dedent(expected_output).strip()
