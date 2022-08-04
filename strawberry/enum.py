@@ -1,6 +1,16 @@
 import dataclasses
 from enum import EnumMeta
-from typing import Any, Callable, List, Mapping, Optional, TypeVar, Union, overload
+from typing import (
+    Any,
+    Callable,
+    Iterable,
+    List,
+    Mapping,
+    Optional,
+    TypeVar,
+    Union,
+    overload,
+)
 
 from strawberry.type import StrawberryType
 
@@ -20,6 +30,7 @@ class EnumDefinition(StrawberryType):
     name: str
     values: List[EnumValue]
     description: Optional[str]
+    directives: Iterable[object] = ((),)
 
     def __hash__(self) -> int:
         # TODO: Is this enough for unique-ness?

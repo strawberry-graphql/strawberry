@@ -1,5 +1,8 @@
 import textwrap
+from enum import Enum
 from typing import List
+
+import pytest
 
 import strawberry
 
@@ -146,6 +149,44 @@ def test_inaccessible_on_scalar():
         type Query {
           _service: _Service!
           hello: SomeScalar!
+        }
+
+        scalar SomeScalar @inaccessible
+
+        scalar _Any
+
+        type _Service {
+          sdl: String!
+        }
+    """
+
+    assert schema.as_str() == textwrap.dedent(expected).strip()
+
+
+@pytest.mark.xfail(reason="Not implemented")
+def test_inaccessible_on_enum():
+    # TODO, this is a wip test
+    @strawberry.enum
+    class SomeEnum(Enum):
+        A = "A"
+
+    @strawberry.type
+    class Query:
+        hello: SomeEnum
+
+    schema = strawberry.federation.Schema(
+        query=Query,
+        enable_federation_2=True,
+    )
+
+    expected = """
+        schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@inaccessible"]) {
+          query: Query
+        }
+
+        type Query {
+          _service: _Service!
+          hello: SomeEnum!
         }
 
         scalar SomeScalar @inaccessible
