@@ -152,7 +152,7 @@ class Subscription:
         async for message in info.context.request.channel_listen(
             type="test.message",
             timeout=timeout,
-            groups=[group] if group is not None else None,
+            groups=[group] if group is not None else [],
         ):
             yield message["text"]
 
