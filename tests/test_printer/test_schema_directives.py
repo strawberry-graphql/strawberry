@@ -422,7 +422,7 @@ def test_does_not_print_definition():
     assert print_schema(schema) == textwrap.dedent(expected_output).strip()
 
 
-def test_print_directive_on_scalr():
+def test_print_directive_on_scalar():
     @strawberry.schema_directive(locations=[Location.SCALAR])
     class Sensitive:
         reason: str
@@ -443,6 +443,36 @@ def test_print_directive_on_scalr():
     }
 
     scalar SensitiveString @sensitive(reason: "example")
+    """
+
+    schema = strawberry.Schema(query=Query)
+
+    assert print_schema(schema) == textwrap.dedent(expected_output).strip()
+
+
+def test_print_directive_on_enum():
+    @strawberry.schema_directive(locations=[Location.ENUM])
+    class Sensitive:
+        reason: str
+
+    @strawberry.enum(directives=[Sensitive(reason="example")])
+    class SomeEnum(str, Enum):
+        EXAMPLE = "example"
+
+    @strawberry.type
+    class Query:
+        first_name: SomeEnum
+
+    expected_output = """
+    directive @sensitive(reason: String!) on ENUM
+
+    type Query {
+      firstName: SomeEnum!
+    }
+
+    enum SomeEnum @sensitive(reason: "example") {
+      EXAMPLE
+    }
     """
 
     schema = strawberry.Schema(query=Query)

@@ -30,7 +30,7 @@ class EnumDefinition(StrawberryType):
     name: str
     values: List[EnumValue]
     description: Optional[str]
-    directives: Iterable[object] = ((),)
+    directives: Iterable[object] = ()
 
     def __hash__(self) -> int:
         # TODO: Is this enough for unique-ness?
@@ -65,7 +65,10 @@ EnumType = TypeVar("EnumType", bound=EnumMeta)
 
 
 def _process_enum(
-    cls: EnumType, name: Optional[str] = None, description: Optional[str] = None
+    cls: EnumType,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    directives: Iterable[object] = (),
 ) -> EnumType:
     if not isinstance(cls, EnumMeta):
         raise ObjectIsNotAnEnumError(cls)
@@ -93,25 +96,28 @@ def _process_enum(
         name=name,
         values=values,
         description=description,
+        directives=directives,
     )
 
     return cls
 
 
 @overload
-def enum(_cls: EnumType, *, name=None, description=None) -> EnumType:
+def enum(
+    _cls: EnumType, *, name=None, description=None, directives: Iterable[object] = ()
+) -> EnumType:
     ...
 
 
 @overload
 def enum(
-    _cls: None = None, *, name=None, description=None
+    _cls: None = None, *, name=None, description=None, directives: Iterable[object] = ()
 ) -> Callable[[EnumType], EnumType]:
     ...
 
 
 def enum(
-    _cls: Optional[EnumType] = None, *, name=None, description=None
+    _cls: Optional[EnumType] = None, *, name=None, description=None, directives=()
 ) -> Union[EnumType, Callable[[EnumType], EnumType]]:
     """Registers the enum in the GraphQL type system.
 
@@ -120,7 +126,7 @@ def enum(
     """
 
     def wrap(cls: EnumType) -> EnumType:
-        return _process_enum(cls, name, description)
+        return _process_enum(cls, name, description, directives=directives)
 
     if not _cls:
         return wrap

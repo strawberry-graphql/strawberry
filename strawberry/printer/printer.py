@@ -16,7 +16,7 @@ from typing import (
     overload,
 )
 
-from graphql import GraphQLArgument, GraphQLScalarType
+from graphql import GraphQLArgument, GraphQLEnumType, GraphQLScalarType
 from graphql.language.printer import print_ast
 from graphql.type import (
     is_enum_type,
@@ -32,7 +32,6 @@ from graphql.utilities.print_schema import (
     print_block,
     print_deprecated,
     print_description,
-    print_enum,
     print_implemented_interfaces,
     print_specified_by_url,
     print_type as original_print_type,
@@ -240,6 +239,33 @@ def print_scalar(
     ).strip()
 
 
+def print_enum(
+    type_: GraphQLEnumType, *, schema: BaseSchema, extras: PrintExtras
+) -> str:
+    strawberry_type = type_.extensions.get("strawberry-definition")
+    directives = strawberry_type.directives if strawberry_type else []
+
+    printed_directives = "".join(
+        (
+            print_schema_directive(directive, schema=schema, extras=extras)
+            for directive in directives
+        )
+    )
+
+    values = [
+        print_description(value, "  ", not i)
+        + f"  {name}"
+        + print_deprecated(value.deprecation_reason)
+        for i, (name, value) in enumerate(type_.values.items())
+    ]
+    return (
+        print_description(type_)
+        + f"enum {type_.name}"
+        + printed_directives
+        + print_block(values)
+    )
+
+
 def print_extends(type_, schema: BaseSchema):
     strawberry_type = type_.extensions and type_.extensions.get(
         GraphQLCoreConverter.DEFINITION_BACKREF
@@ -329,7 +355,7 @@ def _print_type(type_, schema: BaseSchema, *, extras: PrintExtras) -> str:
         return print_scalar(type_, schema=schema, extras=extras)
 
     if is_enum_type(type_):
-        return print_enum(type_)
+        return print_enum(type_, schema=schema, extras=extras)
 
     if is_object_type(type_):
         return _print_object(type_, schema, extras=extras)
