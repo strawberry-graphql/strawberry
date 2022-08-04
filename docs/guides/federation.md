@@ -19,13 +19,6 @@ Strawberry supports
 out of the box, that means that you can create services using Strawberry and
 federate them via Apollo Gateway or Apollo Router.
 
-<Note>
-
-We don’t have a gateway server, you’ll still need to use the Apollo Gateway or
-Apollo Router. In this guide we will be using Apollo Router.
-
-</Note>
-
 ## Federated schema example
 
 Let’s look at an example on how to implement Apollo Federation using Strawberry.
@@ -34,6 +27,23 @@ API:
 
 1. `books`: a service to manage all the books we have
 2. `reviews`: a service to manage book reviews
+
+Our folder structure will look something like this:
+
+```text
+my-app/
+├─ books/
+│  ├─ app.py
+├─ reviews/
+│  ├─ app.py
+```
+
+<Note>
+
+This guide assumes you've installed strawberry in both the books and reviews
+service
+
+</Note>
 
 ### Books service
 
