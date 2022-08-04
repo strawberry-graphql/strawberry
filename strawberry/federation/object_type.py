@@ -161,6 +161,7 @@ def interface(
     *,
     name: str = None,
     description: str = None,
+    keys: Iterable[Union["Key", str]] = (),
     directives: Sequence[object] = (),
     inaccessible: bool = UNSET,
 ) -> T:
@@ -176,6 +177,7 @@ def interface(
     name: str = None,
     description: str = None,
     directives: Sequence[object] = (),
+    keys: Iterable[Union["Key", str]] = (),
     inaccessible: bool = UNSET,
 ) -> Callable[[T], T]:
     ...
@@ -187,6 +189,7 @@ def interface(
     name=None,
     description=None,
     inaccessible: bool = UNSET,
+    keys=(),
     directives=(),
 ):
     return _impl_type(

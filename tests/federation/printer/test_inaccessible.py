@@ -84,7 +84,7 @@ def test_field_inaccessible_printed_correctly():
     assert schema.as_str() == textwrap.dedent(expected).strip()
 
 
-def test_inaccessibile_on_mutation():
+def test_inaccessible_on_mutation():
     @strawberry.type
     class Query:
         hello: str
@@ -115,6 +115,40 @@ def test_inaccessibile_on_mutation():
           _service: _Service!
           hello: String!
         }
+
+        scalar _Any
+
+        type _Service {
+          sdl: String!
+        }
+    """
+
+    assert schema.as_str() == textwrap.dedent(expected).strip()
+
+
+def test_inaccessible_on_scalar():
+    SomeScalar = strawberry.federation.scalar(str, name="SomeScalar", inaccessible=True)
+
+    @strawberry.type
+    class Query:
+        hello: SomeScalar
+
+    schema = strawberry.federation.Schema(
+        query=Query,
+        enable_federation_2=True,
+    )
+
+    expected = """
+        schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@inaccessible"]) {
+          query: Query
+        }
+
+        type Query {
+          _service: _Service!
+          hello: SomeScalar!
+        }
+
+        scalar SomeScalar @inaccessible
 
         scalar _Any
 
