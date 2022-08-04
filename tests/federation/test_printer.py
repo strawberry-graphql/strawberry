@@ -6,6 +6,7 @@ from typing import List
 import strawberry
 from strawberry.federation.schema_directives import Key
 from strawberry.schema.config import StrawberryConfig
+from strawberry.schema_directive import Location
 
 
 def test_entities_type_when_no_type_has_keys():
@@ -37,7 +38,7 @@ def test_entities_type_when_no_type_has_keys():
     expected = """
         directive @external on FIELD_DEFINITION
 
-        directive @key(fields: _FieldSet!, resolvable: Boolean) on OBJECT | INTERFACE
+        directive @key(fields: _FieldSet!, resolvable: Boolean = true) on OBJECT | INTERFACE
 
         extend type Product @key(fields: "upc") {
           upc: String! @external
@@ -67,6 +68,8 @@ def test_entities_type_when_no_type_has_keys():
         type _Service {
           sdl: String!
         }
+
+        scalar _FieldSet
     """
 
     assert schema.as_str() == textwrap.dedent(expected).strip()
@@ -94,7 +97,7 @@ def test_entities_extending_interface():
     expected = """
         directive @external on FIELD_DEFINITION
 
-        directive @key(fields: _FieldSet!, resolvable: Boolean) on OBJECT | INTERFACE
+        directive @key(fields: _FieldSet!, resolvable: Boolean = true) on OBJECT | INTERFACE
 
         extend type Product implements SomeInterface @key(fields: "upc") {
           id: ID!
@@ -118,6 +121,8 @@ def test_entities_extending_interface():
         type _Service {
           sdl: String!
         }
+
+        scalar _FieldSet
     """
 
     assert schema.as_str() == textwrap.dedent(expected).strip()
@@ -158,7 +163,7 @@ def test_fields_requires_are_printed_correctly():
     expected = """
         directive @external on FIELD_DEFINITION
 
-        directive @key(fields: _FieldSet!, resolvable: Boolean) on OBJECT | INTERFACE
+        directive @key(fields: _FieldSet!, resolvable: Boolean = true) on OBJECT | INTERFACE
 
         directive @requires(fields: _FieldSet!) on FIELD_DEFINITION
 
@@ -193,6 +198,8 @@ def test_fields_requires_are_printed_correctly():
         type _Service {
           sdl: String!
         }
+
+        scalar _FieldSet
     """
 
     assert schema.as_str() == textwrap.dedent(expected).strip()
@@ -232,7 +239,7 @@ def test_field_provides_are_printed_correctly_camel_case_on():
     expected = """
         directive @external on FIELD_DEFINITION
 
-        directive @key(fields: _FieldSet!, resolvable: Boolean) on OBJECT | INTERFACE
+        directive @key(fields: _FieldSet!, resolvable: Boolean = true) on OBJECT | INTERFACE
 
         directive @provides(fields: _FieldSet!) on FIELD_DEFINITION
 
@@ -265,6 +272,8 @@ def test_field_provides_are_printed_correctly_camel_case_on():
         type _Service {
           sdl: String!
         }
+
+        scalar _FieldSet
     """
 
     assert schema.as_str() == textwrap.dedent(expected).strip()
@@ -304,7 +313,7 @@ def test_field_provides_are_printed_correctly_camel_case_off():
     expected = """
         directive @external on FIELD_DEFINITION
 
-        directive @key(fields: _FieldSet!, resolvable: Boolean) on OBJECT | INTERFACE
+        directive @key(fields: _FieldSet!, resolvable: Boolean = true) on OBJECT | INTERFACE
 
         directive @provides(fields: _FieldSet!) on FIELD_DEFINITION
 
@@ -337,6 +346,8 @@ def test_field_provides_are_printed_correctly_camel_case_off():
         type _Service {
           sdl: String!
         }
+
+        scalar _FieldSet
     """
 
     assert schema.as_str() == textwrap.dedent(expected).strip()
@@ -374,7 +385,7 @@ def test_multiple_keys():
     expected = """
         directive @external on FIELD_DEFINITION
 
-        directive @key(fields: _FieldSet!, resolvable: Boolean) on OBJECT | INTERFACE
+        directive @key(fields: _FieldSet!, resolvable: Boolean = true) on OBJECT | INTERFACE
 
         extend type Product @key(fields: "upc", resolvable: true) {
           upc: String! @external
@@ -404,6 +415,8 @@ def test_multiple_keys():
         type _Service {
           sdl: String!
         }
+
+        scalar _FieldSet
     """
 
     assert schema.as_str() == textwrap.dedent(expected).strip()
@@ -431,7 +444,7 @@ def test_field_shareable_printed_correctly():
     expected = """
         directive @external on FIELD_DEFINITION
 
-        directive @key(fields: _FieldSet!, resolvable: Boolean) on OBJECT | INTERFACE
+        directive @key(fields: _FieldSet!, resolvable: Boolean = true) on OBJECT | INTERFACE
 
         directive @shareable on FIELD_DEFINITION | OBJECT
 
@@ -457,6 +470,8 @@ def test_field_shareable_printed_correctly():
         type _Service {
           sdl: String!
         }
+
+        scalar _FieldSet
     """
 
     assert schema.as_str() == textwrap.dedent(expected).strip()
@@ -482,7 +497,7 @@ def test_field_tag_printed_correctly():
     expected = """
         directive @external on FIELD_DEFINITION
 
-        directive @key(fields: _FieldSet!, resolvable: Boolean) on OBJECT | INTERFACE
+        directive @key(fields: _FieldSet!, resolvable: Boolean = true) on OBJECT | INTERFACE
 
         directive @tag(name: String!) on FIELD_DEFINITION | INTERFACE | OBJECT | UNION | ARGUMENT_DEFINITION | SCALAR | ENUM | ENUM_VALUE | INPUT_OBJECT | INPUT_FIELD_DEFINITION
 
@@ -508,6 +523,8 @@ def test_field_tag_printed_correctly():
         type _Service {
           sdl: String!
         }
+
+        scalar _FieldSet
     """
 
     assert schema.as_str() == textwrap.dedent(expected).strip()
@@ -533,7 +550,7 @@ def test_field_override_printed_correctly():
     expected = """
         directive @external on FIELD_DEFINITION
 
-        directive @key(fields: _FieldSet!, resolvable: Boolean) on OBJECT | INTERFACE
+        directive @key(fields: _FieldSet!, resolvable: Boolean = true) on OBJECT | INTERFACE
 
         directive @override(from: String!) on FIELD_DEFINITION
 
@@ -559,6 +576,8 @@ def test_field_override_printed_correctly():
         type _Service {
           sdl: String!
         }
+
+        scalar _FieldSet
     """
 
     assert schema.as_str() == textwrap.dedent(expected).strip()
@@ -586,7 +605,7 @@ def test_field_inaccessible_printed_correctly():
 
         directive @inaccessible on FIELD_DEFINITION | OBJECT | INTERFACE | UNION
 
-        directive @key(fields: _FieldSet!, resolvable: Boolean) on OBJECT | INTERFACE
+        directive @key(fields: _FieldSet!, resolvable: Boolean = true) on OBJECT | INTERFACE
 
         extend type Product implements SomeInterface @key(fields: "upc") {
           id: ID!
@@ -610,6 +629,95 @@ def test_field_inaccessible_printed_correctly():
         type _Service {
           sdl: String!
         }
+
+        scalar _FieldSet
     """
 
     assert schema.as_str() == textwrap.dedent(expected).strip()
+
+
+def test_additional_schema_directives_printed_correctly_object():
+    @strawberry.schema_directive(locations=[Location.OBJECT])
+    class CacheControl:
+        max_age: int
+
+    @strawberry.federation.type(
+        keys=["id"], shareable=True, extend=True, directives=[CacheControl(max_age=42)]
+    )
+    class FederatedType:
+        id: strawberry.ID
+
+    @strawberry.type
+    class Query:
+        federatedType: FederatedType
+
+    expected_type = """
+    directive @CacheControl(max_age: Int!) on OBJECT
+
+    directive @key(fields: _FieldSet!, resolvable: Boolean = true) on OBJECT | INTERFACE
+
+    directive @shareable on FIELD_DEFINITION | OBJECT
+
+    extend type FederatedType @key(fields: "id") @shareable @CacheControl(max_age: 42) {
+      id: ID!
+    }
+
+    type Query {
+      federatedType: FederatedType!
+    }
+
+    scalar _FieldSet
+    """
+
+    schema = strawberry.Schema(
+        query=Query, config=StrawberryConfig(auto_camel_case=False)
+    )
+    assert schema.as_str() == textwrap.dedent(expected_type).strip()
+
+
+def test_additional_schema_directives_printed_in_order_object():
+    @strawberry.schema_directive(locations=[Location.OBJECT])
+    class CacheControl0:
+        max_age: int
+
+    @strawberry.schema_directive(locations=[Location.OBJECT])
+    class CacheControl1:
+        min_age: int
+
+    @strawberry.federation.type(
+        keys=["id"],
+        shareable=True,
+        extend=True,
+        directives=[CacheControl0(max_age=42), CacheControl1(min_age=42)],
+    )
+    class FederatedType:
+        id: strawberry.ID
+
+    @strawberry.type
+    class Query:
+        federatedType: FederatedType
+
+    expected_type = """
+    directive @CacheControl0(max_age: Int!) on OBJECT
+
+    directive @CacheControl1(min_age: Int!) on OBJECT
+
+    directive @key(fields: _FieldSet!, resolvable: Boolean = true) on OBJECT | INTERFACE
+
+    directive @shareable on FIELD_DEFINITION | OBJECT
+
+    extend type FederatedType @key(fields: "id") @shareable @CacheControl0(max_age: 42) @CacheControl1(min_age: 42) {
+      id: ID!
+    }
+
+    type Query {
+      federatedType: FederatedType!
+    }
+
+    scalar _FieldSet
+    """
+
+    schema = strawberry.Schema(
+        query=Query, config=StrawberryConfig(auto_camel_case=False)
+    )
+    assert schema.as_str() == textwrap.dedent(expected_type).strip()

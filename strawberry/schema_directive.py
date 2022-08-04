@@ -31,6 +31,7 @@ class StrawberrySchemaDirective:
     locations: List[Location]
     fields: List["StrawberryField"]
     description: Optional[str] = None
+    repeatable: bool = False
 
 
 T = TypeVar("T", bound=Type)
@@ -43,7 +44,8 @@ def schema_directive(
     *,
     locations: List[Location],
     description: Optional[str] = None,
-    name: Optional[str] = None
+    name: Optional[str] = None,
+    repeatable: bool = False,
 ):
     def _wrap(cls: T) -> T:
         cls = _wrap_dataclass(cls)
@@ -54,6 +56,7 @@ def schema_directive(
             graphql_name=name,
             locations=locations,
             description=description,
+            repeatable=repeatable,
             fields=fields,
         )
 

@@ -3,14 +3,12 @@ from typing import Optional
 from typing_extensions import Literal
 
 from strawberry import directive_field
-from strawberry.custom_scalar import scalar
 from strawberry.schema_directive import Location, schema_directive
-from strawberry.unset import UNSET
+
+from .types import FieldSet
 
 
-FieldSet = scalar(str, name="_FieldSet")
 LinkPurpose = Literal["SECURITY", "EXECUTION"]
-LinkImport = scalar(list, name="link__Import")
 
 
 @schema_directive(locations=[Location.FIELD_DEFINITION], name="external")
@@ -31,7 +29,7 @@ class Provides:
 @schema_directive(locations=[Location.OBJECT, Location.INTERFACE], name="key")
 class Key:
     fields: FieldSet
-    resolvable: Optional[bool] = UNSET
+    resolvable: Optional[bool] = True
 
 
 @schema_directive(

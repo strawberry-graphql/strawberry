@@ -87,6 +87,7 @@ class HTTPHandler:
                 root_value=root_value,
                 variable_values=request_data.variables,
                 context_value=context,
+                operation_name=request_data.operation_name,
                 allowed_operation_types=allowed_operation_types,
             )
         except InvalidOperationTypeError as e:
