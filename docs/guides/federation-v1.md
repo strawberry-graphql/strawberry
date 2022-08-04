@@ -14,8 +14,8 @@ via Apollo Gateway.
 
 <Note>
 
-We don’t have a gateway server, you’ll still need to use the Apollo
-Gateway for this.
+We don’t have a gateway server, you’ll still need to use the Apollo Gateway for
+this.
 
 </Note>
 
@@ -60,9 +60,9 @@ uniquely-identifying key.
 
 <Note>
 
-Federation keys can be thought of as primary keys. They are used by the
-gateway to query types between multiple services and then join them into the
-augmented type.
+Federation keys can be thought of as primary keys. They are used by the gateway
+to query types between multiple services and then join them into the augmented
+type.
 
 </Note>
 
@@ -148,7 +148,7 @@ Strawberry won't be able to find them by default.
 ```python
 @strawberry.type
 class Query:
-    _service: Optional[str]
+    _hi: str = strawberry.field(resolver=lambda: "Hello world!")
 
 schema = strawberry.federation.Schema(query=Query, types=[Book, Review])
 ```
@@ -181,7 +181,7 @@ When running this example you'll be able to run query like the following:
 
 ```graphql
 {
-  books {
+  allBooks {
     id
     reviewsCount
     reviews {
