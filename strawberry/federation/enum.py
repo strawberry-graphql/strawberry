@@ -1,6 +1,31 @@
-from typing import Callable, Iterable, Optional, Union, overload
+from typing import Any, Callable, Iterable, Optional, Union, overload
 
-from strawberry.enum import EnumType, _process_enum
+from strawberry.enum import (
+    EnumType,
+    EnumValueDefinition,
+    _process_enum,
+    enum_value as base_enum_value,
+)
+
+
+def enum_value(
+    value: Any,
+    deprecation_reason: Optional[str] = None,
+    directives: Iterable[object] = (),
+    inaccessible: bool = False,
+    tags: Iterable[str] = (),
+) -> EnumValueDefinition:
+    from strawberry.federation.schema_directives import Inaccessible, Tag
+
+    directives = list(directives)
+
+    if inaccessible:
+        directives.append(Inaccessible())
+
+    if tags:
+        directives.extend(Tag(tag) for tag in tags)
+
+    return base_enum_value(value, deprecation_reason, directives)
 
 
 @overload

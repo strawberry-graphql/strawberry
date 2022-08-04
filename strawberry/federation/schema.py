@@ -1,5 +1,6 @@
 from collections import defaultdict
 from copy import copy
+from itertools import chain
 from typing import Any, Union, cast
 
 from graphql import (
@@ -39,8 +40,9 @@ def _find_directives(schema):
         directives.extend(strawberry_definition.directives)
 
         fields = getattr(strawberry_definition, "fields", [])
+        values = getattr(strawberry_definition, "values", [])
 
-        for field in fields:
+        for field in chain(fields, values):
             directives.extend(field.directives)
 
     return directives
