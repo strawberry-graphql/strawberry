@@ -510,3 +510,45 @@ def test_print_directive_on_enum_value():
     schema = strawberry.Schema(query=Query)
 
     assert print_schema(schema) == textwrap.dedent(expected_output).strip()
+
+
+def test_print_directive_on_union():
+    @strawberry.type
+    class A:
+        a: int
+
+    @strawberry.type
+    class B:
+        b: int
+
+    @strawberry.schema_directive(locations=[Location.SCALAR])
+    class Sensitive:
+        reason: str
+
+    Union = strawberry.union("Union", (A, B), directives=[Sensitive(reason="example")])
+
+    @strawberry.type
+    class Query:
+        example: Union
+
+    expected_output = """
+    directive @sensitive(reason: String!) on SCALAR
+
+    type A {
+      a: Int!
+    }
+
+    type B {
+      b: Int!
+    }
+
+    type Query {
+      example: Union!
+    }
+
+    union Union @sensitive(reason: "example") = A | B
+    """
+
+    schema = strawberry.Schema(query=Query)
+
+    assert print_schema(schema) == textwrap.dedent(expected_output).strip()

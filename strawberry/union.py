@@ -3,6 +3,7 @@ from itertools import chain
 from typing import (
     TYPE_CHECKING,
     Any,
+    Iterable,
     List,
     Mapping,
     NoReturn,
@@ -43,10 +44,12 @@ class StrawberryUnion(StrawberryType):
         name: Optional[str] = None,
         type_annotations: Tuple["StrawberryAnnotation", ...] = tuple(),
         description: Optional[str] = None,
+        directives: Iterable[object] = (),
     ):
         self.graphql_name = name
         self.type_annotations = type_annotations
         self.description = description
+        self.directives = directives
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, StrawberryType):
@@ -202,7 +205,11 @@ Types = TypeVar("Types", bound=Type)
 # yet supported in any python implementation (or in typing_extensions).
 # See https://www.python.org/dev/peps/pep-0646/ for more information
 def union(
-    name: str, types: Tuple[Types, ...], *, description: str = None
+    name: str,
+    types: Tuple[Types, ...],
+    *,
+    description: str = None,
+    directives: Iterable[object] = (),
 ) -> Union[Types]:
     """Creates a new named Union type.
 
@@ -225,10 +232,9 @@ def union(
                 f"Type `{_type.__name__}` cannot be used in a GraphQL Union"
             )
 
-    union_definition = StrawberryUnion(
+    return StrawberryUnion(
         name=name,
         type_annotations=tuple(StrawberryAnnotation(type_) for type_ in types),
         description=description,
-    )
-
-    return union_definition  # type: ignore
+        directives=directives,
+    )  # type: ignore

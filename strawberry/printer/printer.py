@@ -21,6 +21,8 @@ from graphql import (
     GraphQLEnumType,
     GraphQLEnumValue,
     GraphQLScalarType,
+    GraphQLUnionType,
+    is_union_type,
 )
 from graphql.language.printer import print_ast
 from graphql.type import (
@@ -378,6 +380,28 @@ def _print_input_object(type_, schema: BaseSchema, *, extras: PrintExtras) -> st
     )
 
 
+def print_union(
+    type_: GraphQLUnionType, *, schema: BaseSchema, extras: PrintExtras
+) -> str:
+    strawberry_type = type_.extensions.get("strawberry-definition")
+    directives = strawberry_type.directives if strawberry_type else []
+
+    printed_directives = "".join(
+        (
+            print_schema_directive(directive, schema=schema, extras=extras)
+            for directive in directives
+        )
+    )
+
+    types = type_.types
+    possible_types = " = " + " | ".join(t.name for t in types) if types else ""
+    return (
+        print_description(type_)
+        + f"union {type_.name}{printed_directives}"
+        + possible_types
+    )
+
+
 def _print_type(type_, schema: BaseSchema, *, extras: PrintExtras) -> str:
     # prevents us from trying to print a scalar as an input type
     if is_scalar_type(type_):
@@ -394,6 +418,9 @@ def _print_type(type_, schema: BaseSchema, *, extras: PrintExtras) -> str:
 
     if is_interface_type(type_):
         return _print_interface(type_, schema, extras=extras)
+
+    if is_union_type(type_):
+        return print_union(type_, schema=schema, extras=extras)
 
     return original_print_type(type_)
 

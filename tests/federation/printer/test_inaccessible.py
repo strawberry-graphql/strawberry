@@ -235,3 +235,50 @@ def test_inaccessible_on_enum_value():
     """
 
     assert schema.as_str() == textwrap.dedent(expected).strip()
+
+
+def test_field_tag_printed_correctly_on_union():
+    @strawberry.type
+    class A:
+        a: str
+
+    @strawberry.type
+    class B:
+        b: str
+
+    Union = strawberry.federation.union("Union", (A, B), inaccessible=True)
+
+    @strawberry.federation.type
+    class Query:
+        hello: Union
+
+    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+
+    expected = """
+        schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@inaccessible"]) {
+          query: Query
+        }
+
+        type A {
+          a: String!
+        }
+
+        type B {
+          b: String!
+        }
+
+        type Query {
+          _service: _Service!
+          hello: Union!
+        }
+
+        union Union @inaccessible = A | B
+
+        scalar _Any
+
+        type _Service {
+          sdl: String!
+        }
+    """
+
+    assert schema.as_str() == textwrap.dedent(expected).strip()
