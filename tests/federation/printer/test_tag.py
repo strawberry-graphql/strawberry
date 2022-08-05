@@ -6,11 +6,11 @@ import strawberry
 
 
 def test_field_tag_printed_correctly():
-    @strawberry.interface
+    @strawberry.federation.interface(tags=["myTag", "anotherTag"])
     class SomeInterface:
         id: strawberry.ID
 
-    @strawberry.federation.type(keys=["upc"], extend=True)
+    @strawberry.federation.type(tags=["myTag", "anotherTag"])
     class Product(SomeInterface):
         upc: str = strawberry.federation.field(
             external=True, tags=["myTag", "anotherTag"]
@@ -25,28 +25,25 @@ def test_field_tag_printed_correctly():
     schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
 
     expected = """
-        schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@external", "@key", "@tag"]) {
+        schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@external", "@tag"]) {
           query: Query
         }
 
-        extend type Product implements SomeInterface @key(fields: "upc") {
+        type Product implements SomeInterface @tag(name: "myTag") @tag(name: "anotherTag") {
           id: ID!
           upc: String! @external @tag(name: "myTag") @tag(name: "anotherTag")
         }
 
         type Query {
           _service: _Service!
-          _entities(representations: [_Any!]!): [_Entity]!
           topProducts(first: Int!): [Product!]!
         }
 
-        interface SomeInterface {
+        interface SomeInterface @tag(name: "myTag") @tag(name: "anotherTag") {
           id: ID!
         }
 
         scalar _Any
-
-        union _Entity = Product
 
         type _Service {
           sdl: String!
@@ -195,6 +192,43 @@ def test_field_tag_printed_correctly_on_union():
         }
 
         union Union @tag(name: "myTag") @tag(name: "anotherTag") = A | B
+
+        scalar _Any
+
+        type _Service {
+          sdl: String!
+        }
+    """
+
+    assert schema.as_str() == textwrap.dedent(expected).strip()
+
+
+def test_tag_printed_correctly_on_inputs():
+    @strawberry.federation.input(tags=["myTag", "anotherTag"])
+    class Input:
+        a: str = strawberry.federation.field(tags=["myTag", "anotherTag"])
+
+    @strawberry.federation.type
+    class Query:
+        hello: str
+
+    schema = strawberry.federation.Schema(
+        query=Query, types=[Input], enable_federation_2=True
+    )
+
+    expected = """
+        schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@tag"]) {
+          query: Query
+        }
+
+        input Input @tag(name: "myTag") @tag(name: "anotherTag") {
+          a: String!
+        }
+
+        type Query {
+          _service: _Service!
+          hello: String!
+        }
 
         scalar _Any
 

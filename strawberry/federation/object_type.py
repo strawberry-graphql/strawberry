@@ -1,4 +1,13 @@
-from typing import TYPE_CHECKING, Callable, Iterable, Sequence, TypeVar, Union, overload
+from typing import (
+    TYPE_CHECKING,
+    Callable,
+    Iterable,
+    Sequence,
+    TypeVar,
+    Union,
+    overload,
+    Optional,
+)
 
 from strawberry.field import StrawberryField, field as base_field
 from strawberry.object_type import type as base_type
@@ -25,25 +34,35 @@ def _impl_type(
     extend: bool = False,
     shareable: bool = False,
     inaccessible: bool = UNSET,
+    tags: Iterable[str] = (),
     is_input: bool = False,
     is_interface: bool = False,
 ) -> T:
-    from strawberry.federation.schema_directives import Inaccessible, Key, Shareable
+    from strawberry.federation.schema_directives import (
+        Inaccessible,
+        Key,
+        Shareable,
+        Tag,
+    )
 
-    all_directives = [Key(key, UNSET) if isinstance(key, str) else key for key in keys]
+    directives = list(directives)
+
+    directives.extend(Key(key, UNSET) if isinstance(key, str) else key for key in keys)
 
     if shareable:
-        all_directives.append(Shareable())  # type: ignore
+        directives.append(Shareable())
 
     if inaccessible is not UNSET:
-        all_directives.append(Inaccessible())  # type: ignore
-    all_directives.extend(directives)  # type: ignore
+        directives.append(Inaccessible())
+
+    if tags:
+        directives.extend(Tag(tag) for tag in tags)
 
     return base_type(
         cls,
         name=name,
         description=description,
-        directives=all_directives,
+        directives=directives,
         extend=extend,
         is_input=is_input,
         is_interface=is_interface,
@@ -61,6 +80,7 @@ def type(
     description: str = None,
     keys: Iterable[Union["Key", str]] = (),
     inaccessible: bool = UNSET,
+    tags: Iterable[str] = (),
     extend: bool = False,
 ) -> T:
     ...
@@ -76,6 +96,7 @@ def type(
     description: str = None,
     keys: Iterable[Union["Key", str]] = (),
     inaccessible: bool = UNSET,
+    tags: Iterable[str] = (),
     extend: bool = False,
     shareable: bool = False,
 ) -> Callable[[T], T]:
@@ -92,6 +113,7 @@ def type(
     extend=False,
     shareable: bool = False,
     inaccessible: bool = UNSET,
+    tags: Iterable[str] = (),
 ):
     return _impl_type(
         cls,
@@ -102,6 +124,7 @@ def type(
         extend=extend,
         shareable=shareable,
         inaccessible=inaccessible,
+        tags=tags,
     )
 
 
@@ -116,6 +139,7 @@ def input(
     description: str = None,
     directives: Sequence[object] = (),
     inaccessible: bool = UNSET,
+    tags: Iterable[str] = (),
 ) -> T:
     ...
 
@@ -130,6 +154,7 @@ def input(
     description: str = None,
     directives: Sequence[object] = (),
     inaccessible: bool = UNSET,
+    tags: Iterable[str] = (),
 ) -> Callable[[T], T]:
     ...
 
@@ -140,6 +165,7 @@ def input(
     name=None,
     description=None,
     inaccessible: bool = UNSET,
+    tags=(),
     directives=(),
 ):
     return _impl_type(
@@ -149,6 +175,7 @@ def input(
         directives=directives,
         inaccessible=inaccessible,
         is_input=True,
+        tags=tags,
     )
 
 
@@ -164,6 +191,7 @@ def interface(
     keys: Iterable[Union["Key", str]] = (),
     directives: Sequence[object] = (),
     inaccessible: bool = UNSET,
+    tags: Iterable[str] = (),
 ) -> T:
     ...
 
@@ -179,6 +207,7 @@ def interface(
     directives: Sequence[object] = (),
     keys: Iterable[Union["Key", str]] = (),
     inaccessible: bool = UNSET,
+    tags: Iterable[str] = (),
 ) -> Callable[[T], T]:
     ...
 
@@ -189,6 +218,7 @@ def interface(
     name=None,
     description=None,
     inaccessible: bool = UNSET,
+    tags: Iterable[str] = (),
     keys=(),
     directives=(),
 ):
@@ -200,4 +230,5 @@ def interface(
         keys=keys,
         inaccessible=inaccessible,
         is_interface=True,
+        tags=tags,
     )

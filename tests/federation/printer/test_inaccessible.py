@@ -21,7 +21,7 @@ def test_field_inaccessible_printed_correctly():
 
     @strawberry.federation.input(inaccessible=True)
     class AnInput:
-        id: strawberry.ID
+        id: strawberry.ID = strawberry.federation.field(inaccessible=True)
 
     @strawberry.federation.type(inaccessible=True)
     class AnInaccessibleType:
