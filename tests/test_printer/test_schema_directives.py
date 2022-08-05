@@ -1,6 +1,6 @@
 import textwrap
 from enum import Enum
-from typing import List, Optional
+from typing import Annotated, List, Optional
 
 import strawberry
 from strawberry.printer import print_schema
@@ -547,6 +547,38 @@ def test_print_directive_on_union():
     }
 
     union Union @sensitive(reason: "example") = A | B
+    """
+
+    schema = strawberry.Schema(query=Query)
+
+    assert print_schema(schema) == textwrap.dedent(expected_output).strip()
+
+
+def test_print_directive_on_argument():
+    @strawberry.schema_directive(locations=[Location.ARGUMENT_DEFINITION])
+    class Sensitive:
+        reason: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(
+            self,
+            name: Annotated[
+                str, strawberry.argument(directives=[Sensitive(reason="example")])
+            ],
+            age: Annotated[
+                str, strawberry.argument(directives=[Sensitive(reason="example")])
+            ],
+        ) -> str:
+            return "Hello " + name
+
+    expected_output = """
+    directive @sensitive(reason: String!) on ARGUMENT_DEFINITION
+
+    type Query {
+      hello(name: String! @sensitive(reason: "example"), age: String! @sensitive(reason: "example")): String!
+    }
     """
 
     schema = strawberry.Schema(query=Query)

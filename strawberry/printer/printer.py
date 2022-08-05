@@ -132,7 +132,7 @@ def print_schema_directive(
         },
     )
 
-    printed_directive = print_directive(gql_directive)
+    printed_directive = print_directive(gql_directive, schema=schema)
 
     if printed_directive is not None:
         extras.directives.add(printed_directive)
@@ -178,7 +178,27 @@ def print_field_directives(
     )
 
 
-def print_args(args: Dict[str, GraphQLArgument], indentation: str = "") -> str:
+def print_argument_directives(
+    argument: GraphQLArgument, *, schema: BaseSchema, extras: PrintExtras
+) -> str:
+    strawberry_type = argument.extensions.get("strawberry-definition")
+    directives = strawberry_type.directives if strawberry_type else []
+
+    return "".join(
+        (
+            print_schema_directive(directive, schema=schema, extras=extras)
+            for directive in directives
+        )
+    )
+
+
+def print_args(
+    args: Dict[str, GraphQLArgument],
+    indentation: str = "",
+    *,
+    schema: BaseSchema,
+    extras: PrintExtras,
+) -> str:
     if not args:
         return ""
 
@@ -186,7 +206,10 @@ def print_args(args: Dict[str, GraphQLArgument], indentation: str = "") -> str:
     if not any(arg.description for arg in args.values()):
         return (
             "("
-            + ", ".join(print_input_value(name, arg) for name, arg in args.items())
+            + ", ".join(
+                f"{print_input_value(name, arg)}{print_argument_directives(arg, schema=schema, extras=extras)}"
+                for name, arg in args.items()
+            )
             + ")"
         )
 
@@ -196,6 +219,7 @@ def print_args(args: Dict[str, GraphQLArgument], indentation: str = "") -> str:
             print_description(arg, f"  {indentation}", not i)
             + f"  {indentation}"
             + print_input_value(name, arg)
+            + print_argument_directives(arg, schema=schema, extras=extras)
             for i, (name, arg) in enumerate(args.items())
         )
         + f"\n{indentation})"
@@ -210,7 +234,11 @@ def print_fields(type_, schema: BaseSchema, *, extras: PrintExtras) -> str:
             GraphQLCoreConverter.DEFINITION_BACKREF
         )
 
-        args = print_args(field.args, "  ") if hasattr(field, "args") else ""
+        args = (
+            print_args(field.args, "  ", schema=schema, extras=extras)
+            if hasattr(field, "args")
+            else ""
+        )
 
         fields.append(
             print_description(field, "  ", not i)
@@ -479,7 +507,9 @@ def print_schema_definition(
     return f"schema{directives} {{\n" + "\n".join(operation_types) + "\n}"
 
 
-def print_directive(directive: GraphQLDirective) -> Optional[str]:
+def print_directive(
+    directive: GraphQLDirective, *, schema: BaseSchema
+) -> Optional[str]:
     strawberry_directive = directive.extensions["strawberry-definition"]
 
     if (
@@ -491,7 +521,8 @@ def print_directive(directive: GraphQLDirective) -> Optional[str]:
     return (
         print_description(directive)
         + f"directive @{directive.name}"
-        + print_args(directive.args)
+        # TODO: add support for directives on arguments directives
+        + print_args(directive.args, schema=schema, extras=PrintExtras())
         + (" repeatable" if directive.is_repeatable else "")
         + " on "
         + " | ".join(location.name for location in directive.locations)
@@ -511,7 +542,9 @@ def print_schema(schema: BaseSchema) -> str:
     types_printed = [_print_type(type_, schema, extras=extras) for type_ in types]
     schema_definition = print_schema_definition(schema, extras=extras)
 
-    directives = filter(None, [print_directive(directive) for directive in directives])
+    directives = filter(
+        None, [print_directive(directive, schema=schema) for directive in directives]
+    )
 
     return "\n\n".join(
         chain(
