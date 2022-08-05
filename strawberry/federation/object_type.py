@@ -1,13 +1,4 @@
-from typing import (
-    TYPE_CHECKING,
-    Callable,
-    Iterable,
-    Sequence,
-    TypeVar,
-    Union,
-    overload,
-    Optional,
-)
+from typing import TYPE_CHECKING, Callable, Iterable, Sequence, TypeVar, Union, overload
 
 from strawberry.field import StrawberryField, field as base_field
 from strawberry.object_type import type as base_type

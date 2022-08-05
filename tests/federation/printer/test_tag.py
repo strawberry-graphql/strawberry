@@ -4,10 +4,6 @@ from typing import Annotated, List
 
 import strawberry
 
-from strawberry.arguments import StrawberryArgument
-
-from strawberry.federation.schema_directives import Tag
-
 
 def test_field_tag_printed_correctly():
     @strawberry.federation.interface(tags=["myTag", "anotherTag"])

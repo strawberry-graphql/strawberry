@@ -31,7 +31,8 @@ def test_field_inaccessible_printed_correctly():
     class Query:
         @strawberry.field
         def top_products(
-            self, first: Annotated[int, strawberry.federation.argument(inaccessible=True)]
+            self,
+            first: Annotated[int, strawberry.federation.argument(inaccessible=True)],
         ) -> List[Product]:
             return []
 
