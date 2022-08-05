@@ -65,19 +65,19 @@ def scalar(
 
     Example usages:
 
-    >>> strawberry.scalar(
+    >>> strawberry.federation.scalar(
     >>>     datetime.date,
     >>>     serialize=lambda value: value.isoformat(),
     >>>     parse_value=datetime.parse_date
     >>> )
 
-    >>> Base64Encoded = strawberry.scalar(
+    >>> Base64Encoded = strawberry.federation.scalar(
     >>>     NewType("Base64Encoded", bytes),
     >>>     serialize=base64.b64encode,
     >>>     parse_value=base64.b64decode
     >>> )
 
-    >>> @strawberry.scalar(
+    >>> @strawberry.federation.scalar(
     >>>     serialize=lambda value: ",".join(value.items),
     >>>     parse_value=lambda value: CustomList(value.split(","))
     >>> )
