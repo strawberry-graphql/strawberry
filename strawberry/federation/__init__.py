@@ -1,3 +1,4 @@
+from .argument import argument
 from .enum import enum, enum_value
 from .field import field
 from .mutation import mutation
@@ -8,6 +9,7 @@ from .union import union
 
 
 __all__ = [
+    "argument",
     "enum",
     "enum_value",
     "field",

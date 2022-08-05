@@ -1,6 +1,6 @@
 import textwrap
 from enum import Enum
-from typing import List
+from typing import Annotated, List
 
 import strawberry
 
@@ -30,7 +30,9 @@ def test_field_inaccessible_printed_correctly():
     @strawberry.federation.type
     class Query:
         @strawberry.field
-        def top_products(self, first: int) -> List[Product]:
+        def top_products(
+            self, first: Annotated[int, strawberry.federation.argument(inaccessible=True)]
+        ) -> List[Product]:
             return []
 
     schema = strawberry.federation.Schema(
@@ -65,7 +67,7 @@ def test_field_inaccessible_printed_correctly():
         type Query {
           _service: _Service!
           _entities(representations: [_Any!]!): [_Entity]!
-          topProducts(first: Int!): [Product!]!
+          topProducts(first: Int! @inaccessible): [Product!]!
         }
 
         interface SomeInterface {

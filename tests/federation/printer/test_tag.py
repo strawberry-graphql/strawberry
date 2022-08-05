@@ -1,8 +1,12 @@
 import textwrap
 from enum import Enum
-from typing import List
+from typing import Annotated, List
 
 import strawberry
+
+from strawberry.arguments import StrawberryArgument
+
+from strawberry.federation.schema_directives import Tag
 
 
 def test_field_tag_printed_correctly():
@@ -19,7 +23,9 @@ def test_field_tag_printed_correctly():
     @strawberry.federation.type
     class Query:
         @strawberry.field
-        def top_products(self, first: int) -> List[Product]:
+        def top_products(
+            self, first: Annotated[int, strawberry.federation.argument(tags=["myTag"])]
+        ) -> List[Product]:
             return []
 
     schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
@@ -36,7 +42,7 @@ def test_field_tag_printed_correctly():
 
         type Query {
           _service: _Service!
-          topProducts(first: Int!): [Product!]!
+          topProducts(first: Int! @tag(name: "myTag")): [Product!]!
         }
 
         interface SomeInterface @tag(name: "myTag") @tag(name: "anotherTag") {
