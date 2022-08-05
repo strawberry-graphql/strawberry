@@ -232,9 +232,11 @@ def union(
                 f"Type `{_type.__name__}` cannot be used in a GraphQL Union"
             )
 
-    return StrawberryUnion(
+    union_definition = StrawberryUnion(
         name=name,
         type_annotations=tuple(StrawberryAnnotation(type_) for type_ in types),
         description=description,
         directives=directives,
-    )  # type: ignore
+    )
+
+    return union_definition  # type: ignore
