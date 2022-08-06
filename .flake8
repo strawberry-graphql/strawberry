@@ -16,3 +16,4 @@ per-file-ignores =
     tests/federation/test_printer.py:E800
     tests/federation/test_printer.py:E501
     tests/test_printer/test_basic.py:E501
+    tests/test_printer/test_schema_directives.py:E501

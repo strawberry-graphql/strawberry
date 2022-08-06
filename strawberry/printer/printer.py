@@ -207,7 +207,10 @@ def print_args(
         return (
             "("
             + ", ".join(
-                f"{print_input_value(name, arg)}{print_argument_directives(arg, schema=schema, extras=extras)}"
+                (
+                    f"{print_input_value(name, arg)}"
+                    f"{print_argument_directives(arg, schema=schema, extras=extras)}"
+                )
                 for name, arg in args.items()
             )
             + ")"
