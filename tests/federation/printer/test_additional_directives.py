@@ -25,7 +25,7 @@ def test_additional_schema_directives_printed_correctly_object():
     expected_type = """
     directive @CacheControl(max_age: Int!) on OBJECT
 
-    extend type FederatedType @key(fields: "id") @shareable @CacheControl(max_age: 42) {
+    extend type FederatedType @CacheControl(max_age: 42) @key(fields: "id") @shareable {
       id: ID!
     }
 
@@ -67,7 +67,7 @@ def test_additional_schema_directives_printed_in_order_object():
 
     directive @CacheControl1(min_age: Int!) on OBJECT
 
-    extend type FederatedType @key(fields: "id") @shareable @CacheControl0(max_age: 42) @CacheControl1(min_age: 42) {
+    extend type FederatedType @CacheControl0(max_age: 42) @CacheControl1(min_age: 42) @key(fields: "id") @shareable {
       id: ID!
     }
 
