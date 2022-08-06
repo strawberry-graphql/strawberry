@@ -1,6 +1,8 @@
 import textwrap
 from enum import Enum
-from typing import Annotated, List, Optional
+from typing import List, Optional
+
+from typing_extensions import Annotated
 
 import strawberry
 from strawberry.printer import print_schema
