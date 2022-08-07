@@ -95,7 +95,7 @@ class GraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
             await self.send_response(
                 405,
                 b"Method not allowed",
-                headers=[b"Allow", b"GET, POST"],
+                headers=[(b"Allow", b"GET, POST")],
             )
         except InvalidOperationTypeError as e:
             error_str = e.as_http_error_reason(self.scope["method"])
