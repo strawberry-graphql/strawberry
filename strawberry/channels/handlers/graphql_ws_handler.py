@@ -50,5 +50,7 @@ class GraphQLWSHandler(BaseGraphQLWSHandler):
             await self.cleanup_operation(operation_id)
 
     async def handle_invalid_message(self, error_message: str) -> None:
-        # Do nothing
-        return
+        # This is not part of the BaseGraphQLWSHandler's interface, but the
+        # channels integration is a high level wrapper that forwards this to
+        # both us and the BaseGraphQLTransportWSHandler.
+        pass
