@@ -59,7 +59,7 @@ async def test_graphiql_view_disabled(consumer):
     )
     response = await client.get_response()
     assert response == {
-        "headers": [b"Allow", b"GET, POST"],
+        "headers": [(b"Allow", b"GET, POST")],
         "status": 405,
         "body": b"Method not allowed",
     }
@@ -74,7 +74,7 @@ async def test_graphiql_view_not_allowed(consumer):
     )
     response = await client.get_response()
     assert response == {
-        "headers": [b"Allow", b"GET, POST"],
+        "headers": [(b"Allow", b"GET, POST")],
         "status": 405,
         "body": b"Method not allowed",
     }
@@ -91,7 +91,7 @@ async def test_disabled_methods(consumer, method: str):
     )
     response = await client.get_response()
     assert response == {
-        "headers": [b"Allow", b"GET, POST"],
+        "headers": [(b"Allow", b"GET, POST")],
         "status": 405,
         "body": b"Method not allowed",
     }
