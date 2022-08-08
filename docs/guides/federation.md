@@ -203,7 +203,7 @@ strawberry server --port 3500 app
 
 ```bash
 cd reviews
-strawberry server --port 300 app
+strawberry server --port 3000 app
 ```
 
 ## Apollo Router
