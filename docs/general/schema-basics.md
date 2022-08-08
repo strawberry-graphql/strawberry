@@ -138,16 +138,16 @@ class Author:
   books: typing.List[Book]
 ```
 
-## Basic Resolvers
+## Providing data to fields
 
 In the above schema, a `Book` has an `author` field and an `Author` has a `books`
-field yet we do not know how our data can be mapped to fulfil the structure of
+field, yet we do not know how our data can be mapped to fulfil the structure of
 the promised schema.
 
-To achieve this, we introduce the concept of the _resolver_ that provides some
+To achieve this, we introduce the concept of the [_resolver_](../types/resolvers.md) that provides some
 data to a field through a function.
 
-Continuing with this example of books and authors, basic resolvers can be defined
+Continuing with this example of books and authors, resolvers can be defined
 to provides values to the fields:
 
 ```python
@@ -190,7 +190,7 @@ from databases, e.g. making SQL queries using SQLAlchemy, and other APIs,
 e.g. making HTTP requests using aiohttp.
 
 For more information and detail on the different ways to write resolvers,
-see the resolvers section.
+see the [resolvers section](../types/resolvers.md).
 
 ## The Query type
 
