@@ -5,6 +5,7 @@ from typing import TYPE_CHECKING, Dict
 from graphql.type import GraphQLArgument
 from graphql.utilities.print_schema import print_description
 
+from .print_argument_directives import print_argument_directives
 from .print_extras import PrintExtras
 from .print_input_value import print_input_value
 
@@ -20,7 +21,6 @@ def print_args(
     schema: BaseSchema,
     extras: PrintExtras,
 ) -> str:
-    from .print_argument_directives import print_argument_directives
 
     if not args:
         return ""

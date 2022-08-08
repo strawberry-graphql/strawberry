@@ -344,9 +344,21 @@ def print_schema(schema: BaseSchema) -> str:
         ],
     )
 
+    directive_definitions = set(
+        sorted(
+            filter(
+                None,
+                (
+                    print_directive_definition(directive, schema=schema)
+                    for directive in extras.directives
+                ),
+            )
+        )
+    )
+
     return "\n\n".join(
         chain(
-            sorted(extras.directives),
+            directive_definitions,
             filter(None, [schema_definition]),
             directives,
             types_printed,

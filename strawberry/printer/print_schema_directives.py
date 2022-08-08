@@ -13,7 +13,7 @@ from strawberry.type import StrawberryContainer
 from strawberry.unset import UNSET
 
 from .ast_from_value import ast_from_value
-from .print_directive_definition import print_directive_definition
+from .print_directive_definition import should_print_directive_definition
 from .print_extras import PrintExtras
 
 
@@ -89,11 +89,8 @@ def print_schema_directive(
         },
     )
 
-    # TODO:
-    printed_directive = print_directive_definition(gql_directive, schema=schema)
-
-    if printed_directive is not None:
-        extras.directives.add(printed_directive)
+    if should_print_directive_definition(gql_directive):
+        extras.directives.append(gql_directive)
 
         for field in strawberry_directive.fields:
             f_type = field.type
