@@ -1,20 +1,7 @@
 from __future__ import annotations
 
-import dataclasses
 from itertools import chain
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    List,
-    Optional,
-    Set,
-    Tuple,
-    TypeVar,
-    Union,
-    cast,
-    overload,
-)
+from typing import TYPE_CHECKING, Optional
 
 from graphql import (
     GraphQLArgument,
@@ -24,7 +11,6 @@ from graphql import (
     GraphQLUnionType,
     is_union_type,
 )
-from graphql.language.printer import print_ast
 from graphql.type import (
     is_enum_type,
     is_input_type,
@@ -33,7 +19,6 @@ from graphql.type import (
     is_scalar_type,
     is_specified_directive,
 )
-from graphql.type.directives import GraphQLDirective
 from graphql.utilities.print_schema import (
     is_defined_type,
     print_block,
@@ -44,115 +29,19 @@ from graphql.utilities.print_schema import (
     print_type as original_print_type,
 )
 
-from strawberry.enum import EnumDefinition
 from strawberry.field import StrawberryField
 from strawberry.schema.schema_converter import GraphQLCoreConverter
-from strawberry.schema_directive import Location, StrawberrySchemaDirective
-from strawberry.type import StrawberryContainer
-from strawberry.unset import UNSET
+from strawberry.schema_directive import Location
 
-from .ast_from_value import ast_from_value
+from .print_args import print_args
+from .print_directive_definition import print_directive_definition
+from .print_extras import PrintExtras
+from .print_input_value import print_input_value
+from .print_schema_directives import print_schema_directive, print_schema_directives
 
 
 if TYPE_CHECKING:
     from strawberry.schema import BaseSchema
-
-
-_T = TypeVar("_T")
-
-
-@dataclasses.dataclass
-class PrintExtras:
-    directives: Set[str] = dataclasses.field(default_factory=set)
-    types: Set[type] = dataclasses.field(default_factory=set)
-
-
-@overload
-def _serialize_dataclasses(value: Dict[_T, object]) -> Dict[_T, object]:
-    ...
-
-
-@overload
-def _serialize_dataclasses(value: Union[List[object], Tuple[object]]) -> List[object]:
-    ...
-
-
-@overload
-def _serialize_dataclasses(value: object) -> object:
-    ...
-
-
-def _serialize_dataclasses(value):
-    if dataclasses.is_dataclass(value):
-        return dataclasses.asdict(value)
-    if isinstance(value, (list, tuple)):
-        return [_serialize_dataclasses(v) for v in value]
-    if isinstance(value, dict):
-        return {k: _serialize_dataclasses(v) for k, v in value.items()}
-
-    return value
-
-
-def print_schema_directive_params(
-    directive: GraphQLDirective, values: Dict[str, Any]
-) -> str:
-    params = []
-    for name, arg in directive.args.items():
-        value = values.get(name, arg.default_value)
-        if value is UNSET:
-            value = None
-        else:
-            ast = ast_from_value(_serialize_dataclasses(value), arg.type)
-            value = ast and f"{name}: {print_ast(ast)}"
-
-        if value:
-            params.append(value)
-
-    if not params:
-        return ""
-
-    return "(" + ", ".join(params) + ")"
-
-
-def print_schema_directive(
-    directive: Any, schema: BaseSchema, *, extras: PrintExtras
-) -> str:
-    strawberry_directive = cast(
-        StrawberrySchemaDirective, directive.__class__.__strawberry_directive__
-    )
-    schema_converter = schema.schema_converter
-    gql_directive = schema_converter.from_schema_directive(directive)
-    params = print_schema_directive_params(
-        gql_directive,
-        {
-            schema.config.name_converter.get_graphql_name(f): getattr(
-                directive, f.python_name or f.name, UNSET
-            )
-            for f in strawberry_directive.fields
-        },
-    )
-
-    printed_directive = print_directive(gql_directive, schema=schema)
-
-    if printed_directive is not None:
-        extras.directives.add(printed_directive)
-
-        for field in strawberry_directive.fields:
-            f_type = field.type
-
-            while isinstance(f_type, StrawberryContainer):
-                f_type = f_type.of_type
-
-            if hasattr(f_type, "_type_definition"):
-                extras.types.add(cast(type, f_type))
-
-            if hasattr(f_type, "_scalar_definition"):
-                extras.types.add(cast(type, f_type))
-
-            if isinstance(f_type, EnumDefinition):
-                extras.types.add(cast(type, f_type))
-
-    return f" @{gql_directive.name}{params}"
 
 
 def print_field_directives(
@@ -192,43 +81,6 @@ def print_argument_directives(
     )
 
 
-def print_args(
-    args: Dict[str, GraphQLArgument],
-    indentation: str = "",
-    *,
-    schema: BaseSchema,
-    extras: PrintExtras,
-) -> str:
-    if not args:
-        return ""
-
-    # If every arg does not have a description, print them on one line.
-    if not any(arg.description for arg in args.values()):
-        return (
-            "("
-            + ", ".join(
-                (
-                    f"{print_input_value(name, arg)}"
-                    f"{print_argument_directives(arg, schema=schema, extras=extras)}"
-                )
-                for name, arg in args.items()
-            )
-            + ")"
-        )
-
-    return (
-        "(\n"
-        + "\n".join(
-            print_description(arg, f"  {indentation}", not i)
-            + f"  {indentation}"
-            + print_input_value(name, arg)
-            + print_argument_directives(arg, schema=schema, extras=extras)
-            for i, (name, arg) in enumerate(args.items())
-        )
-        + f"\n{indentation})"
-    )
-
-
 def print_fields(type_, schema: BaseSchema, *, extras: PrintExtras) -> str:
     fields = []
 
@@ -258,16 +110,7 @@ def print_fields(type_, schema: BaseSchema, *, extras: PrintExtras) -> str:
 def print_scalar(
     type_: GraphQLScalarType, *, schema: BaseSchema, extras: PrintExtras
 ) -> str:
-    # TODO: refactor this
-    strawberry_type = type_.extensions.get("strawberry-definition")
-    directives = strawberry_type.directives if strawberry_type else []
-
-    printed_directives = "".join(
-        (
-            print_schema_directive(directive, schema=schema, extras=extras)
-            for directive in directives
-        )
-    )
+    printed_directives = print_schema_directives(type_, schema=schema, extras=extras)
 
     return (
         print_description(type_)
@@ -285,15 +128,7 @@ def print_enum_value(
     schema: BaseSchema,
     extras: PrintExtras,
 ) -> str:
-    strawberry_type = value.extensions.get("strawberry-definition")
-    directives = strawberry_type.directives if strawberry_type else []
-
-    printed_directives = "".join(
-        (
-            print_schema_directive(directive, schema=schema, extras=extras)
-            for directive in directives
-        )
-    )
+    printed_directives = print_schema_directives(value, schema=schema, extras=extras)
 
     return (
         print_description(value, "  ", first_in_block)
@@ -306,15 +141,8 @@ def print_enum_value(
 def print_enum(
     type_: GraphQLEnumType, *, schema: BaseSchema, extras: PrintExtras
 ) -> str:
-    strawberry_type = type_.extensions.get("strawberry-definition")
-    directives = strawberry_type.directives if strawberry_type else []
 
-    printed_directives = "".join(
-        (
-            print_schema_directive(directive, schema=schema, extras=extras)
-            for directive in directives
-        )
-    )
+    printed_directives = print_schema_directives(type_, schema=schema, extras=extras)
 
     values = [
         print_enum_value(name, value, not i, schema=schema, extras=extras)
@@ -390,14 +218,6 @@ def _print_interface(type_, schema: BaseSchema, *, extras: PrintExtras) -> str:
     )
 
 
-def print_input_value(name: str, arg: GraphQLArgument) -> str:
-    default_ast = ast_from_value(arg.default_value, arg.type)
-    arg_decl = f"{name}: {arg.type}"
-    if default_ast:
-        arg_decl += f" = {print_ast(default_ast)}"
-    return arg_decl + print_deprecated(arg.deprecation_reason)
-
-
 def _print_input_object(type_, schema: BaseSchema, *, extras: PrintExtras) -> str:
     fields = [
         print_description(field, "  ", not i) + "  " + print_input_value(name, field)
@@ -414,15 +234,7 @@ def _print_input_object(type_, schema: BaseSchema, *, extras: PrintExtras) -> st
 def print_union(
     type_: GraphQLUnionType, *, schema: BaseSchema, extras: PrintExtras
 ) -> str:
-    strawberry_type = type_.extensions.get("strawberry-definition")
-    directives = strawberry_type.directives if strawberry_type else []
-
-    printed_directives = "".join(
-        (
-            print_schema_directive(directive, schema=schema, extras=extras)
-            for directive in directives
-        )
-    )
+    printed_directives = print_schema_directives(type_, schema=schema, extras=extras)
 
     types = type_.types
     possible_types = " = " + " | ".join(t.name for t in types) if types else ""
@@ -456,7 +268,8 @@ def _print_type(type_, schema: BaseSchema, *, extras: PrintExtras) -> str:
     return original_print_type(type_)
 
 
-def print_schema_directives(schema: BaseSchema, *, extras: PrintExtras) -> str:
+def print_directives_on_schema(schema: BaseSchema, *, extras: PrintExtras) -> str:
+
     directives = (
         directive
         for directive in schema.schema_directives
@@ -505,31 +318,9 @@ def print_schema_definition(
         subscription_type = schema.subscription._type_definition
         operation_types.append(f"  subscription: {subscription_type.name}")
 
-    directives = print_schema_directives(schema, extras=extras)
+    directives = print_directives_on_schema(schema, extras=extras)
 
     return f"schema{directives} {{\n" + "\n".join(operation_types) + "\n}"
-
-
-def print_directive(
-    directive: GraphQLDirective, *, schema: BaseSchema
-) -> Optional[str]:
-    strawberry_directive = directive.extensions["strawberry-definition"]
-
-    if (
-        isinstance(strawberry_directive, StrawberrySchemaDirective)
-        and not strawberry_directive.print_definition
-    ):
-        return None
-
-    return (
-        print_description(directive)
-        + f"directive @{directive.name}"
-        # TODO: add support for directives on arguments directives
-        + print_args(directive.args, schema=schema, extras=PrintExtras())
-        + (" repeatable" if directive.is_repeatable else "")
-        + " on "
-        + " | ".join(location.name for location in directive.locations)
-    )
 
 
 def print_schema(schema: BaseSchema) -> str:
@@ -546,7 +337,11 @@ def print_schema(schema: BaseSchema) -> str:
     schema_definition = print_schema_definition(schema, extras=extras)
 
     directives = filter(
-        None, [print_directive(directive, schema=schema) for directive in directives]
+        None,
+        [
+            print_directive_definition(directive, schema=schema)
+            for directive in directives
+        ],
     )
 
     return "\n\n".join(
