@@ -18,7 +18,7 @@ def test_entities_type_when_no_type_has_keys():
         def top_products(self, first: int) -> List[Product]:
             return []
 
-    schema = strawberry.federation.Schema(query=Query)
+    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
 
     query = """
         query {
@@ -52,7 +52,7 @@ def test_entities_type():
         def top_products(self, first: int) -> List[Product]:
             return []
 
-    schema = strawberry.federation.Schema(query=Query)
+    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
 
     query = """
         query {
@@ -85,7 +85,7 @@ def test_additional_scalars():
         def top_products(self, first: int) -> List[Example]:
             return []
 
-    schema = strawberry.federation.Schema(query=Query)
+    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
 
     query = """
         query {
@@ -113,7 +113,7 @@ def test_service():
         def top_products(self, first: int) -> List[Product]:
             return []
 
-    schema = strawberry.federation.Schema(query=Query)
+    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
 
     query = """
         query {
@@ -164,7 +164,7 @@ def test_using_generics():
         def top_products(self, first: int) -> ListOfProducts[Product]:
             return ListOfProducts([])
 
-    schema = strawberry.federation.Schema(query=Query)
+    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
 
     query = """
         query {
@@ -200,3 +200,31 @@ def test_using_generics():
     """
 
     assert result.data == {"_service": {"sdl": textwrap.dedent(sdl).strip()}}
+
+
+def test_input_types():
+    @strawberry.federation.input(inaccessible=True)
+    class ExampleInput:
+        upc: str
+
+    @strawberry.federation.type(extend=True)
+    class Query:
+        @strawberry.field
+        def top_products(self, example: ExampleInput) -> List[str]:
+            return []
+
+    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+
+    query = """
+        query {
+            __type(name: "ExampleInput") {
+                kind
+            }
+        }
+    """
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+
+    assert result.data == {"__type": {"kind": "INPUT_OBJECT"}}

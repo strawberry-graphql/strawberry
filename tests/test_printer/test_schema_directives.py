@@ -2,6 +2,8 @@ import textwrap
 from enum import Enum
 from typing import List, Optional
 
+from typing_extensions import Annotated
+
 import strawberry
 from strawberry.printer import print_schema
 from strawberry.schema.config import StrawberryConfig
@@ -392,6 +394,231 @@ def test_prints_with_enum():
 
     enum Reason {
       EXAMPLE
+    }
+    """
+
+    schema = strawberry.Schema(query=Query)
+
+    assert print_schema(schema) == textwrap.dedent(expected_output).strip()
+
+
+def test_does_not_print_definition():
+    @strawberry.schema_directive(
+        locations=[Location.FIELD_DEFINITION], print_definition=False
+    )
+    class Sensitive:
+        reason: str
+
+    @strawberry.type
+    class Query:
+        first_name: str = strawberry.field(directives=[Sensitive(reason="GDPR")])
+
+    expected_output = """
+    type Query {
+      firstName: String! @sensitive(reason: "GDPR")
+    }
+    """
+
+    schema = strawberry.Schema(query=Query)
+
+    assert print_schema(schema) == textwrap.dedent(expected_output).strip()
+
+
+def test_print_directive_on_scalar():
+    @strawberry.schema_directive(locations=[Location.SCALAR])
+    class Sensitive:
+        reason: str
+
+    SensitiveString = strawberry.scalar(
+        str, name="SensitiveString", directives=[Sensitive(reason="example")]
+    )
+
+    @strawberry.type
+    class Query:
+        first_name: SensitiveString
+
+    expected_output = """
+    directive @sensitive(reason: String!) on SCALAR
+
+    type Query {
+      firstName: SensitiveString!
+    }
+
+    scalar SensitiveString @sensitive(reason: "example")
+    """
+
+    schema = strawberry.Schema(query=Query)
+
+    assert print_schema(schema) == textwrap.dedent(expected_output).strip()
+
+
+def test_print_directive_on_enum():
+    @strawberry.schema_directive(locations=[Location.ENUM])
+    class Sensitive:
+        reason: str
+
+    @strawberry.enum(directives=[Sensitive(reason="example")])
+    class SomeEnum(str, Enum):
+        EXAMPLE = "example"
+
+    @strawberry.type
+    class Query:
+        first_name: SomeEnum
+
+    expected_output = """
+    directive @sensitive(reason: String!) on ENUM
+
+    type Query {
+      firstName: SomeEnum!
+    }
+
+    enum SomeEnum @sensitive(reason: "example") {
+      EXAMPLE
+    }
+    """
+
+    schema = strawberry.Schema(query=Query)
+
+    assert print_schema(schema) == textwrap.dedent(expected_output).strip()
+
+
+def test_print_directive_on_enum_value():
+    @strawberry.schema_directive(locations=[Location.ENUM_VALUE])
+    class Sensitive:
+        reason: str
+
+    @strawberry.enum
+    class SomeEnum(Enum):
+        EXAMPLE = strawberry.enum_value(
+            "example", directives=[Sensitive(reason="example")]
+        )
+
+    @strawberry.type
+    class Query:
+        first_name: SomeEnum
+
+    expected_output = """
+    directive @sensitive(reason: String!) on ENUM_VALUE
+
+    type Query {
+      firstName: SomeEnum!
+    }
+
+    enum SomeEnum {
+      EXAMPLE @sensitive(reason: "example")
+    }
+    """
+
+    schema = strawberry.Schema(query=Query)
+
+    assert print_schema(schema) == textwrap.dedent(expected_output).strip()
+
+
+def test_print_directive_on_union():
+    @strawberry.type
+    class A:
+        a: int
+
+    @strawberry.type
+    class B:
+        b: int
+
+    @strawberry.schema_directive(locations=[Location.SCALAR])
+    class Sensitive:
+        reason: str
+
+    Union = strawberry.union("Union", (A, B), directives=[Sensitive(reason="example")])
+
+    @strawberry.type
+    class Query:
+        example: Union
+
+    expected_output = """
+    directive @sensitive(reason: String!) on SCALAR
+
+    type A {
+      a: Int!
+    }
+
+    type B {
+      b: Int!
+    }
+
+    type Query {
+      example: Union!
+    }
+
+    union Union @sensitive(reason: "example") = A | B
+    """
+
+    schema = strawberry.Schema(query=Query)
+
+    assert print_schema(schema) == textwrap.dedent(expected_output).strip()
+
+
+def test_print_directive_on_argument():
+    @strawberry.schema_directive(locations=[Location.ARGUMENT_DEFINITION])
+    class Sensitive:
+        reason: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(
+            self,
+            name: Annotated[
+                str, strawberry.argument(directives=[Sensitive(reason="example")])
+            ],
+            age: Annotated[
+                str, strawberry.argument(directives=[Sensitive(reason="example")])
+            ],
+        ) -> str:
+            return f"Hello {name} of {age}"
+
+    expected_output = """
+    directive @sensitive(reason: String!) on ARGUMENT_DEFINITION
+
+    type Query {
+      hello(name: String! @sensitive(reason: "example"), age: String! @sensitive(reason: "example")): String!
+    }
+    """
+
+    schema = strawberry.Schema(query=Query)
+
+    assert print_schema(schema) == textwrap.dedent(expected_output).strip()
+
+
+def test_print_directive_on_argument_with_description():
+    @strawberry.schema_directive(locations=[Location.ARGUMENT_DEFINITION])
+    class Sensitive:
+        reason: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(
+            self,
+            name: Annotated[
+                str,
+                strawberry.argument(
+                    description="Name", directives=[Sensitive(reason="example")]
+                ),
+            ],
+            age: Annotated[
+                str, strawberry.argument(directives=[Sensitive(reason="example")])
+            ],
+        ) -> str:
+            return f"Hello {name} of {age}"
+
+    expected_output = """
+    directive @sensitive(reason: String!) on ARGUMENT_DEFINITION
+
+    type Query {
+      hello(
+        \"\"\"Name\"\"\"
+        name: String! @sensitive(reason: "example")
+        age: String! @sensitive(reason: "example")
+      ): String!
     }
     """
 

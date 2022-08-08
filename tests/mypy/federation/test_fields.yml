@@ -2,9 +2,9 @@
   main: |
     import strawberry
 
-    @strawberry.type
+    @strawberry.federation.type
     class User:
-        name: str = strawberry.field(description="Example")
+        name: str = strawberry.federation.field(description="Example")
 
     User(name="Patrick")
     User(n="Patrick")
@@ -22,15 +22,15 @@
     @strawberry.type
     class Example:
         a: str
-        b: str = strawberry.field(name="b")
-        c: str = strawberry.field(name="c", resolver=some_resolver)
-        d: str = strawberry.field(resolver=some_resolver)
+        b: str = strawberry.federation.field(name="b")
+        c: str = strawberry.federation.field(name="c", resolver=some_resolver)
+        d: str = strawberry.federation.field(resolver=some_resolver)
 
-        @strawberry.field(description="ABC")
+        @strawberry.federation.field(description="ABC")
         def e(self, info: Info) -> str:
             return ""
 
-        @strawberry.field(name="f")
+        @strawberry.federation.field(name="f")
         def f_resolver(self, info) -> str:
             return ""
 
@@ -86,7 +86,7 @@
 
     @strawberry.type
     class Example:
-        a: str = strawberry.field(description="Example")
+        a: str = strawberry.federation.field(description="Example")
         b: str
 
     reveal_type(Example.a)
@@ -102,8 +102,8 @@
 
     @strawberry.type
     class Example:
-        a: str = strawberry.field(description="Example")
-        b: str = strawberry.field(resolver=resolver)
+        a: str = strawberry.federation.field(description="Example")
+        b: str = strawberry.federation.field(resolver=resolver)
         c: str
 
     i = Example(a="a", c="c")
