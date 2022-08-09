@@ -57,8 +57,8 @@ class StrawberryField(dataclasses.Field):
         description: Optional[str] = None,
         base_resolver: Optional[StrawberryResolver] = None,
         permission_classes: List[Type[BasePermission]] = (),  # type: ignore
-        default: object = UNSET,
-        default_factory: Union[Callable[[], Any], object] = UNSET,
+        default: object = dataclasses.MISSING,
+        default_factory: Union[Callable[[], Any], object] = dataclasses.MISSING,
         deprecation_reason: Optional[str] = None,
         directives: Sequence[object] = (),
     ):
@@ -72,14 +72,8 @@ class StrawberryField(dataclasses.Field):
             kwargs["kw_only"] = False
 
         super().__init__(
-            default=(default if default is not UNSET else dataclasses.MISSING),
-            default_factory=(
-                # mypy is not able to understand that default factory
-                # is a callable so we do a type ignore
-                default_factory  # type: ignore
-                if default_factory is not UNSET
-                else dataclasses.MISSING
-            ),
+            default=default,
+            default_factory=default_factory,
             init=is_basic_field,
             repr=is_basic_field,
             compare=is_basic_field,
