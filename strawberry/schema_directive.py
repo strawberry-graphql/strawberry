@@ -1,13 +1,18 @@
 import dataclasses
 from enum import Enum
-from typing import List, Optional, Type, TypeVar
+from typing import TYPE_CHECKING, Dict, List, Optional, Type, TypeVar
 
 from strawberry.object_type import _wrap_dataclass
 from strawberry.types.type_resolver import _get_fields
+from strawberry.unset import UNSET
 
 from .directive import directive_field
 from .field import StrawberryField, field
 from .utils.typing import __dataclass_transform__
+
+
+if TYPE_CHECKING:
+    from strawberry.schema import BaseSchema
 
 
 class Location(Enum):
@@ -34,6 +39,16 @@ class StrawberrySchemaDirective:
     repeatable: bool = False
     print_definition: bool = True
     origin: Optional[Type] = None
+
+    def get_params(self, directive: object, schema: "BaseSchema") -> Dict[str, object]:
+        name_converter = schema.config.name_converter
+
+        return {
+            name_converter.get_graphql_name(f): getattr(
+                directive, f.python_name or f.name, UNSET
+            )
+            for f in self.fields
+        }
 
 
 T = TypeVar("T", bound=Type)

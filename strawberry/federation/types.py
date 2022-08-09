@@ -4,7 +4,12 @@ from strawberry.custom_scalar import scalar
 from strawberry.enum import enum
 
 
-FieldSet = scalar(str, name="_FieldSet")
+def serialize_field_set(value: str) -> str:
+    # breakpoint()
+    return value
+
+
+FieldSet = scalar(str, name="_FieldSet", serialize=serialize_field_set)
 
 LinkImport = scalar(object, name="link__Import")
 

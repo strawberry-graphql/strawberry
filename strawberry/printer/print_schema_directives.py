@@ -1,10 +1,22 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import TYPE_CHECKING, Any, Dict, List, Tuple, TypeVar, Union, cast, overload
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    TypeVar,
+    Union,
+    cast,
+    overload,
+)
 
+from graphql.language import ValueNode
 from graphql.language.printer import print_ast
-from graphql.type import GraphQLEnumValue, GraphQLNamedType
+from graphql.type import GraphQLEnumValue, GraphQLNamedType, GraphQLScalarType
 from graphql.type.directives import GraphQLDirective
 
 from strawberry.enum import EnumDefinition
@@ -50,6 +62,10 @@ def _serialize_dataclasses(value):
     return value
 
 
+def ast_from_scalar(value: Any, scalar: GraphQLScalarType) -> Optional[ValueNode]:
+    return ast_from_value(value, scalar) + "1"
+
+
 def print_schema_directive_params(
     directive: GraphQLDirective, values: Dict[str, Any]
 ) -> str:
@@ -58,6 +74,9 @@ def print_schema_directive_params(
         value = values.get(name, arg.default_value)
         if value is UNSET:
             value = None
+        elif isinstance(arg.type, GraphQLScalarType):
+            ast = ast_from_scalar(_serialize_dataclasses(value), arg.type)
+            value = ast and f"{name}: {print_ast(ast)}"
         else:
             ast = ast_from_value(_serialize_dataclasses(value), arg.type)
             value = ast and f"{name}: {print_ast(ast)}"
@@ -79,14 +98,10 @@ def print_schema_directive(
     )
     schema_converter = schema.schema_converter
     gql_directive = schema_converter.from_schema_directive(directive)
+
     params = print_schema_directive_params(
         gql_directive,
-        {
-            schema.config.name_converter.get_graphql_name(f): getattr(
-                directive, f.python_name or f.name, UNSET
-            )
-            for f in strawberry_directive.fields
-        },
+        strawberry_directive.get_params(directive, schema),
     )
 
     if should_print_directive_definition(gql_directive):
