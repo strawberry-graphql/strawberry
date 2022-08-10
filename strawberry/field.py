@@ -319,8 +319,8 @@ def field(
     init: Literal[False] = False,
     permission_classes: Optional[List[Type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
-    default: Any = UNSET,
-    default_factory: Union[Callable, object] = UNSET,
+    default: Any = dataclasses.MISSING,
+    default_factory: Union[Callable, object] = dataclasses.MISSING,
     directives: Optional[Sequence[object]] = (),
 ) -> T:
     ...
@@ -335,8 +335,8 @@ def field(
     init: Literal[True] = True,
     permission_classes: Optional[List[Type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
-    default: Any = UNSET,
-    default_factory: Union[Callable, object] = UNSET,
+    default: Any = dataclasses.MISSING,
+    default_factory: Union[Callable, object] = dataclasses.MISSING,
     directives: Optional[Sequence[object]] = (),
 ) -> Any:
     ...
@@ -351,8 +351,8 @@ def field(
     description: Optional[str] = None,
     permission_classes: Optional[List[Type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
-    default: Any = UNSET,
-    default_factory: Union[Callable, object] = UNSET,
+    default: Any = dataclasses.MISSING,
+    default_factory: Union[Callable, object] = dataclasses.MISSING,
     directives: Optional[Sequence[object]] = (),
 ) -> StrawberryField:
     ...
@@ -366,8 +366,8 @@ def field(
     description=None,
     permission_classes=None,
     deprecation_reason=None,
-    default=UNSET,
-    default_factory=UNSET,
+    default=dataclasses.MISSING,
+    default_factory=dataclasses.MISSING,
     directives=(),
     # This init parameter is used by PyRight to determine whether this field
     # is added in the constructor or not. It is not used to change
