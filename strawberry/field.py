@@ -73,7 +73,7 @@ class StrawberryField(dataclasses.Field):
 
         super().__init__(
             default=default,
-            default_factory=default_factory,
+            default_factory=default_factory,  # type: ignore
             init=is_basic_field,
             repr=is_basic_field,
             compare=is_basic_field,
