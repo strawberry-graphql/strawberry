@@ -27,7 +27,6 @@ from strawberry.exceptions import InvalidDefaultFactoryError, InvalidFieldArgume
 from strawberry.type import StrawberryType, StrawberryTypeVar
 from strawberry.types.info import Info
 from strawberry.union import StrawberryUnion
-from strawberry.unset import UNSET
 
 from .permission import BasePermission
 from .types.fields.resolver import StrawberryResolver
