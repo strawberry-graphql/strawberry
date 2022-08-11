@@ -446,7 +446,7 @@ dev = ["pre-commit", "hypothesmith (>=0.2)", "hypothesis", "coverage"]
 
 [[package]]
 name = "flake8-eradicate"
-version = "1.2.1"
+version = "1.3.0"
 description = "Flake8 plugin to find commented out code"
 category = "dev"
 optional = false
@@ -455,7 +455,7 @@ python-versions = ">=3.6,<4.0"
 [package.dependencies]
 attrs = "*"
 eradicate = ">=2.0,<3.0"
-flake8 = ">=3.5,<5"
+flake8 = ">=3.5,<6"
 
 [[package]]
 name = "flake8-isort"
@@ -1496,7 +1496,7 @@ sanic = ["sanic"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "426ceb47fbba437ddd30b5da18eecf2592a40c1bd1b81d2f4f56f9aaabad8904"
+content-hash = "b8aab739a8711f8ee82e7c43836215a4c2956eaf3030164c06b000dbbf90e9ee"
 
 [metadata.files]
 aiofiles = [
@@ -1822,8 +1822,8 @@ flake8-bugbear = [
     {file = "flake8_bugbear-22.7.1-py3-none-any.whl", hash = "sha256:db5d7a831ef4412a224b26c708967ff816818cabae415e76b8c58df156c4b8e5"},
 ]
 flake8-eradicate = [
-    {file = "flake8-eradicate-1.2.1.tar.gz", hash = "sha256:e486f8ab7e2dba3667223688e9239158fbf4ecaa88125e2283bcda81171412b7"},
-    {file = "flake8_eradicate-1.2.1-py3-none-any.whl", hash = "sha256:00d77faefb64cef18b3c1b48a004c3a2ad663aa3cf85650f422437d25ece6441"},
+    {file = "flake8-eradicate-1.3.0.tar.gz", hash = "sha256:e4c98f00d17dc8653e3388cac2624cd81e9735de2fd4a8dcf99029633ebd7a63"},
+    {file = "flake8_eradicate-1.3.0-py3-none-any.whl", hash = "sha256:85a71e0c5f4e07f7c6c5fec520483561fd6bd295417d622855bdeade99242e3d"},
 ]
 flake8-isort = [
     {file = "flake8-isort-4.2.0.tar.gz", hash = "sha256:26571500cd54976bbc0cf1006ffbcd1a68dd102f816b7a1051b219616ba9fee0"},
