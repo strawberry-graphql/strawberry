@@ -73,7 +73,7 @@ flask = ">=1.1"
 chalice = {version = "^1.22"}
 requests = "^2.28.1"
 pytest-benchmark = "^3.4.1"
-freezegun = "^1.2.1"
+freezegun = "^1.2.2"
 opentelemetry-api = "<2"
 opentelemetry-sdk = "<2"
 flake8-isort = "^4.2.0"
