@@ -503,11 +503,13 @@ Strawberries extended [`AsyncConsumer`](https://channels.readthedocs.io/en/stabl
 - `ws.headers: dict` returns a map of the headers from `scope['headers']`.
 
 ```python
-async def channel_listen(self,
-                         type: str,
-                         *,
-                         timeout: float | None = None,
-                         groups: Sequence[str] | None = None) -> AsyncGenerator
+async def channel_listen(
+    self,
+    type: str,
+    *,
+    timeout: float | None = None,
+    groups: Sequence[str] | None = None
+) -> AsyncGenerator
 ```
 
 - `type` - The type of the message to wait for, equivalent to `scope['type']`
