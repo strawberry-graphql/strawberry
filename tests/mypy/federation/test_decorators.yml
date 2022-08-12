@@ -2,7 +2,7 @@
   main: |
     import strawberry
 
-    @strawberry.type
+    @strawberry.federation.type
     class User:
         name: str
 
@@ -15,7 +15,7 @@
   main: |
     import strawberry
 
-    @strawberry.input
+    @strawberry.federation.input
     class EditUserInput:
         name: str
 
@@ -28,7 +28,7 @@
   main: |
     import strawberry
 
-    @strawberry.interface
+    @strawberry.federation.interface
     class NameInterface:
         name: str
 
