@@ -147,6 +147,7 @@ class ChannelsConsumer(AsyncConsumer):
                 try:
                     yield await awaitable
                 except asyncio.TimeoutError:
+                    # TODO: shall we add log here and maybe in the suppress below?
                     return
         finally:
             for group in added_groups:

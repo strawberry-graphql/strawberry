@@ -144,7 +144,7 @@ sections = ["FUTURE", "STDLIB", "PYTEST", "THIRDPARTY", "DJANGO", "GRAPHQL", "FI
 addopts = "-s --emoji --mypy-ini-file=mypy.ini --benchmark-disable"
 DJANGO_SETTINGS_MODULE = "tests.django.django_settings"
 testpaths = ["tests/"]
-markers = ["django", "starlette"]
+markers = ["django", "starlette", "channels"]
 asyncio_mode = "auto"
 filterwarnings = [
     "ignore::DeprecationWarning:strawberry.*.resolver"
