@@ -117,11 +117,14 @@ class Subscription:
         """Join and subscribe to message sent to the given rooms."""
         ws = info.context.ws
         channel_layer = ws.channel_layer
-        for room in (rooms := ["chat_%s" % room.room_name for room in rooms]):
+
+        room_ids = [f"chat_{room.room_name}" for room in rooms]
+
+        for room in room_ids:
             # Join room group
             await channel_layer.group_add(room, ws.channel_name)
 
-        for room in rooms:
+        for room in room_ids:
             await channel_layer.group_send(
                 room,
                 {
@@ -132,11 +135,12 @@ class Subscription:
                 },
             )
 
-        async for message in ws.channel_listen("chat.message", groups=rooms):
+        async for message in ws.channel_listen("chat.message", groups=room_ids):
             yield ChatRoomMessage(
-                room_name=message["room_id"], message=message["message"], current_user=user
+                room_name=message["room_id"],
+                message=message["message"],
+                current_user=user,
             )
-
 ```
 
 Explanation:
@@ -166,10 +170,13 @@ class Mutation:
     @strawberry.mutation
     async def send_chat_message(
         self,
+        info: Info,
         room: ChatRoom,
         message: str,
     ) -> None:
-        channel_layer = get_channel_layer()
+        ws = info.context.ws
+        channel_layer = ws.channel_layer
+
         await channel_layer.group_send(
             f"chat_{room.room_name}",
             {
@@ -221,25 +228,26 @@ You will probably craft your own
 An example of this (continuing from channels tutorial) would be:
 
 ```python
+import os
 from channels.auth import AuthMiddlewareStack
 from channels.routing import ProtocolTypeRouter, URLRouter
 from django.core.asgi import get_asgi_application
 from django.urls import re_path
-from strawberry.channels import GraphQLHTTPConsumer
-from strawberry.channels import GraphQLWSConsumer
+from strawberry.channels import GraphQLHTTPConsumer, GraphQLWSConsumer
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mysite.settings')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "berry.settings")
 django_asgi_app = get_asgi_application()
+
 # Import your Strawberry schema after creating the django ASGI application
 # This ensures django.setup() has been called before any ORM models are imported
 # for the schema.
 
-from mysite.chat import routing
+from chat import routing
 from mysite.graphql import schema
 
-websocket_urlpatterns = routing.websocket_urlpatterns + \
-                        [re_path(r"graphql", GraphQLWSConsumer.as_asgi(schema=schema)), ]
-
+websocket_urlpatterns = routing.websocket_urlpatterns + [
+    re_path(r"graphql", GraphQLWSConsumer.as_asgi(schema=schema)),
+]
 
 
 gql_http_consumer = AuthMiddlewareStack(GraphQLHTTPConsumer.as_asgi(schema=schema))
@@ -249,13 +257,14 @@ application = ProtocolTypeRouter(
         "http": URLRouter(
             [
                 re_path("^graphql", gql_http_consumer),
-                re_path("^", django_asgi_app),  # This might be another endpoints in your app
+                re_path(
+                    "^", django_asgi_app
+                ),  # This might be another endpoint in your app
             ]
         ),
         "websocket": AuthMiddlewareStack(URLRouter(websocket_urlpatterns)),
     }
 )
-
 ```
 
 This example demonstrates some ways that Channels can be set up to handle
@@ -273,9 +282,9 @@ First run your asgi application _(The ProtocolTypeRouter)_
 using your asgi server. If you are coming from the channels tutorial, there is no difference.
 Then open three different tabs on your browser and go to the following URLs:
 
-1. `address:port/graphql`
-2. `address:port/graphql`
-3. `address:port/chat`
+1. `localhost:8000/graphql`
+2. `localhost:8000/graphql`
+3. `localhost:8000/chat`
 
 If you want, you can run 3 different instances of your application with different ports
 it should work the same!
@@ -283,7 +292,7 @@ it should work the same!
 On tab #1 start the subscription:
 
 ```graphql
-subscription fooChat {
+subscription SubscribeToChatRooms {
   joinChatRooms(
     rooms: [{ roomName: "room1" }, { roomName: "room2" }]
     user: "foo"
@@ -308,16 +317,16 @@ Before we do that there is a slight change we need to make in the `ChatConsumer`
 you created with channels in order to make it compatible with our `ChatRoomMessage` type.
 
 ```python
-        # Send message to room group
-        await self.channel_layer.group_send(
-            self.room_group_name,
-            {
-                "type": "chat.message",
-                "room_id": self.room_group_name,  # <<< here is the change
-                "message": f"process is {os.getpid()}, Thread is {threading.current_thread().name}"
-                f" -> {message}",
-            },
-        )
+# Send message to room group
+await self.channel_layer.group_send(
+    self.room_group_name,
+    {
+        "type": "chat.message",
+        "room_id": self.room_group_name,  # <<< here is the change
+        "message": f"process is {os.getpid()}, Thread is {threading.current_thread().name}"
+        f" -> {message}",
+    },
+)
 ```
 
 Look here for some more complete examples:
