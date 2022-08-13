@@ -18,7 +18,7 @@ class StrawberryExceptionsPlugin:
     def pytest_runtest_call(self, item: Item) -> Generator[None, _Result, None]:
         __tracebackhide__ = True
 
-        outcome: _Result = yield
+        outcome = yield
 
         self._check_strawberry_exception(item, outcome)
 
