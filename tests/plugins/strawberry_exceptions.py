@@ -97,7 +97,6 @@ class StrawberryExceptionsPlugin:
 
 
 def pytest_configure(config):
-    # def pytest_configure(config):
     config.pluginmanager.register(StrawberryExceptionsPlugin(), "strawberry_exceptions")
 
     config.addinivalue_line(

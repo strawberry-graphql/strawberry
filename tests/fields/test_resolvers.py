@@ -1,5 +1,4 @@
 import dataclasses
-import re
 from typing import ClassVar, List, no_type_check
 
 import pytest
@@ -102,57 +101,55 @@ def test_classmethod_resolver_fields():
     assert Query().val() == "thingy"
 
 
+@pytest.mark.raises_strawberry_exception(
+    MissingReturnAnnotationError,
+    match='Return annotation missing for field "hello", did you forget to add it?',
+)
 def test_raises_error_when_return_annotation_missing():
-    with pytest.raises(MissingReturnAnnotationError) as e:
-
-        @strawberry.type
-        class Query:
-            @strawberry.field
-            def hello(self):
-                return "I'm a resolver"
-
-    assert e.value.args == (
-        'Return annotation missing for field "hello", did you forget to add it?',
-    )
-
-    with pytest.raises(MissingReturnAnnotationError) as e:
-
-        @strawberry.type
-        class Query2:
-            def adios(self):
-                return -1
-
-            goodbye = strawberry.field(resolver=adios)
-
-    # TODO: Maybe we should say that the resolver needs the annotation?
-
-    assert e.value.args == (
-        'Return annotation missing for field "goodbye", did you forget to add it?',
-    )
-
-
-def test_raises_error_when_argument_annotation_missing():
-    with pytest.raises(MissingArgumentsAnnotationsError) as e:
-
+    @strawberry.type
+    class Query:
         @strawberry.field
-        def hello(self, query) -> str:
+        def hello(self):
             return "I'm a resolver"
 
-    assert e.value.args == (
+
+@pytest.mark.raises_strawberry_exception(
+    MissingReturnAnnotationError,
+    match='Return annotation missing for field "goodbye", did you forget to add it?',
+)
+def test_raises_error_when_return_annotation_missing_resolver():
+    @strawberry.type
+    class Query2:
+        def adios(self):
+            return -1
+
+        goodbye = strawberry.field(resolver=adios)
+
+
+@pytest.mark.raises_strawberry_exception(
+    MissingArgumentsAnnotationsError,
+    match=(
         'Missing annotation for argument "query" in field "hello", '
-        "did you forget to add it?",
-    )
+        "did you forget to add it?"
+    ),
+)
+def test_raises_error_when_argument_annotation_missing():
+    @strawberry.field
+    def hello(self, query) -> str:
+        return "I'm a resolver"
 
-    with pytest.raises(MissingArgumentsAnnotationsError) as e:
 
-        @strawberry.field
-        def hello2(self, query, limit) -> str:
-            return "I'm a resolver"
-
-    assert e.value.args == (
+@pytest.mark.raises_strawberry_exception(
+    MissingArgumentsAnnotationsError,
+    match=(
         'Missing annotation for arguments "limit" and "query" '
-        'in field "hello2", did you forget to add it?',
-    )
+        'in field "hello2", did you forget to add it?'
+    ),
+)
+def test_raises_error_when_argument_annotation_missing_resolver():
+    @strawberry.field
+    def hello2(self, query, limit) -> str:
+        return "I'm a resolver"
 
 
 @pytest.mark.raises_strawberry_exception(
@@ -169,25 +166,29 @@ def test_raises_error_when_missing_annotation_and_resolver():
         missing = strawberry.field(name="annotation")
 
 
+@pytest.mark.raises_strawberry_exception(
+    MissingFieldAnnotationError,
+    match=(
+        'Unable to determine the type of field "missing". Either annotate it '
+        "directly, or provide a typed resolver using @strawberry.field."
+    ),
+)
 def test_raises_error_when_missing_type():
     """Test to make sure that if somehow a non-StrawberryField field is added to the cls
     without annotations it raises an exception. This would occur if someone manually
     uses dataclasses.field"""
-    with pytest.raises(MissingFieldAnnotationError) as e:
 
-        @strawberry.type
-        class Query:  # noqa: F841
-            missing = dataclasses.field()
-
-    [message] = e.value.args
-    assert message == (
-        'Unable to determine the type of field "missing". Either annotate it '
-        "directly, or provide a typed resolver using @strawberry.field."
-    )
+    @strawberry.type
+    class Query:  # noqa: F841
+        missing = dataclasses.field()
 
 
+@pytest.mark.raises_strawberry_exception(
+    UncallableResolverError,
+    match=("Attempted to call resolver (.*) with uncallable function (.*)"),
+)
 def test_raises_error_calling_uncallable_resolver():
-    @classmethod
+    @classmethod  # type: ignore
     def class_func(cls) -> int:
         ...
 
@@ -195,13 +196,7 @@ def test_raises_error_calling_uncallable_resolver():
     # to a class at this point
     resolver = StrawberryResolver(class_func)
 
-    expected_error_message = re.escape(
-        f"Attempted to call resolver {resolver} with uncallable function "
-        f"{class_func}"
-    )
-
-    with pytest.raises(UncallableResolverError, match=expected_error_message):
-        resolver()
+    resolver()
 
 
 def test_can_reuse_resolver():
