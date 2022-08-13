@@ -155,22 +155,18 @@ def test_raises_error_when_argument_annotation_missing():
     )
 
 
-def test_raises_error_when_missing_annotation_and_resolver(
-    collect_strawberry_exception,
-):
-    with pytest.raises(MissingFieldAnnotationError) as e:
-
-        @strawberry.type
-        class Query:  # noqa: F841
-            missing = strawberry.field(name="annotation")
-
-    [message] = e.value.args
-    assert message == (
-        'Unable to determine the type of field "missing". Either annotate it '
-        "directly, or provide a typed resolver using @strawberry.field."
-    )
-
-    collect_strawberry_exception(e.value)
+@pytest.mark.raises_strawberry_exception(
+    MissingFieldAnnotationError,
+    match=(
+        'Unable to determine the type of field "missing". '
+        "Either annotate it directly, or provide a typed resolver "
+        "using @strawberry.field."
+    ),
+)
+def test_raises_error_when_missing_annotation_and_resolver():
+    @strawberry.type
+    class Query:  # noqa: F841
+        missing = strawberry.field(name="annotation")
 
 
 def test_raises_error_when_missing_type():
