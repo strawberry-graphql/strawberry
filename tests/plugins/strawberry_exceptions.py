@@ -9,6 +9,8 @@ import rich
 from _pytest.nodes import Item
 from pluggy._result import _Result
 
+from strawberry.exceptions import StrawberryException
+
 
 class StrawberryExceptionsPlugin:
     def __init__(self):
@@ -33,7 +35,8 @@ class StrawberryExceptionsPlugin:
         exception = raises_marker.args[0]
         match = raises_marker.kwargs.get("match", None)
 
-        # TODO: check if exception is a StrawberryException
+        if not issubclass(exception, StrawberryException):
+            pytest.fail(f"{exception} is not a StrawberryException")
 
         raised_exception = outcome.excinfo[1] if outcome.excinfo else None
 
@@ -42,25 +45,22 @@ class StrawberryExceptionsPlugin:
         outcome.force_result(None)
 
         if raised_exception is None:
-            failure_message = "Expected exception {}, but it did not raise".format(
-                exception
-            )
+            failure_message = f"Expected exception {exception}, but it did not raise"
 
             pytest.fail(failure_message, pytrace=False)
 
         if not isinstance(raised_exception, exception):
-            failure_message = "Expected exception {}, but raised {}".format(
-                exception, raised_exception
+            failure_message = (
+                f"Expected exception {exception}, but raised {raised_exception}"
             )
 
             pytest.fail(failure_message, pytrace=False)
 
         raised_message = str(raised_exception)
-        failure_message = None
 
         if match is not None and not re.match(match, raised_message):
-            failure_message = '"{}" does not match raised message "{}"'.format(
-                match, raised_message
+            failure_message = (
+                f'"{match}" does not match raised message "{raised_message}"'
             )
 
             pytest.fail(failure_message, pytrace=False)
