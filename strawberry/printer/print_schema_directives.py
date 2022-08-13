@@ -74,9 +74,9 @@ def print_schema_directive_params(
         value = values.get(name, arg.default_value)
         if value is UNSET:
             value = None
-        elif isinstance(arg.type, GraphQLScalarType):
-            ast = ast_from_scalar(_serialize_dataclasses(value), arg.type)
-            value = ast and f"{name}: {print_ast(ast)}"
+        # elif isinstance(arg.type, GraphQLScalarType):
+        #     ast = ast_from_scalar(_serialize_dataclasses(value), arg.type)
+        #     value = ast and f"{name}: {print_ast(ast)}"
         else:
             ast = ast_from_value(_serialize_dataclasses(value), arg.type)
             value = ast and f"{name}: {print_ast(ast)}"

@@ -5,10 +5,10 @@ from typing import List
 
 import strawberry
 from strawberry.federation.schema_directives import Key
+from strawberry.schema.config import StrawberryConfig
 
 
-def test_multiple_keys():
-    # also confirm that the "resolvable: True" works
+def test_keys():
     global Review
 
     @strawberry.federation.type
@@ -63,6 +63,52 @@ def test_multiple_keys():
         scalar _Any
 
         union _Entity = Product | Review
+
+        type _Service {
+          sdl: String!
+        }
+    """
+
+    assert schema.as_str() == textwrap.dedent(expected).strip()
+
+    del Review
+
+
+def test_keys_respects_camel_casing():
+    global Review
+
+    @strawberry.federation.type(keys=["the_upc"])
+    class Product:
+        the_upc: str
+
+    @strawberry.federation.type
+    class Query:
+        top_products: List[Product]
+
+    schema = strawberry.federation.Schema(
+        query=Query,
+        enable_federation_2=True,
+        config=StrawberryConfig(auto_camel_case=True),
+    )
+
+    expected = """
+        schema @link(url: "https://specs.apollo.dev/federation/v2.0", import: ["@key"]) {
+          query: Query
+        }
+
+        type Product @key(fields: "theUpc") {
+          theUpc: String!
+        }
+
+        type Query {
+          _service: _Service!
+          _entities(representations: [_Any!]!): [_Entity]!
+          topProducts: [Product!]!
+        }
+
+        scalar _Any
+
+        union _Entity = Product
 
         type _Service {
           sdl: String!

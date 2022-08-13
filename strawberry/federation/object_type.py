@@ -37,7 +37,6 @@ def _impl_type(
     )
 
     directives = list(directives)
-
     directives.extend(Key(key, UNSET) if isinstance(key, str) else key for key in keys)
 
     if shareable:
@@ -49,7 +48,7 @@ def _impl_type(
     if tags:
         directives.extend(Tag(tag) for tag in tags)
 
-    return base_type(
+    type_ = base_type(
         cls,
         name=name,
         description=description,
@@ -58,6 +57,13 @@ def _impl_type(
         is_input=is_input,
         is_interface=is_interface,
     )
+
+    # here we could check if the keys are fine or not
+    # we also need a way to connect them to the actual field for printing
+
+    # type_.check_directives() ???
+
+    return type_
 
 
 @overload
