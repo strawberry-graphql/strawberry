@@ -12,3 +12,7 @@ TEMPLATES = [
 ]
 
 DATABASES = {"default": {"ENGINE": "django.db.backends.sqlite3", "NAME": ":memory:"}}
+
+# This is for channels integration, but only one django settings can be used
+# per pytest_django settings
+CHANNEL_LAYERS = {"default": {"BACKEND": "channels.layers.InMemoryChannelLayer"}}

@@ -204,8 +204,8 @@ class GraphQLCoreConverter:
             locations=[
                 DirectiveLocation(loc.value) for loc in strawberry_directive.locations
             ],
-            is_repeatable=False,
             args=args,
+            is_repeatable=strawberry_directive.repeatable,
             description=strawberry_directive.description,
             extensions={
                 GraphQLCoreConverter.DEFINITION_BACKREF: strawberry_directive,
@@ -498,6 +498,8 @@ class GraphQLCoreConverter:
             await _check_permissions_async(_source, strawberry_info, kwargs)
 
             return await await_maybe(_get_result(_source, strawberry_info, **kwargs))
+
+        field.default_resolver = self.config.default_resolver  # type: ignore
 
         if field.is_async:
             _async_resolver._is_default = not field.base_resolver  # type: ignore

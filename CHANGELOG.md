@@ -1,6 +1,311 @@
 CHANGELOG
 =========
 
+0.125.0 - 2022-08-12
+--------------------
+
+This release adds an integration with Django Channels. The integration will
+allow you to use GraphQL subscriptions via Django Channels.
+
+Contributed by [Dan Sloan](https://github.com/LucidDan) via [PR #1407](https://github.com/strawberry-graphql/strawberry/pull/1407/)
+
+
+0.124.0 - 2022-08-08
+--------------------
+
+This release adds full support for Apollo Federation 2.0. To opt-in you need to
+pass `enable_federation_2=True` to `strawberry.federation.Schema`, like in the
+following example:
+
+```python
+@strawberry.federation.type(keys=["id"])
+class User:
+    id: strawberry.ID
+
+@strawberry.type
+class Query:
+    user: User
+
+schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+```
+
+This release also improves type checker support for the federation.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2047](https://github.com/strawberry-graphql/strawberry/pull/2047/)
+
+
+0.123.3 - 2022-08-02
+--------------------
+
+This release fixes a regression introduced in version 0.118.2 which was
+preventing using circular dependencies in Strawberry django and Strawberry
+django plus.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2062](https://github.com/strawberry-graphql/strawberry/pull/2062/)
+
+
+0.123.2 - 2022-08-01
+--------------------
+
+This release adds support for priting custom enums used only on
+schema directives, for example the following schema:
+
+```python
+@strawberry.enum
+class Reason(str, Enum):
+    EXAMPLE = "example"
+
+@strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
+class Sensitive:
+    reason: Reason
+
+@strawberry.type
+class Query:
+    first_name: str = strawberry.field(
+        directives=[Sensitive(reason=Reason.EXAMPLE)]
+    )
+```
+
+prints the following:
+
+```graphql
+directive @sensitive(reason: Reason!) on FIELD_DEFINITION
+
+type Query {
+    firstName: String! @sensitive(reason: EXAMPLE)
+}
+
+enum Reason {
+    EXAMPLE
+}
+```
+
+while previously it would omit the definition of the enum.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2059](https://github.com/strawberry-graphql/strawberry/pull/2059/)
+
+
+0.123.1 - 2022-08-01
+--------------------
+
+This release adds support for priting custom scalar used only on
+schema directives, for example the following schema:
+
+```python
+SensitiveConfiguration = strawberry.scalar(str, name="SensitiveConfiguration")
+
+@strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
+class Sensitive:
+    config: SensitiveConfiguration
+
+@strawberry.type
+class Query:
+    first_name: str = strawberry.field(directives=[Sensitive(config="Some config")])
+```
+
+prints the following:
+
+```graphql
+directive @sensitive(config: SensitiveConfiguration!) on FIELD_DEFINITION
+
+type Query {
+    firstName: String! @sensitive(config: "Some config")
+}
+
+scalar SensitiveConfiguration
+```
+
+while previously it would omit the definition of the scalar.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2058](https://github.com/strawberry-graphql/strawberry/pull/2058/)
+
+
+0.123.0 - 2022-08-01
+--------------------
+
+This PR adds support for adding schema directives to the schema of
+your GraphQL API. For printing the following schema:
+
+```python
+@strawberry.schema_directive(locations=[Location.SCHEMA])
+class Tag:
+    name: str
+
+@strawberry.type
+class Query:
+    first_name: str = strawberry.field(directives=[Tag(name="team-1")])
+
+schema = strawberry.Schema(query=Query, schema_directives=[Tag(name="team-1")])
+```
+
+will print the following:
+
+```graphql
+directive @tag(name: String!) on SCHEMA
+
+schema @tag(name: "team-1") {
+    query: Query
+}
+
+type Query {
+    firstName: String!
+}
+"""
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2054](https://github.com/strawberry-graphql/strawberry/pull/2054/)
+
+
+0.122.1 - 2022-07-31
+--------------------
+
+This release fixes that the AIOHTTP integration ignored the `operationName` of query
+operations. This behaviour is a regression introduced in version 0.107.0.
+
+Contributed by [Jonathan Ehwald](https://github.com/DoctorJohn) via [PR #2055](https://github.com/strawberry-graphql/strawberry/pull/2055/)
+
+
+0.122.0 - 2022-07-29
+--------------------
+
+This release adds support for printing default values for scalars like JSON.
+
+For example the following:
+
+```python
+import strawberry
+from strawberry.scalars import JSON
+
+
+@strawberry.input
+class MyInput:
+    j: JSON = strawberry.field(default_factory=dict)
+    j2: JSON = strawberry.field(default_factory=lambda: {"hello": "world"})
+```
+
+will print the following schema:
+
+```graphql
+input MyInput {
+    j: JSON! = {}
+    j2: JSON! = {hello: "world"}
+}
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2048](https://github.com/strawberry-graphql/strawberry/pull/2048/)
+
+
+0.121.1 - 2022-07-27
+--------------------
+
+This release adds a backward compatibility layer with libraries
+that specify a custom `get_result`.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2038](https://github.com/strawberry-graphql/strawberry/pull/2038/)
+
+
+0.121.0 - 2022-07-23
+--------------------
+
+This release adds support for overriding the default resolver for fields.
+
+Currently the default resolver is `getattr`, but now you can change it to any
+function you like, for example you can allow returning dictionaries:
+
+```python
+@strawberry.type
+class User:
+    name: str
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def user(self) -> User:
+        return {"name": "Patrick"}  # type: ignore
+
+schema = strawberry.Schema(
+    query=Query,
+    config=StrawberryConfig(default_resolver=getitem),
+)
+
+query = "{ user { name } }"
+
+result = schema.execute_sync(query)
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2037](https://github.com/strawberry-graphql/strawberry/pull/2037/)
+
+
+0.120.0 - 2022-07-23
+--------------------
+
+This release add a new `DatadogTracingExtension` that can be used to instrument
+your application with Datadog.
+
+```python
+import strawberry
+
+from strawberry.extensions.tracing import DatadogTracingExtension
+
+schema = strawberry.Schema(
+    Query,
+    extensions=[
+        DatadogTracingExtension,
+    ]
+)
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2001](https://github.com/strawberry-graphql/strawberry/pull/2001/)
+
+
+0.119.2 - 2022-07-23
+--------------------
+
+Fixed edge case where `Union` types raised an `UnallowedReturnTypeForUnion`
+error when returning the correct type from the resolver. This also improves
+performance of StrawberryUnion's `_resolve_union_type` from `O(n)` to `O(1)` in
+the majority of cases where `n` is the number of types in the schema.
+
+For
+[example the below](https://play.strawberry.rocks/?gist=f7d88898d127e65b12140fdd763f9ef2))
+would previously raise the error when querying `two` as `StrawberryUnion` would
+incorrectly determine that the resolver returns `Container[TypeOne]`.
+
+```python
+import strawberry
+from typing import TypeVar, Generic, Union, List, Type
+
+T = TypeVar("T")
+
+@strawberry.type
+class Container(Generic[T]):
+    items: List[T]
+
+@strawberry.type
+class TypeOne:
+    attr: str
+
+@strawberry.type
+class TypeTwo:
+    attr: str
+
+def resolver_one():
+    return Container(items=[TypeOne("one")])
+
+def resolver_two():
+    return Container(items=[TypeTwo("two")])
+
+@strawberry.type
+class Query:
+    one: Union[Container[TypeOne], TypeOne] = strawberry.field(resolver_one)
+    two: Union[Container[TypeTwo], TypeTwo] = strawberry.field(resolver_two)
+
+schema = strawberry.Schema(query=Query)
+```
+
+Contributed by [Tim OSullivan](https://github.com/invokermain) via [PR #2029](https://github.com/strawberry-graphql/strawberry/pull/2029/)
+
+
 0.119.1 - 2022-07-18
 --------------------
 

@@ -5,14 +5,21 @@ def test_can_import():
     from strawberry.extensions.tracing import (  # noqa
         ApolloTracingExtension,
         ApolloTracingExtensionSync,
+        DatadogTracingExtension,
+        DatadogTracingExtensionSync,
         OpenTelemetryExtension,
         OpenTelemetryExtensionSync,
         apollo,
+        datadog,
         opentelemetry,
     )
     from strawberry.extensions.tracing.apollo import (  # noqa
         ApolloTracingExtension,
         ApolloTracingExtensionSync,
+    )
+    from strawberry.extensions.tracing.datadog import (  # noqa
+        DatadogTracingExtension,
+        DatadogTracingExtensionSync,
     )
     from strawberry.extensions.tracing.opentelemetry import (  # noqa
         OpenTelemetryExtension,
