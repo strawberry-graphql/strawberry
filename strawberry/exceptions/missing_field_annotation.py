@@ -1,16 +1,32 @@
-from typing import Optional
-
-from rich.box import SIMPLE
-from rich.console import Group, RenderableType
-from rich.panel import Panel
+from typing import TYPE_CHECKING, Optional
 
 from .exception import StrawberryException
+
+
+if TYPE_CHECKING:
+    from rich.console import RenderableType
 
 
 class MissingFieldAnnotationError(StrawberryException):
     documentation_url = "https://errors.strawberry.rocks/missing-field-annotation"
 
-    def __rich__(self) -> Optional[RenderableType]:
+    def __init__(self, field_name: str, cls: type = None):
+        self.cls = cls
+        self.field_name = field_name
+
+        message = (
+            f'Unable to determine the type of field "{field_name}". Either '
+            f"annotate it directly, or provide a typed resolver using "
+            f"@strawberry.field."
+        )
+
+        super().__init__(message, cls)
+
+    def __rich__(self) -> Optional["RenderableType"]:
+        from rich.box import SIMPLE
+        from rich.console import Group
+        from rich.panel import Panel
+
         if not self.exception_source:
             return None
 
@@ -59,15 +75,3 @@ class MissingFieldAnnotationError(StrawberryException):
             Group(*content),  # type: ignore
             box=SIMPLE,
         )
-
-    def __init__(self, field_name: str, cls: type = None):
-        self.cls = cls
-        self.field_name = field_name
-
-        message = (
-            f'Unable to determine the type of field "{field_name}". Either '
-            f"annotate it directly, or provide a typed resolver using "
-            f"@strawberry.field."
-        )
-
-        super().__init__(message, cls)

@@ -12,6 +12,7 @@ from strawberry.type import StrawberryType
 
 from .exception import StrawberryException
 from .missing_field_annotation import MissingFieldAnnotationError  # noqa
+from .missing_return_annotation import MissingReturnAnnotationError
 
 
 class ObjectIsNotAnEnumError(StrawberryException):
@@ -49,18 +50,6 @@ class ObjectIsNotClassError(StrawberryException):
     @classmethod
     def type(cls, obj: object) -> ObjectIsNotClassError:
         return cls(obj, cls.MethodType.TYPE)
-
-
-class MissingReturnAnnotationError(StrawberryException):
-    """The field is missing the return annotation"""
-
-    def __init__(self, field_name: str):
-        message = (
-            f'Return annotation missing for field "{field_name}", '
-            "did you forget to add it?"
-        )
-
-        super().__init__(message)
 
 
 class MissingArgumentsAnnotationsError(StrawberryException):
