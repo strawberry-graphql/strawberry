@@ -142,13 +142,45 @@ def test_raises_error_when_argument_annotation_missing():
 @pytest.mark.raises_strawberry_exception(
     MissingArgumentsAnnotationsError,
     match=(
-        'Missing annotation for arguments "limit" and "query" '
-        'in field "hello2", did you forget to add it?'
+        'Missing annotation for arguments "query" and "limit" '
+        'in field "hello", did you forget to add it?'
     ),
 )
-def test_raises_error_when_argument_annotation_missing_resolver():
+def test_raises_error_when_argument_annotation_missing_multiple_fields():
     @strawberry.field
-    def hello2(self, query, limit) -> str:
+    def hello(self, query, limit) -> str:
+        return "I'm a resolver"
+
+
+@pytest.mark.raises_strawberry_exception(
+    MissingArgumentsAnnotationsError,
+    match=(
+        'Missing annotation for argument "query" '
+        'in field "hello", did you forget to add it?'
+    ),
+)
+def test_raises_error_when_argument_annotation_missing_multiple_lines():
+    @strawberry.field
+    def hello(
+        self,
+        query,
+    ) -> str:
+        return "I'm a resolver"
+
+
+@pytest.mark.raises_strawberry_exception(
+    MissingArgumentsAnnotationsError,
+    match=(
+        'Missing annotation for argument "query" '
+        'in field "hello", did you forget to add it?'
+    ),
+)
+def test_raises_error_when_argument_annotation_missing_default_value():
+    @strawberry.field
+    def hello(
+        self,
+        query="this is a default value",
+    ) -> str:
         return "I'm a resolver"
 
 

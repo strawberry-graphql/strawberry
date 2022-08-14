@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import sys
 from enum import Enum
-from typing import List, Set, Union
+from typing import Set, Union
 
 import rich
 
@@ -11,6 +11,7 @@ from graphql import GraphQLInputObjectType, GraphQLObjectType
 from strawberry.type import StrawberryType
 
 from .exception import StrawberryException
+from .missing_arguments_annotations import MissingArgumentsAnnotationsError
 from .missing_field_annotation import MissingFieldAnnotationError  # noqa
 from .missing_return_annotation import MissingReturnAnnotationError
 
@@ -50,26 +51,6 @@ class ObjectIsNotClassError(StrawberryException):
     @classmethod
     def type(cls, obj: object) -> ObjectIsNotClassError:
         return cls(obj, cls.MethodType.TYPE)
-
-
-class MissingArgumentsAnnotationsError(StrawberryException):
-    """The field is missing the annotation for one or more arguments"""
-
-    def __init__(self, field_name: str, arguments: Set[str]):
-        arguments_list: List[str] = sorted(list(arguments))
-
-        if len(arguments_list) == 1:
-            argument = f'argument "{arguments_list[0]}"'
-        else:
-            head = ", ".join(arguments_list[:-1])
-            argument = f'arguments "{head}" and "{arguments_list[-1]}"'
-
-        message = (
-            f"Missing annotation for {argument} "
-            f'in field "{field_name}", did you forget to add it?'
-        )
-
-        super().__init__(message)
 
 
 class WrongReturnTypeForUnion(StrawberryException):

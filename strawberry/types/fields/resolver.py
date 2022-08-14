@@ -198,13 +198,14 @@ class StrawberryResolver(Generic[T]):
         parameters = self.signature.parameters.values()
         reserved_parameters = set(self.reserved_parameters.values())
 
-        missing_annotations = set()
+        missing_annotations = []
         arguments = []
         user_parameters = (p for p in parameters if p not in reserved_parameters)
+
         for param in user_parameters:
             annotation = self._resolved_annotations.get(param, param.annotation)
             if annotation is inspect.Signature.empty:
-                missing_annotations.add(param.name)
+                missing_annotations.append(param.name)
             else:
                 argument = StrawberryArgument(
                     python_name=param.name,
@@ -216,7 +217,7 @@ class StrawberryResolver(Generic[T]):
                 )
                 arguments.append(argument)
         if missing_annotations:
-            raise MissingArgumentsAnnotationsError(self.name, missing_annotations)
+            raise MissingArgumentsAnnotationsError(self, missing_annotations)
         return arguments
 
     @cached_property
