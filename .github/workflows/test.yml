@@ -41,10 +41,13 @@ jobs:
 
       - name: pytest
         run:
-          poetry run pytest --cov-report xml --cov=. --showlocals -vv -m "not
+          poetry run coverage run -m pytest --showlocals -vv -m "not
           starlette" -m "not django" --ignore=tests/mypy --ignore=tests/pyright
 
-      - uses: codecov/codecov-action@v1
+      - name: coverage xml
+        run: poetry run coverage xml -i
+        if: ${{ always() }}
+      - uses: codecov/codecov-action@v3
         if: ${{ always() }}
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -72,10 +75,13 @@ jobs:
 
       - name: pytest
         run:
-          poetry run pytest --cov-report xml --cov=. --showlocals -vv -m "not
+          poetry run coverage run -m pytest --showlocals -vv -m "not
           django" --ignore=tests/mypy --ignore=tests/pyright
 
-      - uses: codecov/codecov-action@v1
+      - name: coverage xml
+        run: poetry run coverage xml -i
+        if: ${{ always() }}
+      - uses: codecov/codecov-action@v3
         if: ${{ always() }}
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -108,9 +114,12 @@ jobs:
 
       - name: pytest
         run:
-          poetry run pytest --cov-report xml --cov=. --showlocals -vv -m django
+          poetry run coverage run -m pytest --showlocals -vv -m django
 
-      - uses: codecov/codecov-action@v1
+      - name: coverage xml
+        run: poetry run coverage xml -i
+        if: ${{ always() }}
+      - uses: codecov/codecov-action@v3
         if: ${{ always() }}
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
@@ -143,10 +152,13 @@ jobs:
 
       - name: pytest
         run:
-          poetry run pytest --cov-report xml --cov=. --showlocals -vv -m
+          poetry run coverage run -m pytest --showlocals -vv -m
           starlette
 
-      - uses: codecov/codecov-action@v1
+      - name: coverage xml
+        run: poetry run coverage xml -i
+        if: ${{ always() }}
+      - uses: codecov/codecov-action@v3
         if: ${{ always() }}
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
