@@ -4,8 +4,6 @@ import sys
 from enum import Enum
 from typing import Set, Union
 
-import rich
-
 from graphql import GraphQLInputObjectType, GraphQLObjectType
 
 from strawberry.type import StrawberryType
@@ -210,6 +208,8 @@ class InvalidCustomContext(StrawberryException):
 
 
 def exception_handler(exception_type, exception, traceback):
+    import rich
+
     if isinstance(exception, StrawberryException):
         rich.print(exception)
     else:

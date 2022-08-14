@@ -3,13 +3,17 @@ import inspect
 import textwrap
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, Dict, NamedTuple, Optional, Union
 
 from backports.cached_property import cached_property
-from rich.console import RenderableType
 
-from .syntax import Syntax
 from .utils.getsource import getsourcelines
+
+
+if TYPE_CHECKING:
+    from rich.console import RenderableType
+
+    from .syntax import Syntax
 
 
 class NodeSource(NamedTuple):
@@ -91,7 +95,7 @@ class StrawberryException(Exception):
 
         super().__init__(message)
 
-    def __rich__(self) -> Optional[RenderableType]:
+    def __rich__(self) -> Optional["RenderableType"]:
         return self.message
 
     @cached_property
@@ -112,7 +116,9 @@ class StrawberryException(Exception):
 
     def highlight_code(
         self, error_line: int, line_annotations: Dict[int, str]
-    ) -> Syntax:
+    ) -> "Syntax":
+        from .syntax import Syntax
+
         assert self.exception_source is not None
 
         return Syntax(
