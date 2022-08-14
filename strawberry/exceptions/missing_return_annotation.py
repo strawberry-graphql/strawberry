@@ -36,7 +36,7 @@ class MissingReturnAnnotationError(StrawberryException):
 
         resolver = self.resolver.wrapped_func
 
-        source_file = inspect.getsourcefile(resolver)
+        source_file = inspect.getsourcefile(resolver)  # type: ignore
 
         if source_file is None:
             return None
