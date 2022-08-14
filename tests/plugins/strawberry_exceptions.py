@@ -65,7 +65,7 @@ class StrawberryExceptionsPlugin:
 
             pytest.fail(failure_message, pytrace=False)
 
-        self._info[exception.__class__.__name__].append(raised_exception)
+        self._info[exception.__name__].append(raised_exception)
 
     def pytest_sessionfinish(self):
         markdown = ""
