@@ -183,10 +183,6 @@ def test_raises_error_when_missing_type():
         missing = dataclasses.field()
 
 
-@pytest.mark.raises_strawberry_exception(
-    UncallableResolverError,
-    match=("Attempted to call resolver (.*) with uncallable function (.*)"),
-)
 def test_raises_error_calling_uncallable_resolver():
     @classmethod  # type: ignore
     def class_func(cls) -> int:
@@ -196,7 +192,11 @@ def test_raises_error_calling_uncallable_resolver():
     # to a class at this point
     resolver = StrawberryResolver(class_func)
 
-    resolver()
+    with pytest.raises(
+        UncallableResolverError,
+        match="Attempted to call resolver (.*) with uncallable function (.*)",
+    ):
+        resolver()
 
 
 def test_can_reuse_resolver():
