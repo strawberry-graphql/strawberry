@@ -32,7 +32,7 @@ Make sure you have read the following Channels documentation:
 
 If you have read the Channels documentation, You should know by now that:
 
-1. ASGI application is a callable function that can handle multiple send / receive operations
+1. ASGI application is a callable that can handle multiple send / receive operations
    without the need of a new application instance.
 2. Channels is all about making ASGI applications instances
    (whether in another processes or in another machine)
@@ -354,7 +354,7 @@ from strawberry.subscriptions.protocols.graphql_ws import (
     GQL_START,
 )
 
-from tserver.tzv5hob.schemas import schema
+from mysite.graphql import schema
 
 
 class DebuggableGraphQLWSConsumer(GraphQLWSConsumer):
@@ -429,7 +429,7 @@ This example is based on the extended `ChannelsLiveServerTestCase` class from ch
 
 </Note>
 
-Add this test in your class:
+Add this test in your `ChannelsLiveServerTestCase` extended class:
 
 ```python
 from gql import Client, gql
