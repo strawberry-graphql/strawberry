@@ -9,6 +9,7 @@ from backports.cached_property import cached_property
 from rich.console import RenderableType
 
 from .syntax import Syntax
+from .utils.getsource import getsourcelines
 
 
 class NodeSource(NamedTuple):
@@ -69,13 +70,16 @@ class ExceptionSource:
 
     @staticmethod
     def is_attribute(expr: Union[ast.Expr, ast.stmt], of_name: str) -> bool:
-        if not isinstance(expr, ast.Assign):
-            return False
+        if isinstance(expr, ast.Assign):
+            return any(
+                isinstance(target, ast.Name) and target.id == of_name
+                for target in expr.targets
+            )
 
-        return any(
-            isinstance(target, ast.Name) and target.id == of_name
-            for target in expr.targets
-        )
+        if isinstance(expr, ast.AnnAssign):
+            return isinstance(expr.target, ast.Name) and expr.target.id == of_name
+
+        return False
 
 
 class StrawberryException(Exception):
@@ -100,7 +104,7 @@ class StrawberryException(Exception):
         if source_file is None:
             return None
 
-        source_lines, line = inspect.getsourcelines(self.cls)
+        source_lines, line = getsourcelines(self.cls)
 
         return ExceptionSource(
             path=Path(source_file), code="".join(source_lines), line=line
