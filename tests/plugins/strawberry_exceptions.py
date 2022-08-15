@@ -79,36 +79,38 @@ class StrawberryExceptionsPlugin:
 
             pytest.fail(failure_message, pytrace=False)
 
-        self._info[exception.__name__].append(raised_exception)
+        self._collect_exception(raised_exception)
+
+    def _collect_exception(self, raised_exception: Exception) -> None:
+        console = rich.console.Console(record=True)
+
+        with suppress_output(self.verbosity_level):
+            console.print(raised_exception)
+
+        exception_text = console.export_text()
+
+        if exception_text.strip() == "None":
+            text = "No exception raised\n"
+        else:
+            text = f"\n\n``````\n{exception_text}\n``````\n\n"
+
+        self._info[raised_exception.__class__.__name__].append(text)
 
     def pytest_sessionfinish(self):
+        summary_path = os.environ.get("GITHUB_STEP_SUMMARY", None)
+
+        if not summary_path:
+            return
+
         markdown = ""
 
         for test, info in self._info.items():
             markdown += f"# {test}\n"
 
-            for exception in info:
+            markdown += "\n".join(info)
 
-                if exception is None:
-                    markdown += "No exception raised\n"
-                else:
-                    console = rich.console.Console(record=True)
-
-                    with suppress_output(self.verbosity_level):
-                        console.print(exception)
-
-                    exception_text = console.export_text()
-
-                    if exception_text.strip() == "None":
-                        markdown += "No exception raised\n"
-                    else:
-                        markdown += f"\n\n``````\n{exception_text}\n``````\n\n"
-
-        summary_path = os.environ.get("GITHUB_STEP_SUMMARY", None)
-
-        if summary_path:
-            with open(summary_path, "w") as f:
-                f.write(markdown)
+        with open(summary_path, "w") as f:
+            f.write(markdown)
 
 
 def pytest_configure(config):
