@@ -2,7 +2,7 @@ import contextlib
 import os
 import re
 from collections import defaultdict
-from typing import Generator
+from typing import DefaultDict, Generator
 
 import pytest
 
@@ -27,7 +27,7 @@ def suppress_output(verbosity_level: int = 0) -> Generator[None, None, None]:
 
 class StrawberryExceptionsPlugin:
     def __init__(self, verbosity_level: int) -> None:
-        self._info = defaultdict(list)
+        self._info: DefaultDict[str, list] = defaultdict(list)
         self.verbosity_level = verbosity_level
 
     @pytest.hookimpl(hookwrapper=True)
