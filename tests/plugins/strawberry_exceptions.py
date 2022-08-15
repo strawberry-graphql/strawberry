@@ -6,6 +6,7 @@ from typing import Generator
 import pytest
 
 import rich
+import rich.console
 from _pytest.nodes import Item
 from pluggy._result import _Result
 
