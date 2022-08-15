@@ -16,13 +16,14 @@ from strawberry.exceptions import StrawberryException
 
 @contextlib.contextmanager
 def suppress_output(verbosity_level: int = 0) -> Generator[None, None, None]:
-    if verbosity_level == 0:
-        with open(os.devnull, "w") as devnull:
-            with contextlib.redirect_stdout(devnull):
-                yield
-        return
-    else:
+    if verbosity_level >= 2:
         yield
+
+        return
+
+    with open(os.devnull, "w") as devnull:
+        with contextlib.redirect_stdout(devnull):
+            yield
 
 
 class StrawberryExceptionsPlugin:
