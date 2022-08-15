@@ -1,3 +1,4 @@
+import contextlib
 import os
 import re
 from collections import defaultdict
@@ -13,9 +14,21 @@ from pluggy._result import _Result
 from strawberry.exceptions import StrawberryException
 
 
+@contextlib.contextmanager
+def suppress_output(verbosity_level: int = 0) -> Generator[None, None, None]:
+    if verbosity_level == 0:
+        with open(os.devnull, "w") as devnull:
+            with contextlib.redirect_stdout(devnull):
+                yield
+        return
+    else:
+        yield
+
+
 class StrawberryExceptionsPlugin:
-    def __init__(self):
+    def __init__(self, verbosity_level: int) -> None:
         self._info = defaultdict(list)
+        self.verbosity_level = verbosity_level
 
     @pytest.hookimpl(hookwrapper=True)
     def pytest_runtest_call(self, item: Item) -> Generator[None, _Result, None]:
@@ -80,8 +93,9 @@ class StrawberryExceptionsPlugin:
                     markdown += "No exception raised\n"
                 else:
                     console = rich.console.Console(record=True)
-                    # TODO: only print to user's console when enabled via a flag
-                    console.print(exception)
+
+                    with suppress_output(self.verbosity_level):
+                        console.print(exception)
 
                     exception_text = console.export_text()
 
@@ -98,7 +112,10 @@ class StrawberryExceptionsPlugin:
 
 
 def pytest_configure(config):
-    config.pluginmanager.register(StrawberryExceptionsPlugin(), "strawberry_exceptions")
+    config.pluginmanager.register(
+        StrawberryExceptionsPlugin(verbosity_level=config.getoption("verbose")),
+        "strawberry_exceptions",
+    )
 
     config.addinivalue_line(
         "markers",
