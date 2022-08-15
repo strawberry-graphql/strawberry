@@ -99,7 +99,7 @@ class StrawberryExceptionsPlugin:
 
                     exception_text = console.export_text()
 
-                    if "None" in str(exception_text):
+                    if exception_text.strip() == "None":
                         markdown += "No exception raised\n"
                     else:
                         markdown += f"\n\n``````\n{exception_text}\n``````\n\n"

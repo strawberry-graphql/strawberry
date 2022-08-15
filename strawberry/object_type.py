@@ -80,7 +80,7 @@ def _check_field_annotations(cls: Type):
         # dataclasses.field
         if field_name not in cls_annotations:
             # Field object exists but did not get an annotation
-            raise MissingFieldAnnotationError(field_name)
+            raise MissingFieldAnnotationError(field_name, cls)
 
 
 def _wrap_dataclass(cls: Type):
