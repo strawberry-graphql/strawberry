@@ -1,7 +1,9 @@
 from collections import defaultdict
 from copy import copy
 from itertools import chain
-from typing import Any, Union, cast
+from typing import Any, List, Union, cast
+
+from backports.cached_property import cached_property
 
 from graphql import (
     GraphQLField,
@@ -26,28 +28,6 @@ from ..printer import print_schema
 from ..schema import Schema as BaseSchema
 
 
-def _find_directives(schema):
-    all_graphql_types = schema._schema.type_map.values()
-
-    directives = []
-
-    for type_ in all_graphql_types:
-        strawberry_definition = type_.extensions.get("strawberry-definition")
-
-        if not strawberry_definition:
-            continue
-
-        directives.extend(strawberry_definition.directives)
-
-        fields = getattr(strawberry_definition, "fields", [])
-        values = getattr(strawberry_definition, "values", [])
-
-        for field in chain(fields, values):
-            directives.extend(field.directives)
-
-    return directives
-
-
 class Schema(BaseSchema):
     def __init__(self, *args, **kwargs):
         additional_types = list(kwargs.pop("types", []))
@@ -63,6 +43,8 @@ class Schema(BaseSchema):
 
         if enable_federation_2:
             self._add_link_directives()
+        else:
+            self._remove_resolvable_field()
 
     def entities_resolver(self, root, info, representations):
         results = []
@@ -89,14 +71,44 @@ class Schema(BaseSchema):
 
         self._schema.type_map["_Any"] = self.Any
 
+    def _remove_resolvable_field(self) -> None:
+        # this might be removed when we remove support for federation 1
+        # or when we improve how we print the directives
+        from ..unset import UNSET
+        from .schema_directives import Key
+
+        for directive in self.schema_directives_in_use:
+            if isinstance(directive, Key):
+                directive.resolvable = UNSET
+
+    @cached_property
+    def schema_directives_in_use(self) -> List[object]:
+        all_graphql_types = self._schema.type_map.values()
+
+        directives = []
+
+        for type_ in all_graphql_types:
+            strawberry_definition = type_.extensions.get("strawberry-definition")
+
+            if not strawberry_definition:
+                continue
+
+            directives.extend(strawberry_definition.directives)
+
+            fields = getattr(strawberry_definition, "fields", [])
+            values = getattr(strawberry_definition, "values", [])
+
+            for field in chain(fields, values):
+                directives.extend(field.directives)
+
+        return directives
+
     def _add_link_directives(self):
         from .schema_directives import FederationDirective, Link
 
-        all_directives = _find_directives(self)
-
         directive_by_url = defaultdict(set)
 
-        for directive in all_directives:
+        for directive in self.schema_directives_in_use:
             if isinstance(directive, FederationDirective):
                 directive_by_url[directive.imported_from.url].add(
                     f"@{directive.imported_from.name}"
