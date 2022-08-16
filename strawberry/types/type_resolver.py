@@ -82,7 +82,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
         if isinstance(field, StrawberryField):
             # Check that the field type is not Private
             if is_private(field.type):
-                raise PrivateStrawberryFieldError(field.python_name, cls.__name__)
+                raise PrivateStrawberryFieldError(field.python_name, cls)
 
             # Check that default is not set if a resolver is defined
             if (

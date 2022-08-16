@@ -10,8 +10,9 @@ from strawberry.type import StrawberryType
 
 from .exception import StrawberryException
 from .missing_arguments_annotations import MissingArgumentsAnnotationsError
-from .missing_field_annotation import MissingFieldAnnotationError  # noqa
+from .missing_field_annotation import MissingFieldAnnotationError
 from .missing_return_annotation import MissingReturnAnnotationError
+from .private_strawberry_field import PrivateStrawberryFieldError
 
 
 class ObjectIsNotAnEnumError(StrawberryException):
@@ -113,16 +114,6 @@ class UnresolvedFieldTypeError(StrawberryException):
             f"Could not resolve the type of '{field_name}'. Check that the class is "
             "accessible from the global module scope."
         )
-        super().__init__(message)
-
-
-class PrivateStrawberryFieldError(StrawberryException):
-    def __init__(self, field_name: str, type_name: str):
-        message = (
-            f"Field {field_name} on type {type_name} cannot be both "
-            "private and a strawberry.field"
-        )
-
         super().__init__(message)
 
 

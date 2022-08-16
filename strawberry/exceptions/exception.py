@@ -169,6 +169,9 @@ class StrawberryException(Exception):
             self.__rich_footer__,
         )
 
+        if all(x == "" for x in content):
+            return self.message
+
         return Panel.fit(
             Group(*content),
             box=SIMPLE,

@@ -29,15 +29,15 @@ def test_private_field():
     assert instance.age == 22
 
 
+@pytest.mark.raises_strawberry_exception(
+    PrivateStrawberryFieldError,
+    match=("Field age on type Query cannot be both private and a strawberry.field"),
+)
 def test_private_field_with_strawberry_field_error():
-    with pytest.raises(PrivateStrawberryFieldError) as error:
-
-        @strawberry.type
-        class Query:
-            name: str
-            age: strawberry.Private[int] = strawberry.field(description="🤫")
-
-    assert "Field age on type Query" in str(error)
+    @strawberry.type
+    class Query:
+        name: str
+        age: strawberry.Private[int] = strawberry.field(description="🤫")
 
 
 def test_private_field_access_in_resolver():
