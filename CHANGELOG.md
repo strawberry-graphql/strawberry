@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.125.1 - 2022-08-16
+--------------------
+
+This release hides `resolvable: True` in @keys directives
+when using Apollo Federation 1, to preserve compatibility
+with older Gateways.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2099](https://github.com/strawberry-graphql/strawberry/pull/2099/)
+
+
 0.125.0 - 2022-08-12
 --------------------
 
