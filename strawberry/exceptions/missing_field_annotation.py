@@ -1,16 +1,18 @@
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING, Optional, Type
 
-from .exception import StrawberryException
+from backports.cached_property import cached_property
+
+from .exception import ExceptionSourceIsClass, NodeSource, StrawberryException
 
 
 if TYPE_CHECKING:
     from rich.console import RenderableType
 
 
-class MissingFieldAnnotationError(StrawberryException):
+class MissingFieldAnnotationError(ExceptionSourceIsClass, StrawberryException):
     documentation_url = "https://errors.strawberry.rocks/missing-field-annotation"
 
-    def __init__(self, field_name: str, cls: type = None):
+    def __init__(self, field_name: str, cls: Type):
         self.cls = cls
         self.field_name = field_name
 
@@ -20,58 +22,55 @@ class MissingFieldAnnotationError(StrawberryException):
             f"@strawberry.field."
         )
 
-        super().__init__(message, cls)
+        super().__init__(message)
 
-    def __rich__(self) -> Optional["RenderableType"]:
-        from rich.box import SIMPLE
-        from rich.console import Group
-        from rich.panel import Panel
+    @cached_property
+    def attribute_source(self) -> Optional[NodeSource]:
+        if self.exception_source:
+            return self.exception_source.find_class_attribute(self.field_name)
 
-        if not self.exception_source:
-            return None
+        return None
 
-        attribute_source = self.exception_source.find_class_attribute(self.field_name)
+    @property
+    def __rich_body__(self) -> "RenderableType":
+        assert self.exception_source
+        assert self.attribute_source
 
-        if attribute_source is None:
-            return None
+        error_line = self.exception_source.line + self.attribute_source.line - 1
 
-        source_file = self.exception_source.path
-        relative_path = self.exception_source.path_relative_to_cwd
-        error_line = self.exception_source.line + attribute_source.line - 1
-
-        prefix = " " * (attribute_source.column + self.exception_source.code_padding)
+        prefix = " " * (
+            self.attribute_source.column + self.exception_source.code_padding
+        )
         caret = "^" * len(self.field_name)
 
         message = f"{prefix}[bold]{caret}[/] field missing annotation"
 
         line_annotations = {error_line: message}
 
-        code = self.highlight_code(
+        return self.highlight_code(
             error_line=error_line, line_annotations=line_annotations
         )
 
-        header = (
+    @property
+    def __rich_header__(self) -> str:
+        assert self.exception_source is not None
+        assert self.attribute_source is not None
+
+        source_file = self.exception_source.path
+        relative_path = self.exception_source.path_relative_to_cwd
+        error_line = self.exception_source.line + self.attribute_source.line - 1
+
+        return (
             f"[bold red]Missing annotation for field `[underline]{self.field_name}[/]` "
             f"in [white][link=file://{source_file}]{relative_path}:{error_line}"
         )
 
-        footer = (
+    @property
+    def __rich_footer__(self) -> str:
+        return (
             "To fix this error you can add an annotation, "
             f"like so [italic]`{self.field_name}: str`"
             "\n\n"
             "Read more about this error on [bold underline]"
             f"[link={self.documentation_url}]{self.documentation_url}"
-        )
-
-        content = (
-            header,
-            "",
-            code,
-            "",
-            *footer.splitlines(),
-        )
-
-        return Panel.fit(
-            Group(*content),  # type: ignore
-            box=SIMPLE,
         )

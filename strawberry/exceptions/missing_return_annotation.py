@@ -47,13 +47,28 @@ class MissingReturnAnnotationError(StrawberryException):
             path=Path(source_file), code="".join(source_lines), line=line
         )
 
-    def __rich__(self) -> Optional["RenderableType"]:
-        from rich.box import SIMPLE
-        from rich.console import Group
-        from rich.panel import Panel
+    @property
+    def __rich_header__(self) -> "RenderableType":
+        assert self.exception_source
 
-        if not self.exception_source:
-            return None
+        lines = self.exception_source.code.splitlines()
+        resolver_line = next(
+            line for line in lines if f"def {self.resolver.name}" in line
+        )
+
+        source_file = self.exception_source.path
+        relative_path = self.exception_source.path_relative_to_cwd
+        error_line = self.exception_source.line + lines.index(resolver_line)
+
+        return (
+            "[bold red]Missing annotation for field "
+            f"`[underline]{self.resolver.name}[/]` "
+            f"in [white][link=file://{source_file}]{relative_path}:{error_line}"
+        )
+
+    @property
+    def __rich_body__(self) -> "RenderableType":
+        assert self.exception_source
 
         lines = self.exception_source.code.splitlines()
         resolver_line = next(
@@ -62,8 +77,6 @@ class MissingReturnAnnotationError(StrawberryException):
 
         column = sum(1 for _ in itertools.takewhile(str.isspace, resolver_line))
 
-        source_file = self.exception_source.path
-        relative_path = self.exception_source.path_relative_to_cwd
         error_line = self.exception_source.line + lines.index(resolver_line)
 
         prefix = " " * (column + len("def "))
@@ -73,33 +86,16 @@ class MissingReturnAnnotationError(StrawberryException):
 
         line_annotations = {error_line: message}
 
-        code = self.highlight_code(
+        return self.highlight_code(
             error_line=error_line, line_annotations=line_annotations
         )
 
-        header = (
-            "[bold red]Missing annotation for field "
-            f"`[underline]{self.resolver.name}[/]` "
-            f"in [white][link=file://{source_file}]{relative_path}:{error_line}"
-        )
-
-        footer = (
+    @property
+    def __rich_footer__(self) -> "RenderableType":
+        return (
             "To fix this error you can add an annotation, "
             f"like so [italic]`def {self.resolver.name} -> str:`"
             "\n\n"
             "Read more about this error on [bold underline]"
             f"[link={self.documentation_url}]{self.documentation_url}"
-        )
-
-        content = (
-            header,
-            "",
-            code,
-            "",
-            *footer.splitlines(),
-        )
-
-        return Panel.fit(
-            Group(*content),  # type: ignore
-            box=SIMPLE,
         )

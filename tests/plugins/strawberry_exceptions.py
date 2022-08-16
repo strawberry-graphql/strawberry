@@ -64,6 +64,8 @@ class StrawberryExceptionsPlugin:
 
             pytest.fail(failure_message, pytrace=False)
 
+        self._collect_exception(raised_exception)
+
         if not isinstance(raised_exception, exception):
             failure_message = (
                 f"Expected exception {exception}, but raised {raised_exception}"
@@ -78,9 +80,10 @@ class StrawberryExceptionsPlugin:
                 f'"{match}" does not match raised message "{raised_message}"'
             )
 
-            pytest.fail(failure_message, pytrace=False)
+            if self.verbosity_level >= 1:
+                print("Exception", exception)
 
-        self._collect_exception(raised_exception)
+            pytest.fail(failure_message, pytrace=False)
 
     def _collect_exception(self, raised_exception: Exception) -> None:
         console = rich.console.Console(record=True)

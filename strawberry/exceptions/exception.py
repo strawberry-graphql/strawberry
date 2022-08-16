@@ -3,7 +3,7 @@ import inspect
 import textwrap
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, NamedTuple, Optional, Union
+from typing import TYPE_CHECKING, ClassVar, Dict, NamedTuple, Optional, Type, Union
 
 from backports.cached_property import cached_property
 
@@ -12,6 +12,8 @@ from .utils.getsource import getsourcelines
 
 if TYPE_CHECKING:
     from rich.console import RenderableType
+
+    from strawberry.types.fields.resolver import StrawberryResolver
 
     from .syntax import Syntax
 
@@ -86,17 +88,8 @@ class ExceptionSource:
         return False
 
 
-class StrawberryException(Exception):
-    cls: Optional[type] = None
-
-    def __init__(self, message: str, cls: Optional[type] = None) -> None:
-        self.cls = cls
-        self.message = message
-
-        super().__init__(message)
-
-    def __rich__(self) -> Optional["RenderableType"]:
-        return self.message
+class ExceptionSourceIsClass:
+    cls: Type
 
     @cached_property
     def exception_source(self) -> Optional[ExceptionSource]:
@@ -114,6 +107,69 @@ class StrawberryException(Exception):
             path=Path(source_file), code="".join(source_lines), line=line
         )
 
+
+class ExceptionSourceIsResolver:
+    resolver: "StrawberryResolver"
+
+    @cached_property
+    def exception_source(self) -> Optional[ExceptionSource]:
+        if self.resolver is None:
+            return None
+
+        resolver = self.resolver.wrapped_func
+
+        source_file = inspect.getsourcefile(resolver)  # type: ignore
+
+        if source_file is None:
+            return None
+
+        source_lines, line = getsourcelines(resolver)
+
+        return ExceptionSource(
+            path=Path(source_file), code="".join(source_lines), line=line
+        )
+
+
+class StrawberryException(Exception):
+    message: str
+    documentation_url: ClassVar[str]
+
+    def __init__(self, message: str) -> None:
+        self.message = message
+
+    def __str__(self) -> str:
+        return self.message
+
+    @property
+    def __rich_header__(self) -> "RenderableType":
+        return ""
+
+    @property
+    def __rich_body__(self) -> "RenderableType":
+        return ""
+
+    @property
+    def __rich_footer__(self) -> "RenderableType":
+        return ""
+
+    def __rich__(self) -> Optional["RenderableType"]:
+        from rich.box import SIMPLE
+        from rich.console import Group
+        from rich.panel import Panel
+
+        content = (
+            self.__rich_header__,
+            "",
+            self.__rich_body__,
+            "",
+            self.__rich_footer__,
+        )
+
+        return Panel.fit(
+            Group(*content),
+            box=SIMPLE,
+        )
+
     def highlight_code(
         self, error_line: int, line_annotations: Dict[int, str]
     ) -> "Syntax":
@@ -123,7 +179,6 @@ class StrawberryException(Exception):
 
         return Syntax(
             code=self.exception_source.code,
-            # TODO: relative to exception source line
             highlight_lines={error_line},
             line_offset=self.exception_source.line - 1,
             line_annotations=line_annotations,
