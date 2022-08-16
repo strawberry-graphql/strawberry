@@ -140,6 +140,10 @@ class StrawberryException(Exception):
     def __str__(self) -> str:
         return self.message
 
+    @cached_property
+    def exception_source(self) -> Optional[ExceptionSource]:
+        return None
+
     @property
     def __rich_header__(self) -> "RenderableType":
         return ""
