@@ -2,7 +2,7 @@ import contextlib
 import os
 import re
 from collections import defaultdict
-from typing import DefaultDict, Generator
+from typing import DefaultDict, Generator, Tuple
 
 import pytest
 
@@ -28,7 +28,7 @@ def suppress_output(verbosity_level: int = 0) -> Generator[None, None, None]:
 
 class StrawberryExceptionsPlugin:
     def __init__(self, verbosity_level: int) -> None:
-        self._info: DefaultDict[str, list] = defaultdict(list)
+        self._info: DefaultDict[Tuple[str, str], list] = defaultdict(list)
         self.verbosity_level = verbosity_level
 
     @pytest.hookimpl(hookwrapper=True)
@@ -85,7 +85,7 @@ class StrawberryExceptionsPlugin:
 
             pytest.fail(failure_message, pytrace=False)
 
-    def _collect_exception(self, raised_exception: Exception) -> None:
+    def _collect_exception(self, raised_exception: StrawberryException) -> None:
         console = rich.console.Console(record=True)
 
         with suppress_output(self.verbosity_level):
@@ -98,7 +98,9 @@ class StrawberryExceptionsPlugin:
         else:
             text = f"\n\n``````\n{exception_text}\n``````\n\n"
 
-        self._info[raised_exception.__class__.__name__].append(text)
+        self._info[
+            raised_exception.__class__.__name__, raised_exception.documentation_url
+        ].append(text)
 
     def pytest_sessionfinish(self):
         summary_path = os.environ.get("GITHUB_STEP_SUMMARY", None)
@@ -109,7 +111,11 @@ class StrawberryExceptionsPlugin:
         markdown = ""
 
         for test, info in self._info.items():
-            markdown += f"# {test}\n"
+            test_name, documentation_url = test
+            test_name = " ".join(re.findall("[a-zA-Z][^A-Z]*", test_name))
+
+            markdown += f"# {test_name}\n\n"
+            markdown += f"Documentation URL: {documentation_url}\n"
 
             markdown += "\n".join(info)
 
