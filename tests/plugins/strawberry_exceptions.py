@@ -89,7 +89,7 @@ class StrawberryExceptionsPlugin:
         console = rich.console.Console(record=True)
 
         with suppress_output(self.verbosity_level):
-            console.print(raised_exception)
+            console.print(raised_exception, soft_wrap=True)
 
         exception_text = console.export_text()
 
