@@ -2,7 +2,9 @@ import ast
 from pathlib import Path
 from typing import TYPE_CHECKING, Optional, Tuple, Type
 
+import libcst as cst
 from backports.cached_property import cached_property
+from libcst.metadata import CodeRange, MetadataWrapper, PositionProvider
 
 from .exception import ExceptionSource, StrawberryException
 
@@ -32,46 +34,54 @@ class InvalidUnionTypeError(StrawberryException):
 
     @cached_property
     def exception_source(self) -> Optional[ExceptionSource]:
-        strawberry_union_node = None
+        strawberry_union_node_position: Optional[CodeRange] = None
 
         lineno = self.frame.lineno
 
-        class FindStrawberryUnionNode(ast.NodeVisitor):
-            def visit_Call(self, node: ast.Call) -> None:
-                if node.lineno != lineno:
-                    return
+        class FindStrawberryUnionNode(cst.CSTVisitor):
+            METADATA_DEPENDENCIES = (PositionProvider,)
 
+            def visit_Call(self, node: cst.Call) -> Optional[bool]:
                 is_union_call = False
 
+                position = self.get_metadata(PositionProvider, node)
+
+                if lineno < position.start.line or lineno > position.end.line:
+                    return True
+
                 # this only works when people don't change the imports
-                if isinstance(node.func, ast.Name) and node.func.id == "union":
+                if isinstance(node.func, cst.Name) and node.func.value == "union":
                     is_union_call = True
-                elif isinstance(node.func, ast.Attribute):
+                elif isinstance(node.func, cst.Attribute):
                     if (
-                        isinstance(node.func.value, ast.Name)
-                        and node.func.attr == "union"
-                        and node.func.value.id == "strawberry"
+                        isinstance(node.func.value, cst.Name)
+                        and node.func.attr.value == "union"
+                        and node.func.value.value == "strawberry"
                     ):
                         is_union_call = True
 
                 if is_union_call:
-                    nonlocal strawberry_union_node
-                    strawberry_union_node = node
+                    nonlocal strawberry_union_node_position
+                    strawberry_union_node_position = position
+
+                return True
 
         path = Path(self.frame.filename)
         full_source = path.read_text()
 
-        module = ast.parse(full_source)
-        FindStrawberryUnionNode().visit(module)
+        visitor = FindStrawberryUnionNode()
 
-        if not strawberry_union_node:
+        module = cst.parse_module(full_source)
+        wrapper = MetadataWrapper(module)
+        wrapper.visit(visitor)
+
+        if not strawberry_union_node_position:
             return None
 
-        code = "\n".join(
-            full_source.splitlines()[
-                strawberry_union_node.lineno - 1 : strawberry_union_node.end_lineno
-            ]
-        )
+        start_line = strawberry_union_node_position.start.line
+        end_line = strawberry_union_node_position.end.line
+
+        code = "\n".join(full_source.splitlines()[start_line - 1 : end_line])
 
         return ExceptionSource(
             path=path,
