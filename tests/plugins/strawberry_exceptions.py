@@ -86,10 +86,10 @@ class StrawberryExceptionsPlugin:
             pytest.fail(failure_message, pytrace=False)
 
     def _collect_exception(self, raised_exception: StrawberryException) -> None:
-        console = rich.console.Console(record=True)
+        console = rich.console.Console(record=True, width=120)
 
         with suppress_output(self.verbosity_level):
-            console.print(raised_exception, soft_wrap=True)
+            console.print(raised_exception)
 
         exception_text = console.export_text()
 
