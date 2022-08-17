@@ -26,7 +26,7 @@ from graphql import (
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import (
-    InvalidUnionType,
+    InvalidUnionTypeError,
     UnallowedReturnTypeForUnion,
     WrongReturnTypeForUnion,
 )
@@ -75,7 +75,7 @@ class StrawberryUnion(StrawberryType):
         # Raise an error in any other case.
         # There is Work in progress to deal with more merging cases, see:
         # https://github.com/strawberry-graphql/strawberry/pull/1455
-        raise InvalidUnionType("Invalid union type", other)  # type: ignore # TODO: fix this  # noqa
+        raise InvalidUnionTypeError("Invalid union type", other)  # type: ignore # TODO: fix this  # noqa
 
     @property
     def types(self) -> Tuple[StrawberryType, ...]:
@@ -226,10 +226,10 @@ def union(
     if len(types) == 0:
         raise TypeError("No types passed to `union`")
 
-    for _type in types:
-        if not isinstance(_type, TypeVar) and not hasattr(_type, "_type_definition"):
-            raise InvalidUnionType(
-                f"Type `{_type.__name__}` cannot be used in a GraphQL Union"
+    for type_ in types:
+        if not isinstance(type_, TypeVar) and not hasattr(type_, "_type_definition"):
+            raise InvalidUnionTypeError(
+                f"Type `{type_.__name__}` cannot be used in a GraphQL Union", type_
             )
 
     union_definition = StrawberryUnion(

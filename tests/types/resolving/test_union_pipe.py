@@ -5,7 +5,7 @@ import pytest
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.exceptions import InvalidUnionType
+from strawberry.exceptions import InvalidUnionTypeError
 from strawberry.type import StrawberryOptional
 from strawberry.union import StrawberryUnion
 
@@ -78,6 +78,9 @@ def test_strawberry_union_and_none():
     )
 
 
+@pytest.mark.raises_strawberry_exception(
+    InvalidUnionTypeError, match="Invalid union type"
+)
 def test_raises_error_when_piping_with_scalar():
     @strawberry.type
     class User:
@@ -89,5 +92,4 @@ def test_raises_error_when_piping_with_scalar():
 
     UserOrError = strawberry.union("UserOrError", (User, Error))
 
-    with pytest.raises(InvalidUnionType):
-        StrawberryAnnotation(UserOrError | int)
+    UserOrError | int  # type: ignore

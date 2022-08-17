@@ -9,6 +9,7 @@ from graphql import GraphQLInputObjectType, GraphQLObjectType
 from strawberry.type import StrawberryType
 
 from .exception import StrawberryException
+from .invalid_union_type import InvalidUnionTypeError
 from .missing_arguments_annotations import MissingArgumentsAnnotationsError
 from .missing_field_annotation import MissingFieldAnnotationError
 from .missing_return_annotation import MissingReturnAnnotationError
@@ -78,10 +79,6 @@ class UnallowedReturnTypeForUnion(StrawberryException):
         )
 
         super().__init__(message)
-
-
-class InvalidUnionType(StrawberryException):
-    """The union is constructed with an invalid type"""
 
 
 class InvalidTypeInputForUnion(StrawberryException):
@@ -217,7 +214,7 @@ __all__ = [
     "MissingReturnTypeError",
     "WrongReturnTypeForUnion",
     "UnallowedReturnTypeForUnion",
-    "InvalidUnionType",
+    "InvalidUnionTypeError",
     "MissingTypesForGenericError",
     "UnsupportedTypeError",
     "UnresolvedFieldTypeError",

@@ -63,7 +63,7 @@ def add_word(word: Word) -> bool:
 # Throws 'Argument "word" on field "add_word" cannot be of type "Union"'
 ```
 
-### InvalidUnionType
+### InvalidUnionTypeError
 
 This exception is raised when an invalid type is used with `Union`.
 
