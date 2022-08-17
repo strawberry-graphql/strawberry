@@ -17,20 +17,18 @@ class InvalidUnionTypeError(StrawberryException):
     """The union is constructed with an invalid type"""
 
     documentation_url = "https://errors.strawberry.rocks/invalid-union-type"
+    invalid_type: Type
 
-    def __init__(self, message: str, invalid_type: Type) -> None:
-        super().__init__(message)
-
+    def __init__(self, invalid_type: Type) -> None:
         self.invalid_type = invalid_type
 
         # assuming that the exception happens two stack frames above the current one.
         # one is our code checking for invalid types, the other is the caller
         self.frame = getframeinfo(stack()[2][0])
 
-        # there's two cases here, or maybe 3
-        # ---- strawberry.union("Result", (int,)) noqa
-        # ---- AUnion | int
-        # ---- Union[str, int] done later
+        message = f"Type `{invalid_type.__name__}` cannot be used in a GraphQL Union"
+
+        super().__init__(message)
 
     @cached_property
     def exception_source(self) -> Optional[ExceptionSource]:
@@ -55,8 +53,6 @@ class InvalidUnionTypeError(StrawberryException):
                         and node.func.value.id == "strawberry"
                     ):
                         is_union_call = True
-
-                    print(node.func.attr, node.lineno)
 
                 if is_union_call:
                     nonlocal strawberry_union_node
@@ -132,6 +128,8 @@ class InvalidUnionTypeError(StrawberryException):
             error_line=error_line, line_annotations=line_annotations
         )
 
+    # todo: maybe also check difference between a scalar and other types?
+
     @property
     def __rich_footer__(self) -> "RenderableType":
         return (
@@ -139,4 +137,52 @@ class InvalidUnionTypeError(StrawberryException):
             "\n\n"
             "Read more about this error on [bold underline]"
             f"[link={self.documentation_url}]{self.documentation_url}"
+        )
+
+
+class InvalidTypeForUnionMergeError(InvalidUnionTypeError):
+    """A specialized version of InvalidUnionTypeError for when trying
+    to merge unions with incompatible types"""
+
+    @cached_property
+    def exception_source(self) -> Optional[ExceptionSource]:
+        strawberry_union_node = None
+
+        lineno = self.frame.lineno
+        invalid_type_name = self.invalid_type.__name__
+
+        class FindStrawberryUnionNode(ast.NodeVisitor):
+            def visit_BinOp(self, node: ast.BinOp) -> None:
+                if node.lineno != lineno:
+                    return
+
+                if not isinstance(node.op, ast.BitOr):
+                    return
+
+                if any(
+                    isinstance(arg, ast.Name) and arg.id == invalid_type_name
+                    for arg in (node.left, node.right)
+                ):
+                    nonlocal strawberry_union_node
+                    strawberry_union_node = node
+
+        path = Path(self.frame.filename)
+        full_source = path.read_text()
+
+        module = ast.parse(full_source)
+        FindStrawberryUnionNode().visit(module)
+
+        if not strawberry_union_node:
+            return None
+
+        code = "\n".join(
+            full_source.splitlines()[
+                strawberry_union_node.lineno - 1 : strawberry_union_node.end_lineno
+            ]
+        )
+
+        return ExceptionSource(
+            path=path,
+            code=code,
+            line=self.frame.lineno,
         )

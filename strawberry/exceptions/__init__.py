@@ -9,7 +9,7 @@ from graphql import GraphQLInputObjectType, GraphQLObjectType
 from strawberry.type import StrawberryType
 
 from .exception import StrawberryException
-from .invalid_union_type import InvalidUnionTypeError
+from .invalid_union_type import InvalidTypeForUnionMergeError, InvalidUnionTypeError
 from .missing_arguments_annotations import MissingArgumentsAnnotationsError
 from .missing_field_annotation import MissingFieldAnnotationError
 from .missing_return_annotation import MissingReturnAnnotationError
@@ -215,6 +215,7 @@ __all__ = [
     "WrongReturnTypeForUnion",
     "UnallowedReturnTypeForUnion",
     "InvalidUnionTypeError",
+    "InvalidTypeForUnionMergeError",
     "MissingTypesForGenericError",
     "UnsupportedTypeError",
     "UnresolvedFieldTypeError",
