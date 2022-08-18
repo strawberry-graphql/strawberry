@@ -57,7 +57,7 @@ channels = {version = ">=3.0.5", optional = true}
 [tool.poetry.dev-dependencies]
 pytest = "^7.1"
 pytest-emoji = "^0.2.0"
-flake8 = "^4.0"
+flake8 = "^5.0"
 black = "^22"
 isort = "^5.10.1"
 pytest-asyncio = "^0.19.0"
