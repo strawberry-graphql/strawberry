@@ -1,10 +1,9 @@
 Release type: minor
 
-Add the support for adding descriptions to enum values.
+This release adds support for adding descriptions to enum values.
 
 ### Example
 
-Here is an example for adding a description for an enum value.
 
 ```python
 @strawberry.enum
