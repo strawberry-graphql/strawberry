@@ -405,8 +405,8 @@ python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
 [package.dependencies]
 attrs = ">=19.2.0"
 bytecode = [
-    {version = ">=0.13.0,<0.14.0", markers = "python_version == \"3.7\""},
     {version = "*", markers = "python_version >= \"3.8\""},
+    {version = ">=0.13.0,<0.14.0", markers = "python_version == \"3.7\""},
 ]
 ddsketch = ">=2.0.1"
 importlib-metadata = {version = "*", markers = "python_version < \"3.8\""}
@@ -1581,7 +1581,7 @@ types-urllib3 = "<1.27"
 
 [[package]]
 name = "types-setuptools"
-version = "64.0.0"
+version = "64.0.1"
 description = "Typing stubs for setuptools"
 category = "dev"
 optional = false
@@ -1769,7 +1769,7 @@ sanic = ["sanic"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "c4f5db0c317f588725758c33a79814a38cd0447724f412b8cd5aa70b90f23d17"
+content-hash = "c08e4d94f69e023055e05bbb7f634dc85c5cf70cec9579a5cd491cfe7aedd6c9"
 
 [metadata.files]
 aiofiles = [
@@ -3012,8 +3012,8 @@ types-requests = [
     {file = "types_requests-2.28.8-py3-none-any.whl", hash = "sha256:b0421f9f2d0dd0f8df2c75f974686517ca67473f05b466232d4c6384d765ad7a"},
 ]
 types-setuptools = [
-    {file = "types-setuptools-64.0.0.tar.gz", hash = "sha256:da53c28d27e5cc8a37d4f219dc36be559b879c65642fa96d0176402602b1cda3"},
-    {file = "types_setuptools-64.0.0-py3-none-any.whl", hash = "sha256:ccf621e6bce09f9b6dee57e81ce3e6878e3dc795395ae0b749deb340198e288b"},
+    {file = "types-setuptools-64.0.1.tar.gz", hash = "sha256:8290b6bf1d916e6b007784d5cbcd112a1af9a2d76343231fcce0a55185343702"},
+    {file = "types_setuptools-64.0.1-py3-none-any.whl", hash = "sha256:005ccb8a1a7d0dce61cd63081dad0ddc599af4413bb49ce1333119a78a7bb2e1"},
 ]
 types-toml = [
     {file = "types-toml-0.10.8.tar.gz", hash = "sha256:b7e7ea572308b1030dc86c3ba825c5210814c2825612ec679eb7814f8dd9295a"},
