@@ -23,7 +23,7 @@ from typing_extensions import Literal
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import StrawberryArgument
-from strawberry.exceptions import InvalidDefaultFactoryError, InvalidFieldArgument
+from strawberry.exceptions import InvalidDefaultFactoryError, InvalidFieldArgumentError
 from strawberry.type import StrawberryType, StrawberryTypeVar
 from strawberry.types.info import Info
 from strawberry.union import StrawberryUnion
@@ -130,15 +130,15 @@ class StrawberryField(dataclasses.Field):
             if isinstance(argument.type_annotation.annotation, str):
                 continue
             elif isinstance(argument.type, StrawberryUnion):
-                raise InvalidFieldArgument(
-                    resolver.name,
+                raise InvalidFieldArgumentError(
+                    resolver,
                     argument.python_name,
                     "Union",
                 )
             elif getattr(argument.type, "_type_definition", False):
                 if argument.type._type_definition.is_interface:  # type: ignore
-                    raise InvalidFieldArgument(
-                        resolver.name,
+                    raise InvalidFieldArgumentError(
+                        resolver,
                         argument.python_name,
                         "Interface",
                     )

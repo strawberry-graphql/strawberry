@@ -1,18 +1,13 @@
 import ast
+from inspect import getframeinfo, stack
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, Type
+from typing import Optional, Type
 
 import libcst as cst
 from backports.cached_property import cached_property
 from libcst.metadata import CodeRange, MetadataWrapper, PositionProvider
 
 from .exception import ExceptionSource, StrawberryException
-
-
-if TYPE_CHECKING:
-    from rich.console import RenderableType
-
-from inspect import getframeinfo, stack
 
 
 class InvalidUnionTypeError(StrawberryException):
@@ -37,24 +32,25 @@ class InvalidUnionTypeError(StrawberryException):
         self.suggestion = (
             "To fix this error you should replace the type a strawberry.type"
         )
+        self.annotation_message = "invalid type here"
 
     def _get_exception_source(
         self, path: Path, full_source: str, start_line: int, end_line: int
     ) -> ExceptionSource:
         code_lines = full_source.splitlines()[start_line - 1 : end_line]
         code = "\n".join(code_lines)
-
         error_line = self.find_invalid_type_line(code)
         invalid_type_line = code_lines[error_line]
         error_column = invalid_type_line.find(self.invalid_type.__name__)
 
         return ExceptionSource(
             path=path,
-            code=code,
+            code=full_source,
             start_line=start_line,
             end_line=end_line,
             error_line=start_line + error_line,
             error_column=error_column,
+            error_column_end=error_column + len(self.invalid_type.__name__),
         )
 
     @cached_property
@@ -120,24 +116,6 @@ class InvalidUnionTypeError(StrawberryException):
                 return invalid_type_line
 
         raise ValueError(f"Could not find {self.invalid_type.__name__} in {code}")
-
-    @property
-    def __rich_body__(self) -> "RenderableType":
-        assert self.exception_source
-
-        prefix = " " * self.exception_source.error_column
-        caret = "^" * len(self.invalid_type.__name__)
-
-        message = f"{prefix}[bold]{caret}[/] invalid type here"
-
-        line_annotations = {
-            self.exception_source.error_line: message,
-        }
-
-        return self.highlight_code(
-            error_line=self.exception_source.error_line,
-            line_annotations=line_annotations,
-        )
 
     # todo: maybe also check difference between a scalar and other types?
 

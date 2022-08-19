@@ -7,7 +7,10 @@ from typing_extensions import Annotated
 
 import strawberry
 from strawberry import UNSET
-from strawberry.exceptions import InvalidFieldArgument, MultipleStrawberryArgumentsError
+from strawberry.exceptions import (
+    InvalidFieldArgumentError,
+    MultipleStrawberryArgumentsError,
+)
 from strawberry.type import StrawberryList, StrawberryOptional
 
 
@@ -422,30 +425,31 @@ def test_annotated_python_39():
     assert argument.type is str
 
 
+@pytest.mark.raises_strawberry_exception(
+    InvalidFieldArgumentError,
+    'Argument "word" on field "add_word" cannot be of type "Union"',
+)
 def test_union_as_an_argument_type():
-    error_message = 'Argument "word" on field "add_word" cannot be of type "Union"'
-    with pytest.raises(InvalidFieldArgument, match=error_message):
+    @strawberry.type
+    class Noun:
+        text: str
 
-        @strawberry.type
-        class Noun:
-            text: str
+    @strawberry.type
+    class Verb:
+        text: str
 
-        @strawberry.type
-        class Verb:
-            text: str
+    Word = strawberry.union("Word", types=(Noun, Verb))
 
-        Word = strawberry.union("Word", types=(Noun, Verb))
-
-        @strawberry.field
-        def add_word(word: Word) -> bool:
-            return True
+    @strawberry.field
+    def add_word(word: Word) -> bool:
+        return True
 
 
 def test_interface_as_an_argument_type():
     error_message = (
         'Argument "adjective" on field "add_adjective" cannot be of type "Interface"'
     )
-    with pytest.raises(InvalidFieldArgument, match=error_message):
+    with pytest.raises(InvalidFieldArgumentError, match=error_message):
 
         @strawberry.interface
         class Adjective:
@@ -461,7 +465,7 @@ def test_resolver_with_invalid_field_argument_type():
         'Argument "adjective" on field "add_adjective_resolver" cannot be '
         'of type "Interface"'
     )
-    with pytest.raises(InvalidFieldArgument, match=error_message):
+    with pytest.raises(InvalidFieldArgumentError, match=error_message):
 
         @strawberry.interface
         class Adjective:

@@ -81,7 +81,7 @@ class StrawberryExceptionsPlugin:
             )
 
             if self.verbosity_level >= 1:
-                print("Exception", exception)
+                print(f"Exception: {exception}")
 
             pytest.fail(failure_message, pytrace=False)
 
@@ -90,6 +90,8 @@ class StrawberryExceptionsPlugin:
 
         with suppress_output(self.verbosity_level):
             console.print(raised_exception)
+
+            print(f"\n Exception class: {raised_exception.__class__.__name__}\n")
 
         exception_text = console.export_text()
 

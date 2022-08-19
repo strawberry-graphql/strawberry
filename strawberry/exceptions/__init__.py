@@ -9,6 +9,7 @@ from graphql import GraphQLInputObjectType, GraphQLObjectType
 from strawberry.type import StrawberryType
 
 from .exception import StrawberryException
+from .invalid_field_argument import InvalidFieldArgumentError
 from .invalid_union_type import InvalidTypeForUnionMergeError, InvalidUnionTypeError
 from .missing_arguments_annotations import MissingArgumentsAnnotationsError
 from .missing_field_annotation import MissingFieldAnnotationError
@@ -168,15 +169,6 @@ class MissingQueryError(StrawberryException):
         super().__init__(message)
 
 
-class InvalidFieldArgument(StrawberryException):
-    def __init__(self, field_name: str, argument_name: str, argument_type: str):
-        message = (
-            f'Argument "{argument_name}" on field "{field_name}" cannot be of type '
-            f'"{argument_type}"'
-        )
-        super().__init__(message)
-
-
 class InvalidDefaultFactoryError(StrawberryException):
     def __init__(self):
         message = "`default_factory` must be a callable that requires no arguments"
@@ -226,7 +218,7 @@ __all__ = [
     "FieldWithResolverAndDefaultValueError",
     "FieldWithResolverAndDefaultFactoryError",
     "MissingQueryError",
-    "InvalidFieldArgument",
+    "InvalidFieldArgumentError",
     "InvalidDefaultFactoryError",
     "InvalidCustomContext",
     "MissingFieldAnnotationError",

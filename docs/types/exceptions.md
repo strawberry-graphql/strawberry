@@ -41,7 +41,7 @@ class Query:
 # Throws 'Field "c" on type "Query" cannot define a default value and a resolver.'
 ```
 
-### InvalidFieldArgument
+### InvalidFieldArgumentError
 
 This exception is raised when a `Union` or an `Interface` is used as an argument type.
 
