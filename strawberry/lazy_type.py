@@ -15,7 +15,14 @@ class LazyType(Generic[TypeName, Module]):
     package: Optional[str]
 
     def __class_getitem__(cls, params):
-        type_name, module = params
+        if isinstance(params, str):
+            type_name = params
+            current_frame = inspect.currentframe()
+            assert current_frame is not None
+            assert current_frame.f_back is not None
+            module = current_frame.f_back.f_globals["__name__"]
+        else:
+            type_name, module = params
 
         package = None
 
