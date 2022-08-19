@@ -149,6 +149,7 @@ class GraphQLCoreConverter:
         return GraphQLEnumValue(
             enum_value.value,
             deprecation_reason=enum_value.deprecation_reason,
+            description=enum_value.description,
             extensions={
                 GraphQLCoreConverter.DEFINITION_BACKREF: enum_value,
             },

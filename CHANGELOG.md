@@ -1,6 +1,60 @@
 CHANGELOG
 =========
 
+0.126.0 - 2022-08-18
+--------------------
+
+This release adds support for adding descriptions to enum values.
+
+### Example
+
+
+```python
+@strawberry.enum
+class IceCreamFlavour(Enum):
+    VANILLA = strawberry.enum_value("vanilla")
+    STRAWBERRY = strawberry.enum_value(
+        "strawberry", description="Our favourite",
+    )
+    CHOCOLATE = "chocolate"
+
+
+@strawberry.type
+class Query:
+    favorite_ice_cream: IceCreamFlavour = IceCreamFlavour.STRAWBERRY
+
+schema = strawberry.Schema(query=Query)
+```
+
+This produces the following schema
+
+```graphql
+enum IceCreamFlavour {
+  VANILLA
+
+  """Our favourite."""
+  STRAWBERRY
+  CHOCOLATE
+}
+
+type Query {
+  favoriteIceCream: IceCreamFlavour!
+}
+```
+
+Contributed by [Felipe Gonzalez](https://github.com/gonzalezzfelipe) via [PR #2106](https://github.com/strawberry-graphql/strawberry/pull/2106/)
+
+
+0.125.1 - 2022-08-16
+--------------------
+
+This release hides `resolvable: True` in @keys directives
+when using Apollo Federation 1, to preserve compatibility
+with older Gateways.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2099](https://github.com/strawberry-graphql/strawberry/pull/2099/)
+
+
 0.125.0 - 2022-08-12
 --------------------
 

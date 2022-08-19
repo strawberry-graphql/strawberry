@@ -23,6 +23,7 @@ class EnumValue:
     value: Any
     deprecation_reason: Optional[str] = None
     directives: Iterable[object] = ()
+    description: Optional[str] = None
 
 
 @dataclasses.dataclass
@@ -53,17 +54,20 @@ class EnumValueDefinition:
     value: Any
     deprecation_reason: Optional[str] = None
     directives: Iterable[object] = ()
+    description: Optional[str] = None
 
 
 def enum_value(
     value: Any,
     deprecation_reason: Optional[str] = None,
     directives: Iterable[object] = (),
+    description: Optional[str] = None,
 ) -> EnumValueDefinition:
     return EnumValueDefinition(
         value=value,
         deprecation_reason=deprecation_reason,
         directives=directives,
+        description=description,
     )
 
 
@@ -90,9 +94,11 @@ def _process_enum(
         item_name = item.name
         deprecation_reason = None
         item_directives: Iterable[object] = ()
+        enum_value_description = None
 
         if isinstance(item_value, EnumValueDefinition):
             item_directives = item_value.directives
+            enum_value_description = item_value.description
             deprecation_reason = item_value.deprecation_reason
             item_value = item_value.value
 
@@ -101,6 +107,7 @@ def _process_enum(
             item_value,
             deprecation_reason=deprecation_reason,
             directives=item_directives,
+            description=enum_value_description,
         )
         values.append(value)
 
