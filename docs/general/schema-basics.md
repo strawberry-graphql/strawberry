@@ -138,6 +138,60 @@ class Author:
   books: typing.List[Book]
 ```
 
+## Providing data to fields
+
+In the above schema, a `Book` has an `author` field and an `Author` has a `books`
+field, yet we do not know how our data can be mapped to fulfil the structure of
+the promised schema.
+
+To achieve this, we introduce the concept of the [_resolver_](../types/resolvers.md) that provides some
+data to a field through a function.
+
+Continuing with this example of books and authors, resolvers can be defined
+to provides values to the fields:
+
+```python
+def get_author_for_book(root) -> "Author":
+    return Author(name="Michael Crichton")
+
+
+@strawberry.type
+class Book:
+    title: str
+    author: "Author" = strawberry.field(resolver=get_author_for_book)
+
+
+def get_books_for_author(root):
+    return [Book(title="Jurassic Park")]
+
+
+@strawberry.type
+class Author:
+    name: str
+    books: typing.List[Book] = strawberry.field(resolver=get_books_for_author)
+
+
+def get_authors(root) -> typing.List[Author]:
+    return [Author(name="Michael Crichton")]
+
+
+@strawberry.type
+class Query:
+    authors: typing.List[Author] = strawberry.field(resolver=get_authors)
+    books: typing.List[Book] = strawberry.field(resolver=get_books_for_author)
+```
+
+These functions provide the `strawberry.field` with the ability to render data
+to the GraphQL query upon request and are the backbone of all GraphQL APIs.
+
+This example is trivial since the resolved data is entirely static. However,
+when building more complex APIs, these resolvers can be written to map data
+from databases, e.g. making SQL queries using SQLAlchemy, and other APIs,
+e.g. making HTTP requests using aiohttp.
+
+For more information and detail on the different ways to write resolvers,
+see the [resolvers section](../types/resolvers.md).
+
 ## The Query type
 
 The `Query` type defines exactly which GraphQL queries (i.e., read operations)

@@ -91,3 +91,28 @@ def test_can_deprecate_enum_values():
     assert definition.values[2].name == "CHOCOLATE"
     assert definition.values[2].value == "chocolate"
     assert definition.values[2].deprecation_reason is None
+
+
+def test_can_describe_enum_values():
+    @strawberry.enum
+    class IceCreamFlavour(Enum):
+        VANILLA = strawberry.enum_value("vanilla")
+        STRAWBERRY = strawberry.enum_value(
+            "strawberry",
+            description="Our favourite",
+        )
+        CHOCOLATE = "chocolate"
+
+    definition = IceCreamFlavour._enum_definition
+
+    assert definition.values[0].name == "VANILLA"
+    assert definition.values[0].value == "vanilla"
+    assert definition.values[0].description is None
+
+    assert definition.values[1].name == "STRAWBERRY"
+    assert definition.values[1].value == "strawberry"
+    assert definition.values[1].description == "Our favourite"
+
+    assert definition.values[2].name == "CHOCOLATE"
+    assert definition.values[2].value == "chocolate"
+    assert definition.values[2].description is None

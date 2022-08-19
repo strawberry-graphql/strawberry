@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional, Union
+from typing import Any, Optional, Union, cast
 
 from typing_extensions import Annotated
 
@@ -41,11 +41,34 @@ class StrawberryAutoMeta(type):
     ):
         # resolve StrawberryAnnotations
         if isinstance(instance, StrawberryAnnotation):
-            instance = instance.resolve()
+            resolved = instance.annotation
+            if isinstance(resolved, str):
+                namespace = instance.namespace
+                resolved = namespace and namespace.get(resolved)
 
-        # Look for Annotated[Any, StrawberryAuto, ...]
-        instance, args = StrawberryAnnotated.get_type_and_args(instance)
-        return instance is Any and any(isinstance(arg, StrawberryAuto) for arg in args)
+            if resolved is not None:
+                instance = cast(type, resolved)
+
+        if instance is auto:
+            return True
+
+        # Support uses of Annotated[auto, something()]
+        annotated_type, annotated_args = StrawberryAnnotated.get_type_and_args(instance)
+        if annotated_type is Any and any(
+            isinstance(arg, StrawberryAuto) for arg in annotated_args
+        ):
+            return True
+
+        # StrawberryType's `__eq__` tries to find the string passed in the global
+        # namespace, which will fail with a `NameError` if "strawberry.auto" hasn't
+        # been imported. So we can't use `instance == "strawberry.auto"` here.
+        # Instead, we'll use `isinstance(instance, str)` to check if the instance
+        # is a StrawberryType, in that case we can return False since we know it
+        # won't be a StrawberryAuto.
+        if isinstance(instance, StrawberryType):
+            return False
+
+        return instance == "strawberry.auto"
 
 
 class StrawberryAuto(metaclass=StrawberryAutoMeta):

@@ -45,6 +45,7 @@ UNRESOLVED = object()
 
 class StrawberryField(dataclasses.Field):
     python_name: str
+    default_resolver: Callable[[Any, str], object] = getattr
 
     def __init__(
         self,
@@ -145,6 +146,20 @@ class StrawberryField(dataclasses.Field):
         self.base_resolver = resolver
 
         return self
+
+    def get_result(
+        self, source: Any, info: Info, args: List[Any], kwargs: Dict[str, Any]
+    ) -> Union[Awaitable[Any], Any]:
+        """
+        Calls the resolver defined for the StrawberryField.
+        If the field doesn't have a resolver defined we default
+        to using the default resolver specified in StrawberryConfig.
+        """
+
+        if self.base_resolver:
+            return self.base_resolver(*args, **kwargs)
+
+        return self.default_resolver(source, self.python_name)  # type: ignore
 
     @property
     def arguments(self) -> List[StrawberryArgument]:
@@ -280,19 +295,6 @@ class StrawberryField(dataclasses.Field):
             default_factory=self.default_factory,
             deprecation_reason=self.deprecation_reason,
         )
-
-    def get_result(
-        self, source: Any, info: Info, args: List[Any], kwargs: Dict[str, Any]
-    ) -> Union[Awaitable[Any], Any]:
-        """
-        Calls the resolver defined for the StrawberryField. If the field doesn't have a
-        resolver defined we default to using getattr on `source`.
-        """
-
-        if self.base_resolver:
-            return self.base_resolver(*args, **kwargs)
-
-        return getattr(source, self.python_name)
 
     @property
     def _has_async_permission_classes(self) -> bool:
