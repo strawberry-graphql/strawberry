@@ -36,7 +36,7 @@ class MissingFieldAnnotationError(ExceptionSourceIsClass, StrawberryException):
         if exception_source is None:
             return None
 
-        attribute_source = self.exception_source.find_class_attribute(self.field_name)
+        attribute_source = exception_source.find_class_attribute(self.field_name)
 
         if attribute_source is None:
             return None
