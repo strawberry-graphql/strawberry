@@ -27,11 +27,17 @@ class NodeSource(NamedTuple):
 class ExceptionSource:
     path: Path
     code: str
-    line: int
+    start_line: int
+    end_line: int
+    error_line: int
+    error_column: int
 
     @property
     def path_relative_to_cwd(self) -> Path:
-        return self.path.relative_to(Path.cwd())
+        if self.path.is_absolute():
+            return self.path.relative_to(Path.cwd())
+
+        return self.path
 
     @cached_property
     def dedented_code(self) -> str:
@@ -104,7 +110,12 @@ class ExceptionSourceIsClass:
         source_lines, line = getsourcelines(self.cls)
 
         return ExceptionSource(
-            path=Path(source_file), code="".join(source_lines), line=line
+            path=Path(source_file),
+            code="".join(source_lines),
+            start_line=line,
+            error_line=line,
+            end_line=line,
+            error_column=0,
         )
 
 
@@ -126,12 +137,19 @@ class ExceptionSourceIsResolver:
         source_lines, line = getsourcelines(resolver)
 
         return ExceptionSource(
-            path=Path(source_file), code="".join(source_lines), line=line
+            path=Path(source_file),
+            code="".join(source_lines),
+            start_line=line,
+            error_line=line,
+            end_line=line,
+            error_column=0,
         )
 
 
 class StrawberryException(Exception):
     message: str
+    rich_message: str
+    suggestion: str
     documentation_url: ClassVar[str]
 
     def __init__(self, message: str) -> None:
@@ -146,7 +164,16 @@ class StrawberryException(Exception):
 
     @property
     def __rich_header__(self) -> "RenderableType":
-        return ""
+        assert self.exception_source
+
+        source_file = self.exception_source.path
+        relative_path = self.exception_source.path_relative_to_cwd
+        error_line = self.exception_source.error_line
+
+        return (
+            f"[bold red]error: {self.rich_message}\n"
+            f"[white]     @ [link=file://{source_file}]{relative_path}:{error_line}"
+        )
 
     @property
     def __rich_body__(self) -> "RenderableType":
@@ -154,7 +181,11 @@ class StrawberryException(Exception):
 
     @property
     def __rich_footer__(self) -> "RenderableType":
-        return ""
+        return (
+            f"{self.suggestion}\n\n"
+            "Read more about this error on [bold underline]"
+            f"[link={self.documentation_url}]{self.documentation_url}"
+        )
 
     def __rich__(self) -> Optional["RenderableType"]:
         from rich.box import SIMPLE
@@ -187,6 +218,6 @@ class StrawberryException(Exception):
         return Syntax(
             code=self.exception_source.code,
             highlight_lines={error_line},
-            line_offset=self.exception_source.line - 1,
+            line_offset=self.exception_source.start_line - 1,
             line_annotations=line_annotations,
         )

@@ -1,6 +1,6 @@
 import ast
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, Tuple, Type
+from typing import TYPE_CHECKING, Optional, Type
 
 import libcst as cst
 from backports.cached_property import cached_property
@@ -28,13 +28,38 @@ class InvalidUnionTypeError(StrawberryException):
         # one is our code checking for invalid types, the other is the caller
         self.frame = getframeinfo(stack()[2][0])
 
-        message = f"Type `{invalid_type.__name__}` cannot be used in a GraphQL Union"
+        type_name = invalid_type.__name__
 
-        super().__init__(message)
+        self.message = f"Type `{type_name}` cannot be used in a GraphQL Union"
+        self.rich_message = (
+            f"Type `[underline]{type_name}[/]` cannot be used in a GraphQL Union"
+        )
+        self.suggestion = (
+            "To fix this error you should replace the type a strawberry.type"
+        )
+
+    def _get_exception_source(
+        self, path: Path, full_source: str, start_line: int, end_line: int
+    ) -> ExceptionSource:
+        code_lines = full_source.splitlines()[start_line - 1 : end_line]
+        code = "\n".join(code_lines)
+
+        error_line = self.find_invalid_type_line(code)
+        invalid_type_line = code_lines[error_line]
+        error_column = invalid_type_line.find(self.invalid_type.__name__)
+
+        return ExceptionSource(
+            path=path,
+            code=code,
+            start_line=start_line,
+            end_line=end_line,
+            error_line=start_line + error_line,
+            error_column=error_column,
+        )
 
     @cached_property
     def exception_source(self) -> Optional[ExceptionSource]:
-        strawberry_union_node_position: Optional[CodeRange] = None
+        union_position: Optional[CodeRange] = None
 
         lineno = self.frame.lineno
 
@@ -61,8 +86,8 @@ class InvalidUnionTypeError(StrawberryException):
                         is_union_call = True
 
                 if is_union_call:
-                    nonlocal strawberry_union_node_position
-                    strawberry_union_node_position = position
+                    nonlocal union_position
+                    union_position = position
 
                 return True
 
@@ -75,79 +100,46 @@ class InvalidUnionTypeError(StrawberryException):
         wrapper = MetadataWrapper(module)
         wrapper.visit(visitor)
 
-        if not strawberry_union_node_position:
+        if not union_position:
             return None
 
-        start_line = strawberry_union_node_position.start.line
-        end_line = strawberry_union_node_position.end.line
-
-        code = "\n".join(full_source.splitlines()[start_line - 1 : end_line])
-
-        return ExceptionSource(
+        return self._get_exception_source(
             path=path,
-            code=code,
-            line=self.frame.lineno,
+            full_source=full_source,
+            start_line=union_position.start.line,
+            end_line=union_position.end.line,
         )
 
-    def find_invalid_type_line(self) -> Tuple[int, str]:
-        assert self.exception_source
-
-        code = self.exception_source.code
-
+    def find_invalid_type_line(self, code: str) -> int:
         lines = code.splitlines()
         invalid_type_line = -1
         type_name = self.invalid_type.__name__
 
         for invalid_type_line, line in enumerate(lines):
             if type_name in line:
-                return invalid_type_line, line
+                return invalid_type_line
 
         raise ValueError(f"Could not find {self.invalid_type.__name__} in {code}")
-
-    @property
-    def __rich_header__(self) -> "RenderableType":
-        assert self.exception_source
-
-        source_file = self.exception_source.path
-        relative_path = self.exception_source.path_relative_to_cwd
-        invalid_type_line_no, invalid_type_line = self.find_invalid_type_line()
-        error_line: int = self.exception_source.line + invalid_type_line_no
-
-        return (
-            f"[bold red]Type `[underline]{self.invalid_type.__name__}[/]` "
-            "cannot be used in a GraphQL Union in "
-            f"[white][link=file://{source_file}]{relative_path}:{error_line}"
-        )
 
     @property
     def __rich_body__(self) -> "RenderableType":
         assert self.exception_source
 
-        invalid_type_line_no, invalid_type_line = self.find_invalid_type_line()
-        column = invalid_type_line.find(self.invalid_type.__name__)
-
-        prefix = " " * column
+        prefix = " " * self.exception_source.error_column
         caret = "^" * len(self.invalid_type.__name__)
 
         message = f"{prefix}[bold]{caret}[/] invalid type here"
 
-        error_line: int = self.exception_source.line + invalid_type_line_no
-        line_annotations = {error_line: message}
+        line_annotations = {
+            self.exception_source.error_line: message,
+        }
 
         return self.highlight_code(
-            error_line=error_line, line_annotations=line_annotations
+            error_line=self.exception_source.error_line,
+            line_annotations=line_annotations,
         )
 
     # todo: maybe also check difference between a scalar and other types?
-
-    @property
-    def __rich_footer__(self) -> "RenderableType":
-        return (
-            "To fix this error you should replace the type a strawberry.type "
-            "\n\n"
-            "Read more about this error on [bold underline]"
-            f"[link={self.documentation_url}]{self.documentation_url}"
-        )
 
 
 class InvalidTypeForUnionMergeError(InvalidUnionTypeError):
@@ -182,17 +174,16 @@ class InvalidTypeForUnionMergeError(InvalidUnionTypeError):
         module = ast.parse(full_source)
         FindStrawberryUnionNode().visit(module)
 
-        if not strawberry_union_node:
-            return None
-
-        code = "\n".join(
-            full_source.splitlines()[
-                strawberry_union_node.lineno - 1 : strawberry_union_node.end_lineno
-            ]
-        )
-
-        return ExceptionSource(
-            path=path,
-            code=code,
-            line=self.frame.lineno,
+        return (
+            self._get_exception_source(
+                path=path,
+                full_source=full_source,
+                start_line=strawberry_union_node.lineno,
+                # end_lineno exists from python 3.8+, but this error
+                # will only appear in python 3.10, so we can ignore
+                # the type error, up until we use libcst for this too
+                end_line=strawberry_union_node.end_lineno,  # type: ignore
+            )
+            if strawberry_union_node
+            else None
         )

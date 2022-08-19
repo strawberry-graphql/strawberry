@@ -35,7 +35,7 @@ class PrivateStrawberryFieldError(ExceptionSourceIsClass, StrawberryException):
         assert self.exception_source
         assert self.attribute_source
 
-        error_line = self.exception_source.line + self.attribute_source.line - 1
+        error_line = self.exception_source.error_line
 
         prefix = " " * (
             self.attribute_source.column + self.exception_source.code_padding
@@ -57,7 +57,7 @@ class PrivateStrawberryFieldError(ExceptionSourceIsClass, StrawberryException):
 
         source_file = self.exception_source.path
         relative_path = self.exception_source.path_relative_to_cwd
-        error_line = self.exception_source.line + self.attribute_source.line - 1
+        error_line = self.exception_source.error_line
 
         return (
             f"[bold red]`[underline]{self.field_name}[/]` field cannot be both "

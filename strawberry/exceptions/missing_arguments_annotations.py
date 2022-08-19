@@ -3,7 +3,7 @@ from typing import TYPE_CHECKING, List, Optional
 
 from backports.cached_property import cached_property
 
-from .exception import ExceptionSourceIsResolver, NodeSource, StrawberryException
+from .exception import ExceptionSource, ExceptionSourceIsResolver, StrawberryException
 
 
 if TYPE_CHECKING:
@@ -21,12 +21,18 @@ class MissingArgumentsAnnotationsError(ExceptionSourceIsResolver, StrawberryExce
         self.missing_arguments = arguments
         self.resolver = resolver
 
-        message = (
+        self.message = (
             f"Missing annotation for {self.missing_arguments_str} "
             f'in field "{self.resolver.name}", did you forget to add it?'
         )
-
-        super().__init__(message)
+        self.rich_message = (
+            f"Missing annotation for {self.missing_arguments_str} in "
+            f"`[underline]{self.resolver.name}[/]`"
+        )
+        self.suggestion = (
+            "To fix this error you can add an annotation to the argument "
+            f"like so [italic]`{self.missing_arguments[0]}: str`"
+        )
 
     @property
     def missing_arguments_str(self):
@@ -38,14 +44,20 @@ class MissingArgumentsAnnotationsError(ExceptionSourceIsResolver, StrawberryExce
         head = ", ".join(arguments[:-1])
         return f'arguments "{head}" and "{arguments[-1]}"'
 
-    def find_argument(self, argument_name: str) -> Optional[NodeSource]:
-        assert self.exception_source is not None
+    @cached_property
+    def exception_source(self) -> Optional[ExceptionSource]:
+        exception_source = super().exception_source
 
-        code_ast = self.exception_source.code_ast
+        if exception_source is None:
+            return None
+
+        code_ast = exception_source.code_ast
 
         assert isinstance(code_ast.body[0], ast.FunctionDef)
 
         function_node = code_ast.body[0]
+
+        argument_name = self.missing_arguments[0]
 
         argument = next(
             (arg for arg in function_node.args.args if arg.arg == argument_name),
@@ -55,51 +67,30 @@ class MissingArgumentsAnnotationsError(ExceptionSourceIsResolver, StrawberryExce
         if argument is None:
             return None
 
-        return NodeSource(argument.lineno, argument.col_offset)
-
-    @cached_property
-    def first_argument(self) -> Optional[NodeSource]:
-        return self.find_argument(self.missing_arguments[0])
-
-    @property
-    def __rich_header__(self) -> "RenderableType":
-        assert self.first_argument
-        assert self.exception_source
-
-        source_file = self.exception_source.path
-        relative_path = self.exception_source.path_relative_to_cwd
-        error_line: int = self.exception_source.line + self.first_argument.line - 1
-
-        return (
-            f"[bold red]Missing annotation for {self.missing_arguments_str} in "
-            f"`[underline]{self.resolver.name}[/]` "
-            f"in [white][link=file://{source_file}]{relative_path}:{error_line}"
+        return ExceptionSource(
+            path=exception_source.path,
+            code=exception_source.code,
+            start_line=exception_source.start_line,
+            end_line=exception_source.end_line,
+            error_line=exception_source.start_line + argument.lineno - 1,
+            error_column=argument.col_offset,
         )
 
     @property
     def __rich_body__(self) -> "RenderableType":
         assert self.exception_source
-        assert self.first_argument
 
-        prefix = " " * (self.first_argument.column + self.exception_source.code_padding)
+        prefix = " " * (
+            self.exception_source.error_column + self.exception_source.code_padding
+        )
         caret = "^" * len(self.missing_arguments[0])
 
         first = "first " if len(self.missing_arguments) > 1 else ""
         message = f"{prefix}[bold]{caret}[/] {first}argument missing annotation"
 
-        error_line: int = self.exception_source.line + self.first_argument.line - 1
+        error_line: int = self.exception_source.error_line
         line_annotations = {error_line: message}
 
         return self.highlight_code(
             error_line=error_line, line_annotations=line_annotations
-        )
-
-    @property
-    def __rich_footer__(self) -> "RenderableType":
-        return (
-            "To fix this error you can add an annotation to the argument "
-            f"like so [italic]`{self.missing_arguments[0]}: str`"
-            "\n\n"
-            "Read more about this error on [bold underline]"
-            f"[link={self.documentation_url}]{self.documentation_url}"
         )

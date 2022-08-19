@@ -21,13 +21,21 @@ class MissingReturnAnnotationError(StrawberryException):
     documentation_url = "https://errors.strawberry.rocks/missing-return-annotation"
 
     def __init__(self, field_name: str, resolver: "StrawberryResolver"):
-        message = (
+        self.resolver = resolver
+
+        self.message = (
             f'Return annotation missing for field "{field_name}", '
             "did you forget to add it?"
         )
-        self.resolver = resolver
+        self.rich_message = (
+            "[bold red]Missing annotation for field "
+            f"`[underline]{self.resolver.name}[/]`"
+        )
 
-        super().__init__(message)
+        self.suggestion = (
+            "To fix this error you can add an annotation, "
+            f"like so [italic]`def {self.resolver.name} -> str:`"
+        )
 
     @cached_property
     def exception_source(self) -> Optional[ExceptionSource]:
@@ -41,45 +49,33 @@ class MissingReturnAnnotationError(StrawberryException):
         if source_file is None:
             return None
 
-        source_lines, line = getsourcelines(resolver)
+        source_lines, start_line = getsourcelines(resolver)
+
+        resolver_line, resolver_line_text = next(
+            (index, line)
+            for index, line in enumerate(source_lines)
+            if f"def {self.resolver.name}" in line
+        )
+        error_column = sum(
+            1 for _ in itertools.takewhile(str.isspace, resolver_line_text)
+        )
 
         return ExceptionSource(
-            path=Path(source_file), code="".join(source_lines), line=line
-        )
-
-    @property
-    def __rich_header__(self) -> "RenderableType":
-        assert self.exception_source
-
-        lines = self.exception_source.code.splitlines()
-        resolver_line = next(
-            line for line in lines if f"def {self.resolver.name}" in line
-        )
-
-        source_file = self.exception_source.path
-        relative_path = self.exception_source.path_relative_to_cwd
-        error_line = self.exception_source.line + lines.index(resolver_line)
-
-        return (
-            "[bold red]Missing annotation for field "
-            f"`[underline]{self.resolver.name}[/]` "
-            f"in [white][link=file://{source_file}]{relative_path}:{error_line}"
+            path=Path(source_file),
+            code="".join(source_lines),
+            start_line=start_line,
+            error_line=start_line + resolver_line,
+            end_line=start_line + len(source_lines),
+            error_column=error_column,
         )
 
     @property
     def __rich_body__(self) -> "RenderableType":
         assert self.exception_source
 
-        lines = self.exception_source.code.splitlines()
-        resolver_line = next(
-            line for line in lines if f"def {self.resolver.name}" in line
-        )
+        error_line = self.exception_source.error_line
 
-        column = sum(1 for _ in itertools.takewhile(str.isspace, resolver_line))
-
-        error_line = self.exception_source.line + lines.index(resolver_line)
-
-        prefix = " " * (column + len("def "))
+        prefix = " " * (self.exception_source.error_column + len("def "))
         caret = "^" * len(self.resolver.name)
 
         message = f"{prefix}[bold]{caret}[/] resolver missing annotation"
@@ -88,14 +84,4 @@ class MissingReturnAnnotationError(StrawberryException):
 
         return self.highlight_code(
             error_line=error_line, line_annotations=line_annotations
-        )
-
-    @property
-    def __rich_footer__(self) -> "RenderableType":
-        return (
-            "To fix this error you can add an annotation, "
-            f"like so [italic]`def {self.resolver.name} -> str:`"
-            "\n\n"
-            "Read more about this error on [bold underline]"
-            f"[link={self.documentation_url}]{self.documentation_url}"
         )
