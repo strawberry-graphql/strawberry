@@ -11,5 +11,9 @@ per-file-ignores =
     tests/test_forward_references.py:E800
     tests/schema/test_resolvers.py:E800
     tests/types/test_string_annotations.py:E800
+    tests/federation/printer/*:E501
+    tests/pyright/test_federation.py:E501
     tests/federation/test_printer.py:E800
     tests/federation/test_printer.py:E501
+    tests/test_printer/test_basic.py:E501
+    tests/test_printer/test_schema_directives.py:E501

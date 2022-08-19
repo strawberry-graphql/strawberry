@@ -1,23 +1,23 @@
 ---
-title: Federation
+title: Federation 2
 ---
 
-# Apollo Federation Guide
+# Apollo Federation 2 Guide
+
+<Note>
+
+This guide refers to Apollo Federation 2, if you're looking for the 1.0 guide,
+please see the [federation v1](docs/guides/federation-v1.md) guide.
+
+</Note>
 
 Apollo Federation allows you to combine multiple GraphQL APIs into one. This can
 be extremely useful when working with a service oriented architecture.
 
 Strawberry supports
-[Apollo Federation](https://www.apollographql.com/docs/federation) out of the
-box, that means that you can create services using Strawberry and federate them
-via Apollo Gateway.
-
-<Note>
-
-We don’t have a gateway server, you’ll still need to use the Apollo
-Gateway for this.
-
-</Note>
+[Apollo Federation 2](https://www.apollographql.com/docs/federation/federation-2/new-in-federation-2/)
+out of the box, that means that you can create services using Strawberry and
+federate them via Apollo Gateway or Apollo Router.
 
 ## Federated schema example
 
@@ -28,30 +28,62 @@ API:
 1. `books`: a service to manage all the books we have
 2. `reviews`: a service to manage book reviews
 
+Our folder structure will look something like this:
+
+```text
+my-app/
+├─ books/
+│  ├─ app.py
+├─ reviews/
+│  ├─ app.py
+```
+
+<Note>
+
+This guide assumes you've installed strawberry in both the books and reviews
+service
+
+</Note>
+
 ### Books service
 
-Our `book` service might look something like this:
+Let's create the `books` service, copy the following inside `books/app.py`
 
 ```python
+from typing import List
+
+import strawberry
+
+
 @strawberry.federation.type(keys=["id"])
 class Book:
     id: strawberry.ID
     title: str
 
+
 def get_all_books() -> List[Book]:
-    return [Book(id=1, title="The Dark Tower")]
+    return [Book(id=strawberry.ID("1"), title="The Dark Tower")]
+
 
 @strawberry.type
 class Query:
     all_books: List[Book] = strawberry.field(resolver=get_all_books)
 
-schema = strawberry.federation.Schema(query=Query)
+
+schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
 ```
+
+<Note>
+
+`enable_federation_2=True` is used to enable Apollo Federation 2 and currently
+defaults to `False`. This will change in a future version of Strawberry.
+
+</Note>
 
 We defined two types: `Book` and `Query`, where `Query` has only one field that
 allows us to fetch all the books.
 
-Notice that the `Book` type is used the `strawberry.federation.type` decorator,
+Notice that the `Book` type is using the `strawberry.federation.type` decorator,
 as opposed to the normal `strawberry.type`, this new decorator extends the base
 one and allows us to define federation-specific attributes on the type.
 
@@ -60,9 +92,9 @@ uniquely-identifying key.
 
 <Note>
 
-Federation keys can be thought of as primary keys. They are used by the
-gateway to query types between multiple services and then join them into the
-augmented type.
+Federation keys can be thought of as primary keys. They are used by the gateway
+to query types between multiple services and then join them into the augmented
+type.
 
 </Note>
 
@@ -71,7 +103,14 @@ augmented type.
 Now, let’s take a look at our review service: we want to define a type for a
 review but also extend the `Book` type to have a list of reviews.
 
+Copy the following inside `reviews/app.py`:
+
 ```python
+from typing import List
+
+import strawberry
+
+
 @strawberry.type
 class Review:
     id: int
@@ -83,9 +122,9 @@ def get_reviews(root: "Book") -> List[Review]:
       for id_ in range(root.reviews_count)
     ]
 
-@strawberry.federation.type(extend=True, keys=["id"])
+@strawberry.federation.type(keys=["id"])
 class Book:
-    id: strawberry.ID = strawberry.federation.field(external=True)
+    id: strawberry.ID
     reviews_count: int
     reviews: List[Review] = strawberry.field(resolver=get_reviews)
 
@@ -94,23 +133,27 @@ class Book:
         # here we could fetch the book from the database
         # or even from an API
         return Book(id=id, reviews_count=3)
+
+@strawberry.type
+class Query:
+    _hi: str = strawberry.field(resolver=lambda: "Hello World!")
+
+schema = strawberry.federation.Schema(query=Query, types=[Book, Review], enable_federation_2=True)
 ```
 
 Now things are looking more interesting; the `Review` type is a GraphQL type
 that holds the contents of the review.
 
-We've also been able to extend the `Book` type by using again
-`strawberry.federation.type`, this time passing `extend=True` as an argument.
-This is important because we need to tell federation that we are extending a
-type that already exists, not creating a new one.
+But we also have a `Book` which has 3 fields, `id`, `reviews_count` and
+`reviews`.
 
-We have also declared three fields on `Book`, one of which is `id` which is
-marked as `external` with `strawberry.federation.field(external=True)`. This
-tells federation that this field is not available in this service, and that it
-comes from another service.
+<Note>
 
-The other fields are `reviews` (the list of `Reviews` for this book) and
-`reviews_count` (the number of reviews for this book).
+In Apollo Federation 1 we'd need to mark the `Book` type as an extension and
+also we'd need to mark `id` as an external field, this is not the case in Apollo
+Federation 2.
+
+</Note>
 
 Finally, we also have a class method, `resolve_reference`, that allows us to
 instantiate types when they are referred to by other services. The
@@ -138,50 +181,87 @@ the requested `id` and a fixed number of reviews.
 If we were to add more fields to `Book` that were stored in a database, this
 would be where we could perform queries for these fields' values.
 
-Now we need to do is to define a `Query` type, even if our service only has one
-type that is not used directly in any GraphQL query. This is because the GraphQL
-spec mandates that a GraphQL server defines a Query type, even if it ends up
-being empty/unused. Finally we also need to let Strawberry know about our Book
-and Review types. Since they are not reachable from the `Query` field itself,
-Strawberry won't be able to find them by default.
+We also defined a `Query` type that has a single field, `_hi`, which returns a
+string. This is required because the GraphQL spec mandates that a GraphQL server
+defines a Query type, even if it ends up being empty/unused.
 
-```python
-@strawberry.type
-class Query:
-    _service: Optional[str]
+Finally we also need to let Strawberry know about our Book and Review types.
+Since they are not reachable from the `Query` field itself, Strawberry won't be
+able to find them.
 
-schema = strawberry.federation.Schema(query=Query, types=[Book, Review])
+## Let's run our services
+
+Before starting Apollo Router to compose our schemas we need to run the
+services.
+
+In two terminal windows, run the following commands:
+
+```bash
+cd books
+strawberry server --port 3500 app
 ```
 
-## The gateway
+```bash
+cd reviews
+strawberry server --port 3000 app
+```
+
+## Apollo Router
 
 Now we have our services up and running, we need to configure a gateway to
-consume our services. Apollo Gateway is the official gateway server for Apollo
-Federation. Here's an example on how to configure the gateway:
+consume our services. Apollo provides a router that can be used for this.
 
-```js
-const { ApolloServer } = require("apollo-server");
-const { ApolloGateway } = require("@apollo/gateway");
+Before continuing we'll need to install Apollo Router by following
+[their installation guide](https://www.apollographql.com/docs/router/quickstart/)
+and we'll need to
+[install Apollo's CLI](https://www.apollographql.com/docs/rover/getting-started)
+to compose the schema.
 
-const gateway = new ApolloGateway({
-  serviceList: [
-    { name: "books", url: "http://localhost:8000" },
-    { name: "reviews", url: "http://localhost:8080" },
-  ],
-});
+<Note>
 
-const server = new ApolloServer({ gateway });
+Composing the schema means combining all our service's schemas into a single
+schema. The composed schema will be used by the router to route requests to the
+appropriate services.
 
-server.listen().then(({ url }) => {
-  console.log(`🚀 Server ready at ${url}`);
-});
+</Note>
+
+Create a file called `supergraph.yaml` with the following contents:
+
+```yaml
+federation_version: 2
+subgraphs:
+  reviews:
+    routing_url: http://localhost:3000
+    schema:
+      subgraph_url: http://localhost:3000
+
+  books:
+    routing_url: http://localhost:3500
+    schema:
+      subgraph_url: http://localhost:3500
 ```
 
-When running this example you'll be able to run query like the following:
+This file will be used by rover to compose the schema, which can be done with
+the following command:
+
+```bash
+# Creates prod-schema.graphql or overwrites if it already exists
+rover supergraph compose --config ./supergraph.yaml > supergraph-schema.graphql
+```
+
+Now that we have the composed schema, we can start the router.
+
+```bash
+./router --supergraph supergraph-schema.graphql
+```
+
+Now that router is running we can go to
+[http://localhost:4000](http://localhost:4000) and try to run the following
+query:
 
 ```graphql
 {
-  books {
+  allBooks {
     id
     reviewsCount
     reviews {
@@ -191,6 +271,36 @@ When running this example you'll be able to run query like the following:
 }
 ```
 
+if everything went well we should get the following result:
+
+```json
+{
+  "data": {
+    "allBooks": [
+      {
+        "id": "1",
+        "reviewsCount": 3,
+        "reviews": [
+          {
+            "body": "A review for 1"
+          },
+          {
+            "body": "A review for 1"
+          },
+          {
+            "body": "A review for 1"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
 We have provided a full example that you can run and tweak to play with
 Strawberry and Federation. The repo is available here:
 [https://github.com/strawberry-graphql/federation-demo](https://github.com/strawberry-graphql/federation-demo)
+
+## Additional resources
+
+[Apollo Federation Quickstart](https://www.apollographql.com/docs/federation/quickstart/setup/)

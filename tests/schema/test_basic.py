@@ -298,6 +298,38 @@ def test_enum_description():
     assert result.data["pizzas"]["description"] is None
 
 
+def test_enum_value_description():
+    @strawberry.enum
+    class IceCreamFlavour(Enum):
+        VANILLA = "vanilla"
+        STRAWBERRY = strawberry.enum_value("strawberry", description="Our favourite.")
+        CHOCOLATE = "chocolate"
+
+    @strawberry.type
+    class Query:
+        favorite_ice_cream: IceCreamFlavour = IceCreamFlavour.STRAWBERRY
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        iceCreamFlavour: __type(name: "IceCreamFlavour") {
+            enumValues {
+                name
+                description
+            }
+        }
+    }"""
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data["iceCreamFlavour"]["enumValues"] == [
+        {"name": "VANILLA", "description": None},
+        {"name": "STRAWBERRY", "description": "Our favourite."},
+        {"name": "CHOCOLATE", "description": None},
+    ]
+
+
 def test_parent_class_fields_are_inherited():
     @strawberry.type
     class Parent:

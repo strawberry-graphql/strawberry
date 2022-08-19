@@ -45,6 +45,7 @@ from strawberry.description_sources import DescriptionSources
 from strawberry.directive import StrawberryDirective
 from strawberry.enum import EnumDefinition, EnumValue
 from strawberry.exceptions import (
+    InvalidTypeInputForUnion,
     MissingTypesForGenericError,
     ScalarAlreadyRegisteredError,
     UnresolvedFieldTypeError,
@@ -94,6 +95,9 @@ class CustomGraphQLEnumType(GraphQLEnumType):
 class GraphQLCoreConverter:
     # TODO: Make abstract
 
+    # Extension key used to link a GraphQLType back into the Strawberry definition
+    DEFINITION_BACKREF = "strawberry-definition"
+
     def __init__(
         self,
         config: StrawberryConfig,
@@ -131,6 +135,9 @@ class GraphQLCoreConverter:
             default_value=default_value,
             description=description,
             deprecation_reason=argument.deprecation_reason,
+            extensions={
+                GraphQLCoreConverter.DEFINITION_BACKREF: argument,
+            },
         )
 
     def from_enum(self, enum: EnumDefinition) -> CustomGraphQLEnumType:
@@ -164,6 +171,9 @@ class GraphQLCoreConverter:
                 for item in enum.values
             },
             description=description,
+            extensions={
+                GraphQLCoreConverter.DEFINITION_BACKREF: enum,
+            },
         )
 
         self.type_map[enum_name] = ConcreteType(
@@ -178,16 +188,25 @@ class GraphQLCoreConverter:
         parent_enum_docstring: Optional[Docstring],
         description_sources: DescriptionSources,
     ) -> GraphQLEnumValue:
+        description_sources = pick_not_none(
+            enum_value.description_sources,
+            description_sources,
+        )
+
         description = self._get_description(
             sources=description_sources,
+            description=enum_value.description,
             parent_enum_docstring=parent_enum_docstring,
             child_name=enum_value.name,
         )
 
         return GraphQLEnumValue(
             enum_value.value,
-            description=description,
             deprecation_reason=enum_value.deprecation_reason,
+            description=description,
+            extensions={
+                GraphQLCoreConverter.DEFINITION_BACKREF: enum_value,
+            },
         )
 
     def from_directive(self, directive: StrawberryDirective) -> GraphQLDirective:
@@ -218,6 +237,9 @@ class GraphQLCoreConverter:
             locations=directive.locations,
             args=graphql_arguments,
             description=description,
+            extensions={
+                GraphQLCoreConverter.DEFINITION_BACKREF: directive,
+            },
         )
 
     def from_schema_directive(self, directive: Any) -> GraphQLDirective:
@@ -265,9 +287,12 @@ class GraphQLCoreConverter:
             locations=[
                 DirectiveLocation(loc.value) for loc in strawberry_directive.locations
             ],
-            is_repeatable=False,
             args=args,
+            is_repeatable=strawberry_directive.repeatable,
             description=description,
+            extensions={
+                GraphQLCoreConverter.DEFINITION_BACKREF: strawberry_directive,
+            },
         )
 
     def from_field(
@@ -312,7 +337,9 @@ class GraphQLCoreConverter:
             subscribe=subscribe,
             description=description,
             deprecation_reason=field.deprecation_reason,
-            extensions={"python_name": field.python_name},
+            extensions={
+                GraphQLCoreConverter.DEFINITION_BACKREF: field,
+            },
         )
 
     def from_input_field(
@@ -346,6 +373,9 @@ class GraphQLCoreConverter:
             default_value=default_value,
             description=description,
             deprecation_reason=field.deprecation_reason,
+            extensions={
+                GraphQLCoreConverter.DEFINITION_BACKREF: field,
+            },
         )
 
     FieldType = TypeVar("FieldType", GraphQLField, GraphQLInputField)
@@ -438,6 +468,9 @@ class GraphQLCoreConverter:
                 type_definition, description_sources, type_definition.docstring
             ),
             description=description,
+            extensions={
+                GraphQLCoreConverter.DEFINITION_BACKREF: type_definition,
+            },
         )
 
         self.type_map[type_name] = ConcreteType(
@@ -474,6 +507,9 @@ class GraphQLCoreConverter:
             ),
             interfaces=list(map(self.from_interface, interface.interfaces)),
             description=description,
+            extensions={
+                GraphQLCoreConverter.DEFINITION_BACKREF: interface,
+            },
         )
 
         self.type_map[interface_name] = ConcreteType(
@@ -533,6 +569,9 @@ class GraphQLCoreConverter:
             interfaces=list(map(self.from_interface, object_type.interfaces)),
             description=description,
             is_type_of=_get_is_type_of(),
+            extensions={
+                GraphQLCoreConverter.DEFINITION_BACKREF: object_type,
+            },
         )
 
         self.type_map[object_type_name] = ConcreteType(
@@ -565,14 +604,16 @@ class GraphQLCoreConverter:
             args = []
 
             if field.base_resolver:
-                if field.base_resolver.has_self_arg:
+                if field.base_resolver.self_parameter:
                     args.append(source)
 
-                if field.base_resolver.has_root_arg:
-                    kwargs["root"] = source
+                root_parameter = field.base_resolver.root_parameter
+                if root_parameter:
+                    kwargs[root_parameter.name] = source
 
-                if field.base_resolver.has_info_arg:
-                    kwargs["info"] = info
+                info_parameter = field.base_resolver.info_parameter
+                if info_parameter:
+                    kwargs[info_parameter.name] = info
 
             return args, kwargs
 
@@ -629,6 +670,8 @@ class GraphQLCoreConverter:
             await _check_permissions_async(_source, strawberry_info, kwargs)
 
             return await await_maybe(_get_result(_source, strawberry_info, **kwargs))
+
+        field.default_resolver = self.config.default_resolver  # type: ignore
 
         if field.is_async:
             _async_resolver._is_default = not field.base_resolver  # type: ignore
@@ -727,6 +770,8 @@ class GraphQLCoreConverter:
         for type_ in union.types:
             graphql_type = self.from_type(type_)
 
+            if isinstance(graphql_type, GraphQLInputObjectType):
+                raise InvalidTypeInputForUnion(graphql_type)
             assert isinstance(graphql_type, GraphQLObjectType)
 
             graphql_types.append(graphql_type)
@@ -736,6 +781,9 @@ class GraphQLCoreConverter:
             types=graphql_types,
             description=union.description,
             resolve_type=union.get_type_resolver(self.type_map),
+            extensions={
+                GraphQLCoreConverter.DEFINITION_BACKREF: union,
+            },
         )
 
         self.type_map[union_name] = ConcreteType(

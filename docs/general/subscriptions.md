@@ -217,6 +217,32 @@ app = GraphQL(schema, subscription_protocols=[
 ])
 ```
 
+##### Django + Channels
+
+```python
+import os
+
+from django.core.asgi import get_asgi_application
+from strawberry.channels import GraphQLProtocolTypeRouter
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mysite.settings')
+django_asgi_app = get_asgi_application()
+
+# Import your Strawberry schema after creating the django ASGI application
+# This ensures django.setup() has been called before any ORM models are imported
+# for the schema.
+from mysite.graphql import schema
+
+
+application = GraphQLProtocolTypeRouter(
+    schema,
+    django_application=django_asgi_app,
+)
+```
+
+Note: Check the [channels integraton](/docs/integrations/channels.md) page for more information
+regarding the it.
+
 ### Single result operations
 
 In addition to _streaming operations_ (i.e. subscriptions),

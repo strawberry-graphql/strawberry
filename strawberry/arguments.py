@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+import dataclasses
 import inspect
 import warnings
-from dataclasses import dataclass
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -42,12 +42,13 @@ DEPRECATED_NAMES: Dict[str, str] = {
 }
 
 
-@dataclass
+@dataclasses.dataclass(frozen=True)
 class StrawberryArgumentAnnotation:
     description_sources: Optional[DescriptionSources]
     description: Optional[str]
     name: Optional[str]
     deprecation_reason: Optional[str]
+    directives: Iterable[object] = dataclasses.field(hash=False)
 
 
 class StrawberryArgument:
@@ -61,6 +62,7 @@ class StrawberryArgument:
         description: Optional[str] = None,
         default: object = _deprecated_UNSET,
         deprecation_reason: Optional[str] = None,
+        directives: Iterable[object] = (),
     ) -> None:
         self.python_name = python_name
         self.graphql_name = graphql_name
@@ -70,6 +72,7 @@ class StrawberryArgument:
         self._type: Optional[StrawberryType] = None
         self.type_annotation = type_annotation
         self.deprecation_reason = deprecation_reason
+        self.directives = directives
 
         # TODO: Consider moving this logic to a function
         self.default = (
@@ -110,6 +113,7 @@ class StrawberryArgument:
                 self.description = arg.description
                 self.graphql_name = arg.name
                 self.deprecation_reason = arg.deprecation_reason
+                self.directives = arg.directives
 
 
 def convert_argument(
@@ -205,12 +209,14 @@ def argument(
     description: Optional[str] = None,
     name: Optional[str] = None,
     deprecation_reason: Optional[str] = None,
+    directives: Iterable[object] = (),
 ) -> StrawberryArgumentAnnotation:
     return StrawberryArgumentAnnotation(
         description_sources=description_sources,
         description=description,
         name=name,
         deprecation_reason=deprecation_reason,
+        directives=directives,
     )
 
 

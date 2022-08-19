@@ -120,3 +120,22 @@ async def test_not_allowed_methods(aiohttp_app_client):
     for method in not_allowed_methods:
         response = await aiohttp_app_client.request(method, "/graphql")
         assert response.status == 405, method
+
+
+async def test_operation_selection(aiohttp_app_client):
+    query = {
+        "query": """
+            query Operation1 {
+                hello(name: "Operation1")
+            }
+            query Operation2 {
+                hello(name: "Operation2")
+            }
+        """,
+        "operationName": "Operation2",
+    }
+
+    response = await aiohttp_app_client.post("/graphql", json=query)
+    data = await response.json()
+    assert response.status == 200
+    assert data["data"]["hello"] == "Hello Operation2"

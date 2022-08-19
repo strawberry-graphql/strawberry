@@ -35,6 +35,9 @@ class StrawberrySchemaDirective:
     description_sources: Optional[DescriptionSources] = None
     description: Optional[str] = None
     docstring: Optional[Docstring] = None
+    repeatable: bool = False
+    print_definition: bool = True
+    origin: Optional[Type] = None
 
 
 T = TypeVar("T", bound=Type)
@@ -48,7 +51,9 @@ def schema_directive(
     locations: List[Location],
     description_sources: Optional[DescriptionSources] = None,
     description: Optional[str] = None,
-    name: Optional[str] = None
+    name: Optional[str] = None,
+    repeatable: bool = False,
+    print_definition: bool = True,
 ):
     def _wrap(cls: T) -> T:
         docstring = Docstring(cls)
@@ -62,7 +67,10 @@ def schema_directive(
             description_sources=description_sources,
             description=description,
             docstring=docstring,
+            repeatable=repeatable,
             fields=fields,
+            print_definition=print_definition,
+            origin=cls,
         )
 
         return cls

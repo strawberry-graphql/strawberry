@@ -17,8 +17,8 @@ The preferred way of adding description in strawberry is using the
 ```python+schema
 @strawberry.enum(description="Example enum")
 class EnumType(Enum):
-    FOO = "foo"
-    BAR = "bar"
+    FOO = strawberry.enum_value("foo", description="Some description")
+    BAR = strawberry.enum_value("bar", description="Another description")
 
 
 @strawberry.type(description="The main GraphQL type")
@@ -39,7 +39,10 @@ schema = strawberry.Schema(query=Query)
 ---
 """Example enum"""
 enum EnumType {
+  """Some description"""
   FOO
+
+  """Another description"""
   BAR
 }
 
@@ -66,7 +69,7 @@ requires all descriptions to be formatted using Markdown syntax (as specified by
 
 It is also possible to generate descriptions from Python docstrings.
 
-Docstrings additionally allow specifying descriptions to enum values and resolver arguments when
+Docstrings additionally allow specifying descriptions to class fields, enum values and resolver arguments when
 one of the [supported syntaxes is used](https://pypi.org/project/docstring-parser/)
 
 <Note>
