@@ -3,16 +3,7 @@ import inspect
 import textwrap
 from dataclasses import dataclass
 from pathlib import Path
-from typing import (
-    TYPE_CHECKING,
-    ClassVar,
-    Dict,
-    NamedTuple,
-    Optional,
-    Tuple,
-    Type,
-    Union,
-)
+from typing import TYPE_CHECKING, ClassVar, Dict, NamedTuple, Optional, Tuple, Type
 
 import libcst as cst
 import libcst.matchers as m
@@ -31,8 +22,8 @@ if TYPE_CHECKING:
 
 
 class NodeSource(NamedTuple):
-    line: int
-    column: int
+    position: CodeRange
+    node: cst.CSTNode
 
 
 @dataclass
@@ -102,9 +93,7 @@ class ExceptionSourceIsClassAttribute:
     cls: Type
     field_name: str
 
-    def _find_attribute_in_class(
-        self, source: str
-    ) -> Optional[Tuple[cst.CSTNode, CodeRange]]:
+    def _find_attribute_in_class(self, source: str) -> Optional[NodeSource]:
         module = cst.parse_module(source)
         wrapper = MetadataWrapper(module)
 
@@ -128,13 +117,13 @@ class ExceptionSourceIsClassAttribute:
 
         assert class_def
 
-        # TODO: can we find a way to not have to return a tuple
-
         attribute_definition = m.findall(
             class_def, m.AssignTarget(target=m.Name(value=self.field_name))
         )[0]
 
-        return attribute_definition, self.position_metadata[attribute_definition]
+        return NodeSource(
+            self.position_metadata[attribute_definition], attribute_definition
+        )
 
     @cached_property
     def exception_source(self) -> Optional[ExceptionSource]:
@@ -149,54 +138,21 @@ class ExceptionSourceIsClassAttribute:
         path = Path(source_file)
         code = path.read_text()
 
-        attribute, position = self._find_attribute_in_class(code)
+        node_source = self._find_attribute_in_class(code)
+
+        if node_source is None:
+            return None
 
         return ExceptionSource(
             path=path,
             code=code,
             # TODO: start should be start of the class
-            start_line=position.start.line,
-            error_line=position.start.line,
-            end_line=position.end.line,
-            error_column=position.start.column,
-            error_column_end=position.end.column,
+            start_line=node_source.position.start.line,
+            error_line=node_source.position.start.line,
+            end_line=node_source.position.end.line,
+            error_column=node_source.position.start.column,
+            error_column_end=node_source.position.end.column,
         )
-
-    def find_class_attribute(self, field_name: str) -> Optional[NodeSource]:
-        # we know that self.ast is always a `ast.Module` since we parse a file
-        # we assume that the first item in the body is a class definition
-        # since we are only parsing the code for the class when we are
-        # looking for the class attribute
-        assert isinstance(self.code_ast.body[0], ast.ClassDef)
-
-        class_node = self.code_ast.body[0]
-
-        assign_expr = next(
-            (
-                expr
-                for expr in class_node.body
-                if self.is_attribute(expr, of_name=field_name)
-            ),
-            None,
-        )
-
-        if assign_expr:
-            return NodeSource(assign_expr.lineno, assign_expr.col_offset)
-
-        return None
-
-    @staticmethod
-    def is_attribute(expr: Union[ast.Expr, ast.stmt], of_name: str) -> bool:
-        if isinstance(expr, ast.Assign):
-            return any(
-                isinstance(target, ast.Name) and target.id == of_name
-                for target in expr.targets
-            )
-
-        if isinstance(expr, ast.AnnAssign):
-            return isinstance(expr.target, ast.Name) and expr.target.id == of_name
-
-        return False
 
 
 class ExceptionSourceIsResolver:
