@@ -118,8 +118,13 @@ class ExceptionSourceIsClassAttribute:
         assert class_def
 
         attribute_definition = m.findall(
-            class_def, m.AssignTarget(target=m.Name(value=self.field_name))
+            class_def,
+            m.AssignTarget(target=m.Name(value=self.field_name))
+            | m.AnnAssign(target=m.Name(value=self.field_name)),
         )[0]
+
+        if isinstance(attribute_definition, cst.AnnAssign):
+            attribute_definition = attribute_definition.target
 
         return NodeSource(
             self.position_metadata[attribute_definition], attribute_definition

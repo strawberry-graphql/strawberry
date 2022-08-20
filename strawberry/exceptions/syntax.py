@@ -38,9 +38,7 @@ class Syntax(RichSyntax):
 
         for segment in segments:
             if segment.text == "\n":
-                # the number 3 comes from: 2 for the > char and the space
-                # and 1 for the space after the number
-                prefix = " " * (3 + len(str(current_line)))
+                prefix = " " * (self._numbers_column_width + 1)
 
                 annotation = annotations.pop(current_line, None)
 
