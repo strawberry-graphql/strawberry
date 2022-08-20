@@ -1,7 +1,6 @@
 from typing import TYPE_CHECKING, Optional
 
 import libcst.matchers as m
-from backports.cached_property import cached_property
 from libcst.metadata import CodeRange
 
 from ..utils.getsource import getsourcelines
@@ -32,7 +31,7 @@ class ExceptionSourceIsArgument(ExceptionSourceIsResolver):
         # TODO: this is a hack to get the argument definition
         return self.position_metadata[argument_def[0]]
 
-    @cached_property
+    @property
     def exception_source(self) -> Optional[ExceptionSource]:
         exception_source = super().exception_source
 

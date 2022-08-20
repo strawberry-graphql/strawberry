@@ -4,7 +4,6 @@ from pathlib import Path
 from typing import Optional, Type
 
 import libcst as cst
-from backports.cached_property import cached_property
 from libcst.metadata import CodeRange, MetadataWrapper, PositionProvider
 
 from .exception import StrawberryException
@@ -53,7 +52,7 @@ class InvalidUnionTypeError(StrawberryException):
             error_column_end=error_column + len(self.invalid_type.__name__),
         )
 
-    @cached_property
+    @property
     def exception_source(self) -> Optional[ExceptionSource]:
         union_position: Optional[CodeRange] = None
 
@@ -124,7 +123,7 @@ class InvalidTypeForUnionMergeError(InvalidUnionTypeError):
     """A specialized version of InvalidUnionTypeError for when trying
     to merge unions with incompatible types"""
 
-    @cached_property
+    @property
     def exception_source(self) -> Optional[ExceptionSource]:
         strawberry_union_node = None
 

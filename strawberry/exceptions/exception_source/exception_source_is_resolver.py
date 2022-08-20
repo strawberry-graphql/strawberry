@@ -4,7 +4,6 @@ from typing import TYPE_CHECKING, Optional, Tuple
 
 import libcst as cst
 import libcst.matchers as m
-from backports.cached_property import cached_property
 from libcst.metadata import CodeRange, MetadataWrapper, PositionProvider
 
 from ..utils.getsource import getsourcelines
@@ -43,7 +42,7 @@ class ExceptionSourceIsResolver:
 
         return result[1] if result else None
 
-    @cached_property
+    @property
     def exception_source(self) -> Optional[ExceptionSource]:
         if self.resolver is None:
             return None

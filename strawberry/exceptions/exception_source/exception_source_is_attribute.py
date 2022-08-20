@@ -4,7 +4,6 @@ from typing import Optional, Type
 
 import libcst as cst
 import libcst.matchers as m
-from backports.cached_property import cached_property
 from libcst.metadata import MetadataWrapper, PositionProvider
 
 from ..utils.getsource import getsourcelines
@@ -60,7 +59,7 @@ class ExceptionSourceIsAttribute(Exception):
             self._position_metadata[attribute_definition], attribute_definition
         )
 
-    @cached_property
+    @property
     def exception_source(self) -> Optional[ExceptionSource]:
         if self.cls is None:
             return None
