@@ -2,6 +2,7 @@ from typing import Dict, Optional, Set, Tuple
 
 from pygments.lexers import PythonLexer
 from rich.console import Console, ConsoleOptions, RenderResult
+from rich.segment import Segment
 from rich.syntax import Syntax as RichSyntax
 
 
@@ -37,6 +38,7 @@ class Syntax(RichSyntax):
         current_line = self.line_range[0] or 0
 
         for segment in segments:
+
             if segment.text == "\n":
                 prefix = " " * (self._numbers_column_width + 1)
 
@@ -51,5 +53,8 @@ class Syntax(RichSyntax):
                     continue
 
             yield segment
+
+            if segment.text.strip() == str(current_line):
+                yield Segment("|")
 
     # TODO: reintroduce | separator in code
