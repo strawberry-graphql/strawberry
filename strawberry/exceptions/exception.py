@@ -26,11 +26,14 @@ class StrawberryException(Exception):
         return self.message
 
     @property
+    def documentation_path(self) -> str:
+        return to_kebab_case(self.__class__.__name__.replace("Error", ""))
+
+    @property
     def documentation_url(self) -> str:
         prefix = "https://errors.strawberry.rocks/"
-        path = to_kebab_case(self.__class__.__name__.replace("Error", ""))
 
-        return prefix + path
+        return prefix + self.documentation_path
 
     @cached_property
     def exception_source(self) -> Optional[ExceptionSource]:

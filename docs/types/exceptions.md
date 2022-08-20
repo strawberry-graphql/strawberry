@@ -11,8 +11,8 @@ Strawberry defines its library-specific exceptions in `strawberry.exceptions`.
 
 ### FieldWithResolverAndDefaultFactoryError
 
-This exception is raised when `strawberry.field` is used with both `resolver` and
-`default_factory` arguments.
+This exception is raised when `strawberry.field` is used with both `resolver`
+and `default_factory` arguments.
 
 ```python
 @strawberry.type
@@ -27,10 +27,10 @@ class Query:
 
 ### FieldWithResolverAndDefaultValueError
 
-This exception is raised when `strawberry.field` is used with both `resolver` and
-`default` arguments.
+This exception is raised when `strawberry.field` is used with both `resolver`
+and `default` arguments.
 
-```python
+````python
 def test_resolver() -> str:
     return "I'm a resolver"
 
@@ -39,80 +39,6 @@ class Query:
     c: str = strawberry.field(default="Example C", resolver=test_resolver)
 
 # Throws 'Field "c" on type "Query" cannot define a default value and a resolver.'
-```
-
-### InvalidFieldArgumentError
-
-This exception is raised when a `Union` or an `Interface` is used as an argument type.
-
-```python
-@strawberry.type
-class Noun:
-    text: str
-
-@strawberry.type
-class Verb:
-    text: str
-
-Word = strawberry.union("Word", types=(Noun, Verb))
-
-@strawberry.field
-def add_word(word: Word) -> bool:
-    return True
-
-# Throws 'Argument "word" on field "add_word" cannot be of type "Union"'
-```
-
-### InvalidUnionTypeError
-
-This exception is raised when an invalid type is used with `Union`.
-
-```python
-Result = strawberry.union("Result", (int, ))
-
-# Throws 'Type `int` cannot be used in a GraphQL Union'
-```
-
-### MissingArgumentsAnnotationsError
-
-The `MissingArgumentsAnnotationsError` exception is raised when a resolver's arguments
-are missing type annotations.
-
-```python
-@strawberry.field
-def hello(self, foo) -> str:
-    return "I'm a resolver"
-
-# Throws 'Missing annotation for argument "foo" in field "hello", did you forget to add it?'
-```
-
-### MissingFieldAnnotationError
-
-The `MissingFieldAnnotationError` exception is raised when a `strawberry.field` is not
-type-annotated but also has no resolver to determine its type.
-
-```python
-@strawberry.type
-class Query:  # noqa: F841
-    foo = strawberry.field()
-
-# Throws 'Unable to determine the type of field "foo". Either annotate it directly, or provide a typed resolver using @strawberry.field.'
-```
-
-### MissingReturnAnnotationError
-
-The `MissingReturnAnnotationError` exception is raised when a resolver is missing the
-type annotation for the return type.
-
-```python
-@strawberry.type
-class Query:
-    @strawberry.field
-    def goodbye(self):
-        return "I'm a resolver"
-
-# Throws 'Return annotation missing for field "goodbye", did you forget to add it?'
-```
 
 ### MissingTypesForGenericError
 
@@ -140,7 +66,7 @@ def name(
     return "Name"
 
 # Throws 'Annotation for argument `argument` on field `name` cannot have multiple `strawberry.argument`s'
-```
+````
 
 ### ObjectIsNotAClassError
 
@@ -157,8 +83,8 @@ def not_a_class():
 
 ### ObjectIsNotAnEnumError
 
-This exception is raised when `strawberry.enum` is used with an object that is not an
-Enum.
+This exception is raised when `strawberry.enum` is used with an object that is
+not an Enum.
 
 ```python
 @strawberry.enum
@@ -185,9 +111,9 @@ class Query:
 
 ### ScalarAlreadyRegisteredError
 
-This exception is raised when two scalars are used with the same name or the same type.
-Note that also `graphql` library will throw a `TypeError` exception with the same
-message.
+This exception is raised when two scalars are used with the same name or the
+same type. Note that also `graphql` library will throw a `TypeError` exception
+with the same message.
 
 ```python
 MyCustomScalar = strawberry.scalar(
@@ -259,8 +185,8 @@ class Type:
 
 ### WrongNumberOfResultsReturned
 
-This exception is raised when the DataLoader returns a different number of results than
-requested.
+This exception is raised when the DataLoader returns a different number of
+results than requested.
 
 ```python
 async def idx(keys):
@@ -275,7 +201,8 @@ await loader.load(1)
 
 ## Runtime exceptions
 
-Some errors are also thrown when trying to exectuing queries (mutations or subscriptions).
+Some errors are also thrown when trying to exectuing queries (mutations or
+subscriptions).
 
 ### MissingQueryError
 
@@ -289,8 +216,8 @@ client.post("/graphql", data={})
 
 ## UnallowedReturnTypeForUnion
 
-This error is raised when the return type of a `Union` is not in the list of Union
-types.
+This error is raised when the return type of a `Union` is not in the list of
+Union types.
 
 ```python
 @strawberry.type
@@ -344,8 +271,8 @@ result = schema.execute_sync(query)
 
 ## WrongReturnTypeForUnion
 
-This exception is thrown when the Union type cannot be resolved because it's not a
-`strawberry.field`.
+This exception is thrown when the Union type cannot be resolved because it's not
+a `strawberry.field`.
 
 ```python
 @strawberry.type

@@ -2,7 +2,8 @@ import contextlib
 import os
 import re
 from collections import defaultdict
-from typing import DefaultDict, Generator, Tuple
+from pathlib import Path
+from typing import DefaultDict, Generator, Type
 
 import pytest
 
@@ -12,6 +13,10 @@ from _pytest.nodes import Item
 from pluggy._result import _Result
 
 from strawberry.exceptions import StrawberryException
+
+
+WORKSPACE_FOLDER = Path(__file__).parents[2]
+DOCS_FOLDER = WORKSPACE_FOLDER / "docs/exceptions"
 
 
 @contextlib.contextmanager
@@ -28,7 +33,7 @@ def suppress_output(verbosity_level: int = 0) -> Generator[None, None, None]:
 
 class StrawberryExceptionsPlugin:
     def __init__(self, verbosity_level: int) -> None:
-        self._info: DefaultDict[Tuple[str, str], list] = defaultdict(list)
+        self._info: DefaultDict[Type[StrawberryException], list] = defaultdict(list)
         self.verbosity_level = verbosity_level
 
     @pytest.hookimpl(hookwrapper=True)
@@ -104,9 +109,15 @@ class StrawberryExceptionsPlugin:
         else:
             text += f"\n``````\n{exception_text.strip()}\n``````\n\n"
 
-        self._info[
-            raised_exception.__class__.__name__, raised_exception.documentation_url
-        ].append(text)
+        documentation_path = DOCS_FOLDER / f"{raised_exception.documentation_path}.md"
+
+        if not documentation_path.exists():
+            pytest.fail(
+                f"{documentation_path.relative_to(WORKSPACE_FOLDER)} does not exist",
+                pytrace=False,
+            )
+
+        self._info[raised_exception.__class__].append(text)
 
     def pytest_sessionfinish(self):
         summary_path = os.environ.get("GITHUB_STEP_SUMMARY", None)
@@ -116,12 +127,11 @@ class StrawberryExceptionsPlugin:
 
         markdown = ""
 
-        for test, info in self._info.items():
-            test_name, documentation_url = test
-            test_name = " ".join(re.findall("[a-zA-Z][^A-Z]*", test_name))
+        for exception, info in self._info.items():
+            test_name = " ".join(re.findall("[a-zA-Z][^A-Z]*", exception.__name__))
 
             markdown += f"# {test_name}\n\n"
-            markdown += f"Documentation URL: {documentation_url}\n\n"
+            markdown += f"Documentation URL: {exception.documentation_url}\n\n"
 
             markdown += "\n".join(info)
 
