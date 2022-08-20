@@ -1,19 +1,15 @@
-from typing import TYPE_CHECKING, Optional
+from typing import Callable, Optional
 
 import libcst.matchers as m
 from libcst.metadata import CodeRange
 
 from ..utils.getsource import getsourcelines
 from .exception_source import ExceptionSource
-from .exception_source_is_resolver import ExceptionSourceIsResolver
+from .exception_source_is_function import ExceptionSourceIsFunction
 
 
-if TYPE_CHECKING:
-    from strawberry.types.fields.resolver import StrawberryResolver
-
-
-class ExceptionSourceIsArgument(ExceptionSourceIsResolver):
-    resolver: "StrawberryResolver"
+class ExceptionSourceIsArgument(ExceptionSourceIsFunction):
+    function: Callable
     argument_name: str
 
     def _find_argument_definition(self, source: str, line: int) -> CodeRange:
@@ -40,7 +36,7 @@ class ExceptionSourceIsArgument(ExceptionSourceIsResolver):
 
         full_source = exception_source.path.read_text()
 
-        _, line = getsourcelines(self.resolver.wrapped_func)
+        _, line = getsourcelines(self.function)
 
         resolver_position = self._find_resolver_definition(full_source, line)
 

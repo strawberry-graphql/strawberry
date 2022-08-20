@@ -1,6 +1,6 @@
 import inspect
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, Tuple
+from typing import Callable, Optional, Tuple
 
 import libcst as cst
 import libcst.matchers as m
@@ -10,12 +10,8 @@ from ..utils.getsource import getsourcelines
 from .exception_source import ExceptionSource
 
 
-if TYPE_CHECKING:
-    from strawberry.types.fields.resolver import StrawberryResolver
-
-
-class ExceptionSourceIsResolver:
-    resolver: "StrawberryResolver"
+class ExceptionSourceIsFunction:
+    function: Callable
 
     def _find_resolver_node(
         self, source: str, line: int
@@ -26,7 +22,7 @@ class ExceptionSourceIsResolver:
         self.position_metadata = wrapper.resolve(PositionProvider)
 
         function_defs = m.findall(
-            wrapper, m.FunctionDef(name=m.Name(value=self.resolver.name))
+            wrapper, m.FunctionDef(name=m.Name(value=self.function.__name__))
         )
 
         for function_def in function_defs:
@@ -44,19 +40,14 @@ class ExceptionSourceIsResolver:
 
     @property
     def exception_source(self) -> Optional[ExceptionSource]:
-        if self.resolver is None:
-            return None
-
-        resolver = self.resolver.wrapped_func
-
-        source_file = inspect.getsourcefile(resolver)  # type: ignore
+        source_file = inspect.getsourcefile(self.function)
 
         if source_file is None:
             return None
 
         path = Path(source_file)
         full_source = path.read_text()
-        _, line = getsourcelines(resolver)
+        _, line = getsourcelines(self.function)
 
         position = self._find_resolver_definition(full_source, line)
 
@@ -64,7 +55,7 @@ class ExceptionSourceIsResolver:
 
         function_prefix = len("def ")
         error_column = position.start.column + function_prefix
-        error_column_end = error_column + len(self.resolver.name)
+        error_column_end = error_column + len(self.function.__name__)
 
         return ExceptionSource(
             path=path,

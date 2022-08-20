@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import os
 import sys
-from enum import Enum
 from types import TracebackType
 from typing import Callable, Optional, Set, Type, Union
 
@@ -16,35 +15,9 @@ from .invalid_union_type import InvalidTypeForUnionMergeError, InvalidUnionTypeE
 from .missing_arguments_annotations import MissingArgumentsAnnotationsError
 from .missing_field_annotation import MissingFieldAnnotationError
 from .missing_return_annotation import MissingReturnAnnotationError
+from .object_is_not_a_class import ObjectIsNotClassError
 from .object_is_not_an_enum import ObjectIsNotAnEnumError
 from .private_strawberry_field import PrivateStrawberryFieldError
-
-
-class ObjectIsNotClassError(StrawberryException):
-    class MethodType(Enum):
-        INPUT = "input"
-        INTERFACE = "interface"
-        TYPE = "type"
-
-    def __init__(self, obj: object, method_type: MethodType):
-        message = (
-            f"strawberry.{method_type.value} can only be used with class types. "
-            f"Provided object {obj} is not a type."
-        )
-
-        super().__init__(message)
-
-    @classmethod
-    def input(cls, obj: object) -> ObjectIsNotClassError:
-        return cls(obj, cls.MethodType.INPUT)
-
-    @classmethod
-    def interface(cls, obj: object) -> ObjectIsNotClassError:
-        return cls(obj, cls.MethodType.INTERFACE)
-
-    @classmethod
-    def type(cls, obj: object) -> ObjectIsNotClassError:
-        return cls(obj, cls.MethodType.TYPE)
 
 
 class WrongReturnTypeForUnion(StrawberryException):
@@ -233,6 +206,7 @@ __all__ = [
     "WrongReturnTypeForUnion",
     "UnallowedReturnTypeForUnion",
     "ObjectIsNotAnEnumError",
+    "ObjectIsNotClassError",
     "InvalidUnionTypeError",
     "InvalidTypeForUnionMergeError",
     "MissingTypesForGenericError",
