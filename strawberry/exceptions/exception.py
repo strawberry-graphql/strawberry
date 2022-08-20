@@ -1,6 +1,5 @@
+from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, Dict, Optional
-
-from backports.cached_property import cached_property
 
 from strawberry.utils.str_converters import to_kebab_case
 
@@ -13,7 +12,7 @@ if TYPE_CHECKING:
     from .syntax import Syntax
 
 
-class StrawberryException(Exception):
+class StrawberryException(ABC, Exception):
     message: str
     rich_message: str
     suggestion: str
@@ -35,7 +34,8 @@ class StrawberryException(Exception):
 
         return prefix + self.documentation_path
 
-    @cached_property
+    @property
+    @abstractmethod
     def exception_source(self) -> Optional[ExceptionSource]:
         return None
 
@@ -94,9 +94,6 @@ class StrawberryException(Exception):
             "",
             self.__rich_footer__,
         )
-
-        if all(x == "" for x in content):
-            return self.message
 
         return Panel.fit(
             Group(*content),
