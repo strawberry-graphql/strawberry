@@ -16,7 +16,7 @@ class PrivateStrawberryFieldError(ExceptionSourceIsAttribute, StrawberryExceptio
             "private and a strawberry.field"
         )
         self.rich_message = (
-            f"[underline]{self.field_name}[/]` field cannot be both "
+            f"`[underline]{self.field_name}[/]` field cannot be both "
             "private and a strawberry.field "
         )
         self.annotation_message = "private field defined here"

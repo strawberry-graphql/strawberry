@@ -133,14 +133,14 @@ class StrawberryField(dataclasses.Field):
                 raise InvalidFieldArgumentError(
                     resolver,
                     argument.python_name,
-                    "Union",
+                    "union",
                 )
             elif getattr(argument.type, "_type_definition", False):
                 if argument.type._type_definition.is_interface:  # type: ignore
                     raise InvalidFieldArgumentError(
                         resolver,
                         argument.python_name,
-                        "Interface",
+                        "interface",
                     )
 
         self.base_resolver = resolver
