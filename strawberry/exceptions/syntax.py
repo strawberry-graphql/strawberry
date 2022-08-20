@@ -40,7 +40,8 @@ class Syntax(RichSyntax):
         for segment in segments:
 
             if segment.text == "\n":
-                prefix = " " * (self._numbers_column_width + 1)
+                # 3 = | + space + space
+                prefix = " " * (self._numbers_column_width + 3)
 
                 annotation = annotations.pop(current_line, None)
 
@@ -55,6 +56,4 @@ class Syntax(RichSyntax):
             yield segment
 
             if segment.text.strip() == str(current_line):
-                yield Segment("|")
-
-    # TODO: reintroduce | separator in code
+                yield Segment("| ")
