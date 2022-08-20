@@ -12,7 +12,7 @@ from .exception_source import ExceptionSource
 from .node_source import NodeSource
 
 
-class ExceptionSourceIsClassAttribute:
+class ExceptionSourceIsAttribute:
     cls: Type
     field_name: str
 

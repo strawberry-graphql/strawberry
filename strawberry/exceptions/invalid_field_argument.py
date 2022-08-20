@@ -1,9 +1,7 @@
 from typing import TYPE_CHECKING
 
 from .exception import StrawberryException
-from .exception_source.exception_source_is_argument import (
-    ExceptionSourceIsResolverArgument,
-)
+from .exception_source.exception_source_is_argument import ExceptionSourceIsArgument
 
 
 if TYPE_CHECKING:
@@ -11,7 +9,7 @@ if TYPE_CHECKING:
 
 
 # TODO: can we find a better name? Maybe invalid argument on resolver
-class InvalidFieldArgumentError(ExceptionSourceIsResolverArgument, StrawberryException):
+class InvalidFieldArgumentError(ExceptionSourceIsArgument, StrawberryException):
     documentation_url = "https://errors.strawberry.rocks/invalid-field-argument"
 
     def __init__(

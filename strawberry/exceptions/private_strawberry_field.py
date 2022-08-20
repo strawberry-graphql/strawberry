@@ -1,12 +1,10 @@
 from typing import Type
 
 from .exception import StrawberryException
-from .exception_source.exception_source_is_attribute import (
-    ExceptionSourceIsClassAttribute,
-)
+from .exception_source.exception_source_is_attribute import ExceptionSourceIsAttribute
 
 
-class PrivateStrawberryFieldError(ExceptionSourceIsClassAttribute, StrawberryException):
+class PrivateStrawberryFieldError(ExceptionSourceIsAttribute, StrawberryException):
     documentation_url = "https://errors.strawberry.rocks/private-strawberry-field"
 
     def __init__(self, field_name: str, cls: Type):

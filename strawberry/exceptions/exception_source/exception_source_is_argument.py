@@ -13,7 +13,7 @@ if TYPE_CHECKING:
     from strawberry.types.fields.resolver import StrawberryResolver
 
 
-class ExceptionSourceIsResolverArgument(ExceptionSourceIsResolver):
+class ExceptionSourceIsArgument(ExceptionSourceIsResolver):
     resolver: "StrawberryResolver"
     argument_name: str
 

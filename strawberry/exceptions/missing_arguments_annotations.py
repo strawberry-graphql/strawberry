@@ -1,18 +1,14 @@
 from typing import TYPE_CHECKING, List
 
 from .exception import StrawberryException
-from .exception_source.exception_source_is_argument import (
-    ExceptionSourceIsResolverArgument,
-)
+from .exception_source.exception_source_is_argument import ExceptionSourceIsArgument
 
 
 if TYPE_CHECKING:
     from strawberry.types.fields.resolver import StrawberryResolver
 
 
-class MissingArgumentsAnnotationsError(
-    ExceptionSourceIsResolverArgument, StrawberryException
-):
+class MissingArgumentsAnnotationsError(ExceptionSourceIsArgument, StrawberryException):
     """The field is missing the annotation for one or more arguments"""
 
     documentation_url = "https://errors.strawberry.rocks/missing-arguments-annotations"
