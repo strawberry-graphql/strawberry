@@ -1,7 +1,7 @@
 from typing import TYPE_CHECKING
 
 from .exception import StrawberryException
-from .exception_source.exception_source_is_argument import ExceptionSourceIsArgument
+from .exception_source import ExceptionSourceIsArgument
 
 
 if TYPE_CHECKING:

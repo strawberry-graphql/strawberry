@@ -7,7 +7,8 @@ import libcst as cst
 from backports.cached_property import cached_property
 from libcst.metadata import CodeRange, MetadataWrapper, PositionProvider
 
-from .exception import ExceptionSource, StrawberryException
+from .exception import StrawberryException
+from .exception_source import ExceptionSource
 
 
 class InvalidUnionTypeError(StrawberryException):

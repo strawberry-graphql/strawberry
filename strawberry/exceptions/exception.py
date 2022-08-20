@@ -2,7 +2,7 @@ from typing import TYPE_CHECKING, ClassVar, Dict, Optional
 
 from backports.cached_property import cached_property
 
-from .exception_source.exception_source import ExceptionSource
+from .exception_source import ExceptionSource
 
 
 if TYPE_CHECKING:

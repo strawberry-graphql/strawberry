@@ -1,7 +1,7 @@
 from typing import Type
 
 from .exception import StrawberryException
-from .exception_source.exception_source_is_attribute import ExceptionSourceIsAttribute
+from .exception_source import ExceptionSourceIsAttribute
 
 
 class PrivateStrawberryFieldError(ExceptionSourceIsAttribute, StrawberryException):
