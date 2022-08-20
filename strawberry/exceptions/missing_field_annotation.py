@@ -5,8 +5,6 @@ from .exception_source import ExceptionSourceIsAttribute
 
 
 class MissingFieldAnnotationError(ExceptionSourceIsAttribute, StrawberryException):
-    documentation_url = "https://errors.strawberry.rocks/missing-field-annotation"
-
     def __init__(self, field_name: str, cls: Type):
         self.cls = cls
         self.field_name = field_name

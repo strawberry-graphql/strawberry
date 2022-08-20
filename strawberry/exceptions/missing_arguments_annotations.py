@@ -11,8 +11,6 @@ if TYPE_CHECKING:
 class MissingArgumentsAnnotationsError(ExceptionSourceIsArgument, StrawberryException):
     """The field is missing the annotation for one or more arguments"""
 
-    documentation_url = "https://errors.strawberry.rocks/missing-arguments-annotations"
-
     def __init__(self, resolver: "StrawberryResolver", arguments: List[str]):
         self.missing_arguments = arguments
         self.resolver = resolver

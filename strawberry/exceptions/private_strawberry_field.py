@@ -5,8 +5,6 @@ from .exception_source import ExceptionSourceIsAttribute
 
 
 class PrivateStrawberryFieldError(ExceptionSourceIsAttribute, StrawberryException):
-    documentation_url = "https://errors.strawberry.rocks/private-strawberry-field"
-
     def __init__(self, field_name: str, cls: Type):
         self.cls = cls
         self.field_name = field_name

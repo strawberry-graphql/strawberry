@@ -11,8 +11,6 @@ if TYPE_CHECKING:
 
 
 class InvalidArgumentTypeError(ExceptionSourceIsArgument, StrawberryException):
-    documentation_url = "https://errors.strawberry.rocks/invalid-argument-type"
-
     def __init__(
         self,
         resolver: "StrawberryResolver",

@@ -1,6 +1,8 @@
-from typing import TYPE_CHECKING, ClassVar, Dict, Optional
+from typing import TYPE_CHECKING, Dict, Optional
 
 from backports.cached_property import cached_property
+
+from strawberry.utils.str_converters import to_kebab_case
 
 from .exception_source import ExceptionSource
 
@@ -16,13 +18,19 @@ class StrawberryException(Exception):
     rich_message: str
     suggestion: str
     annotation_message: str
-    documentation_url: ClassVar[str]
 
     def __init__(self, message: str) -> None:
         self.message = message
 
     def __str__(self) -> str:
         return self.message
+
+    @property
+    def documentation_url(self) -> str:
+        prefix = "https://errors.strawberry.rocks/"
+        path = to_kebab_case(self.__class__.__name__.replace("Error", ""))
+
+        return prefix + path
 
     @cached_property
     def exception_source(self) -> Optional[ExceptionSource]:

@@ -11,8 +11,6 @@ if TYPE_CHECKING:
 class MissingReturnAnnotationError(ExceptionSourceIsResolver, StrawberryException):
     """The field is missing the return annotation"""
 
-    documentation_url = "https://errors.strawberry.rocks/missing-return-annotation"
-
     def __init__(self, field_name: str, resolver: "StrawberryResolver"):
         self.resolver = resolver
 

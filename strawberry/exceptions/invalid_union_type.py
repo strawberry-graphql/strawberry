@@ -14,7 +14,6 @@ from .exception_source import ExceptionSource
 class InvalidUnionTypeError(StrawberryException):
     """The union is constructed with an invalid type"""
 
-    documentation_url = "https://errors.strawberry.rocks/invalid-union-type"
     invalid_type: Type
 
     def __init__(self, invalid_type: Type) -> None:
