@@ -10,8 +10,7 @@ if TYPE_CHECKING:
     from strawberry.types.fields.resolver import StrawberryResolver
 
 
-# TODO: can we find a better name? Maybe invalid argument on resolver
-class InvalidFieldArgumentError(ExceptionSourceIsArgument, StrawberryException):
+class InvalidArgumentTypeError(ExceptionSourceIsArgument, StrawberryException):
     documentation_url = "https://errors.strawberry.rocks/invalid-field-argument"
 
     def __init__(

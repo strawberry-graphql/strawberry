@@ -9,7 +9,7 @@ from graphql import GraphQLInputObjectType, GraphQLObjectType
 from strawberry.type import StrawberryType
 
 from .exception import StrawberryException
-from .invalid_field_argument import InvalidFieldArgumentError
+from .invalid_field_argument import InvalidArgumentTypeError
 from .invalid_union_type import InvalidTypeForUnionMergeError, InvalidUnionTypeError
 from .missing_arguments_annotations import MissingArgumentsAnnotationsError
 from .missing_field_annotation import MissingFieldAnnotationError
@@ -218,7 +218,7 @@ __all__ = [
     "FieldWithResolverAndDefaultValueError",
     "FieldWithResolverAndDefaultFactoryError",
     "MissingQueryError",
-    "InvalidFieldArgumentError",
+    "InvalidArgumentTypeError",
     "InvalidDefaultFactoryError",
     "InvalidCustomContext",
     "MissingFieldAnnotationError",
