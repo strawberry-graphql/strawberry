@@ -44,12 +44,14 @@ class Syntax(RichSyntax):
 
                 annotation = annotations.pop(current_line, None)
 
+                current_line += 1
+
                 if annotation:
                     yield ""
                     yield prefix + annotation
 
-                current_line += 1
-            else:
-                yield segment
+                    continue
+
+            yield segment
 
     # TODO: reintroduce | separator in code
