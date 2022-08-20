@@ -200,8 +200,6 @@ def exception_handler(
     exception: BaseException,
     traceback: Optional[TracebackType],
 ):
-    ...
-
     def _get_handler() -> ExceptionHandler:
         if issubclass(exception_type, StrawberryException):
             try:
