@@ -215,6 +215,38 @@ def test_raises_error_when_missing_type():
         missing = dataclasses.field()
 
 
+@pytest.mark.raises_strawberry_exception(
+    MissingFieldAnnotationError,
+    match=(
+        'Unable to determine the type of field "banana". Either annotate it '
+        "directly, or provide a typed resolver using @strawberry.field."
+    ),
+)
+def test_raises_error_when_missing_type_on_longish_class():
+    @strawberry.type
+    class Query:  # noqa: F841
+        field_1: str = strawberry.field(name="field_1")
+        field_2: str = strawberry.field(name="field_2")
+        field_3: str = strawberry.field(name="field_3")
+        field_4: str = strawberry.field(name="field_4")
+        field_5: str = strawberry.field(name="field_5")
+        field_6: str = strawberry.field(name="field_6")
+        field_7: str = strawberry.field(name="field_7")
+        field_8: str = strawberry.field(name="field_8")
+        field_9: str = strawberry.field(name="field_9")
+        banana = strawberry.field(name="banana")
+        field_10: str = strawberry.field(name="field_10")
+        field_11: str = strawberry.field(name="field_11")
+        field_12: str = strawberry.field(name="field_12")
+        field_13: str = strawberry.field(name="field_13")
+        field_14: str = strawberry.field(name="field_14")
+        field_15: str = strawberry.field(name="field_15")
+        field_16: str = strawberry.field(name="field_16")
+        field_17: str = strawberry.field(name="field_17")
+        field_18: str = strawberry.field(name="field_18")
+        field_19: str = strawberry.field(name="field_19")
+
+
 def test_raises_error_calling_uncallable_resolver():
     @classmethod  # type: ignore
     def class_func(cls) -> int:

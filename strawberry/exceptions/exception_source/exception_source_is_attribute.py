@@ -12,34 +12,41 @@ from .exception_source import ExceptionSource
 from .node_source import NodeSource
 
 
-class ExceptionSourceIsAttribute:
+class ExceptionSourceIsAttribute(Exception):
     cls: Type
     field_name: str
 
-    def _find_attribute_in_class(self, source: str) -> Optional[NodeSource]:
-        module = cst.parse_module(source)
-        wrapper = MetadataWrapper(module)
+    def __init__(self, message: str) -> None:
+        super().__init__(message)
 
-        self.position_metadata = wrapper.resolve(PositionProvider)
+        source_file = inspect.getsourcefile(self.cls)
 
+        if source_file is not None:
+            self.path = Path(source_file)
+            self.source = self.path.read_text()
+            _, line = getsourcelines(self.cls)
+
+            # TODO: can we find better ways to do this?
+            self.class_definition_line = line
+
+            module = cst.parse_module(self.source)
+            self._metadata_wrapper = MetadataWrapper(module)
+            self._position_metadata = self._metadata_wrapper.resolve(PositionProvider)
+
+    def _find_class_definition(self) -> Optional[NodeSource]:
         class_defs = m.findall(
-            wrapper, m.ClassDef(name=m.Name(value=self.cls.__name__))
+            self._metadata_wrapper, m.ClassDef(name=m.Name(value=self.cls.__name__))
         )
 
-        _, line = getsourcelines(self.cls)
-
-        class_def = None
-
         for definition in class_defs:
-            position = self.position_metadata[definition]
+            position = self._position_metadata[definition]
 
-            if position.start.line >= line:
-                class_def = definition
+            if position.start.line >= self.class_definition_line:
+                return NodeSource(position, definition)
 
-                break
+        return None
 
-        assert class_def
-
+    def _find_attribute_in_class(self, class_def: cst.CSTNode) -> Optional[NodeSource]:
         attribute_definition = m.findall(
             class_def,
             m.AssignTarget(target=m.Name(value=self.field_name))
@@ -50,7 +57,7 @@ class ExceptionSourceIsAttribute:
             attribute_definition = attribute_definition.target
 
         return NodeSource(
-            self.position_metadata[attribute_definition], attribute_definition
+            self._position_metadata[attribute_definition], attribute_definition
         )
 
     @cached_property
@@ -58,26 +65,21 @@ class ExceptionSourceIsAttribute:
         if self.cls is None:
             return None
 
-        source_file = inspect.getsourcefile(self.cls)
+        class_def_source = self._find_class_definition()
 
-        if source_file is None:
-            return None
+        assert class_def_source
 
-        path = Path(source_file)
-        code = path.read_text()
-
-        node_source = self._find_attribute_in_class(code)
+        node_source = self._find_attribute_in_class(class_def_source.node)
 
         if node_source is None:
             return None
 
         return ExceptionSource(
-            path=path,
-            code=code,
-            # TODO: start should be start of the class
-            start_line=node_source.position.start.line,
+            path=self.path,
+            code=self.source,
+            start_line=class_def_source.position.start.line,
             error_line=node_source.position.start.line,
-            end_line=node_source.position.end.line,
+            end_line=class_def_source.position.end.line,
             error_column=node_source.position.start.column,
             error_column_end=node_source.position.end.column,
         )

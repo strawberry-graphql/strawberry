@@ -24,3 +24,5 @@ class PrivateStrawberryFieldError(ExceptionSourceIsAttribute, StrawberryExceptio
             "To fix this error you should either make the field non private, "
             "or remove the strawberry.field annotation."
         )
+
+        super().__init__(self.message)

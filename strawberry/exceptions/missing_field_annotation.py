@@ -24,3 +24,5 @@ class MissingFieldAnnotationError(ExceptionSourceIsAttribute, StrawberryExceptio
             f"like so [italic]`{self.field_name}: str`"
         )
         self.annotation_message = "field missing annotation"
+
+        super().__init__(self.message)
