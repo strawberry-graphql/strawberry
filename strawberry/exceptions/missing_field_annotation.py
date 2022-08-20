@@ -1,6 +1,9 @@
 from typing import Type
 
-from .exception import ExceptionSourceIsClassAttribute, StrawberryException
+from .exception import StrawberryException
+from .exception_source.exception_source_is_attribute import (
+    ExceptionSourceIsClassAttribute,
+)
 
 
 class MissingFieldAnnotationError(ExceptionSourceIsClassAttribute, StrawberryException):

@@ -1,13 +1,16 @@
 from typing import TYPE_CHECKING
 
-from .exception import ExceptionSourceIsResolverArgument, StrawberryException
+from .exception import StrawberryException
+from .exception_source.exception_source_is_argument import (
+    ExceptionSourceIsResolverArgument,
+)
 
 
 if TYPE_CHECKING:
     from strawberry.types.fields.resolver import StrawberryResolver
 
 
-# TODO: can we find a better name?
+# TODO: can we find a better name? Maybe invalid argument on resolver
 class InvalidFieldArgumentError(ExceptionSourceIsResolverArgument, StrawberryException):
     documentation_url = "https://errors.strawberry.rocks/invalid-field-argument"
 

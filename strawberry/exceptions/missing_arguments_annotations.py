@@ -1,6 +1,9 @@
 from typing import TYPE_CHECKING, List
 
-from .exception import ExceptionSourceIsResolverArgument, StrawberryException
+from .exception import StrawberryException
+from .exception_source.exception_source_is_argument import (
+    ExceptionSourceIsResolverArgument,
+)
 
 
 if TYPE_CHECKING:
