@@ -187,13 +187,16 @@ class InvalidCustomContext(StrawberryException):
         super().__init__(message)
 
 
+original_exception_hook = sys.excepthook
+
+
 def exception_handler(exception_type, exception, traceback):
     import rich
 
-    if isinstance(exception, StrawberryException):
+    if issubclass(exception_type, StrawberryException):
         rich.print(exception)
     else:
-        print("%s: %s" % (exception_type.__name__, exception))
+        original_exception_hook(exception_type, exception, traceback)
 
 
 sys.excepthook = exception_handler
@@ -203,7 +206,6 @@ __all__ = [
     "StrawberryException",
     "MissingArgumentsAnnotationsError",
     "MissingReturnAnnotationError",
-    "MissingReturnTypeError",
     "WrongReturnTypeForUnion",
     "UnallowedReturnTypeForUnion",
     "InvalidUnionTypeError",
