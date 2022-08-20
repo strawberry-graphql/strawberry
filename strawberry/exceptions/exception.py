@@ -336,6 +336,7 @@ class StrawberryException(Exception):
             "",
             self.__rich_body__,
             "",
+            "",
             self.__rich_footer__,
         )
 

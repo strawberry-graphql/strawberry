@@ -64,7 +64,7 @@ class StrawberryExceptionsPlugin:
 
             pytest.fail(failure_message, pytrace=False)
 
-        self._collect_exception(raised_exception)
+        self._collect_exception(item.name, raised_exception)
 
         if not isinstance(raised_exception, exception):
             failure_message = (
@@ -85,7 +85,9 @@ class StrawberryExceptionsPlugin:
 
             pytest.fail(failure_message, pytrace=False)
 
-    def _collect_exception(self, raised_exception: StrawberryException) -> None:
+    def _collect_exception(
+        self, test_name: str, raised_exception: StrawberryException
+    ) -> None:
         console = rich.console.Console(record=True, width=120)
 
         with suppress_output(self.verbosity_level):
@@ -95,10 +97,12 @@ class StrawberryExceptionsPlugin:
 
         exception_text = console.export_text()
 
+        text = f"## {test_name}\n"
+
         if exception_text.strip() == "None":
-            text = "No exception raised\n"
+            text += "No exception raised\n"
         else:
-            text = f"\n\n``````\n{exception_text}\n``````\n\n"
+            text += f"\n``````\n{exception_text.strip()}\n``````\n\n"
 
         self._info[
             raised_exception.__class__.__name__, raised_exception.documentation_url
@@ -117,7 +121,7 @@ class StrawberryExceptionsPlugin:
             test_name = " ".join(re.findall("[a-zA-Z][^A-Z]*", test_name))
 
             markdown += f"# {test_name}\n\n"
-            markdown += f"Documentation URL: {documentation_url}\n"
+            markdown += f"Documentation URL: {documentation_url}\n\n"
 
             markdown += "\n".join(info)
 
