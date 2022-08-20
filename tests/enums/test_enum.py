@@ -60,13 +60,14 @@ def test_can_use_enum_as_arguments():
     assert isinstance(field.arguments[0].type, EnumDefinition)
 
 
+@pytest.mark.raises_strawberry_exception(
+    ObjectIsNotAnEnumError,
+    message="strawberry.enum can only be used with subclasses of Enum. ",
+)
 def test_raises_error_when_using_enum_with_a_not_enum_class():
-    expected_error = "strawberry.enum can only be used with subclasses of Enum"
-    with pytest.raises(ObjectIsNotAnEnumError, match=expected_error):
-
-        @strawberry.enum
-        class NormalClass:
-            hello = "world"
+    @strawberry.enum
+    class AClass:
+        hello = "world"
 
 
 def test_can_deprecate_enum_values():

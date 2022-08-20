@@ -16,17 +16,8 @@ from .invalid_union_type import InvalidTypeForUnionMergeError, InvalidUnionTypeE
 from .missing_arguments_annotations import MissingArgumentsAnnotationsError
 from .missing_field_annotation import MissingFieldAnnotationError
 from .missing_return_annotation import MissingReturnAnnotationError
+from .object_is_not_an_enum import ObjectIsNotAnEnumError
 from .private_strawberry_field import PrivateStrawberryFieldError
-
-
-class ObjectIsNotAnEnumError(StrawberryException):
-    def __init__(self, obj: object):
-        message = (
-            "strawberry.enum can only be used with subclasses of Enum. "
-            f"Provided object {obj} is not an enum."
-        )
-
-        super().__init__(message)
 
 
 class ObjectIsNotClassError(StrawberryException):
@@ -241,6 +232,7 @@ __all__ = [
     "MissingReturnAnnotationError",
     "WrongReturnTypeForUnion",
     "UnallowedReturnTypeForUnion",
+    "ObjectIsNotAnEnumError",
     "InvalidUnionTypeError",
     "InvalidTypeForUnionMergeError",
     "MissingTypesForGenericError",
