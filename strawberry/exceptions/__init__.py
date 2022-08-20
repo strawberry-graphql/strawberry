@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import sys
 from enum import Enum
 from types import TracebackType
@@ -195,13 +196,22 @@ ExceptionHandler = Callable[
 ]
 
 
+def _should_use_rich_exceptions():
+    errors_disabled = os.environ.get("STRAWBERRY_DISABLE_RICH_ERRORS", "")
+
+    return errors_disabled.lower() not in ["true", "1", "yes"]
+
+
 def exception_handler(
     exception_type: Type[BaseException],
     exception: BaseException,
     traceback: Optional[TracebackType],
 ):
     def _get_handler() -> ExceptionHandler:
-        if issubclass(exception_type, StrawberryException):
+        if (
+            issubclass(exception_type, StrawberryException)
+            and _should_use_rich_exceptions()
+        ):
             try:
                 import rich
             except ImportError:
