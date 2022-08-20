@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import sys
 from enum import Enum
-from typing import Set, Union
+from types import TracebackType
+from typing import Callable, Optional, Set, Type, Union
 
 from graphql import GraphQLInputObjectType, GraphQLObjectType
 
@@ -189,14 +190,38 @@ class InvalidCustomContext(StrawberryException):
 
 original_exception_hook = sys.excepthook
 
+ExceptionHandler = Callable[
+    [Type[BaseException], BaseException, Optional[TracebackType]], None
+]
 
-def exception_handler(exception_type, exception, traceback):
-    import rich
 
-    if issubclass(exception_type, StrawberryException):
-        rich.print(exception)
-    else:
-        original_exception_hook(exception_type, exception, traceback)
+def exception_handler(
+    exception_type: Type[BaseException],
+    exception: BaseException,
+    traceback: Optional[TracebackType],
+):
+    ...
+
+    def _get_handler() -> ExceptionHandler:
+        if issubclass(exception_type, StrawberryException):
+            try:
+                import rich
+            except ImportError:
+                pass
+            else:
+
+                def _handler(
+                    exception_type: Type[BaseException],
+                    exception: BaseException,
+                    traceback: Optional[TracebackType],
+                ):
+                    rich.print(exception)
+
+                return _handler
+
+        return original_exception_hook
+
+    _get_handler()(exception_type, exception, traceback)
 
 
 sys.excepthook = exception_handler

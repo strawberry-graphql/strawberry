@@ -26,3 +26,22 @@ def test_exception_handler_other_exceptions(mocker):
 
     assert print_mock.called is False
     assert original_exception_mock.call_args == mocker.call(ValueError, exception, None)
+
+
+def test_exception_handler_uses_original_when_rich_is_not_installed(mocker):
+    original_exception_mock = mocker.patch(
+        "strawberry.exceptions.original_exception_hook", autospec=True
+    )
+
+    mocker.patch.dict("sys.modules", {"rich": None})
+
+    class Query:
+        abc: int
+
+    exception = MissingFieldAnnotationError("abc", Query)
+
+    exception_handler(MissingFieldAnnotationError, exception, None)
+
+    assert original_exception_mock.call_args == mocker.call(
+        MissingFieldAnnotationError, exception, None
+    )
