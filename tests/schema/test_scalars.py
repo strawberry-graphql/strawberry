@@ -7,6 +7,7 @@ from uuid import UUID
 import pytest
 
 import strawberry
+from strawberry.exceptions import ScalarAlreadyRegisteredError
 from strawberry.scalars import JSON, Base16, Base32, Base64
 
 
@@ -415,3 +416,26 @@ def test_decimal():
         "stringDecimal": "3.14",
         "stringDecimal2": "3.1499999991",
     }
+
+
+@pytest.mark.raises_strawberry_exception(
+    ScalarAlreadyRegisteredError,
+    match="Scalar `MyCustomScalar` has already been registered",
+)
+def test_duplicate_scalars_raises_exception():
+    MyCustomScalar = strawberry.scalar(
+        str,
+        name="MyCustomScalar",
+    )
+
+    MyCustomScalar2 = strawberry.scalar(
+        int,
+        name="MyCustomScalar",
+    )
+
+    @strawberry.type
+    class Query:
+        scalar_1: MyCustomScalar
+        scalar_2: MyCustomScalar2
+
+    strawberry.Schema(Query)

@@ -102,16 +102,28 @@ class Schema(BaseSchema):
                 raise TypeError(f"{graphql_type} is not a named GraphQL Type")
             graphql_types.append(graphql_type)
 
-        self._schema = GraphQLSchema(
-            query=query_type,
-            mutation=mutation_type,
-            subscription=subscription_type if subscription else None,
-            directives=specified_directives + graphql_directives,
-            types=graphql_types,
-            extensions={
-                GraphQLCoreConverter.DEFINITION_BACKREF: self,
-            },
-        )
+        try:
+            self._schema = GraphQLSchema(
+                query=query_type,
+                mutation=mutation_type,
+                subscription=subscription_type if subscription else None,
+                directives=specified_directives + graphql_directives,
+                types=graphql_types,
+                extensions={
+                    GraphQLCoreConverter.DEFINITION_BACKREF: self,
+                },
+            )
+
+        except TypeError as error:
+            # GraphQL core throws a TypeError if there's any exception raised
+            # during the schema creation, so we check if the cause was a
+            # StrawberryError and raise it instead if that's the case.
+            from strawberry.exceptions import StrawberryException
+
+            if isinstance(error.__cause__, StrawberryException):
+                raise error.__cause__ from None
+
+            raise
 
         # attach our schema to the GraphQL schema instance
         self._schema._strawberry_schema = self  # type: ignore

@@ -18,9 +18,11 @@ from .missing_return_annotation import MissingReturnAnnotationError
 from .object_is_not_a_class import ObjectIsNotClassError
 from .object_is_not_an_enum import ObjectIsNotAnEnumError
 from .private_strawberry_field import PrivateStrawberryFieldError
+from .scalar_already_registered import ScalarAlreadyRegisteredError
 
 
-class WrongReturnTypeForUnion(StrawberryException):
+# TODO: this doesn't seem to be tested
+class WrongReturnTypeForUnion(Exception):
     """The Union type cannot be resolved because it's not a field"""
 
     def __init__(self, field_name: str, result_type: str):
@@ -32,7 +34,8 @@ class WrongReturnTypeForUnion(StrawberryException):
         super().__init__(message)
 
 
-class UnallowedReturnTypeForUnion(StrawberryException):
+# TODO: this doesn't seem to be tested
+class UnallowedReturnTypeForUnion(Exception):
     """The return type is not in the list of Union types"""
 
     def __init__(
@@ -48,13 +51,15 @@ class UnallowedReturnTypeForUnion(StrawberryException):
         super().__init__(message)
 
 
-class InvalidTypeInputForUnion(StrawberryException):
+# TODO: this doesn't seem to be tested
+class InvalidTypeInputForUnion(Exception):
     def __init__(self, annotation: GraphQLInputObjectType):
         message = f"Union for {annotation} is not supported because it is an Input type"
         super().__init__(message)
 
 
-class MissingTypesForGenericError(StrawberryException):
+# TODO: this doesn't seem to be tested
+class MissingTypesForGenericError(Exception):
     """Raised when a generic types was used without passing any type."""
 
     def __init__(self, annotation: Union[StrawberryType, type]):
@@ -65,14 +70,16 @@ class MissingTypesForGenericError(StrawberryException):
         super().__init__(message)
 
 
-class UnsupportedTypeError(StrawberryException):
+# TODO: this doesn't seem to be tested
+class UnsupportedTypeError(Exception):
     def __init__(self, annotation):
         message = f"{annotation} conversion is not supported"
 
         super().__init__(message)
 
 
-class UnresolvedFieldTypeError(StrawberryException):
+# TODO: this doesn't seem to be tested
+class UnresolvedFieldTypeError(Exception):
     def __init__(self, field_name: str):
         message = (
             f"Could not resolve the type of '{field_name}'. Check that the class is "
@@ -87,13 +94,6 @@ class MultipleStrawberryArgumentsError(StrawberryException):
             f"Annotation for argument `{argument_name}` cannot have multiple "
             f"`strawberry.argument`s"
         )
-
-        super().__init__(message)
-
-
-class ScalarAlreadyRegisteredError(StrawberryException):
-    def __init__(self, scalar_name: str):
-        message = f"Scalar `{scalar_name}` has already been registered"
 
         super().__init__(message)
 

@@ -1,5 +1,6 @@
 import sys
 from dataclasses import dataclass
+from inspect import getframeinfo, stack
 from typing import (
     Any,
     Callable,
@@ -45,6 +46,10 @@ class ScalarDefinition(StrawberryType):
     # duplicates
     implementation: Optional[GraphQLScalarType] = None
 
+    # used for better error messages
+    _source_file: Optional[str] = None
+    _source_line: Optional[int] = None
+
     def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
     ) -> Union[StrawberryType, type]:
@@ -78,6 +83,17 @@ def _process_scalar(
 ):
     name = name or to_camel_case(cls.__name__)
 
+    _source_file = None
+    _source_line = None
+
+    frame = getframeinfo(stack()[3][0])
+
+    _source_file = frame.filename
+    _source_line = frame.lineno
+
+    # remove this when done with checks
+    print(frame)
+
     wrapper = ScalarWrapper(cls)
     wrapper._scalar_definition = ScalarDefinition(
         name=name,
@@ -87,6 +103,8 @@ def _process_scalar(
         parse_literal=parse_literal,
         parse_value=parse_value,
         directives=directives,
+        _source_file=_source_file,
+        _source_line=_source_line,
     )
 
     return wrapper
