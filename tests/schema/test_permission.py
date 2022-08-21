@@ -3,7 +3,7 @@ import typing
 import pytest
 
 import strawberry
-from strawberry.permission import BasePermission
+from strawberry.permission import BasePermission, PermissionInterface
 from strawberry.types import Info
 
 
@@ -338,3 +338,71 @@ async def test_mixed_sync_and_async_permission_classes():
     context = {"passAsync": True, "passSync": True}
     result = await schema.execute(query, context_value=context)
     assert result.data["user"]["email"] == "patrick.arminio@gmail.com"
+
+
+def test_permission_class_with_return_type():
+    @strawberry.type
+    class AuthOutput(PermissionInterface):
+        message = "User is not authorized"
+
+    class IsAuthorized(BasePermission):
+        def has_permission(self, source, info, **kwargs) -> AuthOutput:
+            if not info.context.get("Authorized", False):
+                return AuthOutput(success=False)
+
+    @strawberry.type
+    class User:
+        name: str
+        email: str = strawberry.field(permission_classes=[IsAuthorized])
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self, name: str) -> User:
+            return User(name=name, email="patrick.arminio@gmail.com")
+
+    schema = strawberry.Schema(query=Query)
+
+    query = '{ user(name: "patrick") { email } }'
+
+    result = schema.execute_sync(query, context_value={"Authorized": False})
+    print(result.data["user"]["email"])
+
+
+def test_permission_with_return_type_on_union_field():
+    raise NotImplementedError
+
+
+def test_has_permission_must_declare_return_type():
+    with pytest.raises(RuntimeError) as err:
+
+        class IsAuthorized(BasePermission):
+            def has_permission(self, source, info, **kwargs):
+                return True
+
+    assert "has_permission method must declare a return type" in err.value.args[0]
+
+
+def test_declare_message_with_output_type_raises_exception():
+    @strawberry.type
+    class AuthOutput(PermissionInterface):
+        message = "User is not authorized"
+
+    with pytest.raises(RuntimeError) as err:
+
+        class IsAuthorized(BasePermission):
+            message = "User is not authorized"
+
+            def has_permission(self, source, info, **kwargs) -> AuthOutput:
+                if not info.context.get("Authorized", False):
+                    return AuthOutput(success=False)
+
+    assert "must not declare `message` this is redundant." in err.value.args[0]
+
+
+def test_only_sync_has_permissions_when_used_on_sync_field():
+    raise NotImplementedError
+
+
+def test_permission_on_a_whole_type(self):
+    raise NotImplementedError

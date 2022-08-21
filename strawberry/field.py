@@ -113,6 +113,7 @@ class StrawberryField(dataclasses.Field):
         self.is_subscription = is_subscription
 
         self.permission_classes: List[Type["BasePermission"]] = list(permission_classes)
+        self._parse_permission_classes()
         self.directives = directives
 
         self.deprecation_reason = deprecation_reason
@@ -158,6 +159,11 @@ class StrawberryField(dataclasses.Field):
             return self.base_resolver(*args, **kwargs)
 
         return self.default_resolver(source, self.python_name)  # type: ignore
+
+    def _parse_permission_classes(self):
+        """adds, the permission classes"""
+        for permission_class in self.permission_classes:
+            ...
 
     @property
     def arguments(self) -> List[StrawberryArgument]:
