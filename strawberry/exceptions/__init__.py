@@ -88,7 +88,7 @@ class UnresolvedFieldTypeError(Exception):
         super().__init__(message)
 
 
-class MultipleStrawberryArgumentsError(StrawberryException):
+class MultipleStrawberryArgumentsError(Exception):
     def __init__(self, argument_name: str):
         message = (
             f"Annotation for argument `{argument_name}` cannot have multiple "
@@ -98,7 +98,7 @@ class MultipleStrawberryArgumentsError(StrawberryException):
         super().__init__(message)
 
 
-class WrongNumberOfResultsReturned(StrawberryException):
+class WrongNumberOfResultsReturned(Exception):
     def __init__(self, expected: int, received: int):
         message = (
             "Received wrong number of results in dataloader, "
@@ -108,7 +108,7 @@ class WrongNumberOfResultsReturned(StrawberryException):
         super().__init__(message)
 
 
-class FieldWithResolverAndDefaultValueError(StrawberryException):
+class FieldWithResolverAndDefaultValueError(Exception):
     def __init__(self, field_name: str, type_name: str):
         message = (
             f'Field "{field_name}" on type "{type_name}" cannot define a default '
@@ -118,7 +118,7 @@ class FieldWithResolverAndDefaultValueError(StrawberryException):
         super().__init__(message)
 
 
-class FieldWithResolverAndDefaultFactoryError(StrawberryException):
+class FieldWithResolverAndDefaultFactoryError(Exception):
     def __init__(self, field_name: str, type_name: str):
         message = (
             f'Field "{field_name}" on type "{type_name}" cannot define a '
@@ -128,21 +128,21 @@ class FieldWithResolverAndDefaultFactoryError(StrawberryException):
         super().__init__(message)
 
 
-class MissingQueryError(StrawberryException):
+class MissingQueryError(Exception):
     def __init__(self):
         message = 'Request data is missing a "query" value'
 
         super().__init__(message)
 
 
-class InvalidDefaultFactoryError(StrawberryException):
+class InvalidDefaultFactoryError(Exception):
     def __init__(self):
         message = "`default_factory` must be a callable that requires no arguments"
 
         super().__init__(message)
 
 
-class InvalidCustomContext(StrawberryException):
+class InvalidCustomContext(Exception):
     """Raised when a custom context object is of the wrong python type"""
 
     def __init__(self):
