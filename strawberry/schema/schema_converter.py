@@ -534,8 +534,15 @@ class GraphQLCoreConverter:
                 definition=scalar_definition, implementation=implementation
             )
         else:
-            if self.type_map[scalar_name].definition != scalar_definition:
-                raise ScalarAlreadyRegisteredError(scalar_definition)
+            other_definition = self.type_map[scalar_name].definition
+
+            # TODO: the other definition might not be a scalar, we should
+            # handle this case better, since right now we assume it is a scalar
+
+            if other_definition != scalar_definition:
+                other_definition = cast(ScalarDefinition, other_definition)
+
+                raise ScalarAlreadyRegisteredError(scalar_definition, other_definition)
 
             implementation = cast(
                 GraphQLScalarType, self.type_map[scalar_name].implementation

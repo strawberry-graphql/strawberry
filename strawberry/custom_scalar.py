@@ -88,11 +88,11 @@ def _process_scalar(
 
     frame = getframeinfo(stack()[3][0])
 
+    # TODO: should we make this code only happen when the
+    # the flag is enabled?
+
     _source_file = frame.filename
     _source_line = frame.lineno
-
-    # remove this when done with checks
-    print(frame)
 
     wrapper = ScalarWrapper(cls)
     wrapper._scalar_definition = ScalarDefinition(
