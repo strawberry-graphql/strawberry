@@ -44,6 +44,7 @@ from graphql.utilities.print_schema import (
     print_type as original_print_type,
 )
 
+from strawberry.custom_scalar import ScalarWrapper
 from strawberry.enum import EnumDefinition
 from strawberry.field import StrawberryField
 from strawberry.schema.schema_converter import GraphQLCoreConverter
@@ -549,6 +550,13 @@ def print_schema(schema: BaseSchema) -> str:
         None, [print_directive(directive, schema=schema) for directive in directives]
     )
 
+    def _name_getter(type_: Any):
+        if hasattr(type_, "name"):
+            return type_.name
+        if isinstance(type_, ScalarWrapper):
+            return type_._scalar_definition.name
+        return type_.__name__
+
     return "\n\n".join(
         chain(
             sorted(extras.directives),
@@ -559,7 +567,8 @@ def print_schema(schema: BaseSchema) -> str:
                 _print_type(
                     schema.schema_converter.from_type(type_), schema, extras=extras
                 )
-                for type_ in extras.types
+                # Make sure extra types are ordered for predictive printing
+                for type_ in sorted(extras.types, key=_name_getter)
             ),
         )
     )
