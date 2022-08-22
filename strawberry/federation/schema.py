@@ -3,8 +3,6 @@ from copy import copy
 from itertools import chain
 from typing import Any, List, Union, cast
 
-from backports.cached_property import cached_property
-
 from graphql import (
     GraphQLField,
     GraphQLInterfaceType,
@@ -22,6 +20,7 @@ from strawberry.enum import EnumDefinition
 from strawberry.schema.types.concrete_type import TypeMap
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
+from strawberry.utils.cached_property import cached_property
 from strawberry.utils.inspect import get_func_args
 
 from ..printer import print_schema

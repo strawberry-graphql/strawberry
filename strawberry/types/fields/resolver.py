@@ -22,7 +22,6 @@ from typing import (  # type: ignore[attr-defined]
     _eval_type,
 )
 
-from backports.cached_property import cached_property
 from typing_extensions import Annotated, Protocol, get_args, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
@@ -30,6 +29,7 @@ from strawberry.arguments import StrawberryArgument
 from strawberry.exceptions import MissingArgumentsAnnotationsError
 from strawberry.type import StrawberryType
 from strawberry.types.info import Info
+from strawberry.utils.cached_property import cached_property
 
 
 class Parameter(inspect.Parameter):
