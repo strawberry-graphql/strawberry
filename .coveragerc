@@ -34,6 +34,7 @@ ignore_errors = True
 omit =
   ./.venv/**
   ./tests/*
+  ./strawberry/exceptions/utils/getsource.py
 
 [html]
 directory = coverage_html_report

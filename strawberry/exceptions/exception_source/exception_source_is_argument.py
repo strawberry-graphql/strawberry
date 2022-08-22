@@ -24,7 +24,6 @@ class ExceptionSourceIsArgument(ExceptionSourceIsFunction):
             m.Param(name=m.Name(value=self.argument_name)),
         )
 
-        # TODO: this is a hack to get the argument definition
         return self.position_metadata[argument_def[0]]
 
     @property
