@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.126.1 - 2022-08-22
+--------------------
+
+Keep extra discovered types sorted so that each schema printing is
+always the same.
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2115](https://github.com/strawberry-graphql/strawberry/pull/2115/)
+
+
 0.126.0 - 2022-08-18
 --------------------
 
