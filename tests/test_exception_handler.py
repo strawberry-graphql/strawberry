@@ -1,6 +1,7 @@
 import os
 
-from strawberry.exceptions import MissingFieldAnnotationError, exception_handler
+from strawberry.exceptions import MissingFieldAnnotationError
+from strawberry.exceptions.handler import strawberry_exception_handler
 
 
 def test_exception_handler(mocker):
@@ -11,7 +12,7 @@ def test_exception_handler(mocker):
 
     exception = MissingFieldAnnotationError("abc", Query)
 
-    exception_handler(MissingFieldAnnotationError, exception, None)
+    strawberry_exception_handler(MissingFieldAnnotationError, exception, None)
 
     assert print_mock.call_args == mocker.call(exception)
 
@@ -24,7 +25,7 @@ def test_exception_handler_other_exceptions(mocker):
 
     exception = ValueError("abc")
 
-    exception_handler(ValueError, exception, None)
+    strawberry_exception_handler(ValueError, exception, None)
 
     assert print_mock.called is False
     assert original_exception_mock.call_args == mocker.call(ValueError, exception, None)
@@ -42,7 +43,7 @@ def test_exception_handler_uses_original_when_rich_is_not_installed(mocker):
 
     exception = MissingFieldAnnotationError("abc", Query)
 
-    exception_handler(MissingFieldAnnotationError, exception, None)
+    strawberry_exception_handler(MissingFieldAnnotationError, exception, None)
 
     assert original_exception_mock.call_args == mocker.call(
         MissingFieldAnnotationError, exception, None
@@ -62,7 +63,7 @@ def test_exception_handler_uses_original_when_disabled_via_env_var(mocker):
 
     exception = MissingFieldAnnotationError("abc", Query)
 
-    exception_handler(MissingFieldAnnotationError, exception, None)
+    strawberry_exception_handler(MissingFieldAnnotationError, exception, None)
 
     assert print_mock.called is False
     assert original_exception_mock.call_args == mocker.call(
