@@ -1,9 +1,6 @@
 from typing import List
 
-import pytest
-
 import strawberry
-from strawberry.exceptions import InvalidDefaultFactoryError
 
 
 def test_type_add_type_definition_with_fields():
@@ -111,6 +108,3 @@ def test_field_with_default_factory():
     assert instance.the_list == []
     fields = Query._type_definition.fields
     assert [field.default_value for field in fields] == [3, []]
-
-    with pytest.raises(InvalidDefaultFactoryError):
-        strawberry.field(default_factory=round)

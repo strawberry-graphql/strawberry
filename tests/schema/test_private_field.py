@@ -64,7 +64,7 @@ def test_private_field_access_in_resolver():
 
 @strawberry.type
 class Query:
-    not_seen: "strawberry.Private[SensitiveData]"
+    not_seen: strawberry.Private["SensitiveData"]
 
     @strawberry.field
     def accessible_info(self) -> str:

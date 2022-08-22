@@ -9,13 +9,10 @@ from strawberry.exceptions import (
     MissingArgumentsAnnotationsError,
     MissingFieldAnnotationError,
     MissingReturnAnnotationError,
-)
-from strawberry.scalars import JSON
-from strawberry.types.fields.resolver import (
-    Signature,
-    StrawberryResolver,
     UncallableResolverError,
 )
+from strawberry.scalars import JSON
+from strawberry.types.fields.resolver import Signature, StrawberryResolver
 from strawberry.types.info import Info
 
 

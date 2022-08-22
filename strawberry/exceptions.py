@@ -6,6 +6,7 @@ from typing import List, Set, Union
 from graphql import GraphQLInputObjectType, GraphQLObjectType
 
 from strawberry.type import StrawberryType
+from strawberry.types.fields.resolver import StrawberryResolver
 
 
 # TODO: add links to docs
@@ -244,5 +245,14 @@ class InvalidCustomContext(Exception):
         message = (
             "The custom context must be either a class "
             "that inherits from BaseContext or a dictionary"
+        )
+        super().__init__(message)
+
+
+class UncallableResolverError(Exception):
+    def __init__(self, resolver: "StrawberryResolver"):
+        message = (
+            f"Attempted to call resolver {resolver} with uncallable function "
+            f"{resolver.wrapped_func}"
         )
         super().__init__(message)

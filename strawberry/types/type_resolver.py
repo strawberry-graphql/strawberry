@@ -3,11 +3,6 @@ import sys
 from typing import Dict, List, Type
 
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.exceptions import (
-    FieldWithResolverAndDefaultFactoryError,
-    FieldWithResolverAndDefaultValueError,
-    PrivateStrawberryFieldError,
-)
 from strawberry.field import StrawberryField
 from strawberry.private import is_private
 
@@ -65,7 +60,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
             # Add base's fields to cls' fields
             fields = {**fields, **base_fields}
 
-    # Find the class the each field was originally defined on so we can use
+    # Find the class that each field was originally defined in, so we can use
     # that scope later when resolving the type, as it may have different names
     # available to it.
     origins: Dict[str, type] = {field_name: cls for field_name in cls.__annotations__}
@@ -80,30 +75,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
     for field in dataclasses.fields(cls):
 
         if isinstance(field, StrawberryField):
-            # Check that the field type is not Private
-            if is_private(field.type):
-                raise PrivateStrawberryFieldError(field.python_name, cls.__name__)
-
-            # Check that default is not set if a resolver is defined
-            if (
-                field.default is not dataclasses.MISSING
-                and field.base_resolver is not None
-            ):
-                raise FieldWithResolverAndDefaultValueError(
-                    field.python_name, cls.__name__
-                )
-
-            # Check that default_factory is not set if a resolver is defined
-            # Note: using getattr because of this issue:
-            # https://github.com/python/mypy/issues/6910
-            if (
-                getattr(field, "default_factory") is not dataclasses.MISSING  # noqa
-                and field.base_resolver is not None
-            ):
-                raise FieldWithResolverAndDefaultFactoryError(
-                    field.python_name, cls.__name__
-                )
-
+            # TODO: Why?
             # we make sure that the origin is either the field's resolver when
             # called as:
             #
@@ -114,13 +86,6 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
             # the correct origin for determining field types when resolving
             # the types.
             field.origin = field.origin or cls
-
-            # Make sure types are StrawberryAnnotations
-            if not isinstance(field.type_annotation, StrawberryAnnotation):
-                module = sys.modules[field.origin.__module__]
-                field.type_annotation = StrawberryAnnotation(
-                    annotation=field.type_annotation, namespace=module.__dict__
-                )
 
         # Create a StrawberryField for fields that didn't use strawberry.field
         else:
@@ -133,8 +98,8 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
             origin = origins.get(field.name, cls)
             module = sys.modules[origin.__module__]
 
-            # Create a StrawberryField, for fields of Types #1 and #2a
-            field = StrawberryField(
+            # Create a StrawberryField, for fields of Types #2
+            field = StrawberryField.create(
                 python_name=field.name,
                 graphql_name=None,
                 type_annotation=StrawberryAnnotation(
@@ -145,12 +110,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
                 default=getattr(cls, field.name, UNSET),
             )
 
-        field_name = field.python_name
-
-        assert_message = "Field must have a name by the time the schema is generated"
-        assert field_name is not None, assert_message
-
         # TODO: Raise exception if field_name already in fields
-        fields[field_name] = field
+        fields[field.python_name] = field
 
     return list(fields.values())

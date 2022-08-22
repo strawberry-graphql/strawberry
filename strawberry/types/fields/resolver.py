@@ -27,7 +27,10 @@ from typing_extensions import Annotated, Protocol, get_args, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import StrawberryArgument
-from strawberry.exceptions import MissingArgumentsAnnotationsError
+from strawberry.exceptions import (
+    MissingArgumentsAnnotationsError,
+    UncallableResolverError,
+)
 from strawberry.type import StrawberryType
 from strawberry.types.info import Info
 
@@ -309,15 +312,6 @@ class StrawberryResolver(Generic[T]):
             return self.wrapped_func.__func__
 
         return self.wrapped_func
-
-
-class UncallableResolverError(Exception):
-    def __init__(self, resolver: "StrawberryResolver"):
-        message = (
-            f"Attempted to call resolver {resolver} with uncallable function "
-            f"{resolver.wrapped_func}"
-        )
-        super().__init__(message)
 
 
 __all__ = ["StrawberryResolver"]

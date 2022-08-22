@@ -3,12 +3,8 @@ import inspect
 import types
 from typing import Callable, List, Optional, Sequence, Type, TypeVar, cast, overload
 
-from .exceptions import (
-    MissingFieldAnnotationError,
-    MissingReturnAnnotationError,
-    ObjectIsNotClassError,
-)
-from .field import StrawberryField, field
+from .exceptions import MissingFieldAnnotationError, ObjectIsNotClassError
+from .field import StrawberryField, StrawberryLazyField, field
 from .types.type_resolver import _get_fields
 from .types.types import TypeDefinition
 from .utils.str_converters import to_camel_case
@@ -45,33 +41,15 @@ def _check_field_annotations(cls: Type):
     cls.__annotations__ = cls_annotations
 
     for field_name, field_ in cls.__dict__.items():
-        if not isinstance(field_, (StrawberryField, dataclasses.Field)):
+        if not isinstance(field_, (StrawberryLazyField, dataclasses.Field)):
             # Not a dataclasses.Field, nor a StrawberryField. Ignore
             continue
 
         # If the field is a StrawberryField we need to do a bit of extra work
         # to make sure dataclasses.dataclass is ready for it
-        if isinstance(field_, StrawberryField):
-
-            # Make sure the cls has an annotation
-            if field_name not in cls_annotations:
-                # If the field uses the default resolver, the field _must_ be
-                # annotated
-                if not field_.base_resolver:
-                    raise MissingFieldAnnotationError(field_name)
-
-                # The resolver _must_ have a return type annotation
-                # TODO: Maybe check this immediately when adding resolver to
-                #       field
-                if field_.base_resolver.type_annotation is None:
-                    raise MissingReturnAnnotationError(field_name)
-
-                cls_annotations[field_name] = field_.base_resolver.type_annotation
-
-            # TODO: Make sure the cls annotation agrees with the field's type
-            # >>> if cls_annotations[field_name] != field.base_resolver.type:
-            # >>>     # TODO: Proper error
-            # >>>    raise Exception
+        if isinstance(field_, StrawberryLazyField):
+            strawberry_field = field_.evaluate(cls, field_name)
+            setattr(cls, field_name, strawberry_field.to_dataclass_field)
 
         # If somehow a non-StrawberryField field is added to the cls without annotations
         # it raises an exception. This would occur if someone manually uses
