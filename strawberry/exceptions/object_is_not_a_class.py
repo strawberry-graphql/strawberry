@@ -20,7 +20,7 @@ class ObjectIsNotClassError(ExceptionSourceIsFunction, StrawberryException):
 
         # TODO: assert obj is a function for now and skip the error if it is
         # something else
-        obj_name = obj.__name__
+        obj_name = obj.__name__  # type: ignore
 
         self.message = (
             f"strawberry.{method_type.value} can only be used with class types. "

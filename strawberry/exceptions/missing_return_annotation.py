@@ -12,7 +12,7 @@ class MissingReturnAnnotationError(ExceptionSourceIsFunction, StrawberryExceptio
     """The field is missing the return annotation"""
 
     def __init__(self, field_name: str, resolver: "StrawberryResolver"):
-        self.function = resolver.wrapped_func  # type: ignore
+        self.function = resolver.wrapped_func
 
         self.message = (
             f'Return annotation missing for field "{field_name}", '

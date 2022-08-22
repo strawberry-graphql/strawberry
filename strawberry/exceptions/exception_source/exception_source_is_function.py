@@ -1,6 +1,6 @@
 import inspect
 from pathlib import Path
-from typing import Callable, Optional, Tuple
+from typing import Callable, Optional, Tuple, Union
 
 import libcst as cst
 import libcst.matchers as m
@@ -11,7 +11,7 @@ from .exception_source import ExceptionSource
 
 
 class ExceptionSourceIsFunction:
-    function: Callable
+    function: Union[Callable, staticmethod, classmethod]
 
     def _find_resolver_node(
         self, source: str, line: int
