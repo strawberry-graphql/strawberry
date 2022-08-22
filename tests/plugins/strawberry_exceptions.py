@@ -69,16 +69,16 @@ class StrawberryExceptionsPlugin:
 
             pytest.fail(failure_message, pytrace=False)
 
-        self._collect_exception(item.name, raised_exception)
-
         if not isinstance(raised_exception, exception):
             failure_message = (
                 f"Expected exception {exception}, but raised {raised_exception}"
             )
 
-            pytest.fail(failure_message, pytrace=False)
+            raise raised_exception
 
         raised_message = str(raised_exception)
+
+        self._collect_exception(item.name, raised_exception)
 
         if match is not None and not re.match(match, raised_message):
             failure_message = (

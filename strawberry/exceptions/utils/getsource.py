@@ -1,15 +1,18 @@
-# backport of (parts of) Python 3.10 inspect module
+# backport of (parts of) Python 3.10 inspect module plus some extra functionality
 
 import ast
 import inspect
 import linecache
 import re
+import sys
+from pathlib import Path
 
 
 class ClassFoundException(Exception):
     pass
 
 
+# TODO: this can be replaced with libcst
 class _ClassFinder(ast.NodeVisitor):
     def __init__(self, qualname):
         self.stack = []
@@ -47,7 +50,7 @@ def findsource(object):
     in the file and the line number indexes a line in that list.  An OSError
     is raised if the source code cannot be retrieved."""
 
-    file = inspect.getsourcefile(object)
+    file = str(getsourcefile(object))
     if file:
         # Invalidate cache if needed.
         linecache.checkcache(file)
@@ -60,15 +63,18 @@ def findsource(object):
             raise OSError("source code not available")
 
     module = inspect.getmodule(object, file)
-    if module:
-        lines = linecache.getlines(file, module.__dict__)
+    if sys.platform == "emscripten":
+        lines = strawberry_playground_getsource().splitlines(keepends=True)  # noqa
     else:
-        lines = linecache.getlines(file)
-    if not lines:
-        raise OSError("could not get source code")
+        if module:
+            lines = linecache.getlines(file, module.__dict__)
+        else:
+            lines = linecache.getlines(file)
+        if not lines:
+            raise OSError("could not get source code")
 
-    if inspect.ismodule(object):
-        return lines, 0
+        if inspect.ismodule(object):
+            return lines, 0
 
     if inspect.isclass(object):
         qualname = object.__qualname__
@@ -131,3 +137,28 @@ def getsourcelines(object):
         return lines, 0
     else:
         return inspect.getblock(lines[lnum:]), lnum + 1
+
+
+class EmscriptenPath:
+    def __init__(self, code: str):
+        self.code = code
+
+    def read_text(self) -> str:
+        return self.code
+
+    def is_absolute(self) -> bool:
+        return False
+
+    def __str__(self) -> str:
+        return "browser"
+
+
+def getsourcefile(object) -> Path:
+    if sys.platform == "emscripten":
+        return EmscriptenPath(strawberry_playground_getsource())  # noqa
+
+    path = inspect.getsourcefile(object)
+
+    assert path
+
+    return Path(path)

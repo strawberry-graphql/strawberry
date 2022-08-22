@@ -1,12 +1,10 @@
-import inspect
-from pathlib import Path
 from typing import Callable, Optional, Tuple, Union
 
 import libcst as cst
 import libcst.matchers as m
 from libcst.metadata import CodeRange, MetadataWrapper, PositionProvider
 
-from ..utils.getsource import getsourcelines
+from ..utils.getsource import getsourcefile, getsourcelines
 from .exception_source import ExceptionSource
 
 
@@ -40,12 +38,12 @@ class ExceptionSourceIsFunction:
 
     @property
     def exception_source(self) -> Optional[ExceptionSource]:
-        source_file = inspect.getsourcefile(self.function)
+        source_file = getsourcefile(self.function)
 
         if source_file is None:
             return None
 
-        path = Path(source_file)
+        path = source_file
         full_source = path.read_text()
         _, line = getsourcelines(self.function)
 

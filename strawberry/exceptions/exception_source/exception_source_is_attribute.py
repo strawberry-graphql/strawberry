@@ -1,12 +1,10 @@
-import inspect
-from pathlib import Path
 from typing import Optional, Type
 
 import libcst as cst
 import libcst.matchers as m
 from libcst.metadata import MetadataWrapper, PositionProvider
 
-from ..utils.getsource import getsourcelines
+from ..utils.getsource import getsourcefile, getsourcelines
 from .exception_source import ExceptionSource
 from .node_source import NodeSource
 
@@ -18,10 +16,10 @@ class ExceptionSourceIsAttribute(Exception):
     def __init__(self, message: str) -> None:
         super().__init__(message)
 
-        source_file = inspect.getsourcefile(self.cls)
+        source_file = getsourcefile(self.cls)
 
         if source_file is not None:
-            self.path = Path(source_file)
+            self.path = source_file
             self.source = self.path.read_text()
             _, line = getsourcelines(self.cls)
 
