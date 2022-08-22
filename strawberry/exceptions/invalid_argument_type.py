@@ -17,7 +17,7 @@ class InvalidArgumentTypeError(ExceptionSourceIsArgument, StrawberryException):
         argument_name: str,
         argument_type: Literal["union", "interface"],
     ):
-        self.resolver = resolver
+        self.function = resolver.wrapped_func
         self.argument_name = argument_name
 
         self.message = (

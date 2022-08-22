@@ -1,4 +1,4 @@
-from typing import Callable, Optional
+from typing import Callable, Optional, Union
 
 import libcst.matchers as m
 from libcst.metadata import CodeRange
@@ -9,7 +9,7 @@ from .exception_source_is_function import ExceptionSourceIsFunction
 
 
 class ExceptionSourceIsArgument(ExceptionSourceIsFunction):
-    function: Callable
+    function: Union[Callable, staticmethod, classmethod]
     argument_name: str
 
     def _find_argument_definition(self, source: str, line: int) -> CodeRange:

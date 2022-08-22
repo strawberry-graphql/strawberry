@@ -13,16 +13,16 @@ class MissingArgumentsAnnotationsError(ExceptionSourceIsArgument, StrawberryExce
 
     def __init__(self, resolver: "StrawberryResolver", arguments: List[str]):
         self.missing_arguments = arguments
-        self.resolver = resolver
+        self.function = resolver.wrapped_func
         self.argument_name = arguments[0]
 
         self.message = (
             f"Missing annotation for {self.missing_arguments_str} "
-            f'in field "{self.resolver.name}", did you forget to add it?'
+            f'in field "{resolver.name}", did you forget to add it?'
         )
         self.rich_message = (
             f"Missing annotation for {self.missing_arguments_str} in "
-            f"`[underline]{self.resolver.name}[/]`"
+            f"`[underline]{resolver.name}[/]`"
         )
         self.suggestion = (
             "To fix this error you can add an annotation to the argument "
