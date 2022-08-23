@@ -1,9 +1,11 @@
-from typing import NamedTuple
+from typing import TYPE_CHECKING, NamedTuple
 
-import libcst as cst
-from libcst.metadata import CodeRange
+
+if TYPE_CHECKING:
+    from libcst import CSTNode
+    from libcst.metadata import CodeRange
 
 
 class NodeSource(NamedTuple):
-    position: CodeRange
-    node: cst.CSTNode
+    position: "CodeRange"
+    node: "CSTNode"
