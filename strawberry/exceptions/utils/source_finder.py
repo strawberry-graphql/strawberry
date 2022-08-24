@@ -1,69 +1,95 @@
 import importlib
+import sys
+from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Generic, Optional, Type, TypeVar, cast
+from typing import Optional, Type
 
 from strawberry.utils.cached_property import cached_property
 
 from ..exception_source import ExceptionSource
-from .getsource import getsourcefile, getsourcelines
 
 
-if TYPE_CHECKING:
-    from libcst import ClassDef, CSTNode, Module
-    from libcst.metadata import CodeRange
-
-
-NodeType = TypeVar("NodeType", bound="CSTNode")
-
-
-class NodeSource(Generic[NodeType]):
-    position: "CodeRange"
-    node: NodeType
-
-    def __init__(self, node: NodeType, position: "CodeRange") -> None:
-        self.node = node
-        self.position = position
+@dataclass
+class SourcePath:
+    path: Path
+    code: str
 
 
 class LibCSTSourceFinder:
     def __init__(self) -> None:
         self.cst = importlib.import_module("libcst")
 
-    def parse_module(self, source: str) -> "Module":
-        module = self.cst.parse_module(source)
+    def find_source(self, module: str) -> Optional[SourcePath]:
+        # todo: support for pyodide
 
-        # TODO, is this fine?
-        from libcst.metadata import MetadataWrapper, PositionProvider
+        source_module = sys.modules.get(module)
 
-        self._metadata_wrapper = MetadataWrapper(module)
-        self._position_metadata = self._metadata_wrapper.resolve(PositionProvider)
+        if source_module is None or source_module.__file__ is None:
+            return None
 
-        return module
+        path = Path(source_module.__file__)
 
-    def find_class(self, cls: Type, source: str) -> Optional[NodeSource["ClassDef"]]:
+        if not path.exists() or path.suffix != ".py":
+            return None
+
+        source = path.read_text()
+
+        return SourcePath(path=path, code=source)
+
+    def find_class(self, cls: Type) -> Optional[ExceptionSource]:
         if self.cst is None:
             return None
 
-        # TODO: this is annoying we can maybe just use libcst for this
-        # we might need to get the code or some other information from the class
-        _, line = getsourcelines(cls)
+        from libcst.metadata import (
+            MetadataWrapper,
+            ParentNodeProvider,
+            PositionProvider,
+        )
+
+        source = self.find_source(cls.__module__)
+
+        if source is None:
+            return None
+
+        module = self.cst.parse_module(source.code)
+        _metadata_wrapper = MetadataWrapper(module)
+        _position_metadata = _metadata_wrapper.resolve(PositionProvider)
+        _parent_metadata = _metadata_wrapper.resolve(ParentNodeProvider)
 
         import libcst.matchers as m
-
-        self.parse_module(source)
+        from libcst import ClassDef, CSTNode, FunctionDef
 
         class_defs = m.findall(
-            self._metadata_wrapper, m.ClassDef(name=m.Name(value=cls.__name__))
+            _metadata_wrapper, m.ClassDef(name=m.Name(value=cls.__name__))
         )
 
         for definition in class_defs:
-            position = self._position_metadata[definition]
+            position = _position_metadata[definition]
+            parent: Optional[CSTNode] = definition
+            stack = []
 
-            # todo
-            if position.start.line >= line:
-                return NodeSource(
-                    node=cast("ClassDef", definition),
-                    position=position,
+            while parent:
+                if isinstance(parent, ClassDef):
+                    stack.append(parent.name.value)
+
+                if isinstance(parent, FunctionDef):
+                    stack.extend(("<locals>", parent.name.value))
+
+                parent = _parent_metadata.get(parent)
+
+            found_class_name = ".".join(reversed(stack))
+
+            if found_class_name == cls.__qualname__:
+                column_start = position.start.column + len("class ")
+
+                return ExceptionSource(
+                    path=source.path,
+                    code=source.code,
+                    start_line=position.start.line,
+                    error_line=position.start.line,
+                    end_line=position.end.line,
+                    error_column=column_start,
+                    error_column_end=column_start + len(cls.__name__),
                 )
 
         return None
@@ -78,34 +104,8 @@ class SourceFinder:
         except ImportError:
             return None
 
-    # TODO: use path like object, do the trick for pyodide
-    def _get_source_file(self, obj: object) -> Path:
-        return getsourcefile(obj)
-
     def find_class_from_object(self, cls: Type) -> Optional[ExceptionSource]:
         if self.cst is None:
             return None
 
-        source_file = self._get_source_file(cls)
-
-        if source_file is None:
-            return None
-
-        source = source_file.read_text()
-
-        class_source = self.cst.find_class(cls, source)
-
-        if class_source is None:
-            return None
-
-        column_start = class_source.position.start.column + len("class ")
-
-        return ExceptionSource(
-            path=source_file,
-            code=source,
-            start_line=class_source.position.start.line,
-            error_line=class_source.position.start.line,
-            end_line=class_source.position.end.line,
-            error_column=column_start,
-            error_column_end=column_start + len(cls.__name__),
-        )
+        return self.cst.find_class(cls)
