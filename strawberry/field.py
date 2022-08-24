@@ -32,7 +32,7 @@ from strawberry.exceptions import (
     MissingReturnAnnotationError,
     PrivateStrawberryFieldError,
 )
-from strawberry.type import StrawberryType, StrawberryTypeVar
+from strawberry.type import StrawberryType
 from strawberry.types.info import Info
 from strawberry.union import StrawberryUnion
 from strawberry.unset import UNSET
@@ -71,7 +71,7 @@ class StrawberryField:
     # dataclasses.Field stuff
     default: object = UNSET
     default_factory: Union[Callable[[], Any], object] = UNSET
-    default_value: Any = dataclasses.field(init=False, default=None)
+    default_value: Any = dataclasses.field(init=False, default=UNSET)
 
     def __call__(
         self,
@@ -152,20 +152,34 @@ class StrawberryField:
                         "Interface",
                     )
 
-        if not self.base_resolver.type_annotation:
+        # fetching type annotation
+        class_annotation = self.origin.__annotations__.get(self.python_name, False)
+        if resolver_annotation := self.base_resolver.type_annotation:
+            # solving aliased imports from other modules
+            namespace = resolver_annotation.namespace
+            namespace.update(sys.modules[self.origin.__module__].__dict__)
+            if class_annotation:
+                assert (
+                    StrawberryAnnotation(
+                        class_annotation, namespace=namespace
+                    ).safe_resolve()
+                    == resolver_annotation.safe_resolve()
+                ), (
+                    f"the field's annotation {resolver_annotation}"
+                    f" does not match the origin annotation "
+                    f"{self.origin.__annotations__[self.python_name]}"
+                )
+        elif not class_annotation:
             raise MissingReturnAnnotationError(self.python_name)
 
-        # fetching type annotation
-        type_annotation = self.base_resolver.type_annotation
-        if annotated := self.origin.__annotations__.get(self.python_name):
-            assert annotated == type_annotation.resolve(), (
-                f"the field's annotation {type_annotation}"
-                f" does not match the origin annotation "
-                f"{self.origin.__annotations__[self.python_name]}"
-            )
         else:
-            self.origin.__annotations__[self.python_name] = type_annotation
-        self.type_annotation = type_annotation
+            self.origin.__annotations__[self.python_name] = (
+                class_annotation or resolver_annotation.safe_resolve()
+            )
+
+        self.type_annotation = resolver_annotation or StrawberryAnnotation(
+            class_annotation,
+        )
 
         # fetching arguments
         self.arguments = self.base_resolver.arguments
@@ -205,13 +219,15 @@ class StrawberryField:
         """Few validation after a field has been evaluated."""
 
         # Check that the field type is not Private
-        if is_private(self.type_annotation.resolve()):
+        if is_private(self.type):
             raise PrivateStrawberryFieldError(self.python_name, self.origin.__name__)
+
         # Check that default is not set if a resolver is defined
         if self.default is not UNSET and self.base_resolver is not None:
             raise FieldWithResolverAndDefaultValueError(
                 self.python_name, self.origin.__name__
             )
+
         # Check that default_factory is not set if a resolver is defined
         if self.default_factory is not UNSET and self.base_resolver is not None:
             raise FieldWithResolverAndDefaultFactoryError(
@@ -249,7 +265,7 @@ class StrawberryField:
             **kw_only,
         )
 
-        field_.type = self.type_annotation.resolve()
+        field_.type = self.type_annotation.safe_resolve()
         return field_
 
     def get_result(
@@ -267,36 +283,10 @@ class StrawberryField:
         # else use default resolver
         return getattr(self.origin, self.python_name)  # type: ignore
 
-    @classmethod
-    def resolve_type(cls, instance: "StrawberryField") -> "StrawberryField":
-        # try to get type from resolver.
-        if (
-            instance.base_resolver is not None
-            and instance.base_resolver.type is not None
-            and not isinstance(instance.base_resolver.type, StrawberryTypeVar)
-        ):
-            res = instance.base_resolver.type
-
-        # if we got a StrawberryAnnotation instead of plain type.
-        elif isinstance(instance.type_annotation, StrawberryAnnotation):
-            res = instance.type_annotation.resolve()
-
-        # resolve from the class this field is defined in.
-        else:
-            if not (
-                res := getattr(
-                    instance.origin, "__annotations__", {instance.python_name: False}
-                )[instance.python_name]
-            ):
-                raise Exception(
-                    f"Could not resolve type annotation for field: {instance}"
-                )
-
-        return cls.evolve(instance, type_annotation=res)
-
     @property
     def type(self):
-        return self.type_annotation.resolve()
+        # TODO: remove this property
+        return self.type_annotation.safe_resolve()
 
     # TODO: add this to arguments (and/or move it to StrawberryType)
     @property

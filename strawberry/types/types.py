@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 import dataclasses
+import inspect
+import sys
 import types
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
     Dict,
+    ForwardRef,
     List,
     Mapping,
     Optional,
@@ -116,12 +119,20 @@ class TypeDefinition(StrawberryType):
     directives: Optional[Sequence[object]]
     is_type_of: Optional[Callable[[Any, GraphQLResolveInfo], bool]]
     fields: List["StrawberryField"]
-
     concrete_of: Optional["TypeDefinition"] = None
     """Concrete implementations of Generic TypeDefinitions fill this in"""
     type_var_map: Mapping[TypeVar, Union[StrawberryType, type]] = dataclasses.field(
         default_factory=dict
     )
+    _deferred_fields: List["StrawberryField"] = dataclasses.field(default_factory=list)
+    """
+    fields that was annotated with a forward reference.
+    Will be evaluated on each StrawberryType call on the module
+    """
+    _module: types.ModuleType = None
+
+    def __post_init__(self):
+        self._evaluate_deferred_fields()
 
     @classmethod
     def from_class(
@@ -139,6 +150,7 @@ class TypeDefinition(StrawberryType):
 
         from strawberry.field import StrawberryField
 
+        _module = sys.modules[origin.__module__]
         name = name or to_camel_case(origin.__name__)
         strawberry_fields: Dict[str, StrawberryField] = {}
 
@@ -174,6 +186,9 @@ class TypeDefinition(StrawberryType):
 
             # inject the dataclass strawberry fields we got so far.
             for sb_field in strawberry_fields.values():
+                origin.__annotations__[
+                    sb_field.python_name
+                ] = sb_field.type_annotation.safe_resolve()
                 setattr(origin, sb_field.python_name, sb_field.to_dataclass_field())
 
         #  we can now create the dataclass
@@ -195,6 +210,11 @@ class TypeDefinition(StrawberryType):
         # find interfaces
         interfaces = _get_interfaces(origin)
         fetched_fields = list(strawberry_fields.values())
+        _deferred_fields = [
+            deferred
+            for deferred in fetched_fields
+            if isinstance(deferred.type, ForwardRef)
+        ]
         # dataclasses removes attributes from the class here:
         # https://github.com/python/cpython/blob/577d7c4e/Lib/dataclasses.py#L873-L880
         # so we need to restore them, this will change in the future, but for now this
@@ -217,6 +237,7 @@ class TypeDefinition(StrawberryType):
                 setattr(origin, field_.python_name, wrapped_func)
 
         is_type_of = getattr(origin, "is_type_of", None)
+
         return cls(
             name=name,
             origin=origin,
@@ -228,7 +249,33 @@ class TypeDefinition(StrawberryType):
             interfaces=interfaces,
             fields=fetched_fields,
             is_type_of=is_type_of,
+            _deferred_fields=_deferred_fields,
+            _module=_module,
         )
+
+    def _evaluate_deferred_fields(self) -> None:
+        """
+        will be called on every type creation,
+        this will allow to determine ForwardRef types
+        """
+        for name, obj in inspect.getmembers(self._module):
+            if strawberry_def := getattr(obj, "__strawberry_definition__", False):
+                # TODO: Remove this when migrating to StrawberryObject.
+                assert isinstance(strawberry_def, TypeDefinition)
+                # avoid recursion
+                if strawberry_def.name != self.name:
+                    if obj.__name__ != self.origin.__name__:
+                        for field in strawberry_def._deferred_fields:
+                            try:
+                                field.type_annotation.resolve()
+                                # migrating the dataclasses field:
+                                setattr(
+                                    field.origin,
+                                    field.python_name,
+                                    field.to_dataclass_field(),
+                                )
+                            except NameError:
+                                pass
 
     # TODO: remove wrapped cls when we "merge" this with `StrawberryObject`
     def resolve_generic(self, wrapped_cls: type) -> type:

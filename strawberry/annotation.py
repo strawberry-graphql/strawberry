@@ -104,6 +104,12 @@ class StrawberryAnnotation:
         # ... raise NotImplementedError(f"Unknown type {evaled_type}")
         return evaled_type
 
+    def safe_resolve(self) -> Union[StrawberryType, type, ForwardRef]:
+        try:
+            return self.resolve()
+        except NameError:
+            return ForwardRef(self.annotation)
+
     def create_concrete_type(self, evaled_type: type) -> type:
         if _is_object_type(evaled_type):
             type_definition: TypeDefinition
