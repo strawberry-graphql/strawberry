@@ -1,6 +1,11 @@
 from typing import List
 
+import pytest
+
 import strawberry
+from strawberry.exceptions import InvalidDefaultFactoryError
+from strawberry.field import StrawberryField
+from strawberry.types.types import TypeDefinition
 
 
 def test_type_add_type_definition_with_fields():
@@ -9,18 +14,18 @@ def test_type_add_type_definition_with_fields():
         name: str
         age: int
 
-    definition = Query._type_definition
+    definition: TypeDefinition = Query.__strawberry_definition__
 
     assert definition.name == "Query"
     assert len(definition.fields) == 2
 
     assert definition.fields[0].python_name == "name"
     assert definition.fields[0].graphql_name is None
-    assert definition.fields[0].type == str
+    assert definition.fields[0].type_annotation.resolve() == str
 
     assert definition.fields[1].python_name == "age"
     assert definition.fields[1].graphql_name is None
-    assert definition.fields[1].type == int
+    assert definition.fields[1].type_annotation.resolve() == int
 
 
 def test_passing_custom_names_to_fields():
@@ -29,18 +34,18 @@ def test_passing_custom_names_to_fields():
         x: str = strawberry.field(name="name")
         y: int = strawberry.field(name="age")
 
-    definition = Query._type_definition
+    definition: TypeDefinition = Query.__strawberry_definition__
 
     assert definition.name == "Query"
     assert len(definition.fields) == 2
 
     assert definition.fields[0].python_name == "x"
     assert definition.fields[0].graphql_name == "name"
-    assert definition.fields[0].type == str
+    assert definition.fields[0].type_annotation.resolve() == str
 
     assert definition.fields[1].python_name == "y"
     assert definition.fields[1].graphql_name == "age"
-    assert definition.fields[1].type == int
+    assert definition.fields[1].type_annotation.resolve() == int
 
 
 def test_passing_nothing_to_fields():
@@ -49,18 +54,18 @@ def test_passing_nothing_to_fields():
         name: str = strawberry.field()
         age: int = strawberry.field()
 
-    definition = Query._type_definition
+    definition: TypeDefinition = Query.__strawberry_definition__
 
     assert definition.name == "Query"
     assert len(definition.fields) == 2
 
     assert definition.fields[0].python_name == "name"
     assert definition.fields[0].graphql_name is None
-    assert definition.fields[0].type == str
+    assert definition.fields[0].type_annotation.resolve() == str
 
     assert definition.fields[1].python_name == "age"
     assert definition.fields[1].graphql_name is None
-    assert definition.fields[1].type == int
+    assert definition.fields[1].type_annotation.resolve() == int
 
 
 def test_can_use_types_directly():
@@ -82,7 +87,7 @@ def test_graphql_name_unchanged():
     class Query:
         the_field: int = strawberry.field(name="some_name")
 
-    definition = Query._type_definition
+    definition = Query.__strawberry_definition__
 
     assert definition.fields[0].python_name == "the_field"
     assert definition.fields[0].graphql_name == "some_name"
@@ -106,5 +111,11 @@ def test_field_with_default_factory():
     instance = Query()
     assert instance.the_int == 3
     assert instance.the_list == []
-    fields = Query._type_definition.fields
+    fields: List[StrawberryField] = Query.__strawberry_definition__.fields
     assert [field.default_value for field in fields] == [3, []]
+
+    with pytest.raises(InvalidDefaultFactoryError):
+
+        @strawberry.type
+        class ShouldRaiseHere:
+            round_takes_arguments: int = strawberry.field(default_factory=round)

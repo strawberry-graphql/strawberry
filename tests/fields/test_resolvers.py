@@ -14,6 +14,7 @@ from strawberry.exceptions import (
 from strawberry.scalars import JSON
 from strawberry.types.fields.resolver import Signature, StrawberryResolver
 from strawberry.types.info import Info
+from strawberry.types.types import TypeDefinition
 
 
 def test_resolver_as_argument():
@@ -24,7 +25,7 @@ def test_resolver_as_argument():
     class Query:
         name: str = strawberry.field(resolver=get_name)
 
-    definition = Query._type_definition
+    definition: TypeDefinition = Query.__strawberry_definition__
 
     assert definition.name == "Query"
     assert len(definition.fields) == 1
@@ -42,7 +43,7 @@ def test_resolver_fields():
         def name(self) -> str:
             return "Name"
 
-    definition = Query._type_definition
+    definition = Query.__strawberry_definition__
 
     assert definition.name == "Query"
     assert len(definition.fields) == 1
@@ -61,7 +62,7 @@ def test_staticmethod_resolver_fields():
         def name() -> str:
             return "Name"
 
-    definition = Query._type_definition
+    definition = Query.__strawberry_definition__
 
     assert definition.name == "Query"
     assert len(definition.fields) == 1
@@ -85,7 +86,7 @@ def test_classmethod_resolver_fields():
         def val(cls) -> str:
             return cls.my_val
 
-    definition = Query._type_definition
+    definition = Query.__strawberry_definition__
 
     assert definition.name == "Query"
     assert len(definition.fields) == 1
@@ -131,9 +132,11 @@ def test_raises_error_when_return_annotation_missing():
 def test_raises_error_when_argument_annotation_missing():
     with pytest.raises(MissingArgumentsAnnotationsError) as e:
 
-        @strawberry.field
-        def hello(self, query) -> str:
-            return "I'm a resolver"
+        @strawberry.type
+        class ShouldRaiseHere:
+            @strawberry.field
+            def hello(self, query) -> str:
+                return "I'm a resolver"
 
     assert e.value.args == (
         'Missing annotation for argument "query" in field "hello", '
@@ -142,9 +145,11 @@ def test_raises_error_when_argument_annotation_missing():
 
     with pytest.raises(MissingArgumentsAnnotationsError) as e:
 
-        @strawberry.field
-        def hello2(self, query, limit) -> str:
-            return "I'm a resolver"
+        @strawberry.type
+        class ShouldRaiseHere2:
+            @strawberry.field
+            def hello2(self, query, limit) -> str:
+                return "I'm a resolver"
 
     assert e.value.args == (
         'Missing annotation for arguments "limit" and "query" '
@@ -210,7 +215,7 @@ def test_can_reuse_resolver():
         name: str = strawberry.field(resolver=get_name)
         name_2: str = strawberry.field(resolver=get_name)
 
-    definition = Query._type_definition
+    definition = Query.__strawberry_definition__
 
     assert definition.name == "Query"
     assert len(definition.fields) == 2

@@ -48,11 +48,11 @@ def test_generic_objects():
 
     # TODO: Simplify with StrawberryObject
     assert isinstance(resolved, type)
-    assert hasattr(resolved, "_type_definition")
-    assert isinstance(resolved._type_definition, TypeDefinition)
-    assert resolved._type_definition.is_generic
+    assert hasattr(resolved, "__strawberry_definition__")
+    assert isinstance(resolved.__strawberry_definition__, TypeDefinition)
+    assert resolved.__strawberry_definition__.is_generic
 
-    field: StrawberryField = resolved._type_definition.fields[0]
+    field: StrawberryField = resolved.__strawberry_definition__.fields[0]
     assert isinstance(field.type, StrawberryTypeVar)
     assert field.type == T
 
@@ -102,9 +102,9 @@ def test_generic_with_enums():
 
     # TODO: Simplify with StrawberryObject
     assert isinstance(resolved, type)
-    assert hasattr(resolved, "_type_definition")
-    assert isinstance(resolved._type_definition, TypeDefinition)
+    assert hasattr(resolved, "__strawberry_definition__")
+    assert isinstance(resolved.__strawberry_definition__, TypeDefinition)
 
-    generic_slot_field: StrawberryField = resolved._type_definition.fields[0]
+    generic_slot_field: StrawberryField = resolved.__strawberry_definition__.fields[0]
     assert isinstance(generic_slot_field.type, EnumDefinition)
     assert generic_slot_field.type is VehicleMake._enum_definition

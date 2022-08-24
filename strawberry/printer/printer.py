@@ -143,7 +143,7 @@ def print_schema_directive(
             while isinstance(f_type, StrawberryContainer):
                 f_type = f_type.of_type
 
-            if hasattr(f_type, "_type_definition"):
+            if hasattr(f_type, "__strawberry_definition__"):
                 extras.types.add(cast(type, f_type))
 
             if hasattr(f_type, "_scalar_definition"):
@@ -475,9 +475,11 @@ def print_schema_directives(schema: BaseSchema, *, extras: PrintExtras) -> str:
 
 
 def _all_root_names_are_common_names(schema: BaseSchema) -> bool:
-    query = schema.query._type_definition
-    mutation = schema.mutation._type_definition if schema.mutation else None
-    subscription = schema.subscription._type_definition if schema.subscription else None
+    query = schema.query.__strawberry_definition__
+    mutation = schema.mutation.__strawberry_definition__ if schema.mutation else None
+    subscription = (
+        schema.subscription.__strawberry_definition__ if schema.subscription else None
+    )
 
     return (
         query.name == "Query"
@@ -494,15 +496,15 @@ def print_schema_definition(
     if _all_root_names_are_common_names(schema) and not schema.schema_directives:
         return None
 
-    query_type = schema.query._type_definition
+    query_type = schema.query.__strawberry_definition__
     operation_types = [f"  query: {query_type.name}"]
 
     if schema.mutation:
-        mutation_type = schema.mutation._type_definition
+        mutation_type = schema.mutation.__strawberry_definition__
         operation_types.append(f"  mutation: {mutation_type.name}")
 
     if schema.subscription:
-        subscription_type = schema.subscription._type_definition
+        subscription_type = schema.subscription.__strawberry_definition__
         operation_types.append(f"  subscription: {subscription_type.name}")
 
     directives = print_schema_directives(schema, extras=extras)

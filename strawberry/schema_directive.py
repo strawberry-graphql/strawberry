@@ -3,10 +3,10 @@ from enum import Enum
 from typing import List, Optional, Type, TypeVar
 
 from strawberry.object_type import _wrap_dataclass
-from strawberry.types.type_resolver import _get_fields
 
 from .directive import directive_field
 from .field import StrawberryField, field
+from .types.types import _get_fields
 from .utils.typing import __dataclass_transform__
 
 

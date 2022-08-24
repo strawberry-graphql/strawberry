@@ -123,7 +123,7 @@ def replace_types_recursively(type_: Any, is_input: bool) -> Any:
             replaced_type = builtins.type(
                 replaced_type.name,
                 (),
-                {"_type_definition": replaced_type},
+                {"__strawberry_definition__": replaced_type},
             )
 
     return replaced_type

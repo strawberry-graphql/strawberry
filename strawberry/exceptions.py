@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import List, Set, Union
+from typing import TYPE_CHECKING, List, Set, Union
 
 from graphql import GraphQLInputObjectType, GraphQLObjectType
 
 from strawberry.type import StrawberryType
-from strawberry.types.fields.resolver import StrawberryResolver
+
+
+if TYPE_CHECKING:
+    from strawberry.types.fields.resolver import StrawberryResolver
 
 
 # TODO: add links to docs

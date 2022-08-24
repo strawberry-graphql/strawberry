@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import dataclasses
+import types
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    Dict,
     List,
     Mapping,
     Optional,
@@ -12,9 +14,13 @@ from typing import (
     Type,
     TypeVar,
     Union,
+    cast,
 )
 
+from strawberry.exceptions import MissingFieldAnnotationError
+from strawberry.private import is_private
 from strawberry.type import StrawberryType, StrawberryTypeVar
+from strawberry.utils.str_converters import to_camel_case
 from strawberry.utils.typing import is_generic as is_type_generic
 
 
@@ -22,6 +28,80 @@ if TYPE_CHECKING:
     from graphql import GraphQLResolveInfo
 
     from strawberry.field import StrawberryField
+
+T = TypeVar("T")
+
+
+def _get_interfaces(cls: Type[T]) -> List[TypeDefinition]:
+    interfaces = []
+
+    for base in cls.__bases__:
+        type_definition = cast(
+            Optional[TypeDefinition], getattr(base, "__strawberry_definition__", None)
+        )
+
+        if type_definition and type_definition.is_interface:
+            interfaces.append(type_definition)
+
+        for inherited_interface in _get_interfaces(base):
+            interfaces.append(inherited_interface)
+
+    return interfaces
+
+
+def _get_fields(cls: Type) -> List["StrawberryField"]:
+    """Get all the strawberry fields off a strawberry.type cls
+
+    This function returns a list of StrawberryFields (one for each field item), while
+    also paying attention the name and typing of the field.
+
+    StrawberryFields can be defined on a strawberry.type class as either a dataclass-
+    style field or using strawberry.field as a decorator.
+
+    >>> import strawberry
+    >>> @strawberry.type
+    ... class Query:
+    ...     type_1a: int = 5
+    ...     type_1b: int = strawberry.field(...)
+    ...     type_1c: int = strawberry.field(resolver=...)
+    ...
+    ...     @strawberry.field
+    ...     def type_2(self) -> int:
+    ...         ...
+
+    Type #1:
+        A pure dataclass-style field. Will not have a StrawberryField; one will need to
+        be created in this function. Type annotation is required.
+
+    Type #2:
+        A field defined using @strawberry.field as a decorator around the resolver. The
+        resolver must be type-annotated.
+
+    The StrawberryField.python_name value will be assigned to the field's name on the
+    class if one is not set by either using an explicit strawberry.field(name=...) or by
+    passing a named function (i.e. not an anonymous lambda) to strawberry.field
+    (typically as a decorator).
+    """
+    # Deferred import to avoid import cycles
+    from strawberry.field import StrawberryField
+
+    fields: Dict[str, StrawberryField] = {}
+
+    # TODO: What is this?
+    # Find the class that each field was originally defined in, so we can use
+    # that scope later when resolving the type, as it may have different names
+    # available to it.
+    origins: Dict[str, type] = {field_name: cls for field_name in cls.__annotations__}
+
+    for base in cls.__mro__:
+        if __strawberry_definition__ := getattr(
+            base, "__strawberry_definition__", False
+        ):
+            for field in __strawberry_definition__.fields:
+                if field.python_name in base.__annotations__:
+                    origins.setdefault(field.python_name, base)
+
+    return list(fields.values())
 
 
 @dataclasses.dataclass(eq=False)
@@ -35,14 +115,120 @@ class TypeDefinition(StrawberryType):
     extend: bool
     directives: Optional[Sequence[object]]
     is_type_of: Optional[Callable[[Any, GraphQLResolveInfo], bool]]
-
-    _fields: List["StrawberryField"]
+    fields: List["StrawberryField"]
 
     concrete_of: Optional["TypeDefinition"] = None
     """Concrete implementations of Generic TypeDefinitions fill this in"""
     type_var_map: Mapping[TypeVar, Union[StrawberryType, type]] = dataclasses.field(
         default_factory=dict
     )
+
+    @classmethod
+    def from_class(
+        cls,
+        origin: Type[T],
+        name: Optional[str] = None,
+        is_input: bool = False,
+        is_interface: bool = False,
+        description: Optional[str] = None,
+        directives: Optional[Sequence[object]] = (),
+        extend: bool = False,
+    ) -> "TypeDefinition":
+        # at this point all the strawberry fields in the class are
+        # without an origin and a python name.
+
+        from strawberry.field import StrawberryField
+
+        name = name or to_camel_case(origin.__name__)
+        strawberry_fields: Dict[str, StrawberryField] = {}
+
+        # find fields in parents.
+        for base in origin.__bases__:
+            if __strawberry_definition__ := getattr(
+                base, "__strawberry_definition__", False
+            ):
+                for field in __strawberry_definition__.fields:
+                    strawberry_fields[field.python_name] = field
+
+        # find fields in this class.
+        for field_name, field_ in [field for field in list(origin.__dict__.items())]:
+            if not isinstance(field_, (StrawberryField, dataclasses.Field)):
+                # Not a dataclasses.Field, nor a StrawberryLazyField. Ignore
+                continue
+            if isinstance(field_, dataclasses.Field):
+                # If somehow a non-StrawberryField field is added to
+                # the cls without annotations
+                # it raises an exception.
+                # This would occur if someone manually uses `dataclasses.field`
+                # This is similar to the check that dataclasses do during creation,
+                # https://github.com/python/cpython/blob/6fed3c85402c5ca704eb3f3189ca3f5c67a08d19/Lib/dataclasses.py#L881-L884,
+                if field_name not in origin.__annotations__:
+                    # Field object exists but did not get an annotation
+                    raise MissingFieldAnnotationError(field_name)
+
+            # set name and origin for the field.
+            if isinstance(field_, StrawberryField):
+                field_.python_name = field_name
+                field_ = field_(origin)
+                strawberry_fields[field_.python_name] = field_
+
+            # inject the dataclass strawberry fields we got so far.
+            for sb_field in strawberry_fields.values():
+                setattr(origin, sb_field.python_name, sb_field.to_dataclass_field())
+
+        #  we can now create the dataclass
+        origin = dataclasses.dataclass(origin)
+
+        # Create a StrawberryField for fields that didn't use strawberry.field
+        for field in dataclasses.fields(origin):
+            if field.name not in strawberry_fields:
+                # Only ignore Private fields that weren't defined using StrawberryFields
+                if is_private(field.type):
+                    continue
+
+                field = StrawberryField(
+                    python_name=field.name, graphql_name=None, origin=origin
+                )
+                strawberry_fields[field.python_name] = field
+                setattr(origin, field.python_name, field.to_dataclass_field())
+
+        # find interfaces
+        interfaces = _get_interfaces(origin)
+        fetched_fields = list(strawberry_fields.values())
+        # dataclasses removes attributes from the class here:
+        # https://github.com/python/cpython/blob/577d7c4e/Lib/dataclasses.py#L873-L880
+        # so we need to restore them, this will change in the future, but for now this
+        # solution should suffice
+        for field_ in fetched_fields:
+            if field_.base_resolver and field_.python_name:
+                wrapped_func = field_.base_resolver.wrapped_func
+
+                # Bind the functions to the class object. This is necessary because when
+                # the @strawberry.field decorator is used on @staticmethod/@classmethods,
+                # we get the raw staticmethod/classmethod objects before class evaluation
+                # binds them to the class. We need to do this manually.
+                if isinstance(wrapped_func, staticmethod):
+                    bound_method = wrapped_func.__get__(origin)
+                    field_.base_resolver.wrapped_func = bound_method
+                elif isinstance(wrapped_func, classmethod):
+                    bound_method = types.MethodType(wrapped_func.__func__, origin)
+                    field_.base_resolver.wrapped_func = bound_method
+
+                setattr(origin, field_.python_name, wrapped_func)
+
+        is_type_of = getattr(origin, "is_type_of", None)
+        return cls(
+            name=name,
+            origin=origin,
+            is_input=is_input,
+            is_interface=is_interface,
+            description=description,
+            directives=directives,
+            extend=extend,
+            interfaces=interfaces,
+            fields=fetched_fields,
+            is_type_of=is_type_of,
+        )
 
     # TODO: remove wrapped cls when we "merge" this with `StrawberryObject`
     def resolve_generic(self, wrapped_cls: type) -> type:
@@ -69,8 +255,8 @@ class TypeDefinition(StrawberryType):
         for field in self.fields:
             # TODO: Logic unnecessary with StrawberryObject
             field_type = field.type
-            if hasattr(field_type, "_type_definition"):
-                field_type = field_type._type_definition  # type: ignore
+            if hasattr(field_type, "__strawberry_definition__"):
+                field_type = field_type.__strawberry_definition__  # type: ignore
 
             # TODO: All types should end up being StrawberryTypes
             #       The first check is here as a symptom of strawberry.ID being a
@@ -98,7 +284,7 @@ class TypeDefinition(StrawberryType):
         new_type = type(
             new_type_definition.name,
             (self.origin,),
-            {"_type_definition": new_type_definition},
+            {"__strawberry_definition__": new_type_definition},
         )
 
         new_type_definition.origin = new_type
@@ -106,14 +292,10 @@ class TypeDefinition(StrawberryType):
         return new_type
 
     def get_field(self, python_name: str) -> Optional["StrawberryField"]:
+        # TODO: Store the fields in a map instead.
         return next(
             (field for field in self.fields if field.python_name == python_name), None
         )
-
-    @property
-    def fields(self) -> List["StrawberryField"]:
-        # TODO: rename _fields to fields and remove this property
-        return self._fields
 
     @property
     def is_generic(self) -> bool:
@@ -133,7 +315,7 @@ class TypeDefinition(StrawberryType):
         if isinstance(root, dict):
             raise NotImplementedError()
 
-        type_definition = root._type_definition  # type: ignore
+        type_definition = root.__strawberry_definition__  # type: ignore
 
         if type_definition is self:
             # No generics involved. Exact type match

@@ -1,31 +1,15 @@
 import dataclasses
 import inspect
-import types
-from typing import Callable, List, Optional, Sequence, Type, TypeVar, cast, overload
+from typing import Callable, Optional, Sequence, Type, TypeVar, overload
 
-from .exceptions import MissingFieldAnnotationError, ObjectIsNotClassError
-from .field import StrawberryField, StrawberryLazyField, field
-from .types.type_resolver import _get_fields
+from .exceptions import (
+    MissingFieldAnnotationError,
+    MissingReturnAnnotationError,
+    ObjectIsNotClassError,
+)
+from .field import StrawberryField, field
 from .types.types import TypeDefinition
-from .utils.str_converters import to_camel_case
 from .utils.typing import __dataclass_transform__
-
-
-def _get_interfaces(cls: Type) -> List[TypeDefinition]:
-    interfaces = []
-
-    for base in cls.__bases__:
-        type_definition = cast(
-            Optional[TypeDefinition], getattr(base, "_type_definition", None)
-        )
-
-        if type_definition and type_definition.is_interface:
-            interfaces.append(type_definition)
-
-        for inherited_interface in _get_interfaces(base):
-            interfaces.append(inherited_interface)
-
-    return interfaces
 
 
 def _check_field_annotations(cls: Type):
@@ -41,15 +25,33 @@ def _check_field_annotations(cls: Type):
     cls.__annotations__ = cls_annotations
 
     for field_name, field_ in cls.__dict__.items():
-        if not isinstance(field_, (StrawberryLazyField, dataclasses.Field)):
+        if not isinstance(field_, (StrawberryField, dataclasses.Field)):
             # Not a dataclasses.Field, nor a StrawberryField. Ignore
             continue
 
         # If the field is a StrawberryField we need to do a bit of extra work
         # to make sure dataclasses.dataclass is ready for it
-        if isinstance(field_, StrawberryLazyField):
-            strawberry_field = field_.evaluate(cls, field_name)
-            setattr(cls, field_name, strawberry_field.to_dataclass_field)
+        if isinstance(field_, StrawberryField):
+
+            # Make sure the cls has an annotation
+            if field_name not in cls_annotations:
+                # If the field uses the default resolver, the field _must_ be
+                # annotated
+                if not field_.base_resolver:
+                    raise MissingFieldAnnotationError(field_name)
+
+                # The resolver _must_ have a return type annotation
+                # TODO: Maybe check this immediately when adding resolver to
+                #       field
+                if field_.base_resolver.type_annotation is None:
+                    raise MissingReturnAnnotationError(field_name)
+
+                cls_annotations[field_name] = field_.base_resolver.type_annotation
+
+            # TODO: Make sure the cls annotation agrees with the field's type
+            # >>> if cls_annotations[field_name] != field.base_resolver.type:
+            # >>>     # TODO: Proper error
+            # >>>    raise Exception
 
         # If somehow a non-StrawberryField field is added to the cls without annotations
         # it raises an exception. This would occur if someone manually uses
@@ -67,59 +69,6 @@ def _wrap_dataclass(cls: Type):
     _check_field_annotations(cls)
 
     return dataclasses.dataclass(cls)
-
-
-def _process_type(
-    cls,
-    *,
-    name: Optional[str] = None,
-    is_input: bool = False,
-    is_interface: bool = False,
-    description: Optional[str] = None,
-    directives: Optional[Sequence[object]] = (),
-    extend: bool = False,
-):
-    name = name or to_camel_case(cls.__name__)
-
-    interfaces = _get_interfaces(cls)
-    fields = _get_fields(cls)
-    is_type_of = getattr(cls, "is_type_of", None)
-
-    cls._type_definition = TypeDefinition(
-        name=name,
-        is_input=is_input,
-        is_interface=is_interface,
-        interfaces=interfaces,
-        description=description,
-        directives=directives,
-        origin=cls,
-        extend=extend,
-        _fields=fields,
-        is_type_of=is_type_of,
-    )
-
-    # dataclasses removes attributes from the class here:
-    # https://github.com/python/cpython/blob/577d7c4e/Lib/dataclasses.py#L873-L880
-    # so we need to restore them, this will change in future, but for now this
-    # solution should suffice
-    for field_ in fields:
-        if field_.base_resolver and field_.python_name:
-            wrapped_func = field_.base_resolver.wrapped_func
-
-            # Bind the functions to the class object. This is necessary because when
-            # the @strawberry.field decorator is used on @staticmethod/@classmethods,
-            # we get the raw staticmethod/classmethod objects before class evaluation
-            # binds them to the class. We need to do this manually.
-            if isinstance(wrapped_func, staticmethod):
-                bound_method = wrapped_func.__get__(cls)
-                field_.base_resolver.wrapped_func = bound_method
-            elif isinstance(wrapped_func, classmethod):
-                bound_method = types.MethodType(wrapped_func.__func__, cls)
-                field_.base_resolver.wrapped_func = bound_method
-
-            setattr(cls, field_.python_name, wrapped_func)
-
-    return cls
 
 
 T = TypeVar("T")
@@ -183,9 +132,8 @@ def type(
                 exc = ObjectIsNotClassError.type
             raise exc(cls)
 
-        wrapped = _wrap_dataclass(cls)
-        return _process_type(
-            wrapped,
+        cls.__strawberry_definition__ = TypeDefinition.from_class(
+            cls,
             name=name,
             is_input=is_input,
             is_interface=is_interface,
@@ -193,6 +141,7 @@ def type(
             directives=directives,
             extend=extend,
         )
+        return cls
 
     if cls is None:
         return wrap

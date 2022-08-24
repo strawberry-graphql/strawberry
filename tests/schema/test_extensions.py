@@ -41,7 +41,7 @@ def test_extensions_schema_directive():
     graphql_scheme_directive = graphql_schema.get_directive("schemaDirective")
     """
     graphql_scheme_directive = schema.schema_converter.from_schema_directive(
-        Query._type_definition.directives[0]
+        Query.__strawberry_definition__.directives[0]
     )
     assert (
         graphql_scheme_directive.extensions[DEFINITION_BACKREF]
@@ -125,7 +125,7 @@ def test_interface():
 
     assert (
         graphql_schema.get_type("Thing").extensions[DEFINITION_BACKREF]
-        is Thing._type_definition
+        is Thing.__strawberry_definition__
     )
 
 
@@ -168,23 +168,23 @@ def test_object_types():
 
     assert (
         graphql_schema.get_type("Input").extensions[DEFINITION_BACKREF]
-        is Input._type_definition
+        is Input.__strawberry_definition__
     )
     assert (
         graphql_schema.get_type("Query").extensions[DEFINITION_BACKREF]
-        is Query._type_definition
+        is Query.__strawberry_definition__
     )
 
     graphql_query = cast(GraphQLObjectType, graphql_schema.get_type("Query"))
     assert graphql_query.fields["hello"].extensions[
         DEFINITION_BACKREF
-    ] is Query._type_definition.get_field("hello")
+    ] is Query.__strawberry_definition__.get_field("hello")
     assert (
         graphql_query.fields["hello"].args["input"].extensions[DEFINITION_BACKREF]
-        is Query._type_definition.get_field("hello").arguments[0]
+        is Query.__strawberry_definition__.get_field("hello").arguments[0]
     )
 
     graphql_input = cast(GraphQLInputType, graphql_schema.get_type("Input"))
     assert graphql_input.fields["name"].extensions[
         DEFINITION_BACKREF
-    ] is Input._type_definition.get_field("name")
+    ] is Input.__strawberry_definition__.get_field("name")

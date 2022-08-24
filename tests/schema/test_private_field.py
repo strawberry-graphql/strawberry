@@ -15,7 +15,7 @@ def test_private_field():
         name: str
         age: strawberry.Private[int]
 
-    definition = Query._type_definition
+    definition = Query.__strawberry_definition__
 
     assert definition.name == "Query"
     assert len(definition.fields) == 1

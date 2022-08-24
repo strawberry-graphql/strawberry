@@ -107,7 +107,7 @@ class StrawberryAnnotation:
     def create_concrete_type(self, evaled_type: type) -> type:
         if _is_object_type(evaled_type):
             type_definition: TypeDefinition
-            type_definition = evaled_type._type_definition  # type: ignore
+            type_definition = evaled_type.__strawberry_definition__  # type: ignore
             return type_definition.resolve_generic(evaled_type)
 
         raise ValueError(f"Not supported {evaled_type}")
@@ -272,9 +272,9 @@ def _is_input_type(type_: Any) -> bool:
     if not _is_object_type(type_):
         return False
 
-    return type_._type_definition.is_input
+    return type_.__strawberry_definition__.is_input
 
 
 def _is_object_type(type_: Any) -> bool:
     # isinstance(type_, StrawberryObjectType)  # noqa: E800
-    return hasattr(type_, "_type_definition")
+    return hasattr(type_, "__strawberry_definition__")

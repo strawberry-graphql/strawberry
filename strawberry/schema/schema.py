@@ -77,14 +77,14 @@ class Schema(BaseSchema):
         self.directives = directives
         self.schema_directives = schema_directives
 
-        query_type = self.schema_converter.from_object(query._type_definition)
+        query_type = self.schema_converter.from_object(query.__strawberry_definition__)
         mutation_type = (
-            self.schema_converter.from_object(mutation._type_definition)
+            self.schema_converter.from_object(mutation.__strawberry_definition__)
             if mutation
             else None
         )
         subscription_type = (
-            self.schema_converter.from_object(subscription._type_definition)
+            self.schema_converter.from_object(subscription.__strawberry_definition__)
             if subscription
             else None
         )

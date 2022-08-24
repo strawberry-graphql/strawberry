@@ -20,7 +20,7 @@ def is_input_type(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
     if not is_object_type(type_):
         return False
 
-    type_definition: TypeDefinition = type_._type_definition  # type: ignore
+    type_definition: TypeDefinition = type_.__strawberry_definition__  # type: ignore
     return type_definition.is_input
 
 
@@ -28,7 +28,7 @@ def is_interface_type(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
     if not is_object_type(type_):
         return False
 
-    type_definition: TypeDefinition = type_._type_definition  # type: ignore
+    type_definition: TypeDefinition = type_.__strawberry_definition__  # type: ignore
     return type_definition.is_interface
 
 
@@ -42,7 +42,7 @@ def is_scalar(
 
 def is_object_type(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
     # isinstance(type_, StrawberryObjectType)  # noqa: E800
-    return hasattr(type_, "_type_definition")
+    return hasattr(type_, "__strawberry_definition__")
 
 
 def is_enum(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
@@ -51,9 +51,9 @@ def is_enum(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
 
 
 def is_generic(type_: Union[StrawberryType, type]) -> bool:
-    if hasattr(type_, "_type_definition"):
+    if hasattr(type_, "__strawberry_definition__"):
 
-        type_definition: TypeDefinition = type_._type_definition  # type: ignore
+        type_definition: TypeDefinition = type_.__strawberry_definition__  # type: ignore
         return type_definition.is_generic
 
     if isinstance(type_, StrawberryType):

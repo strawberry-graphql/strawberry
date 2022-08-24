@@ -87,7 +87,7 @@ class StrawberryUnion(StrawberryType):
     @property
     def type_params(self) -> List[TypeVar]:
         def _get_type_params(type_: StrawberryType):
-            if hasattr(type_, "_type_definition"):
+            if hasattr(type_, "__strawberry_definition__"):
                 parameters = getattr(type_, "__parameters__", None)
 
                 return list(parameters) if parameters else []
@@ -114,8 +114,10 @@ class StrawberryUnion(StrawberryType):
         for type_ in self.types:
             new_type: Union[StrawberryType, type]
 
-            if hasattr(type_, "_type_definition"):
-                type_definition: TypeDefinition = type_._type_definition  # type: ignore
+            if hasattr(type_, "__strawberry_definition__"):
+                type_definition: TypeDefinition = (
+                    type_.__strawberry_definition__
+                )  # type: ignore
 
                 if type_definition.is_generic:
                     new_type = type_definition.copy_with(type_var_map)
@@ -149,7 +151,7 @@ class StrawberryUnion(StrawberryType):
 
             # If the type given is not an Object type, try resolving using `is_type_of`
             # defined on the union's inner types
-            if not hasattr(root, "_type_definition"):
+            if not hasattr(root, "__strawberry_definition__"):
                 for inner_type in type_.types:
                     if inner_type.is_type_of is not None and inner_type.is_type_of(
                         root, info
@@ -227,7 +229,9 @@ def union(
         raise TypeError("No types passed to `union`")
 
     for _type in types:
-        if not isinstance(_type, TypeVar) and not hasattr(_type, "_type_definition"):
+        if not isinstance(_type, TypeVar) and not hasattr(
+            _type, "__strawberry_definition__"
+        ):
             raise InvalidUnionType(
                 f"Type `{_type.__name__}` cannot be used in a GraphQL Union"
             )

@@ -152,8 +152,10 @@ def convert_argument(
     if isinstance(type_, LazyType):
         return convert_argument(value, type_.resolve_type(), scalar_registry, config)
 
-    if hasattr(type_, "_type_definition"):  # TODO: Replace with StrawberryInputObject
-        type_definition: TypeDefinition = type_._type_definition  # type: ignore
+    if hasattr(
+        type_, "__strawberry_definition__"
+    ):  # TODO: Replace with StrawberryInputObject
+        type_definition: TypeDefinition = type_.__strawberry_definition__  # type: ignore
 
         assert type_definition.is_input
 

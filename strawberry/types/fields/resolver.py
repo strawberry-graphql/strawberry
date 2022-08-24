@@ -54,7 +54,6 @@ class Parameter(inspect.Parameter):
 
 
 class Signature(inspect.Signature):
-
     _parameter_cls = Parameter
 
 
@@ -149,7 +148,6 @@ T = TypeVar("T")
 
 
 class StrawberryResolver(Generic[T]):
-
     RESERVED_PARAMSPEC: Tuple[ReservedParameterSpecification, ...] = (
         SELF_PARAMSPEC,
         CLS_PARAMSPEC,
@@ -292,8 +290,10 @@ class StrawberryResolver(Generic[T]):
             if isinstance(self.type, StrawberryType):
                 type_override = self.type.copy_with(type_var_map)
             else:
-                type_override = self.type._type_definition.copy_with(  # type: ignore
-                    type_var_map,
+                type_override = (
+                    self.type.__strawberry_definition__.copy_with(  # type: ignore
+                        type_var_map,
+                    )
                 )
 
         return type(self)(

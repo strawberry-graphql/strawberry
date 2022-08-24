@@ -65,7 +65,7 @@ class StrawberryContainer(StrawberryType):
 
     @property
     def type_params(self) -> List[TypeVar]:
-        if hasattr(self.of_type, "_type_definition"):
+        if hasattr(self.of_type, "__strawberry_definition__"):
             parameters = getattr(self.of_type, "__parameters__", None)
 
             return list(parameters) if parameters else []
@@ -82,9 +82,9 @@ class StrawberryContainer(StrawberryType):
         of_type_copy: Union[StrawberryType, type]
 
         # TODO: Obsolete with StrawberryObject
-        if hasattr(self.of_type, "_type_definition"):
+        if hasattr(self.of_type, "__strawberry_definition__"):
             type_definition: TypeDefinition = (
-                self.of_type._type_definition  # type: ignore
+                self.of_type.__strawberry_definition__  # type: ignore
             )
 
             if type_definition.is_generic:
@@ -101,8 +101,8 @@ class StrawberryContainer(StrawberryType):
     def is_generic(self) -> bool:
         # TODO: Obsolete with StrawberryObject
         type_ = self.of_type
-        if hasattr(self.of_type, "_type_definition"):
-            type_ = self.of_type._type_definition  # type: ignore
+        if hasattr(self.of_type, "__strawberry_definition__"):
+            type_ = self.of_type.__strawberry_definition__  # type: ignore
 
         if isinstance(type_, StrawberryType):
             return type_.is_generic

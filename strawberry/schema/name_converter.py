@@ -94,8 +94,8 @@ class NameConverter:
         name = ""
 
         for type_ in union.types:
-            assert hasattr(type_, "_type_definition")
-            name += self.from_type(type_._type_definition)  # type: ignore
+            assert hasattr(type_, "__strawberry_definition__")
+            name += self.from_type(type_.__strawberry_definition__)  # type: ignore
 
         return name
 
@@ -132,8 +132,8 @@ class NameConverter:
             strawberry_type = type_._scalar_definition  # type: ignore
 
             name = strawberry_type.name
-        elif hasattr(type_, "_type_definition"):
-            strawberry_type = type_._type_definition  # type: ignore
+        elif hasattr(type_, "__strawberry_definition__"):
+            strawberry_type = type_.__strawberry_definition__  # type: ignore
 
             if strawberry_type.is_generic:
                 types = type_.__args__  # type: ignore

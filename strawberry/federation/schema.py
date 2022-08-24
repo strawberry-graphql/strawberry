@@ -187,7 +187,7 @@ def _get_entity_type(type_map: TypeMap):
     entity_type = GraphQLUnionType("_Entity", federation_key_types)  # type: ignore
 
     def _resolve_type(self, value, _type):
-        return self._type_definition.name
+        return self.__strawberry_definition__.name
 
     entity_type.resolve_type = _resolve_type
 

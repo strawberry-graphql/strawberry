@@ -200,45 +200,84 @@ MyCustomScalar2 = strawberry.scalar(
     name="MyCustomScalar",
 )
 
+
 @strawberry.type
 class Query:
     scalar_1: MyCustomScalar
     scalar_2: MyCustomScalar2
 
+
 # Throws 'Scalar `MyCustomScalar` has already been registered'
 # The traceback will look like:
-.../venv/lib/python3.9/site-packages/graphql/type/definition.py:767: in fields
-    fields = resolve_thunk(self._fields)
-.../venv/lib/python3.9/site-packages/graphql/type/definition.py:296: in resolve_thunk
-    return thunk() if callable(thunk) else thunk
-.../venv/lib/python3.9/site-packages/strawberry/schema/schema_converter.py:294: in get_graphql_fields
-    graphql_fields[field_name] = self.from_field(field)
-.../venv/lib/python3.9/site-packages/strawberry/schema/schema_converter.py:140: in from_field
-    field_type = self.from_non_optional(field.type)
-.../venv/lib/python3.9/site-packages/strawberry/schema/schema_converter.py:276: in from_non_optional
-    of_type = self.from_type(type_)
-.../venv/lib/python3.9/site-packages/strawberry/schema/schema_converter.py:456: in from_type
-    return self.from_scalar(type_)
-.../venv/lib/python3.9/site-packages/strawberry/schema/schema_converter.py:429: in from_scalar
-    raise ScalarAlreadyRegisteredError(scalar_definition.name)
-E   strawberry.exceptions.ScalarAlreadyRegisteredError: Scalar `MyCustomScalar` has already been registered
+... / venv / lib / python3
+.9 / site - packages / graphql / type / definition.py: 767: in fields
+fields = resolve_thunk(self.fields)
+... / venv / lib / python3
+.9 / site - packages / graphql / type / definition.py: 296: in resolve_thunk
+return thunk() if callable(thunk) else thunk
+... / venv / lib / python3
+.9 / site - packages / strawberry / schema / schema_converter.py: 294: in get_graphql_fields
+graphql_fields[field_name] = self.from_field(field)
+... / venv / lib / python3
+.9 / site - packages / strawberry / schema / schema_converter.py: 140: in from_field
+field_type = self.from_non_optional(field.type)
+... / venv / lib / python3
+.9 / site - packages / strawberry / schema / schema_converter.py: 276: in from_non_optional
+of_type = self.from_type(type_)
+... / venv / lib / python3
+.9 / site - packages / strawberry / schema / schema_converter.py: 456: in from_type
+return self.from_scalar(type_)
+... / venv / lib / python3
+.9 / site - packages / strawberry / schema / schema_converter.py: 429: in from_scalar
+raise ScalarAlreadyRegisteredError(scalar_definition.name)
+E
+strawberry.exceptions.ScalarAlreadyRegisteredError: Scalar
+`MyCustomScalar`
+has
+already
+been
+registered
 
-During handling of the above exception, another exception occurred:
-test_schema.py:4: in <module>
-    from schema import schema
-schema.py:79: in <module>
-    schema = strawberry.Schema(
-.../venv/lib/python3.9/site-packages/strawberry/schema/schema.py:84: in __init__
-    self._schema = GraphQLSchema(
-.../venv/lib/python3.9/site-packages/graphql/type/schema.py:208: in __init__
-    collect_referenced_types(query)
-.../venv/lib/python3.9/site-packages/graphql/type/schema.py:422: in collect_referenced_types
-    for field in named_type.fields.values():
-....9envet__
-    val = self.func(instance)
-.../venv/lib/python3.9/site-packages/graphql/type/definition.py:769: in fields
-    raise TypeError(f"{self.name} fields cannot be resolved. {error}")
-E   TypeError: Query fields cannot be resolved. Scalar `MyCustomScalar` has already been registered
+During
+handling
+of
+the
+above
+exception, another
+exception
+occurred:
+test_schema.py: 4: in < module >
+from schema import schema
+
+schema.py: 79: in < module >
+schema = strawberry.Schema(
+    ... / venv / lib / python3
+.9 / site - packages / strawberry / schema / schema.py: 84: in __init__
+self._schema = GraphQLSchema(
+    ... / venv / lib / python3
+.9 / site - packages / graphql / type / schema.py: 208: in __init__
+collect_referenced_types(query)
+... / venv / lib / python3
+.9 / site - packages / graphql / type / schema.py: 422: in collect_referenced_types
+for field in named_type.fields.values():
+    ...
+.9
+envet__
+val = self.func(instance)
+      ... / venv / lib / python3
+.9 / site - packages / graphql / type / definition.py: 769: in fields
+raise TypeError(f"{self.name} fields cannot be resolved. {error}")
+E
+TypeError: Query
+fields
+cannot
+be
+resolved.Scalar
+`MyCustomScalar`
+has
+already
+been
+registered
 ```
 
 ### UnsupportedTypeError
