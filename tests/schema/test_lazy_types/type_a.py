@@ -20,3 +20,5 @@ class TypeA:
         from .type_b import TypeB
 
         return TypeB()
+
+    done: bool = True

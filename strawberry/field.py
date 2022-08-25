@@ -40,23 +40,24 @@ from strawberry.unset import UNSET
 from .permission import BasePermission
 from .private import is_private
 from .types.fields.resolver import StrawberryResolver
+from .utils.typing import get_parameters
 
 
 if TYPE_CHECKING:
-    from .object_type import TypeDefinition
+    from .object_type import StrawberryDefinition
 
 _RESOLVER_TYPE = Union[StrawberryResolver, Callable, staticmethod, classmethod]
 
 UNRESOLVED = object()
 
 
-@dataclasses.dataclass
+@dataclasses.dataclass()
 class StrawberryField:
-    python_name: Optional[str]
-    graphql_name: Optional[str]
-    type_annotation: Optional[StrawberryAnnotation] = None
+    python_name: Optional[str] = None
+    graphql_name: Optional[str] = None
     origin: Optional[Type] = None
     base_resolver: Optional[StrawberryResolver] = None
+    type_annotation: Optional[StrawberryAnnotation] = None
     arguments: List[StrawberryArgument] = dataclasses.field(default_factory=list)
     is_subscription: bool = False
     description: Optional[str] = None
@@ -85,21 +86,6 @@ class StrawberryField:
         ],
     ) -> "StrawberryField":
         # TODO: document this.
-        """
-        Hack for fields that wasn't provided with a resolver function.
-        or for solving usecases like this:
-        >>> @strawberry.field(description="bar")
-        >>> def foo():
-        >>>     ...
-        This cannot be handled normally by `strawberry.field`.
-
-        if it was used as a decorator, it would be evaluated when python will
-        call the decorator. if it was use as:
-        >>> foo: str = strawberry.field(description="bar")
-        it would be evaluated in the @strawberry.type fields parsing.
-        """
-        # TODO: document this.
-        # using replace to call __init__ this is a replacement for a frozen style class.
 
         # if it is a StrawberryResolver
         if isinstance(evolvable, StrawberryResolver):
@@ -111,8 +97,38 @@ class StrawberryField:
 
         # finally if it is a plain function then create a StrawberryResolver out of it.
         elif callable(evolvable):
+            resolver = StrawberryResolver(evolvable)
+            return dataclasses.replace(self, base_resolver=resolver)
+
+        elif isinstance(evolvable, classmethod):
             evolvable = StrawberryResolver(evolvable)
+
             return dataclasses.replace(self, base_resolver=evolvable)
+        else:
+            raise TypeError(
+                f"Unsupported type for field evolution, got: {type(evolvable)}"
+            )
+
+    @classmethod
+    def from_dataclasses_field(
+        cls, origin: Type[T], dataclasses_field: dataclasses.Field
+    ) -> "StrawberryField":
+        _default = UNSET
+        _default_factory = UNSET
+        if dataclasses_field.default is not dataclasses.MISSING:
+            _default = dataclasses_field.default
+        if (
+            not _default
+            and dataclasses_field.default_factory is not dataclasses.MISSING
+        ):
+            _default_factory = dataclasses_field.default_factory
+        assert dataclasses_field.name
+        return StrawberryField(
+            origin=origin,
+            default=_default,
+            default_factory=_default_factory,
+            python_name=dataclasses_field.name,
+        )
 
     def __post_init__(self):
         if self.origin:
@@ -129,7 +145,6 @@ class StrawberryField:
         """
         called by __init__ if there is a base resolver and an origin.
         """
-
         # validate base_resolver
         if not isinstance(self.base_resolver, StrawberryResolver):
             self.base_resolver = StrawberryResolver(self.base_resolver)
@@ -157,7 +172,13 @@ class StrawberryField:
         if resolver_annotation := self.base_resolver.type_annotation:
             # solving aliased imports from other modules
             namespace = resolver_annotation.namespace
-            namespace.update(sys.modules[self.origin.__module__].__dict__)
+            if namespace is not None:
+                namespace.update(sys.modules[self.origin.__module__].__dict__)
+            else:
+                namespace = {}
+
+            # check that class annotations if exists
+            # are the same as resolver annotations.
             if class_annotation:
                 assert (
                     StrawberryAnnotation(
@@ -169,9 +190,12 @@ class StrawberryField:
                     f" does not match the origin annotation "
                     f"{self.origin.__annotations__[self.python_name]}"
                 )
+
+        # no class or resolver annotation, raise exception.
         elif not class_annotation:
             raise MissingReturnAnnotationError(self.python_name)
 
+        # only one annotation found, equalize!
         else:
             self.origin.__annotations__[self.python_name] = (
                 class_annotation or resolver_annotation.safe_resolve()
@@ -180,22 +204,22 @@ class StrawberryField:
         self.type_annotation = resolver_annotation or StrawberryAnnotation(
             class_annotation,
         )
-
+        get_parameters(self.type_annotation.annotation)
         # fetching arguments
         self.arguments = self.base_resolver.arguments
 
+        # final checks.
         self._finalize()
 
     def _evaluate_as_basic_field(self) -> None:
         """Field without a resolver"""
+
         self.is_basic_field = True
         if self.default_factory is not UNSET:
             try:
                 self.default_value = self.default_factory()
             except TypeError as exc:
                 raise InvalidDefaultFactoryError() from exc
-
-            self.default_value = self.default_factory()
         else:
             self.default_value = self.default
 
@@ -265,11 +289,11 @@ class StrawberryField:
             **kw_only,
         )
 
-        field_.type = self.type_annotation.safe_resolve()
+        field_.type = self.type
         return field_
 
     def get_result(
-        self, _: Any, info: Info, args: List[Any], kwargs: Dict[str, Any]
+        self, source: Any, info: Info, args: List[Any], kwargs: Dict[str, Any]
     ) -> Union[Awaitable[Any], Any]:
         """
         Calls the resolver defined for the StrawberryField.
@@ -281,11 +305,13 @@ class StrawberryField:
             return self.base_resolver(*args, **kwargs)
 
         # else use default resolver
-        return getattr(self.origin, self.python_name)  # type: ignore
+        return info.schema.config.default_resolver(
+            source, self.python_name
+        )  # type: ignore
 
     @property
     def type(self):
-        # TODO: remove this property
+        assert self.type_annotation
         return self.type_annotation.safe_resolve()
 
     # TODO: add this to arguments (and/or move it to StrawberryType)
@@ -310,7 +336,7 @@ class StrawberryField:
         # TODO: Remove with creation of StrawberryObject. Will act same as other
         #       StrawberryTypes
         if hasattr(self.type, "__strawberry_definition__"):
-            type_definition: TypeDefinition = (
+            type_definition: StrawberryDefinition = (
                 self.type.__strawberry_definition__
             )  # type: ignore
 
@@ -327,6 +353,9 @@ class StrawberryField:
             if self.base_resolver is not None
             else None
         )
+
+        # inject the new annotation to the class
+        self.origin.__annotations__[self.python_name] = new_type
 
         return StrawberryField(
             python_name=self.python_name,

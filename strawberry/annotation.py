@@ -30,7 +30,7 @@ from strawberry.type import (
     StrawberryType,
     StrawberryTypeVar,
 )
-from strawberry.types.types import TypeDefinition
+from strawberry.types.types import StrawberryDefinition
 from strawberry.unset import UNSET
 from strawberry.utils.typing import is_generic, is_type_var
 
@@ -105,16 +105,16 @@ class StrawberryAnnotation:
         return evaled_type
 
     def safe_resolve(self) -> Union[StrawberryType, type, ForwardRef]:
+        # catching NameError if the type is a ForwardRef | str
         try:
             return self.resolve()
         except NameError:
+            assert isinstance(self.annotation, str)
             return ForwardRef(self.annotation)
 
     def create_concrete_type(self, evaled_type: type) -> type:
-        if _is_object_type(evaled_type):
-            type_definition: TypeDefinition
-            type_definition = evaled_type.__strawberry_definition__  # type: ignore
-            return type_definition.resolve_generic(evaled_type)
+        if strawberry_def := _get_strawberry_definition(evaled_type):
+            return strawberry_def.resolve_generic(evaled_type)
 
         raise ValueError(f"Not supported {evaled_type}")
 
@@ -226,9 +226,9 @@ class StrawberryAnnotation:
         # TODO: add support for StrawberryInterface when implemented
         elif isinstance(evaled_type, StrawberryList):
             return True
-        elif _is_object_type(evaled_type):  # TODO: Replace with StrawberryObject
+        elif _get_strawberry_definition(evaled_type):
             return True
-        elif isinstance(evaled_type, TypeDefinition):
+        elif isinstance(evaled_type, StrawberryDefinition):
             return True
         elif isinstance(evaled_type, StrawberryOptional):
             return True
@@ -275,12 +275,19 @@ class StrawberryAnnotation:
 
 
 def _is_input_type(type_: Any) -> bool:
-    if not _is_object_type(type_):
+    if not _get_strawberry_definition(type_):
         return False
 
     return type_.__strawberry_definition__.is_input
 
 
-def _is_object_type(type_: Any) -> bool:
-    # isinstance(type_, StrawberryObjectType)  # noqa: E800
-    return hasattr(type_, "__strawberry_definition__")
+def _get_strawberry_definition(type_: Any) -> Optional[StrawberryDefinition]:
+    origin = type_
+    # generics store their class in __origin__
+    if origin_ := getattr(type_, "__origin__", False):
+        origin = origin_
+    res = getattr(origin, "__strawberry_definition__", None)
+    if isinstance(res, StrawberryDefinition):
+        return res
+    else:
+        return None

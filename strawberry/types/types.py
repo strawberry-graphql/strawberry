@@ -4,6 +4,7 @@ import dataclasses
 import inspect
 import sys
 import types
+from types import ModuleType
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -35,12 +36,13 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 
-def _get_interfaces(cls: Type[T]) -> List[TypeDefinition]:
+def _get_interfaces(cls: Type[T]) -> List[StrawberryDefinition]:
     interfaces = []
 
     for base in cls.__bases__:
         type_definition = cast(
-            Optional[TypeDefinition], getattr(base, "__strawberry_definition__", None)
+            Optional[StrawberryDefinition],
+            getattr(base, "__strawberry_definition__", None),
         )
 
         if type_definition and type_definition.is_interface:
@@ -100,6 +102,8 @@ def _get_fields(cls: Type) -> List["StrawberryField"]:
         if __strawberry_definition__ := getattr(
             base, "__strawberry_definition__", False
         ):
+            # TODO: remove this when merge with StrawberryObject
+            cast(__strawberry_definition__, StrawberryDefinition)
             for field in __strawberry_definition__.fields:
                 if field.python_name in base.__annotations__:
                     origins.setdefault(field.python_name, base)
@@ -108,18 +112,19 @@ def _get_fields(cls: Type) -> List["StrawberryField"]:
 
 
 @dataclasses.dataclass(eq=False)
-class TypeDefinition(StrawberryType):
+class StrawberryDefinition(StrawberryType):
     name: str
     is_input: bool
     is_interface: bool
     origin: Type
     description: Optional[str]
-    interfaces: List["TypeDefinition"]
+    interfaces: List["StrawberryDefinition"]
     extend: bool
     directives: Optional[Sequence[object]]
     is_type_of: Optional[Callable[[Any, GraphQLResolveInfo], bool]]
     fields: List["StrawberryField"]
-    concrete_of: Optional["TypeDefinition"] = None
+    _module: Optional[ModuleType]
+    concrete_of: Optional["StrawberryDefinition"] = None
     """Concrete implementations of Generic TypeDefinitions fill this in"""
     type_var_map: Mapping[TypeVar, Union[StrawberryType, type]] = dataclasses.field(
         default_factory=dict
@@ -129,7 +134,6 @@ class TypeDefinition(StrawberryType):
     fields that was annotated with a forward reference.
     Will be evaluated on each StrawberryType call on the module
     """
-    _module: types.ModuleType = None
 
     def __post_init__(self):
         self._evaluate_deferred_fields()
@@ -144,10 +148,9 @@ class TypeDefinition(StrawberryType):
         description: Optional[str] = None,
         directives: Optional[Sequence[object]] = (),
         extend: bool = False,
-    ) -> "TypeDefinition":
+    ) -> "StrawberryDefinition":
         # at this point all the strawberry fields in the class are
         # without an origin and a python name.
-
         from strawberry.field import StrawberryField
 
         _module = sys.modules[origin.__module__]
@@ -159,7 +162,10 @@ class TypeDefinition(StrawberryType):
             if __strawberry_definition__ := getattr(
                 base, "__strawberry_definition__", False
             ):
+                # TODO: Remove this when migrate to StrawberryObject
+                assert isinstance(__strawberry_definition__, StrawberryDefinition)
                 for field in __strawberry_definition__.fields:
+                    assert field.python_name
                     strawberry_fields[field.python_name] = field
 
         # find fields in this class.
@@ -201,20 +207,22 @@ class TypeDefinition(StrawberryType):
                 if is_private(field.type):
                     continue
 
-                field = StrawberryField(
-                    python_name=field.name, graphql_name=None, origin=origin
+                _strawberry_field = StrawberryField.from_dataclasses_field(
+                    origin=origin, dataclasses_field=field
                 )
-                strawberry_fields[field.python_name] = field
-                setattr(origin, field.python_name, field.to_dataclass_field())
+                strawberry_fields[_strawberry_field.python_name] = _strawberry_field
 
         # find interfaces
         interfaces = _get_interfaces(origin)
         fetched_fields = list(strawberry_fields.values())
+
+        # find fields with undetermined types
         _deferred_fields = [
             deferred
             for deferred in fetched_fields
             if isinstance(deferred.type, ForwardRef)
         ]
+
         # dataclasses removes attributes from the class here:
         # https://github.com/python/cpython/blob/577d7c4e/Lib/dataclasses.py#L873-L880
         # so we need to restore them, this will change in the future, but for now this
@@ -261,7 +269,7 @@ class TypeDefinition(StrawberryType):
         for name, obj in inspect.getmembers(self._module):
             if strawberry_def := getattr(obj, "__strawberry_definition__", False):
                 # TODO: Remove this when migrating to StrawberryObject.
-                assert isinstance(strawberry_def, TypeDefinition)
+                assert isinstance(strawberry_def, StrawberryDefinition)
                 # avoid recursion
                 if strawberry_def.name != self.name:
                     if obj.__name__ != self.origin.__name__:
@@ -303,7 +311,7 @@ class TypeDefinition(StrawberryType):
             # TODO: Logic unnecessary with StrawberryObject
             field_type = field.type
             if hasattr(field_type, "__strawberry_definition__"):
-                field_type = field_type.__strawberry_definition__  # type: ignore
+                field_type = field_type.__strawberry_definition__
 
             # TODO: All types should end up being StrawberryTypes
             #       The first check is here as a symptom of strawberry.ID being a
@@ -313,7 +321,7 @@ class TypeDefinition(StrawberryType):
 
             fields.append(field)
 
-        new_type_definition = TypeDefinition(
+        new_type_definition = StrawberryDefinition(
             name=self.name,
             is_input=self.is_input,
             origin=self.origin,
@@ -323,9 +331,10 @@ class TypeDefinition(StrawberryType):
             description=self.description,
             extend=self.extend,
             is_type_of=self.is_type_of,
-            _fields=fields,
+            fields=fields,
             concrete_of=self,
             type_var_map=type_var_map,
+            _module=self._module,
         )
 
         new_type = type(

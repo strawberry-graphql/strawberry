@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, List, Mapping, TypeVar, Union
 
 
 if TYPE_CHECKING:
-    from .types.types import TypeDefinition
+    from .types.types import StrawberryDefinition
 
 
 class StrawberryType(ABC):
@@ -83,7 +83,7 @@ class StrawberryContainer(StrawberryType):
 
         # TODO: Obsolete with StrawberryObject
         if hasattr(self.of_type, "__strawberry_definition__"):
-            type_definition: TypeDefinition = (
+            type_definition: StrawberryDefinition = (
                 self.of_type.__strawberry_definition__  # type: ignore
             )
 

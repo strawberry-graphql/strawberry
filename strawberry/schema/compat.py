@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING, Dict, Union
 from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.scalars import is_scalar as is_strawberry_scalar
 from strawberry.type import StrawberryType
-from strawberry.types.types import TypeDefinition
+from strawberry.types.types import StrawberryDefinition
 
 
 # TypeGuard is only available in typing_extensions => 3.10, we don't want
@@ -20,7 +20,9 @@ def is_input_type(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
     if not is_object_type(type_):
         return False
 
-    type_definition: TypeDefinition = type_.__strawberry_definition__  # type: ignore
+    type_definition: StrawberryDefinition = (
+        type_.__strawberry_definition__
+    )  # type: ignore
     return type_definition.is_input
 
 
@@ -28,7 +30,9 @@ def is_interface_type(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
     if not is_object_type(type_):
         return False
 
-    type_definition: TypeDefinition = type_.__strawberry_definition__  # type: ignore
+    type_definition: StrawberryDefinition = (
+        type_.__strawberry_definition__
+    )  # type: ignore
     return type_definition.is_interface
 
 
@@ -53,7 +57,9 @@ def is_enum(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
 def is_generic(type_: Union[StrawberryType, type]) -> bool:
     if hasattr(type_, "__strawberry_definition__"):
 
-        type_definition: TypeDefinition = type_.__strawberry_definition__  # type: ignore
+        type_definition: StrawberryDefinition = (
+            type_.__strawberry_definition__
+        )  # type: ignore
         return type_definition.is_generic
 
     if isinstance(type_, StrawberryType):

@@ -5,7 +5,7 @@ from graphql import GraphQLField, GraphQLInputField, GraphQLType
 
 from strawberry.custom_scalar import ScalarDefinition
 from strawberry.enum import EnumDefinition
-from strawberry.types.types import TypeDefinition
+from strawberry.types.types import StrawberryDefinition
 from strawberry.union import StrawberryUnion
 
 
@@ -14,7 +14,9 @@ Field = Union[GraphQLInputField, GraphQLField]
 
 @dataclasses.dataclass
 class ConcreteType:
-    definition: Union[TypeDefinition, EnumDefinition, ScalarDefinition, StrawberryUnion]
+    definition: Union[
+        StrawberryDefinition, EnumDefinition, ScalarDefinition, StrawberryUnion
+    ]
     implementation: GraphQLType
 
 

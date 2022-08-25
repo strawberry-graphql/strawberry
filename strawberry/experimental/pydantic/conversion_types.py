@@ -5,7 +5,7 @@ from typing import Any, Dict, TypeVar
 from pydantic import BaseModel
 from typing_extensions import Protocol
 
-from strawberry.types.types import TypeDefinition
+from strawberry.types.types import StrawberryDefinition
 
 
 PydanticModel = TypeVar("PydanticModel", bound=BaseModel)
@@ -28,7 +28,7 @@ class StrawberryTypeFromPydantic(Protocol[PydanticModel]):
         ...
 
     @property
-    def __strawberry_definition__(self) -> TypeDefinition:
+    def __strawberry_definition__(self) -> StrawberryDefinition:
         ...
 
     @property

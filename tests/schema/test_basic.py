@@ -33,6 +33,21 @@ def test_raises_exception_with_unsupported_types():
 def test_basic_schema():
     @strawberry.type
     class Query:
+        example: str = strawberry.field(default="Example")
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ example }"
+
+    result = schema.execute_sync(query, root_value=Query())
+
+    assert not result.errors
+    assert result.data["example"] == "Example"
+
+
+def test_basic_schema_non_strawberry_field():
+    @strawberry.type
+    class Query:
         example: str = "Example"
 
     schema = strawberry.Schema(query=Query)

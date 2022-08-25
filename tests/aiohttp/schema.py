@@ -8,6 +8,7 @@ import strawberry
 from strawberry.file_uploads import Upload
 from strawberry.permission import BasePermission
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import PingMessage
+from strawberry.types import Info
 
 
 class AlwaysFailPermission(BasePermission):
@@ -124,7 +125,7 @@ class Subscription:
         yield Flavor.CHOCOLATE
 
     @strawberry.subscription
-    async def debug(self, info) -> typing.AsyncGenerator[DebugInfo, None]:
+    async def debug(self, info: Info) -> typing.AsyncGenerator[DebugInfo, None]:
         active_result_handlers = [
             task for task in info.context["tasks"].values() if not task.done()
         ]

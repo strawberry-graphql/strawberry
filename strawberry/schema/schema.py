@@ -26,7 +26,7 @@ from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
 from strawberry.types import ExecutionContext, ExecutionResult
 from strawberry.types.graphql import OperationType
-from strawberry.types.types import TypeDefinition
+from strawberry.types.types import StrawberryDefinition
 from strawberry.union import StrawberryUnion
 
 from ..printer import print_schema
@@ -137,7 +137,7 @@ class Schema(BaseSchema):
     def get_type_by_name(  # type: ignore  # lru_cache makes mypy complain
         self, name: str
     ) -> Optional[
-        Union[TypeDefinition, ScalarDefinition, EnumDefinition, StrawberryUnion]
+        Union[StrawberryDefinition, ScalarDefinition, EnumDefinition, StrawberryUnion]
     ]:
         # TODO: respect auto_camel_case
         if name in self.schema_converter.type_map:
@@ -153,7 +153,7 @@ class Schema(BaseSchema):
         if not type_:
             return None  # pragma: no cover
 
-        assert isinstance(type_, TypeDefinition)
+        assert isinstance(type_, StrawberryDefinition)
 
         return next(
             (

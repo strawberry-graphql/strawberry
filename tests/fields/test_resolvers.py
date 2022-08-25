@@ -14,7 +14,7 @@ from strawberry.exceptions import (
 from strawberry.scalars import JSON
 from strawberry.types.fields.resolver import Signature, StrawberryResolver
 from strawberry.types.info import Info
-from strawberry.types.types import TypeDefinition
+from strawberry.types.types import StrawberryDefinition
 
 
 def test_resolver_as_argument():
@@ -25,7 +25,7 @@ def test_resolver_as_argument():
     class Query:
         name: str = strawberry.field(resolver=get_name)
 
-    definition: TypeDefinition = Query.__strawberry_definition__
+    definition: StrawberryDefinition = Query.__strawberry_definition__
 
     assert definition.name == "Query"
     assert len(definition.fields) == 1

@@ -12,7 +12,7 @@ from strawberry.enum import EnumDefinition
 from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.types import ExecutionContext, ExecutionResult
 from strawberry.types.graphql import OperationType
-from strawberry.types.types import TypeDefinition
+from strawberry.types.types import StrawberryDefinition
 from strawberry.union import StrawberryUnion
 from strawberry.utils.logging import StrawberryLogger
 
@@ -66,7 +66,7 @@ class BaseSchema(Protocol):
     def get_type_by_name(
         self, name: str
     ) -> Optional[
-        Union[TypeDefinition, ScalarDefinition, EnumDefinition, StrawberryUnion]
+        Union[StrawberryDefinition, ScalarDefinition, EnumDefinition, StrawberryUnion]
     ]:
         raise NotImplementedError
 

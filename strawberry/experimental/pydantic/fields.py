@@ -12,7 +12,7 @@ from strawberry.experimental.pydantic.exceptions import (
     UnregisteredTypeException,
     UnsupportedTypeError,
 )
-from strawberry.types.types import TypeDefinition
+from strawberry.types.types import StrawberryDefinition
 
 
 ATTR_TO_TYPE_MAP = {
@@ -117,7 +117,7 @@ def replace_types_recursively(type_: Any, is_input: bool) -> Any:
                 for t in replaced_type.__args__
             )
         )
-        if isinstance(replaced_type, TypeDefinition):
+        if isinstance(replaced_type, StrawberryDefinition):
             # TODO: Not sure if this is necessary. No coverage in tests
             # TODO: Unnecessary with StrawberryObject
             replaced_type = builtins.type(

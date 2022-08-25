@@ -9,7 +9,7 @@ from typing_extensions import Literal
 
 import strawberry
 from strawberry.type import StrawberryOptional
-from strawberry.types.types import TypeDefinition
+from strawberry.types.types import StrawberryDefinition
 
 
 @pytest.mark.parametrize(
@@ -41,7 +41,7 @@ def test_types(pydantic_type, field_type):
     class Type:
         field: strawberry.auto
 
-    definition: TypeDefinition = Type.__strawberry_definition__
+    definition: StrawberryDefinition = Type.__strawberry_definition__
     assert definition.name == "Type"
 
     [field] = definition.fields
@@ -62,7 +62,7 @@ def test_types_optional(pydantic_type, field_type):
     class Type:
         field: strawberry.auto
 
-    definition: TypeDefinition = Type.__strawberry_definition__
+    definition: StrawberryDefinition = Type.__strawberry_definition__
     assert definition.name == "Type"
 
     [field] = definition.fields
@@ -80,7 +80,7 @@ def test_conint():
     class Type:
         field: strawberry.auto
 
-    definition: TypeDefinition = Type.__strawberry_definition__
+    definition: StrawberryDefinition = Type.__strawberry_definition__
     assert definition.name == "Type"
 
     [field] = definition.fields
@@ -97,7 +97,7 @@ def test_constr():
     class Type:
         field: strawberry.auto
 
-    definition: TypeDefinition = Type.__strawberry_definition__
+    definition: StrawberryDefinition = Type.__strawberry_definition__
     assert definition.name == "Type"
 
     [field] = definition.fields
@@ -183,7 +183,7 @@ def test_literal_types():
     class Type:
         field: strawberry.auto
 
-    definition: TypeDefinition = Type.__strawberry_definition__
+    definition: StrawberryDefinition = Type.__strawberry_definition__
     assert definition.name == "Type"
 
     [field] = definition.fields

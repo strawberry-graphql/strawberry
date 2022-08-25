@@ -21,6 +21,7 @@ def test_cyclic_import():
 
     type TypeA {
       listOfB: [TypeB!]
+      done: Boolean!
       typeB: TypeB!
     }
 
@@ -30,5 +31,23 @@ def test_cyclic_import():
     """
 
     schema = strawberry.Schema(Query)
-
-    assert print_schema(schema) == textwrap.dedent(expected).strip()
+    res = schema.execute_sync(
+        """
+    query MyQuery {
+      a {
+        typeB {
+          typeA {
+            done
+          }
+        }
+      }
+    }
+    """,
+        root_value=Query(a=TypeA(), b=TypeB()),
+    )
+    assert res.errors is None
+    assert res.data["a"]["typeB"]["typeA"]["done"]
+    expected = textwrap.dedent(expected).strip()
+    schema = print_schema(schema).splitlines()
+    for line in expected.splitlines():
+        assert line in schema

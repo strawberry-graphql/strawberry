@@ -35,7 +35,7 @@ from strawberry.type import StrawberryOptional, StrawberryType
 
 if TYPE_CHECKING:
     from strawberry.schema.types.concrete_type import TypeMap
-    from strawberry.types.types import TypeDefinition
+    from strawberry.types.types import StrawberryDefinition
 
 
 class StrawberryUnion(StrawberryType):
@@ -115,7 +115,7 @@ class StrawberryUnion(StrawberryType):
             new_type: Union[StrawberryType, type]
 
             if hasattr(type_, "__strawberry_definition__"):
-                type_definition: TypeDefinition = (
+                type_definition: StrawberryDefinition = (
                     type_.__strawberry_definition__
                 )  # type: ignore
 
@@ -147,7 +147,7 @@ class StrawberryUnion(StrawberryType):
         ) -> str:
             assert isinstance(type_, GraphQLUnionType)
 
-            from strawberry.types.types import TypeDefinition
+            from strawberry.types.types import StrawberryDefinition
 
             # If the type given is not an Object type, try resolving using `is_type_of`
             # defined on the union's inner types
@@ -173,7 +173,7 @@ class StrawberryUnion(StrawberryType):
                 concrete_types_for_union, type_map.values()
             ):
                 possible_type = possible_concrete_type.definition
-                if not isinstance(possible_type, TypeDefinition):
+                if not isinstance(possible_type, StrawberryDefinition):
                     continue
                 if possible_type.is_implemented_by(root):
                     return_type = possible_concrete_type.implementation

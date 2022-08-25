@@ -8,7 +8,7 @@ from .exceptions import (
     ObjectIsNotClassError,
 )
 from .field import StrawberryField, field
-from .types.types import TypeDefinition
+from .types.types import StrawberryDefinition
 from .utils.typing import __dataclass_transform__
 
 
@@ -132,7 +132,7 @@ def type(
                 exc = ObjectIsNotClassError.type
             raise exc(cls)
 
-        cls.__strawberry_definition__ = TypeDefinition.from_class(
+        cls.__strawberry_definition__ = StrawberryDefinition.from_class(
             cls,
             name=name,
             is_input=is_input,
@@ -141,6 +141,7 @@ def type(
             directives=directives,
             extend=extend,
         )
+
         return cls
 
     if cls is None:
@@ -216,7 +217,7 @@ def interface(
 
 
 __all__ = [
-    "TypeDefinition",
+    "StrawberryDefinition",
     "input",
     "interface",
     "type",

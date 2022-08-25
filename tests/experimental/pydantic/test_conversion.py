@@ -21,7 +21,7 @@ from strawberry.experimental.pydantic.utils import (
 )
 from strawberry.field import StrawberryField
 from strawberry.type import StrawberryOptional
-from strawberry.types.types import TypeDefinition
+from strawberry.types.types import StrawberryDefinition
 from strawberry.unset import UNSET
 
 
@@ -788,7 +788,7 @@ def test_can_convert_input_types_to_pydantic_default_values_defaults_declared_fi
     assert user.age == 1
     assert user.password is None
 
-    definition: TypeDefinition = UserInput.__strawberry_definition__
+    definition: StrawberryDefinition = UserInput.__strawberry_definition__
     assert definition.name == "UserInput"
 
     [
