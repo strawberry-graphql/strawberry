@@ -1,6 +1,6 @@
 import dataclasses
 import re
-from typing import ClassVar
+from typing import ClassVar, List, no_type_check
 
 import pytest
 
@@ -10,7 +10,13 @@ from strawberry.exceptions import (
     MissingFieldAnnotationError,
     MissingReturnAnnotationError,
 )
-from strawberry.types.fields.resolver import StrawberryResolver, UncallableResolverError
+from strawberry.scalars import JSON
+from strawberry.types.fields.resolver import (
+    Signature,
+    StrawberryResolver,
+    UncallableResolverError,
+)
+from strawberry.types.info import Info
 
 
 def test_resolver_as_argument():
@@ -260,3 +266,73 @@ def test_with_resolver_fields():
 
     assert Query(1) == Query(1)
     assert Query(1) != Query(2)
+
+
+def test_resolver_annotations():
+    """Ensure only non-reserved annotations are returned."""
+
+    def resolver_annotated_info(
+        self, root, foo: str, bar: float, info: str, strawberry_info: Info
+    ) -> str:
+        return "Hello world"
+
+    resolver = StrawberryResolver(resolver_annotated_info)
+
+    expected_annotations = {"foo": str, "bar": float, "info": str, "return": str}
+    assert resolver.annotations == expected_annotations
+
+    # Sanity-check to ensure StrawberryArguments return the same annotations
+    assert {
+        **{
+            arg.python_name: arg.type_annotation.resolve()  # type: ignore
+            for arg in resolver.arguments
+        },
+        "return": str,
+    }
+
+
+@no_type_check
+def test_resolver_with_unhashable_default():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def field(
+            self, x: List[str] = ["foo"], y: JSON = {"foo": 42}  # noqa: B006
+        ) -> str:
+            return f"{x} {y}"
+
+    schema = strawberry.Schema(Query)
+    result = schema.execute_sync("query { field }")
+    assert result.data == {"field": "['foo'] {'foo': 42}"}
+    assert not result.errors
+
+
+@no_type_check
+def test_parameter_hash_collision():
+    """Ensure support for hashable defaults does not introduce collision."""
+
+    def foo(x: str = "foo"):
+        pass
+
+    def bar(x: str = "bar"):
+        pass
+
+    foo_signature = Signature.from_callable(foo, follow_wrapped=True)
+    bar_signature = Signature.from_callable(bar, follow_wrapped=True)
+
+    foo_param = foo_signature.parameters["x"]
+    bar_param = bar_signature.parameters["x"]
+
+    # Ensure __eq__ still functions properly
+    assert foo_param != bar_param
+
+    # Ensure collision does not occur in hash-map and hash-tables. Colisions are
+    # prevented by Python invoking __eq__ when two items have the same hash.
+    parameters_map = {
+        foo_param: "foo",
+        bar_param: "bar",
+    }
+    parameters_set = {foo_param, bar_param}
+
+    assert len(parameters_map) == 2
+    assert len(parameters_set) == 2

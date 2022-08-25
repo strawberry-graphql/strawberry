@@ -3,7 +3,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import List, Set, Union
 
-from graphql import GraphQLObjectType
+from graphql import GraphQLInputObjectType, GraphQLObjectType
 
 from strawberry.type import StrawberryType
 
@@ -111,6 +111,12 @@ class UnallowedReturnTypeForUnion(Exception):
 
 class InvalidUnionType(Exception):
     """The union is constructed with an invalid type"""
+
+
+class InvalidTypeInputForUnion(Exception):
+    def __init__(self, annotation: GraphQLInputObjectType):
+        message = f"Union for {annotation} is not supported because it is an Input type"
+        super().__init__(message)
 
 
 class MissingTypesForGenericError(Exception):

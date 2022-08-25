@@ -1,9 +1,12 @@
 from dataclasses import dataclass
+from typing import Generic, TypeVar
 
 import pytest
 
 import strawberry
+from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import PrivateStrawberryFieldError
+from strawberry.field import StrawberryField
 
 
 def test_private_field():
@@ -114,3 +117,23 @@ def test_private_field_defined_outside_module_scope():
 
         # If schema-conversion does not raise, check if private field is visible
         assert "notSeen" not in str(schema)
+
+
+def test_private_field_type_resolution_with_generic_type():
+    """Check strawberry.Private when its argument is a implicit `Any` generic type.
+
+    Refer to: https://github.com/strawberry-graphql/strawberry/issues/1938
+    """
+
+    T = TypeVar("T")
+
+    class GenericPrivateType(Generic[T]):
+        pass
+
+    private_field = StrawberryField(
+        type_annotation=StrawberryAnnotation(
+            annotation="strawberry.Private[GenericPrivateType]",
+            namespace={**globals(), **locals()},
+        ),
+    )
+    assert private_field.type == strawberry.Private[GenericPrivateType]

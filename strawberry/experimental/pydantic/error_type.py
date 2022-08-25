@@ -12,7 +12,6 @@ from strawberry.experimental.pydantic.utils import (
     normalize_type,
 )
 from strawberry.object_type import _process_type, _wrap_dataclass
-from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.types.type_resolver import _get_fields
 from strawberry.utils.typing import get_list_annotation, is_list
 
@@ -53,7 +52,7 @@ def error_type(
     fields: List[str] = None,
     name: Optional[str] = None,
     description: Optional[str] = None,
-    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    directives: Optional[Sequence[object]] = (),
     all_fields: bool = False
 ):
     def wrap(cls):

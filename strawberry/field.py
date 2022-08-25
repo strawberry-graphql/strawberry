@@ -18,7 +18,6 @@ from typing import (
     overload,
 )
 
-from backports.cached_property import cached_property
 from typing_extensions import Literal
 
 from strawberry.annotation import StrawberryAnnotation
@@ -28,14 +27,13 @@ from strawberry.type import StrawberryType, StrawberryTypeVar
 from strawberry.types.info import Info
 from strawberry.union import StrawberryUnion
 from strawberry.unset import UNSET
+from strawberry.utils.cached_property import cached_property
 
 from .permission import BasePermission
 from .types.fields.resolver import StrawberryResolver
 
 
 if TYPE_CHECKING:
-    from strawberry.schema_directive import StrawberrySchemaDirective
-
     from .object_type import TypeDefinition
 
 
@@ -47,6 +45,7 @@ UNRESOLVED = object()
 
 class StrawberryField(dataclasses.Field):
     python_name: str
+    default_resolver: Callable[[Any, str], object] = getattr
 
     def __init__(
         self,
@@ -61,7 +60,7 @@ class StrawberryField(dataclasses.Field):
         default: object = UNSET,
         default_factory: Union[Callable[[], Any], object] = UNSET,
         deprecation_reason: Optional[str] = None,
-        directives: Sequence["StrawberrySchemaDirective"] = (),
+        directives: Sequence[object] = (),
     ):
         # basic fields are fields with no provided resolver
         is_basic_field = not base_resolver
@@ -147,6 +146,20 @@ class StrawberryField(dataclasses.Field):
         self.base_resolver = resolver
 
         return self
+
+    def get_result(
+        self, source: Any, info: Info, args: List[Any], kwargs: Dict[str, Any]
+    ) -> Union[Awaitable[Any], Any]:
+        """
+        Calls the resolver defined for the StrawberryField.
+        If the field doesn't have a resolver defined we default
+        to using the default resolver specified in StrawberryConfig.
+        """
+
+        if self.base_resolver:
+            return self.base_resolver(*args, **kwargs)
+
+        return self.default_resolver(source, self.python_name)  # type: ignore
 
     @property
     def arguments(self) -> List[StrawberryArgument]:
@@ -283,19 +296,6 @@ class StrawberryField(dataclasses.Field):
             deprecation_reason=self.deprecation_reason,
         )
 
-    def get_result(
-        self, source: Any, info: Info, args: List[Any], kwargs: Dict[str, Any]
-    ) -> Union[Awaitable[Any], Any]:
-        """
-        Calls the resolver defined for the StrawberryField. If the field doesn't have a
-        resolver defined we default to using getattr on `source`.
-        """
-
-        if self.base_resolver:
-            return self.base_resolver(*args, **kwargs)
-
-        return getattr(source, self.python_name)
-
     @property
     def _has_async_permission_classes(self) -> bool:
         for permission_class in self.permission_classes:
@@ -327,7 +327,7 @@ def field(
     deprecation_reason: Optional[str] = None,
     default: Any = UNSET,
     default_factory: Union[Callable, object] = UNSET,
-    directives: Optional[Sequence["StrawberrySchemaDirective"]] = (),
+    directives: Optional[Sequence[object]] = (),
 ) -> T:
     ...
 
@@ -343,7 +343,7 @@ def field(
     deprecation_reason: Optional[str] = None,
     default: Any = UNSET,
     default_factory: Union[Callable, object] = UNSET,
-    directives: Optional[Sequence["StrawberrySchemaDirective"]] = (),
+    directives: Optional[Sequence[object]] = (),
 ) -> Any:
     ...
 
@@ -359,7 +359,7 @@ def field(
     deprecation_reason: Optional[str] = None,
     default: Any = UNSET,
     default_factory: Union[Callable, object] = UNSET,
-    directives: Optional[Sequence["StrawberrySchemaDirective"]] = (),
+    directives: Optional[Sequence[object]] = (),
 ) -> StrawberryField:
     ...
 
