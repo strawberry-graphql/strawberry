@@ -4,9 +4,8 @@ from typing import Generic, List, Optional, TypeVar, Union
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.enum import EnumDefinition
-from strawberry.field import StrawberryField
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryTypeVar
-from strawberry.types.types import StrawberryDefinition
+from strawberry.types.types import get_strawberry_definition
 from strawberry.union import StrawberryUnion
 
 
@@ -46,13 +45,11 @@ def test_generic_objects():
     annotation = StrawberryAnnotation(FooBar)
     resolved = annotation.resolve()
 
-    # TODO: Simplify with StrawberryObject
-    assert isinstance(resolved, type)
-    assert hasattr(resolved, "__strawberry_definition__")
-    assert isinstance(resolved.__strawberry_definition__, StrawberryDefinition)
-    assert resolved.__strawberry_definition__.is_generic
+    strawberry_definition = get_strawberry_definition(resolved)
+    assert strawberry_definition
+    assert strawberry_definition.is_generic
 
-    field: StrawberryField = resolved.__strawberry_definition__.fields[0]
+    field = strawberry_definition.fields[0]
     assert isinstance(field.type, StrawberryTypeVar)
     assert field.type == T
 
@@ -100,11 +97,9 @@ def test_generic_with_enums():
     annotation = StrawberryAnnotation(GenericForEnum[VehicleMake])
     resolved = annotation.resolve()
 
-    # TODO: Simplify with StrawberryObject
-    assert isinstance(resolved, type)
-    assert hasattr(resolved, "__strawberry_definition__")
-    assert isinstance(resolved.__strawberry_definition__, StrawberryDefinition)
+    strawberry_definition = get_strawberry_definition(resolved)
+    assert strawberry_definition
 
-    generic_slot_field: StrawberryField = resolved.__strawberry_definition__.fields[0]
+    generic_slot_field = strawberry_definition.fields[0]
     assert isinstance(generic_slot_field.type, EnumDefinition)
     assert generic_slot_field.type is VehicleMake._enum_definition

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import dataclasses
-import inspect
 import sys
 import types
 from types import ModuleType
@@ -10,7 +9,6 @@ from typing import (
     Any,
     Callable,
     Dict,
-    ForwardRef,
     List,
     Mapping,
     Optional,
@@ -99,11 +97,7 @@ def _get_fields(cls: Type) -> List["StrawberryField"]:
     origins: Dict[str, type] = {field_name: cls for field_name in cls.__annotations__}
 
     for base in cls.__mro__:
-        if __strawberry_definition__ := getattr(
-            base, "__strawberry_definition__", False
-        ):
-            # TODO: remove this when merge with StrawberryObject
-            cast(__strawberry_definition__, StrawberryDefinition)
+        if __strawberry_definition__ := get_strawberry_definition(base):
             for field in __strawberry_definition__.fields:
                 if field.python_name in base.__annotations__:
                     origins.setdefault(field.python_name, base)
@@ -129,14 +123,6 @@ class StrawberryDefinition(StrawberryType):
     type_var_map: Mapping[TypeVar, Union[StrawberryType, type]] = dataclasses.field(
         default_factory=dict
     )
-    _deferred_fields: List["StrawberryField"] = dataclasses.field(default_factory=list)
-    """
-    fields that was annotated with a forward reference.
-    Will be evaluated on each StrawberryType call on the module
-    """
-
-    def __post_init__(self):
-        self._evaluate_deferred_fields()
 
     @classmethod
     def from_class(
@@ -159,11 +145,7 @@ class StrawberryDefinition(StrawberryType):
 
         # find fields in parents.
         for base in origin.__bases__:
-            if __strawberry_definition__ := getattr(
-                base, "__strawberry_definition__", False
-            ):
-                # TODO: Remove this when migrate to StrawberryObject
-                assert isinstance(__strawberry_definition__, StrawberryDefinition)
+            if __strawberry_definition__ := get_strawberry_definition(base):
                 for field in __strawberry_definition__.fields:
                     assert field.python_name
                     strawberry_fields[field.python_name] = field
@@ -216,13 +198,6 @@ class StrawberryDefinition(StrawberryType):
         interfaces = _get_interfaces(origin)
         fetched_fields = list(strawberry_fields.values())
 
-        # find fields with undetermined types
-        _deferred_fields = [
-            deferred
-            for deferred in fetched_fields
-            if isinstance(deferred.type, ForwardRef)
-        ]
-
         # dataclasses removes attributes from the class here:
         # https://github.com/python/cpython/blob/577d7c4e/Lib/dataclasses.py#L873-L880
         # so we need to restore them, this will change in the future, but for now this
@@ -257,33 +232,8 @@ class StrawberryDefinition(StrawberryType):
             interfaces=interfaces,
             fields=fetched_fields,
             is_type_of=is_type_of,
-            _deferred_fields=_deferred_fields,
             _module=_module,
         )
-
-    def _evaluate_deferred_fields(self) -> None:
-        """
-        will be called on every type creation,
-        this will allow to determine ForwardRef types
-        """
-        for name, obj in inspect.getmembers(self._module):
-            if strawberry_def := getattr(obj, "__strawberry_definition__", False):
-                # TODO: Remove this when migrating to StrawberryObject.
-                assert isinstance(strawberry_def, StrawberryDefinition)
-                # avoid recursion
-                if strawberry_def.name != self.name:
-                    if obj.__name__ != self.origin.__name__:
-                        for field in strawberry_def._deferred_fields:
-                            try:
-                                field.type_annotation.resolve()
-                                # migrating the dataclasses field:
-                                setattr(
-                                    field.origin,
-                                    field.python_name,
-                                    field.to_dataclass_field(),
-                                )
-                            except NameError:
-                                pass
 
     # TODO: remove wrapped cls when we "merge" this with `StrawberryObject`
     def resolve_generic(self, wrapped_cls: type) -> type:
@@ -308,10 +258,9 @@ class StrawberryDefinition(StrawberryType):
     ) -> type:
         fields = []
         for field in self.fields:
-            # TODO: Logic unnecessary with StrawberryObject
             field_type = field.type
-            if hasattr(field_type, "__strawberry_definition__"):
-                field_type = field_type.__strawberry_definition__
+            if strawberry_definition := get_strawberry_definition(field_type):
+                field_type = strawberry_definition
 
             # TODO: All types should end up being StrawberryTypes
             #       The first check is here as a symptom of strawberry.ID being a
@@ -348,7 +297,6 @@ class StrawberryDefinition(StrawberryType):
         return new_type
 
     def get_field(self, python_name: str) -> Optional["StrawberryField"]:
-        # TODO: Store the fields in a map instead.
         return next(
             (field for field in self.fields if field.python_name == python_name), None
         )
@@ -407,3 +355,15 @@ class StrawberryDefinition(StrawberryType):
 
         # All field mappings succeeded. This is a match
         return True
+
+
+def get_strawberry_definition(type_: Any) -> Optional[StrawberryDefinition]:
+    origin = type_
+    # generics store their class in __origin__
+    if origin_ := getattr(type_, "__origin__", False):
+        origin = origin_
+    res = getattr(origin, "__strawberry_definition__", None)
+    if isinstance(res, StrawberryDefinition):
+        return res
+    else:
+        return None

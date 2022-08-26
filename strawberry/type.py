@@ -1,11 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, List, Mapping, TypeVar, Union
-
-
-if TYPE_CHECKING:
-    from .types.types import StrawberryDefinition
+from typing import List, Mapping, TypeVar, Union
 
 
 class StrawberryType(ABC):
@@ -79,14 +75,11 @@ class StrawberryContainer(StrawberryType):
     def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
     ) -> StrawberryType:
+        from strawberry.types.types import get_strawberry_definition
+
         of_type_copy: Union[StrawberryType, type]
 
-        # TODO: Obsolete with StrawberryObject
-        if hasattr(self.of_type, "__strawberry_definition__"):
-            type_definition: StrawberryDefinition = (
-                self.of_type.__strawberry_definition__  # type: ignore
-            )
-
+        if type_definition := get_strawberry_definition(self.of_type):
             if type_definition.is_generic:
                 of_type_copy = type_definition.copy_with(type_var_map)
 
@@ -99,10 +92,11 @@ class StrawberryContainer(StrawberryType):
 
     @property
     def is_generic(self) -> bool:
-        # TODO: Obsolete with StrawberryObject
+        from strawberry.types.types import get_strawberry_definition
+
         type_ = self.of_type
-        if hasattr(self.of_type, "__strawberry_definition__"):
-            type_ = self.of_type.__strawberry_definition__  # type: ignore
+        if strawberry_definition := get_strawberry_definition(self.of_type):
+            type_ = strawberry_definition
 
         if isinstance(type_, StrawberryType):
             return type_.is_generic

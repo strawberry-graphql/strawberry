@@ -48,6 +48,6 @@ def test_cyclic_import():
     assert res.errors is None
     assert res.data["a"]["typeB"]["typeA"]["done"]
     expected = textwrap.dedent(expected).strip()
-    schema = print_schema(schema).splitlines()
+    schema = print_schema(schema)
     for line in expected.splitlines():
         assert line in schema
