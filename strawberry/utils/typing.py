@@ -126,9 +126,3 @@ def __dataclass_transform__(
     field_descriptors: Tuple[Union[type, Callable[..., Any]], ...] = (()),
 ) -> Callable[[_T], _T]:
     return lambda a: a
-
-
-def update_annotations(cls: Type, annots: dict) -> None:
-    __annotations__ = getattr(cls, "__annotations__", {})
-    __annotations__.update(annots)
-    cls.__annotations__ = __annotations__

@@ -253,7 +253,7 @@ class InvalidCustomContext(Exception):
 
 
 class UncallableResolverError(Exception):
-    def __init__(self, resolver: "StrawberryResolver"):
+    def __init__(self, resolver: StrawberryResolver):
         message = (
             f"Attempted to call resolver {resolver} with uncallable function "
             f"{resolver.wrapped_func}"
