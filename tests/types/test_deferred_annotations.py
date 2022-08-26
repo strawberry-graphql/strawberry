@@ -32,7 +32,7 @@ def test_deferred_other_module():
             title: str
             body: str
 
-        definition = Post.__strawberry_definition__
+        definition = Post._type_definition
         assert definition.fields[0].type == mod.User
     finally:
         del modules[mod.__name__]

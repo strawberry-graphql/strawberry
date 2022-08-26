@@ -52,7 +52,7 @@ def test_with_resolver():
     class Query:
         users: List[User] = strawberry.field(resolver=get_users)
 
-    definition = Query.__strawberry_definition__
+    definition = Query._type_definition
     assert definition.name == "Query"
 
     [field] = definition.fields

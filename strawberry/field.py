@@ -44,7 +44,7 @@ from .utils.typing import get_parameters
 
 
 if TYPE_CHECKING:
-    from .object_type import StrawberryDefinition
+    from .object_type import TypeDefinition
 
 _RESOLVER_TYPE = Union[StrawberryResolver, Callable, staticmethod, classmethod]
 
@@ -159,7 +159,7 @@ class StrawberryField:
                     "Union",
                 )
 
-            elif type_def := getattr(argument.type, "__strawberry_definition__", False):
+            elif type_def := getattr(argument.type, "_type_definition", False):
                 if type_def.is_interface:  # type: ignore
                     raise InvalidFieldArgument(
                         self.base_resolver.name,
@@ -317,7 +317,7 @@ class StrawberryField:
     # TODO: add this to arguments (and/or move it to StrawberryType)
     @property
     def type_params(self) -> List[TypeVar]:
-        if hasattr(self.type, "__strawberry_definition__"):
+        if hasattr(self.type, "_type_definition"):
             parameters = getattr(self.type, "__parameters__", None)
 
             return list(parameters) if parameters else []
@@ -335,10 +335,8 @@ class StrawberryField:
 
         # TODO: Remove with creation of StrawberryObject. Will act same as other
         #       StrawberryTypes
-        if hasattr(self.type, "__strawberry_definition__"):
-            type_definition: StrawberryDefinition = (
-                self.type.__strawberry_definition__
-            )  # type: ignore
+        if hasattr(self.type, "_type_definition"):
+            type_definition: TypeDefinition = self.type._type_definition  # type: ignore
 
             if type_definition.is_generic:
                 type_ = type_definition

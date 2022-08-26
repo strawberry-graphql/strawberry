@@ -20,7 +20,7 @@ from graphql.type.definition import GraphQLArgument
 from strawberry.custom_scalar import ScalarDefinition
 from strawberry.enum import EnumDefinition
 from strawberry.schema.types.concrete_type import TypeMap
-from strawberry.types.types import StrawberryDefinition
+from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 from strawberry.utils.inspect import get_func_args
 
@@ -53,7 +53,7 @@ class Schema(BaseSchema):
             type_name = representation.pop("__typename")
             type_ = self.schema_converter.type_map[type_name]
 
-            definition = cast(StrawberryDefinition, type_.definition)
+            definition = cast(TypeDefinition, type_.definition)
             resolve_reference = definition.origin.resolve_reference
 
             func_args = get_func_args(resolve_reference)
@@ -187,7 +187,7 @@ def _get_entity_type(type_map: TypeMap):
     entity_type = GraphQLUnionType("_Entity", federation_key_types)  # type: ignore
 
     def _resolve_type(self, value, _type):
-        return self.__strawberry_definition__.name
+        return self._type_definition.name
 
     entity_type.resolve_type = _resolve_type
 
@@ -201,11 +201,9 @@ def _is_key(directive: Any) -> bool:
 
 
 def _has_federation_keys(
-    definition: Union[
-        StrawberryDefinition, ScalarDefinition, EnumDefinition, StrawberryUnion
-    ]
+    definition: Union[TypeDefinition, ScalarDefinition, EnumDefinition, StrawberryUnion]
 ) -> bool:
-    if isinstance(definition, StrawberryDefinition):
+    if isinstance(definition, TypeDefinition):
         return any(_is_key(directive) for directive in definition.directives or [])
 
     return False

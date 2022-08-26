@@ -14,7 +14,7 @@ from strawberry.exceptions import (
 from strawberry.scalars import JSON
 from strawberry.types.fields.resolver import Signature, StrawberryResolver
 from strawberry.types.info import Info
-from strawberry.types.types import StrawberryDefinition
+from strawberry.types.types import TypeDefinition
 
 
 def test_resolver_as_argument():
@@ -25,7 +25,7 @@ def test_resolver_as_argument():
     class Query:
         name: str = strawberry.field(resolver=get_name)
 
-    definition: StrawberryDefinition = Query.__strawberry_definition__
+    definition: TypeDefinition = Query._type_definition
 
     assert definition.name == "Query"
     assert len(definition.fields) == 1
@@ -43,7 +43,7 @@ def test_resolver_fields():
         def name(self) -> str:
             return "Name"
 
-    definition = Query.__strawberry_definition__
+    definition = Query._type_definition
 
     assert definition.name == "Query"
     assert len(definition.fields) == 1
@@ -62,7 +62,7 @@ def test_staticmethod_resolver_fields():
         def name() -> str:
             return "Name"
 
-    definition = Query.__strawberry_definition__
+    definition = Query._type_definition
 
     assert definition.name == "Query"
     assert len(definition.fields) == 1
@@ -86,7 +86,7 @@ def test_classmethod_resolver_fields():
         def val(cls) -> str:
             return cls.my_val
 
-    definition = Query.__strawberry_definition__
+    definition = Query._type_definition
 
     assert definition.name == "Query"
     assert len(definition.fields) == 1
@@ -215,7 +215,7 @@ def test_can_reuse_resolver():
         name: str = strawberry.field(resolver=get_name)
         name_2: str = strawberry.field(resolver=get_name)
 
-    definition = Query.__strawberry_definition__
+    definition = Query._type_definition
 
     assert definition.name == "Query"
     assert len(definition.fields) == 2

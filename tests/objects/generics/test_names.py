@@ -52,7 +52,7 @@ def test_name_generation(types, expected_name):
     class Example(Generic[T]):
         a: T
 
-    type_definition = Example.__strawberry_definition__  # type: ignore
+    type_definition = Example._type_definition  # type: ignore
 
     assert config.name_converter.from_generic(type_definition, types) == expected_name
 
@@ -68,7 +68,7 @@ def test_nested_generics():
     class Connection(Generic[T]):
         edges: List[T]
 
-    type_definition = Connection.__strawberry_definition__  # type: ignore
+    type_definition = Connection._type_definition  # type: ignore
 
     assert (
         config.name_converter.from_generic(
@@ -95,7 +95,7 @@ def test_nested_generics_aliases_with_schema():
         key: K
         value: V
 
-    type_definition = Value.__strawberry_definition__  # type: ignore
+    type_definition = Value._type_definition  # type: ignore
 
     assert (
         config.name_converter.from_generic(

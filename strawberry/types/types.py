@@ -34,13 +34,13 @@ if TYPE_CHECKING:
 T = TypeVar("T")
 
 
-def _get_interfaces(cls: Type[T]) -> List[StrawberryDefinition]:
+def _get_interfaces(cls: Type[T]) -> List[TypeDefinition]:
     interfaces = []
 
     for base in cls.__bases__:
         type_definition = cast(
-            Optional[StrawberryDefinition],
-            getattr(base, "__strawberry_definition__", None),
+            Optional[TypeDefinition],
+            getattr(base, "_type_definition", None),
         )
 
         if type_definition and type_definition.is_interface:
@@ -97,8 +97,8 @@ def _get_fields(cls: Type) -> List["StrawberryField"]:
     origins: Dict[str, type] = {field_name: cls for field_name in cls.__annotations__}
 
     for base in cls.__mro__:
-        if __strawberry_definition__ := get_strawberry_definition(base):
-            for field in __strawberry_definition__.fields:
+        if _type_definition := get_type_definition(base):
+            for field in _type_definition.fields:
                 if field.python_name in base.__annotations__:
                     origins.setdefault(field.python_name, base)
 
@@ -106,19 +106,19 @@ def _get_fields(cls: Type) -> List["StrawberryField"]:
 
 
 @dataclasses.dataclass(eq=False)
-class StrawberryDefinition(StrawberryType):
+class TypeDefinition(StrawberryType):
     name: str
     is_input: bool
     is_interface: bool
     origin: Type
     description: Optional[str]
-    interfaces: List["StrawberryDefinition"]
+    interfaces: List["TypeDefinition"]
     extend: bool
     directives: Optional[Sequence[object]]
     is_type_of: Optional[Callable[[Any, GraphQLResolveInfo], bool]]
     fields: List["StrawberryField"]
     _module: Optional[ModuleType]
-    concrete_of: Optional["StrawberryDefinition"] = None
+    concrete_of: Optional["TypeDefinition"] = None
     """Concrete implementations of Generic TypeDefinitions fill this in"""
     type_var_map: Mapping[TypeVar, Union[StrawberryType, type]] = dataclasses.field(
         default_factory=dict
@@ -134,7 +134,7 @@ class StrawberryDefinition(StrawberryType):
         description: Optional[str] = None,
         directives: Optional[Sequence[object]] = (),
         extend: bool = False,
-    ) -> "StrawberryDefinition":
+    ) -> "TypeDefinition":
         # at this point all the strawberry fields in the class are
         # without an origin and a python name.
         from strawberry.field import StrawberryField
@@ -145,8 +145,8 @@ class StrawberryDefinition(StrawberryType):
 
         # find fields in parents.
         for base in origin.__bases__:
-            if __strawberry_definition__ := get_strawberry_definition(base):
-                for field in __strawberry_definition__.fields:
+            if _type_definition := get_type_definition(base):
+                for field in _type_definition.fields:
                     assert field.python_name
                     strawberry_fields[field.python_name] = field
 
@@ -259,7 +259,7 @@ class StrawberryDefinition(StrawberryType):
         fields = []
         for field in self.fields:
             field_type = field.type
-            if strawberry_definition := get_strawberry_definition(field_type):
+            if strawberry_definition := get_type_definition(field_type):
                 field_type = strawberry_definition
 
             # TODO: All types should end up being StrawberryTypes
@@ -270,7 +270,7 @@ class StrawberryDefinition(StrawberryType):
 
             fields.append(field)
 
-        new_type_definition = StrawberryDefinition(
+        new_type_definition = TypeDefinition(
             name=self.name,
             is_input=self.is_input,
             origin=self.origin,
@@ -289,7 +289,7 @@ class StrawberryDefinition(StrawberryType):
         new_type = type(
             new_type_definition.name,
             (self.origin,),
-            {"__strawberry_definition__": new_type_definition},
+            {"_type_definition": new_type_definition},
         )
 
         new_type_definition.origin = new_type
@@ -319,7 +319,7 @@ class StrawberryDefinition(StrawberryType):
         if isinstance(root, dict):
             raise NotImplementedError()
 
-        type_definition = root.__strawberry_definition__  # type: ignore
+        type_definition = root._type_definition  # type: ignore
 
         if type_definition is self:
             # No generics involved. Exact type match
@@ -357,13 +357,13 @@ class StrawberryDefinition(StrawberryType):
         return True
 
 
-def get_strawberry_definition(type_: Any) -> Optional[StrawberryDefinition]:
+def get_type_definition(type_: Any) -> Optional[TypeDefinition]:
     origin = type_
     # generics store their class in __origin__
     if origin_ := getattr(type_, "__origin__", False):
         origin = origin_
-    res = getattr(origin, "__strawberry_definition__", None)
-    if isinstance(res, StrawberryDefinition):
+    res = getattr(origin, "_type_definition", None)
+    if isinstance(res, TypeDefinition):
         return res
     else:
         return None

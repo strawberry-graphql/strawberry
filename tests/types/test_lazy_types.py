@@ -7,7 +7,7 @@ from strawberry.annotation import StrawberryAnnotation
 from strawberry.field import StrawberryField
 from strawberry.lazy_type import LazyType
 from strawberry.types.fields.resolver import StrawberryResolver
-from strawberry.types.types import get_strawberry_definition
+from strawberry.types.types import get_type_definition
 
 
 # This type is in the same file but should adequately test the logic.
@@ -92,7 +92,7 @@ def test_lazy_type_generic():
     annotation = StrawberryAnnotation(ResolvedType)
     resolved = annotation.resolve()
 
-    strawberry_definition = get_strawberry_definition(resolved)
+    strawberry_definition = get_type_definition(resolved)
 
     items_field = strawberry_definition.fields[0]
     assert items_field.type is LazierType
@@ -107,7 +107,7 @@ def test_lazy_type_object():
     class WaterParkFeature:
         river: LazierType
 
-    strawberry_definition = get_strawberry_definition(WaterParkFeature)
+    strawberry_definition = get_type_definition(WaterParkFeature)
     field = strawberry_definition.fields[0]
     assert isinstance(field.type, LazyType)
     assert field.type is LazierType

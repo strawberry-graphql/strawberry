@@ -10,7 +10,7 @@ from strawberry.enum import EnumDefinition
 from strawberry.lazy_type import LazyType
 from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
-from strawberry.types.types import StrawberryDefinition
+from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 from strawberry.utils.str_converters import capitalize_first, to_camel_case
 
@@ -37,7 +37,7 @@ class NameConverter:
             return self.from_directive(type_)
         if isinstance(type_, EnumDefinition):  # TODO: Replace with StrawberryEnum
             return self.from_enum(type_)
-        elif isinstance(type_, StrawberryDefinition):
+        elif isinstance(type_, TypeDefinition):
             if type_.is_input:
                 return self.from_input_object(type_)
             if type_.is_interface:
@@ -53,7 +53,7 @@ class NameConverter:
     def from_argument(self, argument: StrawberryArgument) -> str:
         return self.get_graphql_name(argument)
 
-    def from_object(self, object_type: StrawberryDefinition) -> str:
+    def from_object(self, object_type: TypeDefinition) -> str:
         if object_type.concrete_of:
             return self.from_generic(
                 object_type, list(object_type.type_var_map.values())
@@ -61,10 +61,10 @@ class NameConverter:
 
         return object_type.name
 
-    def from_input_object(self, input_type: StrawberryDefinition) -> str:
+    def from_input_object(self, input_type: TypeDefinition) -> str:
         return self.from_object(input_type)
 
-    def from_interface(self, interface: StrawberryDefinition) -> str:
+    def from_interface(self, interface: TypeDefinition) -> str:
         return self.from_object(interface)
 
     def from_enum(self, enum: EnumDefinition) -> str:
@@ -94,14 +94,14 @@ class NameConverter:
         name = ""
 
         for type_ in union.types:
-            assert hasattr(type_, "__strawberry_definition__")
-            name += self.from_type(type_.__strawberry_definition__)  # type: ignore
+            assert hasattr(type_, "_type_definition")
+            name += self.from_type(type_._type_definition)  # type: ignore
 
         return name
 
     def from_generic(
         self,
-        generic_type: StrawberryDefinition,
+        generic_type: TypeDefinition,
         types: List[Union[StrawberryType, type]],
     ) -> str:
         generic_type_name = generic_type.name
@@ -134,8 +134,8 @@ class NameConverter:
             strawberry_type = type_._scalar_definition  # type: ignore
 
             name = strawberry_type.name
-        elif hasattr(type_, "__strawberry_definition__"):
-            strawberry_type = type_.__strawberry_definition__  # type: ignore
+        elif hasattr(type_, "_type_definition"):
+            strawberry_type = type_._type_definition  # type: ignore
 
             if strawberry_type.is_generic:
                 types = type_.__args__  # type: ignore

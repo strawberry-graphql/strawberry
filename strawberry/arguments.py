@@ -24,7 +24,7 @@ from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
 
 from .exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError
 from .scalars import is_scalar
-from .types.types import StrawberryDefinition
+from .types.types import get_type_definition
 from .unset import UNSET as _deprecated_UNSET, _deprecated_is_unset  # noqa
 
 
@@ -152,13 +152,9 @@ def convert_argument(
     if isinstance(type_, LazyType):
         return convert_argument(value, type_.resolve_type(), scalar_registry, config)
 
-    if hasattr(
-        type_, "__strawberry_definition__"
+    if type_definition := get_type_definition(
+        type_
     ):  # TODO: Replace with StrawberryInputObject
-        type_definition: StrawberryDefinition = (
-            type_.__strawberry_definition__
-        )  # type: ignore
-
         assert type_definition.is_input
 
         kwargs = {}

@@ -61,7 +61,7 @@ class StrawberryContainer(StrawberryType):
 
     @property
     def type_params(self) -> List[TypeVar]:
-        if hasattr(self.of_type, "__strawberry_definition__"):
+        if hasattr(self.of_type, "_type_definition"):
             parameters = getattr(self.of_type, "__parameters__", None)
 
             return list(parameters) if parameters else []
@@ -75,11 +75,11 @@ class StrawberryContainer(StrawberryType):
     def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
     ) -> StrawberryType:
-        from strawberry.types.types import get_strawberry_definition
+        from strawberry.types.types import get_type_definition
 
         of_type_copy: Union[StrawberryType, type]
 
-        if type_definition := get_strawberry_definition(self.of_type):
+        if type_definition := get_type_definition(self.of_type):
             if type_definition.is_generic:
                 of_type_copy = type_definition.copy_with(type_var_map)
 
@@ -92,10 +92,10 @@ class StrawberryContainer(StrawberryType):
 
     @property
     def is_generic(self) -> bool:
-        from strawberry.types.types import get_strawberry_definition
+        from strawberry.types.types import get_type_definition
 
         type_ = self.of_type
-        if strawberry_definition := get_strawberry_definition(self.of_type):
+        if strawberry_definition := get_type_definition(self.of_type):
             type_ = strawberry_definition
 
         if isinstance(type_, StrawberryType):

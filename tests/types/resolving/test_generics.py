@@ -5,7 +5,7 @@ import strawberry
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.enum import EnumDefinition
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryTypeVar
-from strawberry.types.types import get_strawberry_definition
+from strawberry.types.types import get_type_definition
 from strawberry.union import StrawberryUnion
 
 
@@ -45,7 +45,7 @@ def test_generic_objects():
     annotation = StrawberryAnnotation(FooBar)
     resolved = annotation.resolve()
 
-    strawberry_definition = get_strawberry_definition(resolved)
+    strawberry_definition = get_type_definition(resolved)
     assert strawberry_definition
     assert strawberry_definition.is_generic
 
@@ -97,7 +97,7 @@ def test_generic_with_enums():
     annotation = StrawberryAnnotation(GenericForEnum[VehicleMake])
     resolved = annotation.resolve()
 
-    strawberry_definition = get_strawberry_definition(resolved)
+    strawberry_definition = get_type_definition(resolved)
     assert strawberry_definition
 
     generic_slot_field = strawberry_definition.fields[0]

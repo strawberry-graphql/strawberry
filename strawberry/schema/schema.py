@@ -26,7 +26,7 @@ from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
 from strawberry.types import ExecutionContext, ExecutionResult
 from strawberry.types.graphql import OperationType
-from strawberry.types.types import StrawberryDefinition
+from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 
 from ..printer import print_schema
@@ -77,14 +77,14 @@ class Schema(BaseSchema):
         self.directives = directives
         self.schema_directives = schema_directives
 
-        query_type = self.schema_converter.from_object(query.__strawberry_definition__)
+        query_type = self.schema_converter.from_object(query._type_definition)
         mutation_type = (
-            self.schema_converter.from_object(mutation.__strawberry_definition__)
+            self.schema_converter.from_object(mutation._type_definition)
             if mutation
             else None
         )
         subscription_type = (
-            self.schema_converter.from_object(subscription.__strawberry_definition__)
+            self.schema_converter.from_object(subscription._type_definition)
             if subscription
             else None
         )
@@ -137,7 +137,7 @@ class Schema(BaseSchema):
     def get_type_by_name(  # type: ignore  # lru_cache makes mypy complain
         self, name: str
     ) -> Optional[
-        Union[StrawberryDefinition, ScalarDefinition, EnumDefinition, StrawberryUnion]
+        Union[TypeDefinition, ScalarDefinition, EnumDefinition, StrawberryUnion]
     ]:
         # TODO: respect auto_camel_case
         if name in self.schema_converter.type_map:
@@ -153,7 +153,7 @@ class Schema(BaseSchema):
         if not type_:
             return None  # pragma: no cover
 
-        assert isinstance(type_, StrawberryDefinition)
+        assert isinstance(type_, TypeDefinition)
 
         return next(
             (

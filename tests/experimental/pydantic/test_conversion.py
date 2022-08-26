@@ -21,7 +21,7 @@ from strawberry.experimental.pydantic.utils import (
 )
 from strawberry.field import StrawberryField
 from strawberry.type import StrawberryOptional
-from strawberry.types.types import StrawberryDefinition
+from strawberry.types.types import TypeDefinition
 from strawberry.unset import UNSET
 
 
@@ -151,7 +151,7 @@ def test_convert_alias_name():
     origin_user = UserModel(age=1, password="abc")
     user = User.from_pydantic(origin_user)
     assert user.age_ == 1
-    definition = User.__strawberry_definition__
+    definition = User._type_definition
 
     assert definition.fields[0].graphql_name == "age"
 
@@ -170,7 +170,7 @@ def test_do_not_convert_alias_name():
     origin_user = UserModel(age=1, password="abc")
     user = User.from_pydantic(origin_user)
     assert user.age_ == 1
-    definition = User.__strawberry_definition__
+    definition = User._type_definition
 
     assert definition.fields[0].graphql_name is None
 
@@ -185,7 +185,7 @@ def test_can_pass_pydantic_field_description_to_strawberry():
         age: strawberry.auto
         password: strawberry.auto
 
-    definition = User.__strawberry_definition__
+    definition = User._type_definition
 
     assert definition.fields[0].python_name == "age"
     assert definition.fields[0].description is None
@@ -224,7 +224,7 @@ def test_can_convert_pydantic_type_to_strawberry_with_private_field():
     assert user.age == 30
     assert user.password == "qwerty"
 
-    definition = User.__strawberry_definition__
+    definition = User._type_definition
     assert len(definition.fields) == 1
     assert definition.fields[0].python_name == "age"
     assert definition.fields[0].graphql_name is None
@@ -788,7 +788,7 @@ def test_can_convert_input_types_to_pydantic_default_values_defaults_declared_fi
     assert user.age == 1
     assert user.password is None
 
-    definition: StrawberryDefinition = UserInput.__strawberry_definition__
+    definition: TypeDefinition = UserInput._type_definition
     assert definition.name == "UserInput"
 
     [
@@ -966,10 +966,10 @@ def test_can_convert_pydantic_type_to_strawberry_with_additional_field_resolvers
     origin_user = UserModel(password="abc", new_age=21)
     user = User.from_pydantic(origin_user)
     assert user.password == "abc"
-    assert User.__strawberry_definition__.fields[0].name == "new_age"
-    assert User.__strawberry_definition__.fields[0].base_resolver() == 84
-    assert User.__strawberry_definition__.fields[1].name == "age"
-    assert User.__strawberry_definition__.fields[1].base_resolver() == 42
+    assert User._type_definition.fields[0].name == "new_age"
+    assert User._type_definition.fields[0].base_resolver() == 84
+    assert User._type_definition.fields[1].name == "age"
+    assert User._type_definition.fields[1].base_resolver() == 42
 
 
 def test_can_convert_both_output_and_input_type():
