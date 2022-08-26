@@ -1,14 +1,15 @@
-from typing import TYPE_CHECKING, List
+from typing import TYPE_CHECKING, List, Optional
 
 from .exception import StrawberryException
-from .exception_source import ExceptionSourceIsArgument
+from .exception_source import ExceptionSource
+from .utils.source_finder import SourceFinder
 
 
 if TYPE_CHECKING:
     from strawberry.types.fields.resolver import StrawberryResolver
 
 
-class MissingArgumentsAnnotationsError(ExceptionSourceIsArgument, StrawberryException):
+class MissingArgumentsAnnotationsError(StrawberryException):
     """The field is missing the annotation for one or more arguments"""
 
     def __init__(self, resolver: "StrawberryResolver", arguments: List[str]):
@@ -42,3 +43,14 @@ class MissingArgumentsAnnotationsError(ExceptionSourceIsArgument, StrawberryExce
 
         head = ", ".join(arguments[:-1])
         return f'arguments "{head}" and "{arguments[-1]}"'
+
+    @property
+    def exception_source(self) -> Optional[ExceptionSource]:
+        if self.function is None:
+            return None
+
+        source_finder = SourceFinder()
+
+        return source_finder.find_argument_from_object(
+            self.function, self.argument_name  # type: ignore
+        )

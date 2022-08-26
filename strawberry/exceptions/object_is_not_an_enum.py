@@ -1,11 +1,12 @@
 from enum import Enum
-from typing import Type
+from typing import Optional, Type
 
 from .exception import StrawberryException
-from .exception_source import ExceptionSourceIsClass
+from .exception_source import ExceptionSource
+from .utils.source_finder import SourceFinder
 
 
-class ObjectIsNotAnEnumError(ExceptionSourceIsClass, StrawberryException):
+class ObjectIsNotAnEnumError(StrawberryException):
     def __init__(self, cls: Type[Enum]):
         self.cls = cls
         self.message = (
@@ -22,3 +23,12 @@ class ObjectIsNotAnEnumError(ExceptionSourceIsClass, StrawberryException):
         )
 
         super().__init__(self.message)
+
+    @property
+    def exception_source(self) -> Optional[ExceptionSource]:
+        if self.cls is None:
+            return None
+
+        source_finder = SourceFinder()
+
+        return source_finder.find_class_from_object(self.cls)

@@ -1,16 +1,17 @@
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Optional
 
 from typing_extensions import Literal
 
 from .exception import StrawberryException
-from .exception_source import ExceptionSourceIsArgument
+from .exception_source import ExceptionSource
+from .utils.source_finder import SourceFinder
 
 
 if TYPE_CHECKING:
     from strawberry.types.fields.resolver import StrawberryResolver
 
 
-class InvalidArgumentTypeError(ExceptionSourceIsArgument, StrawberryException):
+class InvalidArgumentTypeError(StrawberryException):
     def __init__(
         self,
         resolver: "StrawberryResolver",
@@ -35,4 +36,15 @@ class InvalidArgumentTypeError(ExceptionSourceIsArgument, StrawberryException):
 
         self.annotation_message = (
             f'Argument "{argument_name}" cannot be of type "{argument_type}"'
+        )
+
+    @property
+    def exception_source(self) -> Optional[ExceptionSource]:
+        if self.function is None:
+            return None
+
+        source_finder = SourceFinder()
+
+        return source_finder.find_argument_from_object(
+            self.function, self.argument_name  # type: ignore
         )

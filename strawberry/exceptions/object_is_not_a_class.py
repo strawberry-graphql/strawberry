@@ -1,13 +1,12 @@
 from enum import Enum
+from typing import Optional
 
 from .exception import StrawberryException
-from .exception_source import ExceptionSourceIsFunction
+from .exception_source import ExceptionSource
+from .utils.source_finder import SourceFinder
 
 
-# class ObjectIsNotAnEnumError(ExceptionSourceIsClass, StrawberryException):
-
-
-class ObjectIsNotClassError(ExceptionSourceIsFunction, StrawberryException):
+class ObjectIsNotClassError(StrawberryException):
     class MethodType(Enum):
         INPUT = "input"
         INTERFACE = "interface"
@@ -51,3 +50,12 @@ class ObjectIsNotClassError(ExceptionSourceIsFunction, StrawberryException):
     @classmethod
     def type(cls, obj: object) -> "ObjectIsNotClassError":
         return cls(obj, cls.MethodType.TYPE)
+
+    @property
+    def exception_source(self) -> Optional[ExceptionSource]:
+        if self.function is None:
+            return None
+
+        source_finder = SourceFinder()
+
+        return source_finder.find_function_from_object(self.function)  # type: ignore
