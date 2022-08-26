@@ -1,10 +1,11 @@
-from typing import Type
+from typing import Optional, Type
 
 from .exception import StrawberryException
-from .exception_source import ExceptionSourceIsAttribute
+from .exception_source import ExceptionSource
+from .utils.source_finder import SourceFinder
 
 
-class MissingFieldAnnotationError(ExceptionSourceIsAttribute, StrawberryException):
+class MissingFieldAnnotationError(StrawberryException):
     def __init__(self, field_name: str, cls: Type):
         self.cls = cls
         self.field_name = field_name
@@ -24,3 +25,12 @@ class MissingFieldAnnotationError(ExceptionSourceIsAttribute, StrawberryExceptio
         self.annotation_message = "field missing annotation"
 
         super().__init__(self.message)
+
+    @property
+    def exception_source(self) -> Optional[ExceptionSource]:
+        if self.cls is None:
+            return None
+
+        source_finder = SourceFinder()
+
+        return source_finder.find_class_attribute_from_object(self.cls, self.field_name)

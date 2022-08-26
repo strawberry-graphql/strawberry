@@ -95,18 +95,23 @@ class LibCSTSourceFinder:
 
         return self._find_definition_by_qualname(function.__qualname__, function_defs)
 
+    def _find_class_definition(
+        self, source: SourcePath, cls: Type
+    ) -> Optional["CSTNode"]:
+        import libcst.matchers as m
+
+        matcher = m.ClassDef(name=m.Name(value=cls.__name__))
+
+        class_defs = self._find(source, matcher)
+        return self._find_definition_by_qualname(cls.__qualname__, class_defs)
+
     def find_class(self, cls: Type) -> Optional[ExceptionSource]:
         source = self.find_source(cls.__module__)
 
         if source is None:
             return None
 
-        import libcst.matchers as m
-
-        matcher = m.ClassDef(name=m.Name(value=cls.__name__))
-
-        class_defs = self._find(source, matcher)
-        class_def = self._find_definition_by_qualname(cls.__qualname__, class_defs)
+        class_def = self._find_class_definition(source, cls)
 
         if class_def is None:
             return None
@@ -122,6 +127,49 @@ class LibCSTSourceFinder:
             end_line=position.end.line,
             error_column=column_start,
             error_column_end=column_start + len(cls.__name__),
+        )
+
+    def find_class_attribute(
+        self, cls: Type, attribute_name: str
+    ) -> Optional[ExceptionSource]:
+        source = self.find_source(cls.__module__)
+
+        if source is None:
+            return None
+
+        class_def = self._find_class_definition(source, cls)
+
+        if class_def is None:
+            return None
+
+        import libcst.matchers as m
+        from libcst import AnnAssign
+
+        attribute_definitions = m.findall(
+            class_def,
+            m.AssignTarget(target=m.Name(value=attribute_name))
+            | m.AnnAssign(target=m.Name(value=attribute_name)),
+        )
+
+        if not attribute_definitions:
+            return None
+
+        attribute_definition = attribute_definitions[0]
+
+        if isinstance(attribute_definition, AnnAssign):
+            attribute_definition = attribute_definition.target
+
+        class_position = self._position_metadata[class_def]
+        attribute_position = self._position_metadata[attribute_definition]
+
+        return ExceptionSource(
+            path=source.path,
+            code=source.code,
+            start_line=class_position.start.line,
+            error_line=attribute_position.start.line,
+            end_line=class_position.end.line,
+            error_column=attribute_position.start.column,
+            error_column_end=attribute_position.end.column,
         )
 
     def find_function(self, function: Callable) -> Optional[ExceptionSource]:
@@ -201,6 +249,11 @@ class SourceFinder:
 
     def find_class_from_object(self, cls: Type) -> Optional[ExceptionSource]:
         return self.cst.find_class(cls) if self.cst else None
+
+    def find_class_attribute_from_object(
+        self, cls: Type, attribute_name: str
+    ) -> Optional[ExceptionSource]:
+        return self.cst.find_class_attribute(cls, attribute_name) if self.cst else None
 
     def find_function_from_object(
         self, function: Callable
