@@ -17,12 +17,13 @@ from strawberry.http import (
     process_result,
 )
 from strawberry.sanic.context import StrawberrySanicContext
-from strawberry.sanic.graphiql import render_graphiql_page, should_render_graphiql
+from strawberry.sanic.graphiql import should_render_graphiql
 from strawberry.sanic.utils import convert_request_to_files_dict
 from strawberry.schema import BaseSchema
 from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types import ExecutionResult
 from strawberry.types.graphql import OperationType
+from strawberry.utils.graphiql import get_graphiql_html
 
 
 class GraphQLView(HTTPMethodView):
@@ -95,7 +96,7 @@ class GraphQLView(HTTPMethodView):
             )
 
         elif should_render_graphiql(self.graphiql, request):
-            template = render_graphiql_page()
+            template = get_graphiql_html(False)
             return self.render_template(template=template)
 
         raise SanicException(status_code=404)

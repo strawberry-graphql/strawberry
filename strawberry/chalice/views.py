@@ -1,7 +1,6 @@
 from typing import Dict, List, Union
 
 from chalice.app import BadRequestError, Request, Response
-from strawberry.chalice.graphiql import render_graphiql_page
 from strawberry.exceptions import MissingQueryError
 from strawberry.http import (
     GraphQLHTTPResponse,
@@ -11,6 +10,7 @@ from strawberry.http import (
 )
 from strawberry.schema import BaseSchema
 from strawberry.types import ExecutionResult
+from strawberry.utils.graphiql import get_graphiql_html
 
 
 class GraphQLView:
@@ -26,7 +26,7 @@ class GraphQLView:
         Returns:
             The GraphiQL html page as a string
         """
-        return render_graphiql_page()
+        return get_graphiql_html(subscription_enabled=False)
 
     @staticmethod
     def should_render_graphiql(graphiql: bool, request: Request) -> bool:
