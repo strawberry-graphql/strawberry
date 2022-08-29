@@ -1,4 +1,4 @@
-from typing import Dict, List, Union
+from typing import Dict, Optional
 
 from chalice.app import BadRequestError, Request, Response
 from strawberry.chalice.graphiql import render_graphiql_page
@@ -51,7 +51,7 @@ class GraphQLView:
         message: str,
         error_code: str,
         http_status_code: int,
-        headers: Dict[str, Union[str, List[str]]] = None,
+        headers: Optional[Dict[str, str]] = None,
     ) -> Response:
         """
         A wrapper for error responses
