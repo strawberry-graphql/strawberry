@@ -99,7 +99,7 @@ types-certifi = "^2021.10.8"
 types-aiofiles = "^0.8.10"
 sanic-testing = "^22.3"
 fastapi = {version = ">=0.65.0", optional = false}
-pytest-xprocess = "^0.19.0"
+pytest-xprocess = "^0.20.0"
 MarkupSafe = "2.1.1"
 pytest-snapshot = "^0.9.0"
 channels = "^3.0.5"
