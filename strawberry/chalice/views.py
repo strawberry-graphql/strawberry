@@ -98,7 +98,7 @@ class GraphQLView:
                     http_status_code=400,
                 )
         elif request.method == "GET" and request.query_params:
-            data = parse_query_params(request.query_params)
+            data = parse_query_params(request.query_params)  # type: ignore
 
         elif request.method == "GET" and self.should_render_graphiql(
             self.graphiql, request
