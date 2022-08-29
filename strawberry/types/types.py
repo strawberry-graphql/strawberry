@@ -270,66 +270,6 @@ class TypeDefinition(StrawberryType):
             is_type_of=is_type_of,
         )
 
-    # TODO: remove wrapped cls when we "merge" this with `StrawberryObject`
-    def resolve_generic(self, wrapped_cls: type) -> type:
-        from strawberry.annotation import StrawberryAnnotation
-
-        passed_types = wrapped_cls.__args__  # type: ignore
-        params = wrapped_cls.__origin__.__parameters__  # type: ignore
-
-        # Make sure all passed_types are turned into StrawberryTypes
-        resolved_types = []
-        for passed_type in passed_types:
-            resolved_type = StrawberryAnnotation(passed_type).resolve()
-            resolved_types.append(resolved_type)
-
-        type_var_map = dict(zip(params, resolved_types))
-
-        return self.copy_with(type_var_map)
-
-    # TODO: Return a StrawberryObject
-    def copy_with(
-        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
-    ) -> type:
-        fields = []
-        for field in self.fields:
-            field_type = field.type
-            if strawberry_definition := get_type_definition(field_type):
-                field_type = strawberry_definition
-
-            # TODO: All types should end up being StrawberryTypes
-            #       The first check is here as a symptom of strawberry.ID being a
-            #       Scalar, but not a StrawberryType
-            if isinstance(field_type, StrawberryType) and field_type.is_generic:
-                field = field.copy_with(type_var_map)
-
-            fields.append(field)
-
-        new_type_definition = TypeDefinition(
-            name=self.name,
-            is_input=self.is_input,
-            origin=self.origin,
-            is_interface=self.is_interface,
-            directives=self.directives,
-            interfaces=self.interfaces,
-            description=self.description,
-            extend=self.extend,
-            is_type_of=self.is_type_of,
-            fields=fields,
-            concrete_of=self,
-            type_var_map=type_var_map,
-        )
-
-        new_type = type(
-            new_type_definition.name,
-            (self.origin,),
-            {"_type_definition": new_type_definition},
-        )
-
-        new_type_definition.origin = new_type
-
-        return new_type
-
     def get_field(self, python_name: str) -> Optional["StrawberryField"]:
         return next(
             (field for field in self.fields if field.python_name == python_name), None

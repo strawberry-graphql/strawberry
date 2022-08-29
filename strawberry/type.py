@@ -9,12 +9,6 @@ class StrawberryType(ABC):
     def type_params(self) -> List[TypeVar]:
         return []
 
-    @abstractmethod
-    def copy_with(
-        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
-    ) -> Union[StrawberryType, type]:
-        raise NotImplementedError()
-
     @property
     @abstractmethod
     def is_generic(self) -> bool:

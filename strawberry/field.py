@@ -1,4 +1,3 @@
-import builtins
 import dataclasses
 import inspect
 import sys
@@ -9,7 +8,6 @@ from typing import (
     Callable,
     Dict,
     List,
-    Mapping,
     Optional,
     Sequence,
     Type,
@@ -339,42 +337,6 @@ class StrawberryField:
         if isinstance(self.type, StrawberryType):
             return self.type.type_params
         return []
-
-    def copy_with(
-        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, builtins.type]]
-    ) -> "StrawberryField":
-        new_type: Union[StrawberryType, type]
-
-        # TODO: Remove with creation of StrawberryObject. Will act same as other
-        #       StrawberryTypes
-        if type_definition := get_type_definition(self.type):
-            if type_definition.is_generic:
-                new_type = type_definition.copy_with(type_var_map)
-        else:
-            assert isinstance(self.type, StrawberryType)
-            new_type = self.type.copy_with(type_var_map)
-
-        new_resolver = (
-            self.base_resolver.copy_with(type_var_map)
-            if self.base_resolver is not None
-            else None
-        )
-        return StrawberryField(
-            python_name=self.python_name,
-            graphql_name=self.graphql_name,
-            # TODO: do we need to wrap this in `StrawberryAnnotation`?
-            # see comment related to dataclasses above
-            type_annotation=StrawberryAnnotation(new_type),
-            origin=self.origin,
-            is_subscription=self.is_subscription,
-            description=self.description,
-            base_resolver=new_resolver,
-            permission_classes=self.permission_classes,
-            default=self.default_value,
-            # ignored because of https://github.com/python/mypy/issues/6910
-            default_factory=self.default_factory,
-            deprecation_reason=self.deprecation_reason,
-        )
 
 
 @overload
