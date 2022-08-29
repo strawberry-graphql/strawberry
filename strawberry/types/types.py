@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 import dataclasses
-import sys
 import types
-from types import ModuleType
+import typing
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -13,10 +12,10 @@ from typing import (
     Mapping,
     Optional,
     Sequence,
+    Tuple,
     Type,
     TypeVar,
     Union,
-    cast,
 )
 
 from strawberry.exceptions import MissingFieldAnnotationError
@@ -38,13 +37,9 @@ def _get_interfaces(cls: Type[T]) -> List[TypeDefinition]:
     interfaces = []
 
     for base in cls.__bases__:
-        type_definition = cast(
-            Optional[TypeDefinition],
-            getattr(base, "_type_definition", None),
-        )
-
-        if type_definition and type_definition.is_interface:
-            interfaces.append(type_definition)
+        if type_definition := get_type_definition(base):
+            if type_definition.is_interface:
+                interfaces.append(type_definition)
 
         for inherited_interface in _get_interfaces(base):
             interfaces.append(inherited_interface)
@@ -105,6 +100,23 @@ def _get_fields(cls: Type) -> List["StrawberryField"]:
     return list(fields.values())
 
 
+def get_type_definition(
+    type_: Any,
+) -> Optional[Union[TypeDefinition, TemplateTypeDefinition]]:
+    origin = type_
+    # generics store their class in __origin__
+    if origin_ := getattr(type_, "__origin__", False):
+        origin = origin_
+    res = getattr(origin, "_type_definition", None)
+    if isinstance(res, TypeDefinition):
+        return res
+    else:
+        return None
+
+
+template__type_definitions: Dict[str, "TemplateTypeDefinition"] = {}
+
+
 @dataclasses.dataclass(eq=False)
 class TypeDefinition(StrawberryType):
     name: str
@@ -117,38 +129,54 @@ class TypeDefinition(StrawberryType):
     directives: Optional[Sequence[object]]
     is_type_of: Optional[Callable[[Any, GraphQLResolveInfo], bool]]
     fields: List["StrawberryField"]
-    _module: Optional[ModuleType]
-    concrete_of: Optional["TypeDefinition"] = None
+    concrete_of: Optional["TemplateTypeDefinition"] = None
     """Concrete implementations of Generic TypeDefinitions fill this in"""
     type_var_map: Mapping[TypeVar, Union[StrawberryType, type]] = dataclasses.field(
         default_factory=dict
     )
+    is_generic = False
 
     @classmethod
     def from_class(
         cls,
-        origin: Type[T],
+        origin: Type,
         name: Optional[str] = None,
         is_input: bool = False,
         is_interface: bool = False,
         description: Optional[str] = None,
         directives: Optional[Sequence[object]] = (),
         extend: bool = False,
-    ) -> "TypeDefinition":
+    ) -> Union["TypeDefinition", "TemplateTypeDefinition"]:
         # at this point all the strawberry fields in the class are
         # without an origin and a python name.
         from strawberry.field import StrawberryField
 
-        _module = sys.modules[origin.__module__]
+        if is_type_generic(origin):
+            ret = TemplateTypeDefinition.from_class(
+                origin=origin,
+                name=name or origin.__name__,
+                is_input=is_input,
+                is_interface=is_interface,
+                description=description,
+                directives=directives,
+                extend=extend,
+                interfaces=[],
+                is_type_of=None,
+                fields=[],
+            )
+            template__type_definitions[ret.name] = ret
+            return ret
+
         name = name or to_camel_case(origin.__name__)
         strawberry_fields: Dict[str, StrawberryField] = {}
 
         # find fields in parents.
         for base in origin.__bases__:
             if _type_definition := get_type_definition(base):
-                for field in _type_definition.fields:
-                    assert field.python_name
-                    strawberry_fields[field.python_name] = field
+                if not isinstance(_type_definition, TemplateTypeDefinition):
+                    for field in _type_definition.fields:
+                        assert field.python_name
+                        strawberry_fields[field.python_name] = field
 
         # find fields in this class.
         for field_name, field_ in [field for field in list(origin.__dict__.items())]:
@@ -219,6 +247,14 @@ class TypeDefinition(StrawberryType):
 
                 setattr(origin, field_.python_name, wrapped_func)
 
+            # generate generic templates.
+            if strawberry_definition := get_type_definition(field_.type):
+                if isinstance(strawberry_definition, TemplateTypeDefinition):
+                    new_annotation = field_.type_annotation.create_concrete_type(
+                        strawberry_definition
+                    )
+                    field_.type_annotation = new_annotation
+
         is_type_of = getattr(origin, "is_type_of", None)
 
         return cls(
@@ -232,7 +268,6 @@ class TypeDefinition(StrawberryType):
             interfaces=interfaces,
             fields=fetched_fields,
             is_type_of=is_type_of,
-            _module=_module,
         )
 
     # TODO: remove wrapped cls when we "merge" this with `StrawberryObject`
@@ -283,7 +318,6 @@ class TypeDefinition(StrawberryType):
             fields=fields,
             concrete_of=self,
             type_var_map=type_var_map,
-            _module=self._module,
         )
 
         new_type = type(
@@ -300,10 +334,6 @@ class TypeDefinition(StrawberryType):
         return next(
             (field for field in self.fields if field.python_name == python_name), None
         )
-
-    @property
-    def is_generic(self) -> bool:
-        return is_type_generic(self.origin)
 
     @property
     def type_params(self) -> List[TypeVar]:
@@ -357,13 +387,81 @@ class TypeDefinition(StrawberryType):
         return True
 
 
-def get_type_definition(type_: Any) -> Optional[TypeDefinition]:
-    origin = type_
-    # generics store their class in __origin__
-    if origin_ := getattr(type_, "__origin__", False):
-        origin = origin_
-    res = getattr(origin, "_type_definition", None)
-    if isinstance(res, TypeDefinition):
-        return res
-    else:
-        return None
+@dataclasses.dataclass(eq=False)
+class TemplateTypeDefinition(TypeDefinition):
+    # generic type vars:
+    parameters: Tuple = None
+    # not used here
+    concrete_of: None = dataclasses.field(init=False)
+    is_generic = True
+
+    @classmethod
+    def from_class(cls, /, origin: type, **kwargs) -> "TemplateTypeDefinition":
+        params = getattr(origin, "__parameters__", None)
+        assert isinstance(params, tuple)
+        return cls(parameters=params, origin=origin, **kwargs)
+
+    # TODO: return `StrawberryObject`
+    def generate(self, passed_types: tuple) -> type:
+        from strawberry.field import StrawberryField
+
+        type_var_map = dict(zip(self.parameters, passed_types))
+        new_type = type(self.name, self.origin.__bases__, dict(self.origin.__dict__))
+        # parameters must not be copied, since it is no longer a template class.
+        new_type.__parameters__ = None
+
+        # find field type in annotations.
+        for name, field in [field for field in list(new_type.__dict__.items())]:
+            if isinstance(field, StrawberryField):
+                field.python_name = name
+                field = field(new_type)
+                field_type = field.type
+            elif field_type := new_type.__annotations__.get(name, None):
+                ...
+            else:
+                continue
+
+            # find the type var
+            if strawberry_definition := get_type_definition(field_type):
+                if isinstance(strawberry_definition, TemplateTypeDefinition):
+                    assert False  # Todo: nested generics
+
+            # TODO: All types should end up being StrawberryTypes
+            #       The first check is here as a symptom of strawberry.ID being a
+            #       Scalar, but not a StrawberryType
+            if isinstance(field_type, StrawberryType):
+                if type_var := getattr(field_type, "type_var", None):
+                    field_type = type_var_map[type_var]
+                elif hasattr(field_type, "of_type"):
+                    field_type = _build_type_var_annotation(
+                        field.type_annotation.annotation, type_var_map
+                    )
+
+            new_type.__annotations__[field.python_name] = field_type
+            # basic fields, just need to update the class annotation.
+            if not field.is_basic_field:
+                f = field.base_resolver.wrapped_func
+                f.__annotations__["return"] = field_type
+                setattr(new_type, name, field(f))
+
+        new_type._type_definition = TypeDefinition.from_class(
+            new_type,
+            self.name,
+            is_input=self.is_input,
+            is_interface=self.is_interface,
+            directives=self.directives,
+            description=self.description,
+            extend=self.extend,
+        )
+        new_type._type_definition.concrete_of = self
+        return new_type
+
+
+def _build_type_var_annotation(annotation, type_var_map):
+    res = []
+    for arg in typing.get_args(annotation):
+        if isinstance(arg, TypeVar):
+            res.append(type_var_map[arg])
+            return annotation[res[0]]
+        else:
+            res.append(_build_type_var_annotation(arg, type_var_map))

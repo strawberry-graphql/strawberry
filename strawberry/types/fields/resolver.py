@@ -145,6 +145,25 @@ ROOT_PARAMSPEC = ReservedName("root")
 INFO_PARAMSPEC = ReservedType("info", Info)
 
 T = TypeVar("T")
+RESOLVER_UNION = Union[Callable[..., T], staticmethod, classmethod]
+
+
+def resolveable(f: Any) -> Optional[RESOLVER_UNION]:
+    """
+    Returns True if the given function is resolving a capable function.
+    """
+    if (
+        inspect.ismethod(f)
+        or inspect.isfunction(f)
+        or inspect.isgenerator(f)
+        or isinstance(f, classmethod)
+        or isinstance(f, staticmethod)
+        or callable(f)
+    ):
+        return f
+
+    else:
+        return None
 
 
 class StrawberryResolver(Generic[T]):
@@ -157,7 +176,7 @@ class StrawberryResolver(Generic[T]):
 
     def __init__(
         self,
-        func: Union[Callable[..., T], staticmethod, classmethod],
+        func: RESOLVER_UNION,
         *,
         description: Optional[str] = None,
         type_override: Optional[Union[StrawberryType, type]] = None,

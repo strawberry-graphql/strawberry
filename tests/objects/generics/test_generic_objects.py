@@ -5,6 +5,7 @@ import pytest
 
 import strawberry
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryTypeVar
+from strawberry.types.types import get_type_definition
 from strawberry.union import StrawberryUnion
 
 
@@ -577,20 +578,21 @@ def test_generic_with_arguments():
     class Query:
         user: Collection[Post]
 
-    query_definition = Query._type_definition
+    query_definition = get_type_definition(Query)
+    assert query_definition
 
-    [user_field] = query_definition.fields
+    user_field = query_definition.fields[0]
     assert user_field.python_name == "user"
 
-    post_collection_definition = user_field.type._type_definition
+    post_collection_definition = get_type_definition(user_field.type)
     assert not post_collection_definition.is_generic
 
-    [by_id_field] = post_collection_definition.fields
+    by_id_field = post_collection_definition.fields[0]
     assert by_id_field.python_name == "by_id"
     assert isinstance(by_id_field.type, StrawberryList)
     assert by_id_field.type.of_type is Post
 
-    [ids_argument] = by_id_field.arguments
+    ids_argument = by_id_field.arguments[0]
     assert ids_argument.python_name == "ids"
     assert isinstance(ids_argument.type, StrawberryList)
     assert ids_argument.type.of_type is int

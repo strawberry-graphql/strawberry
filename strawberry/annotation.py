@@ -30,7 +30,11 @@ from strawberry.type import (
     StrawberryType,
     StrawberryTypeVar,
 )
-from strawberry.types.types import TypeDefinition, get_type_definition
+from strawberry.types.types import (
+    TemplateTypeDefinition,
+    TypeDefinition,
+    get_type_definition,
+)
 from strawberry.unset import UNSET
 from strawberry.utils.typing import is_generic, is_type_var
 
@@ -78,11 +82,6 @@ class StrawberryAnnotation:
         if self._is_lazy_type(evaled_type):
             return evaled_type
 
-        if self._is_generic(evaled_type):
-            if any(is_type_var(type_) for type_ in evaled_type.__args__):
-                return evaled_type
-            return self.create_concrete_type(evaled_type)
-
         # Simply return objects that are already StrawberryTypes
         if self._is_strawberry_type(evaled_type):
             return evaled_type
@@ -105,18 +104,20 @@ class StrawberryAnnotation:
         return evaled_type
 
     def safe_resolve(self) -> Union[StrawberryType, type, ForwardRef]:
-        # catching NameError if the type is a ForwardRef | str
+        # catching NameError if the type is a ForwardRef | str,
+        # it is not certain that is is in the namespace yet.
         try:
             return self.resolve()
         except NameError:
             assert isinstance(self.annotation, str)
             return ForwardRef(self.annotation)
 
-    def create_concrete_type(self, evaled_type: type) -> type:
-        if strawberry_def := get_type_definition(evaled_type):
-            return strawberry_def.resolve_generic(evaled_type)
-
-        raise ValueError(f"Not supported {evaled_type}")
+    def create_concrete_type(
+        self, template: TemplateTypeDefinition
+    ) -> "StrawberryAnnotation":
+        args = getattr(self.annotation, "__args__", None)
+        assert args
+        return StrawberryAnnotation(template.generate(args))
 
     def create_enum(self, evaled_type: Any) -> EnumDefinition:
         return evaled_type._enum_definition
