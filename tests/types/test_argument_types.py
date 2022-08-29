@@ -1,7 +1,9 @@
+import warnings
 from enum import Enum
 from typing import List, Optional, TypeVar
 
 import strawberry
+from strawberry.types.info import Info
 
 
 def test_enum():
@@ -93,3 +95,23 @@ def test_type_var():
 
     argument = set_value.arguments[0]
     assert argument.type == T
+
+
+def test_custom_info():
+    class CustomInfo(Info):
+        pass
+
+    # Ensure no deprecation warning is thrown for info subclass
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
+
+        @strawberry.field
+        def get_info(info: CustomInfo) -> bool:
+            _ = info
+            return True
+
+        assert not get_info.arguments  # Should have no arguments matched
+
+        info_parameter = get_info.base_resolver.info_parameter
+        assert info_parameter is not None
+        assert info_parameter.name == "info"
