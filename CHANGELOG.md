@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.127.1 - 2022-08-30
+--------------------
+
+This release fixes an issue with the updated GraphiQL
+interface.
+
+Contributed by [Doctor](https://github.com/ThirVondukr) via [PR #2138](https://github.com/strawberry-graphql/strawberry/pull/2138/)
+
+
 0.127.0 - 2022-08-29
 --------------------
 
