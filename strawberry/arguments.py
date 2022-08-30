@@ -17,7 +17,7 @@ from typing import (
 from typing_extensions import Annotated, get_args, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
+from strawberry.custom_scalar import ScalarDefinition
 from strawberry.enum import EnumDefinition
 from strawberry.lazy_type import LazyType
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
@@ -124,7 +124,7 @@ class StrawberryArgument:
 def convert_argument(
     value: object,
     type_: Union[StrawberryType, type],
-    scalar_registry: Dict[object, Union[ScalarWrapper, ScalarDefinition]],
+    scalar_registry: Dict[object, ScalarDefinition],
     config: StrawberryConfig,
 ) -> object:
     if value is None:
@@ -177,7 +177,7 @@ def convert_argument(
 def convert_arguments(
     value: Dict[str, Any],
     arguments: List[StrawberryArgument],
-    scalar_registry: Dict[object, Union[ScalarWrapper, ScalarDefinition]],
+    scalar_registry: Dict[object, ScalarDefinition],
     config: StrawberryConfig,
 ) -> Dict[str, Any]:
     """Converts a nested dictionary to a dictionary of actual types.

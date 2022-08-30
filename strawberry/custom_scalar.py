@@ -1,16 +1,18 @@
+import contextlib
+import dataclasses
+import inspect
 import sys
 from dataclasses import dataclass
 from typing import (
     Any,
     Callable,
     Iterable,
-    Mapping,
     NewType,
     Optional,
     Type,
     TypeVar,
     Union,
-    overload,
+    cast,
 )
 
 from graphql import GraphQLScalarType
@@ -31,42 +33,79 @@ def identity(x):
     return x
 
 
+# TODO: Maybe rename this to StrawberryScalar?
 @dataclass
 class ScalarDefinition(StrawberryType):
-    name: str
-    description: Optional[str]
-    specified_by_url: Optional[str]
-    serialize: Optional[Callable]
-    parse_value: Optional[Callable]
-    parse_literal: Optional[Callable]
+    origin: Optional[type] = None
+    name: str = None
+    description: Optional[str] = None
+    specified_by_url: Optional[str] = None
+    serialize: Optional[Callable] = None
+    parse_value: Optional[Callable] = None
+    parse_literal: Optional[Callable] = None
     directives: Iterable[object] = ()
 
     # Optionally store the GraphQLScalarType instance so that we don't get
     # duplicates
     implementation: Optional[GraphQLScalarType] = None
 
-    def copy_with(
-        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
-    ) -> Union[StrawberryType, type]:
-        return super().copy_with(type_var_map)
+    def to_graphql_core(self):
+        if self.implementation:
+            return self.implementation
+        else:
+            from strawberry.schema.schema_converter import GraphQLCoreConverter
+
+            res = GraphQLScalarType(
+                name=self.name,
+                description=self.description,
+                specified_by_url=self.specified_by_url,
+                serialize=self.serialize,
+                parse_value=self.parse_value,
+                parse_literal=self.parse_literal,
+                extensions={GraphQLCoreConverter.DEFINITION_BACKREF: self},
+            )
+            # cache
+            self.implementation = res
+            self.implementation = cast(GraphQLScalarType, res)
+            return self.implementation
+
+    def __call__(self, class_or_value: Any):
+        if (
+            inspect.isclass(class_or_value)
+            or type(class_or_value) is NewType
+            and not self.origin
+        ):
+            self.origin = class_or_value
+            if not self.name:
+                return dataclasses.replace(
+                    self, name=to_camel_case(class_or_value.__name__)
+                )
+        else:
+            # if someone tries to `initialize` the scalar just return what he gave
+            # parse_value will be called else where.
+            return class_or_value
 
     @property
     def is_generic(self) -> bool:
         return False
 
+    def validate(self, value):
+        with contextlib.suppress(Exception):
+            parsed = self.parse_value(value)
+            if self.serialize(parsed) == value:
+                return True
+        with contextlib.suppress(Exception):
+            serialized = self.serialize(value)
+            if self.parse_value(serialized) == value:
+                return True
+        return False
 
-class ScalarWrapper:
-    _scalar_definition: ScalarDefinition
-
-    def __init__(self, wrap):
-        self.wrap = wrap
-
-    def __call__(self, *args, **kwargs):
-        return self.wrap(*args, **kwargs)
+    def __hash__(self) -> int:
+        return id(self)
 
 
-def _process_scalar(
-    cls: Type[_T],
+def scalar(
+    cls: Type = None,
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
@@ -75,11 +114,8 @@ def _process_scalar(
     parse_value: Optional[Callable] = None,
     parse_literal: Optional[Callable] = None,
     directives: Iterable[object] = (),
-):
-    name = name or to_camel_case(cls.__name__)
-
-    wrapper = ScalarWrapper(cls)
-    wrapper._scalar_definition = ScalarDefinition(
+) -> ScalarDefinition:
+    definition = ScalarDefinition(
         name=name,
         description=description,
         specified_by_url=specified_by_url,
@@ -88,95 +124,7 @@ def _process_scalar(
         parse_value=parse_value,
         directives=directives,
     )
+    if cls:
+        return definition(cls)
 
-    return wrapper
-
-
-@overload
-def scalar(
-    *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    specified_by_url: Optional[str] = None,
-    serialize: Callable = identity,
-    parse_value: Optional[Callable] = None,
-    parse_literal: Optional[Callable] = None,
-    directives: Iterable[object] = (),
-) -> Callable[[_T], _T]:
-    ...
-
-
-@overload
-def scalar(
-    cls: _T,
-    *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    specified_by_url: Optional[str] = None,
-    serialize: Callable = identity,
-    parse_value: Optional[Callable] = None,
-    parse_literal: Optional[Callable] = None,
-    directives: Iterable[object] = (),
-) -> _T:
-    ...
-
-
-# FIXME: We are tricking pyright into thinking that we are returning the given type
-# here or else it won't let us use any custom scalar to annotate attributes in
-# dataclasses/types. This should be properly solved when implementing StrawberryScalar
-def scalar(
-    cls=None,
-    *,
-    name: Optional[str] = None,
-    description: Optional[str] = None,
-    specified_by_url: Optional[str] = None,
-    serialize: Callable = identity,
-    parse_value: Optional[Callable] = None,
-    parse_literal: Optional[Callable] = None,
-    directives: Iterable[object] = (),
-) -> Any:
-    """Annotates a class or type as a GraphQL custom scalar.
-
-    Example usages:
-
-    >>> strawberry.scalar(
-    >>>     datetime.date,
-    >>>     serialize=lambda value: value.isoformat(),
-    >>>     parse_value=datetime.parse_date
-    >>> )
-
-    >>> Base64Encoded = strawberry.scalar(
-    >>>     NewType("Base64Encoded", bytes),
-    >>>     serialize=base64.b64encode,
-    >>>     parse_value=base64.b64decode
-    >>> )
-
-    >>> @strawberry.scalar(
-    >>>     serialize=lambda value: ",".join(value.items),
-    >>>     parse_value=lambda value: CustomList(value.split(","))
-    >>> )
-    >>> class CustomList:
-    >>>     def __init__(self, items):
-    >>>         self.items = items
-
-    """
-
-    if parse_value is None:
-        parse_value = cls
-
-    def wrap(cls):
-        return _process_scalar(
-            cls,
-            name=name,
-            description=description,
-            specified_by_url=specified_by_url,
-            serialize=serialize,
-            parse_value=parse_value,
-            parse_literal=parse_literal,
-            directives=directives,
-        )
-
-    if cls is None:
-        return wrap
-
-    return wrap(cls)
+    return definition

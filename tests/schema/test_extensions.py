@@ -105,10 +105,7 @@ def test_scalar():
     schema = strawberry.Schema(query=Query)
     graphql_schema: GraphQLSchema = schema._schema
 
-    assert (
-        graphql_schema.get_type("JSON").extensions[DEFINITION_BACKREF]
-        is JSON._scalar_definition
-    )
+    assert graphql_schema.get_type("JSON").extensions[DEFINITION_BACKREF] is JSON
 
 
 def test_interface():

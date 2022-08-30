@@ -1,10 +1,8 @@
 import base64
-from typing import Any, Dict, NewType, Union
+from typing import Any, Dict, NewType
 
-from .custom_scalar import ScalarDefinition, ScalarWrapper, scalar
+from .custom_scalar import ScalarDefinition, scalar
 
-
-ID = NewType("ID", str)
 
 JSON = scalar(
     NewType("JSON", object),  # mypy doesn't like `NewType("name", Any)`
@@ -51,9 +49,9 @@ Base64 = scalar(
 
 def is_scalar(
     annotation: Any,
-    scalar_registry: Dict[object, Union[ScalarWrapper, ScalarDefinition]],
+    scalar_registry: Dict[object, ScalarDefinition],
 ) -> bool:
     if annotation in scalar_registry:
         return True
 
-    return hasattr(annotation, "_scalar_definition")
+    return isinstance(annotation, ScalarDefinition)

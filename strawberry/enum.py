@@ -47,6 +47,12 @@ class EnumDefinition(StrawberryType):
     def is_generic(self) -> bool:
         return False
 
+    def validate(self, value):
+        for possibility in self.values:
+            if value == possibility:
+                return True
+        return False
+
 
 # TODO: remove duplication of EnumValueDefinition and EnumValue
 @dataclasses.dataclass

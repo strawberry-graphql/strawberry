@@ -278,6 +278,34 @@ def test_supports_lists_of_optionals():
     assert result.data == {"user": {"__typename": "UserEdge", "nodes": [None]}}
 
 
+def test_support_list_of_generic():
+    T = TypeVar("T")
+
+    @strawberry.type
+    class Edge(Generic[T]):
+        node: T
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def user(self) -> List[Edge[str]]:
+            return [Edge(node="Nir")]
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        user {
+            __typename
+            node
+        }
+    }"""
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data == {"user": [{"__typename": "StrEdge", "node": "Nir"}]}
+
+
 def test_can_extend_generics():
     T = TypeVar("T")
 

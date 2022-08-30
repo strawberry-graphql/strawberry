@@ -13,7 +13,7 @@ from graphql import (
 from graphql.subscription import subscribe
 from graphql.type.directives import specified_directives
 
-from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
+from strawberry.custom_scalar import ScalarDefinition
 from strawberry.directive import StrawberryDirective
 from strawberry.enum import EnumDefinition
 from strawberry.extensions import Extension
@@ -54,9 +54,7 @@ class Schema(BaseSchema):
         extensions: Iterable[Union[Type[Extension], Extension]] = (),
         execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
         config: Optional[StrawberryConfig] = None,
-        scalar_overrides: Optional[
-            Dict[object, Union[ScalarWrapper, ScalarDefinition]]
-        ] = None,
+        scalar_overrides: Optional[Dict[object, ScalarDefinition]] = None,
         schema_directives: Iterable[object] = (),
     ):
         self.query = query
@@ -67,9 +65,7 @@ class Schema(BaseSchema):
         self.execution_context_class = execution_context_class
         self.config = config or StrawberryConfig()
 
-        scalar_registry: Dict[object, Union[ScalarWrapper, ScalarDefinition]] = {
-            **DEFAULT_SCALAR_REGISTRY
-        }
+        scalar_registry: Dict[object, ScalarDefinition] = {**DEFAULT_SCALAR_REGISTRY}
         if scalar_overrides:
             scalar_registry.update(scalar_overrides)
 

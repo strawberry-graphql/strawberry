@@ -6,7 +6,6 @@ from uuid import UUID
 from graphql import (
     GraphQLBoolean,
     GraphQLFloat,
-    GraphQLID,
     GraphQLInt,
     GraphQLScalarType,
     GraphQLString,
@@ -14,22 +13,7 @@ from graphql import (
 
 from strawberry.custom_scalar import ScalarDefinition
 from strawberry.file_uploads.scalars import Upload
-from strawberry.scalars import ID
 from strawberry.schema.types import base_scalars
-
-
-def _make_scalar_type(definition: ScalarDefinition) -> GraphQLScalarType:
-    from strawberry.schema.schema_converter import GraphQLCoreConverter
-
-    return GraphQLScalarType(
-        name=definition.name,
-        description=definition.description,
-        specified_by_url=definition.specified_by_url,
-        serialize=definition.serialize,
-        parse_value=definition.parse_value,
-        parse_literal=definition.parse_literal,
-        extensions={GraphQLCoreConverter.DEFINITION_BACKREF: definition},
-    )
 
 
 def _make_scalar_definition(scalar_type: GraphQLScalarType) -> ScalarDefinition:
@@ -45,7 +29,7 @@ def _make_scalar_definition(scalar_type: GraphQLScalarType) -> ScalarDefinition:
 
 
 def _get_scalar_definition(scalar) -> ScalarDefinition:
-    return scalar._scalar_definition
+    return scalar
 
 
 DEFAULT_SCALAR_REGISTRY: Dict[object, ScalarDefinition] = {
@@ -55,7 +39,7 @@ DEFAULT_SCALAR_REGISTRY: Dict[object, ScalarDefinition] = {
     int: _make_scalar_definition(GraphQLInt),
     float: _make_scalar_definition(GraphQLFloat),
     bool: _make_scalar_definition(GraphQLBoolean),
-    ID: _make_scalar_definition(GraphQLID),
+    base_scalars.ID: _get_scalar_definition(base_scalars.ID),
     UUID: _get_scalar_definition(base_scalars.UUID),
     Upload: _get_scalar_definition(Upload),
     datetime.date: _get_scalar_definition(base_scalars.Date),

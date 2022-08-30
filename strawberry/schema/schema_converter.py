@@ -2,18 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import sys
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, Union, cast
 
 from graphql import (
     GraphQLArgument,
@@ -40,7 +29,7 @@ from graphql.language.directive_locations import DirectiveLocation
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import StrawberryArgument, convert_arguments
-from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
+from strawberry.custom_scalar import ScalarDefinition
 from strawberry.directive import StrawberryDirective
 from strawberry.enum import EnumDefinition, EnumValue
 from strawberry.exceptions import (
@@ -53,11 +42,10 @@ from strawberry.field import UNRESOLVED, StrawberryField
 from strawberry.lazy_type import LazyType
 from strawberry.private import is_private
 from strawberry.schema.config import StrawberryConfig
-from strawberry.schema.types.scalar import _make_scalar_type
 from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
 from strawberry.types.info import Info
-from strawberry.types.types import TypeDefinition
+from strawberry.types.types import TypeDefinition, get_type_definition
 from strawberry.union import StrawberryUnion
 from strawberry.unset import UNSET
 from strawberry.utils.await_maybe import await_maybe
@@ -98,7 +86,7 @@ class GraphQLCoreConverter:
     def __init__(
         self,
         config: StrawberryConfig,
-        scalar_registry: Dict[object, Union[ScalarWrapper, ScalarDefinition]],
+        scalar_registry: Dict[object, ScalarDefinition],
     ):
         self.type_map: Dict[str, ConcreteType] = {}
         self.config = config
@@ -382,11 +370,10 @@ class GraphQLCoreConverter:
                 return None
 
             def is_type_of(obj: Any, _info: GraphQLResolveInfo) -> bool:
-                if object_type.concrete_of and (
-                    hasattr(obj, "_type_definition")
-                    and obj._type_definition.origin is object_type.concrete_of.origin
-                ):
-                    return True
+                if object_type.concrete_of:
+                    if _type_definition := get_type_definition(obj):
+                        if _type_definition.origin is object_type.concrete_of.origin:
+                            return True
 
                 return isinstance(obj, object_type.origin)
 
@@ -509,39 +496,22 @@ class GraphQLCoreConverter:
             _resolver._is_default = not field.base_resolver  # type: ignore
             return _resolver
 
-    def from_scalar(self, scalar: Type) -> GraphQLScalarType:
-        scalar_definition: ScalarDefinition
-
-        if scalar in self.scalar_registry:
-            _scalar_definition = self.scalar_registry[scalar]
-            if isinstance(_scalar_definition, ScalarWrapper):
-                scalar_definition = _scalar_definition._scalar_definition
+    def from_scalar(self, scalar: Union[ScalarDefinition, type]) -> GraphQLScalarType:
+        try:
+            # find built-in scalars
+            definition = self.scalar_registry[scalar]
+            return definition.to_graphql_core()
+        except KeyError:
+            assert isinstance(scalar, ScalarDefinition)
+            scalar_name = scalar.name
+            if scalar.name not in self.type_map:
+                self.type_map[scalar_name] = ConcreteType(
+                    definition=scalar, implementation=scalar.to_graphql_core()
+                )
             else:
-                scalar_definition = _scalar_definition
-        else:
-            scalar_definition = scalar._scalar_definition
-
-        scalar_name = self.config.name_converter.from_type(scalar_definition)
-
-        if scalar_name not in self.type_map:
-            implementation = (
-                scalar_definition.implementation
-                if scalar_definition.implementation is not None
-                else _make_scalar_type(scalar_definition)
-            )
-
-            self.type_map[scalar_name] = ConcreteType(
-                definition=scalar_definition, implementation=implementation
-            )
-        else:
-            if self.type_map[scalar_name].definition != scalar_definition:
-                raise ScalarAlreadyRegisteredError(scalar_name)
-
-            implementation = cast(
-                GraphQLScalarType, self.type_map[scalar_name].implementation
-            )
-
-        return implementation
+                if self.type_map[scalar_name].definition != scalar:
+                    raise ScalarAlreadyRegisteredError(scalar_name)
+        return scalar.implementation
 
     def from_maybe_optional(
         self, type_: Union[StrawberryType, type]
@@ -557,19 +527,16 @@ class GraphQLCoreConverter:
     def from_type(self, type_: Union[StrawberryType, type]) -> GraphQLNullableType:
         if compat.is_generic(type_):
             raise MissingTypesForGenericError(type_)
-
         if isinstance(type_, EnumDefinition):  # TODO: Replace with StrawberryEnum
             return self.from_enum(type_)
         elif compat.is_input_type(type_):  # TODO: Replace with StrawberryInputObject
             return self.from_input_object(type_)
         elif isinstance(type_, StrawberryList):
             return self.from_list(type_)
-        elif compat.is_interface_type(type_):  # TODO: Replace with StrawberryInterface
-            type_definition: TypeDefinition = type_._type_definition  # type: ignore
-            return self.from_interface(type_definition)
-        elif compat.is_object_type(type_):  # TODO: Replace with StrawberryObject
-            type_definition: TypeDefinition = type_._type_definition  # type: ignore
-            return self.from_object(type_definition)
+        elif definition := compat.is_interface_type(type_):
+            return self.from_interface(definition)
+        elif definition := compat.is_object_type(type_):
+            return self.from_object(definition)
         elif compat.is_enum(type_):  # TODO: Replace with StrawberryEnum
             enum_definition: EnumDefinition = type_._enum_definition  # type: ignore
             return self.from_enum(enum_definition)
@@ -579,9 +546,7 @@ class GraphQLCoreConverter:
             return self.from_union(type_)
         elif isinstance(type_, LazyType):
             return self.from_type(type_.resolve_type())
-        elif compat.is_scalar(
-            type_, self.scalar_registry
-        ):  # TODO: Replace with StrawberryScalar
+        elif compat.is_scalar(type_, self.scalar_registry):
             return self.from_scalar(type_)
 
         raise TypeError(f"Unexpected type '{type_}'")

@@ -31,7 +31,7 @@ from graphql import (
 )
 
 import strawberry
-from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
+from strawberry.custom_scalar import ScalarDefinition
 from strawberry.enum import EnumDefinition
 from strawberry.lazy_type import LazyType
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
@@ -324,7 +324,7 @@ class QueryCodegen:
         ):
             field_type = self.schema.schema_converter.scalar_registry[field_type]  # type: ignore  # noqa: E501
 
-        if isinstance(field_type, ScalarWrapper):
+        if isinstance(field_type, ScalarDefinition):
             python_type = field_type.wrap
             if hasattr(python_type, "__supertype__"):
                 python_type = python_type.__supertype__

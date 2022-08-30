@@ -11,8 +11,8 @@ from typing import (
     Optional,
     Sequence,
     Type,
-    TypeVar,
     Union,
+    cast,
     overload,
 )
 
@@ -38,7 +38,6 @@ from strawberry.unset import UNSET
 from .permission import BasePermission
 from .private import is_private
 from .types.fields.resolver import StrawberryResolver, resolveable
-from .types.types import get_type_definition
 
 
 if TYPE_CHECKING:
@@ -50,10 +49,11 @@ UNRESOLVED = object()
 
 
 @dataclasses.dataclass()
-class StrawberryField:
+class StrawberryField(StrawberryType):
     python_name: Optional[str] = None
     graphql_name: Optional[str] = None
     origin: Optional[Type] = None
+    child: Optional["StrawberryField"] = None
     base_resolver: Optional[StrawberryResolver] = None
     type_annotation: Optional[StrawberryAnnotation] = None
     arguments: List[StrawberryArgument] = dataclasses.field(default_factory=list)
@@ -64,13 +64,14 @@ class StrawberryField:
         default_factory=list
     )
     directives: Sequence[object] = ()
-
     is_basic_field: bool = False  # True if no resolver provided.
 
     # dataclasses.Field stuff
     default: object = UNSET
     default_factory: Union[Callable[[], Any], object] = UNSET
     default_value: Any = dataclasses.field(init=False, default=UNSET)
+
+    is_generic = False
 
     def __post_init__(self):
         if self.origin:
@@ -82,6 +83,14 @@ class StrawberryField:
 
             else:
                 self._evaluate_as_basic_field()
+            if self.child:
+                state = {
+                    field_.name: field_
+                    for field_ in dataclasses.fields(self)
+                    if field_.init
+                }
+                state.pop("child")
+                self.child = dataclasses.replace(self.child, **state)
 
     def __call__(
         self,
@@ -107,6 +116,17 @@ class StrawberryField:
             evolvable = StrawberryResolver(evolvable)
 
             return dataclasses.replace(self, base_resolver=evolvable)
+
+        elif isinstance(evolvable, StrawberryField):
+            new_type = type(
+                self.__class__.__name__ + "_" + evolvable.__class__.__name__,
+                (self.__class__, evolvable.__class__),
+                {},
+            )
+            state = dataclasses.asdict(self)
+            state.update(dataclasses.asdict(evolvable))
+            new_type = cast(new_type, StrawberryField)
+            return new_type(**state)
 
         else:
             raise TypeError(
@@ -310,12 +330,16 @@ class StrawberryField:
         """
 
         if self.base_resolver:
-            return self.base_resolver(*args, **kwargs)
+            res = self.base_resolver(*args, **kwargs)
 
-        # else use default resolver
-        return info.schema.config.default_resolver(
-            source, self.python_name
-        )  # type: ignore
+        else:
+            res = info.schema.config.default_resolver(
+                source, self.python_name
+            )  # type: ignore
+        if self.child:
+            res = self.child.get_result(res, info, args, kwargs)
+
+        return res
 
     @cached_property
     def is_async(self) -> bool:
@@ -326,17 +350,23 @@ class StrawberryField:
         assert self.type_annotation
         return self.type_annotation.safe_resolve()
 
-    # TODO: add this to arguments (and/or move it to StrawberryType)
-    @property
-    def type_params(self) -> List[TypeVar]:
-        if _type_definition := get_type_definition(self.type):
-            return _type_definition.__parameters__
+    def update_type_annotations(self, annotation: type):
+        self.type_annotation = StrawberryAnnotation(annotation)
 
-        # TODO: Consider making leaf types always StrawberryTypes, maybe a
-        #       StrawberryBaseType or something
-        if isinstance(self.type, StrawberryType):
-            return self.type.type_params
-        return []
+    @property
+    def is_union(self) -> Optional[StrawberryUnion]:
+        type_ = self.type
+        if isinstance(type_, StrawberryUnion):
+            return type_
+        return None
+
+    def validate(self, value):
+        expected_type = self.type
+        if isinstance(expected_type, StrawberryType):
+            return expected_type.validate(value)
+        elif isinstance(value, expected_type):
+            return True
+        return False
 
 
 @overload

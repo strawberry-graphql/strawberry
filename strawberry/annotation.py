@@ -60,6 +60,9 @@ class StrawberryAnnotation:
     ):
         self.annotation = annotation
         self.namespace = namespace
+        if definition := get_type_definition(annotation):
+            if definition := definition.is_generic:
+                self.annotation = self.create_concrete_type(definition).annotation
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, StrawberryAnnotation):
@@ -108,18 +111,19 @@ class StrawberryAnnotation:
         # it is not certain that is is in the namespace yet.
         try:
             return self.resolve()
-        except NameError:
-            assert isinstance(self.annotation, str)
+        except NameError as e:
+            assert isinstance(self.annotation, str), e
             return ForwardRef(self.annotation)
 
     def create_concrete_type(
         self, template: TemplateTypeDefinition
     ) -> "StrawberryAnnotation":
         args = getattr(self.annotation, "__args__", None)
-        assert args
+        assert isinstance(args, tuple)
         return StrawberryAnnotation(template.generate(args))
 
-    def create_enum(self, evaled_type: Any) -> EnumDefinition:
+    @staticmethod
+    def create_enum(evaled_type: Any) -> EnumDefinition:
         return evaled_type._enum_definition
 
     def create_list(self, evaled_type: Any) -> StrawberryList:
@@ -165,10 +169,9 @@ class StrawberryAnnotation:
             return evaled_type
 
         types = evaled_type.__args__
-        union = StrawberryUnion(
+        return StrawberryUnion(
             type_annotations=tuple(StrawberryAnnotation(type_) for type_ in types),
         )
-        return union
 
     @classmethod
     def _is_async_type(cls, annotation: type) -> bool:

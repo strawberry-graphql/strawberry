@@ -1,7 +1,7 @@
 import sys
 from typing import Any, Callable, Iterable, NewType, Optional, TypeVar, Union, overload
 
-from strawberry.custom_scalar import _process_scalar
+from strawberry.custom_scalar import scalar as base_scalar
 
 
 # in python 3.10+ NewType is a class
@@ -100,7 +100,7 @@ def scalar(
         directives.extend(Tag(tag) for tag in tags)
 
     def wrap(cls):
-        return _process_scalar(
+        return base_scalar(
             cls,
             name=name,
             description=description,

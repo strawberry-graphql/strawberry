@@ -1,11 +1,15 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Dict, Union
+from typing import TYPE_CHECKING, Dict, Optional, Union
 
-from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
+from strawberry.custom_scalar import ScalarDefinition
 from strawberry.scalars import is_scalar as is_strawberry_scalar
 from strawberry.type import StrawberryType
-from strawberry.types.types import TypeDefinition
+from strawberry.types.types import (
+    TemplateTypeDefinition,
+    TypeDefinition,
+    get_type_definition,
+)
 
 
 # TypeGuard is only available in typing_extensions => 3.10, we don't want
@@ -24,25 +28,23 @@ def is_input_type(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
     return type_definition.is_input
 
 
-def is_interface_type(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
-    if not is_object_type(type_):
-        return False
-
-    type_definition: TypeDefinition = type_._type_definition  # type: ignore
-    return type_definition.is_interface
+def is_interface_type(type_: Union[StrawberryType, type]) -> Optional[TypeDefinition]:
+    if definition := get_type_definition(type_):
+        if definition.is_interface:
+            return definition
+    return None
 
 
 def is_scalar(
     type_: Union[StrawberryType, type],
-    scalar_registry: Dict[object, Union[ScalarWrapper, ScalarDefinition]],
+    scalar_registry: Dict[object, ScalarDefinition],
 ) -> TypeGuard[type]:
     # isinstance(type_, StrawberryScalar)  # noqa: E800
     return is_strawberry_scalar(type_, scalar_registry)
 
 
-def is_object_type(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
-    # isinstance(type_, StrawberryObjectType)  # noqa: E800
-    return hasattr(type_, "_type_definition")
+def is_object_type(type_: Union[StrawberryType, type]) -> Optional[TypeDefinition]:
+    return get_type_definition(type_)
 
 
 def is_enum(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
@@ -51,12 +53,6 @@ def is_enum(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
 
 
 def is_generic(type_: Union[StrawberryType, type]) -> bool:
-    if hasattr(type_, "_type_definition"):
-
-        type_definition: TypeDefinition = type_._type_definition  # type: ignore
-        return type_definition.is_generic
-
-    if isinstance(type_, StrawberryType):
-        return type_.is_generic
-
+    if definition := get_type_definition(type_):
+        return isinstance(definition, TemplateTypeDefinition)
     return False

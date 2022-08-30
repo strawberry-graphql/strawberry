@@ -10,7 +10,11 @@ from strawberry.enum import EnumDefinition
 from strawberry.lazy_type import LazyType
 from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
-from strawberry.types.types import TypeDefinition
+from strawberry.types.types import (
+    TemplateTypeDefinition,
+    TypeDefinition,
+    get_type_definition,
+)
 from strawberry.union import StrawberryUnion
 from strawberry.utils.str_converters import capitalize_first, to_camel_case
 
@@ -56,7 +60,7 @@ class NameConverter:
     def from_object(self, object_type: TypeDefinition) -> str:
         if object_type.concrete_of:
             return self.from_generic(
-                object_type, list(object_type.type_var_map.values())
+                object_type.concrete_of, list(object_type.type_var_map.values())
             )
 
         return object_type.name
@@ -101,20 +105,29 @@ class NameConverter:
 
     def from_generic(
         self,
-        generic_type: TypeDefinition,
+        generic_type: TemplateTypeDefinition,
         types: List[Union[StrawberryType, type]],
     ) -> str:
-        generic_type_name = generic_type.name
+        implementation = get_type_definition(
+            generic_type.implementations[hash(tuple(types))]
+        )
+        assert implementation
+        if (
+            not implementation.graphql_name
+            or generic_type.graphql_name == generic_type.name
+        ):
+            names: List[str] = []
 
-        names: List[str] = []
+            for type_ in types:
+                name = self.get_from_type(type_)
+                names.append(name)
+            implementation.graphql_name = "".join(names) + generic_type.name
+            return implementation.graphql_name
+        else:
+            return implementation.graphql_name
 
-        for type_ in types:
-            name = self.get_from_type(type_)
-            names.append(name)
-
-        return "".join(names) + generic_type_name
-
-    def get_from_type(self, type_: Union[StrawberryType, type]) -> str:
+    @classmethod
+    def get_from_type(cls, type_: Union[StrawberryType, type]) -> str:
         from strawberry.union import StrawberryUnion
 
         if isinstance(type_, LazyType):
@@ -127,22 +140,19 @@ class NameConverter:
 
             name = type_.graphql_name
         elif isinstance(type_, StrawberryList):
-            name = self.get_from_type(type_.of_type) + "List"
+            name = cls.get_from_type(type_.of_type) + "List"
         elif isinstance(type_, StrawberryOptional):
-            name = self.get_from_type(type_.of_type) + "Optional"
-        elif hasattr(type_, "_scalar_definition"):
-            strawberry_type = type_._scalar_definition  # type: ignore
-
+            name = cls.get_from_type(type_.of_type) + "Optional"
+        elif isinstance(type_, ScalarDefinition):
+            strawberry_type = type_
             name = strawberry_type.name
-        elif hasattr(type_, "_type_definition"):
-            strawberry_type = type_._type_definition  # type: ignore
-
+        elif strawberry_type := get_type_definition(type_):
             if strawberry_type.is_generic:
                 types = type_.__args__  # type: ignore
-                name = self.from_generic(strawberry_type, types)
+                name = cls.from_generic(strawberry_type, types)
             elif strawberry_type.concrete_of:
                 types = list(strawberry_type.type_var_map.values())
-                name = self.from_generic(strawberry_type, types)
+                name = cls.from_generic(strawberry_type, types)
             else:
                 name = strawberry_type.name
         else:

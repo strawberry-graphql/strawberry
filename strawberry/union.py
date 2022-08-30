@@ -1,11 +1,7 @@
-import itertools
-from itertools import chain
 from typing import (
     TYPE_CHECKING,
     Any,
     Iterable,
-    List,
-    Mapping,
     NoReturn,
     Optional,
     Tuple,
@@ -35,7 +31,6 @@ from strawberry.type import StrawberryOptional, StrawberryType
 
 if TYPE_CHECKING:
     from strawberry.schema.types.concrete_type import TypeMap
-    from strawberry.types.types import TypeDefinition
 
 
 class StrawberryUnion(StrawberryType):
@@ -85,51 +80,8 @@ class StrawberryUnion(StrawberryType):
         )
 
     @property
-    def type_params(self) -> List[TypeVar]:
-        def _get_type_params(type_: StrawberryType):
-            if hasattr(type_, "_type_definition"):
-                parameters = getattr(type_, "__parameters__", None)
-
-                return list(parameters) if parameters else []
-
-            return type_.type_params
-
-        # TODO: check if order is important:
-        # https://github.com/strawberry-graphql/strawberry/issues/445
-        return list(
-            set(itertools.chain(*(_get_type_params(type_) for type_ in self.types)))
-        )
-
-    @property
     def is_generic(self) -> bool:
-        return len(self.type_params) > 0
-
-    def copy_with(
-        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
-    ) -> StrawberryType:
-        if not self.is_generic:
-            return self
-
-        new_types = []
-        for type_ in self.types:
-            new_type: Union[StrawberryType, type]
-
-            if hasattr(type_, "_type_definition"):
-                type_definition: TypeDefinition = type_._type_definition  # type: ignore
-
-                if type_definition.is_generic:
-                    new_type = type_definition.copy_with(type_var_map)
-            if isinstance(type_, StrawberryType) and type_.is_generic:
-                new_type = type_.copy_with(type_var_map)
-            else:
-                new_type = type_
-
-            new_types.append(new_type)
-
-        return StrawberryUnion(
-            type_annotations=tuple(map(StrawberryAnnotation, new_types)),
-            description=self.description,
-        )
+        return False
 
     def __call__(self, *_args, **_kwargs) -> NoReturn:
         """Do not use.
@@ -145,7 +97,7 @@ class StrawberryUnion(StrawberryType):
         ) -> str:
             assert isinstance(type_, GraphQLUnionType)
 
-            from strawberry.types.types import TypeDefinition
+            from strawberry.types.types import get_type_definition
 
             # If the type given is not an Object type, try resolving using `is_type_of`
             # defined on the union's inner types
@@ -159,25 +111,17 @@ class StrawberryUnion(StrawberryType):
                 # Couldn't resolve using `is_type_of`
                 raise WrongReturnTypeForUnion(info.field_name, str(type(root)))
 
-            return_type: Optional[GraphQLType]
+            return_type: Optional[GraphQLType] = None
 
-            # Iterate over all of our known types and find the first concrete
-            # type that implements the type. We prioritise checking types named in the
-            # Union in case a nested generic object matches against more than one type.
-            concrete_types_for_union = (type_map[x.name] for x in type_.types)
-
-            # TODO: do we still need to iterate over all types in `type_map`?
-            for possible_concrete_type in chain(
-                concrete_types_for_union, type_map.values()
-            ):
-                possible_type = possible_concrete_type.definition
-                if not isinstance(possible_type, TypeDefinition):
-                    continue
-                if possible_type.is_implemented_by(root):
-                    return_type = possible_concrete_type.implementation
-                    break
-            else:
-                return_type = None
+            if root_definition := get_type_definition(root):
+                if root_definition := root_definition.is_generic:
+                    for _, implementation in root_definition.implementations.items():
+                        if implementation := get_type_definition(implementation):
+                            if implementation.validate(root):
+                                return_type = type_map[
+                                    implementation.graphql_name
+                                ].implementation
+                                break
 
             # Make sure the found type is expected by the Union
             if return_type is None or return_type not in type_.types:
@@ -194,6 +138,13 @@ class StrawberryUnion(StrawberryType):
                 return return_type.__name__  # type: ignore
 
         return _resolve_union_type
+
+    def validate(self, value):
+        # in unions only one type might be valid.
+        for type_ in self.types:
+            if type_.validate(value):
+                return True
+        return False
 
 
 Types = TypeVar("Types", bound=Type)
