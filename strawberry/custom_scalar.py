@@ -80,6 +80,7 @@ class ScalarDefinition(StrawberryType):
                 return dataclasses.replace(
                     self, name=to_camel_case(class_or_value.__name__)
                 )
+            return self
         else:
             # if someone tries to `initialize` the scalar just return what he gave
             # parse_value will be called else where.
