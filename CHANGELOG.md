@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.127.3 - 2022-08-30
+--------------------
+
+This release fixes a couple of small styling issues with
+the GraphiQL explorer
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2143](https://github.com/strawberry-graphql/strawberry/pull/2143/)
+
+
 0.127.2 - 2022-08-30
 --------------------
 
