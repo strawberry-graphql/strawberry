@@ -11,6 +11,8 @@ def get_graphiql_html(
     template = path.read_text(encoding="utf-8")
 
     if replace_variables:
-        template = template.replace("{{ SUBSCRIPTION_ENABLED }}", json.dumps(subscription_enabled))
+        template = template.replace(
+            "{{ SUBSCRIPTION_ENABLED }}", json.dumps(subscription_enabled)
+        )
 
     return template
