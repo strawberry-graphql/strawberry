@@ -30,6 +30,7 @@ from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 
 from ..printer import print_schema
+from . import compat
 from .base import BaseSchema
 from .config import StrawberryConfig
 from .execute import execute, execute_sync
@@ -89,24 +90,29 @@ class Schema(BaseSchema):
             else None
         )
 
-        graphql_directives = tuple(
+        graphql_directives = [
             self.schema_converter.from_directive(directive) for directive in directives
-        )
+        ]
 
         graphql_types = []
         for type_ in types:
-            graphql_type = self.schema_converter.from_maybe_optional(type_)
-            if isinstance(graphql_type, GraphQLNonNull):
-                graphql_type = graphql_type.of_type
-            if not isinstance(graphql_type, GraphQLNamedType):
-                raise TypeError(f"{graphql_type} is not a named GraphQL Type")
-            graphql_types.append(graphql_type)
+            if compat.is_schema_directive(type_):
+                graphql_directives.append(
+                    self.schema_converter.from_schema_directive(type_)
+                )
+            else:
+                graphql_type = self.schema_converter.from_maybe_optional(type_)
+                if isinstance(graphql_type, GraphQLNonNull):
+                    graphql_type = graphql_type.of_type
+                if not isinstance(graphql_type, GraphQLNamedType):
+                    raise TypeError(f"{graphql_type} is not a named GraphQL Type")
+                graphql_types.append(graphql_type)
 
         self._schema = GraphQLSchema(
             query=query_type,
             mutation=mutation_type,
             subscription=subscription_type if subscription else None,
-            directives=specified_directives + graphql_directives,
+            directives=specified_directives + tuple(graphql_directives),
             types=graphql_types,
             extensions={
                 GraphQLCoreConverter.DEFINITION_BACKREF: self,
