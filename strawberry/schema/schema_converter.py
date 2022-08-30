@@ -34,7 +34,6 @@ from strawberry.directive import StrawberryDirective
 from strawberry.enum import EnumDefinition, EnumValue
 from strawberry.exceptions import (
     InvalidTypeInputForUnion,
-    MissingTypesForGenericError,
     ScalarAlreadyRegisteredError,
     UnresolvedFieldTypeError,
 )
@@ -525,8 +524,6 @@ class GraphQLCoreConverter:
             return GraphQLNonNull(self.from_type(type_))
 
     def from_type(self, type_: Union[StrawberryType, type]) -> GraphQLNullableType:
-        if compat.is_generic(type_):
-            raise MissingTypesForGenericError(type_)
         if isinstance(type_, EnumDefinition):  # TODO: Replace with StrawberryEnum
             return self.from_enum(type_)
         elif compat.is_input_type(type_):  # TODO: Replace with StrawberryInputObject

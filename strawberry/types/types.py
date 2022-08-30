@@ -282,7 +282,7 @@ class TypeDefinition(StrawberryType):
         return None
 
     # TODO: replace with StrawberryObject
-    def validate(self, instance: type):
+    def validate(self, instance: type) -> bool:
         for field in dataclasses.fields(instance):
             this_field = self.get_field_by_name(field.name)
             value = getattr(instance, field.name)
@@ -316,7 +316,7 @@ class TemplateTypeDefinition(TypeDefinition):
         and leave generation to strawberry.
         :param passed_types: tuple of __args__ from the generic alias.
         """
-        from strawberry.field import StrawberryField
+        from strawberry.field import StrawberryField, resolveable
 
         signature = hash(passed_types)
         if cached := self.implementations.get(signature, None):
@@ -338,7 +338,10 @@ class TemplateTypeDefinition(TypeDefinition):
                 field = field(new_type)
                 field_type = field.type
             elif field_type := new_type.__annotations__.get(name, None):
-                field = StrawberryField(origin=new_type, python_name=name)
+                resolver = resolveable(getattr(new_type, name, None))
+                field = StrawberryField(
+                    origin=new_type, python_name=name, base_resolver=resolver
+                )
             else:
                 continue
 
@@ -390,6 +393,9 @@ def _resolve_field_type(
         if type_var := getattr(field_type, "type_var", None):
             return type_var_map[type_var]
         elif of_type := getattr(field_type, "of_type", None):
+            if type_var := getattr(of_type, "type_var", None):
+                field_type.of_type = type_var_map[type_var]
+                return field_type
             return _resolve_field_type(
                 field.type_annotation.annotation, of_type, type_var_map
             )

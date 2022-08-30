@@ -5,11 +5,7 @@ from typing import TYPE_CHECKING, Dict, Optional, Union
 from strawberry.custom_scalar import ScalarDefinition
 from strawberry.scalars import is_scalar as is_strawberry_scalar
 from strawberry.type import StrawberryType
-from strawberry.types.types import (
-    TemplateTypeDefinition,
-    TypeDefinition,
-    get_type_definition,
-)
+from strawberry.types.types import TypeDefinition, get_type_definition
 
 
 # TypeGuard is only available in typing_extensions => 3.10, we don't want
@@ -50,9 +46,3 @@ def is_object_type(type_: Union[StrawberryType, type]) -> Optional[TypeDefinitio
 def is_enum(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
     # isinstance(type_, StrawberryEnumType)  # noqa: E800
     return hasattr(type_, "_enum_definition")
-
-
-def is_generic(type_: Union[StrawberryType, type]) -> bool:
-    if definition := get_type_definition(type_):
-        return isinstance(definition, TemplateTypeDefinition)
-    return False

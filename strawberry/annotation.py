@@ -12,6 +12,7 @@ from typing import (  # type: ignore[attr-defined]
     _eval_type,
 )
 
+from strawberry.exceptions import MissingTypesForGenericError
 from strawberry.private import is_private
 
 
@@ -119,6 +120,8 @@ class StrawberryAnnotation:
         self, template: TemplateTypeDefinition
     ) -> "StrawberryAnnotation":
         args = getattr(self.annotation, "__args__", None)
+        if not args:
+            raise MissingTypesForGenericError(self.annotation)
         assert isinstance(args, tuple)
         return StrawberryAnnotation(template.generate(args))
 
