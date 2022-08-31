@@ -1,4 +1,5 @@
 import datetime
+import timeit
 from typing import Generic, List, Optional, TypeVar, Union
 
 import pytest
@@ -44,6 +45,37 @@ def test_basic_generic():
     field = generated_def.fields[0]
     assert field.python_name == "node_field"
     assert field.type is int
+
+
+def test_caches_generated():
+    @strawberry.type
+    class Edge(Generic[T]):
+        node_field: T
+
+    definition = get_template_definitions(Edge)
+    args = (int,)
+    signature = hash(args)
+    generated = definition.generate(args)
+    assert definition.implementations[signature] is generated
+
+
+def test_wont_generate_twice():
+    @strawberry.type
+    class Edge(Generic[T]):
+        node_field: T
+
+    definition = get_template_definitions(Edge)
+    args = (int,)
+    signature = hash(args)
+
+    def generator():
+        return definition.generate(args)
+
+    first = timeit.timeit(generator)
+    second = timeit.timeit(generator)
+    assert second < first
+    generated = definition.generate(args)
+    assert definition.implementations[signature] is generated
 
 
 def test_generics_nested():
