@@ -28,7 +28,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - run: pipx install poetry
-      - uses: actions/setup-python@v3.1.2
+      - uses: actions/setup-python@v4
         id: setup-python
         with:
           python-version: ${{ matrix.python-version }}
@@ -58,7 +58,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - run: pipx install poetry
-      - uses: actions/setup-python@v3.1.2
+      - uses: actions/setup-python@v4
         id: setup-python
         with:
           python-version: "3.10"
@@ -93,7 +93,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - run: pipx install poetry
-      - uses: actions/setup-python@v3.1.2
+      - uses: actions/setup-python@v4
         id: setup-python
         with:
           python-version: "3.10"
@@ -128,7 +128,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - run: pipx install poetry
-      - uses: actions/setup-python@v3.1.2
+      - uses: actions/setup-python@v4
         id: setup-python
         with:
           python-version: "3.10"
