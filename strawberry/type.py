@@ -14,6 +14,22 @@ class StrawberryType(ABC):
     def validate(self, value):
         raise NotImplementedError()
 
+    @staticmethod
+    def base_validator(expected_type, value) -> bool:
+        from strawberry.types.types import get_type_definition
+
+        # FIXME: This is an  ugly fix for strawberry.type not being a StrawberryObject
+        if isinstance(expected_type, StrawberryType):
+            return expected_type.validate(value)
+        elif definition := get_type_definition(expected_type):
+            return definition.validate(value)
+        elif isinstance(value, expected_type):
+            return True
+        return False
+
+    def evaluate_generics(self):
+        raise NotImplementedError()
+
     def __eq__(self, other: object) -> bool:
         from strawberry.annotation import StrawberryAnnotation
 

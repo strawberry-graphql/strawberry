@@ -186,7 +186,6 @@ class StrawberryField(StrawberryType):
         return field_
 
     # TODO: replace type with StrawberryObject
-
     def _evaluate_from_base_resolver(self) -> None:
         """
         called by __post_init__ if there is a base resolver and an origin.
@@ -362,11 +361,7 @@ class StrawberryField(StrawberryType):
 
     def validate(self, value):
         expected_type = self.type
-        if isinstance(expected_type, StrawberryType):
-            return expected_type.validate(value)
-        elif isinstance(value, expected_type):
-            return True
-        return False
+        return super().base_validator(expected_type, value)
 
 
 @overload

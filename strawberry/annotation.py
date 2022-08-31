@@ -37,12 +37,11 @@ from strawberry.types.types import (
     get_type_definition,
 )
 from strawberry.unset import UNSET
-from strawberry.utils.typing import is_generic, is_type_var
+from strawberry.utils.typing import is_type_var
 
 
 if TYPE_CHECKING:
     from strawberry.union import StrawberryUnion
-
 
 ASYNC_TYPES = (
     abc.AsyncGenerator,
@@ -57,7 +56,10 @@ ASYNC_TYPES = (
 
 class StrawberryAnnotation:
     def __init__(
-        self, annotation: Union[object, str], *, namespace: Optional[Dict] = None
+        self,
+        annotation: Union[object, str, StrawberryType],
+        *,
+        namespace: Optional[Dict] = None,
     ):
         self.annotation = annotation
         self.namespace = namespace
@@ -188,13 +190,6 @@ class StrawberryAnnotation:
         if not isinstance(annotation, type):
             return False
         return issubclass(annotation, Enum)
-
-    @classmethod
-    def _is_generic(cls, annotation: Any) -> bool:
-        if hasattr(annotation, "__origin__"):
-            return is_generic(annotation.__origin__)
-
-        return False
 
     @classmethod
     def _is_lazy_type(cls, annotation: Any) -> bool:

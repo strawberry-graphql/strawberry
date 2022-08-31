@@ -1,5 +1,5 @@
 import dataclasses
-from enum import EnumMeta
+from enum import Enum, EnumMeta
 from typing import (
     Any,
     Callable,
@@ -47,9 +47,9 @@ class EnumDefinition(StrawberryType):
     def is_generic(self) -> bool:
         return False
 
-    def validate(self, value):
+    def validate(self, value: Enum):
         for possibility in self.values:
-            if value == possibility:
+            if value.value == possibility.value:
                 return True
         return False
 

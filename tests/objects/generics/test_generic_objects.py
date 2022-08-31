@@ -71,8 +71,8 @@ def test_wont_generate_twice():
     def generator():
         return definition.generate(args)
 
-    first = timeit.timeit(generator)
-    second = timeit.timeit(generator)
+    first = timeit.timeit(generator, number=50)
+    second = timeit.timeit(generator, number=50)
     assert second < first
     generated = definition.generate(args)
     assert definition.implementations[signature] is generated
