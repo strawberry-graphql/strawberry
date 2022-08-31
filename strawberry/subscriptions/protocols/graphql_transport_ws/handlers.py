@@ -219,9 +219,9 @@ class BaseGraphQLTransportWSHandler(ABC):
             # cleanup in case of something really unexpected
             # wait for generator to be closed to ensure that any existing
             # 'finally' statement is called
-            generator = self.subscriptions[operation_id]
+            result_source = self.subscriptions[operation_id]
             with suppress(RuntimeError):
-                await generator.aclose()
+                await result_source.aclose()
             del self.subscriptions[operation_id]
             del self.tasks[operation_id]
             raise
@@ -280,14 +280,14 @@ class BaseGraphQLTransportWSHandler(ABC):
     async def cleanup_operation(self, operation_id: str) -> None:
         if operation_id not in self.subscriptions:
             return
-        generator = self.subscriptions.pop(operation_id)
+        result_source = self.subscriptions.pop(operation_id)
         task = self.tasks.pop(operation_id)
         task.cancel()
         with suppress(BaseException):
             await task
         # since python 3.8, generators cannot be reliably closed
         with suppress(RuntimeError):
-            await generator.aclose()
+            await result_source.aclose()
 
     async def reap_completed_tasks(self) -> None:
         """
