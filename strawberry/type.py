@@ -27,9 +27,6 @@ class StrawberryType(ABC):
             return True
         return False
 
-    def evaluate_generics(self):
-        raise NotImplementedError()
-
     def __eq__(self, other: object) -> bool:
         from strawberry.annotation import StrawberryAnnotation
 
