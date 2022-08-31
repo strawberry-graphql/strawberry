@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.127.4 - 2022-08-31
+--------------------
+
+This release fixes a bug in the subscription clean up when subscribing using the
+graphql-transport-ws protocol, which could occasionally cause a 'finally'
+statement within the task to not get run, leading to leaked resources.
+
+Contributed by [rjwills28](https://github.com/rjwills28) via [PR #2141](https://github.com/strawberry-graphql/strawberry/pull/2141/)
+
+
 0.127.3 - 2022-08-30
 --------------------
 
