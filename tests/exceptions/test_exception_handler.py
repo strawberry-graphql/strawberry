@@ -69,3 +69,22 @@ def test_exception_handler_uses_original_when_disabled_via_env_var(mocker):
     assert original_exception_mock.call_args == mocker.call(
         MissingFieldAnnotationError, exception, None
     )
+
+
+def test_exception_handler_uses_original_when_libcst_is_not_installed(mocker):
+    original_exception_mock = mocker.patch(
+        "strawberry.exceptions.handler.original_exception_hook", autospec=True
+    )
+
+    mocker.patch.dict("sys.modules", {"libcst": None})
+
+    class Query:
+        abc: int
+
+    exception = MissingFieldAnnotationError("abc", Query)
+
+    strawberry_exception_handler(MissingFieldAnnotationError, exception, None)
+
+    assert original_exception_mock.call_args == mocker.call(
+        MissingFieldAnnotationError, exception, None
+    )

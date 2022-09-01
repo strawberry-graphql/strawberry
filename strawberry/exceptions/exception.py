@@ -86,6 +86,9 @@ class StrawberryException(ABC, Exception):
         from rich.console import Group
         from rich.panel import Panel
 
+        if self.exception_source is None:
+            return self.rich_message
+
         content = (
             self.__rich_header__,
             "",

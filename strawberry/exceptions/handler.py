@@ -30,6 +30,9 @@ def strawberry_exception_handler(
             and _should_use_rich_exceptions()
         ):
             try:
+                # we check if libcst is available, since we use to pretty
+                # print the errors
+                import libcst  # noqa: F401
                 import rich
             except ImportError:
                 pass
