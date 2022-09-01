@@ -1,16 +1,6 @@
 import dataclasses
 from enum import Enum, EnumMeta
-from typing import (
-    Any,
-    Callable,
-    Iterable,
-    List,
-    Mapping,
-    Optional,
-    TypeVar,
-    Union,
-    overload,
-)
+from typing import Any, Callable, Iterable, List, Optional, TypeVar, Union, overload
 
 from strawberry.type import StrawberryType
 
@@ -37,11 +27,6 @@ class EnumDefinition(StrawberryType):
     def __hash__(self) -> int:
         # TODO: Is this enough for unique-ness?
         return hash(self.name)
-
-    def copy_with(
-        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
-    ) -> Union[StrawberryType, type]:
-        return super().copy_with(type_var_map)
 
     @property
     def is_generic(self) -> bool:

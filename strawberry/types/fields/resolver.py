@@ -1,6 +1,5 @@
 from __future__ import annotations as _
 
-import builtins
 import inspect
 import sys
 import warnings
@@ -12,7 +11,6 @@ from typing import (  # type: ignore[attr-defined]
     ForwardRef,
     Generic,
     List,
-    Mapping,
     NamedTuple,
     Optional,
     Tuple,
@@ -298,25 +296,6 @@ class StrawberryResolver(Generic[T]):
     def is_async(self) -> bool:
         return iscoroutinefunction(self._unbound_wrapped_func) or isasyncgenfunction(
             self._unbound_wrapped_func
-        )
-
-    def copy_with(
-        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, builtins.type]]
-    ) -> StrawberryResolver:
-        type_override = None
-
-        if self.type:
-            if isinstance(self.type, StrawberryType):
-                type_override = self.type.copy_with(type_var_map)
-            else:
-                type_override = self.type._type_definition.copy_with(  # type: ignore
-                    type_var_map,
-                )
-
-        return type(self)(
-            func=self.wrapped_func,
-            description=self._description,
-            type_override=type_override,
         )
 
     @cached_property
