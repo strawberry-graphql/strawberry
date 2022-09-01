@@ -55,74 +55,7 @@ def _get_interfaces(cls: Type) -> List[TypeDefinition]:
     return interfaces
 
 
-def _get_fields(cls: Type) -> List["StrawberryField"]:
-    """Get all the strawberry fields off a strawberry.type cls
-
-    This function returns a list of StrawberryFields (one for each field item), while
-    also paying attention the name and typing of the field.
-
-    StrawberryFields can be defined on a strawberry.type class as either a dataclass-
-    style field or using strawberry.field as a decorator.
-
-    >>> import strawberry
-    >>> @strawberry.type
-    ... class Query:
-    ...     type_1a: int = 5
-    ...     type_1b: int = strawberry.field(...)
-    ...     type_1c: int = strawberry.field(resolver=...)
-    ...
-    ...     @strawberry.field
-    ...     def type_2(self) -> int:
-    ...         ...
-
-    Type #1:
-        A pure dataclass-style field. Will not have a StrawberryField; one will need to
-        be created in this function. Type annotation is required.
-
-    Type #2:
-        A field defined using @strawberry.field as a decorator around the resolver. The
-        resolver must be type-annotated.
-
-    The StrawberryField.python_name value will be assigned to the field's name on the
-    class if one is not set by either using an explicit strawberry.field(name=...) or by
-    passing a named function (i.e. not an anonymous lambda) to strawberry.field
-    (typically as a decorator).
-    """
-    # Deferred import to avoid import cycles
-    from strawberry.field import StrawberryField
-
-    fields: Dict[str, StrawberryField] = {}
-
-    # TODO: What is this?
-    # Find the class that each field was originally defined in, so we can use
-    # that scope later when resolving the type, as it may have different names
-    # available to it.
-    origins: Dict[str, type] = {field_name: cls for field_name in cls.__annotations__}
-
-    for base in cls.__mro__:
-        if _type_definition := get_type_definition(base):
-            for field in _type_definition.fields:
-                if field.python_name in base.__annotations__:
-                    origins.setdefault(field.python_name, base)
-
-    return list(fields.values())
-
-
-def get_type_definition(
-    type_: Any,
-) -> Optional[Union[TypeDefinition, TemplateTypeDefinition]]:
-    origin = type_
-    # generics store their class in __origin__
-    if origin_ := getattr(type_, "__origin__", False):
-        origin = origin_
-    res = getattr(origin, "_type_definition", None)
-    if isinstance(res, TypeDefinition):
-        return res
-    else:
-        return None
-
-
-def _eval_fields(origin) -> List[StrawberryField]:
+def _get_fields(origin) -> List[StrawberryField]:
     from strawberry.field import StrawberryField
 
     strawberry_fields: Dict[str, StrawberryField] = {}
@@ -183,6 +116,20 @@ def _eval_fields(origin) -> List[StrawberryField]:
             strawberry_fields[_strawberry_field.python_name] = _strawberry_field
 
     return list(strawberry_fields.values())
+
+
+def get_type_definition(
+    type_: Any,
+) -> Optional[Union[TypeDefinition, TemplateTypeDefinition]]:
+    origin = type_
+    # generics store their class in __origin__
+    if origin_ := getattr(type_, "__origin__", False):
+        origin = origin_
+    res = getattr(origin, "_type_definition", None)
+    if isinstance(res, TypeDefinition):
+        return res
+    else:
+        return None
 
 
 class StrawberryMeta(type):
@@ -246,7 +193,7 @@ class TypeDefinition(StrawberryType):
         # without an origin and a python name.
 
         name = name or to_camel_case(origin.__name__)
-        fetched_fields = _eval_fields(origin)
+        fetched_fields = _get_fields(origin)
 
         # find interfaces
         interfaces = _get_interfaces(origin)
@@ -372,7 +319,7 @@ class TemplateTypeDefinition(TypeDefinition):
         new_class_annotations = {}
         new_fields = {}
 
-        # fields should already be evaluated by _eval_fields() above.
+        # fields should already be evaluated by _get_fields() above.
         for field in self.fields:
             # find the type var or generate a new type.
             field_type = _resolve_field_type(field.type, field, type_var_map)
