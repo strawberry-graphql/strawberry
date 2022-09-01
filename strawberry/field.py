@@ -463,7 +463,7 @@ def field(
         return field_
 
     # called like @strawberry.field(description="ABC") or not as decorator
-    # further on the decorator would call StrawberryLazyField.__call__(decorated)
+    # further on the decorator would call StrawberryField.__call__(decorated)
     else:
         return field_
 
