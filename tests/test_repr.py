@@ -12,10 +12,8 @@ def test_repr_type():
         f: float
         id: strawberry.ID
 
-    instance = MyType("a", 1, True, 3.2, "123")
-    instance.__repr__()
     assert (
-        repr(instance)
+        repr(MyType("a", 1, True, 3.2, "123"))
         == "test_repr_type.<locals>.MyType(s='a', i=1, b=True, f=3.2, id='123')"
     )
 

@@ -106,8 +106,7 @@ class NameConverter:
         """
         generated types needed to be renamed, to avoid naming conflicts.
         """
-        template = generic_type.concrete_of
-        assert template
+        assert generic_type.concrete_of
         if (
             not generic_type.graphql_name
             or generic_type.graphql_name == generic_type.name
