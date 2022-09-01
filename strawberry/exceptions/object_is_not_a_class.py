@@ -14,8 +14,7 @@ class ObjectIsNotClassError(StrawberryException):
 
     def __init__(self, obj: object, method_type: MethodType):
         self.obj = obj
-
-        self.function = obj  # type: ignore
+        self.function = obj
 
         # TODO: assert obj is a function for now and skip the error if it is
         # something else
