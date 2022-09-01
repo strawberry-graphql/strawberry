@@ -12,6 +12,10 @@ if TYPE_CHECKING:
     from .syntax import Syntax
 
 
+class UnableToFindExceptionSource(Exception):
+    """Internal exception raised when we can't find the exception source."""
+
+
 class StrawberryException(Exception, ABC):
     message: str
     rich_message: str
@@ -87,7 +91,7 @@ class StrawberryException(Exception, ABC):
         from rich.panel import Panel
 
         if self.exception_source is None:
-            return self.rich_message
+            raise UnableToFindExceptionSource() from self
 
         content = (
             self.__rich_header__,

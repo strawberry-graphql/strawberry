@@ -3,7 +3,7 @@ import sys
 from types import TracebackType
 from typing import Callable, Optional, Type
 
-from .exception import StrawberryException
+from .exception import StrawberryException, UnableToFindExceptionSource
 
 
 original_exception_hook = sys.excepthook
@@ -30,9 +30,6 @@ def strawberry_exception_handler(
             and _should_use_rich_exceptions()
         ):
             try:
-                # we check if libcst is available, since we use to pretty
-                # print the errors
-                import libcst  # noqa: F401
                 import rich
             except ImportError:
                 pass
@@ -43,7 +40,13 @@ def strawberry_exception_handler(
                     exception: BaseException,
                     traceback: Optional[TracebackType],
                 ):
-                    rich.print(exception)
+                    try:
+                        rich.print(exception)
+
+                    # we check if weren't able to find the exception source
+                    # in that case we fallback to the original exception handler
+                    except UnableToFindExceptionSource:
+                        original_exception_hook(exception_type, exception, traceback)
 
                 return _handler
 

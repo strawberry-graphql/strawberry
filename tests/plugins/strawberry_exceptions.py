@@ -12,8 +12,9 @@ import rich
 import rich.console
 from _pytest.nodes import Item
 from pluggy._result import _Result
+from rich.traceback import Traceback
 
-from strawberry.exceptions import StrawberryException
+from strawberry.exceptions import StrawberryException, UnableToFindExceptionSource
 
 
 WORKSPACE_FOLDER = Path(__file__).parents[2]
@@ -105,7 +106,18 @@ class StrawberryExceptionsPlugin:
         console = rich.console.Console(record=True, width=120)
 
         with suppress_output(self.verbosity_level):
-            console.print(raised_exception)
+            try:
+                console.print(raised_exception)
+            except UnableToFindExceptionSource:
+                traceback = Traceback(
+                    Traceback.extract(
+                        raised_exception.__class__,
+                        raised_exception,
+                        raised_exception.__traceback__,
+                    ),
+                    max_frames=10,
+                )
+                console.print(traceback)
 
             print(f"\n Exception class: {raised_exception.__class__.__name__}\n")
 

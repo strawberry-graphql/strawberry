@@ -6,7 +6,7 @@ from graphql import GraphQLInputObjectType, GraphQLObjectType
 
 from strawberry.type import StrawberryType
 
-from .exception import StrawberryException
+from .exception import StrawberryException, UnableToFindExceptionSource
 from .handler import setup_exception_handler
 from .invalid_argument_type import InvalidArgumentTypeError
 from .invalid_union_type import InvalidTypeForUnionMergeError, InvalidUnionTypeError
@@ -156,6 +156,7 @@ class InvalidCustomContext(Exception):
 
 __all__ = [
     "StrawberryException",
+    "UnableToFindExceptionSource",
     "MissingArgumentsAnnotationsError",
     "MissingReturnAnnotationError",
     "WrongReturnTypeForUnion",
