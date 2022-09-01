@@ -42,7 +42,7 @@ class TypeB:
         ([TypeA], "TypeAExample"),
         ([CustomInt], "CustomIntExample"),
         ([TypeB], "TypeBExample"),
-        ([LazyType["TypeB", "test_names"]], "TypeBExample"),  # type: ignore
+        ([LazyType["TypeB", "test_names"]], "TypeBExample"),
     ],
 )
 def test_name_generation(types, expected_name):
