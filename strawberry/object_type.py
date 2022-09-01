@@ -1,5 +1,6 @@
 import dataclasses
 import inspect
+import types
 from typing import Callable, Optional, Sequence, Type, TypeVar, overload
 
 from .exceptions import (
@@ -8,7 +9,7 @@ from .exceptions import (
     ObjectIsNotClassError,
 )
 from .field import StrawberryField, field
-from .types.types import TypeDefinition
+from .types.types import StrawberryMeta, TypeDefinition
 from .utils.typing import __dataclass_transform__
 
 
@@ -132,8 +133,19 @@ def type(
                 exc = ObjectIsNotClassError.type
             raise exc(cls)
 
-        cls._type_definition = TypeDefinition.from_class(
-            cls,
+        # create StrawberryObject
+        def fill_ns(ns):
+            ns.update(cls.__dict__)
+
+        new_type = types.new_class(
+            name=cls.__name__,
+            bases=cls.__bases__,
+            kwds={"metaclass": StrawberryMeta},
+            exec_body=fill_ns,
+        )
+
+        new_type._type_definition = TypeDefinition.from_class(
+            new_type,
             name=name,
             is_input=is_input,
             is_interface=is_interface,
@@ -142,7 +154,7 @@ def type(
             extend=extend,
         )
 
-        return cls
+        return new_type
 
     if cls is None:
         return wrap

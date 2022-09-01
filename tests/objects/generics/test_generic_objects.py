@@ -39,7 +39,7 @@ def test_basic_generic():
     definition = get_template_definitions(Edge)
     assert definition.is_generic
     assert definition.parameters == (T,)
-    generated = definition.generate((int,))
+    generated = Edge[int]
     generated_def = get_type_definition(generated)
     assert not generated_def.is_generic
     field = generated_def.fields[0]
@@ -55,6 +55,7 @@ def test_caches_generated():
     definition = get_template_definitions(Edge)
     args = (int,)
     signature = hash(args)
+    # equivalent to Edge[int] handled by StrawberryMeta.
     generated = definition.generate(args)
     assert definition.implementations[signature] is generated
 
@@ -90,7 +91,7 @@ def test_generics_nested():
     definition = get_template_definitions(Connection)
     assert definition.parameters == (T,)
 
-    generated = definition.generate((int,))
+    generated = Connection[int]
     generated_def = get_type_definition(generated)
     assert not generated_def.is_generic
     field = generated_def.fields[0]
@@ -130,9 +131,7 @@ def test_generics_nested_in_list():
     class Connection(Generic[T]):
         edges: List[Edge[T]]
 
-    definition = get_template_definitions(Connection)
-
-    generated = definition.generate((str,))
+    generated = Connection[str]
     generated_def = get_type_definition(generated)
     assert not generated_def.is_generic
     field = generated_def.fields[0]
@@ -182,8 +181,7 @@ def test_generic_with_optional():
     class Edge(Generic[T]):
         node: Optional[T]
 
-    template = get_template_definitions(Edge)
-    definition = get_type_definition(template.generate((float,)))
+    definition = get_type_definition(Edge[float])
     [field] = definition.fields
     assert field.python_name == "node"
     assert isinstance(field.type, StrawberryOptional)
@@ -195,8 +193,7 @@ def test_generic_with_list():
     class Connection(Generic[T]):
         edges: List[T]
 
-    template = get_template_definitions(Connection)
-    definition = get_type_definition(template.generate((str,)))
+    definition = get_type_definition(Connection[str])
     [field] = definition.fields
     assert field.python_name == "edges"
     assert isinstance(field.type, StrawberryList)
@@ -208,8 +205,7 @@ def test_generic_with_list_of_optionals():
     class Connection(Generic[T]):
         edges: List[Optional[T]]
 
-    template = get_template_definitions(Connection)
-    definition = get_type_definition(template.generate((str,)))
+    definition = get_type_definition(Connection[str])
     [field] = definition.fields
     assert field.python_name == "edges"
     assert isinstance(field.type, StrawberryList)
@@ -230,8 +226,7 @@ def test_generics_with_unions():
     class Node:
         name: str
 
-    template = get_template_definitions(Edge)
-    definition = get_type_definition(template.generate((Node,)))
+    definition = get_type_definition(Edge[Node])
     [field] = definition.fields
     assert field.python_name == "node"
     assert isinstance(field.type, StrawberryUnion)
@@ -548,8 +543,7 @@ def test_federation():
         id: strawberry.ID
         node_field: T
 
-    template = get_template_definitions(Edge)
-    definition = get_type_definition(template.generate((str,)))
+    definition = get_type_definition(Edge[str])
 
     assert not definition.is_generic
     assert definition.directives == Edge._type_definition.directives

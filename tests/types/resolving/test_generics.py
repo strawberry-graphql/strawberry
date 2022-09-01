@@ -76,8 +76,6 @@ def test_generic_unions():
 
     assert isinstance(resolved, StrawberryUnion)
     assert resolved.types == (S, T)
-    assert resolved.is_generic
-
     assert resolved == Union[S, T]
 
 

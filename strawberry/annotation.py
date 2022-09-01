@@ -12,7 +12,6 @@ from typing import (  # type: ignore[attr-defined]
     _eval_type,
 )
 
-from strawberry.exceptions import MissingTypesForGenericError
 from strawberry.private import is_private
 
 
@@ -31,11 +30,7 @@ from strawberry.type import (
     StrawberryType,
     StrawberryTypeVar,
 )
-from strawberry.types.types import (
-    TemplateTypeDefinition,
-    TypeDefinition,
-    get_type_definition,
-)
+from strawberry.types.types import TypeDefinition, get_type_definition
 from strawberry.unset import UNSET
 from strawberry.utils.typing import is_type_var
 
@@ -63,9 +58,6 @@ class StrawberryAnnotation:
     ):
         self.annotation = annotation
         self.namespace = namespace
-        if definition := get_type_definition(annotation):
-            if definition := definition.is_generic:
-                self.annotation = self.create_concrete_type(definition).annotation
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, StrawberryAnnotation):
@@ -117,15 +109,6 @@ class StrawberryAnnotation:
         except NameError as e:
             assert isinstance(self.annotation, str), e
             return ForwardRef(self.annotation)
-
-    def create_concrete_type(
-        self, template: TemplateTypeDefinition
-    ) -> "StrawberryAnnotation":
-        args = getattr(self.annotation, "__args__", None)
-        if not args:
-            raise MissingTypesForGenericError(self.annotation)
-        assert isinstance(args, tuple)
-        return StrawberryAnnotation(template.generate(args))
 
     @staticmethod
     def create_enum(evaled_type: Any) -> EnumDefinition:
