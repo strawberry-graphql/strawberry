@@ -69,16 +69,10 @@ def test_nested_generics():
     class Connection(Generic[T]):
         edges: List[T]
 
-    type_definition = Connection._type_definition  # type: ignore
-
+    generated = Connection[Edge[int]]
+    definition = get_type_definition(generated)
     assert (
-        config.name_converter.from_template_generated(
-            type_definition,
-            [
-                Edge[int],
-            ],
-        )
-        == "IntEdgeConnection"
+        config.name_converter.from_template_generated(definition) == "IntEdgeConnection"
     )
 
 
@@ -96,15 +90,10 @@ def test_nested_generics_aliases_with_schema():
         key: K
         value: V
 
-    type_definition = Value._type_definition  # type: ignore
+    definition = get_type_definition(Value[List[DictItem[int, str]]])
 
     assert (
-        config.name_converter.from_template_generated(
-            type_definition,
-            [
-                StrawberryList(DictItem[int, str]),
-            ],
-        )
+        config.name_converter.from_template_generated(definition)
         == "IntStrDictItemListValue"
     )
 

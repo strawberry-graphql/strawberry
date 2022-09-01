@@ -98,8 +98,9 @@ class NameConverter:
 
         return name
 
+    @classmethod
     def from_template_generated(
-        self,
+        cls,
         generic_type: TypeDefinition,
     ) -> str:
         """
@@ -115,7 +116,7 @@ class NameConverter:
 
             for type_ in generic_type.type_var_map.values():
                 resolved = StrawberryAnnotation(type_).resolve()
-                name = self.get_from_type(resolved)
+                name = cls.get_from_type(resolved)
                 names.append(name)
             generic_type.graphql_name = "".join(names) + generic_type.name
             return generic_type.graphql_name
@@ -126,6 +127,7 @@ class NameConverter:
     def get_from_type(cls, type_: Union[StrawberryType, type]) -> str:
         from strawberry.union import StrawberryUnion
 
+        name = None
         if isinstance(type_, LazyType):
             name = type_.type_name
         elif isinstance(type_, EnumDefinition):
@@ -142,10 +144,10 @@ class NameConverter:
         elif isinstance(type_, ScalarDefinition):
             strawberry_type = type_
             name = strawberry_type.name
-        else:
-            name = type_.__name__  # type: ignore
-
-        return capitalize_first(name)
+        elif definition := get_type_definition(type_):
+            if definition.concrete_of:
+                name = cls.from_template_generated(definition)
+        return capitalize_first(name or type_.__name__)
 
     def get_graphql_name(self, obj: HasGraphQLName) -> str:
         if obj.graphql_name is not None:
