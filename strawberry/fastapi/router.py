@@ -11,7 +11,6 @@ from starlette.types import ASGIApp
 from starlette.websockets import WebSocket
 
 from fastapi import APIRouter, Depends
-from strawberry.asgi.utils import get_graphiql_html
 from strawberry.exceptions import InvalidCustomContext, MissingQueryError
 from strawberry.fastapi.handlers import GraphQLTransportWSHandler, GraphQLWSHandler
 from strawberry.file_uploads.utils import replace_placeholders_with_files
@@ -27,6 +26,7 @@ from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_P
 from strawberry.types import ExecutionResult
 from strawberry.types.graphql import OperationType
 from strawberry.utils.debug import pretty_print_graphql_operation
+from strawberry.utils.graphiql import get_graphiql_html
 
 
 CustomContext = Union["BaseContext", Dict[str, Any]]

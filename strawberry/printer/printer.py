@@ -122,7 +122,7 @@ def print_schema_directive(
         StrawberrySchemaDirective, directive.__class__.__strawberry_directive__
     )
     schema_converter = schema.schema_converter
-    gql_directive = schema_converter.from_schema_directive(directive)
+    gql_directive = schema_converter.from_schema_directive(directive.__class__)
     params = print_schema_directive_params(
         gql_directive,
         {
@@ -533,12 +533,24 @@ def print_directive(
     )
 
 
+def is_builtin_directive(directive: GraphQLDirective) -> bool:
+    # this allows to force print the builtin directives if there's a
+    # directive that was implemented using the schema_directive
+
+    if is_specified_directive(directive):
+        strawberry_definition = directive.extensions.get("strawberry-definition")
+
+        return strawberry_definition is None
+
+    return False
+
+
 def print_schema(schema: BaseSchema) -> str:
     graphql_core_schema = schema._schema  # type: ignore
     extras = PrintExtras()
 
     directives = filter(
-        lambda n: not is_specified_directive(n), graphql_core_schema.directives
+        lambda n: not is_builtin_directive(n), graphql_core_schema.directives
     )
     type_map = graphql_core_schema.type_map
     types = filter(is_defined_type, map(type_map.get, sorted(type_map)))

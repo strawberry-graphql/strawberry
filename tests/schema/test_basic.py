@@ -13,6 +13,7 @@ from strawberry.exceptions import (
     FieldWithResolverAndDefaultValueError,
 )
 from strawberry.scalars import Base64
+from strawberry.schema_directive import Location
 from strawberry.type import StrawberryList
 
 
@@ -548,10 +549,16 @@ def test_with_types():
     class Query:
         foo: int
 
+    @strawberry.schema_directive(locations=[Location.SCALAR], name="specifiedBy")
+    class SpecifiedBy:
+        name: str
+
     schema = strawberry.Schema(
-        query=Query, types=[Type, Interface, Input, Base64, ID, str, int]
+        query=Query, types=[Type, Interface, Input, Base64, ID, str, int, SpecifiedBy]
     )
     expected = '''
+        directive @specifiedBy(name: String!) on SCALAR
+
         """
         Represents binary data as Base64-encoded strings, using the standard alphabet.
         """
