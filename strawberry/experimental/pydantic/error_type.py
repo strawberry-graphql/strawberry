@@ -5,14 +5,15 @@ from typing import Any, List, Optional, Sequence, Tuple, Type, cast
 from pydantic import BaseModel
 from pydantic.fields import ModelField
 
+import strawberry
 from strawberry.auto import StrawberryAuto
 from strawberry.experimental.pydantic.utils import (
     get_private_fields,
     get_strawberry_type_from_model,
     normalize_type,
 )
-from strawberry.object_type import _process_type, _wrap_dataclass
-from strawberry.types.type_resolver import _get_fields
+from strawberry.object_type import _wrap_dataclass
+from strawberry.types.types import _get_fields
 from strawberry.utils.typing import get_list_annotation, is_list
 
 from .exceptions import MissingFieldsListError
@@ -118,8 +119,8 @@ def error_type(
             bases=cls.__bases__,
         )
 
-        _process_type(
-            cls,
+        cls = strawberry.type(
+            cls=cls,
             name=name,
             is_input=False,
             is_interface=False,

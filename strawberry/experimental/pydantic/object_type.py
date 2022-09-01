@@ -19,6 +19,7 @@ from pydantic.fields import ModelField
 
 from graphql import GraphQLResolveInfo
 
+import strawberry
 from strawberry.auto import StrawberryAuto
 from strawberry.experimental.pydantic.conversion import (
     convert_pydantic_model_to_strawberry_class,
@@ -34,8 +35,8 @@ from strawberry.experimental.pydantic.utils import (
     sort_creation_fields,
 )
 from strawberry.field import StrawberryField
-from strawberry.object_type import _process_type, _wrap_dataclass
-from strawberry.types.type_resolver import _get_fields
+from strawberry.object_type import _wrap_dataclass
+from strawberry.types.types import _get_fields
 from strawberry.unset import UNSET
 
 
@@ -167,7 +168,9 @@ def type(
         extra_fields = cast(List[dataclasses.Field], extra_strawberry_fields)
         private_fields = get_private_fields(wrapped)
 
-        extra_fields_dict = {field.name: field for field in extra_strawberry_fields}
+        extra_fields_dict = {
+            field.python_name: field for field in extra_strawberry_fields
+        }
 
         all_model_fields: List[DataclassCreationFields] = [
             _build_dataclass_creation_fields(
@@ -185,7 +188,7 @@ def type(
                     field=field,
                 )
                 for field in extra_fields + private_fields
-                if field.name not in fields_set
+                if field.python_name not in fields_set
             )
         )
 
@@ -223,8 +226,8 @@ def type(
             namespace=namespace,
         )
 
-        _process_type(
-            cls,
+        cls = strawberry.type(
+            cls=cls,
             name=name,
             is_input=is_input,
             is_interface=is_interface,

@@ -1,4 +1,3 @@
-import dataclasses
 from enum import Enum
 from typing import Any, List, Optional, Union
 
@@ -7,6 +6,7 @@ import pytest
 import pydantic
 
 import strawberry
+from strawberry import UNSET
 from strawberry.enum import EnumDefinition
 from strawberry.experimental.pydantic.exceptions import MissingFieldsListError
 from strawberry.schema_directive import Location
@@ -359,9 +359,9 @@ def test_type_with_fields_mutable_default():
 
     [field1, field2] = definition.fields
 
-    assert field1.default is dataclasses.MISSING
-    assert field2.default is dataclasses.MISSING
-    assert field1.default_factory is dataclasses.MISSING
+    assert field1.default is UNSET
+    assert field2.default is UNSET
+    assert field1.default_factory is UNSET
     # check that we really made a copy
     assert field2.default_factory() is not empty_list
     assert UserType(groups=["groups"]).friends is not empty_list
