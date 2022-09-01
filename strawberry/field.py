@@ -196,7 +196,7 @@ class StrawberryField(StrawberryType):
                 self.base_resolver = StrawberryResolver(resolver)
             #     TODO: Tests this fails
             else:
-                raise Exception("Base resolver is not supported.")
+                raise TypeError("Base resolver is not supported.")
         for argument in self.base_resolver.arguments:
             if isinstance(argument.type_annotation.annotation, str):
                 continue

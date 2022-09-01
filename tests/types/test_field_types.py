@@ -1,9 +1,12 @@
 from enum import Enum
 from typing import List, Optional, TypeVar
 
+import pytest
+
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.field import StrawberryField
+from strawberry.types.types import get_type_definition
 from strawberry.union import StrawberryUnion
 
 
@@ -93,3 +96,15 @@ def test_union():
     field = StrawberryField(type_annotation=annotation)
 
     assert field.type is union
+
+
+def test_wrong_resolver():
+    @strawberry.type
+    class A:
+        a: float
+
+    with pytest.raises(TypeError):
+        definition = get_type_definition(A)
+        definition.fields[0].base_resolver = 2
+        # re-evaluate
+        definition.fields[0](A)
