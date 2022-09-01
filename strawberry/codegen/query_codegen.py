@@ -325,11 +325,11 @@ class QueryCodegen:
             field_type = self.schema.schema_converter.scalar_registry[field_type]  # type: ignore  # noqa: E501
 
         if isinstance(field_type, ScalarDefinition):
-            python_type = field_type.wrap
+            python_type = field_type.name
             if hasattr(python_type, "__supertype__"):
                 python_type = python_type.__supertype__
 
-            return self._collect_scalar(field_type._scalar_definition, python_type)
+            return self._collect_scalar(field_type, python_type)
 
         if isinstance(field_type, ScalarDefinition):
             return self._collect_scalar(field_type, None)
@@ -365,7 +365,7 @@ class QueryCodegen:
 
             for field in strawberry_type.fields:
                 field_type = self._collect_type_from_strawberry_type(field.type)
-                type_.fields.append(GraphQLField(field.name, None, field_type))
+                type_.fields.append(GraphQLField(field.python_name, None, field_type))
 
             self._collect_type(type_)
         else:
@@ -409,7 +409,9 @@ class QueryCodegen:
         field_type = self._get_field_type(field.type)
 
         return GraphQLField(
-            field.name, selection.alias.value if selection.alias else None, field_type
+            field.python_name,
+            selection.alias.value if selection.alias else None,
+            field_type,
         )
 
     def _unwrap_type(
@@ -472,7 +474,7 @@ class QueryCodegen:
             field_type = wrapper(field_type)
 
         return GraphQLField(
-            selected_field.name,
+            selected_field.python_name,
             selection.alias.value if selection.alias else None,
             field_type,
         )
