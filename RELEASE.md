@@ -1,4 +1,4 @@
-Release type: patch
+Release type: minor
 
 This release will try to address [#1100](https://github.com/strawberry-graphql/strawberry/pull/1100).
 
