@@ -4,17 +4,14 @@ from typing import TYPE_CHECKING, List, Optional, Union
 
 from typing_extensions import Protocol
 
+from strawberry.annotation import StrawberryAnnotation
 from strawberry.custom_scalar import ScalarDefinition
 from strawberry.directive import StrawberryDirective
 from strawberry.enum import EnumDefinition
 from strawberry.lazy_type import LazyType
 from strawberry.schema_directive import StrawberrySchemaDirective
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
-from strawberry.types.types import (
-    TemplateTypeDefinition,
-    TypeDefinition,
-    get_type_definition,
-)
+from strawberry.types.types import TypeDefinition, get_type_definition
 from strawberry.union import StrawberryUnion
 from strawberry.utils.str_converters import capitalize_first, to_camel_case
 
@@ -59,10 +56,7 @@ class NameConverter:
 
     def from_object(self, object_type: TypeDefinition) -> str:
         if object_type.concrete_of:
-            return self.from_generic(
-                object_type.concrete_of, list(object_type.type_var_map.values())
-            )
-
+            return self.from_template_generated(object_type)
         return object_type.name
 
     def from_input_object(self, input_type: TypeDefinition) -> str:
@@ -98,33 +92,35 @@ class NameConverter:
         name = ""
 
         for type_ in union.types:
-            assert hasattr(type_, "_type_definition")
-            name += self.from_type(type_._type_definition)  # type: ignore
+            definition = get_type_definition(type_)
+            assert definition
+            name += self.from_type(definition)
 
         return name
 
-    def from_generic(
+    def from_template_generated(
         self,
-        generic_type: TemplateTypeDefinition,
-        types: List[Union[StrawberryType, type]],
+        generic_type: TypeDefinition,
     ) -> str:
-        implementation = get_type_definition(
-            generic_type.implementations[hash(tuple(types))]
-        )
-        assert implementation
+        """
+        generated types needed to be renamed, to avoid naming conflicts.
+        """
+        template = generic_type.concrete_of
+        assert template
         if (
-            not implementation.graphql_name
+            not generic_type.graphql_name
             or generic_type.graphql_name == generic_type.name
         ):
             names: List[str] = []
 
-            for type_ in types:
-                name = self.get_from_type(type_)
+            for type_ in generic_type.type_var_map.values():
+                resolved = StrawberryAnnotation(type_).resolve()
+                name = self.get_from_type(resolved)
                 names.append(name)
-            implementation.graphql_name = "".join(names) + generic_type.name
-            return implementation.graphql_name
+            generic_type.graphql_name = "".join(names) + generic_type.name
+            return generic_type.graphql_name
         else:
-            return implementation.graphql_name
+            return generic_type.graphql_name
 
     @classmethod
     def get_from_type(cls, type_: Union[StrawberryType, type]) -> str:
@@ -146,15 +142,6 @@ class NameConverter:
         elif isinstance(type_, ScalarDefinition):
             strawberry_type = type_
             name = strawberry_type.name
-        elif strawberry_type := get_type_definition(type_):
-            if strawberry_type.is_generic:
-                types = type_.__args__  # type: ignore
-                name = cls.from_generic(strawberry_type, types)
-            elif strawberry_type.concrete_of:
-                types = list(strawberry_type.type_var_map.values())
-                name = cls.from_generic(strawberry_type, types)
-            else:
-                name = strawberry_type.name
         else:
             name = type_.__name__  # type: ignore
 

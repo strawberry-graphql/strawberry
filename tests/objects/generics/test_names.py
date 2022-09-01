@@ -8,13 +8,13 @@ from strawberry.enum import EnumDefinition
 from strawberry.lazy_type import LazyType
 from strawberry.schema.config import StrawberryConfig
 from strawberry.type import StrawberryList, StrawberryOptional
+from strawberry.types.types import get_type_definition
 from strawberry.union import StrawberryUnion
 
 
 T = TypeVar("T")
 K = TypeVar("K")
 V = TypeVar("V")
-
 
 Enum = EnumDefinition(None, name="Enum", values=[], description=None)  # type: ignore
 CustomInt = strawberry.scalar(NewType("CustomInt", int))
@@ -41,8 +41,8 @@ class TypeB:
         ([StrawberryUnion("Union", (TypeA, TypeB))], "UnionExample"),  # type: ignore
         ([TypeA], "TypeAExample"),
         ([CustomInt], "CustomIntExample"),
-        ([TypeA, TypeB], "TypeATypeBExample"),
-        ([TypeA, LazyType["TypeB", "test_names"]], "TypeATypeBExample"),  # type: ignore
+        ([TypeB], "TypeBExample"),
+        ([LazyType["TypeB", "test_names"]], "TypeBExample"),  # type: ignore
     ],
 )
 def test_name_generation(types, expected_name):
@@ -52,9 +52,10 @@ def test_name_generation(types, expected_name):
     class Example(Generic[T]):
         a: T
 
-    type_definition = Example._type_definition  # type: ignore
-
-    assert config.name_converter.from_generic(type_definition, types) == expected_name
+    types = tuple(types)
+    generated = Example[types]
+    definition = get_type_definition(generated)
+    assert config.name_converter.from_template_generated(definition) == expected_name
 
 
 def test_nested_generics():
@@ -71,7 +72,7 @@ def test_nested_generics():
     type_definition = Connection._type_definition  # type: ignore
 
     assert (
-        config.name_converter.from_generic(
+        config.name_converter.from_template_generated(
             type_definition,
             [
                 Edge[int],
@@ -98,7 +99,7 @@ def test_nested_generics_aliases_with_schema():
     type_definition = Value._type_definition  # type: ignore
 
     assert (
-        config.name_converter.from_generic(
+        config.name_converter.from_template_generated(
             type_definition,
             [
                 StrawberryList(DictItem[int, str]),
