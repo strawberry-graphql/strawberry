@@ -2,8 +2,9 @@ import contextlib
 import os
 import re
 from collections import defaultdict
+from dataclasses import dataclass
 from pathlib import Path
-from typing import DefaultDict, Generator, Type
+from typing import DefaultDict, Generator, List, Type
 
 import pytest
 
@@ -17,6 +18,12 @@ from strawberry.exceptions import StrawberryException
 
 WORKSPACE_FOLDER = Path(__file__).parents[2]
 DOCS_FOLDER = WORKSPACE_FOLDER / "docs/exceptions"
+
+
+@dataclass
+class Result:
+    text: str
+    raised_exception: StrawberryException
 
 
 @contextlib.contextmanager
@@ -33,7 +40,9 @@ def suppress_output(verbosity_level: int = 0) -> Generator[None, None, None]:
 
 class StrawberryExceptionsPlugin:
     def __init__(self, verbosity_level: int) -> None:
-        self._info: DefaultDict[Type[StrawberryException], list] = defaultdict(list)
+        self._info: DefaultDict[Type[StrawberryException], List[Result]] = defaultdict(
+            list
+        )
         self.verbosity_level = verbosity_level
 
     @pytest.hookimpl(hookwrapper=True)
@@ -117,7 +126,9 @@ class StrawberryExceptionsPlugin:
                 pytrace=False,
             )
 
-        self._info[raised_exception.__class__].append(text)
+        self._info[raised_exception.__class__].append(
+            Result(text=text, raised_exception=raised_exception)
+        )
 
     def pytest_sessionfinish(self):
         summary_path = os.environ.get("GITHUB_STEP_SUMMARY", None)
@@ -127,13 +138,15 @@ class StrawberryExceptionsPlugin:
 
         markdown = ""
 
-        for exception, info in self._info.items():
-            test_name = " ".join(re.findall("[a-zA-Z][^A-Z]*", exception.__name__))
+        for exception_class, info in self._info.items():
+            title = " ".join(re.findall("[a-zA-Z][^A-Z]*", exception_class.__name__))
 
-            markdown += f"# {test_name}\n\n"
-            markdown += f"Documentation URL: {exception.documentation_url}\n\n"
+            markdown += f"# {title}\n\n"
+            markdown += (
+                f"Documentation URL: {info[0].raised_exception.documentation_url}\n\n"
+            )
 
-            markdown += "\n".join(info)
+            markdown += "\n".join([result.text for result in info])
 
         with open(summary_path, "w") as f:
             f.write(markdown)

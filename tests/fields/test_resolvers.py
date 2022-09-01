@@ -1,4 +1,5 @@
 import dataclasses
+import types
 from typing import ClassVar, List, no_type_check
 
 import pytest
@@ -213,6 +214,22 @@ def test_raises_error_when_missing_type():
     @strawberry.type
     class Query:  # noqa: F841
         missing = dataclasses.field()
+
+
+@pytest.mark.raises_strawberry_exception(
+    MissingFieldAnnotationError,
+    match=(
+        'Unable to determine the type of field "missing". Either annotate it '
+        "directly, or provide a typed resolver using @strawberry.field."
+    ),
+)
+def test_raises_error_when_missing_type_on_dynamic_class():
+    # this test if for making sure the code that finds the exception source
+    # doesn't crash with dynamic code
+
+    namespace = {"missing": dataclasses.field()}
+
+    strawberry.type(types.new_class("Query", (), {}, lambda ns: ns.update(namespace)))
 
 
 @pytest.mark.raises_strawberry_exception(

@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from .syntax import Syntax
 
 
-class StrawberryException(ABC, Exception):
+class StrawberryException(Exception, ABC):
     message: str
     rich_message: str
     suggestion: str
