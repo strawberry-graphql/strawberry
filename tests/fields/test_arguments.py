@@ -9,6 +9,7 @@ import strawberry
 from strawberry import UNSET
 from strawberry.exceptions import InvalidFieldArgument, MultipleStrawberryArgumentsError
 from strawberry.type import StrawberryList, StrawberryOptional
+from strawberry.types.types import get_type_definition
 
 
 def test_basic_arguments():
@@ -145,7 +146,7 @@ def test_arguments_when_extending_a_type():
     class NameQuery:
         name: str = strawberry.field(resolver=name_resolver)
 
-    assert hasattr(NameQuery, "_type_definition")
+    assert get_type_definition(NameQuery)
 
     @strawberry.type
     class Query(NameQuery):

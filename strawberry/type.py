@@ -126,17 +126,3 @@ class StrawberryTypeVar(StrawberryType):
             return self.type_var == other
 
         return super().__eq__(other)
-
-
-class StrawberryGqlWrapper(StrawberryType):
-    def __init__(self, of_type):
-        self.of_type = of_type
-
-    is_generic = False
-
-    def validate(self, value):
-        if isinstance(self.of_type, StrawberryType):
-            return self.of_type.validate(value)
-        elif isinstance(value, self.of_type):
-            return True
-        return False
