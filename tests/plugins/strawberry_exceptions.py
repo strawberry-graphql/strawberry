@@ -18,7 +18,7 @@ from strawberry.exceptions import StrawberryException, UnableToFindExceptionSour
 
 
 WORKSPACE_FOLDER = Path(__file__).parents[2]
-DOCS_FOLDER = WORKSPACE_FOLDER / "docs/exceptions"
+DOCS_FOLDER = WORKSPACE_FOLDER / "docs/errors"
 
 
 @dataclass
