@@ -52,6 +52,10 @@ def strawberry_exception_handler(
     _get_handler()(exception_type, exception, traceback)
 
 
+def reset_exception_handler():
+    sys.excepthook = original_exception_hook
+
+
 def setup_exception_handler():
     if _should_use_rich_exceptions():
         sys.excepthook = strawberry_exception_handler
