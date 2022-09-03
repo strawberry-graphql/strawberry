@@ -43,8 +43,7 @@ class Stringable:
 
 ```
 
-The Private[...] cast lets strawberry know not to try to resolve it as a
-GraphQL field. Instead, "object" is a regular dataclass style parameter.
+The `Private[...]` type lets Strawberry know that this field is not a GraphQL field. "value" is a regular field on the class, but it is not exposed on the GraphQL API.
 
 ```
 
