@@ -4,7 +4,7 @@ title: Private Fields
 
 # Private Fields
 
-Private (external) fields can provide local context for later resulution.
+Private (external) fields can provide local context for later resolution.
 These fields will act as plain dataclass fields and not become attached to
 strawberry resolvers.
 
