@@ -27,7 +27,7 @@ converting it to string, representation, or templated output:
 
 @strawberry.type
 class Stringable:
-    object: strawberry.Private[dict]
+    value: strawberry.Private[object]
 
     @strawberry.field
     def string(self) -> str:
