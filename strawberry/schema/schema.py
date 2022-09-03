@@ -1,5 +1,5 @@
 from functools import lru_cache
-from typing import Any, Dict, Iterable, Optional, Sequence, Type, Union
+from typing import Any, Dict, Iterable, List, Optional, Type, Union
 
 from graphql import (
     ExecutionContext as GraphQLExecutionContext,
@@ -30,6 +30,7 @@ from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 
 from ..printer import print_schema
+from . import compat
 from .base import BaseSchema
 from .config import StrawberryConfig
 from .execute import execute, execute_sync
@@ -49,15 +50,20 @@ class Schema(BaseSchema):
         query: Type,
         mutation: Optional[Type] = None,
         subscription: Optional[Type] = None,
-        directives: Sequence[StrawberryDirective] = (),
+        directives: Iterable[StrawberryDirective] = (),
         types=(),
-        extensions: Sequence[Union[Type[Extension], Extension]] = (),
+        extensions: Iterable[Union[Type[Extension], Extension]] = (),
         execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
         config: Optional[StrawberryConfig] = None,
         scalar_overrides: Optional[
             Dict[object, Union[ScalarWrapper, ScalarDefinition]]
         ] = None,
+        schema_directives: Iterable[object] = (),
     ):
+        self.query = query
+        self.mutation = mutation
+        self.subscription = subscription
+
         self.extensions = extensions
         self.execution_context_class = execution_context_class
         self.config = config or StrawberryConfig()
@@ -70,6 +76,7 @@ class Schema(BaseSchema):
 
         self.schema_converter = GraphQLCoreConverter(self.config, scalar_registry)
         self.directives = directives
+        self.schema_directives = schema_directives
 
         query_type = self.schema_converter.from_object(query._type_definition)
         mutation_type = (
@@ -83,25 +90,33 @@ class Schema(BaseSchema):
             else None
         )
 
-        graphql_directives = tuple(
+        graphql_directives = [
             self.schema_converter.from_directive(directive) for directive in directives
-        )
+        ]
 
         graphql_types = []
         for type_ in types:
-            graphql_type = self.schema_converter.from_maybe_optional(type_)
-            if isinstance(graphql_type, GraphQLNonNull):
-                graphql_type = graphql_type.of_type
-            if not isinstance(graphql_type, GraphQLNamedType):
-                raise TypeError(f"{graphql_type} is not a named GraphQL Type")
-            graphql_types.append(graphql_type)
+            if compat.is_schema_directive(type_):
+                graphql_directives.append(
+                    self.schema_converter.from_schema_directive(type_)
+                )
+            else:
+                graphql_type = self.schema_converter.from_maybe_optional(type_)
+                if isinstance(graphql_type, GraphQLNonNull):
+                    graphql_type = graphql_type.of_type
+                if not isinstance(graphql_type, GraphQLNamedType):
+                    raise TypeError(f"{graphql_type} is not a named GraphQL Type")
+                graphql_types.append(graphql_type)
 
         self._schema = GraphQLSchema(
             query=query_type,
             mutation=mutation_type,
             subscription=subscription_type if subscription else None,
-            directives=specified_directives + graphql_directives,
+            directives=specified_directives + tuple(graphql_directives),
             types=graphql_types,
+            extensions={
+                GraphQLCoreConverter.DEFINITION_BACKREF: self,
+            },
         )
 
         # attach our schema to the GraphQL schema instance
@@ -114,7 +129,15 @@ class Schema(BaseSchema):
             formatted_errors = "\n\n".join(f"❌ {error.message}" for error in errors)
             raise ValueError(f"Invalid Schema. Errors:\n\n{formatted_errors}")
 
-        self.query = self.schema_converter.type_map[query_type.name]
+    def get_extensions(
+        self, sync: bool = False
+    ) -> List[Union[Type[Extension], Extension]]:
+        extensions = list(self.extensions)
+
+        if self.directives:
+            extensions.append(DirectivesExtensionSync if sync else DirectivesExtension)
+
+        return extensions
 
     @lru_cache()
     def get_type_by_name(  # type: ignore  # lru_cache makes mypy complain
@@ -183,7 +206,7 @@ class Schema(BaseSchema):
         result = await execute(
             self._schema,
             query,
-            extensions=list(self.extensions) + [DirectivesExtension],
+            extensions=self.get_extensions(),
             execution_context_class=self.execution_context_class,
             execution_context=execution_context,
             allowed_operation_types=allowed_operation_types,
@@ -218,7 +241,7 @@ class Schema(BaseSchema):
         result = execute_sync(
             self._schema,
             query,
-            extensions=list(self.extensions) + [DirectivesExtensionSync],
+            extensions=self.get_extensions(sync=True),
             execution_context_class=self.execution_context_class,
             execution_context=execution_context,
             allowed_operation_types=allowed_operation_types,

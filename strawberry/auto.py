@@ -57,7 +57,16 @@ class StrawberryAutoMeta(type):
             if args[0] is Any:
                 return any(isinstance(arg, StrawberryAuto) for arg in args[1:])
 
-        return False
+        # StrawberryType's `__eq__` tries to find the string passed in the global
+        # namespace, which will fail with a `NameError` if "strawberry.auto" hasn't
+        # been imported. So we can't use `instance == "strawberry.auto"` here.
+        # Instead, we'll use `isinstance(instance, str)` to check if the instance
+        # is a StrawberryType, in that case we can return False since we know it
+        # won't be a StrawberryAuto.
+        if isinstance(instance, StrawberryType):
+            return False
+
+        return instance == "strawberry.auto"
 
 
 class StrawberryAuto(metaclass=StrawberryAutoMeta):

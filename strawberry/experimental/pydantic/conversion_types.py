@@ -24,7 +24,7 @@ class StrawberryTypeFromPydantic(Protocol[PydanticModel]):
     ) -> StrawberryTypeFromPydantic[PydanticModel]:
         ...
 
-    def to_pydantic(self) -> PydanticModel:
+    def to_pydantic(self, **kwargs) -> PydanticModel:
         ...
 
     @property

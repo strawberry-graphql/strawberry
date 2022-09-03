@@ -1,0 +1,38 @@
+- case: test_type
+  main: |
+    import strawberry
+
+    @strawberry.federation.type
+    class User:
+        name: str
+
+    User(name="Patrick")
+    User(n="Patrick")
+  out: |
+    main:8: error: Unexpected keyword argument "n" for "User"  [call-arg]
+
+- case: test_input
+  main: |
+    import strawberry
+
+    @strawberry.federation.input
+    class EditUserInput:
+        name: str
+
+    EditUserInput(name="Patrick")
+    EditUserInput(n="Patrick")
+  out: |
+    main:8: error: Unexpected keyword argument "n" for "EditUserInput"  [call-arg]
+
+- case: test_interface
+  main: |
+    import strawberry
+
+    @strawberry.federation.interface
+    class NameInterface:
+        name: str
+
+    NameInterface(name="Patrick")
+    NameInterface(n="Patrick")
+  out: |
+    main:8: error: Unexpected keyword argument "n" for "NameInterface"  [call-arg]

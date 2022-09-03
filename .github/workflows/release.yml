@@ -36,7 +36,7 @@ jobs:
         with:
           persist-credentials: false
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: "3.10"
       - name: Install deps
@@ -44,7 +44,7 @@ jobs:
           python -m pip install pip --upgrade
           pip install poetry
           pip install githubrelease
-          pip install "git+https://github.com/patrick91/autopub.git@fix/release-not-found#egg=autopub"
+          pip install autopub
           pip install httpx
       - name: Check if we should release
         id: check_release
@@ -91,10 +91,10 @@ jobs:
   update-release-on-github:
     name: Update release on github
     runs-on: ubuntu-latest
-    needs: [release-file-check, get-contributor-info]
+    needs: [release-file-check, get-contributor-info, release]
     if: ${{ needs.release-file-check.outputs.status == 'OK' }}
     steps:
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v4
         with:
           python-version: '3.9'
       - name: Install dependencies
@@ -200,7 +200,7 @@ jobs:
       - uses: actions/download-artifact@v2
         with:
           name: card
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v4
         with:
           python-version: '3.9'
       - name: Install dependencies
