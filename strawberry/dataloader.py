@@ -1,4 +1,3 @@
-import asyncio
 import dataclasses
 from asyncio import create_task, gather, get_event_loop
 from asyncio.events import AbstractEventLoop
@@ -137,7 +136,7 @@ class DataLoader(Generic[K, T]):
         # Populate the cache with the specified values
         if self.cache:
             for key, value in data.items():
-                future = asyncio.Future(loop=self.loop)
+                future: Future = Future(loop=self.loop)
                 future.set_result(value)
                 self.cache_map[key] = future
 
