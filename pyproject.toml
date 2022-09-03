@@ -53,7 +53,8 @@ aiohttp = {version = "^3.7.4.post0", optional = true}
 fastapi = {version = ">=0.65.2", optional = true}
 channels = {version = ">=3.0.5", optional = true}
 "backports.cached-property" = {version = "^1.0.2", python = "<3.8"}
-libcst = {version = "^0.4.7", optional = true}
+libcst = {version = ">=0.4.7", optional = true}
+rich = {version = ">=12.0.0", optional = true}
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.1"
@@ -104,13 +105,14 @@ pytest-xprocess = "^0.20.0"
 MarkupSafe = "2.1.1"
 pytest-snapshot = "^0.9.0"
 channels = "^3.0.5"
-rich = "^12.5.1"
+rich = {version = "^12.5.1", optional = false}
 libcst = {version = "^0.4.7", optional = false}
 ddtrace = "^1.4.1"
 
 [tool.poetry.extras]
 aiohttp = ["aiohttp", "pytest-aiohttp"]
 asgi = ["starlette"]
+debug = ["rich", "libcst"]
 debug-server = ["starlette", "uvicorn"]
 django = ["Django", "pytest-django", "asgiref"]
 channels = ["channels", "asgiref"]
