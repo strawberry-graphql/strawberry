@@ -85,12 +85,18 @@ class GraphQLView(BaseGraphQLView):
             except KeyError:
                 return Response(status=400, response="File(s) missing in form data")
         elif method == "GET" and request.args:
-            data = parse_query_params(request.args.to_dict())
+            try:
+                data = parse_query_params(request.args.to_dict())
+            except json.JSONDecodeError:
+                return Response(
+                    status=400, response="Unable to parse request body as JSON"
+                )
         elif method == "GET" and should_render_graphiql(self.graphiql, request):
             template = get_graphiql_html(False)
 
             return self.render_template(template=template)
-
+        elif method == "GET":
+            return Response(status=404)
         else:
             return Response("Unsupported Media Type", 415)
 
@@ -172,12 +178,19 @@ class AsyncGraphQLView(BaseGraphQLView):
             except KeyError:
                 return Response(status=400, response="File(s) missing in form data")
         elif method == "GET" and request.args:
-            data = parse_query_params(request.args.to_dict())
+            try:
+                data = parse_query_params(request.args.to_dict())
+            except json.JSONDecodeError:
+                return Response(
+                    status=400, response="Unable to parse request body as JSON"
+                )
+
         elif method == "GET" and should_render_graphiql(self.graphiql, request):
             template = get_graphiql_html(False)
 
             return self.render_template(template=template)
-
+        elif method == "GET":
+            return Response(status=404)
         else:
             return Response("Unsupported Media Type", 415)
 
