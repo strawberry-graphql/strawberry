@@ -118,6 +118,62 @@ the list for each incorrect key. A call with `keys == [1, 3]` returns
 directly. If the `load_users` function raises an exception, even `load`s with an
 otherwise valid key, like `await loader.load(1)`, will raise that exception.
 
+### Cache invalidation
+
+By default DataLoaders use an internal cache. It is great for performance, however it can cause problems when the data is modified
+(i.e., a mutation), as the cached data is no longer be valid! 😮
+
+To fix it, you can explicitly invalidate the data in the cache, using one of these ways:
+
+- Specifying a key with `loader.invalidate(id)`,
+- Specifying several keys with `loader.invalidate_many([id1, id2, id3, ...])`,
+- Invalidating the whole cache with `loader.invalidate_all()`
+
+### Importing data into cache
+
+While dataloaders are powerful and efficient, they do not support complex queries.
+
+If your app needs them, you'll probably mix dataloaders and direct database calls.
+
+In these scenarios, it is useful to import the data retrieved externally into the dataloader,
+in order to avoid reloading data afterwards.
+
+For example:
+
+```python+graphql
+@strawberry.type
+class Person:
+    id: strawberry.ID
+    friends_ids: List[strawberry.ID]
+
+    @strawberry.field
+    def friends(self) -> List[Person]:
+      return await loader.load_many(self.friends_ids)
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    async def get_all_people(self) -> List[User]:
+        # Fetch all people from the database, without going through the dataloader abstraction
+        people = await database.get_all_people()
+
+        # Insert the people we just fetched in the dataloader cache
+        # Since "all people" are now in the cache, acessing `Person.friends` will not
+        # trigger any extra database access
+        loader.preset_many({persor.id: person for person in people})
+
+        return people
+---
+{
+  getAllPeople {
+    id
+    friends {
+      id
+    }
+  }
+}
+```
+
 ## Usage with GraphQL
 
 Let's see an example of how you can use DataLoaders with GraphQL:

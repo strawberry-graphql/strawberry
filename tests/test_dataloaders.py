@@ -217,3 +217,56 @@ def test_works_when_created_in_a_different_loop(mocker):
     assert data == 1
 
     mock_loader.assert_called_once_with([1])
+
+
+async def test_put():
+    async def idx(keys):
+        return keys
+
+    loader = DataLoader(load_fn=idx)
+
+    # Basic behavior intact
+    a1 = loader.load(1)
+    assert await a1 == 1
+
+    # Preset overrides value, whenever cached or not
+    loader.put(1, 1.1)
+    loader.put(2, 2.1)
+    b1 = loader.load(1)
+    b2 = loader.load(2)
+    b3 = loader.load(3)
+    assert await b1 == 1.1
+    assert await b2 == 2.1
+    assert await b3 == 3
+
+    # Preset will override pending values, but not cached values
+    c3 = loader.load(3)  # This is in cache
+    c4 = loader.load(4)  # This is pending
+    loader.put_many({3: 3.1, 4: 4.1})
+    assert await c3 == 3
+    assert await c4 == 4.1
+
+
+async def test_invalidate():
+    batch_num = 0
+
+    async def idx(keys):
+        """Maps key => (key, batch_num)"""
+        nonlocal batch_num
+        batch_num += 1
+        return [(key, batch_num) for key in keys]
+
+    loader = DataLoader(load_fn=idx)
+
+    assert await loader.load_many([1, 2]) == [(1, 1), (2, 1)]
+
+    assert await loader.load_many([2, 3]) == [(2, 1), (3, 2)]
+
+    loader.invalidate(2)
+    assert await loader.load_many([1, 2, 3]) == [(1, 1), (2, 3), (3, 2)]
+
+    loader.invalidate_many([1, 3])
+    assert await loader.load_many([1, 2, 3]) == [(1, 4), (2, 3), (3, 4)]
+
+    loader.invalidate_all()
+    assert await loader.load_many([1, 2, 3]) == [(1, 5), (2, 5), (3, 5)]
