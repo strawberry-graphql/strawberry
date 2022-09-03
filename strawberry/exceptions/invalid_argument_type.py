@@ -1,6 +1,6 @@
-from typing import TYPE_CHECKING, Optional
+from __future__ import annotations
 
-from typing_extensions import Literal
+from typing import TYPE_CHECKING, Optional
 
 from .exception import StrawberryException
 from .exception_source import ExceptionSource
@@ -8,21 +8,38 @@ from .utils.source_finder import SourceFinder
 
 
 if TYPE_CHECKING:
+    from strawberry.arguments import StrawberryArgument
     from strawberry.types.fields.resolver import StrawberryResolver
+    from strawberry.types.types import TypeDefinition
 
 
 class InvalidArgumentTypeError(StrawberryException):
     def __init__(
         self,
-        resolver: "StrawberryResolver",
-        argument_name: str,
-        argument_type: Literal["union", "interface"],
+        resolver: StrawberryResolver,
+        argument: StrawberryArgument,
     ):
+        from strawberry.union import StrawberryUnion
+
         self.function = resolver.wrapped_func
-        self.argument_name = argument_name
+        self.argument_name = argument.python_name
+        # argument_type: Literal["union", "interface"],
+
+        argument_type = "unknown"
+
+        if isinstance(argument.type, StrawberryUnion):
+            argument_type = "union"
+        else:
+            type_definition: Optional[TypeDefinition] = getattr(
+                argument.type, "_type_definition", None
+            )
+
+            if type_definition and type_definition.is_interface:
+                argument_type = "interface"
 
         self.message = (
-            f'Argument "{argument_name}" on field "{resolver.name}" cannot be of type '
+            f'Argument "{self.argument_name}" on field '
+            f'"{resolver.name}" cannot be of type '
             f'"{argument_type}"'
         )
         self.rich_message = self.message
@@ -32,10 +49,10 @@ class InvalidArgumentTypeError(StrawberryException):
         elif argument_type == "interface":
             self.suggestion = "Interfaces are not supported as arguments in GraphQL."
         else:
-            self.suggestion = f"{argument_name} is not supported as an argument."
+            self.suggestion = f"{self.argument_name} is not supported as an argument."
 
         self.annotation_message = (
-            f'Argument "{argument_name}" cannot be of type "{argument_type}"'
+            f'Argument "{self.argument_name}" cannot be of type "{argument_type}"'
         )
 
     @property
