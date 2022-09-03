@@ -140,7 +140,7 @@ class GraphQLView:
                 )
         elif method == "GET" and request.query_params:
             try:
-                data = parse_query_params(request.query_params)
+                data = parse_query_params(request.query_params)  # type: ignore
             except json.JSONDecodeError:
                 return self.error_response(
                     error_code="BadRequestError",
