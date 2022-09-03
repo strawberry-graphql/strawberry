@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import asyncio
+import contextvars
+import functools
 import json
 import urllib.parse
 from io import BytesIO
@@ -128,9 +130,12 @@ class FlaskHttpClient(HttpClient):
         headers: Optional[Dict[str, str]] = None,
         **kwargs,
     ) -> Response:
-        return await asyncio.to_thread(
-            self._do_request, url=url, method=method, headers=headers, **kwargs
+        loop = asyncio.get_running_loop()
+        ctx = contextvars.copy_context()
+        func_call = functools.partial(
+            ctx.run, self._do_request, url=url, method=method, headers=headers, **kwargs
         )
+        return await loop.run_in_executor(None, func_call)  # type: ignore
 
     async def get(
         self,
