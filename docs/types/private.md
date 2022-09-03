@@ -10,8 +10,8 @@ strawberry resolvers.
 
 Some uses include:
 
- * Context that relies upon field inputs.
- * Avoiding fully materializing an object hierarchy (lazy resolution)
+- Context that relies upon field inputs.
+- Avoiding fully materializing an object hierarchy (lazy resolution)
 
 # Defining a private field
 
@@ -40,11 +40,11 @@ class Stringable:
     @strawberry.field
     def format(self, template: str) -> str:
         return template.format(my=self.object)
-        
+
 ```
 
-The Private[...] cast lets strawberry know not to try to resolve it as a 
-GraphQL field.  Instead, "object" is a regular dataclass style parameter.
+The Private[...] cast lets strawberry know not to try to resolve it as a
+GraphQL field. Instead, "object" is a regular dataclass style parameter.
 
 ```
 
