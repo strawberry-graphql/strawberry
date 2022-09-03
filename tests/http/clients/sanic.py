@@ -57,11 +57,6 @@ class SanicHttpClient(HttpClient):
     ):
         self.app = Sanic(
             f"test_{int(randint(0, 1000))}",
-            log_config={
-                "version": 1,
-                "loggers": {},
-                "handlers": {},
-            },
         )
         view = GraphQLView.as_view(
             schema=schema,
