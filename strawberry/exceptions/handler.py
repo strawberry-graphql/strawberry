@@ -25,10 +25,7 @@ def strawberry_exception_handler(
     traceback: Optional[TracebackType],
 ):
     def _get_handler() -> ExceptionHandler:
-        if (
-            issubclass(exception_type, StrawberryException)
-            and _should_use_rich_exceptions()
-        ):
+        if issubclass(exception_type, StrawberryException):
             try:
                 import rich
             except ImportError:
@@ -56,4 +53,5 @@ def strawberry_exception_handler(
 
 
 def setup_exception_handler():
-    sys.excepthook = strawberry_exception_handler
+    if _should_use_rich_exceptions():
+        sys.excepthook = strawberry_exception_handler
