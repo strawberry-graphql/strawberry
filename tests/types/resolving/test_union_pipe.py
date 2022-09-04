@@ -5,7 +5,7 @@ import pytest
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.exceptions import InvalidUnionTypeError
+from strawberry.exceptions import InvalidTypeForUnionMergeError
 from strawberry.type import StrawberryOptional
 from strawberry.union import StrawberryUnion
 
@@ -79,7 +79,7 @@ def test_strawberry_union_and_none():
 
 
 @pytest.mark.raises_strawberry_exception(
-    InvalidUnionTypeError, match="Type `int` cannot be used in a GraphQL Union"
+    InvalidTypeForUnionMergeError, match="Type `int` cannot be used in a GraphQL Union"
 )
 def test_raises_error_when_piping_with_scalar():
     @strawberry.type

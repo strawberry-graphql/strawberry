@@ -1,6 +1,9 @@
+from __future__ import annotations
+
 import importlib
 import sys
 from dataclasses import dataclass
+from inspect import Traceback
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Callable, Optional, Sequence, Type, cast
 
@@ -11,6 +14,8 @@ from ..exception_source import ExceptionSource
 
 if TYPE_CHECKING:
     from libcst import CSTNode
+
+    from strawberry.union import StrawberryUnion
 
 
 @dataclass
@@ -314,6 +319,43 @@ class LibCSTSourceFinder:
             error_column_end=invalid_type_node_position.end.column,
         )
 
+    def find_union_merge(
+        self, union: StrawberryUnion, other: object, frame: Traceback
+    ) -> Optional[ExceptionSource]:
+        import libcst.matchers as m
+        from libcst import BinaryOperation
+
+        path = Path(frame.filename)
+        source = path.read_text()
+
+        other_name = getattr(other, "__name__", None)
+
+        if other_name is None:
+            return None
+
+        matcher = m.BinaryOperation(operator=m.BitOr(), right=m.Name(value=other_name))
+
+        merge_calls = self._find(source, matcher)
+
+        if not merge_calls:
+            return None
+
+        merge_call_node = cast(BinaryOperation, merge_calls[0])
+        invalid_type_node = merge_call_node.right
+
+        position = self._position_metadata[merge_call_node]
+        invalid_type_node_position = self._position_metadata[invalid_type_node]
+
+        return ExceptionSource(
+            path=path,
+            code=source,
+            start_line=position.start.line,
+            error_line=invalid_type_node_position.start.line,
+            end_line=position.end.line,
+            error_column=invalid_type_node_position.start.column,
+            error_column_end=invalid_type_node_position.end.column,
+        )
+
 
 class SourceFinder:
     # TODO: this might need to become a getter
@@ -350,3 +392,8 @@ class SourceFinder:
             if self.cst
             else None
         )
+
+    def find_union_merge(
+        self, union: StrawberryUnion, other: object, frame: Traceback
+    ) -> Optional[ExceptionSource]:
+        return self.cst.find_union_merge(union, other, frame) if self.cst else None
