@@ -2,7 +2,7 @@ import importlib
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Callable, Optional, Sequence, Type
+from typing import TYPE_CHECKING, Any, Callable, Optional, Sequence, Type, cast
 
 from strawberry.utils.cached_property import cached_property
 
@@ -40,21 +40,21 @@ class LibCSTSourceFinder:
 
         return SourcePath(path=path, code=source)
 
-    def _find(self, source: SourcePath, matcher: Any) -> Sequence["CSTNode"]:
+    def _find(self, source: str, matcher: Any) -> Sequence["CSTNode"]:
         from libcst.metadata import (
             MetadataWrapper,
             ParentNodeProvider,
             PositionProvider,
         )
 
-        module = self.cst.parse_module(source.code)
-        _metadata_wrapper = MetadataWrapper(module)
-        self._position_metadata = _metadata_wrapper.resolve(PositionProvider)
-        self._parent_metadata = _metadata_wrapper.resolve(ParentNodeProvider)
+        module = self.cst.parse_module(source)
+        self._metadata_wrapper = MetadataWrapper(module)
+        self._position_metadata = self._metadata_wrapper.resolve(PositionProvider)
+        self._parent_metadata = self._metadata_wrapper.resolve(ParentNodeProvider)
 
         import libcst.matchers as m
 
-        return m.findall(_metadata_wrapper, matcher)
+        return m.findall(self._metadata_wrapper, matcher)
 
     def _find_definition_by_qualname(
         self, qualname: str, nodes: Sequence["CSTNode"]
@@ -91,7 +91,7 @@ class LibCSTSourceFinder:
 
         matcher = m.FunctionDef(name=m.Name(value=function.__name__))
 
-        function_defs = self._find(source, matcher)
+        function_defs = self._find(source.code, matcher)
 
         return self._find_definition_by_qualname(function.__qualname__, function_defs)
 
@@ -102,7 +102,7 @@ class LibCSTSourceFinder:
 
         matcher = m.ClassDef(name=m.Name(value=cls.__name__))
 
-        class_defs = self._find(source, matcher)
+        class_defs = self._find(source.code, matcher)
         return self._find_definition_by_qualname(cls.__qualname__, class_defs)
 
     def find_class(self, cls: Type) -> Optional[ExceptionSource]:
@@ -237,9 +237,86 @@ class LibCSTSourceFinder:
             error_column_end=position.end.column,
         )
 
+    def find_union_call(
+        self, path: Path, union_name: str, invalid_type: object
+    ) -> Optional[ExceptionSource]:
+        import libcst.matchers as m
+        from libcst import Call
+
+        source = path.read_text()
+
+        invalid_type_name = getattr(invalid_type, "__name__", None)
+
+        types_arg_matcher = (
+            [
+                m.Tuple(
+                    elements=[
+                        m.ZeroOrMore(),
+                        m.Element(value=m.Name(value=invalid_type_name)),
+                        m.ZeroOrMore(),
+                    ],
+                )
+                | m.List(
+                    elements=[
+                        m.ZeroOrMore(),
+                        m.Element(value=m.Name(value=invalid_type_name)),
+                        m.ZeroOrMore(),
+                    ],
+                )
+            ]
+            if invalid_type_name is not None
+            else []
+        )
+
+        matcher = m.Call(
+            func=m.Attribute(
+                value=m.Name(value="strawberry"),
+                attr=m.Name(value="union"),
+            )
+            | m.Name(value="union"),
+            args=[
+                m.Arg(value=m.SimpleString(value=f"'{union_name}'"))
+                | m.Arg(value=m.SimpleString(value=f'"{union_name}"')),
+                m.Arg(*types_arg_matcher),  # type: ignore
+            ],
+        )
+
+        union_calls = self._find(source, matcher)
+
+        if not union_calls:
+            return None
+
+        union_call = cast(Call, union_calls[0])
+
+        if invalid_type_name:
+            invalid_type_nodes = m.findall(
+                union_call.args[1],
+                m.Element(value=m.Name(value=invalid_type_name)),
+            )
+
+            if not invalid_type_nodes:
+                return None
+
+            invalid_type_node = invalid_type_nodes[0]
+        else:
+            invalid_type_node = union_call
+
+        position = self._position_metadata[union_call]
+        invalid_type_node_position = self._position_metadata[invalid_type_node]
+
+        return ExceptionSource(
+            path=path,
+            code=source,
+            start_line=position.start.line,
+            error_line=invalid_type_node_position.start.line,
+            end_line=position.end.line,
+            error_column=invalid_type_node_position.start.column,
+            error_column_end=invalid_type_node_position.end.column,
+        )
+
 
 class SourceFinder:
-    # this might need to become a getter
+    # TODO: this might need to become a getter
     @cached_property
     def cst(self) -> Optional[LibCSTSourceFinder]:
         try:
@@ -264,3 +341,12 @@ class SourceFinder:
         self, function: Callable, argument_name: str
     ) -> Optional[ExceptionSource]:
         return self.cst.find_argument(function, argument_name) if self.cst else None
+
+    def find_union_call(
+        self, path: Path, union_name: str, invalid_type: object
+    ) -> Optional[ExceptionSource]:
+        return (
+            self.cst.find_union_call(path, union_name, invalid_type)
+            if self.cst
+            else None
+        )

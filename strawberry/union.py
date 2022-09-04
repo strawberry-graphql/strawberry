@@ -229,7 +229,7 @@ def union(
 
     for type_ in types:
         if not isinstance(type_, TypeVar) and not hasattr(type_, "_type_definition"):
-            raise InvalidUnionTypeError(type_)
+            raise InvalidUnionTypeError(union_name=name, invalid_type=type_)
 
     union_definition = StrawberryUnion(
         name=name,

@@ -3,8 +3,7 @@ from inspect import getframeinfo, stack
 from pathlib import Path
 from typing import Optional, Type
 
-import libcst as cst
-from libcst.metadata import CodeRange, MetadataWrapper, PositionProvider
+from strawberry.exceptions.utils.source_finder import SourceFinder
 
 from .exception import StrawberryException
 from .exception_source import ExceptionSource
@@ -15,7 +14,8 @@ class InvalidUnionTypeError(StrawberryException):
 
     invalid_type: Type
 
-    def __init__(self, invalid_type: Type) -> None:
+    def __init__(self, union_name: str, invalid_type: Type) -> None:
+        self.union_name = union_name
         self.invalid_type = invalid_type
 
         # assuming that the exception happens two stack frames above the current one.
@@ -54,69 +54,11 @@ class InvalidUnionTypeError(StrawberryException):
 
     @property
     def exception_source(self) -> Optional[ExceptionSource]:
-        union_position: Optional[CodeRange] = None
-
-        lineno = self.frame.lineno
-
-        class FindStrawberryUnionNode(cst.CSTVisitor):
-            METADATA_DEPENDENCIES = (PositionProvider,)
-
-            def visit_Call(self, node: cst.Call) -> Optional[bool]:
-                is_union_call = False
-
-                position = self.get_metadata(PositionProvider, node)
-
-                if lineno < position.start.line or lineno > position.end.line:
-                    return True
-
-                # this only works when people don't change the imports
-                if isinstance(node.func, cst.Name) and node.func.value == "union":
-                    is_union_call = True
-                elif isinstance(node.func, cst.Attribute):
-                    if (
-                        isinstance(node.func.value, cst.Name)
-                        and node.func.attr.value == "union"
-                        and node.func.value.value == "strawberry"
-                    ):
-                        is_union_call = True
-
-                if is_union_call:
-                    nonlocal union_position
-                    union_position = position
-
-                return True
-
         path = Path(self.frame.filename)
-        full_source = path.read_text()
 
-        visitor = FindStrawberryUnionNode()
+        source_finder = SourceFinder()
 
-        module = cst.parse_module(full_source)
-        wrapper = MetadataWrapper(module)
-        wrapper.visit(visitor)
-
-        if not union_position:
-            return None
-
-        return self._get_exception_source(
-            path=path,
-            full_source=full_source,
-            start_line=union_position.start.line,
-            end_line=union_position.end.line,
-        )
-
-    def find_invalid_type_line(self, code: str) -> int:
-        lines = code.splitlines()
-        invalid_type_line = -1
-        type_name = self.invalid_type.__name__
-
-        for invalid_type_line, line in enumerate(lines):
-            if type_name in line:
-                return invalid_type_line
-
-        raise ValueError(f"Could not find {self.invalid_type.__name__} in {code}")
-
-    # todo: maybe also check difference between a scalar and other types?
+        return source_finder.find_union_call(path, self.union_name, self.invalid_type)
 
 
 class InvalidTypeForUnionMergeError(InvalidUnionTypeError):
