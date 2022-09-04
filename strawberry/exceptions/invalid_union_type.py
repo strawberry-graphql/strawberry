@@ -67,7 +67,6 @@ class InvalidTypeForUnionMergeError(StrawberryException):
         self.rich_message = (
             f"`[underline]{other_name}[/]` cannot be used when merging GraphQL Unions"
         )
-        # TODO: add a suggestion
         self.suggestion = ""
         self.annotation_message = "invalid type here"
 

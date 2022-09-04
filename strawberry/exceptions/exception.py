@@ -83,7 +83,7 @@ class StrawberryException(Exception, ABC):
             f"{self.suggestion}\n\n"
             "Read more about this error on [bold underline]"
             f"[link={self.documentation_url}]{self.documentation_url}"
-        )
+        ).strip()
 
     def __rich__(self) -> Optional["RenderableType"]:
         from rich.box import SIMPLE
