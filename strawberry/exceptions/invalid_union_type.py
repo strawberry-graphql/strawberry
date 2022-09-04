@@ -61,15 +61,14 @@ class InvalidTypeForUnionMergeError(StrawberryException):
         # one is our code checking for invalid types, the other is the caller
         self.frame = getframeinfo(stack()[2][0])
 
-        type_name = "LOL this is a todo"
+        other_name = getattr(other, "__name__", str(other))
 
-        self.message = f"Type `{type_name}` cannot be used in a GraphQL Union"
+        self.message = f"`{other_name}` cannot be used when merging GraphQL Unions"
         self.rich_message = (
-            f"Type `[underline]{type_name}[/]` cannot be used in a GraphQL Union"
+            f"`[underline]{other_name}[/]` cannot be used when merging GraphQL Unions"
         )
-        self.suggestion = (
-            "To fix this error you should replace the type a strawberry.type"
-        )
+        # TODO: add a suggestion
+        self.suggestion = ""
         self.annotation_message = "invalid type here"
 
     @property
