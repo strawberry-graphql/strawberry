@@ -16,6 +16,7 @@ from typing import (
 
 from graphql import GraphQLScalarType
 
+from strawberry.exceptions.handler import should_use_rich_exceptions
 from strawberry.type import StrawberryType
 
 from .utils.str_converters import to_camel_case
@@ -86,13 +87,11 @@ def _process_scalar(
     _source_file = None
     _source_line = None
 
-    frame = getframeinfo(stack()[3][0])
+    if should_use_rich_exceptions():
+        frame = getframeinfo(stack()[3][0])
 
-    # TODO: should we make this code only happen when the
-    # the flag is enabled?
-
-    _source_file = frame.filename
-    _source_line = frame.lineno
+        _source_file = frame.filename
+        _source_line = frame.lineno
 
     wrapper = ScalarWrapper(cls)
     wrapper._scalar_definition = ScalarDefinition(

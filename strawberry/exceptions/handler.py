@@ -13,7 +13,7 @@ ExceptionHandler = Callable[
 ]
 
 
-def _should_use_rich_exceptions():
+def should_use_rich_exceptions():
     errors_disabled = os.environ.get("STRAWBERRY_DISABLE_RICH_ERRORS", "")
 
     return errors_disabled.lower() not in ["true", "1", "yes"]
@@ -57,5 +57,5 @@ def reset_exception_handler():
 
 
 def setup_exception_handler():
-    if _should_use_rich_exceptions():
+    if should_use_rich_exceptions():
         sys.excepthook = strawberry_exception_handler

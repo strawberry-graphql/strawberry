@@ -15,6 +15,7 @@ from ..exception_source import ExceptionSource
 if TYPE_CHECKING:
     from libcst import CSTNode
 
+    from strawberry.custom_scalar import ScalarDefinition
     from strawberry.union import StrawberryUnion
 
 
@@ -356,6 +357,58 @@ class LibCSTSourceFinder:
             error_column_end=invalid_type_node_position.end.column,
         )
 
+    def find_scalar_call(
+        self, scalar_definition: ScalarDefinition
+    ) -> Optional[ExceptionSource]:
+        if scalar_definition._source_file is None:
+            return None
+
+        import libcst.matchers as m
+
+        path = Path(scalar_definition._source_file)
+        source = path.read_text()
+
+        matcher = m.Call(
+            func=m.Attribute(value=m.Name(value="strawberry"), attr=m.Name("scalar"))
+            | m.Name("scalar"),
+            args=[
+                m.ZeroOrMore(),
+                m.Arg(
+                    keyword=m.Name(value="name"),
+                    value=m.SimpleString(value=f"'{scalar_definition.name}'")
+                    | m.SimpleString(value=f'"{scalar_definition.name}"'),
+                ),
+                m.ZeroOrMore(),
+            ],
+        )
+
+        scalar_calls = self._find(source, matcher)
+
+        if not scalar_calls:
+            return None
+
+        scalar_call_node = scalar_calls[0]
+
+        argument_node = m.findall(
+            scalar_call_node,
+            m.Arg(
+                keyword=m.Name(value="name"),
+            ),
+        )
+
+        position = self._position_metadata[scalar_call_node]
+        argument_node_position = self._position_metadata[argument_node[0]]
+
+        return ExceptionSource(
+            path=path,
+            code=source,
+            start_line=position.start.line,
+            end_line=position.end.line,
+            error_line=argument_node_position.start.line,
+            error_column=argument_node_position.start.column,
+            error_column_end=argument_node_position.end.column,
+        )
+
 
 class SourceFinder:
     # TODO: this might need to become a getter
@@ -397,3 +450,8 @@ class SourceFinder:
         self, union: StrawberryUnion, other: object, frame: Traceback
     ) -> Optional[ExceptionSource]:
         return self.cst.find_union_merge(union, other, frame) if self.cst else None
+
+    def find_scalar_call(
+        self, scalar_definition: ScalarDefinition
+    ) -> Optional[ExceptionSource]:
+        return self.cst.find_scalar_call(scalar_definition) if self.cst else None
