@@ -4,6 +4,7 @@ from typing import Any, List, Optional, Sequence, Tuple, Type, cast
 
 from pydantic import BaseModel
 from pydantic.fields import ModelField
+from pydantic.utils import lenient_issubclass
 
 from strawberry.auto import StrawberryAuto
 from strawberry.experimental.pydantic.utils import (
@@ -33,13 +34,13 @@ def field_type_to_type(type_):
 
         if is_list(child_type):
             strawberry_type = field_type_to_type(child_type)
-        elif issubclass(child_type, BaseModel):
+        elif lenient_issubclass(child_type, BaseModel):
             strawberry_type = get_strawberry_type_from_model(child_type)
         else:
             strawberry_type = List[error_class]
 
         strawberry_type = Optional[strawberry_type]
-    elif issubclass(type_, BaseModel):
+    elif lenient_issubclass(type_, BaseModel):
         strawberry_type = get_strawberry_type_from_model(type_)
         return Optional[strawberry_type]
 
