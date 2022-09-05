@@ -79,7 +79,8 @@ def test_strawberry_union_and_none():
 
 
 @pytest.mark.raises_strawberry_exception(
-    InvalidTypeForUnionMergeError, match="Type `int` cannot be used in a GraphQL Union"
+    InvalidTypeForUnionMergeError,
+    match="`int` cannot be used when merging GraphQL Unions",
 )
 def test_raises_error_when_piping_with_scalar():
     @strawberry.type

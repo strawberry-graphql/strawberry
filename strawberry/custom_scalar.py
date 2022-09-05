@@ -16,7 +16,6 @@ from typing import (
 
 from graphql import GraphQLScalarType
 
-from strawberry.exceptions.handler import should_use_rich_exceptions
 from strawberry.type import StrawberryType
 
 from .utils.str_converters import to_camel_case
@@ -82,6 +81,8 @@ def _process_scalar(
     parse_literal: Optional[Callable] = None,
     directives: Iterable[object] = (),
 ):
+    from strawberry.exceptions.handler import should_use_rich_exceptions
+
     name = name or to_camel_case(cls.__name__)
 
     _source_file = None
