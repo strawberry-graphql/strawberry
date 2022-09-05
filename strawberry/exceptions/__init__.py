@@ -17,6 +17,7 @@ from .object_is_not_a_class import ObjectIsNotClassError
 from .object_is_not_an_enum import ObjectIsNotAnEnumError
 from .private_strawberry_field import PrivateStrawberryFieldError
 from .scalar_already_registered import ScalarAlreadyRegisteredError
+from .unresolved_field_type import UnresolvedFieldTypeError
 
 
 setup_exception_handler()
@@ -76,16 +77,6 @@ class UnsupportedTypeError(Exception):
     def __init__(self, annotation):
         message = f"{annotation} conversion is not supported"
 
-        super().__init__(message)
-
-
-# TODO: this doesn't seem to be tested
-class UnresolvedFieldTypeError(Exception):
-    def __init__(self, field_name: str):
-        message = (
-            f"Could not resolve the type of '{field_name}'. Check that the class is "
-            "accessible from the global module scope."
-        )
         super().__init__(message)
 
 

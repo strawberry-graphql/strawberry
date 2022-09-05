@@ -262,7 +262,7 @@ class GraphQLCoreConverter:
 
     @staticmethod
     def _get_thunk_mapping(
-        fields: List[StrawberryField],
+        type_definition: TypeDefinition,
         name_converter: Callable[[StrawberryField], str],
         field_converter: Callable[[StrawberryField], FieldType],
     ) -> Dict[str, FieldType]:
@@ -279,19 +279,20 @@ class GraphQLCoreConverter:
         """
         thunk_mapping = {}
 
-        for f in fields:
-            if f.type is UNRESOLVED:
-                raise UnresolvedFieldTypeError(f.name)
+        for field in type_definition.fields:
+            if field.type is UNRESOLVED:
+                raise UnresolvedFieldTypeError(type_definition, field)
 
-            if not is_private(f.type):
-                thunk_mapping[name_converter(f)] = field_converter(f)
+            if not is_private(field.type):
+                thunk_mapping[name_converter(field)] = field_converter(field)
+
         return thunk_mapping
 
     def get_graphql_fields(
         self, type_definition: TypeDefinition
     ) -> Dict[str, GraphQLField]:
         return self._get_thunk_mapping(
-            fields=type_definition.fields,
+            type_definition=type_definition,
             name_converter=self.config.name_converter.from_field,
             field_converter=self.from_field,
         )
@@ -300,7 +301,7 @@ class GraphQLCoreConverter:
         self, type_definition: TypeDefinition
     ) -> Dict[str, GraphQLInputField]:
         return self._get_thunk_mapping(
-            fields=type_definition.fields,
+            type_definition=type_definition,
             name_converter=self.config.name_converter.from_field,
             field_converter=self.from_input_field,
         )
