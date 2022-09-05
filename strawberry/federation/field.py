@@ -127,10 +127,10 @@ def field(
     directives = list(directives)
 
     if provides:
-        directives.append(Provides(" ".join(provides)))
+        directives.append(Provides(fields=" ".join(provides)))
 
     if requires:
-        directives.append(Requires(" ".join(requires)))
+        directives.append(Requires(fields=" ".join(requires)))
 
     if external:
         directives.append(External())
@@ -139,10 +139,10 @@ def field(
         directives.append(Shareable())
 
     if tags:
-        directives.extend(Tag(tag) for tag in tags)
+        directives.extend(Tag(name=tag) for tag in tags)
 
     if override:
-        directives.append(Override(override))
+        directives.append(Override(override_from=override))
 
     if inaccessible:
         directives.append(Inaccessible())

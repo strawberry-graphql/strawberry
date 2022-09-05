@@ -834,7 +834,7 @@ def test_generic_interface():
     class Query:
         @strawberry.field
         def foo(self) -> GenericObject[str]:
-            return GenericObject("foo")
+            return GenericObject(obj="foo")
 
     schema = strawberry.Schema(query=Query)
     query_result = schema.execute_sync(

@@ -555,11 +555,11 @@ def test_union_with_similar_nested_generic_types():
     class Query:
         @strawberry.field
         def container_a(self) -> Union[Container[A], A]:
-            return Container(items=[A("hello")])
+            return Container(items=[A(a="hello")])
 
         @strawberry.field
         def container_b(self) -> Union[Container[B], B]:
-            return Container(items=[B(3)])
+            return Container(items=[B(b=3)])
 
     schema = strawberry.Schema(query=Query)
 
