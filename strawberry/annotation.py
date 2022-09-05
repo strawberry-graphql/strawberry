@@ -106,9 +106,11 @@ class StrawberryAnnotation:
         # it is not certain that is is in the namespace yet.
         try:
             return self.resolve()
-        except NameError as e:
-            assert isinstance(self.annotation, str), e
-            return ForwardRef(self.annotation)
+        except NameError:
+            if isinstance(self.annotation, str):
+                return ForwardRef(self.annotation)
+            else:
+                return self.annotation
 
     @staticmethod
     def create_enum(evaled_type: Any) -> EnumDefinition:

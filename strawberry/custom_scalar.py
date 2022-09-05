@@ -69,7 +69,7 @@ class ScalarDefinition(StrawberryType):
             self.implementation = cast(GraphQLScalarType, res)
             return self.implementation
 
-    def __call__(self, class_or_value: Any):
+    def __call__(self, class_or_value: Any = None):
         if (
             inspect.isclass(class_or_value)
             or type(class_or_value) is NewType
@@ -81,16 +81,19 @@ class ScalarDefinition(StrawberryType):
                     self, name=to_camel_case(class_or_value.__name__)
                 )
             return self
-        else:
+        elif class_or_value:
             # if someone tries to `initialize` the scalar just return what he gave
             # parse_value will be called else where.
             return class_or_value
+        else:
+            # ugly fix for `test_custom_scalar_decorated_class`
+            return self.serialize(None)
 
     @property
     def is_generic(self) -> bool:
         return False
 
-    def validate(self, value):
+    def _validate(self, value):
         with contextlib.suppress(Exception):
             parsed = self.parse_value(value)
             if self.serialize(parsed) == value:

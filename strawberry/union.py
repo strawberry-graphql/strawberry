@@ -114,14 +114,16 @@ class StrawberryUnion(StrawberryType):
             return_type: Optional[GraphQLType] = None
 
             if root_definition := get_type_definition(root):
-                if root_definition := root_definition.is_generic:
-                    for _, implementation in root_definition.implementations.items():
+                if template := root_definition.is_generic:
+                    for _, implementation in template.implementations.items():
                         if implementation := get_type_definition(implementation):
-                            if implementation.validate(root):
+                            if implementation._validate(root):
                                 return_type = type_map[
                                     implementation.graphql_name
                                 ].implementation
                                 break
+                else:
+                    return_type = type_map[root_definition.name].implementation
 
             # Make sure the found type is expected by the Union
             if return_type is None or return_type not in type_.types:
@@ -139,10 +141,10 @@ class StrawberryUnion(StrawberryType):
 
         return _resolve_union_type
 
-    def validate(self, value):
+    def _validate(self, value):
         # in unions only one type might be valid.
         for type_ in self.types:
-            if type_.validate(value):
+            if type_.__validate(value):
                 return True
         return False
 

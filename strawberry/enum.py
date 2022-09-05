@@ -32,7 +32,7 @@ class EnumDefinition(StrawberryType):
     def is_generic(self) -> bool:
         return False
 
-    def validate(self, value: Enum):
+    def _validate(self, value: Enum):
         for possibility in self.values:
             if value.value == possibility.value:
                 return True

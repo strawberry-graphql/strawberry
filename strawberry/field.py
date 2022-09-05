@@ -38,6 +38,7 @@ from strawberry.unset import UNSET
 from .permission import BasePermission
 from .private import is_private
 from .types.fields.resolver import StrawberryResolver, resolveable
+from .types.types import StrawberryObject
 
 
 if TYPE_CHECKING:
@@ -52,7 +53,7 @@ UNRESOLVED = object()
 class StrawberryField(StrawberryType):
     python_name: Optional[str] = None
     graphql_name: Optional[str] = None
-    origin: Optional[Type] = None
+    origin: Type[StrawberryObject] = None
     child: Optional["StrawberryField"] = None
     base_resolver: Optional[StrawberryResolver] = None
     type_annotation: Optional[StrawberryAnnotation] = None
@@ -64,7 +65,6 @@ class StrawberryField(StrawberryType):
         default_factory=list
     )
     directives: Sequence[object] = ()
-    is_basic_field: bool = False  # True if no resolver provided.
 
     # dataclasses.Field stuff
     default: object = UNSET
@@ -72,6 +72,11 @@ class StrawberryField(StrawberryType):
     default_value: Any = dataclasses.field(init=False, default=UNSET)
 
     is_generic = False
+    is_private = False
+
+    @property
+    def is_basic_field(self) -> bool:
+        return not bool(self.base_resolver)
 
     def __post_init__(self):
         if self.origin:
@@ -243,12 +248,6 @@ class StrawberryField(StrawberryType):
         elif not class_annotation:
             raise MissingReturnAnnotationError(self.python_name)
 
-        # only one annotation found, equalize!
-        else:
-            self.origin.__annotations__[self.python_name] = (
-                class_annotation or resolver_annotation.safe_resolve()
-            )
-
         self.type_annotation = resolver_annotation or StrawberryAnnotation(
             class_annotation,
         )
@@ -261,7 +260,6 @@ class StrawberryField(StrawberryType):
     def _evaluate_as_basic_field(self) -> None:
         """Field without a resolver"""
 
-        self.is_basic_field = True
         if self.default_factory is not UNSET:
             try:
                 self.default_value = self.default_factory()
@@ -359,9 +357,26 @@ class StrawberryField(StrawberryType):
             return type_
         return None
 
-    def validate(self, value):
+    def _validate(self, value):
         expected_type = self.type
         return super().base_validator(expected_type, value)
+
+
+class StrawberryPrivateField(StrawberryField):
+    """
+    this exists only to make sure that private fields are properly
+    ordered in the dataclass.
+    """
+
+    def _finalize(self) -> None:
+        try:
+            super()._finalize()
+        except PrivateStrawberryFieldError:
+            ...
+        except AssertionError:  # forward refs.
+            ...
+
+    is_private = True
 
 
 @overload

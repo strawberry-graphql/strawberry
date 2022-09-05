@@ -11,7 +11,7 @@ class StrawberryType(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def validate(self, value):
+    def _validate(self, value):
         raise NotImplementedError()
 
     @staticmethod
@@ -20,9 +20,9 @@ class StrawberryType(ABC):
 
         # FIXME: This is an  ugly fix for strawberry.type not being a StrawberryObject
         if isinstance(expected_type, StrawberryType):
-            return expected_type.validate(value)
+            return expected_type._validate(value)
         elif definition := get_type_definition(expected_type):
-            return definition.validate(value)
+            return definition._validate(value)
         elif isinstance(value, expected_type):
             return True
         return False
@@ -79,9 +79,9 @@ class StrawberryContainer(StrawberryType):
 
         return False
 
-    def validate(self, value):
+    def _validate(self, value):
         if isinstance(self.of_type, StrawberryType):
-            if not self.of_type.validate(value):
+            if not self.of_type.__validate(value):
                 return False
         else:
             if not isinstance(value, self.of_type):
@@ -90,10 +90,10 @@ class StrawberryContainer(StrawberryType):
 
 
 class StrawberryList(StrawberryContainer):
-    def validate(self, value: List[Any]) -> bool:
+    def _validate(self, value: List[Any]) -> bool:
         for node in value:
             if isinstance(self.of_type, StrawberryType):
-                if not self.of_type.validate(node):
+                if not self.of_type.__validate(node):
                     return False
             else:
                 if not isinstance(node, self.of_type):
@@ -102,10 +102,10 @@ class StrawberryList(StrawberryContainer):
 
 
 class StrawberryOptional(StrawberryContainer):
-    def validate(self, value: List[Any]) -> bool:
+    def _validate(self, value: List[Any]) -> bool:
         if value is None:
             return True
-        return super().validate(value)
+        return super().__validate(value)
 
 
 class StrawberryTypeVar(StrawberryType):
@@ -116,7 +116,7 @@ class StrawberryTypeVar(StrawberryType):
     def is_generic(self) -> bool:
         return True
 
-    def validate(self, value):
+    def _validate(self, value):
         raise NotImplementedError("typeVars cannot be validated")
 
     def __eq__(self, other) -> bool:

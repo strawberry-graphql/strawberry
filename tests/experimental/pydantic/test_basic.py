@@ -11,8 +11,11 @@ from strawberry.enum import EnumDefinition
 from strawberry.experimental.pydantic.exceptions import MissingFieldsListError
 from strawberry.schema_directive import Location
 from strawberry.type import StrawberryList, StrawberryOptional
-from strawberry.types.types import TypeDefinition
+from strawberry.types.types import TypeDefinition, get_type_definition
 from strawberry.union import StrawberryUnion
+
+
+strawberry.type()
 
 
 def test_basic_type_field_list():
@@ -287,11 +290,11 @@ def test_type_with_fields_coming_from_strawberry_and_pydantic():
 
     [field1, field2, field3] = definition.fields
 
-    assert field1.python_name == "age"
-    assert field1.type is int
+    assert field1.python_name == "name"
+    assert field1.type is str
 
-    assert field2.python_name == "name"
-    assert field2.type is str
+    assert field2.python_name == "age"
+    assert field2.type is int
 
     assert field3.python_name == "password"
     assert isinstance(field3.type, StrawberryOptional)
@@ -354,7 +357,7 @@ def test_type_with_fields_mutable_default():
         groups: strawberry.auto
         friends: strawberry.auto
 
-    definition: TypeDefinition = UserType._type_definition
+    definition = get_type_definition(UserType)
     assert definition.name == "UserType"
 
     [field1, field2] = definition.fields
@@ -424,11 +427,11 @@ def test_type_with_nested_fields_coming_from_strawberry_and_pydantic():
 
     [field1, field2, field3] = definition.fields
 
-    assert field1.python_name == "age"
-    assert field1.type is int
+    assert field1.python_name == "name"
+    assert field1.type is Name
 
-    assert field2.python_name == "name"
-    assert field2.type is Name
+    assert field2.python_name == "age"
+    assert field2.type is int
 
     assert field3.python_name == "password"
     assert isinstance(field3.type, StrawberryOptional)

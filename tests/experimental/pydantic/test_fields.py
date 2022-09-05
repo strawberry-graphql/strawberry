@@ -114,7 +114,7 @@ def test_constrained_list():
     class UserType:
         ...
 
-    assert UserType._type_definition.fields[0].name == "friends"
+    assert UserType._type_definition.fields[0].python_name == "friends"
     assert UserType._type_definition.fields[0].type_annotation.annotation == List[str]
 
     data = UserType(friends=[])
@@ -138,7 +138,7 @@ def test_constrained_list_nested():
     class UserType:
         ...
 
-    assert UserType._type_definition.fields[0].name == "friends"
+    assert UserType._type_definition.fields[0].python_name == "friends"
     assert (
         UserType._type_definition.fields[0].type_annotation.annotation
         == List[List[int]]

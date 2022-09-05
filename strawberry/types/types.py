@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import dataclasses
+import inspect
 import types
 import typing
+from collections import deque
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -21,6 +23,7 @@ from typing import (
 from strawberry.exceptions import (
     MissingFieldAnnotationError,
     MissingTypesForGenericError,
+    ObjectIsNotClassError,
 )
 from strawberry.private import is_private
 from strawberry.type import (
@@ -31,6 +34,8 @@ from strawberry.type import (
 )
 from strawberry.utils.str_converters import to_camel_case
 from strawberry.utils.typing import is_generic as is_type_generic
+
+from ..unset import UNSET
 
 
 if TYPE_CHECKING:
@@ -56,76 +61,13 @@ def _get_interfaces(cls: Type) -> List[TypeDefinition]:
 
 
 def _get_fields(origin) -> List[StrawberryField]:
-    from strawberry.field import StrawberryField
-
-    strawberry_fields: Dict[str, StrawberryField] = {}
-    # find fields in parents.
-    for base in origin.__bases__:
-        if _type_definition := get_type_definition(base):
-            if isinstance(_type_definition, TemplateTypeDefinition):
-                base_annots = base.__annotations__.copy()
-                base_annots.update(origin.__annotations__)
-                origin.__annotations__.update(base_annots)
-            for field in _type_definition.fields:
-                assert field.python_name
-                strawberry_fields[field.python_name] = field
-
-    # find fields in this class.
-    for field_name, field_ in [field for field in list(origin.__dict__.items())]:
-        if not isinstance(field_, (StrawberryField, dataclasses.Field)):
-            # Not a dataclasses.Field, nor a StrawberryLazyField. Ignore
-            continue
-
-        if isinstance(field_, dataclasses.Field):
-            # If somehow a non-StrawberryField field is added to
-            # the cls without annotations
-            # it raises an exception.
-            # This would occur if someone manually uses `dataclasses.field`
-            # This is similar to the check that dataclasses do during creation,
-            # https://github.com/python/cpython/blob/6fed3c85402c5ca704eb3f3189ca3f5c67a08d19/Lib/dataclasses.py#L881-L884,
-            if field_name not in origin.__annotations__:
-                # Field object exists but did not get an annotation
-                raise MissingFieldAnnotationError(field_name)
-
-        # set name and origin for the field.
-        if isinstance(field_, StrawberryField):
-            field_.python_name = field_name
-            field_ = field_(origin)
-            strawberry_fields[field_.python_name] = field_
-
-        # inject the dataclass strawberry fields we got so far.
-        for sb_field in strawberry_fields.values():
-            origin.__annotations__[
-                sb_field.python_name
-            ] = sb_field.type_annotation.safe_resolve()
-            setattr(origin, sb_field.python_name, sb_field.to_dataclass_field())
-
-    #  we can now create the dataclass
-    origin = dataclasses.dataclass(origin)
-
-    # Create a StrawberryField for fields that didn't use strawberry.field
-    for field in dataclasses.fields(origin):
-        if field.name not in strawberry_fields:
-            # Only ignore Private fields that weren't defined using StrawberryFields
-            if is_private(field.type):
-                continue
-
-            _strawberry_field = StrawberryField.from_dataclasses_field(
-                origin=origin, dataclasses_field=field
-            )
-            strawberry_fields[_strawberry_field.python_name] = _strawberry_field
-
-    return list(strawberry_fields.values())
+    return list(TypeDefinition._get_strawberry_fields(origin).values())
 
 
 def get_type_definition(
     type_: Any,
 ) -> Optional[Union[TypeDefinition, TemplateTypeDefinition]]:
-    origin = type_
-    # generics store their class in __origin__
-    if origin_ := getattr(type_, "__origin__", False):
-        origin = origin_
-    res = getattr(origin, "_type_definition", None)
+    res = getattr(type_, "_type_definition", None)
     if isinstance(res, TypeDefinition):
         return res
     else:
@@ -179,22 +121,110 @@ class TypeDefinition(StrawberryType):
     graphql_name: str = None
 
     @classmethod
+    def _get_strawberry_fields(
+        cls, origin: Type[StrawberryObject]
+    ) -> Dict[str, StrawberryField]:
+        from strawberry.field import StrawberryField, StrawberryPrivateField
+
+        strawberry_fields: Dict[str, StrawberryField] = {}
+        # find fields in parents.
+        for base in origin.__bases__:
+            if get_type_definition(base):
+                definition = get_type_definition(base)
+                for field in definition.fields:
+                    assert field.python_name
+                    strawberry_fields[field.python_name] = field
+
+        # find fields in this class.
+        for field_name, field_ in [field for field in list(origin.__dict__.items())]:
+            if not isinstance(field_, (StrawberryField, dataclasses.Field)):
+                # Not a dataclasses.Field, nor a StrawberryLazyField. Ignore
+                continue
+
+            if isinstance(field_, dataclasses.Field):
+                # If somehow a non-StrawberryField field is added to
+                # the cls without annotations
+                # it raises an exception.
+                # This would occur if someone manually uses `dataclasses.field`
+                # This is similar to the check that dataclasses do during creation,
+                # https://github.com/python/cpython/blob/6fed3c85402c5ca704eb3f3189ca3f5c67a08d19/Lib/dataclasses.py#L881-L884,
+                if field_name not in origin.__annotations__:
+                    # Field object exists but did not get an annotation
+                    raise MissingFieldAnnotationError(field_name)
+
+            # set name and origin for the field.
+            if isinstance(field_, StrawberryField):
+                field_.python_name = field_name
+                field_ = field_(origin)
+                strawberry_fields[field_.python_name] = field_
+
+        # Create a StrawberryField for fields that didn't use strawberry.field
+        for name, annotation in origin.__annotations__.items():
+            if name not in strawberry_fields:
+                default = getattr(origin, name, UNSET)
+                # Only ignore Private fields that weren't defined using StrawberryFields
+                if is_private(annotation):
+                    strawberry_fields[name] = StrawberryPrivateField(
+                        origin=origin,
+                        python_name=name,
+                        default=default,
+                    )
+                else:
+                    strawberry_fields[name] = StrawberryField(
+                        origin=origin,
+                        python_name=name,
+                        default=default,
+                    )
+        return strawberry_fields
+
+    @classmethod
+    def __pre_dataclass_creation__(
+        cls,
+        origin: StrawberryObject,
+        strawberry_fields: Dict[str, StrawberryField],
+        **kwargs,
+    ) -> Dict[str, StrawberryField]:
+        """
+        This hook will be called just before the dataclass is created,
+        every field that strawberry-core will find is in strawberry_fields.
+        """
+        return strawberry_fields
+
+    @classmethod
     def from_class(
         cls,
-        origin: Type,
+        origin: Type[StrawberryObject],
         name: Optional[str] = None,
         is_input: bool = False,
         is_interface: bool = False,
         description: Optional[str] = None,
         directives: Optional[Sequence[object]] = (),
         extend: bool = False,
+        **kwargs,
     ) -> Union["TypeDefinition", "TemplateTypeDefinition"]:
+        kwargs["is_input"] = is_input
+
         # at this point all the strawberry fields in the class are
         # without an origin and a python name.
-
         name = name or to_camel_case(origin.__name__)
-        fetched_fields = _get_fields(origin)
+        strawberry_fields = cls._get_strawberry_fields(origin)
+        strawberry_fields = cls.__pre_dataclass_creation__(
+            origin, strawberry_fields, **kwargs
+        )
 
+        def has_default(field_: StrawberryField) -> bool:
+            return bool(field_.default or field_.default_factory)
+
+        fetched_fields = sorted(list(strawberry_fields.values()), key=has_default)
+
+        # inject the dataclass strawberry fields we got so far.
+        origin.__annotations__ = {}
+        for sb_field in fetched_fields:
+            origin.__annotations__[sb_field.python_name] = sb_field.type
+            setattr(origin, sb_field.python_name, sb_field.to_dataclass_field())
+            if sb_field.is_private:
+                fetched_fields.remove(sb_field)
+        dataclasses.dataclass(origin)
         # find interfaces
         interfaces = _get_interfaces(origin)
         if is_type_generic(origin):
@@ -271,11 +301,11 @@ class TypeDefinition(StrawberryType):
         return None
 
     # TODO: replace with StrawberryObject
-    def validate(self, instance: type) -> bool:
+    def _validate(self, instance: StrawberryObject) -> bool:
         for field in dataclasses.fields(instance):
             this_field = self.get_field_by_name(field.name)
             value = getattr(instance, field.name)
-            if not this_field.validate(value):
+            if not this_field._validate(value):
                 return False
         return True
 
@@ -384,3 +414,59 @@ def _resolve_field_type(
 
     # just a normal field.
     return field_type
+
+
+class StrawberryObject(metaclass=StrawberryMeta):
+    _type_definition: TypeDefinition = dataclasses.field(init=False)
+
+    @classmethod
+    def from_class(
+        cls,
+        origin: Type,
+        name: Optional[str] = None,
+        is_input: bool = False,
+        is_interface: bool = False,
+        description: Optional[str] = None,
+        directives: Optional[Sequence[object]] = (),
+        extend: bool = False,
+        **kwargs,
+    ) -> Type[StrawberryObject]:
+        if not inspect.isclass(origin):
+            if is_input:
+                exc = ObjectIsNotClassError.input
+            elif is_interface:
+                exc = ObjectIsNotClassError.interface
+            else:
+                exc = ObjectIsNotClassError.type
+            raise exc(origin)
+
+        # create StrawberryObject
+        bases = deque()
+        bases.append(cls)
+        for base in origin.__bases__:
+            if base is not object:
+                bases.append(base)
+            if issubclass(base, StrawberryObject):
+                # remove StrawberryObject if already exists in the MRO.
+                bases.popleft()
+        new_type = types.new_class(
+            name=origin.__name__,
+            bases=tuple(bases),
+            exec_body=lambda ns: ns.update(origin.__dict__),
+        )
+        assert issubclass(new_type, cls)
+        new_type._type_definition = cls.create_type_definition(
+            origin=new_type,
+            name=name,
+            is_input=is_input,
+            is_interface=is_interface,
+            description=description,
+            directives=directives,
+            extend=extend,
+            **kwargs,
+        )
+        return new_type
+
+    @classmethod
+    def create_type_definition(cls, **kwargs):
+        return TypeDefinition.from_class(**kwargs)

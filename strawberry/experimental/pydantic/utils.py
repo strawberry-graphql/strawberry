@@ -1,5 +1,5 @@
 import dataclasses
-from typing import Any, List, NamedTuple, NoReturn, Set, Tuple, Type, Union, cast
+from typing import Any, List, NoReturn, Set, Type, Union, cast
 
 from pydantic import BaseModel
 from pydantic.fields import ModelField
@@ -46,36 +46,6 @@ def get_private_fields(cls: Type) -> List[dataclasses.Field]:
             private_fields.append(field)
 
     return private_fields
-
-
-class DataclassCreationFields(NamedTuple):
-    """Fields required for the fields parameter of make_dataclass"""
-
-    name: str
-    type_annotation: Type
-    field: dataclasses.Field
-
-    def to_tuple(self) -> Tuple[str, Type, dataclasses.Field]:
-        # fields parameter wants (name, type, Field)
-        return self.name, self.type_annotation, self.field
-
-
-def sort_creation_fields(
-    fields: List[DataclassCreationFields],
-) -> List[DataclassCreationFields]:
-    """
-    Sort fields so that fields with missing defaults go first
-    because dataclasses require that fields with no defaults are defined
-    first
-    """
-
-    def has_default(model_field: DataclassCreationFields) -> bool:
-        """Check if field has defaults."""
-        return (model_field.field.default is not dataclasses.MISSING) or (
-            model_field.field.default_factory is not dataclasses.MISSING
-        )
-
-    return sorted(fields, key=has_default)
 
 
 def get_default_factory_for_field(

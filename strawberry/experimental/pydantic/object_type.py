@@ -2,24 +2,13 @@ from __future__ import annotations
 
 import dataclasses
 import warnings
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Sequence,
-    Set,
-    Type,
-    cast,
-)
+from typing import Any, Callable, Dict, List, Optional, Sequence, Type
 
 from pydantic.fields import ModelField
+from pydantic.main import BaseModel as PydanticModel
 
 from graphql import GraphQLResolveInfo
 
-import strawberry
 from strawberry.auto import StrawberryAuto
 from strawberry.experimental.pydantic.conversion import (
     convert_pydantic_model_to_strawberry_class,
@@ -28,15 +17,11 @@ from strawberry.experimental.pydantic.conversion import (
 from strawberry.experimental.pydantic.exceptions import MissingFieldsListError
 from strawberry.experimental.pydantic.fields import replace_types_recursively
 from strawberry.experimental.pydantic.utils import (
-    DataclassCreationFields,
     ensure_all_auto_fields_in_pydantic,
     get_default_factory_for_field,
-    get_private_fields,
-    sort_creation_fields,
 )
 from strawberry.field import StrawberryField
-from strawberry.object_type import _wrap_dataclass
-from strawberry.types.types import _get_fields
+from strawberry.types.types import StrawberryObject, TypeDefinition
 from strawberry.unset import UNSET
 
 
@@ -50,62 +35,145 @@ def get_type_for_field(field: ModelField, is_input: bool):
         return replaced_type
 
 
-def _build_dataclass_creation_fields(
-    field: ModelField,
-    is_input: bool,
-    existing_fields: Dict[str, StrawberryField],
-    auto_fields_set: Set[str],
-    use_pydantic_alias: bool,
-) -> DataclassCreationFields:
-    type_annotation = (
-        get_type_for_field(field, is_input)
-        if field.name in auto_fields_set
-        else existing_fields[field.name].type
-    )
+@dataclasses.dataclass
+class StrawDanticTypeDefinition(TypeDefinition):
+    @classmethod
+    def __pre_dataclass_creation__(
+        cls,
+        origin: StrawDanticObject,
+        strawberry_fields: Dict[str, StrawberryField],
+        **kwargs,
+    ) -> Dict[str, StrawberryField]:
+        defined_fields = kwargs.get("fields", None)
+        if defined_fields:
+            warnings.warn(
+                "Using all_fields overrides any explicitly defined fields "
+                "in the model, using both is likely a bug",
+                stacklevel=2,
+            )
+        all_fields = kwargs["all_fields"]
+        is_input = kwargs["is_input"]
+        use_pydantic_alias = kwargs["use_pydantic_alias"]
+        model = kwargs["model"]
+        assert issubclass(model, PydanticModel)
+        model_fields = model.__fields__
+        defined_fields: List[str] = list(defined_fields) if defined_fields else []
+        existing_fields = getattr(origin, "__annotations__", {})
+        overridden_fields: Dict[str, StrawberryField] = {}
+        if defined_fields:
+            warnings.warn(
+                "`fields` is deprecated, use `auto` type annotations instead",
+                DeprecationWarning,
+            )
+        # these are the fields that matched a field name in the pydantic model
+        # and should copy their alias from the pydantic model
+        for name, sb_field in strawberry_fields.items():
+            if isinstance(sb_field.type, StrawberryAuto):
+                defined_fields.append(sb_field.python_name)
+            elif name in model_fields.keys():
+                overridden_fields[name] = sb_field
+                overridden_fields[model_fields[name].alias] = sb_field
 
-    if (
-        field.name in existing_fields
-        and existing_fields[field.name].base_resolver is not None
-    ):
-        # if the user has defined a resolver for this field, always use it
-        strawberry_field = existing_fields[field.name]
-    else:
-        # otherwise we build an appropriate strawberry field that resolves it
-        existing_field = existing_fields.get(field.name)
-        graphql_name = None
-        if existing_field and existing_field.graphql_name:
-            graphql_name = existing_field.graphql_name
-        elif field.has_alias and use_pydantic_alias:
-            graphql_name = field.alias
-        strawberry_field = StrawberryField(
-            python_name=field.name,
-            graphql_name=graphql_name,
-            # always unset because we use default_factory instead
-            default=UNSET,
-            default_factory=get_default_factory_for_field(field),
-            type_annotation=type_annotation,
-            description=field.field_info.description,
-            deprecation_reason=(
-                existing_field.deprecation_reason if existing_field else None
-            ),
-            permission_classes=(
-                existing_field.permission_classes if existing_field else []
-            ),
-            directives=existing_field.directives if existing_field else (),
+        defined_fields.extend(
+            [
+                name
+                for name, annot in existing_fields.items()
+                if name in model_fields and isinstance(annot, StrawberryAuto)
+            ]
         )
 
-    return DataclassCreationFields(
-        name=field.name,
-        type_annotation=type_annotation,
-        field=strawberry_field,
-    )
+        auto_fields_set = set(defined_fields)
+        if overridden_fields:
+            auto_fields_set = auto_fields_set.union(set(overridden_fields.keys()))
+
+        if all_fields:
+            if auto_fields_set:
+                warnings.warn(
+                    "Using all_fields overrides any explicitly defined fields "
+                    "in the model, using both is likely a bug",
+                    stacklevel=2,
+                )
+            auto_fields_set = set(model_fields.keys())
+        if not auto_fields_set:
+            raise MissingFieldsListError(model)
+
+        ensure_all_auto_fields_in_pydantic(
+            model=model, auto_fields=auto_fields_set, cls_name=origin.__name__
+        )
+        # build strawberry fields.
+        for field_name, field in model_fields.items():
+            if field_name not in auto_fields_set:
+                continue
+            sb_field = strawberry_fields.get(field_name, StrawberryField())
+            # don't override base_resolvers.
+            if sb_field.base_resolver:
+                continue
+            pydantic_default = field.default or UNSET
+            default_factory = (
+                UNSET if pydantic_default else get_default_factory_for_field(field)
+            )
+            field_type = get_type_for_field(field, is_input)
+            if sb_field.python_name in overridden_fields:
+                field_type = overridden_fields[field_name].type
+            pydantic_alias = None
+            if field.has_alias and use_pydantic_alias:
+                pydantic_alias = field.alias
+
+            origin.__annotations__[field_name] = field_type
+            strawberry_fields[field_name] = dataclasses.replace(
+                sb_field,
+                python_name=field_name,
+                origin=origin,
+                default=sb_field.default or pydantic_default,
+                graphql_name=sb_field.graphql_name or pydantic_alias,
+                default_factory=sb_field.default_factory or default_factory,
+                description=sb_field.description or field.field_info.description,
+            )
+
+        if is_input:
+            model._strawberry_input_type = origin  # type: ignore
+        else:
+            model._strawberry_type = origin  # type: ignore
+
+        return strawberry_fields
 
 
-if TYPE_CHECKING:
-    from strawberry.experimental.pydantic.conversion_types import (
-        PydanticModel,
-        StrawberryTypeFromPydantic,
-    )
+class StrawDanticObject(StrawberryObject):
+    _type_definition: StrawDanticTypeDefinition = dataclasses.field(init=False)
+    _pydantic_type: Type[PydanticModel] = None
+
+    @classmethod
+    def is_type_of(cls, instance: type, _info: GraphQLResolveInfo) -> bool:
+        return isinstance(instance, (StrawDanticObject, cls._pydantic_type))
+
+    @classmethod
+    def from_class(cls, **kwargs) -> Type[StrawDanticObject]:
+        model = kwargs["model"]
+        assert issubclass(model, PydanticModel)
+        new_class = super().from_class(**kwargs)
+        assert issubclass(new_class, StrawDanticObject)
+        new_class._pydantic_type = model
+        return new_class
+
+    @classmethod
+    def from_pydantic(
+        cls, instance: PydanticModel, extra: Dict[str, Any] = None
+    ) -> StrawDanticObject:
+        return convert_pydantic_model_to_strawberry_class(
+            cls=cls, model_instance=instance, extra=extra
+        )
+
+    def to_pydantic(self, **kwargs) -> PydanticModel:
+        instance_kwargs = {
+            f.name: convert_strawberry_class_to_pydantic_model(getattr(self, f.name))
+            for f in dataclasses.fields(self)
+        }
+        instance_kwargs.update(kwargs)
+        return self._pydantic_type(**instance_kwargs)
+
+    @classmethod
+    def create_type_definition(cls, **kwargs):
+        return StrawDanticTypeDefinition.from_class(**kwargs)
 
 
 def type(
@@ -119,149 +187,20 @@ def type(
     directives: Optional[Sequence[object]] = (),
     all_fields: bool = False,
     use_pydantic_alias: bool = True,
-) -> Callable[..., Type[StrawberryTypeFromPydantic[PydanticModel]]]:
-    def wrap(cls: Any) -> Type[StrawberryTypeFromPydantic[PydanticModel]]:
-        model_fields = model.__fields__
-        original_fields_set = set(fields) if fields else set([])
-
-        if fields:
-            warnings.warn(
-                "`fields` is deprecated, use `auto` type annotations instead",
-                DeprecationWarning,
-            )
-
-        existing_fields = getattr(cls, "__annotations__", {})
-        # these are the fields that matched a field name in the pydantic model
-        # and should copy their alias from the pydantic model
-        fields_set = original_fields_set.union(
-            set(name for name, _ in existing_fields.items() if name in model_fields)
-        )
-        # these are the fields that were marked with strawberry.auto and
-        # should copy their type from the pydantic model
-        auto_fields_set = original_fields_set.union(
-            set(
-                name
-                for name, type_ in existing_fields.items()
-                if isinstance(type_, StrawberryAuto)
-            )
-        )
-
-        if all_fields:
-            if fields_set:
-                warnings.warn(
-                    "Using all_fields overrides any explicitly defined fields "
-                    "in the model, using both is likely a bug",
-                    stacklevel=2,
-                )
-            fields_set = set(model_fields.keys())
-            auto_fields_set = set(model_fields.keys())
-
-        if not fields_set:
-            raise MissingFieldsListError(cls)
-
-        ensure_all_auto_fields_in_pydantic(
-            model=model, auto_fields=auto_fields_set, cls_name=cls.__name__
-        )
-
-        wrapped = _wrap_dataclass(cls)
-        extra_strawberry_fields = _get_fields(wrapped)
-        extra_fields = cast(List[dataclasses.Field], extra_strawberry_fields)
-        private_fields = get_private_fields(wrapped)
-
-        extra_fields_dict = {
-            field.python_name: field for field in extra_strawberry_fields
-        }
-
-        all_model_fields: List[DataclassCreationFields] = [
-            _build_dataclass_creation_fields(
-                field, is_input, extra_fields_dict, auto_fields_set, use_pydantic_alias
-            )
-            for field_name, field in model_fields.items()
-            if field_name in fields_set
-        ]
-
-        all_model_fields.extend(
-            (
-                DataclassCreationFields(
-                    name=field.name,
-                    type_annotation=field.type,
-                    field=field,
-                )
-                for field in extra_fields + private_fields
-                if field.python_name not in fields_set
-            )
-        )
-
-        # Sort fields so that fields with missing defaults go first
-        sorted_fields = sort_creation_fields(all_model_fields)
-
-        # Implicitly define `is_type_of` to support interfaces/unions that use
-        # pydantic objects (not the corresponding strawberry type)
-        @classmethod  # type: ignore
-        def is_type_of(cls: Type, obj: Any, _info: GraphQLResolveInfo) -> bool:
-            return isinstance(obj, (cls, model))
-
-        namespace = {"is_type_of": is_type_of}
-        # We need to tell the difference between a from_pydantic method that is
-        # inherited from a base class and one that is defined by the user in the
-        # decorated class. We want to override the method only if it is
-        # inherited. To tell the difference, we compare the class name to the
-        # fully qualified name of the method, which will end in <class>.from_pydantic
-        has_custom_from_pydantic = hasattr(
-            cls, "from_pydantic"
-        ) and cls.from_pydantic.__qualname__.endswith(f"{cls.__name__}.from_pydantic")
-        has_custom_to_pydantic = hasattr(
-            cls, "to_pydantic"
-        ) and cls.to_pydantic.__qualname__.endswith(f"{cls.__name__}.to_pydantic")
-
-        if has_custom_from_pydantic:
-            namespace["from_pydantic"] = cls.from_pydantic
-        if has_custom_to_pydantic:
-            namespace["to_pydantic"] = cls.to_pydantic
-
-        cls = dataclasses.make_dataclass(
-            cls.__name__,
-            [field.to_tuple() for field in sorted_fields],
-            bases=cls.__bases__,
-            namespace=namespace,
-        )
-
-        cls = strawberry.type(
-            cls=cls,
+) -> Callable[..., Type[StrawDanticObject]]:
+    def wrap(cls: Any) -> Type[StrawDanticObject]:
+        cls = StrawDanticObject.from_class(
+            origin=cls,
             name=name,
             is_input=is_input,
             is_interface=is_interface,
             description=description,
             directives=directives,
+            model=model,
+            all_fields=all_fields,
+            fields=fields,
+            use_pydantic_alias=use_pydantic_alias,
         )
-
-        if is_input:
-            model._strawberry_input_type = cls  # type: ignore
-        else:
-            model._strawberry_type = cls  # type: ignore
-        cls._pydantic_type = model
-
-        def from_pydantic_default(
-            instance: PydanticModel, extra: Dict[str, Any] = None
-        ) -> StrawberryTypeFromPydantic[PydanticModel]:
-            return convert_pydantic_model_to_strawberry_class(
-                cls=cls, model_instance=instance, extra=extra
-            )
-
-        def to_pydantic_default(self, **kwargs) -> PydanticModel:
-            instance_kwargs = {
-                f.name: convert_strawberry_class_to_pydantic_model(
-                    getattr(self, f.name)
-                )
-                for f in dataclasses.fields(self)
-            }
-            instance_kwargs.update(kwargs)
-            return model(**instance_kwargs)
-
-        if not has_custom_from_pydantic:
-            cls.from_pydantic = staticmethod(from_pydantic_default)
-        if not has_custom_to_pydantic:
-            cls.to_pydantic = to_pydantic_default
 
         return cls
 
@@ -278,7 +217,7 @@ def input(
     directives: Optional[Sequence[object]] = (),
     all_fields: bool = False,
     use_pydantic_alias: bool = True,
-) -> Callable[..., Type[StrawberryTypeFromPydantic[PydanticModel]]]:
+) -> Callable[..., Type[StrawDanticObject]]:
     """Convenience decorator for creating an input type from a Pydantic model.
     Equal to partial(type, is_input=True)
     See https://github.com/strawberry-graphql/strawberry/issues/1830
@@ -306,7 +245,7 @@ def interface(
     directives: Optional[Sequence[object]] = (),
     all_fields: bool = False,
     use_pydantic_alias: bool = True,
-) -> Callable[..., Type[StrawberryTypeFromPydantic[PydanticModel]]]:
+) -> Callable[..., Type[StrawDanticObject]]:
     """Convenience decorator for creating an interface type from a Pydantic model.
     Equal to partial(type, is_interface=True)
     See https://github.com/strawberry-graphql/strawberry/issues/1830

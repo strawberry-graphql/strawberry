@@ -1,15 +1,9 @@
 import dataclasses
-import inspect
-import types
 from typing import Callable, Optional, Sequence, Type, TypeVar, overload
 
-from .exceptions import (
-    MissingFieldAnnotationError,
-    MissingReturnAnnotationError,
-    ObjectIsNotClassError,
-)
+from .exceptions import MissingFieldAnnotationError, MissingReturnAnnotationError
 from .field import StrawberryField, field
-from .types.types import StrawberryMeta, TypeDefinition
+from .types.types import StrawberryObject, TypeDefinition
 from .utils.typing import __dataclass_transform__
 
 
@@ -113,7 +107,7 @@ def type(
     description=None,
     directives=(),
     extend=False,
-):
+) -> Type[StrawberryObject]:
     """Annotates a class as a GraphQL type.
 
     Example usage:
@@ -124,28 +118,8 @@ def type(
     """
 
     def wrap(cls):
-        if not inspect.isclass(cls):
-            if is_input:
-                exc = ObjectIsNotClassError.input
-            elif is_interface:
-                exc = ObjectIsNotClassError.interface
-            else:
-                exc = ObjectIsNotClassError.type
-            raise exc(cls)
-
-        # create StrawberryObject
-        def fill_ns(ns):
-            ns.update(cls.__dict__)
-
-        new_type = types.new_class(
-            name=cls.__name__,
-            bases=cls.__bases__,
-            kwds={"metaclass": StrawberryMeta},
-            exec_body=fill_ns,
-        )
-
-        new_type._type_definition = TypeDefinition.from_class(
-            new_type,
+        return StrawberryObject.from_class(
+            cls,
             name=name,
             is_input=is_input,
             is_interface=is_interface,
@@ -154,10 +128,8 @@ def type(
             extend=extend,
         )
 
-        return new_type
-
     if cls is None:
-        return wrap
+        return wrap  # type: ignore
 
     return wrap(cls)
 
