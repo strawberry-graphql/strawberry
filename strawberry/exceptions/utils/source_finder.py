@@ -13,7 +13,7 @@ from ..exception_source import ExceptionSource
 
 
 if TYPE_CHECKING:
-    from libcst import CSTNode
+    from libcst import CSTNode, FunctionDef
 
     from strawberry.custom_scalar import ScalarDefinition
     from strawberry.union import StrawberryUnion
@@ -92,14 +92,18 @@ class LibCSTSourceFinder:
 
     def _find_function_definition(
         self, source: SourcePath, function: Callable
-    ) -> Optional["CSTNode"]:
+    ) -> Optional[FunctionDef]:
         import libcst.matchers as m
+        from libcst import FunctionDef
 
         matcher = m.FunctionDef(name=m.Name(value=function.__name__))
 
         function_defs = self._find(source.code, matcher)
 
-        return self._find_definition_by_qualname(function.__qualname__, function_defs)
+        return cast(
+            FunctionDef,
+            self._find_definition_by_qualname(function.__qualname__, function_defs),
+        )
 
     def _find_class_definition(
         self, source: SourcePath, cls: Type
@@ -191,7 +195,12 @@ class LibCSTSourceFinder:
 
         position = self._position_metadata[function_def]
 
-        function_prefix = len("def ")
+        prefix = f"def{function_def.whitespace_after_def.value}"
+
+        if function_def.asynchronous:
+            prefix = f"async{function_def.asynchronous.whitespace_after.value}{prefix}"
+
+        function_prefix = len(prefix)
         error_column = position.start.column + function_prefix
         error_column_end = error_column + len(function.__name__)
 

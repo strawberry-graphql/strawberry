@@ -116,6 +116,18 @@ def test_raises_error_when_return_annotation_missing():
 
 @pytest.mark.raises_strawberry_exception(
     MissingReturnAnnotationError,
+    match='Return annotation missing for field "hello", did you forget to add it?',
+)
+def test_raises_error_when_return_annotation_missing_async_function():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        async def hello(self):
+            return "I'm a resolver"
+
+
+@pytest.mark.raises_strawberry_exception(
+    MissingReturnAnnotationError,
     match='Return annotation missing for field "goodbye", did you forget to add it?',
 )
 def test_raises_error_when_return_annotation_missing_resolver():
