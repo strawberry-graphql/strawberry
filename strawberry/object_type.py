@@ -109,7 +109,7 @@ def _wrap_dataclass(cls: Type):
     else:
         dclass_kwargs["init"] = False
 
-    dclass = dataclasses.dataclass(cls, **dclass_kwargs)  # type: ignore
+    dclass = dataclasses.dataclass(cls, **dclass_kwargs)
 
     if sys.version_info < (3, 10):
         add_custom_init_fn(dclass)
