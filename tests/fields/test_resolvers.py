@@ -241,8 +241,8 @@ def test_eq_resolvers():
         name: str = strawberry.field(resolver=get_name)
         name_2: str = strawberry.field(resolver=get_name)
 
-    assert Query(1) == Query(1)
-    assert Query(1) != Query(2)
+    assert Query(a=1) == Query(a=1)
+    assert Query(a=1) != Query(a=2)
 
 
 def test_eq_fields():
@@ -251,8 +251,8 @@ def test_eq_fields():
         a: int
         name: str = strawberry.field(name="name")
 
-    assert Query(1, "name") == Query(1, "name")
-    assert Query(1, "name") != Query(1, "not a name")
+    assert Query(a=1, name="name") == Query(a=1, name="name")
+    assert Query(a=1, name="name") != Query(a=1, name="not a name")
 
 
 def test_with_resolver_fields():
@@ -264,8 +264,8 @@ def test_with_resolver_fields():
         def name(self) -> str:
             return "A"
 
-    assert Query(1) == Query(1)
-    assert Query(1) != Query(2)
+    assert Query(a=1) == Query(a=1)
+    assert Query(a=1) != Query(a=2)
 
 
 def test_resolver_annotations():

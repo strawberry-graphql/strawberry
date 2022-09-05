@@ -23,7 +23,7 @@ def enum_value(
         directives.append(Inaccessible())
 
     if tags:
-        directives.extend(Tag(tag) for tag in tags)
+        directives.extend(Tag(name=tag) for tag in tags)
 
     return base_enum_value(value, deprecation_reason, directives)
 
@@ -77,7 +77,7 @@ def enum(
         directives.append(Inaccessible())
 
     if tags:
-        directives.extend(Tag(tag) for tag in tags)
+        directives.extend(Tag(name=tag) for tag in tags)
 
     def wrap(cls: EnumType) -> EnumType:
         return _process_enum(cls, name, description, directives=directives)
