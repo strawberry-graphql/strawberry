@@ -99,6 +99,8 @@ def test_private_field_with_str_annotations():
 def test_private_field_defined_outside_module_scope():
     """Check compatibility of strawberry.Private when defined outside module scope."""
 
+    global LocallyScopedSensitiveData
+
     @strawberry.type
     class LocallyScopedQuery:
         not_seen: "strawberry.Private[LocallyScopedSensitiveData]"
@@ -112,11 +114,11 @@ def test_private_field_defined_outside_module_scope():
         value: int
         info: str
 
-    with pytest.raises(TypeError, match=r"Could not resolve the type of 'not_seen'."):
-        schema = strawberry.Schema(query=LocallyScopedQuery)
+    schema = strawberry.Schema(query=LocallyScopedQuery)
 
-        # If schema-conversion does not raise, check if private field is visible
-        assert "notSeen" not in str(schema)
+    assert "notSeen" not in str(schema)
+
+    del LocallyScopedSensitiveData
 
 
 def test_private_field_type_resolution_with_generic_type():
