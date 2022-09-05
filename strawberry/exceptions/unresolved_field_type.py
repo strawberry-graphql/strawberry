@@ -42,6 +42,18 @@ class UnresolvedFieldTypeError(StrawberryException):
     def exception_source(self) -> Optional[ExceptionSource]:
         source_finder = SourceFinder()
 
-        return source_finder.find_class_attribute_from_object(
+        # field could be attached to the class or not
+
+        source = source_finder.find_class_attribute_from_object(
             self.type_definition.origin, self.field.name
         )
+
+        if source is not None:
+            return source
+
+        if self.field.base_resolver:
+            return source_finder.find_function_from_object(
+                self.field.base_resolver.wrapped_func  # type: ignore
+            )
+
+        return None
