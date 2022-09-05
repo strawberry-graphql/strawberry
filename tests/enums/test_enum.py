@@ -62,7 +62,7 @@ def test_can_use_enum_as_arguments():
 
 @pytest.mark.raises_strawberry_exception(
     ObjectIsNotAnEnumError,
-    message="strawberry.enum can only be used with subclasses of Enum. ",
+    match="strawberry.enum can only be used with subclasses of Enum. ",
 )
 def test_raises_error_when_using_enum_with_a_not_enum_class():
     @strawberry.enum
