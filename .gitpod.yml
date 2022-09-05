@@ -1,0 +1,8 @@
+tasks:
+  - before: |
+      curl -sSL https://raw.githubusercontent.com/python-poetry/poetry/master/get-poetry.py | python -
+      source $HOME/.poetry/env
+      pip install pre-commit
+    init: |
+      poetry install
+      pre-commit install --install-hooks

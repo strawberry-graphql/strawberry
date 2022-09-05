@@ -1,4 +1,8 @@
-name: Backend tests
+name: 🔂 Unit tests
+
+concurrency:
+  group: ${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
 
 on:
   push:
@@ -16,48 +20,60 @@ jobs:
   unit-tests:
     strategy:
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10']
-        os: [ubuntu-latest, windows-latest]
-        include:
-          - os: ubuntu-latest
-            cache-path: ~/.cache/pypoetry/virtualenvs
-          - os: windows-latest
-            cache-path: ~\AppData\Local\pypoetry\Cache
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
 
-    name: Test ${{ matrix.os }} - Python ${{ matrix.python-version }}
-    runs-on: ${{ matrix.os }}
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
-
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
+      - run: pipx install poetry
+      - uses: actions/setup-python@v4
         id: setup-python
         with:
           python-version: ${{ matrix.python-version }}
-          architecture: x64
+          cache: "poetry"
 
-      - uses: actions/setup-node@v2
-        with:
-          node-version: '14'
-
-      - run: npm install -g --no-package-lock --no-save pyright
-      - run: pip install poetry
-      - run: poetry config experimental.new-installer false
-
-      - name: "Python dependencies cache"
-        id: cache-poetry-dependencies
-        uses: actions/cache@v2
-        with:
-          path: ${{ matrix.cache-path }}
-          key: ${{ runner.os }}-py-${{ steps.setup-python.outputs.python-version }}-poetry-${{ hashFiles('poetry.lock') }}
-          restore-keys: ${{ runner.os }}-py-${{ steps.setup-python.outputs.python-version }}-poetry-
-
-      - name: Install dependencies
-        run: poetry install
-        if: steps.cache-poetry-dependencies.outputs.cache-hit != 'true'
+      - run: poetry env use ${{ matrix.python-version }}
+      - run: poetry run python --version
+      - run: poetry install
+        if: steps.setup-python.outputs.cache-hit != 'true'
 
       - name: pytest
-        run: poetry run pytest --cov-report xml --cov=. --showlocals -vv -m "not django"
+        run:
+          poetry run pytest --cov-report xml --cov=. --showlocals -vv -m "not
+          starlette" -m "not django" --ignore=tests/mypy --ignore=tests/pyright
+
+      - uses: codecov/codecov-action@v1
+        if: ${{ always() }}
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+          verbose: true
+
+  unit-tests-on-windows:
+    name: Python 3.10 on Windows
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - run: pipx install poetry
+      - uses: actions/setup-python@v4
+        id: setup-python
+        with:
+          python-version: "3.10"
+          cache: "poetry"
+
+      - run:
+          poetry env use C:\hostedtoolcache\windows\Python\3.8.10\x86\python.exe
+      - run: poetry run python --version
+      - run: poetry install
+        if: steps.setup-python.outputs.cache-hit != 'true'
+
+      - name: pytest
+        run:
+          poetry run pytest --cov-report xml --cov=. --showlocals -vv -m "not
+          django" --ignore=tests/mypy --ignore=tests/pyright
 
       - uses: codecov/codecov-action@v1
         if: ${{ always() }}
@@ -69,42 +85,66 @@ jobs:
   django-unit-tests:
     strategy:
       matrix:
-        django: ["4.0", "3.2", "2.2"]
+        django: ["4.0", "3.2"]
 
-    name: Test Django ${{ matrix.django }}
+    name: Django ${{ matrix.django }}
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
-
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
+      - run: pipx install poetry
+      - uses: actions/setup-python@v4
         id: setup-python
         with:
-          # Pin to 3.9 because Django 2.2 does not support 3.10
-          python-version: '3.9'
-          architecture: x64
+          python-version: "3.10"
+          cache: "poetry"
 
-      - run: pip install poetry
-      - run: poetry config experimental.new-installer false
-
-      - name: "Python dependencies cache"
-        id: cache-poetry-dependencies
-        uses: actions/cache@v2
-        with:
-          path: ~/.cache/pypoetry/virtualenvs
-          key: ${{ runner.os }}-py-${{ steps.setup-python.outputs.python-version }}-poetry-${{ hashFiles('poetry.lock') }}
-          restore-keys: ${{ runner.os }}-py-${{ steps.setup-python.outputs.python-version }}-poetry-
-
-      - name: Install dependencies
-        run: poetry install
-        if: steps.cache-poetry-dependencies.outputs.cache-hit != 'true'
+      - run: poetry env use python3.10
+      - run: poetry install
+        if: steps.setup-python.outputs.cache-hit != 'true'
 
       - name: Install django ${{ matrix.django }}
-        # Add --python ^3.9 marker because django 4.0 does not support 3.7
-        run: poetry add --python ^3.9 django@^${{ matrix.django }}
+        run: poetry add --python ^3.10 django@^${{ matrix.django }}
 
       - name: pytest
-        run: poetry run pytest --cov-report xml --cov=. --showlocals -vv -m django
+        run:
+          poetry run pytest --cov-report xml --cov=. --showlocals -vv -m django
+
+      - uses: codecov/codecov-action@v1
+        if: ${{ always() }}
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+          verbose: true
+
+  starlette-unit-tests:
+    strategy:
+      matrix:
+        starlette: ["0.17.1", "0.18.0", "0.19.1", "0.20.0"]
+
+    name: Starlette ${{ matrix.starlette }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - run: pipx install poetry
+      - uses: actions/setup-python@v4
+        id: setup-python
+        with:
+          python-version: "3.10"
+          cache: "poetry"
+
+      - run: poetry env use python3.10
+      - run: poetry install
+        if: steps.setup-python.outputs.cache-hit != 'true'
+
+      - name: Install starlette ${{ matrix.starlette }}
+        run: poetry run pip install starlette==${{ matrix.starlette }}
+
+      - name: pytest
+        run:
+          poetry run pytest --cov-report xml --cov=. --showlocals -vv -m
+          starlette
 
       - uses: codecov/codecov-action@v1
         if: ${{ always() }}

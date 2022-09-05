@@ -6,7 +6,7 @@ pytestmark = [skip_on_windows, requires_pyright]
 
 CODE = """
 import strawberry
-
+from typing_extensions import TypeAlias
 
 @strawberry.type
 class User:
@@ -17,7 +17,7 @@ class User:
 class Error:
     message: str
 
-UserOrError = strawberry.union("UserOrError", (User, Error))
+UserOrError: TypeAlias = strawberry.union("UserOrError", (User, Error))
 
 reveal_type(UserOrError)
 
@@ -32,10 +32,10 @@ def test_pyright():
 
     assert results == [
         Result(
-            type="info",
+            type="information",
             message='Type of "UserOrError" is "Type[User] | Type[Error]"',
             line=16,
             column=13,
         ),
-        Result(type="info", message='Type of "x" is "User"', line=20, column=13),
+        Result(type="information", message='Type of "x" is "User"', line=20, column=13),
     ]

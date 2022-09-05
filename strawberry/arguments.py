@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import inspect
+import warnings
 from typing import (
     TYPE_CHECKING,
     Any,
@@ -24,34 +25,38 @@ from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
 from .exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError
 from .scalars import is_scalar
 from .types.types import TypeDefinition
+from .unset import UNSET as _deprecated_UNSET, _deprecated_is_unset  # noqa
 
 
 if TYPE_CHECKING:
     from strawberry.schema.config import StrawberryConfig
 
-
-class _Unset:
-    def __str__(self):
-        return ""
-
-    def __bool__(self):
-        return False
-
-
-UNSET: Any = _Unset()
-
-
-def is_unset(value: Any) -> bool:
-    return type(value) is _Unset
+DEPRECATED_NAMES: Dict[str, str] = {
+    "UNSET": (
+        "importing `UNSET` from `strawberry.arguments` is deprecated, "
+        "import instead from `strawberry` or from `strawberry.unset`"
+    ),
+    "is_unset": "`is_unset` is deprecated use `value is UNSET` instead",
+}
 
 
 class StrawberryArgumentAnnotation:
     description: Optional[str]
     name: Optional[str]
+    deprecation_reason: Optional[str]
+    directives: Iterable[object]
 
-    def __init__(self, description: Optional[str] = None, name: Optional[str] = None):
+    def __init__(
+        self,
+        description: Optional[str] = None,
+        name: Optional[str] = None,
+        deprecation_reason: Optional[str] = None,
+        directives: Iterable[object] = (),
+    ):
         self.description = description
         self.name = name
+        self.deprecation_reason = deprecation_reason
+        self.directives = directives
 
 
 class StrawberryArgument:
@@ -62,17 +67,23 @@ class StrawberryArgument:
         type_annotation: StrawberryAnnotation,
         is_subscription: bool = False,
         description: Optional[str] = None,
-        default: object = UNSET,
+        default: object = _deprecated_UNSET,
+        deprecation_reason: Optional[str] = None,
+        directives: Iterable[object] = (),
     ) -> None:
-        self.python_name = python_name  # type: ignore
+        self.python_name = python_name
         self.graphql_name = graphql_name
         self.is_subscription = is_subscription
         self.description = description
         self._type: Optional[StrawberryType] = None
         self.type_annotation = type_annotation
+        self.deprecation_reason = deprecation_reason
+        self.directives = directives
 
         # TODO: Consider moving this logic to a function
-        self.default = UNSET if default is inspect.Parameter.empty else default
+        self.default = (
+            _deprecated_UNSET if default is inspect.Parameter.empty else default
+        )
 
         if self._annotation_is_annotated(type_annotation):
             self._parse_annotated()
@@ -106,6 +117,8 @@ class StrawberryArgument:
 
                 self.description = arg.description
                 self.graphql_name = arg.name
+                self.deprecation_reason = arg.deprecation_reason
+                self.directives = arg.directives
 
 
 def convert_argument(
@@ -117,8 +130,8 @@ def convert_argument(
     if value is None:
         return None
 
-    if is_unset(value):
-        return value
+    if value is _deprecated_UNSET:
+        return _deprecated_UNSET
 
     if isinstance(type_, StrawberryOptional):
         return convert_argument(value, type_.of_type, scalar_registry, config)
@@ -133,10 +146,8 @@ def convert_argument(
     if is_scalar(type_, scalar_registry):
         return value
 
-    # Convert Enum fields to instances using the value. This is safe
-    # because graphql-core has already validated the input.
     if isinstance(type_, EnumDefinition):
-        return type_.wrapped_cls(value)
+        return value
 
     if isinstance(type_, LazyType):
         return convert_argument(value, type_.resolve_type(), scalar_registry, config)
@@ -198,16 +209,31 @@ def convert_arguments(
 
 
 def argument(
-    description: Optional[str] = None, name: Optional[str] = None
+    description: Optional[str] = None,
+    name: Optional[str] = None,
+    deprecation_reason: Optional[str] = None,
+    directives: Iterable[object] = (),
 ) -> StrawberryArgumentAnnotation:
-    return StrawberryArgumentAnnotation(description=description, name=name)
+    return StrawberryArgumentAnnotation(
+        description=description,
+        name=name,
+        deprecation_reason=deprecation_reason,
+        directives=directives,
+    )
+
+
+def __getattr__(name: str) -> Any:
+    if name in DEPRECATED_NAMES:
+        warnings.warn(DEPRECATED_NAMES[name], DeprecationWarning, stacklevel=2)
+        return globals()[f"_deprecated_{name}"]
+    raise AttributeError(f"module {__name__} has no attribute {name}")
 
 
 # TODO: check exports
-__all__ = [
+__all__ = [  # noqa: F822
     "StrawberryArgument",
     "StrawberryArgumentAnnotation",
-    "UNSET",
+    "UNSET",  # for backwards compatibility
     "argument",
-    "is_unset",
+    "is_unset",  # for backwards compatibility
 ]

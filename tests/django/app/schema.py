@@ -18,6 +18,10 @@ class FolderInput:
 @strawberry.type
 class Mutation:
     @strawberry.mutation
+    def hello(self) -> str:
+        return "strawberry"
+
+    @strawberry.mutation
     def read_text(self, text_file: Upload) -> str:
         return text_file.read().decode()
 
@@ -34,6 +38,11 @@ class Mutation:
         for file in folder.files:
             contents.append(file.read().decode())
         return contents
+
+    @strawberry.mutation
+    def match_text(self, text_file: Upload, pattern: str) -> str:
+        text = text_file.read().decode()
+        return pattern if pattern in text else ""
 
 
 @strawberry.type

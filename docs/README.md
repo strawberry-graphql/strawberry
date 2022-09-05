@@ -13,6 +13,7 @@
 ## Types
 
 - [Schema](./types/schema.md)
+- [Schema Directives](./types/schema-directives.md)
 - [Schema configurations](./types/schema-configurations.md)
 - [Scalars](./types/scalars.md)
 - [Object types](./types/object-types.md)
@@ -24,6 +25,10 @@
 - [Union types](./types/union.md)
 - [Exceptions](./types/exceptions.md)
 
+## Codegen
+
+- [Query codegen](./codegen/query-codegen.md)
+
 ## [Extensions](./extensions)
 
 ## Guides
@@ -32,6 +37,7 @@
 - [DataLoaders](./guides/dataloaders.md)
 - [Dealing with errors](./guides/errors.md)
 - [Federation](./guides/federation.md)
+- [Federation V1](./guides/federation-v1.md)
 - [Custom extensions](./guides/custom-extensions.md)
 - [File upload](./guides/file-upload.md)
 - [Pagination](./guides/pagination.md)
@@ -54,6 +60,7 @@
 - [AIOHTTP](./integrations/aiohttp.md)
 - [ASGI](./integrations/asgi.md)
 - [Django](./integrations/django.md)
+- [Channels](./integrations/channels.md)
 - [FastAPI](./integrations/fastapi.md)
 - [Flask](./integrations/flask.md)
 - [Sanic](./integrations/sanic.md)

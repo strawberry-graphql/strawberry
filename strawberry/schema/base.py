@@ -1,6 +1,6 @@
 from abc import abstractmethod
 from functools import lru_cache
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Iterable, List, Optional, Type, Union
 
 from typing_extensions import Protocol
 
@@ -9,7 +9,9 @@ from graphql import GraphQLError
 from strawberry.custom_scalar import ScalarDefinition
 from strawberry.directive import StrawberryDirective
 from strawberry.enum import EnumDefinition
+from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.types import ExecutionContext, ExecutionResult
+from strawberry.types.graphql import OperationType
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 from strawberry.utils.logging import StrawberryLogger
@@ -19,6 +21,11 @@ from .config import StrawberryConfig
 
 class BaseSchema(Protocol):
     config: StrawberryConfig
+    schema_converter: GraphQLCoreConverter
+    query: Type
+    mutation: Optional[Type]
+    subscription: Optional[Type]
+    schema_directives: Iterable[object]
 
     @abstractmethod
     async def execute(
@@ -28,6 +35,7 @@ class BaseSchema(Protocol):
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
+        allowed_operation_types: Optional[Iterable[OperationType]] = None,
     ) -> ExecutionResult:
         raise NotImplementedError
 
@@ -39,6 +47,7 @@ class BaseSchema(Protocol):
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
+        allowed_operation_types: Optional[Iterable[OperationType]] = None,
     ) -> ExecutionResult:
         raise NotImplementedError
 

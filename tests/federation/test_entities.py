@@ -18,7 +18,7 @@ def test_fetch_entities():
         def top_products(self, first: int) -> typing.List[Product]:
             return []
 
-    schema = strawberry.federation.Schema(query=Query)
+    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
 
     query = """
         query ($representations: [_Any!]!) {
@@ -58,7 +58,7 @@ def test_info_param_in_resolve_reference():
         def top_products(self, first: int) -> typing.List[Product]:
             return []
 
-    schema = strawberry.federation.Schema(query=Query)
+    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
 
     query = """
         query ($representations: [_Any!]!) {

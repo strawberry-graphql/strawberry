@@ -1,7 +1,9 @@
 import itertools
+from itertools import chain
 from typing import (
     TYPE_CHECKING,
     Any,
+    Iterable,
     List,
     Mapping,
     NoReturn,
@@ -28,7 +30,7 @@ from strawberry.exceptions import (
     UnallowedReturnTypeForUnion,
     WrongReturnTypeForUnion,
 )
-from strawberry.type import StrawberryType
+from strawberry.type import StrawberryOptional, StrawberryType
 
 
 if TYPE_CHECKING:
@@ -42,10 +44,12 @@ class StrawberryUnion(StrawberryType):
         name: Optional[str] = None,
         type_annotations: Tuple["StrawberryAnnotation", ...] = tuple(),
         description: Optional[str] = None,
+        directives: Iterable[object] = (),
     ):
         self.graphql_name = name
         self.type_annotations = type_annotations
         self.description = description
+        self.directives = directives
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, StrawberryType):
@@ -62,6 +66,16 @@ class StrawberryUnion(StrawberryType):
     def __hash__(self) -> int:
         # TODO: Is this a bad idea? __eq__ objects are supposed to have the same hash
         return id(self)
+
+    def __or__(self, other: Union[StrawberryType, type]) -> StrawberryType:
+        if other is None:
+            # Return the correct notation when using `StrawberryUnion | None`.
+            return StrawberryOptional(of_type=self)
+
+        # Raise an error in any other case.
+        # There is Work in progress to deal with more merging cases, see:
+        # https://github.com/strawberry-graphql/strawberry/pull/1455
+        raise InvalidUnionType(other)
 
     @property
     def types(self) -> Tuple[StrawberryType, ...]:
@@ -126,8 +140,6 @@ class StrawberryUnion(StrawberryType):
         raise ValueError("Cannot use union type directly")
 
     def get_type_resolver(self, type_map: "TypeMap") -> GraphQLTypeResolver:
-        # TODO: Type annotate returned function
-
         def _resolve_union_type(
             root: Any, info: GraphQLResolveInfo, type_: GraphQLAbstractType
         ) -> str:
@@ -144,14 +156,20 @@ class StrawberryUnion(StrawberryType):
                     ):
                         return inner_type.name
 
-                # Couldn't resolve using `is_type_of``
+                # Couldn't resolve using `is_type_of`
                 raise WrongReturnTypeForUnion(info.field_name, str(type(root)))
 
             return_type: Optional[GraphQLType]
 
-            # Iterate over all of our known types and find the first concrete type that
-            # implements the type
-            for possible_concrete_type in type_map.values():
+            # Iterate over all of our known types and find the first concrete
+            # type that implements the type. We prioritise checking types named in the
+            # Union in case a nested generic object matches against more than one type.
+            concrete_types_for_union = (type_map[x.name] for x in type_.types)
+
+            # TODO: do we still need to iterate over all types in `type_map`?
+            for possible_concrete_type in chain(
+                concrete_types_for_union, type_map.values()
+            ):
                 possible_type = possible_concrete_type.definition
                 if not isinstance(possible_type, TypeDefinition):
                     continue
@@ -187,8 +205,12 @@ Types = TypeVar("Types", bound=Type)
 # yet supported in any python implementation (or in typing_extensions).
 # See https://www.python.org/dev/peps/pep-0646/ for more information
 def union(
-    name: str, types: Tuple[Types, ...], *, description: str = None
-) -> Union[Types]:  # type: ignore
+    name: str,
+    types: Tuple[Types, ...],
+    *,
+    description: str = None,
+    directives: Iterable[object] = (),
+) -> Union[Types]:
     """Creates a new named Union type.
 
     Example usages:
@@ -214,6 +236,7 @@ def union(
         name=name,
         type_annotations=tuple(StrawberryAnnotation(type_) for type_ in types),
         description=description,
+        directives=directives,
     )
 
     return union_definition  # type: ignore

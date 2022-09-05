@@ -1,0 +1,74 @@
+name: 🦺 Type checkers tests
+
+concurrency:
+  group: type-checkers-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+    paths:
+      - "strawberry/**"
+      - "tests/mypy/**"
+      - "tests/pyright/**"
+      - "pyproject.toml"
+      - "poetry.lock"
+      - ".github/workflows/test-type-checkers.yml"
+
+jobs:
+  mypy:
+    strategy:
+      matrix:
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
+
+    name: Mypy on Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - run: pipx install poetry
+      - uses: actions/setup-python@v4
+        id: setup-python
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "poetry"
+
+      - run: poetry env use ${{ matrix.python-version }}
+      - run: poetry run python --version
+      - run: poetry install
+        if: steps.setup-python.outputs.cache-hit != 'true'
+
+      - name: pytest
+        run:
+          poetry run pytest tests/mypy
+
+  pyright:
+    strategy:
+      matrix:
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
+
+    name: Pyright on Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - run: pipx install poetry
+      - uses: actions/setup-python@v4
+        id: setup-python
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: "poetry"
+
+      - uses: actions/setup-node@v2
+      - run: npm install -g --no-package-lock --no-save pyright
+
+      - run: poetry env use ${{ matrix.python-version }}
+      - run: poetry run python --version
+      - run: poetry install
+        if: steps.setup-python.outputs.cache-hit != 'true'
+
+      - name: pytest
+        run:
+          poetry run pytest tests/pyright

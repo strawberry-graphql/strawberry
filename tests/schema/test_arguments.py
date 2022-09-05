@@ -4,7 +4,7 @@ from typing import Optional
 from typing_extensions import Annotated
 
 import strawberry
-from strawberry.arguments import UNSET, is_unset
+from strawberry.unset import UNSET
 
 
 def test_argument_descriptions():
@@ -28,6 +28,27 @@ def test_argument_descriptions():
             name: String! = "Patrick"
           ): String!
         }'''
+    )
+
+
+def test_argument_deprecation_reason():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(  # type: ignore
+            name: Annotated[
+                str, strawberry.argument(deprecation_reason="Your reason")  # noqa: F722
+            ] = "Patrick"
+        ) -> str:
+            return f"Hi {name}"
+
+    schema = strawberry.Schema(query=Query)
+
+    assert str(schema) == dedent(
+        """\
+        type Query {
+          hello(name: String! = "Patrick" @deprecated(reason: "Your reason")): String!
+        }"""
     )
 
 
@@ -81,7 +102,7 @@ def test_optional_argument_unset():
     class Query:
         @strawberry.field
         def hello(self, name: Optional[str] = UNSET, age: Optional[int] = UNSET) -> str:
-            if is_unset(name):
+            if name is UNSET:
                 return "Hi there"
             return f"Hi {name}"
 
@@ -115,7 +136,7 @@ def test_optional_input_field_unset():
     class Query:
         @strawberry.field
         def hello(self, input: TestInput) -> str:
-            if is_unset(input.name):
+            if input.name is UNSET:
                 return "Hi there"
             return f"Hi {input.name}"
 

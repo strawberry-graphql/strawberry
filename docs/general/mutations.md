@@ -11,7 +11,7 @@ queries, they accept parameters and can return anything a regular field can, inc
 new types and existing object types. This can be useful for fetching the new state of an
 object after an update.
 
-Let's improve our books project from the [Getting started tutorial](docs/index.md) and
+Let's improve our books project from the [Getting started tutorial](../index.md) and
 implement a mutation that is supposed to add a book:
 
 ```python
@@ -57,3 +57,27 @@ example we might want to return an error if the book already exists.
 You can checkout our documentation on
 [dealing with errors](/docs/guides/errors#expected-errors) to learn how to return a
 union of types from a mutation.
+
+## Mutations without returned data
+
+It is also possible to write a mutation that doesn't return anything.
+
+This is mapped to a `Void` GraphQL scalar, and always returns `null`
+
+```python+schema
+@strawberry.type
+class Mutation:
+    @strawberry.mutation
+    def restart() -> None:
+        print(f'Restarting the server')
+---
+type Mutation {
+  restart: Void
+}
+```
+
+<Note>
+
+Mutations with void-result go against [GQL best practices](https://graphql-rules.com/rules/mutation-payload)
+
+</Note>

@@ -74,6 +74,50 @@ await loader.load(1)
 
 Will result in only one call to `load_users`.
 
+And finally sometimes we'll want to load more than one key at a time. In those
+cases we can use the `load_many` method.
+
+```python
+[user_a, user_b, user_c] = await loader.load_many([1, 2, 3])
+```
+
+### Errors
+
+An error associated with a particular key can be indicated by including an
+exception value in the corresponding position in the returned list. This
+exception will be thrown by the `load` call for that key. With the same `User`
+class from above:
+
+```python
+from typing import List, Union
+from strawberry.dataloader import DataLoader
+
+users_database = {
+    1: User(id=1),
+    2: User(id=2),
+}
+
+async def load_users(keys: List[int]) -> List[Union[User, ValueError]]:
+    def lookup(key: int) -> Union[User, ValueError]:
+       if user := users_database.get(key):
+           return user
+
+       return ValueError("not found")
+
+    return [lookup(key) for key in keys]
+
+loader = DataLoader(load_fn=load_users)
+```
+
+For this loader, calls like `await loader.load(1)` will return `User(id=1)`,
+while `await loader.load(3)` will raise `ValueError("not found")`.
+
+It's important that the `load_users` function returns exception values within
+the list for each incorrect key. A call with `keys == [1, 3]` returns
+`[User(id=1), ValueError("not found")]`, and doesn't raise the `ValueError`
+directly. If the `load_users` function raises an exception, even `load`s with an
+otherwise valid key, like `await loader.load(1)`, will raise that exception.
+
 ## Usage with GraphQL
 
 Let's see an example of how you can use DataLoaders with GraphQL:
@@ -81,6 +125,7 @@ Let's see an example of how you can use DataLoaders with GraphQL:
 ```python
 from typing import List
 
+from strawberry.dataloader import DataLoader
 import strawberry
 
 @strawberry.type
@@ -137,7 +182,7 @@ Even if this query is fetching two users, it still results in one call to
 As you have seen in the code above, the dataloader is instantiated outside the
 resolver, since we need to share it between multiple resolvers or even between
 multiple resolver calls. However this is a not a recommended pattern when using
-your schema inside a server because the dataloader will so cache results for as
+your schema inside a server because the dataloader will cache results for as
 long as the server is running.
 
 Instead a common pattern is to create the dataloader when creating the GraphQL
@@ -145,7 +190,7 @@ context so that it only caches results with a single request. Let's see an
 example of this using our ASGI view:
 
 ```python
-from typing import List, Union, Any
+from typing import List, Union, Any, Optional
 
 import strawberry
 from strawberry.types import Info
@@ -154,6 +199,7 @@ from strawberry.dataloader import DataLoader
 
 from starlette.requests import Request
 from starlette.websockets import WebSocket
+from starlette.responses import Response
 
 
 @strawberry.type
@@ -166,7 +212,7 @@ async def load_users(keys) -> List[User]:
 
 
 class MyGraphQL(GraphQL):
-    async def get_context(self, request: Union[Request, WebSocket]) -> Any:
+    async def get_context(self, request: Union[Request, WebSocket], response: Optional[Response]) -> Any:
         return {
             "user_loader": DataLoader(load_fn=load_users)
         }
@@ -177,4 +223,22 @@ class Query:
     @strawberry.field
     async def get_user(self, info: Info, id: strawberry.ID) -> User:
         return await info.context["user_loader"].load(id)
+
+
+schema = strawberry.Schema(query=Query)
+app = MyGraphQL(schema)
+```
+
+You can now run the example above with any ASGI server, you can read [ASGI](../integrations/asgi.md)) to
+get more details on how to run the app.
+In case you choose uvicorn you can install it wih
+
+```bash
+pip install uvicorn
+```
+
+and then, assuming we named our file above `schema.py` we start the app with
+
+```
+uvicorn schema:app
 ```

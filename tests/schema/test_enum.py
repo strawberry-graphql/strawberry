@@ -263,11 +263,16 @@ def test_enum_as_argument():
     assert str(schema) == expected
 
     query = "{ createFlavour(flavour: CHOCOLATE) }"
-
     result = schema.execute_sync(query)
-
     assert not result.errors
     assert result.data["createFlavour"] == "CHOCOLATE"
+
+    # Explicitly using `variable_values` now so that the enum is parsed using
+    # `CustomGraphQLEnumType.parse_value()` instead of `.parse_literal`
+    query = "query ($flavour: IceCreamFlavour!) { createFlavour(flavour: $flavour) }"
+    result = schema.execute_sync(query, variable_values={"flavour": "VANILLA"})
+    assert not result.errors
+    assert result.data["createFlavour"] == "VANILLA"
 
 
 def test_enum_as_default_argument():
@@ -334,3 +339,43 @@ def test_enum_resolver_plain_value():
 
     assert not result.errors
     assert result.data["bestFlavour"] == "STRAWBERRY"
+
+
+def test_enum_deprecated_value():
+    @strawberry.enum
+    class IceCreamFlavour(Enum):
+        VANILLA = "vanilla"
+        STRAWBERRY = strawberry.enum_value(
+            "strawberry", deprecation_reason="We ran out"
+        )
+        CHOCOLATE = strawberry.enum_value("chocolate")
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def best_flavour(self) -> IceCreamFlavour:
+            return IceCreamFlavour.STRAWBERRY
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """
+    {
+        __type(name: "IceCreamFlavour") {
+            enumValues(includeDeprecated: true) {
+                name
+                isDeprecated
+                deprecationReason
+            }
+        }
+    }
+    """
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data
+    assert result.data["__type"]["enumValues"] == [
+        {"deprecationReason": None, "isDeprecated": False, "name": "VANILLA"},
+        {"deprecationReason": "We ran out", "isDeprecated": True, "name": "STRAWBERRY"},
+        {"deprecationReason": None, "isDeprecated": False, "name": "CHOCOLATE"},
+    ]

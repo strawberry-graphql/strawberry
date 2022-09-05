@@ -82,7 +82,7 @@ async def test_connection_init_timeout():
 
 
 async def test_connection_init_timeout_cancellation(test_client):
-    app = create_app(connection_init_wait_timeout=timedelta(milliseconds=500))
+    app = create_app(connection_init_wait_timeout=timedelta(milliseconds=1000))
     test_client = TestClient(app)
 
     with test_client.websocket_connect("/", [GRAPHQL_TRANSPORT_WS_PROTOCOL]) as ws:
@@ -91,7 +91,7 @@ async def test_connection_init_timeout_cancellation(test_client):
         response = ws.receive_json()
         assert response == ConnectionAckMessage().as_dict()
 
-        await asyncio.sleep(1)
+        await asyncio.sleep(2)
 
         ws.send_json(
             SubscribeMessage(
@@ -220,6 +220,56 @@ def test_duplicated_operation_ids(test_client):
         assert data["code"] == 4409
 
 
+def test_reused_operation_ids(test_client):
+    """
+    Test that an operation id can be re-used after it has been
+    previously used for a completed operation
+    """
+    with test_client.websocket_connect(
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+    ) as ws:
+        ws.send_json(ConnectionInitMessage().as_dict())
+
+        response = ws.receive_json()
+        assert response == ConnectionAckMessage().as_dict()
+
+        # Use sub1 as an id for an operation
+        ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(
+                    query='subscription { echo(message: "Hi") }'
+                ),
+            ).as_dict()
+        )
+
+        response = ws.receive_json()
+        assert (
+            response
+            == NextMessage(id="sub1", payload={"data": {"echo": "Hi"}}).as_dict()
+        )
+
+        response = ws.receive_json()
+        assert response == CompleteMessage(id="sub1").as_dict()
+
+        # operation is now complete.  Create a new operation using
+        # the same ID
+        ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(
+                    query='subscription { echo(message: "Hi") }'
+                ),
+            ).as_dict()
+        )
+
+        response = ws.receive_json()
+        assert (
+            response
+            == NextMessage(id="sub1", payload={"data": {"echo": "Hi"}}).as_dict()
+        )
+
+
 def test_simple_subscription(test_client):
     with test_client.websocket_connect("/", [GRAPHQL_TRANSPORT_WS_PROTOCOL]) as ws:
         ws.send_json(ConnectionInitMessage().as_dict())
@@ -261,18 +311,9 @@ def test_subscription_syntax_error(test_client):
             ).as_dict()
         )
 
-        response = ws.receive_json()
-        assert response["type"] == ErrorMessage.type
-        assert response["id"] == "sub1"
-        assert len(response["payload"]) == 1
-        assert response["payload"][0]["path"] is None
-        assert response["payload"][0]["locations"] == [{"line": 1, "column": 31}]
-        assert (
-            response["payload"][0]["message"]
-            == "Syntax Error: Expected Name, found <EOF>."
-        )
-
-        ws.close()
+        data = ws.receive()
+        assert data["type"] == "websocket.close"
+        assert data["code"] == 4400
 
 
 def test_subscription_field_errors(test_client):
@@ -295,7 +336,7 @@ def test_subscription_field_errors(test_client):
         assert response["type"] == ErrorMessage.type
         assert response["id"] == "sub1"
         assert len(response["payload"]) == 1
-        assert response["payload"][0]["path"] is None
+        assert response["payload"][0].get("path") is None
         assert response["payload"][0]["locations"] == [{"line": 1, "column": 16}]
         assert (
             response["payload"][0]["message"]
@@ -412,8 +453,342 @@ def test_subscription_exceptions(test_client):
         assert response["type"] == ErrorMessage.type
         assert response["id"] == "sub1"
         assert len(response["payload"]) == 1
-        assert response["payload"][0]["path"] is None
-        assert response["payload"][0]["locations"] is None
+        assert response["payload"][0].get("path") is None
+        assert response["payload"][0].get("locations") is None
         assert response["payload"][0]["message"] == "TEST EXC"
 
         ws.close()
+
+
+def test_single_result_query_operation(test_client):
+    with test_client.websocket_connect(
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+    ) as ws:
+        ws.send_json(ConnectionInitMessage().as_dict())
+
+        response = ws.receive_json()
+        assert response == ConnectionAckMessage().as_dict()
+
+        ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(query="query { hello }"),
+            ).as_dict()
+        )
+
+        response = ws.receive_json()
+        assert (
+            response
+            == NextMessage(
+                id="sub1", payload={"data": {"hello": "Hello world"}}
+            ).as_dict()
+        )
+
+        response = ws.receive_json()
+        assert response == CompleteMessage(id="sub1").as_dict()
+
+
+def test_single_result_query_operation_async(test_client):
+    """
+    Test a single result query operation on an
+    `async` method in the schema, including an artificial
+    async delay
+    """
+    with test_client.websocket_connect(
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+    ) as ws:
+        ws.send_json(ConnectionInitMessage().as_dict())
+
+        response = ws.receive_json()
+        assert response == ConnectionAckMessage().as_dict()
+
+        ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(
+                    query='query { asyncHello(name: "Dolly", delay:0.01)}'
+                ),
+            ).as_dict()
+        )
+
+        response = ws.receive_json()
+        assert (
+            response
+            == NextMessage(
+                id="sub1", payload={"data": {"asyncHello": "Hello Dolly"}}
+            ).as_dict()
+        )
+
+        response = ws.receive_json()
+        assert response == CompleteMessage(id="sub1").as_dict()
+
+
+def test_single_result_query_operation_overlapped(test_client):
+    """
+    Test that two single result queries can be in flight at the same time,
+    just like regular queries.  Start two queries with separate ids. The
+    first query has a delay, so we expect the response to the second
+    query to be delivered first.
+    """
+    with test_client.websocket_connect(
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+    ) as ws:
+        ws.send_json(ConnectionInitMessage().as_dict())
+
+        response = ws.receive_json()
+        assert response == ConnectionAckMessage().as_dict()
+
+        # first query
+        ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(
+                    query='query { asyncHello(name: "Dolly", delay:1)}'
+                ),
+            ).as_dict()
+        )
+        # second query
+        ws.send_json(
+            SubscribeMessage(
+                id="sub2",
+                payload=SubscribeMessagePayload(
+                    query='query { asyncHello(name: "Dolly", delay:0)}'
+                ),
+            ).as_dict()
+        )
+
+        # we expect the response to the second query to arrive first
+        response = ws.receive_json()
+        assert (
+            response
+            == NextMessage(
+                id="sub2", payload={"data": {"asyncHello": "Hello Dolly"}}
+            ).as_dict()
+        )
+        response = ws.receive_json()
+        assert response == CompleteMessage(id="sub2").as_dict()
+
+
+def test_single_result_mutation_operation(test_client):
+    with test_client.websocket_connect(
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+    ) as ws:
+        ws.send_json(ConnectionInitMessage().as_dict())
+
+        response = ws.receive_json()
+        assert response == ConnectionAckMessage().as_dict()
+
+        ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(query="mutation { hello }"),
+            ).as_dict()
+        )
+
+        response = ws.receive_json()
+        assert (
+            response
+            == NextMessage(
+                id="sub1", payload={"data": {"hello": "strawberry"}}
+            ).as_dict()
+        )
+
+        response = ws.receive_json()
+        assert response == CompleteMessage(id="sub1").as_dict()
+
+
+def test_single_result_operation_selection(test_client):
+    with test_client.websocket_connect(
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+    ) as ws:
+        ws.send_json(ConnectionInitMessage().as_dict())
+
+        response = ws.receive_json()
+        assert response == ConnectionAckMessage().as_dict()
+
+        query = """
+            query Query1 {
+                hello
+            }
+            query Query2 {
+                hello(name: "Strawberry")
+            }
+        """
+
+        ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(query=query, operationName="Query2"),
+            ).as_dict()
+        )
+
+        response = ws.receive_json()
+        assert (
+            response
+            == NextMessage(
+                id="sub1", payload={"data": {"hello": "Hello Strawberry"}}
+            ).as_dict()
+        )
+
+        response = ws.receive_json()
+        assert response == CompleteMessage(id="sub1").as_dict()
+
+
+def test_single_result_invalid_operation_selection(test_client):
+    with test_client.websocket_connect(
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+    ) as ws:
+        ws.send_json(ConnectionInitMessage().as_dict())
+
+        response = ws.receive_json()
+        assert response == ConnectionAckMessage().as_dict()
+
+        query = """
+            query Query1 {
+                hello
+            }
+        """
+
+        ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(query=query, operationName="Query2"),
+            ).as_dict()
+        )
+
+        data = ws.receive()
+        assert data["type"] == "websocket.close"
+        assert data["code"] == 4400
+
+
+def test_single_result_operation_error(test_client):
+    with test_client.websocket_connect(
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+    ) as ws:
+        ws.send_json(ConnectionInitMessage().as_dict())
+
+        response = ws.receive_json()
+        assert response == ConnectionAckMessage().as_dict()
+
+        ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(
+                    query="query { alwaysFail }",
+                ),
+            ).as_dict()
+        )
+
+        response = ws.receive_json()
+        assert response["type"] == ErrorMessage.type
+        assert response["id"] == "sub1"
+        assert len(response["payload"]) == 1
+        assert response["payload"][0]["message"] == "You are not authorized"
+
+
+def test_single_result_operation_exception(test_client):
+    """
+    Test that single-result-operations which raise exceptions
+    behave in the same way as streaming operations
+    """
+    with test_client.websocket_connect(
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+    ) as ws:
+        ws.send_json(ConnectionInitMessage().as_dict())
+
+        response = ws.receive_json()
+        assert response == ConnectionAckMessage().as_dict()
+
+        ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(
+                    query='query { exception(message: "bummer") }',
+                ),
+            ).as_dict()
+        )
+
+        response = ws.receive_json()
+        assert response["type"] == ErrorMessage.type
+        assert response["id"] == "sub1"
+        assert len(response["payload"]) == 1
+        assert response["payload"][0].get("path") == ["exception"]
+        assert response["payload"][0]["message"] == "bummer"
+
+
+def test_single_result_duplicate_ids_sub(test_client):
+    """
+    Test that single-result-operations and streaming operations
+    share the same ID namespace.  Start a regular subscription,
+    then issue a single-result operation with same ID and expect an
+    error due to already existing ID
+    """
+    with test_client.websocket_connect(
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+    ) as ws:
+        ws.send_json(ConnectionInitMessage().as_dict())
+
+        response = ws.receive_json()
+        assert response == ConnectionAckMessage().as_dict()
+
+        # regular subscription
+        ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(
+                    query='subscription { echo(message: "Hi", delay: 5) }'
+                ),
+            ).as_dict()
+        )
+        # single result subscription with duplicate id
+        ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(
+                    query="query { hello }",
+                ),
+            ).as_dict()
+        )
+
+        data = ws.receive()
+        assert data["type"] == "websocket.close"
+        assert data["code"] == 4409
+
+
+def test_single_result_duplicate_ids_query(test_client):
+    """
+    Test that single-result-operations don't allow duplicate
+    IDs for two asynchronous queries.  Issue one async query
+    with delay, then another with same id.  Expect error.
+    """
+    with test_client.websocket_connect(
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+    ) as ws:
+        ws.send_json(ConnectionInitMessage().as_dict())
+
+        response = ws.receive_json()
+        assert response == ConnectionAckMessage().as_dict()
+
+        # single result subscription 1
+        ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(
+                    query='query { asyncHello(name: "Hi", delay: 5) }'
+                ),
+            ).as_dict()
+        )
+        # single result subscription with duplicate id
+        ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(
+                    query="query { hello }",
+                ),
+            ).as_dict()
+        )
+
+        # We expect the remote to close the socket due to duplicate ID in use
+        data = ws.receive()
+        assert data["type"] == "websocket.close"
+        assert data["code"] == 4409

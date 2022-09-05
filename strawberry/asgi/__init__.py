@@ -26,6 +26,7 @@ class GraphQL:
         self,
         schema: BaseSchema,
         graphiql: bool = True,
+        allow_queries_via_get: bool = True,
         keep_alive: bool = False,
         keep_alive_interval: float = 1,
         debug: bool = False,
@@ -34,6 +35,7 @@ class GraphQL:
     ) -> None:
         self.schema = schema
         self.graphiql = graphiql
+        self.allow_queries_via_get = allow_queries_via_get
         self.keep_alive = keep_alive
         self.keep_alive_interval = keep_alive_interval
         self.debug = debug
@@ -45,6 +47,7 @@ class GraphQL:
             await self.http_handler_class(
                 schema=self.schema,
                 graphiql=self.graphiql,
+                allow_queries_via_get=self.allow_queries_via_get,
                 debug=self.debug,
                 get_context=self.get_context,
                 get_root_value=self.get_root_value,

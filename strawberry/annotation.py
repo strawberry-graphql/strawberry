@@ -1,11 +1,10 @@
 import sys
 import typing
-from collections.abc import AsyncGenerator as AsyncGenerator_abc
+from collections import abc
 from enum import Enum
-from typing import (  # type: ignore
+from typing import (  # type: ignore[attr-defined]
     TYPE_CHECKING,
     Any,
-    AsyncGenerator as AsyncGenerator_typing,
     Dict,
     Optional,
     TypeVar,
@@ -13,9 +12,11 @@ from typing import (  # type: ignore
     _eval_type,
 )
 
+from strawberry.private import is_private
+
 
 try:
-    from typing import ForwardRef  # type: ignore
+    from typing import ForwardRef
 except ImportError:  # pragma: no cover
     # ForwardRef is private in python 3.6 and 3.7
     from typing import _ForwardRef as ForwardRef  # type: ignore
@@ -30,11 +31,23 @@ from strawberry.type import (
     StrawberryTypeVar,
 )
 from strawberry.types.types import TypeDefinition
+from strawberry.unset import UNSET
 from strawberry.utils.typing import is_generic, is_type_var
 
 
 if TYPE_CHECKING:
     from strawberry.union import StrawberryUnion
+
+
+ASYNC_TYPES = (
+    abc.AsyncGenerator,
+    abc.AsyncIterable,
+    abc.AsyncIterator,
+    typing.AsyncContextManager,
+    typing.AsyncGenerator,
+    typing.AsyncIterable,
+    typing.AsyncIterator,
+)
 
 
 class StrawberryAnnotation:
@@ -58,10 +71,10 @@ class StrawberryAnnotation:
             annotation = self.annotation
 
         evaled_type = _eval_type(annotation, self.namespace, None)
-        if evaled_type is None:
-            raise ValueError("Annotation cannot be plain None type")
-        if self._is_async_generator(evaled_type):
-            evaled_type = self._strip_async_generator(evaled_type)
+        if is_private(evaled_type):
+            return evaled_type
+        if self._is_async_type(evaled_type):
+            evaled_type = self._strip_async_type(evaled_type)
         if self._is_lazy_type(evaled_type):
             return evaled_type
 
@@ -113,7 +126,10 @@ class StrawberryAnnotation:
     def create_optional(self, evaled_type: Any) -> StrawberryOptional:
         types = evaled_type.__args__
         non_optional_types = tuple(
-            filter(lambda x: x is not type(None), types)  # noqa: E721
+            filter(
+                lambda x: x is not type(None) and x is not type(UNSET),  # noqa: E721
+                types,
+            )
         )
 
         # Note that passing a single type to `Union` is equivalent to not using `Union`
@@ -148,14 +164,9 @@ class StrawberryAnnotation:
         return union
 
     @classmethod
-    def _is_async_generator(cls, annotation: type) -> bool:
+    def _is_async_type(cls, annotation: type) -> bool:
         origin = getattr(annotation, "__origin__", None)
-        if origin is AsyncGenerator_abc:
-            return True
-        if origin is AsyncGenerator_typing:
-            # deprecated in Python 3.9 and above
-            return True
-        return False
+        return origin in ASYNC_TYPES
 
     @classmethod
     def _is_enum(cls, annotation: Any) -> bool:
@@ -232,7 +243,7 @@ class StrawberryAnnotation:
         # don't have a `__origin__` property on them, but they are instances of
         # `UnionType`, which is only available in Python 3.10+
         if sys.version_info >= (3, 10):
-            from types import UnionType  # type: ignore
+            from types import UnionType
 
             if isinstance(annotation, UnionType):
                 return True
@@ -244,7 +255,7 @@ class StrawberryAnnotation:
         return annotation_origin is typing.Union
 
     @classmethod
-    def _strip_async_generator(cls, annotation) -> type:
+    def _strip_async_type(cls, annotation) -> type:
         return annotation.__args__[0]
 
     @classmethod

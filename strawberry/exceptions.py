@@ -3,7 +3,7 @@ from __future__ import annotations
 from enum import Enum
 from typing import List, Set, Union
 
-from graphql import GraphQLObjectType
+from graphql import GraphQLInputObjectType, GraphQLObjectType
 
 from strawberry.type import StrawberryType
 
@@ -113,6 +113,12 @@ class InvalidUnionType(Exception):
     """The union is constructed with an invalid type"""
 
 
+class InvalidTypeInputForUnion(Exception):
+    def __init__(self, annotation: GraphQLInputObjectType):
+        message = f"Union for {annotation} is not supported because it is an Input type"
+        super().__init__(message)
+
+
 class MissingTypesForGenericError(Exception):
     """Raised when a generic types was used without passing any type."""
 
@@ -128,6 +134,15 @@ class UnsupportedTypeError(Exception):
     def __init__(self, annotation):
         message = f"{annotation} conversion is not supported"
 
+        super().__init__(message)
+
+
+class UnresolvedFieldTypeError(Exception):
+    def __init__(self, field_name: str):
+        message = (
+            f"Could not resolve the type of '{field_name}'. Check that the class is "
+            "accessible from the global module scope."
+        )
         super().__init__(message)
 
 
@@ -219,4 +234,15 @@ class InvalidDefaultFactoryError(Exception):
     def __init__(self):
         message = "`default_factory` must be a callable that requires no arguments"
 
+        super().__init__(message)
+
+
+class InvalidCustomContext(Exception):
+    """Raised when a custom context object is of the wrong python type"""
+
+    def __init__(self):
+        message = (
+            "The custom context must be either a class "
+            "that inherits from BaseContext or a dictionary"
+        )
         super().__init__(message)

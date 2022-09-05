@@ -28,7 +28,7 @@ class RequestStage(enum.Enum):
 
 class OpenTelemetryExtension(Extension):
     _arg_filter: Optional[ArgFilter]
-    _span_holder: Dict[str, Span] = dict()
+    _span_holder: Dict[RequestStage, Span] = dict()
     _tracer: Tracer
 
     def __init__(
@@ -138,7 +138,7 @@ class OpenTelemetryExtensionSync(OpenTelemetryExtension):
             return result
 
         with self._tracer.start_as_current_span(
-            "GraphQL Resolving: {info.field_name}",
+            f"GraphQL Resolving: {info.field_name}",
             context=trace.set_span_in_context(self._span_holder[RequestStage.REQUEST]),
         ) as span:
             self.add_tags(span, info, kwargs)

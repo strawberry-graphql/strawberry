@@ -2,13 +2,12 @@ import dataclasses
 import warnings
 from typing import TYPE_CHECKING, Any, Dict, Generic, List, Optional, TypeVar, Union
 
-from cached_property import cached_property
-
 from graphql import GraphQLResolveInfo, OperationDefinitionNode
 from graphql.language import FieldNode
 from graphql.pyutils.path import Path
 
 from strawberry.type import StrawberryType
+from strawberry.utils.cached_property import cached_property
 
 
 if TYPE_CHECKING:
@@ -41,6 +40,7 @@ class Info(Generic[ContextType, RootValueType]):
             "`info.field_nodes` is deprecated, use `selected_fields` instead",
             DeprecationWarning,
         )
+
         return self._raw_info.field_nodes
 
     @cached_property

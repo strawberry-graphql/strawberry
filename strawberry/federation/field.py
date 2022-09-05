@@ -1,6 +1,7 @@
 from typing import (
     Any,
     Callable,
+    Iterable,
     List,
     Optional,
     Sequence,
@@ -12,12 +13,9 @@ from typing import (
 
 from typing_extensions import Literal
 
-from strawberry.arguments import UNSET
 from strawberry.field import _RESOLVER_TYPE, StrawberryField, field as base_field
 from strawberry.permission import BasePermission
-from strawberry.schema_directive import StrawberrySchemaDirective
-
-from .schema_directives import External, Provides, Requires
+from strawberry.unset import UNSET
 
 
 T = TypeVar("T")
@@ -33,12 +31,16 @@ def field(
     provides: Optional[List[str]] = None,
     requires: Optional[List[str]] = None,
     external: bool = False,
+    shareable: bool = False,
+    tags: Optional[Iterable[str]] = (),
+    override: Optional[str] = None,
+    inaccessible: bool = False,
     init: Literal[False] = False,
     permission_classes: Optional[List[Type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
     default: Any = UNSET,
     default_factory: Union[Callable, object] = UNSET,
-    directives: Sequence[StrawberrySchemaDirective] = (),
+    directives: Sequence[object] = (),
 ) -> T:
     ...
 
@@ -52,12 +54,16 @@ def field(
     provides: Optional[List[str]] = None,
     requires: Optional[List[str]] = None,
     external: bool = False,
+    shareable: bool = False,
+    tags: Optional[Iterable[str]] = (),
+    override: Optional[str] = None,
+    inaccessible: bool = False,
     init: Literal[True] = True,
     permission_classes: Optional[List[Type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
     default: Any = UNSET,
     default_factory: Union[Callable, object] = UNSET,
-    directives: Sequence[StrawberrySchemaDirective] = (),
+    directives: Sequence[object] = (),
 ) -> Any:
     ...
 
@@ -72,11 +78,15 @@ def field(
     provides: Optional[List[str]] = None,
     requires: Optional[List[str]] = None,
     external: bool = False,
+    shareable: bool = False,
+    tags: Optional[Iterable[str]] = (),
+    override: Optional[str] = None,
+    inaccessible: bool = False,
     permission_classes: Optional[List[Type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
     default: Any = UNSET,
     default_factory: Union[Callable, object] = UNSET,
-    directives: Sequence[StrawberrySchemaDirective] = (),
+    directives: Sequence[object] = (),
 ) -> StrawberryField:
     ...
 
@@ -90,26 +100,52 @@ def field(
     provides=None,
     requires=None,
     external=False,
+    shareable=False,
+    tags=None,
+    override=None,
+    inaccessible=False,
     permission_classes=None,
     deprecation_reason=None,
     default=UNSET,
     default_factory=UNSET,
-    directives: Sequence[StrawberrySchemaDirective] = (),
+    directives: Sequence[object] = (),
     # This init parameter is used by PyRight to determine whether this field
     # is added in the constructor or not. It is not used to change
     # any behavior at the moment.
     init=None,
 ) -> Any:
+    from .schema_directives import (
+        External,
+        Inaccessible,
+        Override,
+        Provides,
+        Requires,
+        Shareable,
+        Tag,
+    )
+
     directives = list(directives)
 
     if provides:
-        directives.append(Provides(" ".join(provides)))  # type: ignore
+        directives.append(Provides(" ".join(provides)))
 
     if requires:
-        directives.append(Requires(" ".join(requires)))  # type: ignore
+        directives.append(Requires(" ".join(requires)))
 
     if external:
-        directives.append(External())  # type: ignore
+        directives.append(External())
+
+    if shareable:
+        directives.append(Shareable())
+
+    if tags:
+        directives.extend(Tag(tag) for tag in tags)
+
+    if override:
+        directives.append(Override(override))
+
+    if inaccessible:
+        directives.append(Inaccessible())
 
     return base_field(
         resolver=resolver,
