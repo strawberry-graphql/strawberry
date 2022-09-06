@@ -1,7 +1,6 @@
 import textwrap
-import types
 from enum import Enum
-from typing import Any, Dict, Generic, List, Optional, TypeVar, Union
+from typing import Any, Generic, List, Optional, TypeVar, Union
 
 import pytest
 
@@ -136,21 +135,6 @@ def test_support_nested_generics():
         def users(self) -> Connection[User]:
             return Connection(edge=Edge(node=User("Patrick")))
 
-    from strawberry.utils.typing import is_generic_subclass
-
-    class StrawberryGenericsGenerator:
-        generated_cache: Dict[type, type] = {}
-        generics_map: Dict[types.ModuleType, type]
-
-        @classmethod
-        def generate(cls, annotation: type, parent: type | None):
-            if origin := getattr(annotation, "__origin__", False):
-                if is_generic_subclass(origin):
-                    return cls.generate(annotation.__args__[0], annotation)
-
-            print("Generating")
-
-    StrawberryGenericsGenerator.generate(Connection[User], None)
     schema = strawberry.Schema(query=Query)
 
     query = """{
@@ -535,10 +519,6 @@ def test_supports_multiple_generics_in_union():
     class Edge(Generic[T]):
         cursor: strawberry.ID
         node: T
-
-    assert Edge[int]._type_definition.fields[1].type is int
-
-    assert Edge[str]._type_definition.fields[1].type is str
 
     @strawberry.type
     class Query:
