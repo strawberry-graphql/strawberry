@@ -129,26 +129,28 @@ class DataLoader(Generic[K, T]):
         if self.cache:
             self.cache_map.clear()
 
-    def put(self, key: K, value: T):
-        self.put_many({key: value})
+    def prime(self, key: K, value: T, force: bool = False):
+        self.prime_many({key: value}, force)
 
-    def put_many(self, data: Mapping[K, T]):
+    def prime_many(self, data: Mapping[K, T], force: bool = False):
         # Populate the cache with the specified values
         if self.cache:
             for key, value in data.items():
-                future: Future = Future(loop=self.loop)
-                future.set_result(value)
-                self.cache_map[key] = future
+                if key not in self.cache_map or force:
+                    future: Future = Future(loop=self.loop)
+                    future.set_result(value)
+                    self.cache_map[key] = future
 
-        # For keys that are pending loading in the current batch,
-        # Remove it from the batch and set to the specified value
+        # For keys that are pending on the current batch, but the
+        # batch hasn't started fetching yet: Remove it from the
+        # batch and set to the specified value
         if self.batch is not None and not self.batch.dispatched:
-            needs_removal = False
+            batch_updated = False
             for task in self.batch.tasks:
                 if task.key in data.keys():
-                    needs_removal = True
+                    batch_updated = True
                     task.future.set_result(data[task.key])
-            if needs_removal:
+            if batch_updated:
                 self.batch.tasks = [
                     task for task in self.batch.tasks if not task.future.done()
                 ]

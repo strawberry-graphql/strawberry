@@ -219,8 +219,9 @@ def test_works_when_created_in_a_different_loop(mocker):
     mock_loader.assert_called_once_with([1])
 
 
-async def test_put():
+async def test_prime():
     async def idx(keys):
+        assert keys, "At least one key must be specified"
         return keys
 
     loader = DataLoader(load_fn=idx)
@@ -229,22 +230,34 @@ async def test_put():
     a1 = loader.load(1)
     assert await a1 == 1
 
-    # Preset overrides value, whenever cached or not
-    loader.put(1, 1.1)
-    loader.put(2, 2.1)
+    # Prime doesn't overrides value
+    loader.prime(1, 1.1)
+    loader.prime(2, 2.1)
     b1 = loader.load(1)
     b2 = loader.load(2)
-    b3 = loader.load(3)
-    assert await b1 == 1.1
+    assert await b1 == 1
     assert await b2 == 2.1
-    assert await b3 == 3
+
+    # Unless you tell it to
+    loader.prime(1, 1.2, force=True)
+    loader.prime(2, 2.2, force=True)
+    b1 = loader.load(1)
+    b2 = loader.load(2)
+    assert await b1 == 1.2
+    assert await b2 == 2.2
 
     # Preset will override pending values, but not cached values
-    c3 = loader.load(3)  # This is in cache
-    c4 = loader.load(4)  # This is pending
-    loader.put_many({3: 3.1, 4: 4.1})
-    assert await c3 == 3
-    assert await c4 == 4.1
+    c2 = loader.load(2)  # This is in cache
+    c3 = loader.load(3)  # This is pending
+    loader.prime_many({2: 2.3, 3: 3.3}, force=True)
+    assert await c2 == 2.2
+    assert await c3 == 3.3
+
+    # If we prime all keys in a batch, the load_fn is never called
+    # (See assertion in idx)
+    c4 = loader.load(4)
+    loader.prime_many({4: 4.4})
+    await c4 == 4.4
 
 
 async def test_clear():
