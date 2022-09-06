@@ -24,6 +24,7 @@
 - [Resolvers](./types/resolvers.md)
 - [Union types](./types/union.md)
 - [Exceptions](./types/exceptions.md)
+- [Private/External Fields](./types/private.md)
 
 ## Codegen
 
