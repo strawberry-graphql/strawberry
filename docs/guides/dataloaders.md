@@ -125,9 +125,9 @@ By default DataLoaders use an internal cache. It is great for performance, howev
 
 To fix it, you can explicitly invalidate the data in the cache, using one of these ways:
 
-- Specifying a key with `loader.invalidate(id)`,
-- Specifying several keys with `loader.invalidate_many([id1, id2, id3, ...])`,
-- Invalidating the whole cache with `loader.invalidate_all()`
+- Specifying a key with `loader.clear(id)`,
+- Specifying several keys with `loader.clear_many([id1, id2, id3, ...])`,
+- Invalidating the whole cache with `loader.clear_all()`
 
 ### Importing data into cache
 

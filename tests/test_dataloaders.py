@@ -247,7 +247,7 @@ async def test_put():
     assert await c4 == 4.1
 
 
-async def test_invalidate():
+async def test_clear():
     batch_num = 0
 
     async def idx(keys):
@@ -262,11 +262,11 @@ async def test_invalidate():
 
     assert await loader.load_many([2, 3]) == [(2, 1), (3, 2)]
 
-    loader.invalidate(2)
+    loader.clear(2)
     assert await loader.load_many([1, 2, 3]) == [(1, 1), (2, 3), (3, 2)]
 
-    loader.invalidate_many([1, 3])
+    loader.clear_many([1, 3])
     assert await loader.load_many([1, 2, 3]) == [(1, 4), (2, 3), (3, 4)]
 
-    loader.invalidate_all()
+    loader.clear_all()
     assert await loader.load_many([1, 2, 3]) == [(1, 5), (2, 5), (3, 5)]

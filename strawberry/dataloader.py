@@ -116,16 +116,16 @@ class DataLoader(Generic[K, T]):
     def load_many(self, keys: Iterable[K]) -> Awaitable[List[T]]:
         return gather(*map(self.load, keys))
 
-    def invalidate(self, key: K):
+    def clear(self, key: K):
         if self.cache:
             self.cache_map.pop(key, None)
 
-    def invalidate_many(self, keys: Iterable[K]):
+    def clear_many(self, keys: Iterable[K]):
         if self.cache:
             for key in keys:
                 self.cache_map.pop(key, None)
 
-    def invalidate_all(self):
+    def clear_all(self):
         if self.cache:
             self.cache_map.clear()
 
