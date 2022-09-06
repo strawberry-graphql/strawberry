@@ -4,8 +4,8 @@ import dataclasses
 import inspect
 import types
 import typing
+from functools import partial
 from typing import (
-    TYPE_CHECKING,
     Any,
     Callable,
     ClassVar,
@@ -20,11 +20,14 @@ from typing import (
     Union,
 )
 
+from graphql import GraphQLResolveInfo
+
 from strawberry.exceptions import (
     MissingFieldAnnotationError,
     MissingTypesForGenericError,
     ObjectIsNotClassError,
 )
+from strawberry.field import _UNRESOLVED, StrawberryField, StrawberryPrivateField
 from strawberry.private import is_private
 from strawberry.type import (
     StrawberryList,
@@ -37,11 +40,6 @@ from strawberry.utils.typing import is_generic as is_type_generic
 
 from ..unset import UNSET
 
-
-if TYPE_CHECKING:
-    from graphql import GraphQLResolveInfo
-
-    from strawberry.field import StrawberryField
 
 T = TypeVar("T")
 
@@ -60,7 +58,7 @@ def _get_interfaces(cls: Type) -> List[TypeDefinition]:
     return interfaces
 
 
-def _get_fields(origin) -> List[StrawberryField]:
+def _get_fields(origin: Type["StrawberryObject"]) -> List[StrawberryField]:
     return list(TypeDefinition._get_strawberry_fields(origin).values())
 
 
@@ -103,7 +101,7 @@ class TypeDefinition(StrawberryType):
     name: str
     is_input: bool
     is_interface: bool
-    origin: Type
+    origin: StrawberryObject
     description: Optional[str]
     interfaces: List["TypeDefinition"]
     extend: bool
@@ -119,14 +117,15 @@ class TypeDefinition(StrawberryType):
     signature: Optional[int] = None
     # generics names are changed by strawberry.
     graphql_name: str = None
+    field_class: ClassVar[StrawberryField] = StrawberryField
+    kwargs: dict = None
 
     @classmethod
     def _get_strawberry_fields(
         cls, origin: Type[StrawberryObject]
     ) -> Dict[str, StrawberryField]:
-        from strawberry.field import StrawberryField, StrawberryPrivateField
 
-        strawberry_fields: Dict[str, StrawberryField] = {}
+        strawberry_fields: Dict[str, cls.field_class] = {}
         # find fields in parents.
         for base in origin.__bases__:
             if get_type_definition(base):
@@ -170,7 +169,7 @@ class TypeDefinition(StrawberryType):
                         default=default,
                     )
                 else:
-                    strawberry_fields[name] = StrawberryField(
+                    strawberry_fields[name] = cls.field_class(
                         origin=origin,
                         python_name=name,
                         default=default,
@@ -213,7 +212,7 @@ class TypeDefinition(StrawberryType):
         )
 
         def has_default(field_: StrawberryField) -> bool:
-            return bool(field_.default or field_.default_factory)
+            return field_.default is not _UNRESOLVED or bool(field_.default_factory)
 
         fetched_fields = sorted(list(strawberry_fields.values()), key=has_default)
 
@@ -227,6 +226,8 @@ class TypeDefinition(StrawberryType):
                     continue
             setattr(origin, sb_field.python_name, sb_field.to_dataclass_field())
             if sb_field.is_private:
+                fetched_fields.remove(sb_field)
+            elif isinstance(sb_field.type, dataclasses.InitVar):
                 fetched_fields.remove(sb_field)
 
         dataclasses.dataclass(origin)
@@ -290,6 +291,7 @@ class TypeDefinition(StrawberryType):
             interfaces=interfaces,
             fields=fetched_fields,
             is_type_of=is_type_of,
+            kwargs=kwargs,
         )
 
     def get_field_by_name(self, name: str) -> "StrawberryField":
@@ -327,7 +329,9 @@ class TemplateTypeDefinition(TypeDefinition):
     graphql_name: None = dataclasses.field(init=False)
 
     @classmethod
-    def from_class(cls, /, origin: type, **kwargs) -> "TemplateTypeDefinition":
+    def from_class(
+        cls, /, origin: StrawberryObject, **kwargs
+    ) -> "TemplateTypeDefinition":
         params = getattr(origin, "__parameters__", None)
         assert isinstance(params, tuple)
         return cls(parameters=params, origin=origin, **kwargs)
@@ -459,7 +463,11 @@ class StrawberryObject(metaclass=StrawberryMeta):
         new_type = types.new_class(
             name=origin.__name__,
             bases=tuple(bases),
-            exec_body=lambda ns: ns.update(origin.__dict__),
+            exec_body=partial(
+                cls._fill_ns,
+                origin,
+                kwargs,
+            ),
         )
         assert issubclass(new_type, cls)
         new_type._type_definition = cls._create_type_definition(
@@ -473,6 +481,10 @@ class StrawberryObject(metaclass=StrawberryMeta):
             **kwargs,
         )
         return new_type
+
+    @classmethod
+    def _fill_ns(cls, origin: type, kwargs: Dict, ns: Dict):
+        ns.update(origin.__dict__)
 
     @classmethod
     def _create_type_definition(cls, **kwargs):

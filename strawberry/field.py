@@ -38,22 +38,22 @@ from strawberry.unset import UNSET
 from .permission import BasePermission
 from .private import is_private
 from .types.fields.resolver import StrawberryResolver, resolveable
-from .types.types import StrawberryObject
 
 
 if TYPE_CHECKING:
-    pass
+    from .types.types import StrawberryObject
+
 
 _RESOLVER_TYPE = Union[StrawberryResolver, Callable, staticmethod, classmethod]
 
-UNRESOLVED = object()
+_UNRESOLVED = object()
 
 
 @dataclasses.dataclass()
 class StrawberryField(StrawberryType):
     python_name: Optional[str] = None
     graphql_name: Optional[str] = None
-    origin: Type[StrawberryObject] = None
+    origin: Type["StrawberryObject"] = None
     child: Optional["StrawberryField"] = None
     base_resolver: Optional[StrawberryResolver] = None
     type_annotation: Optional[StrawberryAnnotation] = None
@@ -67,7 +67,7 @@ class StrawberryField(StrawberryType):
     directives: Sequence[object] = ()
 
     # dataclasses.Field stuff
-    default: object = UNSET
+    default: object = _UNRESOLVED
     default_factory: Union[Callable[[], Any], object] = UNSET
     default_value: Any = dataclasses.field(init=False, default=UNSET)
 
@@ -147,7 +147,7 @@ class StrawberryField(StrawberryType):
         default = dataclasses.MISSING
         default_factory = dataclasses.MISSING
         if self.is_basic_field:
-            if self.default is not UNSET:
+            if self.default is not _UNRESOLVED:
                 default = self.default
             elif self.default_factory:
                 default_factory = self.default_factory
@@ -339,7 +339,7 @@ class StrawberryField(StrawberryType):
 
     @property
     def _has_default(self):
-        return self.default not in (None, UNSET)
+        return self.default not in (None, UNSET, _UNRESOLVED)
 
 
 class StrawberryPrivateField(StrawberryField):

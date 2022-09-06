@@ -271,8 +271,8 @@ def test_basic_type_with_extended_fields():
     }
 
     type User {
-      name: String!
       age: Int!
+      name: String!
     }
     """
     assert str(schema) == textwrap.dedent(expected_schema).strip()

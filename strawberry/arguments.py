@@ -24,7 +24,6 @@ from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
 
 from .exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError
 from .scalars import is_scalar
-from .types.types import get_type_definition
 from .unset import UNSET as _deprecated_UNSET, _deprecated_is_unset  # noqa
 
 
@@ -127,6 +126,8 @@ def convert_argument(
     scalar_registry: Dict[object, ScalarDefinition],
     config: StrawberryConfig,
 ) -> object:
+    from .types.types import get_type_definition
+
     if value is None:
         return None
 

@@ -37,7 +37,7 @@ from strawberry.exceptions import (
     ScalarAlreadyRegisteredError,
     UnresolvedFieldTypeError,
 )
-from strawberry.field import UNRESOLVED, StrawberryField
+from strawberry.field import _UNRESOLVED, StrawberryField
 from strawberry.lazy_type import LazyType
 from strawberry.private import is_private
 from strawberry.schema.config import StrawberryConfig
@@ -268,7 +268,7 @@ class GraphQLCoreConverter:
         thunk_mapping = {}
 
         for f in fields:
-            if f.type is UNRESOLVED:
+            if f.type is _UNRESOLVED:
                 raise UnresolvedFieldTypeError(f.name)
 
             if not is_private(f.type):

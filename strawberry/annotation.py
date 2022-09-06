@@ -30,7 +30,6 @@ from strawberry.type import (
     StrawberryType,
     StrawberryTypeVar,
 )
-from strawberry.types.types import TypeDefinition, get_type_definition
 from strawberry.unset import UNSET
 from strawberry.utils.typing import is_type_var
 
@@ -203,12 +202,10 @@ class StrawberryAnnotation:
 
     @classmethod
     def _is_strawberry_type(cls, evaled_type: Any) -> bool:
-        # Prevent import cycles
+        from strawberry.types.types import TypeDefinition, get_type_definition
         from strawberry.union import StrawberryUnion
 
         if isinstance(evaled_type, EnumDefinition):
-            return True
-        elif _is_input_type(evaled_type):  # TODO: Replace with StrawberryInputObject
             return True
         # TODO: add support for StrawberryInterface when implemented
         elif isinstance(evaled_type, StrawberryList):
@@ -254,15 +251,3 @@ class StrawberryAnnotation:
     @classmethod
     def _strip_lazy_type(cls, annotation: LazyType) -> type:
         return annotation.resolve_type()
-
-
-################################################################################
-# Temporary functions to be removed with new types
-################################################################################
-
-
-def _is_input_type(type_: Any) -> bool:
-    if not get_type_definition(type_):
-        return False
-
-    return type_._type_definition.is_input

@@ -175,13 +175,13 @@ def test_object_types():
     graphql_query = cast(GraphQLObjectType, graphql_schema.get_type("Query"))
     assert graphql_query.fields["hello"].extensions[
         DEFINITION_BACKREF
-    ] is Query._type_definition.get_field("hello")
+    ] is Query._type_definition.get_field_by_name("hello")
     assert (
         graphql_query.fields["hello"].args["input"].extensions[DEFINITION_BACKREF]
-        is Query._type_definition.get_field("hello").arguments[0]
+        is Query._type_definition.get_field_by_name("hello").arguments[0]
     )
 
     graphql_input = cast(GraphQLInputType, graphql_schema.get_type("Input"))
     assert graphql_input.fields["name"].extensions[
         DEFINITION_BACKREF
-    ] is Input._type_definition.get_field("name")
+    ] is Input._type_definition.get_field_by_name("name")

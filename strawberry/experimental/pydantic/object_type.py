@@ -20,9 +20,8 @@ from strawberry.experimental.pydantic.utils import (
     ensure_all_auto_fields_in_pydantic,
     get_default_factory_for_field,
 )
-from strawberry.field import StrawberryField
+from strawberry.field import _UNRESOLVED, StrawberryField
 from strawberry.types.types import StrawberryObject, TypeDefinition
-from strawberry.unset import UNSET
 
 
 def get_type_for_field(field: ModelField, is_input: bool):
@@ -35,8 +34,26 @@ def get_type_for_field(field: ModelField, is_input: bool):
         return replaced_type
 
 
-@dataclasses.dataclass
+class StrawDanticField(StrawberryField):
+    origin: Type["StrawDanticObject"] = None
+
+    def __post_init__(self):
+        super().__post_init__()
+        pydantic_field = self.origin._pydantic_type.__fields__.get(
+            self.python_name, None
+        )
+        if pydantic_field:
+            if self.default is not _UNRESOLVED and not self.default:
+                self.default = _UNRESOLVED
+            if not self.default_factory:
+                self.default_factory = get_default_factory_for_field(pydantic_field)
+            if not self.description:
+                self.description = pydantic_field.field_info.description
+
+
 class StrawDanticTypeDefinition(TypeDefinition):
+    field_class = StrawDanticField
+
     @classmethod
     def __pre_dataclass_creation__(
         cls,
@@ -104,31 +121,21 @@ class StrawDanticTypeDefinition(TypeDefinition):
         for field_name, field in model_fields.items():
             if field_name not in auto_fields_set:
                 continue
-            sb_field = strawberry_fields.get(field_name, StrawberryField())
+            field_type = get_type_for_field(field, is_input)
+            origin.__annotations__[field_name] = field_type
+            sb_field = strawberry_fields.get(
+                field_name, StrawDanticField(origin=origin, python_name=field_name)
+            )
             # don't override base_resolvers.
             if sb_field.base_resolver:
                 continue
-            pydantic_default = field.default or UNSET
-            default_factory = (
-                UNSET if pydantic_default else get_default_factory_for_field(field)
-            )
-            field_type = get_type_for_field(field, is_input)
             if sb_field.python_name in overridden_fields:
-                field_type = overridden_fields[field_name].type
-            pydantic_alias = None
-            if field.has_alias and use_pydantic_alias:
-                pydantic_alias = field.alias
+                origin.__annotations__[field_name] = overridden_fields[field_name].type
+            sb_field = sb_field(origin)  # re-evaluate annotations.
+            if field.has_alias and use_pydantic_alias and not sb_field.graphql_name:
+                sb_field.graphql_name = field.alias
 
-            origin.__annotations__[field_name] = field_type
-            strawberry_fields[field_name] = dataclasses.replace(
-                sb_field,
-                python_name=field_name,
-                origin=origin,
-                default=sb_field.default or pydantic_default,
-                graphql_name=sb_field.graphql_name or pydantic_alias,
-                default_factory=sb_field.default_factory or default_factory,
-                description=sb_field.description or field.field_info.description,
-            )
+            strawberry_fields[sb_field.python_name] = sb_field
 
         if is_input:
             model._strawberry_input_type = origin  # type: ignore
@@ -154,6 +161,12 @@ class StrawDanticObject(StrawberryObject):
         assert issubclass(new_class, StrawDanticObject)
         new_class._pydantic_type = model
         return new_class
+
+    @classmethod
+    def _fill_ns(cls, origin, kwargs, ns):
+        super()._fill_ns(origin, kwargs, ns)
+        model = kwargs["model"]
+        ns.update({"_pydantic_type": model})
 
     @classmethod
     def from_pydantic(

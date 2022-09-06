@@ -1,3 +1,4 @@
+import dataclasses
 from enum import Enum
 from typing import Any, List, Optional, Union
 
@@ -6,7 +7,6 @@ import pytest
 import pydantic
 
 import strawberry
-from strawberry import UNSET
 from strawberry.enum import EnumDefinition
 from strawberry.experimental.pydantic.exceptions import MissingFieldsListError
 from strawberry.schema_directive import Location
@@ -290,11 +290,11 @@ def test_type_with_fields_coming_from_strawberry_and_pydantic():
 
     [field1, field2, field3] = definition.fields
 
-    assert field1.python_name == "name"
-    assert field1.type is str
+    assert field1.python_name == "age"
+    assert field1.type is int
 
-    assert field2.python_name == "age"
-    assert field2.type is int
+    assert field2.python_name == "name"
+    assert field2.type is str
 
     assert field3.python_name == "password"
     assert isinstance(field3.type, StrawberryOptional)
@@ -360,11 +360,11 @@ def test_type_with_fields_mutable_default():
     definition = get_type_definition(UserType)
     assert definition.name == "UserType"
 
-    [field1, field2] = definition.fields
+    [field1, field2] = dataclasses.fields(UserType)
 
-    assert field1.default is UNSET
-    assert field2.default is UNSET
-    assert field1.default_factory is UNSET
+    assert field1.default is dataclasses.MISSING
+    assert field1.default_factory is dataclasses.MISSING
+    assert field2.default is dataclasses.MISSING
     # check that we really made a copy
     assert field2.default_factory() is not empty_list
     assert UserType(groups=["groups"]).friends is not empty_list
@@ -427,11 +427,11 @@ def test_type_with_nested_fields_coming_from_strawberry_and_pydantic():
 
     [field1, field2, field3] = definition.fields
 
-    assert field1.python_name == "name"
-    assert field1.type is Name
+    assert field1.python_name == "age"
+    assert field1.type is int
 
-    assert field2.python_name == "age"
-    assert field2.type is int
+    assert field2.python_name == "name"
+    assert field2.type is Name
 
     assert field3.python_name == "password"
     assert isinstance(field3.type, StrawberryOptional)
@@ -833,13 +833,11 @@ def test_alias_fields_with_use_pydantic_alias():
     definition: TypeDefinition = UserType._type_definition
     assert definition.name == "UserType"
 
-    [field1, field2, field3] = definition.fields
-
-    assert field1.python_name == "age"
+    field1 = definition.get_field_by_name("age")
     assert field1.graphql_name == "ageAlias"
 
-    assert field2.python_name == "state"
+    field2 = definition.get_field_by_name("state")
     assert field2.graphql_name == "state"
 
-    assert field3.python_name == "country"
+    field3 = definition.get_field_by_name("country")
     assert field3.graphql_name == "countryPydantic"
