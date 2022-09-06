@@ -536,6 +536,10 @@ def test_supports_multiple_generics_in_union():
         cursor: strawberry.ID
         node: T
 
+    assert Edge[int]._type_definition.fields[1].type is int
+
+    assert Edge[str]._type_definition.fields[1].type is str
+
     @strawberry.type
     class Query:
         @strawberry.field
@@ -812,17 +816,17 @@ def test_generic_extending_with_type_var():
     schema = strawberry.Schema(query=Query)
 
     expected_schema = """
-    type Book implements Node {
+    type Book implements StrNode {
       id: ID!
       name: String!
     }
 
-    interface Node {
-      id: ID!
-    }
-
     type Query {
       books: [Book!]!
+    }
+
+    interface StrNode {
+      id: ID!
     }
     """
 

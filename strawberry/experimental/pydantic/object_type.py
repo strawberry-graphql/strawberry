@@ -147,10 +147,10 @@ class StrawDanticObject(StrawberryObject):
         return isinstance(instance, (StrawDanticObject, cls._pydantic_type))
 
     @classmethod
-    def from_class(cls, **kwargs) -> Type[StrawDanticObject]:
+    def _from_class(cls, **kwargs) -> Type[StrawDanticObject]:
         model = kwargs["model"]
         assert issubclass(model, PydanticModel)
-        new_class = super().from_class(**kwargs)
+        new_class = super()._from_class(**kwargs)
         assert issubclass(new_class, StrawDanticObject)
         new_class._pydantic_type = model
         return new_class
@@ -172,7 +172,7 @@ class StrawDanticObject(StrawberryObject):
         return self._pydantic_type(**instance_kwargs)
 
     @classmethod
-    def create_type_definition(cls, **kwargs):
+    def _create_type_definition(cls, **kwargs):
         return StrawDanticTypeDefinition.from_class(**kwargs)
 
 
@@ -189,7 +189,7 @@ def type(
     use_pydantic_alias: bool = True,
 ) -> Callable[..., Type[StrawDanticObject]]:
     def wrap(cls: Any) -> Type[StrawDanticObject]:
-        cls = StrawDanticObject.from_class(
+        cls = StrawDanticObject._from_class(
             origin=cls,
             name=name,
             is_input=is_input,

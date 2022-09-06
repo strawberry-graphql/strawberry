@@ -138,27 +138,6 @@ class StrawberryField(StrawberryType):
                 f"Unsupported type for field evolution, got: {type(evolvable)}"
             )
 
-    @classmethod
-    def from_dataclasses_field(
-        cls, origin: Type, dataclasses_field: dataclasses.Field
-    ) -> "StrawberryField":
-        _default = UNSET
-        _default_factory = UNSET
-        if dataclasses_field.default is not dataclasses.MISSING:
-            _default = dataclasses_field.default
-        if (
-            not _default
-            and dataclasses_field.default_factory is not dataclasses.MISSING
-        ):
-            _default_factory = dataclasses_field.default_factory
-        assert dataclasses_field.name
-        return StrawberryField(
-            origin=origin,
-            default=_default,
-            default_factory=_default_factory,
-            python_name=dataclasses_field.name,
-        )
-
     def to_dataclass_field(self) -> dataclasses.Field:
         # basic fields are fields with no provided resolver
         kw_only = {}
@@ -170,7 +149,7 @@ class StrawberryField(StrawberryType):
         if self.is_basic_field:
             if self.default is not UNSET:
                 default = self.default
-            if self.default_factory is not UNSET:
+            elif self.default_factory:
                 default_factory = self.default_factory
         field_ = dataclasses.Field(
             default=default,
@@ -292,7 +271,7 @@ class StrawberryField(StrawberryType):
             raise PrivateStrawberryFieldError(self.python_name, self.origin.__name__)
 
         # Check that default is not set if a resolver is defined
-        if self.default is not UNSET and self.base_resolver is not None:
+        if self._has_default and self.base_resolver is not None:
             raise FieldWithResolverAndDefaultValueError(
                 self.python_name, self.origin.__name__
             )
@@ -347,9 +326,6 @@ class StrawberryField(StrawberryType):
         assert self.type_annotation
         return self.type_annotation.safe_resolve()
 
-    def update_type_annotations(self, annotation: type):
-        self.type_annotation = StrawberryAnnotation(annotation)
-
     @property
     def is_union(self) -> Optional[StrawberryUnion]:
         type_ = self.type
@@ -360,6 +336,10 @@ class StrawberryField(StrawberryType):
     def _validate(self, value):
         expected_type = self.type
         return super().base_validator(expected_type, value)
+
+    @property
+    def _has_default(self):
+        return self.default not in (None, UNSET)
 
 
 class StrawberryPrivateField(StrawberryField):

@@ -4,11 +4,11 @@ import dataclasses
 import inspect
 import types
 import typing
-from collections import deque
 from typing import (
     TYPE_CHECKING,
     Any,
     Callable,
+    ClassVar,
     Dict,
     List,
     Mapping,
@@ -91,7 +91,7 @@ class StrawberryMeta(type):
         for annotation in type_annotation:
             if isinstance(annotation, TypeVar):
                 # return what Generic getitem would return.
-                return cls.__class_getitem__(type_annotation)
+                return cls.__class_getitem__(type_annotation)  # type: ignore
 
         if template := get_type_definition(cls):
             assert isinstance(template, TemplateTypeDefinition)
@@ -193,7 +193,7 @@ class TypeDefinition(StrawberryType):
     @classmethod
     def from_class(
         cls,
-        origin: Type[StrawberryObject],
+        origin: StrawberryObject,
         name: Optional[str] = None,
         is_input: bool = False,
         is_interface: bool = False,
@@ -221,9 +221,14 @@ class TypeDefinition(StrawberryType):
         origin.__annotations__ = {}
         for sb_field in fetched_fields:
             origin.__annotations__[sb_field.python_name] = sb_field.type
+            if hasattr(sb_field.type, "__origin__"):
+                if sb_field.type.__origin__ is ClassVar:  # dataclasses
+                    fetched_fields.remove(sb_field)
+                    continue
             setattr(origin, sb_field.python_name, sb_field.to_dataclass_field())
             if sb_field.is_private:
                 fetched_fields.remove(sb_field)
+
         dataclasses.dataclass(origin)
         # find interfaces
         interfaces = _get_interfaces(origin)
@@ -341,21 +346,20 @@ class TemplateTypeDefinition(TypeDefinition):
             return cached
         type_var_map = dict(zip(self.parameters, passed_types))
         new_type = type(self.name, self.origin.__bases__, dict(self.origin.__dict__))
-        # parameters must not be copied, since it is no longer a template class.
-        new_type.__parameters__ = None
 
         fields = new_type.__annotations__.copy()
         fields.update(new_type.__dict__.copy())
         new_class_annotations = {}
         new_fields = {}
 
-        # fields should already be evaluated by _get_fields() above.
+        # fields should already be evaluated by above.
         for field in self.fields:
             # find the type var or generate a new type.
             field_type = _resolve_field_type(field.type, field, type_var_map)
-
+            new_field = field(new_type)
+            new_fields[field.python_name] = new_field
             new_class_annotations[field.python_name] = field_type
-            # for basic fields we just need to update the class annotation.
+
             if not field.is_basic_field:
                 f = field.base_resolver.wrapped_func
                 f.__annotations__["return"] = field_type
@@ -368,6 +372,8 @@ class TemplateTypeDefinition(TypeDefinition):
         for name, field in new_fields.items():
             setattr(new_type, name, field)
 
+        # parameters must not be copied, since it is no longer a template class.
+        new_type.__parameters__ = None
         _type_definition = TypeDefinition.from_class(
             new_type,
             self.name,
@@ -417,10 +423,10 @@ def _resolve_field_type(
 
 
 class StrawberryObject(metaclass=StrawberryMeta):
-    _type_definition: TypeDefinition = dataclasses.field(init=False)
+    _type_definition: ClassVar[TypeDefinition]
 
     @classmethod
-    def from_class(
+    def _from_class(
         cls,
         origin: Type,
         name: Optional[str] = None,
@@ -441,21 +447,22 @@ class StrawberryObject(metaclass=StrawberryMeta):
             raise exc(origin)
 
         # create StrawberryObject
-        bases = deque()
-        bases.append(cls)
+        is_strawberry_extended = False
+        bases = []
         for base in origin.__bases__:
             if base is not object:
                 bases.append(base)
             if issubclass(base, StrawberryObject):
-                # remove StrawberryObject if already exists in the MRO.
-                bases.popleft()
+                is_strawberry_extended = True
+        if not is_strawberry_extended:
+            bases.append(cls)
         new_type = types.new_class(
             name=origin.__name__,
             bases=tuple(bases),
             exec_body=lambda ns: ns.update(origin.__dict__),
         )
         assert issubclass(new_type, cls)
-        new_type._type_definition = cls.create_type_definition(
+        new_type._type_definition = cls._create_type_definition(
             origin=new_type,
             name=name,
             is_input=is_input,
@@ -468,5 +475,5 @@ class StrawberryObject(metaclass=StrawberryMeta):
         return new_type
 
     @classmethod
-    def create_type_definition(cls, **kwargs):
+    def _create_type_definition(cls, **kwargs):
         return TypeDefinition.from_class(**kwargs)

@@ -118,7 +118,7 @@ def type(
     """
 
     def wrap(cls):
-        return StrawberryObject.from_class(
+        return StrawberryObject._from_class(
             cls,
             name=name,
             is_input=is_input,
