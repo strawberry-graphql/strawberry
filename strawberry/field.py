@@ -147,10 +147,11 @@ class StrawberryField(StrawberryType):
         default = dataclasses.MISSING
         default_factory = dataclasses.MISSING
         if self.is_basic_field:
-            if self.default is not _UNRESOLVED:
-                default = self.default
-            elif self.default_factory:
+
+            if self.default_factory:
                 default_factory = self.default_factory
+            elif self.default is not _UNRESOLVED:
+                default = self.default
         field_ = dataclasses.Field(
             default=default,
             default_factory=(
