@@ -260,6 +260,24 @@ async def test_prime():
     await c4 == 4.4
 
 
+async def test_prime_nocache():
+    async def idx(keys):
+        assert keys, "At least one key must be specified"
+        return keys
+
+    loader = DataLoader(load_fn=idx, cache=False)
+
+    # Primed value is ignored
+    loader.prime(1, 1.1)
+    a1 = loader.load(1)
+    assert await a1 == 1
+
+    # Unless it affects pending value in the current batch
+    b1 = loader.load(2)
+    loader.prime(2, 2.2)
+    assert await b1 == 2.2
+
+
 async def test_clear():
     batch_num = 0
 
@@ -271,15 +289,42 @@ async def test_clear():
 
     loader = DataLoader(load_fn=idx)
 
-    assert await loader.load_many([1, 2]) == [(1, 1), (2, 1)]
+    assert await loader.load_many([1, 2, 3]) == [(1, 1), (2, 1), (3, 1)]
 
-    assert await loader.load_many([2, 3]) == [(2, 1), (3, 2)]
+    loader.clear(1)
 
-    loader.clear(2)
-    assert await loader.load_many([1, 2, 3]) == [(1, 1), (2, 3), (3, 2)]
+    assert await loader.load_many([1, 2, 3]) == [(1, 2), (2, 1), (3, 1)]
 
-    loader.clear_many([1, 3])
-    assert await loader.load_many([1, 2, 3]) == [(1, 4), (2, 3), (3, 4)]
+    loader.clear_many([1, 2])
+
+    assert await loader.load_many([1, 2, 3]) == [(1, 3), (2, 3), (3, 1)]
 
     loader.clear_all()
-    assert await loader.load_many([1, 2, 3]) == [(1, 5), (2, 5), (3, 5)]
+
+    assert await loader.load_many([1, 2, 3]) == [(1, 4), (2, 4), (3, 4)]
+
+
+async def test_clear_nocache():
+    batch_num = 0
+
+    async def idx(keys):
+        """Maps key => (key, batch_num)"""
+        nonlocal batch_num
+        batch_num += 1
+        return [(key, batch_num) for key in keys]
+
+    loader = DataLoader(load_fn=idx, cache=False)
+
+    assert await loader.load_many([1, 2, 3]) == [(1, 1), (2, 1), (3, 1)]
+
+    loader.clear(1)
+
+    assert await loader.load_many([1, 2, 3]) == [(1, 2), (2, 2), (3, 2)]
+
+    loader.clear_many([1, 2])
+
+    assert await loader.load_many([1, 2, 3]) == [(1, 3), (2, 3), (3, 3)]
+
+    loader.clear_all()
+
+    assert await loader.load_many([1, 2, 3]) == [(1, 4), (2, 4), (3, 4)]
