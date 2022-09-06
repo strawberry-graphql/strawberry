@@ -364,7 +364,7 @@ class TemplateTypeDefinition(TypeDefinition):
             new_fields[field.python_name] = new_field
             new_class_annotations[field.python_name] = field_type
 
-            if not field.is_basic_field:
+            if not field._is_basic_field:
                 f = field.base_resolver.wrapped_func
                 f.__annotations__["return"] = field_type
                 # evolve resolver.

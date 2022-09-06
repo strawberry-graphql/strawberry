@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import TYPE_CHECKING, List, Set, Union
+from typing import TYPE_CHECKING, Any, List, Set, Union
 
 from graphql import GraphQLInputObjectType, GraphQLObjectType
 
@@ -9,6 +9,7 @@ from strawberry.type import StrawberryType
 
 
 if TYPE_CHECKING:
+    from strawberry.field import StrawberryField
     from strawberry.types.fields.resolver import StrawberryResolver
 
 
@@ -257,5 +258,22 @@ class UncallableResolverError(Exception):
         message = (
             f"Attempted to call resolver {resolver} with uncallable function "
             f"{resolver.wrapped_func}"
+        )
+        super().__init__(message)
+
+
+class OverrideError(TypeError):
+    def __init__(
+        self,
+        field_to_override: str,
+        expected_type: Any,
+        found_type: Any,
+        field: StrawberryField,
+    ):
+        message = (
+            f"You tried to override {field_to_override} for field {field.python_name}"
+            f" on type {field.origin}"
+            f"But provided {type(found_type)} you should provide instead"
+            f" {type(expected_type)}"
         )
         super().__init__(message)

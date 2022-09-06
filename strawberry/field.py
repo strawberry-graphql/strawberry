@@ -28,6 +28,7 @@ from strawberry.exceptions import (
     InvalidFieldArgument,
     MissingFieldAnnotationError,
     MissingReturnAnnotationError,
+    OverrideError,
     PrivateStrawberryFieldError,
 )
 from strawberry.type import StrawberryType
@@ -51,12 +52,11 @@ _UNRESOLVED = object()
 
 @dataclasses.dataclass()
 class StrawberryField(StrawberryType):
-    python_name: Optional[str] = None
+    python_name: str = None
     graphql_name: Optional[str] = None
     origin: Type["StrawberryObject"] = None
-    child: Optional["StrawberryField"] = None
     base_resolver: Optional[StrawberryResolver] = None
-    type_annotation: Optional[StrawberryAnnotation] = None
+    type_annotation: StrawberryAnnotation = None
     arguments: List[StrawberryArgument] = dataclasses.field(default_factory=list)
     is_subscription: bool = False
     description: Optional[str] = None
@@ -74,10 +74,6 @@ class StrawberryField(StrawberryType):
     is_generic = False
     is_private = False
 
-    @property
-    def is_basic_field(self) -> bool:
-        return not bool(self.base_resolver)
-
     def __post_init__(self):
         if self.origin:
             assert (
@@ -88,14 +84,22 @@ class StrawberryField(StrawberryType):
 
             else:
                 self._evaluate_as_basic_field()
-            if self.child:
-                state = {
-                    field_.name: field_
-                    for field_ in dataclasses.fields(self)
-                    if field_.init
-                }
-                state.pop("child")
-                self.child = dataclasses.replace(self.child, **state)
+
+            arguments = self.override_arguments()
+            for arg in arguments:
+                if not isinstance(arg, StrawberryArgument):
+                    raise OverrideError("arguments", StrawberryArgument, arg, self)
+            self.arguments = arguments
+            type_annotation = self.override_type()
+            if not isinstance(type_annotation, StrawberryAnnotation):
+                raise OverrideError(
+                    "type_annotation", StrawberryAnnotation, type_annotation, self
+                )
+            self.type_annotation = type_annotation
+            graphql_name = self.override_graphql_name()
+            if graphql_name and not isinstance(graphql_name, str):
+                raise OverrideError("graphql_name", str, graphql_name, self)
+            self.graphql_name = graphql_name
 
     def __call__(
         self,
@@ -138,6 +142,15 @@ class StrawberryField(StrawberryType):
                 f"Unsupported type for field evolution, got: {type(evolvable)}"
             )
 
+    def override_type(self) -> StrawberryAnnotation:
+        return self.type_annotation
+
+    def override_arguments(self) -> List[StrawberryArgument]:
+        return self.arguments
+
+    def override_graphql_name(self) -> Optional[str]:
+        return self.graphql_name
+
     def to_dataclass_field(self) -> dataclasses.Field:
         # basic fields are fields with no provided resolver
         kw_only = {}
@@ -146,7 +159,7 @@ class StrawberryField(StrawberryType):
 
         default = dataclasses.MISSING
         default_factory = dataclasses.MISSING
-        if self.is_basic_field:
+        if self._is_basic_field:
 
             if self.default_factory:
                 default_factory = self.default_factory
@@ -159,9 +172,9 @@ class StrawberryField(StrawberryType):
                 # is a callable, so we do a type ignore
                 default_factory  # type: ignore
             ),
-            init=self.is_basic_field,
-            repr=self.is_basic_field,
-            compare=self.is_basic_field,
+            init=self._is_basic_field,
+            repr=self._is_basic_field,
+            compare=self._is_basic_field,
             hash=None,
             metadata={},
             **kw_only,
@@ -264,6 +277,10 @@ class StrawberryField(StrawberryType):
 
         self._finalize()
 
+    @property
+    def _is_basic_field(self) -> bool:
+        return not bool(self.base_resolver)
+
     def _finalize(self) -> None:
         """Few validation after a field has been evaluated."""
 
@@ -313,8 +330,6 @@ class StrawberryField(StrawberryType):
             res = info.schema.config.default_resolver(
                 source, self.python_name
             )  # type: ignore
-        if self.child:
-            res = self.child.get_result(res, info, args, kwargs)
 
         return res
 
