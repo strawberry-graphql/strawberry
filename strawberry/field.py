@@ -318,7 +318,7 @@ T = TypeVar("T")
 @overload
 def field(
     *,
-    resolver: Callable[[], T],
+    resolver: Callable[[...], T],
     name: Optional[str] = None,
     is_subscription: bool = False,
     description: Optional[str] = None,
