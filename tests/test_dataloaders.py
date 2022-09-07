@@ -259,6 +259,10 @@ async def test_prime():
     loader.prime_many({4: 4.4})
     await c4 == 4.4
 
+    # Yield to ensure the last batch has been dispatched,
+    # despite all values being primed
+    await asyncio.sleep(0)
+
 
 async def test_prime_nocache():
     async def idx(keys):
@@ -276,6 +280,10 @@ async def test_prime_nocache():
     b1 = loader.load(2)
     loader.prime(2, 2.2)
     assert await b1 == 2.2
+
+    # Yield to ensure the last batch has been dispatched,
+    # despite all values being primed
+    await asyncio.sleep(0)
 
 
 async def test_clear():
