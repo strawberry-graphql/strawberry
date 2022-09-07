@@ -318,7 +318,8 @@ T = TypeVar("T")
 @overload
 def field(
     *,
-    resolver: Callable[[...], T],
+    # Union is used because Pyright doesn't match empty argument list to ellipsis
+    resolver: Callable[[], T] | Callable[[...], T],
     name: Optional[str] = None,
     is_subscription: bool = False,
     description: Optional[str] = None,
