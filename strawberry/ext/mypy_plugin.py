@@ -1,4 +1,5 @@
 import re
+import warnings
 from decimal import Decimal
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union, cast
 
@@ -1016,5 +1017,8 @@ def plugin(version: str):
         MypyVersion.VERSION = Decimal(".".join(match.groups()))
     else:
         MypyVersion.VERSION = FALLBACK_VERSION
+        warnings.warn(
+            f"Mypy version {version} could not be parsed. Reverting to v0.800"
+        )
 
     return StrawberryPlugin
