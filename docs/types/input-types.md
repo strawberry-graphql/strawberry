@@ -55,6 +55,20 @@ class Point2D:
     label: Optional[Text] = None
 ```
 
+Alternatively you can also use `strawberry.UNSET` instead of the None default value, which will then return the value "UNSET" instead of "None".
+
+```python
+import strawberry
+from typing import Optional
+
+@strawberry.input
+class Point2D:
+    x: float
+    y: float
+    label: Optional[Text] = strawberry.UNSET
+```
+
+
 ## API
 
 `@strawberry.input(name: str = None, description: str = None)`
