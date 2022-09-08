@@ -42,6 +42,19 @@ class Mutation:
         return True
 ```
 
+If you want to include optional arguments, you need to provide them with a default. For example if we want to expand on the above example to allow optional labeling of our point we could do:
+
+```python
+import strawberry
+from typing import Optional
+
+@strawberry.input
+class Point2D:
+    x: float
+    y: float
+    label: Optional[Text] = None
+```
+
 ## API
 
 `@strawberry.input(name: str = None, description: str = None)`
