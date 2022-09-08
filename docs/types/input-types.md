@@ -68,7 +68,6 @@ class Point2D:
     label: Optional[Text] = strawberry.UNSET
 ```
 
-
 ## API
 
 `@strawberry.input(name: str = None, description: str = None)`
