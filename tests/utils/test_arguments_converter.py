@@ -311,7 +311,7 @@ def test_nested_list_of_complex_types():
         arguments,
         scalar_registry=DEFAULT_SCALAR_REGISTRY,
         config=StrawberryConfig(),
-    ) == {"input": Input(numbers=[Number(1), Number(2)])}
+    ) == {"input": Input(numbers=[Number(value=1), Number(value=2)])}
 
 
 def test_uses_default_for_optional_types_when_nothing_is_passed():
@@ -340,7 +340,7 @@ def test_uses_default_for_optional_types_when_nothing_is_passed():
         arguments,
         scalar_registry=DEFAULT_SCALAR_REGISTRY,
         config=StrawberryConfig(),
-    ) == {"input": Input(UNSET, UNSET)}
+    ) == {"input": Input(numbers=UNSET, numbers_second=UNSET)}
 
     # case 2
     args = {"input": {"numbersSecond": None}}
@@ -358,7 +358,7 @@ def test_uses_default_for_optional_types_when_nothing_is_passed():
         arguments,
         scalar_registry=DEFAULT_SCALAR_REGISTRY,
         config=StrawberryConfig(),
-    ) == {"input": Input(UNSET, None)}
+    ) == {"input": Input(numbers=UNSET, numbers_second=None)}
 
 
 def test_when_optional():
