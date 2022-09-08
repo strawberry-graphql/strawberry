@@ -24,6 +24,8 @@ def maintain_version():
         ("0.800", Decimal("0.800")),
         ("0.920", Decimal("0.920")),
         ("0.980+dev.d89b28d973c3036ef154c9551b961d9119761380", Decimal("0.980")),
+        ("1.0.0", Decimal("1.0")),
+        ("99.999", Decimal("11.0")),
     ],
 )
 def test_plugin(version, expected):
