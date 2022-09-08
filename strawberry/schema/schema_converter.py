@@ -51,6 +51,7 @@ from strawberry.exceptions import (
 )
 from strawberry.field import UNRESOLVED, StrawberryField
 from strawberry.lazy_type import LazyType
+from strawberry.permission import BasePermission, PermissionInterface
 from strawberry.private import is_private
 from strawberry.schema.config import StrawberryConfig
 from strawberry.schema.types.scalar import _make_scalar_type
@@ -445,32 +446,43 @@ class GraphQLCoreConverter:
 
             return args, kwargs
 
-        def _check_permissions(source: Any, info: Info, kwargs: Dict[str, Any]):
-            """
-            Checks if the permission should be accepted and
-            raises an exception if not
-            """
-            for permission_class in field.permission_classes:
-                permission = permission_class()
-
-                if not permission.has_permission(source, info, **kwargs):
-                    message = getattr(permission, "message", None)
-                    raise PermissionError(message)
-
-        async def _check_permissions_async(
-            source: Any, info: Info, kwargs: Dict[str, Any]
+        async def _check_permission_async(
+            source: Any,
+            info: Info,
+            permission_class: Type[BasePermission],
+            kwargs: Dict[str, Any],
         ):
-            for permission_class in field.permission_classes:
-                permission = permission_class()
-                has_permission: bool
+            """
+            Checks if the permission should be accepted, raises PermissionError
+            or returns PermissionInterface extended type.
+            """
+            permission = permission_class()
+            return await await_maybe(permission.has_permission(source, info, **kwargs))
 
-                has_permission = await await_maybe(
-                    permission.has_permission(source, info, **kwargs)
-                )
+        def _check_permission(
+            source: Any,
+            info: Info,
+            permission_class: Type[BasePermission],
+            kwargs: Dict[str, Any],
+        ):
+            """
+            Checks if the permission should be accepted, raises PermissionError
+            or returns PermissionInterface extended type.
+            """
+            permission = permission_class()
+            return permission.has_permission(source, info, **kwargs)
 
-                if not has_permission:
-                    message = getattr(permission, "message", None)
-                    raise PermissionError(message)
+        def _handle_permission_result(
+            permission_class: Type[BasePermission],
+            result: Union[bool, PermissionInterface],
+        ):
+
+            if isinstance(result, PermissionInterface):
+                if not result.success:
+                    return result
+
+            elif not result:
+                raise PermissionError(permission_class.message)
 
         def _strawberry_info_from_graphql(info: GraphQLResolveInfo) -> Info:
             return Info(
@@ -482,20 +494,35 @@ class GraphQLCoreConverter:
             field_args, field_kwargs = _get_arguments(
                 source=_source, info=info, kwargs=kwargs
             )
-
             return field.get_result(
                 _source, info=info, args=field_args, kwargs=field_kwargs
             )
 
         def _resolver(_source: Any, info: GraphQLResolveInfo, **kwargs):
             strawberry_info = _strawberry_info_from_graphql(info)
-            _check_permissions(_source, strawberry_info, kwargs)
+            for permission_class in field.permission_classes:
+                res = _check_permission(
+                    _source, strawberry_info, permission_class, kwargs
+                )
+                # might raise permission exception or return a strawberry type.
+                if permission_result := _handle_permission_result(
+                    permission_class, res
+                ):
+                    return permission_result
 
             return _get_result(_source, strawberry_info, **kwargs)
 
         async def _async_resolver(_source: Any, info: GraphQLResolveInfo, **kwargs):
             strawberry_info = _strawberry_info_from_graphql(info)
-            await _check_permissions_async(_source, strawberry_info, kwargs)
+            for permission_class in field.permission_classes:
+                res = await _check_permission_async(
+                    _source, strawberry_info, permission_class, kwargs
+                )
+                # might raise permission exception or return a strawberry type.
+                if permission_result := _handle_permission_result(
+                    permission_class, res
+                ):
+                    return permission_result
 
             return await await_maybe(_get_result(_source, strawberry_info, **kwargs))
 

@@ -135,6 +135,19 @@ $ poetry run pre-commit install
 Your code must always be accompanied by corresponding tests. If tests are not
 present, your code will not be merged.
 
+#### Debugging
+During debugging, you might tackle errors like:
+```bash
+ModuleNotFoundError: No module named 'aiohttp.test_utils'
+```
+or
+```bash
+ImportError: cannot import name 'GenericAlias' from 'types'
+```
+
+these are caused because of namespace clashes, make sure that you are running the tests from
+strawberry root directory and not from inside `strawberry/tests` directory.
+
 #### Pull requests
 
 - Be sure that your pull request contains tests that cover the changed or added

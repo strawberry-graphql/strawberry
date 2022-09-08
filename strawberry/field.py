@@ -29,16 +29,14 @@ from strawberry.union import StrawberryUnion
 from strawberry.unset import UNSET
 from strawberry.utils.cached_property import cached_property
 
-from .permission import BasePermission
 from .types.fields.resolver import StrawberryResolver
 
 
 if TYPE_CHECKING:
     from .object_type import TypeDefinition
-
+    from .permission import BasePermission
 
 _RESOLVER_TYPE = Union[StrawberryResolver, Callable, staticmethod, classmethod]
-
 
 UNRESOLVED = object()
 
@@ -56,7 +54,7 @@ class StrawberryField(dataclasses.Field):
         is_subscription: bool = False,
         description: Optional[str] = None,
         base_resolver: Optional[StrawberryResolver] = None,
-        permission_classes: List[Type[BasePermission]] = (),  # type: ignore
+        permission_classes: List[Type["BasePermission"]] = (),  # type: ignore
         default: object = UNSET,
         default_factory: Union[Callable[[], Any], object] = UNSET,
         deprecation_reason: Optional[str] = None,
@@ -114,7 +112,8 @@ class StrawberryField(dataclasses.Field):
 
         self.is_subscription = is_subscription
 
-        self.permission_classes: List[Type[BasePermission]] = list(permission_classes)
+        self.permission_classes: List[Type["BasePermission"]] = list(permission_classes)
+        self._parse_permission_classes()
         self.directives = directives
 
         self.deprecation_reason = deprecation_reason
@@ -160,6 +159,11 @@ class StrawberryField(dataclasses.Field):
             return self.base_resolver(*args, **kwargs)
 
         return self.default_resolver(source, self.python_name)  # type: ignore
+
+    def _parse_permission_classes(self):
+        """adds, the permission classes"""
+        for permission_class in self.permission_classes:
+            ...
 
     @property
     def arguments(self) -> List[StrawberryArgument]:
@@ -323,7 +327,7 @@ def field(
     is_subscription: bool = False,
     description: Optional[str] = None,
     init: Literal[False] = False,
-    permission_classes: Optional[List[Type[BasePermission]]] = None,
+    permission_classes: Optional[List[Type["BasePermission"]]] = None,
     deprecation_reason: Optional[str] = None,
     default: Any = UNSET,
     default_factory: Union[Callable, object] = UNSET,
@@ -339,7 +343,7 @@ def field(
     is_subscription: bool = False,
     description: Optional[str] = None,
     init: Literal[True] = True,
-    permission_classes: Optional[List[Type[BasePermission]]] = None,
+    permission_classes: Optional[List[Type["BasePermission"]]] = None,
     deprecation_reason: Optional[str] = None,
     default: Any = UNSET,
     default_factory: Union[Callable, object] = UNSET,
@@ -355,7 +359,7 @@ def field(
     name: Optional[str] = None,
     is_subscription: bool = False,
     description: Optional[str] = None,
-    permission_classes: Optional[List[Type[BasePermission]]] = None,
+    permission_classes: Optional[List[Type["BasePermission"]]] = None,
     deprecation_reason: Optional[str] = None,
     default: Any = UNSET,
     default_factory: Union[Callable, object] = UNSET,
