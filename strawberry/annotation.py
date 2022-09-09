@@ -68,6 +68,8 @@ class StrawberryAnnotation:
 
     @staticmethod
     def parse_annotated(annotation: object) -> object:
+        from strawberry.auto import StrawberryAuto
+
         if get_origin(annotation) is Annotated:
             annotated_args = get_args(annotation)
             annotation_type = annotated_args[0]
@@ -77,6 +79,9 @@ class StrawberryAnnotation:
                     assert isinstance(annotation_type, ForwardRef)
 
                     return arg.resolve_forward_ref(annotation_type)
+
+                if isinstance(arg, StrawberryAuto):
+                    return arg
 
             return StrawberryAnnotation.parse_annotated(annotation_type)
 

@@ -1,5 +1,6 @@
 import importlib
 import inspect
+import warnings
 from dataclasses import dataclass
 from typing import ForwardRef, Generic, Optional, Type, TypeVar, cast
 
@@ -15,6 +16,12 @@ class LazyType(Generic[TypeName, Module]):
     package: Optional[str]
 
     def __class_getitem__(cls, params):
+        warnings.warn(
+            "LazyType is deprecated, use Annotated[YourType, strawberry.lazy(path)] instead",
+            DeprecationWarning,
+            stacklevel=2,
+        )
+
         type_name, module = params
 
         package = None
