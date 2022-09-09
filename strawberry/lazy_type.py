@@ -13,7 +13,7 @@ Module = TypeVar("Module")
 class LazyType(Generic[TypeName, Module]):
     type_name: str
     module: str
-    package: Optional[str]
+    package: Optional[str] = None
 
     def __class_getitem__(cls, params):
         warnings.warn(

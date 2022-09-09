@@ -148,7 +148,7 @@ markers = ["django", "starlette", "channels"]
 asyncio_mode = "auto"
 filterwarnings = [
     "ignore::DeprecationWarning:strawberry.*.resolver",
-    "ignore::DeprecationWarning:LazyType is deprecatedy",
+    "ignore:LazyType is deprecated:DeprecationWarning",
 ]
 
 [tool.autopub]
