@@ -117,7 +117,6 @@ class NameConverter:
         from strawberry.union import StrawberryUnion
 
         # TODO: maybe we should move parse_annotated somewhere else?
-        breakpoint()
         type_ = StrawberryAnnotation.parse_annotated(type_)  # type: ignore
 
         if isinstance(type_, LazyType):
