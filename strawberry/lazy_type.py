@@ -17,7 +17,10 @@ class LazyType(Generic[TypeName, Module]):
 
     def __class_getitem__(cls, params):
         warnings.warn(
-            "LazyType is deprecated, use Annotated[YourType, strawberry.lazy(path)] instead",
+            (
+                "LazyType is deprecated, use "
+                "Annotated[YourType, strawberry.lazy(path)] instead"
+            ),
             DeprecationWarning,
             stacklevel=2,
         )
