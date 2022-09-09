@@ -8,7 +8,6 @@ from typing import (  # type: ignore[attr-defined]
     Dict,
     List,
     Optional,
-    Type,
     TypeVar,
     Union,
     _eval_type,
@@ -67,10 +66,10 @@ class StrawberryAnnotation:
 
         return self.resolve() == other.resolve()
 
-    def _parse_annotated(self, annotation: Type) -> object:
+    @staticmethod
+    def parse_annotated(annotation: object) -> object:
         if get_origin(annotation) is Annotated:
             annotated_args = get_args(annotation)
-
             annotation_type = annotated_args[0]
 
             for arg in annotated_args[1:]:
@@ -79,18 +78,23 @@ class StrawberryAnnotation:
 
                     return arg.resolve_forward_ref(annotation_type)
 
+            return StrawberryAnnotation.parse_annotated(annotation_type)
+
         if is_union(annotation):
             return Union[
-                tuple(self._parse_annotated(arg) for arg in get_args(annotation))
-            ]
+                tuple(
+                    StrawberryAnnotation.parse_annotated(arg)
+                    for arg in get_args(annotation)
+                )  # pyright: ignore
+            ]  # pyright: ignore
 
         if is_list(annotation):
-            return List[self._parse_annotated(get_args(annotation)[0])]
+            return List[StrawberryAnnotation.parse_annotated(get_args(annotation)[0])]  # type: ignore  # noqa: E501
 
         return annotation
 
     def resolve(self) -> Union[StrawberryType, type]:
-        annotation = self._parse_annotated(self.annotation)
+        annotation = self.parse_annotated(self.annotation)
 
         if isinstance(self.annotation, str):
             annotation = ForwardRef(self.annotation)
