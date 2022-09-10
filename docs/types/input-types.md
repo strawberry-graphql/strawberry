@@ -62,7 +62,7 @@ from typing import Optional
 class Point2D:
     x: float
     y: float
-    label: Optional[Text] = None
+    label: Optional[str] = None
 ---
 type Point2D {
     x: Float!
@@ -82,7 +82,7 @@ from typing import Optional
 class Point2D:
     x: float
     y: float
-    label: Optional[Text] = strawberry.UNSET
+    label: Optional[str] = strawberry.UNSET
 ---
 type Point2D {
     x: Float!
