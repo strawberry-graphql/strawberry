@@ -1,10 +1,8 @@
 Release type: minor
 
 This release adds `strawberry.lazy` which allows you to define the type of the
-field and its path.
-
-This is useful when you want to define a field with a type that has a circular
-dependency.
+field and its path. This is useful when you want to define a field with a type
+that has a circular dependency.
 
 For example, let's say we have a `User` type that has a list of `Post` and a
 `Post` type that has a `User`:
