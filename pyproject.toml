@@ -147,7 +147,8 @@ testpaths = ["tests/"]
 markers = ["django", "starlette", "channels"]
 asyncio_mode = "auto"
 filterwarnings = [
-    "ignore::DeprecationWarning:strawberry.*.resolver"
+    "ignore::DeprecationWarning:strawberry.*.resolver",
+    "ignore:LazyType is deprecated:DeprecationWarning",
 ]
 
 [tool.autopub]
