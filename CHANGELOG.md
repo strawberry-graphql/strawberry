@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.130.1 - 2022-09-12
+--------------------
+
+Fix version parsing issue related to dev builds of Mypy in `strawberry.ext.mypy_plugin`
+
+Contributed by [San Kilkis](https://github.com/skilkis) via [PR #2157](https://github.com/strawberry-graphql/strawberry/pull/2157/)
+
+
 0.130.0 - 2022-09-12
 --------------------
 
