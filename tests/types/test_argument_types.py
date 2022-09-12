@@ -129,8 +129,15 @@ def test_custom_info(annotation):
         assert info_parameter is not None
         assert info_parameter.name == "info"
 
+
+def test_custom_info_negative():
+    """Test to ensure deprecation warning is emitted."""
+    with pytest.warns(
+        DeprecationWarning, match=r"Argument name-based matching of 'info'"
+    ):
+
         @strawberry.field
-        def get_info(info: CustomInfo) -> bool:
+        def get_info(info) -> bool:
             _ = info
             return True
 
