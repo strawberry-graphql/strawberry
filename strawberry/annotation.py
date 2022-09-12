@@ -241,7 +241,11 @@ class StrawberryAnnotation:
 
         annotation_origin = getattr(annotation, "__origin__", None)
 
-        return annotation_origin == list
+        return (
+            annotation_origin == list
+            or annotation_origin == tuple
+            or annotation_origin is abc.Sequence
+        )
 
     @classmethod
     def _is_strawberry_type(cls, evaled_type: Any) -> bool:
