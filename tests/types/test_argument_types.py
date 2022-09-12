@@ -1,6 +1,8 @@
 import warnings
 from enum import Enum
-from typing import List, Optional, TypeVar
+from typing import Any, List, Optional, TypeVar
+
+import pytest
 
 import strawberry
 from strawberry.types.info import Info
@@ -97,13 +99,35 @@ def test_type_var():
     assert argument.type == T
 
 
-def test_custom_info():
-    class CustomInfo(Info):
-        pass
+ContextType = TypeVar("ContextType")
+RootValueType = TypeVar("RootValueType")
 
-    # Ensure no deprecation warning is thrown for info subclass
+
+class CustomInfo(Info[ContextType, RootValueType]):
+    """Subclassed Info type used to test dependency injection."""
+
+
+@pytest.mark.parametrize(
+    "annotation",
+    [CustomInfo, CustomInfo[Any, Any], Info, Info[Any, Any]],
+)
+def test_custom_info(annotation):
+    """Test to ensure that subclassed Info does not raise warning."""
     with warnings.catch_warnings():
-        warnings.simplefilter("error")
+        warnings.filterwarnings("error")
+
+        def get_info(info) -> bool:
+            _ = info
+            return True
+
+        get_info.__annotations__["info"] = annotation
+        get_info_field = strawberry.field(get_info)
+
+        assert not get_info_field.arguments  # Should have no arguments matched
+
+        info_parameter = get_info_field.base_resolver.info_parameter
+        assert info_parameter is not None
+        assert info_parameter.name == "info"
 
         @strawberry.field
         def get_info(info: CustomInfo) -> bool:
