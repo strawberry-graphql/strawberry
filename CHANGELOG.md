@@ -1,6 +1,31 @@
 CHANGELOG
 =========
 
+0.130.3 - 2022-09-12
+--------------------
+
+Fix invalid deprecation warning issued on arguments annotated
+by a subclassed `strawberry.types.Info`.
+
+Thanks to @ThirVondukr for the bug report!
+
+Example:
+
+```python
+class MyInfo(Info)
+    pass
+
+@strawberry.type
+class Query:
+
+    @strawberry.field
+    def is_tasty(self, info: MyInfo) -> bool:
+        """Subclassed ``info`` argument no longer raises deprecation warning."""
+```
+
+Contributed by [San Kilkis](https://github.com/skilkis) via [PR #2137](https://github.com/strawberry-graphql/strawberry/pull/2137/)
+
+
 0.130.2 - 2022-09-12
 --------------------
 
