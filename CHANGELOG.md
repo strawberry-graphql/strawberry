@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.130.2 - 2022-09-12
+--------------------
+
+This release fixes the conversion of generic aliases when
+using pydantic.
+
+Contributed by [Silas Sewell](https://github.com/silas) via [PR #2152](https://github.com/strawberry-graphql/strawberry/pull/2152/)
+
+
 0.130.1 - 2022-09-12
 --------------------
 
