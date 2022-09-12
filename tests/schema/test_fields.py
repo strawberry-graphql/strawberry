@@ -7,7 +7,7 @@ from strawberry.schema.config import StrawberryConfig
 
 def test_custom_field():
     class CustomField(StrawberryField):
-        def get_result(self, root, info, args, kwargs):
+        def get_result(self, root, info, arguments):
             return getattr(root, self.python_name) * 2
 
     @strawberry.type

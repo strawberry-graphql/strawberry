@@ -415,7 +415,7 @@ class GraphQLCoreConverter:
             source: Any,
             info: Info,
             kwargs: Dict[str, Any],
-        ) -> Tuple[List[Any], Dict[str, Any]]:
+        ) -> Dict[str, Any]:
             kwargs = convert_arguments(
                 kwargs,
                 field.arguments,
@@ -425,16 +425,10 @@ class GraphQLCoreConverter:
 
             # the following code allows to omit info and root arguments
             # by inspecting the original resolver arguments,
-            # if it asks for self, the source will be passed as first argument
             # if it asks for root, the source it will be passed as kwarg
             # if it asks for info, the info will be passed as kwarg
 
-            args = []
-
             if field.base_resolver:
-                if field.base_resolver.self_parameter:
-                    args.append(source)
-
                 root_parameter = field.base_resolver.root_parameter
                 if root_parameter:
                     kwargs[root_parameter.name] = source
@@ -443,7 +437,7 @@ class GraphQLCoreConverter:
                 if info_parameter:
                     kwargs[info_parameter.name] = info
 
-            return args, kwargs
+            return kwargs
 
         def _check_permissions(source: Any, info: Info, kwargs: Dict[str, Any]):
             """
@@ -479,12 +473,10 @@ class GraphQLCoreConverter:
             )
 
         def _get_result(_source: Any, info: Info, **kwargs):
-            field_args, field_kwargs = _get_arguments(
-                source=_source, info=info, kwargs=kwargs
-            )
+            field_arguments = _get_arguments(source=_source, info=info, kwargs=kwargs)
 
             return field.get_result(
-                _source, info=info, args=field_args, kwargs=field_kwargs
+                _source, info=info, arguments=field_arguments
             )
 
         def _resolver(_source: Any, info: GraphQLResolveInfo, **kwargs):

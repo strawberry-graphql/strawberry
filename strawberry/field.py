@@ -148,7 +148,7 @@ class StrawberryField(dataclasses.Field):
         return self
 
     def get_result(
-        self, source: Any, info: Info, args: List[Any], kwargs: Dict[str, Any]
+        self, source: Any, info: Info, arguments: Dict[str, Any]
     ) -> Union[Awaitable[Any], Any]:
         """
         Calls the resolver defined for the StrawberryField.
@@ -157,7 +157,12 @@ class StrawberryField(dataclasses.Field):
         """
 
         if self.base_resolver:
-            return self.base_resolver(*args, **kwargs)
+            # Check if the resolver asks for `self`. If it does then include the
+            # source as the first argument to the resolver.
+            args = []
+            if self.base_resolver.self_parameter is not None:
+                args = [source]
+            return self.base_resolver(*args, **arguments)
 
         return self.default_resolver(source, self.python_name)  # type: ignore
 

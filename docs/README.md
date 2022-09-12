@@ -25,7 +25,8 @@
 - [Union types](./types/union.md)
 - [Lazy types](./types/lazy.md)
 - [Exceptions](./types/exceptions.md)
-- [Private/External Fields](./types/private.md)
+- [Private/External fields](./types/private.md)
+- [Custom fields](./types/custom-fields.md)
 
 ## Codegen
 

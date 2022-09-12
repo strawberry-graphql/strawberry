@@ -23,7 +23,8 @@ internal and not for GraphQL.
 Consider the following type, which can accept any Python object and handle
 converting it to string, representation, or templated output:
 
-```
+```python
+import strawberry
 
 @strawberry.type
 class Stringable:
@@ -47,7 +48,8 @@ The `Private[...]` type lets Strawberry know that this field is not
 a GraphQL field. "value" is a regular field on the class, but it is not
 exposed on the GraphQL API.
 
-```
+```python
+import strawberry
 
 @strawberry.type
 class Query:
