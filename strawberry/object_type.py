@@ -10,6 +10,7 @@ from typing import (
     Sequence,
     Type,
     TypeVar,
+    Union,
     cast,
     overload,
 )
@@ -211,7 +212,7 @@ def type(
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     extend: bool = False,
-) -> T:
+) -> Union[T, Callable[[T], T]]:
     """Annotates a class as a GraphQL type.
 
     Example usage:
