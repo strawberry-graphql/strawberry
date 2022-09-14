@@ -1,6 +1,19 @@
 CHANGELOG
 =========
 
+0.130.4 - 2022-09-14
+--------------------
+
+This release adds improved support for Pyright and Pylance, VSCode default
+language server for Python.
+
+Using `strawberry.type`, `strawberry.field`, `strawberry.input` and
+`strawberry.enum` will now be correctly recognized by Pyright and Pylance and
+won't show errors.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2172](https://github.com/strawberry-graphql/strawberry/pull/2172/)
+
+
 0.130.3 - 2022-09-12
 --------------------
 
