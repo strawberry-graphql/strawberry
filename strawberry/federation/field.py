@@ -147,7 +147,7 @@ def field(
     if inaccessible:
         directives.append(Inaccessible())
 
-    return base_field(
+    return base_field(  # type: ignore
         resolver=resolver,  # type: ignore
         name=name,
         is_subscription=is_subscription,
