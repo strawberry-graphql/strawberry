@@ -62,7 +62,7 @@ def _impl_type(
     if tags:
         directives.extend(Tag(name=tag) for tag in tags)
 
-    return base_type(
+    return base_type(  # type: ignore
         cls,
         name=name,
         description=description,

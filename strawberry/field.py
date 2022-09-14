@@ -322,7 +322,7 @@ class StrawberryField(dataclasses.Field):
 @overload
 def field(
     *,
-    resolver: Callable[[], T],
+    resolver: _RESOLVER_TYPE[T],
     name: Optional[str] = None,
     is_subscription: bool = False,
     description: Optional[str] = None,
@@ -409,7 +409,7 @@ def field(
         deprecation_reason=deprecation_reason,
         default=default,
         default_factory=default_factory,
-        directives=directives,
+        directives=directives or (),
     )
 
     if resolver:

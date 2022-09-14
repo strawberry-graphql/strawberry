@@ -286,8 +286,12 @@ def input(
     >>>     field_abc: str = "ABC"
     """
 
-    return type(
-        cls, name=name, description=description, directives=directives, is_input=True
+    return type(  # type: ignore # not sure why mypy complains here
+        cls,
+        name=name,
+        description=description,
+        directives=directives,
+        is_input=True,
     )
 
 
@@ -329,7 +333,7 @@ def interface(
     >>>     field_abc: str
     """
 
-    return type(
+    return type(  # type: ignore # not sure why mypy complains here
         cls,
         name=name,
         description=description,

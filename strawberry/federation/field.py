@@ -148,7 +148,7 @@ def field(
         directives.append(Inaccessible())
 
     return base_field(
-        resolver=resolver,
+        resolver=resolver,  # type: ignore
         name=name,
         is_subscription=is_subscription,
         description=description,
@@ -156,6 +156,6 @@ def field(
         deprecation_reason=deprecation_reason,
         default=default,
         default_factory=default_factory,
-        init=init,
+        init=init,  # type: ignore
         directives=directives,
     )
