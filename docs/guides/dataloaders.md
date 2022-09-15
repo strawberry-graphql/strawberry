@@ -160,7 +160,7 @@ class Query:
         # Insert the people we just fetched in the dataloader cache
         # Since "all people" are now in the cache, acessing `Person.friends` will not
         # trigger any extra database access
-        loader.preset_many({persor.id: person for person in people})
+        loader.prime_many({persor.id: person for person in people})
 
         return people
 ---
