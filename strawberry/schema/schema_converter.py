@@ -16,6 +16,7 @@ from typing import (
 )
 
 from graphql import (
+    EnumValueNode,
     GraphQLArgument,
     GraphQLDirective,
     GraphQLEnumType,
@@ -81,12 +82,20 @@ class CustomGraphQLEnumType(GraphQLEnumType):
         return super().serialize(output_value)
 
     def parse_value(self, input_value: str) -> Any:
-        return self.wrapped_cls(super().parse_value(input_value))
+        # execute checks
+        super().parse_value(input_value)
+        # return enum value
+        return self.wrapped_cls[input_value]
 
     def parse_literal(
         self, value_node: ValueNode, _variables: Optional[Dict[str, Any]] = None
     ) -> Any:
-        return self.wrapped_cls(super().parse_literal(value_node, _variables))
+        # execute checks
+        super().parse_literal(value_node, _variables)
+        # for mypy, also handy for checking the check
+        assert isinstance(value_node, EnumValueNode), "must be a EnumValueNode"
+        # return enum value
+        return self.wrapped_cls[value_node.value]
 
 
 class GraphQLCoreConverter:
