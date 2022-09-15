@@ -144,10 +144,10 @@ For example:
 @strawberry.type
 class Person:
     id: strawberry.ID
-    friends_ids: List[strawberry.ID]
+    friends_ids: strawberry.Private[List[strawberry.ID]]
 
     @strawberry.field
-    def friends(self) -> List[Person]:
+    async def friends(self) -> List[Person]:
       return await loader.load_many(self.friends_ids)
 
 @strawberry.type
@@ -157,10 +157,10 @@ class Query:
         # Fetch all people from the database, without going through the dataloader abstraction
         people = await database.get_all_people()
 
-        # Insert the people we just fetched in the dataloader cache
-        # Since "all people" are now in the cache, acessing `Person.friends` will not
+        # Insert the people we fetched in the dataloader cache
+        # Since "all people" are now in the cache, accessing `Person.friends` will not
         # trigger any extra database access
-        loader.prime_many({persor.id: person for person in people})
+        loader.prime_many({person.id: person for person in people})
 
         return people
 ---
