@@ -5,9 +5,9 @@ from typing import List, Optional
 import pytest
 
 import strawberry
-from strawberry.arguments import UNSET
 from strawberry.types import Info
 from strawberry.types.nodes import FragmentSpread, InlineFragment, SelectedField
+from strawberry.unset import UNSET
 
 
 def test_info_has_the_correct_shape():
@@ -25,6 +25,7 @@ def test_info_has_the_correct_shape():
         context_equal: bool
         root_equal: bool
         return_type: str
+        schema_print: str
 
     @strawberry.type
     class Query:
@@ -40,6 +41,7 @@ def test_info_has_the_correct_shape():
                 context_equal=info.context == my_context,
                 root_equal=info.root_value == root_value,
                 return_type=str(info.return_type),
+                schema_print=info.schema.as_str(),
             )
 
     schema = strawberry.Schema(query=Query)
@@ -55,6 +57,7 @@ def test_info_has_the_correct_shape():
             rootEqual
             variableValues
             returnType
+            schemaPrint
         }
     }"""
 
@@ -75,6 +78,7 @@ def test_info_has_the_correct_shape():
         "returnType",
         "fieldName",
         "pythonName",
+        "schemaPrint",
     }
     assert field == {
         "name": "helloWorld",
@@ -90,6 +94,7 @@ def test_info_has_the_correct_shape():
         "rootEqual": True,
         "variableValues": "{}",
         "returnType": "<class 'tests.schema.test_info.test_info_has_the_correct_shape.<locals>.Result'>",  # noqa
+        "schemaPrint": schema.as_str(),
     }
 
 

@@ -1,0 +1,84 @@
+name: 🎁 Release test pre-release version
+
+on:
+  repository_dispatch:
+    types: [pre-release-command]
+
+jobs:
+  pre-release:
+    name: Pre-release
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          ref: ${{ github.event.client_payload.pull_request.head.sha }}
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - name: Install deps
+        run: |
+          python -m pip install pip --upgrade
+          pip install poetry
+          pip install githubrelease
+          pip install autopub
+          pip install httpx
+      - name: Check if release exists
+        id: check_release
+        run: echo "::set-output name=release::$(autopub check)"
+      - name: Metadata
+        id: metadata
+        if: steps.check_release.outputs.release == ''
+        run: echo "::set-output name=commit::$(git rev-parse HEAD)"
+      - name: Find Release Comment
+        uses: peter-evans/find-comment@v1
+        id: find_comment
+        if: steps.check_release.outputs.release == ''
+        with:
+          token: ${{ secrets.BOT_TOKEN }}
+          issue-number: ${{ github.event.client_payload.github.payload.issue.number }}
+          comment-author: botberry
+          body-includes: "# Pre-release"
+      - name: Create or update comment
+        uses: peter-evans/create-or-update-comment@v1
+        if: steps.check_release.outputs.release == ''
+        with:
+          token: ${{ secrets.BOT_TOKEN }}
+          comment-id: ${{ steps.find_comment.outputs.comment-id }}
+          issue-number: ${{ github.event.client_payload.github.payload.issue.number }}
+          body: |
+            # Pre-release
+            :wave:
+
+            Releasing commit [${{ steps.metadata.outputs.commit }}] to PyPi as pre-release! :package:
+          edit-mode: replace
+      - name: Publish pre-release version
+        if: steps.check_release.outputs.release == ''
+        id: release
+        env:
+          GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
+          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
+        run: |
+          autopub prepare
+          poetry version $(poetry version -s).dev.$(date '+%s')
+          poetry build
+          poetry publish --username __token__
+          echo "::set-output name=version::$(poetry version -s)"
+      - name: Create or update comment
+        uses: peter-evans/create-or-update-comment@v1
+        if: steps.check_release.outputs.release == ''
+        with:
+          token: ${{ secrets.BOT_TOKEN }}
+          comment-id: ${{ steps.find_comment.outputs.comment-id }}
+          issue-number: ${{ github.event.client_payload.github.payload.issue.number }}
+          body: |
+            # Pre-release
+            :wave:
+
+            Pre-release **${{ steps.release.outputs.version }}** [${{ steps.metadata.outputs.commit }}] has been released on PyPi! :rocket:
+            You can try it by doing:
+
+            ```shell
+            poetry add strawberry-graphql==${{ steps.release.outputs.version }}
+            ```
+          edit-mode: replace

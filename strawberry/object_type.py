@@ -1,6 +1,19 @@
 import dataclasses
 import inspect
-from typing import List, Optional, Type, cast
+import sys
+import types
+from typing import (
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+    overload,
+)
 
 from .exceptions import (
     MissingFieldAnnotationError,
@@ -9,7 +22,8 @@ from .exceptions import (
 )
 from .field import StrawberryField, field
 from .types.type_resolver import _get_fields
-from .types.types import FederationTypeParams, TypeDefinition
+from .types.types import TypeDefinition
+from .utils.dataclasses import add_custom_init_fn
 from .utils.str_converters import to_camel_case
 from .utils.typing import __dataclass_transform__
 
@@ -87,7 +101,21 @@ def _wrap_dataclass(cls: Type):
     # Ensure all Fields have been properly type-annotated
     _check_field_annotations(cls)
 
-    return dataclasses.dataclass(cls)
+    dclass_kwargs: Dict[str, bool] = {}
+
+    # Python 3.10 introduces the kw_only param. If we're on an older version
+    # then generate our own custom init function
+    if sys.version_info >= (3, 10):
+        dclass_kwargs["kw_only"] = True
+    else:
+        dclass_kwargs["init"] = False
+
+    dclass = dataclasses.dataclass(cls, **dclass_kwargs)
+
+    if sys.version_info < (3, 10):
+        add_custom_init_fn(dclass)
+
+    return dclass
 
 
 def _process_type(
@@ -97,12 +125,14 @@ def _process_type(
     is_input: bool = False,
     is_interface: bool = False,
     description: Optional[str] = None,
-    federation: Optional[FederationTypeParams] = None,
+    directives: Optional[Sequence[object]] = (),
+    extend: bool = False,
 ):
     name = name or to_camel_case(cls.__name__)
 
     interfaces = _get_interfaces(cls)
     fields = _get_fields(cls)
+    is_type_of = getattr(cls, "is_type_of", None)
 
     cls._type_definition = TypeDefinition(
         name=name,
@@ -110,33 +140,79 @@ def _process_type(
         is_interface=is_interface,
         interfaces=interfaces,
         description=description,
-        federation=federation or FederationTypeParams(),
+        directives=directives,
         origin=cls,
+        extend=extend,
         _fields=fields,
+        is_type_of=is_type_of,
     )
 
     # dataclasses removes attributes from the class here:
     # https://github.com/python/cpython/blob/577d7c4e/Lib/dataclasses.py#L873-L880
     # so we need to restore them, this will change in future, but for now this
     # solution should suffice
-
     for field_ in fields:
         if field_.base_resolver and field_.python_name:
-            setattr(cls, field_.python_name, field_.base_resolver.wrapped_func)
+            wrapped_func = field_.base_resolver.wrapped_func
+
+            # Bind the functions to the class object. This is necessary because when
+            # the @strawberry.field decorator is used on @staticmethod/@classmethods,
+            # we get the raw staticmethod/classmethod objects before class evaluation
+            # binds them to the class. We need to do this manually.
+            if isinstance(wrapped_func, staticmethod):
+                bound_method = wrapped_func.__get__(cls)
+                field_.base_resolver.wrapped_func = bound_method
+            elif isinstance(wrapped_func, classmethod):
+                bound_method = types.MethodType(wrapped_func.__func__, cls)
+                field_.base_resolver.wrapped_func = bound_method
+
+            setattr(cls, field_.python_name, wrapped_func)
 
     return cls
 
 
+T = TypeVar("T", bound=Type)
+
+
+@overload
 @__dataclass_transform__(order_default=True, field_descriptors=(field, StrawberryField))
 def type(
-    cls: Type = None,
+    cls: T,
     *,
-    name: str = None,
+    name: Optional[str] = None,
     is_input: bool = False,
     is_interface: bool = False,
-    description: str = None,
-    federation: Optional[FederationTypeParams] = None,
-):
+    description: Optional[str] = None,
+    directives: Optional[Sequence[object]] = (),
+    extend: bool = False,
+) -> T:
+    ...
+
+
+@overload
+@__dataclass_transform__(order_default=True, field_descriptors=(field, StrawberryField))
+def type(
+    *,
+    name: Optional[str] = None,
+    is_input: bool = False,
+    is_interface: bool = False,
+    description: Optional[str] = None,
+    directives: Optional[Sequence[object]] = (),
+    extend: bool = False,
+) -> Callable[[T], T]:
+    ...
+
+
+def type(
+    cls: Optional[T] = None,
+    *,
+    name: Optional[str] = None,
+    is_input: bool = False,
+    is_interface: bool = False,
+    description: Optional[str] = None,
+    directives: Optional[Sequence[object]] = (),
+    extend: bool = False,
+) -> Union[T, Callable[[T], T]]:
     """Annotates a class as a GraphQL type.
 
     Example usage:
@@ -163,7 +239,8 @@ def type(
             is_input=is_input,
             is_interface=is_interface,
             description=description,
-            federation=federation,
+            directives=directives,
+            extend=extend,
         )
 
     if cls is None:
@@ -172,13 +249,35 @@ def type(
     return wrap(cls)
 
 
+@overload
 @__dataclass_transform__(order_default=True, field_descriptors=(field, StrawberryField))
 def input(
-    cls: Type = None,
+    cls: T,
     *,
-    name: str = None,
-    description: str = None,
-    federation: Optional[FederationTypeParams] = None,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    directives: Optional[Sequence[object]] = (),
+) -> T:
+    ...
+
+
+@overload
+@__dataclass_transform__(order_default=True, field_descriptors=(field, StrawberryField))
+def input(
+    *,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    directives: Optional[Sequence[object]] = (),
+) -> Callable[[T], T]:
+    ...
+
+
+def input(
+    cls: Optional[T] = None,
+    *,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    directives: Optional[Sequence[object]] = (),
 ):
     """Annotates a class as a GraphQL Input type.
     Example usage:
@@ -187,18 +286,45 @@ def input(
     >>>     field_abc: str = "ABC"
     """
 
-    return type(
-        cls, name=name, description=description, federation=federation, is_input=True
+    return type(  # type: ignore # not sure why mypy complains here
+        cls,
+        name=name,
+        description=description,
+        directives=directives,
+        is_input=True,
     )
+
+
+@overload
+@__dataclass_transform__(order_default=True, field_descriptors=(field, StrawberryField))
+def interface(
+    cls: T,
+    *,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    directives: Optional[Sequence[object]] = (),
+) -> T:
+    ...
+
+
+@overload
+@__dataclass_transform__(order_default=True, field_descriptors=(field, StrawberryField))
+def interface(
+    *,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    directives: Optional[Sequence[object]] = (),
+) -> Callable[[T], T]:
+    ...
 
 
 @__dataclass_transform__(order_default=True, field_descriptors=(field, StrawberryField))
 def interface(
-    cls: Type = None,
+    cls: Optional[T] = None,
     *,
-    name: str = None,
-    description: str = None,
-    federation: Optional[FederationTypeParams] = None,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    directives: Optional[Sequence[object]] = (),
 ):
     """Annotates a class as a GraphQL Interface.
     Example usage:
@@ -207,17 +333,16 @@ def interface(
     >>>     field_abc: str
     """
 
-    return type(
+    return type(  # type: ignore # not sure why mypy complains here
         cls,
         name=name,
         description=description,
-        federation=federation,
+        directives=directives,
         is_interface=True,
     )
 
 
 __all__ = [
-    "FederationTypeParams",
     "TypeDefinition",
     "input",
     "interface",

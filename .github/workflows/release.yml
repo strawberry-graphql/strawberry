@@ -1,4 +1,6 @@
-name: Release
+name: 🆙 Release
+
+concurrency: release
 
 on:
   push:
@@ -34,9 +36,9 @@ jobs:
         with:
           persist-credentials: false
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
-          python-version: 3.7
+          python-version: "3.10"
       - name: Install deps
         run: |
           python -m pip install pip --upgrade
@@ -53,13 +55,14 @@ jobs:
         if: steps.check_release.outputs.release == ''
         env:
           GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
+          POETRY_PYPI_TOKEN_PYPI: ${{ secrets.PYPI_TOKEN }}
         run: |
           git remote set-url origin https://${{ secrets.BOT_TOKEN }}@github.com/${{ github.repository }}
           autopub prepare
           poetry build
           autopub commit
           autopub githubrelease
-          poetry publish --username __token__ --password ${{ secrets.PYPI_TOKEN }}
+          poetry publish --username __token__
       - name: Get project version
         id: get-version
         shell: python
@@ -68,7 +71,7 @@ jobs:
 
           print(f"::set-output name=version::{get_project_version()}")
 
-  get-contributor-name:
+  get-contributor-info:
     name: Get PR info
     runs-on: ubuntu-latest
     needs: release-file-check
@@ -76,18 +79,79 @@ jobs:
 
     outputs:
       contributor-name: ${{ steps.get-info.outputs.contributor-name }}
+      contributor-username: ${{ steps.get-info.outputs.contributor-username }}
+      contributor-twitter-username: ${{ steps.get-info.outputs.contributor-twitter-username }}
+      pr-number: ${{ steps.get-info.outputs.pr-number }}
 
     steps:
       - name: Get PR info
         id: get-info
-        uses: strawberry-graphql/get-pr-info-action@v4
+        uses: strawberry-graphql/get-pr-info-action@v6
 
+  update-release-on-github:
+    name: Update release on github
+    runs-on: ubuntu-latest
+    needs: [release-file-check, get-contributor-info, release]
+    if: ${{ needs.release-file-check.outputs.status == 'OK' }}
+    steps:
+      - uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - name: Install dependencies
+        run: pip install httpx
+      - name: Send tweet
+        shell: python
+        run: |
+          import os
+
+          import httpx
+
+
+          tag = os.environ["TAG"]
+          contributor_username = os.environ["CONTRIBUTOR_USERNAME"]
+          pr_number = os.environ["PR_NUMBER"]
+
+
+          response = httpx.get(
+              url=f"https://api.github.com/repos/strawberry-graphql/strawberry/releases/tags/{tag}",
+              headers={
+                  "Accept": "application/vnd.github.v3+json",
+              },
+          )
+
+          response.raise_for_status()
+          data = response.json()
+          release_id = data["id"]
+          release_body = data["body"].strip()
+
+          release_footer = f"""
+          Releases contributed by @{contributor_username} via #{pr_number}
+          """.strip()
+
+          updated_release_body = f"{release_body}\n\n{release_footer}"
+
+          response = httpx.patch(
+              url=f"https://api.github.com/repos/strawberry-graphql/strawberry/releases/{release_id}",
+              json={"body": updated_release_body},
+              headers={
+                  "Accept": "application/vnd.github.v3+json",
+                  "Authorization": f"token {os.environ['GITHUB_TOKEN']}",
+              },
+          )
+
+          response.raise_for_status()
+
+        env:
+          GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
+          TAG: ${{ steps.release.outputs.version }}
+          CONTRIBUTOR_USERNAME: ${{ steps.get-contributor-info.outputs.contributor-username }}
+          PR_NUMBER: ${{ steps.get-contributor-info.outputs.pr-number }}
 
   read-tweet-md:
     name: Read TWEET.md
     runs-on: ubuntu-latest
-    needs: [release, get-contributor-name, release-file-check]
-    if: ${{ needs.release-file-check.outputs.status == 'OK' && needs.get-contributor-name.outputs.contributor-name }}
+    needs: [release, get-contributor-info, release-file-check]
+    if: ${{ needs.release-file-check.outputs.status == 'OK' && needs.get-contributor-info.outputs.contributor-name }}
 
     outputs:
       tweet: ${{ steps.extract.outputs.tweet }}
@@ -98,16 +162,17 @@ jobs:
     - uses: actions/checkout@v1
     - name: Extract tweet message and changelog
       id: extract
-      uses: strawberry-graphql/tweet-actions/read-tweet@v1
+      uses: strawberry-graphql/tweet-actions/read-tweet@v4
       with:
         changelog: ${{ needs.release-file-check.outputs.changelog }}
         version: ${{ needs.release.outputs.version }}
-        contributor_name: ${{ needs.get-contributor-name.outputs.contributor-name }}
+        contributor_name: ${{ needs.get-contributor-info.outputs.contributor-name }}
+        contributor_twitter_username: ${{ needs.get-contributor-info.outputs.contributor-twitter-username }}
 
   generate-preview:
     name: Generate Preview
     runs-on: ubuntu-latest
-    needs: [release-file-check, read-tweet-md, release, get-contributor-name]
+    needs: [release-file-check, read-tweet-md, release, get-contributor-info]
     if: ${{ needs.release-file-check.outputs.status == 'OK' }}
 
     steps:
@@ -116,7 +181,7 @@ jobs:
       if: ${{ needs.release-file-check.outputs.status == 'OK' }}
       with:
         version: ${{ needs.release.outputs.version }}
-        contributor: ${{ needs.get-contributor-name.outputs.contributor-name }}
+        contributor: ${{ needs.get-contributor-info.outputs.contributor-name }}
         description_base64: ${{ needs.read-tweet-md.outputs.card-text }}
     - name: Store card in artificats
       uses: actions/upload-artifact@v2
@@ -128,14 +193,14 @@ jobs:
   send-tweet:
     name: Send tweet
     runs-on: ubuntu-latest
-    needs: [release, read-tweet-md, get-contributor-name, generate-preview]
+    needs: [release, read-tweet-md, get-contributor-info, generate-preview]
     if: ${{ needs.release-file-check.outputs.status == 'OK' }}
 
     steps:
       - uses: actions/download-artifact@v2
         with:
           name: card
-      - uses: actions/setup-python@v2
+      - uses: actions/setup-python@v4
         with:
           python-version: '3.9'
       - name: Install dependencies

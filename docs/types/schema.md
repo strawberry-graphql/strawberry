@@ -54,7 +54,7 @@ The root subscription type. Usually called `Subscription`.
 #### `config: Optional[StrawberryConfig] = None`
 
 Pass a `StrawberryConfig` object to configure how the schema is generated. [Read
-more](/docs/schema-configurations).
+more](/docs/types/schema-configurations).
 
 #### `types: List[Type] = []`
 
@@ -140,7 +140,7 @@ The name of the operation you want to execute, useful when sending a document wi
 Executes a GraphQL operation against a schema
 
 ```python
-async def execute_sync(query, variable_values, context_value, root_value, operation_name)`
+def execute_sync(query, variable_values, context_value, root_value, operation_name)`
 ```
 
 #### `query: str`

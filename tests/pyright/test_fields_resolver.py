@@ -1,11 +1,8 @@
-import pytest
-
-from .utils import Result, pyright_exist, run_pyright
+from .utils import Result, requires_pyright, run_pyright, skip_on_windows
 
 
-pytestmark = pytest.mark.skipif(
-    not pyright_exist(), reason="These tests require pyright"
-)
+pytestmark = [skip_on_windows, requires_pyright]
+
 CODE = """
 import strawberry
 
@@ -44,10 +41,13 @@ def test_pyright():
             column=1,
         ),
         Result(
-            type="info", message='Type of "User" is "Type[User]"', line=17, column=13
+            type="information",
+            message='Type of "User" is "Type[User]"',
+            line=17,
+            column=13,
         ),
         Result(
-            type="info",
+            type="information",
             message='Type of "User.__init__" is "(self: User, name: str) -> None"',
             line=18,
             column=13,

@@ -1,4 +1,4 @@
-name: Ok to preview
+name: 🆗 Ok to preview
 
 on:
   pull_request_target:
@@ -10,12 +10,14 @@ jobs:
     runs-on: ubuntu-latest
     steps:
 
-    - uses: lots0logs/gh-action-get-changed-files@2.1.4
+    - name: Get changed files
+      #uses: lots0logs/gh-action-get-changed-files@2.1.4
+      uses: Mineflash07/gh-action-get-changed-files@feature/support-pr-target-event # Remove as soon as PR is merged
       with:
         token: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Get list of links
-      id: links_list
+    - name: Get comment message
+      id: get-comment-message
       run: |
         import os, json, textwrap
 
@@ -37,30 +39,22 @@ jobs:
           if file.startswith("docs/") and file.endswith(".md")
         ]
 
-        links = json.dumps(links)
-        output = "::set-output name=links::{}".format(links)
+        message = textwrap.dedent(
+          """
+          Hi 👋 You can find a preview of the docs here:
+
+          {links}
+          """
+        ).format(links="\n".join(links))
+
+        message = message.replace("%", "%25").replace("\n", "%0A").replace("\r", "%0D")
+        output = "::set-output name=message::{}".format(message)
 
         print(output)
       shell: python
 
-    - uses: actions/github-script@v1
-      id: add-comment
-      env:
-        number: ${{ github.event.number }}
-        links: ${{ steps.links_list.outputs.links }}
+    - name: Create comment
+      uses: peter-evans/create-or-update-comment@v1
       with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        script: |
-          const links = JSON.parse(process.env.links).map(l => `- ${l}`).join('\n')
-
-          if (links.length) {
-            const message = `
-              Hi 👋  You can find a preview of the docs here: \n\n${links}
-            `.trim()
-            await github.issues.createComment({
-              issue_number: process.env.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: message
-            })
-          }
+        issue-number: ${{ github.event.number }}
+        body: ${{ steps.get-comment-message.outputs.message }}

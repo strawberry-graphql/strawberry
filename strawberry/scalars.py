@@ -1,17 +1,59 @@
-from datetime import date, datetime, time
-from decimal import Decimal
-from typing import Any, NewType
-from uuid import UUID
+import base64
+from typing import Any, Dict, NewType, Union
+
+from .custom_scalar import ScalarDefinition, ScalarWrapper, scalar
 
 
 ID = NewType("ID", str)
-SCALAR_TYPES = [int, str, float, bytes, bool, ID, UUID, datetime, date, time, Decimal]
+
+JSON = scalar(
+    NewType("JSON", object),  # mypy doesn't like `NewType("name", Any)`
+    description=(
+        "The `JSON` scalar type represents JSON values as specified by "
+        "[ECMA-404]"
+        "(http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf)."
+    ),
+    specified_by_url=(
+        "http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf"
+    ),
+    serialize=lambda v: v,
+    parse_value=lambda v: v,
+)
+
+Base16 = scalar(
+    NewType("Base16", bytes),
+    description="Represents binary data as Base16-encoded (hexadecimal) strings.",
+    specified_by_url="https://datatracker.ietf.org/doc/html/rfc4648.html#section-8",
+    serialize=lambda v: base64.b16encode(v).decode("utf-8"),
+    parse_value=lambda v: base64.b16decode(v.encode("utf-8"), casefold=True),
+)
+
+Base32 = scalar(
+    NewType("Base32", bytes),
+    description=(
+        "Represents binary data as Base32-encoded strings, using the standard alphabet."
+    ),
+    specified_by_url=("https://datatracker.ietf.org/doc/html/rfc4648.html#section-6"),
+    serialize=lambda v: base64.b32encode(v).decode("utf-8"),
+    parse_value=lambda v: base64.b32decode(v.encode("utf-8"), casefold=True),
+)
+
+Base64 = scalar(
+    NewType("Base64", bytes),
+    description=(
+        "Represents binary data as Base64-encoded strings, using the standard alphabet."
+    ),
+    specified_by_url="https://datatracker.ietf.org/doc/html/rfc4648.html#section-4",
+    serialize=lambda v: base64.b64encode(v).decode("utf-8"),
+    parse_value=lambda v: base64.b64decode(v.encode("utf-8")),
+)
 
 
-def is_scalar(annotation: Any) -> bool:
-    type_ = getattr(annotation, "__supertype__", annotation)
-
-    if type_ in SCALAR_TYPES:
+def is_scalar(
+    annotation: Any,
+    scalar_registry: Dict[object, Union[ScalarWrapper, ScalarDefinition]],
+) -> bool:
+    if annotation in scalar_registry:
         return True
 
     return hasattr(annotation, "_scalar_definition")

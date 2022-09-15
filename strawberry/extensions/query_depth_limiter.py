@@ -26,7 +26,7 @@
 # SOFTWARE.
 
 import re
-from typing import Callable, Dict, List, Optional, Type, Union
+from typing import Callable, Dict, Iterable, List, Optional, Type, Union
 
 from graphql import GraphQLError
 from graphql.language import (
@@ -119,7 +119,7 @@ def create_validator(
 
 
 def get_fragments(
-    definitions: List[DefinitionNode],
+    definitions: Iterable[DefinitionNode],
 ) -> Dict[str, FragmentDefinitionNode]:
     fragments = {}
     for definition in definitions:
@@ -132,7 +132,7 @@ def get_fragments(
 # This will actually get both queries and mutations.
 # We can basically treat those the same
 def get_queries_and_mutations(
-    definitions: List[DefinitionNode],
+    definitions: Iterable[DefinitionNode],
 ) -> Dict[str, OperationDefinitionNode]:
     operations = {}
 

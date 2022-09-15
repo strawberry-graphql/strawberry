@@ -65,3 +65,21 @@ class ParsingContextManager(ExtensionContextManager):
     async def __aexit__(self, exc_type, exc_val, exc_tb):
         for extension in self.extensions:
             await await_maybe(extension.on_parsing_end())
+
+
+class ExecutingContextManager(ExtensionContextManager):
+    def __enter__(self):
+        for extension in self.extensions:
+            extension.on_executing_start()
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        for extension in self.extensions:
+            extension.on_executing_end()
+
+    async def __aenter__(self):
+        for extension in self.extensions:
+            await await_maybe(extension.on_executing_start())
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb):
+        for extension in self.extensions:
+            await await_maybe(extension.on_executing_end())

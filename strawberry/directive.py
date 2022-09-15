@@ -1,65 +1,89 @@
+from __future__ import annotations
+
 import dataclasses
 import inspect
-import sys
-from itertools import islice
-from typing import Callable, List, Optional
+from typing import Any, Callable, List, Optional, TypeVar
+
+from typing_extensions import Annotated
 
 from graphql import DirectiveLocation
 
-from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import StrawberryArgument
-from strawberry.utils.str_converters import to_camel_case
+from strawberry.field import StrawberryField
+from strawberry.types.fields.resolver import (
+    INFO_PARAMSPEC,
+    ReservedType,
+    StrawberryResolver,
+)
+from strawberry.unset import UNSET
+from strawberry.utils.cached_property import cached_property
+
+
+def directive_field(name: str, default: object = UNSET) -> Any:
+    return StrawberryField(
+        python_name=None,
+        graphql_name=name,
+        default=default,
+    )
+
+
+T = TypeVar("T")
+
+
+class StrawberryDirectiveValue:
+    ...
+
+
+DirectiveValue = Annotated[T, StrawberryDirectiveValue()]
+DirectiveValue.__doc__ = (
+    """Represents the ``value`` argument for a GraphQL query directive."""
+)
+
+# Registers `DirectiveValue[...]` annotated arguments as reserved
+VALUE_PARAMSPEC = ReservedType(name="value", type=StrawberryDirectiveValue)
+
+
+class StrawberryDirectiveResolver(StrawberryResolver[T]):
+
+    RESERVED_PARAMSPEC = (
+        INFO_PARAMSPEC,
+        VALUE_PARAMSPEC,
+    )
+
+    @cached_property
+    def value_parameter(self) -> Optional[inspect.Parameter]:
+        return self.reserved_parameters.get(VALUE_PARAMSPEC)
 
 
 @dataclasses.dataclass
-class DirectiveDefinition:
-    name: str
-    resolver: Callable
+class StrawberryDirective:
+    python_name: str
+    graphql_name: Optional[str]
+    resolver: StrawberryDirectiveResolver
     locations: List[DirectiveLocation]
     description: Optional[str] = None
 
-    @property
+    @cached_property
     def arguments(self) -> List[StrawberryArgument]:
-        annotations = self.resolver.__annotations__
-        annotations = dict(islice(annotations.items(), 1, None))
-        annotations.pop("return", None)
-
-        parameters = inspect.signature(self.resolver).parameters
-
-        module = sys.modules[self.resolver.__module__]
-        annotation_namespace = module.__dict__
-        arguments = []
-        for arg_name, annotation in annotations.items():
-            parameter = parameters[arg_name]
-
-            argument = StrawberryArgument(
-                python_name=arg_name,
-                graphql_name=None,
-                type_annotation=StrawberryAnnotation(
-                    annotation=annotation, namespace=annotation_namespace
-                ),
-                default=parameter.default,
-            )
-
-            arguments.append(argument)
-
-        return arguments
+        return self.resolver.arguments
 
 
-def directive(*, locations: List[DirectiveLocation], description=None, name=None):
-    def _wrap(f):
-        directive_name = name or to_camel_case(f.__name__)
-
-        f.directive_definition = DirectiveDefinition(
-            name=directive_name,
+def directive(
+    *,
+    locations: List[DirectiveLocation],
+    description: Optional[str] = None,
+    name: Optional[str] = None,
+) -> Callable[[Callable[..., T]], T]:
+    def _wrap(f: Callable[..., T]) -> T:
+        return StrawberryDirective(  # type: ignore
+            python_name=f.__name__,
+            graphql_name=name,
             locations=locations,
             description=description,
-            resolver=f,
+            resolver=StrawberryDirectiveResolver(f),
         )
-
-        return f
 
     return _wrap
 
 
-__all__ = ["DirectiveLocation", "DirectiveDefinition", "directive"]
+__all__ = ["DirectiveLocation", "StrawberryDirective", "directive"]

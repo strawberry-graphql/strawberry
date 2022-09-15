@@ -14,7 +14,7 @@ The quick start method provides a server and CLI to get going quickly. Install
 with:
 
 ```shell
-pip install strawberry-graphql[debug-server]
+pip install 'strawberry-graphql[debug-server]'
 ```
 
 ## Getting Started
@@ -100,9 +100,15 @@ enabled server. The debug server can be made to support WebSockets with these
 commands:
 
 ```shell
-pip install strawberry-graphql[debug-server]
-pip install uvicorn[standard]
+pip install 'strawberry-graphql[debug-server]'
+pip install 'uvicorn[standard]'
 ```
+
+## Examples
+
+* [Various examples on how to use Strawberry](https://github.com/strawberry-graphql/examples)
+* [Full stack example using Starlette, SQLAlchemy, Typescript codegen and Next.js](https://github.com/jokull/python-ts-graphql-demo)
+* [Quart + Strawberry tutorial](https://github.com/rockyburt/Ketchup)
 
 ## Contributing
 

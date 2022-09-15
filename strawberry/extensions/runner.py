@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional, Type, Union
 from graphql import MiddlewareManager
 
 from strawberry.extensions.context import (
+    ExecutingContextManager,
     ParsingContextManager,
     RequestContextManager,
     ValidationContextManager,
@@ -49,6 +50,9 @@ class ExtensionsRunner:
     def parsing(self) -> ParsingContextManager:
         return ParsingContextManager(self.extensions)
 
+    def executing(self) -> ExecutingContextManager:
+        return ExecutingContextManager(self.extensions)
+
     def get_extensions_results_sync(self) -> Dict[str, Any]:
         data: Dict[str, Any] = {}
 
@@ -66,7 +70,7 @@ class ExtensionsRunner:
 
         for extension in self.extensions:
             results = await await_maybe(extension.get_results())
-            data.update(results)  # type: ignore
+            data.update(results)
 
         return data
 

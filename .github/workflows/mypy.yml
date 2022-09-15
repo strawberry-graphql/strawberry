@@ -1,0 +1,42 @@
+name: 🦺 MyPy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+    paths:
+      - "strawberry/**"
+      - "tests/**"
+      - ".github/workflows/mypy.yml"
+
+jobs:
+  mypy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/setup-python@v4
+        id: setup-python
+        with:
+          python-version: '3.10'
+          architecture: x64
+
+      - uses: actions/checkout@v2
+
+      - run: pip install poetry
+      - run: poetry config experimental.new-installer false
+
+      - name: "Python dependencies cache"
+        id: cache-poetry-dependencies
+        uses: actions/cache@v2
+        with:
+          path: ~/.cache/pypoetry/virtualenvs
+          key: ${{ runner.os }}-py-${{ steps.setup-python.outputs.python-version }}-poetry-${{ hashFiles('poetry.lock') }}
+          restore-keys: ${{ runner.os }}-py-${{ steps.setup-python.outputs.python-version }}-poetry-
+
+      - name: Install dependencies
+        run: poetry install
+        if: steps.cache-poetry-dependencies.outputs.cache-hit != 'true'
+
+      - run: mkdir -p .mypy_cache
+      - run: poetry run mypy --ignore-missing-imports --config-file mypy.ini --install-types --non-interactive --show-traceback strawberry

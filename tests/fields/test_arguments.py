@@ -6,7 +6,7 @@ import pytest
 from typing_extensions import Annotated
 
 import strawberry
-from strawberry.arguments import UNSET
+from strawberry import UNSET
 from strawberry.exceptions import InvalidFieldArgument, MultipleStrawberryArgumentsError
 from strawberry.type import StrawberryList, StrawberryOptional
 
@@ -423,7 +423,8 @@ def test_annotated_python_39():
 
 
 def test_union_as_an_argument_type():
-    with pytest.raises(InvalidFieldArgument):
+    error_message = 'Argument "word" on field "add_word" cannot be of type "Union"'
+    with pytest.raises(InvalidFieldArgument, match=error_message):
 
         @strawberry.type
         class Noun:
@@ -441,7 +442,10 @@ def test_union_as_an_argument_type():
 
 
 def test_interface_as_an_argument_type():
-    with pytest.raises(InvalidFieldArgument):
+    error_message = (
+        'Argument "adjective" on field "add_adjective" cannot be of type "Interface"'
+    )
+    with pytest.raises(InvalidFieldArgument, match=error_message):
 
         @strawberry.interface
         class Adjective:
@@ -453,7 +457,11 @@ def test_interface_as_an_argument_type():
 
 
 def test_resolver_with_invalid_field_argument_type():
-    with pytest.raises(InvalidFieldArgument):
+    error_message = (
+        'Argument "adjective" on field "add_adjective_resolver" cannot be '
+        'of type "Interface"'
+    )
+    with pytest.raises(InvalidFieldArgument, match=error_message):
 
         @strawberry.interface
         class Adjective:
@@ -465,3 +473,19 @@ def test_resolver_with_invalid_field_argument_type():
         @strawberry.type
         class Mutation:
             add_adjective: bool = strawberry.field(resolver=add_adjective_resolver)
+
+
+def test_unset_deprecation_warning():
+    with pytest.deprecated_call():
+        from strawberry.arguments import UNSET  # noqa: F401
+    with pytest.deprecated_call():
+        from strawberry.arguments import is_unset  # noqa: F401
+
+
+def test_deprecated_unset():
+    with pytest.deprecated_call():
+        from strawberry.unset import is_unset  # noqa: F401
+    assert is_unset(UNSET)
+    assert not is_unset(None)
+    assert not is_unset(False)
+    assert not is_unset("hello world")

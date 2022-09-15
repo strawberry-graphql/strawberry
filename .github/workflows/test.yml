@@ -1,4 +1,8 @@
-name: Backend tests
+name: 🔂 Unit tests
+
+concurrency:
+  group: ${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
 
 on:
   push:
@@ -14,32 +18,32 @@ on:
 
 jobs:
   unit-tests:
-    runs-on: ubuntu-latest
-    name: Test on ${{ matrix.python-version }} - django ${{ matrix.django }}
-
     strategy:
       matrix:
-        python-version: ['3.7', '3.8', '3.9', '3.10']
-        django: [3.2, 3.1.8, 3.0.14, 2.2.20]
+        python-version: ["3.7", "3.8", "3.9", "3.10"]
+
+    name: Python ${{ matrix.python-version }}
+    runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-python@v2
+      - uses: actions/checkout@v3
+      - run: pipx install poetry
+      - uses: actions/setup-python@v4
+        id: setup-python
         with:
           python-version: ${{ matrix.python-version }}
-          architecture: x64
-      - uses: actions/setup-node@v2
-        with:
-          node-version: '14'
-      - run: npm install -g --no-package-lock --no-save pyright
-      - run: pip install poetry
-      - run: poetry config experimental.new-installer false
-      - name: Install dependencies
-        run: poetry install
-      - name: Install django ${{ matrix.django }}
-        run: poetry add django==${{ matrix.django }}
+          cache: "poetry"
+
+      - run: poetry env use ${{ matrix.python-version }}
+      - run: poetry run python --version
+      - run: poetry install
+        if: steps.setup-python.outputs.cache-hit != 'true'
+
       - name: pytest
-        run: poetry run py.test --cov-report xml --cov=. --cov-fail-under 80 --showlocals -vv
+        run:
+          poetry run pytest --cov-report xml --cov=. --showlocals -vv -m "not
+          starlette" -m "not django" --ignore=tests/mypy --ignore=tests/pyright
+
       - uses: codecov/codecov-action@v1
         if: ${{ always() }}
         with:
@@ -47,14 +51,104 @@ jobs:
           fail_ci_if_error: true
           verbose: true
 
-  mypy:
-    runs-on: ubuntu-latest
-    container: python:3.9
+  unit-tests-on-windows:
+    name: Python 3.10 on Windows
+    runs-on: windows-latest
 
     steps:
-      - uses: actions/checkout@v2
-      - run: pip install poetry
-      - run: poetry config experimental.new-installer false
-      - name: Install dependencies
-        run: poetry install
-      - run: poetry run mypy --ignore-missing-imports --config-file mypy.ini --install-types --non-interactive .
+      - uses: actions/checkout@v3
+      - run: pipx install poetry
+      - uses: actions/setup-python@v4
+        id: setup-python
+        with:
+          python-version: "3.10"
+          cache: "poetry"
+
+      - run:
+          poetry env use C:\hostedtoolcache\windows\Python\3.8.10\x86\python.exe
+      - run: poetry run python --version
+      - run: poetry install
+        if: steps.setup-python.outputs.cache-hit != 'true'
+
+      - name: pytest
+        run:
+          poetry run pytest --cov-report xml --cov=. --showlocals -vv -m "not
+          django" --ignore=tests/mypy --ignore=tests/pyright
+
+      - uses: codecov/codecov-action@v1
+        if: ${{ always() }}
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+          verbose: true
+
+  django-unit-tests:
+    strategy:
+      matrix:
+        django: ["4.0", "3.2"]
+
+    name: Django ${{ matrix.django }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - run: pipx install poetry
+      - uses: actions/setup-python@v4
+        id: setup-python
+        with:
+          python-version: "3.10"
+          cache: "poetry"
+
+      - run: poetry env use python3.10
+      - run: poetry install
+        if: steps.setup-python.outputs.cache-hit != 'true'
+
+      - name: Install django ${{ matrix.django }}
+        run: poetry add --python ^3.10 django@^${{ matrix.django }}
+
+      - name: pytest
+        run:
+          poetry run pytest --cov-report xml --cov=. --showlocals -vv -m django
+
+      - uses: codecov/codecov-action@v1
+        if: ${{ always() }}
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+          verbose: true
+
+  starlette-unit-tests:
+    strategy:
+      matrix:
+        starlette: ["0.17.1", "0.18.0", "0.19.1", "0.20.0"]
+
+    name: Starlette ${{ matrix.starlette }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+      - run: pipx install poetry
+      - uses: actions/setup-python@v4
+        id: setup-python
+        with:
+          python-version: "3.10"
+          cache: "poetry"
+
+      - run: poetry env use python3.10
+      - run: poetry install
+        if: steps.setup-python.outputs.cache-hit != 'true'
+
+      - name: Install starlette ${{ matrix.starlette }}
+        run: poetry run pip install starlette==${{ matrix.starlette }}
+
+      - name: pytest
+        run:
+          poetry run pytest --cov-report xml --cov=. --showlocals -vv -m
+          starlette
+
+      - uses: codecov/codecov-action@v1
+        if: ${{ always() }}
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: true
+          verbose: true

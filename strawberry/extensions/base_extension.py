@@ -1,6 +1,8 @@
 from typing import Any, Dict
 
-from strawberry.types import ExecutionContext, Info
+from graphql import GraphQLResolveInfo
+
+from strawberry.types import ExecutionContext
 from strawberry.utils.await_maybe import AwaitableOrValue
 
 
@@ -28,9 +30,15 @@ class Extension:
     def on_parsing_end(self) -> AwaitableOrValue[None]:
         """This method is called after the parsing step"""
 
+    def on_executing_start(self) -> AwaitableOrValue[None]:
+        """This method is called before the execution step"""
+
+    def on_executing_end(self) -> AwaitableOrValue[None]:
+        """This method is called after the executing step"""
+
     def resolve(
-        self, _next, root, info: Info, *args, **kwargs
-    ) -> AwaitableOrValue[None]:
+        self, _next, root, info: GraphQLResolveInfo, *args, **kwargs
+    ) -> AwaitableOrValue[object]:
         return _next(root, info, *args, **kwargs)
 
     def get_results(self) -> AwaitableOrValue[Dict[str, Any]]:

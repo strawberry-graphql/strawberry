@@ -1,29 +1,32 @@
 import sys
 import typing
-from collections.abc import AsyncGenerator as AsyncGenerator_abc
+from collections import abc
 from enum import Enum
-from typing import (  # type: ignore
+from typing import (  # type: ignore[attr-defined]
     TYPE_CHECKING,
     Any,
-    AsyncGenerator as AsyncGenerator_typing,
     Dict,
+    List,
     Optional,
     TypeVar,
     Union,
     _eval_type,
 )
 
+from typing_extensions import Annotated, get_args, get_origin
+
+from strawberry.private import is_private
+
 
 try:
-    from typing import ForwardRef  # type: ignore
+    from typing import ForwardRef
 except ImportError:  # pragma: no cover
     # ForwardRef is private in python 3.6 and 3.7
     from typing import _ForwardRef as ForwardRef  # type: ignore
 
 from strawberry.custom_scalar import ScalarDefinition
 from strawberry.enum import EnumDefinition
-from strawberry.lazy_type import LazyType
-from strawberry.scalars import SCALAR_TYPES
+from strawberry.lazy_type import LazyType, StrawberryLazyReference
 from strawberry.type import (
     StrawberryList,
     StrawberryOptional,
@@ -31,11 +34,23 @@ from strawberry.type import (
     StrawberryTypeVar,
 )
 from strawberry.types.types import TypeDefinition
-from strawberry.utils.typing import is_generic, is_type_var
+from strawberry.unset import UNSET
+from strawberry.utils.typing import is_generic, is_list, is_type_var, is_union
 
 
 if TYPE_CHECKING:
     from strawberry.union import StrawberryUnion
+
+
+ASYNC_TYPES = (
+    abc.AsyncGenerator,
+    abc.AsyncIterable,
+    abc.AsyncIterator,
+    typing.AsyncContextManager,
+    typing.AsyncGenerator,
+    typing.AsyncIterable,
+    typing.AsyncIterator,
+)
 
 
 class StrawberryAnnotation:
@@ -51,18 +66,50 @@ class StrawberryAnnotation:
 
         return self.resolve() == other.resolve()
 
+    @staticmethod
+    def parse_annotated(annotation: object) -> object:
+        from strawberry.auto import StrawberryAuto
+
+        if get_origin(annotation) is Annotated:
+            annotated_args = get_args(annotation)
+            annotation_type = annotated_args[0]
+
+            for arg in annotated_args[1:]:
+                if isinstance(arg, StrawberryLazyReference):
+                    assert isinstance(annotation_type, ForwardRef)
+
+                    return arg.resolve_forward_ref(annotation_type)
+
+                if isinstance(arg, StrawberryAuto):
+                    return arg
+
+            return StrawberryAnnotation.parse_annotated(annotation_type)
+
+        if is_union(annotation):
+            return Union[
+                tuple(
+                    StrawberryAnnotation.parse_annotated(arg)
+                    for arg in get_args(annotation)
+                )  # pyright: ignore
+            ]  # pyright: ignore
+
+        if is_list(annotation):
+            return List[StrawberryAnnotation.parse_annotated(get_args(annotation)[0])]  # type: ignore  # noqa: E501
+
+        return annotation
+
     def resolve(self) -> Union[StrawberryType, type]:
-        annotation: object
+        annotation = self.parse_annotated(self.annotation)
+
         if isinstance(self.annotation, str):
             annotation = ForwardRef(self.annotation)
-        else:
-            annotation = self.annotation
 
         evaled_type = _eval_type(annotation, self.namespace, None)
-        if evaled_type is None:
-            raise ValueError("Annotation cannot be plain None type")
-        if self._is_async_generator(evaled_type):
-            evaled_type = self._strip_async_generator(evaled_type)
+
+        if is_private(evaled_type):
+            return evaled_type
+        if self._is_async_type(evaled_type):
+            evaled_type = self._strip_async_type(evaled_type)
         if self._is_lazy_type(evaled_type):
             return evaled_type
 
@@ -83,8 +130,6 @@ class StrawberryAnnotation:
             return self.create_list(evaled_type)
         elif self._is_optional(evaled_type):
             return self.create_optional(evaled_type)
-        elif self._is_scalar(evaled_type):
-            return evaled_type
         elif self._is_union(evaled_type):
             return self.create_union(evaled_type)
         elif is_type_var(evaled_type):
@@ -116,7 +161,10 @@ class StrawberryAnnotation:
     def create_optional(self, evaled_type: Any) -> StrawberryOptional:
         types = evaled_type.__args__
         non_optional_types = tuple(
-            filter(lambda x: x is not type(None), types)  # noqa: E721
+            filter(
+                lambda x: x is not type(None) and x is not type(UNSET),  # noqa: E721
+                types,
+            )
         )
 
         # Note that passing a single type to `Union` is equivalent to not using `Union`
@@ -151,14 +199,9 @@ class StrawberryAnnotation:
         return union
 
     @classmethod
-    def _is_async_generator(cls, annotation: type) -> bool:
+    def _is_async_type(cls, annotation: type) -> bool:
         origin = getattr(annotation, "__origin__", None)
-        if origin is AsyncGenerator_abc:
-            return True
-        if origin is AsyncGenerator_typing:
-            # deprecated in Python 3.9 and above
-            return True
-        return False
+        return origin in ASYNC_TYPES
 
     @classmethod
     def _is_enum(cls, annotation: Any) -> bool:
@@ -198,16 +241,11 @@ class StrawberryAnnotation:
 
         annotation_origin = getattr(annotation, "__origin__", None)
 
-        return annotation_origin == list
-
-    @classmethod
-    def _is_scalar(cls, annotation: Any) -> bool:
-        type_ = getattr(annotation, "__supertype__", annotation)
-
-        if type_ in SCALAR_TYPES:
-            return True
-
-        return hasattr(annotation, "_scalar_definition")
+        return (
+            annotation_origin == list
+            or annotation_origin == tuple
+            or annotation_origin is abc.Sequence
+        )
 
     @classmethod
     def _is_strawberry_type(cls, evaled_type: Any) -> bool:
@@ -244,7 +282,7 @@ class StrawberryAnnotation:
         # don't have a `__origin__` property on them, but they are instances of
         # `UnionType`, which is only available in Python 3.10+
         if sys.version_info >= (3, 10):
-            from types import UnionType  # type: ignore
+            from types import UnionType
 
             if isinstance(annotation, UnionType):
                 return True
@@ -256,7 +294,7 @@ class StrawberryAnnotation:
         return annotation_origin is typing.Union
 
     @classmethod
-    def _strip_async_generator(cls, annotation) -> type:
+    def _strip_async_type(cls, annotation) -> type:
         return annotation.__args__[0]
 
     @classmethod

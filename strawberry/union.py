@@ -1,7 +1,9 @@
 import itertools
+from itertools import chain
 from typing import (
     TYPE_CHECKING,
     Any,
+    Iterable,
     List,
     Mapping,
     NoReturn,
@@ -28,8 +30,7 @@ from strawberry.exceptions import (
     UnallowedReturnTypeForUnion,
     WrongReturnTypeForUnion,
 )
-from strawberry.scalars import SCALAR_TYPES
-from strawberry.type import StrawberryType
+from strawberry.type import StrawberryOptional, StrawberryType
 
 
 if TYPE_CHECKING:
@@ -43,16 +44,18 @@ class StrawberryUnion(StrawberryType):
         name: Optional[str] = None,
         type_annotations: Tuple["StrawberryAnnotation", ...] = tuple(),
         description: Optional[str] = None,
+        directives: Iterable[object] = (),
     ):
-        self._name = name
+        self.graphql_name = name
         self.type_annotations = type_annotations
         self.description = description
+        self.directives = directives
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, StrawberryType):
             if isinstance(other, StrawberryUnion):
                 return (
-                    self.name == other.name
+                    self.graphql_name == other.graphql_name
                     and self.type_annotations == other.type_annotations
                     and self.description == other.description
                 )
@@ -64,19 +67,15 @@ class StrawberryUnion(StrawberryType):
         # TODO: Is this a bad idea? __eq__ objects are supposed to have the same hash
         return id(self)
 
-    @property
-    def name(self) -> str:
-        if self._name is not None:
-            return self._name
+    def __or__(self, other: Union[StrawberryType, type]) -> StrawberryType:
+        if other is None:
+            # Return the correct notation when using `StrawberryUnion | None`.
+            return StrawberryOptional(of_type=self)
 
-        name = ""
-        for type_ in self.types:
-            if hasattr(type_, "_type_definition"):
-                name += type_._type_definition.name  # type: ignore
-            else:
-                name += type.__name__
-
-        return name
+        # Raise an error in any other case.
+        # There is Work in progress to deal with more merging cases, see:
+        # https://github.com/strawberry-graphql/strawberry/pull/1455
+        raise InvalidUnionType(other)
 
     @property
     def types(self) -> Tuple[StrawberryType, ...]:
@@ -141,8 +140,6 @@ class StrawberryUnion(StrawberryType):
         raise ValueError("Cannot use union type directly")
 
     def get_type_resolver(self, type_map: "TypeMap") -> GraphQLTypeResolver:
-        # TODO: Type annotate returned function
-
         def _resolve_union_type(
             root: Any, info: GraphQLResolveInfo, type_: GraphQLAbstractType
         ) -> str:
@@ -150,16 +147,29 @@ class StrawberryUnion(StrawberryType):
 
             from strawberry.types.types import TypeDefinition
 
-            # Make sure that the type that's passed in is an Object type
+            # If the type given is not an Object type, try resolving using `is_type_of`
+            # defined on the union's inner types
             if not hasattr(root, "_type_definition"):
-                # TODO: If root=python dict, this won't work
+                for inner_type in type_.types:
+                    if inner_type.is_type_of is not None and inner_type.is_type_of(
+                        root, info
+                    ):
+                        return inner_type.name
+
+                # Couldn't resolve using `is_type_of`
                 raise WrongReturnTypeForUnion(info.field_name, str(type(root)))
 
             return_type: Optional[GraphQLType]
 
-            # Iterate over all of our known types and find the first concrete type that
-            # implements the type
-            for possible_concrete_type in type_map.values():
+            # Iterate over all of our known types and find the first concrete
+            # type that implements the type. We prioritise checking types named in the
+            # Union in case a nested generic object matches against more than one type.
+            concrete_types_for_union = (type_map[x.name] for x in type_.types)
+
+            # TODO: do we still need to iterate over all types in `type_map`?
+            for possible_concrete_type in chain(
+                concrete_types_for_union, type_map.values()
+            ):
                 possible_type = possible_concrete_type.definition
                 if not isinstance(possible_type, TypeDefinition):
                     continue
@@ -186,9 +196,21 @@ class StrawberryUnion(StrawberryType):
         return _resolve_union_type
 
 
+Types = TypeVar("Types", bound=Type)
+
+
+# We return a Union type here in order to allow to use the union type as type
+# annotation.
+# For the `types` argument we'd ideally use a TypeVarTuple, but that's not
+# yet supported in any python implementation (or in typing_extensions).
+# See https://www.python.org/dev/peps/pep-0646/ for more information
 def union(
-    name: str, types: Tuple[Type, ...], *, description: str = None
-) -> StrawberryUnion:
+    name: str,
+    types: Tuple[Types, ...],
+    *,
+    description: str = None,
+    directives: Iterable[object] = (),
+) -> Union[Types]:
     """Creates a new named Union type.
 
     Example usages:
@@ -205,20 +227,16 @@ def union(
         raise TypeError("No types passed to `union`")
 
     for _type in types:
-        if _type in SCALAR_TYPES:
-            raise InvalidUnionType(
-                f"Scalar type `{_type.__name__}` cannot be used in a GraphQL Union"
-            )
-
         if not isinstance(_type, TypeVar) and not hasattr(_type, "_type_definition"):
             raise InvalidUnionType(
-                f"Union type `{_type.__name__}` is not a Strawberry type"
+                f"Type `{_type.__name__}` cannot be used in a GraphQL Union"
             )
 
     union_definition = StrawberryUnion(
         name=name,
         type_annotations=tuple(StrawberryAnnotation(type_) for type_ in types),
         description=description,
+        directives=directives,
     )
 
-    return union_definition
+    return union_definition  # type: ignore

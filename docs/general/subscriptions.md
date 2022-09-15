@@ -5,26 +5,27 @@ title: Subscriptions
 # Subscriptions
 
 In GraphQL you can use subscriptions to stream data from a server. To enable
-this with Strawberry your server must support ASGI and websockets or use the AIOHTTP
-integration.
+this with Strawberry your server must support ASGI and websockets or use the
+AIOHTTP integration.
 
 This is how you define a subscription-capable resolver:
 
 ```python
 import asyncio
+from typing import AsyncGenerator
 
 import strawberry
 
 @strawberry.type
 class Query:
     @strawberry.field
-    def hello() -> str:
+    def hello(self) -> str:
         return "world"
 
 @strawberry.type
 class Subscription:
     @strawberry.subscription
-    async def count(self, target: int = 100) -> int:
+    async def count(self, target: int = 100) -> AsyncGenerator[int, None]:
         for i in range(target):
             yield i
             await asyncio.sleep(0.5)
@@ -32,9 +33,17 @@ class Subscription:
 schema = strawberry.Schema(query=Query, subscription=Subscription)
 ```
 
-Like queries and mutations, subscriptions are defined in a class and passed
-to the Schema function. Here we create a rudimentary counting function which
-counts from 0 to the target sleeping between each loop iteration.
+Like queries and mutations, subscriptions are defined in a class and passed to
+the Schema function. Here we create a rudimentary counting function which counts
+from 0 to the target sleeping between each loop iteration.
+
+<Note>
+
+The return type of `count` is `AsyncGenerator` where the first generic
+argument is the actual type of the response, in most cases the second argument
+should be left as `None` (more about Generator typing [here](https://docs.python.org/3/library/typing.html#typing.AsyncGenerator)).
+
+</Note>
 
 We would send the following GraphQL document to our server to subscribe to this
 data stream:
@@ -47,7 +56,7 @@ subscription {
 
 In this example, the data looks like this as it passes over the websocket:
 
-![](../images/subscriptions-count-websocket.png)
+<img src="../images/subscriptions-count-websocket.png" alt="A view of the data that's been passed via websocket" width="1013" height="267" />
 
 This is a very short example of what is possible. Like with queries and
 mutations the subscription can return any GraphQL type, not only scalars as
@@ -65,8 +74,8 @@ Both of these types are documented in [PEP-525][pep-525]. Anything yielded from
 these types of resolvers will be shipped across the websocket. Care needs to be
 taken to ensure the returned values conform to the GraphQL schema.
 
-The benefit of an AsyncGenerator, over an interator, is that the complex
-business logic can be broken out into a seperate module within your codebase.
+The benefit of an AsyncGenerator, over an iterator, is that the complex
+business logic can be broken out into a separate module within your codebase.
 Allowing you to keep the resolver logic succinct.
 
 The following example is similar to the one above, except it returns an
@@ -74,6 +83,7 @@ AsyncGenerator to the ASGI server which is responsible for streaming
 subscription results until the Generator exits.
 
 ```python
+import strawberry
 import asyncio
 import asyncio.subprocess as subprocess
 from asyncio import streams
@@ -82,7 +92,7 @@ from typing import Any, AsyncGenerator, AsyncIterator, Coroutine, Optional
 
 async def wait_for_call(coro: Coroutine[Any, Any, bytes]) -> Optional[bytes]:
     """
-    wait_for_call calls the the supplied coroutine in a wait_for block.
+    wait_for_call calls the supplied coroutine in a wait_for block.
 
     This mitigates cases where the coroutine doesn't yield until it has
     completed its task. In this case, reading a line from a StreamReader; if
@@ -157,17 +167,27 @@ schema = strawberry.Schema(query=Query, subscription=Subscription)
 ## GraphQL over WebSocket protocols
 
 Strawberry support both the legacy
-[graphql-ws](https://github.com/apollographql/subscriptions-transport-ws)
-and the newer recommended
-[graphql-transport-ws](https://github.com/enisdenjo/graphql-ws) WebSocket sub-protocols.
+[graphql-ws](https://github.com/apollographql/subscriptions-transport-ws) and
+the newer recommended
+[graphql-transport-ws](https://github.com/enisdenjo/graphql-ws) WebSocket
+sub-protocols.
 
-Note that the `graphql-ws` sub-protocol is mainly supported for backwards compatibility.
-Read the [graphql-ws-transport protocols announcement](https://the-guild.dev/blog/graphql-over-websockets)
+<Note>
+
+The `graphql-transport-ws` protocols repository is called `graphql-ws`.
+However, `graphql-ws` is also the name of the legacy protocol.
+This documentation always refers to the protocol names.
+
+</Note>
+
+Note that the `graphql-ws` sub-protocol is mainly supported for backwards
+compatibility. Read the
+[graphql-ws-transport protocols announcement](https://the-guild.dev/blog/graphql-over-websockets)
 to learn more about why the newer protocol is preferred.
 
-Strawberry allows you to choose which protocols you want to accept. All integrations
-supporting subscriptions can be configured with a list of `subscription_protocols` to
-accept. By default, all protocols are accepted.
+Strawberry allows you to choose which protocols you want to accept. All
+integrations supporting subscriptions can be configured with a list of
+`subscription_protocols` to accept. By default, all protocols are accepted.
 
 ##### AIOHTTP
 
@@ -196,3 +216,41 @@ app = GraphQL(schema, subscription_protocols=[
     GRAPHQL_WS_PROTOCOL,
 ])
 ```
+
+##### Django + Channels
+
+```python
+import os
+
+from django.core.asgi import get_asgi_application
+from strawberry.channels import GraphQLProtocolTypeRouter
+
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mysite.settings')
+django_asgi_app = get_asgi_application()
+
+# Import your Strawberry schema after creating the django ASGI application
+# This ensures django.setup() has been called before any ORM models are imported
+# for the schema.
+from mysite.graphql import schema
+
+
+application = GraphQLProtocolTypeRouter(
+    schema,
+    django_application=django_asgi_app,
+)
+```
+
+Note: Check the [channels integraton](/docs/integrations/channels.md) page for more information
+regarding the it.
+
+### Single result operations
+
+In addition to _streaming operations_ (i.e. subscriptions),
+the `graphql-transport-ws` protocol supports so called _single result operations_ (i.e. queries and mutations).
+
+This enables clients to use one protocol and one connection for queries, mutations and subscriptions.
+Take a look at the [protocols repository](https://github.com/enisdenjo/graphql-ws)
+to learn how to correctly set up the graphql client of your choice.
+
+Strawberry supports single result operations out of the box when the `graphql-transport-ws` protocol is enabled.
+Single result operations are normal queries and mutations, so there is no need to adjust any resolvers.

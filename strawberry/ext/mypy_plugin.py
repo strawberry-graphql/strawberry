@@ -1,20 +1,30 @@
-from typing import Any, Callable, Dict, List, Optional, Set, Tuple, cast
+import re
+import warnings
+from decimal import Decimal
+from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union, cast
 
 from typing_extensions import Final
 
+import mypy
 from mypy.nodes import (
+    ARG_OPT,
     ARG_POS,
+    ARG_STAR2,
     GDEF,
     MDEF,
     Argument,
     AssignmentStmt,
+    Block,
     CallExpr,
     CastExpr,
+    ClassDef,
     Context,
     Expression,
+    FuncDef,
     IndexExpr,
     MemberExpr,
     NameExpr,
+    PassStmt,
     PlaceholderNode,
     RefExpr,
     SymbolTableNode,
@@ -27,26 +37,52 @@ from mypy.nodes import (
 )
 from mypy.plugin import (
     AnalyzeTypeContext,
+    CheckerPluginInterface,
     ClassDefContext,
     DynamicClassDefContext,
     FunctionContext,
     Plugin,
     SemanticAnalyzerPluginInterface,
 )
-from mypy.plugins.common import _get_decorator_bool_argument, add_method
+from mypy.plugins.common import _get_argument, _get_decorator_bool_argument, add_method
 from mypy.plugins.dataclasses import DataclassAttribute
+from mypy.semanal_shared import set_callable_name
 from mypy.server.trigger import make_wildcard_trigger
 from mypy.types import (
     AnyType,
+    CallableType,
     Instance,
     NoneType,
     Type,
     TypeOfAny,
-    TypeVarDef,
     TypeVarType,
     UnionType,
     get_proper_type,
 )
+from mypy.typevars import fill_typevars
+from mypy.util import get_unique_redefinition_name
+
+
+# Backwards compatible with the removal of `TypeVarDef` in mypy 0.920.
+try:
+    from mypy.types import TypeVarDef  # type: ignore
+except ImportError:
+    TypeVarDef = TypeVarType
+
+# To be compatible with user who don't use pydantic
+try:
+    from pydantic.mypy import METADATA_KEY as PYDANTIC_METADATA_KEY, PydanticModelField
+except ImportError:
+    PYDANTIC_METADATA_KEY = ""
+
+VERSION_RE = re.compile(r"(^0|^(?:[1-9][0-9]*))\.(0|(?:[1-9][0-9]*))")
+FALLBACK_VERSION = Decimal("0.800")
+
+
+class MypyVersion:
+    """Stores the mypy version to be used by the plugin"""
+
+    VERSION: Decimal
 
 
 class InvalidNodeTypeException(Exception):
@@ -78,23 +114,16 @@ def strawberry_field_hook(ctx: FunctionContext) -> Type:
     return AnyType(TypeOfAny.special_form)
 
 
-def private_type_analyze_callback(ctx: AnalyzeTypeContext) -> Type:
-    type_name = ctx.type.args[0]
-    type_ = ctx.api.analyze_type(type_name)
-
-    return type_
-
-
 def _get_named_type(name: str, api: SemanticAnalyzerPluginInterface):
     if "." in name:
-        return api.named_type_or_none(name)  # type: ignore
+        return api.named_type_or_none(name)
 
     return api.named_type(name)
 
 
 def _get_type_for_expr(expr: Expression, api: SemanticAnalyzerPluginInterface) -> Type:
     if isinstance(expr, NameExpr):
-        # guarding agains invalid nodes, still have to figure out why this happens
+        # guarding against invalid nodes, still have to figure out why this happens
         # but sometimes mypy crashes because the internal node of the named type
         # is actually a Var node, which is unexpected, so we do a naive guard here
         # and raise an exception for it.
@@ -105,7 +134,7 @@ def _get_type_for_expr(expr: Expression, api: SemanticAnalyzerPluginInterface) -
             if sym and isinstance(sym.node, Var):
                 raise InvalidNodeTypeException(sym.node)
 
-        return _get_named_type(expr.name, api)
+        return _get_named_type(expr.fullname or expr.name, api)
 
     if isinstance(expr, IndexExpr):
         type_ = _get_type_for_expr(expr.base, api)
@@ -238,9 +267,121 @@ def enum_hook(ctx: DynamicClassDefContext) -> None:
     )
 
 
-def strawberry_pydantic_class_callback(ctx: ClassDefContext):
+def scalar_hook(ctx: DynamicClassDefContext) -> None:
+    first_argument = ctx.call.args[0]
+
+    if isinstance(first_argument, NameExpr):
+        if not first_argument.node:
+            ctx.api.defer()
+
+            return
+
+        if isinstance(first_argument.node, Var):
+            var_type = first_argument.node.type or AnyType(
+                TypeOfAny.implementation_artifact
+            )
+
+            type_alias = TypeAlias(
+                var_type,
+                fullname=ctx.api.qualified_name(ctx.name),
+                line=ctx.call.line,
+                column=ctx.call.column,
+            )
+
+            ctx.api.add_symbol_table_node(
+                ctx.name, SymbolTableNode(GDEF, type_alias, plugin_generated=False)
+            )
+            return
+
+    scalar_type: Optional[Type]
+
+    # TODO: add proper support for NewType
+
+    try:
+        scalar_type = _get_type_for_expr(first_argument, ctx.api)
+    except InvalidNodeTypeException:
+        scalar_type = None
+
+    if not scalar_type:
+        scalar_type = AnyType(TypeOfAny.from_error)
+
+    type_alias = TypeAlias(
+        scalar_type,
+        fullname=ctx.api.qualified_name(ctx.name),
+        line=ctx.call.line,
+        column=ctx.call.column,
+    )
+
+    ctx.api.add_symbol_table_node(
+        ctx.name, SymbolTableNode(GDEF, type_alias, plugin_generated=False)
+    )
+
+
+def add_static_method_to_class(
+    api: Union[SemanticAnalyzerPluginInterface, CheckerPluginInterface],
+    cls: ClassDef,
+    name: str,
+    args: List[Argument],
+    return_type: Type,
+    tvar_def: Optional[TypeVarType] = None,
+) -> None:
+    """Adds a static method
+    Edited add_method_to_class to incorporate static method logic
+    https://github.com/python/mypy/blob/9c05d3d19/mypy/plugins/common.py
+    """
+    info = cls.info
+
+    # First remove any previously generated methods with the same name
+    # to avoid clashes and problems in the semantic analyzer.
+    if name in info.names:
+        sym = info.names[name]
+        if sym.plugin_generated and isinstance(sym.node, FuncDef):
+            cls.defs.body.remove(sym.node)
+
+    # For compat with mypy < 0.93
+    if MypyVersion.VERSION < Decimal("0.93"):
+        function_type = api.named_type("__builtins__.function")  # type: ignore
+    else:
+        if isinstance(api, SemanticAnalyzerPluginInterface):
+            function_type = api.named_type("builtins.function")
+        else:
+            function_type = api.named_generic_type("builtins.function", [])
+
+    arg_types, arg_names, arg_kinds = [], [], []
+    for arg in args:
+        assert arg.type_annotation, "All arguments must be fully typed."
+        arg_types.append(arg.type_annotation)
+        arg_names.append(arg.variable.name)
+        arg_kinds.append(arg.kind)
+
+    signature = CallableType(
+        arg_types, arg_kinds, arg_names, return_type, function_type
+    )
+    if tvar_def:
+        signature.variables = [tvar_def]
+
+    func = FuncDef(name, args, Block([PassStmt()]))
+
+    func.is_static = True
+    func.info = info
+    func.type = set_callable_name(signature, func)
+    func._fullname = f"{info.fullname}.{name}"
+    func.line = info.line
+
+    # NOTE: we would like the plugin generated node to dominate, but we still
+    # need to keep any existing definitions so they get semantically analyzed.
+    if name in info.names:
+        # Get a nice unique name instead.
+        r_name = get_unique_redefinition_name(name, info.names)
+        info.names[r_name] = info.names[name]
+
+    info.names[name] = SymbolTableNode(MDEF, func, plugin_generated=True)
+    info.defn.defs.body.append(func)
+
+
+def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
     # in future we want to have a proper pydantic plugin, but for now
-    # let's fallback to any, some resources are here:
+    # let's fallback to **kwargs for __init__, some resources are here:
     # https://github.com/samuelcolvin/pydantic/blob/master/pydantic/mypy.py
     # >>> model_index = ctx.cls.decorators[0].arg_names.index("model")
     # >>> model_name = ctx.cls.decorators[0].args[model_index].name
@@ -248,28 +389,110 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext):
     # >>> model_type = ctx.api.named_type("UserModel")
     # >>> model_type = ctx.api.lookup(model_name, Context())
 
-    ctx.cls.info.fallback_to_any = True
+    model_expression = _get_argument(call=ctx.reason, name="model")  # type: ignore
+    if model_expression is None:
+        ctx.api.fail("model argument in decorator failed to be parsed", ctx.reason)
+
+    else:
+        # Add __init__
+        init_args = [
+            Argument(Var("kwargs"), AnyType(TypeOfAny.explicit), None, ARG_STAR2)
+        ]
+        add_method(ctx, "__init__", init_args, NoneType())
+
+        model_type = cast(
+            mypy.types.Instance, _get_type_for_expr(model_expression, ctx.api)
+        )
+
+        # these are the fields that the user added to the strawberry type
+        new_strawberry_fields: Set[str] = set()
+
+        # TODO: think about inheritance for strawberry?
+        for stmt in ctx.cls.defs.body:
+            if isinstance(stmt, AssignmentStmt):
+                lhs = cast(NameExpr, stmt.lvalues[0])
+                new_strawberry_fields.add(lhs.name)
+
+        pydantic_fields: Set["PydanticModelField"] = set()
+        try:
+            for name, data in model_type.type.metadata[PYDANTIC_METADATA_KEY][
+                "fields"
+            ].items():
+                field = PydanticModelField.deserialize(ctx.cls.info, data)
+                pydantic_fields.add(field)
+        except KeyError:
+            # this will happen if the user didn't add the pydantic plugin
+            # AND is using the pydantic conversion decorator
+            ctx.api.fail(
+                "Pydantic plugin not installed,"
+                " please add pydantic.mypy your mypy.ini plugins",
+                ctx.reason,
+            )
+
+        missing_pydantic_fields: Set["PydanticModelField"] = set(
+            f for f in pydantic_fields if f.name not in new_strawberry_fields
+        )
+
+        # Add to_pydantic
+        # TODO: Only add this if not manually defined
+        add_method(
+            ctx,
+            "to_pydantic",
+            args=[
+                f.to_argument(
+                    # TODO: use_alias should depend on config?
+                    info=model_type.type,
+                    typed=True,
+                    force_optional=False,
+                    use_alias=True,
+                )
+                for f in missing_pydantic_fields
+            ],
+            return_type=model_type,
+        )
+
+        # Add from_pydantic
+        model_argument = Argument(
+            variable=Var(name="instance", type=model_type),
+            type_annotation=model_type,
+            initializer=None,
+            kind=ARG_OPT,
+        )
+
+        add_static_method_to_class(
+            ctx.api,
+            ctx.cls,
+            name="from_pydantic",
+            args=[model_argument],
+            return_type=fill_typevars(ctx.cls.info),
+        )
 
 
 def is_dataclasses_field_or_strawberry_field(expr: Expression) -> bool:
     if isinstance(expr, CallExpr):
-        if isinstance(expr.callee, RefExpr):
-            if expr.callee.fullname in (
-                "dataclasses.field",
-                "strawberry.field.field",
-                "strawberry.federation.field",
-            ):
-                return True
+        if isinstance(expr.callee, RefExpr) and expr.callee.fullname in (
+            "dataclasses.field",
+            "strawberry.field.field",
+            "strawberry.mutation.mutation",
+            "strawberry.federation.field",
+            "strawberry.federation.field.field",
+        ):
+            return True
 
         if isinstance(expr.callee, MemberExpr) and isinstance(
             expr.callee.expr, NameExpr
         ):
-            return expr.callee.name == "field" and expr.callee.expr.name == "strawberry"
+            return (
+                expr.callee.name in {"field", "mutation"}
+                and expr.callee.expr.name == "strawberry"
+            )
 
     return False
 
 
-def _collect_field_args(expr: Expression) -> Tuple[bool, Dict[str, Expression]]:
+def _collect_field_args(
+    ctx: ClassDefContext, expr: Expression
+) -> Tuple[bool, Dict[str, Expression]]:
     """Returns a tuple where the first value represents whether or not
     the expression is a call to dataclass.field and the second is a
     dictionary of the keyword arguments that field() was called with.
@@ -278,24 +501,28 @@ def _collect_field_args(expr: Expression) -> Tuple[bool, Dict[str, Expression]]:
     if is_dataclasses_field_or_strawberry_field(expr):
         expr = cast(CallExpr, expr)
 
-        # field() only takes keyword arguments.
         args = {}
 
         for name, arg in zip(expr.arg_names, expr.args):
-            assert name is not None
+            if name is None:
+                ctx.api.fail(
+                    '"field()" or "mutation()" only takes keyword arguments', expr
+                )
+                return False, {}
+
             args[name] = arg
         return True, args
 
     return False, {}
 
 
-# Custom dataclass transfomer that knows about strawberry.field, we cannot
+# Custom dataclass transformer that knows about strawberry.field, we cannot
 # extend the mypy one as it might be compiled by mypyc and we'd get this error
 # >>> TypeError: interpreted classes cannot inherit from compiled
 # Original copy from
-# https://github.com/python/mypy/blob/849a7f73/mypy/plugins/dataclasses.py
+# https://github.com/python/mypy/blob/5253f7c0/mypy/plugins/dataclasses.py
 
-SELF_TVAR_NAME = "_DT"  # type: Final
+SELF_TVAR_NAME: Final = "_DT"
 
 
 class CustomDataclassTransformer:
@@ -371,7 +598,13 @@ class CustomDataclassTransformer:
                     [],
                     obj_type,
                 )
-                order_other_type = TypeVarType(order_tvar_def)
+
+                # Backwards compatible with the removal of `TypeVarDef` in mypy 0.920.
+                if isinstance(order_tvar_def, TypeVarType):
+                    order_other_type = order_tvar_def
+                else:
+                    order_other_type = TypeVarType(order_tvar_def)  # type: ignore
+
                 order_return_type = ctx.api.named_type("__builtins__.bool")
                 order_args = [
                     Argument(
@@ -399,6 +632,8 @@ class CustomDataclassTransformer:
 
         if decorator_arguments["frozen"]:
             self._freeze(attributes)
+        else:
+            self._propertize_callables(attributes)
 
         self.reset_init_only_vars(info, attributes)
 
@@ -478,7 +713,7 @@ class CustomDataclassTransformer:
                 is_init_var = True
                 node.type = node_type.args[0]
 
-            has_field_call, field_args = _collect_field_args(stmt.rvalue)
+            has_field_call, field_args = _collect_field_args(ctx, stmt.rvalue)
 
             is_in_init_param = field_args.get("init")
             if is_in_init_param is None:
@@ -516,16 +751,14 @@ class CustomDataclassTransformer:
                 type=sym.type,
             )
 
-            # add support for mypy >= 0.800 without breaking backwards compatibility
-            # https://github.com/python/mypy/pull/9380/file
-            # https://github.com/strawberry-graphql/strawberry/issues/678
-
-            try:
-                attribute = DataclassAttribute(**params)  # type: ignore
-            except TypeError:
+            # Support the addition of `info` in mypy 0.800 and `kw_only` in mypy 0.920
+            # without breaking backwards compatibility.
+            if MypyVersion.VERSION >= Decimal("0.800"):
                 params["info"] = cls.info
-                attribute = DataclassAttribute(**params)  # type: ignore
+            if MypyVersion.VERSION >= Decimal("0.920"):
+                params["kw_only"] = False
 
+            attribute = DataclassAttribute(**params)  # type: ignore
             attrs.append(attribute)
 
         # Next, collect attributes belonging to any class in the MRO
@@ -543,9 +776,10 @@ class CustomDataclassTransformer:
             ctx.api.add_plugin_dependency(make_wildcard_trigger(info.fullname))
 
             for data in info.metadata["dataclass"]["attributes"]:
-                name = data["name"]  # type: str
+                name: str = data["name"]
                 if name not in known_attrs:
                     attr = DataclassAttribute.deserialize(info, data, ctx.api)
+                    attr.expand_typevar_from_subtype(ctx.cls.info)
                     known_attrs.add(name)
                     super_attrs.append(attr)
                 elif all_attrs:
@@ -602,6 +836,24 @@ class CustomDataclassTransformer:
                 var._fullname = info.fullname + "." + var.name
                 info.names[var.name] = SymbolTableNode(MDEF, var)
 
+    def _propertize_callables(self, attributes: List[DataclassAttribute]) -> None:
+        """Converts all attributes with callable types to @property methods.
+
+        This avoids the typechecker getting confused and thinking that
+        `my_dataclass_instance.callable_attr(foo)` is going to receive a
+        `self` argument (it is not).
+
+        """
+        info = self._ctx.cls.info
+        for attr in attributes:
+            if isinstance(get_proper_type(attr.type), CallableType):
+                var = attr.to_var()
+                var.info = info
+                var.is_property = True
+                var.is_settable_property = True
+                var._fullname = info.fullname + "." + var.name
+                info.names[var.name] = SymbolTableNode(MDEF, var)
+
 
 def custom_dataclass_class_maker_callback(ctx: ClassDefContext) -> None:
     """Hooks into the class typechecking process to add support for dataclasses."""
@@ -621,6 +873,9 @@ class StrawberryPlugin(Plugin):
         if self._is_strawberry_enum(fullname):
             return enum_hook
 
+        if self._is_strawberry_scalar(fullname):
+            return scalar_hook
+
         if self._is_strawberry_create_type(fullname):
             return create_type_hook
 
@@ -637,9 +892,6 @@ class StrawberryPlugin(Plugin):
     def get_type_analyze_hook(self, fullname: str):
         if self._is_strawberry_lazy_type(fullname):
             return lazy_type_analyze_callback
-
-        if self._is_strawberry_private(fullname):
-            return private_type_analyze_callback
 
         return None
 
@@ -662,6 +914,7 @@ class StrawberryPlugin(Plugin):
     def _is_strawberry_field(self, fullname: str) -> bool:
         if fullname in {
             "strawberry.field.field",
+            "strawberry.mutation.mutation",
             "strawberry.federation.field",
         }:
             return True
@@ -670,6 +923,7 @@ class StrawberryPlugin(Plugin):
             fullname.endswith(decorator)
             for decorator in {
                 "strawberry.field",
+                "strawberry.mutation",
                 "strawberry.federation.field",
             }
         )
@@ -679,13 +933,13 @@ class StrawberryPlugin(Plugin):
             "strawberry.enum"
         )
 
+    def _is_strawberry_scalar(self, fullname: str) -> bool:
+        return fullname == "strawberry.custom_scalar.scalar" or fullname.endswith(
+            "strawberry.scalar"
+        )
+
     def _is_strawberry_lazy_type(self, fullname: str) -> bool:
         return fullname == "strawberry.lazy_type.LazyType"
-
-    def _is_strawberry_private(self, fullname: str) -> bool:
-        return fullname == "strawberry.private.Private" or fullname.endswith(
-            "strawberry.Private"
-        )
 
     def _is_strawberry_decorator(self, fullname: str) -> bool:
         if any(
@@ -693,6 +947,12 @@ class StrawberryPlugin(Plugin):
             for strawberry_decorator in {
                 "strawberry.object_type.type",
                 "strawberry.federation.type",
+                "strawberry.federation.object_type.type",
+                "strawberry.federation.input",
+                "strawberry.federation.object_type.input",
+                "strawberry.federation.interface",
+                "strawberry.federation.object_type.interface",
+                "strawberry.schema_directive.schema_directive",
                 "strawberry.object_type.input",
                 "strawberry.object_type.interface",
             }
@@ -710,6 +970,7 @@ class StrawberryPlugin(Plugin):
                 "strawberry.federation.type",
                 "strawberry.input",
                 "strawberry.interface",
+                "strawberry.schema_directive",
             }
         )
 
@@ -730,6 +991,7 @@ class StrawberryPlugin(Plugin):
             for strawberry_decorator in {
                 "strawberry.experimental.pydantic.object_type.type",
                 "strawberry.experimental.pydantic.object_type.input",
+                "strawberry.experimental.pydantic.object_type.interface",
                 "strawberry.experimental.pydantic.error_type",
             }
         ):
@@ -750,4 +1012,13 @@ class StrawberryPlugin(Plugin):
 
 
 def plugin(version: str):
+    match = VERSION_RE.match(version)
+    if match:
+        MypyVersion.VERSION = Decimal(".".join(match.groups()))
+    else:
+        MypyVersion.VERSION = FALLBACK_VERSION
+        warnings.warn(
+            f"Mypy version {version} could not be parsed. Reverting to v0.800"
+        )
+
     return StrawberryPlugin
