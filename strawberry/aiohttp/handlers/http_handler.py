@@ -1,6 +1,5 @@
 import json
 from io import BytesIO
-from pathlib import Path
 from typing import Any, Dict, Union
 
 from typing_extensions import Literal
@@ -12,6 +11,7 @@ from strawberry.http import GraphQLRequestData, parse_query_params, parse_reques
 from strawberry.schema import BaseSchema
 from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types.graphql import OperationType
+from strawberry.utils.graphiql import get_graphiql_html
 
 
 class HTTPHandler:
@@ -145,8 +145,8 @@ class HTTPHandler:
             raise web.HTTPBadRequest(reason="File(s) missing in form data")
 
     def render_graphiql(self) -> web.StreamResponse:
-        html_string = self.graphiql_html_file_path.read_text()
-        html_string = html_string.replace("{{ SUBSCRIPTION_ENABLED }}", "true")
+        html_string = get_graphiql_html()
+
         return web.Response(text=html_string, content_type="text/html")
 
     def should_render_graphiql(self, request: web.Request) -> bool:
@@ -156,7 +156,3 @@ class HTTPHandler:
             supported_header in request.headers.get("Accept", "")
             for supported_header in ("text/html", "*/*")
         )
-
-    @property
-    def graphiql_html_file_path(self) -> Path:
-        return Path(__file__).parent.parent.parent / "static" / "graphiql.html"

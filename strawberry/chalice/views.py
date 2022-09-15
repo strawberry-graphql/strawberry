@@ -1,7 +1,6 @@
-from typing import Dict, List, Union
+from typing import Dict, Optional
 
 from chalice.app import BadRequestError, Request, Response
-from strawberry.chalice.graphiql import render_graphiql_page
 from strawberry.exceptions import MissingQueryError
 from strawberry.http import (
     GraphQLHTTPResponse,
@@ -11,6 +10,7 @@ from strawberry.http import (
 )
 from strawberry.schema import BaseSchema
 from strawberry.types import ExecutionResult
+from strawberry.utils.graphiql import get_graphiql_html
 
 
 class GraphQLView:
@@ -26,7 +26,7 @@ class GraphQLView:
         Returns:
             The GraphiQL html page as a string
         """
-        return render_graphiql_page()
+        return get_graphiql_html(subscription_enabled=False)
 
     @staticmethod
     def should_render_graphiql(graphiql: bool, request: Request) -> bool:
@@ -51,7 +51,7 @@ class GraphQLView:
         message: str,
         error_code: str,
         http_status_code: int,
-        headers: Dict[str, Union[str, List[str]]] = None,
+        headers: Optional[Dict[str, str]] = None,
     ) -> Response:
         """
         A wrapper for error responses
@@ -98,7 +98,7 @@ class GraphQLView:
                     http_status_code=400,
                 )
         elif request.method == "GET" and request.query_params:
-            data = parse_query_params(request.query_params)
+            data = parse_query_params(request.query_params)  # type: ignore
 
         elif request.method == "GET" and self.should_render_graphiql(
             self.graphiql, request

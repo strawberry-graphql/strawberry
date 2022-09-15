@@ -124,20 +124,32 @@ def _process_enum(
 
 @overload
 def enum(
-    _cls: EnumType, *, name=None, description=None, directives: Iterable[object] = ()
+    _cls: EnumType,
+    *,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    directives: Iterable[object] = ()
 ) -> EnumType:
     ...
 
 
 @overload
 def enum(
-    _cls: None = None, *, name=None, description=None, directives: Iterable[object] = ()
+    _cls: None = None,
+    *,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    directives: Iterable[object] = ()
 ) -> Callable[[EnumType], EnumType]:
     ...
 
 
 def enum(
-    _cls: Optional[EnumType] = None, *, name=None, description=None, directives=()
+    _cls: Optional[EnumType] = None,
+    *,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    directives: Iterable[object] = ()
 ) -> Union[EnumType, Callable[[EnumType], EnumType]]:
     """Registers the enum in the GraphQL type system.
 

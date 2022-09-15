@@ -1,6 +1,5 @@
 import asyncio
 import json
-import os
 from typing import Any, Dict, Optional, Type
 
 from django.core.exceptions import BadRequest, SuspiciousOperation
@@ -15,7 +14,6 @@ from django.utils.decorators import classonlymethod, method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
 
-import strawberry
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import (
@@ -28,6 +26,7 @@ from strawberry.http import (
 from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types import ExecutionResult
 from strawberry.types.graphql import OperationType
+from strawberry.utils.graphiql import get_graphiql_html
 
 from ..schema import BaseSchema
 from .context import StrawberryDjangoContext
@@ -124,15 +123,7 @@ class BaseView(View):
         try:
             template = Template(render_to_string("graphql/graphiql.html"))
         except TemplateDoesNotExist:
-            template = Template(
-                open(
-                    os.path.join(
-                        os.path.dirname(os.path.abspath(strawberry.__file__)),
-                        "static/graphiql.html",
-                    ),
-                    "r",
-                ).read()
-            )
+            template = Template(get_graphiql_html(replace_variables=False))
 
         context = context or {}
         context.update({"SUBSCRIPTION_ENABLED": json.dumps(self.subscriptions_enabled)})

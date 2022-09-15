@@ -5,7 +5,6 @@ A consumer to provide a graphql endpoint, and optionally graphiql.
 
 import dataclasses
 import json
-from pathlib import Path
 from typing import Any, Optional
 from urllib.parse import parse_qs
 
@@ -24,6 +23,7 @@ from strawberry.schema import BaseSchema
 from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types import ExecutionResult
 from strawberry.types.graphql import OperationType
+from strawberry.utils.graphiql import get_graphiql_html
 
 from .base import ChannelsConsumer
 
@@ -64,10 +64,6 @@ class GraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
     })
     ```
     """
-
-    graphiql_html_file_path = (
-        Path(__file__).parent.parent.parent / "static" / "graphiql.html"
-    )
 
     def __init__(
         self,
@@ -178,12 +174,8 @@ class GraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
         return process_result(result)
 
     async def render_graphiql(self, body):
-        html_string = self.graphiql_html_file_path.read_text()
-        html_string = html_string.replace(
-            "{{ SUBSCRIPTION_ENABLED }}",
-            json.dumps(self.subscriptions_enabled),
-        )
-        return Result(response=html_string.encode(), content_type="text/html")
+        html = get_graphiql_html(self.subscriptions_enabled)
+        return Result(response=html.encode(), content_type="text/html")
 
     def should_render_graphiql(self):
         accept_list = self.headers.get("accept", "").split(",")

@@ -1,9 +1,9 @@
-import typing
+from typing import TYPE_CHECKING
 
 import strawberry
 
 
-if typing.TYPE_CHECKING:
+if TYPE_CHECKING:
     import tests
 
     from .type_a import TypeA
