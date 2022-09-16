@@ -212,20 +212,21 @@ def type(
         if has_custom_to_pydantic:
             namespace["to_pydantic"] = cls.to_pydantic
 
-        dclass_kwargs = {}
+        kwargs: Dict[str, object] = {}
 
         # Python 3.10 introduces the kw_only param. If we're on an older version
         # then generate our own custom init function
         if sys.version_info >= (3, 10):
-            dclass_kwargs["kw_only"] = True
+            kwargs["kw_only"] = True
         else:
-            dclass_kwargs["init"] = False
+            kwargs["init"] = False
 
         cls = dataclasses.make_dataclass(
             cls.__name__,
             [field.to_tuple() for field in all_model_fields],
             bases=cls.__bases__,
             namespace=namespace,
+            **kwargs,  # type: ignore
         )
 
         if sys.version_info < (3, 10):

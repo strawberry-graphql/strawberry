@@ -743,7 +743,7 @@ def test_can_convert_input_types_to_pydantic():
         age: strawberry.auto
         password: strawberry.auto
 
-    data = UserInput(1, None)
+    data = UserInput(age=1, password=None)
     user = data.to_pydantic()
 
     assert user.age == 1
@@ -915,10 +915,10 @@ def test_can_convert_pydantic_type_to_strawberry_with_additional_field_resolvers
     origin_user = UserModel(password="abc", new_age=21)
     user = User.from_pydantic(origin_user)
     assert user.password == "abc"
-    assert User._type_definition.fields[0].name == "new_age"
-    assert User._type_definition.fields[0].base_resolver() == 84
-    assert User._type_definition.fields[1].name == "age"
-    assert User._type_definition.fields[1].base_resolver() == 42
+    assert User._type_definition.fields[0].name == "age"
+    assert User._type_definition.fields[0].base_resolver() == 42
+    assert User._type_definition.fields[2].name == "new_age"
+    assert User._type_definition.fields[2].base_resolver() == 84
 
 
 def test_can_convert_both_output_and_input_type():
