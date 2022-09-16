@@ -56,12 +56,19 @@ def test_enum_arguments():
         VANILLA = "vanilla"
         STRAWBERRY = "strawberry"
         CHOCOLATE = "chocolate"
+        DARK_CHOCOLATE = strawberry.enum_value(
+            "chocolate", description="chocolate but bitter"
+        )
 
     @strawberry.type
     class Query:
         @strawberry.field
         def flavour_available(self, flavour: IceCreamFlavour) -> bool:
             return flavour == IceCreamFlavour.STRAWBERRY
+
+        @strawberry.field
+        def bitter(self, flavour: IceCreamFlavour) -> bool:
+            return flavour is IceCreamFlavour.DARK_CHOCOLATE
 
     @strawberry.input
     class ConeInput:
@@ -80,6 +87,18 @@ def test_enum_arguments():
 
     assert not result.errors
     assert result.data["flavourAvailable"] is False
+
+    query = "{ bitter(flavour: CHOCOLATE) }"
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data["bitter"] is False
+
+    query = "{ bitter(flavour: DARK_CHOCOLATE) }"
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data["bitter"] is True
 
     query = "{ flavourAvailable(flavour: STRAWBERRY) }"
     result = schema.execute_sync(query)
