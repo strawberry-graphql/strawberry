@@ -1,105 +1,155 @@
 <!DOCTYPE html>
 <html>
-
-<head>
+  <head>
     <title>Strawberry GraphiQL</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,
+        <svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22>
+            <!-- Strawberry Emoji as a HTML Entity (hex)  -->
+            <text y=%22.9em%22 font-size=%2280%22>&#x1f353;</text>
+        </svg>"
+    />
     <style>
-        html,
-        body {
-            height: 100%;
-            margin: 0;
-            overflow: hidden;
-            width: 100%;
-        }
+      body {
+        height: 100%;
+        margin: 0;
+        width: 100%;
+        overflow: hidden;
+      }
 
-        #graphiql {
-            height: 100vh;
-        }
+      #graphiql {
+        height: 100vh;
+        display: flex;
+      }
+
+      .docExplorerHide {
+        display: none;
+      }
+
+      .doc-explorer-contents {
+        overflow-y: hidden !important;
+      }
+
+      .docExplorerWrap {
+        width: unset !important;
+        min-width: unset !important;
+      }
+
+      .graphiql-explorer-actions select {
+        margin-left: 4px;
+      }
     </style>
 
-    <link rel="stylesheet"
-        href="https://unpkg.com/graphiql-with-extensions@0.14.3/graphiqlWithExtensions.css"
-        integrity="sha384-GBqwox+q8UtVEyBLBKloN5QDlBDsQnuoSUfMeJH1ZtDiCrrk103D7Bg/WjIvl4ya" crossorigin="anonymous" />
-    <script src="https://unpkg.com/whatwg-fetch@2.0.3/fetch.js"
-        integrity="sha384-KaKx4aJnrltBb2dne61B/MRPA4uRfQvv6YW99RgjHax8TRjFxcC4BC19EEX0te/6"
-        crossorigin="anonymous"></script>
-    <script src="https://unpkg.com/react@16.8.6/umd/react.production.min.js"
-        integrity="sha384-qn+ML/QkkJxqn4LLs1zjaKxlTg2Bl/6yU/xBTJAgxkmNGc6kMZyeskAG0a7eJBR1"
-        crossorigin="anonymous"></script>
-    <script src="https://unpkg.com/react-dom@16.8.6/umd/react-dom.production.min.js"
-        integrity="sha384-85IMG5rvmoDsmMeWK/qUU4kwnYXVpC+o9hoHMLi4bpNR+gMEiPLrvkZCgsr7WWgV"
-        crossorigin="anonymous"></script>
-    <script src="https://unpkg.com/graphiql-with-extensions@0.14.3/graphiqlWithExtensions.min.js"
-        integrity="sha384-TqI6gT2PjmSrnEOTvGHLad1U4Vm5VoyzMmcKK0C/PLCWTnwPyXhCJY6NYhC/tp19"
-        crossorigin="anonymous"></script>
-    <script src="https://unpkg.com/js-cookie@3.0.0-rc.2/dist/js.cookie.umd.min.js"></script>
+    <script
+      crossorigin
+      src="https://unpkg.com/react@17.0.2/umd/react.development.js"
+      integrity="sha384-xQwCoNcK/7P3Lpv50IZSEbJdpqbToWEODAUyI/RECaRXmOE2apWt7htari8kvKa/"
+    ></script>
+    <script
+      crossorigin
+      src="https://unpkg.com/react-dom@17.0.2/umd/react-dom.development.js"
+      integrity="sha384-E9IgxDsnjKgh0777N3lXen7NwXeTsOpLLJhI01SW7idG046SRqJpsW2rJwsOYk0L"
+    ></script>
 
-    <!-- breaking changes in subscriptions-transport-ws since 0.9.0 -->
-    <script src="https://unpkg.com/subscriptions-transport-ws@0.8.3/browser/client.js"></script>
-    <script src="https://unpkg.com/graphiql-subscriptions-fetcher@0.0.2/browser/client.js"></script>
-</head>
+    <script
+      crossorigin
+      src="https://unpkg.com/js-cookie@3.0.1/dist/js.cookie.min.js"
+      integrity="sha384-ETDm/j6COkRSUfVFsGNM5WYE4WjyRgfDhy4Pf4Fsc8eNw/eYEMqYZWuxTzMX6FBa"
+    ></script>
 
-<body>
-    <div id="graphiql"></div>
+    <link
+      crossorigin
+      rel="stylesheet"
+      href="https://unpkg.com/graphiql@2.0.3/graphiql.min.css"
+      integrity="sha384-AKx2Bh1kuZ1tUTwbmHASXvBtHBX4WWVwdTQjArDlqPCL2uuBTyJkajuxdczWhzTN"
+    />
+  </head>
+
+  <body>
+    <div id="graphiql" class="graphiql-container">Loading...</div>
+    <script
+      crossorigin
+      src="https://unpkg.com/graphiql@2.0.3/graphiql.min.js"
+      integrity="sha384-WI6ayyBMb7Ln13us9JlWopMH4Kz33Pt9bYbkO5oY/xryP/pbGmz5Q08oS2dcrLmc"
+    ></script>
+    <script
+      crossorigin
+      src="https://unpkg.com/@graphiql/plugin-explorer@0.1.0/dist/graphiql-plugin-explorer.umd.js"
+      integrity="sha384-XyAmNqmxnLsRHkMhQYTqC0ub7uXpNbwdkhjn70ZF3J3XSb7bouSdRVfzDojimcMd"
+    ></script>
     <script>
-        var fetchURL = window.location.href;
+      const EXAMPLE_QUERY = `# Welcome to GraphiQL 🍓
+#
+# GraphiQL is an in-browser tool for writing, validating, and
+# testing GraphQL queries.
+#
+# Type queries into this side of the screen, and you will see intelligent
+# typeaheads aware of the current GraphQL type schema and live syntax and
+# validation errors highlighted within the text.
+#
+# GraphQL queries typically start with a "{" character. Lines that starts
+# with a # are ignored.
+#
+# An example GraphQL query might look like:
+#
+#     {
+#       field(arg: "value") {
+#         subField
+#       }
+#     }
+#
+# Keyboard shortcuts:
+#
+#       Run Query:  Ctrl-Enter (or press the play button above)
+#
+#   Auto Complete:  Ctrl-Space (or just start typing)
+#
+`;
 
-        function httpUrlToWebSockeUrl(url) {
-            return url.replace(/(http)(s)?\:\/\//, "ws$2://");
-        }
+      const fetchURL = window.location.href;
 
-        function graphQLFetcher(graphQLParams) {
-            var headers = {
-                Accept: 'application/json',
-                'Content-Type': 'application/json',
-            };
+      function httpUrlToWebSockeUrl(url) {
+        return url.replace(/(http)(s)?\:\/\//, "ws$2://");
+      }
 
-            var csrfToken = Cookies.get('csrftoken');
-            if (csrfToken) {
-              headers['x-csrftoken'] = csrfToken;
-            }
+      const headers = {};
+      const csrfToken = Cookies.get("csrftoken");
 
-            return fetch(fetchURL, {
-                method: 'post',
-                headers: headers,
-                body: JSON.stringify(graphQLParams),
-            })
-                .then(function (response) {
-                    return response.text();
-                })
-                .then(function (responseBody) {
-                    try {
-                        return JSON.parse(responseBody);
-                    } catch (error) {
-                        return responseBody;
-                    }
-                });
-        }
+      if (csrfToken) {
+        headers["x-csrftoken"] = csrfToken;
+      }
 
-        var subscriptionsEndpoint = httpUrlToWebSockeUrl(fetchURL);
-        var subscriptionsEnabled = JSON.parse('{{ SUBSCRIPTION_ENABLED }}')
+      const subscriptionsEnabled = JSON.parse("{{ SUBSCRIPTION_ENABLED }}");
+      const subscriptionUrl = subscriptionsEnabled
+        ? httpUrlToWebSockeUrl(fetchURL)
+        : null;
 
-        const subscriptionsClient =
-            subscriptionsEnabled ? new window.SubscriptionsTransportWs.SubscriptionClient(
-                subscriptionsEndpoint,
-                {
-                    reconnect: true
-                }
-            ) : null;
+      const fetcher = GraphiQL.createFetcher({
+        url: fetchURL,
+        headers: headers,
+        subscriptionUrl,
+      });
 
-        const graphQLFetcherWithSubscriptions =
-            window.GraphiQLSubscriptionsFetcher.graphQLFetcher(
-                subscriptionsClient,
-                graphQLFetcher
-            );
+      function GraphiQLWithExplorer() {
+        const [query, setQuery] = React.useState(EXAMPLE_QUERY);
+        const explorerPlugin = GraphiQLPluginExplorer.useExplorerPlugin({
+          query: query,
+          onEdit: setQuery,
+        });
+        return React.createElement(GraphiQL, {
+          fetcher: fetcher,
+          defaultEditorToolsVisibility: true,
+          plugins: [explorerPlugin],
+          query: query,
+          onEditQuery: setQuery,
+        });
+      }
 
-        ReactDOM.render(
-            React.createElement(GraphiQLWithExtensions.GraphiQLWithExtensions, {
-                fetcher: graphQLFetcherWithSubscriptions,
-            }),
-            document.getElementById('graphiql'),
-        );
+      ReactDOM.render(
+        React.createElement(GraphiQLWithExplorer),
+        document.getElementById("graphiql")
+      );
     </script>
-</body>
-
+  </body>
 </html>

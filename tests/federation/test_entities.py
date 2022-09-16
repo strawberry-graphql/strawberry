@@ -10,7 +10,7 @@ def test_fetch_entities():
 
         @classmethod
         def resolve_reference(cls, upc):
-            return Product(upc)
+            return Product(upc=upc)
 
     @strawberry.federation.type(extend=True)
     class Query:
@@ -50,7 +50,7 @@ def test_info_param_in_resolve_reference():
 
         @classmethod
         def resolve_reference(cls, info, upc):
-            return Product(upc, info)
+            return Product(upc=upc, info=info)
 
     @strawberry.federation.type(extend=True)
     class Query:

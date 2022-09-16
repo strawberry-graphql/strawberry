@@ -34,21 +34,28 @@ class Result:
         return cls(type=type_, message=message, line=line, column=column)
 
 
-def run_pyright(code: str) -> List[Result]:
+def run_pyright(code: str, strict: bool = True) -> List[Result]:
+    if strict:
+        code = "# pyright: strict\n" + code
+
     with tempfile.NamedTemporaryFile("w", suffix=".py", delete=False) as f:
         f.write(code)
 
-    result = subprocess.run(["pyright", f.name], stdout=subprocess.PIPE)
+    process_result = subprocess.run(["pyright", f.name], stdout=subprocess.PIPE)
 
     os.remove(f.name)
 
-    output = result.stdout.decode("utf-8")
+    output = process_result.stdout.decode("utf-8")
 
     results: List[Result] = []
 
     for line in output.splitlines():
         if line.strip().startswith(f"{f.name}:"):
-            results.append(Result.from_output_line(line))
+            result = Result.from_output_line(line)
+            if strict:
+                result.line -= 1
+
+            results.append(result)
 
     return results
 

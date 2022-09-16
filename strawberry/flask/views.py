@@ -5,7 +5,7 @@ from flask import Response, render_template_string, request
 from flask.views import View
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
-from strawberry.flask.graphiql import render_graphiql_page, should_render_graphiql
+from strawberry.flask.graphiql import should_render_graphiql
 from strawberry.http import (
     GraphQLHTTPResponse,
     parse_query_params,
@@ -16,6 +16,7 @@ from strawberry.schema.base import BaseSchema
 from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types import ExecutionResult
 from strawberry.types.graphql import OperationType
+from strawberry.utils.graphiql import get_graphiql_html
 
 
 class GraphQLView(View):
@@ -57,7 +58,7 @@ class GraphQLView(View):
         elif method == "GET" and request.args:
             data = parse_query_params(request.args.to_dict())
         elif method == "GET" and should_render_graphiql(self.graphiql, request):
-            template = render_graphiql_page()
+            template = get_graphiql_html(False)
 
             return self.render_template(template=template)
         else:
@@ -109,7 +110,7 @@ class AsyncGraphQLView(GraphQLView):
         elif method == "GET" and request.args:
             data = parse_query_params(request.args.to_dict())
         elif method == "GET" and should_render_graphiql(self.graphiql, request):
-            template = render_graphiql_page()
+            template = get_graphiql_html(False)
 
             return self.render_template(template=template)
         else:

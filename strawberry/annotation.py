@@ -6,11 +6,14 @@ from typing import (  # type: ignore[attr-defined]
     TYPE_CHECKING,
     Any,
     Dict,
+    List,
     Optional,
     TypeVar,
     Union,
     _eval_type,
 )
+
+from typing_extensions import Annotated, get_args, get_origin
 
 from strawberry.private import is_private
 
@@ -23,7 +26,7 @@ except ImportError:  # pragma: no cover
 
 from strawberry.custom_scalar import ScalarDefinition
 from strawberry.enum import EnumDefinition
-from strawberry.lazy_type import LazyType
+from strawberry.lazy_type import LazyType, StrawberryLazyReference
 from strawberry.type import (
     StrawberryList,
     StrawberryOptional,
@@ -32,7 +35,7 @@ from strawberry.type import (
 )
 from strawberry.types.types import TypeDefinition
 from strawberry.unset import UNSET
-from strawberry.utils.typing import is_generic, is_type_var
+from strawberry.utils.typing import is_generic, is_list, is_type_var, is_union
 
 
 if TYPE_CHECKING:
@@ -63,14 +66,46 @@ class StrawberryAnnotation:
 
         return self.resolve() == other.resolve()
 
+    @staticmethod
+    def parse_annotated(annotation: object) -> object:
+        from strawberry.auto import StrawberryAuto
+
+        if get_origin(annotation) is Annotated:
+            annotated_args = get_args(annotation)
+            annotation_type = annotated_args[0]
+
+            for arg in annotated_args[1:]:
+                if isinstance(arg, StrawberryLazyReference):
+                    assert isinstance(annotation_type, ForwardRef)
+
+                    return arg.resolve_forward_ref(annotation_type)
+
+                if isinstance(arg, StrawberryAuto):
+                    return arg
+
+            return StrawberryAnnotation.parse_annotated(annotation_type)
+
+        if is_union(annotation):
+            return Union[
+                tuple(
+                    StrawberryAnnotation.parse_annotated(arg)
+                    for arg in get_args(annotation)
+                )  # pyright: ignore
+            ]  # pyright: ignore
+
+        if is_list(annotation):
+            return List[StrawberryAnnotation.parse_annotated(get_args(annotation)[0])]  # type: ignore  # noqa: E501
+
+        return annotation
+
     def resolve(self) -> Union[StrawberryType, type]:
-        annotation: object
+        annotation = self.parse_annotated(self.annotation)
+
         if isinstance(self.annotation, str):
             annotation = ForwardRef(self.annotation)
-        else:
-            annotation = self.annotation
 
         evaled_type = _eval_type(annotation, self.namespace, None)
+
         if is_private(evaled_type):
             return evaled_type
         if self._is_async_type(evaled_type):
@@ -206,7 +241,11 @@ class StrawberryAnnotation:
 
         annotation_origin = getattr(annotation, "__origin__", None)
 
-        return annotation_origin == list
+        return (
+            annotation_origin == list
+            or annotation_origin == tuple
+            or annotation_origin is abc.Sequence
+        )
 
     @classmethod
     def _is_strawberry_type(cls, evaled_type: Any) -> bool:

@@ -36,8 +36,15 @@ from .types.fields.resolver import StrawberryResolver
 if TYPE_CHECKING:
     from .object_type import TypeDefinition
 
+T = TypeVar("T")
 
-_RESOLVER_TYPE = Union[StrawberryResolver, Callable, staticmethod, classmethod]
+
+_RESOLVER_TYPE = Union[
+    StrawberryResolver[T],
+    Callable[..., T],
+    "staticmethod[T]",
+    "classmethod[T]",
+]
 
 
 UNRESOLVED = object()
@@ -306,13 +313,10 @@ class StrawberryField(dataclasses.Field):
         return self._has_async_permission_classes or self._has_async_base_resolver
 
 
-T = TypeVar("T")
-
-
 @overload
 def field(
     *,
-    resolver: Callable[[], T],
+    resolver: _RESOLVER_TYPE[T],
     name: Optional[str] = None,
     is_subscription: bool = False,
     description: Optional[str] = None,
@@ -320,7 +324,7 @@ def field(
     permission_classes: Optional[List[Type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
     default: Any = dataclasses.MISSING,
-    default_factory: Union[Callable, dataclasses._MISSING_TYPE] = dataclasses.MISSING,
+    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
     directives: Optional[Sequence[object]] = (),
 ) -> T:
     ...
@@ -336,7 +340,7 @@ def field(
     permission_classes: Optional[List[Type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
     default: Any = dataclasses.MISSING,
-    default_factory: Union[Callable, dataclasses._MISSING_TYPE] = dataclasses.MISSING,
+    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
     directives: Optional[Sequence[object]] = (),
 ) -> Any:
     ...
@@ -344,7 +348,7 @@ def field(
 
 @overload
 def field(
-    resolver: _RESOLVER_TYPE,
+    resolver: _RESOLVER_TYPE[T],
     *,
     name: Optional[str] = None,
     is_subscription: bool = False,
@@ -352,27 +356,27 @@ def field(
     permission_classes: Optional[List[Type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
     default: Any = dataclasses.MISSING,
-    default_factory: Union[Callable, dataclasses._MISSING_TYPE] = dataclasses.MISSING,
+    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
     directives: Optional[Sequence[object]] = (),
 ) -> StrawberryField:
     ...
 
 
 def field(
-    resolver=None,
+    resolver: Optional[_RESOLVER_TYPE[Any]] = None,
     *,
-    name=None,
-    is_subscription=False,
-    description=None,
-    permission_classes=None,
-    deprecation_reason=None,
-    default=dataclasses.MISSING,
-    default_factory=dataclasses.MISSING,
-    directives=(),
+    name: Optional[str] = None,
+    is_subscription: bool = False,
+    description: Optional[str] = None,
+    permission_classes: Optional[List[Type[BasePermission]]] = None,
+    deprecation_reason: Optional[str] = None,
+    default: Any = dataclasses.MISSING,
+    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
+    directives: Optional[Sequence[object]] = (),
     # This init parameter is used by PyRight to determine whether this field
     # is added in the constructor or not. It is not used to change
     # any behavior at the moment.
-    init=None,
+    init: Literal[True, False, None] = None,
 ) -> Any:
     """Annotates a method or property as a GraphQL field.
 
@@ -399,7 +403,7 @@ def field(
         deprecation_reason=deprecation_reason,
         default=default,
         default_factory=default_factory,
-        directives=directives,
+        directives=directives or (),
     )
 
     if resolver:

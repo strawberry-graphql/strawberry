@@ -34,7 +34,7 @@ def union(
         directives.append(Inaccessible())
 
     if tags:
-        directives.extend(Tag(tag) for tag in tags)
+        directives.extend(Tag(name=tag) for tag in tags)
 
     return base_union(
         name,
