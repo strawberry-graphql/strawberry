@@ -756,7 +756,9 @@ class CustomDataclassTransformer:
             if MypyVersion.VERSION >= Decimal("0.800"):
                 params["info"] = cls.info
             if MypyVersion.VERSION >= Decimal("0.920"):
-                params["kw_only"] = True
+                # TODO: update this when we understand why it triggers
+                # other python errors
+                params["kw_only"] = False
 
             attribute = DataclassAttribute(**params)  # type: ignore
             attrs.append(attribute)
