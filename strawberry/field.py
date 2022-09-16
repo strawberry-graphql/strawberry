@@ -26,7 +26,6 @@ from strawberry.exceptions import InvalidDefaultFactoryError, InvalidFieldArgume
 from strawberry.type import StrawberryType, StrawberryTypeVar
 from strawberry.types.info import Info
 from strawberry.union import StrawberryUnion
-from strawberry.unset import UNSET
 from strawberry.utils.cached_property import cached_property
 
 from .permission import BasePermission
@@ -64,7 +63,7 @@ class StrawberryField(dataclasses.Field):
         description: Optional[str] = None,
         base_resolver: Optional[StrawberryResolver] = None,
         permission_classes: List[Type[BasePermission]] = (),  # type: ignore
-        default: object = UNSET,
+        default: object = dataclasses.MISSING,
         default_factory: Union[Callable[[], Any], object] = dataclasses.MISSING,
         deprecation_reason: Optional[str] = None,
         directives: Sequence[object] = (),

@@ -1,4 +1,5 @@
 import base64
+import dataclasses
 import re
 import sys
 from enum import Enum
@@ -793,11 +794,9 @@ def test_can_convert_input_types_to_pydantic_default_values_defaults_declared_fi
     assert definition.name == "UserInput"
 
     [
-        age_field,
         password_field,
-    ] = (
-        definition.fields
-    )  # fields without a default go first, so the order gets reverse
+        age_field,
+    ] = definition.fields
 
     assert age_field.python_name == "age"
     assert age_field.type is int
@@ -853,7 +852,7 @@ def test_sort_creation_fields():
             python_name="has_default",
             graphql_name="has_default",
             default="default_str",
-            default_factory=UNSET,
+            default_factory=dataclasses.MISSING,
             type_annotation=str,
             description="description",
         ),
@@ -864,7 +863,7 @@ def test_sort_creation_fields():
         field=StrawberryField(
             python_name="has_default_factory",
             graphql_name="has_default_factory",
-            default=UNSET,
+            default=dataclasses.MISSING,
             default_factory=lambda: "default_factory_str",
             type_annotation=str,
             description="description",
@@ -876,8 +875,8 @@ def test_sort_creation_fields():
         field=StrawberryField(
             python_name="no_defaults",
             graphql_name="no_defaults",
-            default=UNSET,
-            default_factory=UNSET,
+            default=dataclasses.MISSING,
+            default_factory=dataclasses.MISSING,
             type_annotation=str,
             description="description",
         ),
@@ -933,6 +932,25 @@ def test_get_default_factory_for_field():
         match=("Not allowed to specify both default and default_factory."),
     ):
         get_default_factory_for_field(field)
+
+
+def test_get_default_factory_for_field_missing():
+    def _get_field(
+        default: Any = dataclasses.MISSING, default_factory: Any = dataclasses.MISSING
+    ) -> ModelField:
+        return ModelField(
+            name="a",
+            type_=str,
+            class_validators={},
+            model_config=BaseConfig,
+            default=default,
+            default_factory=default_factory,
+        )
+
+    # should return UNSET when both defaults are UNSET
+    field = _get_field()
+
+    assert get_default_factory_for_field(field) is UNSET
 
 
 def test_convert_input_types_to_pydantic_default_and_default_factory():

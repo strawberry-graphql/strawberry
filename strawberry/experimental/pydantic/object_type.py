@@ -36,7 +36,6 @@ from strawberry.experimental.pydantic.utils import (
 from strawberry.field import StrawberryField
 from strawberry.object_type import _process_type, _wrap_dataclass
 from strawberry.types.type_resolver import _get_fields
-from strawberry.unset import UNSET
 
 
 def get_type_for_field(field: ModelField, is_input: bool):
@@ -80,7 +79,7 @@ def _build_dataclass_creation_fields(
             python_name=field.name,
             graphql_name=graphql_name,
             # always unset because we use default_factory instead
-            default=UNSET,
+            default=dataclasses.MISSING,
             default_factory=get_default_factory_for_field(field),
             type_annotation=type_annotation,
             description=field.field_info.description,

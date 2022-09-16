@@ -88,8 +88,13 @@ def get_default_factory_for_field(
 
     Returns optionally a NoArgAnyCallable representing a default_factory parameter
     """
-    default_factory = field.default_factory
-    default = field.default
+    # replace dataclasses.MISSING with our own UNSET to make comparisons easier
+    default_factory = (
+        field.default_factory
+        if field.default_factory is not dataclasses.MISSING
+        else UNSET
+    )
+    default = field.default if field.default is not dataclasses.MISSING else UNSET
 
     has_factory = default_factory is not None and default_factory is not UNSET
     has_default = default is not None and default is not UNSET

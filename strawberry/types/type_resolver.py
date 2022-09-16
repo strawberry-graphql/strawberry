@@ -11,8 +11,6 @@ from strawberry.exceptions import (
 from strawberry.field import StrawberryField
 from strawberry.private import is_private
 
-from ..unset import UNSET
-
 
 def _get_fields(cls: Type) -> List[StrawberryField]:
     """Get all the strawberry fields off a strawberry.type cls
@@ -142,7 +140,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
                     namespace=module.__dict__,
                 ),
                 origin=origin,
-                default=getattr(cls, field.name, UNSET),
+                default=getattr(cls, field.name, dataclasses.MISSING),
             )
 
         field_name = field.python_name
