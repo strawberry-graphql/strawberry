@@ -3,6 +3,7 @@ import sys
 from typing import Dict, List, Type
 
 from strawberry.annotation import StrawberryAnnotation
+from strawberry.arguments import UNSET
 from strawberry.exceptions import (
     FieldWithResolverAndDefaultFactoryError,
     FieldWithResolverAndDefaultValueError,
@@ -85,6 +86,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
             # Check that default is not set if a resolver is defined
             if (
                 field.default is not dataclasses.MISSING
+                and field.default is not UNSET
                 and field.base_resolver is not None
             ):
                 raise FieldWithResolverAndDefaultValueError(
@@ -94,8 +96,10 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
             # Check that default_factory is not set if a resolver is defined
             # Note: using getattr because of this issue:
             # https://github.com/python/mypy/issues/6910
+            default_factory = getattr(field, "default_factory", None)
             if (
-                getattr(field, "default_factory") is not dataclasses.MISSING  # noqa
+                default_factory is not dataclasses.MISSING
+                and default_factory is not UNSET
                 and field.base_resolver is not None
             ):
                 raise FieldWithResolverAndDefaultFactoryError(

@@ -243,7 +243,7 @@ class GraphQLCoreConverter:
         field_type = cast(GraphQLInputType, self.from_maybe_optional(field.type))
         default_value: object
 
-        if field.default_value is UNSET:
+        if field.default_value is UNSET or field.default_value is dataclasses.MISSING:
             default_value = Undefined
         else:
             default_value = field.default_value
