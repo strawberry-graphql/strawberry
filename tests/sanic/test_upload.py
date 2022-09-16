@@ -77,12 +77,12 @@ END = "------sanic--"
 
 
 def test_single_file_upload(sanic_client):
-    data = OPERATIONS_FIELD + MAP_FIELD + TEXT_FILE_FIELD + END
+    content = OPERATIONS_FIELD + MAP_FIELD + TEXT_FILE_FIELD + END
     headers = {"content-type": "multipart/form-data; boundary=----sanic"}
 
     request, response = sanic_client.test_client.post(
         "/graphql",
-        data=data,
+        content=content,
         headers=headers,
     )
 
@@ -92,7 +92,7 @@ def test_single_file_upload(sanic_client):
 
 
 def test_file_list_upload(sanic_client):
-    data = (
+    content = (
         MULTI_UPLOAD_OPERATIONS_FIELD
         + MULTI_UPLOAD_MAP_FIELD
         + MULTI_UPLOAD_TEXT_FILE1_FIELD
@@ -103,7 +103,7 @@ def test_file_list_upload(sanic_client):
 
     request, response = sanic_client.test_client.post(
         "/graphql",
-        data=data,
+        content=content,
         headers=headers,
     )
 
@@ -116,7 +116,7 @@ def test_file_list_upload(sanic_client):
 
 
 def test_nested_file_list(sanic_client):
-    data = (
+    content = (
         COMPLEX_UPLOAD_OPERATIONS_FIELD
         + COMPLEX_UPLOAD_MAP_FIELD
         + MULTI_UPLOAD_TEXT_FILE1_FIELD
@@ -127,7 +127,7 @@ def test_nested_file_list(sanic_client):
 
     request, response = sanic_client.test_client.post(
         "/graphql",
-        data=data,
+        content=content,
         headers=headers,
     )
 
@@ -147,12 +147,12 @@ def test_extra_form_data_fields_are_ignored(sanic_client):
         "{}\r\n"
     )
 
-    data = OPERATIONS_FIELD + MAP_FIELD + TEXT_FILE_FIELD + extra_field + END
+    content = OPERATIONS_FIELD + MAP_FIELD + TEXT_FILE_FIELD + extra_field + END
     headers = {"content-type": "multipart/form-data; boundary=----sanic"}
 
     request, response = sanic_client.test_client.post(
         "/graphql",
-        data=data,
+        content=content,
         headers=headers,
     )
 
@@ -182,12 +182,12 @@ def test_malformed_query(sanic_client):
         "}\r\n"
     )
 
-    data = operations_field + MAP_FIELD + TEXT_FILE_FIELD + END
+    content = operations_field + MAP_FIELD + TEXT_FILE_FIELD + END
     headers = {"content-type": "multipart/form-data; boundary=----sanic"}
 
     request, response = sanic_client.test_client.post(
         "/graphql",
-        data=data,
+        content=content,
         headers=headers,
     )
 
@@ -203,12 +203,12 @@ def test_sending_invalid_json_body(sanic_client):
         "}\r\n"
     )
 
-    data = operations_field + MAP_FIELD + TEXT_FILE_FIELD + END
+    content = operations_field + MAP_FIELD + TEXT_FILE_FIELD + END
     headers = {"content-type": "multipart/form-data; boundary=----sanic"}
 
     request, response = sanic_client.test_client.post(
         "/graphql",
-        data=data,
+        content=content,
         headers=headers,
     )
 
@@ -217,12 +217,12 @@ def test_sending_invalid_json_body(sanic_client):
 
 
 def test_upload_with_missing_file(sanic_client):
-    data = OPERATIONS_FIELD + MAP_FIELD + END
+    content = OPERATIONS_FIELD + MAP_FIELD + END
     headers = {"content-type": "multipart/form-data; boundary=----sanic"}
 
     request, response = sanic_client.test_client.post(
         "/graphql",
-        data=data,
+        data=content,
         headers=headers,
     )
 
