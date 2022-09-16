@@ -1,6 +1,20 @@
 CHANGELOG
 =========
 
+0.131.1 - 2022-09-16
+--------------------
+
+Fix warnings during unit tests for Sanic's upload.
+
+Otherwise running unit tests results in a bunch of warning like this:
+
+```
+DeprecationWarning: Use 'content=<...>' to upload raw bytes/text content.
+```
+
+Contributed by [Paulo Costa](https://github.com/paulo-raca) via [PR #2178](https://github.com/strawberry-graphql/strawberry/pull/2178/)
+
+
 0.131.0 - 2022-09-15
 --------------------
 
