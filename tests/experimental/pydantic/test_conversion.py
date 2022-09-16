@@ -16,15 +16,9 @@ from strawberry.experimental.pydantic.exceptions import (
     AutoFieldsNotInBaseModelError,
     BothDefaultAndDefaultFactoryDefinedError,
 )
-from strawberry.experimental.pydantic.utils import (
-    DataclassCreationFields,
-    get_default_factory_for_field,
-    sort_creation_fields,
-)
-from strawberry.field import StrawberryField
+from strawberry.experimental.pydantic.utils import get_default_factory_for_field
 from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.types.types import TypeDefinition
-from strawberry.unset import UNSET
 
 
 def test_can_use_type_standalone():
@@ -844,54 +838,10 @@ def test_can_convert_pydantic_type_to_strawberry_newtype_list():
     assert user.passwords == ["hunter2"]
 
 
-def test_sort_creation_fields():
-    has_default = DataclassCreationFields(
-        name="has_default",
-        type_annotation=str,
-        field=StrawberryField(
-            python_name="has_default",
-            graphql_name="has_default",
-            default="default_str",
-            default_factory=dataclasses.MISSING,
-            type_annotation=str,
-            description="description",
-        ),
-    )
-    has_default_factory = DataclassCreationFields(
-        name="has_default_factory",
-        type_annotation=str,
-        field=StrawberryField(
-            python_name="has_default_factory",
-            graphql_name="has_default_factory",
-            default=dataclasses.MISSING,
-            default_factory=lambda: "default_factory_str",
-            type_annotation=str,
-            description="description",
-        ),
-    )
-    no_defaults = DataclassCreationFields(
-        name="no_defaults",
-        type_annotation=str,
-        field=StrawberryField(
-            python_name="no_defaults",
-            graphql_name="no_defaults",
-            default=dataclasses.MISSING,
-            default_factory=dataclasses.MISSING,
-            type_annotation=str,
-            description="description",
-        ),
-    )
-    fields = [has_default, has_default_factory, no_defaults]
-    # should place items with defaults last
-    assert sort_creation_fields(fields) == [
-        no_defaults,
-        has_default,
-        has_default_factory,
-    ]
-
-
 def test_get_default_factory_for_field():
-    def _get_field(default: Any = UNSET, default_factory: Any = UNSET) -> ModelField:
+    def _get_field(
+        default: Any = dataclasses.MISSING, default_factory: Any = dataclasses.MISSING
+    ) -> ModelField:
         return ModelField(
             name="a",
             type_=str,
@@ -901,10 +851,9 @@ def test_get_default_factory_for_field():
             default_factory=default_factory,
         )
 
-    # should return UNSET when both defaults are UNSET
     field = _get_field()
 
-    assert get_default_factory_for_field(field) is UNSET
+    assert get_default_factory_for_field(field) is dataclasses.MISSING
 
     def factory_func():
         return "strawberry"
@@ -932,25 +881,6 @@ def test_get_default_factory_for_field():
         match=("Not allowed to specify both default and default_factory."),
     ):
         get_default_factory_for_field(field)
-
-
-def test_get_default_factory_for_field_missing():
-    def _get_field(
-        default: Any = dataclasses.MISSING, default_factory: Any = dataclasses.MISSING
-    ) -> ModelField:
-        return ModelField(
-            name="a",
-            type_=str,
-            class_validators={},
-            model_config=BaseConfig,
-            default=default,
-            default_factory=default_factory,
-        )
-
-    # should return UNSET when both defaults are UNSET
-    field = _get_field()
-
-    assert get_default_factory_for_field(field) is UNSET
 
 
 def test_convert_input_types_to_pydantic_default_and_default_factory():

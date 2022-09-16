@@ -359,10 +359,8 @@ def test_type_with_fields_mutable_default():
 
     [groups_field, friends_field] = definition.fields
 
-    # TODO: restore
-
-    # assert groups_field.default is dataclasses.MISSING
-    # assert groups_field.default_factory is dataclasses.MISSING
+    assert groups_field.default is dataclasses.MISSING
+    assert groups_field.default_factory is dataclasses.MISSING
     assert friends_field.default is dataclasses.MISSING
 
     # check that we really made a copy
