@@ -1,5 +1,5 @@
 import dataclasses
-from enum import EnumMeta
+from enum import Enum, EnumMeta
 from typing import (
     Any,
     Callable,
@@ -9,6 +9,7 @@ from typing import (
     Optional,
     TypeVar,
     Union,
+    cast,
     overload,
 )
 
@@ -74,6 +75,10 @@ def enum_value(
 EnumType = TypeVar("EnumType", bound=EnumMeta)
 
 
+def _process_value(enum_value: EnumValue):
+    return (enum_value.name, enum_value.value)
+
+
 def _process_enum(
     cls: EnumType,
     name: Optional[str] = None,
@@ -89,6 +94,7 @@ def _process_enum(
     description = description
 
     values = []
+    needs_new_enum = False
     for item in cls:  # type: ignore
         item_value = item.value
         item_name = item.name
@@ -101,6 +107,7 @@ def _process_enum(
             enum_value_description = item_value.description
             deprecation_reason = item_value.deprecation_reason
             item_value = item_value.value
+            needs_new_enum = True
 
         value = EnumValue(
             item_name,
@@ -111,15 +118,28 @@ def _process_enum(
         )
         values.append(value)
 
-    cls._enum_definition = EnumDefinition(  # type: ignore
-        wrapped_cls=cls,
+    if needs_new_enum:
+        new_cls = cast(
+            EnumType,
+            Enum(
+                cls.__name__,
+                map(_process_value, values),
+                module=cls.__module__,
+                qualname=cls.__qualname__,
+            ),
+        )
+    else:
+        new_cls = cls
+
+    new_cls._enum_definition = EnumDefinition(  # type: ignore
+        wrapped_cls=new_cls,
         name=name,
         values=values,
         description=description,
         directives=directives,
     )
 
-    return cls
+    return new_cls
 
 
 @overload
