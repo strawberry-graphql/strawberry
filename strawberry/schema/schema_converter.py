@@ -81,11 +81,15 @@ class CustomGraphQLEnumType(GraphQLEnumType):
         return super().serialize(output_value)
 
     def parse_value(self, input_value: str) -> Any:
+        # return singleton enum value
+        # an enum value has only a reference to the first key with the value
         return self.wrapped_cls(super().parse_value(input_value))
 
     def parse_literal(
         self, value_node: ValueNode, _variables: Optional[Dict[str, Any]] = None
     ) -> Any:
+        # return singleton enum value
+        # an enum value has only a reference to the first key with the value
         return self.wrapped_cls(super().parse_literal(value_node, _variables))
 
 
