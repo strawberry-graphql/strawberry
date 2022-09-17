@@ -10,6 +10,7 @@ from typing import (
     Sequence,
     Type,
     TypeVar,
+    Union,
     cast,
     overload,
 )
@@ -172,7 +173,7 @@ def _process_type(
     return cls
 
 
-T = TypeVar("T")
+T = TypeVar("T", bound=Type)
 
 
 @overload
@@ -180,10 +181,10 @@ T = TypeVar("T")
 def type(
     cls: T,
     *,
-    name: str = None,
+    name: Optional[str] = None,
     is_input: bool = False,
     is_interface: bool = False,
-    description: str = None,
+    description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     extend: bool = False,
 ) -> T:
@@ -194,10 +195,10 @@ def type(
 @__dataclass_transform__(order_default=True, field_descriptors=(field, StrawberryField))
 def type(
     *,
-    name: str = None,
+    name: Optional[str] = None,
     is_input: bool = False,
     is_interface: bool = False,
-    description: str = None,
+    description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     extend: bool = False,
 ) -> Callable[[T], T]:
@@ -205,15 +206,15 @@ def type(
 
 
 def type(
-    cls=None,
+    cls: Optional[T] = None,
     *,
-    name=None,
-    is_input=False,
-    is_interface=False,
-    description=None,
-    directives=(),
-    extend=False,
-):
+    name: Optional[str] = None,
+    is_input: bool = False,
+    is_interface: bool = False,
+    description: Optional[str] = None,
+    directives: Optional[Sequence[object]] = (),
+    extend: bool = False,
+) -> Union[T, Callable[[T], T]]:
     """Annotates a class as a GraphQL type.
 
     Example usage:
@@ -255,8 +256,8 @@ def type(
 def input(
     cls: T,
     *,
-    name: str = None,
-    description: str = None,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
 ) -> T:
     ...
@@ -266,19 +267,19 @@ def input(
 @__dataclass_transform__(order_default=True, field_descriptors=(field, StrawberryField))
 def input(
     *,
-    name: str = None,
-    description: str = None,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
 ) -> Callable[[T], T]:
     ...
 
 
 def input(
-    cls=None,
+    cls: Optional[T] = None,
     *,
-    name=None,
-    description=None,
-    directives=(),
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    directives: Optional[Sequence[object]] = (),
 ):
     """Annotates a class as a GraphQL Input type.
     Example usage:
@@ -287,17 +288,44 @@ def input(
     >>>     field_abc: str = "ABC"
     """
 
-    return type(
-        cls, name=name, description=description, directives=directives, is_input=True
+    return type(  # type: ignore # not sure why mypy complains here
+        cls,
+        name=name,
+        description=description,
+        directives=directives,
+        is_input=True,
     )
+
+
+@overload
+@__dataclass_transform__(order_default=True, field_descriptors=(field, StrawberryField))
+def interface(
+    cls: T,
+    *,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    directives: Optional[Sequence[object]] = (),
+) -> T:
+    ...
+
+
+@overload
+@__dataclass_transform__(order_default=True, field_descriptors=(field, StrawberryField))
+def interface(
+    *,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    directives: Optional[Sequence[object]] = (),
+) -> Callable[[T], T]:
+    ...
 
 
 @__dataclass_transform__(order_default=True, field_descriptors=(field, StrawberryField))
 def interface(
-    cls: Type = None,
+    cls: Optional[T] = None,
     *,
-    name: str = None,
-    description: str = None,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
 ):
     """Annotates a class as a GraphQL Interface.
@@ -307,7 +335,7 @@ def interface(
     >>>     field_abc: str
     """
 
-    return type(
+    return type(  # type: ignore # not sure why mypy complains here
         cls,
         name=name,
         description=description,

@@ -1,6 +1,8 @@
 from enum import Enum
 from typing import List, Optional
 
+from typing_extensions import Annotated
+
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import StrawberryArgument, convert_arguments
@@ -86,6 +88,29 @@ class LaziestType:
 
 def test_lazy():
     LazierType = LazyType["LaziestType", __name__]
+
+    args = {
+        "lazyArg": {"something": True},
+    }
+
+    arguments = [
+        StrawberryArgument(
+            graphql_name="lazyArg",
+            python_name="lazy_arg",
+            type_annotation=StrawberryAnnotation(LazierType),
+        ),
+    ]
+
+    assert convert_arguments(
+        args,
+        arguments,
+        scalar_registry=DEFAULT_SCALAR_REGISTRY,
+        config=StrawberryConfig(),
+    ) == {"lazy_arg": LaziestType(something=True)}
+
+
+def test_annotated():
+    LazierType = Annotated["LaziestType", strawberry.lazy(__name__)]
 
     args = {
         "lazyArg": {"something": True},

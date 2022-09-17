@@ -1,6 +1,149 @@
 CHANGELOG
 =========
 
+0.131.1 - 2022-09-16
+--------------------
+
+Fix warnings during unit tests for Sanic's upload.
+
+Otherwise running unit tests results in a bunch of warning like this:
+
+```
+DeprecationWarning: Use 'content=<...>' to upload raw bytes/text content.
+```
+
+Contributed by [Paulo Costa](https://github.com/paulo-raca) via [PR #2178](https://github.com/strawberry-graphql/strawberry/pull/2178/)
+
+
+0.131.0 - 2022-09-15
+--------------------
+
+This release improves the dataloader class with new features:
+
+- Explicitly cache invalidation, prevents old data from being fetched after a mutation
+- Importing data into the cache, prevents unnecessary load calls if the data has already been fetched by other means.
+
+Contributed by [Paulo Costa](https://github.com/paulo-raca) via [PR #2149](https://github.com/strawberry-graphql/strawberry/pull/2149/)
+
+
+0.130.4 - 2022-09-14
+--------------------
+
+This release adds improved support for Pyright and Pylance, VSCode default
+language server for Python.
+
+Using `strawberry.type`, `strawberry.field`, `strawberry.input` and
+`strawberry.enum` will now be correctly recognized by Pyright and Pylance and
+won't show errors.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2172](https://github.com/strawberry-graphql/strawberry/pull/2172/)
+
+
+0.130.3 - 2022-09-12
+--------------------
+
+Fix invalid deprecation warning issued on arguments annotated
+by a subclassed `strawberry.types.Info`.
+
+Thanks to @ThirVondukr for the bug report!
+
+Example:
+
+```python
+class MyInfo(Info)
+    pass
+
+@strawberry.type
+class Query:
+
+    @strawberry.field
+    def is_tasty(self, info: MyInfo) -> bool:
+        """Subclassed ``info`` argument no longer raises deprecation warning."""
+```
+
+Contributed by [San Kilkis](https://github.com/skilkis) via [PR #2137](https://github.com/strawberry-graphql/strawberry/pull/2137/)
+
+
+0.130.2 - 2022-09-12
+--------------------
+
+This release fixes the conversion of generic aliases when
+using pydantic.
+
+Contributed by [Silas Sewell](https://github.com/silas) via [PR #2152](https://github.com/strawberry-graphql/strawberry/pull/2152/)
+
+
+0.130.1 - 2022-09-12
+--------------------
+
+Fix version parsing issue related to dev builds of Mypy in `strawberry.ext.mypy_plugin`
+
+Contributed by [San Kilkis](https://github.com/skilkis) via [PR #2157](https://github.com/strawberry-graphql/strawberry/pull/2157/)
+
+
+0.130.0 - 2022-09-12
+--------------------
+
+Convert Tuple and Sequence types to GraphQL list types.
+
+Example:
+
+```python
+from collections.abc import Sequence
+from typing import Tuple
+
+@strawberry.type
+class User:
+    pets: Sequence[Pet]
+    favourite_ice_cream_flavours: Tuple[IceCreamFlavour]
+```
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) via [PR #2164](https://github.com/strawberry-graphql/strawberry/pull/2164/)
+
+
+0.129.0 - 2022-09-11
+--------------------
+
+This release adds `strawberry.lazy` which allows you to define the type of the
+field and its path. This is useful when you want to define a field with a type
+that has a circular dependency.
+
+For example, let's say we have a `User` type that has a list of `Post` and a
+`Post` type that has a `User`:
+
+```python
+# posts.py
+from typing import TYPE_CHECKING, Annotated
+
+import strawberry
+
+if TYPE_CHECKING:
+    from .users import User
+
+@strawberry.type
+class Post:
+    title: str
+    author: Annotated["User", strawberry.lazy(".users")]
+```
+
+```python
+# users.py
+from typing import TYPE_CHECKING, Annotated, List
+
+import strawberry
+
+if TYPE_CHECKING:
+    from .posts import Post
+
+@strawberry.type
+class User:
+    name: str
+    posts: List[Annotated["Post", strawberry.lazy(".posts")]]
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2158](https://github.com/strawberry-graphql/strawberry/pull/2158/)
+
+
 0.128.0 - 2022-09-05
 --------------------
 

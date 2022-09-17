@@ -1,4 +1,14 @@
-from typing import TYPE_CHECKING, Callable, Iterable, Sequence, TypeVar, Union, overload
+from typing import (
+    TYPE_CHECKING,
+    Callable,
+    Iterable,
+    Optional,
+    Sequence,
+    Type,
+    TypeVar,
+    Union,
+    overload,
+)
 
 from strawberry.field import StrawberryField, field as base_field
 from strawberry.object_type import type as base_type
@@ -12,14 +22,14 @@ if TYPE_CHECKING:
     from .schema_directives import Key
 
 
-T = TypeVar("T")
+T = TypeVar("T", bound=Type)
 
 
 def _impl_type(
-    cls: T,
+    cls: Optional[T],
     *,
-    name: str = None,
-    description: str = None,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
     directives: Iterable[object] = (),
     keys: Iterable[Union["Key", str]] = (),
     extend: bool = False,
@@ -52,7 +62,7 @@ def _impl_type(
     if tags:
         directives.extend(Tag(name=tag) for tag in tags)
 
-    return base_type(
+    return base_type(  # type: ignore
         cls,
         name=name,
         description=description,
@@ -70,8 +80,8 @@ def _impl_type(
 def type(
     cls: T,
     *,
-    name: str = None,
-    description: str = None,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
     keys: Iterable[Union["Key", str]] = (),
     inaccessible: bool = UNSET,
     tags: Iterable[str] = (),
@@ -86,28 +96,29 @@ def type(
 )
 def type(
     *,
-    name: str = None,
-    description: str = None,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
     keys: Iterable[Union["Key", str]] = (),
     inaccessible: bool = UNSET,
     tags: Iterable[str] = (),
     extend: bool = False,
     shareable: bool = False,
+    directives: Iterable[object] = (),
 ) -> Callable[[T], T]:
     ...
 
 
 def type(
-    cls=None,
+    cls: Optional[T] = None,
     *,
-    name=None,
-    description=None,
-    directives: Iterable[object] = (),
+    name: Optional[str] = None,
+    description: Optional[str] = None,
     keys: Iterable[Union["Key", str]] = (),
-    extend=False,
-    shareable: bool = False,
     inaccessible: bool = UNSET,
     tags: Iterable[str] = (),
+    extend: bool = False,
+    shareable: bool = False,
+    directives: Iterable[object] = (),
 ):
     return _impl_type(
         cls,
@@ -129,8 +140,8 @@ def type(
 def input(
     cls: T,
     *,
-    name: str = None,
-    description: str = None,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
     directives: Sequence[object] = (),
     inaccessible: bool = UNSET,
     tags: Iterable[str] = (),
@@ -144,8 +155,8 @@ def input(
 )
 def input(
     *,
-    name: str = None,
-    description: str = None,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
     directives: Sequence[object] = (),
     inaccessible: bool = UNSET,
     tags: Iterable[str] = (),
@@ -154,13 +165,13 @@ def input(
 
 
 def input(
-    cls=None,
+    cls: Optional[T] = None,
     *,
-    name=None,
-    description=None,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    directives: Sequence[object] = (),
     inaccessible: bool = UNSET,
-    tags=(),
-    directives=(),
+    tags: Iterable[str] = (),
 ):
     return _impl_type(
         cls,
@@ -180,12 +191,12 @@ def input(
 def interface(
     cls: T,
     *,
-    name: str = None,
-    description: str = None,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
     keys: Iterable[Union["Key", str]] = (),
-    directives: Sequence[object] = (),
     inaccessible: bool = UNSET,
     tags: Iterable[str] = (),
+    directives: Iterable[object] = (),
 ) -> T:
     ...
 
@@ -196,25 +207,25 @@ def interface(
 )
 def interface(
     *,
-    name: str = None,
-    description: str = None,
-    directives: Sequence[object] = (),
+    name: Optional[str] = None,
+    description: Optional[str] = None,
     keys: Iterable[Union["Key", str]] = (),
     inaccessible: bool = UNSET,
     tags: Iterable[str] = (),
+    directives: Iterable[object] = (),
 ) -> Callable[[T], T]:
     ...
 
 
 def interface(
-    cls=None,
+    cls: Optional[T] = None,
     *,
-    name=None,
-    description=None,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    keys: Iterable[Union["Key", str]] = (),
     inaccessible: bool = UNSET,
     tags: Iterable[str] = (),
-    keys=(),
-    directives=(),
+    directives: Iterable[object] = (),
 ):
     return _impl_type(
         cls,

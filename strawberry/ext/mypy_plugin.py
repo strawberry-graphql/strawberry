@@ -1,3 +1,5 @@
+import re
+import warnings
 from decimal import Decimal
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union, cast
 
@@ -72,6 +74,9 @@ try:
     from pydantic.mypy import METADATA_KEY as PYDANTIC_METADATA_KEY, PydanticModelField
 except ImportError:
     PYDANTIC_METADATA_KEY = ""
+
+VERSION_RE = re.compile(r"(^0|^(?:[1-9][0-9]*))\.(0|(?:[1-9][0-9]*))")
+FALLBACK_VERSION = Decimal("0.800")
 
 
 class MypyVersion:
@@ -1007,7 +1012,13 @@ class StrawberryPlugin(Plugin):
 
 
 def plugin(version: str):
-    # Save the version to be used by the plugin.
-    MypyVersion.VERSION = Decimal(version)
+    match = VERSION_RE.match(version)
+    if match:
+        MypyVersion.VERSION = Decimal(".".join(match.groups()))
+    else:
+        MypyVersion.VERSION = FALLBACK_VERSION
+        warnings.warn(
+            f"Mypy version {version} could not be parsed. Reverting to v0.800"
+        )
 
     return StrawberryPlugin

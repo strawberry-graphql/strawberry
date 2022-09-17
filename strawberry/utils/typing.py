@@ -4,7 +4,7 @@ from typing import _GenericAlias  # type: ignore
 from typing import Any, Callable, ClassVar, Generic, Tuple, Type, TypeVar, Union
 
 
-def is_list(annotation: Type) -> bool:
+def is_list(annotation: object) -> bool:
     """Returns True if annotation is a List"""
 
     annotation_origin = getattr(annotation, "__origin__", None)
@@ -12,7 +12,7 @@ def is_list(annotation: Type) -> bool:
     return annotation_origin == list
 
 
-def is_union(annotation: Type) -> bool:
+def is_union(annotation: object) -> bool:
     """Returns True if annotation is a Union"""
 
     # this check is needed because unions declared with the new syntax `A | B`
