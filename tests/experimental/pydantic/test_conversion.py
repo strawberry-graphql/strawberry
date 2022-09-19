@@ -1,5 +1,6 @@
 import base64
 import re
+import sys
 from enum import Enum
 from typing import Any, Dict, List, NewType, Optional, Union, cast
 
@@ -20,7 +21,7 @@ from strawberry.experimental.pydantic.utils import (
     sort_creation_fields,
 )
 from strawberry.field import StrawberryField
-from strawberry.type import StrawberryOptional
+from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.types.types import TypeDefinition
 from strawberry.unset import UNSET
 
@@ -1190,3 +1191,59 @@ def test_raise_missing_arguments_to_pydantic():
         match=("1 validation error for User"),
     ):
         data.to_pydantic()
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 9),
+    reason="generic aliases where added in python 3.9",
+)
+def test_can_convert_generic_alias_fields_to_strawberry():
+    class TestModel(BaseModel):
+        list_1d: list[int]
+        list_2d: list[list[int]]
+
+    @strawberry.experimental.pydantic.type(TestModel)
+    class Test:
+        list_1d: strawberry.auto
+        list_2d: strawberry.auto
+
+    fields = Test._type_definition.fields
+    assert isinstance(fields[0].type, StrawberryList)
+    assert isinstance(fields[1].type, StrawberryList)
+
+    model = TestModel(
+        list_1d=[1, 2, 3],
+        list_2d=[[1, 2], [3]],
+    )
+    test = Test.from_pydantic(model)
+
+    assert test.list_1d == [1, 2, 3]
+    assert test.list_2d == [[1, 2], [3]]
+
+
+@pytest.mark.skipif(
+    sys.version_info < (3, 10),
+    reason="union type expressions were added in python 3.10",
+)
+def test_can_convert_optional_union_type_expression_fields_to_strawberry():
+    class TestModel(BaseModel):
+        optional_list: list[int] | None
+        optional_str: str | None
+
+    @strawberry.experimental.pydantic.type(TestModel)
+    class Test:
+        optional_list: strawberry.auto
+        optional_str: strawberry.auto
+
+    fields = Test._type_definition.fields
+    assert isinstance(fields[0].type, StrawberryOptional)
+    assert isinstance(fields[1].type, StrawberryOptional)
+
+    model = TestModel(
+        optional_list=[1, 2, 3],
+        optional_str=None,
+    )
+    test = Test.from_pydantic(model)
+
+    assert test.optional_list == [1, 2, 3]
+    assert test.optional_str is None

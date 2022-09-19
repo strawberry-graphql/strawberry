@@ -6,7 +6,8 @@ import textwrap
 from typing import Any, Dict, Optional, cast
 
 import docstring_parser
-from backports.cached_property import cached_property
+
+from strawberry.utils.cached_property import cached_property
 
 
 class Docstring:

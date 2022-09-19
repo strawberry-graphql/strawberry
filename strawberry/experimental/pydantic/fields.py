@@ -5,14 +5,21 @@ from uuid import UUID
 
 import pydantic
 from pydantic import BaseModel
-from pydantic.typing import is_new_type, new_type_supertype
-from typing_extensions import Literal
+from pydantic.typing import get_args, get_origin, is_new_type, new_type_supertype
+from pydantic.utils import lenient_issubclass
 
 from strawberry.experimental.pydantic.exceptions import (
     UnregisteredTypeException,
     UnsupportedTypeError,
 )
 from strawberry.types.types import TypeDefinition
+
+
+try:
+    from typing import GenericAlias as TypingGenericAlias  # type: ignore
+except ImportError:
+    # python < 3.9 does not have GenericAlias (list[int], tuple[str, ...] and so on)
+    TypingGenericAlias = ()
 
 
 ATTR_TO_TYPE_MAP = {
@@ -68,13 +75,12 @@ FIELDS_MAP = {
 
 
 def get_basic_type(type_) -> Type[Any]:
-    if isinstance(type_, type):
-        if issubclass(type_, pydantic.ConstrainedInt):
-            return int
-        if issubclass(type_, pydantic.ConstrainedStr):
-            return str
-        if issubclass(type_, pydantic.ConstrainedList):
-            return List[get_basic_type(type_.item_type)]  # type: ignore
+    if lenient_issubclass(type_, pydantic.ConstrainedInt):
+        return int
+    if lenient_issubclass(type_, pydantic.ConstrainedStr):
+        return str
+    if lenient_issubclass(type_, pydantic.ConstrainedList):
+        return List[get_basic_type(type_.item_type)]  # type: ignore
 
     if type_ in FIELDS_MAP:
         type_ = FIELDS_MAP.get(type_)
@@ -89,15 +95,12 @@ def get_basic_type(type_) -> Type[Any]:
 
 
 def replace_pydantic_types(type_: Any, is_input: bool):
-    # NewType is a function <= python 3.9. Therefore isinstance guard is needed otherwise
-    # to ignore NewType instances. Otherwise, issubclass will except
-    if isinstance(type_, type):
-        if issubclass(type_, BaseModel):
-            attr = "_strawberry_input_type" if is_input else "_strawberry_type"
-            if hasattr(type_, attr):
-                return getattr(type_, attr)
-            else:
-                raise UnregisteredTypeException(type_)
+    if lenient_issubclass(type_, BaseModel):
+        attr = "_strawberry_input_type" if is_input else "_strawberry_type"
+        if hasattr(type_, attr):
+            return getattr(type_, attr)
+        else:
+            raise UnregisteredTypeException(type_)
     return type_
 
 
@@ -106,24 +109,26 @@ def replace_types_recursively(type_: Any, is_input: bool) -> Any:
     basic_type = get_basic_type(type_)
     replaced_type = replace_pydantic_types(basic_type, is_input)
 
-    origin = getattr(type_, "__origin__", None)
-    if origin is Literal:
-        # Literal does not have types in its __args__ so we return early
+    origin = get_origin(type_)
+    if not origin or not hasattr(type_, "__args__"):
         return replaced_type
-    if hasattr(replaced_type, "__args__"):
-        replaced_type = replaced_type.copy_with(
-            tuple(
-                replace_types_recursively(t, is_input=is_input)
-                for t in replaced_type.__args__
-            )
+
+    converted = tuple(
+        replace_types_recursively(t, is_input=is_input) for t in get_args(replaced_type)
+    )
+
+    if isinstance(replaced_type, TypingGenericAlias):
+        return TypingGenericAlias(origin, converted)
+
+    replaced_type = replaced_type.copy_with(converted)
+
+    if isinstance(replaced_type, TypeDefinition):
+        # TODO: Not sure if this is necessary. No coverage in tests
+        # TODO: Unnecessary with StrawberryObject
+        replaced_type = builtins.type(
+            replaced_type.name,
+            (),
+            {"_type_definition": replaced_type},
         )
-        if isinstance(replaced_type, TypeDefinition):
-            # TODO: Not sure if this is necessary. No coverage in tests
-            # TODO: Unnecessary with StrawberryObject
-            replaced_type = builtins.type(
-                replaced_type.name,
-                (),
-                {"_type_definition": replaced_type},
-            )
 
     return replaced_type

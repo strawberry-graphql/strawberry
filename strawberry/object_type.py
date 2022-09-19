@@ -1,7 +1,19 @@
 import dataclasses
 import inspect
+import sys
 import types
-from typing import Callable, List, Optional, Sequence, Type, TypeVar, cast, overload
+from typing import (
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+    overload,
+)
 
 from strawberry.description_sources import DescriptionSources
 
@@ -13,6 +25,7 @@ from .exceptions import (
 from .field import StrawberryField, field
 from .types.type_resolver import _get_fields
 from .types.types import TypeDefinition
+from .utils.dataclasses import add_custom_init_fn
 from .utils.docstrings import Docstring
 from .utils.str_converters import to_camel_case
 from .utils.typing import __dataclass_transform__
@@ -91,7 +104,21 @@ def _wrap_dataclass(cls: Type):
     # Ensure all Fields have been properly type-annotated
     _check_field_annotations(cls)
 
-    return dataclasses.dataclass(cls)
+    dclass_kwargs: Dict[str, bool] = {}
+
+    # Python 3.10 introduces the kw_only param. If we're on an older version
+    # then generate our own custom init function
+    if sys.version_info >= (3, 10):
+        dclass_kwargs["kw_only"] = True
+    else:
+        dclass_kwargs["init"] = False
+
+    dclass = dataclasses.dataclass(cls, **dclass_kwargs)
+
+    if sys.version_info < (3, 10):
+        add_custom_init_fn(dclass)
+
+    return dclass
 
 
 def _process_type(
@@ -151,7 +178,7 @@ def _process_type(
     return cls
 
 
-T = TypeVar("T")
+T = TypeVar("T", bound=Type)
 
 
 @overload
@@ -159,11 +186,11 @@ T = TypeVar("T")
 def type(
     cls: T,
     *,
-    name: str = None,
+    name: Optional[str] = None,
     is_input: bool = False,
     is_interface: bool = False,
     description_sources: Optional[DescriptionSources] = None,
-    description: str = None,
+    description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     extend: bool = False,
 ) -> T:
@@ -174,11 +201,11 @@ def type(
 @__dataclass_transform__(order_default=True, field_descriptors=(field, StrawberryField))
 def type(
     *,
-    name: str = None,
+    name: Optional[str] = None,
     is_input: bool = False,
     is_interface: bool = False,
     description_sources: Optional[DescriptionSources] = None,
-    description: str = None,
+    description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     extend: bool = False,
 ) -> Callable[[T], T]:
@@ -186,16 +213,16 @@ def type(
 
 
 def type(
-    cls=None,
+    cls: Optional[T] = None,
     *,
-    name=None,
-    is_input=False,
-    is_interface=False,
-    description_sources=None,
-    description=None,
-    directives=(),
-    extend=False,
-):
+    name: Optional[str] = None,
+    is_input: bool = False,
+    is_interface: bool = False,
+    description_sources: Optional[DescriptionSources] = None,
+    description: Optional[str] = None,
+    directives: Optional[Sequence[object]] = (),
+    extend: bool = False,
+) -> Union[T, Callable[[T], T]]:
     """Annotates a class as a GraphQL type.
 
     Example usage:
@@ -240,8 +267,8 @@ def type(
 def input(
     cls: T,
     *,
-    name: str = None,
-    description: str = None,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
 ) -> T:
     ...
@@ -251,20 +278,20 @@ def input(
 @__dataclass_transform__(order_default=True, field_descriptors=(field, StrawberryField))
 def input(
     *,
-    name: str = None,
-    description: str = None,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
 ) -> Callable[[T], T]:
     ...
 
 
 def input(
-    cls=None,
+    cls: Optional[T] = None,
     *,
-    name=None,
+    name: Optional[str] = None,
     description_sources: Optional[DescriptionSources] = None,
-    description=None,
-    directives=(),
+    description: Optional[str] = None,
+    directives: Optional[Sequence[object]] = (),
 ):
     """Annotates a class as a GraphQL Input type.
     Example usage:
@@ -273,7 +300,7 @@ def input(
     >>>     field_abc: str = "ABC"
     """
 
-    return type(
+    return type(  # type: ignore # not sure why mypy complains here
         cls,
         name=name,
         description_sources=description_sources,
@@ -283,13 +310,36 @@ def input(
     )
 
 
+@overload
 @__dataclass_transform__(order_default=True, field_descriptors=(field, StrawberryField))
 def interface(
-    cls: Type = None,
+    cls: T,
     *,
-    name: str = None,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    directives: Optional[Sequence[object]] = (),
+) -> T:
+    ...
+
+
+@overload
+@__dataclass_transform__(order_default=True, field_descriptors=(field, StrawberryField))
+def interface(
+    *,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    directives: Optional[Sequence[object]] = (),
+) -> Callable[[T], T]:
+    ...
+
+
+@__dataclass_transform__(order_default=True, field_descriptors=(field, StrawberryField))
+def interface(
+    cls: Optional[T] = None,
+    *,
+    name: Optional[str] = None,
     description_sources: Optional[DescriptionSources] = None,
-    description: str = None,
+    description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
 ):
     """Annotates a class as a GraphQL Interface.
@@ -299,7 +349,7 @@ def interface(
     >>>     field_abc: str
     """
 
-    return type(
+    return type(  # type: ignore # not sure why mypy complains here
         cls,
         name=name,
         description_sources=description_sources,

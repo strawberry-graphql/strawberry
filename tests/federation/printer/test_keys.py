@@ -14,7 +14,7 @@ def test_keys_federation_1():
     class User:
         username: str
 
-    @strawberry.federation.type(keys=[Key("upc", True)], extend=True)
+    @strawberry.federation.type(keys=[Key(fields="upc", resolvable=True)], extend=True)
     class Product:
         upc: str = strawberry.federation.field(external=True)
         reviews: List["Review"]
@@ -76,7 +76,7 @@ def test_keys_federation_2():
     class User:
         username: str
 
-    @strawberry.federation.type(keys=[Key("upc", True)], extend=True)
+    @strawberry.federation.type(keys=[Key(fields="upc", resolvable=True)], extend=True)
     class Product:
         upc: str = strawberry.federation.field(external=True)
         reviews: List["Review"]

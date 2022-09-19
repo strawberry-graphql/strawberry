@@ -29,7 +29,7 @@ class SchemaDirective:
         name2: name2 docstring
     """
 
-    name1: Annotated[str, strawberry.argument(description="name1 description")]
+    name1: str = strawberry.field(description="name1 description")
     """ name1 attribute docstring """
 
     name2: str = strawberry.field(description="name2 description")

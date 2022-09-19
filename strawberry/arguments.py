@@ -21,7 +21,7 @@ from strawberry.annotation import StrawberryAnnotation
 from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.description_sources import DescriptionSources
 from strawberry.enum import EnumDefinition
-from strawberry.lazy_type import LazyType
+from strawberry.lazy_type import LazyType, StrawberryLazyReference
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
 
 from .exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError
@@ -100,6 +100,7 @@ class StrawberryArgument:
         # in the other Annotated args, raising an exception if there
         # are multiple StrawberryArgumentAnnotations
         argument_annotation_seen = False
+
         for arg in annotated_args[1:]:
             if isinstance(arg, StrawberryArgumentAnnotation):
                 if argument_annotation_seen:
@@ -114,6 +115,11 @@ class StrawberryArgument:
                 self.graphql_name = arg.name
                 self.deprecation_reason = arg.deprecation_reason
                 self.directives = arg.directives
+
+            if isinstance(arg, StrawberryLazyReference):
+                self.type_annotation = StrawberryAnnotation(
+                    arg.resolve_forward_ref(annotated_args[0])
+                )
 
 
 def convert_argument(

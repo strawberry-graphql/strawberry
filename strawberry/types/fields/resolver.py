@@ -20,9 +20,9 @@ from typing import (  # type: ignore[attr-defined]
     TypeVar,
     Union,
     _eval_type,
+    cast,
 )
 
-from backports.cached_property import cached_property
 from typing_extensions import Annotated, Protocol, get_args, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
@@ -30,6 +30,7 @@ from strawberry.arguments import StrawberryArgument
 from strawberry.exceptions import MissingArgumentsAnnotationsError
 from strawberry.type import StrawberryType
 from strawberry.types.info import Info
+from strawberry.utils.cached_property import cached_property
 
 
 class Parameter(inspect.Parameter):
@@ -129,12 +130,17 @@ class ReservedType(NamedTuple):
             return None
 
     def is_reserved_type(self, other: Type) -> bool:
-        if get_origin(other) is Annotated:
+        origin = cast(type, get_origin(other)) or other
+        if origin is Annotated:
             # Handle annotated arguments such as Private[str] and DirectiveValue[str]
             return any(isinstance(argument, self.type) for argument in get_args(other))
         else:
             # Handle both concrete and generic types (i.e Info, and Info[Any, Any])
-            return other is self.type or get_origin(other) is self.type
+            return (
+                issubclass(origin, self.type)
+                if isinstance(origin, type)
+                else origin is self.type
+            )
 
 
 SELF_PARAMSPEC = ReservedNameBoundParameter("self")

@@ -97,7 +97,7 @@ def scalar(
         directives.append(Inaccessible())
 
     if tags:
-        directives.extend(Tag(tag) for tag in tags)
+        directives.extend(Tag(name=tag) for tag in tags)
 
     def wrap(cls):
         return _process_scalar(

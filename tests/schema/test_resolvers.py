@@ -361,7 +361,7 @@ def test_typed_resolver_factory():
 
     def resolver_factory(strawberry_type: Type[T]):
         def resolver() -> T:
-            return strawberry_type(1)
+            return strawberry_type(some=1)
 
         return resolver
 
