@@ -2,12 +2,12 @@ import hashlib
 from inspect import isawaitable
 from typing import Optional
 
-from backports.cached_property import cached_property
 from ddtrace import tracer
 
 from strawberry.extensions import Extension
 from strawberry.extensions.tracing.utils import should_skip_tracing
 from strawberry.types.execution import ExecutionContext
+from strawberry.utils.cached_property import cached_property
 
 
 class DatadogTracingExtension(Extension):

@@ -7,6 +7,7 @@ from typing import (
     TYPE_CHECKING,
     Any,
     Dict,
+    ForwardRef,
     Iterable,
     List,
     Mapping,
@@ -18,7 +19,7 @@ from typing import (
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.enum import EnumDefinition
-from strawberry.lazy_type import LazyType
+from strawberry.lazy_type import LazyType, StrawberryLazyReference
 from strawberry.type import (
     StrawberryAnnotated,
     StrawberryList,
@@ -85,14 +86,16 @@ class StrawberryArgument:
         return self.type_annotation.resolve()
 
     def _parse_annotated(self):
+        base_type, annotated_args = StrawberryAnnotated.get_type_and_args(
+            self.type_annotation.annotation
+        )
+
         # Find any instances of StrawberryArgumentAnnotation
         # in the other Annotated args, raising an exception if there
         # are multiple StrawberryArgumentAnnotations
         argument_annotation_seen = False
 
-        for arg in StrawberryAnnotated.get_type_and_args(
-            self.type_annotation.annotation
-        )[1]:
+        for arg in annotated_args:
             if isinstance(arg, StrawberryArgumentAnnotation):
                 if argument_annotation_seen:
                     raise MultipleStrawberryArgumentsError(
@@ -105,6 +108,18 @@ class StrawberryArgument:
                 self.graphql_name = arg.name
                 self.deprecation_reason = arg.deprecation_reason
                 self.directives = arg.directives
+
+            if isinstance(arg, StrawberryLazyReference):
+                assert isinstance(base_type, ForwardRef)
+                lazy_type = arg.resolve_forward_ref(base_type)
+                annotated_args = [
+                    arg
+                    for arg in annotated_args
+                    if not isinstance(arg, StrawberryLazyReference)
+                ]
+                self.type_annotation = StrawberryAnnotation(
+                    StrawberryAnnotated(lazy_type, *annotated_args)
+                )
 
 
 def convert_argument(

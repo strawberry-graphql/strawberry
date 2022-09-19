@@ -179,8 +179,7 @@ class GraphQLCoreConverter:
             },
         )
 
-    def from_schema_directive(self, directive: Any) -> GraphQLDirective:
-        cls = directive.__class__
+    def from_schema_directive(self, cls: Type) -> GraphQLDirective:
         strawberry_directive = cast(
             StrawberrySchemaDirective, cls.__strawberry_directive__
         )

@@ -1,9 +1,13 @@
+import warnings
 from enum import Enum
-from typing import List, Optional, TypeVar
+from typing import Any, List, Optional, TypeVar
+
+import pytest
 
 from typing_extensions import Annotated
 
 import strawberry
+from strawberry.types.info import Info
 
 
 def test_enum():
@@ -95,6 +99,55 @@ def test_type_var():
 
     argument = set_value.arguments[0]
     assert argument.type == T
+
+
+ContextType = TypeVar("ContextType")
+RootValueType = TypeVar("RootValueType")
+
+
+class CustomInfo(Info[ContextType, RootValueType]):
+    """Subclassed Info type used to test dependency injection."""
+
+
+@pytest.mark.parametrize(
+    "annotation",
+    [CustomInfo, CustomInfo[Any, Any], Info, Info[Any, Any]],
+)
+def test_custom_info(annotation):
+    """Test to ensure that subclassed Info does not raise warning."""
+    with warnings.catch_warnings():
+        warnings.filterwarnings("error")
+
+        def get_info(info) -> bool:
+            _ = info
+            return True
+
+        get_info.__annotations__["info"] = annotation
+        get_info_field = strawberry.field(get_info)
+
+        assert not get_info_field.arguments  # Should have no arguments matched
+
+        info_parameter = get_info_field.base_resolver.info_parameter
+        assert info_parameter is not None
+        assert info_parameter.name == "info"
+
+
+def test_custom_info_negative():
+    """Test to ensure deprecation warning is emitted."""
+    with pytest.warns(
+        DeprecationWarning, match=r"Argument name-based matching of 'info'"
+    ):
+
+        @strawberry.field
+        def get_info(info) -> bool:
+            _ = info
+            return True
+
+        assert not get_info.arguments  # Should have no arguments matched
+
+        info_parameter = get_info.base_resolver.info_parameter
+        assert info_parameter is not None
+        assert info_parameter.name == "info"
 
 
 def test_type_equals_hash_repr():

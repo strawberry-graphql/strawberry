@@ -1,7 +1,17 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Any, List, Mapping, Tuple, TypeVar, Union, cast
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    List,
+    Mapping,
+    Sequence,
+    Tuple,
+    TypeVar,
+    Union,
+    cast,
+)
 
 from typing_extensions import Annotated, get_args, get_origin
 
@@ -144,7 +154,7 @@ class StrawberryAnnotated(StrawberryContainer):
     @staticmethod
     def get_type_and_args(
         type_: Union[StrawberryType, type, T]
-    ) -> Tuple[Union[StrawberryType, type, T], Tuple[Any, ...]]:
+    ) -> Tuple[Union[StrawberryType, type, T], Sequence[Any]]:
         """
         Splits a possibly-annotated type in the actual type and the list of annotations
         Supports both StrawberryAnnotated and typing.Annotated

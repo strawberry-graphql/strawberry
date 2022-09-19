@@ -44,6 +44,7 @@ from graphql.utilities.print_schema import (
     print_type as original_print_type,
 )
 
+from strawberry.custom_scalar import ScalarWrapper
 from strawberry.enum import EnumDefinition
 from strawberry.field import StrawberryField
 from strawberry.schema.schema_converter import GraphQLCoreConverter
@@ -121,7 +122,7 @@ def print_schema_directive(
         StrawberrySchemaDirective, directive.__class__.__strawberry_directive__
     )
     schema_converter = schema.schema_converter
-    gql_directive = schema_converter.from_schema_directive(directive)
+    gql_directive = schema_converter.from_schema_directive(directive.__class__)
     params = print_schema_directive_params(
         gql_directive,
         {
@@ -532,12 +533,24 @@ def print_directive(
     )
 
 
+def is_builtin_directive(directive: GraphQLDirective) -> bool:
+    # this allows to force print the builtin directives if there's a
+    # directive that was implemented using the schema_directive
+
+    if is_specified_directive(directive):
+        strawberry_definition = directive.extensions.get("strawberry-definition")
+
+        return strawberry_definition is None
+
+    return False
+
+
 def print_schema(schema: BaseSchema) -> str:
     graphql_core_schema = schema._schema  # type: ignore
     extras = PrintExtras()
 
     directives = filter(
-        lambda n: not is_specified_directive(n), graphql_core_schema.directives
+        lambda n: not is_builtin_directive(n), graphql_core_schema.directives
     )
     type_map = graphql_core_schema.type_map
     types = filter(is_defined_type, map(type_map.get, sorted(type_map)))
@@ -549,6 +562,13 @@ def print_schema(schema: BaseSchema) -> str:
         None, [print_directive(directive, schema=schema) for directive in directives]
     )
 
+    def _name_getter(type_: Any):
+        if hasattr(type_, "name"):
+            return type_.name
+        if isinstance(type_, ScalarWrapper):
+            return type_._scalar_definition.name
+        return type_.__name__
+
     return "\n\n".join(
         chain(
             sorted(extras.directives),
@@ -559,7 +579,8 @@ def print_schema(schema: BaseSchema) -> str:
                 _print_type(
                     schema.schema_converter.from_type(type_), schema, extras=extras
                 )
-                for type_ in extras.types
+                # Make sure extra types are ordered for predictive printing
+                for type_ in sorted(extras.types, key=_name_getter)
             ),
         )
     )

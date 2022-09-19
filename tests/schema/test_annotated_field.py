@@ -87,7 +87,10 @@ def test_annotated_field():
     result = schema.execute_sync(
         query,
         root_value=Query(
-            name="name", age=123, private_number=56, generic=GenericData[int](1234)
+            name="name",
+            age=123,
+            private_number=56,
+            generic=GenericData[int](value=1234),
         ),
     )
     assert not result.errors
