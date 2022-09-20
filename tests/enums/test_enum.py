@@ -92,6 +92,10 @@ def test_can_deprecate_enum_values():
     assert definition.values[2].value == "chocolate"
     assert definition.values[2].deprecation_reason is None
 
+    assert IceCreamFlavour("strawberry") == IceCreamFlavour.STRAWBERRY
+    assert IceCreamFlavour("vanilla") == IceCreamFlavour.VANILLA
+    assert IceCreamFlavour("chocolate") == IceCreamFlavour.CHOCOLATE
+
 
 def test_can_describe_enum_values():
     @strawberry.enum

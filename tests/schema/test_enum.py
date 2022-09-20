@@ -379,3 +379,39 @@ def test_enum_deprecated_value():
         {"deprecationReason": "We ran out", "isDeprecated": True, "name": "STRAWBERRY"},
         {"deprecationReason": None, "isDeprecated": False, "name": "CHOCOLATE"},
     ]
+
+
+def test_can_use_enum_as_arguments():
+    @strawberry.enum
+    class IceCreamFlavour(Enum):
+        VANILLA = "vanilla"
+        STRAWBERRY = strawberry.enum_value(
+            "strawberry", deprecation_reason="We ran out"
+        )
+        CHOCOLATE = strawberry.enum_value("chocolate")
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def print_flavour(self, flavour: IceCreamFlavour) -> str:
+            return str(flavour)
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """
+    {
+        vanilla: printFlavour(flavour: VANILLA)
+        strawberry: printFlavour(flavour: STRAWBERRY)
+        chocolate: printFlavour(flavour: CHOCOLATE)
+    }
+    """
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data
+    assert result.data == {
+        "vanilla": "VANILLA",
+        "strawberry": "STRAWBERRY",
+        "chocolate": "CHOCOLATE",
+    }
