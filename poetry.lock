@@ -213,14 +213,6 @@ urllib3 = ">=1.25.4,<1.27"
 crt = ["awscrt (==0.14.0)"]
 
 [[package]]
-name = "bytecode"
-version = "0.13.0"
-description = "Python module to generate and modify bytecode"
-category = "dev"
-optional = false
-python-versions = ">=3.6"
-
-[[package]]
 name = "certifi"
 version = "2022.9.14"
 description = "Python package for providing Mozilla's CA Bundle."
@@ -373,43 +365,6 @@ twisted = {version = ">=18.7", extras = ["tls"]}
 
 [package.extras]
 tests = ["hypothesis (==4.23)", "pytest (>=3.10,<4.0)", "pytest-asyncio (>=0.8,<1.0)"]
-
-[[package]]
-name = "ddsketch"
-version = "2.0.4"
-description = "Distributed quantile sketches"
-category = "dev"
-optional = false
-python-versions = ">=2.7"
-
-[package.dependencies]
-protobuf = {version = ">=3.0.0", markers = "python_version >= \"3.7\""}
-six = "*"
-
-[[package]]
-name = "ddtrace"
-version = "1.4.5"
-description = "Datadog APM client library"
-category = "dev"
-optional = false
-python-versions = ">=2.7, !=3.0.*, !=3.1.*, !=3.2.*, !=3.3.*, !=3.4.*"
-
-[package.dependencies]
-attrs = ">=19.2.0"
-bytecode = [
-    {version = ">=0.13.0,<0.14.0", markers = "python_version == \"3.7\""},
-    {version = "*", markers = "python_version >= \"3.8\""},
-]
-ddsketch = ">=2.0.1"
-importlib-metadata = {version = "*", markers = "python_version < \"3.8\""}
-packaging = ">=17.1"
-protobuf = {version = ">=3", markers = "python_version >= \"3.7\""}
-six = ">=1.12.0"
-tenacity = ">=5"
-typing-extensions = "*"
-
-[package.extras]
-opentracing = ["opentracing (>=2.0.0)"]
 
 [[package]]
 name = "decorator"
@@ -930,14 +885,6 @@ testing = ["pytest-benchmark", "pytest"]
 dev = ["tox", "pre-commit"]
 
 [[package]]
-name = "protobuf"
-version = "4.21.6"
-description = ""
-category = "dev"
-optional = false
-python-versions = ">=3.7"
-
-[[package]]
 name = "psutil"
 version = "5.9.2"
 description = "Cross-platform lib for process and system monitoring in Python."
@@ -1436,17 +1383,6 @@ typing-extensions = {version = ">=3.10.0", markers = "python_version < \"3.10\""
 full = ["itsdangerous", "jinja2", "python-multipart", "pyyaml", "requests"]
 
 [[package]]
-name = "tenacity"
-version = "8.0.1"
-description = "Retry code until it succeeds"
-category = "dev"
-optional = false
-python-versions = ">=3.6"
-
-[package.extras]
-doc = ["reno", "sphinx", "tornado (>=4.5)"]
-
-[[package]]
 name = "tomli"
 version = "2.0.1"
 description = "A lil' TOML parser"
@@ -1761,7 +1697,7 @@ sanic = ["sanic"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "699b276d8ab2f320c241148a23c9a636f3d1f649c1d5ef146ad0d15348383b73"
+content-hash = "a20db042a721032ef9dcb9ae870a128a9bead108c01f2acbb74c7b6918835169"
 
 [metadata.files]
 aiofiles = []
@@ -1779,7 +1715,6 @@ automat = []
 black = []
 blessed = []
 botocore = []
-bytecode = []
 certifi = []
 cffi = []
 chalice = []
@@ -1792,8 +1727,6 @@ constantly = []
 coverage = []
 cryptography = []
 daphne = []
-ddsketch = []
-ddtrace = []
 decorator = []
 deprecated = []
 django = []
@@ -1837,7 +1770,6 @@ packaging = []
 pathspec = []
 platformdirs = []
 pluggy = []
-protobuf = []
 psutil = []
 py = []
 py-cpuinfo = []
@@ -1879,7 +1811,6 @@ six = []
 sniffio = []
 sqlparse = []
 starlette = []
-tenacity = []
 tomli = []
 twisted = []
 twisted-iocpsupport = []
