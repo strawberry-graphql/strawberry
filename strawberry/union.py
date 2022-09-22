@@ -8,6 +8,7 @@ from typing import (
     Mapping,
     NoReturn,
     Optional,
+    Sequence,
     Tuple,
     Type,
     TypeVar,
@@ -196,9 +197,6 @@ class StrawberryUnion(StrawberryType):
         return _resolve_union_type
 
 
-Types = TypeVar("Types", bound=Type)
-
-
 # We return a Union type here in order to allow to use the union type as type
 # annotation.
 # For the `types` argument we'd ideally use a TypeVarTuple, but that's not
@@ -206,11 +204,11 @@ Types = TypeVar("Types", bound=Type)
 # See https://www.python.org/dev/peps/pep-0646/ for more information
 def union(
     name: str,
-    types: Tuple[Types, ...],
+    types: Sequence[Type],
     *,
     description: str = None,
     directives: Iterable[object] = (),
-) -> Union[Types]:
+) -> Union[Type]:
     """Creates a new named Union type.
 
     Example usages:
