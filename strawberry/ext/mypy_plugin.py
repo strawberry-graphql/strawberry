@@ -428,27 +428,38 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
                 ctx.reason,
             )
 
-        missing_pydantic_fields: Set["PydanticModelField"] = set(
+        potentially_missing_fields: Set["PydanticModelField"] = set(
             f for f in pydantic_fields if f.name not in new_strawberry_fields
         )
 
-        # Add to_pydantic
-        # TODO: Only add this if not manually defined
-        add_method(
-            ctx,
-            "to_pydantic",
-            args=[
-                f.to_argument(
-                    # TODO: use_alias should depend on config?
-                    info=model_type.type,
-                    typed=True,
-                    force_optional=False,
-                    use_alias=True,
-                )
-                for f in missing_pydantic_fields
-            ],
-            return_type=model_type,
+        """
+        Need to check if all_fields=True from the pydantic decorator
+        There is no way to real check that Literal[True] was used
+        We just check if the strawberry type is missing all the fields
+        This means that the user is using all_fields=True
+        """
+        is_all_fields: bool = len(potentially_missing_fields) == len(pydantic_fields)
+        missing_pydantic_fields: Set["PydanticModelField"] = (
+            potentially_missing_fields if not is_all_fields else set()
         )
+
+        # Add the default to_pydantic if undefined by the user
+        if "to_pydantic" not in ctx.cls.info.names:
+            add_method(
+                ctx,
+                "to_pydantic",
+                args=[
+                    f.to_argument(
+                        # TODO: use_alias should depend on config?
+                        info=model_type.type,
+                        typed=True,
+                        force_optional=False,
+                        use_alias=True,
+                    )
+                    for f in missing_pydantic_fields
+                ],
+                return_type=model_type,
+            )
 
         # Add from_pydantic
         model_argument = Argument(
