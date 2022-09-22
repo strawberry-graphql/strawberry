@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.131.4 - 2022-09-22
+--------------------
+
+This release updates the mypy plugin and the typing for Pyright to treat all
+strawberry fields as keyword-only arguments. This reflects a previous change to
+the Strawberry API.
+
+Contributed by [Paulo Costa](https://github.com/paulo-raca) via [PR #2191](https://github.com/strawberry-graphql/strawberry/pull/2191/)
+
+
 0.131.3 - 2022-09-22
 --------------------
 
