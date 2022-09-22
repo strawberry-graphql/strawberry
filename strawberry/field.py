@@ -66,6 +66,7 @@ class StrawberryField(dataclasses.Field):
         permission_classes: List[Type[BasePermission]] = (),  # type: ignore
         default: object = UNSET,
         default_factory: Union[Callable[[], Any], object] = UNSET,
+        metadata: Optional[Mapping[Any, Any]] = None,
         deprecation_reason: Optional[str] = None,
         directives: Sequence[object] = (),
     ):
@@ -91,7 +92,7 @@ class StrawberryField(dataclasses.Field):
             repr=is_basic_field,
             compare=is_basic_field,
             hash=None,
-            metadata={},
+            metadata=metadata or {},
             **kwargs,
         )
 
@@ -331,6 +332,7 @@ def field(
     deprecation_reason: Optional[str] = None,
     default: Any = UNSET,
     default_factory: Union[Callable[..., object], object] = UNSET,
+    metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
 ) -> T:
     ...
@@ -347,6 +349,7 @@ def field(
     deprecation_reason: Optional[str] = None,
     default: Any = UNSET,
     default_factory: Union[Callable[..., object], object] = UNSET,
+    metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
 ) -> Any:
     ...
@@ -363,6 +366,7 @@ def field(
     deprecation_reason: Optional[str] = None,
     default: Any = UNSET,
     default_factory: Union[Callable[..., object], object] = UNSET,
+    metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
 ) -> StrawberryField:
     ...
@@ -378,6 +382,7 @@ def field(
     deprecation_reason: Optional[str] = None,
     default: Any = UNSET,
     default_factory: Union[Callable[..., object], object] = UNSET,
+    metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
     # This init parameter is used by PyRight to determine whether this field
     # is added in the constructor or not. It is not used to change
@@ -409,6 +414,7 @@ def field(
         deprecation_reason=deprecation_reason,
         default=default,
         default_factory=default_factory,
+        metadata=metadata,
         directives=directives or (),
     )
 
