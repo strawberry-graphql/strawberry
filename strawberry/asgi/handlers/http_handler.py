@@ -92,7 +92,8 @@ class HTTPHandler:
                     )
             elif content_type.startswith("multipart/form-data"):
                 multipart_data = await request.form()
-                operations = json.loads(multipart_data.get("operations", "{}"))
+                operations_text = multipart_data.get("operations", "{}")
+                operations = json.loads(operations_text)
                 files_map = json.loads(multipart_data.get("map", "{}"))
 
                 data = replace_placeholders_with_files(
