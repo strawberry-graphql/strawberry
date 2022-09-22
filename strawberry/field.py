@@ -24,7 +24,7 @@ from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import StrawberryArgument
 from strawberry.exceptions import InvalidDefaultFactoryError, InvalidFieldArgument
 from strawberry.type import StrawberryType, StrawberryTypeVar
-from strawberry.types.info import Info
+from strawberry.types.info import Info, current_info
 from strawberry.union import StrawberryUnion
 from strawberry.unset import UNSET
 from strawberry.utils.cached_property import cached_property
@@ -163,10 +163,14 @@ class StrawberryField(dataclasses.Field):
         to using the default resolver specified in StrawberryConfig.
         """
 
-        if self.base_resolver:
-            return self.base_resolver(*args, **kwargs)
+        old_info = current_info.set(info)
+        try:
+            if self.base_resolver:
+                return self.base_resolver(*args, **kwargs)
 
-        return self.default_resolver(source, self.python_name)  # type: ignore
+            return self.default_resolver(source, self.python_name)  # type: ignore
+        finally:
+            current_info.reset(old_info)
 
     @property
     def arguments(self) -> List[StrawberryArgument]:

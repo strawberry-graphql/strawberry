@@ -347,3 +347,49 @@ def test_field_nodes_deprecation():
 
     assert not result.errors
     assert result.data["field"] == 0
+
+
+def test_info_context():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def test_1(self, info: Info) -> None:
+            info2 = strawberry.get_info()
+            assert info2 is info
+            assert info2.python_name == "test_1"
+            assert info2.path.key in ("a", "c")
+
+            ctx2 = strawberry.get_context()
+            assert ctx2 is info2.context
+            assert "context" == ctx2
+
+        @strawberry.field
+        def test_2(self) -> None:
+            info2 = strawberry.get_info()
+            assert info2.python_name == "test_2"
+            assert info2.path.key in ("b", "d")
+
+            ctx2 = strawberry.get_context()
+            assert ctx2 is info2.context
+            assert "context" == ctx2
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        a: test1
+        b: test2
+        c: test1
+        d: test2
+    }
+    """
+    result = schema.execute_sync(query, context_value="context")
+
+    assert not result.errors
+
+
+def test_info_context_missing():
+    with pytest.raises(LookupError):
+        strawberry.get_info()
+
+    with pytest.raises(LookupError):
+        strawberry.get_context()

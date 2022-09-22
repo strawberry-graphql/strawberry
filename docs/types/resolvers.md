@@ -86,7 +86,7 @@ very small resolvers.
 
 The _self_ argument is a bit special here, when executing a GraphQL query, in
 case of resolvers defined with a decorator, the _self_ argument corresponds to
-the _root_ value that field. In this example the _root_ value is the value
+the _root_ value of that field. In this example the _root_ value is the value
 `Query` type, which is usually `None`. You can change the _root_ value when
 calling the `execute` method on a `Schema`. More on _root_ values below.
 
@@ -231,14 +231,15 @@ for the current execution context.
 import strawberry
 from strawberry.types import Info
 
-def full_name(root: User, info: Info) -> str:
-    return f"{root.first_name} {root.last_name} {info.field_name}"
 
 @strawberry.type
 class User:
     first_name: str
     last_name: str
-    full_name: str = strawberry.field(resolver=full_name)
+
+    @strawberry.field
+    def full_name(self, info: Info) -> str:
+        return f"{self.first_name} {self.last_name} {info.field_name}"
 ```
 
 <Tip>
@@ -247,6 +248,23 @@ You don't have to call this parameter `info`, its name can be anything.
 Strawberry uses the type to pass the correct value to the resolver.
 
 </Tip>
+
+Alternativerly, you can retrieve the info for the current resolver using `strawberry.get_info()`:
+
+```python
+import strawberry
+from strawberry.types import Info
+
+
+@strawberry.type
+class User:
+    first_name: str
+    last_name: str
+
+    @strawberry.field
+    def full_name(self) -> str:
+        return f"{self.first_name} {self.last_name} {strawberry.get_info().field_name}"
+```
 
 ### API
 
