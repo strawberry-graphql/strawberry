@@ -1,17 +1,20 @@
-from typing import Iterable, Optional, Sequence, Type, Union
+from typing import Iterable, Optional, Tuple, Type, TypeVar, Union
 
 from strawberry.union import union as base_union
 
 
+Types = TypeVar("Types", bound=Type)
+
+
 def union(
     name: str,
-    types: Sequence[Type],
+    types: Tuple[Types, ...],
     *,
     description: str = None,
     directives: Iterable[object] = (),
     inaccessible: bool = False,
     tags: Optional[Iterable[str]] = (),
-) -> Union[Type]:
+) -> Union[Types]:
     """Creates a new named Union type.
 
     Example usages:

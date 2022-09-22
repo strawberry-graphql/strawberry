@@ -3,12 +3,12 @@ from itertools import chain
 from typing import (
     TYPE_CHECKING,
     Any,
+    Collection,
     Iterable,
     List,
     Mapping,
     NoReturn,
     Optional,
-    Sequence,
     Tuple,
     Type,
     TypeVar,
@@ -197,6 +197,9 @@ class StrawberryUnion(StrawberryType):
         return _resolve_union_type
 
 
+Types = TypeVar("Types", bound=Type)
+
+
 # We return a Union type here in order to allow to use the union type as type
 # annotation.
 # For the `types` argument we'd ideally use a TypeVarTuple, but that's not
@@ -204,11 +207,11 @@ class StrawberryUnion(StrawberryType):
 # See https://www.python.org/dev/peps/pep-0646/ for more information
 def union(
     name: str,
-    types: Sequence[Type],
+    types: Collection[Types],
     *,
     description: str = None,
     directives: Iterable[object] = (),
-) -> Union[Type]:
+) -> Union[Types]:
     """Creates a new named Union type.
 
     Example usages:
