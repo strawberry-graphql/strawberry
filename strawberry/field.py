@@ -76,7 +76,7 @@ class StrawberryField(dataclasses.Field):
 
         # kw_only was added to python 3.10 and it is required
         if sys.version_info >= (3, 10):
-            kwargs["kw_only"] = False
+            kwargs["kw_only"] = dataclasses.MISSING
 
         super().__init__(
             default=(default if default is not UNSET else dataclasses.MISSING),
