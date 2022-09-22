@@ -18,7 +18,6 @@ from mypy.nodes import (
     CallExpr,
     CastExpr,
     ClassDef,
-    Context,
     Expression,
     FuncDef,
     IndexExpr,
@@ -756,7 +755,7 @@ class CustomDataclassTransformer:
             if MypyVersion.VERSION >= Decimal("0.800"):
                 params["info"] = cls.info
             if MypyVersion.VERSION >= Decimal("0.920"):
-                params["kw_only"] = False
+                params["kw_only"] = True
 
             attribute = DataclassAttribute(**params)  # type: ignore
             attrs.append(attribute)
@@ -793,28 +792,6 @@ class CustomDataclassTransformer:
                             super_attrs.append(attr)
                             break
             all_attrs = super_attrs + all_attrs
-
-        # Ensure that arguments without a default don't follow
-        # arguments that have a default.
-        found_default = False
-        for attr in all_attrs:
-            # If we find any attribute that is_in_init but that
-            # doesn't have a default after one that does have one,
-            # then that's an error.
-            if found_default and attr.is_in_init and not attr.has_default:
-                # If the issue comes from merging different classes, report it
-                # at the class definition point.
-                context = (
-                    Context(line=attr.line, column=attr.column)
-                    if attr in attrs
-                    else ctx.cls
-                )
-                ctx.api.fail(
-                    "Attributes without a default cannot follow attributes with one",
-                    context,
-                )
-
-            found_default = found_default or (attr.has_default and attr.is_in_init)
 
         return all_attrs
 

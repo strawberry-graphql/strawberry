@@ -69,7 +69,7 @@ def test_pyright():
         ),
         Result(
             type="information",
-            message='Type of "User.__init__" is "(self: User, age: int, name: str) '
+            message='Type of "User.__init__" is "(self: User, *, age: int, name: str) '
             '-> None"',
             line=23,
             column=13,
@@ -82,8 +82,10 @@ def test_pyright():
         ),
         Result(
             type="information",
-            message='Type of "UserInput.__init__" is "(self: UserInput, age: int, '
-            'name: str) -> None"',
+            message=(
+                'Type of "UserInput.__init__" is "(self: UserInput, *, age: int, '
+                'name: str) -> None"'
+            ),
             line=26,
             column=13,
         ),
