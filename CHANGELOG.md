@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.131.3 - 2022-09-22
+--------------------
+
+Bug fix: Do not force kw-only=False in fields specified with strawberry.field()
+
+Contributed by [Paulo Costa](https://github.com/paulo-raca) via [PR #2189](https://github.com/strawberry-graphql/strawberry/pull/2189/)
+
+
 0.131.2 - 2022-09-22
 --------------------
 
