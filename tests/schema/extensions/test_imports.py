@@ -1,7 +1,10 @@
 import pytest
 
 
-def test_can_import():
+def test_can_import(mocker):
+    # mocking sys.modules.ddtrace so we don't get an ImportError
+    mocker.patch.dict("sys.modules", ddtrace=mocker.MagicMock())
+
     from strawberry.extensions.tracing import (  # noqa
         ApolloTracingExtension,
         ApolloTracingExtensionSync,
