@@ -1,6 +1,23 @@
 CHANGELOG
 =========
 
+0.131.3 - 2022-09-22
+--------------------
+
+Bug fix: Do not force kw-only=False in fields specified with strawberry.field()
+
+Contributed by [Paulo Costa](https://github.com/paulo-raca) via [PR #2189](https://github.com/strawberry-graphql/strawberry/pull/2189/)
+
+
+0.131.2 - 2022-09-22
+--------------------
+
+This release fixes a small issue that might happen when
+uploading files and not passing the operations object.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2192](https://github.com/strawberry-graphql/strawberry/pull/2192/)
+
+
 0.131.1 - 2022-09-16
 --------------------
 

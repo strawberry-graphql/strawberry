@@ -189,8 +189,9 @@ class GraphQLRouter(APIRouter):
                     return self._merge_responses(response, actual_response)
             elif content_type.startswith("multipart/form-data"):
                 multipart_data = await request.form()
-                operations = json.loads(multipart_data.get("operations", {}))
-                files_map = json.loads(multipart_data.get("map", {}))
+                operations_text = multipart_data.get("operations", "{}")
+                operations = json.loads(operations_text)  # type: ignore
+                files_map = json.loads(multipart_data.get("map", "{}"))  # type: ignore
                 data = replace_placeholders_with_files(
                     operations, files_map, multipart_data
                 )
