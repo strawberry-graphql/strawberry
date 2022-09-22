@@ -75,7 +75,9 @@ def _impl_type(
 
 @overload
 @__dataclass_transform__(
-    order_default=True, field_descriptors=(base_field, field, StrawberryField)
+    order_default=True,
+    kw_only_default=True,
+    field_descriptors=(base_field, field, StrawberryField),
 )
 def type(
     cls: T,
@@ -92,7 +94,9 @@ def type(
 
 @overload
 @__dataclass_transform__(
-    order_default=True, field_descriptors=(base_field, field, StrawberryField)
+    order_default=True,
+    kw_only_default=True,
+    field_descriptors=(base_field, field, StrawberryField),
 )
 def type(
     *,
@@ -135,7 +139,9 @@ def type(
 
 @overload
 @__dataclass_transform__(
-    order_default=True, field_descriptors=(base_field, field, StrawberryField)
+    order_default=True,
+    kw_only_default=True,
+    field_descriptors=(base_field, field, StrawberryField),
 )
 def input(
     cls: T,
@@ -151,7 +157,9 @@ def input(
 
 @overload
 @__dataclass_transform__(
-    order_default=True, field_descriptors=(base_field, field, StrawberryField)
+    order_default=True,
+    kw_only_default=True,
+    field_descriptors=(base_field, field, StrawberryField),
 )
 def input(
     *,
@@ -186,7 +194,9 @@ def input(
 
 @overload
 @__dataclass_transform__(
-    order_default=True, field_descriptors=(base_field, field, StrawberryField)
+    order_default=True,
+    kw_only_default=True,
+    field_descriptors=(base_field, field, StrawberryField),
 )
 def interface(
     cls: T,
@@ -203,7 +213,9 @@ def interface(
 
 @overload
 @__dataclass_transform__(
-    order_default=True, field_descriptors=(base_field, field, StrawberryField)
+    order_default=True,
+    kw_only_default=True,
+    field_descriptors=(base_field, field, StrawberryField),
 )
 def interface(
     *,
