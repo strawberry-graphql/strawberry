@@ -1,3 +1,4 @@
+import dataclasses
 from operator import getitem
 
 import strawberry
@@ -69,3 +70,12 @@ def test_can_change_default_resolver():
     assert not result.errors
     assert result.data
     assert result.data["user"]["name"] == "Patrick"
+
+
+def test_field_metadata():
+    @strawberry.type
+    class Query:
+        a: str = strawberry.field(default="Example", metadata={"Foo": "Bar"})
+
+    (a,) = dataclasses.fields(Query)
+    assert a.metadata == {"Foo": "Bar"}
