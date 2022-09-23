@@ -156,7 +156,7 @@ class StrawberryField(dataclasses.Field):
         return self
 
     def get_result(
-        self, source: Any, info: Info, args: List[Any], kwargs: Dict[str, Any]
+        self, source: Any, info: Optional[Info], args: List[Any], kwargs: Dict[str, Any]
     ) -> Union[Awaitable[Any], Any]:
         """
         Calls the resolver defined for the StrawberryField.
@@ -168,6 +168,17 @@ class StrawberryField(dataclasses.Field):
             return self.base_resolver(*args, **kwargs)
 
         return self.default_resolver(source, self.python_name)  # type: ignore
+
+    @property
+    def is_basic_field(self) -> bool:
+        """
+        Flag indicating if this is a "basic" field that has no resolver or
+        permission classes, i.e. it just returns the relevant attribute from
+        the source object. If it is a basic field we can avoid constructing
+        an `Info` object and running any permission checks in the resolver
+        which improves performance.
+        """
+        return not self.base_resolver and not self.permission_classes
 
     @property
     def arguments(self) -> List[StrawberryArgument]:

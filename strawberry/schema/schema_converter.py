@@ -411,6 +411,19 @@ class GraphQLCoreConverter:
     def from_resolver(
         self, field: StrawberryField
     ) -> Callable:  # TODO: Take StrawberryResolver
+        field.default_resolver = self.config.default_resolver  # type: ignore
+
+        if field.is_basic_field:
+
+            def _get_basic_result(_source: Any, *args, **kwargs):
+                # Call `get_result` without an info object or any args or
+                # kwargs because this is a basic field with no resolver.
+                return field.get_result(_source, info=None, args=[], kwargs={})
+
+            _get_basic_result._is_default = True  # type: ignore
+
+            return _get_basic_result
+
         def _get_arguments(
             source: Any,
             info: Info,
@@ -498,8 +511,6 @@ class GraphQLCoreConverter:
             await _check_permissions_async(_source, strawberry_info, kwargs)
 
             return await await_maybe(_get_result(_source, strawberry_info, **kwargs))
-
-        field.default_resolver = self.config.default_resolver  # type: ignore
 
         if field.is_async:
             _async_resolver._is_default = not field.base_resolver  # type: ignore
