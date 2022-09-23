@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.132.0 - 2022-09-23
+--------------------
+
+Support storing metadata in strawberry fields.
+
+Contributed by [Paulo Costa](https://github.com/paulo-raca) via [PR #2190](https://github.com/strawberry-graphql/strawberry/pull/2190/)
+
+
 0.131.5 - 2022-09-22
 --------------------
 
