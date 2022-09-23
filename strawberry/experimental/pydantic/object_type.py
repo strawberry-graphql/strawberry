@@ -217,7 +217,7 @@ def type(
         # Python 3.10 introduces the kw_only param. If we're on an older version
         # then generate our own custom init function
         if sys.version_info >= (3, 10):
-            kwargs["kw_only"] = True
+            kwargs["kw_only"] = dataclasses.MISSING
         else:
             kwargs["init"] = False
 
