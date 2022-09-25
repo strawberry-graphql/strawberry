@@ -131,8 +131,9 @@ class Schema(BaseSchema):
             raise ValueError(f"Invalid Schema. Errors:\n\n{formatted_errors}")
 
         if use_libgraphqlparser:
-            from tartiflette.schema.transformer import schema_from_sdl
             import json
+
+            from tartiflette.schema.transformer import schema_from_sdl
 
             self._schema.cpp_schema = schema_from_sdl(str(self), "CPPSchema")
             self._schema.cpp_schema.json_loader = json.loads
