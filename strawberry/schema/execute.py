@@ -103,8 +103,14 @@ async def execute(
         if execution_context.operation_type not in allowed_operation_types:
             raise InvalidOperationTypeError(execution_context.operation_type)
 
-        async with extensions_runner.validation():
-            _run_validation(execution_context)
+        with extensions_runner.validation():
+            if hasattr(schema, "cpp_schema"):
+                from tartiflette.execution.collect import parse_and_validate_query
+
+                _, errors = parse_and_validate_query(query, schema.cpp_schema)
+                execution_context.errors = errors or []
+            else:
+                _run_validation(execution_context)
             if execution_context.errors:
                 return ExecutionResult(data=None, errors=execution_context.errors)
 
@@ -183,7 +189,13 @@ def execute_sync(
             raise InvalidOperationTypeError(execution_context.operation_type)
 
         with extensions_runner.validation():
-            _run_validation(execution_context)
+            if hasattr(schema, "cpp_schema"):
+                from tartiflette.execution.collect import parse_and_validate_query
+
+                _, errors = parse_and_validate_query(query, schema.cpp_schema)
+                execution_context.errors = errors or []
+            else:
+                _run_validation(execution_context)
             if execution_context.errors:
                 return ExecutionResult(data=None, errors=execution_context.errors)
 

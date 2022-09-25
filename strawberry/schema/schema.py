@@ -59,6 +59,7 @@ class Schema(BaseSchema):
             Dict[object, Union[ScalarWrapper, ScalarDefinition]]
         ] = None,
         schema_directives: Iterable[object] = (),
+        use_libgraphqlparser: bool = False,
     ):
         self.query = query
         self.mutation = mutation
@@ -128,6 +129,13 @@ class Schema(BaseSchema):
         if errors:
             formatted_errors = "\n\n".join(f"❌ {error.message}" for error in errors)
             raise ValueError(f"Invalid Schema. Errors:\n\n{formatted_errors}")
+
+        if use_libgraphqlparser:
+            from tartiflette.schema.transformer import schema_from_sdl
+            import json
+
+            self._schema.cpp_schema = schema_from_sdl(str(self), "CPPSchema")
+            self._schema.cpp_schema.json_loader = json.loads
 
     def get_extensions(
         self, sync: bool = False
