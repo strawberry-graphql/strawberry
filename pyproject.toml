@@ -33,26 +33,28 @@ build-backend = "poetry.masonry.api"
 
 [tool.poetry.dependencies]
 python = "^3.7"
+
+graphql-core = "~3.2.0"
+typing_extensions = ">=3.7.4,<5.0.0"
+python-dateutil = "^2.7.0"
+"backports.cached-property" = {version = "^1.0.2", python = "<3.8"}
+
 starlette = {version = ">=0.13.6", optional = true}
 click = {version = ">=7.0,<9.0", optional = true}
 pygments = {version = "^2.3", optional = true}
 uvicorn = {version = ">=0.11.6,<0.19.0", optional = true}
 Django = {version = ">=3.2", optional = true}
-graphql-core = "~3.2.0"
 asgiref = {version = "^3.2", optional = true}
 flask = {version = ">=1.1", optional = true}
-typing_extensions = ">=3.7.4,<5.0.0"
 opentelemetry-api = {version = "<2", optional = true}
 opentelemetry-sdk = {version = "<2", optional = true}
 chalice = {version = "^1.22", optional = true}
-python-dateutil = "^2.7.0"
 pydantic = {version = "<2", optional = true}
 python-multipart = {version = "^0.0.5", optional = true}
 sanic = {version = ">=20.12.2,<22.0.0", optional = true}
 aiohttp = {version = "^3.7.4.post0", optional = true}
 fastapi = {version = ">=0.65.2", optional = true}
 channels = {version = ">=3.0.5", optional = true}
-"backports.cached-property" = {version = "^1.0.2", python = "<3.8"}
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.1"
