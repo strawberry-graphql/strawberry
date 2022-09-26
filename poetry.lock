@@ -1733,7 +1733,8 @@ aiohttp = ["aiohttp"]
 asgi = ["starlette", "python-multipart"]
 chalice = ["chalice"]
 channels = ["channels", "asgiref"]
-debug-server = ["starlette", "uvicorn", "python-multipart"]
+cli = ["click", "pygments"]
+debug-server = ["starlette", "uvicorn", "python-multipart", "click", "pygments"]
 django = ["Django", "asgiref"]
 fastapi = ["fastapi", "python-multipart"]
 flask = ["flask"]
@@ -1744,7 +1745,7 @@ sanic = ["sanic"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "e48a5aed0649f9dc9e4f2ef7f3786e83a236412011347af81c4c00b306e37096"
+content-hash = "5b131a9e6ef8b877f8100d3f7b827f73e59cd63b4df12060741e184fa019da70"
 
 [metadata.files]
 aiofiles = [

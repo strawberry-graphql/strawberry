@@ -35,7 +35,7 @@ build-backend = "poetry.masonry.api"
 python = "^3.7"
 starlette = {version = ">=0.13.6", optional = true}
 click = {version = ">=7.0,<9.0", optional = true}
-pygments = "^2.3"
+pygments = {version = "^2.3", optional = true}
 uvicorn = {version = ">=0.11.6,<0.19.0", optional = true}
 Django = {version = ">=3.2", optional = true}
 graphql-core = "~3.2.0"
@@ -104,11 +104,12 @@ MarkupSafe = "2.1.1"
 pytest-snapshot = "^0.9.0"
 channels = "^3.0.5"
 python-multipart = "^0.0.5"
+pygments = "^2.3"
 
 [tool.poetry.extras]
 aiohttp = ["aiohttp", "pytest-aiohttp"]
 asgi = ["starlette", "python-multipart"]
-debug-server = ["starlette", "uvicorn", "python-multipart"]
+debug-server = ["starlette", "uvicorn", "python-multipart", "click", "pygments"]
 django = ["Django", "pytest-django", "asgiref"]
 channels = ["channels", "asgiref"]
 flask = ["flask", "pytest-flask"]
@@ -117,6 +118,7 @@ pydantic = ["pydantic"]
 sanic = ["sanic"]
 fastapi = ["fastapi", "python-multipart"]
 chalice = ["chalice"]
+cli = ["click", "pygments"]
 
 [tool.poetry.scripts]
 strawberry = "strawberry.cli:run"
