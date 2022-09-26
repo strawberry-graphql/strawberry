@@ -3,7 +3,7 @@ from typing import Any, Callable, Iterable, Optional, Union, overload
 from strawberry.enum import (
     EnumType,
     EnumValueDefinition,
-    _process_enum,
+    enum as base_enum,
     enum_value as base_enum_value,
 )
 
@@ -78,11 +78,6 @@ def enum(
 
     if tags:
         directives.extend(Tag(name=tag) for tag in tags)
-
-    def wrap(cls: EnumType) -> EnumType:
-        return _process_enum(cls, name, description, directives=directives)
-
-    if not _cls:
-        return wrap
-
-    return wrap(_cls)  # pragma: no cover
+    return base_enum(
+        _cls, name=name, description=description, directives=directives
+    )  # pragma: no cover
