@@ -1730,12 +1730,12 @@ testing = ["coverage (>=5.0.3)", "zope.event", "zope.testing"]
 
 [extras]
 aiohttp = ["aiohttp"]
-asgi = ["starlette"]
+asgi = ["starlette", "python-multipart"]
 chalice = ["chalice"]
 channels = ["channels", "asgiref"]
-debug-server = ["starlette", "uvicorn"]
+debug-server = ["starlette", "uvicorn", "python-multipart"]
 django = ["Django", "asgiref"]
-fastapi = ["fastapi"]
+fastapi = ["fastapi", "python-multipart"]
 flask = ["flask"]
 opentelemetry = ["opentelemetry-api", "opentelemetry-sdk"]
 pydantic = ["pydantic"]
@@ -1744,7 +1744,7 @@ sanic = ["sanic"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "ae22545c6b08c8983df81d5fbf70cbf21768e731e742fc069a3886afde42f103"
+content-hash = "e48a5aed0649f9dc9e4f2ef7f3786e83a236412011347af81c4c00b306e37096"
 
 [metadata.files]
 aiofiles = [
