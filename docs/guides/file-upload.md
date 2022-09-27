@@ -27,7 +27,7 @@ Since these integrations use asyncio for communication, the resolver _must_ be a
 
 Additionally, these servers rely on the `python-multipart` package, which is not included by Strawberry by default. It can be installed directly, or, for convenience, it is included in extras: `strawberry[asgi]` (for ASGI/Starlette) or `strawberry[fastapi]` (for FastAPI). For example:
 
-- if using Pip, `pip install 'strawbrry[fastapi]'`
+- if using Pip, `pip install 'strawberry[fastapi]'`
 - if using Poetry, `strawberry = { version = "...", extras = ["fastapi"] }` in `pyproject.toml`.
 
 Example:
