@@ -411,7 +411,7 @@ class GraphQLCoreConverter:
     def from_resolver(
         self, field: StrawberryField
     ) -> Callable:  # TODO: Take StrawberryResolver
-        field.default_resolver = self.config.default_resolver  # type: ignore
+        field.default_resolver = self.config.default_resolver
 
         if field.is_basic_field:
 
