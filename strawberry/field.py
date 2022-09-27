@@ -167,7 +167,7 @@ class StrawberryField(dataclasses.Field):
         if self.base_resolver:
             return self.base_resolver(*args, **kwargs)
 
-        return self.default_resolver(source, self.python_name)  # type: ignore
+        return self.default_resolver(source, self.python_name)
 
     @property
     def is_basic_field(self) -> bool:
