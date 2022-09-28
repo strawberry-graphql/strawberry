@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.133.1 - 2022-09-28
+--------------------
+
+This release fixes an issue that prevented using `strawberry.field` with
+`UNSET` as the default value.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2128](https://github.com/strawberry-graphql/strawberry/pull/2128/)
+
+
 0.133.0 - 2022-09-27
 --------------------
 
