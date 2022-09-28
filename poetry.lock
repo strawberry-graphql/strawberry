@@ -1301,7 +1301,7 @@ idna2008 = ["idna"]
 
 [[package]]
 name = "sanic"
-version = "21.12.2"
+version = "22.6.2"
 description = "A web server and web framework that's written to go fast. Build fast. Run fast."
 category = "main"
 optional = false
@@ -1310,22 +1310,23 @@ python-versions = ">=3.7"
 [package.dependencies]
 aiofiles = ">=0.6.0"
 httptools = ">=0.0.10"
-multidict = ">=5.0,<6.0"
-sanic-routing = ">=0.7,<1.0"
+multidict = ">=5.0,<7.0"
+sanic-routing = ">=22.3.0,<22.6.0"
 ujson = {version = ">=1.35", markers = "sys_platform != \"win32\" and implementation_name == \"cpython\""}
 uvloop = {version = ">=0.5.3", markers = "sys_platform != \"win32\" and implementation_name == \"cpython\""}
 websockets = ">=10.0"
 
 [package.extras]
-all = ["bandit", "beautifulsoup4", "black", "chardet (>=3.0.0,<4.0.0)", "coverage (==5.3)", "cryptography", "docutils", "flake8", "gunicorn (==20.0.4)", "isort (>=5.0.0)", "m2r2", "mistune (<2.0.0)", "mypy (>=0.901,<0.910)", "pygments", "pytest (==6.2.5)", "pytest-benchmark", "pytest-cov", "pytest-sanic", "pytest-sugar", "sanic-testing (>=0.7.0)", "sphinx (>=2.1.2)", "sphinx-rtd-theme (>=0.4.3)", "towncrier", "tox", "types-ujson", "uvicorn (<0.15.0)"]
-dev = ["bandit", "beautifulsoup4", "black", "chardet (>=3.0.0,<4.0.0)", "coverage (==5.3)", "cryptography", "docutils", "flake8", "gunicorn (==20.0.4)", "isort (>=5.0.0)", "mypy (>=0.901,<0.910)", "pygments", "pytest (==6.2.5)", "pytest-benchmark", "pytest-cov", "pytest-sanic", "pytest-sugar", "sanic-testing (>=0.7.0)", "towncrier", "tox", "types-ujson", "uvicorn (<0.15.0)"]
-docs = ["docutils", "m2r2", "mistune (<2.0.0)", "pygments", "sphinx (>=2.1.2)", "sphinx-rtd-theme (>=0.4.3)"]
+all = ["bandit", "beautifulsoup4", "black", "chardet (>=3.0.0,<4.0.0)", "coverage (==5.3)", "cryptography", "docutils", "enum-tools[sphinx]", "flake8", "gunicorn (==20.0.4)", "isort (>=5.0.0)", "m2r2", "mistune (<2.0.0)", "mypy (>=0.901,<0.910)", "pygments", "pytest (==6.2.5)", "pytest-benchmark", "pytest-cov", "pytest-sanic", "pytest-sugar", "sanic-testing (>=22.3.0)", "slotscheck (>=0.8.0,<1)", "sphinx (>=2.1.2)", "sphinx-rtd-theme (>=0.4.3)", "towncrier", "tox", "types-ujson", "uvicorn (<0.15.0)"]
+dev = ["bandit", "beautifulsoup4", "black", "chardet (>=3.0.0,<4.0.0)", "coverage (==5.3)", "cryptography", "docutils", "flake8", "gunicorn (==20.0.4)", "isort (>=5.0.0)", "mypy (>=0.901,<0.910)", "pygments", "pytest (==6.2.5)", "pytest-benchmark", "pytest-cov", "pytest-sanic", "pytest-sugar", "sanic-testing (>=22.3.0)", "slotscheck (>=0.8.0,<1)", "towncrier", "tox", "types-ujson", "uvicorn (<0.15.0)"]
+docs = ["docutils", "enum-tools[sphinx]", "m2r2", "mistune (<2.0.0)", "pygments", "sphinx (>=2.1.2)", "sphinx-rtd-theme (>=0.4.3)"]
 ext = ["sanic-ext"]
-test = ["bandit", "beautifulsoup4", "black", "chardet (>=3.0.0,<4.0.0)", "coverage (==5.3)", "docutils", "flake8", "gunicorn (==20.0.4)", "isort (>=5.0.0)", "mypy (>=0.901,<0.910)", "pygments", "pytest (==6.2.5)", "pytest-benchmark", "pytest-cov", "pytest-sanic", "pytest-sugar", "sanic-testing (>=0.7.0)", "types-ujson", "uvicorn (<0.15.0)"]
+http3 = ["aioquic"]
+test = ["bandit", "beautifulsoup4", "black", "chardet (>=3.0.0,<4.0.0)", "coverage (==5.3)", "docutils", "flake8", "gunicorn (==20.0.4)", "isort (>=5.0.0)", "mypy (>=0.901,<0.910)", "pygments", "pytest (==6.2.5)", "pytest-benchmark", "pytest-cov", "pytest-sanic", "pytest-sugar", "sanic-testing (>=22.3.0)", "slotscheck (>=0.8.0,<1)", "types-ujson", "uvicorn (<0.15.0)"]
 
 [[package]]
 name = "sanic-routing"
-version = "0.7.2"
+version = "22.3.0"
 description = "Core routing component for Sanic"
 category = "main"
 optional = false
@@ -1745,7 +1746,7 @@ sanic = ["sanic"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "125af808fbbe764fbeeb98f6979b07a5056aea982c3286284a257055f2f5a90f"
+content-hash = "efe502910e09007acf4eb2211fcad6aaa8e2eee337f145e5d86aee519fe4e0cd"
 
 [metadata.files]
 aiofiles = [
@@ -2817,12 +2818,12 @@ rfc3986 = [
     {file = "rfc3986-1.5.0.tar.gz", hash = "sha256:270aaf10d87d0d4e095063c65bf3ddbc6ee3d0b226328ce21e036f946e421835"},
 ]
 sanic = [
-    {file = "sanic-21.12.2-py3-none-any.whl", hash = "sha256:ef4edddfba46f2f8728400470f84deb91d9e5fc21cf2531512acf70638699620"},
-    {file = "sanic-21.12.2.tar.gz", hash = "sha256:c426e15aac6984860c6d1221329be17e02e2dfed4ce0abf8532ab096026ee5e3"},
+    {file = "sanic-22.6.2-py3-none-any.whl", hash = "sha256:efc3e19eb8c43836ebfd424cb3efc762880b5e3f8fbc07bc125e6d469243a62c"},
+    {file = "sanic-22.6.2.tar.gz", hash = "sha256:0edb346455ab5fba4304288c40af31c394f3503458b835051694f2607979010b"},
 ]
 sanic-routing = [
-    {file = "sanic-routing-0.7.2.tar.gz", hash = "sha256:139ce88b3f054e7aa336e2ecc8459837092b103b275d3a97609a34092c55374d"},
-    {file = "sanic_routing-0.7.2-py3-none-any.whl", hash = "sha256:523034ffd07aca056040e08de438269c9a880722eee1ace3a32e4f74b394d9aa"},
+    {file = "sanic-routing-22.3.0.tar.gz", hash = "sha256:fde5a7d4079794b585b9a2904accd0de5a70abf27c82d2658b40c551ef44f703"},
+    {file = "sanic_routing-22.3.0-py3-none-any.whl", hash = "sha256:8282fc05659ff2cebbffa4fb69697601fc9d653c34e0b5bdeed04a832e793fb9"},
 ]
 sanic-testing = [
     {file = "sanic-testing-22.6.0.tar.gz", hash = "sha256:8f006d2332106539cd6f3da8a5c0d1f31472261f3293e43e2c9bbad605e72c5b"},
