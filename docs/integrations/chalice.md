@@ -65,4 +65,10 @@ The GraphiQL interface can then be opened in your browser on http://localhost:80
 The `GraphQLView` accepts two options at the moment:
 
 - `schema`: mandatory, the schema created by `strawberry.Schema`.
-- `graphiql`: optional, defaults to `True`, whether to enable the GraphiQL interface.
+- `render_graphiql`: optional, defaults to `True`, whether to enable the GraphiQL interface.
+- `json_encoder`: optional JSON encoder, defaults to `json.JSONEncoder`, will
+  be used to serialize the data.
+- `json_dumps_params`: optional dictionary of keyword arguments to pass to the
+  `json.dumps` call used to generate the response. To get the most compact JSON
+  representation, you should specify `{"separators": (",", ":")}`, defaults to
+  `None`.
