@@ -118,8 +118,9 @@ class HTTPHandler:
             elif content_type.startswith("multipart/form-data"):
                 multipart_data = await request.form()
                 try:
-                    operations = json.loads(multipart_data.get("operations", "{}"))
-                    files_map = json.loads(multipart_data.get("map", "{}"))
+                    operations_text = multipart_data.get("operations", "{}")
+                    operations = json.loads(operations_text)  # type: ignore
+                    files_map = json.loads(multipart_data.get("map", "{}"))  # type: ignore # noqa: E501
                 except json.JSONDecodeError:
                     return PlainTextResponse(
                         "Unable to parse request body as JSON",

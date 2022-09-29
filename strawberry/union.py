@@ -3,6 +3,7 @@ from itertools import chain
 from typing import (
     TYPE_CHECKING,
     Any,
+    Collection,
     Iterable,
     List,
     Mapping,
@@ -206,7 +207,7 @@ Types = TypeVar("Types", bound=Type)
 # See https://www.python.org/dev/peps/pep-0646/ for more information
 def union(
     name: str,
-    types: Tuple[Types, ...],
+    types: Collection[Types],
     *,
     description: str = None,
     directives: Iterable[object] = (),

@@ -4,6 +4,7 @@ from typing import TYPE_CHECKING, List, Optional, Union
 
 from typing_extensions import Protocol
 
+from strawberry.annotation import StrawberryAnnotation
 from strawberry.custom_scalar import ScalarDefinition
 from strawberry.directive import StrawberryDirective
 from strawberry.enum import EnumDefinition
@@ -114,6 +115,9 @@ class NameConverter:
 
     def get_from_type(self, type_: Union[StrawberryType, type]) -> str:
         from strawberry.union import StrawberryUnion
+
+        # TODO: maybe we should move parse_annotated somewhere else?
+        type_ = StrawberryAnnotation.parse_annotated(type_)  # type: ignore
 
         if isinstance(type_, LazyType):
             name = type_.type_name

@@ -23,7 +23,7 @@ class LazyEnum(enum.Enum):
 
 def test_lazy_type():
     # Module path is short and relative because of the way pytest runs the file
-    LazierType = LazyType["LaziestType", "test_lazy_types"]
+    LazierType = LazyType("LaziestType", "test_lazy_types")
 
     annotation = StrawberryAnnotation(LazierType)
     resolved = annotation.resolve()
@@ -38,7 +38,7 @@ def test_lazy_type():
 
 def test_lazy_type_enum():
     # Module path is short and relative because of the way pytest runs the file
-    LazierType = LazyType["LazyEnum", "test_lazy_types"]
+    LazierType = LazyType("LazyEnum", "test_lazy_types")
 
     annotation = StrawberryAnnotation(LazierType)
     resolved = annotation.resolve()
@@ -53,7 +53,7 @@ def test_lazy_type_enum():
 
 def test_lazy_type_argument():
     # Module path is short and relative because of the way pytest runs the file
-    LazierType = LazyType["LaziestType", "test_lazy_types"]
+    LazierType = LazyType("LaziestType", "test_lazy_types")
 
     @strawberry.mutation
     def slack_off(emotion: LazierType) -> bool:
@@ -63,19 +63,19 @@ def test_lazy_type_argument():
     argument = slack_off.arguments[0]
     assert isinstance(argument.type, LazyType)
     assert argument.type is LazierType
-    assert argument.type.resolve_type() is LaziestType  # type: ignore
+    assert argument.type.resolve_type() is LaziestType
 
 
 def test_lazy_type_field():
     # Module path is short and relative because of the way pytest runs the file
-    LazierType = LazyType["LaziestType", "test_lazy_types"]
+    LazierType = LazyType("LaziestType", "test_lazy_types")
 
     annotation = StrawberryAnnotation(LazierType)
     field = StrawberryField(type_annotation=annotation)
 
     assert isinstance(field.type, LazyType)
     assert field.type is LazierType
-    assert field.type.resolve_type() is LaziestType  # type: ignore
+    assert field.type.resolve_type() is LaziestType
 
 
 def test_lazy_type_generic():
@@ -86,7 +86,7 @@ def test_lazy_type_generic():
         item: T
 
     # Module path is short and relative because of the way pytest runs the file
-    LazierType = LazyType["LaziestType", "test_lazy_types"]
+    LazierType = LazyType("LaziestType", "test_lazy_types")
     ResolvedType = GenericType[LazierType]
 
     annotation = StrawberryAnnotation(ResolvedType)
@@ -104,7 +104,7 @@ def test_lazy_type_generic():
 
 def test_lazy_type_object():
     # Module path is short and relative because of the way pytest runs the file
-    LazierType = LazyType["LaziestType", "test_lazy_types"]
+    LazierType = LazyType("LaziestType", "test_lazy_types")
 
     @strawberry.type
     class WaterParkFeature:
@@ -115,12 +115,12 @@ def test_lazy_type_object():
 
     assert isinstance(field.type, LazyType)
     assert field.type is LazierType
-    assert field.type.resolve_type() is LaziestType  # type: ignore
+    assert field.type.resolve_type() is LaziestType
 
 
 def test_lazy_type_resolver():
     # Module path is short and relative because of the way pytest runs the file
-    LazierType = LazyType["LaziestType", "test_lazy_types"]
+    LazierType = LazyType("LaziestType", "test_lazy_types")
 
     def slaking_pokemon() -> LazierType:
         raise NotImplementedError
@@ -128,4 +128,4 @@ def test_lazy_type_resolver():
     resolver = StrawberryResolver(slaking_pokemon)
     assert isinstance(resolver.type, LazyType)
     assert resolver.type is LazierType
-    assert resolver.type.resolve_type() is LaziestType  # type: ignore
+    assert resolver.type.resolve_type() is LaziestType

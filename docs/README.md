@@ -23,7 +23,9 @@
 - [Generics](./types/generics.md)
 - [Resolvers](./types/resolvers.md)
 - [Union types](./types/union.md)
+- [Lazy types](./types/lazy.md)
 - [Exceptions](./types/exceptions.md)
+- [Private/External Fields](./types/private.md)
 
 ## Codegen
 
@@ -48,6 +50,7 @@
 
 ## Editor integration
 
+- [Mypy](./editors/mypy.md)
 - [Visual Studio Code](./editors/vscode.md)
 
 ## Concepts

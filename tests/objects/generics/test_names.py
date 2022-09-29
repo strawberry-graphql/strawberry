@@ -3,6 +3,8 @@ from typing import Generic, List, NewType, TypeVar
 
 import pytest
 
+from typing_extensions import Annotated
+
 import strawberry
 from strawberry.enum import EnumDefinition
 from strawberry.lazy_type import LazyType
@@ -38,11 +40,15 @@ class TypeB:
         ([StrawberryOptional(StrawberryList(str))], "StrListOptionalExample"),
         ([StrawberryList(StrawberryOptional(str))], "StrOptionalListExample"),
         ([StrawberryList(Enum)], "EnumListExample"),
-        ([StrawberryUnion("Union", (TypeA, TypeB))], "UnionExample"),  # type: ignore
+        ([StrawberryUnion("Union", (TypeA, TypeB))], "UnionExample"),  # pyright: ignore
         ([TypeA], "TypeAExample"),
         ([CustomInt], "CustomIntExample"),
         ([TypeA, TypeB], "TypeATypeBExample"),
         ([TypeA, LazyType["TypeB", "test_names"]], "TypeATypeBExample"),  # type: ignore
+        (
+            [TypeA, Annotated["TypeB", strawberry.lazy("test_names")]],
+            "TypeATypeBExample",
+        ),
     ],
 )
 def test_name_generation(types, expected_name):

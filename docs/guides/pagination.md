@@ -34,7 +34,7 @@ class Connection(Generic[GenericType]):
     would be a connection that might have a `friendshipStartTime`
     """
     page_info: "PageInfo"
-    edges: list["Edge[GenericType]"]
+    edges: List["Edge[GenericType]"]
 
 
 @strawberry.type
@@ -118,7 +118,7 @@ def get_books(first: int = 10, after: Optional[Cursor] = UNSET) -> Connection[Bo
 
 @strawberry.type
 class Query:
-    books: List[Book] = strawberry.field(resolver=get_books)
+    books: Connection[Book] = strawberry.field(resolver=get_books)
 
 schema = strawberry.Schema(query=Query)
 ```

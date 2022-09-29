@@ -1,6 +1,287 @@
 CHANGELOG
 =========
 
+0.133.1 - 2022-09-28
+--------------------
+
+This release fixes an issue that prevented using `strawberry.field` with
+`UNSET` as the default value.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2128](https://github.com/strawberry-graphql/strawberry/pull/2128/)
+
+
+0.133.0 - 2022-09-27
+--------------------
+
+Reduce the number of required dependencies, by marking Pygments and python-multipart as optional. These dependencies are still necessary for some functionality, and so users of that functionality need to ensure they're installed, either explicitly or via an extra:
+
+- Pygments is still necessary when using Strawberry in debug mode, and is included in the `strawberry[debug-server]` extra.
+- python-multipart is still necessary when using `strawberry.file_uploads.Upload` with FastAPI or Starlette, and is included in the `strawberry[fastapi]` and `strawberry[asgi]` extras, respectively.
+
+There is now also the `strawberry[cli]` extra to support commands like `strawberry codegen` and `strawberry export-schema`.
+
+Contributed by [Huon Wilson](https://github.com/huonw) via [PR #2205](https://github.com/strawberry-graphql/strawberry/pull/2205/)
+
+
+0.132.1 - 2022-09-23
+--------------------
+
+Improve resolving performance by avoiding extra calls for basic fields.
+
+This change improves performance of resolving a query by skipping `Info`
+creation and permission checking for fields that don't have a resolver
+or permission classes. In local benchmarks it improves performance of large
+results by ~14%.
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) via [PR #2194](https://github.com/strawberry-graphql/strawberry/pull/2194/)
+
+
+0.132.0 - 2022-09-23
+--------------------
+
+Support storing metadata in strawberry fields.
+
+Contributed by [Paulo Costa](https://github.com/paulo-raca) via [PR #2190](https://github.com/strawberry-graphql/strawberry/pull/2190/)
+
+
+0.131.5 - 2022-09-22
+--------------------
+
+Fixes false positives with the mypy plugin.
+Happened when `to_pydantic` was called on a type that was converted
+pydantic with all_fields=True.
+
+Also fixes the type signature when `to_pydantic` is defined by the user.
+
+```python
+from pydantic import BaseModel
+from typing import Optional
+import strawberry
+
+
+class MyModel(BaseModel):
+    email: str
+    password: Optional[str]
+
+
+@strawberry.experimental.pydantic.input(model=MyModel, all_fields=True)
+class MyModelStrawberry:
+    ...
+
+MyModelStrawberry(email="").to_pydantic()
+# previously would complain wrongly about missing email and password
+```
+
+Contributed by [James Chua](https://github.com/thejaminator) via [PR #2017](https://github.com/strawberry-graphql/strawberry/pull/2017/)
+
+
+0.131.4 - 2022-09-22
+--------------------
+
+This release updates the mypy plugin and the typing for Pyright to treat all
+strawberry fields as keyword-only arguments. This reflects a previous change to
+the Strawberry API.
+
+Contributed by [Paulo Costa](https://github.com/paulo-raca) via [PR #2191](https://github.com/strawberry-graphql/strawberry/pull/2191/)
+
+
+0.131.3 - 2022-09-22
+--------------------
+
+Bug fix: Do not force kw-only=False in fields specified with strawberry.field()
+
+Contributed by [Paulo Costa](https://github.com/paulo-raca) via [PR #2189](https://github.com/strawberry-graphql/strawberry/pull/2189/)
+
+
+0.131.2 - 2022-09-22
+--------------------
+
+This release fixes a small issue that might happen when
+uploading files and not passing the operations object.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2192](https://github.com/strawberry-graphql/strawberry/pull/2192/)
+
+
+0.131.1 - 2022-09-16
+--------------------
+
+Fix warnings during unit tests for Sanic's upload.
+
+Otherwise running unit tests results in a bunch of warning like this:
+
+```
+DeprecationWarning: Use 'content=<...>' to upload raw bytes/text content.
+```
+
+Contributed by [Paulo Costa](https://github.com/paulo-raca) via [PR #2178](https://github.com/strawberry-graphql/strawberry/pull/2178/)
+
+
+0.131.0 - 2022-09-15
+--------------------
+
+This release improves the dataloader class with new features:
+
+- Explicitly cache invalidation, prevents old data from being fetched after a mutation
+- Importing data into the cache, prevents unnecessary load calls if the data has already been fetched by other means.
+
+Contributed by [Paulo Costa](https://github.com/paulo-raca) via [PR #2149](https://github.com/strawberry-graphql/strawberry/pull/2149/)
+
+
+0.130.4 - 2022-09-14
+--------------------
+
+This release adds improved support for Pyright and Pylance, VSCode default
+language server for Python.
+
+Using `strawberry.type`, `strawberry.field`, `strawberry.input` and
+`strawberry.enum` will now be correctly recognized by Pyright and Pylance and
+won't show errors.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2172](https://github.com/strawberry-graphql/strawberry/pull/2172/)
+
+
+0.130.3 - 2022-09-12
+--------------------
+
+Fix invalid deprecation warning issued on arguments annotated
+by a subclassed `strawberry.types.Info`.
+
+Thanks to @ThirVondukr for the bug report!
+
+Example:
+
+```python
+class MyInfo(Info)
+    pass
+
+@strawberry.type
+class Query:
+
+    @strawberry.field
+    def is_tasty(self, info: MyInfo) -> bool:
+        """Subclassed ``info`` argument no longer raises deprecation warning."""
+```
+
+Contributed by [San Kilkis](https://github.com/skilkis) via [PR #2137](https://github.com/strawberry-graphql/strawberry/pull/2137/)
+
+
+0.130.2 - 2022-09-12
+--------------------
+
+This release fixes the conversion of generic aliases when
+using pydantic.
+
+Contributed by [Silas Sewell](https://github.com/silas) via [PR #2152](https://github.com/strawberry-graphql/strawberry/pull/2152/)
+
+
+0.130.1 - 2022-09-12
+--------------------
+
+Fix version parsing issue related to dev builds of Mypy in `strawberry.ext.mypy_plugin`
+
+Contributed by [San Kilkis](https://github.com/skilkis) via [PR #2157](https://github.com/strawberry-graphql/strawberry/pull/2157/)
+
+
+0.130.0 - 2022-09-12
+--------------------
+
+Convert Tuple and Sequence types to GraphQL list types.
+
+Example:
+
+```python
+from collections.abc import Sequence
+from typing import Tuple
+
+@strawberry.type
+class User:
+    pets: Sequence[Pet]
+    favourite_ice_cream_flavours: Tuple[IceCreamFlavour]
+```
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) via [PR #2164](https://github.com/strawberry-graphql/strawberry/pull/2164/)
+
+
+0.129.0 - 2022-09-11
+--------------------
+
+This release adds `strawberry.lazy` which allows you to define the type of the
+field and its path. This is useful when you want to define a field with a type
+that has a circular dependency.
+
+For example, let's say we have a `User` type that has a list of `Post` and a
+`Post` type that has a `User`:
+
+```python
+# posts.py
+from typing import TYPE_CHECKING, Annotated
+
+import strawberry
+
+if TYPE_CHECKING:
+    from .users import User
+
+@strawberry.type
+class Post:
+    title: str
+    author: Annotated["User", strawberry.lazy(".users")]
+```
+
+```python
+# users.py
+from typing import TYPE_CHECKING, Annotated, List
+
+import strawberry
+
+if TYPE_CHECKING:
+    from .posts import Post
+
+@strawberry.type
+class User:
+    name: str
+    posts: List[Annotated["Post", strawberry.lazy(".posts")]]
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2158](https://github.com/strawberry-graphql/strawberry/pull/2158/)
+
+
+0.128.0 - 2022-09-05
+--------------------
+
+This release changes how dataclasses are created to make use of the new
+`kw_only` argument in Python 3.10 so that fields without a default value can now
+follow a field with a default value. This feature is also backported to all other
+supported Python versions.
+
+More info: https://docs.python.org/3/library/dataclasses.html#dataclasses.dataclass
+
+For example:
+
+```python
+# This no longer raises a TypeError
+
+@strawberry.type
+class MyType:
+    a: str = "Hi"
+    b: int
+```
+
+⚠️ This is a breaking change! Whenever instantiating a Strawberry type make sure
+that you only pass values are keyword arguments:
+
+```python
+# Before:
+
+MyType("foo", 3)
+
+# After:
+
+MyType(a="foo", b=3)
+```
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) via [PR #1187](https://github.com/strawberry-graphql/strawberry/pull/1187/)
+
+
 0.127.4 - 2022-08-31
 --------------------
 

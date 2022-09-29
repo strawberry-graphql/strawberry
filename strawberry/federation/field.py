@@ -39,7 +39,7 @@ def field(
     permission_classes: Optional[List[Type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
     default: Any = UNSET,
-    default_factory: Union[Callable, object] = UNSET,
+    default_factory: Union[Callable[..., object], object] = UNSET,
     directives: Sequence[object] = (),
 ) -> T:
     ...
@@ -62,7 +62,7 @@ def field(
     permission_classes: Optional[List[Type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
     default: Any = UNSET,
-    default_factory: Union[Callable, object] = UNSET,
+    default_factory: Union[Callable[..., object], object] = UNSET,
     directives: Sequence[object] = (),
 ) -> Any:
     ...
@@ -70,7 +70,7 @@ def field(
 
 @overload
 def field(
-    resolver: _RESOLVER_TYPE,
+    resolver: _RESOLVER_TYPE[T],
     *,
     name: Optional[str] = None,
     is_subscription: bool = False,
@@ -85,34 +85,34 @@ def field(
     permission_classes: Optional[List[Type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
     default: Any = UNSET,
-    default_factory: Union[Callable, object] = UNSET,
+    default_factory: Union[Callable[..., object], object] = UNSET,
     directives: Sequence[object] = (),
 ) -> StrawberryField:
     ...
 
 
 def field(
-    resolver=None,
+    resolver: Optional[_RESOLVER_TYPE[Any]] = None,
     *,
-    name=None,
-    is_subscription=False,
-    description=None,
-    provides=None,
-    requires=None,
-    external=False,
-    shareable=False,
-    tags=None,
-    override=None,
-    inaccessible=False,
-    permission_classes=None,
-    deprecation_reason=None,
-    default=UNSET,
-    default_factory=UNSET,
+    name: Optional[str] = None,
+    is_subscription: bool = False,
+    description: Optional[str] = None,
+    provides: Optional[List[str]] = None,
+    requires: Optional[List[str]] = None,
+    external: bool = False,
+    shareable: bool = False,
+    tags: Optional[Iterable[str]] = (),
+    override: Optional[str] = None,
+    inaccessible: bool = False,
+    permission_classes: Optional[List[Type[BasePermission]]] = None,
+    deprecation_reason: Optional[str] = None,
+    default: Any = UNSET,
+    default_factory: Union[Callable[..., object], object] = UNSET,
     directives: Sequence[object] = (),
     # This init parameter is used by PyRight to determine whether this field
     # is added in the constructor or not. It is not used to change
     # any behavior at the moment.
-    init=None,
+    init: Literal[True, False, None] = None,
 ) -> Any:
     from .schema_directives import (
         External,
@@ -127,10 +127,10 @@ def field(
     directives = list(directives)
 
     if provides:
-        directives.append(Provides(" ".join(provides)))
+        directives.append(Provides(fields=" ".join(provides)))
 
     if requires:
-        directives.append(Requires(" ".join(requires)))
+        directives.append(Requires(fields=" ".join(requires)))
 
     if external:
         directives.append(External())
@@ -139,16 +139,16 @@ def field(
         directives.append(Shareable())
 
     if tags:
-        directives.extend(Tag(tag) for tag in tags)
+        directives.extend(Tag(name=tag) for tag in tags)
 
     if override:
-        directives.append(Override(override))
+        directives.append(Override(override_from=override))
 
     if inaccessible:
         directives.append(Inaccessible())
 
-    return base_field(
-        resolver=resolver,
+    return base_field(  # type: ignore
+        resolver=resolver,  # type: ignore
         name=name,
         is_subscription=is_subscription,
         description=description,
@@ -156,6 +156,6 @@ def field(
         deprecation_reason=deprecation_reason,
         default=default,
         default_factory=default_factory,
-        init=init,
+        init=init,  # type: ignore
         directives=directives,
     )
