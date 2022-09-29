@@ -115,13 +115,6 @@ class AsyncGraphQLView(GraphQLView):
             files_map = json.loads(request.form.get("map", "{}"))
 
             data = replace_placeholders_with_files(operations, files_map, request.files)
-
-            try:
-                data = replace_placeholders_with_files(
-                    operations, files_map, request.files
-                )
-            except KeyError:
-                return Response(status=400, response="File(s) missing in form data")
         elif method == "GET" and request.args:
             data = parse_query_params(request.args.to_dict())
 
