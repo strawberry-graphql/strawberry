@@ -29,9 +29,6 @@ class GraphQLView:
         self.json_encoder = json_encoder
         self.json_dumps_params = json_dumps_params or {}
 
-    def get_root_value(self, request: Request) -> Optional[object]:
-        return None
-
     @staticmethod
     def render_graphiql() -> str:
         """
