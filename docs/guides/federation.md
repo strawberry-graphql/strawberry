@@ -7,7 +7,7 @@ title: Federation 2
 <Note>
 
 This guide refers to Apollo Federation 2, if you're looking for the 1.0 guide,
-please see the [federation v1](docs/guides/federation-v1.md) guide.
+please see the [federation v1](federation-v1.md) guide.
 
 </Note>
 
