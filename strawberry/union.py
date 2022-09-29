@@ -205,9 +205,12 @@ Types = TypeVar("Types", bound=Type)
 # For the `types` argument we'd ideally use a TypeVarTuple, but that's not
 # yet supported in any python implementation (or in typing_extensions).
 # See https://www.python.org/dev/peps/pep-0646/ for more information
+# TODO: add overload for deprecated
+
+
 def union(
     name: str,
-    types: Collection[Types],
+    types: Optional[Collection[Types]] = None,
     *,
     description: str = None,
     directives: Iterable[object] = (),
@@ -222,6 +225,11 @@ def union(
     ... class B: ...
     >>> strawberry.union("Name", (A, Optional[B]))
     """
+
+    if types is None:
+        return StrawberryUnion(
+            name=name, description=description, directives=directives
+        )
 
     # Validate types
     if len(types) == 0:

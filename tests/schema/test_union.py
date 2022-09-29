@@ -5,6 +5,8 @@ from typing import Generic, List, Optional, TypeVar, Union
 
 import pytest
 
+from typing_extensions import Annotated
+
 import strawberry
 
 
@@ -232,7 +234,7 @@ def test_named_union():
     class B:
         b: int
 
-    Result = strawberry.union("Result", (A, B))
+    Result = Annotated[Union[A, B], strawberry.union(name="Result")]
 
     @strawberry.type
     class Query:
