@@ -1,4 +1,5 @@
-from typing import Dict, Optional
+import json
+from typing import Dict, Optional, Type
 
 from chalice.app import BadRequestError, Request, Response
 from strawberry.exceptions import MissingQueryError
@@ -8,15 +9,28 @@ from strawberry.http import (
     parse_request_data,
     process_result,
 )
+from strawberry.http.json_dumps_params import JSONDumpsParams
 from strawberry.schema import BaseSchema
 from strawberry.types import ExecutionResult
 from strawberry.utils.graphiql import get_graphiql_html
 
 
 class GraphQLView:
-    def __init__(self, schema: BaseSchema, render_graphiql: bool = True):
-        self._schema = schema
+    def __init__(
+        self,
+        schema: BaseSchema,
+        render_graphiql: bool = True,
+        json_encoder: Type[json.JSONEncoder] = json.JSONEncoder,
+        json_dumps_params: Optional[JSONDumpsParams] = None,
+        **kwargs
+    ):
         self.graphiql = render_graphiql
+        self._schema = schema
+        self.json_encoder = json_encoder
+        self.json_dumps_params = json_dumps_params or {}
+
+    def get_root_value(self, request: Request) -> Optional[object]:
+        return None
 
     @staticmethod
     def render_graphiql() -> str:
@@ -61,6 +75,11 @@ class GraphQLView:
         body = {"Code": error_code, "Message": message}
 
         return Response(body=body, status_code=http_status_code, headers=headers)
+
+    def process_result(
+        self, request: Request, result: ExecutionResult
+    ) -> GraphQLHTTPResponse:
+        return process_result(result)
 
     def execute_request(self, request: Request) -> Response:
         """
@@ -133,6 +152,8 @@ class GraphQLView:
             root_value=None,
         )
 
-        http_result: GraphQLHTTPResponse = process_result(result)
+        http_result = self.process_result(request, result)
 
-        return Response(body=http_result)
+        body = self.json_encoder(**self.json_dumps_params).encode(http_result)
+
+        return Response(body=body)

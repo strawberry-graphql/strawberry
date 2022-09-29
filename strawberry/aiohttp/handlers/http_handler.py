@@ -1,6 +1,6 @@
 import json
 from io import BytesIO
-from typing import Any, Dict, Union
+from typing import Any, Dict, Optional, Type, Union
 
 from typing_extensions import Literal
 
@@ -8,6 +8,7 @@ from aiohttp import web
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import GraphQLRequestData, parse_query_params, parse_request_data
+from strawberry.http.json_dumps_params import JSONDumpsParams
 from strawberry.schema import BaseSchema
 from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types.graphql import OperationType
@@ -24,6 +25,8 @@ class HTTPHandler:
         get_root_value,
         process_result,
         request: web.Request,
+        json_encoder: Type[json.JSONEncoder] = json.JSONEncoder,
+        json_dumps_params: Optional[JSONDumpsParams] = None,
     ):
         self.schema = schema
         self.graphiql = graphiql
@@ -32,6 +35,8 @@ class HTTPHandler:
         self.get_root_value = get_root_value
         self.process_result = process_result
         self.request = request
+        self.json_encoder = json_encoder
+        self.json_dumps_params = json_dumps_params or {}
 
     async def handle(self) -> web.StreamResponse:
         if self.request.method == "GET":
@@ -96,7 +101,9 @@ class HTTPHandler:
             ) from e
 
         response_data = await self.process_result(request, result)
-        response.text = json.dumps(response_data)
+        response.text = self.json_encoder(**self.json_dumps_params).encode(
+            response_data
+        )
         response.content_type = "application/json"
         return response
 
@@ -152,6 +159,7 @@ class HTTPHandler:
     def should_render_graphiql(self, request: web.Request) -> bool:
         if not self.graphiql:
             return False
+
         return any(
             supported_header in request.headers.get("Accept", "")
             for supported_header in ("text/html", "*/*")
