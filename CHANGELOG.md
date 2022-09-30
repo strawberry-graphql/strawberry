@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.133.2 - 2022-09-30
+--------------------
+
+This release fixes an issue with `strawberry.federation.field` that
+prevented instantiating field when passing a resolver function.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2218](https://github.com/strawberry-graphql/strawberry/pull/2218/)
+
+
 0.133.1 - 2022-09-28
 --------------------
 
