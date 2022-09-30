@@ -162,7 +162,7 @@ def test_using_generics():
     class Query:
         @strawberry.field
         def top_products(self, first: int) -> ListOfProducts[Product]:
-            return ListOfProducts([])
+            return ListOfProducts(products=[])
 
     schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
 
