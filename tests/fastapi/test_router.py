@@ -16,9 +16,14 @@ def test_include_router_default_prefix():
 
     app = FastAPI()
     schema = strawberry.Schema(query=Query)
-    graphql_app = GraphQLRouter(schema)
-    with pytest.raises(Exception):
-        app.include_router(graphql_app)
+    graphql_app = GraphQLRouter(schema, path="/")
+    app.include_router(graphql_app)
+
+    test_client = TestClient(app)
+    response = test_client.post("/", json={"query": "{ abc }"})
+
+    assert response.status_code == 200
+    assert response.json() == {"data": {"abc": "abc"}}
 
 
 def test_include_router_prefix():
