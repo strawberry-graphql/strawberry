@@ -20,7 +20,7 @@ def test_include_router_default_prefix():
     app.include_router(graphql_app)
 
     test_client = TestClient(app)
-    response = test_client.post("/", json={"query": "{ abc }"})
+    response = test_client.post("/graphql", json={"query": "{ abc }"})
 
     assert response.status_code == 200
     assert response.json() == {"data": {"abc": "abc"}}
