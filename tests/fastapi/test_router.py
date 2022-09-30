@@ -16,7 +16,7 @@ def test_include_router_default_prefix():
 
     app = FastAPI()
     schema = strawberry.Schema(query=Query)
-    graphql_app = GraphQLRouter(schema, path="/")
+    graphql_app = GraphQLRouter(schema)
     app.include_router(graphql_app)
 
     test_client = TestClient(app)
