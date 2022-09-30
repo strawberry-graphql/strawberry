@@ -1,3 +1,4 @@
+import dataclasses
 from typing import (
     Any,
     Callable,
@@ -106,8 +107,8 @@ def field(
     inaccessible: bool = False,
     permission_classes: Optional[List[Type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
-    default: Any = UNSET,
-    default_factory: Union[Callable[..., object], object] = UNSET,
+    default: Any = dataclasses.MISSING,
+    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
     directives: Sequence[object] = (),
     # This init parameter is used by PyRight to determine whether this field
     # is added in the constructor or not. It is not used to change
