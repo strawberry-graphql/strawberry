@@ -1,7 +1,7 @@
 from collections import defaultdict
 from copy import copy
 from itertools import chain
-from typing import Any, List, Union, cast
+from typing import Any, List, Optional, Type, Union, cast
 
 from graphql import (
     GraphQLField,
@@ -10,7 +10,6 @@ from graphql import (
     GraphQLNonNull,
     GraphQLObjectType,
     GraphQLScalarType,
-    GraphQLString,
     GraphQLUnionType,
 )
 from graphql.type.definition import GraphQLArgument
@@ -33,17 +32,83 @@ class Schema(BaseSchema):
         enable_federation_2 = kwargs.pop("enable_federation_2", False)
 
         kwargs["types"] = additional_types
+        kwargs["query"] = self._get_query_type(kwargs.get("query"))
 
         super().__init__(*args, **kwargs)
 
         self._add_scalars()
-        self._create_service_field()
         self._extend_query_type()
 
         if enable_federation_2:
             self._add_link_directives()
         else:
             self._remove_resolvable_field()
+
+    def _get_query_type(self, query: Optional[Type]) -> Type:
+        import strawberry
+        from strawberry.tools.create_type import create_type
+        from strawberry.tools.merge_types import merge_types
+
+        @strawberry.type(name="_Service")
+        class Service:
+            sdl: str = strawberry.field(
+                resolver=lambda: print_schema(self),
+            )
+
+        # self._service_type = GraphQLObjectType(
+        #     name="_Service", fields={"sdl": GraphQLField(GraphQLNonNull(GraphQLString))}
+        # )
+
+        # self._service_field = GraphQLField(
+        #     GraphQLNonNull(self._service_type),
+        #     resolve=lambda _, info: {"sdl": print_schema(self)},
+        # )
+
+        @strawberry.field(name="_service")
+        def service() -> Service:
+            return Service()
+
+        fields = [service]
+
+        FederationQuery = create_type(name="Query", fields=fields)
+
+        # @strawberry.type(name="Query")
+        # class FederationQuery:
+        #     _service: Service = strawberry.field(name="_service")
+
+        if query is None:
+            return FederationQuery
+
+        query_type = merge_types(
+            "Query",
+            (
+                FederationQuery,
+                query,
+            ),
+        )
+
+        if query._type_definition.extend:
+            query_type._type_definition.extend = True
+
+        return query_type
+
+    def _extend_query_type(self):
+        fields = {}
+        entity_type = _get_entity_type(self.schema_converter.type_map)
+
+        if entity_type:
+            self._schema.type_map[entity_type.name] = entity_type
+            fields["_entities"] = self._get_entities_field(entity_type)
+
+        # Copy the query type, update it to use the modified fields
+        query_type = cast(GraphQLObjectType, self._schema.query_type)
+        fields.update(query_type.fields)
+
+        query_type = copy(query_type)
+        query_type._fields = fields
+
+        self._schema.query_type = query_type
+        self._schema.type_map[query_type.name] = query_type
 
     def entities_resolver(self, root, info, representations):
         results = []
@@ -123,25 +188,6 @@ class Schema(BaseSchema):
 
         self.schema_directives = tuple(self.schema_directives) + link_directives
 
-    def _extend_query_type(self):
-        fields = {"_service": self._service_field}
-
-        entity_type = _get_entity_type(self.schema_converter.type_map)
-
-        if entity_type:
-            self._schema.type_map[entity_type.name] = entity_type
-            fields["_entities"] = self._get_entities_field(entity_type)
-
-        # Copy the query type, update it to use the modified fields
-        query_type = cast(GraphQLObjectType, self._schema.query_type)
-        fields.update(query_type.fields)
-        query_type = copy(query_type)
-        query_type._fields = fields
-
-        self._schema.query_type = query_type
-        self._schema.type_map["_Service"] = self._service_type
-        self._schema.type_map[query_type.name] = query_type
-
     def _get_entities_field(self, entity_type: GraphQLUnionType) -> GraphQLField:
         return GraphQLField(
             GraphQLNonNull(GraphQLList(entity_type)),
@@ -151,16 +197,6 @@ class Schema(BaseSchema):
                 )
             },
             resolve=self.entities_resolver,
-        )
-
-    def _create_service_field(self):
-        self._service_type = GraphQLObjectType(
-            name="_Service", fields={"sdl": GraphQLField(GraphQLNonNull(GraphQLString))}
-        )
-
-        self._service_field = GraphQLField(
-            GraphQLNonNull(self._service_type),
-            resolve=lambda _, info: {"sdl": print_schema(self)},
         )
 
 
