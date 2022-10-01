@@ -55,15 +55,6 @@ class Schema(BaseSchema):
                 resolver=lambda: print_schema(self),
             )
 
-        # self._service_type = GraphQLObjectType(
-        #     name="_Service", fields={"sdl": GraphQLField(GraphQLNonNull(GraphQLString))}
-        # )
-
-        # self._service_field = GraphQLField(
-        #     GraphQLNonNull(self._service_type),
-        #     resolve=lambda _, info: {"sdl": print_schema(self)},
-        # )
-
         @strawberry.field(name="_service")
         def service() -> Service:
             return Service()
@@ -71,10 +62,6 @@ class Schema(BaseSchema):
         fields = [service]
 
         FederationQuery = create_type(name="Query", fields=fields)
-
-        # @strawberry.type(name="Query")
-        # class FederationQuery:
-        #     _service: Service = strawberry.field(name="_service")
 
         if query is None:
             return FederationQuery
@@ -87,8 +74,9 @@ class Schema(BaseSchema):
             ),
         )
 
+        # TODO: this should be probably done in merge_types
         if query._type_definition.extend:
-            query_type._type_definition.extend = True
+            query_type._type_definition.extend = True  # type: ignore
 
         return query_type
 
