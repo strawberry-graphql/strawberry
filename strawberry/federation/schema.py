@@ -32,19 +32,41 @@ class Schema(BaseSchema):
         enable_federation_2 = kwargs.pop("enable_federation_2", False)
 
         kwargs["types"] = additional_types
-        kwargs["query"] = self._get_query_type(kwargs.get("query"))
+        kwargs["query"] = self._get_federation_query_type(kwargs.get("query"))
 
         super().__init__(*args, **kwargs)
 
         self._add_scalars()
-        self._extend_query_type()
+        self._add_entities_to_query()
 
         if enable_federation_2:
             self._add_link_directives()
         else:
             self._remove_resolvable_field()
 
-    def _get_query_type(self, query: Optional[Type]) -> Type:
+    def _get_federation_query_type(self, query: Optional[Type]) -> Type:
+        """Returns a new query type that includes the _service field.
+
+        If the query type is provided, it will be used as the base for the new
+        query type. Otherwise, a new query type will be created.
+
+        Federation needs the following two fields to be present in the query type:
+        - _service: This field is used by the gateway to query for the capabilities
+            of the federated service.
+        - _entities: This field is used by the gateway to query for the entities
+            that are part of the federated service.
+
+        The _service field is added by default, but the _entities field is only
+        added if the schema contains an entity type.
+        """
+
+        # note we don't add the _entities field here, as we need to know if the
+        # schema contains an entity type first and we do that by leveraging
+        # the schema converter type map, so we don't have to do that twice
+        # TODO: ideally we should be able to do this without using the schema
+        # converter, but for now this is the easiest way to do it
+        # see `_add_entities_to_query`
+
         import strawberry
         from strawberry.tools.create_type import create_type
         from strawberry.tools.merge_types import merge_types
@@ -80,13 +102,14 @@ class Schema(BaseSchema):
 
         return query_type
 
-    def _extend_query_type(self):
-        fields = {}
+    def _add_entities_to_query(self):
         entity_type = _get_entity_type(self.schema_converter.type_map)
 
-        if entity_type:
-            self._schema.type_map[entity_type.name] = entity_type
-            fields["_entities"] = self._get_entities_field(entity_type)
+        if not entity_type:
+            return
+
+        self._schema.type_map[entity_type.name] = entity_type
+        fields = {"_entities": self._get_entities_field(entity_type)}
 
         # Copy the query type, update it to use the modified fields
         query_type = cast(GraphQLObjectType, self._schema.query_type)
