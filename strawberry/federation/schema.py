@@ -1,9 +1,10 @@
 from collections import defaultdict
 from copy import copy
 from itertools import chain
-from typing import Any, List, Optional, Type, Union, cast
+from typing import Any, Dict, Iterable, List, Optional, Type, Union, cast
 
 from graphql import (
+    ExecutionContext as GraphQLExecutionContext,
     GraphQLField,
     GraphQLInterfaceType,
     GraphQLList,
@@ -14,8 +15,9 @@ from graphql import (
 )
 from graphql.type.definition import GraphQLArgument
 
-from strawberry.custom_scalar import ScalarDefinition
+from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.enum import EnumDefinition
+from strawberry.extensions import Extension
 from strawberry.schema.types.concrete_type import TypeMap
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
@@ -24,17 +26,42 @@ from strawberry.utils.inspect import get_func_args
 
 from ..printer import print_schema
 from ..schema import Schema as BaseSchema
+from ..schema.config import StrawberryConfig
 
 
 class Schema(BaseSchema):
-    def __init__(self, *args, **kwargs):
-        additional_types = list(kwargs.pop("types", []))
-        enable_federation_2 = kwargs.pop("enable_federation_2", False)
+    def __init__(
+        self,
+        query: Optional[Type] = None,
+        mutation: Optional[Type] = None,
+        subscription: Optional[Type] = None,
+        # TODO: we should update directives' type in the main schema
+        directives: Iterable[Type] = (),
+        types: Iterable[Type] = (),
+        extensions: Iterable[Union[Type[Extension], Extension]] = (),
+        execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
+        config: Optional[StrawberryConfig] = None,
+        scalar_overrides: Optional[
+            Dict[object, Union[ScalarWrapper, ScalarDefinition]]
+        ] = None,
+        schema_directives: Iterable[object] = (),
+        enable_federation_2: bool = False,
+    ):
 
-        kwargs["types"] = additional_types
-        kwargs["query"] = self._get_federation_query_type(kwargs.get("query"))
+        query = self._get_federation_query_type(query)
 
-        super().__init__(*args, **kwargs)
+        super().__init__(
+            query=query,
+            mutation=mutation,
+            subscription=subscription,
+            directives=directives,  # type: ignore
+            types=types,
+            extensions=extensions,
+            execution_context_class=execution_context_class,
+            config=config,
+            scalar_overrides=scalar_overrides,
+            schema_directives=schema_directives,
+        )
 
         self._add_scalars()
         self._add_entities_to_query()
