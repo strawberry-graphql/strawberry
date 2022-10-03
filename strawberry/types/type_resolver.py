@@ -3,7 +3,6 @@ import sys
 from typing import Dict, List, Type
 
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.arguments import UNSET
 from strawberry.exceptions import (
     FieldWithResolverAndDefaultFactoryError,
     FieldWithResolverAndDefaultValueError,
@@ -11,6 +10,7 @@ from strawberry.exceptions import (
 )
 from strawberry.field import StrawberryField
 from strawberry.private import is_private
+from strawberry.unset import UNSET
 
 
 def _get_fields(cls: Type) -> List[StrawberryField]:
