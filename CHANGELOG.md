@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.133.5 - 2022-10-03
+--------------------
+
+Updated `unset` import, from `strawberry.arguments` to `strawberry.unset` in codebase.
+
+This will prevent strawberry from triggering its own warning on deprecated imports.
+
+Contributed by [dependabot](https://github.com/dependabot) via [PR #2219](https://github.com/strawberry-graphql/strawberry/pull/2219/)
+
+
 0.133.4 - 2022-10-03
 --------------------
 
