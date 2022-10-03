@@ -1,6 +1,25 @@
 CHANGELOG
 =========
 
+0.133.3 - 2022-10-03
+--------------------
+
+This release allows to create a federation schema without having to pass a
+`Query` type. This is useful when your schema only extends some types without
+adding any additional root field.
+
+```python
+@strawberry.federation.type(keys=["id"])
+class Location:
+    id: strawberry.ID
+    name: str = strawberry.federation.field(override="start")
+
+schema = strawberry.federation.Schema(types=[Location])
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2220](https://github.com/strawberry-graphql/strawberry/pull/2220/)
+
+
 0.133.2 - 2022-09-30
 --------------------
 
