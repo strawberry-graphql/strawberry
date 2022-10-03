@@ -1,6 +1,26 @@
 CHANGELOG
 =========
 
+0.133.4 - 2022-10-03
+--------------------
+
+This release fixes the type of strawberry.federation.field,
+this will prevent errors from mypy and pyright when doing the following:
+
+```python
+@strawberry.federation.type(keys=["id"])
+class Location:
+    id: strawberry.ID
+
+    # the following field was reporting an error in mypy and pylance
+    celestial_body: CelestialBody = strawberry.federation.field(
+        resolver=resolve_celestial_body
+    )
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2222](https://github.com/strawberry-graphql/strawberry/pull/2222/)
+
+
 0.133.3 - 2022-10-03
 --------------------
 
