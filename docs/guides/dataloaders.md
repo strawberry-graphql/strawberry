@@ -14,6 +14,8 @@ DataLoaders provide an async API, so they only work in async context
 
 </Note>
 
+Refer the official dataloaders [specification](https://github.com/graphql/dataloader) for an advance guide on dataloaders.
+
 ## Basic usage
 
 Here's how you'd use a DataLoader, first we need to define a function that
@@ -118,6 +120,44 @@ the list for each incorrect key. A call with `keys == [1, 3]` returns
 directly. If the `load_users` function raises an exception, even `load`s with an
 otherwise valid key, like `await loader.load(1)`, will raise that exception.
 
+### Overriding Cache Key
+
+By default, the input is used as cache key. In the above examples, the cache key is always a scalar (int, float, string, etc.)
+and uniquely resolves the data for the input.
+
+In practical applications there are situations where it requires combination of fields to
+uniquely identify the data. By providing `cache_key_fn` argument to the `DataLoader` the behaviour of generating key is changed. It is also useful when objects are keys and two objects should be considered equivalent.
+The function definition takes an input parameter and returns a `Hashable` type.
+
+```python
+from typing import List, Union
+from strawberry.dataloader import DataLoader
+
+class User:
+    def __init__(self, custom_id: int, name: str):
+        self.id: int = custom_id
+        self.name: str = name
+
+async def loader_fn(keys):
+    return keys
+
+def custom_cache_key(key):
+    return key.id
+
+loader = DataLoader(load_fn=loader_fn, cache_key_fn=custom_cache_key)
+data1 = await loader.load(User(1, "Nick"))
+data2 = await loader.load(User(1, "Nick"))
+assert data1 == data2 #returns true
+```
+
+`loader.load(User(1, "Nick"))` will call `custom_cache_key` internally, passing the object as parameter to the function
+which will return `User.id` as key that is `1`.
+The second call will check the cache for the key returned by `custom_cache_key` and will return the cache object
+from the loader cache.
+
+The implementation relies on users to handle conflicts while generating the cache key. In case of conflict the
+data will be overriden for the key.
+
 ### Cache invalidation
 
 By default DataLoaders use an internal cache. It is great for performance, however it can cause problems when the data is modified
@@ -172,6 +212,75 @@ class Query:
     }
   }
 }
+```
+
+### Custom Cache
+
+DataLoaders are per-request cache that is short-lived, it caches data in memory.
+However, this strategy might not be optimal or safe for long-lived data loaders. DataLoaders let you override the custom caching logic, which can get data from other persistent caches (e.g Redis)
+
+`DataLoaders` provides an argument `cache_map`. It takes an instance of a class which implements an abstract interface `AbstractCache`. The interface methods are `get`, `set`, `delete` and `clear`
+
+Using custom cache supersedes the `cache_key_fn` if both arguments are provided simultaneously.
+
+```python
+from typing import List, Union, Any, Optional
+
+import strawberry
+from strawberry.types import Info
+from strawberry.asgi import GraphQL
+from strawberry.dataloader import DataLoader, AbstractCache
+
+from starlette.requests import Request
+from starlette.websockets import WebSocket
+from starlette.responses import Response
+
+
+class UserCache(AbstractCache):
+    def __init__(self):
+        self.cache = {}
+
+    def get(self, key: Any) -> Union[Any, None]:
+        return self.cache.get(key)   #fetch data from persistent cache
+
+    def set(self, key: Any, value: Any) -> None:
+        self.cache[key] = value   #store data in the cache
+
+    def delete(self, key: Any) -> None:
+        del self.cache[key]   #delete key from the cache
+
+    def clear(self) -> None:
+        self.cache.clear()  #clear the cache
+
+
+@strawberry.type
+class User:
+    id: strawberry.ID
+    name: str
+
+
+async def load_users(keys) -> List[User]:
+    return [User(id=key, name="Jane Doe") for key in keys]
+
+
+class MyGraphQL(GraphQL):
+    async def get_context(self, request: Union[Request, WebSocket], response: Optional[Response]) -> Any:
+        return {
+            "user_loader": DataLoader(
+                load_fn=load_users,
+                cache_map=UserCache()
+            )
+        }
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    async def get_user(self, info: Info, id: strawberry.ID) -> User:
+        return await info.context["user_loader"].load(id)
+
+
+schema = strawberry.Schema(query=Query)
+app = MyGraphQL(schema, graphiql=True)
 ```
 
 ## Usage with GraphQL
