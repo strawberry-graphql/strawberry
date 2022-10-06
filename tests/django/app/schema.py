@@ -1,7 +1,8 @@
 import typing
 
 import strawberry
-from strawberry.extensions import Extension
+from strawberry.apollo.schema_directives import CacheControl
+from strawberry.extensions import ApolloCacheControlExtension, Extension
 from strawberry.file_uploads import Upload
 
 
@@ -13,6 +14,17 @@ class MyExtension(Extension):
 @strawberry.input
 class FolderInput:
     files: typing.List[Upload]
+
+
+@strawberry.type
+class Book:
+    title: str
+    cachedTitle: str = strawberry.field(directives=[CacheControl(max_age=30)])
+
+
+@strawberry.type
+class Reader:
+    book: Book = strawberry.field(directives=[CacheControl(inheredit_max_age=True)])
 
 
 @strawberry.type
@@ -53,5 +65,24 @@ class Query:
     def hi(self, name: str) -> str:
         return f"Hi {name}!"
 
+    @strawberry.field
+    def book(self) -> Book:
+        return Book(
+            title="The Boy, the Mole, the Fox and the Horse",
+            cachedTitle="The Boy, the Mole, the Fox and the Horse",
+        )
 
-schema = strawberry.Schema(query=Query, mutation=Mutation, extensions=[MyExtension])
+    @strawberry.field(directives=[CacheControl(max_age=60)])
+    def cached_book(self) -> Book:
+        return Book(title="Kill the Next One", cachedTitle="Kill the Next One")
+
+    @strawberry.field(directives=[CacheControl(max_age=40)])
+    def reader(self) -> Reader:
+        return Reader(book=Book(title="The Help", cachedTitle="The Help"))
+
+
+schema = strawberry.Schema(
+    query=Query,
+    mutation=Mutation,
+    extensions=[MyExtension, ApolloCacheControlExtension],
+)

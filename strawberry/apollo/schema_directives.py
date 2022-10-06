@@ -21,9 +21,6 @@ class CacheControlScope(Enum):
     ],
 )
 class CacheControl:
-    max_age: Optional[int]
+    max_age: int = 0
     scope: Optional[CacheControlScope] = CacheControlScope.PUBLIC
     inheredit_max_age: Optional[bool] = False
-
-
-__all__ = ["CacheControl"]

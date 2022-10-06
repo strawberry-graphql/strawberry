@@ -13,6 +13,7 @@ class Response:
     errors: Optional[List[GraphQLFormattedError]]
     data: Optional[Dict[str, object]]
     extensions: Optional[Dict[str, object]]
+    headers: Optional[Dict[str, object]]
 
 
 class Body(TypedDict, total=False):
@@ -41,6 +42,7 @@ class BaseGraphQLTestClient(ABC):
             errors=data.get("errors"),
             data=data.get("data"),
             extensions=data.get("extensions"),
+            headers=resp.headers,
         )
         if asserts_errors:
             assert response.errors is None
