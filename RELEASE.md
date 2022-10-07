@@ -11,7 +11,7 @@ class RangeInput:
 @strawberry.input
 class CreateUserInput:
     name: str
-    age: int = strawberry.field(directives=[ValidRange(min=1, max=100)])
+    age: int = strawberry.field(directives=[RangeInput(min=1, max=100)])
 ```
 
 prints the following:
