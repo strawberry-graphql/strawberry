@@ -8,7 +8,8 @@ The GraphiQL playground integrated with Strawberry available at
 [http://localhost:8000/graphql](http://localhost:8000/graphql) (if you run the schema
 with `strawberry server`) can be a good place to start testing your queries and
 mutations. However, at some point, while you are developing your application (or even
-before if you are practising TDD), you may want to create some automated tests.
+before if you are practising Test Driven Development), you may want to create some
+automated tests.
 
 We can use the Strawberry `schema` object we defined in the
 [Getting Started tutorial](../index.md#step-5-create-our-schema-and-run-it) to run our
@@ -69,8 +70,7 @@ async def test_query_async():
 
 ## Testing Mutations
 
-We can also write a test for our [`addBook` Mutation](../general/mutations.md)
-example:
+We can also write a test for our [`addBook` Mutation](../general/mutations.md) example:
 
 ```python
 @pytest.mark.asyncio
@@ -142,3 +142,104 @@ async def test_subscription():
 
 As you can see testing Subscriptions is a bit more complicated because we want to check
 the result of each individual result.
+
+## Testing with API Client
+
+To test the http request you can use our test client `GraphQLTestClient`. It hides the
+http request's details and asserts that there are no errors in the response (you can
+always disable this behavior by passing `asserts_errors=False` to the `query` method).
+This makes it easier to test queries and makes your tests cleaner.
+
+Your tests will look like these:
+
+```python
+def test_strawberry(graphql_client):
+    query = """
+        query Hi($name: String!) {
+            hi(name: $name)
+        }
+    """
+
+    result = graphql_client.query(query, variables={"name": "Marcotte"})
+
+    assert result.data == {"hi": "Hi Marcotte!"}
+
+
+def test_fails(graphql_client):
+    query = """
+        query {
+            nope
+        }
+    """
+
+    result = graphql_client.query(query, asserts_errors=False)
+
+    assert result.errors == []
+```
+
+If you are using `pytest` you can add a fixture in `conftest.py`
+
+There is a different `GraphQLTestClient` for `Django`, `asgi` and `aiohttp` as each
+integration manage the request differently.
+
+### With Django
+
+```python
+import pytest
+
+from django.test.client import Client
+
+from strawberry.django.test import GraphQLTestClient
+
+
+@pytest.fixture()
+def graphql_client():
+    yield GraphQLTestClient(Client())
+```
+
+### With asgi
+
+```python
+import pytest
+
+from starlette.testclient import TestClient
+
+from strawberry.asgi.test import GraphQLTestClient
+from tests.asgi.app import create_app
+
+
+@pytest.fixture
+def test_client():
+    app = create_app()
+    return TestClient(app)
+
+
+@pytest.fixture
+def graphql_client(test_client):
+    yield GraphQLTestClient(test_client)
+```
+
+## With aiohttp
+
+```python
+import pytest
+
+import pytest_asyncio
+
+from strawberry.aiohttp.test.client import GraphQLTestClient
+from tests.aiohttp.app import create_app
+
+
+@pytest_asyncio.fixture
+async def aiohttp_app_client(event_loop, aiohttp_client):
+    app = create_app(graphiql=True)
+    event_loop.set_debug(True)
+    return await aiohttp_client(app)
+
+
+@pytest.fixture
+def graphql_client(aiohttp_app_client):
+    yield GraphQLTestClient(aiohttp_app_client, url="/graphql")
+```
+
+## Testing file Upload
