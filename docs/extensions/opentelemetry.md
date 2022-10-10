@@ -68,6 +68,25 @@ ArgFilter = Callable[
 ]
 ```
 
+#### `arg_serialize: Optional[ArgSerializer]`
+
+A function to serialize field arguments before adding them into the tracing
+data.
+
+This is sometimes useful because OpenTelemetry Python SDK accepts only
+certain attribute types, namely `bool`, `str`, `bytes`, `int`, and `float`.
+
+If not specified, then a default serializer is applied which converts any
+value to string. It additionally flattens any nested dictionaries, which
+includes strawberry's input types.
+
+```python
+ArgSerializer = Callable[
+  [Dict[str, Any], GraphQLResolveInfo],
+  Dict[str, Any]
+]
+```
+
 ## More examples:
 
 <details>

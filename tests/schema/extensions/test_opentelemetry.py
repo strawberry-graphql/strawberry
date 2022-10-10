@@ -216,3 +216,41 @@ async def test_tracing_filter_kwargs(global_tracer_mock, mocker):
             mocker.call().__enter__().set_attribute("graphql.param.name", "[...]"),
         ]
     )
+
+
+@pytest.mark.asyncio
+async def test_tracing_serialize_kwargs(global_tracer_mock, mocker):
+    @strawberry.input
+    class Options:
+        count: int
+        greeter: str
+        sequence: list[int]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hi(self, name: str, opts: Options) -> str:
+            return f"{opts.count * opts.greeter} {name}"
+
+    schema = strawberry.Schema(query=Query, extensions=[OpenTelemetryExtension()])
+
+    query = """
+        query {
+            hi(name: "Patrick", opts: {count: 3, greeter: "Hi", sequence: [1, 2, 3]})
+        }
+    """
+
+    await schema.execute(query)
+
+    global_tracer_mock.return_value.start_as_current_span.assert_has_calls(
+        [
+            mocker.call().__enter__().set_attribute("graphql.parentType", "Query"),
+            mocker.call().__enter__().set_attribute("graphql.path", "hi"),
+            mocker.call().__enter__().set_attribute("graphql.param.name", "Patrick"),
+            mocker.call().__enter__().set_attribute("graphql.param.opts.count", "3"),
+            mocker.call().__enter__().set_attribute("graphql.param.opts.greeter", "Hi"),
+            mocker.call()
+            .__enter__()
+            .set_attribute("graphql.param.opts.sequence", "[1, 2, 3]"),
+        ]
+    )
