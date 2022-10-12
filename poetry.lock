@@ -1467,6 +1467,17 @@ docs = ["pygments-github-lexers (>=0.0.5)", "sphinx (>=2.0.0)", "sphinxcontrib-a
 testing = ["flaky (>=3.4.0)", "freezegun (>=0.3.11)", "pathlib2 (>=2.3.3)", "psutil (>=5.6.1)", "pytest (>=4.0.0)", "pytest-cov (>=2.5.1)", "pytest-mock (>=1.10.0)", "pytest-randomly (>=1.0.0)"]
 
 [[package]]
+name = "tox-factor"
+version = "0.1.2"
+description = "Run tox testenvs that match a given factor"
+category = "dev"
+optional = false
+python-versions = "*"
+
+[package.dependencies]
+tox = "*"
+
+[[package]]
 name = "twisted"
 version = "22.4.0"
 description = "An asynchronous networking framework written in Python"
@@ -1806,7 +1817,7 @@ sanic = ["sanic"]
 [metadata]
 lock-version = "1.1"
 python-versions = "^3.7"
-content-hash = "dbfbe2699c1e732934d831ff038d8bef60906a818781727d2569f1bb89e4a2fa"
+content-hash = "7f973bb46819fe436340ad6b4ab2c29f0d699335736e23a3579ad49be46fc237"
 
 [metadata.files]
 aiofiles = [
@@ -2928,6 +2939,10 @@ tomli = [
 tox = [
     {file = "tox-3.26.0-py2.py3-none-any.whl", hash = "sha256:bf037662d7c740d15c9924ba23bb3e587df20598697bb985ac2b49bdc2d847f6"},
     {file = "tox-3.26.0.tar.gz", hash = "sha256:44f3c347c68c2c68799d7d44f1808f9d396fc8a1a500cbc624253375c7ae107e"},
+]
+tox-factor = [
+    {file = "tox-factor-0.1.2.tar.gz", hash = "sha256:eef41a8f4857d081ebb2bb815c6f5bdfc4d4084743cac030ac9a95b1686e2b4d"},
+    {file = "tox_factor-0.1.2-py2.py3-none-any.whl", hash = "sha256:01570eedf27bc1e1531984dae15978db76ffffacebff8665275d2f14e3840bd6"},
 ]
 twisted = [
     {file = "Twisted-22.4.0-py3-none-any.whl", hash = "sha256:f9f7a91f94932477a9fc3b169d57f54f96c6e74a23d78d9ce54039a7f48928a2"},
