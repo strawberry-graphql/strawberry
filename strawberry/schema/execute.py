@@ -1,8 +1,8 @@
 from asyncio import ensure_future
-from collections.abc import Callable
 from inspect import isawaitable
 from typing import (
     Awaitable,
+    Callable,
     Iterable,
     List,
     Optional,
