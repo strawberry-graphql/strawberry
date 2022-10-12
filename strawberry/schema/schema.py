@@ -210,10 +210,8 @@ class Schema(BaseSchema):
             execution_context_class=self.execution_context_class,
             execution_context=execution_context,
             allowed_operation_types=allowed_operation_types,
+            process_errors=self.process_errors,
         )
-
-        if result.errors:
-            self.process_errors(result.errors, execution_context=execution_context)
 
         return result
 
@@ -245,10 +243,8 @@ class Schema(BaseSchema):
             execution_context_class=self.execution_context_class,
             execution_context=execution_context,
             allowed_operation_types=allowed_operation_types,
+            process_errors=self.process_errors,
         )
-
-        if result.errors:
-            self.process_errors(result.errors, execution_context=execution_context)
 
         return result
 
