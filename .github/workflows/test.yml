@@ -20,29 +20,24 @@ jobs:
   unit-tests:
     strategy:
       matrix:
-        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11-dev"]
+        python-version: ["3.7", "3.8", "3.9", "3.10", "3.11"]
 
     name: Python ${{ matrix.python-version }}
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v3
-      - run: pipx install poetry
+      - run: pipx install tox tox-factor
       - uses: actions/setup-python@v4
         id: setup-python
         with:
           python-version: ${{ matrix.python-version }}
-          cache: "poetry"
+          cache: "pip"
 
-      - run: poetry env use ${{ matrix.python-version }}
-      - run: poetry run python --version
-      - run: poetry install
-        if: steps.setup-python.outputs.cache-hit != 'true'
-
-      - name: pytest
+      - name: tox
         run:
-          poetry run pytest --cov-report xml --cov=. --showlocals -vv -m "not
-          starlette" -m "not django" --ignore=tests/mypy --ignore=tests/pyright
+          tox --skip-missing-interpreters -- \
+            --cov-report xml --cov=. --showlocals -vv --ignore=tests/mypy --ignore=tests/pyright
 
       - uses: codecov/codecov-action@v1
         if: ${{ always() }}
@@ -57,99 +52,17 @@ jobs:
 
     steps:
       - uses: actions/checkout@v3
-      - run: pipx install poetry
+      - run: pipx install tox tox-factor
       - uses: actions/setup-python@v4
         id: setup-python
         with:
           python-version: "3.10"
-          cache: "poetry"
+          cache: "pip"
 
-      - run:
-          poetry env use C:\hostedtoolcache\windows\Python\3.8.10\x86\python.exe
-      - run: poetry run python --version
-      - run: poetry install
-        if: steps.setup-python.outputs.cache-hit != 'true'
-
-      - name: pytest
+      - name: tox
         run:
-          poetry run pytest --cov-report xml --cov=. --showlocals -vv -m "not
-          django" --ignore=tests/mypy --ignore=tests/pyright
-
-      - uses: codecov/codecov-action@v1
-        if: ${{ always() }}
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          fail_ci_if_error: true
-          verbose: true
-
-  django-unit-tests:
-    strategy:
-      matrix:
-        django: ["4.0", "3.2"]
-
-    name: Django ${{ matrix.django }}
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v3
-      - run: pipx install poetry
-      - uses: actions/setup-python@v4
-        id: setup-python
-        with:
-          python-version: "3.10"
-          cache: "poetry"
-
-      - run: poetry env use python3.10
-      - run: poetry install
-        if: steps.setup-python.outputs.cache-hit != 'true'
-
-      - name: Install django ${{ matrix.django }}
-        run: poetry add --python ^3.10 django@^${{ matrix.django }}
-
-      - name: pytest
-        run:
-          poetry run pytest --cov-report xml --cov=. --showlocals -vv -m django
-
-      - uses: codecov/codecov-action@v1
-        if: ${{ always() }}
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          fail_ci_if_error: true
-          verbose: true
-
-  starlette-unit-tests:
-    strategy:
-      matrix:
-        starlette: ["0.17.1", "0.18.0", "0.19.1", "0.20.4"]
-
-    name: Starlette ${{ matrix.starlette }}
-    runs-on: ubuntu-latest
-
-    steps:
-      - uses: actions/checkout@v3
-      - run: pipx install poetry
-      - uses: actions/setup-python@v4
-        id: setup-python
-        with:
-          python-version: "3.10"
-          cache: "poetry"
-
-      - run: poetry env use python3.10
-      - run: poetry install
-        if: steps.setup-python.outputs.cache-hit != 'true'
-
-      - name: Install starlette ${{ matrix.starlette }}
-        run: poetry run pip install starlette==${{ matrix.starlette }}
-
-      # install fastapi < 0.85.0 if we are testing starlette before 0.20.4
-      - name: Install fastapi 0.85.0
-        run: poetry run pip install "fastapi<0.85.0"
-        if: matrix.starlette != '0.20.4'
-
-      - name: pytest
-        run:
-          poetry run pytest --cov-report xml --cov=. --showlocals -vv -m
-          starlette
+          tox --skip-missing-interpreters -- \
+            --cov-report xml --cov=. --showlocals -vv --ignore=tests/mypy --ignore=tests/pyright
 
       - uses: codecov/codecov-action@v1
         if: ${{ always() }}
