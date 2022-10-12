@@ -23,7 +23,7 @@ def test_lazy_enum():
         @strawberry.type
         class Query:
             a: strawberry.LazyType[
-                "LazyEnum", "tests.schema.test_lazy_types.test_lazy_enums"
+                "LazyEnum", "tests.unittests.schema.test_lazy_types.test_lazy_enums"
             ]
 
     expected = """

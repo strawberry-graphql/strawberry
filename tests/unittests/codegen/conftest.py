@@ -93,7 +93,7 @@ class Query:
     union: PersonOrAnimal
     optional_union: Optional[PersonOrAnimal]
     interface: Node
-    lazy: Annotated["LaziestType", strawberry.lazy("tests.codegen.lazy_type")]
+    lazy: Annotated["LaziestType", strawberry.lazy("tests.unittests.codegen.lazy_type")]
 
     @strawberry.field
     def with_inputs(self, id: Optional[strawberry.ID], input: ExampleInput) -> bool:

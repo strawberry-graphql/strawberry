@@ -14,7 +14,7 @@ class TypeB:
     @strawberry.field()
     def type_a(
         self,
-    ) -> Annotated["TypeA", strawberry.lazy("tests.schema.test_lazy_types.type_a")]:
+    ) -> Annotated["TypeA", strawberry.lazy("tests.unittests.schema.test_lazy_types.type_a")]:
         from .type_a import TypeA
 
         return TypeA()

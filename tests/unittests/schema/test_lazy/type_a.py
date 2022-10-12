@@ -12,7 +12,7 @@ if TYPE_CHECKING:
 @strawberry.type
 class TypeA:
     list_of_b: Optional[
-        List[Annotated["TypeB", strawberry.lazy("tests.schema.test_lazy.type_b")]]
+        List[Annotated["TypeB", strawberry.lazy("tests.unittests.schema.test_lazy.type_b")]]
     ] = None
 
     @strawberry.field

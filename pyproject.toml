@@ -128,7 +128,7 @@ strawberry = "strawberry.cli:run"
 [tool.black]
 line-length = 88
 extend-exclude = '''
-tests/codegen/snapshots/
+tests/unittests/codegen/snapshots/
 '''
 
 [tool.isort]
@@ -145,10 +145,10 @@ known_first_party = ["strawberry"]
 sections = ["FUTURE", "STDLIB", "PYTEST", "THIRDPARTY", "DJANGO", "GRAPHQL", "FIRSTPARTY", "LOCALFOLDER"]
 
 [tool.pytest.ini_options]
-addopts = "-s --emoji --mypy-ini-file=mypy.ini --benchmark-disable"
+addopts = "-s --emoji --mypy-ini-file=${TOX_WORK_DIR}${TOX_WORK_DIR:+../../}mypy.ini --benchmark-disable"
 DJANGO_SETTINGS_MODULE = "tests.django.django_settings"
 testpaths = ["tests/"]
-markers = ["django", "starlette", "channels"]
+markers = ["aiohttp", "asgi", "chalice", "channels", "cli", "django", "django_db", "fastapi", "fixtures", "flask", "sanic", "starlette", "unittests"]
 asyncio_mode = "auto"
 filterwarnings = [
     "ignore::DeprecationWarning:strawberry.*.resolver",

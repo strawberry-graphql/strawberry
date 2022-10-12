@@ -181,7 +181,7 @@ def test_types_not_included_in_the_union_are_rejected():
 
     assert (
         result.errors[0].message == "The type "
-        "\"<class 'tests.schema.test_union.test_types_not_included_in_the_union_are_rejected.<locals>.Outside'>\""  # noqa
+        "\"<class 'tests.unittests.schema.test_union.test_types_not_included_in_the_union_are_rejected.<locals>.Outside'>\""  # noqa
         ' of the field "hello" '
         "is not in the list of the types of the union: \"['A', 'B']\""
     )

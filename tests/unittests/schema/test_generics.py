@@ -705,7 +705,7 @@ def test_raises_error_when_unable_to_find_type():
     result = schema.execute_sync(query)
 
     assert result.errors[0].message == (
-        "Unable to find type for <class 'tests.schema.test_generics."
+        "Unable to find type for <class 'tests.unittests.unittests.schema.test_generics."
         "test_raises_error_when_unable_to_find_type.<locals>.Edge'> "
         "and (<class 'str'>,)"
     )
