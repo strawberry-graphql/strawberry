@@ -154,6 +154,7 @@ asyncio_mode = "auto"
 filterwarnings = [
     "ignore::DeprecationWarning:strawberry.*.resolver",
     "ignore:LazyType is deprecated:DeprecationWarning",
+    "ignore:Unknown config option. DJANGO_SETTINGS_MODULE:pytest.PytestConfigWarning",
 ]
 
 [tool.autopub]
