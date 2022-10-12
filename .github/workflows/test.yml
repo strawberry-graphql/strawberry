@@ -61,8 +61,7 @@ jobs:
 
       - name: tox
         run:
-          tox --skip-missing-interpreters -- \
-            --cov-report xml --cov=. --showlocals -vv --ignore=tests/mypy --ignore=tests/pyright
+          tox --skip-missing-interpreters -- --cov-report xml --cov=. --showlocals -vv
 
       - uses: codecov/codecov-action@v1
         if: ${{ always() }}
