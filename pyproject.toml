@@ -150,7 +150,7 @@ sections = ["FUTURE", "STDLIB", "PYTEST", "THIRDPARTY", "DJANGO", "GRAPHQL", "FI
 addopts = "-s --emoji --mypy-ini-file=mypy.ini --benchmark-disable"
 DJANGO_SETTINGS_MODULE = "tests.django.django_settings"
 testpaths = ["tests/"]
-markers = ["aiohttp", "asgi", "chalice", "channels", "cli", "django", "django_db", "fastapi", "fixtures", "flask", "sanic", "starlette", "unittests"]
+markers = ["aiohttp", "asgi", "chalice", "channels", "cli", "django", "django_db", "fastapi", "fixtures", "flask", "mypy", "pyright", "sanic", "starlette", "unittests"]
 asyncio_mode = "auto"
 filterwarnings = [
     "ignore::DeprecationWarning:strawberry.*.resolver",
