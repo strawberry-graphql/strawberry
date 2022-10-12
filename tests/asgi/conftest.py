@@ -1,5 +1,3 @@
-import pathlib
-
 import pytest
 
 from starlette.testclient import TestClient
@@ -35,15 +33,3 @@ def test_client_no_get():
 @pytest.fixture
 def graphql_client(test_client):
     yield GraphQLTestClient(test_client)
-
-
-def pytest_collection_modifyitems(config, items):
-    # automatically mark tests with 'starlette' if they are in the asgi subfolder
-
-    rootdir = pathlib.Path(config.rootdir)
-
-    for item in items:
-        rel_path = pathlib.Path(item.fspath).relative_to(rootdir)
-
-        if str(rel_path).startswith("tests/asgi"):
-            item.add_marker(pytest.mark.starlette)
