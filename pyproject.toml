@@ -146,7 +146,7 @@ known_first_party = ["strawberry"]
 sections = ["FUTURE", "STDLIB", "PYTEST", "THIRDPARTY", "DJANGO", "GRAPHQL", "FIRSTPARTY", "LOCALFOLDER"]
 
 [tool.pytest.ini_options]
-addopts = "-s --emoji --mypy-ini-file=${TOX_WORK_DIR}${TOX_WORK_DIR:+../../}mypy.ini --benchmark-disable"
+addopts = "-s --emoji --mypy-ini-file=mypy.ini --benchmark-disable"
 DJANGO_SETTINGS_MODULE = "tests.django.django_settings"
 testpaths = ["tests/"]
 markers = ["aiohttp", "asgi", "chalice", "channels", "cli", "django", "django_db", "fastapi", "fixtures", "flask", "sanic", "starlette", "unittests"]
