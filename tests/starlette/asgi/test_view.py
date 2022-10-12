@@ -5,7 +5,7 @@ from starlette.testclient import TestClient
 from starlette.websockets import WebSocketDisconnect
 
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
-from tests.asgi.app import create_app
+from tests.starlette.asgi.app import create_app
 
 
 @pytest.mark.parametrize("path", ("/", "/graphql"))

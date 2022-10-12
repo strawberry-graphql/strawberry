@@ -60,7 +60,7 @@ def test_codegen(cli_runner, query_file_path: Path, tmp_path: Path):
         cmd_codegen,
         [
             "-p",
-            "tests.cli.test_codegen:QueryCodegenTestPlugin",
+            "tests.starlette.cli.test_codegen:QueryCodegenTestPlugin",
             "-o",
             str(tmp_path),
             "--schema",
@@ -85,7 +85,7 @@ def test_codegen_passing_plugin_symbol(
         cmd_codegen,
         [
             "-p",
-            "tests.cli.test_codegen:EmptyPlugin",
+            "tests.starlette.cli.test_codegen:EmptyPlugin",
             "-o",
             str(tmp_path),
             "--schema",
@@ -110,7 +110,7 @@ def test_codegen_returns_error_when_symbol_does_not_exist(
         cmd_codegen,
         [
             "-p",
-            "tests.cli.test_codegen:SomePlugin",
+            "tests.starlette.cli.test_codegen:SomePlugin",
             "--schema",
             selector,
             str(query_file_path),
@@ -119,7 +119,7 @@ def test_codegen_returns_error_when_symbol_does_not_exist(
 
     assert result.exit_code == 1
     assert result.exception.args == (
-        "module 'tests.cli.test_codegen' has no attribute 'SomePlugin'",
+        "module 'tests.starlette.cli.test_codegen' has no attribute 'SomePlugin'",
     )
 
 
@@ -142,11 +142,11 @@ def test_codegen_returns_error_when_does_not_find_plugin(
     selector = "tests.fixtures.sample_package.sample_module:schema"
     result = cli_runner.invoke(
         cmd_codegen,
-        ["-p", "tests.cli.test_server", "--schema", selector, str(query_file_path)],
+        ["-p", "tests.starlette.cli.test_server", "--schema", selector, str(query_file_path)],
     )
 
     assert result.exit_code == 1
-    assert "Error: Plugin tests.cli.test_server not found" in result.output
+    assert "Error: Plugin tests.starlette.cli.test_server not found" in result.output
 
 
 def test_codegen_finds_our_plugins(cli_runner, query_file_path: Path, tmp_path: Path):
@@ -170,7 +170,7 @@ def test_can_use_custom_cli_plugin(cli_runner, query_file_path: Path, tmp_path: 
         cmd_codegen,
         [
             "--cli-plugin",
-            "tests.cli.test_codegen:ConsoleTestPlugin",
+            "tests.starlette.cli.test_codegen:ConsoleTestPlugin",
             "-p",
             "python",
             "--schema",
