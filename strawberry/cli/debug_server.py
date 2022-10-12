@@ -2,7 +2,6 @@ import os
 
 from starlette.applications import Starlette
 from starlette.middleware.cors import CORSMiddleware
-
 from strawberry import Schema
 from strawberry.asgi import GraphQL
 from strawberry.cli.constants import DEBUG_SERVER_SCHEMA_ENV_VAR_KEY

@@ -4,7 +4,6 @@ from datetime import timedelta
 
 from starlette.testclient import TestClient
 from starlette.websockets import WebSocketDisconnect
-
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     CompleteMessage,

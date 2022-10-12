@@ -1,9 +1,11 @@
-from uuid import UUID
 from datetime import date, datetime, time
 from decimal import Decimal
+from uuid import UUID
+
 
 class OperationNameResultLazy:
     something: bool
+
 
 class OperationNameResult:
     id: str

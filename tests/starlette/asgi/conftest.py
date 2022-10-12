@@ -1,7 +1,6 @@
 import pytest
 
 from starlette.testclient import TestClient
-
 from strawberry.asgi.test import GraphQLTestClient
 from tests.starlette.asgi.app import create_app
 

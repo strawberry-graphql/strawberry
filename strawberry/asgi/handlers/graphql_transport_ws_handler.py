@@ -2,7 +2,6 @@ from datetime import timedelta
 from typing import Any
 
 from starlette.websockets import WebSocket, WebSocketDisconnect, WebSocketState
-
 from strawberry.schema import BaseSchema
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_transport_ws.handlers import (

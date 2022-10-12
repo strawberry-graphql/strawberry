@@ -2,7 +2,6 @@ from contextlib import suppress
 from typing import Any, Optional
 
 from starlette.websockets import WebSocket, WebSocketDisconnect, WebSocketState
-
 from strawberry.schema import BaseSchema
 from strawberry.subscriptions import GRAPHQL_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_ws.handlers import BaseGraphQLWSHandler

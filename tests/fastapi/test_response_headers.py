@@ -1,7 +1,6 @@
-from starlette.testclient import TestClient
-
 import strawberry
 from fastapi import FastAPI
+from starlette.testclient import TestClient
 from strawberry.fastapi import GraphQLRouter
 from strawberry.types import Info
 

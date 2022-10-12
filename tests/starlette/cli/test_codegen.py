@@ -142,7 +142,13 @@ def test_codegen_returns_error_when_does_not_find_plugin(
     selector = "tests.fixtures.sample_package.sample_module:schema"
     result = cli_runner.invoke(
         cmd_codegen,
-        ["-p", "tests.starlette.cli.test_server", "--schema", selector, str(query_file_path)],
+        [
+            "-p",
+            "tests.starlette.cli.test_server",
+            "--schema",
+            selector,
+            str(query_file_path),
+        ],
     )
 
     assert result.exit_code == 1

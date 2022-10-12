@@ -1,7 +1,6 @@
 import pytest
 
 from starlette.websockets import WebSocketDisconnect
-
 from strawberry.subscriptions import GRAPHQL_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_ws import (
     GQL_COMPLETE,

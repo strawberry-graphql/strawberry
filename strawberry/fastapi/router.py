@@ -3,14 +3,13 @@ from datetime import timedelta
 from inspect import signature
 from typing import Any, Callable, Dict, Iterable, Optional, Sequence, Union
 
+from fastapi import APIRouter, Depends
 from starlette import status
 from starlette.background import BackgroundTasks
 from starlette.requests import Request
 from starlette.responses import HTMLResponse, JSONResponse, PlainTextResponse, Response
 from starlette.types import ASGIApp
 from starlette.websockets import WebSocket
-
-from fastapi import APIRouter, Depends
 from strawberry.exceptions import InvalidCustomContext, MissingQueryError
 from strawberry.fastapi.handlers import GraphQLTransportWSHandler, GraphQLWSHandler
 from strawberry.file_uploads.utils import replace_placeholders_with_files

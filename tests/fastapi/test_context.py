@@ -2,10 +2,9 @@ from typing import Dict
 
 import pytest
 
-from starlette.testclient import TestClient
-
 import strawberry
 from fastapi import Depends, FastAPI
+from starlette.testclient import TestClient
 from strawberry.exceptions import InvalidCustomContext
 from strawberry.fastapi import BaseContext, GraphQLRouter
 from strawberry.types import Info

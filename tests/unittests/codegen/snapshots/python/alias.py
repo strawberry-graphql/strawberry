@@ -2,6 +2,7 @@ class OperationNameResultLazy:
     # alias for something
     lazy: bool
 
+
 class OperationNameResult:
     id: str
     # alias for id

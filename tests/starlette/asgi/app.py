@@ -3,7 +3,6 @@ from typing import Optional, Union
 from starlette.requests import Request
 from starlette.responses import Response
 from starlette.websockets import WebSocket
-
 from strawberry.asgi import GraphQL as BaseGraphQL
 from strawberry.asgi.handlers import GraphQLTransportWSHandler, GraphQLWSHandler
 from tests.starlette.asgi.schema import Query, schema

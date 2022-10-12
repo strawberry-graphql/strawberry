@@ -32,8 +32,9 @@ def server(schema, host, port, log_level, app_dir):
     sys.path.insert(0, app_dir)
 
     try:
-        import starlette  # noqa: F401
         import uvicorn
+
+        import starlette  # noqa: F401
     except ImportError:
         message = (
             "The debug server requires additional packages, install them by running:\n"

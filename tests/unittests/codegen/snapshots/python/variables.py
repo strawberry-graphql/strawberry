@@ -1,7 +1,9 @@
 from typing import List, Optional
 
+
 class OperationNameResult:
     with_inputs: bool
+
 
 class OperationNameVariables:
     id: Optional[str]
@@ -10,8 +12,10 @@ class OperationNameVariables:
     ids2: Optional[List[Optional[str]]]
     ids3: Optional[List[Optional[List[Optional[str]]]]]
 
+
 class PersonInput:
     name: str
+
 
 class ExampleInput:
     id: str

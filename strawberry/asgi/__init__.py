@@ -5,7 +5,6 @@ from starlette.requests import Request
 from starlette.responses import Response
 from starlette.types import Receive, Scope, Send
 from starlette.websockets import WebSocket
-
 from strawberry.asgi.handlers import (
     GraphQLTransportWSHandler,
     GraphQLWSHandler,
