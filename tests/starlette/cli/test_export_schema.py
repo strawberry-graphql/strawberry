@@ -1,3 +1,6 @@
+import os
+import pathlib
+
 from strawberry.cli.commands.export_schema import export_schema as cmd_export_schema
 
 
@@ -27,8 +30,10 @@ def test_default_schema_symbol_name(cli_runner):
 
 def test_app_dir_option(cli_runner):
     selector = "sample_module"
+    tests_path = pathlib.Path(__file__).parts[:-3]
+    sample_path = os.path.join(*tests_path, "fixtures", "sample_package")
     result = cli_runner.invoke(
-        cmd_export_schema, ["--app-dir=./tests/fixtures/sample_package", selector]
+        cmd_export_schema, [f"--app-dir={sample_path}", selector]
     )
 
     assert result.exit_code == 0
