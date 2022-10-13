@@ -158,6 +158,10 @@ def convert_argument(
     if isinstance(type_, LazyType):
         return convert_argument(value, type_.resolve_type(), scalar_registry, config)
 
+    if hasattr(type_, "_enum_definition"):
+        enum_definition: EnumDefinition = type_._enum_definition  # type: ignore
+        return convert_argument(value, enum_definition, scalar_registry, config)
+
     if hasattr(type_, "_type_definition"):  # TODO: Replace with StrawberryInputObject
         type_definition: TypeDefinition = type_._type_definition  # type: ignore
 
