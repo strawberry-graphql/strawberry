@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.133.6 - 2022-10-13
+--------------------
+
+Fix support for arguments where `arg.type=LazyType["EnumType"]`
+
+Contributed by [Paulo Costa](https://github.com/paulo-raca) via [PR #2245](https://github.com/strawberry-graphql/strawberry/pull/2245/)
+
+
 0.133.5 - 2022-10-03
 --------------------
 
