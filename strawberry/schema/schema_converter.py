@@ -524,6 +524,7 @@ class GraphQLCoreConverter:
 
         if scalar in self.scalar_registry:
             _scalar_definition = self.scalar_registry[scalar]
+            # TODO: check why we need the cast and we are not trying with getattr first
             if isinstance(_scalar_definition, ScalarWrapper):
                 scalar_definition = _scalar_definition._scalar_definition
             else:

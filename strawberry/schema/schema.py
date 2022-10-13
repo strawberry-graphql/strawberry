@@ -1,5 +1,5 @@
 from functools import lru_cache
-from typing import Any, Dict, Iterable, List, Optional, Type, Union
+from typing import Any, Dict, Iterable, List, Optional, Type, Union, cast
 
 from graphql import (
     ExecutionContext as GraphQLExecutionContext,
@@ -56,7 +56,7 @@ class Schema(BaseSchema):
         execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
         config: Optional[StrawberryConfig] = None,
         scalar_overrides: Optional[
-            Dict[object, Union[ScalarWrapper, ScalarDefinition]]
+            Dict[object, Union[Type, ScalarWrapper, ScalarDefinition]]
         ] = None,
         schema_directives: Iterable[object] = (),
     ):
@@ -68,11 +68,14 @@ class Schema(BaseSchema):
         self.execution_context_class = execution_context_class
         self.config = config or StrawberryConfig()
 
-        scalar_registry: Dict[object, Union[ScalarWrapper, ScalarDefinition]] = {
-            **DEFAULT_SCALAR_REGISTRY
-        }
+        SCALAR_OVERRIDES_DICT_TYPE = Dict[
+            object, Union[ScalarWrapper, ScalarDefinition]
+        ]
+
+        scalar_registry: SCALAR_OVERRIDES_DICT_TYPE = {**DEFAULT_SCALAR_REGISTRY}
         if scalar_overrides:
-            scalar_registry.update(scalar_overrides)
+            # TODO: check that the overrides are valid
+            scalar_registry.update(cast(SCALAR_OVERRIDES_DICT_TYPE, scalar_overrides))
 
         self.schema_converter = GraphQLCoreConverter(self.config, scalar_registry)
         self.directives = directives
