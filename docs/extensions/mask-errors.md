@@ -7,7 +7,7 @@ tags: security
 # `MaskErrors`
 
 This extension hides error messages from the client to prevent exposing
-sensitive details.
+sensitive details. By default it masks all errors raised in any field resolver.
 
 ## Usage example:
 
@@ -18,7 +18,7 @@ from strawberry.extensions import MaskErrors
 schema = strawberry.Schema(
     Query,
     extensions=[
-        MaskErrors(visible_errors=[MyVisibleError]),
+        MaskErrors(),
     ]
 )
 ```
@@ -26,16 +26,18 @@ schema = strawberry.Schema(
 ## API reference:
 
 ```python
-class MaskErrors(visible_errors, error_message="Unexpected error.")`
+class MaskErrors(should_mask_error=default_should_mask_error, error_message="Unexpected error.")`
 ```
 
-#### `visible_errors: Sequence[Type[Exception]]`
+#### `should_mask_error: Callable[[GraphQLError], bool] = default_should_mask_error`
 
-A sequence of exceptions that shouldn't be masked from the client.
+Predicate function to check if a GraphQLError should be masked or not. Use the
+`original_error` attribute to access the original error that was raised in the
+resolver.
 
 <Note>
 
-Passing an empty list will mask all errors.
+The `default_should_mask_error` function always returns `True`.
 
 </Note>
 
@@ -46,7 +48,35 @@ The error message to display to the client when there is an error.
 ## More examples:
 
 <details>
-  <summary>Hide all exceptions</summary>
+  <summary>Hide some exceptions</summary>
+
+```python
+import strawberry
+from strawberry.extensions import MaskErrors
+from graphql.error import GraphQLError
+
+class VisibleError(Exception):
+    pass
+
+def should_mask_error(error: GraphQLError) -> bool:
+    original_error = error.original_error
+    if original_error and isinstance(original_error, VisibleError):
+        return False
+
+    return True
+
+schema = strawberry.Schema(
+    Query,
+    extensions=[
+        MaskErrors(should_mask_error=should_mask_error),
+    ]
+)
+```
+
+</details>
+
+<details>
+  <summary>Change error message</summary>
 
 ```python
 import strawberry
@@ -55,7 +85,7 @@ from strawberry.extensions import MaskErrors
 schema = strawberry.Schema(
     Query,
     extensions=[
-        MaskErrors(visible_errors=[]),
+        MaskErrors(error_message="Oh no! An error occured. Very sorry about that."),
     ]
 )
 ```

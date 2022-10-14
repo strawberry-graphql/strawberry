@@ -1,20 +1,25 @@
-from typing import Sequence, Type
+from collections.abc import Callable
 
 from graphql.error import GraphQLError
 
 from strawberry.extensions import Extension
 
 
+def default_should_mask_error(_) -> bool:
+    # Mask all errors
+    return True
+
+
 class MaskErrors(Extension):
-    visible_errors: Sequence[Type[Exception]]
+    should_mask_error: Callable[[GraphQLError], bool]
     error_message: str
 
     def __init__(
         self,
-        visible_errors: Sequence[Type[Exception]],
+        should_mask_error: Callable[[GraphQLError], bool] = default_should_mask_error,
         error_message: str = "Unexpected error.",
     ):
-        self.visible_errors = visible_errors
+        self.should_mask_error = should_mask_error
         self.error_message = error_message
 
     def __call__(self, execution_context):
@@ -36,19 +41,9 @@ class MaskErrors(Extension):
         if result and result.errors:
             processed_errors = []
             for error in result.errors:
-                if not error.original_error:
-                    processed_errors.append(error)
+                if self.should_mask_error(error):
+                    processed_errors.append(self.anonymise_error(error))
                 else:
-                    original_error = error.original_error
-
-                    if not self.visible_errors:
-                        # anonymise all errors
-                        processed_errors.append(self.anonymise_error(error))
-                    else:
-                        for visible_error_cls in self.visible_errors:
-                            if not isinstance(original_error, visible_error_cls):
-                                processed_errors.append(self.anonymise_error(error))
-                            else:
-                                processed_errors.append(error)
+                    processed_errors.append(error)
 
             result.errors = processed_errors
