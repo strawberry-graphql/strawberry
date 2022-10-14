@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.133.7 - 2022-10-14
+--------------------
+
+This release fixes a type issue when passing `scalar_overrides` to `strawberry.Schema`
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2251](https://github.com/strawberry-graphql/strawberry/pull/2251/)
+
+
 0.133.6 - 2022-10-13
 --------------------
 
