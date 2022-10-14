@@ -100,7 +100,7 @@ class StrawberryAnnotation:
             args = get_args(annotation)
 
             if args:
-                return annotation.__origin__[
+                return annotation.__origin__[  # type: ignore
                     tuple(StrawberryAnnotation.parse_annotated(arg) for arg in args)
                 ]
 
