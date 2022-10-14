@@ -70,7 +70,9 @@ class StrawberryAnnotation:
     def parse_annotated(annotation: object) -> object:
         from strawberry.auto import StrawberryAuto
 
-        if get_origin(annotation) is Annotated:
+        annotation_origin = get_origin(annotation)
+
+        if annotation_origin is Annotated:
             annotated_args = get_args(annotation)
             annotation_type = annotated_args[0]
 
@@ -96,13 +98,12 @@ class StrawberryAnnotation:
         elif is_list(annotation):
             return List[StrawberryAnnotation.parse_annotated(get_args(annotation)[0])]  # type: ignore  # noqa: E501
 
-        else:
+        elif annotation_origin and is_generic(annotation_origin):
             args = get_args(annotation)
 
-            if args:
-                return annotation.__origin__[  # type: ignore
-                    tuple(StrawberryAnnotation.parse_annotated(arg) for arg in args)
-                ]
+            return annotation_origin[
+                tuple(StrawberryAnnotation.parse_annotated(arg) for arg in args)
+            ]
 
         return annotation
 
