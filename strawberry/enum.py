@@ -113,6 +113,7 @@ class StrawberryEnumMeta(EnumMeta):
 
 def _default_adapt_fn(item):
     if isinstance(item, Enum):
+        # enum member
         return {
             "value": item,
             "description": getattr(item, "description", None),
@@ -120,7 +121,9 @@ def _default_adapt_fn(item):
             "directives": getattr(item, "directives", None),
         }
     else:
+        # enum definition
         return {
+            "name": getattr(item, "_name", None),
             "description": getattr(item, "_description", None),
             "deprecation_reason": getattr(item, "_deprecation_reason", None),
             "directives": getattr(item, "_directives", None),
@@ -205,11 +208,11 @@ class StrawberryEnum(Enum, metaclass=StrawberryEnumMeta):
             adapt_fn = _default_adapt_fn
         basedef = adapt_fn(enum)
         return cls(
-            basedef.get("name", enum.__name__),
+            basedef["name"] or enum.__name__,
             map(
-                lambda name, value_enum: (
-                    name,
-                    EnumValueDefinition(**adapt_fn(value_enum)),
+                lambda item: (
+                    item[0],
+                    EnumValueDefinition(**adapt_fn(item[1])),
                 ),
                 enum.__members__.items(),
             ),
