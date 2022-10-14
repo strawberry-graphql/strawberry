@@ -85,7 +85,7 @@ class StrawberryAnnotation:
 
             return StrawberryAnnotation.parse_annotated(annotation_type)
 
-        if is_union(annotation):
+        elif is_union(annotation):
             return Union[
                 tuple(
                     StrawberryAnnotation.parse_annotated(arg)
@@ -93,8 +93,16 @@ class StrawberryAnnotation:
                 )  # pyright: ignore
             ]  # pyright: ignore
 
-        if is_list(annotation):
+        elif is_list(annotation):
             return List[StrawberryAnnotation.parse_annotated(get_args(annotation)[0])]  # type: ignore  # noqa: E501
+
+        else:
+            args = get_args(annotation)
+
+            if args:
+                return annotation.__origin__[
+                    tuple(StrawberryAnnotation.parse_annotated(arg) for arg in args)
+                ]
 
         return annotation
 
