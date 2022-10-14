@@ -89,6 +89,24 @@ class StrawberryEnumMeta(EnumMeta):
         setattr(enum_class, "_name", name)
         setattr(enum_class, "_description", description)
         setattr(enum_class, "_directives", directives)
+        values = []
+        for item in enum_class.__members__.values():  # type: ignore
+
+            value = EnumValue(
+                item.name,
+                item.value,
+                deprecation_reason=item.deprecation_reason,
+                directives=item.directives,
+                description=item.description,
+            )
+            values.append(value)
+        enum_class._enum_definition = EnumDefinition(  # type: ignore
+            wrapped_cls=enum_class,
+            name=enum_class._name or enum_class.__name__,
+            values=values,
+            description=enum_class._description,
+            directives=enum_class._directives,
+        )
 
         return enum_class
 
@@ -123,7 +141,7 @@ class StrawberryEnum(Enum, metaclass=StrawberryEnumMeta):
             deprecation_reason = item_value.deprecation_reason
             directives = item_value.directives
             item_value = item_value.value
-        obj = cls.__new__(cls, item_value)
+        obj = object.__new__(cls)
         obj._value_ = item_value
         obj.description = description
         obj.deprecation_reason = deprecation_reason
