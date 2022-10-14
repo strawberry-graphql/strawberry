@@ -150,7 +150,77 @@ http request's details and asserts that there are no errors in the response (you
 always disable this behavior by passing `asserts_errors=False` to the `query` method).
 This makes it easier to test queries and makes your tests cleaner.
 
-Your tests will look like these:
+### Instantiate the `GraphQLTestClient`
+
+We can start instantiating the `GraphQLTestClient` and, if you are using `pytest`, you
+can add a fixture in `conftest.py`.
+
+There are a different `GraphQLTestClient`s depending on the integration we use in our
+application. The API is the same you just need to change the import.
+
+#### With Django
+
+```python
+import pytest
+
+from django.test.client import Client
+
+from strawberry.django.test import GraphQLTestClient
+
+
+@pytest.fixture()
+def graphql_client():
+    yield GraphQLTestClient(Client())
+```
+
+#### With asgi
+
+```python
+import pytest
+
+from starlette.testclient import TestClient
+
+from strawberry.asgi.test import GraphQLTestClient
+from tests.asgi.app import create_app
+
+
+@pytest.fixture
+def test_client():
+    app = create_app()
+    return TestClient(app)
+
+
+@pytest.fixture
+def graphql_client(test_client):
+    yield GraphQLTestClient(test_client)
+```
+
+#### With aiohttp
+
+```python
+import pytest
+
+import pytest_asyncio
+
+from strawberry.aiohttp.test.client import GraphQLTestClient
+from tests.aiohttp.app import create_app
+
+
+@pytest_asyncio.fixture
+async def aiohttp_app_client(event_loop, aiohttp_client):
+    app = create_app(graphiql=True)
+    event_loop.set_debug(True)
+    return await aiohttp_client(app)
+
+
+@pytest.fixture
+def graphql_client(aiohttp_app_client):
+    yield GraphQLTestClient(aiohttp_app_client, url="/graphql")
+```
+
+### Define the tests with the `graphql_client` fixture
+
+Finally, our tests will look like these:
 
 ```python
 def test_strawberry(graphql_client):
@@ -177,69 +247,26 @@ def test_fails(graphql_client):
     assert result.errors == []
 ```
 
-If you are using `pytest` you can add a fixture in `conftest.py`
+### Testing file Upload
 
-There is a different `GraphQLTestClient` for `Django`, `asgi` and `aiohttp` as each
-integration manage the request differently.
-
-### With Django
-
-```python
-import pytest
-
-from django.test.client import Client
-
-from strawberry.django.test import GraphQLTestClient
-
-
-@pytest.fixture()
-def graphql_client():
-    yield GraphQLTestClient(Client())
-```
-
-### With asgi
+As Strawberry supports multipart uploads, we can test them with the test client as well.
+We just have to add `files` parameter when we execute the query. Check the
+[file upload](../guides/file-upload.md) documentation to understand how if works.
 
 ```python
-import pytest
+from django.core.files.uploadedfile import SimpleUploadedFile
 
-from starlette.testclient import TestClient
+def test_upload(graphql_client):
+    f = SimpleUploadedFile("file.txt", b"strawberry")
+    query = """mutation($textFile: Upload!) {
+        readText(textFile: $textFile)
+    }"""
 
-from strawberry.asgi.test import GraphQLTestClient
-from tests.asgi.app import create_app
+    response = graphql_client.query(
+        query=query,
+        variables={"textFile": None},
+        files={"textFile": f},
+    )
 
-
-@pytest.fixture
-def test_client():
-    app = create_app()
-    return TestClient(app)
-
-
-@pytest.fixture
-def graphql_client(test_client):
-    yield GraphQLTestClient(test_client)
+    assert response.data["readText"] == "strawberry"
 ```
-
-## With aiohttp
-
-```python
-import pytest
-
-import pytest_asyncio
-
-from strawberry.aiohttp.test.client import GraphQLTestClient
-from tests.aiohttp.app import create_app
-
-
-@pytest_asyncio.fixture
-async def aiohttp_app_client(event_loop, aiohttp_client):
-    app = create_app(graphiql=True)
-    event_loop.set_debug(True)
-    return await aiohttp_client(app)
-
-
-@pytest.fixture
-def graphql_client(aiohttp_app_client):
-    yield GraphQLTestClient(aiohttp_app_client, url="/graphql")
-```
-
-## Testing file Upload
