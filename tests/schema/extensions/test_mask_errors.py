@@ -112,8 +112,8 @@ def test_process_errors_original_error():
 
     assert mock_process_error.call_count == 1
     call = mock_process_error.call_args_list[0]
-    assert call.args[0].message == "This error is not visible"
-    assert isinstance(call.args[0].original_error, ValueError)
+    assert call[0][0].message == "This error is not visible"
+    assert isinstance(call[0][0].original_error, ValueError)
 
 
 def test_graphql_error_masking():
