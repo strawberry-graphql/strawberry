@@ -53,4 +53,4 @@ repos:
     rev: v3.1.0
     hooks:
       - id: pyupgrade
-        args: ['--py37-plus']
+        args: [--py37-plus, --keep-runtime-typing]
