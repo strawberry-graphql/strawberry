@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from enum import Enum
-from typing import List, Set, Union
 
 from graphql import GraphQLInputObjectType, GraphQLObjectType
 
@@ -60,8 +59,8 @@ class MissingReturnAnnotationError(Exception):
 class MissingArgumentsAnnotationsError(Exception):
     """The field is missing the annotation for one or more arguments"""
 
-    def __init__(self, field_name: str, arguments: Set[str]):
-        arguments_list: List[str] = sorted(list(arguments))
+    def __init__(self, field_name: str, arguments: set[str]):
+        arguments_list: list[str] = sorted(list(arguments))
 
         if len(arguments_list) == 1:
             argument = f'argument "{arguments_list[0]}"'
@@ -93,7 +92,7 @@ class UnallowedReturnTypeForUnion(Exception):
     """The return type is not in the list of Union types"""
 
     def __init__(
-        self, field_name: str, result_type: str, allowed_types: Set[GraphQLObjectType]
+        self, field_name: str, result_type: str, allowed_types: set[GraphQLObjectType]
     ):
         formatted_allowed_types = list(sorted(type_.name for type_ in allowed_types))
 
@@ -118,7 +117,7 @@ class InvalidTypeInputForUnion(Exception):
 class MissingTypesForGenericError(Exception):
     """Raised when a generic types was used without passing any type."""
 
-    def __init__(self, annotation: Union[StrawberryType, type]):
+    def __init__(self, annotation: StrawberryType | type):
         message = (
             f'The type "{repr(annotation)}" is generic, but no type has been passed'
         )

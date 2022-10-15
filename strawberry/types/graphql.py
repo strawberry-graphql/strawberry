@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import enum
-from typing import Set
 
 
 class OperationType(enum.Enum):
@@ -10,7 +9,7 @@ class OperationType(enum.Enum):
     SUBSCRIPTION = "subscription"
 
     @staticmethod
-    def from_http(method: str) -> Set[OperationType]:
+    def from_http(method: str) -> set[OperationType]:
         if method == "GET":
             return {OperationType.QUERY}
 

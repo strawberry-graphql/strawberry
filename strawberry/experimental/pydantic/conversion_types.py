@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Dict, TypeVar
+from typing import Any, TypeVar
 
 from pydantic import BaseModel
 from typing_extensions import Protocol
@@ -20,7 +20,7 @@ class StrawberryTypeFromPydantic(Protocol[PydanticModel]):
 
     @staticmethod
     def from_pydantic(
-        instance: PydanticModel, extra: Dict[str, Any] = None
+        instance: PydanticModel, extra: dict[str, Any] = None
     ) -> StrawberryTypeFromPydantic[PydanticModel]:
         ...
 

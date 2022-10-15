@@ -2,17 +2,7 @@ from __future__ import annotations
 
 import inspect
 import warnings
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    Iterable,
-    List,
-    Mapping,
-    Optional,
-    Union,
-    cast,
-)
+from typing import TYPE_CHECKING, Any, Iterable, Mapping, cast
 
 from typing_extensions import Annotated, get_args, get_origin
 
@@ -31,7 +21,7 @@ from .unset import UNSET as _deprecated_UNSET, _deprecated_is_unset  # noqa
 if TYPE_CHECKING:
     from strawberry.schema.config import StrawberryConfig
 
-DEPRECATED_NAMES: Dict[str, str] = {
+DEPRECATED_NAMES: dict[str, str] = {
     "UNSET": (
         "importing `UNSET` from `strawberry.arguments` is deprecated, "
         "import instead from `strawberry` or from `strawberry.unset`"
@@ -41,16 +31,16 @@ DEPRECATED_NAMES: Dict[str, str] = {
 
 
 class StrawberryArgumentAnnotation:
-    description: Optional[str]
-    name: Optional[str]
-    deprecation_reason: Optional[str]
+    description: str | None
+    name: str | None
+    deprecation_reason: str | None
     directives: Iterable[object]
 
     def __init__(
         self,
-        description: Optional[str] = None,
-        name: Optional[str] = None,
-        deprecation_reason: Optional[str] = None,
+        description: str | None = None,
+        name: str | None = None,
+        deprecation_reason: str | None = None,
         directives: Iterable[object] = (),
     ):
         self.description = description
@@ -63,19 +53,19 @@ class StrawberryArgument:
     def __init__(
         self,
         python_name: str,
-        graphql_name: Optional[str],
+        graphql_name: str | None,
         type_annotation: StrawberryAnnotation,
         is_subscription: bool = False,
-        description: Optional[str] = None,
+        description: str | None = None,
         default: object = _deprecated_UNSET,
-        deprecation_reason: Optional[str] = None,
+        deprecation_reason: str | None = None,
         directives: Iterable[object] = (),
     ) -> None:
         self.python_name = python_name
         self.graphql_name = graphql_name
         self.is_subscription = is_subscription
         self.description = description
-        self._type: Optional[StrawberryType] = None
+        self._type: StrawberryType | None = None
         self.type_annotation = type_annotation
         self.deprecation_reason = deprecation_reason
         self.directives = directives
@@ -89,7 +79,7 @@ class StrawberryArgument:
             self._parse_annotated()
 
     @property
-    def type(self) -> Union[StrawberryType, type]:
+    def type(self) -> StrawberryType | type:
         return self.type_annotation.resolve()
 
     @classmethod
@@ -129,8 +119,8 @@ class StrawberryArgument:
 
 def convert_argument(
     value: object,
-    type_: Union[StrawberryType, type],
-    scalar_registry: Dict[object, Union[ScalarWrapper, ScalarDefinition]],
+    type_: StrawberryType | type,
+    scalar_registry: dict[object, ScalarWrapper | ScalarDefinition],
     config: StrawberryConfig,
 ) -> object:
     if value is None:
@@ -185,11 +175,11 @@ def convert_argument(
 
 
 def convert_arguments(
-    value: Dict[str, Any],
-    arguments: List[StrawberryArgument],
-    scalar_registry: Dict[object, Union[ScalarWrapper, ScalarDefinition]],
+    value: dict[str, Any],
+    arguments: list[StrawberryArgument],
+    scalar_registry: dict[object, ScalarWrapper | ScalarDefinition],
     config: StrawberryConfig,
-) -> Dict[str, Any]:
+) -> dict[str, Any]:
     """Converts a nested dictionary to a dictionary of actual types.
 
     It deals with conversion of input types to proper dataclasses and
@@ -219,9 +209,9 @@ def convert_arguments(
 
 
 def argument(
-    description: Optional[str] = None,
-    name: Optional[str] = None,
-    deprecation_reason: Optional[str] = None,
+    description: str | None = None,
+    name: str | None = None,
+    deprecation_reason: str | None = None,
     directives: Iterable[object] = (),
 ) -> StrawberryArgumentAnnotation:
     return StrawberryArgumentAnnotation(

@@ -27,8 +27,8 @@ class Result:
 
         file_info, result = output_line.split("-", maxsplit=1)
 
-        line, column = [int(value) for value in file_info.split(":")[1:]]
-        type_, message = [value.strip() for value in result.split(":", maxsplit=1)]
+        line, column = (int(value) for value in file_info.split(":")[1:])
+        type_, message = (value.strip() for value in result.split(":", maxsplit=1))
         type_ = cast(ResultType, type_)
 
         return cls(type=type_, message=message, line=line, column=column)

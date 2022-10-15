@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import textwrap
-from typing import Optional
 
 import pydantic
 
@@ -13,7 +12,7 @@ def test_auto_fields():
 
     class UserModel(pydantic.BaseModel):
         age: int
-        password: Optional[str]
+        password: str | None
         other: float
 
     @strawberry.experimental.pydantic.type(UserModel)

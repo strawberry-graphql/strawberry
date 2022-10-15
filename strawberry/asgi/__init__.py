@@ -82,7 +82,7 @@ class GraphQL:
                 await ws.close(code=4406)
 
         else:  # pragma: no cover
-            raise ValueError("Unknown scope type: %r" % (scope["type"],))
+            raise ValueError("Unknown scope type: {!r}".format(scope["type"]))
 
     def pick_preferred_protocol(self, ws: WebSocket) -> Optional[str]:
         protocols = ws["subprotocols"]

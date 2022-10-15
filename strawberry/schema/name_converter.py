@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List, Optional, Union
+from typing import TYPE_CHECKING
 
 from typing_extensions import Protocol
 
@@ -23,7 +23,7 @@ if TYPE_CHECKING:
 
 class HasGraphQLName(Protocol):
     python_name: str
-    graphql_name: Optional[str]
+    graphql_name: str | None
 
 
 class NameConverter:
@@ -32,7 +32,7 @@ class NameConverter:
 
     def from_type(
         self,
-        type_: Union[StrawberryType, StrawberryDirective, StrawberryDirective],
+        type_: StrawberryType | StrawberryDirective | StrawberryDirective,
     ) -> str:
         if isinstance(type_, (StrawberryDirective, StrawberrySchemaDirective)):
             return self.from_directive(type_)
@@ -72,7 +72,7 @@ class NameConverter:
         return enum.name
 
     def from_directive(
-        self, directive: Union[StrawberryDirective, StrawberrySchemaDirective]
+        self, directive: StrawberryDirective | StrawberrySchemaDirective
     ) -> str:
         name = self.get_graphql_name(directive)
 
@@ -101,11 +101,11 @@ class NameConverter:
         return name
 
     def from_generic(
-        self, generic_type: TypeDefinition, types: List[Union[StrawberryType, type]]
+        self, generic_type: TypeDefinition, types: list[StrawberryType | type]
     ) -> str:
         generic_type_name = generic_type.name
 
-        names: List[str] = []
+        names: list[str] = []
 
         for type_ in types:
             name = self.get_from_type(type_)
@@ -113,7 +113,7 @@ class NameConverter:
 
         return "".join(names) + generic_type_name
 
-    def get_from_type(self, type_: Union[StrawberryType, type]) -> str:
+    def get_from_type(self, type_: StrawberryType | type) -> str:
         from strawberry.union import StrawberryUnion
 
         # TODO: maybe we should move parse_annotated somewhere else?
