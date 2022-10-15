@@ -74,6 +74,33 @@ def enum_value(
 EnumType = TypeVar("EnumType", bound=EnumMeta)
 
 
+def _decorate_StrawberryEnum(enum_class, name, description, directives):
+    values = []
+    for item in enum_class.__members__.values():  # type: ignore
+        value = EnumValue(
+            item.name,
+            item.value,
+            deprecation_reason=item.deprecation_reason,
+            directives=item.directives,
+            description=item.description,
+        )
+        values.append(value)
+
+    if name is not None:
+        setattr(enum_class, "_name", name)
+    if description is not None:
+        setattr(enum_class, "_description", description)
+    if directives is not None:
+        setattr(enum_class, "_directives", directives)
+    enum_class._enum_definition = EnumDefinition(  # type: ignore
+        wrapped_cls=enum_class,
+        name=getattr(enum_class, "_name", enum_class.__name__),
+        values=values,
+        description=getattr(enum_class, "_description", None),
+        directives=getattr(enum_class, "_directives", ()),
+    )
+
+
 class StrawberryEnumMeta(EnumMeta):
     def __new__(
         metacls,
@@ -86,28 +113,47 @@ class StrawberryEnumMeta(EnumMeta):
         **kwds,
     ):
         enum_class = EnumMeta.__new__(metacls, cls, bases, classdict, **kwds)
-        setattr(enum_class, "_name", name)
-        setattr(enum_class, "_description", description)
-        setattr(enum_class, "_directives", directives)
-        values = []
-        for item in enum_class.__members__.values():  # type: ignore
-
-            value = EnumValue(
-                item.name,
-                item.value,
-                deprecation_reason=item.deprecation_reason,
-                directives=item.directives,
-                description=item.description,
-            )
-            values.append(value)
-        enum_class._enum_definition = EnumDefinition(  # type: ignore
-            wrapped_cls=enum_class,
-            name=enum_class._name or enum_class.__name__,
-            values=values,
-            description=enum_class._description,
-            directives=enum_class._directives,
+        _decorate_StrawberryEnum(
+            enum_class,
+            name=name,
+            description=description,
+            directives=directives,
         )
+        return enum_class
 
+    def __call__(
+        cls,
+        value,
+        names=None,
+        *,
+        name: Optional[str] = None,
+        description: Optional[str] = None,
+        directives: Optional[Iterable[object]] = None,
+        module=None,
+        qualname=None,
+        type=None,
+        start=1,
+    ):
+
+        enum_class = EnumMeta.__call__(
+            cls,
+            value,
+            names,
+            module=module,
+            qualname=qualname,
+            type=type,
+            start=start,
+        )
+        if names:
+            _decorate_StrawberryEnum(
+                enum_class,
+                name=name,
+                description=description,
+                directives=directives,
+            )
+            assert hasattr(
+                enum_class, "_directives"
+            ), "_directives attribute is missing"
         return enum_class
 
 
@@ -151,55 +197,6 @@ class StrawberryEnum(Enum, metaclass=StrawberryEnumMeta):
         obj.directives = directives
         return obj
 
-    def __call__(
-        cls,
-        value,
-        names=None,
-        *,
-        name: Optional[str] = None,
-        description: Optional[str] = None,
-        directives: Iterable[object] = (),
-        module=None,
-        qualname=None,
-        type=None,
-        start=1,
-    ):
-        enum_class = Enum.__call__(
-            cls,
-            names,
-            module=module,
-            qualname=qualname,
-            type=type,
-            start=start,
-        )
-        if names:
-            if name:
-                setattr(enum_class, "_name", name)
-            if description:
-                setattr(enum_class, "_description", description)
-            if directives:
-                setattr(enum_class, "_directives", directives)
-
-            values = []
-            for item in enum_class:  # type: ignore
-
-                value = EnumValue(
-                    item.name,
-                    item.value,
-                    deprecation_reason=item.deprecation_reason,
-                    directives=item.directives,
-                    description=item.description,
-                )
-                values.append(value)
-            enum_class._enum_definition = EnumDefinition(  # type: ignore
-                wrapped_cls=enum_class,
-                name=enum_class._name or enum_class.__name__,
-                values=values,
-                description=enum_class._description,
-                directives=enum_class._directives,
-            )
-        return enum_class
-
     @classmethod
     def adapt(cls, enum, adapt_fn=None):
         if not isinstance(enum, EnumMeta):
@@ -208,7 +205,7 @@ class StrawberryEnum(Enum, metaclass=StrawberryEnumMeta):
             adapt_fn = _default_adapt_fn
         basedef = adapt_fn(enum)
         return cls(
-            basedef["name"] or enum.__name__,
+            enum.__name__,
             map(
                 lambda item: (
                     item[0],
@@ -216,6 +213,7 @@ class StrawberryEnum(Enum, metaclass=StrawberryEnumMeta):
                 ),
                 enum.__members__.items(),
             ),
+            **basedef,
         )
 
 
