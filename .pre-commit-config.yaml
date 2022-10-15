@@ -11,6 +11,12 @@ repos:
       require_serial: true
       exclude: ^tests/codegen/snapshots/python/
 
+  - repo: https://github.com/asottile/pyupgrade
+    rev: v3.1.0
+    hooks:
+      - id: pyupgrade
+        args: [--py37-plus, --keep-runtime-typing]
+
   - repo: https://github.com/PyCQA/flake8
     rev: 5.0.4
     hooks:
@@ -49,8 +55,3 @@ repos:
     hooks:
       - id: black
         exclude: ^tests/codegen/snapshots/python/
-  - repo: https://github.com/asottile/pyupgrade
-    rev: v3.1.0
-    hooks:
-      - id: pyupgrade
-        args: [--py37-plus, --keep-runtime-typing]
