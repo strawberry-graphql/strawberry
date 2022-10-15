@@ -172,10 +172,8 @@ def print_field_directives(
     )
 
     return "".join(
-        (
-            print_schema_directive(directive, schema=schema, extras=extras)
-            for directive in directives
-        )
+        print_schema_directive(directive, schema=schema, extras=extras)
+        for directive in directives
     )
 
 
@@ -186,10 +184,8 @@ def print_argument_directives(
     directives = strawberry_type.directives if strawberry_type else []
 
     return "".join(
-        (
-            print_schema_directive(directive, schema=schema, extras=extras)
-            for directive in directives
-        )
+        print_schema_directive(directive, schema=schema, extras=extras)
+        for directive in directives
     )
 
 
@@ -264,10 +260,8 @@ def print_scalar(
     directives = strawberry_type.directives if strawberry_type else []
 
     printed_directives = "".join(
-        (
-            print_schema_directive(directive, schema=schema, extras=extras)
-            for directive in directives
-        )
+        print_schema_directive(directive, schema=schema, extras=extras)
+        for directive in directives
     )
 
     return (
@@ -290,10 +284,8 @@ def print_enum_value(
     directives = strawberry_type.directives if strawberry_type else []
 
     printed_directives = "".join(
-        (
-            print_schema_directive(directive, schema=schema, extras=extras)
-            for directive in directives
-        )
+        print_schema_directive(directive, schema=schema, extras=extras)
+        for directive in directives
     )
 
     return (
@@ -311,10 +303,8 @@ def print_enum(
     directives = strawberry_type.directives if strawberry_type else []
 
     printed_directives = "".join(
-        (
-            print_schema_directive(directive, schema=schema, extras=extras)
-            for directive in directives
-        )
+        print_schema_directive(directive, schema=schema, extras=extras)
+        for directive in directives
     )
 
     values = [
@@ -362,10 +352,8 @@ def print_type_directives(type_, schema: BaseSchema, *, extras: PrintExtras) -> 
     )
 
     return "".join(
-        (
-            print_schema_directive(directive, schema=schema, extras=extras)
-            for directive in directives
-        )
+        print_schema_directive(directive, schema=schema, extras=extras)
+        for directive in directives
     )
 
 
@@ -419,10 +407,8 @@ def print_union(
     directives = strawberry_type.directives if strawberry_type else []
 
     printed_directives = "".join(
-        (
-            print_schema_directive(directive, schema=schema, extras=extras)
-            for directive in directives
-        )
+        print_schema_directive(directive, schema=schema, extras=extras)
+        for directive in directives
     )
 
     types = type_.types
@@ -468,10 +454,8 @@ def print_schema_directives(schema: BaseSchema, *, extras: PrintExtras) -> str:
     )
 
     return "".join(
-        (
-            print_schema_directive(directive, schema=schema, extras=extras)
-            for directive in directives
-        )
+        print_schema_directive(directive, schema=schema, extras=extras)
+        for directive in directives
     )
 
 
