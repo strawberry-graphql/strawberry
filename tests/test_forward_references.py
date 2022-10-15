@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import textwrap
+from typing import List
 
 import strawberry
 from strawberry.printer import print_schema
@@ -44,12 +45,12 @@ def test_with_resolver():
     class User:
         name: str
 
-    def get_users() -> list[User]:
+    def get_users() -> List[User]:
         return []
 
     @strawberry.type
     class Query:
-        users: list[User] = strawberry.field(resolver=get_users)
+        users: List[User] = strawberry.field(resolver=get_users)
 
     definition = Query._type_definition
     assert definition.name == "Query"

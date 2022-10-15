@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import inspect
-from typing import Any, Callable, TypeVar
+from typing import Any, Callable, List, Optional, TypeVar
 
 from typing_extensions import Annotated
 
@@ -51,28 +51,28 @@ class StrawberryDirectiveResolver(StrawberryResolver[T]):
     )
 
     @cached_property
-    def value_parameter(self) -> inspect.Parameter | None:
+    def value_parameter(self) -> Optional[inspect.Parameter]:
         return self.reserved_parameters.get(VALUE_PARAMSPEC)
 
 
 @dataclasses.dataclass
 class StrawberryDirective:
     python_name: str
-    graphql_name: str | None
+    graphql_name: Optional[str]
     resolver: StrawberryDirectiveResolver
-    locations: list[DirectiveLocation]
-    description: str | None = None
+    locations: List[DirectiveLocation]
+    description: Optional[str] = None
 
     @cached_property
-    def arguments(self) -> list[StrawberryArgument]:
+    def arguments(self) -> List[StrawberryArgument]:
         return self.resolver.arguments
 
 
 def directive(
     *,
-    locations: list[DirectiveLocation],
-    description: str | None = None,
-    name: str | None = None,
+    locations: List[DirectiveLocation],
+    description: Optional[str] = None,
+    name: Optional[str] = None,
 ) -> Callable[[Callable[..., T]], T]:
     def _wrap(f: Callable[..., T]) -> T:
         return StrawberryDirective(  # type: ignore

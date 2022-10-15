@@ -293,7 +293,7 @@ def test_warning_about_async_get_results_hooks_in_sync_context():
     class Query:
         @strawberry.field
         def string(self) -> str:
-            return ""
+            return str()
 
     schema = strawberry.Schema(query=Query, extensions=[MyExtension])
     query = "query { string }"

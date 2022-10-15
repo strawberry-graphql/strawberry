@@ -1,7 +1,18 @@
 from __future__ import annotations
 
 import dataclasses
-from typing import TYPE_CHECKING, Any, Callable, Mapping, Sequence, TypeVar
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    Callable,
+    List,
+    Mapping,
+    Optional,
+    Sequence,
+    Type,
+    TypeVar,
+    Union,
+)
 
 from strawberry.type import StrawberryType, StrawberryTypeVar
 from strawberry.utils.typing import is_generic as is_type_generic
@@ -18,18 +29,18 @@ class TypeDefinition(StrawberryType):
     name: str
     is_input: bool
     is_interface: bool
-    origin: type
-    description: str | None
-    interfaces: list[TypeDefinition]
+    origin: Type
+    description: Optional[str]
+    interfaces: List["TypeDefinition"]
     extend: bool
-    directives: Sequence[object] | None
-    is_type_of: Callable[[Any, GraphQLResolveInfo], bool] | None
+    directives: Optional[Sequence[object]]
+    is_type_of: Optional[Callable[[Any, GraphQLResolveInfo], bool]]
 
-    _fields: list[StrawberryField]
+    _fields: List["StrawberryField"]
 
-    concrete_of: TypeDefinition | None = None
+    concrete_of: Optional["TypeDefinition"] = None
     """Concrete implementations of Generic TypeDefinitions fill this in"""
-    type_var_map: Mapping[TypeVar, StrawberryType | type] = dataclasses.field(
+    type_var_map: Mapping[TypeVar, Union[StrawberryType, type]] = dataclasses.field(
         default_factory=dict
     )
 
@@ -51,7 +62,9 @@ class TypeDefinition(StrawberryType):
         return self.copy_with(type_var_map)
 
     # TODO: Return a StrawberryObject
-    def copy_with(self, type_var_map: Mapping[TypeVar, StrawberryType | type]) -> type:
+    def copy_with(
+        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
+    ) -> type:
         fields = []
         for field in self.fields:
             # TODO: Logic unnecessary with StrawberryObject
@@ -92,13 +105,13 @@ class TypeDefinition(StrawberryType):
 
         return new_type
 
-    def get_field(self, python_name: str) -> StrawberryField | None:
+    def get_field(self, python_name: str) -> Optional["StrawberryField"]:
         return next(
             (field for field in self.fields if field.python_name == python_name), None
         )
 
     @property
-    def fields(self) -> list[StrawberryField]:
+    def fields(self) -> List["StrawberryField"]:
         # TODO: rename _fields to fields and remove this property
         return self._fields
 
@@ -107,14 +120,14 @@ class TypeDefinition(StrawberryType):
         return is_type_generic(self.origin)
 
     @property
-    def type_params(self) -> list[TypeVar]:
-        type_params: list[TypeVar] = []
+    def type_params(self) -> List[TypeVar]:
+        type_params: List[TypeVar] = []
         for field in self.fields:
             type_params.extend(field.type_params)
 
         return type_params
 
-    def is_implemented_by(self, root: type | dict) -> bool:
+    def is_implemented_by(self, root: Union[type, dict]) -> bool:
         # TODO: Accept StrawberryObject instead
         # TODO: Support dicts
         if isinstance(root, dict):

@@ -2,7 +2,18 @@ from __future__ import annotations
 
 import dataclasses
 import sys
-from typing import Any, Callable, TypeVar, cast
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+)
 
 from graphql import (
     GraphQLArgument,
@@ -73,7 +84,7 @@ class CustomGraphQLEnumType(GraphQLEnumType):
         return self.wrapped_cls(super().parse_value(input_value))
 
     def parse_literal(
-        self, value_node: ValueNode, _variables: dict[str, Any] | None = None
+        self, value_node: ValueNode, _variables: Optional[Dict[str, Any]] = None
     ) -> Any:
         return self.wrapped_cls(super().parse_literal(value_node, _variables))
 
@@ -87,9 +98,9 @@ class GraphQLCoreConverter:
     def __init__(
         self,
         config: StrawberryConfig,
-        scalar_registry: dict[object, ScalarWrapper | ScalarDefinition],
+        scalar_registry: Dict[object, Union[ScalarWrapper, ScalarDefinition]],
     ):
-        self.type_map: dict[str, ConcreteType] = {}
+        self.type_map: Dict[str, ConcreteType] = {}
         self.config = config
         self.scalar_registry = scalar_registry
 
@@ -163,13 +174,13 @@ class GraphQLCoreConverter:
             },
         )
 
-    def from_schema_directive(self, cls: type) -> GraphQLDirective:
+    def from_schema_directive(self, cls: Type) -> GraphQLDirective:
         strawberry_directive = cast(
             StrawberrySchemaDirective, cls.__strawberry_directive__
         )
         module = sys.modules[cls.__module__]
 
-        args: dict[str, GraphQLArgument] = {}
+        args: Dict[str, GraphQLArgument] = {}
         for field in strawberry_directive.fields:
             default = field.default
             if default == dataclasses.MISSING:
@@ -251,10 +262,10 @@ class GraphQLCoreConverter:
 
     @staticmethod
     def _get_thunk_mapping(
-        fields: list[StrawberryField],
+        fields: List[StrawberryField],
         name_converter: Callable[[StrawberryField], str],
         field_converter: Callable[[StrawberryField], FieldType],
-    ) -> dict[str, FieldType]:
+    ) -> Dict[str, FieldType]:
         """Create a GraphQL core `ThunkMapping` mapping of field names to field types.
 
         This method filters out remaining `strawberry.Private` annotated fields that
@@ -278,7 +289,7 @@ class GraphQLCoreConverter:
 
     def get_graphql_fields(
         self, type_definition: TypeDefinition
-    ) -> dict[str, GraphQLField]:
+    ) -> Dict[str, GraphQLField]:
         return self._get_thunk_mapping(
             fields=type_definition.fields,
             name_converter=self.config.name_converter.from_field,
@@ -287,7 +298,7 @@ class GraphQLCoreConverter:
 
     def get_graphql_input_fields(
         self, type_definition: TypeDefinition
-    ) -> dict[str, GraphQLInputField]:
+    ) -> Dict[str, GraphQLInputField]:
         return self._get_thunk_mapping(
             fields=type_definition.fields,
             name_converter=self.config.name_converter.from_field,
@@ -362,7 +373,7 @@ class GraphQLCoreConverter:
             assert isinstance(graphql_object_type, GraphQLObjectType)  # For mypy
             return graphql_object_type
 
-        def _get_is_type_of() -> Callable[[Any, GraphQLResolveInfo], bool] | None:
+        def _get_is_type_of() -> Optional[Callable[[Any, GraphQLResolveInfo], bool]]:
             if object_type.is_type_of:
                 return object_type.is_type_of
 
@@ -416,8 +427,8 @@ class GraphQLCoreConverter:
         def _get_arguments(
             source: Any,
             info: Info,
-            kwargs: dict[str, Any],
-        ) -> tuple[list[Any], dict[str, Any]]:
+            kwargs: Dict[str, Any],
+        ) -> Tuple[List[Any], Dict[str, Any]]:
             kwargs = convert_arguments(
                 kwargs,
                 field.arguments,
@@ -447,7 +458,7 @@ class GraphQLCoreConverter:
 
             return args, kwargs
 
-        def _check_permissions(source: Any, info: Info, kwargs: dict[str, Any]):
+        def _check_permissions(source: Any, info: Info, kwargs: Dict[str, Any]):
             """
             Checks if the permission should be accepted and
             raises an exception if not
@@ -460,7 +471,7 @@ class GraphQLCoreConverter:
                     raise PermissionError(message)
 
         async def _check_permissions_async(
-            source: Any, info: Info, kwargs: dict[str, Any]
+            source: Any, info: Info, kwargs: Dict[str, Any]
         ):
             for permission_class in field.permission_classes:
                 permission = permission_class()
@@ -508,7 +519,7 @@ class GraphQLCoreConverter:
             _resolver._is_default = not field.base_resolver  # type: ignore
             return _resolver
 
-    def from_scalar(self, scalar: type) -> GraphQLScalarType:
+    def from_scalar(self, scalar: Type) -> GraphQLScalarType:
         scalar_definition: ScalarDefinition
 
         if scalar in self.scalar_registry:
@@ -544,8 +555,8 @@ class GraphQLCoreConverter:
         return implementation
 
     def from_maybe_optional(
-        self, type_: StrawberryType | type
-    ) -> GraphQLNullableType | GraphQLNonNull:
+        self, type_: Union[StrawberryType, type]
+    ) -> Union[GraphQLNullableType, GraphQLNonNull]:
         NoneType = type(None)
         if type_ is None or type_ is NoneType:
             return self.from_type(type_)
@@ -554,7 +565,7 @@ class GraphQLCoreConverter:
         else:
             return GraphQLNonNull(self.from_type(type_))
 
-    def from_type(self, type_: StrawberryType | type) -> GraphQLNullableType:
+    def from_type(self, type_: Union[StrawberryType, type]) -> GraphQLNullableType:
         if compat.is_generic(type_):
             raise MissingTypesForGenericError(type_)
 
@@ -595,7 +606,7 @@ class GraphQLCoreConverter:
             assert isinstance(graphql_union, GraphQLUnionType)  # For mypy
             return graphql_union
 
-        graphql_types: list[GraphQLObjectType] = []
+        graphql_types: List[GraphQLObjectType] = []
         for type_ in union.types:
             graphql_type = self.from_type(type_)
 
@@ -624,7 +635,7 @@ class GraphQLCoreConverter:
     def _get_is_type_of(
         self,
         object_type: TypeDefinition,
-    ) -> Callable[[Any, GraphQLResolveInfo], bool] | None:
+    ) -> Optional[Callable[[Any, GraphQLResolveInfo], bool]]:
         if object_type.is_type_of:
             return object_type.is_type_of
 

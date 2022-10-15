@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import EnumMeta
-from typing import Union
+from typing import List, Optional, Type, Union
 
 from typing_extensions import Literal
 
@@ -20,33 +20,33 @@ class GraphQLList:
 @dataclass
 class GraphQLUnion:
     name: str
-    types: list[GraphQLObjectType]
+    types: List[GraphQLObjectType]
 
 
 @dataclass
 class GraphQLField:
     name: str
-    alias: str | None
+    alias: Optional[str]
     type: GraphQLType
 
 
 @dataclass
 class GraphQLObjectType:
     name: str
-    fields: list[GraphQLField]
+    fields: List[GraphQLField]
 
 
 @dataclass
 class GraphQLEnum:
     name: str
-    values: list[str]
+    values: List[str]
     python_type: EnumMeta
 
 
 @dataclass
 class GraphQLScalar:
     name: str
-    python_type: type | None
+    python_type: Optional[Type]
 
 
 GraphQLType = Union[
@@ -62,16 +62,16 @@ GraphQLType = Union[
 @dataclass
 class GraphQLFieldSelection:
     field: str
-    alias: str | None
-    selections: list[GraphQLSelection]
-    directives: list[GraphQLDirective]
-    arguments: list[GraphQLArgument]
+    alias: Optional[str]
+    selections: List[GraphQLSelection]
+    directives: List[GraphQLDirective]
+    arguments: List[GraphQLArgument]
 
 
 @dataclass
 class GraphQLInlineFragment:
     type_condition: str
-    selections: list[GraphQLSelection]
+    selections: List[GraphQLSelection]
 
 
 GraphQLSelection = Union[GraphQLFieldSelection, GraphQLInlineFragment]
@@ -99,7 +99,7 @@ class GraphQLBoolValue:
 
 @dataclass
 class GraphQLListValue:
-    values: list[GraphQLArgumentValue]
+    values: List[GraphQLArgumentValue]
 
 
 @dataclass
@@ -126,7 +126,7 @@ class GraphQLArgument:
 @dataclass
 class GraphQLDirective:
     name: str
-    arguments: list[GraphQLArgument]
+    arguments: List[GraphQLArgument]
 
 
 @dataclass
@@ -139,8 +139,8 @@ class GraphQLVariable:
 class GraphQLOperation:
     name: str
     kind: Literal["query", "mutation", "subscription"]
-    selections: list[GraphQLSelection]
-    directives: list[GraphQLDirective]
-    variables: list[GraphQLVariable]
+    selections: List[GraphQLSelection]
+    directives: List[GraphQLDirective]
+    variables: List[GraphQLVariable]
     type: GraphQLObjectType
-    variables_type: GraphQLObjectType | None
+    variables_type: Optional[GraphQLObjectType]

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, cast
+from typing import Any, Optional, Union, cast
 
 from typing_extensions import Annotated, get_args, get_origin
 
@@ -26,7 +26,7 @@ class StrawberryAutoMeta(type):
     """
 
     def __init__(self, *args, **kwargs):
-        self._instance: StrawberryAuto | None = None
+        self._instance: Optional[StrawberryAuto] = None
         super().__init__(*args, **kwargs)
 
     def __call__(cls, *args, **kwargs):
@@ -37,7 +37,7 @@ class StrawberryAutoMeta(type):
 
     def __instancecheck__(
         self,
-        instance: StrawberryAuto | StrawberryAnnotation | StrawberryType | type,
+        instance: Union[StrawberryAuto, StrawberryAnnotation, StrawberryType, type],
     ):
         if isinstance(instance, StrawberryAnnotation):
             resolved = instance.annotation

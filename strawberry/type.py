@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Mapping, TypeVar
+from typing import TYPE_CHECKING, List, Mapping, TypeVar, Union
 
 
 if TYPE_CHECKING:
@@ -10,13 +10,13 @@ if TYPE_CHECKING:
 
 class StrawberryType(ABC):
     @property
-    def type_params(self) -> list[TypeVar]:
+    def type_params(self) -> List[TypeVar]:
         return []
 
     @abstractmethod
     def copy_with(
-        self, type_var_map: Mapping[TypeVar, StrawberryType | type]
-    ) -> StrawberryType | type:
+        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
+    ) -> Union[StrawberryType, type]:
         raise NotImplementedError()
 
     @property
@@ -48,7 +48,7 @@ class StrawberryType(ABC):
 
 
 class StrawberryContainer(StrawberryType):
-    def __init__(self, of_type: StrawberryType | type):
+    def __init__(self, of_type: Union[StrawberryType, type]):
         self.of_type = of_type
 
     def __hash__(self) -> int:
@@ -64,7 +64,7 @@ class StrawberryContainer(StrawberryType):
         return super().__eq__(other)
 
     @property
-    def type_params(self) -> list[TypeVar]:
+    def type_params(self) -> List[TypeVar]:
         if hasattr(self.of_type, "_type_definition"):
             parameters = getattr(self.of_type, "__parameters__", None)
 
@@ -77,9 +77,9 @@ class StrawberryContainer(StrawberryType):
             return []
 
     def copy_with(
-        self, type_var_map: Mapping[TypeVar, StrawberryType | type]
+        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
     ) -> StrawberryType:
-        of_type_copy: StrawberryType | type
+        of_type_copy: Union[StrawberryType, type]
 
         # TODO: Obsolete with StrawberryObject
         if hasattr(self.of_type, "_type_definition"):
@@ -123,8 +123,8 @@ class StrawberryTypeVar(StrawberryType):
         self.type_var = type_var
 
     def copy_with(
-        self, type_var_map: Mapping[TypeVar, StrawberryType | type]
-    ) -> StrawberryType | type:
+        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
+    ) -> Union[StrawberryType, type]:
         return type_var_map[self.type_var]
 
     @property
@@ -132,7 +132,7 @@ class StrawberryTypeVar(StrawberryType):
         return True
 
     @property
-    def type_params(self) -> list[TypeVar]:
+    def type_params(self) -> List[TypeVar]:
         return [self.type_var]
 
     def __eq__(self, other) -> bool:
