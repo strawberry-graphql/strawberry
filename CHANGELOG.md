@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.134.2 - 2022-10-16
+--------------------
+
+This release adds pyupgrade to our CI and includes some minor changes to keep our codebase modern.
+
+Contributed by [Liel Fridman](https://github.com/lielfr) via [PR #2255](https://github.com/strawberry-graphql/strawberry/pull/2255/)
+
+
 0.134.1 - 2022-10-14
 --------------------
 
