@@ -27,11 +27,9 @@ def create_type(name: str, fields: List[StrawberryField]) -> Type:
 
         if field.python_name is None:
             raise ValueError(
-                (
-                    "Field doesn't have a name. Fields passed to "
-                    "`create_type` must define a name by passing the "
-                    "`name` argument to `strawberry.field`."
-                )
+                "Field doesn't have a name. Fields passed to "
+                "`create_type` must define a name by passing the "
+                "`name` argument to `strawberry.field`."
             )
 
         namespace[field.python_name] = field

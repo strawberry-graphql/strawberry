@@ -428,9 +428,9 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
                 ctx.reason,
             )
 
-        potentially_missing_fields: Set["PydanticModelField"] = set(
+        potentially_missing_fields: Set["PydanticModelField"] = {
             f for f in pydantic_fields if f.name not in new_strawberry_fields
-        )
+        }
 
         """
         Need to check if all_fields=True from the pydantic decorator

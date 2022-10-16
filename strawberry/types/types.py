@@ -31,14 +31,14 @@ class TypeDefinition(StrawberryType):
     is_interface: bool
     origin: Type
     description: Optional[str]
-    interfaces: List["TypeDefinition"]
+    interfaces: List[TypeDefinition]
     extend: bool
     directives: Optional[Sequence[object]]
     is_type_of: Optional[Callable[[Any, GraphQLResolveInfo], bool]]
 
-    _fields: List["StrawberryField"]
+    _fields: List[StrawberryField]
 
-    concrete_of: Optional["TypeDefinition"] = None
+    concrete_of: Optional[TypeDefinition] = None
     """Concrete implementations of Generic TypeDefinitions fill this in"""
     type_var_map: Mapping[TypeVar, Union[StrawberryType, type]] = dataclasses.field(
         default_factory=dict
@@ -105,13 +105,13 @@ class TypeDefinition(StrawberryType):
 
         return new_type
 
-    def get_field(self, python_name: str) -> Optional["StrawberryField"]:
+    def get_field(self, python_name: str) -> Optional[StrawberryField]:
         return next(
             (field for field in self.fields if field.python_name == python_name), None
         )
 
     @property
-    def fields(self) -> List["StrawberryField"]:
+    def fields(self) -> List[StrawberryField]:
         # TODO: rename _fields to fields and remove this property
         return self._fields
 
