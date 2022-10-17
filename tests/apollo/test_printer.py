@@ -11,10 +11,15 @@ def test_print_simple_cache_control():
         first_name: str = strawberry.field(directives=[CacheControl(max_age=10)])
 
     expected_type = """
-        directive @cacheControl(maxAge: Int, scope: CacheControlScope = PUBLIC, inhereditMaxAge: Boolean = false) on FIELD_DEFINITION | OBJECT | INTERFACE | UNION
+        directive @cacheControl(maxAge: Int, scope: CacheControlScope, inhereditMaxAge: Boolean) on FIELD_DEFINITION | OBJECT | INTERFACE | UNION
 
         type Query {
-          firstName: String! @cacheControl(maxAge: 10, scope: PUBLIC, inhereditMaxAge: false)
+          firstName: String! @cacheControl(maxAge: 10)
+        }
+
+        enum CacheControlScope {
+          PRIVATE
+          PUBLIC
         }
     """
     schema = strawberry.Schema(query=Query)

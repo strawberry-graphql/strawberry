@@ -1,5 +1,5 @@
 from .add_validation_rules import AddValidationRules
-from .apollo_cache_control import ApolloCacheControlExtension
+from .apollo_cache_control import ApolloCacheControl
 from .base_extension import Extension
 from .disable_validation import DisableValidation
 from .parser_cache import ParserCache
@@ -10,7 +10,7 @@ from .validation_cache import ValidationCache
 __all__ = [
     "Extension",
     "AddValidationRules",
-    "ApolloCacheControlExtension",
+    "ApolloCacheControl",
     "DisableValidation",
     "ParserCache",
     "QueryDepthLimiter",
