@@ -15,8 +15,9 @@ from typing import (  # type: ignore[attr-defined]
 
 from typing_extensions import Annotated, get_args, get_origin
 
-from strawberry.private import is_private
 from strawberry.exceptions import StrawberryException
+from strawberry.private import is_private
+
 
 try:
     from typing import ForwardRef
