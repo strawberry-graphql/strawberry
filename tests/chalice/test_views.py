@@ -5,6 +5,7 @@ import pytest
 from werkzeug.urls import url_encode, url_unparse
 
 from chalice.test import Client
+from strawberry.chalice.views import GraphQLView
 
 from .app import app
 
@@ -185,3 +186,10 @@ def test_query_custom_status_code():
 
         assert response.status_code == 418
         assert response.json_body["data"]["teapot"] == "🫖"
+
+
+def test_passing_render_graphiql_is_deprecated():
+    from .app import schema
+
+    with pytest.warns(DeprecationWarning):
+        GraphQLView(schema=schema, render_graphiql=True)
