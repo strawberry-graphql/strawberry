@@ -17,7 +17,7 @@ class CreateUserInput:
 prints the following:
 
 ```graphql
-directive @rangeInput(min: Int!, max: Int!) on INPUT_FIELD_DEFINITIO
+directive @rangeInput(min: Int!, max: Int!) on INPUT_FIELD_DEFINITION
 
 input Input @sensitiveInput(reason: "GDPR") {
   firstName: String!
