@@ -1,6 +1,6 @@
 Release type: patch
 
-This release add support for printing schema directives on an input type object, for example the following schema:
+This release adds support for printing schema directives on an input type object, for example the following schema:
 
 ```python
 @strawberry.schema_directive(locations=[Location.INPUT_FIELD_DEFINITION])
