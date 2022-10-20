@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.134.5 - 2022-10-20
+--------------------
+
+This release improves the error message that you get when trying
+to use an enum that hasn't been decorated with `@strawberry.enum`
+inside a type's field.
+
+Contributed by [Rise Riyo](https://github.com/riseriyo) via [PR #2267](https://github.com/strawberry-graphql/strawberry/pull/2267/)
+
+
 0.134.4 - 2022-10-20
 --------------------
 
