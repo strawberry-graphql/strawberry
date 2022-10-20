@@ -55,12 +55,7 @@ def test_malformed_unparsable_json_query_returns_error():
 
 def test_malformed_unparsable_json_query_returns_error_via_get():
     with Client(app) as client:
-        headers = {"Accept": "application/json", "Content-Type": "application/json"}
-
-        response = client.http.get(
-            "/graphql?query={ hello }&variables='{'",
-            headers=headers,
-        )
+        response = client.http.get("/graphql?query={ hello }&variables='{'")
 
         assert response.status_code == 400
 
