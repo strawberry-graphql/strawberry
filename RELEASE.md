@@ -11,13 +11,13 @@ class RangeInput:
 @strawberry.input
 class CreateUserInput:
     name: str
-    age: int = strawberry.field(directives=[ValidRange(min=1, max=100)])
+    age: int = strawberry.field(directives=[RangeInput(min=1, max=100)])
 ```
 
 prints the following:
 
 ```graphql
-directive @rangeInput(min: Int!, max: Int!) on INPUT_FIELD_DEFINITIO
+directive @rangeInput(min: Int!, max: Int!) on INPUT_FIELD_DEFINITION
 
 input Input @sensitiveInput(reason: "GDPR") {
   firstName: String!
