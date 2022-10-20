@@ -54,7 +54,7 @@ def test_field_inaccessible_printed_correctly():
         }
 
         input AnInput @inaccessible {
-          id: ID!
+          id: ID! @inaccessible
         }
 
         interface AnInterface @inaccessible {
