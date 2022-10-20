@@ -8,6 +8,10 @@ from graphql import GraphQLInputObjectType, GraphQLObjectType
 from strawberry.type import StrawberryType
 
 
+class StrawberryException(Exception):
+    pass
+
+
 class ObjectIsNotAnEnumError(Exception):
     def __init__(self, obj: object):
         message = (
