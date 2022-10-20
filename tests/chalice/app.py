@@ -34,8 +34,9 @@ class Mutation:
 
 
 schema = strawberry.Schema(query=Query, mutation=Mutation)
-view = GraphQLView(schema=schema, graphiql=True)
+view = GraphQLView(schema=schema, graphiql=True, allow_queries_via_get=True)
 view_no_graphiql = GraphQLView(schema=schema, graphiql=False)
+view_not_get = GraphQLView(schema=schema, graphiql=False, allow_queries_via_get=False)
 
 
 @app.route("/")
@@ -55,3 +56,12 @@ def handle_graphql():
 )
 def handle_graphql_without_graphiql():
     return view_no_graphiql.execute_request(app.current_request)
+
+
+@app.route(
+    "/graphql-no-get",
+    methods=["GET", "POST", "PUT"],
+    content_types=["application/json"],
+)
+def handle_graphql_without_queries_via_get():
+    return view_not_get.execute_request(app.current_request)

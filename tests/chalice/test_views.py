@@ -78,6 +78,25 @@ def test_query():
         assert response.json_body["data"]["greetings"] == "hello"
 
 
+def test_query_via_get():
+    with Client(app) as client:
+        response = client.http.get("/graphql?query={greetings}")
+
+        assert response.status_code == 200
+        assert response.json_body["data"]["greetings"] == "hello"
+
+
+def test_query_via_get_when_disabled():
+    with Client(app) as client:
+        response = client.http.get("/graphql-no-get?query={greetings}")
+
+        assert response.status_code == 400
+        assert response.json_body == {
+            "Code": "BadRequestError",
+            "Message": "queries are not allowed when using GET",
+        }
+
+
 def test_can_pass_variables():
     with Client(app) as client:
         headers = {"Accept": "application/json", "Content-Type": "application/json"}
