@@ -160,7 +160,7 @@ class StrawberryAnnotation:
     def create_enum(self, evaled_type: Any) -> EnumDefinition:
         try:
             return evaled_type._enum_definition
-        except Exception:
+        except AttributeError:
             raise StrawberryException(f"{evaled_type} fields cannot be resolved.")
 
     def create_list(self, evaled_type: Any) -> StrawberryList:
