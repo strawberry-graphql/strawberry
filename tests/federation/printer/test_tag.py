@@ -226,7 +226,7 @@ def test_tag_printed_correctly_on_inputs():
         }
 
         input Input @tag(name: "myTag") @tag(name: "anotherTag") {
-          a: String!
+          a: String! @tag(name: "myTag") @tag(name: "anotherTag")
         }
 
         type Query {
