@@ -29,6 +29,7 @@ class HasGraphQLName(Protocol):
 class NameConverter:
     def __init__(self, auto_camel_case: bool = True) -> None:
         self.auto_camel_case = auto_camel_case
+        self.scalar_registry: dict = {}
 
     def from_type(
         self,
@@ -147,6 +148,8 @@ class NameConverter:
                 name = self.from_generic(strawberry_type, types)
             else:
                 name = strawberry_type.name
+        elif type_ in self.scalar_registry:
+            name = self.scalar_registry[type_].name
         else:
             name = type_.__name__  # type: ignore
 

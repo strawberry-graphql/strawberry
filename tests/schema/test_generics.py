@@ -110,7 +110,7 @@ def test_supports_multiple_generic():
 
     assert not result.errors
     assert result.data == {
-        "multiple": {"__typename": "IntStrMultiple", "a": 123, "b": "123"}
+        "multiple": {"__typename": "IntStringMultiple", "a": 123, "b": "123"}
     }
 
 
@@ -419,7 +419,7 @@ def test_supports_generic_in_unions_multiple_vars():
         example {
             __typename
 
-            ... on IntStrEdge {
+            ... on IntStringEdge {
                 node
                 info
             }
@@ -430,7 +430,7 @@ def test_supports_generic_in_unions_multiple_vars():
 
     assert not result.errors
     assert result.data == {
-        "example": {"__typename": "IntStrEdge", "node": "string", "info": 1}
+        "example": {"__typename": "IntStringEdge", "node": "string", "info": 1}
     }
 
 
@@ -511,13 +511,13 @@ def test_supports_multiple_generics_in_union():
         node: Int!
       }
 
-      union IntEdgeStrEdge = IntEdge | StrEdge
+      union IntEdgeStringEdge = IntEdge | StringEdge
 
       type Query {
-        example: [IntEdgeStrEdge!]!
+        example: [IntEdgeStringEdge!]!
       }
 
-      type StrEdge {
+      type StringEdge {
         cursor: ID!
         node: String!
       }
@@ -534,7 +534,7 @@ def test_supports_multiple_generics_in_union():
                 intNode: node
             }
 
-            ... on StrEdge {
+            ... on StringEdge {
                 cursor
                 strNode: node
             }
@@ -547,7 +547,7 @@ def test_supports_multiple_generics_in_union():
     assert result.data == {
         "example": [
             {"__typename": "IntEdge", "cursor": "1", "intNode": 1},
-            {"__typename": "StrEdge", "cursor": "2", "strNode": "string"},
+            {"__typename": "StringEdge", "cursor": "2", "strNode": "string"},
         ]
     }
 
@@ -852,7 +852,7 @@ def test_generic_interface():
     assert not query_result.errors
     assert query_result.data == {
         "foo": {
-            "__typename": "StrGenericObject",
+            "__typename": "StringGenericObject",
             "value": "foo",
             "repr": "foo",
         }

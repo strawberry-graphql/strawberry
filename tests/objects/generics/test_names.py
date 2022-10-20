@@ -121,17 +121,17 @@ def test_nested_generics_aliases_with_schema():
 
     expected = textwrap.dedent(
         """
-        type IntStrDictItem {
+        type IntStringDictItem {
           key: Int!
           value: String!
         }
 
-        type IntStrDictItemListValue {
-          value: [IntStrDictItem!]!
+        type IntStringDictItemListValue {
+          value: [IntStringDictItem!]!
         }
 
         type Query {
-          d: IntStrDictItemListValue!
+          d: IntStringDictItemListValue!
         }
         """
     ).strip()

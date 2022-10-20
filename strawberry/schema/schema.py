@@ -77,6 +77,7 @@ class Schema(BaseSchema):
             # TODO: check that the overrides are valid
             scalar_registry.update(cast(SCALAR_OVERRIDES_DICT_TYPE, scalar_overrides))
 
+        self.config.name_converter.scalar_registry.update(scalar_registry)
         self.schema_converter = GraphQLCoreConverter(self.config, scalar_registry)
         self.directives = directives
         self.schema_directives = schema_directives
