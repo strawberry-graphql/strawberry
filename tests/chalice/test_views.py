@@ -30,7 +30,7 @@ def test_graphiql_view_is_not_returned_if_accept_headers_is_none():
     with Client(app) as client:
         response = client.http.get("/graphql", headers=None)
 
-        assert response.status_code == 415
+        assert response.status_code == 404
 
 
 def test_get_graphql_view_with_json_accept_type_is_rejected():
@@ -38,7 +38,7 @@ def test_get_graphql_view_with_json_accept_type_is_rejected():
         headers = {"Accept": "application/json"}
         response = client.http.get("/graphql", headers=headers)
 
-        assert response.status_code == 415
+        assert response.status_code == 404
 
 
 def test_malformed_unparsable_json_query_returns_error():
@@ -103,7 +103,7 @@ def test_query_with_no_request_body():
         headers = {"Accept": "application/json"}
         response = client.http.post("/graphql", headers=headers, body="")
 
-        assert response.status_code == 415
+        assert response.status_code == 404
 
 
 def test_query_with_query_params():
@@ -173,4 +173,15 @@ def test_no_graphiql_view_is_returned_if_false(header_value):
         headers = {"Accept": header_value}
         response = client.http.get("/graphql-no-graphiql", headers=headers)
 
-        assert response.status_code == 415
+        assert response.status_code == 404
+
+
+def test_query_custom_status_code():
+    with Client(app) as client:
+        headers = {"Accept": "application/json", "Content-Type": "application/json"}
+
+        query = {"query": "query { teapot }"}
+        response = client.http.post("/graphql", headers=headers, body=json.dumps(query))
+
+        assert response.status_code == 418
+        assert response.json_body["data"]["teapot"] == "🫖"

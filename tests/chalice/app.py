@@ -1,8 +1,9 @@
-from typing import Optional
+from typing import Any, Optional
 
 import strawberry
 from chalice import Chalice  # type: ignore
 from strawberry.chalice.views import GraphQLView
+from strawberry.types.info import Info
 
 
 app = Chalice(app_name="TheStackBadger")
@@ -17,6 +18,12 @@ class Query:
     @strawberry.field
     def hello(self, name: Optional[str] = None) -> str:
         return f"Hello {name or 'world'}"
+
+    @strawberry.field
+    def teapot(self, info: Info[Any, None]) -> str:
+        info.context["response"].status_code = 418
+
+        return "🫖"
 
 
 @strawberry.type
