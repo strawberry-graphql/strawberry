@@ -53,6 +53,18 @@ def test_malformed_unparsable_json_query_returns_error():
         assert response.status_code == 400
 
 
+def test_malformed_unparsable_json_query_returns_error_via_get():
+    with Client(app) as client:
+        headers = {"Accept": "application/json", "Content-Type": "application/json"}
+
+        response = client.http.get(
+            "/graphql?query={ hello }&variables='{'",
+            headers=headers,
+        )
+
+        assert response.status_code == 400
+
+
 # These tests are checking that graphql is getting routed through the endpoint
 # correctly to the strawberry execute_sync command
 def test_query():
