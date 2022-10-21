@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.137.0 - 2022-10-21
+--------------------
+
+This release fixes errors when using Union-of-lazy-types
+
+Contributed by [Paulo Costa](https://github.com/paulo-raca) via [PR #2271](https://github.com/strawberry-graphql/strawberry/pull/2271/)
+
+
 0.136.0 - 2022-10-21
 --------------------
 
