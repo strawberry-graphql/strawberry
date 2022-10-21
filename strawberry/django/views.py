@@ -1,6 +1,7 @@
 import asyncio
 import json
-from typing import Any, Dict, Optional, Type
+import warnings
+from typing import Any, Dict, Optional
 
 from django.core.exceptions import BadRequest, SuspiciousOperation
 from django.core.serializers.json import DjangoJSONEncoder
@@ -23,6 +24,7 @@ from strawberry.http import (
     parse_request_data,
     process_result,
 )
+from strawberry.http.json_encoder import JsonEncoder, default_json_encoder
 from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types import ExecutionResult
 from strawberry.types.graphql import OperationType
@@ -54,22 +56,59 @@ class BaseView(View):
     graphiql = True
     allow_queries_via_get = True
     schema: Optional[BaseSchema] = None
-    json_encoder: Type[json.JSONEncoder] = DjangoJSONEncoder
+    json_encoder: JsonEncoder = staticmethod(default_json_encoder)
     json_dumps_params: Optional[Dict[str, Any]] = None
 
     def __init__(
         self,
         schema: BaseSchema,
-        graphiql=True,
-        allow_queries_via_get=True,
-        subscriptions_enabled=False,
+        graphiql: bool = True,
+        allow_queries_via_get: bool = True,
+        subscriptions_enabled: bool = False,
         **kwargs: Any,
     ):
         self.schema = schema
         self.graphiql = graphiql
         self.allow_queries_via_get = allow_queries_via_get
         self.subscriptions_enabled = subscriptions_enabled
+
         super().__init__(**kwargs)
+
+        json_dumps_params = kwargs.get("json_dumps_params", self.json_dumps_params)
+
+        if json_dumps_params:
+            warnings.warn(
+                "json_dumps_params is deprecated, use json_encoder instead",
+                DeprecationWarning,
+            )
+
+            if "json_encoder" in kwargs and isinstance(kwargs["json_encoder"], type):
+                raise ValueError(
+                    "You can't use json_dumps_params with a custom json_encoder function"
+                )
+
+            self.json_encoder = DjangoJSONEncoder
+
+        if isinstance(self.json_encoder, type):
+            # TODO: better message
+            warnings.warn(
+                (
+                    "Passing a class to json_encoder is deprecated, "
+                    "please pass a function instead"
+                ),
+                DeprecationWarning,
+            )
+
+            encoder_class = self.json_encoder
+
+            def temporary_json_encoder(data: GraphQLHTTPResponse) -> str:
+                return json.dumps(
+                    data,
+                    cls=encoder_class,  # type: ignore
+                    **json_dumps_params or {},
+                )
+
+            self.json_encoder = temporary_json_encoder
 
     def parse_body(self, request: HttpRequest) -> Dict[str, Any]:
         content_type = request.content_type or ""
@@ -135,11 +174,12 @@ class BaseView(View):
 
     def _create_response(
         self, response_data: GraphQLHTTPResponse, sub_response: HttpResponse
-    ) -> JsonResponse:
-        response = JsonResponse(
-            response_data,
-            encoder=self.json_encoder,
-            json_dumps_params=self.json_dumps_params,
+    ) -> HttpResponse:
+        data = self.json_encoder(response_data)
+
+        response = HttpResponse(
+            data,
+            content_type="application/json",
         )
 
         for name, value in sub_response.items():

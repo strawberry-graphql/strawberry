@@ -10,6 +10,7 @@ from django.utils.http import urlencode
 
 import strawberry
 from strawberry.django.views import GraphQLView as BaseGraphQLView, TemporalHttpResponse
+from strawberry.http import GraphQLHTTPResponse
 from strawberry.permission import BasePermission
 from strawberry.types import ExecutionResult, Info
 
@@ -437,22 +438,50 @@ def test_json_encoder():
         "/graphql/", {"query": query}, content_type="application/json"
     )
 
+    def fake_encoder(data: GraphQLHTTPResponse) -> str:
+        return "fake_encoder"
+
+    response1 = GraphQLView.as_view(schema=schema, json_encoder=fake_encoder)(request)
+    assert response1.content.decode() == "fake_encoder"
+
+    class CustomGraphQLView(GraphQLView):
+        json_encoder = staticmethod(fake_encoder)
+
+    response2 = CustomGraphQLView.as_view(schema=schema)(request)
+    assert response2.content.decode() == "fake_encoder"
+
+
+def test_json_encoder_as_class_works_with_warning():
     class CustomEncoder(json.JSONEncoder):
         def encode(self, o: Any) -> str:
             # Reverse the result.
-            return super().encode(o)[::-1]
+            return "this is deprecated"
 
-    response1 = GraphQLView.as_view(schema=schema, json_encoder=CustomEncoder)(request)
-    assert response1.content.decode() == '{"data": {"hello": "strawberry"}}'[::-1]
+    query = "{ hello }"
 
-    class CustomGraphQLView(GraphQLView):
-        json_encoder = CustomEncoder
+    factory = RequestFactory()
+    request = factory.post(
+        "/graphql/", {"query": query}, content_type="application/json"
+    )
 
-    response2 = CustomGraphQLView.as_view(schema=schema)(request)
-    assert response1.content == response2.content
+    with pytest.warns(DeprecationWarning):
+        response1 = GraphQLView.as_view(schema=schema, json_encoder=CustomEncoder)(
+            request
+        )
+
+        assert response1.content.decode() == "this is deprecated"
+
+    with pytest.warns(DeprecationWarning):
+
+        class CustomGraphQLView(GraphQLView):
+            json_encoder = CustomEncoder
+
+        response2 = CustomGraphQLView.as_view(schema=schema)(request)
+
+        assert response2.content.decode() == "this is deprecated"
 
 
-def test_json_dumps_params():
+def test_json_dumps_params_deprecated_via_param():
     query = "{ hello }"
 
     factory = RequestFactory()
@@ -462,16 +491,30 @@ def test_json_dumps_params():
 
     dumps_params = {"separators": (",", ":")}
 
-    response1 = GraphQLView.as_view(schema=schema, json_dumps_params=dumps_params)(
-        request
+    with pytest.warns(DeprecationWarning):
+        response1 = GraphQLView.as_view(schema=schema, json_dumps_params=dumps_params)(
+            request
+        )
+        assert response1.content.decode() == '{"data":{"hello":"strawberry"}}'
+
+
+def test_json_dumps_params_deprecated_via_property():
+    query = "{ hello }"
+
+    factory = RequestFactory()
+    request = factory.post(
+        "/graphql/", {"query": query}, content_type="application/json"
     )
-    assert response1.content.decode() == '{"data":{"hello":"strawberry"}}'
 
-    class CustomGraphQLView(GraphQLView):
-        json_dumps_params = dumps_params
+    dumps_params = {"separators": (",", ":")}
 
-    response2 = CustomGraphQLView.as_view(schema=schema)(request)
-    assert response1.content == response2.content
+    with pytest.warns(DeprecationWarning):
+
+        class CustomGraphQLView(GraphQLView):
+            json_dumps_params = dumps_params
+
+        response = CustomGraphQLView.as_view(schema=schema)(request)
+        assert response.content.decode() == '{"data":{"hello":"strawberry"}}'
 
 
 def test_TemporalHttpResponse() -> None:
