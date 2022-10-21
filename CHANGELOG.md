@@ -1,6 +1,28 @@
 CHANGELOG
 =========
 
+0.135.0 - 2022-10-21
+--------------------
+
+This release adds a new `MaskErrors` extension that can be used to hide error
+messages from the client to prevent exposing sensitive details. By default it
+masks all errors raised in any field resolver.
+
+```python
+import strawberry
+from strawberry.extensions import MaskErrors
+
+schema = strawberry.Schema(
+    Query,
+    extensions=[
+        MaskErrors(),
+    ]
+)
+```
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) via [PR #2248](https://github.com/strawberry-graphql/strawberry/pull/2248/)
+
+
 0.134.5 - 2022-10-20
 --------------------
 
