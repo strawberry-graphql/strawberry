@@ -9,7 +9,6 @@ from graphql.pyutils.path import Path
 from strawberry.apollo.schema_directives import CacheControl, CacheControlScope
 from strawberry.extensions.base_extension import Extension
 from strawberry.field import StrawberryField
-from strawberry.types import ExecutionContext
 from strawberry.utils.await_maybe import AwaitableOrValue
 
 
@@ -77,15 +76,11 @@ class ApolloCacheControl(Extension):
         *,
         default_max_age: Optional[int] = 0,
         calculate_http_headers: Optional[bool] = True,
-        execution_context: Optional[ExecutionContext] = None,
     ):
         self.calculate_http_headers = calculate_http_headers
 
         if default_max_age:
             self.default_max_age = default_max_age
-
-        if execution_context:
-            self.execution_context = execution_context
 
     def on_request_start(self):
         self.fields_caches: Dict[str, CachePolicy] = {}
