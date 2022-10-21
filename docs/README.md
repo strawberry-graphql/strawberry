@@ -50,6 +50,7 @@
 
 ## Editor integration
 
+- [Mypy](./editors/mypy.md)
 - [Visual Studio Code](./editors/vscode.md)
 
 ## Concepts

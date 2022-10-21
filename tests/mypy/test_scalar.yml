@@ -53,7 +53,6 @@
     main:11: note: Revealed type is "builtins.str"
     main:12: note: Revealed type is "builtins.int"
 
-
 - case: test_scalar_as_function_new_type
   main: |
     from typing import NewType
@@ -70,3 +69,25 @@
   out: |
     main:10: note: Revealed type is "Any"
     main:11: note: Revealed type is "Any"
+
+- case: test_we_can_pass_scalar_overrides_to_schema
+  main: |
+    import strawberry
+    from datetime import datetime, timezone
+
+    EpochDateTime = strawberry.scalar(
+        datetime,
+    )
+
+    @strawberry.type
+    class Query:
+        a: datetime
+
+    schema = strawberry.Schema(query=Query, scalar_overrides={
+        datetime: EpochDateTime,
+    })
+
+    reveal_type(EpochDateTime)
+
+  out: |
+    main:16: note: Revealed type is "def (year: builtins.int, month: builtins.int, day: builtins.int, hour: builtins.int =, minute: builtins.int =, second: builtins.int =, microsecond: builtins.int =, tzinfo: Union[datetime.tzinfo, None] =, *, fold: builtins.int =) -> datetime.datetime"

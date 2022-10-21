@@ -90,5 +90,5 @@ def get_info() -> Info:
     return current_info.get()
 
 
-def get_context() -> ContextType:
+def get_context() -> Any:
     return current_info.get().context

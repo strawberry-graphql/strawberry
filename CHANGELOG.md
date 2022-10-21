@@ -1,6 +1,278 @@
 CHANGELOG
 =========
 
+0.136.0 - 2022-10-21
+--------------------
+
+This release refactors the chalice integration in order to keep it consistent with
+the other integrations.
+
+## Deprecation:
+
+Passing `render_graphiql` is now deprecated, please use `graphiql` instead.
+
+## New features:
+
+- You can now return a custom status by using `info.context["response"].status_code = 418`
+- You can enabled/disable queries via get using `allow_queries_via_get` (defaults to `True`)
+
+## Changes:
+
+Trying to access /graphql via a browser and with `graphiql` set to `False` will return a 404.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2266](https://github.com/strawberry-graphql/strawberry/pull/2266/)
+
+
+0.135.0 - 2022-10-21
+--------------------
+
+This release adds a new `MaskErrors` extension that can be used to hide error
+messages from the client to prevent exposing sensitive details. By default it
+masks all errors raised in any field resolver.
+
+```python
+import strawberry
+from strawberry.extensions import MaskErrors
+
+schema = strawberry.Schema(
+    Query,
+    extensions=[
+        MaskErrors(),
+    ]
+)
+```
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) via [PR #2248](https://github.com/strawberry-graphql/strawberry/pull/2248/)
+
+
+0.134.5 - 2022-10-20
+--------------------
+
+This release improves the error message that you get when trying
+to use an enum that hasn't been decorated with `@strawberry.enum`
+inside a type's field.
+
+Contributed by [Rise Riyo](https://github.com/riseriyo) via [PR #2267](https://github.com/strawberry-graphql/strawberry/pull/2267/)
+
+
+0.134.4 - 2022-10-20
+--------------------
+
+This release adds support for printing schema directives on an input type object, for example the following schema:
+
+```python
+@strawberry.schema_directive(locations=[Location.INPUT_FIELD_DEFINITION])
+class RangeInput:
+    min: int
+    max: int
+
+@strawberry.input
+class CreateUserInput:
+    name: str
+    age: int = strawberry.field(directives=[RangeInput(min=1, max=100)])
+```
+
+prints the following:
+
+```graphql
+directive @rangeInput(min: Int!, max: Int!) on INPUT_FIELD_DEFINITION
+
+input Input @sensitiveInput(reason: "GDPR") {
+  firstName: String!
+  age: Int! @rangeInput(min: 1, max: 100)
+}
+```
+
+Contributed by [Etty](https://github.com/estyxx) via [PR #2233](https://github.com/strawberry-graphql/strawberry/pull/2233/)
+
+
+0.134.3 - 2022-10-16
+--------------------
+
+This release fixes an issue that prevented using strawberry.lazy with relative paths.
+
+The following should work now:
+
+```python
+@strawberry.type
+class TypeA:
+    b: Annotated["TypeB", strawberry.lazy(".type_b")]
+```
+
+Contributed by [Paulo Costa](https://github.com/paulo-raca) via [PR #2244](https://github.com/strawberry-graphql/strawberry/pull/2244/)
+
+
+0.134.2 - 2022-10-16
+--------------------
+
+This release adds pyupgrade to our CI and includes some minor changes to keep our codebase modern.
+
+Contributed by [Liel Fridman](https://github.com/lielfr) via [PR #2255](https://github.com/strawberry-graphql/strawberry/pull/2255/)
+
+
+0.134.1 - 2022-10-14
+--------------------
+
+This release fixes an issue that prevented using lazy types inside
+generic types.
+
+The following is now allowed:
+
+```python
+T = TypeVar("T")
+
+TypeAType = Annotated["TypeA", strawberry.lazy("tests.schema.test_lazy.type_a")]
+
+@strawberry.type
+class Edge(Generic[T]):
+    node: T
+
+@strawberry.type
+class Query:
+    users: Edge[TypeAType]
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2254](https://github.com/strawberry-graphql/strawberry/pull/2254/)
+
+
+0.134.0 - 2022-10-14
+--------------------
+
+These release allow you to define a different `url` in the `GraphQLTestClient`, the default is "/graphql/".
+
+Here's an example with Starlette client:
+```python
+import pytest
+
+from starlette.testclient import TestClient
+from strawberry.asgi.test import GraphQLTestClient
+
+
+@pytest.fixture
+def graphql_client() -> GraphQLTestClient:
+    return GraphQLTestClient(TestClient(app, base_url="http://localhost:8000"), url="/api/")
+```
+
+Contributed by [Etty](https://github.com/estyxx) via [PR #2238](https://github.com/strawberry-graphql/strawberry/pull/2238/)
+
+
+0.133.7 - 2022-10-14
+--------------------
+
+This release fixes a type issue when passing `scalar_overrides` to `strawberry.Schema`
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2251](https://github.com/strawberry-graphql/strawberry/pull/2251/)
+
+
+0.133.6 - 2022-10-13
+--------------------
+
+Fix support for arguments where `arg.type=LazyType["EnumType"]`
+
+Contributed by [Paulo Costa](https://github.com/paulo-raca) via [PR #2245](https://github.com/strawberry-graphql/strawberry/pull/2245/)
+
+
+0.133.5 - 2022-10-03
+--------------------
+
+Updated `unset` import, from `strawberry.arguments` to `strawberry.unset` in codebase.
+
+This will prevent strawberry from triggering its own warning on deprecated imports.
+
+Contributed by [dependabot](https://github.com/dependabot) via [PR #2219](https://github.com/strawberry-graphql/strawberry/pull/2219/)
+
+
+0.133.4 - 2022-10-03
+--------------------
+
+This release fixes the type of strawberry.federation.field,
+this will prevent errors from mypy and pyright when doing the following:
+
+```python
+@strawberry.federation.type(keys=["id"])
+class Location:
+    id: strawberry.ID
+
+    # the following field was reporting an error in mypy and pylance
+    celestial_body: CelestialBody = strawberry.federation.field(
+        resolver=resolve_celestial_body
+    )
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2222](https://github.com/strawberry-graphql/strawberry/pull/2222/)
+
+
+0.133.3 - 2022-10-03
+--------------------
+
+This release allows to create a federation schema without having to pass a
+`Query` type. This is useful when your schema only extends some types without
+adding any additional root field.
+
+```python
+@strawberry.federation.type(keys=["id"])
+class Location:
+    id: strawberry.ID
+    name: str = strawberry.federation.field(override="start")
+
+schema = strawberry.federation.Schema(types=[Location])
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2220](https://github.com/strawberry-graphql/strawberry/pull/2220/)
+
+
+0.133.2 - 2022-09-30
+--------------------
+
+This release fixes an issue with `strawberry.federation.field` that
+prevented instantiating field when passing a resolver function.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2218](https://github.com/strawberry-graphql/strawberry/pull/2218/)
+
+
+0.133.1 - 2022-09-28
+--------------------
+
+This release fixes an issue that prevented using `strawberry.field` with
+`UNSET` as the default value.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2128](https://github.com/strawberry-graphql/strawberry/pull/2128/)
+
+
+0.133.0 - 2022-09-27
+--------------------
+
+Reduce the number of required dependencies, by marking Pygments and python-multipart as optional. These dependencies are still necessary for some functionality, and so users of that functionality need to ensure they're installed, either explicitly or via an extra:
+
+- Pygments is still necessary when using Strawberry in debug mode, and is included in the `strawberry[debug-server]` extra.
+- python-multipart is still necessary when using `strawberry.file_uploads.Upload` with FastAPI or Starlette, and is included in the `strawberry[fastapi]` and `strawberry[asgi]` extras, respectively.
+
+There is now also the `strawberry[cli]` extra to support commands like `strawberry codegen` and `strawberry export-schema`.
+
+Contributed by [Huon Wilson](https://github.com/huonw) via [PR #2205](https://github.com/strawberry-graphql/strawberry/pull/2205/)
+
+
+0.132.1 - 2022-09-23
+--------------------
+
+Improve resolving performance by avoiding extra calls for basic fields.
+
+This change improves performance of resolving a query by skipping `Info`
+creation and permission checking for fields that don't have a resolver
+or permission classes. In local benchmarks it improves performance of large
+results by ~14%.
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) via [PR #2194](https://github.com/strawberry-graphql/strawberry/pull/2194/)
+
+
+0.132.0 - 2022-09-23
+--------------------
+
+Support storing metadata in strawberry fields.
+
+Contributed by [Paulo Costa](https://github.com/paulo-raca) via [PR #2190](https://github.com/strawberry-graphql/strawberry/pull/2190/)
+
+
 0.131.5 - 2022-09-22
 --------------------
 

@@ -243,7 +243,7 @@ class GraphQLCoreConverter:
         field_type = cast(GraphQLInputType, self.from_maybe_optional(field.type))
         default_value: object
 
-        if field.default_value is UNSET:
+        if field.default_value is UNSET or field.default_value is dataclasses.MISSING:
             default_value = Undefined
         else:
             default_value = field.default_value
@@ -411,6 +411,19 @@ class GraphQLCoreConverter:
     def from_resolver(
         self, field: StrawberryField
     ) -> Callable:  # TODO: Take StrawberryResolver
+        field.default_resolver = self.config.default_resolver
+
+        if field.is_basic_field:
+
+            def _get_basic_result(_source: Any, *args, **kwargs):
+                # Call `get_result` without an info object or any args or
+                # kwargs because this is a basic field with no resolver.
+                return field.get_result(_source, info=None, args=[], kwargs={})
+
+            _get_basic_result._is_default = True  # type: ignore
+
+            return _get_basic_result
+
         def _get_arguments(
             source: Any,
             info: Info,
@@ -499,8 +512,6 @@ class GraphQLCoreConverter:
 
             return await await_maybe(_get_result(_source, strawberry_info, **kwargs))
 
-        field.default_resolver = self.config.default_resolver  # type: ignore
-
         if field.is_async:
             _async_resolver._is_default = not field.base_resolver  # type: ignore
             return _async_resolver
@@ -513,6 +524,7 @@ class GraphQLCoreConverter:
 
         if scalar in self.scalar_registry:
             _scalar_definition = self.scalar_registry[scalar]
+            # TODO: check why we need the cast and we are not trying with getattr first
             if isinstance(_scalar_definition, ScalarWrapper):
                 scalar_definition = _scalar_definition._scalar_definition
             else:

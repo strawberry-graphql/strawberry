@@ -5,6 +5,7 @@ import pytest
 from werkzeug.urls import url_encode, url_unparse
 
 from chalice.test import Client
+from strawberry.chalice.views import GraphQLView
 
 from .app import app
 
@@ -30,7 +31,7 @@ def test_graphiql_view_is_not_returned_if_accept_headers_is_none():
     with Client(app) as client:
         response = client.http.get("/graphql", headers=None)
 
-        assert response.status_code == 415
+        assert response.status_code == 404
 
 
 def test_get_graphql_view_with_json_accept_type_is_rejected():
@@ -38,7 +39,7 @@ def test_get_graphql_view_with_json_accept_type_is_rejected():
         headers = {"Accept": "application/json"}
         response = client.http.get("/graphql", headers=headers)
 
-        assert response.status_code == 415
+        assert response.status_code == 404
 
 
 def test_malformed_unparsable_json_query_returns_error():
@@ -48,6 +49,13 @@ def test_malformed_unparsable_json_query_returns_error():
         # The query key in the json dict is missing
         query = "I am a malformed query"
         response = client.http.post("/graphql", headers=headers, body=json.dumps(query))
+
+        assert response.status_code == 400
+
+
+def test_malformed_unparsable_json_query_returns_error_via_get():
+    with Client(app) as client:
+        response = client.http.get("/graphql?query={ hello }&variables='{'")
 
         assert response.status_code == 400
 
@@ -63,6 +71,25 @@ def test_query():
 
         assert response.status_code == 200
         assert response.json_body["data"]["greetings"] == "hello"
+
+
+def test_query_via_get():
+    with Client(app) as client:
+        response = client.http.get("/graphql?query={greetings}")
+
+        assert response.status_code == 200
+        assert response.json_body["data"]["greetings"] == "hello"
+
+
+def test_query_via_get_when_disabled():
+    with Client(app) as client:
+        response = client.http.get("/graphql-no-get?query={greetings}")
+
+        assert response.status_code == 400
+        assert response.json_body == {
+            "Code": "BadRequestError",
+            "Message": "queries are not allowed when using GET",
+        }
 
 
 def test_can_pass_variables():
@@ -103,7 +130,7 @@ def test_query_with_no_request_body():
         headers = {"Accept": "application/json"}
         response = client.http.post("/graphql", headers=headers, body="")
 
-        assert response.status_code == 415
+        assert response.status_code == 404
 
 
 def test_query_with_query_params():
@@ -173,4 +200,22 @@ def test_no_graphiql_view_is_returned_if_false(header_value):
         headers = {"Accept": header_value}
         response = client.http.get("/graphql-no-graphiql", headers=headers)
 
-        assert response.status_code == 415
+        assert response.status_code == 404
+
+
+def test_query_custom_status_code():
+    with Client(app) as client:
+        headers = {"Accept": "application/json", "Content-Type": "application/json"}
+
+        query = {"query": "query { teapot }"}
+        response = client.http.post("/graphql", headers=headers, body=json.dumps(query))
+
+        assert response.status_code == 418
+        assert response.json_body["data"]["teapot"] == "🫖"
+
+
+def test_passing_render_graphiql_is_deprecated():
+    from .app import schema
+
+    with pytest.warns(DeprecationWarning):
+        GraphQLView(schema=schema, render_graphiql=True)

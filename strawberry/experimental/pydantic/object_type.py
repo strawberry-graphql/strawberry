@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import dataclasses
+import sys
 import warnings
 from typing import (
     TYPE_CHECKING,
@@ -31,12 +32,11 @@ from strawberry.experimental.pydantic.utils import (
     ensure_all_auto_fields_in_pydantic,
     get_default_factory_for_field,
     get_private_fields,
-    sort_creation_fields,
 )
 from strawberry.field import StrawberryField
 from strawberry.object_type import _process_type, _wrap_dataclass
 from strawberry.types.type_resolver import _get_fields
-from strawberry.unset import UNSET
+from strawberry.utils.dataclasses import add_custom_init_fn
 
 
 def get_type_for_field(field: ModelField, is_input: bool):
@@ -80,7 +80,7 @@ def _build_dataclass_creation_fields(
             python_name=field.name,
             graphql_name=graphql_name,
             # always unset because we use default_factory instead
-            default=UNSET,
+            default=dataclasses.MISSING,
             default_factory=get_default_factory_for_field(field),
             type_annotation=type_annotation,
             description=field.field_info.description,
@@ -121,7 +121,7 @@ def type(
 ) -> Callable[..., Type[StrawberryTypeFromPydantic[PydanticModel]]]:
     def wrap(cls: Any) -> Type[StrawberryTypeFromPydantic[PydanticModel]]:
         model_fields = model.__fields__
-        original_fields_set = set(fields) if fields else set([])
+        original_fields_set = set(fields) if fields else set()
 
         if fields:
             warnings.warn(
@@ -130,19 +130,20 @@ def type(
             )
 
         existing_fields = getattr(cls, "__annotations__", {})
+
         # these are the fields that matched a field name in the pydantic model
         # and should copy their alias from the pydantic model
         fields_set = original_fields_set.union(
-            set(name for name, _ in existing_fields.items() if name in model_fields)
+            {name for name, _ in existing_fields.items() if name in model_fields}
         )
         # these are the fields that were marked with strawberry.auto and
         # should copy their type from the pydantic model
         auto_fields_set = original_fields_set.union(
-            set(
+            {
                 name
                 for name, type_ in existing_fields.items()
                 if isinstance(type_, StrawberryAuto)
-            )
+            }
         )
 
         if all_fields:
@@ -177,20 +178,15 @@ def type(
             if field_name in fields_set
         ]
 
-        all_model_fields.extend(
-            (
-                DataclassCreationFields(
-                    name=field.name,
-                    type_annotation=field.type,
-                    field=field,
-                )
-                for field in extra_fields + private_fields
-                if field.name not in fields_set
+        all_model_fields = [
+            DataclassCreationFields(
+                name=field.name,
+                type_annotation=field.type,
+                field=field,
             )
-        )
-
-        # Sort fields so that fields with missing defaults go first
-        sorted_fields = sort_creation_fields(all_model_fields)
+            for field in extra_fields + private_fields
+            if field.name not in fields_set
+        ] + all_model_fields
 
         # Implicitly define `is_type_of` to support interfaces/unions that use
         # pydantic objects (not the corresponding strawberry type)
@@ -216,12 +212,25 @@ def type(
         if has_custom_to_pydantic:
             namespace["to_pydantic"] = cls.to_pydantic
 
+        kwargs: Dict[str, object] = {}
+
+        # Python 3.10 introduces the kw_only param. If we're on an older version
+        # then generate our own custom init function
+        if sys.version_info >= (3, 10):
+            kwargs["kw_only"] = dataclasses.MISSING
+        else:
+            kwargs["init"] = False
+
         cls = dataclasses.make_dataclass(
             cls.__name__,
-            [field.to_tuple() for field in sorted_fields],
+            [field.to_tuple() for field in all_model_fields],
             bases=cls.__bases__,
             namespace=namespace,
+            **kwargs,  # type: ignore
         )
+
+        if sys.version_info < (3, 10):
+            add_custom_init_fn(cls)
 
         _process_type(
             cls,

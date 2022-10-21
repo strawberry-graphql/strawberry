@@ -6,11 +6,18 @@ pytestmark = [skip_on_windows, requires_pyright]
 CODE = """
 import strawberry
 
+def some_resolver(root: "User") -> str:
+    return "An address"
+
+def some_resolver_2() -> str:
+    return "Another address"
 
 @strawberry.federation.type
 class User:
     age: int = strawberry.federation.field(description="Age")
     name: str
+    address: str = strawberry.federation.field(resolver=some_resolver)
+    another_address: str = strawberry.federation.field(resolver=some_resolver_2)
 
 @strawberry.federation.input
 class UserInput:
@@ -39,45 +46,45 @@ def test_pyright():
         Result(
             type="error",
             message='No parameter named "n" (reportGeneralTypeIssues)',
-            line=17,
+            line=24,
             column=6,
         ),
         Result(
             type="error",
             message='Argument missing for parameter "name" (reportGeneralTypeIssues)',
-            line=17,
+            line=24,
             column=1,
         ),
         Result(
             type="error",
             message='No parameter named "n" (reportGeneralTypeIssues)',
-            line=20,
+            line=27,
             column=11,
         ),
         Result(
             type="error",
             message='Argument missing for parameter "name" '
             "(reportGeneralTypeIssues)",
-            line=20,
+            line=27,
             column=1,
         ),
         Result(
             type="information",
             message='Type of "User" is "Type[User]"',
-            line=22,
+            line=29,
             column=13,
         ),
         Result(
             type="information",
             message='Type of "User.__init__" is "(self: User, *, age: int, name: str) '
             '-> None"',
-            line=23,
+            line=30,
             column=13,
         ),
         Result(
             type="information",
             message='Type of "UserInput" is "Type[UserInput]"',
-            line=25,
+            line=32,
             column=13,
         ),
         Result(
@@ -86,7 +93,7 @@ def test_pyright():
                 'Type of "UserInput.__init__" is "(self: UserInput, *, age: int, '
                 'name: str) -> None"'
             ),
-            line=26,
+            line=33,
             column=13,
         ),
     ]

@@ -301,11 +301,12 @@ def test_annotated_argument_with_default_value():
     @strawberry.type
     class Query:
         @strawberry.field
-        def name(  # type: ignore
+        def name(
+            self,
             argument: Annotated[
                 str,
                 strawberry.argument(description="This is a description"),  # noqa: F722
-            ] = "Patrick"
+            ] = "Patrick",
         ) -> str:
             return "Name"
 
@@ -326,11 +327,12 @@ def test_annotated_argument_with_rename():
     @strawberry.type
     class Query:
         @strawberry.field
-        def name(  # type: ignore
+        def name(
+            self,
             arg: Annotated[
                 str,
                 strawberry.argument(name="argument"),  # noqa: F722
-            ] = "Patrick"
+            ] = "Patrick",
         ) -> str:
             return "Name"
 
@@ -354,12 +356,12 @@ def test_multiple_annotated_arguments_exception():
     with pytest.raises(MultipleStrawberryArgumentsError) as error:
 
         @strawberry.field
-        def name(  # type: ignore
+        def name(
             argument: Annotated[
                 str,
                 strawberry.argument(description="This is a description"),  # noqa: F722
                 strawberry.argument(description="Another description"),  # noqa: F722
-            ]
+            ],
         ) -> str:
             return "Name"
 
@@ -374,8 +376,8 @@ def test_annotated_with_other_information():
     @strawberry.type
     class Query:
         @strawberry.field
-        def name(  # type: ignore
-            argument: Annotated[str, "Some other info"]  # noqa: F722
+        def name(
+            self, argument: Annotated[str, "Some other info"]  # noqa: F722
         ) -> str:
             return "Name"
 
@@ -401,11 +403,12 @@ def test_annotated_python_39():
     @strawberry.type
     class Query:
         @strawberry.field
-        def name(  # type: ignore
+        def name(
+            self,
             argument: Annotated[
                 str,
                 strawberry.argument(description="This is a description"),  # noqa: F722
-            ]
+            ],
         ) -> str:
             return "Name"
 
