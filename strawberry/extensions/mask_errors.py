@@ -22,10 +22,6 @@ class MaskErrors(Extension):
         self.should_mask_error = should_mask_error
         self.error_message = error_message
 
-    def __call__(self, execution_context):
-        self.execution_context = execution_context
-        return self
-
     def anonymise_error(self, error: GraphQLError) -> GraphQLError:
         return GraphQLError(
             message=self.error_message,
