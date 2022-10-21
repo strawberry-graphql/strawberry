@@ -99,7 +99,7 @@ types-freezegun = "^1.1.9"
 types-chardet = "^5.0.4"
 types-certifi = "^2021.10.8"
 types-aiofiles = "^22.1.0"
-sanic-testing = "^22.3"
+sanic-testing = "^22.9"
 fastapi = {version = ">=0.65.0", optional = false}
 pytest-xprocess = "^0.20.0"
 MarkupSafe = "2.1.1"
