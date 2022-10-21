@@ -19,12 +19,15 @@
     def some_resolver() -> str:
         return ""
 
+    def some_resolver_2(root: "Example") -> str:
+        return ""
+
     @strawberry.type
     class Example:
         a: str
         b: str = strawberry.federation.field(name="b")
         c: str = strawberry.federation.field(name="c", resolver=some_resolver)
-        d: str = strawberry.federation.field(resolver=some_resolver)
+        d: str = strawberry.federation.field(resolver=some_resolver_2)
 
         @strawberry.federation.field(description="ABC")
         def e(self, info: Info) -> str:
@@ -41,12 +44,12 @@
     reveal_type(Example.e)
     reveal_type(Example.f_resolver)
   out: |
-    main:22: note: Revealed type is "builtins.str"
-    main:23: note: Revealed type is "builtins.str"
-    main:24: note: Revealed type is "builtins.str"
     main:25: note: Revealed type is "builtins.str"
-    main:26: note: Revealed type is "Any"
-    main:27: note: Revealed type is "Any"
+    main:26: note: Revealed type is "builtins.str"
+    main:27: note: Revealed type is "builtins.str"
+    main:28: note: Revealed type is "builtins.str"
+    main:29: note: Revealed type is "Any"
+    main:30: note: Revealed type is "Any"
 
 - case: test_private_field
   main: |

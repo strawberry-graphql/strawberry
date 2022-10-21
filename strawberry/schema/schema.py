@@ -1,5 +1,5 @@
 from functools import lru_cache
-from typing import Any, Dict, Iterable, List, Optional, Type, Union
+from typing import Any, Dict, Iterable, List, Optional, Type, Union, cast
 
 from graphql import (
     ExecutionContext as GraphQLExecutionContext,
@@ -56,7 +56,7 @@ class Schema(BaseSchema):
         execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
         config: Optional[StrawberryConfig] = None,
         scalar_overrides: Optional[
-            Dict[object, Union[ScalarWrapper, ScalarDefinition]]
+            Dict[object, Union[Type, ScalarWrapper, ScalarDefinition]]
         ] = None,
         schema_directives: Iterable[object] = (),
     ):
@@ -68,11 +68,14 @@ class Schema(BaseSchema):
         self.execution_context_class = execution_context_class
         self.config = config or StrawberryConfig()
 
-        scalar_registry: Dict[object, Union[ScalarWrapper, ScalarDefinition]] = {
-            **DEFAULT_SCALAR_REGISTRY
-        }
+        SCALAR_OVERRIDES_DICT_TYPE = Dict[
+            object, Union[ScalarWrapper, ScalarDefinition]
+        ]
+
+        scalar_registry: SCALAR_OVERRIDES_DICT_TYPE = {**DEFAULT_SCALAR_REGISTRY}
         if scalar_overrides:
-            scalar_registry.update(scalar_overrides)
+            # TODO: check that the overrides are valid
+            scalar_registry.update(cast(SCALAR_OVERRIDES_DICT_TYPE, scalar_overrides))
 
         self.schema_converter = GraphQLCoreConverter(self.config, scalar_registry)
         self.directives = directives
@@ -108,16 +111,24 @@ class Schema(BaseSchema):
                     raise TypeError(f"{graphql_type} is not a named GraphQL Type")
                 graphql_types.append(graphql_type)
 
-        self._schema = GraphQLSchema(
-            query=query_type,
-            mutation=mutation_type,
-            subscription=subscription_type if subscription else None,
-            directives=specified_directives + tuple(graphql_directives),
-            types=graphql_types,
-            extensions={
-                GraphQLCoreConverter.DEFINITION_BACKREF: self,
-            },
-        )
+        try:
+            self._schema = GraphQLSchema(
+                query=query_type,
+                mutation=mutation_type,
+                subscription=subscription_type if subscription else None,
+                directives=specified_directives + tuple(graphql_directives),
+                types=graphql_types,
+                extensions={
+                    GraphQLCoreConverter.DEFINITION_BACKREF: self,
+                },
+            )
+        except TypeError as error:
+            from strawberry.exceptions import StrawberryException
+
+            if isinstance(error.__cause__, StrawberryException):
+                raise error.__cause__ from None
+
+            raise
 
         # attach our schema to the GraphQL schema instance
         self._schema._strawberry_schema = self  # type: ignore
@@ -210,10 +221,8 @@ class Schema(BaseSchema):
             execution_context_class=self.execution_context_class,
             execution_context=execution_context,
             allowed_operation_types=allowed_operation_types,
+            process_errors=self.process_errors,
         )
-
-        if result.errors:
-            self.process_errors(result.errors, execution_context=execution_context)
 
         return result
 
@@ -245,10 +254,8 @@ class Schema(BaseSchema):
             execution_context_class=self.execution_context_class,
             execution_context=execution_context,
             allowed_operation_types=allowed_operation_types,
+            process_errors=self.process_errors,
         )
-
-        if result.errors:
-            self.process_errors(result.errors, execution_context=execution_context)
 
         return result
 

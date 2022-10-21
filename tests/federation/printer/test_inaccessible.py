@@ -54,7 +54,7 @@ def test_field_inaccessible_printed_correctly():
         }
 
         input AnInput @inaccessible {
-          id: ID!
+          id: ID! @inaccessible
         }
 
         interface AnInterface @inaccessible {
@@ -68,8 +68,8 @@ def test_field_inaccessible_printed_correctly():
         }
 
         type Query {
-          _service: _Service!
           _entities(representations: [_Any!]!): [_Entity]!
+          _service: _Service!
           topProducts(first: Int! @inaccessible): [Product!]!
         }
 

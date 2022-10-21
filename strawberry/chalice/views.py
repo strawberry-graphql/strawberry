@@ -1,6 +1,6 @@
 import json
 import warnings
-from typing import Dict, Mapping, Optional, Type
+from typing import Dict, Mapping, Optional
 
 from chalice.app import BadRequestError, Request, Response
 from strawberry.exceptions import MissingQueryError
@@ -10,7 +10,6 @@ from strawberry.http import (
     parse_request_data,
     process_result,
 )
-from strawberry.http.json_dumps_params import JSONDumpsParams
 from strawberry.http.temporal_response import TemporalResponse
 from strawberry.schema import BaseSchema
 from strawberry.schema.exceptions import InvalidOperationTypeError
@@ -25,8 +24,6 @@ class GraphQLView:
         schema: BaseSchema,
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
-        json_encoder: Type[json.JSONEncoder] = json.JSONEncoder,
-        json_dumps_params: Optional[JSONDumpsParams] = None,
         **kwargs
     ):
         if "render_graphiql" in kwargs:
@@ -41,8 +38,6 @@ class GraphQLView:
 
         self.allow_queries_via_get = allow_queries_via_get
         self._schema = schema
-        self.json_encoder = json_encoder
-        self.json_dumps_params = json_dumps_params or {}
 
     def get_root_value(self, request: Request) -> Optional[object]:
         return None
@@ -120,6 +115,7 @@ class GraphQLView:
                 http_status_code=405,
             )
         content_type = request.headers.get("content-type", "")
+
         if "application/json" in content_type:
             try:
                 data = request.json_body
@@ -147,9 +143,6 @@ class GraphQLView:
                     message="Unable to parse request body as JSON",
                     http_status_code=400,
                 )
-
-        elif request.method == "GET" and request.query_params:
-            data = parse_query_params(request.query_params)  # type: ignore
 
         elif method == "GET" and self.should_render_graphiql(self.graphiql, request):
             return Response(
@@ -206,6 +199,4 @@ class GraphQLView:
             # TODO: we might want to use typed dict for context
             status_code = context["response"].status_code  # type: ignore[attr-defined]
 
-        body = self.json_encoder(**self.json_dumps_params).encode(http_result)
-
-        return Response(body=body, status_code=status_code)
+        return Response(body=http_result, status_code=status_code)

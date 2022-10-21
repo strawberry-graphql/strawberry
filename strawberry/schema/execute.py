@@ -2,6 +2,7 @@ from asyncio import ensure_future
 from inspect import isawaitable
 from typing import (
     Awaitable,
+    Callable,
     Iterable,
     List,
     Optional,
@@ -67,6 +68,7 @@ async def execute(
     extensions: Sequence[Union[Type[Extension], Extension]],
     execution_context: ExecutionContext,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
+    process_errors: Callable[[List[GraphQLError], Optional[ExecutionContext]], None],
 ) -> ExecutionResult:
     extensions_runner = ExtensionsRunner(
         execution_context=execution_context,
@@ -131,6 +133,12 @@ async def execute(
                 if result.errors:
                     execution_context.errors = result.errors
 
+                    # Run the `Schema.process_errors` function here before
+                    # extensions have a chance to modify them (see the MaskErrors
+                    # extension). That way we can log the original errors but
+                    # only return a sanitised version to the client.
+                    process_errors(result.errors, execution_context)
+
     return ExecutionResult(
         data=execution_context.result.data,
         errors=execution_context.result.errors,
@@ -146,6 +154,7 @@ def execute_sync(
     extensions: Sequence[Union[Type[Extension], Extension]],
     execution_context: ExecutionContext,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
+    process_errors: Callable[[List[GraphQLError], Optional[ExecutionContext]], None],
 ) -> ExecutionResult:
     extensions_runner = ExtensionsRunner(
         execution_context=execution_context,
@@ -213,6 +222,12 @@ def execute_sync(
                 # to access in extensions
                 if result.errors:
                     execution_context.errors = result.errors
+
+                    # Run the `Schema.process_errors` function here before
+                    # extensions have a chance to modify them (see the MaskErrors
+                    # extension). That way we can log the original errors but
+                    # only return a sanitised version to the client.
+                    process_errors(result.errors, execution_context)
 
     return ExecutionResult(
         data=execution_context.result.data,

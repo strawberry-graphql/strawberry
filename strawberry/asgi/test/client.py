@@ -37,7 +37,7 @@ class GraphQLTestClient(BaseGraphQLTestClient):
         files: Optional[Dict[str, object]] = None,
     ):
         return self._client.post(
-            "/graphql/",
+            self.url,
             json=body if not files else None,
             data=body if files else None,
             files=files,

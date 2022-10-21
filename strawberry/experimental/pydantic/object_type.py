@@ -121,7 +121,7 @@ def type(
 ) -> Callable[..., Type[StrawberryTypeFromPydantic[PydanticModel]]]:
     def wrap(cls: Any) -> Type[StrawberryTypeFromPydantic[PydanticModel]]:
         model_fields = model.__fields__
-        original_fields_set = set(fields) if fields else set([])
+        original_fields_set = set(fields) if fields else set()
 
         if fields:
             warnings.warn(
@@ -134,16 +134,16 @@ def type(
         # these are the fields that matched a field name in the pydantic model
         # and should copy their alias from the pydantic model
         fields_set = original_fields_set.union(
-            set(name for name, _ in existing_fields.items() if name in model_fields)
+            {name for name, _ in existing_fields.items() if name in model_fields}
         )
         # these are the fields that were marked with strawberry.auto and
         # should copy their type from the pydantic model
         auto_fields_set = original_fields_set.union(
-            set(
+            {
                 name
                 for name, type_ in existing_fields.items()
                 if isinstance(type_, StrawberryAuto)
-            )
+            }
         )
 
         if all_fields:
