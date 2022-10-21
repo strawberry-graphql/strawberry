@@ -19,7 +19,7 @@ def test_union_as_field():
 
     @strawberry.type
     class Query:
-        ab: Union[A, B] = A(a=5)
+        ab: Union[A, B] = strawberry.field(default_factory=lambda: A(a=5))
 
     schema = strawberry.Schema(query=Query)
     query = """{
@@ -49,7 +49,7 @@ def test_union_as_field_inverse():
 
     @strawberry.type
     class Query:
-        ab: Union[A, B] = B(b=5)
+        ab: Union[A, B] = strawberry.field(default_factory=lambda: B(b=5))
 
     schema = strawberry.Schema(query=Query)
     query = """{
@@ -236,7 +236,7 @@ def test_named_union():
 
     @strawberry.type
     class Query:
-        ab: Result = A(a=5)
+        ab: Result = strawberry.field(default_factory=lambda: A(a=5))
 
     schema = strawberry.Schema(query=Query)
 
@@ -275,7 +275,7 @@ def test_named_union_description():
 
     @strawberry.type
     class Query:
-        ab: Result = A(a=5)
+        ab: Result = strawberry.field(default_factory=lambda: A(a=5))
 
     schema = strawberry.Schema(query=Query)
 

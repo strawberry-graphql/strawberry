@@ -44,7 +44,7 @@ def test_pyright():
         ),
         Result(
             type="information",
-            message='Type of "User.__init__" is "(self: User, name: str) -> None"',
+            message='Type of "User.__init__" is "(self: User, *, name: str) -> None"',
             line=14,
             column=13,
         ),

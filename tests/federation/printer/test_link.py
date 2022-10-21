@@ -100,8 +100,8 @@ def test_adds_link_directive_automatically():
         }
 
         type Query {
-          _service: _Service!
           _entities(representations: [_Any!]!): [_Entity]!
+          _service: _Service!
           user: User!
         }
 
@@ -229,8 +229,8 @@ def test_adds_link_directive_automatically_from_field():
         }
 
         type Query {
-          _service: _Service!
           _entities(representations: [_Any!]!): [_Entity]!
+          _service: _Service!
           user: User!
         }
 
@@ -264,8 +264,8 @@ def test_does_not_add_directive_link_if_federation_two_is_not_enabled():
 
     expected = """
         type Query {
-          _service: _Service!
           _entities(representations: [_Any!]!): [_Entity]!
+          _service: _Service!
           user: User!
         }
 
@@ -308,8 +308,8 @@ def test_adds_link_directive_automatically_from_scalar():
         }
 
         type Query {
-          _service: _Service!
           _entities(representations: [_Any!]!): [_Entity]!
+          _service: _Service!
           user: User!
         }
 

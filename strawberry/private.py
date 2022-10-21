@@ -12,7 +12,7 @@ class StrawberryPrivate:
 T = TypeVar("T")
 
 Private = Annotated[T, StrawberryPrivate()]
-Private.__doc__ = """Represent a private field that won't be converted into a GraphQL field
+Private.__doc__ = """Represents a field that won't be exposed in the GraphQL schema
 
 Example:
 

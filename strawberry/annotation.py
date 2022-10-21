@@ -18,6 +18,8 @@ from typing import (  # type: ignore[attr-defined]
 
 from typing_extensions import Annotated, get_args, get_origin
 
+from strawberry.exceptions import StrawberryException
+
 
 try:
     from typing import ForwardRef
@@ -70,7 +72,9 @@ class StrawberryAnnotation:
 
     @staticmethod
     def parse_annotated(annotation: object) -> object:
-        if get_origin(annotation) is Annotated:
+        annotation_origin = get_origin(annotation)
+
+        if annotation_origin is Annotated:
             args = get_args(annotation)
             base_type = args[0]
             annotated_args: Sequence[Any] = args[1:]
@@ -90,7 +94,7 @@ class StrawberryAnnotation:
                 base_type = Annotated[(base_type, *annotated_args)]
             return base_type
 
-        if is_union(annotation):
+        elif is_union(annotation):
             return Union[
                 tuple(
                     StrawberryAnnotation.parse_annotated(arg)
@@ -98,8 +102,15 @@ class StrawberryAnnotation:
                 )  # pyright: ignore
             ]  # pyright: ignore
 
-        if is_list(annotation):
+        elif is_list(annotation):
             return List[StrawberryAnnotation.parse_annotated(get_args(annotation)[0])]  # type: ignore  # noqa: E501
+
+        elif annotation_origin and is_generic(annotation_origin):
+            args = get_args(annotation)
+
+            return annotation_origin[
+                tuple(StrawberryAnnotation.parse_annotated(arg) for arg in args)
+            ]
 
         return annotation
 
@@ -158,7 +169,10 @@ class StrawberryAnnotation:
         raise ValueError(f"Not supported {evaled_type}")
 
     def create_enum(self, evaled_type: Any) -> EnumDefinition:
-        return evaled_type._enum_definition
+        try:
+            return evaled_type._enum_definition
+        except AttributeError:
+            raise StrawberryException(f"{evaled_type} fields cannot be resolved.")
 
     def create_list(self, evaled_type: Any) -> StrawberryList:
         of_type = StrawberryAnnotation(
@@ -194,7 +208,7 @@ class StrawberryAnnotation:
     def create_type_var(self, evaled_type: TypeVar) -> StrawberryTypeVar:
         return StrawberryTypeVar(evaled_type)
 
-    def create_union(self, evaled_type) -> "StrawberryUnion":
+    def create_union(self, evaled_type) -> StrawberryUnion:
         # Prevent import cycles
         from strawberry.union import StrawberryUnion
 

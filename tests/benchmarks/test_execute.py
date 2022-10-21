@@ -10,7 +10,6 @@ from asgiref.sync import async_to_sync
 import strawberry
 
 
-@pytest.mark.asyncio
 @pytest.mark.parametrize(
     "items",
     [25, 100, 250],

@@ -26,7 +26,6 @@ from strawberry.exceptions import InvalidDefaultFactoryError, InvalidFieldArgume
 from strawberry.type import StrawberryType, StrawberryTypeVar
 from strawberry.types.info import Info
 from strawberry.union import StrawberryUnion
-from strawberry.unset import UNSET
 from strawberry.utils.cached_property import cached_property
 
 from .permission import BasePermission
@@ -64,8 +63,9 @@ class StrawberryField(dataclasses.Field):
         description: Optional[str] = None,
         base_resolver: Optional[StrawberryResolver] = None,
         permission_classes: List[Type[BasePermission]] = (),  # type: ignore
-        default: object = UNSET,
-        default_factory: Union[Callable[[], Any], object] = UNSET,
+        default: object = dataclasses.MISSING,
+        default_factory: Union[Callable[[], Any], object] = dataclasses.MISSING,
+        metadata: Optional[Mapping[Any, Any]] = None,
         deprecation_reason: Optional[str] = None,
         directives: Sequence[object] = (),
     ):
@@ -76,22 +76,16 @@ class StrawberryField(dataclasses.Field):
 
         # kw_only was added to python 3.10 and it is required
         if sys.version_info >= (3, 10):
-            kwargs["kw_only"] = False
+            kwargs["kw_only"] = dataclasses.MISSING
 
         super().__init__(
-            default=(default if default is not UNSET else dataclasses.MISSING),
-            default_factory=(
-                # mypy is not able to understand that default factory
-                # is a callable so we do a type ignore
-                default_factory  # type: ignore
-                if default_factory is not UNSET
-                else dataclasses.MISSING
-            ),
+            default=default,
+            default_factory=default_factory,  # type: ignore
             init=is_basic_field,
             repr=is_basic_field,
             compare=is_basic_field,
             hash=None,
-            metadata={},
+            metadata=metadata or {},
             **kwargs,
         )
 
@@ -155,7 +149,7 @@ class StrawberryField(dataclasses.Field):
         return self
 
     def get_result(
-        self, source: Any, info: Info, args: List[Any], kwargs: Dict[str, Any]
+        self, source: Any, info: Optional[Info], args: List[Any], kwargs: Dict[str, Any]
     ) -> Union[Awaitable[Any], Any]:
         """
         Calls the resolver defined for the StrawberryField.
@@ -166,7 +160,18 @@ class StrawberryField(dataclasses.Field):
         if self.base_resolver:
             return self.base_resolver(*args, **kwargs)
 
-        return self.default_resolver(source, self.python_name)  # type: ignore
+        return self.default_resolver(source, self.python_name)
+
+    @property
+    def is_basic_field(self) -> bool:
+        """
+        Flag indicating if this is a "basic" field that has no resolver or
+        permission classes, i.e. it just returns the relevant attribute from
+        the source object. If it is a basic field we can avoid constructing
+        an `Info` object and running any permission checks in the resolver
+        which improves performance.
+        """
+        return not self.base_resolver and not self.permission_classes
 
     @property
     def arguments(self) -> List[StrawberryArgument]:
@@ -329,8 +334,9 @@ def field(
     init: Literal[False] = False,
     permission_classes: Optional[List[Type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
-    default: Any = UNSET,
-    default_factory: Union[Callable[..., object], object] = UNSET,
+    default: Any = dataclasses.MISSING,
+    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
+    metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
 ) -> T:
     ...
@@ -345,8 +351,9 @@ def field(
     init: Literal[True] = True,
     permission_classes: Optional[List[Type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
-    default: Any = UNSET,
-    default_factory: Union[Callable[..., object], object] = UNSET,
+    default: Any = dataclasses.MISSING,
+    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
+    metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
 ) -> Any:
     ...
@@ -361,8 +368,9 @@ def field(
     description: Optional[str] = None,
     permission_classes: Optional[List[Type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
-    default: Any = UNSET,
-    default_factory: Union[Callable[..., object], object] = UNSET,
+    default: Any = dataclasses.MISSING,
+    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
+    metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
 ) -> StrawberryField:
     ...
@@ -376,8 +384,9 @@ def field(
     description: Optional[str] = None,
     permission_classes: Optional[List[Type[BasePermission]]] = None,
     deprecation_reason: Optional[str] = None,
-    default: Any = UNSET,
-    default_factory: Union[Callable[..., object], object] = UNSET,
+    default: Any = dataclasses.MISSING,
+    default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
+    metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
     # This init parameter is used by PyRight to determine whether this field
     # is added in the constructor or not. It is not used to change
@@ -409,6 +418,7 @@ def field(
         deprecation_reason=deprecation_reason,
         default=default,
         default_factory=default_factory,
+        metadata=metadata,
         directives=directives or (),
     )
 
