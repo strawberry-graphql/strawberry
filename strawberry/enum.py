@@ -1,5 +1,5 @@
 import dataclasses
-from enum import EnumMeta
+from enum import Enum, EnumMeta
 from typing import (
     Any,
     Callable,
@@ -121,13 +121,15 @@ def _process_enum(
         )
         values.append(value)
 
+    docstring = Docstring(cls if cls.__doc__ != _UndocumentedEnum.__doc__ else None)
+
     cls._enum_definition = EnumDefinition(  # type: ignore
         wrapped_cls=cls,
         name=name,
         values=values,
         description_sources=description_sources,
         description=description,
-        docstring=Docstring(cls),
+        docstring=docstring,
         directives=directives,
     )
 
@@ -183,3 +185,9 @@ def enum(
         return wrap
 
     return wrap(_cls)
+
+
+class _UndocumentedEnum(Enum):
+    # Python automatically a generic docstrin 'An enumeration.' docstring
+    # This acts as a reference to know if there is a non-automatic docstring
+    ...

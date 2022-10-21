@@ -57,12 +57,11 @@ def test_undocumented():
         config=StrawberryConfig(description_sources=DescriptionSources.ALL),
     )
 
-    expected = '''
+    expected = """
         directive @schemaDirective(name: String!) on OBJECT | INPUT_OBJECT
 
         directive @directive(oldChar: String!, newChar: String!) on FIELD
 
-        """An enumeration."""
         enum EnumType {
           A
         }
@@ -84,6 +83,6 @@ def test_undocumented():
           obj: ObjectType!
           resolver(input: InputType!): ObjectType!
         }
-    '''
+    """
 
     assert str(schema) == textwrap.dedent(expected).strip()
