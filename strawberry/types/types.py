@@ -14,7 +14,9 @@ from typing import (
     Union,
 )
 
+from strawberry.description_sources import DescriptionSources
 from strawberry.type import StrawberryType, StrawberryTypeVar
+from strawberry.utils.docstrings import Docstring
 from strawberry.utils.typing import is_generic as is_type_generic
 
 
@@ -30,7 +32,9 @@ class TypeDefinition(StrawberryType):
     is_input: bool
     is_interface: bool
     origin: Type
+    description_sources: Optional[DescriptionSources]
     description: Optional[str]
+    docstring: Optional[Docstring]
     interfaces: List[TypeDefinition]
     extend: bool
     directives: Optional[Sequence[object]]
@@ -87,7 +91,9 @@ class TypeDefinition(StrawberryType):
             is_interface=self.is_interface,
             directives=self.directives,
             interfaces=self.interfaces,
+            description_sources=self.description_sources,
             description=self.description,
+            docstring=self.docstring,
             extend=self.extend,
             is_type_of=self.is_type_of,
             _fields=fields,

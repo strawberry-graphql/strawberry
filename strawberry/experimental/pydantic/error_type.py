@@ -7,6 +7,7 @@ from pydantic.fields import ModelField
 from pydantic.utils import lenient_issubclass
 
 from strawberry.auto import StrawberryAuto
+from strawberry.description_sources import DescriptionSources
 from strawberry.experimental.pydantic.utils import (
     get_private_fields,
     get_strawberry_type_from_model,
@@ -14,6 +15,7 @@ from strawberry.experimental.pydantic.utils import (
 )
 from strawberry.object_type import _process_type, _wrap_dataclass
 from strawberry.types.type_resolver import _get_fields
+from strawberry.utils.docstrings import Docstring
 from strawberry.utils.typing import get_list_annotation, is_list
 
 from .exceptions import MissingFieldsListError
@@ -52,6 +54,7 @@ def error_type(
     *,
     fields: List[str] = None,
     name: Optional[str] = None,
+    description_sources: Optional[DescriptionSources] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     all_fields: bool = False
@@ -97,6 +100,7 @@ def error_type(
             if name in fields_set
         ]
 
+        docstring = Docstring(cls)
         wrapped = _wrap_dataclass(cls)
         extra_fields = cast(List[dataclasses.Field], _get_fields(wrapped))
         private_fields = get_private_fields(wrapped)
@@ -122,7 +126,9 @@ def error_type(
             name=name,
             is_input=False,
             is_interface=False,
+            description_sources=description_sources,
             description=description,
+            docstring=docstring,
             directives=directives,
         )
 

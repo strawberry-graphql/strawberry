@@ -1,5 +1,6 @@
 from typing import Any, Callable, Iterable, Optional, Union, overload
 
+from strawberry.description_sources import DescriptionSources
 from strawberry.enum import (
     EnumType,
     EnumValueDefinition,
@@ -10,6 +11,9 @@ from strawberry.enum import (
 
 def enum_value(
     value: Any,
+    *,
+    description_sources: Optional[DescriptionSources] = None,
+    description: Optional[str] = None,
     deprecation_reason: Optional[str] = None,
     directives: Iterable[object] = (),
     inaccessible: bool = False,
@@ -25,7 +29,13 @@ def enum_value(
     if tags:
         directives.extend(Tag(name=tag) for tag in tags)
 
-    return base_enum_value(value, deprecation_reason, directives)
+    return base_enum_value(
+        value,
+        description_sources=description_sources,
+        description=description,
+        deprecation_reason=deprecation_reason,
+        directives=directives,
+    )
 
 
 @overload

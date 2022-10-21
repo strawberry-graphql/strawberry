@@ -21,6 +21,7 @@ from pydantic.fields import ModelField
 from graphql import GraphQLResolveInfo
 
 from strawberry.auto import StrawberryAuto
+from strawberry.description_sources import DescriptionSources
 from strawberry.experimental.pydantic.conversion import (
     convert_pydantic_model_to_strawberry_class,
     convert_strawberry_class_to_pydantic_model,
@@ -37,6 +38,7 @@ from strawberry.field import StrawberryField
 from strawberry.object_type import _process_type, _wrap_dataclass
 from strawberry.types.type_resolver import _get_fields
 from strawberry.utils.dataclasses import add_custom_init_fn
+from strawberry.utils.docstrings import Docstring
 
 
 def get_type_for_field(field: ModelField, is_input: bool):
@@ -114,6 +116,7 @@ def type(
     name: Optional[str] = None,
     is_input: bool = False,
     is_interface: bool = False,
+    description_sources: Optional[DescriptionSources] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     all_fields: bool = False,
@@ -163,6 +166,7 @@ def type(
             model=model, auto_fields=auto_fields_set, cls_name=cls.__name__
         )
 
+        docstring = Docstring(cls)
         wrapped = _wrap_dataclass(cls)
         extra_strawberry_fields = _get_fields(wrapped)
         extra_fields = cast(List[dataclasses.Field], extra_strawberry_fields)
@@ -237,7 +241,9 @@ def type(
             name=name,
             is_input=is_input,
             is_interface=is_interface,
+            description_sources=description_sources,
             description=description,
+            docstring=docstring,
             directives=directives,
         )
 

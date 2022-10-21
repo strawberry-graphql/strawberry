@@ -302,7 +302,7 @@ def test_enum_description():
 def test_enum_value_description():
     @strawberry.enum
     class IceCreamFlavour(Enum):
-        VANILLA = "vainilla"
+        VANILLA = "vanilla"
         STRAWBERRY = strawberry.enum_value("strawberry", description="Our favourite.")
         CHOCOLATE = "chocolate"
 

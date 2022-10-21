@@ -9,6 +9,7 @@ from typing_extensions import Annotated
 from graphql import DirectiveLocation
 
 from strawberry.arguments import StrawberryArgument
+from strawberry.description_sources import DescriptionSources
 from strawberry.field import StrawberryField
 from strawberry.types.fields.resolver import (
     INFO_PARAMSPEC,
@@ -17,6 +18,7 @@ from strawberry.types.fields.resolver import (
 )
 from strawberry.unset import UNSET
 from strawberry.utils.cached_property import cached_property
+from strawberry.utils.docstrings import Docstring
 
 
 def directive_field(name: str, default: object = UNSET) -> Any:
@@ -61,7 +63,9 @@ class StrawberryDirective:
     graphql_name: Optional[str]
     resolver: StrawberryDirectiveResolver
     locations: List[DirectiveLocation]
+    description_sources: Optional[DescriptionSources] = None
     description: Optional[str] = None
+    docstring: Optional[Docstring] = None
 
     @cached_property
     def arguments(self) -> List[StrawberryArgument]:
@@ -71,6 +75,7 @@ class StrawberryDirective:
 def directive(
     *,
     locations: List[DirectiveLocation],
+    description_sources: Optional[DescriptionSources] = None,
     description: Optional[str] = None,
     name: Optional[str] = None,
 ) -> Callable[[Callable[..., T]], T]:
@@ -79,7 +84,9 @@ def directive(
             python_name=f.__name__,
             graphql_name=name,
             locations=locations,
+            description_sources=description_sources,
             description=description,
+            docstring=Docstring(f),
             resolver=StrawberryDirectiveResolver(f),
         )
 

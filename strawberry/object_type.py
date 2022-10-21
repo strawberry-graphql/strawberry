@@ -15,6 +15,8 @@ from typing import (
     overload,
 )
 
+from strawberry.description_sources import DescriptionSources
+
 from .exceptions import (
     MissingFieldAnnotationError,
     MissingReturnAnnotationError,
@@ -24,6 +26,7 @@ from .field import StrawberryField, field
 from .types.type_resolver import _get_fields
 from .types.types import TypeDefinition
 from .utils.dataclasses import add_custom_init_fn
+from .utils.docstrings import Docstring
 from .utils.str_converters import to_camel_case
 from .utils.typing import __dataclass_transform__
 
@@ -124,7 +127,9 @@ def _process_type(
     name: Optional[str] = None,
     is_input: bool = False,
     is_interface: bool = False,
+    description_sources: Optional[DescriptionSources] = None,
     description: Optional[str] = None,
+    docstring: Optional[Docstring] = None,
     directives: Optional[Sequence[object]] = (),
     extend: bool = False,
 ):
@@ -139,7 +144,9 @@ def _process_type(
         is_input=is_input,
         is_interface=is_interface,
         interfaces=interfaces,
+        description_sources=description_sources,
         description=description,
+        docstring=docstring,
         directives=directives,
         origin=cls,
         extend=extend,
@@ -184,6 +191,7 @@ def type(
     name: Optional[str] = None,
     is_input: bool = False,
     is_interface: bool = False,
+    description_sources: Optional[DescriptionSources] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     extend: bool = False,
@@ -200,6 +208,7 @@ def type(
     name: Optional[str] = None,
     is_input: bool = False,
     is_interface: bool = False,
+    description_sources: Optional[DescriptionSources] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     extend: bool = False,
@@ -213,6 +222,7 @@ def type(
     name: Optional[str] = None,
     is_input: bool = False,
     is_interface: bool = False,
+    description_sources: Optional[DescriptionSources] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
     extend: bool = False,
@@ -236,13 +246,16 @@ def type(
                 exc = ObjectIsNotClassError.type
             raise exc(cls)
 
+        docstring = Docstring(cls)
         wrapped = _wrap_dataclass(cls)
         return _process_type(
             wrapped,
             name=name,
             is_input=is_input,
             is_interface=is_interface,
+            description_sources=description_sources,
             description=description,
+            docstring=docstring,
             directives=directives,
             extend=extend,
         )
@@ -284,6 +297,7 @@ def input(
     cls: Optional[T] = None,
     *,
     name: Optional[str] = None,
+    description_sources: Optional[DescriptionSources] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
 ):
@@ -297,6 +311,7 @@ def input(
     return type(  # type: ignore # not sure why mypy complains here
         cls,
         name=name,
+        description_sources=description_sources,
         description=description,
         directives=directives,
         is_input=True,
@@ -337,6 +352,7 @@ def interface(
     cls: Optional[T] = None,
     *,
     name: Optional[str] = None,
+    description_sources: Optional[DescriptionSources] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
 ):
@@ -350,6 +366,7 @@ def interface(
     return type(  # type: ignore # not sure why mypy complains here
         cls,
         name=name,
+        description_sources=description_sources,
         description=description,
         directives=directives,
         is_interface=True,
