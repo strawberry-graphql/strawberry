@@ -42,7 +42,7 @@ python-dateutil = "^2.7.0"
 starlette = {version = ">=0.13.6", optional = true}
 click = {version = ">=7.0,<9.0", optional = true}
 pygments = {version = "^2.3", optional = true}
-uvicorn = {version = ">=0.11.6,<0.19.0", optional = true}
+uvicorn = {version = ">=0.11.6,<0.20.0", optional = true}
 Django = {version = ">=3.2", optional = true}
 asgiref = {version = "^3.2", optional = true}
 flask = {version = ">=1.1", optional = true}
