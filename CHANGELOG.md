@@ -1,6 +1,185 @@
 CHANGELOG
 =========
 
+0.137.0 - 2022-10-21
+--------------------
+
+This release fixes errors when using Union-of-lazy-types
+
+Contributed by [Paulo Costa](https://github.com/paulo-raca) via [PR #2271](https://github.com/strawberry-graphql/strawberry/pull/2271/)
+
+
+0.136.0 - 2022-10-21
+--------------------
+
+This release refactors the chalice integration in order to keep it consistent with
+the other integrations.
+
+## Deprecation:
+
+Passing `render_graphiql` is now deprecated, please use `graphiql` instead.
+
+## New features:
+
+- You can now return a custom status by using `info.context["response"].status_code = 418`
+- You can enabled/disable queries via get using `allow_queries_via_get` (defaults to `True`)
+
+## Changes:
+
+Trying to access /graphql via a browser and with `graphiql` set to `False` will return a 404.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2266](https://github.com/strawberry-graphql/strawberry/pull/2266/)
+
+
+0.135.0 - 2022-10-21
+--------------------
+
+This release adds a new `MaskErrors` extension that can be used to hide error
+messages from the client to prevent exposing sensitive details. By default it
+masks all errors raised in any field resolver.
+
+```python
+import strawberry
+from strawberry.extensions import MaskErrors
+
+schema = strawberry.Schema(
+    Query,
+    extensions=[
+        MaskErrors(),
+    ]
+)
+```
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) via [PR #2248](https://github.com/strawberry-graphql/strawberry/pull/2248/)
+
+
+0.134.5 - 2022-10-20
+--------------------
+
+This release improves the error message that you get when trying
+to use an enum that hasn't been decorated with `@strawberry.enum`
+inside a type's field.
+
+Contributed by [Rise Riyo](https://github.com/riseriyo) via [PR #2267](https://github.com/strawberry-graphql/strawberry/pull/2267/)
+
+
+0.134.4 - 2022-10-20
+--------------------
+
+This release adds support for printing schema directives on an input type object, for example the following schema:
+
+```python
+@strawberry.schema_directive(locations=[Location.INPUT_FIELD_DEFINITION])
+class RangeInput:
+    min: int
+    max: int
+
+@strawberry.input
+class CreateUserInput:
+    name: str
+    age: int = strawberry.field(directives=[RangeInput(min=1, max=100)])
+```
+
+prints the following:
+
+```graphql
+directive @rangeInput(min: Int!, max: Int!) on INPUT_FIELD_DEFINITION
+
+input Input @sensitiveInput(reason: "GDPR") {
+  firstName: String!
+  age: Int! @rangeInput(min: 1, max: 100)
+}
+```
+
+Contributed by [Etty](https://github.com/estyxx) via [PR #2233](https://github.com/strawberry-graphql/strawberry/pull/2233/)
+
+
+0.134.3 - 2022-10-16
+--------------------
+
+This release fixes an issue that prevented using strawberry.lazy with relative paths.
+
+The following should work now:
+
+```python
+@strawberry.type
+class TypeA:
+    b: Annotated["TypeB", strawberry.lazy(".type_b")]
+```
+
+Contributed by [Paulo Costa](https://github.com/paulo-raca) via [PR #2244](https://github.com/strawberry-graphql/strawberry/pull/2244/)
+
+
+0.134.2 - 2022-10-16
+--------------------
+
+This release adds pyupgrade to our CI and includes some minor changes to keep our codebase modern.
+
+Contributed by [Liel Fridman](https://github.com/lielfr) via [PR #2255](https://github.com/strawberry-graphql/strawberry/pull/2255/)
+
+
+0.134.1 - 2022-10-14
+--------------------
+
+This release fixes an issue that prevented using lazy types inside
+generic types.
+
+The following is now allowed:
+
+```python
+T = TypeVar("T")
+
+TypeAType = Annotated["TypeA", strawberry.lazy("tests.schema.test_lazy.type_a")]
+
+@strawberry.type
+class Edge(Generic[T]):
+    node: T
+
+@strawberry.type
+class Query:
+    users: Edge[TypeAType]
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2254](https://github.com/strawberry-graphql/strawberry/pull/2254/)
+
+
+0.134.0 - 2022-10-14
+--------------------
+
+These release allow you to define a different `url` in the `GraphQLTestClient`, the default is "/graphql/".
+
+Here's an example with Starlette client:
+```python
+import pytest
+
+from starlette.testclient import TestClient
+from strawberry.asgi.test import GraphQLTestClient
+
+
+@pytest.fixture
+def graphql_client() -> GraphQLTestClient:
+    return GraphQLTestClient(TestClient(app, base_url="http://localhost:8000"), url="/api/")
+```
+
+Contributed by [Etty](https://github.com/estyxx) via [PR #2238](https://github.com/strawberry-graphql/strawberry/pull/2238/)
+
+
+0.133.7 - 2022-10-14
+--------------------
+
+This release fixes a type issue when passing `scalar_overrides` to `strawberry.Schema`
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2251](https://github.com/strawberry-graphql/strawberry/pull/2251/)
+
+
+0.133.6 - 2022-10-13
+--------------------
+
+Fix support for arguments where `arg.type=LazyType["EnumType"]`
+
+Contributed by [Paulo Costa](https://github.com/paulo-raca) via [PR #2245](https://github.com/strawberry-graphql/strawberry/pull/2245/)
+
+
 0.133.5 - 2022-10-03
 --------------------
 
