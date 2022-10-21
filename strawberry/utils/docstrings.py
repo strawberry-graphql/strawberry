@@ -73,7 +73,7 @@ class Docstring:
             # Extract and parse the source of the class
             try:
                 source = inspect.getsource(parent)
-            except (TypeError, IOError):
+            except (TypeError, OSError):
                 continue
 
             source = textwrap.dedent(source)
