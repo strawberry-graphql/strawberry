@@ -31,6 +31,7 @@ from strawberry.exceptions import (
     UnallowedReturnTypeForUnion,
     WrongReturnTypeForUnion,
 )
+from strawberry.lazy_type import LazyType
 from strawberry.type import StrawberryOptional, StrawberryType
 
 
@@ -88,6 +89,9 @@ class StrawberryUnion(StrawberryType):
     @property
     def type_params(self) -> List[TypeVar]:
         def _get_type_params(type_: StrawberryType):
+            if isinstance(type_, LazyType):
+                type_ = cast(StrawberryType, type_.resolve_type())
+
             if hasattr(type_, "_type_definition"):
                 parameters = getattr(type_, "__parameters__", None)
 

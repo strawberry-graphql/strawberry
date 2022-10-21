@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List, Optional, Union
+from typing import TYPE_CHECKING, List, Optional, Union, cast
 
 from typing_extensions import Protocol
 
@@ -95,6 +95,9 @@ class NameConverter:
         name = ""
 
         for type_ in union.types:
+            if isinstance(type_, LazyType):
+                type_ = cast(StrawberryType, type_.resolve_type())
+
             assert hasattr(type_, "_type_definition")
             name += self.from_type(type_._type_definition)  # type: ignore
 
