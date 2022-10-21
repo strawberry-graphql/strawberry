@@ -8,8 +8,8 @@ from graphql import GraphQLInputObjectType, GraphQLObjectType
 from strawberry.type import StrawberryType
 
 
-# TODO: add links to docs
-# https://github.com/strawberry-graphql/strawberry/issues/1298
+class StrawberryException(Exception):
+    pass
 
 
 class ObjectIsNotAnEnumError(Exception):

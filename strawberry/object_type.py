@@ -182,7 +182,9 @@ T = TypeVar("T", bound=Type)
 
 
 @overload
-@__dataclass_transform__(order_default=True, field_descriptors=(field, StrawberryField))
+@__dataclass_transform__(
+    order_default=True, kw_only_default=True, field_descriptors=(field, StrawberryField)
+)
 def type(
     cls: T,
     *,
@@ -198,7 +200,9 @@ def type(
 
 
 @overload
-@__dataclass_transform__(order_default=True, field_descriptors=(field, StrawberryField))
+@__dataclass_transform__(
+    order_default=True, kw_only_default=True, field_descriptors=(field, StrawberryField)
+)
 def type(
     *,
     name: Optional[str] = None,
@@ -263,7 +267,9 @@ def type(
 
 
 @overload
-@__dataclass_transform__(order_default=True, field_descriptors=(field, StrawberryField))
+@__dataclass_transform__(
+    order_default=True, kw_only_default=True, field_descriptors=(field, StrawberryField)
+)
 def input(
     cls: T,
     *,
@@ -275,7 +281,9 @@ def input(
 
 
 @overload
-@__dataclass_transform__(order_default=True, field_descriptors=(field, StrawberryField))
+@__dataclass_transform__(
+    order_default=True, kw_only_default=True, field_descriptors=(field, StrawberryField)
+)
 def input(
     *,
     name: Optional[str] = None,
@@ -311,7 +319,9 @@ def input(
 
 
 @overload
-@__dataclass_transform__(order_default=True, field_descriptors=(field, StrawberryField))
+@__dataclass_transform__(
+    order_default=True, kw_only_default=True, field_descriptors=(field, StrawberryField)
+)
 def interface(
     cls: T,
     *,
@@ -323,7 +333,9 @@ def interface(
 
 
 @overload
-@__dataclass_transform__(order_default=True, field_descriptors=(field, StrawberryField))
+@__dataclass_transform__(
+    order_default=True, kw_only_default=True, field_descriptors=(field, StrawberryField)
+)
 def interface(
     *,
     name: Optional[str] = None,
@@ -333,7 +345,9 @@ def interface(
     ...
 
 
-@__dataclass_transform__(order_default=True, field_descriptors=(field, StrawberryField))
+@__dataclass_transform__(
+    order_default=True, kw_only_default=True, field_descriptors=(field, StrawberryField)
+)
 def interface(
     cls: Optional[T] = None,
     *,

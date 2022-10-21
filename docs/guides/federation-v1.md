@@ -5,7 +5,7 @@ title: Federation V1
 <Warning>
 
 This guide refers to Apollo Federation 1, if you're looking for the 2.0 guide,
-please see the [federation v2](docs/guides/federation.md) guide.
+please see the [federation v2](federation.md) guide.
 
 You can also see the
 [What's new in federation 2](https://www.apollographql.com/docs/federation/federation-2/new-in-federation-2/)

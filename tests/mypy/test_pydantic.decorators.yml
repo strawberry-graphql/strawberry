@@ -204,3 +204,84 @@
 
     MyModelStrawberry(email="").to_pydantic()
   out: |
+- case: test_to_pydantic_kwargs_with_all_fields
+  main: |
+    from pydantic import BaseModel
+    from typing import Optional
+    import strawberry
+
+
+    class MyModel(BaseModel):
+        email: str
+        password: Optional[str]
+
+
+    @strawberry.experimental.pydantic.input(model=MyModel, all_fields=True)
+    class MyModelStrawberry:
+        ...
+
+
+    MyModelStrawberry(email="").to_pydantic()
+  out: |
+- case: test_to_pydantic_kwargs_with_all_fields_adding_field
+  main: |
+    from pydantic import BaseModel
+    from typing import Optional
+    import strawberry
+
+
+    class MyModel(BaseModel):
+        email: str
+        password: Optional[str]
+
+        @property
+        def age(self) -> int:
+            return 42
+
+
+    @strawberry.experimental.pydantic.input(model=MyModel, all_fields=True)
+    class MyModelStrawberry:
+        age: int # read from the property
+
+
+    MyModelStrawberry(email="").to_pydantic()
+  out: |
+- case: test_to_pydantic_kwargs_private_field
+  main: |
+    from pydantic import BaseModel
+    from typing import Optional
+    import strawberry
+
+
+    class MyModel(BaseModel):
+        email: str
+        _age: int # for pydantic, underscore means private field
+
+
+    @strawberry.experimental.pydantic.input(model=MyModel)
+    class MyModelStrawberry:
+        email: strawberry.auto
+
+
+    MyModelStrawberry(email="").to_pydantic()
+  out: |
+- case: test_to_pydantic_custom
+  main: |
+    from pydantic import BaseModel
+    import strawberry
+
+    class MyModel(BaseModel):
+        email: str
+
+    @strawberry.experimental.pydantic.input(model=MyModel)
+    class MyModelStrawberry:
+        email: strawberry.auto
+
+        def to_pydantic(self, another_param: str):
+            # custom to_pydantic overwrites default params
+            ...
+
+    MyModelStrawberry(email="").to_pydantic()
+
+  out: |
+    main:15: error: Missing positional argument "another_param" in call to "to_pydantic" of "MyModelStrawberry"  [call-arg]

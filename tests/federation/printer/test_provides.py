@@ -50,8 +50,8 @@ def test_field_provides_are_printed_correctly_camel_case_on():
         }
 
         type Query {
-          _service: _Service!
           _entities(representations: [_Any!]!): [_Entity]!
+          _service: _Service!
           topProducts(first: Int!): [Product!]!
         }
 
@@ -122,8 +122,8 @@ def test_field_provides_are_printed_correctly_camel_case_off():
         }
 
         type Query {
-          _service: _Service!
           _entities(representations: [_Any!]!): [_Entity]!
+          _service: _Service!
           top_products(first: Int!): [Product!]!
         }
 

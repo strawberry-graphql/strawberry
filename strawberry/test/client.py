@@ -21,8 +21,9 @@ class Body(TypedDict, total=False):
 
 
 class BaseGraphQLTestClient(ABC):
-    def __init__(self, client):
+    def __init__(self, client, url: str = "/graphql/"):
         self._client = client
+        self.url = url
 
     def query(
         self,

@@ -42,11 +42,11 @@ class TemporalHttpResponse(JsonResponse):
         """Adopted from Django to handle `status_code=None`."""
         if self.status_code is not None:
             return super().__repr__()
-        return "<%(cls)s status_code=%(status_code)s%(content_type)s>" % {
-            "cls": self.__class__.__name__,
-            "status_code": self.status_code,
-            "content_type": self._content_type_for_repr,
-        }
+        return "<{cls} status_code={status_code}{content_type}>".format(
+            cls=self.__class__.__name__,
+            status_code=self.status_code,
+            content_type=self._content_type_for_repr,
+        )
 
 
 class BaseView(View):

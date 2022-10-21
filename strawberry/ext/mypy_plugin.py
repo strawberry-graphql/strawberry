@@ -18,7 +18,6 @@ from mypy.nodes import (
     CallExpr,
     CastExpr,
     ClassDef,
-    Context,
     Expression,
     FuncDef,
     IndexExpr,
@@ -429,27 +428,38 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
                 ctx.reason,
             )
 
-        missing_pydantic_fields: Set["PydanticModelField"] = set(
+        potentially_missing_fields: Set["PydanticModelField"] = {
             f for f in pydantic_fields if f.name not in new_strawberry_fields
+        }
+
+        """
+        Need to check if all_fields=True from the pydantic decorator
+        There is no way to real check that Literal[True] was used
+        We just check if the strawberry type is missing all the fields
+        This means that the user is using all_fields=True
+        """
+        is_all_fields: bool = len(potentially_missing_fields) == len(pydantic_fields)
+        missing_pydantic_fields: Set["PydanticModelField"] = (
+            potentially_missing_fields if not is_all_fields else set()
         )
 
-        # Add to_pydantic
-        # TODO: Only add this if not manually defined
-        add_method(
-            ctx,
-            "to_pydantic",
-            args=[
-                f.to_argument(
-                    # TODO: use_alias should depend on config?
-                    info=model_type.type,
-                    typed=True,
-                    force_optional=False,
-                    use_alias=True,
-                )
-                for f in missing_pydantic_fields
-            ],
-            return_type=model_type,
-        )
+        # Add the default to_pydantic if undefined by the user
+        if "to_pydantic" not in ctx.cls.info.names:
+            add_method(
+                ctx,
+                "to_pydantic",
+                args=[
+                    f.to_argument(
+                        # TODO: use_alias should depend on config?
+                        info=model_type.type,
+                        typed=True,
+                        force_optional=False,
+                        use_alias=True,
+                    )
+                    for f in missing_pydantic_fields
+                ],
+                return_type=model_type,
+            )
 
         # Add from_pydantic
         model_argument = Argument(
@@ -756,7 +766,7 @@ class CustomDataclassTransformer:
             if MypyVersion.VERSION >= Decimal("0.800"):
                 params["info"] = cls.info
             if MypyVersion.VERSION >= Decimal("0.920"):
-                params["kw_only"] = False
+                params["kw_only"] = True
 
             attribute = DataclassAttribute(**params)  # type: ignore
             attrs.append(attribute)
@@ -793,28 +803,6 @@ class CustomDataclassTransformer:
                             super_attrs.append(attr)
                             break
             all_attrs = super_attrs + all_attrs
-
-        # Ensure that arguments without a default don't follow
-        # arguments that have a default.
-        found_default = False
-        for attr in all_attrs:
-            # If we find any attribute that is_in_init but that
-            # doesn't have a default after one that does have one,
-            # then that's an error.
-            if found_default and attr.is_in_init and not attr.has_default:
-                # If the issue comes from merging different classes, report it
-                # at the class definition point.
-                context = (
-                    Context(line=attr.line, column=attr.column)
-                    if attr in attrs
-                    else ctx.cls
-                )
-                ctx.api.fail(
-                    "Attributes without a default cannot follow attributes with one",
-                    context,
-                )
-
-            found_default = found_default or (attr.has_default and attr.is_in_init)
 
         return all_attrs
 

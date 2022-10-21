@@ -3,15 +3,28 @@ from typing import AsyncGenerator
 import pytest
 
 import strawberry
-from strawberry.extensions.tracing.datadog import (
-    DatadogTracingExtension,
-    DatadogTracingExtensionSync,
-)
 
 
 @pytest.fixture
-def tracer_mock(mocker):
-    return mocker.patch("strawberry.extensions.tracing.datadog.tracer")
+def datadog_extension(mocker):
+    datadog_mock = mocker.MagicMock()
+
+    mocker.patch.dict("sys.modules", ddtrace=datadog_mock)
+
+    from strawberry.extensions.tracing.datadog import DatadogTracingExtension
+
+    return DatadogTracingExtension, datadog_mock
+
+
+@pytest.fixture
+def datadog_extension_sync(mocker):
+    datadog_mock = mocker.MagicMock()
+
+    mocker.patch.dict("sys.modules", ddtrace=datadog_mock)
+
+    from strawberry.extensions.tracing.datadog import DatadogTracingExtensionSync
+
+    return DatadogTracingExtensionSync, datadog_mock
 
 
 @strawberry.type
@@ -49,11 +62,13 @@ class Subscription:
 
 
 @pytest.mark.asyncio
-async def test_datadog_tracer(tracer_mock, mocker):
+async def test_datadog_tracer(datadog_extension, mocker):
+    extension, mock = datadog_extension
+
     schema = strawberry.Schema(
         query=Query,
         mutation=Mutation,
-        extensions=[DatadogTracingExtension],
+        extensions=[extension],
     )
 
     query = """
@@ -66,7 +81,7 @@ async def test_datadog_tracer(tracer_mock, mocker):
 
     await schema.execute(query)
 
-    tracer_mock.assert_has_calls(
+    mock.tracer.assert_has_calls(
         [
             mocker.call.trace(
                 "Anonymous Query",
@@ -97,10 +112,10 @@ async def test_datadog_tracer(tracer_mock, mocker):
 
 
 @pytest.mark.asyncio
-async def test_uses_operation_name_and_hash(tracer_mock, mocker):
-    schema = strawberry.Schema(
-        query=Query, mutation=Mutation, extensions=[DatadogTracingExtension]
-    )
+async def test_uses_operation_name_and_hash(datadog_extension):
+    extension, mock = datadog_extension
+
+    schema = strawberry.Schema(query=Query, mutation=Mutation, extensions=[extension])
 
     query = """
         query MyExampleQuery {
@@ -112,7 +127,7 @@ async def test_uses_operation_name_and_hash(tracer_mock, mocker):
 
     await schema.execute(query, operation_name="MyExampleQuery")
 
-    tracer_mock.trace.assert_any_call(
+    mock.tracer.trace.assert_any_call(
         "MyExampleQuery",
         resource="MyExampleQuery:efe8d7247ee8136f45e3824c2768b155",
         span_type="graphql",
@@ -121,10 +136,10 @@ async def test_uses_operation_name_and_hash(tracer_mock, mocker):
 
 
 @pytest.mark.asyncio
-async def test_uses_operation_type(tracer_mock, mocker):
-    schema = strawberry.Schema(
-        query=Query, mutation=Mutation, extensions=[DatadogTracingExtension]
-    )
+async def test_uses_operation_type(datadog_extension):
+    extension, mock = datadog_extension
+
+    schema = strawberry.Schema(query=Query, mutation=Mutation, extensions=[extension])
 
     query = """
         mutation MyMutation {
@@ -133,14 +148,14 @@ async def test_uses_operation_type(tracer_mock, mocker):
     """
 
     await schema.execute(query, operation_name="MyMutation")
-    tracer_mock.trace().set_tag.assert_any_call("graphql.operation_type", "mutation"),
+    mock.tracer.trace().set_tag.assert_any_call("graphql.operation_type", "mutation"),
 
 
 @pytest.mark.asyncio
-async def test_uses_operation_subscription(tracer_mock, mocker):
-    schema = strawberry.Schema(
-        query=Query, mutation=Mutation, extensions=[DatadogTracingExtension]
-    )
+async def test_uses_operation_subscription(datadog_extension):
+    extension, mock = datadog_extension
+
+    schema = strawberry.Schema(query=Query, mutation=Mutation, extensions=[extension])
 
     query = """
         subscription MySubscription {
@@ -149,15 +164,14 @@ async def test_uses_operation_subscription(tracer_mock, mocker):
     """
 
     await schema.execute(query, operation_name="MySubscription")
-    tracer_mock.trace().set_tag.assert_any_call(
+    mock.tracer.trace().set_tag.assert_any_call(
         "graphql.operation_type", "subscription"
     ),
 
 
-def test_datadog_tracer_sync(tracer_mock, mocker):
-    schema = strawberry.Schema(
-        query=Query, mutation=Mutation, extensions=[DatadogTracingExtensionSync]
-    )
+def test_datadog_tracer_sync(datadog_extension_sync, mocker):
+    extension, mock = datadog_extension_sync
+    schema = strawberry.Schema(query=Query, mutation=Mutation, extensions=[extension])
 
     query = """
         query {
@@ -169,7 +183,7 @@ def test_datadog_tracer_sync(tracer_mock, mocker):
 
     schema.execute_sync(query)
 
-    tracer_mock.assert_has_calls(
+    mock.tracer.assert_has_calls(
         [
             mocker.call.trace(
                 "Anonymous Query",
@@ -197,10 +211,10 @@ def test_datadog_tracer_sync(tracer_mock, mocker):
     )
 
 
-def test_uses_operation_name_and_hash_sync(tracer_mock, mocker):
-    schema = strawberry.Schema(
-        query=Query, mutation=Mutation, extensions=[DatadogTracingExtensionSync]
-    )
+def test_uses_operation_name_and_hash_sync(datadog_extension_sync):
+    extension, mock = datadog_extension_sync
+
+    schema = strawberry.Schema(query=Query, mutation=Mutation, extensions=[extension])
 
     query = """
         query MyExampleQuery {
@@ -212,7 +226,7 @@ def test_uses_operation_name_and_hash_sync(tracer_mock, mocker):
 
     schema.execute_sync(query, operation_name="MyExampleQuery")
 
-    tracer_mock.trace.assert_any_call(
+    mock.tracer.trace.assert_any_call(
         "MyExampleQuery",
         resource="MyExampleQuery:efe8d7247ee8136f45e3824c2768b155",
         span_type="graphql",
@@ -220,10 +234,10 @@ def test_uses_operation_name_and_hash_sync(tracer_mock, mocker):
     )
 
 
-def test_uses_operation_type_sync(tracer_mock, mocker):
-    schema = strawberry.Schema(
-        query=Query, mutation=Mutation, extensions=[DatadogTracingExtensionSync]
-    )
+def test_uses_operation_type_sync(datadog_extension_sync):
+    extension, mock = datadog_extension_sync
+
+    schema = strawberry.Schema(query=Query, mutation=Mutation, extensions=[extension])
 
     query = """
         mutation MyMutation {
@@ -233,4 +247,4 @@ def test_uses_operation_type_sync(tracer_mock, mocker):
 
     schema.execute_sync(query, operation_name="MyMutation")
 
-    tracer_mock.trace().set_tag.assert_any_call("graphql.operation_type", "mutation"),
+    mock.tracer.trace().set_tag.assert_any_call("graphql.operation_type", "mutation"),

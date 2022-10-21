@@ -591,3 +591,27 @@ def test_with_types_non_named():
 
     with pytest.raises(TypeError, match=r"\[Int!\] is not a named GraphQL Type"):
         strawberry.Schema(query=Query, types=[StrawberryList(int)])
+
+
+def test_kw_only():
+    @strawberry.type
+    class FooBar1:
+        foo: int = 1
+        bar: int
+
+    @strawberry.type
+    class FooBar2:
+        foo: int = strawberry.field(default=1)
+        bar: int = strawberry.field()
+
+    for FooBar in (FooBar1, FooBar2):
+        with pytest.raises(
+            TypeError, match="missing 1 required keyword-only argument: 'bar'"
+        ):
+            FooBar()
+        with pytest.raises(
+            TypeError, match="missing 1 required keyword-only argument: 'bar'"
+        ):
+            FooBar(foo=1)
+        FooBar(bar=2)
+        FooBar(foo=1, bar=2)
