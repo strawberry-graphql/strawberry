@@ -25,6 +25,7 @@ from graphql.language import (
     ValueNode as GQLValueNode,
     VariableNode as GQLVariableNode,
 )
+from graphql.pyutils import camel_to_snake
 
 
 Arguments = Dict[str, Any]
@@ -84,6 +85,7 @@ class FragmentSpread:
     """Wrapper for a FragmentSpreadNode."""
 
     name: str
+    python_name: str
     type_condition: str
     directives: Directives
     selections: List[Selection]
@@ -95,6 +97,7 @@ class FragmentSpread:
         fragment = info.fragments[name]
         return cls(
             name=name,
+            python_name=camel_to_snake(node.name.value),
             directives=convert_directives(info, node.directives),
             type_condition=fragment.type_condition.name.value,
             selections=convert_selections(
@@ -127,6 +130,7 @@ class SelectedField:
     """Wrapper for a FieldNode."""
 
     name: str
+    python_name: str
     directives: Directives
     arguments: Arguments
     selections: List[Selection]
@@ -136,6 +140,7 @@ class SelectedField:
     def from_node(cls, info: GraphQLResolveInfo, node: GQLFieldNode):
         return cls(
             name=node.name.value,
+            python_name=camel_to_snake(node.name.value),
             directives=convert_directives(info, node.directives),
             alias=getattr(node.alias, "value", None),
             arguments=convert_arguments(info, node.arguments),
