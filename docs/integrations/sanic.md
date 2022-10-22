@@ -104,12 +104,13 @@ result.
 ```python
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
+from sanic.request import Request
 
 from graphql.error.graphql_error import format_error as format_graphql_error
 
 class MyGraphQLView(GraphQLView):
     def process_result(
-        self, result: ExecutionResult
+        self, request: Request, result: ExecutionResult
     ) -> GraphQLHTTPResponse:
         data: GraphQLHTTPResponse = {"data": result.data}
 

@@ -222,7 +222,7 @@ def test_upload_with_missing_file(sanic_client):
 
     request, response = sanic_client.test_client.post(
         "/graphql",
-        data=content,
+        content=content,
         headers=headers,
     )
 
