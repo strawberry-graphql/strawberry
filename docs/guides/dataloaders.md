@@ -14,7 +14,7 @@ DataLoaders provide an async API, so they only work in async context
 
 </Note>
 
-Refer the official dataloaders [specification](https://github.com/graphql/dataloader) for advance guide on dataloaders.
+Refer the official dataloaders [specification](https://github.com/graphql/dataloader) for an advance guide on dataloaders.
 
 ## Basic usage
 
