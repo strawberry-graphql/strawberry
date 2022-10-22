@@ -1,6 +1,6 @@
 Release type: minor
 
-This release adds `ApolloCacheControl` extension that can be used to define cache control settings (`max_age` and `scope`) for each field in your schema.
+This release adds `ApolloCacheControl` extension and a `CacheControl` directive that can be used to define cache control settings (`max_age` and `scope`) for each field in your schema.
 
 ```python
 import strawberry

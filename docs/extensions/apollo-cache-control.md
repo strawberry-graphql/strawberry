@@ -50,3 +50,27 @@ You can set a default `max_age` that's applied to fields that otherwise receive 
 ### `calculate_http_headers: Optional[bool] = True`
 
 Adds `Cache-Control` headers to the response with the calculated `max_age` and `scope`
+
+## `CacheControl` directive
+
+### API Reference:
+
+```python
+class CacheControl(
+    max_age: Optional[int]
+    scope: Optional[CacheControlScope]
+    inheredit_max_age: Optional[bool]
+)
+```
+
+#### `max_age: Optional[int]`
+
+The maximum amount of time the field's cached value is valid, in seconds. The default value is 0, but you can set a different default for the schema in the `ApolloCacheControl` extension.
+
+#### `scope: Optional[CacheControlScope]`
+
+If `PRIVATE`, the field's value is specific to a single user. The default value is `PUBLIC`.
+
+#### `inheredit_max_age: Optional[bool]`
+
+If true, this field inherits the `max_age` of its parent field instead of using the default `max_age`. Do not provide `max_age` if you provide this argument.
