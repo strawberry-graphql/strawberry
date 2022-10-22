@@ -127,6 +127,7 @@ and uniquely resolves the data for the input.
 
 In practical applications there are situations where it requires combination of fields to
 uniquely identify the data. By providing `cache_key_fn` argument to the `DataLoader` the behaviour of generating key is changed. It is also useful when objects are keys and two objects should be considered equivalent.
+The function definition takes an input parameter and returns a `Hashable` type.
 
 ```python
 from typing import List, Union
@@ -153,6 +154,9 @@ assert data1 == data2 #returns true
 which will return `User.id` as key that is `1`.
 The second call will check the cache for the key returned by `custom_cache_key` and will return the cache object
 from the loader cache.
+
+The implementation relies on users to handle conflicts while generating the cache key. In case of conflict the
+data will be overriden for the key.
 
 ### Cache invalidation
 

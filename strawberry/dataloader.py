@@ -10,6 +10,7 @@ from typing import (
     Callable,
     Dict,
     Generic,
+    Hashable,
     Iterable,
     List,
     Mapping,
@@ -100,7 +101,7 @@ class DataLoader(Generic[K, T]):
         cache: bool = True,
         loop: AbstractEventLoop = None,
         cache_map: Optional[AbstractCache[K, T]] = None,
-        cache_key_fn: Optional[Callable[[K], T]] = None,
+        cache_key_fn: Optional[Callable[[K], Hashable]] = None,
     ) -> None:
         ...
 
@@ -113,7 +114,7 @@ class DataLoader(Generic[K, T]):
         cache: bool = True,
         loop: AbstractEventLoop = None,
         cache_map: Optional[AbstractCache[K, T]] = None,
-        cache_key_fn: Optional[Callable[[K], T]] = None,
+        cache_key_fn: Optional[Callable[[K], Hashable]] = None,
     ) -> None:
         ...
 
@@ -124,7 +125,7 @@ class DataLoader(Generic[K, T]):
         cache: bool = True,
         loop: AbstractEventLoop = None,
         cache_map: Optional[AbstractCache[K, T]] = None,
-        cache_key_fn: Optional[Callable[[K], T]] = None,
+        cache_key_fn: Optional[Callable[[K], Hashable]] = None,
     ):
         self.load_fn = load_fn
         self.max_batch_size = max_batch_size
