@@ -8,7 +8,9 @@ from typing import (
     Any,
     Awaitable,
     Callable,
+    Dict,
     Generic,
+    Hashable,
     Iterable,
     List,
     Mapping,
@@ -45,17 +47,17 @@ class Batch(Generic[K, T]):
         return len(self.tasks)
 
 
-class AbstractCache(ABC):
+class AbstractCache(Generic[K, T], ABC):
     @abstractmethod
-    def get(self, key: Any) -> Union[Any, None]:
+    def get(self, key: K) -> Union[Awaitable[T], None]:
         pass
 
     @abstractmethod
-    def set(self, key: Any, value: Any) -> None:
+    def set(self, key: K, value: Awaitable[T]) -> None:
         pass
 
     @abstractmethod
-    def delete(self, key: Any) -> None:
+    def delete(self, key: K) -> None:
         pass
 
     @abstractmethod
@@ -63,19 +65,19 @@ class AbstractCache(ABC):
         pass
 
 
-class DefaultCache(AbstractCache):
+class DefaultCache(AbstractCache[K, T]):
     def __init__(self, cache_key_fn=None):
         if cache_key_fn:
             self.cache_key_fn = cache_key_fn
         else:
             self.cache_key_fn = lambda x: x
 
-        self.cache_map = {}
+        self.cache_map: Dict[K, Awaitable[T]] = {}
 
-    def get(self, key: K) -> T:
+    def get(self, key: K) -> Union[Awaitable[T], None]:
         return self.cache_map.get(self.cache_key_fn(key))
 
-    def set(self, key: K, value: Any) -> None:
+    def set(self, key: K, value: Awaitable[T]) -> None:
         self.cache_map[self.cache_key_fn(key)] = value
 
     def delete(self, key: K) -> None:
@@ -88,7 +90,7 @@ class DefaultCache(AbstractCache):
 class DataLoader(Generic[K, T]):
     batch: Optional[Batch[K, T]] = None
     cache: bool = False
-    cache_map: AbstractCache
+    cache_map: AbstractCache[K, T]
 
     @overload
     def __init__(
@@ -98,8 +100,8 @@ class DataLoader(Generic[K, T]):
         max_batch_size: Optional[int] = None,
         cache: bool = True,
         loop: AbstractEventLoop = None,
-        cache_map: Optional[AbstractCache] = None,
-        cache_key_fn: Optional[Callable[[K], Any]] = None,
+        cache_map: Optional[AbstractCache[K, T]] = None,
+        cache_key_fn: Optional[Callable[[K], Hashable]] = None,
     ) -> None:
         ...
 
@@ -111,8 +113,8 @@ class DataLoader(Generic[K, T]):
         max_batch_size: Optional[int] = None,
         cache: bool = True,
         loop: AbstractEventLoop = None,
-        cache_map: Optional[AbstractCache] = None,
-        cache_key_fn: Optional[Callable[[K], Any]] = None,
+        cache_map: Optional[AbstractCache[K, T]] = None,
+        cache_key_fn: Optional[Callable[[K], Hashable]] = None,
     ) -> None:
         ...
 
@@ -122,8 +124,8 @@ class DataLoader(Generic[K, T]):
         max_batch_size: Optional[int] = None,
         cache: bool = True,
         loop: AbstractEventLoop = None,
-        cache_map: Optional[AbstractCache] = None,
-        cache_key_fn: Optional[Callable[[K], Any]] = None,
+        cache_map: Optional[AbstractCache[K, T]] = None,
+        cache_key_fn: Optional[Callable[[K], Hashable]] = None,
     ):
         self.load_fn = load_fn
         self.max_batch_size = max_batch_size
