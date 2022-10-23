@@ -2,6 +2,7 @@ from unittest.mock import Mock
 
 from graphql.error import GraphQLError
 from graphql.error.graphql_error import format_error as format_graphql_error
+
 import strawberry
 from strawberry.extensions import MaskErrors
 from strawberry.types import ExecutionContext

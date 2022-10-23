@@ -47,8 +47,8 @@ The error message to display to the client when there is an error.
 
 #### `status_code_hook: Callable[[GraphQLError, ExecutionContext], None] = None`
 
-Predicate function to update the `Response`, which can be accessed from the 
-`Execution Context` given. This allows you to dynamically set the `Response.status_code` 
+Predicate function to update the `Response`, which can be accessed from the
+`Execution Context` given. This allows you to dynamically set the `Response.status_code`
 based on the `original_error` attribute from the `GraphQLError`.
 
 <Note>
@@ -101,7 +101,6 @@ schema = strawberry.Schema(
 ```
 
 </details>
-
 
 <details>
   <summary>Change response status code dynamically</summary>
