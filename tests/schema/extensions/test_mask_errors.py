@@ -140,7 +140,8 @@ def test_graphql_error_masking():
 
 
 def test_mask_some_errors_with_status_code_hook():
-    """This works when running the server. This test shows this does not break the extension."""
+    """This works when running the server.
+    This test shows this does not break the extension."""
     VISIBLE_ERROR_STATUS_CODE = 400
     HIDDEN_ERROR_STATUS_CODE = 500
 
