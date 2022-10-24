@@ -5,7 +5,10 @@ from typing import Generic, List, Optional, TypeVar, Union
 
 import pytest
 
+from typing_extensions import Annotated
+
 import strawberry
+from strawberry.lazy_type import lazy
 
 
 def test_union_as_field():
@@ -19,7 +22,7 @@ def test_union_as_field():
 
     @strawberry.type
     class Query:
-        ab: Union[A, B] = A(a=5)
+        ab: Union[A, B] = strawberry.field(default_factory=lambda: A(a=5))
 
     schema = strawberry.Schema(query=Query)
     query = """{
@@ -49,7 +52,7 @@ def test_union_as_field_inverse():
 
     @strawberry.type
     class Query:
-        ab: Union[A, B] = B(b=5)
+        ab: Union[A, B] = strawberry.field(default_factory=lambda: B(b=5))
 
     schema = strawberry.Schema(query=Query)
     query = """{
@@ -236,7 +239,7 @@ def test_named_union():
 
     @strawberry.type
     class Query:
-        ab: Result = A(a=5)
+        ab: Result = strawberry.field(default_factory=lambda: A(a=5))
 
     schema = strawberry.Schema(query=Query)
 
@@ -275,7 +278,7 @@ def test_named_union_description():
 
     @strawberry.type
     class Query:
-        ab: Result = A(a=5)
+        ab: Result = strawberry.field(default_factory=lambda: A(a=5))
 
     schema = strawberry.Schema(query=Query)
 
@@ -602,3 +605,43 @@ def test_union_with_similar_nested_generic_types():
     result = schema.execute_sync(query)
 
     assert result.data["containerB"]["items"][0]["b"] == 3
+
+
+def test_lazy_union():
+    """
+    Previously this failed to evaluate generic parameters on lazy types
+    """
+    TypeA = Annotated["TypeA", lazy("tests.schema.test_lazy_types.type_a")]
+    TypeB = Annotated["TypeB", lazy("tests.schema.test_lazy_types.type_b")]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def a(self) -> Union[TypeA, TypeB]:
+            from tests.schema.test_lazy_types.type_a import TypeA
+
+            return TypeA(list_of_b=[])
+
+        @strawberry.field
+        def b(self) -> Union[TypeA, TypeB]:
+            from tests.schema.test_lazy_types.type_b import TypeB
+
+            return TypeB()
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """
+     {
+        a {
+            __typename
+        }
+        b {
+            __typename
+        }
+    }
+    """
+
+    result = schema.execute_sync(query)
+
+    assert result.data["a"]["__typename"] == "TypeA"
+    assert result.data["b"]["__typename"] == "TypeB"

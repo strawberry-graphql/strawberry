@@ -40,8 +40,8 @@ def test_keys_federation_1():
         }
 
         type Query {
-          _service: _Service!
           _entities(representations: [_Any!]!): [_Entity]!
+          _service: _Service!
           topProducts(first: Int!): [Product!]!
         }
 
@@ -106,8 +106,8 @@ def test_keys_federation_2():
         }
 
         type Query {
-          _service: _Service!
           _entities(representations: [_Any!]!): [_Entity]!
+          _service: _Service!
           topProducts(first: Int!): [Product!]!
         }
 

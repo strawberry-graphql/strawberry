@@ -106,8 +106,8 @@ def test_entities_type_when_one_type_has_keys():
         }
 
         type Query {
-          _service: _Service!
           _entities(representations: [_Any!]!): [_Entity]!
+          _service: _Service!
           topProducts(first: Int!): [Product!]!
         }
 

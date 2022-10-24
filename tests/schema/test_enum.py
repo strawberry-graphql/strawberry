@@ -5,7 +5,10 @@ from typing import List, Optional
 
 import pytest
 
+from typing_extensions import Annotated
+
 import strawberry
+from strawberry.lazy_type import lazy
 
 
 def test_enum_resolver():
@@ -98,6 +101,25 @@ def test_enum_arguments():
 
     assert not result.errors
     assert result.data["eatCone"] is True
+
+
+def test_lazy_enum_arguments():
+    LazyEnum = Annotated[
+        "LazyEnum", lazy("tests.schema.test_lazy_types.test_lazy_enums")
+    ]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def something(self, enum: LazyEnum) -> LazyEnum:
+            return enum
+
+    schema = strawberry.Schema(query=Query)
+
+    query = "{ something(enum: BREAD) }"
+    result = schema.execute_sync(query)
+    assert not result.errors
+    assert result.data["something"] == "BREAD"
 
 
 def test_enum_falsy_values():

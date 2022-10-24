@@ -50,7 +50,7 @@ def test_federation_type():
         ),
         Result(
             type="information",
-            message='Type of "User.__init__" is "(self: User, name: str) -> None"',
+            message='Type of "User.__init__" is "(self: User, *, name: str) -> None"',
             line=19,
             column=13,
         ),
@@ -99,7 +99,7 @@ def test_federation_interface():
         ),
         Result(
             type="information",
-            message='Type of "User.__init__" is "(self: User, name: str, age: int) -> None"',
+            message='Type of "User.__init__" is "(self: User, *, name: str, age: int) -> None"',
             line=15,
             column=13,
         ),
@@ -146,7 +146,7 @@ def test_federation_input():
         ),
         Result(
             type="information",
-            message='Type of "User.__init__" is "(self: User, name: str) -> None"',
+            message='Type of "User.__init__" is "(self: User, *, name: str) -> None"',
             line=13,
             column=13,
         ),

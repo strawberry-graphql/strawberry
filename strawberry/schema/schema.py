@@ -1,5 +1,5 @@
 from functools import lru_cache
-from typing import Any, Dict, Iterable, List, Optional, Type, Union
+from typing import Any, Dict, Iterable, List, Optional, Type, Union, cast
 
 from graphql import (
     ExecutionContext as GraphQLExecutionContext,
@@ -56,7 +56,7 @@ class Schema(BaseSchema):
         execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
         config: Optional[StrawberryConfig] = None,
         scalar_overrides: Optional[
-            Dict[object, Union[ScalarWrapper, ScalarDefinition]]
+            Dict[object, Union[Type, ScalarWrapper, ScalarDefinition]]
         ] = None,
         schema_directives: Iterable[object] = (),
     ):
@@ -68,11 +68,14 @@ class Schema(BaseSchema):
         self.execution_context_class = execution_context_class
         self.config = config or StrawberryConfig()
 
-        scalar_registry: Dict[object, Union[ScalarWrapper, ScalarDefinition]] = {
-            **DEFAULT_SCALAR_REGISTRY
-        }
+        SCALAR_OVERRIDES_DICT_TYPE = Dict[
+            object, Union[ScalarWrapper, ScalarDefinition]
+        ]
+
+        scalar_registry: SCALAR_OVERRIDES_DICT_TYPE = {**DEFAULT_SCALAR_REGISTRY}
         if scalar_overrides:
-            scalar_registry.update(scalar_overrides)
+            # TODO: check that the overrides are valid
+            scalar_registry.update(cast(SCALAR_OVERRIDES_DICT_TYPE, scalar_overrides))
 
         self.schema_converter = GraphQLCoreConverter(self.config, scalar_registry)
         self.directives = directives
@@ -124,6 +127,7 @@ class Schema(BaseSchema):
             # GraphQL core throws a TypeError if there's any exception raised
             # during the schema creation, so we check if the cause was a
             # StrawberryError and raise it instead if that's the case.
+
             from strawberry.exceptions import StrawberryException
 
             if isinstance(error.__cause__, StrawberryException):
@@ -222,10 +226,8 @@ class Schema(BaseSchema):
             execution_context_class=self.execution_context_class,
             execution_context=execution_context,
             allowed_operation_types=allowed_operation_types,
+            process_errors=self.process_errors,
         )
-
-        if result.errors:
-            self.process_errors(result.errors, execution_context=execution_context)
 
         return result
 
@@ -257,10 +259,8 @@ class Schema(BaseSchema):
             execution_context_class=self.execution_context_class,
             execution_context=execution_context,
             allowed_operation_types=allowed_operation_types,
+            process_errors=self.process_errors,
         )
-
-        if result.errors:
-            self.process_errors(result.errors, execution_context=execution_context)
 
         return result
 

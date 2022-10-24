@@ -129,14 +129,14 @@ def test_auto_fields_other_sentinel():
     assert field1.graphql_name is None
     assert field1.type is int
 
-    assert field2.python_name == "other"
+    assert field2.python_name == "password"
     assert field2.graphql_name is None
-    assert field2.type is other_sentinel
+    assert isinstance(field2.type, StrawberryOptional)
+    assert field2.type.of_type is str
 
-    assert field3.python_name == "password"
+    assert field3.python_name == "other"
     assert field3.graphql_name is None
-    assert isinstance(field3.type, StrawberryOptional)
-    assert field3.type.of_type is str
+    assert field3.type is other_sentinel
 
 
 def test_referencing_other_models_fails_when_not_registered():
@@ -287,11 +287,11 @@ def test_type_with_fields_coming_from_strawberry_and_pydantic():
 
     [field1, field2, field3] = definition.fields
 
-    assert field1.python_name == "age"
-    assert field1.type is int
+    assert field1.python_name == "name"
+    assert field1.type is str
 
-    assert field2.python_name == "name"
-    assert field2.type is str
+    assert field2.python_name == "age"
+    assert field2.type is int
 
     assert field3.python_name == "password"
     assert isinstance(field3.type, StrawberryOptional)
@@ -357,13 +357,14 @@ def test_type_with_fields_mutable_default():
     definition: TypeDefinition = UserType._type_definition
     assert definition.name == "UserType"
 
-    [field1, field2] = definition.fields
+    [groups_field, friends_field] = definition.fields
 
-    assert field1.default is dataclasses.MISSING
-    assert field2.default is dataclasses.MISSING
-    assert field1.default_factory is dataclasses.MISSING
+    assert groups_field.default is dataclasses.MISSING
+    assert groups_field.default_factory is dataclasses.MISSING
+    assert friends_field.default is dataclasses.MISSING
+
     # check that we really made a copy
-    assert field2.default_factory() is not empty_list
+    assert friends_field.default_factory() is not empty_list
     assert UserType(groups=["groups"]).friends is not empty_list
     UserType(groups=["groups"]).friends.append("joe")
     assert empty_list == []
@@ -424,11 +425,11 @@ def test_type_with_nested_fields_coming_from_strawberry_and_pydantic():
 
     [field1, field2, field3] = definition.fields
 
-    assert field1.python_name == "age"
-    assert field1.type is int
+    assert field1.python_name == "name"
+    assert field1.type is Name
 
-    assert field2.python_name == "name"
-    assert field2.type is Name
+    assert field2.python_name == "age"
+    assert field2.type is int
 
     assert field3.python_name == "password"
     assert isinstance(field3.type, StrawberryOptional)

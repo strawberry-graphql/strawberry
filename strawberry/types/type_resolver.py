@@ -10,8 +10,7 @@ from strawberry.exceptions import (
 )
 from strawberry.field import StrawberryField
 from strawberry.private import is_private
-
-from ..unset import UNSET
+from strawberry.unset import UNSET
 
 
 def _get_fields(cls: Type) -> List[StrawberryField]:
@@ -87,6 +86,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
             # Check that default is not set if a resolver is defined
             if (
                 field.default is not dataclasses.MISSING
+                and field.default is not UNSET
                 and field.base_resolver is not None
             ):
                 raise FieldWithResolverAndDefaultValueError(
@@ -96,8 +96,10 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
             # Check that default_factory is not set if a resolver is defined
             # Note: using getattr because of this issue:
             # https://github.com/python/mypy/issues/6910
+            default_factory = getattr(field, "default_factory", None)
             if (
-                getattr(field, "default_factory") is not dataclasses.MISSING  # noqa
+                default_factory is not dataclasses.MISSING
+                and default_factory is not UNSET
                 and field.base_resolver is not None
             ):
                 raise FieldWithResolverAndDefaultFactoryError(
@@ -142,7 +144,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
                     namespace=module.__dict__,
                 ),
                 origin=origin,
-                default=getattr(cls, field.name, UNSET),
+                default=getattr(cls, field.name, dataclasses.MISSING),
             )
 
         field_name = field.python_name

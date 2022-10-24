@@ -162,7 +162,7 @@ def test_using_generics():
     class Query:
         @strawberry.field
         def top_products(self, first: int) -> ListOfProducts[Product]:
-            return ListOfProducts([])
+            return ListOfProducts(products=[])
 
     schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
 
@@ -228,3 +228,38 @@ def test_input_types():
     assert not result.errors
 
     assert result.data == {"__type": {"kind": "INPUT_OBJECT"}}
+
+
+def test_can_create_schema_without_query():
+    @strawberry.federation.type()
+    class Product:
+        upc: str
+        name: Optional[str]
+        price: Optional[int]
+        weight: Optional[int]
+
+    schema = strawberry.federation.Schema(types=[Product], enable_federation_2=True)
+
+    assert (
+        str(schema)
+        == textwrap.dedent(
+            """
+                type Product {
+                  upc: String!
+                  name: String
+                  price: Int
+                  weight: Int
+                }
+
+                type Query {
+                  _service: _Service!
+                }
+
+                scalar _Any
+
+                type _Service {
+                  sdl: String!
+                }
+            """
+        ).strip()
+    )

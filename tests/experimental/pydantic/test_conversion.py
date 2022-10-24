@@ -1,4 +1,5 @@
 import base64
+import dataclasses
 import re
 import sys
 from enum import Enum
@@ -15,15 +16,9 @@ from strawberry.experimental.pydantic.exceptions import (
     AutoFieldsNotInBaseModelError,
     BothDefaultAndDefaultFactoryDefinedError,
 )
-from strawberry.experimental.pydantic.utils import (
-    DataclassCreationFields,
-    get_default_factory_for_field,
-    sort_creation_fields,
-)
-from strawberry.field import StrawberryField
+from strawberry.experimental.pydantic.utils import get_default_factory_for_field
 from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.types.types import TypeDefinition
-from strawberry.unset import UNSET
 
 
 def test_can_use_type_standalone():
@@ -748,7 +743,7 @@ def test_can_convert_input_types_to_pydantic():
         age: strawberry.auto
         password: strawberry.auto
 
-    data = UserInput(1, None)
+    data = UserInput(age=1, password=None)
     user = data.to_pydantic()
 
     assert user.age == 1
@@ -793,11 +788,9 @@ def test_can_convert_input_types_to_pydantic_default_values_defaults_declared_fi
     assert definition.name == "UserInput"
 
     [
-        age_field,
         password_field,
-    ] = (
-        definition.fields
-    )  # fields without a default go first, so the order gets reverse
+        age_field,
+    ] = definition.fields
 
     assert age_field.python_name == "age"
     assert age_field.type is int
@@ -845,54 +838,10 @@ def test_can_convert_pydantic_type_to_strawberry_newtype_list():
     assert user.passwords == ["hunter2"]
 
 
-def test_sort_creation_fields():
-    has_default = DataclassCreationFields(
-        name="has_default",
-        type_annotation=str,
-        field=StrawberryField(
-            python_name="has_default",
-            graphql_name="has_default",
-            default="default_str",
-            default_factory=UNSET,
-            type_annotation=str,
-            description="description",
-        ),
-    )
-    has_default_factory = DataclassCreationFields(
-        name="has_default_factory",
-        type_annotation=str,
-        field=StrawberryField(
-            python_name="has_default_factory",
-            graphql_name="has_default_factory",
-            default=UNSET,
-            default_factory=lambda: "default_factory_str",
-            type_annotation=str,
-            description="description",
-        ),
-    )
-    no_defaults = DataclassCreationFields(
-        name="no_defaults",
-        type_annotation=str,
-        field=StrawberryField(
-            python_name="no_defaults",
-            graphql_name="no_defaults",
-            default=UNSET,
-            default_factory=UNSET,
-            type_annotation=str,
-            description="description",
-        ),
-    )
-    fields = [has_default, has_default_factory, no_defaults]
-    # should place items with defaults last
-    assert sort_creation_fields(fields) == [
-        no_defaults,
-        has_default,
-        has_default_factory,
-    ]
-
-
 def test_get_default_factory_for_field():
-    def _get_field(default: Any = UNSET, default_factory: Any = UNSET) -> ModelField:
+    def _get_field(
+        default: Any = dataclasses.MISSING, default_factory: Any = dataclasses.MISSING
+    ) -> ModelField:
         return ModelField(
             name="a",
             type_=str,
@@ -902,10 +851,9 @@ def test_get_default_factory_for_field():
             default_factory=default_factory,
         )
 
-    # should return UNSET when both defaults are UNSET
     field = _get_field()
 
-    assert get_default_factory_for_field(field) is UNSET
+    assert get_default_factory_for_field(field) is dataclasses.MISSING
 
     def factory_func():
         return "strawberry"
@@ -967,10 +915,10 @@ def test_can_convert_pydantic_type_to_strawberry_with_additional_field_resolvers
     origin_user = UserModel(password="abc", new_age=21)
     user = User.from_pydantic(origin_user)
     assert user.password == "abc"
-    assert User._type_definition.fields[0].name == "new_age"
-    assert User._type_definition.fields[0].base_resolver() == 84
-    assert User._type_definition.fields[1].name == "age"
-    assert User._type_definition.fields[1].base_resolver() == 42
+    assert User._type_definition.fields[0].name == "age"
+    assert User._type_definition.fields[0].base_resolver() == 42
+    assert User._type_definition.fields[2].name == "new_age"
+    assert User._type_definition.fields[2].base_resolver() == 84
 
 
 def test_can_convert_both_output_and_input_type():
