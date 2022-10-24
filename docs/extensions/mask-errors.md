@@ -111,9 +111,6 @@ from strawberry.extensions import MaskErrors
 from graphql.error import GraphQLError
 from strawberry.types import ExecutionContext
 
-VISIBLE_ERROR_STATUS_CODE = 400
-HIDDEN_ERROR_STATUS_CODE = 500
-
 class VisibleError(Exception):
     pass
 
@@ -130,11 +127,13 @@ def status_code_hook(error: GraphQLError, execution_context: ExecutionContext) -
     This example uses the default FastAPI config."""
     response = execution_context.context['response'] # change depending on your context config
     if response:
+        existing_status_code = response.status_code
         if should_mask_error(error):
-            response.status_code = HIDDEN_ERROR_STATUS_CODE
+            new_status_code = 400
         else:
-            response.status_code = VISIBLE_ERROR_STATUS_CODE
-
+            new_response.status_code = 500
+        if new_status_code > existing_status_code:
+            response.status_code = new_status_code
 
 schema = strawberry.Schema(
     Query,

@@ -12,11 +12,14 @@ class VisibleError(Exception):
     pass
 
 def status_code_hook(error: GraphQLError, execution_context: ExecutionContext) -> None:
+    response = execution_context.context['response']
+    existing_status_code = response.status_code
     if error.original_error and isinstance(error.orginal_error, VisibleError):
-        execution_context.context['response'].status_code = 400
+        new_status_code = 400
     else:
-        execution_context.context['response'].status_code = 500
-
+        new_status_code = 500
+    if new_status_code > existing_status_code:
+        response.status_code = new_status_code
 
 schema = strawberry.Schema(
     Query,
