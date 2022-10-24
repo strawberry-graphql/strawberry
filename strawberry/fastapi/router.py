@@ -54,7 +54,7 @@ class GraphQLRouter(APIRouter):
     def __get_context_getter(
         custom_getter: Callable[..., Optional[CustomContext]]
     ) -> Callable[..., CustomContext]:
-        def dependency(
+        async def dependency(
             custom_context: Optional[CustomContext],
             background_tasks: BackgroundTasks,
             request: Request = None,
