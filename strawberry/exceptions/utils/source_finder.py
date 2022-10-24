@@ -46,7 +46,7 @@ class LibCSTSourceFinder:
 
         return SourcePath(path=path, code=source)
 
-    def _find(self, source: str, matcher: Any) -> Sequence["CSTNode"]:
+    def _find(self, source: str, matcher: Any) -> Sequence[CSTNode]:
         from libcst.metadata import (
             MetadataWrapper,
             ParentNodeProvider,
@@ -63,8 +63,8 @@ class LibCSTSourceFinder:
         return m.findall(self._metadata_wrapper, matcher)
 
     def _find_definition_by_qualname(
-        self, qualname: str, nodes: Sequence["CSTNode"]
-    ) -> Optional["CSTNode"]:
+        self, qualname: str, nodes: Sequence[CSTNode]
+    ) -> Optional[CSTNode]:
         from libcst import ClassDef, CSTNode, FunctionDef
 
         for definition in nodes:
@@ -107,7 +107,7 @@ class LibCSTSourceFinder:
 
     def _find_class_definition(
         self, source: SourcePath, cls: Type
-    ) -> Optional["CSTNode"]:
+    ) -> Optional[CSTNode]:
         import libcst.matchers as m
 
         matcher = m.ClassDef(name=m.Name(value=cls.__name__))
