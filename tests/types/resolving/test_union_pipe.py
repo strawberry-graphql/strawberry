@@ -6,6 +6,7 @@ import pytest
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.exceptions import InvalidUnionType
+from strawberry.schema.types.base_scalars import Date, DateTime
 from strawberry.type import StrawberryOptional
 from strawberry.union import StrawberryUnion
 
@@ -91,3 +92,6 @@ def test_raises_error_when_piping_with_scalar():
 
     with pytest.raises(InvalidUnionType):
         StrawberryAnnotation(UserOrError | int)
+
+    with pytest.raises(InvalidUnionType):
+        StrawberryAnnotation(Date | DateTime)
