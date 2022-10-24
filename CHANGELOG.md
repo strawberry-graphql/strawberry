@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.137.1 - 2022-10-24
+--------------------
+
+Allowed `CustomScalar | None` syntax for python >= 3.10.
+
+Contributed by [Guillaume Andreu Sabater](https://github.com/g-as) via [PR #2279](https://github.com/strawberry-graphql/strawberry/pull/2279/)
+
+
 0.137.0 - 2022-10-21
 --------------------
 
