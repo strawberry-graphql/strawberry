@@ -1,7 +1,7 @@
 import json
 from datetime import timedelta
 from inspect import signature
-from typing import Any, Callable, Dict, Iterable, Optional, Sequence, Union
+from typing import Any, Awaitable, Callable, Dict, Iterable, Optional, Sequence, Union
 
 from starlette import status
 from starlette.background import BackgroundTasks
@@ -52,8 +52,10 @@ class GraphQLRouter(APIRouter):
 
     @staticmethod
     def __get_context_getter(
-        custom_getter: Callable[..., Optional[CustomContext]]
-    ) -> Callable[..., CustomContext]:
+        custom_getter: Callable[
+            ..., Union[Optional[CustomContext], Awaitable[Optional[CustomContext]]]
+        ]
+    ) -> Callable[..., Awaitable[CustomContext]]:
         async def dependency(
             custom_context: Optional[CustomContext],
             background_tasks: BackgroundTasks,
