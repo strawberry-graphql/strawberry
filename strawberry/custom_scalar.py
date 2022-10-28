@@ -16,7 +16,7 @@ from typing import (
 
 from graphql import GraphQLScalarType
 
-from strawberry.exceptions import InvalidUnionType
+from strawberry.exceptions import InvalidUnionTypeError
 from strawberry.type import StrawberryOptional, StrawberryType
 
 from .utils.str_converters import to_camel_case
@@ -78,7 +78,7 @@ class ScalarWrapper:
         # Raise an error in any other case.
         # There is Work in progress to deal with more merging cases, see:
         # https://github.com/strawberry-graphql/strawberry/pull/1455
-        raise InvalidUnionType(other)
+        raise InvalidUnionTypeError(other)
 
 
 def _process_scalar(

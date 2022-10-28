@@ -1,11 +1,16 @@
-from pathlib import Path
-from typing import Optional
+from __future__ import annotations
 
-from strawberry.custom_scalar import ScalarDefinition
+from pathlib import Path
+from typing import TYPE_CHECKING, Optional
+
 from strawberry.exceptions.utils.source_finder import SourceFinder
 
 from .exception import StrawberryException
 from .exception_source import ExceptionSource
+
+
+if TYPE_CHECKING:
+    from strawberry.custom_scalar import ScalarDefinition
 
 
 class ScalarAlreadyRegisteredError(StrawberryException):
