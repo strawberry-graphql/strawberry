@@ -11,8 +11,8 @@ This includes support for uploading single files as well as lists of files.
 Uploads can be used in mutations via the `Upload` scalar.
 The type passed at runtime depends on the integration:
 
-| Integration                               | Type                                                                                                                                                  |
-| ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Integration                               | Type                                                                                                                                                |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [AIOHTTP](/docs/integrations/aiohttp)     | [io.BytesIO](https://docs.python.org/3/library/io.html#io.BytesIO)                                                                                  |
 | [ASGI](/docs/integrations/asgi)           | [starlette.datastructures.UploadFile](https://www.starlette.io/requests/#request-files)                                                             |
 | [Django](/docs/integrations/django)       | [django.core.files.uploadedfile.UploadedFile](https://docs.djangoproject.com/en/3.2/ref/files/uploads/#django.core.files.uploadedfile.UploadedFile) |
