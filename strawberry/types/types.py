@@ -65,6 +65,8 @@ class TypeDefinition(StrawberryType):
     def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
     ) -> type:
+        from strawberry.annotation import StrawberryAnnotation
+
         fields = []
         for field in self.fields:
             # TODO: Logic unnecessary with StrawberryObject
@@ -77,6 +79,15 @@ class TypeDefinition(StrawberryType):
             #       Scalar, but not a StrawberryType
             if isinstance(field_type, StrawberryType) and field_type.is_generic:
                 field = field.copy_with(type_var_map)
+
+            # Resolve generic arguments
+            for argument in field.arguments:
+                if isinstance(argument.type, StrawberryType):
+                    if argument.type.is_generic:
+                        argument.type_annotation = StrawberryAnnotation(
+                            annotation=argument.type.copy_with(type_var_map),
+                            namespace=argument.type_annotation.namespace,
+                        )
 
             fields.append(field)
 

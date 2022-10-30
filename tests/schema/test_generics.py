@@ -747,6 +747,34 @@ def test_generic_with_arguments():
     assert str(schema) == textwrap.dedent(expected_schema).strip()
 
 
+def test_generic_argument():
+    T = TypeVar("T")
+
+    @strawberry.type
+    class Collection(Generic[T]):
+        @strawberry.field
+        def by_id(self, ids: List[T]) -> List[T]:
+            return []
+
+    @strawberry.type
+    class Query:
+        user: Collection[int]
+
+    schema = strawberry.Schema(Query)
+
+    expected_schema = """
+    type IntCollection {
+      byId(ids: [Int!]!): [Int!]!
+    }
+
+    type Query {
+      user: IntCollection!
+    }
+    """
+
+    assert str(schema) == textwrap.dedent(expected_schema).strip()
+
+
 def test_generic_extending_with_type_var():
     T = TypeVar("T")
 
