@@ -5,6 +5,7 @@ import pytest
 import strawberry
 from strawberry.enum import EnumDefinition
 from strawberry.exceptions import ObjectIsNotAnEnumError
+from strawberry.exceptions.not_a_strawberry_enum import NotAStrawberryEnumError
 
 
 def test_basic_enum():
@@ -117,3 +118,22 @@ def test_can_describe_enum_values():
     assert definition.values[2].name == "CHOCOLATE"
     assert definition.values[2].value == "chocolate"
     assert definition.values[2].description is None
+
+
+@pytest.mark.raises_strawberry_exception(
+    NotAStrawberryEnumError, match='Enum "IceCreamFlavour" is not a Strawberry enum'
+)
+def test_raises_error_when_using_enum_not_decorated():
+    class IceCreamFlavour(Enum):
+        VANILLA = strawberry.enum_value("vanilla")
+        STRAWBERRY = strawberry.enum_value(
+            "strawberry",
+            description="Our favourite",
+        )
+        CHOCOLATE = "chocolate"
+
+    @strawberry.type
+    class Query:
+        flavour: IceCreamFlavour
+
+    strawberry.Schema(query=Query)

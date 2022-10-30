@@ -13,6 +13,7 @@ from .invalid_union_type import InvalidTypeForUnionMergeError, InvalidUnionTypeE
 from .missing_arguments_annotations import MissingArgumentsAnnotationsError
 from .missing_field_annotation import MissingFieldAnnotationError
 from .missing_return_annotation import MissingReturnAnnotationError
+from .not_a_strawberry_enum import NotAStrawberryEnumError
 from .object_is_not_a_class import ObjectIsNotClassError
 from .object_is_not_an_enum import ObjectIsNotAnEnumError
 from .private_strawberry_field import PrivateStrawberryFieldError
@@ -161,6 +162,7 @@ __all__ = [
     "UnresolvedFieldTypeError",
     "PrivateStrawberryFieldError",
     "MultipleStrawberryArgumentsError",
+    "NotAStrawberryEnumError",
     "ScalarAlreadyRegisteredError",
     "WrongNumberOfResultsReturned",
     "FieldWithResolverAndDefaultValueError",

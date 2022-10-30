@@ -15,7 +15,7 @@ from typing import (  # type: ignore[attr-defined]
 
 from typing_extensions import Annotated, get_args, get_origin
 
-from strawberry.exceptions import StrawberryException
+from strawberry.exceptions.not_a_strawberry_enum import NotAStrawberryEnumError
 from strawberry.private import is_private
 
 
@@ -161,10 +161,7 @@ class StrawberryAnnotation:
         try:
             return evaled_type._enum_definition
         except AttributeError:
-            # TODO: proper exception
-            raise StrawberryException(
-                f"{evaled_type} fields cannot be resolved."
-            )  # type: ignore
+            raise NotAStrawberryEnumError(evaled_type)
 
     def create_list(self, evaled_type: Any) -> StrawberryList:
         of_type = StrawberryAnnotation(
