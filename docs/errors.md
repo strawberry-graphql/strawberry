@@ -1,6 +1,6 @@
 # Errors in strawberry
 
-Strawberry has a built-in errors for when something goes wrong with the creation
+Strawberry has built-in errors for when something goes wrong with the creation
 and usage of the schema.
 
 It also provides a custom exception handler for improving how errors are printed

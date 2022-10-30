@@ -78,7 +78,7 @@ class ScalarWrapper:
         # Raise an error in any other case.
         # There is Work in progress to deal with more merging cases, see:
         # https://github.com/strawberry-graphql/strawberry/pull/1455
-        raise InvalidUnionTypeError(other)
+        raise InvalidUnionTypeError(str(other), self.wrap)
 
 
 def _process_scalar(
