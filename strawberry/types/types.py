@@ -81,13 +81,20 @@ class TypeDefinition(StrawberryType):
                 field = field.copy_with(type_var_map)
 
             # Resolve generic arguments
-            for argument in field.arguments:
-                if isinstance(argument.type, StrawberryType):
-                    if argument.type.is_generic:
-                        argument.type_annotation = StrawberryAnnotation(
-                            annotation=argument.type.copy_with(type_var_map),
-                            namespace=argument.type_annotation.namespace,
-                        )
+            generic_arguments = (
+                argument
+                for argument in field.arguments
+                if isinstance(argument.type, StrawberryType)
+                and argument.type.is_generic
+            )
+
+            for argument in generic_arguments:
+                assert isinstance(argument.type, StrawberryType)
+
+                argument.type_annotation = StrawberryAnnotation(
+                    annotation=argument.type.copy_with(type_var_map),
+                    namespace=argument.type_annotation.namespace,
+                )
 
             fields.append(field)
 
