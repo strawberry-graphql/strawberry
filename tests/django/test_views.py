@@ -430,7 +430,7 @@ def test_can_change_status_code():
     assert data == {"data": {"abc": "ABC"}}
 
 
-def test_json_encoder():
+def test_custom_json_encoder():
     query = "{ hello }"
 
     factory = RequestFactory()
@@ -438,17 +438,12 @@ def test_json_encoder():
         "/graphql/", {"query": query}, content_type="application/json"
     )
 
-    def fake_encoder(data: GraphQLHTTPResponse) -> str:
-        return "fake_encoder"
+    class MyGraphQLView(BaseGraphQLView):
+        def encode_json(self, response_data: GraphQLHTTPResponse) -> str:
+            return "fake_encoder"
 
-    response1 = GraphQLView.as_view(schema=schema, json_encoder=fake_encoder)(request)
-    assert response1.content.decode() == "fake_encoder"
-
-    class CustomGraphQLView(GraphQLView):
-        json_encoder = staticmethod(fake_encoder)
-
-    response2 = CustomGraphQLView.as_view(schema=schema)(request)
-    assert response2.content.decode() == "fake_encoder"
+    response = MyGraphQLView.as_view(schema=schema)(request)
+    assert response.content.decode() == "fake_encoder"
 
 
 def test_json_encoder_as_class_works_with_warning():
@@ -476,9 +471,7 @@ def test_json_encoder_as_class_works_with_warning():
         class CustomGraphQLView(GraphQLView):
             json_encoder = CustomEncoder
 
-        response2 = CustomGraphQLView.as_view(schema=schema)(request)
-
-        assert response2.content.decode() == "this is deprecated"
+        CustomGraphQLView(schema=schema)
 
 
 def test_json_dumps_params_deprecated_via_param():
