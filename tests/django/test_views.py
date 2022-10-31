@@ -449,7 +449,6 @@ def test_custom_json_encoder():
 def test_json_encoder_as_class_works_with_warning():
     class CustomEncoder(json.JSONEncoder):
         def encode(self, o: Any) -> str:
-            # Reverse the result.
             return "this is deprecated"
 
     query = "{ hello }"

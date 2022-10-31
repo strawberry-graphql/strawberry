@@ -1,4 +1,5 @@
 import json
+import warnings
 from typing import Any, Dict, Optional, Type, Union
 
 from typing_extensions import Literal
@@ -34,8 +35,6 @@ class GraphQLView(HTTPMethodView):
         schema: strawberry.Schema
         graphiql: bool, default is True
         allow_queries_via_get: bool, default is True
-        json_encoder: json.JSONEncoder, default is JSONEncoder
-        json_dumps_params: dict, default is None
 
     Returns:
         None
@@ -52,7 +51,7 @@ class GraphQLView(HTTPMethodView):
         schema: BaseSchema,
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
-        json_encoder: Type[json.JSONEncoder] = json.JSONEncoder,
+        json_encoder: Optional[Type[json.JSONEncoder]] = None,
         json_dumps_params: Optional[Dict[str, Any]] = None,
     ):
         self.schema = schema
@@ -60,6 +59,20 @@ class GraphQLView(HTTPMethodView):
         self.allow_queries_via_get = allow_queries_via_get
         self.json_encoder = json_encoder
         self.json_dumps_params = json_dumps_params
+
+        if self.json_encoder is not None:
+            warnings.warn(
+                "json_encoder is deprecated, override encode_json instead",
+                DeprecationWarning,
+            )
+
+        if self.json_dumps_params is not None:
+            warnings.warn(
+                "json_dumps_params is deprecated, override encode_json instead",
+                DeprecationWarning,
+            )
+
+            self.json_encoder = json.JSONEncoder
 
     def get_root_value(self):
         return None
@@ -102,15 +115,26 @@ class GraphQLView(HTTPMethodView):
         raise SanicException(status_code=404)
 
     async def get_response(self, response_data: GraphQLHTTPResponse) -> HTTPResponse:
-        data = json.dumps(
-            response_data, cls=self.json_encoder, **(self.json_dumps_params or {})
-        )
+        data = self.encode_json(response_data)
 
         return HTTPResponse(
             data,
             status=200,
             content_type="application/json",
         )
+
+    def encode_json(self, response_data: GraphQLHTTPResponse) -> str:
+        if self.json_dumps_params:
+            assert self.json_encoder
+
+            return json.dumps(
+                response_data, cls=self.json_encoder, **self.json_dumps_params
+            )
+
+        if self.json_encoder:
+            return json.dumps(response_data, cls=self.json_encoder)
+
+        return json.dumps(response_data)
 
     async def post(self, request: Request) -> HTTPResponse:
         request_data = self.get_request_data(request)

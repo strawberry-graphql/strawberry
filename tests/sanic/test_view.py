@@ -1,9 +1,12 @@
 import json
 from typing import Any
 
+import pytest
+
 import strawberry
 from sanic import Sanic
-from strawberry.sanic.views import GraphQLView as BaseGraphQLView
+from strawberry.http import GraphQLHTTPResponse
+from strawberry.sanic.views import GraphQLView
 from strawberry.types import ExecutionResult, Info
 
 from .app import create_app
@@ -51,7 +54,7 @@ def test_graphiql_disabled_view():
 
 
 def test_custom_context():
-    class CustomGraphQLView(BaseGraphQLView):
+    class CustomGraphQLView(GraphQLView):
         async def get_context(self, request):
             return {"request": request, "custom_value": "Hi!"}
 
@@ -78,7 +81,7 @@ def test_custom_context():
 
 
 def test_custom_process_result():
-    class CustomGraphQLView(BaseGraphQLView):
+    class CustomGraphQLView(GraphQLView):
         def process_result(self, result: ExecutionResult):
             return {}
 
@@ -118,11 +121,6 @@ def test_malformed_query(sanic_client):
 
 
 def test_json_encoder():
-    class CustomEncoder(json.JSONEncoder):
-        def encode(self, o: Any) -> str:
-            # Reverse the result.
-            return super().encode(o)[::-1]
-
     @strawberry.type
     class Query:
         @strawberry.field
@@ -134,10 +132,12 @@ def test_json_encoder():
     app = Sanic("test-app-custom_context")
     app.debug = True
 
+    class MyGraphQLView(GraphQLView):
+        def encode_json(self, data: GraphQLHTTPResponse) -> str:
+            return "fake response"
+
     app.add_route(
-        BaseGraphQLView.as_view(
-            schema=schema, graphiql=True, json_encoder=CustomEncoder
-        ),
+        MyGraphQLView.as_view(schema=schema, graphiql=True),
         "/graphql",
     )
 
@@ -147,4 +147,66 @@ def test_json_encoder():
     data = response.content.decode()
 
     assert response.status == 200
-    assert data[::-1] == '{"data": {"hello": "strawberry"}}'
+    assert data == "fake response"
+
+
+def test_json_encoder_as_class_works_with_warning():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(self, info: Info) -> str:
+            return "strawberry"
+
+    schema = strawberry.Schema(query=Query)
+
+    app = Sanic("test-app-custom_context")
+    app.debug = True
+    query = "{ hello }"
+
+    class CustomEncoder(json.JSONEncoder):
+        def encode(self, o: Any) -> str:
+            return "this is deprecated"
+
+    with pytest.warns(DeprecationWarning):
+        app.add_route(
+            GraphQLView.as_view(
+                schema=schema, graphiql=True, json_encoder=CustomEncoder
+            ),
+            "/graphql",
+        )
+
+        request, response = app.test_client.post("/graphql", json={"query": query})
+
+        data = response.content.decode()
+
+    assert response.status == 200
+    assert data == "this is deprecated"
+
+
+def test_json_dumps_params_warning():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(self, info: Info) -> str:
+            return "strawberry"
+
+    schema = strawberry.Schema(query=Query)
+
+    app = Sanic("test-app-custom_context")
+    app.debug = True
+    query = "{ hello }"
+
+    with pytest.warns(DeprecationWarning):
+        app.add_route(
+            GraphQLView.as_view(
+                schema=schema, graphiql=True, json_dumps_params={"indent": 3}
+            ),
+            "/graphql",
+        )
+
+        request, response = app.test_client.post("/graphql", json={"query": query})
+
+        data = response.content.decode()
+
+    assert response.status == 200
+    assert data == '{\n   "data": {\n      "hello": "strawberry"\n   }\n}'
