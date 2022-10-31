@@ -1,6 +1,24 @@
 CHANGELOG
 =========
 
+0.138.0 - 2022-10-31
+--------------------
+
+This release adds support for generic in arguments, see the following example:
+
+```python
+T = TypeVar('T')
+
+@strawberry.type
+class Node(Generic[T]):
+   @strawberry.field
+   def data(self, arg: T) -> T:  # `arg` is also generic
+       return arg
+```
+
+Contributed by [A. Coady](https://github.com/coady) via [PR #2293](https://github.com/strawberry-graphql/strawberry/pull/2293/)
+
+
 0.137.1 - 2022-10-24
 --------------------
 
