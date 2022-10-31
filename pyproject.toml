@@ -75,7 +75,7 @@ pytest-flask = {version = "^1.2.0"}
 flask = ">=1.1"
 chalice = {version = "^1.22"}
 requests = "^2.28.1"
-pytest-benchmark = "^3.4.1"
+pytest-benchmark = "^4.0.0"
 freezegun = "^1.2.1"
 opentelemetry-api = "<2"
 opentelemetry-sdk = "<2"
