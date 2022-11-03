@@ -214,9 +214,11 @@ def type(
 
         kwargs: Dict[str, object] = {}
 
-        # Python 3.10 introduces the kw_only param. If we're on an older version
-        # then generate our own custom init function
-        if sys.version_info >= (3, 10):
+        # Python 3.10.1 introduces the kw_only param to `make_dataclass`.
+        # If we're on an older version then generate our own custom init function
+        # Note: Python 3.10.0 added the `kw_only` param to dataclasses, it was
+        # just missed from the `make_dataclass` function: https://github.com/python/cpython/issues/89961
+        if sys.version_info >= (3, 10, 1):
             kwargs["kw_only"] = dataclasses.MISSING
         else:
             kwargs["init"] = False
@@ -229,7 +231,7 @@ def type(
             **kwargs,  # type: ignore
         )
 
-        if sys.version_info < (3, 10):
+        if sys.version_info < (3, 10, 1):
             add_custom_init_fn(cls)
 
         _process_type(
