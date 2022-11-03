@@ -13,6 +13,7 @@ from graphql import (
 from graphql.subscription import subscribe
 from graphql.type.directives import specified_directives
 
+from strawberry.annotation import StrawberryAnnotation
 from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.directive import StrawberryDirective
 from strawberry.enum import EnumDefinition
@@ -104,6 +105,9 @@ class Schema(BaseSchema):
                     self.schema_converter.from_schema_directive(type_)
                 )
             else:
+                if hasattr(type_, "_type_definition"):
+                    if type_._type_definition.is_generic:
+                        type_ = StrawberryAnnotation(type_).resolve()
                 graphql_type = self.schema_converter.from_maybe_optional(type_)
                 if isinstance(graphql_type, GraphQLNonNull):
                     graphql_type = graphql_type.of_type
