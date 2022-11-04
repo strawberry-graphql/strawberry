@@ -57,7 +57,7 @@ def _build_dataclass_creation_fields(
     auto_fields_set: Set[str],
     use_pydantic_alias: bool,
 ) -> DataclassCreationFields:
-    field_type = (
+    graphql_type = (
         get_type_for_field(field, is_input)
         if field.name in auto_fields_set
         else existing_fields[field.name].type
@@ -97,7 +97,7 @@ def _build_dataclass_creation_fields(
 
     return DataclassCreationFields(
         name=field.name,
-        field_type=field_type,
+        graphql_type=graphql_type,
         field=strawberry_field,
     )
 
@@ -183,7 +183,7 @@ def type(
         all_model_fields = [
             DataclassCreationFields(
                 name=field.name,
-                field_type=field.type,
+                graphql_type=field.type,
                 field=field,
             )
             for field in extra_fields + private_fields

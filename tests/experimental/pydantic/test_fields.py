@@ -115,7 +115,7 @@ def test_constrained_list():
         ...
 
     assert UserType._type_definition.fields[0].name == "friends"
-    assert UserType._type_definition.fields[0].field_type.annotation == List[str]
+    assert UserType._type_definition.fields[0].graphql_type.annotation == List[str]
 
     data = UserType(friends=[])
 
@@ -139,7 +139,7 @@ def test_constrained_list_nested():
         ...
 
     assert UserType._type_definition.fields[0].name == "friends"
-    assert UserType._type_definition.fields[0].field_type.annotation == List[List[int]]
+    assert UserType._type_definition.fields[0].graphql_type.annotation == List[List[int]]
 
 
 @pytest.mark.parametrize(

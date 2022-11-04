@@ -118,10 +118,10 @@ def test_field_type_priority():
 def test_field_type_override():
     @strawberry.type
     class Query:
-        a: float = strawberry.field(field_type=str)
-        b = strawberry.field(field_type=int)
+        a: float = strawberry.field(graphql_type=str)
+        b = strawberry.field(graphql_type=int)
 
-        @strawberry.field(field_type=float)
+        @strawberry.field(graphql_type=float)
         def c(self):
             return "3.4"
 
