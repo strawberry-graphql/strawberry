@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.138.2 - 2022-11-04
+--------------------
+
+Fix Pydantic integration for Python 3.10.0 (which was missing the `kw_only`
+parameter for `dataclasses.make_dataclass()`).
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) via [PR #2309](https://github.com/strawberry-graphql/strawberry/pull/2309/)
+
+
 0.138.1 - 2022-10-31
 --------------------
 
