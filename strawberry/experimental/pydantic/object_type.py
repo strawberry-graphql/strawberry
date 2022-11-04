@@ -217,7 +217,8 @@ def type(
         # Python 3.10.1 introduces the kw_only param to `make_dataclass`.
         # If we're on an older version then generate our own custom init function
         # Note: Python 3.10.0 added the `kw_only` param to dataclasses, it was
-        # just missed from the `make_dataclass` function: https://github.com/python/cpython/issues/89961
+        # just missed from the `make_dataclass` function:
+        # https://github.com/python/cpython/issues/89961
         if sys.version_info >= (3, 10, 1):
             kwargs["kw_only"] = dataclasses.MISSING
         else:
