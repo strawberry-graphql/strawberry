@@ -113,3 +113,37 @@ def test_field_type_priority():
     assert result.data == {
         "a": 1.33,
     }
+
+
+def test_field_type_override():
+    @strawberry.type
+    class Query:
+        a: float = strawberry.field(field_type=str)
+        b = strawberry.field(field_type=int)
+
+        @strawberry.field(field_type=float)
+        def c(self):
+            return "3.4"
+
+    schema = strawberry.Schema(Query)
+
+    expected = """
+    type Query {
+      a: String!
+      b: Int!
+      c: Float!
+    }
+    """
+
+    assert print_schema(schema) == textwrap.dedent(expected).strip()
+
+    query = "{ a, b, c }"
+
+    result = schema.execute_sync(query, root_value=Query(a=1.33, b=2))
+
+    assert not result.errors
+    assert result.data == {
+        "a": "1.33",
+        "b": 2,
+        "c": 3.4,
+    }

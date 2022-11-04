@@ -131,7 +131,7 @@ def test_private_field_type_resolution_with_generic_type():
         pass
 
     private_field = StrawberryField(
-        type_annotation=StrawberryAnnotation(
+        field_type=StrawberryAnnotation(
             annotation="strawberry.Private[GenericPrivateType]",
             namespace={**globals(), **locals()},
         ),

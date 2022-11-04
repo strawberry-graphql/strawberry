@@ -142,7 +142,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
             field = StrawberryField(
                 python_name=field.name,
                 graphql_name=None,
-                type_annotation=StrawberryAnnotation(
+                field_type=StrawberryAnnotation(
                     annotation=field_type,
                     namespace=module.__dict__,
                 ),

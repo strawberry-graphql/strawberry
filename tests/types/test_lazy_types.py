@@ -71,7 +71,7 @@ def test_lazy_type_field():
     LazierType = LazyType("LaziestType", "test_lazy_types")
 
     annotation = StrawberryAnnotation(LazierType)
-    field = StrawberryField(type_annotation=annotation)
+    field = StrawberryField(field_type=annotation)
 
     assert isinstance(field.type, LazyType)
     assert field.type is LazierType

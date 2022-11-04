@@ -58,7 +58,6 @@ class StrawberryField(dataclasses.Field):
         self,
         python_name: Optional[str] = None,
         graphql_name: Optional[str] = None,
-        type_annotation: Optional[StrawberryAnnotation] = None,
         origin: Optional[Union[Type, Callable, staticmethod, classmethod]] = None,
         is_subscription: bool = False,
         description: Optional[str] = None,
@@ -69,6 +68,7 @@ class StrawberryField(dataclasses.Field):
         metadata: Optional[Mapping[Any, Any]] = None,
         deprecation_reason: Optional[str] = None,
         directives: Sequence[object] = (),
+        field_type: Optional[Union[Type, StrawberryAnnotation]] = None,
     ):
         # basic fields are fields with no provided resolver
         is_basic_field = not base_resolver
@@ -94,7 +94,7 @@ class StrawberryField(dataclasses.Field):
         if python_name is not None:
             self.python_name = python_name
 
-        self.type_annotation = type_annotation
+        self.field_type = field_type
 
         self.description: Optional[str] = description
         self.origin = origin
@@ -308,7 +308,7 @@ class StrawberryField(dataclasses.Field):
             graphql_name=self.graphql_name,
             # TODO: do we need to wrap this in `StrawberryAnnotation`?
             # see comment related to dataclasses above
-            type_annotation=StrawberryAnnotation(new_type),
+            field_type=StrawberryAnnotation(new_type),
             origin=self.origin,
             is_subscription=self.is_subscription,
             description=self.description,
@@ -350,6 +350,7 @@ def field(
     default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
+    field_type: Optional[Type] = None,
 ) -> T:
     ...
 
@@ -367,6 +368,7 @@ def field(
     default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
+    field_type: Optional[Type] = None,
 ) -> Any:
     ...
 
@@ -384,6 +386,7 @@ def field(
     default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
+    field_type: Optional[Type] = None,
 ) -> StrawberryField:
     ...
 
@@ -400,6 +403,7 @@ def field(
     default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
+    field_type: Optional[Type] = None,
     # This init parameter is used by PyRight to determine whether this field
     # is added in the constructor or not. It is not used to change
     # any behavior at the moment.
@@ -423,7 +427,6 @@ def field(
     field_ = StrawberryField(
         python_name=None,
         graphql_name=name,
-        type_annotation=None,
         description=description,
         is_subscription=is_subscription,
         permission_classes=permission_classes or [],
@@ -432,6 +435,7 @@ def field(
         default_factory=default_factory,
         metadata=metadata,
         directives=directives or (),
+        field_type=field_type,
     )
 
     if resolver:
