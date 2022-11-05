@@ -86,9 +86,7 @@ class CustomGraphQLEnumType(GraphQLEnumType):
     def parse_literal(
         self, value_node: ValueNode, _variables: Optional[Dict[str, Any]] = None
     ) -> Any:
-        parsed_value = super().parse_literal(value_node, _variables)
-
-        return self.wrapped_cls(parsed_value)
+        return super().parse_literal(value_node, _variables)
 
 
 class GraphQLCoreConverter:
