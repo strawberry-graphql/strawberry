@@ -56,6 +56,15 @@ class EnumValueDefinition:
     directives: Iterable[object] = ()
     description: Optional[str] = None
 
+    def __eq__(self, __o: object) -> bool:
+        if isinstance(__o, EnumValueDefinition):
+            return self.value == __o.value
+        else:
+            return self.value == __o
+
+    def __hash__(self) -> int:
+        return hash(self.value)
+
 
 def enum_value(
     value: Any,
@@ -101,6 +110,7 @@ def _process_enum(
             enum_value_description = item_value.description
             deprecation_reason = item_value.deprecation_reason
             item_value = item_value.value
+            item._value_ = item_value
 
         value = EnumValue(
             item_name,
