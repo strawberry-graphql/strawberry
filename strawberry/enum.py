@@ -102,11 +102,10 @@ def _process_enum(
             deprecation_reason = item_value.deprecation_reason
             item_value = item_value.value
 
-            # TODO: this check should always be true, but if it's not we should
-            # raise an error (???)
-
-            if item.name not in cls._value2member_map_:
-                cls._value2member_map_[item_value] = item
+            # update _value2member_map_ so that doing `MyEnum.MY_VALUE` and
+            # `MyEnum['MY_VALUE']` both work
+            cls._value2member_map_[item_value] = item
+            cls._member_map_[item_name].value = item_value
 
         value = EnumValue(
             item_name,
