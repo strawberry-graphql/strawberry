@@ -14,7 +14,7 @@ def test_enum():
         b = "B"
 
     annotation = StrawberryAnnotation(Egnum)
-    field = StrawberryField(graphql_type=annotation)
+    field = StrawberryField(type_annotation=annotation)
 
     # TODO: Remove reference to ._enum_definition with StrawberryEnum
     assert field.type is Egnum._enum_definition
@@ -24,7 +24,7 @@ def test_forward_reference():
     global RefForward
 
     annotation = StrawberryAnnotation("RefForward", namespace=globals())
-    field = StrawberryField(graphql_type=annotation)
+    field = StrawberryField(type_annotation=annotation)
 
     @strawberry.type
     class RefForward:
@@ -37,14 +37,14 @@ def test_forward_reference():
 
 def test_list():
     annotation = StrawberryAnnotation(List[int])
-    field = StrawberryField(graphql_type=annotation)
+    field = StrawberryField(type_annotation=annotation)
 
     assert field.type == List[int]
 
 
 def test_literal():
     annotation = StrawberryAnnotation(bool)
-    field = StrawberryField(graphql_type=annotation)
+    field = StrawberryField(type_annotation=annotation)
 
     assert field.type is bool
 
@@ -55,14 +55,14 @@ def test_object():
         value: str
 
     annotation = StrawberryAnnotation(TypeyType)
-    field = StrawberryField(graphql_type=annotation)
+    field = StrawberryField(type_annotation=annotation)
 
     assert field.type is TypeyType
 
 
 def test_optional():
     annotation = StrawberryAnnotation(Optional[float])
-    field = StrawberryField(graphql_type=annotation)
+    field = StrawberryField(type_annotation=annotation)
 
     assert field.type == Optional[float]
 
@@ -71,7 +71,7 @@ def test_type_var():
     T = TypeVar("T")
 
     annotation = StrawberryAnnotation(T)
-    field = StrawberryField(graphql_type=annotation)
+    field = StrawberryField(type_annotation=annotation)
 
     assert field.type == T
 
@@ -90,6 +90,6 @@ def test_union():
         type_annotations=(StrawberryAnnotation(Un), StrawberryAnnotation(Ion)),
     )
     annotation = StrawberryAnnotation(union)
-    field = StrawberryField(graphql_type=annotation)
+    field = StrawberryField(type_annotation=annotation)
 
     assert field.type is union

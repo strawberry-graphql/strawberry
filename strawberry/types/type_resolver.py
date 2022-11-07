@@ -133,7 +133,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
             if is_private(field.type):
                 continue
 
-            graphql_type = field.type
+            field_type = field.type
 
             origin = origins.get(field.name, cls)
             module = sys.modules[origin.__module__]
@@ -142,8 +142,8 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
             field = StrawberryField(
                 python_name=field.name,
                 graphql_name=None,
-                graphql_type=StrawberryAnnotation(
-                    annotation=graphql_type,
+                type_annotation=StrawberryAnnotation(
+                    annotation=field_type,
                     namespace=module.__dict__,
                 ),
                 origin=origin,

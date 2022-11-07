@@ -68,8 +68,8 @@ def _check_field_annotations(cls: Type):
 
             # If the field has a type override then use that instead of using
             # the class annotations or resolver annotation
-            if field_.graphql_type is not None:
-                cls_annotations[field_name] = field_.graphql_type
+            if field_.type_annotation is not None:
+                cls_annotations[field_name] = field_.type_annotation.annotation
                 continue
 
             # Make sure the cls has an annotation

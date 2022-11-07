@@ -57,7 +57,7 @@ def _build_dataclass_creation_fields(
     auto_fields_set: Set[str],
     use_pydantic_alias: bool,
 ) -> DataclassCreationFields:
-    graphql_type = (
+    field_type = (
         get_type_for_field(field, is_input)
         if field.name in auto_fields_set
         else existing_fields[field.name].type
@@ -77,7 +77,6 @@ def _build_dataclass_creation_fields(
             graphql_name = existing_field.graphql_name
         elif field.has_alias and use_pydantic_alias:
             graphql_name = field.alias
-
         strawberry_field = StrawberryField(
             python_name=field.name,
             graphql_name=graphql_name,
@@ -97,7 +96,7 @@ def _build_dataclass_creation_fields(
 
     return DataclassCreationFields(
         name=field.name,
-        graphql_type=graphql_type,
+        field_type=field_type,
         field=strawberry_field,
     )
 
@@ -183,7 +182,7 @@ def type(
         all_model_fields = [
             DataclassCreationFields(
                 name=field.name,
-                graphql_type=field.type,
+                field_type=field.type,
                 field=field,
             )
             for field in extra_fields + private_fields

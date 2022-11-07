@@ -53,11 +53,13 @@ class StrawberryField(dataclasses.Field):
     python_name: str
     type_annotation: Optional[StrawberryAnnotation]
     default_resolver: Callable[[Any, str], object] = getattr
+    _base_resolver: Optional[StrawberryResolver] = None
 
     def __init__(
         self,
         python_name: Optional[str] = None,
         graphql_name: Optional[str] = None,
+        type_annotation: Optional[StrawberryAnnotation] = None,
         origin: Optional[Union[Type, Callable, staticmethod, classmethod]] = None,
         is_subscription: bool = False,
         description: Optional[str] = None,
@@ -68,7 +70,6 @@ class StrawberryField(dataclasses.Field):
         metadata: Optional[Mapping[Any, Any]] = None,
         deprecation_reason: Optional[str] = None,
         directives: Sequence[object] = (),
-        graphql_type: Optional[Union[Any, StrawberryAnnotation]] = None,
     ):
         # basic fields are fields with no provided resolver
         is_basic_field = not base_resolver
@@ -94,7 +95,7 @@ class StrawberryField(dataclasses.Field):
         if python_name is not None:
             self.python_name = python_name
 
-        self.graphql_type = graphql_type
+        self.type_annotation = type_annotation
 
         self.description: Optional[str] = description
         self.origin = origin
@@ -308,7 +309,7 @@ class StrawberryField(dataclasses.Field):
             graphql_name=self.graphql_name,
             # TODO: do we need to wrap this in `StrawberryAnnotation`?
             # see comment related to dataclasses above
-            graphql_type=StrawberryAnnotation(new_type),
+            type_annotation=StrawberryAnnotation(new_type),
             origin=self.origin,
             is_subscription=self.is_subscription,
             description=self.description,
@@ -424,9 +425,14 @@ def field(
     it can be used both as decorator and as a normal function.
     """
 
+    type_annotation = None
+    if graphql_type is not None:
+        type_annotation = StrawberryAnnotation(graphql_type)
+
     field_ = StrawberryField(
         python_name=None,
         graphql_name=name,
+        type_annotation=type_annotation,
         description=description,
         is_subscription=is_subscription,
         permission_classes=permission_classes or [],
@@ -435,7 +441,6 @@ def field(
         default_factory=default_factory,
         metadata=metadata,
         directives=directives or (),
-        graphql_type=graphql_type,
     )
 
     if resolver:
