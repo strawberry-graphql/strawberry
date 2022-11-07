@@ -48,3 +48,71 @@ class Mutation:
 
         return LoginSuccess(user=User(username=username))
 ```
+
+
+### Access authenticated user in resolver
+
+Its fairly common to require user information within a resolver. We can do that in a type safe way with a custom context dataclass.
+
+For example, in fastapi this might look like this:
+
+
+```python
+from functools import cached_property
+from typing import cast
+
+import strawberry
+from fastapi import FastAPI, Request
+from strawberry.fastapi import BaseContext, GraphQLRouter
+from strawberry.types import Info as _Info
+from strawberry.types.info import RootValueType
+
+
+class User:
+    pass
+
+
+class ProgrammingError(Exception):
+    pass
+
+
+class Context(BaseContext):
+    @property
+    def _request(self) -> Request:
+        if not self.request:
+            raise NotImplementedError()
+
+        return cast(Request, self.request)
+
+    @cached_property
+    def user(self) -> User:
+        authorization = self._request.headers.get("Authorization")
+        return authorization_service.authorize(authorization)
+
+
+Info = _Info[Context, RootValueType]
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def get_authenticated_user(self, info: Info, id: strawberry.ID) -> User:
+        return info.context.user
+
+
+async def get_context() -> Context:
+    return Context()
+
+
+schema = strawberry.Schema(Query)
+
+
+graphql_app = GraphQLRouter(
+    schema,
+    context_getter=get_context,
+)
+
+app = FastAPI()
+app.include_router(graphql_app, prefix="/graphql")
+
+```
