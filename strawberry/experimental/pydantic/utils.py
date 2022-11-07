@@ -52,12 +52,12 @@ class DataclassCreationFields(NamedTuple):
     """Fields required for the fields parameter of make_dataclass"""
 
     name: str
-    type_annotation: Type
+    field_type: Type
     field: dataclasses.Field
 
     def to_tuple(self) -> Tuple[str, Type, dataclasses.Field]:
         # fields parameter wants (name, type, Field)
-        return self.name, self.type_annotation, self.field
+        return self.name, self.field_type, self.field
 
 
 def get_default_factory_for_field(

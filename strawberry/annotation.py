@@ -71,6 +71,10 @@ class StrawberryAnnotation:
     def parse_annotated(annotation: object) -> object:
         from strawberry.auto import StrawberryAuto
 
+        # If the annotation is a private field return it straight away
+        if is_private(annotation):
+            return annotation
+
         annotation_origin = get_origin(annotation)
 
         if annotation_origin is Annotated:
