@@ -86,7 +86,7 @@ Info = _Info[Context, RootValueType]
 @strawberry.type
 class Query:
     @strawberry.field
-    def get_authenticated_user(self, info: Info, id: strawberry.ID) -> User | None:
+    def get_authenticated_user(self, info: Info) -> User | None:
         return info.context.user
 
 
