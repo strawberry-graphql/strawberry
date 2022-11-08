@@ -72,10 +72,6 @@ class User:
     ... # This is just a stub for an actual user object
 
 
-class ProgrammingError(Exception):
-    pass
-
-
 class Context(BaseContext):
     @property
     def _request(self) -> Request:
