@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.140.1 - 2022-11-08
+--------------------
+
+This release adds logging back for parsing and validation errors that was
+accidentally removed in v0.135.0.
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) via [PR #2323](https://github.com/strawberry-graphql/strawberry/pull/2323/)
+
+
 0.140.0 - 2022-11-07
 --------------------
 
