@@ -53,7 +53,7 @@ using `TYPE_CHECKING` to tell type checkers where to look for the type.
 `Annotated` is only available in Python 3.9+, if you are using an older version
 of Python you can use `typing_extensions.Annotated` instead.
 
-```Python
+```python
 # users.py
 from typing import TYPE_CHECKING, List
 from typing_extensions import Annotated
