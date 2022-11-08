@@ -1,6 +1,33 @@
 CHANGELOG
 =========
 
+0.140.2 - 2022-11-08
+--------------------
+
+This release fixes an issue that prevented using enums that
+were using strawberry.enum_value, like the following example:
+
+```python
+from enum import Enum
+import strawberry
+
+@strawberry.enum
+class TestEnum(Enum):
+    A = strawberry.enum_value("A")
+    B = "B"
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def receive_enum(self, test: TestEnum) -> int:
+        return 0
+
+schema = strawberry.Schema(query=Query)
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2306](https://github.com/strawberry-graphql/strawberry/pull/2306/)
+
+
 0.140.1 - 2022-11-08
 --------------------
 
