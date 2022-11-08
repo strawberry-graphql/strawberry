@@ -77,7 +77,7 @@ class Context(BaseContext):
         if not self.request:
             return None
 
-        authorization = self._request.headers.get("Authorization", None)
+        authorization = self.request.headers.get("Authorization", None)
         return authorization_service.authorize(authorization)
 
 
