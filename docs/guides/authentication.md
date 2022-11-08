@@ -53,7 +53,7 @@ class Mutation:
 
 Its fairly common to require user information within a resolver. We can do that in a type safe way with a custom context dataclass.
 
-For example, in fastapi this might look like this:
+For example, in FastAPI this might look like this:
 
 ```python
 from functools import cached_property
