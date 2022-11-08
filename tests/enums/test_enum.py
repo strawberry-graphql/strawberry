@@ -116,3 +116,19 @@ def test_can_describe_enum_values():
     assert definition.values[2].name == "CHOCOLATE"
     assert definition.values[2].value == "chocolate"
     assert definition.values[2].description is None
+
+
+def test_can_use_enum_values():
+    @strawberry.enum
+    class TestEnum(Enum):
+        A = "A"
+        B = strawberry.enum_value("B")
+        C = strawberry.enum_value("Coconut", deprecation_reason="We ran out")
+
+    assert TestEnum.B.value == "B"
+
+    assert [x.value for x in TestEnum.__members__.values()] == [
+        "A",
+        "B",
+        "Coconut",
+    ]
