@@ -105,7 +105,7 @@ def _process_enum(
             # update _value2member_map_ so that doing `MyEnum.MY_VALUE` and
             # `MyEnum['MY_VALUE']` both work
             cls._value2member_map_[item_value] = item
-            cls._member_map_[item_name].value = item_value
+            cls._member_map_[item_name]._value_ = item_value
 
         value = EnumValue(
             item_name,
