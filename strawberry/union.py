@@ -120,7 +120,7 @@ class StrawberryUnion(StrawberryType):
             new_type: Union[StrawberryType, type]
 
             if hasattr(type_, "_type_definition"):
-                type_definition: TypeDefinition = type_._type_definition  # type: ignore
+                type_definition: TypeDefinition = type_._type_definition
 
                 if type_definition.is_generic:
                     new_type = type_definition.copy_with(type_var_map)
@@ -213,7 +213,7 @@ def union(
     name: str,
     types: Collection[Types],
     *,
-    description: str = None,
+    description: Optional[str] = None,
     directives: Iterable[object] = (),
 ) -> Union[Types]:
     """Creates a new named Union type.
