@@ -55,7 +55,6 @@ Its fairly common to require user information within a resolver. We can do that 
 
 For example, in FastAPI this might look like this:
 
-
 ```python
 from functools import cached_property
 from typing import cast
