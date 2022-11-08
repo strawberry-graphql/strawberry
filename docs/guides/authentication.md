@@ -72,16 +72,12 @@ class User:
 
 
 class Context(BaseContext):
-    @property
-    def _request(self) -> Request:
-        if not self.request:
-            raise NotImplementedError()
-
-        return cast(Request, self.request)
-
     @cached_property
-    def user(self) -> User:
-        authorization = self._request.headers.get("Authorization")
+    def user(self) -> User | None:
+        if not self.request:
+            return None
+
+        authorization = self._request.headers.get("Authorization", None)
         return authorization_service.authorize(authorization)
 
 
