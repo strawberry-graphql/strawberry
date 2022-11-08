@@ -1533,7 +1533,7 @@ python-versions = "*"
 
 [[package]]
 name = "types-requests"
-version = "2.28.11.2"
+version = "2.28.11.3"
 description = "Typing stubs for requests"
 category = "dev"
 optional = false
@@ -2927,8 +2927,8 @@ types-python-dateutil = [
     {file = "types_python_dateutil-2.8.19.2-py3-none-any.whl", hash = "sha256:3f4dbe465e7e0c6581db11fd7a4855d1355b78712b3f292bd399cd332247e9c0"},
 ]
 types-requests = [
-    {file = "types-requests-2.28.11.2.tar.gz", hash = "sha256:fdcd7bd148139fb8eef72cf4a41ac7273872cad9e6ada14b11ff5dfdeee60ed3"},
-    {file = "types_requests-2.28.11.2-py3-none-any.whl", hash = "sha256:14941f8023a80b16441b3b46caffcbfce5265fd14555844d6029697824b5a2ef"},
+    {file = "types-requests-2.28.11.3.tar.gz", hash = "sha256:be9007affb17f0a09bb48e77db18bb6e0be9f82609c78f1dae6db30259d721d6"},
+    {file = "types_requests-2.28.11.3-py3-none-any.whl", hash = "sha256:b39c23011f389ce842e7d025b8386854fefdaa2f8ce628d7a8f1ea486f158acf"},
 ]
 types-toml = [
     {file = "types-toml-0.10.8.tar.gz", hash = "sha256:b7e7ea572308b1030dc86c3ba825c5210814c2825612ec679eb7814f8dd9295a"},
