@@ -57,10 +57,9 @@ For example, in FastAPI this might look like this:
 
 ```python
 from functools import cached_property
-from typing import cast
 
 import strawberry
-from fastapi import FastAPI, Request
+from fastapi import FastAPI
 from strawberry.fastapi import BaseContext, GraphQLRouter
 from strawberry.types import Info as _Info
 from strawberry.types.info import RootValueType
@@ -87,7 +86,7 @@ Info = _Info[Context, RootValueType]
 @strawberry.type
 class Query:
     @strawberry.field
-    def get_authenticated_user(self, info: Info, id: strawberry.ID) -> User:
+    def get_authenticated_user(self, info: Info, id: strawberry.ID) -> User | None:
         return info.context.user
 
 
