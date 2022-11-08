@@ -283,7 +283,7 @@ class StrawberryField(dataclasses.Field):
         # TODO: Remove with creation of StrawberryObject. Will act same as other
         #       StrawberryTypes
         if hasattr(self.type, "_type_definition"):
-            type_definition: TypeDefinition = self.type._type_definition  # type: ignore
+            type_definition: TypeDefinition = self.type._type_definition
 
             if type_definition.is_generic:
                 type_ = type_definition

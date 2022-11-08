@@ -251,7 +251,7 @@ def type(
         cls._pydantic_type = model
 
         def from_pydantic_default(
-            instance: PydanticModel, extra: Dict[str, Any] = None
+            instance: PydanticModel, extra: Optional[Dict[str, Any]] = None
         ) -> StrawberryTypeFromPydantic[PydanticModel]:
             return convert_pydantic_model_to_strawberry_class(
                 cls=cls, model_instance=instance, extra=extra

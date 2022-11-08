@@ -50,7 +50,7 @@ def field_type_to_type(type_):
 def error_type(
     model: Type[BaseModel],
     *,
-    fields: List[str] = None,
+    fields: Optional[List[str]] = None,
     name: Optional[str] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),

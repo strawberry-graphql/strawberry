@@ -159,11 +159,11 @@ def convert_argument(
         return convert_argument(value, type_.resolve_type(), scalar_registry, config)
 
     if hasattr(type_, "_enum_definition"):
-        enum_definition: EnumDefinition = type_._enum_definition  # type: ignore
+        enum_definition: EnumDefinition = type_._enum_definition
         return convert_argument(value, enum_definition, scalar_registry, config)
 
     if hasattr(type_, "_type_definition"):  # TODO: Replace with StrawberryInputObject
-        type_definition: TypeDefinition = type_._type_definition  # type: ignore
+        type_definition: TypeDefinition = type_._type_definition
 
         assert type_definition.is_input
 

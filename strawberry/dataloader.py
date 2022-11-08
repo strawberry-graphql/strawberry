@@ -57,7 +57,7 @@ class DataLoader(Generic[K, T]):
         load_fn: Callable[[List[K]], Awaitable[Sequence[Union[T, BaseException]]]],
         max_batch_size: Optional[int] = None,
         cache: bool = True,
-        loop: AbstractEventLoop = None,
+        loop: Optional[AbstractEventLoop] = None,
     ) -> None:
         ...
 
@@ -68,7 +68,7 @@ class DataLoader(Generic[K, T]):
         load_fn: Callable[[List[K]], Awaitable[List[Any]]],
         max_batch_size: Optional[int] = None,
         cache: bool = True,
-        loop: AbstractEventLoop = None,
+        loop: Optional[AbstractEventLoop] = None,
     ) -> None:
         ...
 
@@ -77,7 +77,7 @@ class DataLoader(Generic[K, T]):
         load_fn: Callable[[List[K]], Awaitable[Sequence[Union[T, BaseException]]]],
         max_batch_size: Optional[int] = None,
         cache: bool = True,
-        loop: AbstractEventLoop = None,
+        loop: Optional[AbstractEventLoop] = None,
     ):
         self.load_fn = load_fn
         self.max_batch_size = max_batch_size

@@ -355,7 +355,7 @@ class QueryCodegen:
             )
 
         if hasattr(strawberry_type, "_type_definition"):
-            strawberry_type = strawberry_type._type_definition  # type: ignore[union-attr]  # noqa: E501
+            strawberry_type = strawberry_type._type_definition
 
         if isinstance(strawberry_type, TypeDefinition):
             type_ = GraphQLObjectType(
