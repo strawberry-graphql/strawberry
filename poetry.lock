@@ -1551,7 +1551,7 @@ python-versions = "*"
 
 [[package]]
 name = "types-typed-ast"
-version = "1.5.8.1"
+version = "1.5.8.2"
 description = "Typing stubs for typed-ast"
 category = "dev"
 optional = false
@@ -2928,8 +2928,8 @@ types-toml = [
     {file = "types_toml-0.10.8-py3-none-any.whl", hash = "sha256:8300fd093e5829eb9c1fba69cee38130347d4b74ddf32d0a7df650ae55c2b599"},
 ]
 types-typed-ast = [
-    {file = "types-typed-ast-1.5.8.1.tar.gz", hash = "sha256:f64c15ec04c0911819ac4c0fd0052795132001fbf5ea23d1d7e4fead7de49bfc"},
-    {file = "types_typed_ast-1.5.8.1-py3-none-any.whl", hash = "sha256:5178b31c345734a6fe43764a71273b22637aa8c41c62ed5aadfd09960cbb5fd3"},
+    {file = "types-typed-ast-1.5.8.2.tar.gz", hash = "sha256:fb667cd9d99924a67b1f844ffef348b2bc9556101e7550a77906a826a219288f"},
+    {file = "types_typed_ast-1.5.8.2-py3-none-any.whl", hash = "sha256:25752053b6b9d75246aadd4e8cda82801bcfa8201fb03b330f59deb982dc91fa"},
 ]
 types-ujson = [
     {file = "types-ujson-5.5.0.tar.gz", hash = "sha256:74bc0ec76e3caf3682625703aad4aa9999327517e39afae67bb5aa3100a39bb8"},
