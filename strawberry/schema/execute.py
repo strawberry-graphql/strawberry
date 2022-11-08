@@ -86,6 +86,7 @@ async def execute(
 
             except GraphQLError as error:
                 execution_context.errors = [error]
+                process_errors([error], execution_context)
                 return ExecutionResult(
                     data=None,
                     errors=[error],
@@ -96,6 +97,8 @@ async def execute(
                 error = GraphQLError(str(error), original_error=error)
 
                 execution_context.errors = [error]
+                process_errors([error], execution_context)
+
                 return ExecutionResult(
                     data=None,
                     errors=[error],
@@ -108,6 +111,7 @@ async def execute(
         async with extensions_runner.validation():
             _run_validation(execution_context)
             if execution_context.errors:
+                process_errors(execution_context.errors, execution_context)
                 return ExecutionResult(data=None, errors=execution_context.errors)
 
         async with extensions_runner.executing():
@@ -172,6 +176,7 @@ def execute_sync(
 
             except GraphQLError as error:
                 execution_context.errors = [error]
+                process_errors([error], execution_context)
                 return ExecutionResult(
                     data=None,
                     errors=[error],
@@ -182,6 +187,7 @@ def execute_sync(
                 error = GraphQLError(str(error), original_error=error)
 
                 execution_context.errors = [error]
+                process_errors([error], execution_context)
                 return ExecutionResult(
                     data=None,
                     errors=[error],
@@ -194,6 +200,7 @@ def execute_sync(
         with extensions_runner.validation():
             _run_validation(execution_context)
             if execution_context.errors:
+                process_errors(execution_context.errors, execution_context)
                 return ExecutionResult(data=None, errors=execution_context.errors)
 
         with extensions_runner.executing():
