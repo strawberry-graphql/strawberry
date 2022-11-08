@@ -55,6 +55,7 @@ Its fairly common to require user information within a resolver. We can do that 
 
 For example, in FastAPI this might look like this:
 
+
 ```python
 from functools import cached_property
 from typing import cast
@@ -66,8 +67,9 @@ from strawberry.types import Info as _Info
 from strawberry.types.info import RootValueType
 
 
+@strawberry.type
 class User:
-    pass
+    ... # This is just a stub for an actual user object
 
 
 class ProgrammingError(Exception):
