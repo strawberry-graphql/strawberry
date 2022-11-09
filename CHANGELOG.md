@@ -1,6 +1,124 @@
 CHANGELOG
 =========
 
+0.140.2 - 2022-11-08
+--------------------
+
+This release fixes an issue that prevented using enums that
+were using strawberry.enum_value, like the following example:
+
+```python
+from enum import Enum
+import strawberry
+
+@strawberry.enum
+class TestEnum(Enum):
+    A = strawberry.enum_value("A")
+    B = "B"
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def receive_enum(self, test: TestEnum) -> int:
+        return 0
+
+schema = strawberry.Schema(query=Query)
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2306](https://github.com/strawberry-graphql/strawberry/pull/2306/)
+
+
+0.140.1 - 2022-11-08
+--------------------
+
+This release adds logging back for parsing and validation errors that was
+accidentally removed in v0.135.0.
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) via [PR #2323](https://github.com/strawberry-graphql/strawberry/pull/2323/)
+
+
+0.140.0 - 2022-11-07
+--------------------
+
+This release allows to disable operation logging when running the debug server.
+
+```
+strawberry server demo --log-operations False
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2310](https://github.com/strawberry-graphql/strawberry/pull/2310/)
+
+
+0.139.0 - 2022-11-04
+--------------------
+
+This release changes the type resolution priority to prefer the field annotation over the resolver return type.
+
+```python
+def my_resolver() -> str:
+    return "1.33"
+
+@strawberry.type
+class Query:
+    a: float = strawberry.field(resolver=my_resolver)
+
+schema = strawberry.Schema(Query)
+
+# Before:
+str(schema) == """
+type Query {
+  a: String!
+}
+"""
+
+# After:
+str(schema) == """
+type Query {
+  a: Float!
+}
+"""
+```
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) via [PR #2312](https://github.com/strawberry-graphql/strawberry/pull/2312/)
+
+
+0.138.2 - 2022-11-04
+--------------------
+
+Fix Pydantic integration for Python 3.10.0 (which was missing the `kw_only`
+parameter for `dataclasses.make_dataclass()`).
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) via [PR #2309](https://github.com/strawberry-graphql/strawberry/pull/2309/)
+
+
+0.138.1 - 2022-10-31
+--------------------
+
+This release changes an internal implementation for FastAPI's
+GraphQL router. This should reduce overhead when using the context,
+and it shouldn't affect your code.
+
+Contributed by [Kristján Valur Jónsson](https://github.com/kristjanvalur) via [PR #2278](https://github.com/strawberry-graphql/strawberry/pull/2278/)
+
+
+0.138.0 - 2022-10-31
+--------------------
+
+This release adds support for generic in arguments, see the following example:
+
+```python
+T = TypeVar('T')
+
+@strawberry.type
+class Node(Generic[T]):
+   @strawberry.field
+   def data(self, arg: T) -> T:  # `arg` is also generic
+       return arg
+```
+
+Contributed by [A. Coady](https://github.com/coady) via [PR #2293](https://github.com/strawberry-graphql/strawberry/pull/2293/)
+
+
 0.137.1 - 2022-10-24
 --------------------
 
