@@ -72,7 +72,7 @@ class TypeDefinition(StrawberryType):
             # TODO: Logic unnecessary with StrawberryObject
             field_type = field.type
             if hasattr(field_type, "_type_definition"):
-                field_type = field_type._type_definition  # type: ignore
+                field_type = field_type._type_definition
 
             # TODO: All types should end up being StrawberryTypes
             #       The first check is here as a symptom of strawberry.ID being a

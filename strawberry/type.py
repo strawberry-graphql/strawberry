@@ -83,9 +83,7 @@ class StrawberryContainer(StrawberryType):
 
         # TODO: Obsolete with StrawberryObject
         if hasattr(self.of_type, "_type_definition"):
-            type_definition: TypeDefinition = (
-                self.of_type._type_definition  # type: ignore
-            )
+            type_definition: TypeDefinition = self.of_type._type_definition
 
             if type_definition.is_generic:
                 of_type_copy = type_definition.copy_with(type_var_map)
@@ -102,7 +100,7 @@ class StrawberryContainer(StrawberryType):
         # TODO: Obsolete with StrawberryObject
         type_ = self.of_type
         if hasattr(self.of_type, "_type_definition"):
-            type_ = self.of_type._type_definition  # type: ignore
+            type_ = self.of_type._type_definition
 
         if isinstance(type_, StrawberryType):
             return type_.is_generic

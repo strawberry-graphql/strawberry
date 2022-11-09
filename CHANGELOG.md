@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.140.3 - 2022-11-09
+--------------------
+
+[Internal] Update StrawberryField so that `type_annotation` is always an instance of StrawberryAnnotation.
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) via [PR #2319](https://github.com/strawberry-graphql/strawberry/pull/2319/)
+
+
 0.140.2 - 2022-11-08
 --------------------
 

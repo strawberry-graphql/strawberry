@@ -40,6 +40,7 @@ from strawberry.utils.typing import is_generic, is_list, is_type_var, is_union
 
 
 if TYPE_CHECKING:
+    from strawberry.field import StrawberryField
     from strawberry.union import StrawberryUnion
 
 
@@ -68,8 +69,22 @@ class StrawberryAnnotation:
         return self.resolve() == other.resolve()
 
     @staticmethod
+    def from_annotation(
+        annotation: object, namespace: Optional[Dict] = None
+    ) -> Optional["StrawberryAnnotation"]:
+        if annotation is None:
+            return None
+
+        if not isinstance(annotation, StrawberryAnnotation):
+            return StrawberryAnnotation(annotation, namespace=namespace)
+        return annotation
+
+    @staticmethod
     def parse_annotated(annotation: object) -> object:
         from strawberry.auto import StrawberryAuto
+
+        if is_private(annotation):
+            return annotation
 
         annotation_origin = get_origin(annotation)
 
@@ -148,6 +163,10 @@ class StrawberryAnnotation:
         # TODO: Raise exception now, or later?
         # ... raise NotImplementedError(f"Unknown type {evaled_type}")
         return evaled_type
+
+    def set_namespace_from_field(self, field: "StrawberryField"):
+        module = sys.modules[field.origin.__module__]
+        self.namespace = module.__dict__
 
     def create_concrete_type(self, evaled_type: type) -> type:
         if _is_object_type(evaled_type):

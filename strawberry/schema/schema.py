@@ -156,7 +156,7 @@ class Schema(BaseSchema):
         return extensions
 
     @lru_cache()
-    def get_type_by_name(  # type: ignore  # lru_cache makes mypy complain
+    def get_type_by_name(
         self, name: str
     ) -> Optional[
         Union[TypeDefinition, ScalarDefinition, EnumDefinition, StrawberryUnion]
