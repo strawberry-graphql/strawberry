@@ -165,7 +165,7 @@ def convert_argument(
     if hasattr(type_, "_type_definition"):  # TODO: Replace with StrawberryInputObject
         type_definition: TypeDefinition = type_._type_definition
 
-        assert type_definition.is_input
+        # assert type_definition.is_input
 
         kwargs = {}
 

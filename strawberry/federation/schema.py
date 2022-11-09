@@ -156,15 +156,34 @@ class Schema(BaseSchema):
             type_ = self.schema_converter.type_map[type_name]
 
             definition = cast(TypeDefinition, type_.definition)
-            resolve_reference = definition.origin.resolve_reference
 
-            func_args = get_func_args(resolve_reference)
-            kwargs = representation
+            if hasattr(definition.origin, "resolve_reference"):
 
-            if "info" in func_args:
-                kwargs["info"] = info
+                resolve_reference = definition.origin.resolve_reference
 
-            results.append(resolve_reference(**kwargs))
+                func_args = get_func_args(resolve_reference)
+                kwargs = representation
+
+                # TODO: use the same logic we use for other resolvers
+                if "info" in func_args:
+                    kwargs["info"] = info
+
+                result = resolve_reference(**kwargs)
+            else:
+                from strawberry.arguments import convert_argument
+
+                strawberry_schema = info.schema.extensions["strawberry-definition"]
+                config = strawberry_schema.config
+                scalar_registry = strawberry_schema.schema_converter.scalar_registry
+
+                result = convert_argument(
+                    representation,
+                    type_=definition.origin,
+                    scalar_registry=scalar_registry,
+                    config=config,
+                )
+
+            results.append(result)
 
         return results
 
