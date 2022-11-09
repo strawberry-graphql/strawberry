@@ -257,17 +257,13 @@ class StrawberryField(dataclasses.Field):
 
     @type.setter
     def type(self, type_: Any) -> None:
-        if type_ is None:
-            return
-
-        if isinstance(type_, StrawberryAnnotation):
-            self.type_annotation = type_
-        else:
-            # Note: we aren't setting a namespace here for the annotation. That
-            # happens in the `_get_fields` function in `types/type_resolver` so
-            # that we have access to the correct namespace for the object type
-            # the field is attached to.
-            self.type_annotation = StrawberryAnnotation(type_)
+        # Note: we aren't setting a namespace here for the annotation. That
+        # happens in the `_get_fields` function in `types/type_resolver` so
+        # that we have access to the correct namespace for the object type
+        # the field is attached to.
+        self.type_annotation = StrawberryAnnotation.from_annotation(
+            type_, namespace=None
+        )
 
     # TODO: add this to arguments (and/or move it to StrawberryType)
     @property

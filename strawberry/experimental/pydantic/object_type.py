@@ -78,19 +78,13 @@ def _build_dataclass_creation_fields(
         elif field.has_alias and use_pydantic_alias:
             graphql_name = field.alias
 
-        type_annotation: Optional[StrawberryAnnotation] = None
-        if not isinstance(field_type, StrawberryAnnotation):
-            type_annotation = StrawberryAnnotation(field_type)
-        else:
-            type_annotation = field_type
-
         strawberry_field = StrawberryField(
             python_name=field.name,
             graphql_name=graphql_name,
             # always unset because we use default_factory instead
             default=dataclasses.MISSING,
             default_factory=get_default_factory_for_field(field),
-            type_annotation=type_annotation,
+            type_annotation=StrawberryAnnotation.from_annotation(field_type),
             description=field.field_info.description,
             deprecation_reason=(
                 existing_field.deprecation_reason if existing_field else None

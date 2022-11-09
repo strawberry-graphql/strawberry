@@ -125,8 +125,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
             if isinstance(field.type_annotation, StrawberryAnnotation):
                 type_annotation = field.type_annotation
                 if type_annotation.namespace is None:
-                    module = sys.modules[field.origin.__module__]
-                    type_annotation.namespace = module.__dict__
+                    type_annotation.set_namespace_from_field(field)
 
         # Create a StrawberryField for fields that didn't use strawberry.field
         else:
