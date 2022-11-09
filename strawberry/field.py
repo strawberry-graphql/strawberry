@@ -53,7 +53,6 @@ class StrawberryField(dataclasses.Field):
     python_name: str
     type_annotation: Optional[StrawberryAnnotation]
     default_resolver: Callable[[Any, str], object] = getattr
-    _base_resolver: Optional[StrawberryResolver] = None
 
     def __init__(
         self,
