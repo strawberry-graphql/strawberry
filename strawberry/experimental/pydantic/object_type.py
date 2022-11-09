@@ -20,6 +20,7 @@ from pydantic.fields import ModelField
 
 from graphql import GraphQLResolveInfo
 
+from strawberry.annotation import StrawberryAnnotation
 from strawberry.auto import StrawberryAuto
 from strawberry.experimental.pydantic.conversion import (
     convert_pydantic_model_to_strawberry_class,
@@ -56,7 +57,7 @@ def _build_dataclass_creation_fields(
     auto_fields_set: Set[str],
     use_pydantic_alias: bool,
 ) -> DataclassCreationFields:
-    type_annotation = (
+    field_type = (
         get_type_for_field(field, is_input)
         if field.name in auto_fields_set
         else existing_fields[field.name].type
@@ -76,13 +77,14 @@ def _build_dataclass_creation_fields(
             graphql_name = existing_field.graphql_name
         elif field.has_alias and use_pydantic_alias:
             graphql_name = field.alias
+
         strawberry_field = StrawberryField(
             python_name=field.name,
             graphql_name=graphql_name,
             # always unset because we use default_factory instead
             default=dataclasses.MISSING,
             default_factory=get_default_factory_for_field(field),
-            type_annotation=type_annotation,
+            type_annotation=StrawberryAnnotation.from_annotation(field_type),
             description=field.field_info.description,
             deprecation_reason=(
                 existing_field.deprecation_reason if existing_field else None
@@ -95,7 +97,7 @@ def _build_dataclass_creation_fields(
 
     return DataclassCreationFields(
         name=field.name,
-        type_annotation=type_annotation,
+        field_type=field_type,
         field=strawberry_field,
     )
 
@@ -181,7 +183,7 @@ def type(
         all_model_fields = [
             DataclassCreationFields(
                 name=field.name,
-                type_annotation=field.type,
+                field_type=field.type,
                 field=field,
             )
             for field in extra_fields + private_fields

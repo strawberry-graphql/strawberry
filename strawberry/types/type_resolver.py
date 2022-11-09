@@ -117,12 +117,15 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
             # the types.
             field.origin = field.origin or cls
 
-            # Make sure types are StrawberryAnnotations
-            if not isinstance(field.type_annotation, StrawberryAnnotation):
-                module = sys.modules[field.origin.__module__]
-                field.type_annotation = StrawberryAnnotation(
-                    annotation=field.type_annotation, namespace=module.__dict__
-                )
+            # Set the correct namespace for annotations if a namespace isn't
+            # already set
+            # Note: We do this here rather in the `Strawberry.type` setter
+            # function because at that point we don't have a link to the object
+            # type that the field as attached to.
+            if isinstance(field.type_annotation, StrawberryAnnotation):
+                type_annotation = field.type_annotation
+                if type_annotation.namespace is None:
+                    type_annotation.set_namespace_from_field(field)
 
         # Create a StrawberryField for fields that didn't use strawberry.field
         else:

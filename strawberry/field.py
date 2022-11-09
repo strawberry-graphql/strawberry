@@ -51,6 +51,7 @@ UNRESOLVED = object()
 
 class StrawberryField(dataclasses.Field):
     python_name: str
+    type_annotation: Optional[StrawberryAnnotation]
     default_resolver: Callable[[Any, str], object] = getattr
 
     def __init__(
@@ -231,10 +232,7 @@ class StrawberryField(dataclasses.Field):
         try:
             # Prioritise the field type over the resolver return type
             if self.type_annotation is not None:
-                if isinstance(self.type_annotation, StrawberryAnnotation):
-                    return self.type_annotation.resolve()
-
-                return self.type_annotation
+                return self.type_annotation.resolve()
 
             if self.base_resolver is not None:
                 # Handle unannotated functions (such as lambdas)
@@ -259,7 +257,13 @@ class StrawberryField(dataclasses.Field):
 
     @type.setter
     def type(self, type_: Any) -> None:
-        self.type_annotation = type_
+        # Note: we aren't setting a namespace here for the annotation. That
+        # happens in the `_get_fields` function in `types/type_resolver` so
+        # that we have access to the correct namespace for the object type
+        # the field is attached to.
+        self.type_annotation = StrawberryAnnotation.from_annotation(
+            type_, namespace=None
+        )
 
     # TODO: add this to arguments (and/or move it to StrawberryType)
     @property
