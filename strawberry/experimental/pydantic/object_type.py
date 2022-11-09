@@ -77,6 +77,7 @@ def _build_dataclass_creation_fields(
             graphql_name = existing_field.graphql_name
         elif field.has_alias and use_pydantic_alias:
             graphql_name = field.alias
+
         strawberry_field = StrawberryField(
             python_name=field.name,
             graphql_name=graphql_name,

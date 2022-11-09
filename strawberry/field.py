@@ -425,9 +425,7 @@ def field(
     it can be used both as decorator and as a normal function.
     """
 
-    type_annotation = None
-    if graphql_type is not None:
-        type_annotation = StrawberryAnnotation(graphql_type)
+    type_annotation = StrawberryAnnotation.from_annotation(graphql_type)
 
     field_ = StrawberryField(
         python_name=None,
