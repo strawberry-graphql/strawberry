@@ -137,3 +137,19 @@ def test_raises_error_when_using_enum_not_decorated():
         flavour: IceCreamFlavour
 
     strawberry.Schema(query=Query)
+
+
+def test_can_use_enum_values():
+    @strawberry.enum
+    class TestEnum(Enum):
+        A = "A"
+        B = strawberry.enum_value("B")
+        C = strawberry.enum_value("Coconut", deprecation_reason="We ran out")
+
+    assert TestEnum.B.value == "B"
+
+    assert [x.value for x in TestEnum.__members__.values()] == [
+        "A",
+        "B",
+        "Coconut",
+    ]
