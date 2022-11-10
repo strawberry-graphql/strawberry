@@ -1,4 +1,4 @@
-Release type: patch
+Release type: minor
 
 This release adds support for an implicit `resolve_reference` method
 on Federation type. This method will automatically create a Strawberry
