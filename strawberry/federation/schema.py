@@ -1,10 +1,12 @@
 from collections import defaultdict
 from copy import copy
+from functools import partial
 from itertools import chain
 from typing import Any, Dict, Iterable, List, Optional, Type, Union, cast
 
 from graphql import (
     ExecutionContext as GraphQLExecutionContext,
+    GraphQLError,
     GraphQLField,
     GraphQLInterfaceType,
     GraphQLList,
@@ -168,7 +170,7 @@ class Schema(BaseSchema):
                 if "info" in func_args:
                     kwargs["info"] = info
 
-                result = resolve_reference(**kwargs)
+                get_result = partial(resolve_reference, **kwargs)
             else:
                 from strawberry.arguments import convert_argument
 
@@ -176,11 +178,20 @@ class Schema(BaseSchema):
                 config = strawberry_schema.config
                 scalar_registry = strawberry_schema.schema_converter.scalar_registry
 
-                result = convert_argument(
+                get_result = partial(
+                    convert_argument,
                     representation,
                     type_=definition.origin,
                     scalar_registry=scalar_registry,
                     config=config,
+                )
+
+            try:
+                result = get_result()
+            except Exception as e:
+                result = GraphQLError(
+                    f"Unable to resolve reference for {definition.origin}",
+                    original_error=e,
                 )
 
             results.append(result)

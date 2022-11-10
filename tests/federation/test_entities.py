@@ -166,3 +166,52 @@ def test_does_not_need_custom_resolve_reference_nested():
     assert result.data == {
         "_entities": [{"upc": "B00005N5PF", "something": {"id": "1"}}]
     }
+
+
+def test_fails_properly_when_wrong_data_is_passed():
+    @strawberry.federation.type(keys=["id"])
+    class Something:
+        id: str
+
+    @strawberry.federation.type(keys=["upc"])
+    class Product:
+        upc: str
+        something: Something
+
+    @strawberry.federation.type(extend=True)
+    class Query:
+        @strawberry.field
+        def top_products(self, first: int) -> typing.List[Product]:
+            return []
+
+    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+
+    query = """
+        query ($representations: [_Any!]!) {
+            _entities(representations: $representations) {
+                ... on Product {
+                    upc
+                    something {
+                        id
+                    }
+                }
+            }
+        }
+    """
+
+    result = schema.execute_sync(
+        query,
+        variable_values={
+            "representations": [
+                {
+                    "__typename": "Product",
+                    "upc": "B00005N5PF",
+                    "not_something": {"id": "1"},
+                }
+            ]
+        },
+    )
+
+    assert result.errors
+
+    assert result.errors[0].message.startswith("Unable to resolve reference for")
