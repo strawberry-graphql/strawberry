@@ -13,7 +13,7 @@ from typing import (  # type: ignore[attr-defined]
     _eval_type,
 )
 
-from typing_extensions import Annotated, get_args, get_origin
+from typing_extensions import Annotated, Self, get_args, get_origin
 
 from strawberry.exceptions import StrawberryException
 from strawberry.private import is_private
@@ -157,7 +157,7 @@ class StrawberryAnnotation:
             return self.create_optional(evaled_type)
         elif self._is_union(evaled_type):
             return self.create_union(evaled_type)
-        elif is_type_var(evaled_type):
+        elif is_type_var(evaled_type) or evaled_type is Self:
             return self.create_type_var(evaled_type)
 
         # TODO: Raise exception now, or later?
