@@ -133,6 +133,8 @@ def convert_argument(
     scalar_registry: Dict[object, Union[ScalarWrapper, ScalarDefinition]],
     config: StrawberryConfig,
 ) -> object:
+    # TODO: move this somewhere else and make it first class
+
     if value is None:
         return None
 
@@ -164,8 +166,6 @@ def convert_argument(
 
     if hasattr(type_, "_type_definition"):  # TODO: Replace with StrawberryInputObject
         type_definition: TypeDefinition = type_._type_definition
-
-        assert type_definition.is_input
 
         kwargs = {}
 

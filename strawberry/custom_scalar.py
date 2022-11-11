@@ -64,7 +64,7 @@ class ScalarDefinition(StrawberryType):
 class ScalarWrapper:
     _scalar_definition: ScalarDefinition
 
-    def __init__(self, wrap):
+    def __init__(self, wrap: Callable[[Any], Any]):
         self.wrap = wrap
 
     def __call__(self, *args, **kwargs):

@@ -4,6 +4,8 @@ from typing import Any, Generic, List, Optional, TypeVar, Union
 
 import pytest
 
+from typing_extensions import Self
+
 import strawberry
 
 
@@ -813,6 +815,48 @@ def test_generic_extending_with_type_var():
     """
 
     assert str(schema) == textwrap.dedent(expected_schema).strip()
+
+
+def test_self():
+    @strawberry.interface
+    class INode:
+        field: Optional[Self]
+        fields: List[Self]
+
+    @strawberry.type
+    class Node(INode):
+        ...
+
+    schema = strawberry.Schema(query=Node)
+
+    expected_schema = """
+    schema {
+      query: Node
+    }
+
+    interface INode {
+      field: INode
+      fields: [INode!]!
+    }
+
+    type Node implements INode {
+      field: Node
+      fields: [Node!]!
+    }
+    """
+
+    assert str(schema) == textwrap.dedent(expected_schema).strip()
+
+    query = """{
+        field {
+            __typename
+        }
+        fields {
+            __typename
+        }
+    }"""
+    result = schema.execute_sync(query, root_value=Node(field=None, fields=[]))
+    assert result.data == {"field": None, "fields": []}
 
 
 def test_supports_generic_input_type():

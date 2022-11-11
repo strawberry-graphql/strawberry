@@ -1,6 +1,6 @@
 import sys
 from dataclasses import dataclass
-from typing import Generic, TypeVar, Union
+from typing import Generic, NewType, TypeVar, Union
 
 import pytest
 
@@ -152,6 +152,19 @@ def test_error_with_scalar_types():
             bool,
         ),
     )
+
+
+@pytest.mark.raises_strawberry_exception(
+    InvalidUnionTypeError, match="Type `CustomScalar` cannot be used in a GraphQL Union"
+)
+def test_error_with_custom_scalar_types():
+    CustomScalar = strawberry.scalar(
+        NewType("CustomScalar", str),
+        serialize=lambda v: str(v),
+        parse_value=lambda v: str(v),
+    )
+
+    strawberry.union("Result", (CustomScalar,))
 
 
 @pytest.mark.raises_strawberry_exception(

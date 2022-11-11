@@ -189,6 +189,22 @@ Finally we also need to let Strawberry know about our Book and Review types.
 Since they are not reachable from the `Query` field itself, Strawberry won't be
 able to find them.
 
+<Note>
+
+If you don't need any custom logic for your resolve_reference, you can omit it
+and Strawberry will automatically instanciate the type for you. For example,
+if we had a `Book` type with only an `id` field, Strawberry would be able to
+instanciate it for us based on the data returned by the gateway.
+
+```python
+@strawberry.federation.type(keys=["id"])
+class Book:
+    id: strawberry.ID
+    reviews: List[Review] = strawberry.field(resolver=get_reviews)
+```
+
+</Note>
+
 ## Let's run our services
 
 Before starting Apollo Router to compose our schemas we need to run the

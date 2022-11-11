@@ -17,9 +17,11 @@ if TYPE_CHECKING:
 class InvalidUnionTypeError(StrawberryException):
     """The union is constructed with an invalid type"""
 
-    invalid_type: Type
+    invalid_type: object
 
-    def __init__(self, union_name: str, invalid_type: Type) -> None:
+    def __init__(self, union_name: str, invalid_type: object) -> None:
+        from strawberry.custom_scalar import ScalarWrapper
+
         self.union_name = union_name
         self.invalid_type = invalid_type
 
@@ -27,7 +29,10 @@ class InvalidUnionTypeError(StrawberryException):
         # one is our code checking for invalid types, the other is the caller
         self.frame = getframeinfo(stack()[2][0])
 
-        type_name = invalid_type.__name__
+        if isinstance(invalid_type, ScalarWrapper):
+            type_name = invalid_type.wrap.__name__
+        else:
+            type_name = invalid_type.__name__  # type: ignore
 
         self.message = f"Type `{type_name}` cannot be used in a GraphQL Union"
         self.rich_message = (
