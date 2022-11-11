@@ -1,6 +1,6 @@
 import sys
 from dataclasses import dataclass
-from typing import Generic, TypeVar, Union
+from typing import Generic, NewType, TypeVar, Union
 
 import pytest
 
@@ -144,6 +144,19 @@ def test_error_with_scalar_types():
         InvalidUnionType, match="Type `int` cannot be used in a GraphQL Union"
     ):
         strawberry.union("Result", (int,))
+
+
+def test_error_with_custom_scalar_types():
+    CustomScalar = strawberry.scalar(
+        NewType("CustomScalar", str),
+        serialize=lambda v: str(v),
+        parse_value=lambda v: str(v),
+    )
+
+    with pytest.raises(
+        InvalidUnionType, match="Type `CustomScalar` cannot be used in a GraphQL Union"
+    ):
+        strawberry.union("Result", (CustomScalar,))
 
 
 def test_error_with_non_strawberry_type():

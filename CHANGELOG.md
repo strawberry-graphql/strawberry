@@ -1,6 +1,65 @@
 CHANGELOG
 =========
 
+0.142.1 - 2022-11-11
+--------------------
+
+This release fixes a bug where using a custom scalar in a union would result
+in an unclear exception. Instead, when using a custom scalar in a union,
+the `InvalidUnionType` exception is raised with a clear message that you
+cannot use that type in a union.
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) via [PR #2336](https://github.com/strawberry-graphql/strawberry/pull/2336/)
+
+
+0.142.0 - 2022-11-11
+--------------------
+
+This release adds support for `typing.Self` and `typing_extensions.Self` for types and interfaces.
+
+```python
+from typing_extensions import Self
+
+@strawberry.type
+class Node:
+    @strawberry.field
+    def field(self) -> Self:
+        return self
+```
+
+Contributed by [A. Coady](https://github.com/coady) via [PR #2295](https://github.com/strawberry-graphql/strawberry/pull/2295/)
+
+
+0.141.0 - 2022-11-10
+--------------------
+
+This release adds support for an implicit `resolve_reference` method
+on Federation type. This method will automatically create a Strawberry
+instance for a federation type based on the input data received, for
+example, the following:
+
+```python
+@strawberry.federation.type(keys=["id"])
+class Something:
+    id: str
+
+@strawberry.federation.type(keys=["upc"])
+class Product:
+    upc: str
+    something: Something
+
+    @staticmethod
+    def resolve_reference(**data):
+        return Product(
+            upc=data["upc"], something=Something(id=data["something_id"])
+        )
+```
+
+doesn't need the resolve_reference method anymore.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2332](https://github.com/strawberry-graphql/strawberry/pull/2332/)
+
+
 0.140.3 - 2022-11-09
 --------------------
 
