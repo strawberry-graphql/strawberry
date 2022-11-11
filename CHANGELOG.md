@@ -1,6 +1,24 @@
 CHANGELOG
 =========
 
+0.142.0 - 2022-11-11
+--------------------
+
+This release adds support for `typing.Self` and `typing_extensions.Self` for types and interfaces.
+
+```python
+from typing_extensions import Self
+
+@strawberry.type
+class Node:
+    @strawberry.field
+    def field(self) -> Self:
+        return self
+```
+
+Contributed by [A. Coady](https://github.com/coady) via [PR #2295](https://github.com/strawberry-graphql/strawberry/pull/2295/)
+
+
 0.141.0 - 2022-11-10
 --------------------
 
