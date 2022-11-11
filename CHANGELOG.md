@@ -1,6 +1,17 @@
 CHANGELOG
 =========
 
+0.142.1 - 2022-11-11
+--------------------
+
+This release fixes a bug where using a custom scalar in a union would result
+in an unclear exception. Instead, when using a custom scalar in a union,
+the `InvalidUnionType` exception is raised with a clear message that you
+cannot use that type in a union.
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) via [PR #2336](https://github.com/strawberry-graphql/strawberry/pull/2336/)
+
+
 0.142.0 - 2022-11-11
 --------------------
 
