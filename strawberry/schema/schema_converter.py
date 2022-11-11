@@ -227,12 +227,23 @@ class GraphQLCoreConverter:
             argument_name = self.config.name_converter.from_argument(argument)
             graphql_arguments[argument_name] = self.from_argument(argument)
 
+        description = field.description
+        if field.permission_classes and self.config.permissions_description:
+            description = (description or "") + "\n\n"
+            description += "Required permissions:\n"
+            for permission in field.permission_classes:
+                description += f" - *{permission.__name__}*"
+                if permission.message:
+                    description += f": {permission.message}"
+                description += "\n"
+            description = description.strip()
+
         return GraphQLField(
             type_=field_type,
             args=graphql_arguments,
             resolve=resolver,
             subscribe=subscribe,
-            description=field.description,
+            description=description,
             deprecation_reason=field.deprecation_reason,
             extensions={
                 GraphQLCoreConverter.DEFINITION_BACKREF: field,
