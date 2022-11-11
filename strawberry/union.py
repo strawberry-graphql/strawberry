@@ -26,6 +26,7 @@ from graphql import (
 )
 
 from strawberry.annotation import StrawberryAnnotation
+from strawberry.custom_scalar import ScalarWrapper
 from strawberry.exceptions import (
     InvalidUnionType,
     UnallowedReturnTypeForUnion,
@@ -233,8 +234,12 @@ def union(
 
     for _type in types:
         if not isinstance(_type, TypeVar) and not hasattr(_type, "_type_definition"):
+            if isinstance(_type, ScalarWrapper):
+                type_name = _type.wrap.__name__
+            else:
+                type_name = _type.__name__
             raise InvalidUnionType(
-                f"Type `{_type.__name__}` cannot be used in a GraphQL Union"
+                f"Type `{type_name}` cannot be used in a GraphQL Union"
             )
 
     union_definition = StrawberryUnion(
