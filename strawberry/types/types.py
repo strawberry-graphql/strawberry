@@ -14,6 +14,8 @@ from typing import (
     Union,
 )
 
+from typing_extensions import Self
+
 from strawberry.type import StrawberryType, StrawberryTypeVar
 from strawberry.utils.typing import is_generic as is_type_generic
 
@@ -43,6 +45,12 @@ class TypeDefinition(StrawberryType):
     type_var_map: Mapping[TypeVar, Union[StrawberryType, type]] = dataclasses.field(
         default_factory=dict
     )
+
+    def __post_init__(self):
+        # resolve `Self` annotation with the origin type
+        for index, field in enumerate(self.fields):
+            if isinstance(field.type, StrawberryType) and field.type.has_generic(Self):
+                self.fields[index] = field.copy_with({Self: self.origin})  # type: ignore
 
     # TODO: remove wrapped cls when we "merge" this with `StrawberryObject`
     def resolve_generic(self, wrapped_cls: type) -> type:
