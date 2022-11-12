@@ -1,6 +1,14 @@
+import sys
 from pathlib import Path
 
+import pytest
+
 from strawberry.exceptions.exception_source import ExceptionSource
+
+
+pytestmark = pytest.mark.skipif(
+    sys.platform == "win32", reason="Test is meant to run on Unix systems"
+)
 
 
 def test_returns_relative_path(mocker):
