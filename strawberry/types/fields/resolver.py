@@ -294,16 +294,24 @@ class StrawberryResolver(Generic[T]):
         if self.type:
             if isinstance(self.type, StrawberryType):
                 type_override = self.type.copy_with(type_var_map)
-            else:
-                type_override = self.type._type_definition.copy_with(  # type: ignore
+            elif hasattr(self.type, "_type_definition"):
+                type_override = self.type._type_definition.copy_with(
                     type_var_map,
                 )
 
-        return type(self)(
+        other = type(self)(
             func=self.wrapped_func,
             description=self._description,
             type_override=type_override,
         )
+        # Resolve generic arguments
+        for argument in other.arguments:
+            if isinstance(argument.type, StrawberryType) and argument.type.is_generic:
+                argument.type_annotation = StrawberryAnnotation(
+                    annotation=argument.type.copy_with(type_var_map),
+                    namespace=argument.type_annotation.namespace,
+                )
+        return other
 
     @cached_property
     def _namespace(self) -> Dict[str, Any]:
