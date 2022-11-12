@@ -420,7 +420,10 @@ def test_when_optional():
     )
 
 
-@pytest.mark.raises_strawberry_exception(UnsupportedTypeError, match="LOL")
+@pytest.mark.raises_strawberry_exception(
+    UnsupportedTypeError,
+    match=r"<class .*> conversion is not supported",
+)
 def test_fails_when_passing_non_strawberry_classes():
     class Input:
         numbers: List[int]
