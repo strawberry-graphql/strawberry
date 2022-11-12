@@ -48,7 +48,7 @@ class ScalarAlreadyRegisteredError(StrawberryException):
         if not all(
             (self.scalar_definition._source_file, self.scalar_definition._source_line)
         ):
-            return None
+            return None  # pragma: no cover
 
         source_finder = SourceFinder()
 

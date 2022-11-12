@@ -35,12 +35,12 @@ class LibCSTSourceFinder:
         source_module = sys.modules.get(module)
 
         if source_module is None or source_module.__file__ is None:
-            return None
+            return None  # pragma: no cover
 
         path = Path(source_module.__file__)
 
         if not path.exists() or path.suffix != ".py":
-            return None
+            return None  # pragma: no cover
 
         source = path.read_text()
 
@@ -119,12 +119,12 @@ class LibCSTSourceFinder:
         source = self.find_source(cls.__module__)
 
         if source is None:
-            return None
+            return None  # pragma: no cover
 
         class_def = self._find_class_definition(source, cls)
 
         if class_def is None:
-            return None
+            return None  # pragma: no cover
 
         position = self._position_metadata[class_def]
         column_start = position.start.column + len("class ")
@@ -145,12 +145,12 @@ class LibCSTSourceFinder:
         source = self.find_source(cls.__module__)
 
         if source is None:
-            return None
+            return None  # pragma: no cover
 
         class_def = self._find_class_definition(source, cls)
 
         if class_def is None:
-            return None
+            return None  # pragma: no cover
 
         import libcst.matchers as m
         from libcst import AnnAssign
@@ -186,12 +186,12 @@ class LibCSTSourceFinder:
         source = self.find_source(function.__module__)
 
         if source is None:
-            return None
+            return None  # pragma: no cover
 
         function_def = self._find_function_definition(source, function)
 
         if function_def is None:
-            return None
+            return None  # pragma: no cover
 
         position = self._position_metadata[function_def]
 
@@ -220,12 +220,12 @@ class LibCSTSourceFinder:
         source = self.find_source(function.__module__)
 
         if source is None:
-            return None
+            return None  # pragma: no cover
 
         function_def = self._find_function_definition(source, function)
 
         if function_def is None:
-            return None
+            return None  # pragma: no cover
 
         import libcst.matchers as m
 
@@ -235,7 +235,7 @@ class LibCSTSourceFinder:
         )
 
         if not argument_defs:
-            return None
+            return None  # pragma: no cover
 
         argument_def = argument_defs[0]
 
@@ -299,7 +299,7 @@ class LibCSTSourceFinder:
         union_calls = self._find(source, matcher)
 
         if not union_calls:
-            return None
+            return None  # pragma: no cover
 
         union_call = cast(Call, union_calls[0])
 
@@ -310,7 +310,7 @@ class LibCSTSourceFinder:
             )
 
             if not invalid_type_nodes:
-                return None
+                return None  # pragma: no cover
 
             invalid_type_node = invalid_type_nodes[0]
         else:
@@ -341,14 +341,14 @@ class LibCSTSourceFinder:
         other_name = getattr(other, "__name__", None)
 
         if other_name is None:
-            return None
+            return None  # pragma: no cover
 
         matcher = m.BinaryOperation(operator=m.BitOr(), right=m.Name(value=other_name))
 
         merge_calls = self._find(source, matcher)
 
         if not merge_calls:
-            return None
+            return None  # pragma: no cover
 
         merge_call_node = cast(BinaryOperation, merge_calls[0])
         invalid_type_node = merge_call_node.right
@@ -370,7 +370,7 @@ class LibCSTSourceFinder:
         self, scalar_definition: ScalarDefinition
     ) -> Optional[ExceptionSource]:
         if scalar_definition._source_file is None:
-            return None
+            return None  # pragma: no cover
 
         import libcst.matchers as m
 
@@ -394,7 +394,7 @@ class LibCSTSourceFinder:
         scalar_calls = self._find(source, matcher)
 
         if not scalar_calls:
-            return None
+            return None  # pragma: no cover
 
         scalar_call_node = scalar_calls[0]
 
@@ -426,7 +426,7 @@ class SourceFinder:
         try:
             return LibCSTSourceFinder()
         except ImportError:
-            return None
+            return None  # pragma: no cover
 
     def find_class_from_object(self, cls: Type) -> Optional[ExceptionSource]:
         return self.cst.find_class(cls) if self.cst else None

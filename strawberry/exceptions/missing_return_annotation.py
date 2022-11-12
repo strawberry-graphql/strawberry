@@ -32,7 +32,7 @@ class MissingReturnAnnotationError(StrawberryException):
     @property
     def exception_source(self) -> Optional[ExceptionSource]:
         if self.function is None:
-            return None
+            return None  # pragma: no cover
 
         source_finder = SourceFinder()
 

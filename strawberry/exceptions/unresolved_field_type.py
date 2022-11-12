@@ -56,4 +56,4 @@ class UnresolvedFieldTypeError(StrawberryException):
                 self.field.base_resolver.wrapped_func  # type: ignore
             )
 
-        return None
+        return None  # pragma: no cover
