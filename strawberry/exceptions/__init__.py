@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from typing import Set, Union
+from typing import Optional, Set, Union
 
 from graphql import GraphQLInputObjectType, GraphQLObjectType
 
 from strawberry.type import StrawberryType
 
 from .exception import StrawberryException, UnableToFindExceptionSource
+from .exception_source import ExceptionSource
 from .handler import setup_exception_handler
 from .invalid_argument_type import InvalidArgumentTypeError
 from .invalid_union_type import InvalidTypeForUnionMergeError, InvalidUnionTypeError
@@ -73,12 +74,15 @@ class MissingTypesForGenericError(Exception):
         super().__init__(message)
 
 
-# TODO: this doesn't seem to be tested
 class UnsupportedTypeError(StrawberryException):
-    def __init__(self, annotation):
+    def __init__(self, annotation: Union[StrawberryType, type]):
         message = f"{annotation} conversion is not supported"
 
         super().__init__(message)
+
+    @property
+    def exception_source(self) -> Optional[ExceptionSource]:
+        return None
 
 
 class MultipleStrawberryArgumentsError(Exception):
