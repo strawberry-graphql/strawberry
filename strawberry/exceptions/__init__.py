@@ -74,7 +74,7 @@ class MissingTypesForGenericError(Exception):
 
 
 # TODO: this doesn't seem to be tested
-class UnsupportedTypeError(Exception):
+class UnsupportedTypeError(StrawberryException):
     def __init__(self, annotation):
         message = f"{annotation} conversion is not supported"
 
