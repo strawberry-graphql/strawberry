@@ -12,7 +12,7 @@ repos:
       exclude: ^tests/codegen/snapshots/python/
 
   - repo: https://github.com/asottile/pyupgrade
-    rev: v3.2.0
+    rev: v3.2.2
     hooks:
       - id: pyupgrade
         args: [--py37-plus, --keep-runtime-typing]
