@@ -100,7 +100,7 @@ class DataLoader(Generic[K, T]):
         if self.cache:
             future = self.cache_map.get(key)
 
-            if future:
+            if future and not future.cancelled():
                 return future
 
         future = self.loop.create_future()
@@ -204,6 +204,11 @@ async def dispatch_batch(loader: DataLoader, batch: Batch) -> None:
             )
 
         for task, value in zip(batch.tasks, values):
+            # Trying to set_result in a cancelled future would raise
+            # asyncio.exceptions.InvalidStateError
+            if task.future.cancelled():
+                continue
+
             if isinstance(value, BaseException):
                 task.future.set_exception(value)
             else:
