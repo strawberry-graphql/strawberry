@@ -1473,7 +1473,7 @@ python-versions = ">=3.6"
 
 [[package]]
 name = "types-aiofiles"
-version = "22.1.0.2"
+version = "22.1.0.3"
 description = "Typing stubs for aiofiles"
 category = "dev"
 optional = false
@@ -2845,8 +2845,8 @@ typed-ast = [
     {file = "typed_ast-1.5.4.tar.gz", hash = "sha256:39e21ceb7388e4bb37f4c679d72707ed46c2fbf2a5609b8b8ebc4b067d977df2"},
 ]
 types-aiofiles = [
-    {file = "types-aiofiles-22.1.0.2.tar.gz", hash = "sha256:121b88f160798b29d34dd0ad6539f1bec102d75fe771e3e40238c3324fc2a937"},
-    {file = "types_aiofiles-22.1.0.2-py3-none-any.whl", hash = "sha256:a92193f807c6714f77281fc4ca8e1100cac20288f0fa27659a355da925012750"},
+    {file = "types-aiofiles-22.1.0.3.tar.gz", hash = "sha256:9406b93f970e5d647b2183c3a01a253e77693b175b6e31de997192639f6c4955"},
+    {file = "types_aiofiles-22.1.0.3-py3-none-any.whl", hash = "sha256:c12668e29307ce06f751dbe02960a9fe6a3e3d9055911ca254839e8e9a78553f"},
 ]
 types-certifi = [
     {file = "types-certifi-2021.10.8.3.tar.gz", hash = "sha256:72cf7798d165bc0b76e1c10dd1ea3097c7063c42c21d664523b928e88b554a4f"},
