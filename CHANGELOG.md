@@ -1,6 +1,16 @@
 CHANGELOG
 =========
 
+0.142.2 - 2022-11-15
+--------------------
+
+This release changes the dataloader batch resolution to avoid resolving
+futures that were canceled, and also from reusing them from the cache.
+Trying to resolve a future that was canceled would raise `asyncio.InvalidStateError`
+
+Contributed by [Thiago Bellini Ribeiro](https://github.com/bellini666) via [PR #2339](https://github.com/strawberry-graphql/strawberry/pull/2339/)
+
+
 0.142.1 - 2022-11-11
 --------------------
 
