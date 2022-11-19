@@ -246,3 +246,14 @@ class InvalidCustomContext(Exception):
             "that inherits from BaseContext or a dictionary"
         )
         super().__init__(message)
+
+
+class DuplicatedTypeName(Exception):
+    """Raised when the same type with different definition is reused inside a schema"""
+
+    def __init__(self, duplicated_type_name: str):
+        message = (
+            "Types need to have unique names in the entire schema. "
+            f"Duplicated type name: {duplicated_type_name}"
+        )
+        super().__init__(message)
