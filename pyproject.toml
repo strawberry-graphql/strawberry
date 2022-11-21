@@ -79,7 +79,7 @@ pytest-benchmark = "^4.0.0"
 freezegun = "^1.2.1"
 opentelemetry-api = "<2"
 opentelemetry-sdk = "<2"
-flake8-isort = "^5.0.0"
+flake8-isort = "^5.0.3"
 flake8-black = "^0.3"
 Django = ">=3.2"
 pydantic = {version = "<2", optional = false}
