@@ -4,6 +4,7 @@ from enum import Enum
 from typing import List, Set, Union
 
 from graphql import GraphQLInputObjectType, GraphQLObjectType
+from graphql.error import GraphQLError
 
 from strawberry.type import StrawberryType
 
@@ -246,3 +247,7 @@ class InvalidCustomContext(Exception):
             "that inherits from BaseContext or a dictionary"
         )
         super().__init__(message)
+
+
+class StrawberryGraphQLError(GraphQLError):
+    """Use it when you want to override the graphql.GraphQLError in Custom extensions"""

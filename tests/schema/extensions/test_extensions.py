@@ -11,6 +11,7 @@ from graphql import (
 )
 
 import strawberry
+from strawberry.exceptions import StrawberryGraphQLError
 from strawberry.extensions import Extension
 
 
@@ -541,3 +542,44 @@ def test_execution_reject_example(mock_original_execute):
     assert result.errors == [GraphQLError("Well you asked for it")]
 
     assert mock_original_execute.call_count == 1
+
+
+def test_extend_error_format_example():
+    # Test that the example of how to extend error format
+
+    class ExtendErrorFormat(Extension):
+        def on_request_end(self):
+            result = self.execution_context.result
+            if hasattr(result, "errors") and result.errors is not None:
+                processed_errors = []
+                for error in result.errors:
+                    processed_errors.append(
+                        StrawberryGraphQLError(
+                            extensions={"additional_key": "additional_value"},
+                            nodes=error.nodes,
+                            source=error.source,
+                            positions=error.positions,
+                            path=error.path,
+                            original_error=error.original_error,
+                            message=error.message,
+                        )
+                    )
+                result.errors = processed_errors
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def ping(self) -> str:
+            raise Exception("This is an error occurred when query ping field")
+
+    schema = strawberry.Schema(query=Query, extensions=[ExtendErrorFormat])
+    query = """
+        query TestQuery {
+            ping
+        }
+    """
+
+    result = schema.execute_sync(query)
+    assert result.errors[0].extensions == {"additional_key": "additional_value"}
+    assert result.errors[0].message == "This is an error occurred when query ping field"
+    assert result.data is None
