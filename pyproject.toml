@@ -166,3 +166,31 @@ reportMissingImports = true
 reportMissingTypeStubs = false
 pythonVersion = "3.7"
 stubPath = ""
+
+[tool.ruff]
+line-length = 89
+select = ["E", "F", "ERA"]
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+    "tests/codegen/snapshots"
+]
+
+per-file-ignores = {"tests/federation/printer/*" = ["E501"], "tests/test_printer/test_basic.py" = ["E501"], "tests/pyright/test_federation.py" = ["E501"], "tests/test_printer/test_schema_directives.py" = ["E501"]}
