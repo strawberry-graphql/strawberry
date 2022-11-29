@@ -669,6 +669,4 @@ class GraphQLCoreConverter:
         self, name: str, type_definition: StrawberryType, cached_type: ConcreteType
     ) -> None:
         if cached_type.definition != type_definition:
-            print(cached_type.definition)
-            print(type_definition)
             raise DuplicatedTypeName(name)
