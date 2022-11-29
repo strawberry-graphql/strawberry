@@ -1,6 +1,6 @@
 Release type: patch
 
- Generic types allowed in schema's extra types.
+ Generic types are now allowed in the schema's extra types.
 ```python
 T = TypeVar('T')
 
