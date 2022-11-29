@@ -1,3 +1,4 @@
 Release type: patch
 
-Make sure no hash part of URL is present when converting an URL for use with websocket
+This release updates GraphiQL to 2.2.0 and fixes an issue with the websocket URL
+being incorrectly set when navigating to GraphiQL with an URL with a hash.
