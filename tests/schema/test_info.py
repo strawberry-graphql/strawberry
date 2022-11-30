@@ -82,6 +82,7 @@ def test_info_has_the_correct_shape():
     }
     assert field == {
         "name": "helloWorld",
+        "python_name": "hello_world",
         "directives": {},
         "alias": None,
         "arguments": {},
@@ -108,14 +109,14 @@ def test_info_field_fragments():
     @strawberry.type
     class Query:
         @strawberry.field
-        def hello(self, info: Info[str, str]) -> Result:
+        def hello_world(self, info: Info[str, str]) -> Result:
             nonlocal selected_fields
             selected_fields = info.selected_fields
             return Result(ok=True)
 
     schema = strawberry.Schema(query=Query)
     query = """{
-        hello {
+        helloWorld {
             ... on Result {
                 k: ok @include(if: true)
             }
@@ -132,7 +133,8 @@ def test_info_field_fragments():
     assert not result.errors
     assert selected_fields == [
         SelectedField(
-            name="hello",
+            name="helloWorld",
+            python_name="hello_world",
             directives={},
             alias=None,
             arguments={},
@@ -143,6 +145,7 @@ def test_info_field_fragments():
                     selections=[
                         SelectedField(
                             name="ok",
+                            python_name="ok",
                             alias="k",
                             arguments={},
                             directives={
@@ -156,11 +159,13 @@ def test_info_field_fragments():
                 ),
                 FragmentSpread(
                     name="frag",
+                    python_name="frag",
                     directives={},
                     type_condition="Result",
                     selections=[
                         SelectedField(
                             name="ok",
+                            python_name="ok",
                             directives={},
                             arguments={},
                             selections=[],
@@ -202,6 +207,7 @@ def test_info_arguments():
     assert selected_fields == [
         SelectedField(
             name="testArg",
+            python_name="test_arg",
             directives={},
             arguments={
                 "input": {
@@ -229,6 +235,7 @@ def test_info_arguments():
     assert selected_fields == [
         SelectedField(
             name="testArg",
+            python_name="test_arg",
             directives={},
             arguments={
                 "input": {
@@ -272,6 +279,7 @@ def test_info_selected_fields_undefined_variable():
     assert selected_fields == [
         SelectedField(
             name="hello",
+            python_name="hello",
             directives={},
             alias=None,
             arguments={
@@ -280,6 +288,7 @@ def test_info_selected_fields_undefined_variable():
             selections=[
                 SelectedField(
                     name="ok",
+                    python_name="ok",
                     alias=None,
                     arguments={},
                     directives={},
