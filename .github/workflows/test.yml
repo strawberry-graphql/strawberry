@@ -35,7 +35,6 @@ jobs:
           cache: "poetry"
 
       - run: poetry env use ${{ matrix.python-version }}
-      - run: poetry run python --version
       - run: poetry install
         if: steps.setup-python.outputs.cache-hit != 'true'
 
@@ -67,9 +66,6 @@ jobs:
           python-version: "3.10.0"
           cache: "poetry"
 
-      - run:
-          python --version
-      - run: poetry run python --version
       - run: poetry install
         if: steps.setup-python.outputs.cache-hit != 'true'
 
