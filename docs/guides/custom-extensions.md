@@ -42,6 +42,40 @@ class MyExtension(Extension):
         print('GraphQL request end')
 ```
 
+<details>
+  <summary>Extend error response format</summary>
+
+```python
+class ExtendErrorFormat(Extension):
+    def on_request_end(self):
+        result = self.execution_context.result
+        if getattr(result, "errors", None):
+            result.errors = [
+                StrawberryGraphQLError(
+                    extensions={"additional_key": "additional_value"},
+                    nodes=error.nodes,
+                    source=error.source,
+                    positions=error.positions,
+                    path=error.path,
+                    original_error=error.original_error,
+                    message=error.message,
+                )
+                for error in result.errors
+            ]
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def ping(self) -> str:
+        raise Exception("This error occurred while querying the ping field")
+
+
+schema = strawberry.Schema(query=Query, extensions=[ExtendErrorFormat])
+```
+
+</details>
+
 ### Resolve
 
 `resolve` can be used to run code before or after the execution of resolvers, this
