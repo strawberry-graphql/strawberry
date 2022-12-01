@@ -24,6 +24,7 @@ include = ["strawberry/py.typed"]
 [tool.poetry.urls]
 "Discord" = "https://discord.com/invite/3uQ2PaY"
 "Twitter" = "https://twitter.com/strawberry_gql"
+"Mastodon" = "https://farbun.social/@strawberry"
 "Sponsor on GitHub" = "https://github.com/sponsors/strawberry-graphql"
 "Sponsor on Open Collective" = "https://opencollective.com/strawberry-graphql"
 
