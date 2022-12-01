@@ -1,10 +1,9 @@
 import textwrap
 from enum import Enum
 from typing import Any, Generic, List, Optional, TypeVar, Union
+from typing_extensions import Self
 
 import pytest
-
-from typing_extensions import Self
 
 import strawberry
 

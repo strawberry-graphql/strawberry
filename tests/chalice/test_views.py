@@ -1,7 +1,6 @@
 import json
 
 import pytest
-
 from werkzeug.urls import url_encode, url_unparse
 
 from chalice.test import Client

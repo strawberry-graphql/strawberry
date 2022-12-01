@@ -1,9 +1,8 @@
 import sys
 from typing import List, Optional
+from typing_extensions import Annotated
 
 import pytest
-
-from typing_extensions import Annotated
 
 import strawberry
 from strawberry import UNSET
@@ -377,8 +376,8 @@ def test_annotated_with_other_information():
     class Query:
         @strawberry.field
         def name(
-            self, argument: Annotated[str, "Some other info"]  # noqa: F722
-        ) -> str:
+            self, argument: Annotated[str, "Some other info"]
+        ) -> str:  # noqa: F722
             return "Name"
 
     definition = Query._type_definition

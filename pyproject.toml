@@ -24,6 +24,7 @@ include = ["strawberry/py.typed"]
 [tool.poetry.urls]
 "Discord" = "https://discord.com/invite/3uQ2PaY"
 "Twitter" = "https://twitter.com/strawberry_gql"
+"Mastodon" = "https://farbun.social/@strawberry"
 "Sponsor on GitHub" = "https://github.com/sponsors/strawberry-graphql"
 "Sponsor on Open Collective" = "https://opencollective.com/strawberry-graphql"
 
@@ -129,19 +130,6 @@ extend-exclude = '''
 tests/codegen/snapshots/
 '''
 
-[tool.isort]
-src_paths = ["strawberry", "tests", "scripts"]
-profile = "black"
-indent = 4
-combine_star = true
-combine_as_imports = true
-lines_after_imports = 2
-known_django = ["django"]
-known_graphql = ["graphql"]
-known_pytest = ["pytest"]
-known_first_party = ["strawberry"]
-sections = ["FUTURE", "STDLIB", "PYTEST", "THIRDPARTY", "DJANGO", "GRAPHQL", "FIRSTPARTY", "LOCALFOLDER"]
-
 [tool.pytest.ini_options]
 addopts = "-s --emoji --mypy-ini-file=mypy.ini --benchmark-disable"
 DJANGO_SETTINGS_MODULE = "tests.django.django_settings"
@@ -166,3 +154,54 @@ reportMissingImports = true
 reportMissingTypeStubs = false
 pythonVersion = "3.7"
 stubPath = ""
+
+[tool.ruff]
+line-length = 88
+select = ["E", "F", "ERA", "I"]
+ignore = ["I252"]
+fix = true
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+    "tests/codegen/snapshots"
+]
+src = ["strawberry", "tests"]
+
+[tool.ruff.per-file-ignores]
+"tests/federation/printer/*" = ["E501"]
+"tests/test_printer/test_basic.py" = ["E501"]
+"tests/pyright/test_federation.py" = ["E501"]
+"tests/test_printer/test_schema_directives.py" = ["E501"]
+# temporary until https://github.com/charliermarsh/ruff/issues/960 is fixed
+"tests/federation/printer/test_entities.py" = ["F821"]
+"tests/federation/printer/test_keys.py" = ["F821"]
+"tests/federation/printer/test_provides.py" = ["F821"]
+"tests/schema/test_resolvers.py" = ["F821"]
+"tests/test_forward_references.py" = ["F821"]
+"tests/types/resolving/test_string_annotations.py" = ["F821"]
+"tests/types/test_argument_types.py" = ["F821"]
+"tests/types/test_object_types.py" = ["F821"]
+"tests/types/test_resolver_types.py" = ["F821"]
+"tests/federation/printer/test_requires.py" = ["F821"]
+
+[tool.ruff.isort]
+known-first-party = ["strawberry"]
+known-third-party = ["django", "graphql"]
+extra-standard-library = ["typing_extensions"]

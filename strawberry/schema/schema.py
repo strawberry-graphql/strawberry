@@ -1,8 +1,8 @@
 from functools import lru_cache
 from typing import Any, Dict, Iterable, List, Optional, Type, Union, cast
 
+from graphql import ExecutionContext as GraphQLExecutionContext
 from graphql import (
-    ExecutionContext as GraphQLExecutionContext,
     GraphQLNamedType,
     GraphQLNonNull,
     GraphQLSchema,
@@ -46,7 +46,8 @@ DEFAULT_ALLOWED_OPERATION_TYPES = {
 class Schema(BaseSchema):
     def __init__(
         self,
-        # TODO: can we make sure we only allow to pass something that has been decorated?
+        # TODO: can we make sure we only allow to pass
+        # something that has been decorated?
         query: Type,
         mutation: Optional[Type] = None,
         subscription: Optional[Type] = None,

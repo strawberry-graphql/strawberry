@@ -13,14 +13,10 @@ from typing import (
     cast,
 )
 
-from graphql import (
-    ExecutionContext as GraphQLExecutionContext,
-    ExecutionResult as GraphQLExecutionResult,
-    GraphQLError,
-    GraphQLSchema,
-    execute as original_execute,
-    parse,
-)
+from graphql import ExecutionContext as GraphQLExecutionContext
+from graphql import ExecutionResult as GraphQLExecutionResult
+from graphql import GraphQLError, GraphQLSchema, parse
+from graphql import execute as original_execute
 from graphql.language import DocumentNode
 from graphql.validation import ASTValidationRule, validate
 

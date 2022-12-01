@@ -11,10 +11,10 @@ from typing import (
     Union,
     overload,
 )
-
 from typing_extensions import Literal
 
-from strawberry.field import _RESOLVER_TYPE, StrawberryField, field as base_field
+from strawberry.field import _RESOLVER_TYPE, StrawberryField
+from strawberry.field import field as base_field
 from strawberry.permission import BasePermission
 from strawberry.unset import UNSET
 

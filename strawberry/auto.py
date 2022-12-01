@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from typing import Any, Optional, Union, cast
-
 from typing_extensions import Annotated, get_args, get_origin
 
 from strawberry.type import StrawberryType

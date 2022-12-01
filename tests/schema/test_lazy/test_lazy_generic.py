@@ -1,5 +1,4 @@
 from typing import TYPE_CHECKING, Generic, TypeVar
-
 from typing_extensions import Annotated
 
 import strawberry

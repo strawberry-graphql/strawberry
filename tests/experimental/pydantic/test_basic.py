@@ -2,9 +2,8 @@ import dataclasses
 from enum import Enum
 from typing import Any, List, Optional, Union
 
-import pytest
-
 import pydantic
+import pytest
 
 import strawberry
 from strawberry.enum import EnumDefinition

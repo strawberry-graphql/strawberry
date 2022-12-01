@@ -1,5 +1,4 @@
 from typing import Any, cast
-
 from typing_extensions import Annotated, get_args
 
 import strawberry

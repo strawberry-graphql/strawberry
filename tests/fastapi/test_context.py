@@ -1,7 +1,6 @@
 from typing import Dict
 
 import pytest
-
 from starlette.testclient import TestClient
 
 import strawberry

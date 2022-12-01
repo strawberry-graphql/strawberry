@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, List, Optional, Union, cast
-
 from typing_extensions import Protocol
 
 from strawberry.annotation import StrawberryAnnotation
