@@ -49,28 +49,26 @@ class MyExtension(Extension):
 class ExtendErrorFormat(Extension):
     def on_request_end(self):
         result = self.execution_context.result
-        if hasattr(result, "errors") and result.errors is not None:
-            processed_errors = []
-            for error in result.errors:
-                processed_errors.append(
-                    StrawberryGraphQLError(
-                        extensions={"additional_key": "additional_value"},
-                        nodes=error.nodes,
-                        source=error.source,
-                        positions=error.positions,
-                        path=error.path,
-                        original_error=error.original_error,
-                        message=error.message,
-                    )
+        if getattr(result, "errors", None):
+            result.errors = [
+                StrawberryGraphQLError(
+                    extensions={"additional_key": "additional_value"},
+                    nodes=error.nodes,
+                    source=error.source,
+                    positions=error.positions,
+                    path=error.path,
+                    original_error=error.original_error,
+                    message=error.message,
                 )
-            result.errors = processed_errors
+                for error in result.errors
+            ]
 
 
 @strawberry.type
 class Query:
     @strawberry.field
     def ping(self) -> str:
-        raise Exception("This is an error occurred when query ping field")
+        raise Exception("This error occurred while querying the ping field")
 
 
 schema = strawberry.Schema(query=Query, extensions=[ExtendErrorFormat])
