@@ -568,7 +568,7 @@ def test_extend_error_format_example():
     class Query:
         @strawberry.field
         def ping(self) -> str:
-            raise Exception("This is an error occurred when query ping field")
+            raise Exception("This error occurred while querying the ping field")
 
     schema = strawberry.Schema(query=Query, extensions=[ExtendErrorFormat])
     query = """
