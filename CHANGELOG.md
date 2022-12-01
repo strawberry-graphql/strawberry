@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.142.3 - 2022-11-29
+--------------------
+
+This release updates GraphiQL to 2.2.0 and fixes an issue with the websocket URL
+being incorrectly set when navigating to GraphiQL with an URL with a hash.
+
+Contributed by [Shen Li](https://github.com/ericls) via [PR #2363](https://github.com/strawberry-graphql/strawberry/pull/2363/)
+
+
 0.142.2 - 2022-11-15
 --------------------
 
