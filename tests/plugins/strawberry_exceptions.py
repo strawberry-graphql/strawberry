@@ -7,7 +7,6 @@ from pathlib import Path
 from typing import DefaultDict, Generator, List, Type
 
 import pytest
-
 import rich
 import rich.console
 from _pytest.nodes import Item

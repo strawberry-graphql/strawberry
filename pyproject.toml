@@ -206,6 +206,7 @@ src = ["strawberry", "tests"]
 "tests/types/test_object_types.py" = ["F821"]
 "tests/types/test_resolver_types.py" = ["F821"]
 "tests/federation/printer/test_requires.py" = ["F821"]
+"tests/schema/test_private_field.py" = ["F821"]
 
 [tool.ruff.isort]
 known-first-party = ["strawberry"]

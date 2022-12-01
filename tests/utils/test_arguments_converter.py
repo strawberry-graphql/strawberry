@@ -1,8 +1,8 @@
 from enum import Enum
 from typing import List, Optional
+from typing_extensions import Annotated
 
 import pytest
-from typing_extensions import Annotated
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
