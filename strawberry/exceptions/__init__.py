@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Optional, Set, Union
 
-from graphql import GraphQLInputObjectType, GraphQLObjectType
+from graphql import GraphQLError, GraphQLInputObjectType, GraphQLObjectType
 
 from strawberry.type import StrawberryType
 
@@ -150,6 +150,10 @@ class InvalidCustomContext(Exception):
         super().__init__(message)
 
 
+class StrawberryGraphQLError(GraphQLError):
+    """Use it when you want to override the graphql.GraphQLError in custom extensions"""
+
+
 __all__ = [
     "StrawberryException",
     "UnableToFindExceptionSource",
@@ -176,4 +180,5 @@ __all__ = [
     "InvalidDefaultFactoryError",
     "InvalidCustomContext",
     "MissingFieldAnnotationError",
+    "StrawberryGraphQLError",
 ]
