@@ -579,5 +579,5 @@ def test_extend_error_format_example():
 
     result = schema.execute_sync(query)
     assert result.errors[0].extensions == {"additional_key": "additional_value"}
-    assert result.errors[0].message == "This is an error occurred when query ping field"
+    assert result.errors[0].message == "This error occurred while querying the ping field"
     assert result.data is None
