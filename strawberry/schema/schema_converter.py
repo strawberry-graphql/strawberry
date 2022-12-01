@@ -2,18 +2,7 @@ from __future__ import annotations
 
 import dataclasses
 import sys
-from typing import (
-    Any,
-    Callable,
-    Dict,
-    List,
-    Optional,
-    Tuple,
-    Type,
-    TypeVar,
-    Union,
-    cast,
-)
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type, TypeVar, Union, cast
 
 from graphql import (
     GraphQLArgument,

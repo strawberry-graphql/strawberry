@@ -40,12 +40,7 @@ def _impl_type(
     is_input: bool = False,
     is_interface: bool = False,
 ) -> T:
-    from strawberry.federation.schema_directives import (
-        Inaccessible,
-        Key,
-        Shareable,
-        Tag,
-    )
+    from strawberry.federation.schema_directives import Inaccessible, Key, Shareable, Tag
 
     directives = list(directives)
 

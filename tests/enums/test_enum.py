@@ -73,9 +73,7 @@ def test_can_deprecate_enum_values():
     @strawberry.enum
     class IceCreamFlavour(Enum):
         VANILLA = strawberry.enum_value("vanilla")
-        STRAWBERRY = strawberry.enum_value(
-            "strawberry", deprecation_reason="We ran out"
-        )
+        STRAWBERRY = strawberry.enum_value("strawberry", deprecation_reason="We ran out")
         CHOCOLATE = "chocolate"
 
     definition = IceCreamFlavour._enum_definition

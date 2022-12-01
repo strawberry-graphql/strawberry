@@ -44,8 +44,7 @@ class PrintOperationPlugin(QueryCodegenPlugin):
             return ""
 
         variables = ", ".join(
-            f"${v.name}: {self._print_graphql_type(v.type)}"
-            for v in operation.variables
+            f"${v.name}: {self._print_graphql_type(v.type)}" for v in operation.variables
         )
 
         return f"({variables})"

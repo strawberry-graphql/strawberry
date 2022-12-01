@@ -157,11 +157,7 @@ class DataLoader(Generic[K, T]):
 
 
 def should_create_new_batch(loader: DataLoader, batch: Batch) -> bool:
-    if (
-        batch.dispatched
-        or loader.max_batch_size
-        and len(batch) >= loader.max_batch_size
-    ):
+    if batch.dispatched or loader.max_batch_size and len(batch) >= loader.max_batch_size:
         return True
 
     return False
@@ -199,9 +195,7 @@ async def dispatch_batch(loader: DataLoader, batch: Batch) -> None:
         values = list(values)
 
         if len(values) != len(batch):
-            raise WrongNumberOfResultsReturned(
-                expected=len(batch), received=len(values)
-            )
+            raise WrongNumberOfResultsReturned(expected=len(batch), received=len(values))
 
         for task, value in zip(batch.tasks, values):
             # Trying to set_result in a cancelled future would raise

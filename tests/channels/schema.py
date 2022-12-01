@@ -130,9 +130,7 @@ class Subscription:
 
         connection_init_timeout_task = info.context.connectionInitTimeoutTask
         is_connection_init_timeout_task_done = (
-            connection_init_timeout_task.done()
-            if connection_init_timeout_task
-            else None
+            connection_init_timeout_task.done() if connection_init_timeout_task else None
         )
 
         yield DebugInfo(

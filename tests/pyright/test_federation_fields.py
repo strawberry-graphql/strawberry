@@ -63,8 +63,7 @@ def test_pyright():
         ),
         Result(
             type="error",
-            message='Argument missing for parameter "name" '
-            "(reportGeneralTypeIssues)",
+            message='Argument missing for parameter "name" ' "(reportGeneralTypeIssues)",
             line=27,
             column=1,
         ),

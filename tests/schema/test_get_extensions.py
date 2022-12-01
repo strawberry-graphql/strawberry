@@ -1,10 +1,7 @@
 import strawberry
 from strawberry.directive import DirectiveLocation
 from strawberry.extensions import Extension
-from strawberry.extensions.directives import (
-    DirectivesExtension,
-    DirectivesExtensionSync,
-)
+from strawberry.extensions.directives import DirectivesExtension, DirectivesExtensionSync
 
 
 @strawberry.type

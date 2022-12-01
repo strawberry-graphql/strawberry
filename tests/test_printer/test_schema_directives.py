@@ -33,9 +33,7 @@ def test_print_simple_directive():
 
 
 def test_print_directive_with_name():
-    @strawberry.schema_directive(
-        name="sensitive", locations=[Location.FIELD_DEFINITION]
-    )
+    @strawberry.schema_directive(name="sensitive", locations=[Location.FIELD_DEFINITION])
     class SensitiveDirective:
         reason: str
 
@@ -392,9 +390,7 @@ def test_prints_with_enum():
 
     @strawberry.type
     class Query:
-        first_name: str = strawberry.field(
-            directives=[Sensitive(reason=Reason.EXAMPLE)]
-        )
+        first_name: str = strawberry.field(directives=[Sensitive(reason=Reason.EXAMPLE)])
 
     expected_output = """
     directive @sensitive(reason: Reason!) on FIELD_DEFINITION

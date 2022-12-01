@@ -10,6 +10,5 @@ def test_get_optional_annotation():
 
     # More than pair Union
     assert (
-        get_optional_annotation(Optional[Union[str, int, bool]])
-        == Union[str, int, bool]
+        get_optional_annotation(Optional[Union[str, int, bool]]) == Union[str, int, bool]
     )

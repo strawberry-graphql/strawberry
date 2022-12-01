@@ -375,9 +375,7 @@ def test_annotated_with_other_information():
     @strawberry.type
     class Query:
         @strawberry.field
-        def name(
-            self, argument: Annotated[str, "Some other info"]  # noqa: F722
-        ) -> str:
+        def name(self, argument: Annotated[str, "Some other info"]) -> str:  # noqa: F722
             return "Name"
 
     definition = Query._type_definition

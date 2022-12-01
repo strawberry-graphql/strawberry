@@ -76,9 +76,7 @@ def test_resolvers_on_types():
     @strawberry.type
     class Example:
         hello: str = strawberry.field(resolver=function_resolver)
-        hello_with_params: str = strawberry.field(
-            resolver=function_resolver_with_params
-        )
+        hello_with_params: str = strawberry.field(resolver=function_resolver_with_params)
 
     @strawberry.type
     class Query:
@@ -116,9 +114,7 @@ def test_optional_info_and_root_params_function_resolver():
     class Query:
         hello: str = strawberry.field(resolver=function_resolver)
         hello_with_root: str = strawberry.field(resolver=function_resolver_with_root)
-        hello_with_params: str = strawberry.field(
-            resolver=function_resolver_with_params
-        )
+        hello_with_params: str = strawberry.field(resolver=function_resolver_with_params)
 
         def __post_init__(self):
             self._example = "Example"
@@ -183,9 +179,7 @@ def test_only_info_function_resolvers():
     @strawberry.type
     class Query:
         hello: str = strawberry.field(resolver=function_resolver)
-        hello_with_params: str = strawberry.field(
-            resolver=function_resolver_with_params
-        )
+        hello_with_params: str = strawberry.field(resolver=function_resolver_with_params)
 
     schema = strawberry.Schema(query=Query)
 

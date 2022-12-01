@@ -90,9 +90,7 @@ class HTTPHandler:
                 allowed_operation_types=allowed_operation_types,
             )
         except InvalidOperationTypeError as e:
-            raise web.HTTPBadRequest(
-                reason=e.as_http_error_reason(method=method)
-            ) from e
+            raise web.HTTPBadRequest(reason=e.as_http_error_reason(method=method)) from e
 
         response_data = await self.process_result(request, result)
         response.text = json.dumps(response_data)

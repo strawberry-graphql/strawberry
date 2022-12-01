@@ -139,8 +139,7 @@ def test_constrained_list_nested():
 
     assert UserType._type_definition.fields[0].name == "friends"
     assert (
-        UserType._type_definition.fields[0].type_annotation.annotation
-        == List[List[int]]
+        UserType._type_definition.fields[0].type_annotation.annotation == List[List[int]]
     )
 
 
@@ -162,9 +161,7 @@ def test_unsupported_types(pydantic_type):
     class Model(pydantic.BaseModel):
         field: pydantic_type
 
-    with pytest.raises(
-        strawberry.experimental.pydantic.exceptions.UnsupportedTypeError
-    ):
+    with pytest.raises(strawberry.experimental.pydantic.exceptions.UnsupportedTypeError):
 
         @strawberry.experimental.pydantic.type(Model)
         class Type:

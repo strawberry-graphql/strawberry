@@ -17,10 +17,7 @@ from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.directive import StrawberryDirective
 from strawberry.enum import EnumDefinition
 from strawberry.extensions import Extension
-from strawberry.extensions.directives import (
-    DirectivesExtension,
-    DirectivesExtensionSync,
-)
+from strawberry.extensions.directives import DirectivesExtension, DirectivesExtensionSync
 from strawberry.field import StrawberryField
 from strawberry.schema.schema_converter import GraphQLCoreConverter
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
@@ -68,9 +65,7 @@ class Schema(BaseSchema):
         self.execution_context_class = execution_context_class
         self.config = config or StrawberryConfig()
 
-        SCALAR_OVERRIDES_DICT_TYPE = Dict[
-            object, Union[ScalarWrapper, ScalarDefinition]
-        ]
+        SCALAR_OVERRIDES_DICT_TYPE = Dict[object, Union[ScalarWrapper, ScalarDefinition]]
 
         scalar_registry: SCALAR_OVERRIDES_DICT_TYPE = {**DEFAULT_SCALAR_REGISTRY}
         if scalar_overrides:

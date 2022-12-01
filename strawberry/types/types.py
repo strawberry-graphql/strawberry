@@ -91,8 +91,7 @@ class TypeDefinition(StrawberryType):
             generic_arguments = (
                 argument
                 for argument in field.arguments
-                if isinstance(argument.type, StrawberryType)
-                and argument.type.is_generic
+                if isinstance(argument.type, StrawberryType) and argument.type.is_generic
             )
 
             for argument in generic_arguments:

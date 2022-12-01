@@ -188,9 +188,7 @@ def union_hook(ctx: DynamicClassDefContext) -> None:
 
     if isinstance(types, TupleExpr):
         try:
-            type_ = UnionType(
-                tuple(_get_type_for_expr(x, ctx.api) for x in types.items)
-            )
+            type_ = UnionType(tuple(_get_type_for_expr(x, ctx.api) for x in types.items))
         except InvalidNodeTypeException:
             type_alias = TypeAlias(
                 AnyType(TypeOfAny.from_error),
@@ -353,9 +351,7 @@ def add_static_method_to_class(
         arg_names.append(arg.variable.name)
         arg_kinds.append(arg.kind)
 
-    signature = CallableType(
-        arg_types, arg_kinds, arg_names, return_type, function_type
-    )
+    signature = CallableType(arg_types, arg_kinds, arg_names, return_type, function_type)
     if tvar_def:
         signature.variables = [tvar_def]
 
@@ -568,9 +564,7 @@ class CustomDataclassTransformer:
         # empty signature will be present anyway.
         if (
             decorator_arguments["init"]
-            and (
-                "__init__" not in info.names or info.names["__init__"].plugin_generated
-            )
+            and ("__init__" not in info.names or info.names["__init__"].plugin_generated)
             and attributes
         ):
             add_method(
@@ -917,9 +911,7 @@ class StrawberryPlugin(Plugin):
         )
 
     def _is_strawberry_enum(self, fullname: str) -> bool:
-        return fullname == "strawberry.enum.enum" or fullname.endswith(
-            "strawberry.enum"
-        )
+        return fullname == "strawberry.enum.enum" or fullname.endswith("strawberry.enum")
 
     def _is_strawberry_scalar(self, fullname: str) -> bool:
         return fullname == "strawberry.custom_scalar.scalar" or fullname.endswith(
@@ -1005,8 +997,6 @@ def plugin(version: str):
         MypyVersion.VERSION = Decimal(".".join(match.groups()))
     else:
         MypyVersion.VERSION = FALLBACK_VERSION
-        warnings.warn(
-            f"Mypy version {version} could not be parsed. Reverting to v0.800"
-        )
+        warnings.warn(f"Mypy version {version} could not be parsed. Reverting to v0.800")
 
     return StrawberryPlugin

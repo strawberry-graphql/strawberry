@@ -115,9 +115,7 @@ def execute_mutation(value):
     @strawberry.type
     class Mutation:
         @strawberry.mutation
-        def datetime_input(
-            self, datetime_input: datetime.datetime
-        ) -> datetime.datetime:
+        def datetime_input(self, datetime_input: datetime.datetime) -> datetime.datetime:
             assert isinstance(datetime_input, datetime.datetime)
             return datetime_input
 
