@@ -250,4 +250,4 @@ class InvalidCustomContext(Exception):
 
 
 class StrawberryGraphQLError(GraphQLError):
-    """Use it when you want to override the graphql.GraphQLError in Custom extensions"""
+    """Use it when you want to override the graphql.GraphQLError in custom extensions"""
