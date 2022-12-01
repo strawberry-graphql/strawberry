@@ -1,11 +1,10 @@
 import pytest
-
 from starlette import status
 from starlette.testclient import TestClient
 from starlette.websockets import WebSocketDisconnect
+from tests.fastapi.app import create_app
 
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
-from tests.fastapi.app import create_app
 
 
 def test_renders_graphiql(test_client):

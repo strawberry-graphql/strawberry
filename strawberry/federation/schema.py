@@ -4,8 +4,8 @@ from functools import partial
 from itertools import chain
 from typing import Any, Dict, Iterable, List, Optional, Type, Union, cast
 
+from graphql import ExecutionContext as GraphQLExecutionContext
 from graphql import (
-    ExecutionContext as GraphQLExecutionContext,
     GraphQLError,
     GraphQLField,
     GraphQLInterfaceType,

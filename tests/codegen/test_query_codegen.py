@@ -9,7 +9,6 @@ from pathlib import Path
 from typing import Type
 
 import pytest
-
 from pytest_snapshot.plugin import Snapshot
 
 from strawberry.codegen import QueryCodegen, QueryCodegenPlugin

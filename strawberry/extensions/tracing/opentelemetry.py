@@ -3,10 +3,9 @@ from copy import deepcopy
 from inspect import isawaitable
 from typing import Any, Callable, Dict, Optional
 
+from graphql import GraphQLResolveInfo
 from opentelemetry import trace
 from opentelemetry.trace import Span, SpanKind, Tracer
-
-from graphql import GraphQLResolveInfo
 
 from strawberry.extensions import Extension
 from strawberry.extensions.utils import get_path_from_info

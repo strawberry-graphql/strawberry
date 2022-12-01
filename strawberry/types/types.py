@@ -13,7 +13,6 @@ from typing import (
     TypeVar,
     Union,
 )
-
 from typing_extensions import Self
 
 from strawberry.type import StrawberryType, StrawberryTypeVar

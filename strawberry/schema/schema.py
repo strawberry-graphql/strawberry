@@ -1,8 +1,8 @@
 from functools import lru_cache
 from typing import Any, Dict, Iterable, List, Optional, Type, Union, cast
 
+from graphql import ExecutionContext as GraphQLExecutionContext
 from graphql import (
-    ExecutionContext as GraphQLExecutionContext,
     GraphQLNamedType,
     GraphQLNonNull,
     GraphQLSchema,

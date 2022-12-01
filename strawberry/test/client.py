@@ -2,7 +2,6 @@ import json
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, Coroutine, Dict, List, Mapping, Optional, Union
-
 from typing_extensions import Literal, TypedDict
 
 from graphql import GraphQLFormattedError

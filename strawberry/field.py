@@ -17,7 +17,6 @@ from typing import (
     Union,
     overload,
 )
-
 from typing_extensions import Literal
 
 from strawberry.annotation import StrawberryAnnotation

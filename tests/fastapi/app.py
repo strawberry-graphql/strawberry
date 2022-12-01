@@ -1,7 +1,8 @@
+from tests.fastapi.schema import schema
+
 from fastapi import BackgroundTasks, Depends, FastAPI, Request, WebSocket
 from strawberry.fastapi import GraphQLRouter as BaseGraphQLRouter
 from strawberry.fastapi.handlers import GraphQLTransportWSHandler, GraphQLWSHandler
-from tests.fastapi.schema import schema
 
 
 class DebuggableGraphQLTransportWSHandler(GraphQLTransportWSHandler):

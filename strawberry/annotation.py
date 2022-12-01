@@ -12,7 +12,6 @@ from typing import (  # type: ignore[attr-defined]
     Union,
     _eval_type,
 )
-
 from typing_extensions import Annotated, Self, get_args, get_origin
 
 from strawberry.exceptions import StrawberryException

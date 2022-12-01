@@ -16,9 +16,8 @@ from typing import (
     cast,
 )
 
-from pydantic.fields import ModelField
-
 from graphql import GraphQLResolveInfo
+from pydantic.fields import ModelField
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.auto import StrawberryAuto

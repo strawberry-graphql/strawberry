@@ -1,7 +1,6 @@
 import json
 from dataclasses import dataclass
 from typing import Any, Dict, List, Mapping, Optional
-
 from typing_extensions import TypedDict
 
 from graphql.error.graphql_error import format_error as format_graphql_error
