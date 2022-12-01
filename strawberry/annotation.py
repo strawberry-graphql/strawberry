@@ -12,7 +12,6 @@ from typing import (  # type: ignore[attr-defined]
     Union,
     _eval_type,
 )
-
 from typing_extensions import Annotated, Self, get_args, get_origin
 
 from strawberry.exceptions.not_a_strawberry_enum import NotAStrawberryEnumError
@@ -319,7 +318,8 @@ class StrawberryAnnotation:
             if isinstance(annotation, UnionType):
                 return True
 
-        # unions declared as Union[A, B] fall through to this check, even on python 3.10+
+        # unions declared as Union[A, B] fall through to this check
+        # even on python 3.10+
 
         annotation_origin = getattr(annotation, "__origin__", None)
 

@@ -41,8 +41,8 @@ from graphql.utilities.print_schema import (
     print_description,
     print_implemented_interfaces,
     print_specified_by_url,
-    print_type as original_print_type,
 )
+from graphql.utilities.print_schema import print_type as original_print_type
 
 from strawberry.custom_scalar import ScalarWrapper
 from strawberry.enum import EnumDefinition

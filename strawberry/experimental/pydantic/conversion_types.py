@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from typing import Any, Dict, Optional, TypeVar
+from typing_extensions import Protocol
 
 from pydantic import BaseModel
-from typing_extensions import Protocol
 
 from strawberry.types.types import TypeDefinition
 

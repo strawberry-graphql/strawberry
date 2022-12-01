@@ -1,11 +1,8 @@
 import dataclasses
 from typing import TYPE_CHECKING, Any, Dict, List, Optional, Tuple, Type
 
-from graphql import (
-    ASTValidationRule,
-    ExecutionResult as GraphQLExecutionResult,
-    specified_rules,
-)
+from graphql import ASTValidationRule, specified_rules
+from graphql import ExecutionResult as GraphQLExecutionResult
 from graphql.error.graphql_error import GraphQLError
 from graphql.language import DocumentNode, OperationDefinitionNode
 

@@ -3,12 +3,9 @@ from typing import Optional
 from unittest.mock import patch
 
 import pytest
-
-from graphql import (
-    ExecutionResult as GraphQLExecutionResult,
-    GraphQLError,
-    execute as original_execute,
-)
+from graphql import ExecutionResult as GraphQLExecutionResult
+from graphql import GraphQLError
+from graphql import execute as original_execute
 
 import strawberry
 from strawberry.extensions import Extension

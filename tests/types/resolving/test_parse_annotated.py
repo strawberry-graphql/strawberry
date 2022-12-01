@@ -1,5 +1,4 @@
 from typing import List, Optional, Union
-
 from typing_extensions import Annotated
 
 from strawberry.annotation import StrawberryAnnotation

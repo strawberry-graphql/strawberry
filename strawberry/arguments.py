@@ -13,7 +13,6 @@ from typing import (
     Union,
     cast,
 )
-
 from typing_extensions import Annotated, get_args, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
@@ -25,7 +24,8 @@ from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
 from .exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError
 from .scalars import is_scalar
 from .types.types import TypeDefinition
-from .unset import UNSET as _deprecated_UNSET, _deprecated_is_unset  # noqa
+from .unset import UNSET as _deprecated_UNSET
+from .unset import _deprecated_is_unset  # noqa
 
 
 if TYPE_CHECKING:

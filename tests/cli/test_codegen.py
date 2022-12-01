@@ -3,7 +3,8 @@ from typing import List
 
 import pytest
 
-from strawberry.cli.commands.codegen import ConsolePlugin, codegen as cmd_codegen
+from strawberry.cli.commands.codegen import ConsolePlugin
+from strawberry.cli.commands.codegen import codegen as cmd_codegen
 from strawberry.codegen import CodegenFile, CodegenResult, QueryCodegenPlugin
 from strawberry.codegen.types import GraphQLOperation, GraphQLType
 

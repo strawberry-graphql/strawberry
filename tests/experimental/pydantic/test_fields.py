@@ -1,11 +1,10 @@
 import re
 from typing import List
-
-import pytest
+from typing_extensions import Literal
 
 import pydantic
+import pytest
 from pydantic import BaseModel, ValidationError, conlist
-from typing_extensions import Literal
 
 import strawberry
 from strawberry.type import StrawberryOptional

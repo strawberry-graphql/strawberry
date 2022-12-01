@@ -1,5 +1,4 @@
 import pytest
-
 from starlette.websockets import WebSocketDisconnect
 
 from strawberry.subscriptions import GRAPHQL_WS_PROTOCOL

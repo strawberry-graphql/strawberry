@@ -1,7 +1,6 @@
 import json
 from io import BytesIO
 from typing import Any, Dict, Union
-
 from typing_extensions import Literal
 
 from aiohttp import web

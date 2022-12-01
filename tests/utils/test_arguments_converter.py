@@ -2,7 +2,6 @@ from enum import Enum
 from typing import List, Optional
 
 import pytest
-
 from typing_extensions import Annotated
 
 import strawberry

@@ -66,7 +66,8 @@ def get_default_factory_for_field(
     """
     Gets the default factory for a pydantic field.
 
-    Handles mutable defaults when making the dataclass by using pydantic's smart_deepcopy
+    Handles mutable defaults when making the dataclass by
+    using pydantic's smart_deepcopy
 
     Returns optionally a NoArgAnyCallable representing a default_factory parameter
     """

@@ -141,7 +141,7 @@ def test_input_defaults():
         id_number: strawberry.ID = strawberry.ID(123)  # type: ignore
         id_number_string: strawberry.ID = strawberry.ID("123")
         x: Optional[int] = UNSET
-        l: List[str] = strawberry.field(default_factory=list)
+        l: List[str] = strawberry.field(default_factory=list)  # noqa: E741
         list_with_values: List[str] = strawberry.field(
             default_factory=lambda: ["a", "b"]
         )

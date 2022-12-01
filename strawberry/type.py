@@ -3,7 +3,6 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from typing import TYPE_CHECKING, List, Mapping, TypeVar, Union
 
-
 if TYPE_CHECKING:
     from .types.types import TypeDefinition
 

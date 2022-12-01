@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Iterable, List, Optional, Tuple, Type, Union, cast
-
 from typing_extensions import Literal, Protocol
 
 from graphql import (

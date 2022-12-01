@@ -5,10 +5,9 @@ import sys
 import tempfile
 from dataclasses import dataclass
 from typing import List, cast
+from typing_extensions import Literal
 
 import pytest
-
-from typing_extensions import Literal
 
 
 ResultType = Literal["error", "information"]
