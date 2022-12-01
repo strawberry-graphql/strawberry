@@ -276,4 +276,6 @@ def test_should_work_as_extension():
     result = schema.execute_sync(query)
 
     assert len(result.errors) == 1
-    assert result.errors[0].message == "'anonymous' exceeds maximum operation depth of 4"
+    assert (
+        result.errors[0].message == "'anonymous' exceeds maximum operation depth of 4"
+    )

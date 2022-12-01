@@ -207,7 +207,9 @@ class QueryCodegen:
             return GraphQLVariableReference(value.name.value)
 
         if isinstance(value, ListValueNode):
-            return GraphQLListValue([self._convert_value(item) for item in value.values])
+            return GraphQLListValue(
+                [self._convert_value(item) for item in value.values]
+            )
 
         if isinstance(value, EnumValueNode):
             return GraphQLEnumValue(value.value)

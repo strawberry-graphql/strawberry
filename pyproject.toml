@@ -125,7 +125,7 @@ cli = ["click", "pygments"]
 strawberry = "strawberry.cli:run"
 
 [tool.black]
-line-length = 89
+line-length = 88
 extend-exclude = '''
 tests/codegen/snapshots/
 '''
@@ -156,7 +156,7 @@ pythonVersion = "3.7"
 stubPath = ""
 
 [tool.ruff]
-line-length = 89
+line-length = 88
 select = ["E", "F", "ERA", "I"]
 ignore = ["I252"]
 fix = true

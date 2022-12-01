@@ -97,7 +97,9 @@ async def test_datadog_tracer(datadog_extension, mocker):
             mocker.call.trace().finish(),
             mocker.call.trace("Resolving: Query.personAsync", span_type="graphql"),
             mocker.call.trace().__enter__(),
-            mocker.call.trace().__enter__().set_tag("graphql.field_name", "personAsync"),
+            mocker.call.trace()
+            .__enter__()
+            .set_tag("graphql.field_name", "personAsync"),
             mocker.call.trace().__enter__().set_tag("graphql.parent_type", "Query"),
             mocker.call.trace()
             .__enter__()

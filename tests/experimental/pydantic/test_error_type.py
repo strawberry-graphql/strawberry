@@ -344,6 +344,8 @@ def test_error_type_with_matrix_list_of_scalar():
     assert isinstance(field.type.of_type.of_type.of_type, StrawberryList)
 
     assert isinstance(field.type.of_type.of_type.of_type.of_type, StrawberryOptional)
-    assert isinstance(field.type.of_type.of_type.of_type.of_type.of_type, StrawberryList)
+    assert isinstance(
+        field.type.of_type.of_type.of_type.of_type.of_type, StrawberryList
+    )
 
     assert field.type.of_type.of_type.of_type.of_type.of_type.of_type is str

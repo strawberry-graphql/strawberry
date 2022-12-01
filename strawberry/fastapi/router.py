@@ -100,7 +100,9 @@ class GraphQLRouter(APIRouter):
         sig = sig.replace(
             parameters=[
                 *list(sig.parameters.values())[1:],
-                sig.parameters["custom_context"].replace(default=Depends(custom_getter)),
+                sig.parameters["custom_context"].replace(
+                    default=Depends(custom_getter)
+                ),
             ],
         )
         # there is an ongoing issue with types and .__signature__ applied to Callables:
@@ -138,7 +140,9 @@ class GraphQLRouter(APIRouter):
         self.keep_alive_interval = keep_alive_interval
         self.debug = debug
         self.root_value_getter = root_value_getter or self.__get_root_value
-        self.context_getter = self.__get_context_getter(context_getter or (lambda: None))
+        self.context_getter = self.__get_context_getter(
+            context_getter or (lambda: None)
+        )
         self.protocols = subscription_protocols
         self.connection_init_wait_timeout = connection_init_wait_timeout
 

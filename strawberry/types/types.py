@@ -49,7 +49,7 @@ class TypeDefinition(StrawberryType):
         # resolve `Self` annotation with the origin type
         for index, field in enumerate(self.fields):
             if isinstance(field.type, StrawberryType) and field.type.has_generic(Self):
-                self.fields[index] = field.copy_with({Self: self.origin})  # type: ignore
+                self.fields[index] = field.copy_with({Self: self.origin})  # type: ignore  # noqa: E501
 
     # TODO: remove wrapped cls when we "merge" this with `StrawberryObject`
     def resolve_generic(self, wrapped_cls: type) -> type:
@@ -91,7 +91,8 @@ class TypeDefinition(StrawberryType):
             generic_arguments = (
                 argument
                 for argument in field.arguments
-                if isinstance(argument.type, StrawberryType) and argument.type.is_generic
+                if isinstance(argument.type, StrawberryType)
+                and argument.type.is_generic
             )
 
             for argument in generic_arguments:

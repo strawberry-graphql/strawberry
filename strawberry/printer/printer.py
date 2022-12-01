@@ -480,7 +480,9 @@ def _all_root_names_are_common_names(schema: BaseSchema) -> bool:
     )
 
 
-def print_schema_definition(schema: BaseSchema, *, extras: PrintExtras) -> Optional[str]:
+def print_schema_definition(
+    schema: BaseSchema, *, extras: PrintExtras
+) -> Optional[str]:
     # TODO: add support for description
 
     if _all_root_names_are_common_names(schema) and not schema.schema_directives:
@@ -502,7 +504,9 @@ def print_schema_definition(schema: BaseSchema, *, extras: PrintExtras) -> Optio
     return f"schema{directives} {{\n" + "\n".join(operation_types) + "\n}"
 
 
-def print_directive(directive: GraphQLDirective, *, schema: BaseSchema) -> Optional[str]:
+def print_directive(
+    directive: GraphQLDirective, *, schema: BaseSchema
+) -> Optional[str]:
     strawberry_directive = directive.extensions["strawberry-definition"]
 
     if (

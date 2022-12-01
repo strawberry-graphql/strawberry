@@ -75,7 +75,9 @@ def _load_plugins(plugins: List[str]) -> List[QueryCodegenPlugin]:
 
 
 class ConsolePlugin(QueryCodegenPlugin):
-    def __init__(self, query: Path, output_dir: Path, plugins: List[QueryCodegenPlugin]):
+    def __init__(
+        self, query: Path, output_dir: Path, plugins: List[QueryCodegenPlugin]
+    ):
         self.query = query
         self.output_dir = output_dir
         self.plugins = plugins

@@ -11,5 +11,7 @@ def should_skip_tracing(resolver: Callable, info: GraphQLResolveInfo) -> bool:
         return True
     resolver = info.parent_type.fields[info.field_name].resolve
     return (
-        is_introspection_field(info) or is_default_resolver(resolver) or resolver is None
+        is_introspection_field(info)
+        or is_default_resolver(resolver)
+        or resolver is None
     )

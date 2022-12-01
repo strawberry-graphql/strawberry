@@ -19,7 +19,9 @@ def test_parse_annotated_optional():
 
 def test_parse_annotated_list():
     assert StrawberryAnnotation.parse_annotated(List[str]) == List[str]
-    assert StrawberryAnnotation.parse_annotated(Annotated[List[str], "foo"]) == List[str]
+    assert (
+        StrawberryAnnotation.parse_annotated(Annotated[List[str], "foo"]) == List[str]
+    )
 
 
 def test_parse_annotated_union():
@@ -36,7 +38,9 @@ def test_parse_annotated_optional_union():
         == Optional[Union[str, int]]
     )
     assert (
-        StrawberryAnnotation.parse_annotated(Annotated[Optional[Union[str, int]], "foo"])
+        StrawberryAnnotation.parse_annotated(
+            Annotated[Optional[Union[str, int]], "foo"]
+        )
         == Optional[Union[str, int]]
     )
 

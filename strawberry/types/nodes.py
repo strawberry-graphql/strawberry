@@ -1,7 +1,8 @@
 """
 Abstraction layer for graphql-core field nodes.
 
-Call `convert_sections` on a list of GraphQL `FieldNode`s, such as in `info.field_nodes`.
+Call `convert_sections` on a list of GraphQL `FieldNode`s,
+such as in `info.field_nodes`.
 
 If a node has only one useful value, it's value is inlined.
 

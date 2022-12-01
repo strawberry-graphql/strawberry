@@ -267,7 +267,9 @@ async def test_simple_subscription(ws):
     )
 
     response = await ws.receive_json_from()
-    assert response == NextMessage(id="sub1", payload={"data": {"echo": "Hi"}}).as_dict()
+    assert (
+        response == NextMessage(id="sub1", payload={"data": {"echo": "Hi"}}).as_dict()
+    )
 
     await ws.send_json_to(CompleteMessage(id="sub1").as_dict())
 

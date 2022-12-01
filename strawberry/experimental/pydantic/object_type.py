@@ -260,7 +260,9 @@ def type(
 
         def to_pydantic_default(self, **kwargs) -> PydanticModel:
             instance_kwargs = {
-                f.name: convert_strawberry_class_to_pydantic_model(getattr(self, f.name))
+                f.name: convert_strawberry_class_to_pydantic_model(
+                    getattr(self, f.name)
+                )
                 for f in dataclasses.fields(self)
             }
             instance_kwargs.update(kwargs)
