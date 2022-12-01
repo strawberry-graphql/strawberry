@@ -125,7 +125,7 @@ pydantic = ["pydantic"]
 sanic = ["sanic"]
 fastapi = ["fastapi", "python-multipart"]
 chalice = ["chalice"]
-cli = ["click", "pygments"]
+cli = ["click", "pygments", "rich", "libcst"]
 
 [tool.poetry.scripts]
 strawberry = "strawberry.cli:run"
