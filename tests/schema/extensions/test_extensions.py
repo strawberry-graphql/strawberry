@@ -550,7 +550,7 @@ def test_extend_error_format_example():
     class ExtendErrorFormat(Extension):
         def on_request_end(self):
             result = self.execution_context.result
-            if hasattr(result, "errors") and result.errors is not None:
+            if getattr(result, "errors", None):
                 processed_errors = []
                 for error in result.errors:
                     processed_errors.append(
