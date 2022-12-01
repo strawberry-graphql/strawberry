@@ -551,20 +551,18 @@ def test_extend_error_format_example():
         def on_request_end(self):
             result = self.execution_context.result
             if getattr(result, "errors", None):
-                processed_errors = []
-                for error in result.errors:
-                    processed_errors.append(
-                        StrawberryGraphQLError(
-                            extensions={"additional_key": "additional_value"},
-                            nodes=error.nodes,
-                            source=error.source,
-                            positions=error.positions,
-                            path=error.path,
-                            original_error=error.original_error,
-                            message=error.message,
-                        )
+                result.errors = [
+                    StrawberryGraphQLError(
+                        extensions={"additional_key": "additional_value"},
+                        nodes=error.nodes,
+                        source=error.source,
+                        positions=error.positions,
+                        path=error.path,
+                        original_error=error.original_error,
+                        message=error.message,
                     )
-                result.errors = processed_errors
+                    for error in result.errors
+                ]
 
     @strawberry.type
     class Query:
