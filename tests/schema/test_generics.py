@@ -776,6 +776,32 @@ def test_generic_argument():
     assert str(schema) == textwrap.dedent(expected_schema).strip()
 
 
+def test_generic_extra_type():
+    T = TypeVar("T")
+
+    @strawberry.type
+    class Node(Generic[T]):
+        field: T
+
+    @strawberry.type
+    class Query:
+        name: str
+
+    schema = strawberry.Schema(Query, types=[Node[int]])
+
+    expected_schema = """
+    type IntNode {
+      field: Int!
+    }
+
+    type Query {
+      name: String!
+    }
+    """
+
+    assert str(schema) == textwrap.dedent(expected_schema).strip()
+
+
 def test_generic_extending_with_type_var():
     T = TypeVar("T")
 
