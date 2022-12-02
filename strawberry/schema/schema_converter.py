@@ -44,6 +44,7 @@ from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.directive import StrawberryDirective
 from strawberry.enum import EnumDefinition, EnumValue
 from strawberry.exceptions import (
+    DuplicatedTypeName,
     InvalidTypeInputForUnion,
     MissingTypesForGenericError,
     ScalarAlreadyRegisteredError,
@@ -124,8 +125,10 @@ class GraphQLCoreConverter:
         assert enum_name is not None
 
         # Don't reevaluate known types
-        if enum_name in self.type_map:
-            graphql_enum = self.type_map[enum_name].implementation
+        cached_type = self.type_map.get(enum_name, None)
+        if cached_type:
+            self.validate_same_type_definition(enum_name, enum, cached_type)
+            graphql_enum = cached_type.implementation
             assert isinstance(graphql_enum, CustomGraphQLEnumType)  # For mypy
             return graphql_enum
 
@@ -312,7 +315,9 @@ class GraphQLCoreConverter:
         type_name = self.config.name_converter.from_type(type_definition)
 
         # Don't reevaluate known types
-        if type_name in self.type_map:
+        cached_type = self.type_map.get(type_name, None)
+        if cached_type:
+            self.validate_same_type_definition(type_name, type_definition, cached_type)
             graphql_object_type = self.type_map[type_name].implementation
             assert isinstance(graphql_object_type, GraphQLInputObjectType)  # For mypy
             return graphql_object_type
@@ -338,8 +343,10 @@ class GraphQLCoreConverter:
         interface_name = self.config.name_converter.from_type(interface)
 
         # Don't reevaluate known types
-        if interface_name in self.type_map:
-            graphql_interface = self.type_map[interface_name].implementation
+        cached_type = self.type_map.get(interface_name, None)
+        if cached_type:
+            self.validate_same_type_definition(interface_name, interface, cached_type)
+            graphql_interface = cached_type.implementation
             assert isinstance(graphql_interface, GraphQLInterfaceType)  # For mypy
             return graphql_interface
 
@@ -369,8 +376,12 @@ class GraphQLCoreConverter:
         object_type_name = self.config.name_converter.from_type(object_type)
 
         # Don't reevaluate known types
-        if object_type_name in self.type_map:
-            graphql_object_type = self.type_map[object_type_name].implementation
+        cached_type = self.type_map.get(object_type_name, None)
+        if cached_type:
+            self.validate_same_type_definition(
+                object_type_name, object_type, cached_type
+            )
+            graphql_object_type = cached_type.implementation
             assert isinstance(graphql_object_type, GraphQLObjectType)  # For mypy
             return graphql_object_type
 
@@ -661,3 +672,43 @@ class GraphQLCoreConverter:
             return is_type_of
 
         return None
+
+    def validate_same_type_definition(
+        self, name: str, type_definition: StrawberryType, cached_type: ConcreteType
+    ) -> None:
+        # if the type definitions are the same we can return
+        if cached_type.definition == type_definition:
+            return
+
+        # otherwise we need to check if we are dealing with different instances
+        # of the same type generic type. This happens when using the same generic
+        # type in different places in the schema, like in the following example:
+
+        # >>> @strawberry.type
+        # >>> class A(Generic[T]):
+        # >>>     a: T
+
+        # >>> @strawberry.type
+        # >>> class Query:
+        # >>>     first: A[int]
+        # >>>     second: A[int]
+
+        # in theory we won't ever have duplicated definitions for the same generic,
+        # but we are doing the check in an exhaustive way just in case we missed
+        # something.
+
+        # we only do this check for TypeDefinitions, as they are the only ones
+        # that can be generic.
+        # of they are of the same generic type, we need to check if the type
+        # var map is the same, in that case we can return
+
+        if (
+            isinstance(type_definition, TypeDefinition)
+            and isinstance(cached_type.definition, TypeDefinition)
+            and cached_type.definition.concrete_of is not None
+            and cached_type.definition.concrete_of == type_definition.concrete_of
+        ):
+            if cached_type.definition.type_var_map == type_definition.type_var_map:
+                return
+
+        raise DuplicatedTypeName(name)
