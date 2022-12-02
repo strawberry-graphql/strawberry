@@ -150,7 +150,8 @@ class InvalidCustomContext(Exception):
         super().__init__(message)
 
 
-class DuplicatedTypeName(Exception):
+# TODO Move it
+class DuplicatedTypeName(StrawberryException):
     """Raised when the same type with different definition is reused inside a schema"""
 
     def __init__(self, duplicated_type_name: str):
