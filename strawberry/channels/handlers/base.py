@@ -12,7 +12,6 @@ from typing import (
     Optional,
     Sequence,
 )
-
 from typing_extensions import Literal, Protocol, TypedDict
 
 from channels.consumer import AsyncConsumer

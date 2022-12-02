@@ -2,7 +2,6 @@ import re
 import sys
 
 import pytest
-
 import uvicorn
 
 from strawberry.cli.commands.server import server as cmd_server

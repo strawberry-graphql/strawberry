@@ -1,6 +1,5 @@
 import json
 from typing import Any, Dict, Optional, Type, Union
-
 from typing_extensions import Literal
 
 from sanic.exceptions import SanicException, ServerError

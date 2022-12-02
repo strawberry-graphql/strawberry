@@ -1,7 +1,6 @@
 from abc import abstractmethod
 from functools import lru_cache
 from typing import Any, Dict, Iterable, List, Optional, Type, Union
-
 from typing_extensions import Protocol
 
 from graphql import GraphQLError

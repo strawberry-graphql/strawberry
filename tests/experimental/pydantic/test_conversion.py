@@ -6,7 +6,6 @@ from enum import Enum
 from typing import Any, Dict, List, NewType, Optional, Union, cast
 
 import pytest
-
 from pydantic import BaseConfig, BaseModel, Field, ValidationError
 from pydantic.fields import ModelField
 from pydantic.typing import NoArgAnyCallable

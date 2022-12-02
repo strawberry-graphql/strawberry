@@ -22,7 +22,6 @@ from typing import (  # type: ignore[attr-defined]
     _eval_type,
     cast,
 )
-
 from typing_extensions import Annotated, Protocol, get_args, get_origin
 
 from strawberry.annotation import StrawberryAnnotation

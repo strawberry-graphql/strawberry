@@ -3,10 +3,8 @@ import typing
 import strawberry
 from flask import Flask
 from strawberry.file_uploads import Upload
-from strawberry.flask.views import (
-    AsyncGraphQLView as BaseAsyncGraphQLView,
-    GraphQLView as BaseGraphQLView,
-)
+from strawberry.flask.views import AsyncGraphQLView as BaseAsyncGraphQLView
+from strawberry.flask.views import GraphQLView as BaseGraphQLView
 
 
 def create_app(use_async_view=False, **kwargs):

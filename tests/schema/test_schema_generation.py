@@ -1,9 +1,8 @@
 from typing import Any, Dict, List, Optional
 
 import pytest
-
+from graphql import ExecutionContext as GraphQLExecutionContext
 from graphql import (
-    ExecutionContext as GraphQLExecutionContext,
     ExecutionResult,
     GraphQLError,
     GraphQLField,
@@ -11,8 +10,8 @@ from graphql import (
     GraphQLObjectType,
     GraphQLSchema,
     GraphQLString,
-    print_schema as graphql_core_print_schema,
 )
+from graphql import print_schema as graphql_core_print_schema
 
 import strawberry
 

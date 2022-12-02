@@ -4,12 +4,8 @@ from contextlib import suppress
 from datetime import timedelta
 from typing import Any, AsyncGenerator, Callable, Dict, List, Optional
 
-from graphql import (
-    ExecutionResult as GraphQLExecutionResult,
-    GraphQLError,
-    GraphQLSyntaxError,
-    parse,
-)
+from graphql import ExecutionResult as GraphQLExecutionResult
+from graphql import GraphQLError, GraphQLSyntaxError, parse
 from graphql.error.graphql_error import format_error as format_graphql_error
 
 from strawberry.schema import BaseSchema
