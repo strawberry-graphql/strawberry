@@ -668,5 +668,39 @@ class GraphQLCoreConverter:
     def validate_same_type_definition(
         self, name: str, type_definition: StrawberryType, cached_type: ConcreteType
     ) -> None:
-        if cached_type.definition != type_definition:
-            raise DuplicatedTypeName(name)
+        # if the type definitions are the same we can return
+        if cached_type.definition == type_definition:
+            return
+
+        # otherwise we need to check if we are dealing with different instances
+        # of the same type generic type. This happens when using the same generic
+        # type in different places in the schema, like in the following example:
+
+        # >>> @strawberry.type
+        # >>> class A(Generic[T]):
+        # >>>     a: T
+
+        # >>> @strawberry.type
+        # >>> class Query:
+        # >>>     first: A[int]
+        # >>>     second: A[int]
+
+        # in theory we won't ever have duplicated definitions for the same generic,
+        # but we are doing the check in an exhaustive way just in case we missed
+        # something.
+
+        # we only do this check for TypeDefinitions, as they are the only ones
+        # that can be generic.
+        # of they are of the same generic type, we need to check if the type
+        # var map is the same, in that case we can return
+
+        if (
+            isinstance(type_definition, TypeDefinition)
+            and isinstance(cached_type.definition, TypeDefinition)
+            and cached_type.definition.concrete_of is not None
+            and cached_type.definition.concrete_of == type_definition.concrete_of
+        ):
+            if cached_type.definition.type_var_map == type_definition.type_var_map:
+                return
+
+        raise DuplicatedTypeName(name)
