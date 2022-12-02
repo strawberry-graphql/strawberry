@@ -1,6 +1,15 @@
 CHANGELOG
 =========
 
+0.144.1 - 2022-12-02
+--------------------
+
+This release fixes a regression that prevented Generic types
+from being used multiple types.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2378](https://github.com/strawberry-graphql/strawberry/pull/2378/)
+
+
 0.144.0 - 2022-12-02
 --------------------
 
