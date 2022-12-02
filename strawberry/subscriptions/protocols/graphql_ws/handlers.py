@@ -42,6 +42,7 @@ class BaseGraphQLWSHandler(ABC):
         self.keep_alive_task: Optional[asyncio.Task] = None
         self.subscriptions: Dict[str, AsyncGenerator] = {}
         self.tasks: Dict[str, asyncio.Task] = {}
+        self.connection_params: Dict[str, Any] = {}
 
     @abstractmethod
     async def get_context(self) -> Any:
@@ -85,6 +86,8 @@ class BaseGraphQLWSHandler(ABC):
         data: OperationMessage = {"type": GQL_CONNECTION_ACK}
         await self.send_json(data)
 
+        self.connection_params = message.get("payload") or {}
+
         if self.keep_alive:
             keep_alive_handler = self.handle_keep_alive()
             self.keep_alive_task = asyncio.create_task(keep_alive_handler)
@@ -100,6 +103,8 @@ class BaseGraphQLWSHandler(ABC):
         variables = payload.get("variables")
 
         context = await self.get_context()
+        if isinstance(context, dict):
+            context["connection_params"] = self.connection_params
         root_value = await self.get_root_value()
 
         if self.debug:

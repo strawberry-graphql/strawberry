@@ -42,6 +42,7 @@ class BaseGraphQLTransportWSHandler(ABC):
         self.subscriptions: Dict[str, AsyncGenerator] = {}
         self.tasks: Dict[str, asyncio.Task] = {}
         self.completed_tasks: List[asyncio.Task] = []
+        self.connection_params: Dict[str, Any] = {}
 
     @abstractmethod
     async def get_context(self) -> Any:
@@ -122,6 +123,8 @@ class BaseGraphQLTransportWSHandler(ABC):
             await self.close(code=4429, reason=reason)
             return
 
+        self.connection_params = message.payload or {}
+
         self.connection_init_received = True
         await self.send_message(ConnectionAckMessage())
         self.connection_acknowledged = True
@@ -164,6 +167,8 @@ class BaseGraphQLTransportWSHandler(ABC):
             )
 
         context = await self.get_context()
+        if isinstance(context, dict):
+            context["connection_params"] = self.connection_params
         root_value = await self.get_root_value()
 
         # Get an AsyncGenerator yielding the results
