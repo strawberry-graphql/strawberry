@@ -1,6 +1,27 @@
 CHANGELOG
 =========
 
+0.144.2 - 2022-12-02
+--------------------
+
+Generic types are now allowed in the schema's extra types.
+```python
+T = TypeVar('T')
+
+@strawberry.type
+class Node(Generic[T]):
+    field: T
+
+@strawberry.type
+class Query:
+    name: str
+
+schema = strawberry.Schema(Query, types=[Node[int]])
+```
+
+Contributed by [A. Coady](https://github.com/coady) via [PR #2294](https://github.com/strawberry-graphql/strawberry/pull/2294/)
+
+
 0.144.1 - 2022-12-02
 --------------------
 
