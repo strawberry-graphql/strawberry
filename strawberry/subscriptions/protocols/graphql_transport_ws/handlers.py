@@ -118,12 +118,12 @@ class BaseGraphQLTransportWSHandler(ABC):
         await self.reap_completed_tasks()
 
     async def handle_connection_init(self, message: ConnectionInitMessage) -> None:
+        self.connection_params = message.payload or {}
+        
         if self.connection_init_received:
             reason = "Too many initialisation requests"
             await self.close(code=4429, reason=reason)
             return
-
-        self.connection_params = message.payload or {}
 
         self.connection_init_received = True
         await self.send_message(ConnectionAckMessage())

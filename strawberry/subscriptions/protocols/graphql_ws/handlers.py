@@ -83,10 +83,10 @@ class BaseGraphQLWSHandler(ABC):
             await self.handle_stop(message)
 
     async def handle_connection_init(self, message: OperationMessage) -> None:
+        self.connection_params = message.get("payload") or {}
+
         data: OperationMessage = {"type": GQL_CONNECTION_ACK}
         await self.send_json(data)
-
-        self.connection_params = message.get("payload") or {}
 
         if self.keep_alive:
             keep_alive_handler = self.handle_keep_alive()
