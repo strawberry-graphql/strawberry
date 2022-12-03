@@ -699,8 +699,26 @@ class GraphQLCoreConverter:
             and isinstance(cached_type.definition, TypeDefinition)
             and cached_type.definition.concrete_of is not None
             and cached_type.definition.concrete_of == type_definition.concrete_of
+            and (
+                cached_type.definition.type_var_map.keys()
+                == type_definition.type_var_map.keys()
+            )
         ):
-            if cached_type.definition.type_var_map == type_definition.type_var_map:
+            # manually compare type_var_maps while resolving any lazy types
+            # so that they're considered equal to the actual types they're referencing
+            equal = True
+            for type_var, type1 in cached_type.definition.type_var_map.items():
+                type2 = type_definition.type_var_map[type_var]
+                # both lazy types are always resolved because two different lazy types
+                # may be referencing the same actual type
+                if isinstance(type1, LazyType):
+                    type1 = type1.resolve_type()
+                if isinstance(type2, LazyType):
+                    type2 = type2.resolve_type()
+                if type1 != type2:
+                    equal = False
+                    break
+            if equal:
                 return
 
         raise DuplicatedTypeName(name)
