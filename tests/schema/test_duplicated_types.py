@@ -10,10 +10,7 @@ from strawberry.exceptions import DuplicatedTypeName
 
 @pytest.mark.raises_strawberry_exception(
     DuplicatedTypeName,
-    match=(
-        r"Types need to have unique names in the entire schema. "
-        r"Duplicated type name: (.*)"
-    ),
+    match=r"Type (.*) is defined multiple times in the schema",
 )
 def test_schema_has_no_duplicated_input_types():
     @strawberry.input(name="DuplicatedInput")
@@ -33,10 +30,7 @@ def test_schema_has_no_duplicated_input_types():
 
 @pytest.mark.raises_strawberry_exception(
     DuplicatedTypeName,
-    match=(
-        r"Types need to have unique names in the entire schema. "
-        r"Duplicated type name: (.*)"
-    ),
+    match=r"Type (.*) is defined multiple times in the schema",
 )
 def test_schema_has_no_duplicated_types():
     @strawberry.type(name="DuplicatedType")
@@ -56,10 +50,7 @@ def test_schema_has_no_duplicated_types():
 
 @pytest.mark.raises_strawberry_exception(
     DuplicatedTypeName,
-    match=(
-        r"Types need to have unique names in the entire schema. "
-        r"Duplicated type name: (.*)"
-    ),
+    match=r"Type (.*) is defined multiple times in the schema",
 )
 def test_schema_has_no_duplicated_interfaces():
     @strawberry.interface(name="DuplicatedType")
@@ -79,10 +70,7 @@ def test_schema_has_no_duplicated_interfaces():
 
 @pytest.mark.raises_strawberry_exception(
     DuplicatedTypeName,
-    match=(
-        r"Types need to have unique names in the entire schema. "
-        r"Duplicated type name: (.*)"
-    ),
+    match=r"Type (.*) is defined multiple times in the schema",
 )
 def test_schema_has_no_duplicated_enums():
     @strawberry.enum(name="DuplicatedType")
@@ -102,10 +90,7 @@ def test_schema_has_no_duplicated_enums():
 
 @pytest.mark.raises_strawberry_exception(
     DuplicatedTypeName,
-    match=(
-        r"Types need to have unique names in the entire schema. "
-        r"Duplicated type name: (.*)"
-    ),
+    match=r"Type (.*) is defined multiple times in the schema",
 )
 def test_schema_has_no_duplicated_names_across_different_types():
     @strawberry.interface(name="DuplicatedType")
@@ -125,10 +110,7 @@ def test_schema_has_no_duplicated_names_across_different_types():
 
 @pytest.mark.raises_strawberry_exception(
     DuplicatedTypeName,
-    match=(
-        r"Types need to have unique names in the entire schema. "
-        r"Duplicated type name: (.*)"
-    ),
+    match=r"Type (.*) is defined multiple times in the schema",
 )
 def test_schema_has_no_duplicated_types_between_schema_and_extra_types():
     @strawberry.type(name="DuplicatedType")

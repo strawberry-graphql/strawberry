@@ -6,6 +6,7 @@ from graphql import GraphQLError, GraphQLInputObjectType, GraphQLObjectType
 
 from strawberry.type import StrawberryType
 
+from .duplicated_type_name import DuplicatedTypeName
 from .exception import StrawberryException, UnableToFindExceptionSource
 from .exception_source import ExceptionSource
 from .handler import setup_exception_handler
@@ -146,18 +147,6 @@ class InvalidCustomContext(Exception):
         message = (
             "The custom context must be either a class "
             "that inherits from BaseContext or a dictionary"
-        )
-        super().__init__(message)
-
-
-# TODO Move it
-class DuplicatedTypeName(StrawberryException):
-    """Raised when the same type with different definition is reused inside a schema"""
-
-    def __init__(self, duplicated_type_name: str):
-        message = (
-            "Types need to have unique names in the entire schema. "
-            f"Duplicated type name: {duplicated_type_name}"
         )
         super().__init__(message)
 

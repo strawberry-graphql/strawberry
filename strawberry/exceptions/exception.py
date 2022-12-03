@@ -120,7 +120,7 @@ class StrawberryException(Exception, ABC):
             line_offset=self.exception_source.start_line - 1,
             line_annotations=line_annotations,
             line_range=(
-                self.exception_source.start_line,
+                self.exception_source.start_line - 1,
                 self.exception_source.end_line,
             ),
         )
