@@ -711,10 +711,11 @@ class GraphQLCoreConverter:
             if cached_type.definition.type_var_map == type_definition.type_var_map:
                 return
 
-        origin = (
-            type_definition.wrapped_cls
-            if isinstance(type_definition, EnumDefinition)
-            else type_definition.origin
-        )
+        if isinstance(type_definition, TypeDefinition):
+            origin = type_definition.origin
+        elif isinstance(type_definition, EnumDefinition):
+            origin = type_definition.wrapped_cls
+        else:
+            origin = None
 
         raise DuplicatedTypeName(origin, name)
