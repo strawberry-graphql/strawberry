@@ -20,6 +20,7 @@ from strawberry.subscriptions.protocols.graphql_ws import (
     GQL_STOP,
 )
 from strawberry.subscriptions.protocols.graphql_ws.types import (
+    ConnectionInitPayload,
     OperationMessage,
     OperationMessagePayload,
     StartPayload,
@@ -42,7 +43,7 @@ class BaseGraphQLWSHandler(ABC):
         self.keep_alive_task: Optional[asyncio.Task] = None
         self.subscriptions: Dict[str, AsyncGenerator] = {}
         self.tasks: Dict[str, asyncio.Task] = {}
-        self.connection_params: Dict[str, Any] = {}
+        self.connection_params: ConnectionInitPayload = dict()
 
     @abstractmethod
     async def get_context(self) -> Any:
@@ -83,7 +84,8 @@ class BaseGraphQLWSHandler(ABC):
             await self.handle_stop(message)
 
     async def handle_connection_init(self, message: OperationMessage) -> None:
-        self.connection_params = message.get("payload") or {}
+        payload = cast(ConnectionInitPayload, message.get("payload"))
+        self.connection_params = payload or dict()
 
         data: OperationMessage = {"type": GQL_CONNECTION_ACK}
         await self.send_json(data)
