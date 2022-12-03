@@ -45,7 +45,7 @@ def test_with_explicit_class_context_getter():
         def abc(self, info: Info) -> str:
             assert info.context.request is not None
             assert info.context.strawberry == "explicitly rocks"
-            assert not hasattr(info.context, "connection_params")
+            assert info.context.connection_params is None
             return "abc"
 
     class CustomContext(BaseContext):
