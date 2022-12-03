@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING, Any, Optional
 
 
 if TYPE_CHECKING:
@@ -12,8 +12,8 @@ class StrawberryChannelsContext:
     A Channels context for GraphQL
     """
 
-    connection_params: Any
     request: "ChannelsConsumer"
+    connection_params: Optional[Any] = None
 
     @property
     def ws(self):
