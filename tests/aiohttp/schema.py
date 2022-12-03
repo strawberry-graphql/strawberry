@@ -141,5 +141,8 @@ class Subscription:
             is_connection_init_timeout_task_done=is_connection_init_timeout_task_done,
         )
 
+    @strawberry.subscription
+    async def connection_params(self, info) -> typing.AsyncGenerator[str, None]:
+        yield info.context["connection_params"]
 
 schema = strawberry.Schema(query=Query, mutation=Mutation, subscription=Subscription)

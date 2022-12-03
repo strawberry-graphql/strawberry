@@ -516,3 +516,41 @@ def test_task_cancellation_separation(test_client):
         response = ws1.receive_json()
         assert response["type"] == GQL_COMPLETE
         assert response["id"] == "debug1"
+
+def test_injects_connection_params(test_client):
+    with test_client.websocket_connect("/graphql", [GRAPHQL_WS_PROTOCOL]) as ws:
+        ws.send_json(
+            {
+                "type": GQL_CONNECTION_INIT,
+                "id": "demo",
+                "payload": "echo"
+            }
+        )
+        ws.send_json(
+            {
+                "type": GQL_START,
+                "id": "demo",
+                "payload": {
+                    "query": 'subscription { connectionParams }',
+                },
+            }
+        )
+
+        response = ws.receive_json()
+        assert response["type"] == GQL_CONNECTION_ACK
+
+        response = ws.receive_json()
+        assert response["type"] == GQL_DATA
+        assert response["id"] == "demo"
+        assert response["payload"]["data"] == {"connectionParams": "echo"}
+
+        ws.send_json({"type": GQL_STOP, "id": "demo"})
+        response = ws.receive_json()
+        assert response["type"] == GQL_COMPLETE
+        assert response["id"] == "demo"
+
+        ws.send_json({"type": GQL_CONNECTION_TERMINATE})
+
+        # make sure the websocket is disconnected now
+        with pytest.raises(WebSocketDisconnect):
+            ws.receive_json()

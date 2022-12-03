@@ -584,3 +584,41 @@ async def test_task_cancellation_separation():
     response = await ws1.receive_json_from()
     assert response["type"] == GQL_COMPLETE
     assert response["id"] == "debug1"
+
+
+async def test_injects_connection_params(ws):
+    await ws.send_json_to(
+        {
+            "type": GQL_CONNECTION_INIT,
+            "id": "demo",
+            "payload": "echo"
+        }
+    )
+    await ws.send_json_to(
+        {
+            "type": GQL_START,
+            "id": "demo",
+            "payload": {
+                "query": 'subscription { connectionParams }',
+            },
+        }
+    )
+
+    response = await ws.receive_json_from()
+    assert response["type"] == GQL_CONNECTION_ACK
+
+    response = await ws.receive_json_from()
+    assert response["type"] == GQL_DATA
+    assert response["id"] == "demo"
+    assert response["payload"]["data"] == {"connectionParams": "echo"}
+
+    await ws.send_json_to({"type": GQL_STOP, "id": "demo"})
+    response = await ws.receive_json_from()
+    assert response["type"] == GQL_COMPLETE
+    assert response["id"] == "demo"
+
+    await ws.send_json_to({"type": GQL_CONNECTION_TERMINATE})
+
+    # make sure the websocket is disconnected now
+    data = await ws.receive_output()
+    assert data == {"type": "websocket.close", "code": 1000}

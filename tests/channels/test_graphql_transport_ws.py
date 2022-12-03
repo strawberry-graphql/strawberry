@@ -423,3 +423,27 @@ async def test_subscription_exceptions(ws):
     assert response["id"] == "sub1"
     assert len(response["payload"]) == 1
     assert response["payload"][0] == {"message": "TEST EXC"}
+
+async def test_inject_connection_params(ws):
+    await ws.send_json_to(ConnectionInitMessage(
+        payload="echo"
+    ).as_dict())
+
+    response = await ws.receive_json_from()
+    assert response == ConnectionAckMessage().as_dict()
+
+    await ws.send_json_to(
+        SubscribeMessage(
+            id="sub1",
+            payload=SubscribeMessagePayload(
+                query='subscription { connectionParams }'
+            ),
+        ).as_dict()
+    )
+
+    response = await ws.receive_json_from()
+    assert (
+        response == NextMessage(id="sub1", payload={"data": {"connectionParams": "echo"}}).as_dict()
+    )
+
+    await ws.send_json_to(CompleteMessage(id="sub1").as_dict())
