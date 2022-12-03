@@ -180,7 +180,7 @@ def test_with_invalid_context_getter():
         test_client.post("/graphql", json={"query": "{ abc }"})
 
 
-def test_injects_class_context_connection_params_transport_ws():
+def test_class_context_injects_connection_params_over_transport_ws():
     @strawberry.type
     class Query:
         x: str = "hi"
@@ -234,7 +234,7 @@ def test_injects_class_context_connection_params_transport_ws():
         ws.close()
 
 
-def test_injects_class_context_connection_params_ws():
+def test_class_context_injects_connection_params_over_ws():
     @strawberry.type
     class Query:
         x: str = "hi"
