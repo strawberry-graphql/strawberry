@@ -45,6 +45,7 @@ def test_with_explicit_class_context_getter():
         def abc(self, info: Info) -> str:
             assert info.context.request is not None
             assert info.context.strawberry == "explicitly rocks"
+            assert not hasattr(info.context, "connection_params")
             return "abc"
 
     class CustomContext(BaseContext):
@@ -76,10 +77,12 @@ def test_with_implicit_class_context_getter():
         def abc(self, info: Info) -> str:
             assert info.context.request is not None
             assert info.context.strawberry == "implicitly rocks"
+            assert info.context.connection_params is None
             return "abc"
 
     class CustomContext(BaseContext):
         def __init__(self, rocks: str = "implicitly rocks"):
+            super().__init__()
             self.strawberry = rocks
 
     def get_context(custom_context: CustomContext = Depends()):
@@ -103,6 +106,7 @@ def test_with_dict_context_getter():
         @strawberry.field
         def abc(self, info: Info) -> str:
             assert info.context.get("request") is not None
+            assert "connection_params" not in info.context.keys()
             assert info.context.get("strawberry") == "rocks"
             return "abc"
 
