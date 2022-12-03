@@ -199,7 +199,9 @@ class SyncGraphQLHTTPConsumer(GraphQLHTTPConsumer):
         self,
         request: Optional["ChannelsConsumer"] = None,
     ) -> StrawberryChannelsContext:
-        return StrawberryChannelsContext(request=request or self, connection_params=None)
+        return StrawberryChannelsContext(
+            request=request or self, connection_params=None
+        )
 
     def process_result(  # type:ignore [override]
         self, result: ExecutionResult

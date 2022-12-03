@@ -796,9 +796,7 @@ def test_single_result_duplicate_ids_query(test_client):
 
 def test_injects_connection_params(test_client):
     with test_client.websocket_connect("/", [GRAPHQL_TRANSPORT_WS_PROTOCOL]) as ws:
-        ws.send_json(ConnectionInitMessage(
-            payload="echo"
-        ).as_dict())
+        ws.send_json(ConnectionInitMessage(payload="echo").as_dict())
 
         response = ws.receive_json()
         assert response == ConnectionAckMessage().as_dict()
@@ -807,7 +805,7 @@ def test_injects_connection_params(test_client):
             SubscribeMessage(
                 id="sub1",
                 payload=SubscribeMessagePayload(
-                    query='subscription { connectionParams }'
+                    query="subscription { connectionParams }"
                 ),
             ).as_dict()
         )
@@ -815,7 +813,9 @@ def test_injects_connection_params(test_client):
         response = ws.receive_json()
         assert (
             response
-            == NextMessage(id="sub1", payload={"data": {"connectionParams": "echo"}}).as_dict()
+            == NextMessage(
+                id="sub1", payload={"data": {"connectionParams": "echo"}}
+            ).as_dict()
         )
 
         ws.send_json(CompleteMessage(id="sub1").as_dict())

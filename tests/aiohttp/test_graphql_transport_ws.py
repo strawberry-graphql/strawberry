@@ -956,6 +956,7 @@ async def test_single_result_duplicate_ids_query(aiohttp_client):
         await ws.close()
         assert ws.closed
 
+
 async def test_injects_connection_params(aiohttp_client):
     app = create_app()
     aiohttp_app_client = await aiohttp_client(app)
@@ -963,9 +964,7 @@ async def test_injects_connection_params(aiohttp_client):
     async with aiohttp_app_client.ws_connect(
         "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
-        await ws.send_json(ConnectionInitMessage(
-            payload="echo"
-        ).as_dict())
+        await ws.send_json(ConnectionInitMessage(payload="echo").as_dict())
 
         response = await ws.receive_json()
         assert response == ConnectionAckMessage().as_dict()
@@ -974,7 +973,7 @@ async def test_injects_connection_params(aiohttp_client):
             SubscribeMessage(
                 id="sub1",
                 payload=SubscribeMessagePayload(
-                    query='subscription { connectionParams }'
+                    query="subscription { connectionParams }"
                 ),
             ).as_dict()
         )
@@ -982,7 +981,9 @@ async def test_injects_connection_params(aiohttp_client):
         response = await ws.receive_json()
         assert (
             response
-            == NextMessage(id="sub1", payload={"data": {"connectionParams": "echo"}}).as_dict()
+            == NextMessage(
+                id="sub1", payload={"data": {"connectionParams": "echo"}}
+            ).as_dict()
         )
 
         await ws.send_json(CompleteMessage(id="sub1").as_dict())

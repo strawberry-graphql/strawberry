@@ -1,6 +1,6 @@
+import asyncio
 from typing import AsyncGenerator, Dict
 
-import asyncio
 import pytest
 from starlette.testclient import TestClient
 from starlette.websockets import WebSocketDisconnect
@@ -10,11 +10,7 @@ from fastapi import Depends, FastAPI
 from fastapi.testclient import TestClient
 from strawberry.exceptions import InvalidCustomContext
 from strawberry.fastapi import BaseContext, GraphQLRouter
-from strawberry.types import Info
-
-from starlette.testclient import TestClient
-
-from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL
+from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     CompleteMessage,
     ConnectionAckMessage,
@@ -23,7 +19,6 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     SubscribeMessage,
     SubscribeMessagePayload,
 )
-from strawberry.subscriptions import GRAPHQL_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_ws import (
     GQL_COMPLETE,
     GQL_CONNECTION_ACK,
@@ -33,6 +28,8 @@ from strawberry.subscriptions.protocols.graphql_ws import (
     GQL_START,
     GQL_STOP,
 )
+from strawberry.types import Info
+
 
 def test_base_context():
     base_context = BaseContext()
@@ -178,6 +175,7 @@ def test_with_invalid_context_getter():
     ):
         test_client.post("/graphql", json={"query": "{ abc }"})
 
+
 def test_injects_class_context_connection_params_transport_ws():
     @strawberry.type
     class Query:
@@ -186,9 +184,7 @@ def test_injects_class_context_connection_params_transport_ws():
     @strawberry.type
     class Subscription:
         @strawberry.subscription
-        async def echo(
-            self, info: Info, delay: float = 0
-        ) -> AsyncGenerator[str, None]:
+        async def echo(self, info: Info, delay: float = 0) -> AsyncGenerator[str, None]:
             assert info.context.request is not None
             await asyncio.sleep(delay)
             yield info.context.connection_params
@@ -203,7 +199,7 @@ def test_injects_class_context_connection_params_transport_ws():
         return context
 
     app = FastAPI()
-    schema = strawberry.Schema(query=Query, subscription=Subscription) 
+    schema = strawberry.Schema(query=Query, subscription=Subscription)
     graphql_app = GraphQLRouter(schema=schema, context_getter=get_context)
     app.include_router(graphql_app, prefix="/graphql")
     test_client = TestClient(app)
@@ -211,9 +207,7 @@ def test_injects_class_context_connection_params_transport_ws():
     with test_client.websocket_connect(
         "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
-        ws.send_json(ConnectionInitMessage(
-            payload="echo"
-        ).as_dict())
+        ws.send_json(ConnectionInitMessage(payload="echo").as_dict())
 
         response = ws.receive_json()
         assert response == ConnectionAckMessage().as_dict()
@@ -221,9 +215,7 @@ def test_injects_class_context_connection_params_transport_ws():
         ws.send_json(
             SubscribeMessage(
                 id="sub1",
-                payload=SubscribeMessagePayload(
-                    query='subscription { echo }'
-                ),
+                payload=SubscribeMessagePayload(query="subscription { echo }"),
             ).as_dict()
         )
 
@@ -237,6 +229,7 @@ def test_injects_class_context_connection_params_transport_ws():
 
         ws.close()
 
+
 def test_injects_class_context_connection_params_ws():
     @strawberry.type
     class Query:
@@ -245,9 +238,7 @@ def test_injects_class_context_connection_params_ws():
     @strawberry.type
     class Subscription:
         @strawberry.subscription
-        async def echo(
-            self, info: Info, delay: float = 0
-        ) -> AsyncGenerator[str, None]:
+        async def echo(self, info: Info, delay: float = 0) -> AsyncGenerator[str, None]:
             assert info.context.request is not None
             await asyncio.sleep(delay)
             yield info.context.connection_params
@@ -262,25 +253,19 @@ def test_injects_class_context_connection_params_ws():
         return context
 
     app = FastAPI()
-    schema = strawberry.Schema(query=Query, subscription=Subscription) 
+    schema = strawberry.Schema(query=Query, subscription=Subscription)
     graphql_app = GraphQLRouter(schema=schema, context_getter=get_context)
     app.include_router(graphql_app, prefix="/graphql")
     test_client = TestClient(app)
 
     with test_client.websocket_connect("/graphql", [GRAPHQL_WS_PROTOCOL]) as ws:
-        ws.send_json(
-            {
-                "type": GQL_CONNECTION_INIT,
-                "id": "demo",
-                "payload": "echo"
-            }
-        )
+        ws.send_json({"type": GQL_CONNECTION_INIT, "id": "demo", "payload": "echo"})
         ws.send_json(
             {
                 "type": GQL_START,
                 "id": "demo",
                 "payload": {
-                    "query": 'subscription { echo }',
+                    "query": "subscription { echo }",
                 },
             }
         )

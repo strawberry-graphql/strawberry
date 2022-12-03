@@ -587,6 +587,7 @@ async def test_task_cancellation_separation(aiohttp_client):
 
         assert len(get_result_handler_tasks()) == 0
 
+
 async def test_injects_connection_params(aiohttp_client):
     app = create_app(keep_alive=False)
     aiohttp_app_client = await aiohttp_client(app)
@@ -595,18 +596,14 @@ async def test_injects_connection_params(aiohttp_client):
         "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
     ) as ws:
         await ws.send_json(
-            {
-                "type": GQL_CONNECTION_INIT,
-                "id": "demo",
-                "payload": "echo"
-            }
+            {"type": GQL_CONNECTION_INIT, "id": "demo", "payload": "echo"}
         )
         await ws.send_json(
             {
                 "type": GQL_START,
                 "id": "demo",
                 "payload": {
-                    "query": 'subscription { connectionParams }',
+                    "query": "subscription { connectionParams }",
                 },
             }
         )

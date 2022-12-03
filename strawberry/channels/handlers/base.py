@@ -87,7 +87,9 @@ class ChannelsConsumer(AsyncConsumer):
         request: Optional["ChannelsConsumer"] = None,
         connection_params: Optional[Any] = None,
     ) -> StrawberryChannelsContext:
-        return StrawberryChannelsContext(request=request or self, connection_params=connection_params)
+        return StrawberryChannelsContext(
+            request=request or self, connection_params=connection_params
+        )
 
     async def dispatch(self, message: ChannelsMessage):
         # AsyncConsumer will try to get a function for message["type"] to handle

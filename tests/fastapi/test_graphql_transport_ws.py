@@ -4,6 +4,7 @@ from datetime import timedelta
 
 from starlette.testclient import TestClient
 from starlette.websockets import WebSocketDisconnect
+from tests.fastapi.app import create_app
 
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
@@ -17,7 +18,6 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     SubscribeMessage,
     SubscribeMessagePayload,
 )
-from tests.fastapi.app import create_app
 
 
 def test_unknown_message_type(test_client):
@@ -829,13 +829,12 @@ def test_single_result_duplicate_ids_query(test_client):
         assert data["type"] == "websocket.close"
         assert data["code"] == 4409
 
+
 def test_injects_connection_params(test_client):
     with test_client.websocket_connect(
         "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
-        ws.send_json(ConnectionInitMessage(
-            payload="echo"
-        ).as_dict())
+        ws.send_json(ConnectionInitMessage(payload="echo").as_dict())
 
         response = ws.receive_json()
         assert response == ConnectionAckMessage().as_dict()
@@ -844,7 +843,7 @@ def test_injects_connection_params(test_client):
             SubscribeMessage(
                 id="sub1",
                 payload=SubscribeMessagePayload(
-                    query='subscription { connectionParams }'
+                    query="subscription { connectionParams }"
                 ),
             ).as_dict()
         )
@@ -852,10 +851,11 @@ def test_injects_connection_params(test_client):
         response = ws.receive_json()
         assert (
             response
-            == NextMessage(id="sub1", payload={"data": {"connectionParams": "echo"}}).as_dict()
+            == NextMessage(
+                id="sub1", payload={"data": {"connectionParams": "echo"}}
+            ).as_dict()
         )
 
         ws.send_json(CompleteMessage(id="sub1").as_dict())
 
         ws.close()
-

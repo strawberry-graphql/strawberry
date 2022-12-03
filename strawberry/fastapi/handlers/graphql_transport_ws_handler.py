@@ -5,6 +5,7 @@ from strawberry.asgi.handlers import (
 )
 from strawberry.fastapi.context import BaseContext
 
+
 class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
     async def get_context(self) -> Any:
         context = await self._get_context()

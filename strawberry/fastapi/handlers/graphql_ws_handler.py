@@ -1,9 +1,8 @@
 from typing import Any
 
-from strawberry.asgi.handlers import (
-    GraphQLWSHandler as BaseGraphQLWSHandler,
-)
+from strawberry.asgi.handlers import GraphQLWSHandler as BaseGraphQLWSHandler
 from strawberry.fastapi.context import BaseContext
+
 
 class GraphQLWSHandler(BaseGraphQLWSHandler):
     async def get_context(self) -> Any:

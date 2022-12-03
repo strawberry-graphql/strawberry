@@ -515,6 +515,7 @@ def test_task_cancellation_separation(test_client):
         assert response["type"] == GQL_COMPLETE
         assert response["id"] == "debug1"
 
+
 def test_injects_connection_params(test_client):
     with test_client.websocket_connect("/", [GRAPHQL_WS_PROTOCOL]) as ws:
         ws.send_json(
@@ -529,7 +530,7 @@ def test_injects_connection_params(test_client):
                 "type": GQL_START,
                 "id": "demo",
                 "payload": {
-                    "query": 'subscription { connectionParams }',
+                    "query": "subscription { connectionParams }",
                 },
             }
         )

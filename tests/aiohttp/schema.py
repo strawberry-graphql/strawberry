@@ -145,4 +145,5 @@ class Subscription:
     async def connection_params(self, info) -> typing.AsyncGenerator[str, None]:
         yield info.context["connection_params"]
 
+
 schema = strawberry.Schema(query=Query, mutation=Mutation, subscription=Subscription)

@@ -588,18 +588,14 @@ async def test_task_cancellation_separation():
 
 async def test_injects_connection_params(ws):
     await ws.send_json_to(
-        {
-            "type": GQL_CONNECTION_INIT,
-            "id": "demo",
-            "payload": "echo"
-        }
+        {"type": GQL_CONNECTION_INIT, "id": "demo", "payload": "echo"}
     )
     await ws.send_json_to(
         {
             "type": GQL_START,
             "id": "demo",
             "payload": {
-                "query": 'subscription { connectionParams }',
+                "query": "subscription { connectionParams }",
             },
         }
     )
