@@ -1,6 +1,26 @@
 CHANGELOG
 =========
 
+0.144.3 - 2022-12-04
+--------------------
+
+This release fixes an issue with type duplication of generics.
+
+You can now use a lazy type with a generic even if
+the original type was already used with that generic in the schema.
+
+Example:
+
+```python3
+@strawberry.type
+class Query:
+    regular: Edge[User]
+    lazy: Edge[Annotated["User", strawberry.lazy(".user")]]
+```
+
+Contributed by [Dmitry Semenov](https://github.com/lonelyteapot) via [PR #2381](https://github.com/strawberry-graphql/strawberry/pull/2381/)
+
+
 0.144.2 - 2022-12-02
 --------------------
 
