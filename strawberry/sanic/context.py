@@ -1,3 +1,4 @@
+import warnings
 from typing_extensions import TypedDict
 
 from sanic.request import Request
@@ -10,5 +11,13 @@ class StrawberrySanicContext(TypedDict):
 
     # see https://github.com/python/mypy/issues/13066 for the type ignore
     def __getattr__(self, key: str) -> object:  # type: ignore
-        # TODO: raise a warning?
+        # a warning will be raised because this is not supported anymore
+        # but we need to keep it for backwards compatibility
+
+        warnings.warn(
+            "Accessing context attributes via the dot notation is deprecated, "
+            "please use context.get('key') or context['key'] instead",
+            DeprecationWarning,
+        )
+
         return super().__getitem__(key)
