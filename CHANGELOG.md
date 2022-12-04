@@ -1,6 +1,25 @@
 CHANGELOG
 =========
 
+0.145.0 - 2022-12-04
+--------------------
+
+This release introduced improved errors! Now, when you have a syntax error in
+your code, you'll get a nice error message with a line number and a pointer to
+the exact location of the error. ✨
+
+This is a huge improvement over the previous behavior, which was providing a
+stack trace with no clear indication of where the error was. 🙈
+
+You can enable rich errors by installing Strawberry with the `cli` extra:
+
+```bash
+pip install strawberry-graphql[cli]
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2027](https://github.com/strawberry-graphql/strawberry/pull/2027/)
+
+
 0.144.3 - 2022-12-04
 --------------------
 
