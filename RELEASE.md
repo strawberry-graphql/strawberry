@@ -10,5 +10,5 @@ stack trace with no clear indication of where the error was. 🙈
 You can enable rich errors by installing Strawberry with the `cli` extra:
 
 ```bash
-pip install strawberry[cli]
+pip install strawberry-graphql[cli]
 ```
