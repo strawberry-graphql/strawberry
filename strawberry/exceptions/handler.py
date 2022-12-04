@@ -2,7 +2,7 @@ import os
 import sys
 import threading
 from types import TracebackType
-from typing import Callable, Optional, Tuple, Type
+from typing import Any, Callable, Optional, Tuple, Type, cast
 
 from .exception import StrawberryException, UnableToFindExceptionSource
 
@@ -72,7 +72,7 @@ def strawberry_threading_exception_handler(
 
     if exception is None:
         if sys.version_info >= (3, 8):
-            original_threading_exception_hook(args)
+            cast(Any, original_threading_exception_hook)(args)
 
         return
 
