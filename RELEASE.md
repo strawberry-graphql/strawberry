@@ -6,3 +6,9 @@ the exact location of the error. ✨
 
 This is a huge improvement over the previous behavior, which was providing a
 stack trace with no clear indication of where the error was. 🙈
+
+You can enable rich errors by installing Strawberry with the `cli` extra:
+
+```bash
+pip install strawberry[cli]
+```
