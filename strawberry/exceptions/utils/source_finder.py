@@ -34,10 +34,14 @@ class LibCSTSourceFinder:
 
         source_module = sys.modules.get(module)
 
-        if source_module is None or source_module.__file__ is None:
-            return None  # pragma: no cover
+        if source_module is None:
+            # TODO: this might fail
 
-        path = Path(source_module.__file__)
+            path = Path(importlib.util.find_spec(module).origin)
+        elif source_module.__file__ is None:
+            return None  # pragma: no cover
+        else:
+            path = Path(source_module.__file__)
 
         if not path.exists() or path.suffix != ".py":
             return None  # pragma: no cover
