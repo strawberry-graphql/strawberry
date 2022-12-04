@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import importlib
+import importlib.util
 import sys
 from dataclasses import dataclass
 from inspect import Traceback
@@ -34,14 +35,18 @@ class LibCSTSourceFinder:
 
         source_module = sys.modules.get(module)
 
-        if source_module is None:
-            # TODO: this might fail
+        path = None
 
-            path = Path(importlib.util.find_spec(module).origin)
-        elif source_module.__file__ is None:
-            return None  # pragma: no cover
-        else:
+        if source_module is None:
+            spec = importlib.util.find_spec(module)
+
+            if spec is not None and spec.origin is not None:
+                path = Path(spec.origin)
+        elif source_module.__file__ is not None:
             path = Path(source_module.__file__)
+
+        if path is None:
+            return None
 
         if not path.exists() or path.suffix != ".py":
             return None  # pragma: no cover
