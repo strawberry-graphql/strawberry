@@ -712,10 +712,17 @@ class GraphQLCoreConverter:
                 return
 
         if isinstance(type_definition, TypeDefinition):
-            origin = type_definition.origin
+            first_origin = type_definition.origin
         elif isinstance(type_definition, EnumDefinition):
-            origin = type_definition.wrapped_cls
+            first_origin = type_definition.wrapped_cls
         else:
-            origin = None
+            first_origin = None
 
-        raise DuplicatedTypeName(origin, name)
+        if isinstance(cached_type.definition, TypeDefinition):
+            second_origin = cached_type.definition.origin
+        elif isinstance(cached_type.definition, EnumDefinition):
+            second_origin = cached_type.definition.wrapped_cls
+        else:
+            second_origin = None
+
+        raise DuplicatedTypeName(first_origin, second_origin, name)

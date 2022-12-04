@@ -2,6 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Optional
 
+from strawberry.utils.cached_property import cached_property
+
 from .exception import StrawberryException
 from .exception_source import ExceptionSource
 from .utils.source_finder import SourceFinder
@@ -55,7 +57,7 @@ class InvalidArgumentTypeError(StrawberryException):
             f'Argument "{self.argument_name}" cannot be of type "{argument_type}"'
         )
 
-    @property
+    @cached_property
     def exception_source(self) -> Optional[ExceptionSource]:
         if self.function is None:
             return None  # pragma: no cover

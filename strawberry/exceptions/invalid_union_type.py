@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Optional, Type
 
 from strawberry.exceptions.utils.source_finder import SourceFinder
+from strawberry.utils.cached_property import cached_property
 
 from .exception import StrawberryException
 from .exception_source import ExceptionSource
@@ -43,7 +44,7 @@ class InvalidUnionTypeError(StrawberryException):
         )
         self.annotation_message = "invalid type here"
 
-    @property
+    @cached_property
     def exception_source(self) -> Optional[ExceptionSource]:
         path = Path(self.frame.filename)
 
@@ -75,7 +76,7 @@ class InvalidTypeForUnionMergeError(StrawberryException):
         self.suggestion = ""
         self.annotation_message = "invalid type here"
 
-    @property
+    @cached_property
     def exception_source(self) -> Optional[ExceptionSource]:
         source_finder = SourceFinder()
 

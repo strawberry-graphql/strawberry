@@ -4,6 +4,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Optional
 
 from strawberry.exceptions.utils.source_finder import SourceFinder
+from strawberry.utils.cached_property import cached_property
 
 from .exception import StrawberryException
 from .exception_source import ExceptionSource
@@ -43,7 +44,7 @@ class ScalarAlreadyRegisteredError(StrawberryException):
 
         super().__init__(self.message)
 
-    @property
+    @cached_property
     def exception_source(self) -> Optional[ExceptionSource]:
         if not all(
             (self.scalar_definition._source_file, self.scalar_definition._source_line)

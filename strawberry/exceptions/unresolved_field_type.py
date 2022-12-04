@@ -3,10 +3,10 @@ from __future__ import annotations
 from typing import TYPE_CHECKING, Optional
 
 from strawberry.exceptions.utils.source_finder import SourceFinder
+from strawberry.utils.cached_property import cached_property
 
 from .exception import StrawberryException
 from .exception_source import ExceptionSource
-
 
 if TYPE_CHECKING:
     from strawberry.field import StrawberryField
@@ -38,7 +38,7 @@ class UnresolvedFieldTypeError(StrawberryException):
 
         super().__init__(self.message)
 
-    @property
+    @cached_property
     def exception_source(self) -> Optional[ExceptionSource]:
         source_finder = SourceFinder()
 

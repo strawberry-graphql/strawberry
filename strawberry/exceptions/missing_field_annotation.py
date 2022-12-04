@@ -1,5 +1,7 @@
 from typing import Optional, Type
 
+from strawberry.utils.cached_property import cached_property
+
 from .exception import StrawberryException
 from .exception_source import ExceptionSource
 from .utils.source_finder import SourceFinder
@@ -26,7 +28,7 @@ class MissingFieldAnnotationError(StrawberryException):
 
         super().__init__(self.message)
 
-    @property
+    @cached_property
     def exception_source(self) -> Optional[ExceptionSource]:
         if self.cls is None:
             return None  # pragma: no cover

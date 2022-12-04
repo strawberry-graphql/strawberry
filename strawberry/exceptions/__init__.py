@@ -5,6 +5,7 @@ from typing import Optional, Set, Union
 from graphql import GraphQLError, GraphQLInputObjectType, GraphQLObjectType
 
 from strawberry.type import StrawberryType
+from strawberry.utils.cached_property import cached_property
 
 from .duplicated_type_name import DuplicatedTypeName
 from .exception import StrawberryException, UnableToFindExceptionSource
@@ -81,7 +82,7 @@ class UnsupportedTypeError(StrawberryException):
 
         super().__init__(message)
 
-    @property
+    @cached_property
     def exception_source(self) -> Optional[ExceptionSource]:
         return None
 

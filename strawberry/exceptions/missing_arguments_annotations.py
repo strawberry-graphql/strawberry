@@ -1,9 +1,10 @@
 from typing import TYPE_CHECKING, List, Optional
 
+from strawberry.utils.cached_property import cached_property
+
 from .exception import StrawberryException
 from .exception_source import ExceptionSource
 from .utils.source_finder import SourceFinder
-
 
 if TYPE_CHECKING:
     from strawberry.types.fields.resolver import StrawberryResolver
@@ -44,7 +45,7 @@ class MissingArgumentsAnnotationsError(StrawberryException):
         head = ", ".join(arguments[:-1])
         return f'arguments "{head}" and "{arguments[-1]}"'
 
-    @property
+    @cached_property
     def exception_source(self) -> Optional[ExceptionSource]:
         if self.function is None:
             return None  # pragma: no cover

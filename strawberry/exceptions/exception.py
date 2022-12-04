@@ -1,6 +1,7 @@
 from abc import ABC, abstractmethod
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING, Optional
 
+from strawberry.utils.cached_property import cached_property
 from strawberry.utils.str_converters import to_kebab_case
 
 from .exception_source import ExceptionSource
@@ -8,8 +9,6 @@ from .exception_source import ExceptionSource
 
 if TYPE_CHECKING:
     from rich.console import RenderableType
-
-    from .syntax import Syntax
 
 
 class UnableToFindExceptionSource(Exception):
@@ -38,44 +37,20 @@ class StrawberryException(Exception, ABC):
 
         return prefix + self.documentation_path
 
-    @property
+    @cached_property
     @abstractmethod
     def exception_source(self) -> Optional[ExceptionSource]:
         return None
 
     @property
     def __rich_header__(self) -> "RenderableType":
-        assert self.exception_source
-
-        source_file = self.exception_source.path
-        relative_path = self.exception_source.path_relative_to_cwd
-        error_line = self.exception_source.error_line
-
-        return (
-            f"[bold red]error: {self.rich_message}\n"
-            f"[white]     @ [link=file://{source_file}]{relative_path}:{error_line}"
-        )
+        return f"[bold red]error: {self.rich_message}"
 
     @property
     def __rich_body__(self) -> "RenderableType":
         assert self.exception_source
-        exception_source = self.exception_source
 
-        prefix = " " * exception_source.error_column
-        caret = "^" * (
-            exception_source.error_column_end - exception_source.error_column
-        )
-
-        message = self.annotation_message
-
-        message = f"{prefix}[bold]{caret}[/] {message}"
-
-        error_line = exception_source.error_line
-        line_annotations = {error_line: message}
-
-        return self.highlight_code(
-            error_line=error_line, line_annotations=line_annotations
-        )
+        return self._get_error_inline(self.exception_source, self.annotation_message)
 
     @property
     def __rich_footer__(self) -> "RenderableType":
@@ -107,20 +82,40 @@ class StrawberryException(Exception, ABC):
             box=SIMPLE,
         )
 
-    def highlight_code(
-        self, error_line: int, line_annotations: Dict[int, str]
-    ) -> "Syntax":
+    def _get_error_inline(
+        self, exception_source: ExceptionSource, message: str
+    ) -> "RenderableType":
+        source_file = exception_source.path
+        relative_path = exception_source.path_relative_to_cwd
+        error_line = exception_source.error_line
+
+        from rich.console import Group
+
         from .syntax import Syntax
 
-        assert self.exception_source is not None
+        path = f"[white]     @ [link=file://{source_file}]{relative_path}:{error_line}"
 
-        return Syntax(
-            code=self.exception_source.code,
-            highlight_lines={error_line},
-            line_offset=self.exception_source.start_line - 1,
-            line_annotations=line_annotations,
-            line_range=(
-                self.exception_source.start_line - 1,
-                self.exception_source.end_line,
+        prefix = " " * exception_source.error_column
+        caret = "^" * (
+            exception_source.error_column_end - exception_source.error_column
+        )
+
+        message = f"{prefix}[bold]{caret}[/] {message}"
+
+        error_line = exception_source.error_line
+        line_annotations = {error_line: message}
+
+        return Group(
+            path,
+            "",
+            Syntax(
+                code=exception_source.code,
+                highlight_lines={error_line},
+                line_offset=exception_source.start_line - 1,
+                line_annotations=line_annotations,
+                line_range=(
+                    exception_source.start_line - 1,
+                    exception_source.end_line,
+                ),
             ),
         )

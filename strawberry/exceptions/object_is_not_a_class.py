@@ -3,6 +3,8 @@ from __future__ import annotations
 from enum import Enum
 from typing import Optional
 
+from strawberry.utils.cached_property import cached_property
+
 from .exception import StrawberryException
 from .exception_source import ExceptionSource
 from .utils.source_finder import SourceFinder
@@ -52,7 +54,7 @@ class ObjectIsNotClassError(StrawberryException):
     def type(cls, obj: object) -> ObjectIsNotClassError:
         return cls(obj, cls.MethodType.TYPE)
 
-    @property
+    @cached_property
     def exception_source(self) -> Optional[ExceptionSource]:
         if self.function is None:
             return None  # pragma: no cover
