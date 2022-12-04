@@ -2,7 +2,7 @@ import sys
 from typing import TYPE_CHECKING
 
 if sys.version_info < (3, 8):
-    from backports.cached_property import cached_property  # type: ignore
+    from backports.cached_property import cached_property
 else:
     from functools import cached_property
 
@@ -13,8 +13,7 @@ if TYPE_CHECKING:
     _T = TypeVar("_T")
     _S = TypeVar("_S")
 
-    # noinspection PyPep8Naming
-    class cached_property(Generic[_T]):
+    class cached_property(Generic[_T]):  # type: ignore[no-redef]
         func: Callable[[Any], _T]
         attrname: Optional[str]
         lock: RLock
@@ -22,7 +21,7 @@ if TYPE_CHECKING:
         def __init__(self, func: Callable[[Any], _T]) -> None:
             ...
 
-        @overload
+        @overload  # type: ignore[no-overload-impl]
         def __get__(
             self, instance: None, owner: Optional[Type[Any]] = ...
         ) -> cached_property[_T]:
