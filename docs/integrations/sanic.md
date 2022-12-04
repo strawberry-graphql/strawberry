@@ -102,22 +102,20 @@ It needs to return an object of `GraphQLHTTPResponse` and accepts the execution
 result.
 
 ```python
-from strawberry.http import GraphQLHTTPResponse
+from strawberry.sanic.views import GraphQLView
+from strawberry.http import GraphQLHTTPResponse, process_result
 from strawberry.types import ExecutionResult
 from sanic.request import Request
-
 from graphql.error.graphql_error import format_error as format_graphql_error
 
 class MyGraphQLView(GraphQLView):
-    def process_result(
+    async def process_result(
         self, request: Request, result: ExecutionResult
     ) -> GraphQLHTTPResponse:
-        data: GraphQLHTTPResponse = {"data": result.data}
-
         if result.errors:
-            data["errors"] = [format_graphql_error(err) for err in result.errors]
+            result.errors = [format_graphql_error(err) for err in result.errors]
 
-        return data
+        return process_result(data)
 ```
 
 In this case we are doing the default processing of the result, but it can be
