@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from typing import TYPE_CHECKING, List, Optional, Union, cast
-
 from typing_extensions import Protocol
 
 from strawberry.annotation import StrawberryAnnotation
@@ -99,7 +98,7 @@ class NameConverter:
                 type_ = cast(StrawberryType, type_.resolve_type())
 
             assert hasattr(type_, "_type_definition")
-            name += self.from_type(type_._type_definition)  # type: ignore
+            name += self.from_type(type_._type_definition)
 
         return name
 
@@ -136,11 +135,11 @@ class NameConverter:
         elif isinstance(type_, StrawberryOptional):
             name = self.get_from_type(type_.of_type) + "Optional"
         elif hasattr(type_, "_scalar_definition"):
-            strawberry_type = type_._scalar_definition  # type: ignore
+            strawberry_type = type_._scalar_definition
 
             name = strawberry_type.name
         elif hasattr(type_, "_type_definition"):
-            strawberry_type = type_._type_definition  # type: ignore
+            strawberry_type = type_._type_definition
 
             if strawberry_type.is_generic:
                 types = type_.__args__  # type: ignore

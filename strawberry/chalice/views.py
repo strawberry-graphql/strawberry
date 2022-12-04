@@ -45,8 +45,10 @@ class GraphQLView:
     @staticmethod
     def render_graphiql() -> str:
         """
-        Returns a string containing the html for the graphiql webpage. It also caches the
-        result using lru cache. This saves loading from disk each time it is invoked.
+        Returns a string containing the html for the graphiql webpage. It also caches
+        the result using lru cache.
+        This saves loading from disk each time it is invoked.
+
         Returns:
             The GraphiQL html page as a string
         """

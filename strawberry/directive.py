@@ -3,7 +3,6 @@ from __future__ import annotations
 import dataclasses
 import inspect
 from typing import Any, Callable, List, Optional, TypeVar
-
 from typing_extensions import Annotated
 
 from graphql import DirectiveLocation

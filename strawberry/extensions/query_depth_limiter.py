@@ -163,7 +163,8 @@ def determine_depth(
         return depth_so_far
 
     if isinstance(node, FieldNode):
-        # by default, ignore the introspection fields which begin with double underscores
+        # by default, ignore the introspection fields which begin
+        # with double underscores
         should_ignore = is_introspection_key(node.name.value) or is_ignored(
             node, ignore
         )
