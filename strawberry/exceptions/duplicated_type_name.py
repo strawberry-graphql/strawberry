@@ -53,7 +53,11 @@ class DuplicatedTypeName(StrawberryException):
         assert first_class_source
 
         second_class_source = source_finder.find_class_from_object(self.second_cls)
-        assert second_class_source
+
+        if second_class_source is None:
+            return self._get_error_inline(
+                first_class_source, "first class defined here"
+            )
 
         return Group(
             self._get_error_inline(first_class_source, "first class defined here"),
