@@ -68,12 +68,12 @@ def strawberry_threading_exception_handler(
         Optional[threading.Thread],
     ]
 ):
-    (exception_type, exception, traceback, thread) = args
+    (exception_type, exception, traceback, _) = args
 
     if exception is None:
-        assert original_threading_exception_hook
+        assert original_threading_exception_hook  # type: ignore[truthy-function]
 
-        original_threading_exception_hook(args)
+        original_threading_exception_hook(args)  # type: ignore[arg-type]
 
         return
 
@@ -83,7 +83,7 @@ def strawberry_threading_exception_handler(
 def reset_exception_handler():
     sys.excepthook = original_exception_hook
 
-    if original_threading_exception_hook:
+    if original_threading_exception_hook:  # type: ignore[truthy-function]
         threading.excepthook = original_threading_exception_hook
 
 
@@ -91,5 +91,5 @@ def setup_exception_handler():
     if should_use_rich_exceptions():
         sys.excepthook = strawberry_exception_handler
 
-        if original_threading_exception_hook:
+        if original_threading_exception_hook:  # type: ignore[truthy-function]
             threading.excepthook = strawberry_threading_exception_handler
