@@ -10,7 +10,7 @@ from .utils.source_finder import SourceFinder
 class DuplicatedTypeName(StrawberryException):
     """Raised when the same type with different definition is reused inside a schema"""
 
-    def __init__(self, cls: Type, duplicated_type_name: str):
+    def __init__(self, cls: Optional[Type], duplicated_type_name: str):
         self.cls = cls
 
         self.message = (
