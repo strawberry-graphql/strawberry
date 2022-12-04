@@ -265,7 +265,7 @@ class GraphQLCoreConverter:
 
     @staticmethod
     def _get_thunk_mapping(
-        fields: List[StrawberryField],
+        type_definition: TypeDefinition,
         name_converter: Callable[[StrawberryField], str],
         field_converter: Callable[[StrawberryField], FieldType],
     ) -> Dict[str, FieldType]:
@@ -282,19 +282,20 @@ class GraphQLCoreConverter:
         """
         thunk_mapping = {}
 
-        for f in fields:
-            if f.type is UNRESOLVED:
-                raise UnresolvedFieldTypeError(f.name)
+        for field in type_definition.fields:
+            if field.type is UNRESOLVED:
+                raise UnresolvedFieldTypeError(type_definition, field)
 
-            if not is_private(f.type):
-                thunk_mapping[name_converter(f)] = field_converter(f)
+            if not is_private(field.type):
+                thunk_mapping[name_converter(field)] = field_converter(field)
+
         return thunk_mapping
 
     def get_graphql_fields(
         self, type_definition: TypeDefinition
     ) -> Dict[str, GraphQLField]:
         return self._get_thunk_mapping(
-            fields=type_definition.fields,
+            type_definition=type_definition,
             name_converter=self.config.name_converter.from_field,
             field_converter=self.from_field,
         )
@@ -303,7 +304,7 @@ class GraphQLCoreConverter:
         self, type_definition: TypeDefinition
     ) -> Dict[str, GraphQLInputField]:
         return self._get_thunk_mapping(
-            fields=type_definition.fields,
+            type_definition=type_definition,
             name_converter=self.config.name_converter.from_field,
             field_converter=self.from_input_field,
         )
@@ -556,8 +557,15 @@ class GraphQLCoreConverter:
                 definition=scalar_definition, implementation=implementation
             )
         else:
-            if self.type_map[scalar_name].definition != scalar_definition:
-                raise ScalarAlreadyRegisteredError(scalar_name)
+            other_definition = self.type_map[scalar_name].definition
+
+            # TODO: the other definition might not be a scalar, we should
+            # handle this case better, since right now we assume it is a scalar
+
+            if other_definition != scalar_definition:
+                other_definition = cast(ScalarDefinition, other_definition)
+
+                raise ScalarAlreadyRegisteredError(scalar_definition, other_definition)
 
             implementation = cast(
                 GraphQLScalarType, self.type_map[scalar_name].implementation
@@ -721,4 +729,18 @@ class GraphQLCoreConverter:
             if equal:
                 return
 
-        raise DuplicatedTypeName(name)
+        if isinstance(type_definition, TypeDefinition):
+            first_origin = type_definition.origin
+        elif isinstance(type_definition, EnumDefinition):
+            first_origin = type_definition.wrapped_cls
+        else:
+            first_origin = None
+
+        if isinstance(cached_type.definition, TypeDefinition):
+            second_origin = cached_type.definition.origin
+        elif isinstance(cached_type.definition, EnumDefinition):
+            second_origin = cached_type.definition.wrapped_cls
+        else:
+            second_origin = None
+
+        raise DuplicatedTypeName(first_origin, second_origin, name)

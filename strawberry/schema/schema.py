@@ -127,7 +127,12 @@ class Schema(BaseSchema):
                     GraphQLCoreConverter.DEFINITION_BACKREF: self,
                 },
             )
+
         except TypeError as error:
+            # GraphQL core throws a TypeError if there's any exception raised
+            # during the schema creation, so we check if the cause was a
+            # StrawberryError and raise it instead if that's the case.
+
             from strawberry.exceptions import StrawberryException
 
             if isinstance(error.__cause__, StrawberryException):

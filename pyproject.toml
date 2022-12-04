@@ -38,7 +38,6 @@ python = "^3.7"
 graphql-core = "~3.2.0"
 typing_extensions = ">=3.7.4,<5.0.0"
 python-dateutil = "^2.7.0"
-"backports.cached-property" = {version = "^1.0.2", python = "<3.8"}
 
 starlette = {version = ">=0.13.6", optional = true}
 click = {version = ">=7.0,<9.0", optional = true}
@@ -56,6 +55,9 @@ sanic = {version = ">=20.12.2,<22.0.0", optional = true}
 aiohttp = {version = "^3.7.4.post0", optional = true}
 fastapi = {version = ">=0.65.2", optional = true}
 channels = {version = ">=3.0.5", optional = true}
+"backports.cached-property" = {version = "^1.0.2", python = "<3.8"}
+libcst = {version = ">=0.4.7", optional = true}
+rich = {version = ">=12.0.0", optional = true}
 
 [tool.poetry.dev-dependencies]
 pytest = "^7.2"
@@ -98,13 +100,17 @@ fastapi = {version = ">=0.65.0", optional = false}
 MarkupSafe = "2.1.1"
 pytest-snapshot = "^0.9.0"
 channels = "^3.0.5"
+rich = {version = "^12.5.1", optional = false}
+libcst = {version = "^0.4.7", optional = false}
+ddtrace = "^1.4.1"
 python-multipart = "^0.0.5"
 pygments = "^2.3"
 
 [tool.poetry.extras]
 aiohttp = ["aiohttp", "pytest-aiohttp"]
 asgi = ["starlette", "python-multipart"]
-debug-server = ["starlette", "uvicorn", "python-multipart", "click", "pygments"]
+debug = ["rich", "libcst"]
+debug-server = ["starlette", "uvicorn", "python-multipart", "click", "pygments", "rich", "libcst"]
 django = ["Django", "pytest-django", "asgiref"]
 channels = ["channels", "asgiref"]
 flask = ["flask", "pytest-flask"]
@@ -113,7 +119,7 @@ pydantic = ["pydantic"]
 sanic = ["sanic"]
 fastapi = ["fastapi", "python-multipart"]
 chalice = ["chalice"]
-cli = ["click", "pygments"]
+cli = ["click", "pygments", "rich", "libcst"]
 
 [tool.poetry.scripts]
 strawberry = "strawberry.cli:run"
@@ -194,6 +200,7 @@ src = ["strawberry", "tests"]
 "tests/types/test_object_types.py" = ["F821"]
 "tests/types/test_resolver_types.py" = ["F821"]
 "tests/federation/printer/test_requires.py" = ["F821"]
+"tests/schema/test_private_field.py" = ["F821"]
 
 [tool.ruff.isort]
 known-first-party = ["strawberry"]
