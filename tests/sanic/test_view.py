@@ -3,6 +3,7 @@ from typing import Any
 
 import strawberry
 from sanic import Sanic
+from sanic.request import Request
 from strawberry.sanic.views import GraphQLView as BaseGraphQLView
 from strawberry.types import ExecutionResult, Info
 
@@ -52,8 +53,8 @@ def test_graphiql_disabled_view():
 
 def test_custom_context():
     class CustomGraphQLView(BaseGraphQLView):
-        async def get_context(self, request):
-            return {"request": request, "custom_value": "Hi!"}
+        async def get_context(self, request, response):
+            return {"request": request, "custom_value": "Hi!", "response": response}
 
     @strawberry.type
     class Query:
@@ -63,8 +64,7 @@ def test_custom_context():
 
     schema = strawberry.Schema(query=Query)
 
-    app = Sanic("test-app-custom_context")
-    app.debug = True
+    app = Sanic("test-app-custom_context", configure_logging=False)
 
     app.add_route(CustomGraphQLView.as_view(schema=schema, graphiql=True), "/graphql")
 
@@ -79,7 +79,7 @@ def test_custom_context():
 
 def test_custom_process_result():
     class CustomGraphQLView(BaseGraphQLView):
-        def process_result(self, result: ExecutionResult):
+        async def process_result(self, request: Request, result: ExecutionResult):
             return {}
 
     @strawberry.type
@@ -90,8 +90,7 @@ def test_custom_process_result():
 
     schema = strawberry.Schema(query=Query)
 
-    app = Sanic("test-app-custom_process_result")
-    app.debug = True
+    app = Sanic("test-app-custom_process_result", configure_logging=False)
 
     app.add_route(CustomGraphQLView.as_view(schema=schema, graphiql=True), "/graphql")
 
@@ -131,8 +130,7 @@ def test_json_encoder():
 
     schema = strawberry.Schema(query=Query)
 
-    app = Sanic("test-app-custom_context")
-    app.debug = True
+    app = Sanic("test-app-custom_context", configure_logging=False)
 
     app.add_route(
         BaseGraphQLView.as_view(

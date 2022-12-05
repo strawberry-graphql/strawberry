@@ -48,7 +48,7 @@ def create_app(**kwargs):
         def get_root_value(self):
             return Query()
 
-    app = Sanic(f"test_{int(random()*1000)}")
+    app = Sanic(f"test_{int(random()*1000)}", configure_logging=False)
     app.add_route(GraphQLView.as_view(schema=schema, **kwargs), "/graphql")
 
     return app
