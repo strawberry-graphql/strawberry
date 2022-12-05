@@ -4,11 +4,15 @@ This release updates the Sanic integration and includes some breaking changes.
 You might need to update your code if you are customizing `get_context` or
 `process_result`
 
-1. `get_context` now receives the request as the first argument and the response
-   as the second argument.
+## `get_context`
 
-2. `process_result` is now async and receives the request and the GraphQL
-   execution result.
+`get_context` now receives the request as the first argument and the response as
+the second argument.
+
+## `process_result`
+
+`process_result` is now async and receives the request and the GraphQL execution
+result.
 
 This change is needed to align all the HTTP integrations and reduce the amount
 of code needed to maintain. It also makes the errors consistent with other
