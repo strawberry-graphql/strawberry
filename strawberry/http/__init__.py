@@ -1,7 +1,6 @@
 import json
 from dataclasses import dataclass
 from typing import Any, Dict, List, Mapping, Optional
-
 from typing_extensions import TypedDict
 
 from graphql.error.graphql_error import format_error as format_graphql_error
@@ -41,7 +40,7 @@ def parse_query_params(params: Dict[str, str]) -> Dict[str, Any]:
     return params
 
 
-def parse_request_data(data: Mapping) -> GraphQLRequestData:
+def parse_request_data(data: Mapping[str, Any]) -> GraphQLRequestData:
     if "query" not in data:
         raise MissingQueryError()
 

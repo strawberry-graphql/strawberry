@@ -5,7 +5,9 @@ import pytest
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.exceptions import InvalidUnionType
+from strawberry.exceptions import InvalidTypeForUnionMergeError
+from strawberry.exceptions.invalid_union_type import InvalidUnionTypeError
+from strawberry.schema.types.base_scalars import Date, DateTime
 from strawberry.type import StrawberryOptional
 from strawberry.union import StrawberryUnion
 
@@ -78,6 +80,10 @@ def test_strawberry_union_and_none():
     )
 
 
+@pytest.mark.raises_strawberry_exception(
+    InvalidTypeForUnionMergeError,
+    match="`int` cannot be used when merging GraphQL Unions",
+)
 def test_raises_error_when_piping_with_scalar():
     @strawberry.type
     class User:
@@ -89,5 +95,12 @@ def test_raises_error_when_piping_with_scalar():
 
     UserOrError = strawberry.union("UserOrError", (User, Error))
 
-    with pytest.raises(InvalidUnionType):
-        StrawberryAnnotation(UserOrError | int)
+    StrawberryAnnotation(UserOrError | int)
+
+
+@pytest.mark.raises_strawberry_exception(
+    InvalidUnionTypeError,
+    match="Type `date` cannot be used in a GraphQL Union",
+)
+def test_raises_error_when_piping_with_custom_scalar():
+    StrawberryAnnotation(Date | DateTime)

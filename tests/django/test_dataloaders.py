@@ -1,11 +1,9 @@
 import json
 from typing import List
 
-import pytest
-
-from asgiref.sync import sync_to_async
-
 import django
+import pytest
+from asgiref.sync import sync_to_async
 from django.test.client import RequestFactory
 
 import strawberry

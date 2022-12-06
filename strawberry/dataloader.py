@@ -57,7 +57,7 @@ class DataLoader(Generic[K, T]):
         load_fn: Callable[[List[K]], Awaitable[Sequence[Union[T, BaseException]]]],
         max_batch_size: Optional[int] = None,
         cache: bool = True,
-        loop: AbstractEventLoop = None,
+        loop: Optional[AbstractEventLoop] = None,
     ) -> None:
         ...
 
@@ -68,7 +68,7 @@ class DataLoader(Generic[K, T]):
         load_fn: Callable[[List[K]], Awaitable[List[Any]]],
         max_batch_size: Optional[int] = None,
         cache: bool = True,
-        loop: AbstractEventLoop = None,
+        loop: Optional[AbstractEventLoop] = None,
     ) -> None:
         ...
 
@@ -77,7 +77,7 @@ class DataLoader(Generic[K, T]):
         load_fn: Callable[[List[K]], Awaitable[Sequence[Union[T, BaseException]]]],
         max_batch_size: Optional[int] = None,
         cache: bool = True,
-        loop: AbstractEventLoop = None,
+        loop: Optional[AbstractEventLoop] = None,
     ):
         self.load_fn = load_fn
         self.max_batch_size = max_batch_size
@@ -100,7 +100,7 @@ class DataLoader(Generic[K, T]):
         if self.cache:
             future = self.cache_map.get(key)
 
-            if future:
+            if future and not future.cancelled():
                 return future
 
         future = self.loop.create_future()
@@ -204,6 +204,11 @@ async def dispatch_batch(loader: DataLoader, batch: Batch) -> None:
             )
 
         for task, value in zip(batch.tasks, values):
+            # Trying to set_result in a cancelled future would raise
+            # asyncio.exceptions.InvalidStateError
+            if task.future.cancelled():
+                continue
+
             if isinstance(value, BaseException):
                 task.future.set_exception(value)
             else:

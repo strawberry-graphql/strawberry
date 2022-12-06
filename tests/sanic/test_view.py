@@ -5,6 +5,7 @@ import pytest
 
 import strawberry
 from sanic import Sanic
+from sanic.request import Request
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.sanic.views import GraphQLView
 from strawberry.types import ExecutionResult, Info
@@ -55,8 +56,8 @@ def test_graphiql_disabled_view():
 
 def test_custom_context():
     class CustomGraphQLView(GraphQLView):
-        async def get_context(self, request):
-            return {"request": request, "custom_value": "Hi!"}
+        async def get_context(self, request, response):
+            return {"request": request, "custom_value": "Hi!", "response": response}
 
     @strawberry.type
     class Query:
@@ -66,8 +67,7 @@ def test_custom_context():
 
     schema = strawberry.Schema(query=Query)
 
-    app = Sanic("test-app-custom_context")
-    app.debug = True
+    app = Sanic("test-app-custom_context", configure_logging=False)
 
     app.add_route(CustomGraphQLView.as_view(schema=schema, graphiql=True), "/graphql")
 
@@ -82,7 +82,7 @@ def test_custom_context():
 
 def test_custom_process_result():
     class CustomGraphQLView(GraphQLView):
-        def process_result(self, result: ExecutionResult):
+        async def process_result(self, request: Request, result: ExecutionResult):
             return {}
 
     @strawberry.type
@@ -93,14 +93,13 @@ def test_custom_process_result():
 
     schema = strawberry.Schema(query=Query)
 
-    app = Sanic("test-app-custom_process_result")
-    app.debug = True
+    app = Sanic("test-app-custom_process_result", configure_logging=False)
 
     app.add_route(CustomGraphQLView.as_view(schema=schema, graphiql=True), "/graphql")
 
     query = "{ abc }"
 
-    request, response = app.test_client.post("/graphql", json={"query": query})
+    _, response = app.test_client.post("/graphql", json={"query": query})
     data = response.json
 
     assert response.status == 200
@@ -116,7 +115,7 @@ def test_malformed_query(sanic_client):
         """
     }
 
-    request, response = sanic_client.test_client.post("/graphql", json=query)
+    _, response = sanic_client.test_client.post("/graphql", json=query)
     assert response.status == 400
 
 
@@ -129,8 +128,7 @@ def test_json_encoder():
 
     schema = strawberry.Schema(query=Query)
 
-    app = Sanic("test-app-custom_context")
-    app.debug = True
+    app = Sanic("test-app-custom_context", configure_logging=False)
 
     class MyGraphQLView(GraphQLView):
         def encode_json(self, data: GraphQLHTTPResponse) -> str:
@@ -159,8 +157,7 @@ def test_json_encoder_as_class_works_with_warning():
 
     schema = strawberry.Schema(query=Query)
 
-    app = Sanic("test-app-custom_context")
-    app.debug = True
+    app = Sanic("test-app-custom_context", configure_logging=False)
     query = "{ hello }"
 
     class CustomEncoder(json.JSONEncoder):
@@ -192,8 +189,7 @@ def test_json_dumps_params_warning():
 
     schema = strawberry.Schema(query=Query)
 
-    app = Sanic("test-app-custom_context")
-    app.debug = True
+    app = Sanic("test-app-custom_context", configure_logging=False)
     query = "{ hello }"
 
     with pytest.warns(DeprecationWarning):

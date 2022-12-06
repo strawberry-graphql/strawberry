@@ -2,10 +2,9 @@ import typing
 from enum import Enum
 from textwrap import dedent
 from typing import List, Optional
+from typing_extensions import Annotated
 
 import pytest
-
-from typing_extensions import Annotated
 
 import strawberry
 from strawberry.lazy_type import lazy
@@ -401,3 +400,35 @@ def test_enum_deprecated_value():
         {"deprecationReason": "We ran out", "isDeprecated": True, "name": "STRAWBERRY"},
         {"deprecationReason": None, "isDeprecated": False, "name": "CHOCOLATE"},
     ]
+
+
+def test_can_use_enum_values_in_input():
+    @strawberry.enum
+    class TestEnum(Enum):
+        A = "A"
+        B = strawberry.enum_value("B")
+        C = strawberry.enum_value("Coconut", deprecation_reason="We ran out")
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def receive_enum(self, test: TestEnum) -> str:
+            return str(test)
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """
+    query {
+        a: receiveEnum(test: A)
+        b: receiveEnum(test: B)
+        c: receiveEnum(test: C)
+    }
+    """
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data
+    assert result.data["a"] == "TestEnum.A"
+    assert result.data["b"] == "TestEnum.B"
+    assert result.data["c"] == "TestEnum.C"

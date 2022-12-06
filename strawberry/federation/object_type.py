@@ -10,7 +10,8 @@ from typing import (
     overload,
 )
 
-from strawberry.field import StrawberryField, field as base_field
+from strawberry.field import StrawberryField
+from strawberry.field import field as base_field
 from strawberry.object_type import type as base_type
 from strawberry.unset import UNSET
 from strawberry.utils.typing import __dataclass_transform__

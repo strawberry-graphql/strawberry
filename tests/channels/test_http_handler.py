@@ -2,11 +2,11 @@ import json
 from typing import Any, Dict, Optional
 
 import pytest
+from tests.channels.schema import schema
 
 from channels.testing import HttpCommunicator
 from strawberry.channels import GraphQLHTTPConsumer
 from strawberry.channels.handlers.http_handler import SyncGraphQLHTTPConsumer
-from tests.channels.schema import schema
 
 
 def generate_body(query: str, variables: Optional[Dict[str, Any]] = None):

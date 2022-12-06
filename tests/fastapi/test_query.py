@@ -1,9 +1,10 @@
+from tests.fastapi.app import create_app
+
 import strawberry
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 from strawberry.fastapi import GraphQLRouter
 from strawberry.types import ExecutionResult, Info
-from tests.fastapi.app import create_app
 
 
 def test_simple_query(test_client):

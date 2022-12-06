@@ -1,5 +1,4 @@
 from typing import Any, Dict, List, Optional, Union
-
 from typing_extensions import TypedDict
 
 from graphql import GraphQLFormattedError

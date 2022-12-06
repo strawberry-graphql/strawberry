@@ -1,7 +1,6 @@
 import sys
 
 import pytest
-
 from click.testing import CliRunner
 from starlette.testclient import TestClient
 

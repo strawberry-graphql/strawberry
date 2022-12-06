@@ -195,7 +195,7 @@ class SyncGraphQLHTTPConsumer(GraphQLHTTPConsumer):
     def get_root_value(self, request: Optional["ChannelsConsumer"] = None) -> Any:
         return None
 
-    def get_context(
+    def get_context(  # type: ignore[override]
         self,
         request: Optional["ChannelsConsumer"] = None,
     ) -> StrawberryChannelsContext:

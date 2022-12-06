@@ -1,7 +1,16 @@
 import sys
 from collections.abc import AsyncGenerator
-from typing import _GenericAlias  # type: ignore
-from typing import Any, Callable, ClassVar, Generic, Tuple, Type, TypeVar, Union
+from typing import (  # type: ignore
+    Any,
+    Callable,
+    ClassVar,
+    Generic,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+    _GenericAlias,
+)
 
 
 def is_list(annotation: object) -> bool:

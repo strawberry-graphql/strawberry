@@ -2,14 +2,14 @@ import json
 from typing import Any, Optional
 
 import pytest
-
 from django.core.exceptions import BadRequest, SuspiciousOperation
 from django.http import Http404, JsonResponse
 from django.test.client import RequestFactory
 from django.utils.http import urlencode
 
 import strawberry
-from strawberry.django.views import GraphQLView as BaseGraphQLView, TemporalHttpResponse
+from strawberry.django.views import GraphQLView as BaseGraphQLView
+from strawberry.django.views import TemporalHttpResponse
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.permission import BasePermission
 from strawberry.types import ExecutionResult, Info
