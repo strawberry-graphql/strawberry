@@ -45,7 +45,7 @@ The `GraphQLView` accepts the following arguments:
 
 We allow to extend the base `GraphQLView`, by overriding the following methods:
 
-- `get_context(self, request: HttpRequest) -> Any`
+- `get_context(self, request: HttpRequest, response: HttpResponse) -> Any`
 - `get_root_value(self, request: HttpRequest) -> Any`
 - `process_result(self, request: HttpRequest, result: ExecutionResult) -> GraphQLHTTPResponse`
 
