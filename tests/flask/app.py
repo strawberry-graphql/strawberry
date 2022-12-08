@@ -49,7 +49,7 @@ def create_app(use_async_view=False, **kwargs):
             return Query()
 
     class AsyncGraphQLView(BaseAsyncGraphQLView):
-        def get_root_value(self):
+        async def get_root_value(self):
             return Query()
 
     app = Flask(__name__)

@@ -51,6 +51,14 @@ We allow to extend the base `GraphQLView`, by overriding the following methods:
 - `process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse`
 - `encode_json(self, response_data: GraphQLHTTPResponse) -> str`
 
+<Note>
+
+Note that the `AsyncGraphQLView` can also be extended by overriding the same
+methods above, but `get_context`, `get_root_value` and `process_result` are
+async functions.
+
+</Note>
+
 ## get_context
 
 `get_context` allows to provide a custom context object that can be used in your
