@@ -29,12 +29,7 @@ The `GraphQLView` accepts two options at the moment:
   interface.
 - `allow_queries_via_get`: optional, defaults to `True`, whether to enable
   queries via `GET` requests
-- `json_encoder`: optional **JSON** encoder, defaults to `DjangoJSONEncoder`,
-  will be used to serialize the data.
-- `json_dumps_params`: optional dictionary of keyword arguments to pass to the
-  `json.dumps` call used to generate the response. To get the most compact JSON
-  representation, you should specify `{"separators": (",", ":")}`, defaults to
-  `None`.
+- `def encode_json(self, data: GraphQLHTTPResponse) -> str`
 
 ## Extending the view
 
@@ -120,3 +115,14 @@ class MyGraphQLView(GraphQLView):
 
 In this case we are doing the default processing of the result, but it can be
 tweaked based on your needs.
+
+## encode_json
+
+`encode_json` allows to customize the encoding of the JSON response. By default
+we use `json.dumps` but you can override this method to use a different encoder.
+
+```python
+class MyGraphQLView(GraphQLView):
+    def encode_json(self, data: GraphQLHTTPResponse) -> str:
+        return json.dumps(data, indent=2)
+```

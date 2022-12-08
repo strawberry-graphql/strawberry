@@ -3,6 +3,7 @@ import json
 import pytest
 from werkzeug.urls import url_encode, url_unparse
 
+from chalice import Chalice  # type: ignore
 from chalice.test import Client
 from strawberry.chalice.views import GraphQLView
 
@@ -218,3 +219,28 @@ def test_passing_render_graphiql_is_deprecated():
 
     with pytest.warns(DeprecationWarning):
         GraphQLView(schema=schema, render_graphiql=True)
+
+
+def test_custom_encode_json():
+    from .app import schema
+
+    class CustomGraphQLView(GraphQLView):
+        def encode_json(self, data):
+            return '"custom"'
+
+    view = CustomGraphQLView(schema=schema)
+
+    app = Chalice(app_name="test_encode_json")
+
+    @app.route("/graphql", methods=["GET", "POST"], content_types=["application/json"])
+    def handle_graphql():
+        return view.execute_request(app.current_request)
+
+    with Client(app) as client:
+        headers = {"Accept": "application/json", "Content-Type": "application/json"}
+
+        query = {"query": "query GreetMe {greetings}"}
+        response = client.http.post("/graphql", headers=headers, body=json.dumps(query))
+
+        assert response.status_code == 200
+        assert response.json_body == "custom"

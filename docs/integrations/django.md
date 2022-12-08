@@ -34,12 +34,20 @@ The `GraphQLView` accepts the following arguments:
   queries via `GET` requests
 - `subscriptions_enabled`: optional boolean paramenter enabling subscriptions in
   the GraphiQL interface, defaults to `False`.
+
+## Deprecated options
+
+The following options are deprecated and will be removed in a future release:
+
 - `json_encoder`: optional JSON encoder, defaults to `DjangoJSONEncoder`, will
   be used to serialize the data.
 - `json_dumps_params`: optional dictionary of keyword arguments to pass to the
   `json.dumps` call used to generate the response. To get the most compact JSON
   representation, you should specify `{"separators": (",", ":")}`, defaults to
   `None`.
+
+You can extend the view and override `encode_json` to customize the JSON
+encoding process.
 
 ## Extending the view
 
@@ -165,12 +173,6 @@ The `AsyncGraphQLView` accepts the following arguments:
   queries via `GET` requests
 - `subscriptions_enabled`: optional boolean paramenter enabling subscriptions in
   the GraphiQL interface, defaults to `False`.
-- `json_encoder`: optional JSON encoder, defaults to `DjangoJSONEncoder`, will
-  be used to serialize the data.
-- `json_dumps_params`: optional dictionary of keyword arguments to pass to the
-  `json.dumps` call used to generate the response. To get the most compact JSON
-  representation, you should specify `{"separators": (",", ":")}`, defaults to
-  `None`.
 
 ## Extending the view
 
@@ -180,6 +182,7 @@ methods:
 - `async get_context(self, request: HttpRequest) -> Any`
 - `async get_root_value(self, request: HttpRequest) -> Any`
 - `async process_result(self, request: HttpRequest, result: ExecutionResult) -> GraphQLHTTPResponse`
+- `def encode_json(self, data: GraphQLHTTPResponse) -> str`
 
 ## get_context
 
@@ -257,8 +260,20 @@ class MyGraphQLView(AsyncGraphQLView):
 In this case we are doing the default processing of the result, but it can be
 tweaked based on your needs.
 
+## encode_json
+
+`encode_json` allows to customize the encoding of the JSON response. By default
+we use `json.dumps` but you can override this method to use a different encoder.
+
+```python
+class MyGraphQLView(AsyncGraphQLView):
+    def encode_json(self, data: GraphQLHTTPResponse) -> str:
+        return json.dumps(data, indent=2)
+```
+
 ## Subscriptions
 
 Subscriptions run over websockets and thus depend on
 [channels](https://channels.readthedocs.io/). Take a look at our
-[channels integraton](/docs/integrations/channels.md) page for more information regarding it.
+[channels integraton](/docs/integrations/channels.md) page for more information
+regarding it.

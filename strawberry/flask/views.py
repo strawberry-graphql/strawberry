@@ -90,9 +90,12 @@ class GraphQLView(View):
             return Response(e.as_http_error_reason(method), 400)
 
         response_data = self.process_result(result)
-        response.set_data(json.dumps(response_data))
+        response.set_data(self.encode_json(response_data))
 
         return response
+
+    def encode_json(self, response_data: GraphQLHTTPResponse) -> str:
+        return json.dumps(response_data)
 
 
 class AsyncGraphQLView(GraphQLView):
@@ -142,6 +145,6 @@ class AsyncGraphQLView(GraphQLView):
             return Response(e.as_http_error_reason(method), 400)
 
         response_data = self.process_result(result)
-        response.set_data(json.dumps(response_data))
+        response.set_data(self.encode_json(response_data))
 
         return response

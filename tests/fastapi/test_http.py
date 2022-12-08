@@ -10,7 +10,7 @@ def test_returns_error_when_missing_query(test_client):
 
 
 def test_returns_error_when_not_sending_wrong_content_type(test_client):
-    response = test_client.post("/graphql", data="Example")
+    response = test_client.post("/graphql", content="Example")
 
     assert response.status_code == status.HTTP_415_UNSUPPORTED_MEDIA_TYPE
 

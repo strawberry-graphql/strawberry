@@ -16,7 +16,7 @@ from typing import (
 from starlette import status
 from starlette.background import BackgroundTasks
 from starlette.requests import HTTPConnection, Request
-from starlette.responses import HTMLResponse, JSONResponse, PlainTextResponse, Response
+from starlette.responses import HTMLResponse, PlainTextResponse, Response
 from starlette.types import ASGIApp
 from starlette.websockets import WebSocket
 
@@ -349,9 +349,13 @@ class GraphQLRouter(APIRouter):
 
         response_data = await self.process_result(request, result)
 
-        actual_response: JSONResponse = JSONResponse(
-            response_data,
+        actual_response = Response(
+            self.encode_json(response_data),
+            media_type="application/json",
             status_code=status.HTTP_200_OK,
         )
 
         return self._merge_responses(response, actual_response)
+
+    def encode_json(self, response_data: GraphQLHTTPResponse) -> str:
+        return json.dumps(response_data)
