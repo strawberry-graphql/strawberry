@@ -180,3 +180,34 @@ def test_context_with_response():
 
         response = client.get("/graphql", json={"query": query})
         assert response.status_code == 401
+
+
+def test_custom_encode_json():
+    class CustomGraphQLView(BaseGraphQLView):
+        def encode_json(self, data):
+            return '"custom"'
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def example(self) -> str:
+            return "example"
+
+    schema = strawberry.Schema(query=Query)
+
+    app = Flask(__name__)
+    app.debug = True
+
+    app.add_url_rule(
+        "/graphql",
+        view_func=CustomGraphQLView.as_view("graphql_view", schema=schema),
+    )
+
+    with app.test_client() as client:
+        query = "{ example }"
+
+        response = client.get("/graphql", json={"query": query})
+        data = json.loads(response.data.decode())
+
+        assert response.status_code == 200
+        assert data == "custom"
