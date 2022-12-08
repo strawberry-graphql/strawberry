@@ -3,7 +3,7 @@ from typing import Any, Callable, Dict, Iterable, Optional
 
 from starlette import status
 from starlette.requests import Request
-from starlette.responses import HTMLResponse, JSONResponse, PlainTextResponse, Response
+from starlette.responses import HTMLResponse, PlainTextResponse, Response
 from starlette.types import Receive, Scope, Send
 
 from strawberry.exceptions import MissingQueryError
@@ -26,6 +26,7 @@ class HTTPHandler:
         get_context,
         get_root_value,
         process_result,
+        encode_json,
     ):
         self.schema = schema
         self.graphiql = graphiql
@@ -34,6 +35,7 @@ class HTTPHandler:
         self.get_context = get_context
         self.get_root_value = get_root_value
         self.process_result = process_result
+        self.encode_json = encode_json
 
     async def handle(self, scope: Scope, receive: Receive, send: Send):
         request = Request(scope=scope, receive=receive)
@@ -140,7 +142,11 @@ class HTTPHandler:
 
         response_data = await process_result(request=request, result=result)
 
-        return JSONResponse(response_data, status_code=status.HTTP_200_OK)
+        return Response(
+            self.encode_json(response_data),
+            status_code=status.HTTP_200_OK,
+            media_type="application/json",
+        )
 
     def should_render_graphiql(self, request: Request) -> bool:
         if not self.graphiql:

@@ -16,7 +16,9 @@ def test_simple_query(graphql_client):
 
 def test_fails_when_request_body_has_invalid_json(test_client):
     response = test_client.post(
-        "/", data='{"qeury": "{__typena"', headers={"content-type": "application/json"}
+        "/",
+        content='{"qeury": "{__typena"',
+        headers={"content-type": "application/json"},
     )
     assert response.status_code == 400
 
@@ -172,3 +174,24 @@ def test_custom_process_result():
 
     assert response.status_code == 200
     assert response.json() == {}
+
+
+def test_encode_json():
+    class CustomGraphQL(BaseGraphQL):
+        def encode_json(self, data) -> str:
+            return '"custom"'
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def example(self) -> str:
+            return "example"
+
+    schema = strawberry.Schema(query=Query)
+    app = CustomGraphQL(schema)
+
+    test_client = TestClient(app)
+    response = test_client.post("/", json={"query": "{ example }"})
+
+    assert response.status_code == 200
+    assert response.json() == "custom"

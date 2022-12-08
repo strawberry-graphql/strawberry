@@ -44,6 +44,7 @@ We allow to extend the base `GraphQL` app, by overriding the following methods:
 - `async get_context(self, request: Union[Request, WebSocket], response: Optional[Response] = None) -> Any`
 - `async get_root_value(self, request: Request) -> Any`
 - `async process_result(self, request: Request, result: ExecutionResult) -> GraphQLHTTPResponse`
+- `def encode_json(self, response_data: GraphQLHTTPResponse) -> str`
 
 ## get_context
 
@@ -157,3 +158,14 @@ class MyGraphQL(GraphQL):
 
 In this case we are doing the default processing of the result, but it can be
 tweaked based on your needs.
+
+## encode_json
+
+`encode_json` allows to customize the encoding of the JSON response. By default
+we use `json.dumps` but you can override this method to use a different encoder.
+
+```python
+class MyGraphQLView(GraphQL):
+    def encode_json(self, data: GraphQLHTTPResponse) -> str:
+        return json.dumps(data, indent=2)
+```
