@@ -141,7 +141,7 @@ class AsyncGraphQLView(BaseGraphQLView):
     async def process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse:
         return process_result(result)
 
-    async def dispatch_request(self):
+    async def dispatch_request(self) -> ResponseReturnValue:  # type: ignore[override]
         method = request.method
         content_type = request.content_type or ""
 
