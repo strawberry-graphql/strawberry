@@ -52,7 +52,11 @@ class Query:
     @strawberry.field
     def returns_401(self, info: Info) -> str:
         response = info.context["response"]
-        response.status_code = 401
+
+        if hasattr(response, "set_status"):
+            response.set_status(401)
+        else:
+            response.status_code = 401
 
         return "hey"
 

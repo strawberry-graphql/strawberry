@@ -7,7 +7,6 @@ from aiohttp import web
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import GraphQLRequestData, parse_query_params, parse_request_data
-from strawberry.http.temporal_response import TemporalResponse
 from strawberry.schema import BaseSchema
 from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types.graphql import OperationType
@@ -76,7 +75,9 @@ class HTTPHandler:
         request_data: GraphQLRequestData,
         method: Union[Literal["GET"], Literal["POST"]],
     ) -> web.StreamResponse:
-        context = await self.get_context(request, TemporalResponse(200))
+        response = web.Response()
+
+        context = await self.get_context(request, response)
         root_value = await self.get_root_value(request)
 
         allowed_operation_types = OperationType.from_http(method)
@@ -98,15 +99,11 @@ class HTTPHandler:
                 reason=e.as_http_error_reason(method=method)
             ) from e
 
-        status_code = 200
-
-        if "response" in context:
-            status_code = context["response"].status_code
-
-        response = web.Response(status=status_code)
         response_data = await self.process_result(request, result)
+
         response.text = self.encode_json(response_data)
         response.content_type = "application/json"
+
         return response
 
     async def get_request_data(self, request: web.Request) -> GraphQLRequestData:
