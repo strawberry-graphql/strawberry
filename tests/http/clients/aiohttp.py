@@ -2,16 +2,13 @@ from __future__ import annotations
 
 import json
 from io import BytesIO
-from json import JSONEncoder
-from typing import Dict, Optional, Type
-
+from typing import Dict, Optional
 from typing_extensions import Literal
 
 from aiohttp import web
 from aiohttp.test_utils import TestClient, TestServer
 from strawberry.aiohttp.views import GraphQLView as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
-from strawberry.http.json_dumps_params import JSONDumpsParams
 from strawberry.types import ExecutionResult
 
 from ..context import get_context
@@ -47,15 +44,11 @@ class AioHttpClient(HttpClient):
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
-        json_encoder: Type[JSONEncoder] = JSONEncoder,
-        json_dumps_params: Optional[JSONDumpsParams] = None,
     ):
         view = GraphQLView(
             schema=schema,
             graphiql=graphiql,
             allow_queries_via_get=allow_queries_via_get,
-            json_encoder=json_encoder,
-            json_dumps_params=json_dumps_params,
         )
         view.result_override = result_override
 

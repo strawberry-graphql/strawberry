@@ -1,16 +1,14 @@
 from __future__ import annotations
 
 from io import BytesIO
-from json import JSONEncoder, dumps
+from json import dumps
 from random import randint
-from typing import Dict, Optional, Type
-
+from typing import Dict, Optional
 from typing_extensions import Literal
 
 from sanic import Sanic
 from sanic.request import Request as SanicRequest
 from strawberry.http import GraphQLHTTPResponse
-from strawberry.http.json_dumps_params import JSONDumpsParams
 from strawberry.http.temporal_response import TemporalResponse
 from strawberry.sanic.views import GraphQLView as BaseGraphQLView
 from strawberry.types import ExecutionResult
@@ -52,8 +50,6 @@ class SanicHttpClient(HttpClient):
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
-        json_encoder: Type[JSONEncoder] = None,
-        json_dumps_params: Optional[JSONDumpsParams] = None,
     ):
         self.app = Sanic(
             f"test_{int(randint(0, 1000))}",
@@ -63,8 +59,6 @@ class SanicHttpClient(HttpClient):
             graphiql=graphiql,
             allow_queries_via_get=allow_queries_via_get,
             result_override=result_override,
-            json_encoder=json_encoder,
-            json_dumps_params=json_dumps_params,
         )
         self.app.add_route(
             view,
@@ -88,7 +82,10 @@ class SanicHttpClient(HttpClient):
             if method == "get":
                 kwargs["params"] = body
             else:
-                kwargs["data"] = body if files else dumps(body)
+                if files:
+                    kwargs["data"] = body
+                else:
+                    kwargs["content"] = dumps(body)
 
         request, response = await self.app.asgi_client.request(
             method,
@@ -130,7 +127,7 @@ class SanicHttpClient(HttpClient):
     ) -> Response:
         body = data or dumps(json)
         request, response = await self.app.asgi_client.request(
-            "post", url, data=body, headers=headers
+            "post", url, content=body, headers=headers
         )
 
         return Response(status_code=response.status_code, data=response.content)

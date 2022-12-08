@@ -2,18 +2,16 @@ from __future__ import annotations
 
 import json
 from io import BytesIO
-from json import JSONEncoder
-from typing import Dict, Optional, Type, Union
+from typing import Dict, Optional, Union
+from typing_extensions import Literal
 
 from starlette.requests import Request
 from starlette.responses import Response as StarletteResponse
 from starlette.testclient import TestClient
 from starlette.websockets import WebSocket
-from typing_extensions import Literal
 
 from strawberry.asgi import GraphQL as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
-from strawberry.http.json_dumps_params import JSONDumpsParams
 from strawberry.types import ExecutionResult
 
 from ..context import get_context
@@ -51,15 +49,11 @@ class AsgiHttpClient(HttpClient):
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
-        json_encoder: Type[JSONEncoder] = JSONEncoder,
-        json_dumps_params: Optional[JSONDumpsParams] = None,
     ):
         view = GraphQLView(
             schema,
             graphiql=graphiql,
             allow_queries_via_get=allow_queries_via_get,
-            json_encoder=json_encoder,
-            json_dumps_params=json_dumps_params,
         )
         view.result_override = result_override
 
@@ -81,12 +75,17 @@ class AsgiHttpClient(HttpClient):
         if method == "get":
             kwargs["params"] = body
         elif body:
-            kwargs["data"] = body if files else json.dumps(body)
+            if files:
+                kwargs["data"] = body
+            else:
+                kwargs["content"] = json.dumps(body)
+
+        if files is not None:
+            kwargs["files"] = files
 
         response = getattr(self.client, method)(
             "/graphql",
             headers=self._get_headers(method=method, headers=headers, files=files),
-            files=files,
             **kwargs,
         )
 
@@ -122,7 +121,7 @@ class AsgiHttpClient(HttpClient):
         json: Optional[JSON] = None,
         headers: Optional[Dict[str, str]] = None,
     ) -> Response:
-        response = self.client.post(url, headers=headers, data=data, json=json)
+        response = self.client.post(url, headers=headers, content=data, json=json)
 
         return Response(
             status_code=response.status_code,

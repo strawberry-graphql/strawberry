@@ -2,16 +2,13 @@ from __future__ import annotations
 
 import json
 from io import BytesIO
-from json import JSONEncoder
-from typing import Dict, Optional, Type
-
+from typing import Dict, Optional
 from typing_extensions import Literal
 
 from fastapi import BackgroundTasks, Depends, FastAPI, Request, WebSocket
 from fastapi.testclient import TestClient
 from strawberry.fastapi import GraphQLRouter as BaseGraphQLRouter
 from strawberry.http import GraphQLHTTPResponse
-from strawberry.http.json_dumps_params import JSONDumpsParams
 from strawberry.types import ExecutionResult
 
 from ..context import get_context
@@ -59,8 +56,6 @@ class FastAPIHttpClient(HttpClient):
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
-        json_encoder: Type[JSONEncoder] = JSONEncoder,
-        json_dumps_params: Optional[JSONDumpsParams] = None,
     ):
         self.app = FastAPI()
 
@@ -70,8 +65,6 @@ class FastAPIHttpClient(HttpClient):
             context_getter=fastapi_get_context,
             root_value_getter=get_root_value,
             allow_queries_via_get=allow_queries_via_get,
-            json_encoder=json_encoder,
-            json_dumps_params=json_dumps_params,
         )
         graphql_app.result_override = result_override
         self.app.include_router(graphql_app, prefix="/graphql")
@@ -95,12 +88,17 @@ class FastAPIHttpClient(HttpClient):
             if method == "get":
                 kwargs["params"] = body
             else:
-                kwargs["data"] = body if files else json.dumps(body)
+                if files:
+                    kwargs["data"] = body
+                else:
+                    kwargs["content"] = json.dumps(body)
+
+        if files:
+            kwargs["files"] = files
 
         response = getattr(self.client, method)(
             "/graphql",
             headers=self._get_headers(method=method, headers=headers, files=files),
-            files=files,
             **kwargs,
         )
 
@@ -133,7 +131,7 @@ class FastAPIHttpClient(HttpClient):
         json: Optional[JSON] = None,
         headers: Optional[Dict[str, str]] = None,
     ) -> Response:
-        response = self.client.post(url, headers=headers, data=data, json=json)
+        response = self.client.post(url, headers=headers, content=data, json=json)
 
         return Response(
             status_code=response.status_code,

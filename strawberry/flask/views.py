@@ -36,6 +36,9 @@ class BaseGraphQLView(View):
     def render_template(self, template: str) -> str:
         return render_template_string(template)
 
+    def encode_json(self, response_data: GraphQLHTTPResponse) -> str:
+        return json.dumps(response_data)
+
 
 class GraphQLView(BaseGraphQLView):
     def get_root_value(self) -> object:
@@ -124,9 +127,6 @@ class GraphQLView(BaseGraphQLView):
         response.set_data(self.encode_json(response_data))
 
         return response
-
-    def encode_json(self, response_data: GraphQLHTTPResponse) -> str:
-        return json.dumps(response_data)
 
 
 class AsyncGraphQLView(BaseGraphQLView):
@@ -218,7 +218,6 @@ class AsyncGraphQLView(BaseGraphQLView):
             return Response(e.as_http_error_reason(method), 400)
 
         response_data = await self.process_result(result)
-        response_data = self.process_result(result)
         response.set_data(self.encode_json(response_data))
 
         return response

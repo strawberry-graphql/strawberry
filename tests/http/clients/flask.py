@@ -6,15 +6,13 @@ import functools
 import json
 import urllib.parse
 from io import BytesIO
-from json import JSONEncoder
-from typing import Dict, Optional, Type, Union
-
+from typing import Dict, Optional, Union
 from typing_extensions import Literal
 
-from flask import Flask, Response as FlaskResponse
+from flask import Flask
+from flask import Response as FlaskResponse
 from strawberry.flask.views import GraphQLView as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
-from strawberry.http.json_dumps_params import JSONDumpsParams
 from strawberry.types import ExecutionResult
 
 from ..context import get_context
@@ -55,8 +53,6 @@ class FlaskHttpClient(HttpClient):
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
         result_override: ResultOverrideFunction = None,
-        json_encoder: Type[JSONEncoder] = JSONEncoder,
-        json_dumps_params: Optional[JSONDumpsParams] = None,
     ):
         self.app = Flask(__name__)
         self.app.debug = True
@@ -67,8 +63,6 @@ class FlaskHttpClient(HttpClient):
             graphiql=graphiql,
             allow_queries_via_get=allow_queries_via_get,
             result_override=result_override,
-            json_encoder=json_encoder,
-            json_dumps_params=json_dumps_params,
         )
 
         self.app.add_url_rule(

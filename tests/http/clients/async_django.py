@@ -17,7 +17,7 @@ from .django import DjangoHttpClient
 class AsyncGraphQLView(BaseAsyncGraphQLView):
     result_override: ResultOverrideFunction = None
 
-    async def get_root_value(self, request):
+    async def get_root_value(self, request: HttpRequest):
         return Query()
 
     async def get_context(self, request: HttpRequest, response: HttpResponse) -> object:
@@ -41,8 +41,6 @@ class AsyncDjangoHttpClient(DjangoHttpClient):
             graphiql=self.graphiql,
             allow_queries_via_get=self.allow_queries_via_get,
             result_override=self.result_override,
-            json_encoder=self.json_encoder,
-            json_dumps_params=self.json_dumps_params,
         )
 
         try:
