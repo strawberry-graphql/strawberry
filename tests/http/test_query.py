@@ -1,6 +1,6 @@
-import pytest
-
 from typing_extensions import Literal
+
+import pytest
 
 from .clients import HttpClient
 

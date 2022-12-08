@@ -1,6 +1,6 @@
-import pytest
-
 from typing_extensions import Literal
+
+import pytest
 
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
