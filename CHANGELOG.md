@@ -1,6 +1,19 @@
 CHANGELOG
 =========
 
+0.147.0 - 2022-12-08
+--------------------
+
+This release introduces a `encode_json` method on all the HTTP integrations.
+This method allows to customize the encoding of the JSON response. By default we
+use `json.dumps` but you can override this method to use a different encoder.
+
+It also deprecates `json_encoder` and `json_dumps_params` in the Django and
+Sanic views, `encode_json` should be used instead.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2272](https://github.com/strawberry-graphql/strawberry/pull/2272/)
+
+
 0.146.0 - 2022-12-05
 --------------------
 
