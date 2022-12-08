@@ -46,7 +46,7 @@ The `GraphQLView` accepts two options at the moment:
 
 We allow to extend the base `GraphQLView`, by overriding the following methods:
 
-- `get_context(self) -> Any`
+- `get_context(self, response: Response) -> Any`
 - `get_root_value(self) -> Any`
 - `process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse`
 - `encode_json(self, response_data: GraphQLHTTPResponse) -> str`
