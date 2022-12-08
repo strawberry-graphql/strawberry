@@ -1,5 +1,6 @@
 import sys
 from dataclasses import dataclass
+from inspect import getframeinfo, stack
 from typing import (
     Any,
     Callable,
@@ -15,7 +16,8 @@ from typing import (
 
 from graphql import GraphQLScalarType
 
-from strawberry.type import StrawberryType
+from strawberry.exceptions import InvalidUnionTypeError
+from strawberry.type import StrawberryOptional, StrawberryType
 
 from .utils.str_converters import to_camel_case
 
@@ -45,10 +47,14 @@ class ScalarDefinition(StrawberryType):
     # duplicates
     implementation: Optional[GraphQLScalarType] = None
 
+    # used for better error messages
+    _source_file: Optional[str] = None
+    _source_line: Optional[int] = None
+
     def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
     ) -> Union[StrawberryType, type]:
-        return super().copy_with(type_var_map)
+        return super().copy_with(type_var_map)  # type: ignore[safe-super]
 
     @property
     def is_generic(self) -> bool:
@@ -58,11 +64,21 @@ class ScalarDefinition(StrawberryType):
 class ScalarWrapper:
     _scalar_definition: ScalarDefinition
 
-    def __init__(self, wrap):
+    def __init__(self, wrap: Callable[[Any], Any]):
         self.wrap = wrap
 
     def __call__(self, *args, **kwargs):
         return self.wrap(*args, **kwargs)
+
+    def __or__(self, other: Union[StrawberryType, type]) -> StrawberryType:
+        if other is None:
+            # Return the correct notation when using `StrawberryUnion | None`.
+            return StrawberryOptional(of_type=self)
+
+        # Raise an error in any other case.
+        # There is Work in progress to deal with more merging cases, see:
+        # https://github.com/strawberry-graphql/strawberry/pull/1455
+        raise InvalidUnionTypeError(str(other), self.wrap)
 
 
 def _process_scalar(
@@ -76,7 +92,18 @@ def _process_scalar(
     parse_literal: Optional[Callable] = None,
     directives: Iterable[object] = (),
 ):
+    from strawberry.exceptions.handler import should_use_rich_exceptions
+
     name = name or to_camel_case(cls.__name__)
+
+    _source_file = None
+    _source_line = None
+
+    if should_use_rich_exceptions():
+        frame = getframeinfo(stack()[3][0])
+
+        _source_file = frame.filename
+        _source_line = frame.lineno
 
     wrapper = ScalarWrapper(cls)
     wrapper._scalar_definition = ScalarDefinition(
@@ -87,6 +114,8 @@ def _process_scalar(
         parse_literal=parse_literal,
         parse_value=parse_value,
         directives=directives,
+        _source_file=_source_file,
+        _source_line=_source_line,
     )
 
     return wrapper

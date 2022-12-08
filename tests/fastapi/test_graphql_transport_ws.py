@@ -4,6 +4,7 @@ from datetime import timedelta
 
 from starlette.testclient import TestClient
 from starlette.websockets import WebSocketDisconnect
+from tests.fastapi.app import create_app
 
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
@@ -17,7 +18,6 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     SubscribeMessage,
     SubscribeMessagePayload,
 )
-from tests.fastapi.app import create_app
 
 
 def test_unknown_message_type(test_client):

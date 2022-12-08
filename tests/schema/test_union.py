@@ -2,10 +2,12 @@ import sys
 from dataclasses import dataclass
 from textwrap import dedent
 from typing import Generic, List, Optional, TypeVar, Union
+from typing_extensions import Annotated
 
 import pytest
 
 import strawberry
+from strawberry.lazy_type import lazy
 
 
 def test_union_as_field():
@@ -602,3 +604,43 @@ def test_union_with_similar_nested_generic_types():
     result = schema.execute_sync(query)
 
     assert result.data["containerB"]["items"][0]["b"] == 3
+
+
+def test_lazy_union():
+    """
+    Previously this failed to evaluate generic parameters on lazy types
+    """
+    TypeA = Annotated["TypeA", lazy("tests.schema.test_lazy_types.type_a")]
+    TypeB = Annotated["TypeB", lazy("tests.schema.test_lazy_types.type_b")]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def a(self) -> Union[TypeA, TypeB]:
+            from tests.schema.test_lazy_types.type_a import TypeA
+
+            return TypeA(list_of_b=[])
+
+        @strawberry.field
+        def b(self) -> Union[TypeA, TypeB]:
+            from tests.schema.test_lazy_types.type_b import TypeB
+
+            return TypeB()
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """
+     {
+        a {
+            __typename
+        }
+        b {
+            __typename
+        }
+    }
+    """
+
+    result = schema.execute_sync(query)
+
+    assert result.data["a"]["__typename"] == "TypeA"
+    assert result.data["b"]["__typename"] == "TypeB"

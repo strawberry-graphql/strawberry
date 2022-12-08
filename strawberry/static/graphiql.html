@@ -61,8 +61,8 @@
     <link
       crossorigin
       rel="stylesheet"
-      href="https://unpkg.com/graphiql@2.0.3/graphiql.min.css"
-      integrity="sha384-AKx2Bh1kuZ1tUTwbmHASXvBtHBX4WWVwdTQjArDlqPCL2uuBTyJkajuxdczWhzTN"
+      href="https://unpkg.com/graphiql@2.2.0/graphiql.min.css"
+      integrity="sha384-4a2fCKkum7OnFcO9Qae5NAO7bYHTeolCix2FOnzhz8L42NP6+2Q1cTH7p/xr4Pfg"
     />
   </head>
 
@@ -70,8 +70,8 @@
     <div id="graphiql" class="graphiql-container">Loading...</div>
     <script
       crossorigin
-      src="https://unpkg.com/graphiql@2.0.3/graphiql.min.js"
-      integrity="sha384-WI6ayyBMb7Ln13us9JlWopMH4Kz33Pt9bYbkO5oY/xryP/pbGmz5Q08oS2dcrLmc"
+      src="https://unpkg.com/graphiql@2.2.0/graphiql.min.js"
+      integrity="sha384-JHFGCFTH/jUGV6uL38eHuw/3kb0aUiF0EzWPP68NQxvz7ldZXEoCv9RBGtsFHM86"
     ></script>
     <script
       crossorigin
@@ -110,7 +110,11 @@
       const fetchURL = window.location.href;
 
       function httpUrlToWebSockeUrl(url) {
-        return url.replace(/(http)(s)?\:\/\//, "ws$2://");
+        const parsedURL = new URL(url);
+        const protocol = parsedURL.protocol === "http:" ? "ws:" : "wss:";
+        parsedURL.protocol = protocol;
+        parsedURL.hash = "";
+        return parsedURL.toString();
       }
 
       const headers = {};

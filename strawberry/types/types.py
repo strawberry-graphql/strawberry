@@ -13,6 +13,7 @@ from typing import (
     TypeVar,
     Union,
 )
+from typing_extensions import Self
 
 from strawberry.type import StrawberryType, StrawberryTypeVar
 from strawberry.utils.typing import is_generic as is_type_generic
@@ -44,6 +45,12 @@ class TypeDefinition(StrawberryType):
         default_factory=dict
     )
 
+    def __post_init__(self):
+        # resolve `Self` annotation with the origin type
+        for index, field in enumerate(self.fields):
+            if isinstance(field.type, StrawberryType) and field.type.has_generic(Self):
+                self.fields[index] = field.copy_with({Self: self.origin})  # type: ignore  # noqa: E501
+
     # TODO: remove wrapped cls when we "merge" this with `StrawberryObject`
     def resolve_generic(self, wrapped_cls: type) -> type:
         from strawberry.annotation import StrawberryAnnotation
@@ -65,18 +72,36 @@ class TypeDefinition(StrawberryType):
     def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
     ) -> type:
+        from strawberry.annotation import StrawberryAnnotation
+
         fields = []
         for field in self.fields:
             # TODO: Logic unnecessary with StrawberryObject
             field_type = field.type
             if hasattr(field_type, "_type_definition"):
-                field_type = field_type._type_definition  # type: ignore
+                field_type = field_type._type_definition
 
             # TODO: All types should end up being StrawberryTypes
             #       The first check is here as a symptom of strawberry.ID being a
             #       Scalar, but not a StrawberryType
             if isinstance(field_type, StrawberryType) and field_type.is_generic:
                 field = field.copy_with(type_var_map)
+
+            # Resolve generic arguments
+            generic_arguments = (
+                argument
+                for argument in field.arguments
+                if isinstance(argument.type, StrawberryType)
+                and argument.type.is_generic
+            )
+
+            for argument in generic_arguments:
+                assert isinstance(argument.type, StrawberryType)
+
+                argument.type_annotation = StrawberryAnnotation(
+                    annotation=argument.type.copy_with(type_var_map),
+                    namespace=argument.type_annotation.namespace,
+                )
 
             fields.append(field)
 

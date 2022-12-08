@@ -1,6 +1,6 @@
 import json
-from typing import Any, Dict, Mapping, Optional, Type, Union
-
+import warnings
+from typing import Any, Dict, Optional, Type, Union
 from typing_extensions import Literal
 
 from sanic.exceptions import NotFound, SanicException, ServerError
@@ -25,6 +25,8 @@ from strawberry.types import ExecutionResult
 from strawberry.types.graphql import OperationType
 from strawberry.utils.graphiql import get_graphiql_html
 
+from .context import StrawberrySanicContext
+
 
 class GraphQLView(HTTPMethodView):
     """
@@ -34,8 +36,6 @@ class GraphQLView(HTTPMethodView):
         schema: strawberry.Schema
         graphiql: bool, default is True
         allow_queries_via_get: bool, default is True
-        json_encoder: json.JSONEncoder, default is JSONEncoder
-        json_dumps_params: dict, default is None
 
     Returns:
         None
@@ -52,7 +52,7 @@ class GraphQLView(HTTPMethodView):
         schema: BaseSchema,
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
-        json_encoder: Type[json.JSONEncoder] = json.JSONEncoder,
+        json_encoder: Optional[Type[json.JSONEncoder]] = None,
         json_dumps_params: Optional[Dict[str, Any]] = None,
     ):
         self.schema = schema
@@ -61,13 +61,29 @@ class GraphQLView(HTTPMethodView):
         self.json_encoder = json_encoder
         self.json_dumps_params = json_dumps_params
 
+        if self.json_encoder is not None:
+            warnings.warn(
+                "json_encoder is deprecated, override encode_json instead",
+                DeprecationWarning,
+            )
+
+        if self.json_dumps_params is not None:
+            warnings.warn(
+                "json_dumps_params is deprecated, override encode_json instead",
+                DeprecationWarning,
+            )
+
+            self.json_encoder = json.JSONEncoder
+
     def get_root_value(self):
         return None
 
-    async def get_context(self, request: Request, response: TemporalResponse) -> Any:
+    async def get_context(
+        self, request: Request, response: TemporalResponse
+    ) -> StrawberrySanicContext:
         return {"request": request, "response": response}
 
-    def render_template(self, template=None):
+    def render_template(self, template: str) -> HTTPResponse:
         return html(template)
 
     async def process_result(
@@ -109,22 +125,33 @@ class GraphQLView(HTTPMethodView):
         raise NotFound()
 
     async def get_response(
-        self, response_data: GraphQLHTTPResponse, context: Mapping[str, object]
+        self, response_data: GraphQLHTTPResponse, context: StrawberrySanicContext
     ) -> HTTPResponse:
         status_code = 200
 
-        if "response" in context:
-            status_code = context["response"].status_code  # type: ignore[attr-defined]
+        if "response" in context and context["response"]:
+            status_code = context["response"].status_code
 
-        data = json.dumps(
-            response_data, cls=self.json_encoder, **(self.json_dumps_params or {})
-        )
+        data = self.encode_json(response_data)
 
         return HTTPResponse(
             data,
             status=status_code,
             content_type="application/json",
         )
+
+    def encode_json(self, response_data: GraphQLHTTPResponse) -> str:
+        if self.json_dumps_params:
+            assert self.json_encoder
+
+            return json.dumps(
+                response_data, cls=self.json_encoder, **self.json_dumps_params
+            )
+
+        if self.json_encoder:
+            return json.dumps(response_data, cls=self.json_encoder)
+
+        return json.dumps(response_data)
 
     async def post(self, request: Request) -> HTTPResponse:
         request_data = self.get_request_data(request)
@@ -178,7 +205,7 @@ class GraphQLView(HTTPMethodView):
 
         return request_data
 
-    def parse_request(self, request: Request) -> dict:
+    def parse_request(self, request: Request) -> Dict[str, Any]:
         content_type = request.content_type or ""
 
         if "application/json" in content_type:

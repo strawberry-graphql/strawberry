@@ -1,5 +1,5 @@
 import json
-from typing import Dict, Optional, Type
+from typing import Dict
 
 from flask import Response, render_template_string, request
 from flask.typing import ResponseReturnValue
@@ -13,7 +13,6 @@ from strawberry.http import (
     parse_request_data,
     process_result,
 )
-from strawberry.http.json_dumps_params import JSONDumpsParams
 from strawberry.schema.base import BaseSchema
 from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types import ExecutionResult
@@ -29,14 +28,10 @@ class BaseGraphQLView(View):
         schema: BaseSchema,
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
-        json_encoder: Type[json.JSONEncoder] = json.JSONEncoder,
-        json_dumps_params: Optional[JSONDumpsParams] = None,
     ):
         self.schema = schema
         self.graphiql = graphiql
         self.allow_queries_via_get = allow_queries_via_get
-        self.json_encoder = json_encoder
-        self.json_dumps_params = json_dumps_params or {}
 
     def render_template(self, template: str) -> str:
         return render_template_string(template)
@@ -126,11 +121,12 @@ class GraphQLView(BaseGraphQLView):
             return Response(e.as_http_error_reason(method), 400)
 
         response_data = self.process_result(result)
-        response.set_data(
-            self.json_encoder(**self.json_dumps_params).encode(response_data)
-        )
+        response.set_data(self.encode_json(response_data))
 
         return response
+
+    def encode_json(self, response_data: GraphQLHTTPResponse) -> str:
+        return json.dumps(response_data)
 
 
 class AsyncGraphQLView(BaseGraphQLView):
@@ -222,8 +218,7 @@ class AsyncGraphQLView(BaseGraphQLView):
             return Response(e.as_http_error_reason(method), 400)
 
         response_data = await self.process_result(result)
-        response.set_data(
-            self.json_encoder(**self.json_dumps_params).encode(response_data)
-        )
+        response_data = self.process_result(result)
+        response.set_data(self.encode_json(response_data))
 
         return response

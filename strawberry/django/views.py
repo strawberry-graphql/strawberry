@@ -1,5 +1,6 @@
 import asyncio
 import json
+import warnings
 from typing import Any, Dict, Optional, Type
 
 from django.core.exceptions import BadRequest, SuspiciousOperation
@@ -23,7 +24,6 @@ from strawberry.http import (
     parse_request_data,
     process_result,
 )
-from strawberry.http.json_dumps_params import JSONDumpsParams
 from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types import ExecutionResult
 from strawberry.types.graphql import OperationType
@@ -55,22 +55,41 @@ class BaseView(View):
     graphiql = True
     allow_queries_via_get = True
     schema: Optional[BaseSchema] = None
-    json_encoder: Type[json.JSONEncoder] = DjangoJSONEncoder
-    json_dumps_params: Optional[JSONDumpsParams] = None
+    json_encoder: Optional[Type[json.JSONEncoder]] = None
+    json_dumps_params: Optional[Dict[str, Any]] = None
 
     def __init__(
         self,
         schema: BaseSchema,
-        graphiql=True,
-        allow_queries_via_get=True,
-        subscriptions_enabled=False,
+        graphiql: bool = True,
+        allow_queries_via_get: bool = True,
+        subscriptions_enabled: bool = False,
         **kwargs: Any,
     ):
         self.schema = schema
         self.graphiql = graphiql
         self.allow_queries_via_get = allow_queries_via_get
         self.subscriptions_enabled = subscriptions_enabled
+
         super().__init__(**kwargs)
+
+        self.json_dumps_params = kwargs.pop("json_dumps_params", self.json_dumps_params)
+
+        if self.json_dumps_params:
+            warnings.warn(
+                "json_dumps_params is deprecated, override encode_json instead",
+                DeprecationWarning,
+            )
+
+            self.json_encoder = DjangoJSONEncoder
+
+        self.json_encoder = kwargs.pop("json_encoder", self.json_encoder)
+
+        if self.json_encoder is not None:
+            warnings.warn(
+                "json_encoder is deprecated, override encode_json instead",
+                DeprecationWarning,
+            )
 
     def parse_body(self, request: HttpRequest) -> Dict[str, Any]:
         content_type = request.content_type or ""
@@ -138,11 +157,12 @@ class BaseView(View):
 
     def _create_response(
         self, response_data: GraphQLHTTPResponse, sub_response: HttpResponse
-    ) -> JsonResponse:
-        response = JsonResponse(
-            response_data,
-            encoder=self.json_encoder,
-            json_dumps_params=self.json_dumps_params,
+    ) -> HttpResponse:
+        data = self.encode_json(response_data)
+
+        response = HttpResponse(
+            data,
+            content_type="application/json",
         )
 
         for name, value in sub_response.items():
@@ -155,6 +175,19 @@ class BaseView(View):
             response.cookies[name] = value
 
         return response
+
+    def encode_json(self, response_data: GraphQLHTTPResponse) -> str:
+        if self.json_dumps_params:
+            assert self.json_encoder
+
+            return json.dumps(
+                response_data, cls=self.json_encoder, **self.json_dumps_params
+            )
+
+        if self.json_encoder:
+            return json.dumps(response_data, cls=self.json_encoder)
+
+        return json.dumps(response_data)
 
 
 class GraphQLView(BaseView):

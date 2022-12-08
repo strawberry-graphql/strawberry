@@ -1,4 +1,5 @@
 import asyncio
+from typing import cast
 
 import pytest
 
@@ -257,7 +258,7 @@ async def test_prime():
     # (See assertion in idx)
     c4 = loader.load(4)
     loader.prime_many({4: 4.4})
-    await c4 == 4.4
+    assert await c4 == 4.4
 
     # Yield to ensure the last batch has been dispatched,
     # despite all values being primed
@@ -336,3 +337,45 @@ async def test_clear_nocache():
     loader.clear_all()
 
     assert await loader.load_many([1, 2, 3]) == [(1, 4), (2, 4), (3, 4)]
+
+
+async def test_dont_dispatch_cancelled():
+    async def idx(keys):
+        await asyncio.sleep(0.2)
+        return keys
+
+    loader = DataLoader(load_fn=idx)
+
+    value_a = await loader.load(1)
+    # value_b will be cancelled by hand
+    value_b = cast(asyncio.Future, loader.load(2))
+    value_b.cancel()
+    # value_c will be cancelled by the timeout
+    with pytest.raises(asyncio.TimeoutError):
+        value_c = cast(asyncio.Future, loader.load(3))
+        await asyncio.wait_for(value_c, 0.1)
+    value_d = await loader.load(4)
+
+    assert value_a == 1
+    assert value_d == 4
+
+    # 2 can still be used here because a new future will be created for it
+    values = await loader.load_many([1, 2, 3, 4, 5, 6])
+    assert values == [1, 2, 3, 4, 5, 6]
+
+    with pytest.raises(asyncio.CancelledError):
+        value_b.result()
+    with pytest.raises(asyncio.CancelledError):
+        value_c.result()
+
+    # Try single loading results again to make sure the cancelled
+    # futures are not being reused
+    value_a = await loader.load(1)
+    value_b = await loader.load(2)
+    value_c = await loader.load(3)
+    value_d = await loader.load(4)
+
+    assert value_a == 1
+    assert value_b == 2
+    assert value_c == 3
+    assert value_d == 4

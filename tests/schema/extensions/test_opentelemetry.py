@@ -1,5 +1,4 @@
 import pytest
-
 from opentelemetry.trace import SpanKind
 
 import strawberry

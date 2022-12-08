@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable, Iterable, List, Optional, Tuple, Type, Union, cast
-
 from typing_extensions import Literal, Protocol
 
 from graphql import (
@@ -329,7 +328,7 @@ class QueryCodegen:
             if hasattr(python_type, "__supertype__"):
                 python_type = python_type.__supertype__
 
-            return self._collect_scalar(field_type._scalar_definition, python_type)
+            return self._collect_scalar(field_type._scalar_definition, python_type)  # type: ignore  # noqa: E501
 
         if isinstance(field_type, ScalarDefinition):
             return self._collect_scalar(field_type, None)
@@ -355,7 +354,7 @@ class QueryCodegen:
             )
 
         if hasattr(strawberry_type, "_type_definition"):
-            strawberry_type = strawberry_type._type_definition  # type: ignore[union-attr]  # noqa: E501
+            strawberry_type = strawberry_type._type_definition
 
         if isinstance(strawberry_type, TypeDefinition):
             type_ = GraphQLObjectType(

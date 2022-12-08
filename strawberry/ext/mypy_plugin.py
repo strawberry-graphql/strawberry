@@ -2,7 +2,6 @@ import re
 import warnings
 from decimal import Decimal
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union, cast
-
 from typing_extensions import Final
 
 import mypy
@@ -70,7 +69,8 @@ except ImportError:
 
 # To be compatible with user who don't use pydantic
 try:
-    from pydantic.mypy import METADATA_KEY as PYDANTIC_METADATA_KEY, PydanticModelField
+    from pydantic.mypy import METADATA_KEY as PYDANTIC_METADATA_KEY
+    from pydantic.mypy import PydanticModelField
 except ImportError:
     PYDANTIC_METADATA_KEY = ""
 

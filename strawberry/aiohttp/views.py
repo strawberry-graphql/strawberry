@@ -1,7 +1,7 @@
 import asyncio
 import json
 from datetime import timedelta
-from typing import Optional, Type
+from typing import Iterable
 
 from aiohttp import web
 from strawberry.aiohttp.handlers import (
@@ -10,7 +10,6 @@ from strawberry.aiohttp.handlers import (
     HTTPHandler,
 )
 from strawberry.http import GraphQLHTTPResponse, process_result
-from strawberry.http.json_dumps_params import JSONDumpsParams
 from strawberry.schema import BaseSchema
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 from strawberry.types import ExecutionResult
@@ -33,10 +32,11 @@ class GraphQLView:
         keep_alive: bool = True,
         keep_alive_interval: float = 1,
         debug: bool = False,
-        subscription_protocols=(GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL),
+        subscription_protocols: Iterable[str] = (
+            GRAPHQL_TRANSPORT_WS_PROTOCOL,
+            GRAPHQL_WS_PROTOCOL,
+        ),
         connection_init_wait_timeout: timedelta = timedelta(minutes=1),
-        json_encoder: Type[json.JSONEncoder] = json.JSONEncoder,
-        json_dumps_params: Optional[JSONDumpsParams] = None,
     ):
         self.schema = schema
         self.graphiql = graphiql
@@ -46,8 +46,6 @@ class GraphQLView:
         self.debug = debug
         self.subscription_protocols = subscription_protocols
         self.connection_init_wait_timeout = connection_init_wait_timeout
-        self.json_encoder = json_encoder
-        self.json_dumps_params = json_dumps_params or {}
 
     async def __call__(self, request: web.Request) -> web.StreamResponse:
         ws = web.WebSocketResponse(protocols=self.subscription_protocols)
@@ -84,9 +82,8 @@ class GraphQLView:
                 allow_queries_via_get=self.allow_queries_via_get,
                 get_context=self.get_context,
                 get_root_value=self.get_root_value,
+                encode_json=self.encode_json,
                 process_result=self.process_result,
-                json_encoder=self.json_encoder,
-                json_dumps_params=self.json_dumps_params,
                 request=request,
             ).handle()
 
@@ -102,3 +99,6 @@ class GraphQLView:
         self, request: web.Request, result: ExecutionResult
     ) -> GraphQLHTTPResponse:
         return process_result(result)
+
+    def encode_json(self, response_data: GraphQLHTTPResponse) -> str:
+        return json.dumps(response_data)

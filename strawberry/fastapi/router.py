@@ -1,17 +1,27 @@
 import json
 from datetime import timedelta
 from inspect import signature
-from typing import Any, Callable, Dict, Iterable, Optional, Sequence, Type, Union
+from typing import (
+    Any,
+    Awaitable,
+    Callable,
+    Dict,
+    Iterable,
+    Optional,
+    Sequence,
+    Type,
+    Union,
+    cast,
+)
 
 from starlette import status
 from starlette.background import BackgroundTasks
-from starlette.requests import Request
-from starlette.responses import HTMLResponse, JSONResponse, PlainTextResponse, Response
+from starlette.requests import HTTPConnection, Request
+from starlette.responses import HTMLResponse, PlainTextResponse, Response
 from starlette.types import ASGIApp
 from starlette.websockets import WebSocket
 
 from fastapi import APIRouter, Depends
-from strawberry.asgi.handlers.http_handler import CustomJSONResponse
 from strawberry.exceptions import InvalidCustomContext, MissingQueryError
 from strawberry.fastapi.handlers import GraphQLTransportWSHandler, GraphQLWSHandler
 from strawberry.file_uploads.utils import replace_placeholders_with_files
@@ -54,26 +64,28 @@ class GraphQLRouter(APIRouter):
 
     @staticmethod
     def __get_context_getter(
-        custom_getter: Callable[..., Optional[CustomContext]]
-    ) -> Callable[..., CustomContext]:
-        def dependency(
+        custom_getter: Callable[
+            ..., Union[Optional[CustomContext], Awaitable[Optional[CustomContext]]]
+        ]
+    ) -> Callable[..., Awaitable[CustomContext]]:
+        async def dependency(
             custom_context: Optional[CustomContext],
             background_tasks: BackgroundTasks,
-            request: Request = None,
-            response: Response = None,
-            ws: WebSocket = None,
+            connection: HTTPConnection,
+            response: Response = None,  # type: ignore
         ) -> MergedContext:
-            default_context = {
-                "request": request or ws,
-                "background_tasks": background_tasks,
-                "response": response,
-            }
+            request = cast(Union[Request, WebSocket], connection)
             if isinstance(custom_context, BaseContext):
-                custom_context.request = request or ws
+                custom_context.request = request
                 custom_context.background_tasks = background_tasks
                 custom_context.response = response
                 return custom_context
-            elif isinstance(custom_context, dict):
+            default_context = {
+                "request": request,
+                "background_tasks": background_tasks,
+                "response": response,
+            }
+            if isinstance(custom_context, dict):
                 return {
                     **default_context,
                     **custom_context,
@@ -368,11 +380,15 @@ class GraphQLRouter(APIRouter):
 
         response_data = await self.process_result(request, result)
 
-        actual_response: JSONResponse = CustomJSONResponse(
-            response_data,
+        actual_response = Response(
+            self.encode_json(response_data),
+            media_type="application/json",
             status_code=status.HTTP_200_OK,
             json_encoder=self.json_encoder,
             json_dumps_params=self.json_dumps_params,
         )
 
         return self._merge_responses(response, actual_response)
+
+    def encode_json(self, response_data: GraphQLHTTPResponse) -> str:
+        return json.dumps(response_data)

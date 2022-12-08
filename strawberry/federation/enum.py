@@ -1,11 +1,7 @@
 from typing import Any, Callable, Iterable, Optional, Union, overload
 
-from strawberry.enum import (
-    EnumType,
-    EnumValueDefinition,
-    _process_enum,
-    enum_value as base_enum_value,
-)
+from strawberry.enum import EnumType, EnumValueDefinition, _process_enum
+from strawberry.enum import enum_value as base_enum_value
 
 
 def enum_value(

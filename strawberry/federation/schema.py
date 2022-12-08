@@ -1,10 +1,12 @@
 from collections import defaultdict
 from copy import copy
+from functools import partial
 from itertools import chain
 from typing import Any, Dict, Iterable, List, Optional, Type, Union, cast
 
+from graphql import ExecutionContext as GraphQLExecutionContext
 from graphql import (
-    ExecutionContext as GraphQLExecutionContext,
+    GraphQLError,
     GraphQLField,
     GraphQLInterfaceType,
     GraphQLList,
@@ -156,15 +158,43 @@ class Schema(BaseSchema):
             type_ = self.schema_converter.type_map[type_name]
 
             definition = cast(TypeDefinition, type_.definition)
-            resolve_reference = definition.origin.resolve_reference
 
-            func_args = get_func_args(resolve_reference)
-            kwargs = representation
+            if hasattr(definition.origin, "resolve_reference"):
 
-            if "info" in func_args:
-                kwargs["info"] = info
+                resolve_reference = definition.origin.resolve_reference
 
-            results.append(resolve_reference(**kwargs))
+                func_args = get_func_args(resolve_reference)
+                kwargs = representation
+
+                # TODO: use the same logic we use for other resolvers
+                if "info" in func_args:
+                    kwargs["info"] = info
+
+                get_result = partial(resolve_reference, **kwargs)
+            else:
+                from strawberry.arguments import convert_argument
+
+                strawberry_schema = info.schema.extensions["strawberry-definition"]
+                config = strawberry_schema.config
+                scalar_registry = strawberry_schema.schema_converter.scalar_registry
+
+                get_result = partial(
+                    convert_argument,
+                    representation,
+                    type_=definition.origin,
+                    scalar_registry=scalar_registry,
+                    config=config,
+                )
+
+            try:
+                result = get_result()
+            except Exception as e:
+                result = GraphQLError(
+                    f"Unable to resolve reference for {definition.origin}",
+                    original_error=e,
+                )
+
+            results.append(result)
 
         return results
 

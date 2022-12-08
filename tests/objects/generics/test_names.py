@@ -1,9 +1,8 @@
 import textwrap
 from typing import Generic, List, NewType, TypeVar
+from typing_extensions import Annotated
 
 import pytest
-
-from typing_extensions import Annotated
 
 import strawberry
 from strawberry.enum import EnumDefinition
