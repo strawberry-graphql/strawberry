@@ -34,12 +34,20 @@ The `GraphQLView` accepts the following arguments:
   queries via `GET` requests
 - `subscriptions_enabled`: optional boolean paramenter enabling subscriptions in
   the GraphiQL interface, defaults to `False`.
+
+## Deprecated options
+
+The following options are deprecated and will be removed in a future release:
+
 - `json_encoder`: optional JSON encoder, defaults to `DjangoJSONEncoder`, will
   be used to serialize the data.
 - `json_dumps_params`: optional dictionary of keyword arguments to pass to the
   `json.dumps` call used to generate the response. To get the most compact JSON
   representation, you should specify `{"separators": (",", ":")}`, defaults to
   `None`.
+
+You can extend the view and override `encode_json` to customize the JSON
+encoding process.
 
 ## Extending the view
 

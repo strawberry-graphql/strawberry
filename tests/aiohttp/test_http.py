@@ -139,3 +139,28 @@ async def test_operation_selection(aiohttp_app_client):
     data = await response.json()
     assert response.status == 200
     assert data["data"]["hello"] == "Hello Operation2"
+
+
+async def test_custom_encode_json(aiohttp_client):
+    class CustomGraphQLView(GraphQLView):
+        def encode_json(self, data):
+            return '"custom"'
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def example(self) -> str:
+            return "example"
+
+    schema = strawberry.Schema(query=Query)
+
+    app = web.Application()
+    app.router.add_route("*", "/graphql", CustomGraphQLView(schema=schema))
+    client = await aiohttp_client(app)
+
+    query = "{ example }"
+    resp = await client.post("/graphql", json={"query": query})
+    data = await resp.json()
+
+    assert resp.status == 200
+    assert data == "custom"
