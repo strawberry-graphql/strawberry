@@ -43,4 +43,22 @@ type User {
 
 ## How can I deal with circular imports?
 
-TODO...
+In cases where you have circular imports, you can use `strawberry.lazy` to
+resolve the circular imports, for example:
+
+```python
+# posts.py
+from typing import TYPE_CHECKING, Annotated
+
+import strawberry
+
+if TYPE_CHECKING:
+    from .users import User
+
+@strawberry.type
+class Post:
+    title: str
+    author: Annotated["User", strawberry.lazy(".users")]
+```
+
+For more information, see the [Lazy types](./types/lazy.md) documentation.
