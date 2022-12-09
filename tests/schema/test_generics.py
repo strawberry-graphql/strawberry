@@ -752,24 +752,36 @@ def test_generic_argument():
     T = TypeVar("T")
 
     @strawberry.type
-    class Collection(Generic[T]):
+    class Node(Generic[T]):
         @strawberry.field
-        def by_id(self, ids: List[T]) -> List[T]:
-            return []
+        def edge(self, arg: T) -> bool:
+            return bool(arg)
+
+        @strawberry.field
+        def edges(self, args: List[T]) -> int:
+            return len(args)
 
     @strawberry.type
     class Query:
-        user: Collection[int]
+        i_node: Node[int]
+        b_node: Node[bool]
 
     schema = strawberry.Schema(Query)
 
     expected_schema = """
-    type IntCollection {
-      byId(ids: [Int!]!): [Int!]!
+    type BoolNode {
+      edge(arg: Boolean!): Boolean!
+      edges(args: [Boolean!]!): Int!
+    }
+
+    type IntNode {
+      edge(arg: Int!): Boolean!
+      edges(args: [Int!]!): Int!
     }
 
     type Query {
-      user: IntCollection!
+      iNode: IntNode!
+      bNode: BoolNode!
     }
     """
 

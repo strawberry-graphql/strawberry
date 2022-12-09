@@ -72,38 +72,8 @@ class TypeDefinition(StrawberryType):
     def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
     ) -> type:
-        from strawberry.annotation import StrawberryAnnotation
-
-        fields = []
-        for field in self.fields:
-            # TODO: Logic unnecessary with StrawberryObject
-            field_type = field.type
-            if hasattr(field_type, "_type_definition"):
-                field_type = field_type._type_definition
-
-            # TODO: All types should end up being StrawberryTypes
-            #       The first check is here as a symptom of strawberry.ID being a
-            #       Scalar, but not a StrawberryType
-            if isinstance(field_type, StrawberryType) and field_type.is_generic:
-                field = field.copy_with(type_var_map)
-
-            # Resolve generic arguments
-            generic_arguments = (
-                argument
-                for argument in field.arguments
-                if isinstance(argument.type, StrawberryType)
-                and argument.type.is_generic
-            )
-
-            for argument in generic_arguments:
-                assert isinstance(argument.type, StrawberryType)
-
-                argument.type_annotation = StrawberryAnnotation(
-                    annotation=argument.type.copy_with(type_var_map),
-                    namespace=argument.type_annotation.namespace,
-                )
-
-            fields.append(field)
+        # TODO: Logic unnecessary with StrawberryObject
+        fields = [field.copy_with(type_var_map) for field in self.fields]
 
         new_type_definition = TypeDefinition(
             name=self.name,
