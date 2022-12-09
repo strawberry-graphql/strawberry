@@ -1,6 +1,20 @@
 CHANGELOG
 =========
 
+0.149.0 - 2022-12-09
+--------------------
+
+This release does some internal refactoring of the HTTP views, hopefully it
+doesn't affect anyone. It mostly changes the status codes returned in case of
+errors (e.g. bad JSON, missing queries and so on).
+
+It also improves the testing, and adds an entirely new test suite for the HTTP
+views, this means in future we'll be able to keep all the HTTP views in sync
+feature-wise.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #1840](https://github.com/strawberry-graphql/strawberry/pull/1840/)
+
+
 0.148.0 - 2022-12-08
 --------------------
 
