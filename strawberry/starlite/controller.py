@@ -19,6 +19,7 @@ from starlite.exceptions import ImproperlyConfiguredException
 from starlite.status_codes import (
     HTTP_200_OK,
     HTTP_400_BAD_REQUEST,
+    HTTP_404_NOT_FOUND,
     HTTP_415_UNSUPPORTED_MEDIA_TYPE,
 )
 from starlite.types import AnyCallable
@@ -247,9 +248,16 @@ def make_graphql_controller(
             actual_response: Response
 
             if request.query_params:
-                query_data = parse_query_params(
-                    cast(Dict[str, Any], request.query_params)
-                )
+                try:
+                    query_data = parse_query_params(
+                        cast(Dict[str, Any], request.query_params)
+                    )
+                except json.JSONDecodeError:
+                    return Response(
+                        "Unable to parse request body as JSON",
+                        status_code=HTTP_400_BAD_REQUEST,
+                        media_type=MediaType.TEXT,
+                    )
                 return await self.execute_request(
                     request=request,
                     data=query_data,
@@ -258,7 +266,7 @@ def make_graphql_controller(
                 )
             elif self.should_render_graphiql(request):
                 return self.get_graphiql_response()
-            return Response(content="Bad request", status_code=HTTP_400_BAD_REQUEST)
+            return Response(content="Bad request", status_code=HTTP_404_NOT_FOUND)
 
         @post()
         async def handle_http_post(
