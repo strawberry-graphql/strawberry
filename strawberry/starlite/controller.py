@@ -62,7 +62,6 @@ def _get_root_value_getter(custom_root_value: Union[AnyCallable, None]) -> Any:
 
 async def _context_getter(
     custom_context: Optional[CustomContext],
-    # background_tasks: BackgroundTasks,
     request: Request,
 ) -> MergedContext:
     if isinstance(custom_context, BaseContext):
