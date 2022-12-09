@@ -82,17 +82,6 @@ See our [Input Types](../types/input-types.md) docs.
 
 ## Can I use asyncio with Strawberry and Django?
 
-Yes, we do! Strawberry provides an async view taht you can use with Django 3.1+!
+Yes, Strawberry provides an async view that can be used with Django, you can
 Check [Async Django](../integrations/django.md#async-django) for more
 information.
-
-## How can I do authentication with Strawberry?
-
-Authentication is a task that should be handled by the framework, and you should
-check its documentation about how to do it. Strawberry it's only a wrapper
-around your authentication logic.
-
-You should check our [Authentication](../guides/authentication.md) docs to
-understand how to deal with authentication with Strawberry, but TL;TR you should
-define a mutation that authenticate the user and then use
-[`Permissions` classes](./permissions.md).
