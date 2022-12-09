@@ -1,6 +1,5 @@
 import sys
 from dataclasses import dataclass
-from inspect import getframeinfo, stack
 from typing import (
     Any,
     Callable,
@@ -100,10 +99,10 @@ def _process_scalar(
     _source_line = None
 
     if should_use_rich_exceptions():
-        frame = getframeinfo(stack()[3][0])
+        frame = sys._getframe(3)
 
-        _source_file = frame.filename
-        _source_line = frame.lineno
+        _source_file = frame.f_code.co_filename
+        _source_line = frame.f_lineno
 
     wrapper = ScalarWrapper(cls)
     wrapper._scalar_definition = ScalarDefinition(
