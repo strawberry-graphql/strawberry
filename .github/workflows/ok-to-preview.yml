@@ -1,4 +1,4 @@
-name: Ok to preview
+name: 🆗 Ok to preview
 
 on:
   pull_request_target:

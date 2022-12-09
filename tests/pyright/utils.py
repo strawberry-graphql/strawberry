@@ -5,13 +5,12 @@ import sys
 import tempfile
 from dataclasses import dataclass
 from typing import List, cast
+from typing_extensions import Literal
 
 import pytest
 
-from typing_extensions import Literal
 
-
-ResultType = Literal["error", "info"]
+ResultType = Literal["error", "information"]
 
 
 @dataclass
@@ -27,28 +26,35 @@ class Result:
 
         file_info, result = output_line.split("-", maxsplit=1)
 
-        line, column = [int(value) for value in file_info.split(":")[1:]]
-        type_, message = [value.strip() for value in result.split(":", maxsplit=1)]
+        line, column = (int(value) for value in file_info.split(":")[1:])
+        type_, message = (value.strip() for value in result.split(":", maxsplit=1))
         type_ = cast(ResultType, type_)
 
         return cls(type=type_, message=message, line=line, column=column)
 
 
-def run_pyright(code: str) -> List[Result]:
+def run_pyright(code: str, strict: bool = True) -> List[Result]:
+    if strict:
+        code = "# pyright: strict\n" + code
+
     with tempfile.NamedTemporaryFile("w", suffix=".py", delete=False) as f:
         f.write(code)
 
-    result = subprocess.run(["pyright", f.name], stdout=subprocess.PIPE)
+    process_result = subprocess.run(["pyright", f.name], stdout=subprocess.PIPE)
 
     os.remove(f.name)
 
-    output = result.stdout.decode("utf-8")
+    output = process_result.stdout.decode("utf-8")
 
     results: List[Result] = []
 
     for line in output.splitlines():
         if line.strip().startswith(f"{f.name}:"):
-            results.append(Result.from_output_line(line))
+            result = Result.from_output_line(line)
+            if strict:
+                result.line -= 1
+
+            results.append(result)
 
     return results
 

@@ -13,6 +13,7 @@ from typing import (
     TypeVar,
     Union,
 )
+from typing_extensions import Self
 
 from strawberry.type import StrawberryType, StrawberryTypeVar
 from strawberry.utils.typing import is_generic as is_type_generic
@@ -22,7 +23,6 @@ if TYPE_CHECKING:
     from graphql import GraphQLResolveInfo
 
     from strawberry.field import StrawberryField
-    from strawberry.schema_directive import StrawberrySchemaDirective
 
 
 @dataclasses.dataclass(eq=False)
@@ -32,18 +32,24 @@ class TypeDefinition(StrawberryType):
     is_interface: bool
     origin: Type
     description: Optional[str]
-    interfaces: List["TypeDefinition"]
+    interfaces: List[TypeDefinition]
     extend: bool
-    directives: Optional[Sequence[StrawberrySchemaDirective]]
+    directives: Optional[Sequence[object]]
     is_type_of: Optional[Callable[[Any, GraphQLResolveInfo], bool]]
 
-    _fields: List["StrawberryField"]
+    _fields: List[StrawberryField]
 
-    concrete_of: Optional["TypeDefinition"] = None
+    concrete_of: Optional[TypeDefinition] = None
     """Concrete implementations of Generic TypeDefinitions fill this in"""
     type_var_map: Mapping[TypeVar, Union[StrawberryType, type]] = dataclasses.field(
         default_factory=dict
     )
+
+    def __post_init__(self):
+        # resolve `Self` annotation with the origin type
+        for index, field in enumerate(self.fields):
+            if isinstance(field.type, StrawberryType) and field.type.has_generic(Self):
+                self.fields[index] = field.copy_with({Self: self.origin})  # type: ignore  # noqa: E501
 
     # TODO: remove wrapped cls when we "merge" this with `StrawberryObject`
     def resolve_generic(self, wrapped_cls: type) -> type:
@@ -66,18 +72,36 @@ class TypeDefinition(StrawberryType):
     def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
     ) -> type:
+        from strawberry.annotation import StrawberryAnnotation
+
         fields = []
         for field in self.fields:
             # TODO: Logic unnecessary with StrawberryObject
             field_type = field.type
             if hasattr(field_type, "_type_definition"):
-                field_type = field_type._type_definition  # type: ignore
+                field_type = field_type._type_definition
 
             # TODO: All types should end up being StrawberryTypes
             #       The first check is here as a symptom of strawberry.ID being a
             #       Scalar, but not a StrawberryType
             if isinstance(field_type, StrawberryType) and field_type.is_generic:
                 field = field.copy_with(type_var_map)
+
+            # Resolve generic arguments
+            generic_arguments = (
+                argument
+                for argument in field.arguments
+                if isinstance(argument.type, StrawberryType)
+                and argument.type.is_generic
+            )
+
+            for argument in generic_arguments:
+                assert isinstance(argument.type, StrawberryType)
+
+                argument.type_annotation = StrawberryAnnotation(
+                    annotation=argument.type.copy_with(type_var_map),
+                    namespace=argument.type_annotation.namespace,
+                )
 
             fields.append(field)
 
@@ -106,13 +130,13 @@ class TypeDefinition(StrawberryType):
 
         return new_type
 
-    def get_field(self, python_name: str) -> Optional["StrawberryField"]:
+    def get_field(self, python_name: str) -> Optional[StrawberryField]:
         return next(
             (field for field in self.fields if field.python_name == python_name), None
         )
 
     @property
-    def fields(self) -> List["StrawberryField"]:
+    def fields(self) -> List[StrawberryField]:
         # TODO: rename _fields to fields and remove this property
         return self._fields
 

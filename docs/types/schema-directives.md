@@ -46,6 +46,16 @@ type User @keys(fields: "id") {
 }
 ```
 
+## Overriding field names
+
+You can use `strawberry.directive_field` to override the name of a field:
+
+```python
+@strawberry.schema_directive(locations=[Location.OBJECT])
+class Keys:
+    fields: str = strawberry.directive_field(name="as")
+```
+
 ## Locations
 
 Schema directives can be applied to many different parts of a schema. Here's the

@@ -1,13 +1,16 @@
 import json
 from io import BytesIO
-from pathlib import Path
-from typing import Any, Dict
+from typing import Any, Dict, Union
+from typing_extensions import Literal
 
 from aiohttp import web
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
-from strawberry.http import GraphQLRequestData, parse_request_data
+from strawberry.http import GraphQLRequestData, parse_query_params, parse_request_data
 from strawberry.schema import BaseSchema
+from strawberry.schema.exceptions import InvalidOperationTypeError
+from strawberry.types.graphql import OperationType
+from strawberry.utils.graphiql import get_graphiql_html
 
 
 class HTTPHandler:
@@ -15,15 +18,19 @@ class HTTPHandler:
         self,
         schema: BaseSchema,
         graphiql: bool,
+        allow_queries_via_get: bool,
         get_context,
         get_root_value,
+        encode_json,
         process_result,
         request: web.Request,
     ):
         self.schema = schema
         self.graphiql = graphiql
+        self.allow_queries_via_get = allow_queries_via_get
         self.get_context = get_context
         self.get_root_value = get_root_value
+        self.encode_json = encode_json
         self.process_result = process_result
         self.request = request
 
@@ -35,27 +42,68 @@ class HTTPHandler:
         raise web.HTTPMethodNotAllowed(self.request.method, ["GET", "POST"])
 
     async def get(self, request: web.Request) -> web.StreamResponse:
-        if self.should_render_graphiql(request):
+        if request.query:
+            try:
+                query_params = {
+                    key: request.query.getone(key) for key in set(request.query.keys())
+                }
+                query_data = parse_query_params(query_params)
+                request_data = parse_request_data(query_data)
+            except json.JSONDecodeError:
+                raise web.HTTPBadRequest(reason="Unable to parse request body as JSON")
+            except MissingQueryError:
+                raise web.HTTPBadRequest(reason="No GraphQL query found in the request")
+
+            return await self.execute_request(
+                request=request, request_data=request_data, method="GET"
+            )
+
+        elif self.should_render_graphiql(request):
             return self.render_graphiql()
         raise web.HTTPNotFound()
 
     async def post(self, request: web.Request) -> web.StreamResponse:
         request_data = await self.get_request_data(request)
+
+        return await self.execute_request(
+            request=request, request_data=request_data, method="POST"
+        )
+
+    async def execute_request(
+        self,
+        request: web.Request,
+        request_data: GraphQLRequestData,
+        method: Union[Literal["GET"], Literal["POST"]],
+    ) -> web.StreamResponse:
         response = web.Response()
+
         context = await self.get_context(request, response)
         root_value = await self.get_root_value(request)
 
-        result = await self.schema.execute(
-            query=request_data.query,
-            root_value=root_value,
-            variable_values=request_data.variables,
-            context_value=context,
-            operation_name=request_data.operation_name,
-        )
+        allowed_operation_types = OperationType.from_http(method)
+
+        if not self.allow_queries_via_get and method == "GET":
+            allowed_operation_types = allowed_operation_types - {OperationType.QUERY}
+
+        try:
+            result = await self.schema.execute(
+                query=request_data.query,
+                root_value=root_value,
+                variable_values=request_data.variables,
+                context_value=context,
+                operation_name=request_data.operation_name,
+                allowed_operation_types=allowed_operation_types,
+            )
+        except InvalidOperationTypeError as e:
+            raise web.HTTPBadRequest(
+                reason=e.as_http_error_reason(method=method)
+            ) from e
 
         response_data = await self.process_result(request, result)
-        response.text = json.dumps(response_data)
+
+        response.text = self.encode_json(response_data)
         response.content_type = "application/json"
+
         return response
 
     async def get_request_data(self, request: web.Request) -> GraphQLRequestData:
@@ -63,8 +111,10 @@ class HTTPHandler:
 
         try:
             request_data = parse_request_data(data)
-        except MissingQueryError:
-            raise web.HTTPBadRequest(reason="No GraphQL query found in the request")
+        except MissingQueryError as e:
+            raise web.HTTPBadRequest(
+                reason="No GraphQL query found in the request"
+            ) from e
 
         return request_data
 
@@ -73,8 +123,10 @@ class HTTPHandler:
             return await self.parse_multipart_body(request)
         try:
             return await request.json()
-        except json.JSONDecodeError:
-            raise web.HTTPBadRequest(reason="Unable to parse request body as JSON")
+        except json.JSONDecodeError as e:
+            raise web.HTTPBadRequest(
+                reason="Unable to parse request body as JSON"
+            ) from e
 
     async def parse_multipart_body(self, request: web.Request) -> dict:
         reader = await request.multipart()
@@ -99,15 +151,15 @@ class HTTPHandler:
             raise web.HTTPBadRequest(reason="File(s) missing in form data")
 
     def render_graphiql(self) -> web.StreamResponse:
-        html_string = self.graphiql_html_file_path.read_text()
-        html_string = html_string.replace("{{ SUBSCRIPTION_ENABLED }}", "true")
+        html_string = get_graphiql_html()
+
         return web.Response(text=html_string, content_type="text/html")
 
     def should_render_graphiql(self, request: web.Request) -> bool:
         if not self.graphiql:
             return False
-        return "text/html" in request.headers.get("Accept", "")
 
-    @property
-    def graphiql_html_file_path(self) -> Path:
-        return Path(__file__).parent.parent.parent / "static" / "graphiql.html"
+        return any(
+            supported_header in request.headers.get("Accept", "")
+            for supported_header in ("text/html", "*/*")
+        )

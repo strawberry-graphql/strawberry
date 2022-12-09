@@ -11,8 +11,12 @@ from typing import (
     Generic,
     Iterable,
     List,
+    Mapping,
     Optional,
+    Sequence,
     TypeVar,
+    Union,
+    overload,
 )
 
 from .exceptions import WrongNumberOfResultsReturned
@@ -42,17 +46,38 @@ class Batch(Generic[K, T]):
 
 
 class DataLoader(Generic[K, T]):
-    queue: List[LoaderTask] = []
     batch: Optional[Batch[K, T]] = None
     cache: bool = False
     cache_map: Dict[K, Future]
 
+    @overload
     def __init__(
         self,
-        load_fn: Callable[[List[K]], Awaitable[List[T]]],
+        # any BaseException is rethrown in 'load', so should be excluded from the T type
+        load_fn: Callable[[List[K]], Awaitable[Sequence[Union[T, BaseException]]]],
         max_batch_size: Optional[int] = None,
         cache: bool = True,
-        loop: AbstractEventLoop = None,
+        loop: Optional[AbstractEventLoop] = None,
+    ) -> None:
+        ...
+
+    # fallback if load_fn is untyped and there's no other info for inference
+    @overload
+    def __init__(
+        self: "DataLoader[K, Any]",
+        load_fn: Callable[[List[K]], Awaitable[List[Any]]],
+        max_batch_size: Optional[int] = None,
+        cache: bool = True,
+        loop: Optional[AbstractEventLoop] = None,
+    ) -> None:
+        ...
+
+    def __init__(
+        self,
+        load_fn: Callable[[List[K]], Awaitable[Sequence[Union[T, BaseException]]]],
+        max_batch_size: Optional[int] = None,
+        cache: bool = True,
+        loop: Optional[AbstractEventLoop] = None,
     ):
         self.load_fn = load_fn
         self.max_batch_size = max_batch_size
@@ -75,7 +100,7 @@ class DataLoader(Generic[K, T]):
         if self.cache:
             future = self.cache_map.get(key)
 
-            if future:
+            if future and not future.cancelled():
                 return future
 
         future = self.loop.create_future()
@@ -90,6 +115,45 @@ class DataLoader(Generic[K, T]):
 
     def load_many(self, keys: Iterable[K]) -> Awaitable[List[T]]:
         return gather(*map(self.load, keys))
+
+    def clear(self, key: K):
+        if self.cache:
+            self.cache_map.pop(key, None)
+
+    def clear_many(self, keys: Iterable[K]):
+        if self.cache:
+            for key in keys:
+                self.cache_map.pop(key, None)
+
+    def clear_all(self):
+        if self.cache:
+            self.cache_map.clear()
+
+    def prime(self, key: K, value: T, force: bool = False):
+        self.prime_many({key: value}, force)
+
+    def prime_many(self, data: Mapping[K, T], force: bool = False):
+        # Populate the cache with the specified values
+        if self.cache:
+            for key, value in data.items():
+                if key not in self.cache_map or force:
+                    future: Future = Future(loop=self.loop)
+                    future.set_result(value)
+                    self.cache_map[key] = future
+
+        # For keys that are pending on the current batch, but the
+        # batch hasn't started fetching yet: Remove it from the
+        # batch and set to the specified value
+        if self.batch is not None and not self.batch.dispatched:
+            batch_updated = False
+            for task in self.batch.tasks:
+                if task.key in data.keys():
+                    batch_updated = True
+                    task.future.set_result(data[task.key])
+            if batch_updated:
+                self.batch.tasks = [
+                    task for task in self.batch.tasks if not task.future.done()
+                ]
 
 
 def should_create_new_batch(loader: DataLoader, batch: Batch) -> bool:
@@ -115,16 +179,18 @@ def get_current_batch(loader: DataLoader) -> Batch:
 
 
 def dispatch(loader: DataLoader, batch: Batch):
-    async def dispatch():
-        await dispatch_batch(loader, batch)
-
-    loader.loop.call_soon(create_task, dispatch())
+    loader.loop.call_soon(create_task, dispatch_batch(loader, batch))
 
 
 async def dispatch_batch(loader: DataLoader, batch: Batch) -> None:
     batch.dispatched = True
 
     keys = [task.key for task in batch.tasks]
+    if len(keys) == 0:
+        # Ensure batch is not empty
+        # Unlikely, but could happen if the tasks are
+        # overriden with preset values
+        return
 
     # TODO: check if load_fn return an awaitable and it is a list
 
@@ -138,6 +204,11 @@ async def dispatch_batch(loader: DataLoader, batch: Batch) -> None:
             )
 
         for task, value in zip(batch.tasks, values):
+            # Trying to set_result in a cancelled future would raise
+            # asyncio.exceptions.InvalidStateError
+            if task.future.cancelled():
+                continue
+
             if isinstance(value, BaseException):
                 task.future.set_exception(value)
             else:

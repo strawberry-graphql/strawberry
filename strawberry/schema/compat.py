@@ -50,10 +50,14 @@ def is_enum(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
     return hasattr(type_, "_enum_definition")
 
 
+def is_schema_directive(type_: Union[StrawberryType, type]) -> TypeGuard[type]:
+    return hasattr(type_, "__strawberry_directive__")
+
+
 def is_generic(type_: Union[StrawberryType, type]) -> bool:
     if hasattr(type_, "_type_definition"):
+        type_definition: TypeDefinition = type_._type_definition
 
-        type_definition: TypeDefinition = type_._type_definition  # type: ignore
         return type_definition.is_generic
 
     if isinstance(type_, StrawberryType):

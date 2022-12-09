@@ -1,12 +1,17 @@
 from enum import Enum
 from typing import List, Optional
+from typing_extensions import Annotated
+
+import pytest
 
 import strawberry
 from strawberry.annotation import StrawberryAnnotation
-from strawberry.arguments import UNSET, StrawberryArgument, convert_arguments
+from strawberry.arguments import StrawberryArgument, convert_arguments
+from strawberry.exceptions import UnsupportedTypeError
 from strawberry.lazy_type import LazyType
 from strawberry.schema.config import StrawberryConfig
 from strawberry.schema.types.scalar import DEFAULT_SCALAR_REGISTRY
+from strawberry.unset import UNSET
 
 
 def test_simple_types():
@@ -85,6 +90,29 @@ class LaziestType:
 
 def test_lazy():
     LazierType = LazyType["LaziestType", __name__]
+
+    args = {
+        "lazyArg": {"something": True},
+    }
+
+    arguments = [
+        StrawberryArgument(
+            graphql_name="lazyArg",
+            python_name="lazy_arg",
+            type_annotation=StrawberryAnnotation(LazierType),
+        ),
+    ]
+
+    assert convert_arguments(
+        args,
+        arguments,
+        scalar_registry=DEFAULT_SCALAR_REGISTRY,
+        config=StrawberryConfig(),
+    ) == {"lazy_arg": LaziestType(something=True)}
+
+
+def test_annotated():
+    LazierType = Annotated["LaziestType", strawberry.lazy(__name__)]
 
     args = {
         "lazyArg": {"something": True},
@@ -229,9 +257,9 @@ def test_nested_input_types():
     args = {
         "input": {
             "prNumber": 12,
-            "status": ReleaseFileStatus.OK.value,
+            "status": ReleaseFileStatus.OK,
             "releaseInfo": {
-                "changeType": ChangeType.MAJOR.value,
+                "changeType": ChangeType.MAJOR,
                 "changelog": "example",
             },
         }
@@ -261,7 +289,7 @@ def test_nested_input_types():
     args = {
         "input": {
             "prNumber": 12,
-            "status": ReleaseFileStatus.OK.value,
+            "status": ReleaseFileStatus.OK,
             "releaseInfo": None,
         }
     }
@@ -310,7 +338,7 @@ def test_nested_list_of_complex_types():
         arguments,
         scalar_registry=DEFAULT_SCALAR_REGISTRY,
         config=StrawberryConfig(),
-    ) == {"input": Input(numbers=[Number(1), Number(2)])}
+    ) == {"input": Input(numbers=[Number(value=1), Number(value=2)])}
 
 
 def test_uses_default_for_optional_types_when_nothing_is_passed():
@@ -339,7 +367,7 @@ def test_uses_default_for_optional_types_when_nothing_is_passed():
         arguments,
         scalar_registry=DEFAULT_SCALAR_REGISTRY,
         config=StrawberryConfig(),
-    ) == {"input": Input(UNSET, UNSET)}
+    ) == {"input": Input(numbers=UNSET, numbers_second=UNSET)}
 
     # case 2
     args = {"input": {"numbersSecond": None}}
@@ -357,7 +385,7 @@ def test_uses_default_for_optional_types_when_nothing_is_passed():
         arguments,
         scalar_registry=DEFAULT_SCALAR_REGISTRY,
         config=StrawberryConfig(),
-    ) == {"input": Input(UNSET, None)}
+    ) == {"input": Input(numbers=UNSET, numbers_second=None)}
 
 
 def test_when_optional():
@@ -371,6 +399,39 @@ def test_when_optional():
         numbers_second: Optional[Number] = UNSET
 
     args = {}
+
+    arguments = [
+        StrawberryArgument(
+            graphql_name=None,
+            python_name="input",
+            type_annotation=StrawberryAnnotation(Optional[Input]),
+        )
+    ]
+
+    assert (
+        convert_arguments(
+            args,
+            arguments,
+            scalar_registry=DEFAULT_SCALAR_REGISTRY,
+            config=StrawberryConfig(),
+        )
+        == {}
+    )
+
+
+@pytest.mark.raises_strawberry_exception(
+    UnsupportedTypeError,
+    match=r"<class .*> conversion is not supported",
+)
+def test_fails_when_passing_non_strawberry_classes():
+    class Input:
+        numbers: List[int]
+
+    args = {
+        "input": {
+            "numbers": [1, 2],
+        }
+    }
 
     arguments = [
         StrawberryArgument(

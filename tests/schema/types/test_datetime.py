@@ -1,9 +1,7 @@
 import datetime
 
-import pytest
-
 import dateutil.tz
-
+import pytest
 from graphql import GraphQLError
 
 import strawberry

@@ -7,6 +7,7 @@ from strawberry.fastapi import GraphQLRouter
 from strawberry.types import Info
 
 
+# TODO: move this to common tests
 def test_set_custom_http_response_status():
     @strawberry.type
     class Query:

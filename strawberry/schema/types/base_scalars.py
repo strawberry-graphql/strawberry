@@ -5,7 +5,6 @@ from operator import methodcaller
 from typing import Callable
 
 import dateutil.parser
-
 from graphql import GraphQLError
 
 from strawberry.custom_scalar import scalar
@@ -21,9 +20,9 @@ def wrap_parser(parser: Callable, type_: str) -> Callable:
     return inner
 
 
-def parse_decimal(value: str) -> decimal.Decimal:
+def parse_decimal(value: object) -> decimal.Decimal:
     try:
-        return decimal.Decimal(value)
+        return decimal.Decimal(str(value))
     except decimal.DecimalException:
         raise GraphQLError(f'Value cannot represent a Decimal: "{value}".')
 

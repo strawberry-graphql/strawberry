@@ -1,9 +1,19 @@
 import dataclasses
 import inspect
+import sys
 import types
-from typing import Callable, List, Optional, Sequence, Type, TypeVar, cast, overload
-
-from strawberry.schema_directive import StrawberrySchemaDirective
+from typing import (
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Type,
+    TypeVar,
+    Union,
+    cast,
+    overload,
+)
 
 from .exceptions import (
     MissingFieldAnnotationError,
@@ -13,6 +23,7 @@ from .exceptions import (
 from .field import StrawberryField, field
 from .types.type_resolver import _get_fields
 from .types.types import TypeDefinition
+from .utils.dataclasses import add_custom_init_fn
 from .utils.str_converters import to_camel_case
 from .utils.typing import __dataclass_transform__
 
@@ -60,13 +71,15 @@ def _check_field_annotations(cls: Type):
                 # If the field uses the default resolver, the field _must_ be
                 # annotated
                 if not field_.base_resolver:
-                    raise MissingFieldAnnotationError(field_name)
+                    raise MissingFieldAnnotationError(field_name, cls)
 
                 # The resolver _must_ have a return type annotation
                 # TODO: Maybe check this immediately when adding resolver to
                 #       field
                 if field_.base_resolver.type_annotation is None:
-                    raise MissingReturnAnnotationError(field_name)
+                    raise MissingReturnAnnotationError(
+                        field_name, resolver=field_.base_resolver
+                    )
 
                 cls_annotations[field_name] = field_.base_resolver.type_annotation
 
@@ -80,7 +93,7 @@ def _check_field_annotations(cls: Type):
         # dataclasses.field
         if field_name not in cls_annotations:
             # Field object exists but did not get an annotation
-            raise MissingFieldAnnotationError(field_name)
+            raise MissingFieldAnnotationError(field_name, cls)
 
 
 def _wrap_dataclass(cls: Type):
@@ -90,7 +103,21 @@ def _wrap_dataclass(cls: Type):
     # Ensure all Fields have been properly type-annotated
     _check_field_annotations(cls)
 
-    return dataclasses.dataclass(cls)
+    dclass_kwargs: Dict[str, bool] = {}
+
+    # Python 3.10 introduces the kw_only param. If we're on an older version
+    # then generate our own custom init function
+    if sys.version_info >= (3, 10):
+        dclass_kwargs["kw_only"] = True
+    else:
+        dclass_kwargs["init"] = False
+
+    dclass = dataclasses.dataclass(cls, **dclass_kwargs)
+
+    if sys.version_info < (3, 10):
+        add_custom_init_fn(dclass)
+
+    return dclass
 
 
 def _process_type(
@@ -100,7 +127,7 @@ def _process_type(
     is_input: bool = False,
     is_interface: bool = False,
     description: Optional[str] = None,
-    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    directives: Optional[Sequence[object]] = (),
     extend: bool = False,
 ):
     name = name or to_camel_case(cls.__name__)
@@ -146,48 +173,52 @@ def _process_type(
     return cls
 
 
-T = TypeVar("T")
+T = TypeVar("T", bound=Type)
 
 
 @overload
-@__dataclass_transform__(order_default=True, field_descriptors=(field, StrawberryField))
+@__dataclass_transform__(
+    order_default=True, kw_only_default=True, field_descriptors=(field, StrawberryField)
+)
 def type(
     cls: T,
     *,
-    name: str = None,
+    name: Optional[str] = None,
     is_input: bool = False,
     is_interface: bool = False,
-    description: str = None,
-    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    description: Optional[str] = None,
+    directives: Optional[Sequence[object]] = (),
     extend: bool = False,
 ) -> T:
     ...
 
 
 @overload
-@__dataclass_transform__(order_default=True, field_descriptors=(field, StrawberryField))
+@__dataclass_transform__(
+    order_default=True, kw_only_default=True, field_descriptors=(field, StrawberryField)
+)
 def type(
     *,
-    name: str = None,
+    name: Optional[str] = None,
     is_input: bool = False,
     is_interface: bool = False,
-    description: str = None,
-    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    description: Optional[str] = None,
+    directives: Optional[Sequence[object]] = (),
     extend: bool = False,
 ) -> Callable[[T], T]:
     ...
 
 
 def type(
-    cls=None,
+    cls: Optional[T] = None,
     *,
-    name=None,
-    is_input=False,
-    is_interface=False,
-    description=None,
-    directives=(),
-    extend=False,
-):
+    name: Optional[str] = None,
+    is_input: bool = False,
+    is_interface: bool = False,
+    description: Optional[str] = None,
+    directives: Optional[Sequence[object]] = (),
+    extend: bool = False,
+) -> Union[T, Callable[[T], T]]:
     """Annotates a class as a GraphQL type.
 
     Example usage:
@@ -225,34 +256,38 @@ def type(
 
 
 @overload
-@__dataclass_transform__(order_default=True, field_descriptors=(field, StrawberryField))
+@__dataclass_transform__(
+    order_default=True, kw_only_default=True, field_descriptors=(field, StrawberryField)
+)
 def input(
     cls: T,
     *,
-    name: str = None,
-    description: str = None,
-    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    directives: Optional[Sequence[object]] = (),
 ) -> T:
     ...
 
 
 @overload
-@__dataclass_transform__(order_default=True, field_descriptors=(field, StrawberryField))
+@__dataclass_transform__(
+    order_default=True, kw_only_default=True, field_descriptors=(field, StrawberryField)
+)
 def input(
     *,
-    name: str = None,
-    description: str = None,
-    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    directives: Optional[Sequence[object]] = (),
 ) -> Callable[[T], T]:
     ...
 
 
 def input(
-    cls=None,
+    cls: Optional[T] = None,
     *,
-    name=None,
-    description=None,
-    directives=(),
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    directives: Optional[Sequence[object]] = (),
 ):
     """Annotates a class as a GraphQL Input type.
     Example usage:
@@ -261,18 +296,51 @@ def input(
     >>>     field_abc: str = "ABC"
     """
 
-    return type(
-        cls, name=name, description=description, directives=directives, is_input=True
+    return type(  # type: ignore # not sure why mypy complains here
+        cls,
+        name=name,
+        description=description,
+        directives=directives,
+        is_input=True,
     )
 
 
-@__dataclass_transform__(order_default=True, field_descriptors=(field, StrawberryField))
+@overload
+@__dataclass_transform__(
+    order_default=True, kw_only_default=True, field_descriptors=(field, StrawberryField)
+)
 def interface(
-    cls: Type = None,
+    cls: T,
     *,
-    name: str = None,
-    description: str = None,
-    directives: Optional[Sequence[StrawberrySchemaDirective]] = (),
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    directives: Optional[Sequence[object]] = (),
+) -> T:
+    ...
+
+
+@overload
+@__dataclass_transform__(
+    order_default=True, kw_only_default=True, field_descriptors=(field, StrawberryField)
+)
+def interface(
+    *,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    directives: Optional[Sequence[object]] = (),
+) -> Callable[[T], T]:
+    ...
+
+
+@__dataclass_transform__(
+    order_default=True, kw_only_default=True, field_descriptors=(field, StrawberryField)
+)
+def interface(
+    cls: Optional[T] = None,
+    *,
+    name: Optional[str] = None,
+    description: Optional[str] = None,
+    directives: Optional[Sequence[object]] = (),
 ):
     """Annotates a class as a GraphQL Interface.
     Example usage:
@@ -281,7 +349,7 @@ def interface(
     >>>     field_abc: str
     """
 
-    return type(
+    return type(  # type: ignore # not sure why mypy complains here
         cls,
         name=name,
         description=description,

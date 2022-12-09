@@ -1,6 +1,7 @@
 import textwrap
-import typing
 from enum import Enum
+from typing import Any, Generic, List, Optional, TypeVar, Union
+from typing_extensions import Self
 
 import pytest
 
@@ -8,10 +9,10 @@ import strawberry
 
 
 def test_supports_generic_simple_type():
-    T = typing.TypeVar("T")
+    T = TypeVar("T")
 
     @strawberry.type
-    class Edge(typing.Generic[T]):
+    class Edge(Generic[T]):
         cursor: strawberry.ID
         node_field: T
 
@@ -40,10 +41,10 @@ def test_supports_generic_simple_type():
 
 
 def test_supports_generic():
-    T = typing.TypeVar("T")
+    T = TypeVar("T")
 
     @strawberry.type
-    class Edge(typing.Generic[T]):
+    class Edge(Generic[T]):
         cursor: strawberry.ID
         node: T
 
@@ -82,11 +83,11 @@ def test_supports_generic():
 
 
 def test_supports_multiple_generic():
-    A = typing.TypeVar("A")
-    B = typing.TypeVar("B")
+    A = TypeVar("A")
+    B = TypeVar("B")
 
     @strawberry.type
-    class Multiple(typing.Generic[A, B]):
+    class Multiple(Generic[A, B]):
         a: A
         b: B
 
@@ -115,25 +116,25 @@ def test_supports_multiple_generic():
 
 
 def test_support_nested_generics():
-    T = typing.TypeVar("T")
+    T = TypeVar("T")
 
     @strawberry.type
     class User:
         name: str
 
     @strawberry.type
-    class Edge(typing.Generic[T]):
+    class Edge(Generic[T]):
         node: T
 
     @strawberry.type
-    class Connection(typing.Generic[T]):
+    class Connection(Generic[T]):
         edge: Edge[T]
 
     @strawberry.type
     class Query:
         @strawberry.field
         def users(self) -> Connection[User]:
-            return Connection(edge=Edge(node=User("Patrick")))
+            return Connection(edge=Edge(node=User(name="Patrick")))
 
     schema = strawberry.Schema(query=Query)
 
@@ -161,15 +162,15 @@ def test_support_nested_generics():
 
 
 def test_supports_optional():
-    T = typing.TypeVar("T")
+    T = TypeVar("T")
 
     @strawberry.type
     class User:
         name: str
 
     @strawberry.type
-    class Edge(typing.Generic[T]):
-        node: typing.Optional[T] = None
+    class Edge(Generic[T]):
+        node: Optional[T] = None
 
     @strawberry.type
     class Query:
@@ -195,15 +196,15 @@ def test_supports_optional():
 
 
 def test_supports_lists():
-    T = typing.TypeVar("T")
+    T = TypeVar("T")
 
     @strawberry.type
     class User:
         name: str
 
     @strawberry.type
-    class Edge(typing.Generic[T]):
-        nodes: typing.List[T]
+    class Edge(Generic[T]):
+        nodes: List[T]
 
     @strawberry.type
     class Query:
@@ -229,15 +230,15 @@ def test_supports_lists():
 
 
 def test_supports_lists_of_optionals():
-    T = typing.TypeVar("T")
+    T = TypeVar("T")
 
     @strawberry.type
     class User:
         name: str
 
     @strawberry.type
-    class Edge(typing.Generic[T]):
-        nodes: typing.List[typing.Optional[T]]
+    class Edge(Generic[T]):
+        nodes: List[Optional[T]]
 
     @strawberry.type
     class Query:
@@ -263,19 +264,19 @@ def test_supports_lists_of_optionals():
 
 
 def test_can_extend_generics():
-    T = typing.TypeVar("T")
+    T = TypeVar("T")
 
     @strawberry.type
     class User:
         name: str
 
     @strawberry.type
-    class Edge(typing.Generic[T]):
+    class Edge(Generic[T]):
         node: T
 
     @strawberry.type
-    class Connection(typing.Generic[T]):
-        edges: typing.List[Edge[T]]
+    class Connection(Generic[T]):
+        edges: List[Edge[T]]
 
     @strawberry.type
     class ConnectionWithMeta(Connection[T]):
@@ -285,7 +286,9 @@ def test_can_extend_generics():
     class Query:
         @strawberry.field
         def users(self) -> ConnectionWithMeta[User]:
-            return ConnectionWithMeta(meta="123", edges=[Edge(node=User("Patrick"))])
+            return ConnectionWithMeta(
+                meta="123", edges=[Edge(node=User(name="Patrick"))]
+            )
 
     schema = strawberry.Schema(query=Query)
 
@@ -315,10 +318,10 @@ def test_can_extend_generics():
 
 
 def test_supports_generic_in_unions():
-    T = typing.TypeVar("T")
+    T = TypeVar("T")
 
     @strawberry.type
-    class Edge(typing.Generic[T]):
+    class Edge(Generic[T]):
         cursor: strawberry.ID
         node: T
 
@@ -329,7 +332,7 @@ def test_supports_generic_in_unions():
     @strawberry.type
     class Query:
         @strawberry.field
-        def example(self) -> typing.Union[Fallback, Edge[int]]:
+        def example(self) -> Union[Fallback, Edge[int]]:
             return Edge(cursor=strawberry.ID("1"), node=1)
 
     schema = strawberry.Schema(query=Query)
@@ -354,14 +357,14 @@ def test_supports_generic_in_unions():
 
 
 def test_generic_with_enum_as_param_of_type_inside_unions():
-    T = typing.TypeVar("T")
+    T = TypeVar("T")
 
     @strawberry.type
     class Pet:
         name: str
 
     @strawberry.type
-    class ErrorNode(typing.Generic[T]):
+    class ErrorNode(Generic[T]):
         code: T
 
     @strawberry.enum
@@ -372,7 +375,7 @@ def test_generic_with_enum_as_param_of_type_inside_unions():
     @strawberry.type
     class Query:
         @strawberry.field
-        def result(self) -> typing.Union[Pet, ErrorNode[Codes]]:
+        def result(self) -> Union[Pet, ErrorNode[Codes]]:
             return ErrorNode(code=Codes.a)
 
     schema = strawberry.Schema(query=Query)
@@ -393,11 +396,11 @@ def test_generic_with_enum_as_param_of_type_inside_unions():
 
 
 def test_supports_generic_in_unions_multiple_vars():
-    A = typing.TypeVar("A")
-    B = typing.TypeVar("B")
+    A = TypeVar("A")
+    B = TypeVar("B")
 
     @strawberry.type
-    class Edge(typing.Generic[A, B]):
+    class Edge(Generic[A, B]):
         info: A
         node: B
 
@@ -408,7 +411,7 @@ def test_supports_generic_in_unions_multiple_vars():
     @strawberry.type
     class Query:
         @strawberry.field
-        def example(self) -> typing.Union[Fallback, Edge[int, str]]:
+        def example(self) -> Union[Fallback, Edge[int, str]]:
             return Edge(node="string", info=1)
 
     schema = strawberry.Schema(query=Query)
@@ -433,18 +436,18 @@ def test_supports_generic_in_unions_multiple_vars():
 
 
 def test_supports_generic_in_unions_with_nesting():
-    T = typing.TypeVar("T")
+    T = TypeVar("T")
 
     @strawberry.type
     class User:
         name: str
 
     @strawberry.type
-    class Edge(typing.Generic[T]):
+    class Edge(Generic[T]):
         node: T
 
     @strawberry.type
-    class Connection(typing.Generic[T]):
+    class Connection(Generic[T]):
         edge: Edge[T]
 
     @strawberry.type
@@ -454,8 +457,8 @@ def test_supports_generic_in_unions_with_nesting():
     @strawberry.type
     class Query:
         @strawberry.field
-        def users(self) -> typing.Union[Connection[User], Fallback]:
-            return Connection(edge=Edge(node=User("Patrick")))
+        def users(self) -> Union[Connection[User], Fallback]:
+            return Connection(edge=Edge(node=User(name="Patrick")))
 
     schema = strawberry.Schema(query=Query)
 
@@ -485,17 +488,17 @@ def test_supports_generic_in_unions_with_nesting():
 
 
 def test_supports_multiple_generics_in_union():
-    T = typing.TypeVar("T")
+    T = TypeVar("T")
 
     @strawberry.type
-    class Edge(typing.Generic[T]):
+    class Edge(Generic[T]):
         cursor: strawberry.ID
         node: T
 
     @strawberry.type
     class Query:
         @strawberry.field
-        def example(self) -> typing.List[typing.Union[Edge[int], Edge[str]]]:
+        def example(self) -> List[Union[Edge[int], Edge[str]]]:
             return [
                 Edge(cursor=strawberry.ID("1"), node=1),
                 Edge(cursor=strawberry.ID("2"), node="string"),
@@ -551,10 +554,10 @@ def test_supports_multiple_generics_in_union():
 
 
 def test_generated_names():
-    T = typing.TypeVar("T")
+    T = TypeVar("T")
 
     @strawberry.type
-    class EdgeWithCursor(typing.Generic[T]):
+    class EdgeWithCursor(Generic[T]):
         cursor: strawberry.ID
         node: T
 
@@ -595,21 +598,21 @@ def test_generated_names():
 
 
 def test_supports_lists_within_unions():
-    T = typing.TypeVar("T")
+    T = TypeVar("T")
 
     @strawberry.type
     class User:
         name: str
 
     @strawberry.type
-    class Edge(typing.Generic[T]):
-        nodes: typing.List[T]
+    class Edge(Generic[T]):
+        nodes: List[T]
 
     @strawberry.type
     class Query:
         @strawberry.field
-        def user(self) -> typing.Union[User, Edge[User]]:
-            return Edge(nodes=[User("P")])
+        def user(self) -> Union[User, Edge[User]]:
+            return Edge(nodes=[User(name="P")])
 
     schema = strawberry.Schema(query=Query)
 
@@ -632,20 +635,20 @@ def test_supports_lists_within_unions():
 
 
 def test_supports_lists_within_unions_empty_list():
-    T = typing.TypeVar("T")
+    T = TypeVar("T")
 
     @strawberry.type
     class User:
         name: str
 
     @strawberry.type
-    class Edge(typing.Generic[T]):
-        nodes: typing.List[T]
+    class Edge(Generic[T]):
+        nodes: List[T]
 
     @strawberry.type
     class Query:
         @strawberry.field
-        def user(self) -> typing.Union[User, Edge[User]]:
+        def user(self) -> Union[User, Edge[User]]:
             return Edge(nodes=[])
 
     schema = strawberry.Schema(query=Query)
@@ -670,20 +673,20 @@ def test_supports_lists_within_unions_empty_list():
 
 @pytest.mark.xfail()
 def test_raises_error_when_unable_to_find_type():
-    T = typing.TypeVar("T")
+    T = TypeVar("T")
 
     @strawberry.type
     class User:
         name: str
 
     @strawberry.type
-    class Edge(typing.Generic[T]):
-        nodes: typing.List[T]
+    class Edge(Generic[T]):
+        nodes: List[T]
 
     @strawberry.type
     class Query:
         @strawberry.field
-        def user(self) -> typing.Union[User, Edge[User]]:
+        def user(self) -> Union[User, Edge[User]]:
             return Edge(nodes=["bad example"])  # type: ignore
 
     schema = strawberry.Schema(query=Query)
@@ -710,12 +713,12 @@ def test_raises_error_when_unable_to_find_type():
 
 
 def test_generic_with_arguments():
-    T = typing.TypeVar("T")
+    T = TypeVar("T")
 
     @strawberry.type
-    class Collection(typing.Generic[T]):
+    class Collection(Generic[T]):
         @strawberry.field
-        def by_id(self, ids: typing.List[int]) -> typing.List[T]:
+        def by_id(self, ids: List[int]) -> List[T]:
             return []
 
     @strawberry.type
@@ -745,14 +748,68 @@ def test_generic_with_arguments():
     assert str(schema) == textwrap.dedent(expected_schema).strip()
 
 
+def test_generic_argument():
+    T = TypeVar("T")
+
+    @strawberry.type
+    class Collection(Generic[T]):
+        @strawberry.field
+        def by_id(self, ids: List[T]) -> List[T]:
+            return []
+
+    @strawberry.type
+    class Query:
+        user: Collection[int]
+
+    schema = strawberry.Schema(Query)
+
+    expected_schema = """
+    type IntCollection {
+      byId(ids: [Int!]!): [Int!]!
+    }
+
+    type Query {
+      user: IntCollection!
+    }
+    """
+
+    assert str(schema) == textwrap.dedent(expected_schema).strip()
+
+
+def test_generic_extra_type():
+    T = TypeVar("T")
+
+    @strawberry.type
+    class Node(Generic[T]):
+        field: T
+
+    @strawberry.type
+    class Query:
+        name: str
+
+    schema = strawberry.Schema(Query, types=[Node[int]])
+
+    expected_schema = """
+    type IntNode {
+      field: Int!
+    }
+
+    type Query {
+      name: String!
+    }
+    """
+
+    assert str(schema) == textwrap.dedent(expected_schema).strip()
+
+
 def test_generic_extending_with_type_var():
-    T = typing.TypeVar("T")
+    T = TypeVar("T")
 
     @strawberry.interface
-    class Node(typing.Generic[T]):
+    class Node(Generic[T]):
         id: strawberry.ID
 
-        def _resolve(self) -> typing.Optional[T]:
+        def _resolve(self) -> Optional[T]:
             return None
 
     @strawberry.type
@@ -762,7 +819,7 @@ def test_generic_extending_with_type_var():
     @strawberry.type
     class Query:
         @strawberry.field
-        def books(self) -> typing.List[Book]:
+        def books(self) -> List[Book]:
             return list()
 
     schema = strawberry.Schema(query=Query)
@@ -785,11 +842,53 @@ def test_generic_extending_with_type_var():
     assert str(schema) == textwrap.dedent(expected_schema).strip()
 
 
+def test_self():
+    @strawberry.interface
+    class INode:
+        field: Optional[Self]
+        fields: List[Self]
+
+    @strawberry.type
+    class Node(INode):
+        ...
+
+    schema = strawberry.Schema(query=Node)
+
+    expected_schema = """
+    schema {
+      query: Node
+    }
+
+    interface INode {
+      field: INode
+      fields: [INode!]!
+    }
+
+    type Node implements INode {
+      field: Node
+      fields: [Node!]!
+    }
+    """
+
+    assert str(schema) == textwrap.dedent(expected_schema).strip()
+
+    query = """{
+        field {
+            __typename
+        }
+        fields {
+            __typename
+        }
+    }"""
+    result = schema.execute_sync(query, root_value=Node(field=None, fields=[]))
+    assert result.data == {"field": None, "fields": []}
+
+
 def test_supports_generic_input_type():
-    T = typing.TypeVar("T")
+    T = TypeVar("T")
 
     @strawberry.input
-    class Input(typing.Generic[T]):
+    class Input(Generic[T]):
         field: T
 
     @strawberry.type
@@ -808,3 +907,50 @@ def test_supports_generic_input_type():
 
     assert not result.errors
     assert result.data == {"field": "data"}
+
+
+def test_generic_interface():
+    @strawberry.interface
+    class ObjectType:
+
+        obj: strawberry.Private[Any]
+
+        @strawberry.field
+        def repr(self) -> str:
+            return str(self.obj)
+
+    T = TypeVar("T")
+
+    @strawberry.type
+    class GenericObject(ObjectType, Generic[T]):
+        @strawberry.field
+        def value(self) -> T:
+            return self.obj
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def foo(self) -> GenericObject[str]:
+            return GenericObject(obj="foo")
+
+    schema = strawberry.Schema(query=Query)
+    query_result = schema.execute_sync(
+        """
+            query {
+                foo {
+                    __typename
+                    value
+                    repr
+                }
+            }
+        """
+    )
+
+    assert not query_result.errors
+    assert query_result.data == {
+        "foo": {
+            "__typename": "StrGenericObject",
+            "value": "foo",
+            "repr": "foo",
+        }
+    }

@@ -1,10 +1,9 @@
 from textwrap import dedent
 from typing import Optional
-
 from typing_extensions import Annotated
 
 import strawberry
-from strawberry.arguments import UNSET, is_unset
+from strawberry.unset import UNSET
 
 
 def test_argument_descriptions():
@@ -102,7 +101,7 @@ def test_optional_argument_unset():
     class Query:
         @strawberry.field
         def hello(self, name: Optional[str] = UNSET, age: Optional[int] = UNSET) -> str:
-            if is_unset(name):
+            if name is UNSET:
                 return "Hi there"
             return f"Hi {name}"
 
@@ -136,7 +135,7 @@ def test_optional_input_field_unset():
     class Query:
         @strawberry.field
         def hello(self, input: TestInput) -> str:
-            if is_unset(input.name):
+            if input.name is UNSET:
                 return "Hi there"
             return f"Hi {input.name}"
 

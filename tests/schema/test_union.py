@@ -1,11 +1,13 @@
 import sys
 from dataclasses import dataclass
 from textwrap import dedent
-from typing import Optional, Union
+from typing import Generic, List, Optional, TypeVar, Union
+from typing_extensions import Annotated
 
 import pytest
 
 import strawberry
+from strawberry.lazy_type import lazy
 
 
 def test_union_as_field():
@@ -19,7 +21,7 @@ def test_union_as_field():
 
     @strawberry.type
     class Query:
-        ab: Union[A, B] = A(a=5)
+        ab: Union[A, B] = strawberry.field(default_factory=lambda: A(a=5))
 
     schema = strawberry.Schema(query=Query)
     query = """{
@@ -49,7 +51,7 @@ def test_union_as_field_inverse():
 
     @strawberry.type
     class Query:
-        ab: Union[A, B] = B(b=5)
+        ab: Union[A, B] = strawberry.field(default_factory=lambda: B(b=5))
 
     schema = strawberry.Schema(query=Query)
     query = """{
@@ -187,6 +189,42 @@ def test_types_not_included_in_the_union_are_rejected():
     )
 
 
+def test_unknown_types_are_rejected():
+    @strawberry.type
+    class Outside:
+        c: int
+
+    @strawberry.type
+    class A:
+        a: int
+
+    @strawberry.type
+    class B:
+        b: int
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hello(self) -> Union[A, B]:
+            return Outside(c=5)  # type:ignore
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """
+    {
+        hello {
+            ... on A {
+                a
+            }
+        }
+    }
+    """
+
+    result = schema.execute_sync(query)
+
+    assert "Outside" in result.errors[0].message
+
+
 def test_named_union():
     @strawberry.type
     class A:
@@ -200,7 +238,7 @@ def test_named_union():
 
     @strawberry.type
     class Query:
-        ab: Result = A(a=5)
+        ab: Result = strawberry.field(default_factory=lambda: A(a=5))
 
     schema = strawberry.Schema(query=Query)
 
@@ -239,7 +277,7 @@ def test_named_union_description():
 
     @strawberry.type
     class Query:
-        ab: Result = A(a=5)
+        ab: Result = strawberry.field(default_factory=lambda: A(a=5))
 
     schema = strawberry.Schema(query=Query)
 
@@ -457,3 +495,152 @@ def test_union_optional_with_or_operator():
 
     assert not result.errors
     assert result.data["animal"] is None
+
+
+def test_union_with_input_types():
+    """
+    Verify that union of input types raises an error
+    """
+
+    @strawberry.type
+    class User:
+        name: str
+        age: int
+
+    @strawberry.input
+    class A:
+        a: str
+
+    @strawberry.input
+    class B:
+        b: str
+
+    @strawberry.input
+    class Input:
+        name: str
+        something: Union[A, B]
+
+    with pytest.raises(
+        TypeError, match="Union for A is not supported because it is an Input type"
+    ):
+
+        @strawberry.type
+        class Query:
+            @strawberry.field
+            def user(self, data: Input) -> User:
+                return User(name=data.name, age=100)
+
+        strawberry.Schema(query=Query)
+
+
+def test_union_with_similar_nested_generic_types():
+    """
+    Previously this failed due to an edge case where Strawberry would choose AContainer
+    as the resolved type for container_b due to the inability to exactly match the
+    nested generic `Container.items`.
+    """
+    T = TypeVar("T")
+
+    @strawberry.type
+    class Container(Generic[T]):
+        items: List[T]
+
+    @strawberry.type
+    class A:
+        a: str
+
+    @strawberry.type
+    class B:
+        b: int
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def container_a(self) -> Union[Container[A], A]:
+            return Container(items=[A(a="hello")])
+
+        @strawberry.field
+        def container_b(self) -> Union[Container[B], B]:
+            return Container(items=[B(b=3)])
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """
+     {
+        containerA {
+            __typename
+            ... on AContainer {
+                items {
+                    a
+                }
+            }
+            ... on A {
+                a
+            }
+        }
+    }
+    """
+
+    result = schema.execute_sync(query)
+
+    assert result.data["containerA"]["items"][0]["a"] == "hello"
+
+    query = """
+     {
+        containerB {
+            __typename
+            ... on BContainer {
+                items {
+                    b
+                }
+            }
+            ... on B {
+                b
+            }
+        }
+    }
+    """
+
+    result = schema.execute_sync(query)
+
+    assert result.data["containerB"]["items"][0]["b"] == 3
+
+
+def test_lazy_union():
+    """
+    Previously this failed to evaluate generic parameters on lazy types
+    """
+    TypeA = Annotated["TypeA", lazy("tests.schema.test_lazy_types.type_a")]
+    TypeB = Annotated["TypeB", lazy("tests.schema.test_lazy_types.type_b")]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def a(self) -> Union[TypeA, TypeB]:
+            from tests.schema.test_lazy_types.type_a import TypeA
+
+            return TypeA(list_of_b=[])
+
+        @strawberry.field
+        def b(self) -> Union[TypeA, TypeB]:
+            from tests.schema.test_lazy_types.type_b import TypeB
+
+            return TypeB()
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """
+     {
+        a {
+            __typename
+        }
+        b {
+            __typename
+        }
+    }
+    """
+
+    result = schema.execute_sync(query)
+
+    assert result.data["a"]["__typename"] == "TypeA"
+    assert result.data["b"]["__typename"] == "TypeB"

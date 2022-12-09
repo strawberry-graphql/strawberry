@@ -68,7 +68,7 @@
     main:13: note: Revealed type is "builtins.int"
     main:14: error: "int" has no attribute "trim"  [attr-defined]
 
-- case: test_field_with_default_cannot_be_before_non_default
+- case: test_field_with_default_before_non_default
   main: |
     import strawberry
 
@@ -78,7 +78,6 @@
         b: str
 
   out: |
-    main:6: error: Attributes without a default cannot follow attributes with one  [misc]
 
 - case: test_using_strawberry_field_does_not_break
   main: |
@@ -111,16 +110,3 @@
     reveal_type(i.a)
   out: |
     main:14: note: Revealed type is "builtins.str"
-
-- case: test_using_strawberry_federation_field_does_not_break
-  main: |
-    import strawberry
-
-    @strawberry.type
-    class Example:
-        a: str = strawberry.federation.field(description="Example")
-        b: str
-
-    reveal_type(Example.a)
-  out: |
-    main:8: note: Revealed type is "builtins.str"

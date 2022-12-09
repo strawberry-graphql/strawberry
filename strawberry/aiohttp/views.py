@@ -1,5 +1,7 @@
 import asyncio
+import json
 from datetime import timedelta
+from typing import Iterable
 
 from aiohttp import web
 from strawberry.aiohttp.handlers import (
@@ -26,14 +28,19 @@ class GraphQLView:
         self,
         schema: BaseSchema,
         graphiql: bool = True,
+        allow_queries_via_get: bool = True,
         keep_alive: bool = True,
         keep_alive_interval: float = 1,
         debug: bool = False,
-        subscription_protocols=(GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL),
+        subscription_protocols: Iterable[str] = (
+            GRAPHQL_TRANSPORT_WS_PROTOCOL,
+            GRAPHQL_WS_PROTOCOL,
+        ),
         connection_init_wait_timeout: timedelta = timedelta(minutes=1),
     ):
         self.schema = schema
         self.graphiql = graphiql
+        self.allow_queries_via_get = allow_queries_via_get
         self.keep_alive = keep_alive
         self.keep_alive_interval = keep_alive_interval
         self.debug = debug
@@ -72,8 +79,10 @@ class GraphQLView:
             return await self.http_handler_class(
                 schema=self.schema,
                 graphiql=self.graphiql,
+                allow_queries_via_get=self.allow_queries_via_get,
                 get_context=self.get_context,
                 get_root_value=self.get_root_value,
+                encode_json=self.encode_json,
                 process_result=self.process_result,
                 request=request,
             ).handle()
@@ -90,3 +99,6 @@ class GraphQLView:
         self, request: web.Request, result: ExecutionResult
     ) -> GraphQLHTTPResponse:
         return process_result(result)
+
+    def encode_json(self, response_data: GraphQLHTTPResponse) -> str:
+        return json.dumps(response_data)

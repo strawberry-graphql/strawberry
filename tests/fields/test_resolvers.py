@@ -1,6 +1,6 @@
 import dataclasses
-import re
-from typing import ClassVar
+import types
+from typing import ClassVar, List, no_type_check
 
 import pytest
 
@@ -10,7 +10,13 @@ from strawberry.exceptions import (
     MissingFieldAnnotationError,
     MissingReturnAnnotationError,
 )
-from strawberry.types.fields.resolver import StrawberryResolver, UncallableResolverError
+from strawberry.scalars import JSON
+from strawberry.types.fields.resolver import (
+    Signature,
+    StrawberryResolver,
+    UncallableResolverError,
+)
+from strawberry.types.info import Info
 
 
 def test_resolver_as_argument():
@@ -96,92 +102,182 @@ def test_classmethod_resolver_fields():
     assert Query().val() == "thingy"
 
 
+@pytest.mark.raises_strawberry_exception(
+    MissingReturnAnnotationError,
+    match='Return annotation missing for field "hello", did you forget to add it?',
+)
 def test_raises_error_when_return_annotation_missing():
-    with pytest.raises(MissingReturnAnnotationError) as e:
-
-        @strawberry.type
-        class Query:
-            @strawberry.field
-            def hello(self):
-                return "I'm a resolver"
-
-    assert e.value.args == (
-        'Return annotation missing for field "hello", did you forget to add it?',
-    )
-
-    with pytest.raises(MissingReturnAnnotationError) as e:
-
-        @strawberry.type
-        class Query2:
-            def adios(self):
-                return -1
-
-            goodbye = strawberry.field(resolver=adios)
-
-    # TODO: Maybe we should say that the resolver needs the annotation?
-
-    assert e.value.args == (
-        'Return annotation missing for field "goodbye", did you forget to add it?',
-    )
-
-
-def test_raises_error_when_argument_annotation_missing():
-    with pytest.raises(MissingArgumentsAnnotationsError) as e:
-
+    @strawberry.type
+    class Query:
         @strawberry.field
-        def hello(self, query) -> str:
+        def hello(self):
             return "I'm a resolver"
 
-    assert e.value.args == (
+
+@pytest.mark.raises_strawberry_exception(
+    MissingReturnAnnotationError,
+    match='Return annotation missing for field "hello", did you forget to add it?',
+)
+def test_raises_error_when_return_annotation_missing_async_function():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        async def hello(self):
+            return "I'm a resolver"
+
+
+@pytest.mark.raises_strawberry_exception(
+    MissingReturnAnnotationError,
+    match='Return annotation missing for field "goodbye", did you forget to add it?',
+)
+def test_raises_error_when_return_annotation_missing_resolver():
+    @strawberry.type
+    class Query2:
+        def adios(self):
+            return -1
+
+        goodbye = strawberry.field(resolver=adios)
+
+
+@pytest.mark.raises_strawberry_exception(
+    MissingArgumentsAnnotationsError,
+    match=(
         'Missing annotation for argument "query" in field "hello", '
-        "did you forget to add it?",
-    )
-
-    with pytest.raises(MissingArgumentsAnnotationsError) as e:
-
-        @strawberry.field
-        def hello2(self, query, limit) -> str:
-            return "I'm a resolver"
-
-    assert e.value.args == (
-        'Missing annotation for arguments "limit" and "query" '
-        'in field "hello2", did you forget to add it?',
-    )
+        "did you forget to add it?"
+    ),
+)
+def test_raises_error_when_argument_annotation_missing():
+    @strawberry.field
+    def hello(self, query) -> str:
+        return "I'm a resolver"
 
 
+@pytest.mark.raises_strawberry_exception(
+    MissingArgumentsAnnotationsError,
+    match=(
+        'Missing annotation for arguments "query" and "limit" '
+        'in field "hello", did you forget to add it?'
+    ),
+)
+def test_raises_error_when_argument_annotation_missing_multiple_fields():
+    @strawberry.field
+    def hello(self, query, limit) -> str:
+        return "I'm a resolver"
+
+
+@pytest.mark.raises_strawberry_exception(
+    MissingArgumentsAnnotationsError,
+    match=(
+        'Missing annotation for argument "query" '
+        'in field "hello", did you forget to add it?'
+    ),
+)
+def test_raises_error_when_argument_annotation_missing_multiple_lines():
+    @strawberry.field
+    def hello(
+        self,
+        query,
+    ) -> str:
+        return "I'm a resolver"
+
+
+@pytest.mark.raises_strawberry_exception(
+    MissingArgumentsAnnotationsError,
+    match=(
+        'Missing annotation for argument "query" '
+        'in field "hello", did you forget to add it?'
+    ),
+)
+def test_raises_error_when_argument_annotation_missing_default_value():
+    @strawberry.field
+    def hello(
+        self,
+        query="this is a default value",
+    ) -> str:
+        return "I'm a resolver"
+
+
+@pytest.mark.raises_strawberry_exception(
+    MissingFieldAnnotationError,
+    match=(
+        'Unable to determine the type of field "missing". '
+        "Either annotate it directly, or provide a typed resolver "
+        "using @strawberry.field."
+    ),
+)
 def test_raises_error_when_missing_annotation_and_resolver():
-    with pytest.raises(MissingFieldAnnotationError) as e:
+    @strawberry.type
+    class Query:  # noqa: F841
+        missing = strawberry.field(name="annotation")
 
-        @strawberry.type
-        class Query:  # noqa: F841
-            missing = strawberry.field(name="annotation")
 
-    [message] = e.value.args
-    assert message == (
+@pytest.mark.raises_strawberry_exception(
+    MissingFieldAnnotationError,
+    match=(
         'Unable to determine the type of field "missing". Either annotate it '
         "directly, or provide a typed resolver using @strawberry.field."
-    )
-
-
+    ),
+)
 def test_raises_error_when_missing_type():
     """Test to make sure that if somehow a non-StrawberryField field is added to the cls
     without annotations it raises an exception. This would occur if someone manually
     uses dataclasses.field"""
-    with pytest.raises(MissingFieldAnnotationError) as e:
 
-        @strawberry.type
-        class Query:  # noqa: F841
-            missing = dataclasses.field()
+    @strawberry.type
+    class Query:  # noqa: F841
+        missing = dataclasses.field()
 
-    [message] = e.value.args
-    assert message == (
+
+@pytest.mark.raises_strawberry_exception(
+    MissingFieldAnnotationError,
+    match=(
         'Unable to determine the type of field "missing". Either annotate it '
         "directly, or provide a typed resolver using @strawberry.field."
-    )
+    ),
+)
+def test_raises_error_when_missing_type_on_dynamic_class():
+    # this test if for making sure the code that finds the exception source
+    # doesn't crash with dynamic code
+
+    namespace = {"missing": dataclasses.field()}
+
+    strawberry.type(types.new_class("Query", (), {}, lambda ns: ns.update(namespace)))
+
+
+@pytest.mark.raises_strawberry_exception(
+    MissingFieldAnnotationError,
+    match=(
+        'Unable to determine the type of field "banana". Either annotate it '
+        "directly, or provide a typed resolver using @strawberry.field."
+    ),
+)
+def test_raises_error_when_missing_type_on_longish_class():
+    @strawberry.type
+    class Query:  # noqa: F841
+        field_1: str = strawberry.field(name="field_1")
+        field_2: str = strawberry.field(name="field_2")
+        field_3: str = strawberry.field(name="field_3")
+        field_4: str = strawberry.field(name="field_4")
+        field_5: str = strawberry.field(name="field_5")
+        field_6: str = strawberry.field(name="field_6")
+        field_7: str = strawberry.field(name="field_7")
+        field_8: str = strawberry.field(name="field_8")
+        field_9: str = strawberry.field(name="field_9")
+        banana = strawberry.field(name="banana")
+        field_10: str = strawberry.field(name="field_10")
+        field_11: str = strawberry.field(name="field_11")
+        field_12: str = strawberry.field(name="field_12")
+        field_13: str = strawberry.field(name="field_13")
+        field_14: str = strawberry.field(name="field_14")
+        field_15: str = strawberry.field(name="field_15")
+        field_16: str = strawberry.field(name="field_16")
+        field_17: str = strawberry.field(name="field_17")
+        field_18: str = strawberry.field(name="field_18")
+        field_19: str = strawberry.field(name="field_19")
 
 
 def test_raises_error_calling_uncallable_resolver():
-    @classmethod
+    @classmethod  # type: ignore
     def class_func(cls) -> int:
         ...
 
@@ -189,12 +285,10 @@ def test_raises_error_calling_uncallable_resolver():
     # to a class at this point
     resolver = StrawberryResolver(class_func)
 
-    expected_error_message = re.escape(
-        f"Attempted to call resolver {resolver} with uncallable function "
-        f"{class_func}"
-    )
-
-    with pytest.raises(UncallableResolverError, match=expected_error_message):
+    with pytest.raises(
+        UncallableResolverError,
+        match="Attempted to call resolver (.*) with uncallable function (.*)",
+    ):
         resolver()
 
 
@@ -235,8 +329,8 @@ def test_eq_resolvers():
         name: str = strawberry.field(resolver=get_name)
         name_2: str = strawberry.field(resolver=get_name)
 
-    assert Query(1) == Query(1)
-    assert Query(1) != Query(2)
+    assert Query(a=1) == Query(a=1)
+    assert Query(a=1) != Query(a=2)
 
 
 def test_eq_fields():
@@ -245,8 +339,8 @@ def test_eq_fields():
         a: int
         name: str = strawberry.field(name="name")
 
-    assert Query(1, "name") == Query(1, "name")
-    assert Query(1, "name") != Query(1, "not a name")
+    assert Query(a=1, name="name") == Query(a=1, name="name")
+    assert Query(a=1, name="name") != Query(a=1, name="not a name")
 
 
 def test_with_resolver_fields():
@@ -258,5 +352,75 @@ def test_with_resolver_fields():
         def name(self) -> str:
             return "A"
 
-    assert Query(1) == Query(1)
-    assert Query(1) != Query(2)
+    assert Query(a=1) == Query(a=1)
+    assert Query(a=1) != Query(a=2)
+
+
+def test_resolver_annotations():
+    """Ensure only non-reserved annotations are returned."""
+
+    def resolver_annotated_info(
+        self, root, foo: str, bar: float, info: str, strawberry_info: Info
+    ) -> str:
+        return "Hello world"
+
+    resolver = StrawberryResolver(resolver_annotated_info)
+
+    expected_annotations = {"foo": str, "bar": float, "info": str, "return": str}
+    assert resolver.annotations == expected_annotations
+
+    # Sanity-check to ensure StrawberryArguments return the same annotations
+    assert {
+        **{
+            arg.python_name: arg.type_annotation.resolve()  # type: ignore
+            for arg in resolver.arguments
+        },
+        "return": str,
+    }
+
+
+@no_type_check
+def test_resolver_with_unhashable_default():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def field(
+            self, x: List[str] = ["foo"], y: JSON = {"foo": 42}  # noqa: B006
+        ) -> str:
+            return f"{x} {y}"
+
+    schema = strawberry.Schema(Query)
+    result = schema.execute_sync("query { field }")
+    assert result.data == {"field": "['foo'] {'foo': 42}"}
+    assert not result.errors
+
+
+@no_type_check
+def test_parameter_hash_collision():
+    """Ensure support for hashable defaults does not introduce collision."""
+
+    def foo(x: str = "foo"):
+        pass
+
+    def bar(x: str = "bar"):
+        pass
+
+    foo_signature = Signature.from_callable(foo, follow_wrapped=True)
+    bar_signature = Signature.from_callable(bar, follow_wrapped=True)
+
+    foo_param = foo_signature.parameters["x"]
+    bar_param = bar_signature.parameters["x"]
+
+    # Ensure __eq__ still functions properly
+    assert foo_param != bar_param
+
+    # Ensure collision does not occur in hash-map and hash-tables. Colisions are
+    # prevented by Python invoking __eq__ when two items have the same hash.
+    parameters_map = {
+        foo_param: "foo",
+        bar_param: "bar",
+    }
+    parameters_set = {foo_param, bar_param}
+
+    assert len(parameters_map) == 2
+    assert len(parameters_set) == 2
