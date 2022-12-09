@@ -215,3 +215,84 @@ def test_fails_properly_when_wrong_data_is_passed():
     assert result.errors
 
     assert result.errors[0].message.startswith("Unable to resolve reference for")
+
+
+async def test_can_use_async_resolve_reference():
+    @strawberry.federation.type(keys=["upc"])
+    class Product:
+        upc: str
+
+        @classmethod
+        async def resolve_reference(cls, upc: str):
+            return Product(upc=upc)
+
+    @strawberry.federation.type(extend=True)
+    class Query:
+        @strawberry.field
+        def top_products(self, first: int) -> typing.List[Product]:
+            return []
+
+    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+
+    query = """
+        query ($representations: [_Any!]!) {
+            _entities(representations: $representations) {
+                ... on Product {
+                    upc
+                }
+            }
+        }
+    """
+
+    result = await schema.execute(
+        query,
+        variable_values={
+            "representations": [{"__typename": "Product", "upc": "B00005N5PF"}]
+        },
+    )
+
+    assert not result.errors
+
+    assert result.data == {"_entities": [{"upc": "B00005N5PF"}]}
+
+
+async def test_can_use_async_resolve_reference_multiple_representations():
+    @strawberry.federation.type(keys=["upc"])
+    class Product:
+        upc: str
+
+        @classmethod
+        async def resolve_reference(cls, upc: str):
+            return Product(upc=upc)
+
+    @strawberry.federation.type(extend=True)
+    class Query:
+        @strawberry.field
+        def top_products(self, first: int) -> typing.List[Product]:
+            return []
+
+    schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
+
+    query = """
+        query ($representations: [_Any!]!) {
+            _entities(representations: $representations) {
+                ... on Product {
+                    upc
+                }
+            }
+        }
+    """
+
+    result = await schema.execute(
+        query,
+        variable_values={
+            "representations": [
+                {"__typename": "Product", "upc": "B00005N5PF"},
+                {"__typename": "Product", "upc": "B00005N5PG"},
+            ]
+        },
+    )
+
+    assert not result.errors
+
+    assert result.data == {"_entities": [{"upc": "B00005N5PF"}, {"upc": "B00005N5PG"}]}
