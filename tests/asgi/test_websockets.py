@@ -1,26 +1,9 @@
 import pytest
-from starlette import status
 from starlette.testclient import TestClient
 from starlette.websockets import WebSocketDisconnect
 from tests.asgi.app import create_app
 
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
-
-
-@pytest.mark.parametrize("path", ("/", "/graphql"))
-def test_renders_graphiql(path, test_client):
-    response = test_client.get(path)
-
-    assert response.status_code == status.HTTP_200_OK
-
-    assert "<title>Strawberry GraphiQL</title>" in response.text
-
-
-@pytest.mark.parametrize("path", ("/", "/graphql"))
-def test_renders_graphiql_disabled(path, test_client_no_graphiql):
-    response = test_client_no_graphiql.get(path)
-
-    assert response.status_code == status.HTTP_404_NOT_FOUND
 
 
 def test_turning_off_graphql_ws():

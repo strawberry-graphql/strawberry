@@ -49,6 +49,8 @@ class HTTPHandler:
                 }
                 query_data = parse_query_params(query_params)
                 request_data = parse_request_data(query_data)
+            except json.JSONDecodeError:
+                raise web.HTTPBadRequest(reason="Unable to parse request body as JSON")
             except MissingQueryError:
                 raise web.HTTPBadRequest(reason="No GraphQL query found in the request")
 
@@ -74,6 +76,7 @@ class HTTPHandler:
         method: Union[Literal["GET"], Literal["POST"]],
     ) -> web.StreamResponse:
         response = web.Response()
+
         context = await self.get_context(request, response)
         root_value = await self.get_root_value(request)
 
@@ -97,8 +100,10 @@ class HTTPHandler:
             ) from e
 
         response_data = await self.process_result(request, result)
+
         response.text = self.encode_json(response_data)
         response.content_type = "application/json"
+
         return response
 
     async def get_request_data(self, request: web.Request) -> GraphQLRequestData:
@@ -153,6 +158,7 @@ class HTTPHandler:
     def should_render_graphiql(self, request: web.Request) -> bool:
         if not self.graphiql:
             return False
+
         return any(
             supported_header in request.headers.get("Accept", "")
             for supported_header in ("text/html", "*/*")

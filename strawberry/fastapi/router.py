@@ -166,7 +166,15 @@ class GraphQLRouter(APIRouter):
             actual_response: Response
 
             if request.query_params:
-                query_data = parse_query_params(request.query_params._dict)
+                try:
+                    query_data = parse_query_params(request.query_params._dict)
+
+                except json.JSONDecodeError:
+                    return PlainTextResponse(
+                        "Unable to parse request body as JSON",
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                    )
+
                 return await self.execute_request(
                     request=request,
                     response=response,
@@ -176,7 +184,7 @@ class GraphQLRouter(APIRouter):
                 )
             elif self.should_render_graphiql(request):
                 return self.get_graphiql_response()
-            return Response(status_code=status.HTTP_400_BAD_REQUEST)
+            return Response(status_code=status.HTTP_404_NOT_FOUND)
 
         @self.post(path)
         async def handle_http_post(
@@ -201,12 +209,29 @@ class GraphQLRouter(APIRouter):
                     return self._merge_responses(response, actual_response)
             elif content_type.startswith("multipart/form-data"):
                 multipart_data = await request.form()
-                operations_text = multipart_data.get("operations", "{}")
-                operations = json.loads(operations_text)  # type: ignore
-                files_map = json.loads(multipart_data.get("map", "{}"))  # type: ignore
-                data = replace_placeholders_with_files(
-                    operations, files_map, multipart_data
-                )
+                try:
+                    operations_text = multipart_data.get("operations", "{}")
+                    operations = json.loads(operations_text)  # type: ignore
+                    files_map = json.loads(multipart_data.get("map", "{}"))  # type: ignore # noqa: E501
+                except json.JSONDecodeError:
+                    actual_response = PlainTextResponse(
+                        "Unable to parse request body as JSON",
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                    return self._merge_responses(response, actual_response)
+
+                try:
+                    data = replace_placeholders_with_files(
+                        operations, files_map, multipart_data
+                    )
+                except KeyError:
+                    actual_response = PlainTextResponse(
+                        "File(s) missing in form data",
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                    return self._merge_responses(response, actual_response)
             else:
                 actual_response = PlainTextResponse(
                     "Unsupported Media Type",
