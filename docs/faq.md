@@ -62,3 +62,26 @@ class Post:
 ```
 
 For more information, see the [Lazy types](./types/lazy.md) documentation.
+
+## Can I reuse Object Types with Input Objects?
+
+Unfortunately not because, as the
+[GraphQL spec](https://spec.graphql.org/June2018/#sec-Input-Objects) specifies,
+there is a difference between Objects Types and Inputs types:
+
+> The GraphQL Object type (ObjectTypeDefinition) defined above is inappropriate
+> for re‐use here, because Object types can contain fields that define arguments
+> or contain references to interfaces and unions, neither of which is
+> appropriate for use as an input argument. For this reason, input objects have
+> a separate type in the system.
+
+And this is also true for Input types' fields: you can only use Strawberry Input
+types or scalar.
+
+See our [Input Types](../types/input-types.md) docs.
+
+## Can I use asyncio with Strawberry and Django?
+
+Yes, Strawberry provides an async view that can be used with Django, you can
+Check [Async Django](../integrations/django.md#async-django) for more
+information.
