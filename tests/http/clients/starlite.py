@@ -20,10 +20,7 @@ def custom_context_dependency() -> str:
     return "Hi!"
 
 
-async def starlite_get_context(
-    # background_tasks: BackgroundTasks,
-    request: Request = None,
-):
+async def starlite_get_context(request: Request = None):
     return get_context({"request": request})
 
 
@@ -48,18 +45,15 @@ class StarliteHttpClient(HttpClient):
         )
 
         class GraphQLController(BaseGraphQLController):
-            result_override: ResultOverrideFunction = None
-
             async def process_result(
                 self, result: ExecutionResult
             ) -> GraphQLHTTPResponse:
-                if self.result_override:
-                    return self.result_override(result)
+                if result_override:
+                    return result_override(result)
 
                 return await super().process_result(result)
 
         self.app = Starlite(route_handlers=[GraphQLController])
-        GraphQLController.result_override = result_override
 
         self.client = TestClient(self.app)
 

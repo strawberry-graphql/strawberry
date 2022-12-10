@@ -76,10 +76,9 @@ async def _context_getter(
             **default_context,
             **custom_context,
         }
-    elif custom_context is None:
+    if custom_context is None:
         return default_context
-    else:
-        raise InvalidCustomContext()
+    raise InvalidCustomContext()
 
 
 class GraphQLWSHandler(BaseGraphQLWSHandler):
@@ -101,6 +100,7 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
 class BaseContext:
     def __init__(self):
         self.request: Optional[Union[Request, WebSocket]] = None
+        self.response: Optional[Response] = None
 
 
 def make_graphql_controller(
@@ -202,6 +202,12 @@ def make_graphql_controller(
                     OperationType.QUERY
                 }
 
+            response = Response({})
+
+            if isinstance(context, BaseContext):
+                context.response = response
+            elif isinstance(context, dict):
+                context["response"] = response
             try:
                 result = await self.execute(
                     request_data.query,
@@ -224,7 +230,7 @@ def make_graphql_controller(
                 response_data, status_code=HTTP_200_OK, media_type=MediaType.JSON
             )
 
-            return actual_response
+            return self._merge_responses(response, actual_response)
 
         def should_render_graphiql(self, request: Request) -> bool:
             if not self._graphiql:
@@ -238,6 +244,15 @@ def make_graphql_controller(
             html = get_graphiql_html()
             return Response(html, media_type=MediaType.HTML)
 
+        @staticmethod
+        def _merge_responses(response: Response, actual_response: Response) -> Response:
+            actual_response.headers.update(response.headers)
+            actual_response.cookies.extend(response.cookies)
+            if response.status_code:
+                actual_response.status_code = response.status_code
+
+            return actual_response
+
         @get()
         async def handle_http_get(
             self,
@@ -250,7 +265,7 @@ def make_graphql_controller(
             if request.query_params:
                 try:
                     query_data = parse_query_params(
-                        cast(Dict[str, Any], request.query_params)
+                        cast("Dict[str, Any]", request.query_params)
                     )
                 except json.JSONDecodeError:
                     return Response(
@@ -264,7 +279,7 @@ def make_graphql_controller(
                     context=context,
                     root_value=root_value,
                 )
-            elif self.should_render_graphiql(request):
+            if self.should_render_graphiql(request):
                 return self.get_graphiql_response()
             return Response(content="Bad request", status_code=HTTP_404_NOT_FOUND)
 

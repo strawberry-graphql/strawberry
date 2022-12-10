@@ -77,11 +77,11 @@ def test_ws_messages_must_be_text(test_client):
 
 
 async def test_connection_init_timeout():
-    app = create_app(connection_init_wait_timeout=timedelta(seconds=0))
+    app = create_app(connection_init_wait_timeout=timedelta(seconds=0.1))
     test_client = TestClient(app)
 
     # Hope that the connection init timeout expired
-    await asyncio.sleep(0.1)
+    await asyncio.sleep(0.2)
 
     try:
         with test_client.websocket_connect(
