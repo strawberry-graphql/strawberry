@@ -202,7 +202,7 @@ def make_graphql_controller(
                     OperationType.QUERY
                 }
 
-            response = Response({})
+            response = Response({}, background=BackgroundTasks([]))
 
             if isinstance(context, BaseContext):
                 context.response = response
@@ -248,6 +248,7 @@ def make_graphql_controller(
         def _merge_responses(response: Response, actual_response: Response) -> Response:
             actual_response.headers.update(response.headers)
             actual_response.cookies.extend(response.cookies)
+            actual_response.background = response.background
             if response.status_code:
                 actual_response.status_code = response.status_code
 

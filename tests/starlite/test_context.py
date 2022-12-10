@@ -1,5 +1,7 @@
 from typing import Dict
 
+from tests.starlite.app import create_app
+
 import strawberry
 from starlite import Provide, Starlite
 from starlite.testing import TestClient
@@ -135,3 +137,45 @@ def test_with_invalid_context_getter():
         response.json()["detail"]
         == "A dependency failed validation for POST http://testserver.local/graphql"
     )
+
+
+def test_custom_context():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def custom_context_value(self, info: Info) -> str:
+            return info.context["custom_value"]
+
+    schema = strawberry.Schema(query=Query)
+    app = create_app(schema=schema)
+
+    test_client = TestClient(app)
+    response = test_client.post("/graphql", json={"query": "{ customContextValue }"})
+
+    assert response.status_code == 200
+    assert response.json() == {"data": {"customContextValue": "Hi!"}}
+
+
+def test_can_set_background_task():
+    task_complete = False
+
+    async def task():
+        nonlocal task_complete
+        task_complete = True
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def something(self, info: Info) -> str:
+            response = info.context["response"]
+            response.background.tasks.append(task)
+            return "foo"
+
+    schema = strawberry.Schema(query=Query)
+    app = create_app(schema=schema)
+
+    test_client = TestClient(app)
+    response = test_client.post("/graphql", json={"query": "{ something }"})
+
+    assert response.json() == {"data": {"something": "foo"}}
+    assert task_complete
