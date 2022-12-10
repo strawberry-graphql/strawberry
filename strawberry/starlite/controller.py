@@ -3,6 +3,8 @@ import json
 from datetime import timedelta
 from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Type, Union, cast
 
+from pydantic import BaseModel
+
 from starlite import (
     BackgroundTasks,
     Controller,
@@ -10,6 +12,7 @@ from starlite import (
     Provide,
     Request,
     Response,
+    ResponseSpec,
     WebSocket,
     get,
     post,
@@ -22,7 +25,6 @@ from starlite.status_codes import (
     HTTP_404_NOT_FOUND,
     HTTP_415_UNSUPPORTED_MEDIA_TYPE,
 )
-from starlite.types import AnyCallable
 from strawberry.exceptions import InvalidCustomContext, MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import (
@@ -55,12 +57,6 @@ MergedContext = Union[
 ]
 
 
-def _get_root_value_getter(custom_root_value: Union[AnyCallable, None]) -> Any:
-    if custom_root_value is not None:
-        return custom_root_value
-    return None
-
-
 async def _context_getter(
     custom_context: Optional[CustomContext],
     request: Request,
@@ -79,6 +75,16 @@ async def _context_getter(
     if custom_context is None:
         return default_context
     raise InvalidCustomContext()
+
+
+class GraphQLResource(BaseModel):
+    data: Optional[Dict[str, object]]
+    errors: Optional[List[object]]
+    extensions: Optional[Dict[str, object]]
+
+
+class EmptyResponseModel(BaseModel):
+    pass
 
 
 class GraphQLWSHandler(BaseGraphQLWSHandler):
@@ -124,11 +130,11 @@ def make_graphql_controller(
 
     if context_getter is None:
 
-        def context_getter_():
+        def custom_context_getter_():
             return None
 
     else:
-        context_getter_ = context_getter
+        custom_context_getter_ = context_getter
 
     if root_value_getter is None:
 
@@ -141,7 +147,7 @@ def make_graphql_controller(
     class GraphQLController(Controller):
         path: str = routes_path
         dependencies: Optional["Dependencies"] = {
-            "custom_context": Provide(context_getter_),
+            "custom_context": Provide(custom_context_getter_),
             "context": Provide(_context_getter),
             "root_value": Provide(root_value_getter_),
         }
@@ -183,16 +189,15 @@ def make_graphql_controller(
 
         async def execute_request(
             self, request: Request, data: dict, context, root_value
-        ) -> Response:
+        ) -> Response[Union[GraphQLResource, str]]:
             try:
                 request_data = parse_request_data(data or {})
             except MissingQueryError:
-                missing_query_response = Response(
+                return Response(
                     "No GraphQL query found in the request",
                     status_code=HTTP_400_BAD_REQUEST,
                     media_type=MediaType.TEXT,
                 )
-                return missing_query_response
 
             method = request.method
             allowed_operation_types = OperationType.from_http(method)
@@ -226,7 +231,7 @@ def make_graphql_controller(
 
             response_data = await self.process_result(result)
 
-            actual_response: Response = Response(
+            actual_response: Response[GraphQLHTTPResponse] = Response(
                 response_data, status_code=HTTP_200_OK, media_type=MediaType.JSON
             )
 
@@ -240,12 +245,14 @@ def make_graphql_controller(
                 for supported_header in ("text/html", "*/*")
             )
 
-        def get_graphiql_response(self) -> Response:
+        def get_graphiql_response(self) -> Response[str]:
             html = get_graphiql_html()
             return Response(html, media_type=MediaType.HTML)
 
         @staticmethod
-        def _merge_responses(response: Response, actual_response: Response) -> Response:
+        def _merge_responses(
+            response: Response, actual_response: Response
+        ) -> Response[Union[GraphQLResource, str]]:
             actual_response.headers.update(response.headers)
             actual_response.cookies.extend(response.cookies)
             actual_response.background = response.background
@@ -254,13 +261,26 @@ def make_graphql_controller(
 
             return actual_response
 
-        @get()
+        @get(
+            responses={
+                HTTP_404_NOT_FOUND: ResponseSpec(
+                    description="Not found if GraphiQL is not enabled.",
+                    model=EmptyResponseModel,
+                    media_type=MediaType.TEXT,
+                ),
+                HTTP_400_BAD_REQUEST: ResponseSpec(
+                    description="Unable to parse request body as JSON",
+                    model=EmptyResponseModel,
+                    media_type=MediaType.TEXT,
+                ),
+            },
+        )
         async def handle_http_get(
             self,
             request: Request,
             context: CustomContext,
             root_value: Any,
-        ) -> Response:
+        ) -> Response[Union[GraphQLResource, str]]:
             actual_response: Response
 
             if request.query_params:
@@ -281,17 +301,20 @@ def make_graphql_controller(
                     root_value=root_value,
                 )
             if self.should_render_graphiql(request):
-                return self.get_graphiql_response()
+                return cast(
+                    "Response[Union[GraphQLResource, str]]",
+                    self.get_graphiql_response(),
+                )
             return Response(content="Bad request", status_code=HTTP_404_NOT_FOUND)
 
-        @post()
+        @post(status_code=HTTP_200_OK)
         async def handle_http_post(
             self,
             request: Request,
             context: CustomContext,
             root_value: Any,
-        ) -> Response:
-            actual_response: Response
+        ) -> Response[Union[GraphQLResource, str]]:
+            actual_response: Response[Union[GraphQLResource, str]]
 
             content_type = request.headers.get("content-type", "")
 
