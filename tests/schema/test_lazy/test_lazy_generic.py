@@ -4,7 +4,6 @@ from typing_extensions import Annotated
 
 import strawberry
 
-
 if TYPE_CHECKING:
     from tests.schema.test_lazy.type_a import TypeA  # noqa
 

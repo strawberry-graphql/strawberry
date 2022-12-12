@@ -8,7 +8,6 @@ from .exception import StrawberryException
 from .exception_source import ExceptionSource
 from .utils.source_finder import SourceFinder
 
-
 if TYPE_CHECKING:
     from strawberry.arguments import StrawberryArgument
     from strawberry.types.fields.resolver import StrawberryResolver

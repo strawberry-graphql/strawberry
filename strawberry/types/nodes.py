@@ -25,7 +25,6 @@ from graphql.language import ObjectValueNode as GQLObjectValueNode
 from graphql.language import ValueNode as GQLValueNode
 from graphql.language import VariableNode as GQLVariableNode
 
-
 Arguments = Dict[str, Any]
 Directives = Dict[str, Arguments]
 Selection = Union["SelectedField", "FragmentSpread", "InlineFragment"]

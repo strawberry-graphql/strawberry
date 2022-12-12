@@ -3,7 +3,6 @@ from typing_extensions import TypedDict
 
 from graphql import GraphQLFormattedError
 
-
 ConnectionInitPayload = Dict[str, Any]
 
 

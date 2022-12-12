@@ -43,7 +43,6 @@ from graphql.validation import ValidationContext, ValidationRule
 from strawberry.extensions import AddValidationRules
 from strawberry.extensions.utils import is_introspection_key
 
-
 IgnoreType = Union[Callable[[str], bool], re.Pattern, str]
 
 

@@ -1,6 +1,5 @@
 import os
 
-
 RELEASE_FILE_PATH = "RELEASE.md"
 GITHUB_SHA = os.environ["GITHUB_SHA"]
 GITHUB_EVENT_PATH = os.environ["GITHUB_EVENT_PATH"]

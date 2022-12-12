@@ -3,7 +3,6 @@ from types import ModuleType
 
 import strawberry
 
-
 deferred_module_source = """
 from __future__ import annotations
 

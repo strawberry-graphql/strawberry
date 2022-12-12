@@ -1,7 +1,6 @@
 import importlib
 from typing import TYPE_CHECKING
 
-
 if TYPE_CHECKING:
     from .apollo import ApolloTracingExtension, ApolloTracingExtensionSync  # noqa
     from .datadog import DatadogTracingExtension, DatadogTracingExtensionSync  # noqa

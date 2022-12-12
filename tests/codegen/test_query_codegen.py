@@ -1,4 +1,3 @@
-# # TODO:
 # - 1. test fragments
 # - 2. test variables
 # - 3. test input objects
@@ -19,7 +18,6 @@ from strawberry.codegen.exceptions import (
 )
 from strawberry.codegen.plugins.python import PythonPlugin
 from strawberry.codegen.plugins.typescript import TypeScriptPlugin
-
 
 HERE = Path(__file__).parent
 QUERIES = list(HERE.glob("queries/*.graphql"))

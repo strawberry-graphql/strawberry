@@ -12,7 +12,6 @@ from strawberry.django.views import AsyncGraphQLView
 
 from .app.models import Example
 
-
 pytestmark = [
     pytest.mark.asyncio,
     pytest.mark.skipif(

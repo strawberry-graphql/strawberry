@@ -9,7 +9,6 @@ from typing_extensions import Literal
 
 import pytest
 
-
 ResultType = Literal["error", "information"]
 
 

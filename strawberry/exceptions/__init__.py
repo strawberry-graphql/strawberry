@@ -23,7 +23,6 @@ from .private_strawberry_field import PrivateStrawberryFieldError
 from .scalar_already_registered import ScalarAlreadyRegisteredError
 from .unresolved_field_type import UnresolvedFieldTypeError
 
-
 setup_exception_handler()
 
 

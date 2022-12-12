@@ -7,7 +7,6 @@ import strawberry
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryTypeVar
 from strawberry.union import StrawberryUnion
 
-
 T = TypeVar("T")
 
 

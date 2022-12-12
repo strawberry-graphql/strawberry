@@ -7,7 +7,6 @@ from pydantic import BaseModel
 
 from strawberry.types.types import TypeDefinition
 
-
 PydanticModel = TypeVar("PydanticModel", bound=BaseModel)
 
 

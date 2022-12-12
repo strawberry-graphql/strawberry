@@ -38,7 +38,6 @@ from strawberry.types.graphql import OperationType
 from strawberry.utils.debug import pretty_print_graphql_operation
 from strawberry.utils.graphiql import get_graphiql_html
 
-
 CustomContext = Union["BaseContext", Dict[str, Any]]
 MergedContext = Union[
     "BaseContext", Dict[str, Union[Any, BackgroundTasks, Request, Response, WebSocket]]
@@ -163,8 +162,6 @@ class GraphQLRouter(APIRouter):
             context=Depends(self.context_getter),
             root_value=Depends(self.root_value_getter),
         ) -> Response:
-            actual_response: Response
-
             if request.query_params:
                 try:
                     query_data = parse_query_params(request.query_params._dict)
