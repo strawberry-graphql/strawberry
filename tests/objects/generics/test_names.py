@@ -11,7 +11,6 @@ from strawberry.schema.config import StrawberryConfig
 from strawberry.type import StrawberryList, StrawberryOptional
 from strawberry.union import StrawberryUnion
 
-
 T = TypeVar("T")
 K = TypeVar("K")
 V = TypeVar("V")

@@ -11,7 +11,6 @@ from strawberry.schema.types.base_scalars import Date, DateTime
 from strawberry.type import StrawberryOptional
 from strawberry.union import StrawberryUnion
 
-
 pytestmark = pytest.mark.skipif(
     sys.version_info < (3, 10),
     reason="pipe syntax for union is only available on python 3.10+",

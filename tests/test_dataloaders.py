@@ -6,7 +6,6 @@ import pytest
 from strawberry.dataloader import DataLoader
 from strawberry.exceptions import WrongNumberOfResultsReturned
 
-
 pytestmark = pytest.mark.asyncio
 
 

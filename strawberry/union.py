@@ -35,7 +35,6 @@ from strawberry.exceptions import (
 from strawberry.lazy_type import LazyType
 from strawberry.type import StrawberryOptional, StrawberryType
 
-
 if TYPE_CHECKING:
     from strawberry.schema.types.concrete_type import TypeMap
     from strawberry.types.types import TypeDefinition

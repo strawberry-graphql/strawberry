@@ -2,7 +2,6 @@ from typing import TYPE_CHECKING
 
 import strawberry
 
-
 if TYPE_CHECKING:
     import tests
 

@@ -20,7 +20,6 @@ from strawberry.type import StrawberryOptional, StrawberryType
 
 from .utils.str_converters import to_camel_case
 
-
 # in python 3.10+ NewType is a class
 if sys.version_info >= (3, 10):
     _T = TypeVar("_T", bound=Union[type, NewType])

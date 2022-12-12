@@ -6,7 +6,6 @@ from .parser_cache import ParserCache
 from .query_depth_limiter import QueryDepthLimiter
 from .validation_cache import ValidationCache
 
-
 __all__ = [
     "Extension",
     "AddValidationRules",

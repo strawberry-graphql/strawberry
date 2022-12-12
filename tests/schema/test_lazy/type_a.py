@@ -3,7 +3,6 @@ from typing_extensions import Annotated
 
 import strawberry
 
-
 if TYPE_CHECKING:
     from .type_b import TypeB
 

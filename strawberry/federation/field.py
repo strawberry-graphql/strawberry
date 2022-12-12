@@ -18,7 +18,6 @@ from strawberry.field import field as base_field
 from strawberry.permission import BasePermission
 from strawberry.unset import UNSET
 
-
 T = TypeVar("T")
 
 

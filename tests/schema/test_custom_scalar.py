@@ -3,7 +3,6 @@ from typing import NewType
 
 import strawberry
 
-
 Base64Encoded = strawberry.scalar(
     NewType("Base64Encoded", bytes),
     serialize=base64.b64encode,

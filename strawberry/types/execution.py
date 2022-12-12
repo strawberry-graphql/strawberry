@@ -10,7 +10,6 @@ from strawberry.utils.operation import get_first_operation, get_operation_type
 
 from .graphql import OperationType
 
-
 if TYPE_CHECKING:
     from strawberry.schema import Schema
 

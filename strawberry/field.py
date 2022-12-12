@@ -30,7 +30,6 @@ from strawberry.utils.cached_property import cached_property
 from .permission import BasePermission
 from .types.fields.resolver import StrawberryResolver
 
-
 if TYPE_CHECKING:
     from .object_type import TypeDefinition
 

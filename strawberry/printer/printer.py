@@ -54,7 +54,6 @@ from strawberry.unset import UNSET
 
 from .ast_from_value import ast_from_value
 
-
 if TYPE_CHECKING:
     from strawberry.schema import BaseSchema
 

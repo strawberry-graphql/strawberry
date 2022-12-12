@@ -60,7 +60,6 @@ from mypy.types import (
 from mypy.typevars import fill_typevars
 from mypy.util import get_unique_redefinition_name
 
-
 # Backwards compatible with the removal of `TypeVarDef` in mypy 0.920.
 try:
     from mypy.types import TypeVarDef  # type: ignore

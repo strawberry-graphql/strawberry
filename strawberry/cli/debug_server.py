@@ -11,7 +11,6 @@ from strawberry.cli.constants import (
 )
 from strawberry.utils.importer import import_module_symbol
 
-
 app = Starlette(debug=True)
 app.add_middleware(
     CORSMiddleware, allow_headers=["*"], allow_origins=["*"], allow_methods=["*"]

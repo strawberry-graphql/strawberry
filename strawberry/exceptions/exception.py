@@ -6,7 +6,6 @@ from strawberry.utils.str_converters import to_kebab_case
 
 from .exception_source import ExceptionSource
 
-
 if TYPE_CHECKING:
     from rich.console import RenderableType
 

@@ -15,7 +15,6 @@ from rich.traceback import Traceback
 
 from strawberry.exceptions import StrawberryException, UnableToFindExceptionSource
 
-
 WORKSPACE_FOLDER = Path(__file__).parents[2]
 DOCS_FOLDER = WORKSPACE_FOLDER / "docs/errors"
 

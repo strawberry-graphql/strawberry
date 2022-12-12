@@ -6,7 +6,6 @@ from typing import Any, Callable, Optional, Tuple, Type, cast
 
 from .exception import StrawberryException, UnableToFindExceptionSource
 
-
 original_exception_hook = sys.excepthook
 
 

@@ -5,7 +5,6 @@ from chalice import Chalice  # type: ignore
 from strawberry.chalice.views import GraphQLView
 from strawberry.types.info import Info
 
-
 app = Chalice(app_name="TheStackBadger")
 
 
