@@ -389,7 +389,7 @@ def test_generic_resolver_optional():
     T = TypeVar("T")
 
     def resolver() -> Optional[T]:
-        return AType(1)
+        return AType(some=1)
 
     @strawberry.type
     class Query:
@@ -419,7 +419,7 @@ def test_generic_resolver_container():
         some: int
 
     def resolver() -> Container[T]:
-        return Container(AType(1))
+        return Container(item=AType(some=1))
 
     @strawberry.type
     class Query:
@@ -449,7 +449,7 @@ def test_generic_resolver_union():
         other: int
 
     def resolver() -> Union[T, OtherType]:
-        return AType(1)
+        return AType(some=1)
 
     @strawberry.type
     class Query:
@@ -475,7 +475,7 @@ def test_generic_resolver_list():
         some: int
 
     def resolver() -> List[T]:
-        return [AType(1)]
+        return [AType(some=1)]
 
     @strawberry.type
     class Query:

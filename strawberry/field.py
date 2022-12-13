@@ -54,7 +54,7 @@ def _is_generic(resolver_type: Union[StrawberryType, type]) -> bool:
 
     # solves the Generic subclass case
     if hasattr(resolver_type, "_type_definition"):
-        return resolver_type._type_definition.is_generic  # type: ignore
+        return resolver_type._type_definition.is_generic
 
     return False
 
