@@ -12,8 +12,9 @@ before if you are practising TDD), you may want to create some automated tests.
 
 We can use the Strawberry `schema` object we defined in the
 [Getting Started tutorial](../index.md#step-5-create-our-schema-and-run-it) to run our
-first test:  
+first test:
 `test_sample_query.py`
+
 ```python
 import unittest
 import strawberry
@@ -71,6 +72,7 @@ if __name__ == '__main__':
 ```
 
 This `test_query` example:
+
 1. can be ran using `python -m unittest path/to/test_sample_query.py`
 2. defines the query we will test against; it accepts one argument, `title`, as input
 3. executes the query and assigns the result to a `result` variable
