@@ -1,6 +1,17 @@
 CHANGELOG
 =========
 
+0.150.0 - 2022-12-13
+--------------------
+
+This release implements the ability to use custom caching for dataloaders.
+It also allows to provide a `cache_key_fn` to the dataloader. This function
+is used to generate the cache key for the dataloader. This is useful when
+you want to use a custom hashing function for the cache key.
+
+Contributed by [Aman Choudhary](https://github.com/Techno-Tut) via [PR #2394](https://github.com/strawberry-graphql/strawberry/pull/2394/)
+
+
 0.149.2 - 2022-12-09
 --------------------
 
