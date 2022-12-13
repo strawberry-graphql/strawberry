@@ -67,9 +67,12 @@ jobs:
         id: get-version
         shell: python
         run: |
+          import os
+          import pathlib
           from autopub.base import get_project_version
 
-          print(f"::set-output name=version::{get_project_version()}")
+          with Path(os.environ["GITHUB_OUTPUT"]).open('a') as f:
+              f.write(f"version={get_project_version()}\n")
 
   get-contributor-info:
     name: Get PR info
