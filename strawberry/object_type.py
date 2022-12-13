@@ -66,6 +66,12 @@ def _check_field_annotations(cls: Type):
         # to make sure dataclasses.dataclass is ready for it
         if isinstance(field_, StrawberryField):
 
+            # If the field has a type override then use that instead of using
+            # the class annotations or resolver annotation
+            if field_.type_annotation is not None:
+                cls_annotations[field_name] = field_.type_annotation.annotation
+                continue
+
             # Make sure the cls has an annotation
             if field_name not in cls_annotations:
                 # If the field uses the default resolver, the field _must_ be

@@ -356,6 +356,7 @@ def field(
     default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
+    graphql_type: Optional[Any] = None,
 ) -> T:
     ...
 
@@ -373,6 +374,7 @@ def field(
     default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
+    graphql_type: Optional[Any] = None,
 ) -> Any:
     ...
 
@@ -390,6 +392,7 @@ def field(
     default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
+    graphql_type: Optional[Any] = None,
 ) -> StrawberryField:
     ...
 
@@ -406,6 +409,7 @@ def field(
     default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
+    graphql_type: Optional[Any] = None,
     # This init parameter is used by PyRight to determine whether this field
     # is added in the constructor or not. It is not used to change
     # any behavior at the moment.
@@ -426,10 +430,12 @@ def field(
     it can be used both as decorator and as a normal function.
     """
 
+    type_annotation = StrawberryAnnotation.from_annotation(graphql_type)
+
     field_ = StrawberryField(
         python_name=None,
         graphql_name=name,
-        type_annotation=None,
+        type_annotation=type_annotation,
         description=description,
         is_subscription=is_subscription,
         permission_classes=permission_classes or [],
