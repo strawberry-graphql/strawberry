@@ -2,7 +2,6 @@ import asyncio
 from typing import AsyncGenerator, Dict
 
 import pytest
-from starlette.testclient import TestClient
 from starlette.websockets import WebSocketDisconnect
 
 import strawberry
