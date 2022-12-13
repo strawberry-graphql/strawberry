@@ -14,7 +14,9 @@ DataLoaders provide an async API, so they only work in async context
 
 </Note>
 
-Refer the official dataloaders [specification](https://github.com/graphql/dataloader) for an advance guide on dataloaders.
+Refer the official DataLoaders
+[specification](https://github.com/graphql/dataloader) for an advanced guide on
+DataLoaders.
 
 ## Basic usage
 
@@ -122,12 +124,15 @@ otherwise valid key, like `await loader.load(1)`, will raise that exception.
 
 ### Overriding Cache Key
 
-By default, the input is used as cache key. In the above examples, the cache key is always a scalar (int, float, string, etc.)
-and uniquely resolves the data for the input.
+By default, the input is used as cache key. In the above examples, the cache key
+is always a scalar (int, float, string, etc.) and uniquely resolves the data for
+the input.
 
-In practical applications there are situations where it requires combination of fields to
-uniquely identify the data. By providing `cache_key_fn` argument to the `DataLoader` the behaviour of generating key is changed. It is also useful when objects are keys and two objects should be considered equivalent.
-The function definition takes an input parameter and returns a `Hashable` type.
+In practical applications there are situations where it requires combination of
+fields to uniquely identify the data. By providing `cache_key_fn` argument to
+the `DataLoader` the behaviour of generating key is changed. It is also useful
+when objects are keys and two objects should be considered equivalent. The
+function definition takes an input parameter and returns a `Hashable` type.
 
 ```python
 from typing import List, Union
@@ -150,20 +155,22 @@ data2 = await loader.load(User(1, "Nick"))
 assert data1 == data2 #returns true
 ```
 
-`loader.load(User(1, "Nick"))` will call `custom_cache_key` internally, passing the object as parameter to the function
-which will return `User.id` as key that is `1`.
-The second call will check the cache for the key returned by `custom_cache_key` and will return the cache object
-from the loader cache.
+`loader.load(User(1, "Nick"))` will call `custom_cache_key` internally, passing
+the object as parameter to the function which will return `User.id` as key that
+is `1`. The second call will check the cache for the key returned by
+`custom_cache_key` and will return the cache object from the loader cache.
 
-The implementation relies on users to handle conflicts while generating the cache key. In case of conflict the
-data will be overriden for the key.
+The implementation relies on users to handle conflicts while generating the
+cache key. In case of conflict the data will be overriden for the key.
 
 ### Cache invalidation
 
-By default DataLoaders use an internal cache. It is great for performance, however it can cause problems when the data is modified
-(i.e., a mutation), as the cached data is no longer be valid! 😮
+By default DataLoaders use an internal cache. It is great for performance,
+however it can cause problems when the data is modified (i.e., a mutation), as
+the cached data is no longer be valid! 😮
 
-To fix it, you can explicitly invalidate the data in the cache, using one of these ways:
+To fix it, you can explicitly invalidate the data in the cache, using one of
+these ways:
 
 - Specifying a key with `loader.clear(id)`,
 - Specifying several keys with `loader.clear_many([id1, id2, id3, ...])`,
@@ -171,12 +178,14 @@ To fix it, you can explicitly invalidate the data in the cache, using one of the
 
 ### Importing data into cache
 
-While dataloaders are powerful and efficient, they do not support complex queries.
+While dataloaders are powerful and efficient, they do not support complex
+queries.
 
-If your app needs them, you'll probably mix dataloaders and direct database calls.
+If your app needs them, you'll probably mix dataloaders and direct database
+calls.
 
-In these scenarios, it is useful to import the data retrieved externally into the dataloader,
-in order to avoid reloading data afterwards.
+In these scenarios, it is useful to import the data retrieved externally into
+the dataloader, in order to avoid reloading data afterwards.
 
 For example:
 
@@ -216,12 +225,18 @@ class Query:
 
 ### Custom Cache
 
-DataLoaders are per-request cache that is short-lived, it caches data in memory.
-However, this strategy might not be optimal or safe for long-lived data loaders. DataLoaders let you override the custom caching logic, which can get data from other persistent caches (e.g Redis)
+DataLoader's default cache is per-request and it caches data in memory. This
+strategy might not be optimal or safe for all use cases. For example, if you are
+using DataLoader in a distributed environment, you might want to use a
+distributed cache. DataLoader let you override the custom caching logic, which
+can get data from other persistent caches (e.g Redis)
 
-`DataLoaders` provides an argument `cache_map`. It takes an instance of a class which implements an abstract interface `AbstractCache`. The interface methods are `get`, `set`, `delete` and `clear`
+`DataLoader` provides an argument `cache_map`. It takes an instance of a class
+which implements an abstract interface `AbstractCache`. The interface methods
+are `get`, `set`, `delete` and `clear`
 
-Using custom cache supersedes the `cache_key_fn` if both arguments are provided simultaneously.
+The `cache_map` parameter overrides the `cache_key_fn` if both arguments are
+provided.
 
 ```python
 from typing import List, Union, Any, Optional
@@ -241,16 +256,16 @@ class UserCache(AbstractCache):
         self.cache = {}
 
     def get(self, key: Any) -> Union[Any, None]:
-        return self.cache.get(key)   #fetch data from persistent cache
+        return self.cache.get(key)   # fetch data from persistent cache
 
     def set(self, key: Any, value: Any) -> None:
-        self.cache[key] = value   #store data in the cache
+        self.cache[key] = value   # store data in the cache
 
     def delete(self, key: Any) -> None:
-        del self.cache[key]   #delete key from the cache
+        del self.cache[key]   # delete key from the cache
 
     def clear(self) -> None:
-        self.cache.clear()  #clear the cache
+        self.cache.clear()  # clear the cache
 
 
 @strawberry.type
@@ -394,9 +409,9 @@ schema = strawberry.Schema(query=Query)
 app = MyGraphQL(schema)
 ```
 
-You can now run the example above with any ASGI server, you can read [ASGI](../integrations/asgi.md)) to
-get more details on how to run the app.
-In case you choose uvicorn you can install it wih
+You can now run the example above with any ASGI server, you can read
+[ASGI](../integrations/asgi.md)) to get more details on how to run the app. In
+case you choose uvicorn you can install it wih
 
 ```bash
 pip install uvicorn
