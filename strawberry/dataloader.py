@@ -68,13 +68,11 @@ class AbstractCache(Generic[K, T], ABC):
 
 
 class DefaultCache(AbstractCache[K, T]):
-    def __init__(self, cache_key_fn=None):
-        if cache_key_fn:
-            self.cache_key_fn = cache_key_fn
-        else:
-            self.cache_key_fn = lambda x: x
-
-        self.cache_map: Dict[K, Future[T]] = {}
+    def __init__(self, cache_key_fn: Optional[Callable[[K], Hashable]] = None):
+        self.cache_key_fn: Callable[[K], Hashable] = (
+            cache_key_fn if cache_key_fn is not None else lambda x: x
+        )
+        self.cache_map: Dict[Hashable, Future[T]] = {}
 
     def get(self, key: K) -> Union[Future[T], None]:
         return self.cache_map.get(self.cache_key_fn(key))
