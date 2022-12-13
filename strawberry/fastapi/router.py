@@ -16,7 +16,7 @@ from typing import (
 from starlette import status
 from starlette.background import BackgroundTasks
 from starlette.requests import HTTPConnection, Request
-from starlette.responses import HTMLResponse, JSONResponse, PlainTextResponse, Response
+from starlette.responses import HTMLResponse, PlainTextResponse, Response
 from starlette.types import ASGIApp
 from starlette.websockets import WebSocket
 
@@ -151,10 +151,16 @@ class GraphQLRouter(APIRouter):
             context=Depends(self.context_getter),
             root_value=Depends(self.root_value_getter),
         ) -> Response:
-            actual_response: Response
-
             if request.query_params:
-                query_data = parse_query_params(request.query_params._dict)
+                try:
+                    query_data = parse_query_params(request.query_params._dict)
+
+                except json.JSONDecodeError:
+                    return PlainTextResponse(
+                        "Unable to parse request body as JSON",
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                    )
+
                 return await self.execute_request(
                     request=request,
                     response=response,
@@ -164,7 +170,7 @@ class GraphQLRouter(APIRouter):
                 )
             elif self.should_render_graphiql(request):
                 return self.get_graphiql_response()
-            return Response(status_code=status.HTTP_400_BAD_REQUEST)
+            return Response(status_code=status.HTTP_404_NOT_FOUND)
 
         @self.post(path)
         async def handle_http_post(
@@ -189,12 +195,29 @@ class GraphQLRouter(APIRouter):
                     return self._merge_responses(response, actual_response)
             elif content_type.startswith("multipart/form-data"):
                 multipart_data = await request.form()
-                operations_text = multipart_data.get("operations", "{}")
-                operations = json.loads(operations_text)  # type: ignore
-                files_map = json.loads(multipart_data.get("map", "{}"))  # type: ignore
-                data = replace_placeholders_with_files(
-                    operations, files_map, multipart_data
-                )
+                try:
+                    operations_text = multipart_data.get("operations", "{}")
+                    operations = json.loads(operations_text)  # type: ignore
+                    files_map = json.loads(multipart_data.get("map", "{}"))  # type: ignore # noqa: E501
+                except json.JSONDecodeError:
+                    actual_response = PlainTextResponse(
+                        "Unable to parse request body as JSON",
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                    return self._merge_responses(response, actual_response)
+
+                try:
+                    data = replace_placeholders_with_files(
+                        operations, files_map, multipart_data
+                    )
+                except KeyError:
+                    actual_response = PlainTextResponse(
+                        "File(s) missing in form data",
+                        status_code=status.HTTP_400_BAD_REQUEST,
+                    )
+
+                    return self._merge_responses(response, actual_response)
             else:
                 actual_response = PlainTextResponse(
                     "Unsupported Media Type",
@@ -337,9 +360,13 @@ class GraphQLRouter(APIRouter):
 
         response_data = await self.process_result(request, result)
 
-        actual_response: JSONResponse = JSONResponse(
-            response_data,
+        actual_response = Response(
+            self.encode_json(response_data),
+            media_type="application/json",
             status_code=status.HTTP_200_OK,
         )
 
         return self._merge_responses(response, actual_response)
+
+    def encode_json(self, response_data: GraphQLHTTPResponse) -> str:
+        return json.dumps(response_data)

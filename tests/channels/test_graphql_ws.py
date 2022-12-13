@@ -16,7 +16,6 @@ from strawberry.subscriptions.protocols.graphql_ws import (
     GQL_STOP,
 )
 
-
 pytestmark = [
     pytest.mark.asyncio,
 ]

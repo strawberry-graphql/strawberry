@@ -14,7 +14,6 @@ from strawberry.experimental.pydantic.exceptions import (
 )
 from strawberry.types.types import TypeDefinition
 
-
 try:
     from typing import GenericAlias as TypingGenericAlias  # type: ignore
 except ImportError:

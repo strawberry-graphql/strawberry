@@ -10,9 +10,9 @@ from strawberry.types import ExecutionResult
 
 
 class GraphQLHTTPResponse(TypedDict, total=False):
-    data: Optional[Dict[str, Any]]
-    errors: Optional[List[Any]]
-    extensions: Optional[Dict[str, Any]]
+    data: Optional[Dict[str, object]]
+    errors: Optional[List[object]]
+    extensions: Optional[Dict[str, object]]
 
 
 def process_result(result: ExecutionResult) -> GraphQLHTTPResponse:
@@ -40,14 +40,14 @@ def parse_query_params(params: Dict[str, str]) -> Dict[str, Any]:
     return params
 
 
-def parse_request_data(data: Mapping) -> GraphQLRequestData:
-    if "query" not in data:
+def parse_request_data(data: Mapping[str, Any]) -> GraphQLRequestData:
+    query = data.get("query")
+
+    if not query:
         raise MissingQueryError()
 
-    result = GraphQLRequestData(
+    return GraphQLRequestData(
         query=data["query"],
         variables=data.get("variables"),
         operation_name=data.get("operationName"),
     )
-
-    return result

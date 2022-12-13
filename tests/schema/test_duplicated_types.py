@@ -8,6 +8,10 @@ import strawberry
 from strawberry.exceptions import DuplicatedTypeName
 
 
+@pytest.mark.raises_strawberry_exception(
+    DuplicatedTypeName,
+    match=r"Type (.*) is defined multiple times in the schema",
+)
 def test_schema_has_no_duplicated_input_types():
     @strawberry.input(name="DuplicatedInput")
     class A:
@@ -21,10 +25,13 @@ def test_schema_has_no_duplicated_input_types():
     class Query:
         field: int
 
-    with pytest.raises(DuplicatedTypeName):
-        strawberry.Schema(query=Query, types=[A, B])
+    strawberry.Schema(query=Query, types=[A, B])
 
 
+@pytest.mark.raises_strawberry_exception(
+    DuplicatedTypeName,
+    match=r"Type (.*) is defined multiple times in the schema",
+)
 def test_schema_has_no_duplicated_types():
     @strawberry.type(name="DuplicatedType")
     class A:
@@ -38,10 +45,13 @@ def test_schema_has_no_duplicated_types():
     class Query:
         field: int
 
-    with pytest.raises(DuplicatedTypeName):
-        strawberry.Schema(query=Query, types=[A, B])
+    strawberry.Schema(query=Query, types=[A, B])
 
 
+@pytest.mark.raises_strawberry_exception(
+    DuplicatedTypeName,
+    match=r"Type (.*) is defined multiple times in the schema",
+)
 def test_schema_has_no_duplicated_interfaces():
     @strawberry.interface(name="DuplicatedType")
     class A:
@@ -55,10 +65,13 @@ def test_schema_has_no_duplicated_interfaces():
     class Query:
         pass
 
-    with pytest.raises(DuplicatedTypeName):
-        strawberry.Schema(query=Query, types=[A, B])
+    strawberry.Schema(query=Query, types=[A, B])
 
 
+@pytest.mark.raises_strawberry_exception(
+    DuplicatedTypeName,
+    match=r"Type (.*) is defined multiple times in the schema",
+)
 def test_schema_has_no_duplicated_enums():
     @strawberry.enum(name="DuplicatedType")
     class A(Enum):
@@ -72,10 +85,13 @@ def test_schema_has_no_duplicated_enums():
     class Query:
         field: int
 
-    with pytest.raises(DuplicatedTypeName):
-        strawberry.Schema(query=Query, types=[A, B])
+    strawberry.Schema(query=Query, types=[A, B])
 
 
+@pytest.mark.raises_strawberry_exception(
+    DuplicatedTypeName,
+    match=r"Type (.*) is defined multiple times in the schema",
+)
 def test_schema_has_no_duplicated_names_across_different_types():
     @strawberry.interface(name="DuplicatedType")
     class A:
@@ -89,10 +105,13 @@ def test_schema_has_no_duplicated_names_across_different_types():
     class Query:
         field: int
 
-    with pytest.raises(DuplicatedTypeName):
-        strawberry.Schema(query=Query, types=[A, B])
+    strawberry.Schema(query=Query, types=[A, B])
 
 
+@pytest.mark.raises_strawberry_exception(
+    DuplicatedTypeName,
+    match=r"Type (.*) is defined multiple times in the schema",
+)
 def test_schema_has_no_duplicated_types_between_schema_and_extra_types():
     @strawberry.type(name="DuplicatedType")
     class A:
@@ -106,10 +125,7 @@ def test_schema_has_no_duplicated_types_between_schema_and_extra_types():
     class Query:
         field: A
 
-    with pytest.raises(Exception) as exc_info:
-        strawberry.Schema(query=Query, types=[B])
-
-    assert isinstance(exc_info.value.__cause__, DuplicatedTypeName)
+    strawberry.Schema(query=Query, types=[B])
 
 
 def test_allows_multiple_instance_of_same_generic():

@@ -21,15 +21,14 @@ from typing_extensions import Literal
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import StrawberryArgument
-from strawberry.exceptions import InvalidDefaultFactoryError, InvalidFieldArgument
-from strawberry.type import StrawberryType, StrawberryTypeVar
+from strawberry.exceptions import InvalidArgumentTypeError, InvalidDefaultFactoryError
+from strawberry.type import StrawberryType
 from strawberry.types.info import Info
 from strawberry.union import StrawberryUnion
 from strawberry.utils.cached_property import cached_property
 
 from .permission import BasePermission
 from .types.fields.resolver import StrawberryResolver
-
 
 if TYPE_CHECKING:
     from .object_type import TypeDefinition
@@ -46,6 +45,18 @@ _RESOLVER_TYPE = Union[
 
 
 UNRESOLVED = object()
+
+
+def _is_generic(resolver_type: Union[StrawberryType, type]) -> bool:
+    """Returns True if `resolver_type` is generic else False"""
+    if isinstance(resolver_type, StrawberryType):
+        return resolver_type.is_generic
+
+    # solves the Generic subclass case
+    if hasattr(resolver_type, "_type_definition"):
+        return resolver_type._type_definition.is_generic
+
+    return False
 
 
 class StrawberryField(dataclasses.Field):
@@ -131,17 +142,15 @@ class StrawberryField(dataclasses.Field):
             if isinstance(argument.type_annotation.annotation, str):
                 continue
             elif isinstance(argument.type, StrawberryUnion):
-                raise InvalidFieldArgument(
-                    resolver.name,
-                    argument.python_name,
-                    "Union",
+                raise InvalidArgumentTypeError(
+                    resolver,
+                    argument,
                 )
             elif getattr(argument.type, "_type_definition", False):
                 if argument.type._type_definition.is_interface:  # type: ignore
-                    raise InvalidFieldArgument(
-                        resolver.name,
-                        argument.python_name,
-                        "Interface",
+                    raise InvalidArgumentTypeError(
+                        resolver,
+                        argument,
                     )
 
         self.base_resolver = resolver
@@ -237,10 +246,10 @@ class StrawberryField(dataclasses.Field):
                 # Handle unannotated functions (such as lambdas)
                 if self.base_resolver.type is not None:
 
-                    # StrawberryTypeVar will raise MissingTypesForGenericError later
+                    # Generics will raise MissingTypesForGenericError later
                     # on if we let it be returned. So use `type_annotation` instead
                     # which is the same behaviour as having no type information.
-                    if not isinstance(self.base_resolver.type, StrawberryTypeVar):
+                    if not _is_generic(self.base_resolver.type):
                         return self.base_resolver.type
 
             # If we get this far it means that we don't have a field type and
@@ -281,7 +290,7 @@ class StrawberryField(dataclasses.Field):
     def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, builtins.type]]
     ) -> "StrawberryField":
-        new_type: Union[StrawberryType, type]
+        new_type: Union[StrawberryType, type] = self.type
 
         # TODO: Remove with creation of StrawberryObject. Will act same as other
         #       StrawberryTypes
@@ -291,9 +300,7 @@ class StrawberryField(dataclasses.Field):
             if type_definition.is_generic:
                 type_ = type_definition
                 new_type = type_.copy_with(type_var_map)
-        else:
-            assert isinstance(self.type, StrawberryType)
-
+        elif isinstance(self.type, StrawberryType):
             new_type = self.type.copy_with(type_var_map)
 
         new_resolver = (
@@ -349,6 +356,7 @@ def field(
     default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
+    graphql_type: Optional[Any] = None,
 ) -> T:
     ...
 
@@ -366,6 +374,7 @@ def field(
     default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
+    graphql_type: Optional[Any] = None,
 ) -> Any:
     ...
 
@@ -383,6 +392,7 @@ def field(
     default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
+    graphql_type: Optional[Any] = None,
 ) -> StrawberryField:
     ...
 
@@ -399,6 +409,7 @@ def field(
     default_factory: Union[Callable[..., object], object] = dataclasses.MISSING,
     metadata: Optional[Mapping[Any, Any]] = None,
     directives: Optional[Sequence[object]] = (),
+    graphql_type: Optional[Any] = None,
     # This init parameter is used by PyRight to determine whether this field
     # is added in the constructor or not. It is not used to change
     # any behavior at the moment.
@@ -419,10 +430,12 @@ def field(
     it can be used both as decorator and as a normal function.
     """
 
+    type_annotation = StrawberryAnnotation.from_annotation(graphql_type)
+
     field_ = StrawberryField(
         python_name=None,
         graphql_name=name,
-        type_annotation=None,
+        type_annotation=type_annotation,
         description=description,
         is_subscription=is_subscription,
         permission_classes=permission_classes or [],

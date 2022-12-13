@@ -20,7 +20,6 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     SubscribeMessagePayload,
 )
 
-
 pytestmark = [
     pytest.mark.asyncio,
 ]

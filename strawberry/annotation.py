@@ -14,9 +14,8 @@ from typing import (  # type: ignore[attr-defined]
 )
 from typing_extensions import Annotated, Self, get_args, get_origin
 
-from strawberry.exceptions import StrawberryException
+from strawberry.exceptions.not_a_strawberry_enum import NotAStrawberryEnumError
 from strawberry.private import is_private
-
 
 try:
     from typing import ForwardRef
@@ -36,7 +35,6 @@ from strawberry.type import (
 from strawberry.types.types import TypeDefinition
 from strawberry.unset import UNSET
 from strawberry.utils.typing import is_generic, is_list, is_type_var, is_union
-
 
 if TYPE_CHECKING:
     from strawberry.field import StrawberryField
@@ -179,7 +177,7 @@ class StrawberryAnnotation:
         try:
             return evaled_type._enum_definition
         except AttributeError:
-            raise StrawberryException(f"{evaled_type} fields cannot be resolved.")
+            raise NotAStrawberryEnumError(evaled_type)
 
     def create_list(self, evaled_type: Any) -> StrawberryList:
         of_type = StrawberryAnnotation(
@@ -347,5 +345,4 @@ def _is_input_type(type_: Any) -> bool:
 
 
 def _is_object_type(type_: Any) -> bool:
-    # isinstance(type_, StrawberryObjectType)  # noqa: E800
     return hasattr(type_, "_type_definition")

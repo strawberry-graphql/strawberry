@@ -7,6 +7,7 @@ def replace_placeholders_with_files(
     files_map: Mapping[str, List[str]],
     files: Mapping[str, Any],
 ) -> Dict[str, Any]:
+    # TODO: test this with missing variables in operations_with_placeholders
     operations = copy.deepcopy(operations_with_placeholders)
 
     for multipart_form_field_name, operations_paths in files_map.items():

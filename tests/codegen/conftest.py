@@ -9,7 +9,6 @@ import pytest
 
 import strawberry
 
-
 if TYPE_CHECKING:
 
     from .lazy_type import LaziestType

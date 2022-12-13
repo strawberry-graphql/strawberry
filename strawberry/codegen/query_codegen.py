@@ -328,7 +328,7 @@ class QueryCodegen:
             if hasattr(python_type, "__supertype__"):
                 python_type = python_type.__supertype__
 
-            return self._collect_scalar(field_type._scalar_definition, python_type)
+            return self._collect_scalar(field_type._scalar_definition, python_type)  # type: ignore  # noqa: E501
 
         if isinstance(field_type, ScalarDefinition):
             return self._collect_scalar(field_type, None)

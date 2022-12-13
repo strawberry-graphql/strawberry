@@ -66,18 +66,26 @@ def _check_field_annotations(cls: Type):
         # to make sure dataclasses.dataclass is ready for it
         if isinstance(field_, StrawberryField):
 
+            # If the field has a type override then use that instead of using
+            # the class annotations or resolver annotation
+            if field_.type_annotation is not None:
+                cls_annotations[field_name] = field_.type_annotation.annotation
+                continue
+
             # Make sure the cls has an annotation
             if field_name not in cls_annotations:
                 # If the field uses the default resolver, the field _must_ be
                 # annotated
                 if not field_.base_resolver:
-                    raise MissingFieldAnnotationError(field_name)
+                    raise MissingFieldAnnotationError(field_name, cls)
 
                 # The resolver _must_ have a return type annotation
                 # TODO: Maybe check this immediately when adding resolver to
                 #       field
                 if field_.base_resolver.type_annotation is None:
-                    raise MissingReturnAnnotationError(field_name)
+                    raise MissingReturnAnnotationError(
+                        field_name, resolver=field_.base_resolver
+                    )
 
                 cls_annotations[field_name] = field_.base_resolver.type_annotation
 
@@ -91,7 +99,7 @@ def _check_field_annotations(cls: Type):
         # dataclasses.field
         if field_name not in cls_annotations:
             # Field object exists but did not get an annotation
-            raise MissingFieldAnnotationError(field_name)
+            raise MissingFieldAnnotationError(field_name, cls)
 
 
 def _wrap_dataclass(cls: Type):

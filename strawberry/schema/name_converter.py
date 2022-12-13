@@ -14,7 +14,6 @@ from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 from strawberry.utils.str_converters import capitalize_first, to_camel_case
 
-
 if TYPE_CHECKING:
     from strawberry.arguments import StrawberryArgument
     from strawberry.field import StrawberryField

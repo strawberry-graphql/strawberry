@@ -18,7 +18,6 @@ from strawberry.utils.typing import __dataclass_transform__
 
 from .field import field
 
-
 if TYPE_CHECKING:
     from .schema_directives import Key
 

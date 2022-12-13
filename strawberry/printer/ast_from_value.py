@@ -30,7 +30,6 @@ from graphql.type import (
     is_non_null_type,
 )
 
-
 __all__ = ["ast_from_value"]
 
 _re_integer_string = re.compile("^-?(?:0|[1-9][0-9]*)$")

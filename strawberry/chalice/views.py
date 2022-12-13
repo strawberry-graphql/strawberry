@@ -201,4 +201,7 @@ class GraphQLView:
             # TODO: we might want to use typed dict for context
             status_code = context["response"].status_code  # type: ignore[attr-defined]
 
-        return Response(body=http_result, status_code=status_code)
+        return Response(body=self.encode_json(http_result), status_code=status_code)
+
+    def encode_json(self, response_data: GraphQLHTTPResponse) -> str:
+        return json.dumps(response_data)

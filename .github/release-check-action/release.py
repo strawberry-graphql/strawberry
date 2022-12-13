@@ -3,7 +3,6 @@ import re
 from enum import Enum
 from pathlib import Path
 
-
 RELEASE_TYPE_REGEX = re.compile(r"^[Rr]elease [Tt]ype: (major|minor|patch)$")
 
 

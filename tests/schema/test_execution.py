@@ -182,6 +182,7 @@ async def test_logging_exceptions(caplog):
         root_value=Query(),
     )
 
+    assert result.errors
     assert len(result.errors) == 1
 
     # Exception was logged

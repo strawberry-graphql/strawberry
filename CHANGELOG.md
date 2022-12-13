@@ -1,6 +1,227 @@
 CHANGELOG
 =========
 
+0.151.0 - 2022-12-13
+--------------------
+
+This PR adds a new `graphql_type` parameter to strawberry.field that allows you
+to explicitly set the field type. This parameter will take preference over the
+resolver return type and the class field type.
+
+For example:
+
+```python
+@strawberry.type
+class Query:
+    a: float = strawberry.field(graphql_type=str)
+    b = strawberry.field(graphql_type=int)
+
+    @strawberry.field(graphql_type=float)
+    def c(self) -> str:
+        return "3.4"
+
+schema = strawberry.Schema(Query)
+
+str(schema) == """
+  type Query {
+    a: String!
+    b: Int!
+    c: Float!
+  }
+"""
+```
+
+Contributed by [Jonathan Kim](https://github.com/jkimbo) via [PR #2313](https://github.com/strawberry-graphql/strawberry/pull/2313/)
+
+
+0.150.1 - 2022-12-13
+--------------------
+
+Fixed field resolvers with nested generic return types
+(e.g. `list`, `Optional`, `Union` etc) raising TypeErrors.
+This means resolver factory methods can now be correctly type hinted.
+
+For example the below would previously error unless you ommited all the
+type hints on `resolver_factory` and `actual_resolver` functions.
+```python
+from typing import Callable, Optional, Type, TypeVar
+
+import strawberry
+
+
+@strawberry.type
+class Cat:
+    name: str
+
+
+T = TypeVar("T")
+
+
+def resolver_factory(type_: Type[T]) -> Callable[[], Optional[T]]:
+    def actual_resolver() -> Optional[T]:
+        # load rows from database and cast to type etc
+        ...
+
+    return actual_resolver
+
+
+@strawberry.type
+class Query:
+    cat: Cat = strawberry.field(resolver_factory(Cat))
+
+
+schema = strawberry.Schema(query=Query)
+```
+
+Contributed by [Tim OSullivan](https://github.com/invokermain) via [PR #1900](https://github.com/strawberry-graphql/strawberry/pull/1900/)
+
+
+0.150.0 - 2022-12-13
+--------------------
+
+This release implements the ability to use custom caching for dataloaders.
+It also allows to provide a `cache_key_fn` to the dataloader. This function
+is used to generate the cache key for the dataloader. This is useful when
+you want to use a custom hashing function for the cache key.
+
+Contributed by [Aman Choudhary](https://github.com/Techno-Tut) via [PR #2394](https://github.com/strawberry-graphql/strawberry/pull/2394/)
+
+
+0.149.2 - 2022-12-09
+--------------------
+
+This release fixes support for generics in arguments, see the following example:
+
+ ```python
+ T = TypeVar('T')
+
+ @strawberry.type
+ class Node(Generic[T]):
+    @strawberry.field
+    def data(self, arg: T) -> T:  # `arg` is also generic
+        return arg
+ ```
+
+Contributed by [A. Coady](https://github.com/coady) via [PR #2316](https://github.com/strawberry-graphql/strawberry/pull/2316/)
+
+
+0.149.1 - 2022-12-09
+--------------------
+
+This release improves the performance of rich exceptions on custom scalars
+by changing how frames are fetched from the call stack.
+Before the change, custom scalars were using a CPU intensive call to the
+`inspect` module to fetch frame info which could lead to serious CPU spikes.
+
+Contributed by [Paulo Amaral](https://github.com/paulopaixaoamaral) via [PR #2390](https://github.com/strawberry-graphql/strawberry/pull/2390/)
+
+
+0.149.0 - 2022-12-09
+--------------------
+
+This release does some internal refactoring of the HTTP views, hopefully it
+doesn't affect anyone. It mostly changes the status codes returned in case of
+errors (e.g. bad JSON, missing queries and so on).
+
+It also improves the testing, and adds an entirely new test suite for the HTTP
+views, this means in future we'll be able to keep all the HTTP views in sync
+feature-wise.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #1840](https://github.com/strawberry-graphql/strawberry/pull/1840/)
+
+
+0.148.0 - 2022-12-08
+--------------------
+
+This release changes the `get_context`, `get_root_value` and `process_result`
+methods of the Flask async view to be async functions. This allows you to use
+async code in these methods.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2388](https://github.com/strawberry-graphql/strawberry/pull/2388/)
+
+
+0.147.0 - 2022-12-08
+--------------------
+
+This release introduces a `encode_json` method on all the HTTP integrations.
+This method allows to customize the encoding of the JSON response. By default we
+use `json.dumps` but you can override this method to use a different encoder.
+
+It also deprecates `json_encoder` and `json_dumps_params` in the Django and
+Sanic views, `encode_json` should be used instead.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2272](https://github.com/strawberry-graphql/strawberry/pull/2272/)
+
+
+0.146.0 - 2022-12-05
+--------------------
+
+This release updates the Sanic integration and includes some breaking changes.
+You might need to update your code if you are customizing `get_context` or
+`process_result`
+
+## `get_context`
+
+`get_context` now receives the request as the first argument and the response as
+the second argument.
+
+## `process_result`
+
+`process_result` is now async and receives the request and the GraphQL execution
+result.
+
+This change is needed to align all the HTTP integrations and reduce the amount
+of code needed to maintain. It also makes the errors consistent with other
+integrations.
+
+It also brings a **new feature** and it allows to customize the HTTP status code
+by using `info.context["response"].status_code = YOUR_CODE`.
+
+It also removes the upper bound on the Sanic version, so you can use the latest
+version of Sanic with Strawberry.
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2273](https://github.com/strawberry-graphql/strawberry/pull/2273/)
+
+
+0.145.0 - 2022-12-04
+--------------------
+
+This release introduced improved errors! Now, when you have a syntax error in
+your code, you'll get a nice error message with a line number and a pointer to
+the exact location of the error. ✨
+
+This is a huge improvement over the previous behavior, which was providing a
+stack trace with no clear indication of where the error was. 🙈
+
+You can enable rich errors by installing Strawberry with the `cli` extra:
+
+```bash
+pip install strawberry-graphql[cli]
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2027](https://github.com/strawberry-graphql/strawberry/pull/2027/)
+
+
+0.144.3 - 2022-12-04
+--------------------
+
+This release fixes an issue with type duplication of generics.
+
+You can now use a lazy type with a generic even if
+the original type was already used with that generic in the schema.
+
+Example:
+
+```python3
+@strawberry.type
+class Query:
+    regular: Edge[User]
+    lazy: Edge[Annotated["User", strawberry.lazy(".user")]]
+```
+
+Contributed by [Dmitry Semenov](https://github.com/lonelyteapot) via [PR #2381](https://github.com/strawberry-graphql/strawberry/pull/2381/)
+
+
 0.144.2 - 2022-12-02
 --------------------
 
