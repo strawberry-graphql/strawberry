@@ -1,9 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List, Optional, Union
-
+from typing import TYPE_CHECKING, List, Optional, Union, cast
 from typing_extensions import Protocol
 
+from strawberry.annotation import StrawberryAnnotation
 from strawberry.custom_scalar import ScalarDefinition
 from strawberry.directive import StrawberryDirective
 from strawberry.enum import EnumDefinition
@@ -13,7 +13,6 @@ from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 from strawberry.utils.str_converters import capitalize_first, to_camel_case
-
 
 if TYPE_CHECKING:
     from strawberry.arguments import StrawberryArgument
@@ -94,8 +93,11 @@ class NameConverter:
         name = ""
 
         for type_ in union.types:
+            if isinstance(type_, LazyType):
+                type_ = cast(StrawberryType, type_.resolve_type())
+
             assert hasattr(type_, "_type_definition")
-            name += self.from_type(type_._type_definition)  # type: ignore
+            name += self.from_type(type_._type_definition)
 
         return name
 
@@ -115,6 +117,9 @@ class NameConverter:
     def get_from_type(self, type_: Union[StrawberryType, type]) -> str:
         from strawberry.union import StrawberryUnion
 
+        # TODO: maybe we should move parse_annotated somewhere else?
+        type_ = StrawberryAnnotation.parse_annotated(type_)  # type: ignore
+
         if isinstance(type_, LazyType):
             name = type_.type_name
         elif isinstance(type_, EnumDefinition):
@@ -129,11 +134,11 @@ class NameConverter:
         elif isinstance(type_, StrawberryOptional):
             name = self.get_from_type(type_.of_type) + "Optional"
         elif hasattr(type_, "_scalar_definition"):
-            strawberry_type = type_._scalar_definition  # type: ignore
+            strawberry_type = type_._scalar_definition
 
             name = strawberry_type.name
         elif hasattr(type_, "_type_definition"):
-            strawberry_type = type_._type_definition  # type: ignore
+            strawberry_type = type_._type_definition
 
             if strawberry_type.is_generic:
                 types = type_.__args__  # type: ignore

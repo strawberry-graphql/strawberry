@@ -9,6 +9,8 @@
 - [Mutations](./general/mutations.md)
 - [Subscriptions](./general/subscriptions.md)
 - [Why](./general/why.md)
+- [Breaking changes](./breaking-changes.md)
+- [FAQ](./faq.md)
 
 ## Types
 
@@ -23,7 +25,9 @@
 - [Generics](./types/generics.md)
 - [Resolvers](./types/resolvers.md)
 - [Union types](./types/union.md)
+- [Lazy types](./types/lazy.md)
 - [Exceptions](./types/exceptions.md)
+- [Private/External Fields](./types/private.md)
 
 ## Codegen
 
@@ -37,6 +41,7 @@
 - [DataLoaders](./guides/dataloaders.md)
 - [Dealing with errors](./guides/errors.md)
 - [Federation](./guides/federation.md)
+- [Federation V1](./guides/federation-v1.md)
 - [Custom extensions](./guides/custom-extensions.md)
 - [File upload](./guides/file-upload.md)
 - [Pagination](./guides/pagination.md)
@@ -47,6 +52,7 @@
 
 ## Editor integration
 
+- [Mypy](./editors/mypy.md)
 - [Visual Studio Code](./editors/vscode.md)
 
 ## Concepts
@@ -59,6 +65,7 @@
 - [AIOHTTP](./integrations/aiohttp.md)
 - [ASGI](./integrations/asgi.md)
 - [Django](./integrations/django.md)
+- [Channels](./integrations/channels.md)
 - [FastAPI](./integrations/fastapi.md)
 - [Flask](./integrations/flask.md)
 - [Sanic](./integrations/sanic.md)

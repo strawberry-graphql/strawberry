@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import dataclasses
+import sys
 import warnings
 from typing import (
     TYPE_CHECKING,
@@ -15,10 +16,10 @@ from typing import (
     cast,
 )
 
+from graphql import GraphQLResolveInfo
 from pydantic.fields import ModelField
 
-from graphql import GraphQLResolveInfo
-
+from strawberry.annotation import StrawberryAnnotation
 from strawberry.auto import StrawberryAuto
 from strawberry.experimental.pydantic.conversion import (
     convert_pydantic_model_to_strawberry_class,
@@ -31,12 +32,11 @@ from strawberry.experimental.pydantic.utils import (
     ensure_all_auto_fields_in_pydantic,
     get_default_factory_for_field,
     get_private_fields,
-    sort_creation_fields,
 )
 from strawberry.field import StrawberryField
 from strawberry.object_type import _process_type, _wrap_dataclass
 from strawberry.types.type_resolver import _get_fields
-from strawberry.unset import UNSET
+from strawberry.utils.dataclasses import add_custom_init_fn
 
 
 def get_type_for_field(field: ModelField, is_input: bool):
@@ -56,7 +56,7 @@ def _build_dataclass_creation_fields(
     auto_fields_set: Set[str],
     use_pydantic_alias: bool,
 ) -> DataclassCreationFields:
-    type_annotation = (
+    field_type = (
         get_type_for_field(field, is_input)
         if field.name in auto_fields_set
         else existing_fields[field.name].type
@@ -76,13 +76,14 @@ def _build_dataclass_creation_fields(
             graphql_name = existing_field.graphql_name
         elif field.has_alias and use_pydantic_alias:
             graphql_name = field.alias
+
         strawberry_field = StrawberryField(
             python_name=field.name,
             graphql_name=graphql_name,
             # always unset because we use default_factory instead
-            default=UNSET,
+            default=dataclasses.MISSING,
             default_factory=get_default_factory_for_field(field),
-            type_annotation=type_annotation,
+            type_annotation=StrawberryAnnotation.from_annotation(field_type),
             description=field.field_info.description,
             deprecation_reason=(
                 existing_field.deprecation_reason if existing_field else None
@@ -95,7 +96,7 @@ def _build_dataclass_creation_fields(
 
     return DataclassCreationFields(
         name=field.name,
-        type_annotation=type_annotation,
+        field_type=field_type,
         field=strawberry_field,
     )
 
@@ -121,7 +122,7 @@ def type(
 ) -> Callable[..., Type[StrawberryTypeFromPydantic[PydanticModel]]]:
     def wrap(cls: Any) -> Type[StrawberryTypeFromPydantic[PydanticModel]]:
         model_fields = model.__fields__
-        original_fields_set = set(fields) if fields else set([])
+        original_fields_set = set(fields) if fields else set()
 
         if fields:
             warnings.warn(
@@ -130,19 +131,20 @@ def type(
             )
 
         existing_fields = getattr(cls, "__annotations__", {})
+
         # these are the fields that matched a field name in the pydantic model
         # and should copy their alias from the pydantic model
         fields_set = original_fields_set.union(
-            set(name for name, _ in existing_fields.items() if name in model_fields)
+            {name for name, _ in existing_fields.items() if name in model_fields}
         )
         # these are the fields that were marked with strawberry.auto and
         # should copy their type from the pydantic model
         auto_fields_set = original_fields_set.union(
-            set(
+            {
                 name
                 for name, type_ in existing_fields.items()
                 if isinstance(type_, StrawberryAuto)
-            )
+            }
         )
 
         if all_fields:
@@ -177,20 +179,15 @@ def type(
             if field_name in fields_set
         ]
 
-        all_model_fields.extend(
-            (
-                DataclassCreationFields(
-                    name=field.name,
-                    type_annotation=field.type,
-                    field=field,
-                )
-                for field in extra_fields + private_fields
-                if field.name not in fields_set
+        all_model_fields = [
+            DataclassCreationFields(
+                name=field.name,
+                field_type=field.type,
+                field=field,
             )
-        )
-
-        # Sort fields so that fields with missing defaults go first
-        sorted_fields = sort_creation_fields(all_model_fields)
+            for field in extra_fields + private_fields
+            if field.name not in fields_set
+        ] + all_model_fields
 
         # Implicitly define `is_type_of` to support interfaces/unions that use
         # pydantic objects (not the corresponding strawberry type)
@@ -216,12 +213,28 @@ def type(
         if has_custom_to_pydantic:
             namespace["to_pydantic"] = cls.to_pydantic
 
+        kwargs: Dict[str, object] = {}
+
+        # Python 3.10.1 introduces the kw_only param to `make_dataclass`.
+        # If we're on an older version then generate our own custom init function
+        # Note: Python 3.10.0 added the `kw_only` param to dataclasses, it was
+        # just missed from the `make_dataclass` function:
+        # https://github.com/python/cpython/issues/89961
+        if sys.version_info >= (3, 10, 1):
+            kwargs["kw_only"] = dataclasses.MISSING
+        else:
+            kwargs["init"] = False
+
         cls = dataclasses.make_dataclass(
             cls.__name__,
-            [field.to_tuple() for field in sorted_fields],
+            [field.to_tuple() for field in all_model_fields],
             bases=cls.__bases__,
             namespace=namespace,
+            **kwargs,  # type: ignore
         )
+
+        if sys.version_info < (3, 10, 1):
+            add_custom_init_fn(cls)
 
         _process_type(
             cls,
@@ -239,7 +252,7 @@ def type(
         cls._pydantic_type = model
 
         def from_pydantic_default(
-            instance: PydanticModel, extra: Dict[str, Any] = None
+            instance: PydanticModel, extra: Optional[Dict[str, Any]] = None
         ) -> StrawberryTypeFromPydantic[PydanticModel]:
             return convert_pydantic_model_to_strawberry_class(
                 cls=cls, model_instance=instance, extra=extra

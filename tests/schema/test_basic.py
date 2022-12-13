@@ -13,6 +13,7 @@ from strawberry.exceptions import (
     FieldWithResolverAndDefaultValueError,
 )
 from strawberry.scalars import Base64
+from strawberry.schema_directive import Location
 from strawberry.type import StrawberryList
 
 
@@ -107,7 +108,7 @@ def test_can_rename_fields():
     class Query:
         @strawberry.field
         def hello(self) -> Hello:
-            return Hello("hi")
+            return Hello(value="hi")
 
         @strawberry.field(name="example1")
         def example(self, query_param: str) -> str:
@@ -296,6 +297,38 @@ def test_enum_description():
     ]
 
     assert result.data["pizzas"]["description"] is None
+
+
+def test_enum_value_description():
+    @strawberry.enum
+    class IceCreamFlavour(Enum):
+        VANILLA = "vainilla"
+        STRAWBERRY = strawberry.enum_value("strawberry", description="Our favourite.")
+        CHOCOLATE = "chocolate"
+
+    @strawberry.type
+    class Query:
+        favorite_ice_cream: IceCreamFlavour = IceCreamFlavour.STRAWBERRY
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        iceCreamFlavour: __type(name: "IceCreamFlavour") {
+            enumValues {
+                name
+                description
+            }
+        }
+    }"""
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data["iceCreamFlavour"]["enumValues"] == [
+        {"name": "VANILLA", "description": None},
+        {"name": "STRAWBERRY", "description": "Our favourite."},
+        {"name": "CHOCOLATE", "description": None},
+    ]
 
 
 def test_parent_class_fields_are_inherited():
@@ -516,10 +549,16 @@ def test_with_types():
     class Query:
         foo: int
 
+    @strawberry.schema_directive(locations=[Location.SCALAR], name="specifiedBy")
+    class SpecifiedBy:
+        name: str
+
     schema = strawberry.Schema(
-        query=Query, types=[Type, Interface, Input, Base64, ID, str, int]
+        query=Query, types=[Type, Interface, Input, Base64, ID, str, int, SpecifiedBy]
     )
     expected = '''
+        directive @specifiedBy(name: String!) on SCALAR
+
         """
         Represents binary data as Base64-encoded strings, using the standard alphabet.
         """
@@ -552,3 +591,27 @@ def test_with_types_non_named():
 
     with pytest.raises(TypeError, match=r"\[Int!\] is not a named GraphQL Type"):
         strawberry.Schema(query=Query, types=[StrawberryList(int)])
+
+
+def test_kw_only():
+    @strawberry.type
+    class FooBar1:
+        foo: int = 1
+        bar: int
+
+    @strawberry.type
+    class FooBar2:
+        foo: int = strawberry.field(default=1)
+        bar: int = strawberry.field()
+
+    for FooBar in (FooBar1, FooBar2):
+        with pytest.raises(
+            TypeError, match="missing 1 required keyword-only argument: 'bar'"
+        ):
+            FooBar()
+        with pytest.raises(
+            TypeError, match="missing 1 required keyword-only argument: 'bar'"
+        ):
+            FooBar(foo=1)
+        FooBar(bar=2)
+        FooBar(foo=1, bar=2)

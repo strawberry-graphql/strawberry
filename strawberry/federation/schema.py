@@ -1,59 +1,200 @@
+from collections import defaultdict
 from copy import copy
-from typing import Any, Union, cast
+from functools import partial
+from itertools import chain
+from typing import Any, Dict, Iterable, List, Optional, Type, Union, cast
 
+from graphql import ExecutionContext as GraphQLExecutionContext
 from graphql import (
+    GraphQLError,
     GraphQLField,
+    GraphQLInterfaceType,
     GraphQLList,
     GraphQLNonNull,
     GraphQLObjectType,
     GraphQLScalarType,
-    GraphQLString,
     GraphQLUnionType,
 )
 from graphql.type.definition import GraphQLArgument
 
-from strawberry.custom_scalar import ScalarDefinition
+from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.enum import EnumDefinition
+from strawberry.extensions import Extension
 from strawberry.schema.types.concrete_type import TypeMap
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
+from strawberry.utils.cached_property import cached_property
 from strawberry.utils.inspect import get_func_args
 
 from ..printer import print_schema
 from ..schema import Schema as BaseSchema
-from .types import FieldSet
+from ..schema.config import StrawberryConfig
 
 
 class Schema(BaseSchema):
-    def __init__(self, *args, **kwargs):
-        additional_types = list(kwargs.pop("types", []))
-        additional_types.extend([FieldSet])
+    def __init__(
+        self,
+        query: Optional[Type] = None,
+        mutation: Optional[Type] = None,
+        subscription: Optional[Type] = None,
+        # TODO: we should update directives' type in the main schema
+        directives: Iterable[Type] = (),
+        types: Iterable[Type] = (),
+        extensions: Iterable[Union[Type[Extension], Extension]] = (),
+        execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
+        config: Optional[StrawberryConfig] = None,
+        scalar_overrides: Optional[
+            Dict[object, Union[Type, ScalarWrapper, ScalarDefinition]]
+        ] = None,
+        schema_directives: Iterable[object] = (),
+        enable_federation_2: bool = False,
+    ):
 
-        kwargs["types"] = additional_types
+        query = self._get_federation_query_type(query)
 
-        super().__init__(*args, **kwargs)
+        super().__init__(
+            query=query,
+            mutation=mutation,
+            subscription=subscription,
+            directives=directives,  # type: ignore
+            types=types,
+            extensions=extensions,
+            execution_context_class=execution_context_class,
+            config=config,
+            scalar_overrides=scalar_overrides,
+            schema_directives=schema_directives,
+        )
 
         self._add_scalars()
-        self._create_service_field()
-        self._extend_query_type()
+        self._add_entities_to_query()
+
+        if enable_federation_2:
+            self._add_link_directives()
+        else:
+            self._remove_resolvable_field()
+
+    def _get_federation_query_type(self, query: Optional[Type]) -> Type:
+        """Returns a new query type that includes the _service field.
+
+        If the query type is provided, it will be used as the base for the new
+        query type. Otherwise, a new query type will be created.
+
+        Federation needs the following two fields to be present in the query type:
+        - _service: This field is used by the gateway to query for the capabilities
+            of the federated service.
+        - _entities: This field is used by the gateway to query for the entities
+            that are part of the federated service.
+
+        The _service field is added by default, but the _entities field is only
+        added if the schema contains an entity type.
+        """
+
+        # note we don't add the _entities field here, as we need to know if the
+        # schema contains an entity type first and we do that by leveraging
+        # the schema converter type map, so we don't have to do that twice
+        # TODO: ideally we should be able to do this without using the schema
+        # converter, but for now this is the easiest way to do it
+        # see `_add_entities_to_query`
+
+        import strawberry
+        from strawberry.tools.create_type import create_type
+        from strawberry.tools.merge_types import merge_types
+
+        @strawberry.type(name="_Service")
+        class Service:
+            sdl: str = strawberry.field(
+                resolver=lambda: print_schema(self),
+            )
+
+        @strawberry.field(name="_service")
+        def service() -> Service:
+            return Service()
+
+        fields = [service]
+
+        FederationQuery = create_type(name="Query", fields=fields)
+
+        if query is None:
+            return FederationQuery
+
+        query_type = merge_types(
+            "Query",
+            (
+                FederationQuery,
+                query,
+            ),
+        )
+
+        # TODO: this should be probably done in merge_types
+        if query._type_definition.extend:
+            query_type._type_definition.extend = True  # type: ignore
+
+        return query_type
+
+    def _add_entities_to_query(self):
+        entity_type = _get_entity_type(self.schema_converter.type_map)
+
+        if not entity_type:
+            return
+
+        self._schema.type_map[entity_type.name] = entity_type
+        fields = {"_entities": self._get_entities_field(entity_type)}
+
+        # Copy the query type, update it to use the modified fields
+        query_type = cast(GraphQLObjectType, self._schema.query_type)
+        fields.update(query_type.fields)
+
+        query_type = copy(query_type)
+        query_type._fields = fields
+
+        self._schema.query_type = query_type
+        self._schema.type_map[query_type.name] = query_type
 
     def entities_resolver(self, root, info, representations):
         results = []
 
         for representation in representations:
             type_name = representation.pop("__typename")
-            type = self.schema_converter.type_map[type_name]
+            type_ = self.schema_converter.type_map[type_name]
 
-            definition = cast(TypeDefinition, type.definition)
-            resolve_reference = definition.origin.resolve_reference
+            definition = cast(TypeDefinition, type_.definition)
 
-            func_args = get_func_args(resolve_reference)
-            kwargs = representation
+            if hasattr(definition.origin, "resolve_reference"):
 
-            if "info" in func_args:
-                kwargs["info"] = info
+                resolve_reference = definition.origin.resolve_reference
 
-            results.append(resolve_reference(**kwargs))
+                func_args = get_func_args(resolve_reference)
+                kwargs = representation
+
+                # TODO: use the same logic we use for other resolvers
+                if "info" in func_args:
+                    kwargs["info"] = info
+
+                get_result = partial(resolve_reference, **kwargs)
+            else:
+                from strawberry.arguments import convert_argument
+
+                strawberry_schema = info.schema.extensions["strawberry-definition"]
+                config = strawberry_schema.config
+                scalar_registry = strawberry_schema.schema_converter.scalar_registry
+
+                get_result = partial(
+                    convert_argument,
+                    representation,
+                    type_=definition.origin,
+                    scalar_registry=scalar_registry,
+                    config=config,
+                )
+
+            try:
+                result = get_result()
+            except Exception as e:
+                result = GraphQLError(
+                    f"Unable to resolve reference for {definition.origin}",
+                    original_error=e,
+                )
+
+            results.append(result)
 
         return results
 
@@ -62,24 +203,58 @@ class Schema(BaseSchema):
 
         self._schema.type_map["_Any"] = self.Any
 
-    def _extend_query_type(self):
-        fields = {"_service": self._service_field}
+    def _remove_resolvable_field(self) -> None:
+        # this might be removed when we remove support for federation 1
+        # or when we improve how we print the directives
+        from ..unset import UNSET
+        from .schema_directives import Key
 
-        entity_type = _get_entity_type(self.schema_converter.type_map)
+        for directive in self.schema_directives_in_use:
+            if isinstance(directive, Key):
+                directive.resolvable = UNSET
 
-        if entity_type:
-            self._schema.type_map[entity_type.name] = entity_type
-            fields["_entities"] = self._get_entities_field(entity_type)
+    @cached_property
+    def schema_directives_in_use(self) -> List[object]:
+        all_graphql_types = self._schema.type_map.values()
 
-        # Copy the query type, update it to use the modified fields
-        query_type = cast(GraphQLObjectType, self._schema.query_type)
-        fields.update(query_type.fields)
-        query_type = copy(query_type)
-        query_type._fields = fields
+        directives = []
 
-        self._schema.query_type = query_type
-        self._schema.type_map["_Service"] = self._service_type
-        self._schema.type_map[query_type.name] = query_type
+        for type_ in all_graphql_types:
+            strawberry_definition = type_.extensions.get("strawberry-definition")
+
+            if not strawberry_definition:
+                continue
+
+            directives.extend(strawberry_definition.directives)
+
+            fields = getattr(strawberry_definition, "fields", [])
+            values = getattr(strawberry_definition, "values", [])
+
+            for field in chain(fields, values):
+                directives.extend(field.directives)
+
+        return directives
+
+    def _add_link_directives(self):
+        from .schema_directives import FederationDirective, Link
+
+        directive_by_url = defaultdict(set)
+
+        for directive in self.schema_directives_in_use:
+            if isinstance(directive, FederationDirective):
+                directive_by_url[directive.imported_from.url].add(
+                    f"@{directive.imported_from.name}"
+                )
+
+        link_directives = tuple(
+            Link(
+                url=url,
+                import_=list(sorted(directives)),
+            )
+            for url, directives in directive_by_url.items()
+        )
+
+        self.schema_directives = tuple(self.schema_directives) + link_directives
 
     def _get_entities_field(self, entity_type: GraphQLUnionType) -> GraphQLField:
         return GraphQLField(
@@ -90,16 +265,6 @@ class Schema(BaseSchema):
                 )
             },
             resolve=self.entities_resolver,
-        )
-
-    def _create_service_field(self):
-        self._service_type = GraphQLObjectType(
-            name="_Service", fields={"sdl": GraphQLField(GraphQLNonNull(GraphQLString))}
-        )
-
-        self._service_field = GraphQLField(
-            GraphQLNonNull(self._service_type),
-            resolve=lambda _, info: {"sdl": print_schema(self)},
         )
 
 
@@ -113,6 +278,8 @@ def _get_entity_type(type_map: TypeMap):
         type.implementation
         for type in type_map.values()
         if _has_federation_keys(type.definition)
+        # TODO: check this
+        and not isinstance(type.implementation, GraphQLInterfaceType)
     ]
 
     # If no types are annotated with the key directive, then the _Entity

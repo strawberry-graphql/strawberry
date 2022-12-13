@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from typing import Any, Optional, Union, cast
-
 from typing_extensions import Annotated, get_args, get_origin
 
 from strawberry.type import StrawberryType
@@ -56,6 +55,15 @@ class StrawberryAutoMeta(type):
             args = get_args(instance)
             if args[0] is Any:
                 return any(isinstance(arg, StrawberryAuto) for arg in args[1:])
+
+        # StrawberryType's `__eq__` tries to find the string passed in the global
+        # namespace, which will fail with a `NameError` if "strawberry.auto" hasn't
+        # been imported. So we can't use `instance == "strawberry.auto"` here.
+        # Instead, we'll use `isinstance(instance, str)` to check if the instance
+        # is a StrawberryType, in that case we can return False since we know it
+        # won't be a StrawberryAuto.
+        if isinstance(instance, StrawberryType):
+            return False
 
         return instance == "strawberry.auto"
 

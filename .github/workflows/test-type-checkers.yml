@@ -29,14 +29,13 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - run: pipx install poetry
-      - uses: actions/setup-python@v3.1.2
+      - uses: actions/setup-python@v4
         id: setup-python
         with:
           python-version: ${{ matrix.python-version }}
           cache: "poetry"
 
       - run: poetry env use ${{ matrix.python-version }}
-      - run: poetry run python --version
       - run: poetry install
         if: steps.setup-python.outputs.cache-hit != 'true'
 
@@ -55,7 +54,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - run: pipx install poetry
-      - uses: actions/setup-python@v3.1.2
+      - uses: actions/setup-python@v4
         id: setup-python
         with:
           python-version: ${{ matrix.python-version }}
@@ -65,7 +64,6 @@ jobs:
       - run: npm install -g --no-package-lock --no-save pyright
 
       - run: poetry env use ${{ matrix.python-version }}
-      - run: poetry run python --version
       - run: poetry install
         if: steps.setup-python.outputs.cache-hit != 'true'
 

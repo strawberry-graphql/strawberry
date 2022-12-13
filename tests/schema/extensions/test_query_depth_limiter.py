@@ -2,7 +2,6 @@ import re
 from typing import List, Optional
 
 import pytest
-
 from graphql import get_introspection_query, parse, specified_rules, validate
 
 import strawberry

@@ -13,20 +13,19 @@ from typing import (
     Union,
     cast,
 )
-
 from typing_extensions import Annotated, get_args, get_origin
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.custom_scalar import ScalarDefinition, ScalarWrapper
 from strawberry.enum import EnumDefinition
-from strawberry.lazy_type import LazyType
+from strawberry.lazy_type import LazyType, StrawberryLazyReference
 from strawberry.type import StrawberryList, StrawberryOptional, StrawberryType
 
 from .exceptions import MultipleStrawberryArgumentsError, UnsupportedTypeError
 from .scalars import is_scalar
 from .types.types import TypeDefinition
-from .unset import UNSET as _deprecated_UNSET, _deprecated_is_unset  # noqa
-
+from .unset import UNSET as _deprecated_UNSET
+from .unset import _deprecated_is_unset  # noqa
 
 if TYPE_CHECKING:
     from strawberry.schema.config import StrawberryConfig
@@ -44,16 +43,19 @@ class StrawberryArgumentAnnotation:
     description: Optional[str]
     name: Optional[str]
     deprecation_reason: Optional[str]
+    directives: Iterable[object]
 
     def __init__(
         self,
         description: Optional[str] = None,
         name: Optional[str] = None,
         deprecation_reason: Optional[str] = None,
+        directives: Iterable[object] = (),
     ):
         self.description = description
         self.name = name
         self.deprecation_reason = deprecation_reason
+        self.directives = directives
 
 
 class StrawberryArgument:
@@ -66,6 +68,7 @@ class StrawberryArgument:
         description: Optional[str] = None,
         default: object = _deprecated_UNSET,
         deprecation_reason: Optional[str] = None,
+        directives: Iterable[object] = (),
     ) -> None:
         self.python_name = python_name
         self.graphql_name = graphql_name
@@ -74,6 +77,7 @@ class StrawberryArgument:
         self._type: Optional[StrawberryType] = None
         self.type_annotation = type_annotation
         self.deprecation_reason = deprecation_reason
+        self.directives = directives
 
         # TODO: Consider moving this logic to a function
         self.default = (
@@ -101,6 +105,7 @@ class StrawberryArgument:
         # in the other Annotated args, raising an exception if there
         # are multiple StrawberryArgumentAnnotations
         argument_annotation_seen = False
+
         for arg in annotated_args[1:]:
             if isinstance(arg, StrawberryArgumentAnnotation):
                 if argument_annotation_seen:
@@ -113,6 +118,12 @@ class StrawberryArgument:
                 self.description = arg.description
                 self.graphql_name = arg.name
                 self.deprecation_reason = arg.deprecation_reason
+                self.directives = arg.directives
+
+            if isinstance(arg, StrawberryLazyReference):
+                self.type_annotation = StrawberryAnnotation(
+                    arg.resolve_forward_ref(annotated_args[0])
+                )
 
 
 def convert_argument(
@@ -121,6 +132,8 @@ def convert_argument(
     scalar_registry: Dict[object, Union[ScalarWrapper, ScalarDefinition]],
     config: StrawberryConfig,
 ) -> object:
+    # TODO: move this somewhere else and make it first class
+
     if value is None:
         return None
 
@@ -146,10 +159,12 @@ def convert_argument(
     if isinstance(type_, LazyType):
         return convert_argument(value, type_.resolve_type(), scalar_registry, config)
 
-    if hasattr(type_, "_type_definition"):  # TODO: Replace with StrawberryInputObject
-        type_definition: TypeDefinition = type_._type_definition  # type: ignore
+    if hasattr(type_, "_enum_definition"):
+        enum_definition: EnumDefinition = type_._enum_definition
+        return convert_argument(value, enum_definition, scalar_registry, config)
 
-        assert type_definition.is_input
+    if hasattr(type_, "_type_definition"):  # TODO: Replace with StrawberryInputObject
+        type_definition: TypeDefinition = type_._type_definition
 
         kwargs = {}
 
@@ -206,9 +221,13 @@ def argument(
     description: Optional[str] = None,
     name: Optional[str] = None,
     deprecation_reason: Optional[str] = None,
+    directives: Iterable[object] = (),
 ) -> StrawberryArgumentAnnotation:
     return StrawberryArgumentAnnotation(
-        description=description, name=name, deprecation_reason=deprecation_reason
+        description=description,
+        name=name,
+        deprecation_reason=deprecation_reason,
+        directives=directives,
     )
 
 

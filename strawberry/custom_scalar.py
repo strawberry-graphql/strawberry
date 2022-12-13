@@ -3,6 +3,7 @@ from dataclasses import dataclass
 from typing import (
     Any,
     Callable,
+    Iterable,
     Mapping,
     NewType,
     Optional,
@@ -14,10 +15,10 @@ from typing import (
 
 from graphql import GraphQLScalarType
 
-from strawberry.type import StrawberryType
+from strawberry.exceptions import InvalidUnionTypeError
+from strawberry.type import StrawberryOptional, StrawberryType
 
 from .utils.str_converters import to_camel_case
-
 
 # in python 3.10+ NewType is a class
 if sys.version_info >= (3, 10):
@@ -38,15 +39,20 @@ class ScalarDefinition(StrawberryType):
     serialize: Optional[Callable]
     parse_value: Optional[Callable]
     parse_literal: Optional[Callable]
+    directives: Iterable[object] = ()
 
     # Optionally store the GraphQLScalarType instance so that we don't get
     # duplicates
     implementation: Optional[GraphQLScalarType] = None
 
+    # used for better error messages
+    _source_file: Optional[str] = None
+    _source_line: Optional[int] = None
+
     def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
     ) -> Union[StrawberryType, type]:
-        return super().copy_with(type_var_map)
+        return super().copy_with(type_var_map)  # type: ignore[safe-super]
 
     @property
     def is_generic(self) -> bool:
@@ -56,11 +62,21 @@ class ScalarDefinition(StrawberryType):
 class ScalarWrapper:
     _scalar_definition: ScalarDefinition
 
-    def __init__(self, wrap):
+    def __init__(self, wrap: Callable[[Any], Any]):
         self.wrap = wrap
 
     def __call__(self, *args, **kwargs):
         return self.wrap(*args, **kwargs)
+
+    def __or__(self, other: Union[StrawberryType, type]) -> StrawberryType:
+        if other is None:
+            # Return the correct notation when using `StrawberryUnion | None`.
+            return StrawberryOptional(of_type=self)
+
+        # Raise an error in any other case.
+        # There is Work in progress to deal with more merging cases, see:
+        # https://github.com/strawberry-graphql/strawberry/pull/1455
+        raise InvalidUnionTypeError(str(other), self.wrap)
 
 
 def _process_scalar(
@@ -72,8 +88,20 @@ def _process_scalar(
     serialize: Optional[Callable] = None,
     parse_value: Optional[Callable] = None,
     parse_literal: Optional[Callable] = None,
+    directives: Iterable[object] = (),
 ):
+    from strawberry.exceptions.handler import should_use_rich_exceptions
+
     name = name or to_camel_case(cls.__name__)
+
+    _source_file = None
+    _source_line = None
+
+    if should_use_rich_exceptions():
+        frame = sys._getframe(3)
+
+        _source_file = frame.f_code.co_filename
+        _source_line = frame.f_lineno
 
     wrapper = ScalarWrapper(cls)
     wrapper._scalar_definition = ScalarDefinition(
@@ -83,6 +111,9 @@ def _process_scalar(
         serialize=serialize,
         parse_literal=parse_literal,
         parse_value=parse_value,
+        directives=directives,
+        _source_file=_source_file,
+        _source_line=_source_line,
     )
 
     return wrapper
@@ -97,6 +128,7 @@ def scalar(
     serialize: Callable = identity,
     parse_value: Optional[Callable] = None,
     parse_literal: Optional[Callable] = None,
+    directives: Iterable[object] = (),
 ) -> Callable[[_T], _T]:
     ...
 
@@ -111,6 +143,7 @@ def scalar(
     serialize: Callable = identity,
     parse_value: Optional[Callable] = None,
     parse_literal: Optional[Callable] = None,
+    directives: Iterable[object] = (),
 ) -> _T:
     ...
 
@@ -127,6 +160,7 @@ def scalar(
     serialize: Callable = identity,
     parse_value: Optional[Callable] = None,
     parse_literal: Optional[Callable] = None,
+    directives: Iterable[object] = (),
 ) -> Any:
     """Annotates a class or type as a GraphQL custom scalar.
 
@@ -166,6 +200,7 @@ def scalar(
             serialize=serialize,
             parse_value=parse_value,
             parse_literal=parse_literal,
+            directives=directives,
         )
 
     if cls is None:

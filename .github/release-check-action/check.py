@@ -4,7 +4,6 @@ import pathlib
 from config import GITHUB_WORKSPACE, RELEASE_FILE_PATH
 from release import InvalidReleaseFileError, get_release_info
 
-
 release_file = pathlib.Path(GITHUB_WORKSPACE) / RELEASE_FILE_PATH
 
 release_info = None

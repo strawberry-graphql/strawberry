@@ -3,8 +3,6 @@ from __future__ import annotations
 import dataclasses
 import inspect
 from typing import Any, Callable, List, Optional, TypeVar
-
-from backports.cached_property import cached_property
 from typing_extensions import Annotated
 
 from graphql import DirectiveLocation
@@ -16,12 +14,15 @@ from strawberry.types.fields.resolver import (
     ReservedType,
     StrawberryResolver,
 )
+from strawberry.unset import UNSET
+from strawberry.utils.cached_property import cached_property
 
 
-def directive_field(name: str) -> Any:
+def directive_field(name: str, default: object = UNSET) -> Any:
     return StrawberryField(
         python_name=None,
         graphql_name=name,
+        default=default,
     )
 
 

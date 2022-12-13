@@ -147,3 +147,5 @@ pre-commit install
 
 The code in this project is licensed under MIT license. See [LICENSE](./LICENSE)
 for more information.
+
+![Recent Activity](https://images.repography.com/0/strawberry-graphql/strawberry/recent-activity/d751713988987e9331980363e24189ce.svg)

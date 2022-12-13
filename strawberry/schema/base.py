@@ -1,7 +1,6 @@
 from abc import abstractmethod
 from functools import lru_cache
-from typing import Any, Dict, Iterable, List, Optional, Union
-
+from typing import Any, Dict, Iterable, List, Optional, Type, Union
 from typing_extensions import Protocol
 
 from graphql import GraphQLError
@@ -22,6 +21,10 @@ from .config import StrawberryConfig
 class BaseSchema(Protocol):
     config: StrawberryConfig
     schema_converter: GraphQLCoreConverter
+    query: Type
+    mutation: Optional[Type]
+    subscription: Optional[Type]
+    schema_directives: Iterable[object]
 
     @abstractmethod
     async def execute(

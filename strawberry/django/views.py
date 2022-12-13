@@ -1,6 +1,6 @@
 import asyncio
 import json
-import os
+import warnings
 from typing import Any, Dict, Optional, Type
 
 from django.core.exceptions import BadRequest, SuspiciousOperation
@@ -15,7 +15,6 @@ from django.utils.decorators import classonlymethod, method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from django.views.generic import View
 
-import strawberry
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import (
@@ -28,6 +27,7 @@ from strawberry.http import (
 from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types import ExecutionResult
 from strawberry.types.graphql import OperationType
+from strawberry.utils.graphiql import get_graphiql_html
 
 from ..schema import BaseSchema
 from .context import StrawberryDjangoContext
@@ -43,11 +43,11 @@ class TemporalHttpResponse(JsonResponse):
         """Adopted from Django to handle `status_code=None`."""
         if self.status_code is not None:
             return super().__repr__()
-        return "<%(cls)s status_code=%(status_code)s%(content_type)s>" % {
-            "cls": self.__class__.__name__,
-            "status_code": self.status_code,
-            "content_type": self._content_type_for_repr,
-        }
+        return "<{cls} status_code={status_code}{content_type}>".format(
+            cls=self.__class__.__name__,
+            status_code=self.status_code,
+            content_type=self._content_type_for_repr,
+        )
 
 
 class BaseView(View):
@@ -55,22 +55,41 @@ class BaseView(View):
     graphiql = True
     allow_queries_via_get = True
     schema: Optional[BaseSchema] = None
-    json_encoder: Type[json.JSONEncoder] = DjangoJSONEncoder
+    json_encoder: Optional[Type[json.JSONEncoder]] = None
     json_dumps_params: Optional[Dict[str, Any]] = None
 
     def __init__(
         self,
         schema: BaseSchema,
-        graphiql=True,
-        allow_queries_via_get=True,
-        subscriptions_enabled=False,
+        graphiql: bool = True,
+        allow_queries_via_get: bool = True,
+        subscriptions_enabled: bool = False,
         **kwargs: Any,
     ):
         self.schema = schema
         self.graphiql = graphiql
         self.allow_queries_via_get = allow_queries_via_get
         self.subscriptions_enabled = subscriptions_enabled
+
         super().__init__(**kwargs)
+
+        self.json_dumps_params = kwargs.pop("json_dumps_params", self.json_dumps_params)
+
+        if self.json_dumps_params:
+            warnings.warn(
+                "json_dumps_params is deprecated, override encode_json instead",
+                DeprecationWarning,
+            )
+
+            self.json_encoder = DjangoJSONEncoder
+
+        self.json_encoder = kwargs.pop("json_encoder", self.json_encoder)
+
+        if self.json_encoder is not None:
+            warnings.warn(
+                "json_encoder is deprecated, override encode_json instead",
+                DeprecationWarning,
+            )
 
     def parse_body(self, request: HttpRequest) -> Dict[str, Any]:
         content_type = request.content_type or ""
@@ -96,7 +115,7 @@ class BaseView(View):
         if request.method.lower() != "get":
             return False
 
-        if request.META.get("QUERY_STRING"):
+        if self.allow_queries_via_get and request.META.get("QUERY_STRING"):
             return False
 
         return any(
@@ -109,6 +128,8 @@ class BaseView(View):
             data = self.parse_body(request)
         except json.decoder.JSONDecodeError:
             raise SuspiciousOperation("Unable to parse request body as JSON")
+        except KeyError:
+            raise BadRequest("File(s) missing in form data")
 
         try:
             request_data = parse_request_data(data)
@@ -124,15 +145,7 @@ class BaseView(View):
         try:
             template = Template(render_to_string("graphql/graphiql.html"))
         except TemplateDoesNotExist:
-            template = Template(
-                open(
-                    os.path.join(
-                        os.path.dirname(os.path.abspath(strawberry.__file__)),
-                        "static/graphiql.html",
-                    ),
-                    "r",
-                ).read()
-            )
+            template = Template(get_graphiql_html(replace_variables=False))
 
         context = context or {}
         context.update({"SUBSCRIPTION_ENABLED": json.dumps(self.subscriptions_enabled)})
@@ -144,11 +157,12 @@ class BaseView(View):
 
     def _create_response(
         self, response_data: GraphQLHTTPResponse, sub_response: HttpResponse
-    ) -> JsonResponse:
-        response = JsonResponse(
-            response_data,
-            encoder=self.json_encoder,
-            json_dumps_params=self.json_dumps_params,
+    ) -> HttpResponse:
+        data = self.encode_json(response_data)
+
+        response = HttpResponse(
+            data,
+            content_type="application/json",
         )
 
         for name, value in sub_response.items():
@@ -161,6 +175,19 @@ class BaseView(View):
             response.cookies[name] = value
 
         return response
+
+    def encode_json(self, response_data: GraphQLHTTPResponse) -> str:
+        if self.json_dumps_params:
+            assert self.json_encoder
+
+            return json.dumps(
+                response_data, cls=self.json_encoder, **self.json_dumps_params
+            )
+
+        if self.json_encoder:
+            return json.dumps(response_data, cls=self.json_encoder)
+
+        return json.dumps(response_data)
 
 
 class GraphQLView(BaseView):

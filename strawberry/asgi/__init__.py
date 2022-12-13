@@ -1,3 +1,4 @@
+import json
 from datetime import timedelta
 from typing import Any, Optional, Union
 
@@ -52,6 +53,7 @@ class GraphQL:
                 get_context=self.get_context,
                 get_root_value=self.get_root_value,
                 process_result=self.process_result,
+                encode_json=self.encode_json,
             ).handle(scope=scope, receive=receive, send=send)
 
         elif scope["type"] == "websocket":
@@ -82,7 +84,7 @@ class GraphQL:
                 await ws.close(code=4406)
 
         else:  # pragma: no cover
-            raise ValueError("Unknown scope type: %r" % (scope["type"],))
+            raise ValueError("Unknown scope type: {!r}".format(scope["type"]))
 
     def pick_preferred_protocol(self, ws: WebSocket) -> Optional[str]:
         protocols = ws["subprotocols"]
@@ -104,3 +106,6 @@ class GraphQL:
         self, request: Request, result: ExecutionResult
     ) -> GraphQLHTTPResponse:
         return process_result(result)
+
+    def encode_json(self, response_data: GraphQLHTTPResponse) -> str:
+        return json.dumps(response_data)

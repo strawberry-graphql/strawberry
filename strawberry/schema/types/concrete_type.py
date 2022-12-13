@@ -8,7 +8,6 @@ from strawberry.enum import EnumDefinition
 from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 
-
 Field = Union[GraphQLInputField, GraphQLField]
 
 

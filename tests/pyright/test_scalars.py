@@ -1,6 +1,5 @@
 from .utils import Result, requires_pyright, run_pyright, skip_on_windows
 
-
 pytestmark = [skip_on_windows, requires_pyright]
 
 
@@ -68,6 +67,40 @@ def test_pyright():
             type="information",
             message='Type of "obj.base64" is "Base64"',
             line=27,
+            column=13,
+        ),
+    ]
+
+
+CODE_SCHEMA_OVERRIDES = """
+import strawberry
+from datetime import datetime, timezone
+
+EpochDateTime = strawberry.scalar(
+    datetime,
+)
+
+@strawberry.type
+class Query:
+    a: datetime
+
+schema = strawberry.Schema(query=Query, scalar_overrides={
+    datetime: EpochDateTime,
+})
+
+reveal_type(EpochDateTime)
+"""
+
+
+def test_schema_overrides():
+    # TODO: change strict to true when we improve type hints for scalar
+    results = run_pyright(CODE_SCHEMA_OVERRIDES, strict=False)
+
+    assert results == [
+        Result(
+            type="information",
+            message='Type of "EpochDateTime" is "Type[datetime]"',
+            line=17,
             column=13,
         ),
     ]

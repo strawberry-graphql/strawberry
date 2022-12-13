@@ -1,13 +1,17 @@
 import datetime
 import decimal
 import enum
-from typing import List, NewType, Optional
+from typing import TYPE_CHECKING, List, NewType, Optional
+from typing_extensions import Annotated
 from uuid import UUID
 
 import pytest
 
 import strawberry
 
+if TYPE_CHECKING:
+
+    from .lazy_type import LaziestType
 
 JSON = strawberry.scalar(NewType("JSON", str))
 
@@ -87,7 +91,7 @@ class Query:
     union: PersonOrAnimal
     optional_union: Optional[PersonOrAnimal]
     interface: Node
-    lazy: strawberry.LazyType["LaziestType", "tests.codegen.lazy_type"]  # noqa
+    lazy: Annotated["LaziestType", strawberry.lazy("tests.codegen.lazy_type")]
 
     @strawberry.field
     def with_inputs(self, id: Optional[strawberry.ID], input: ExampleInput) -> bool:

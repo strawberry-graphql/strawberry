@@ -1,6 +1,7 @@
+import re
+import warnings
 from decimal import Decimal
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union, cast
-
 from typing_extensions import Final
 
 import mypy
@@ -16,7 +17,6 @@ from mypy.nodes import (
     CallExpr,
     CastExpr,
     ClassDef,
-    Context,
     Expression,
     FuncDef,
     IndexExpr,
@@ -60,7 +60,6 @@ from mypy.types import (
 from mypy.typevars import fill_typevars
 from mypy.util import get_unique_redefinition_name
 
-
 # Backwards compatible with the removal of `TypeVarDef` in mypy 0.920.
 try:
     from mypy.types import TypeVarDef  # type: ignore
@@ -69,9 +68,13 @@ except ImportError:
 
 # To be compatible with user who don't use pydantic
 try:
-    from pydantic.mypy import METADATA_KEY as PYDANTIC_METADATA_KEY, PydanticModelField
+    from pydantic.mypy import METADATA_KEY as PYDANTIC_METADATA_KEY
+    from pydantic.mypy import PydanticModelField
 except ImportError:
     PYDANTIC_METADATA_KEY = ""
+
+VERSION_RE = re.compile(r"(^0|^(?:[1-9][0-9]*))\.(0|(?:[1-9][0-9]*))")
+FALLBACK_VERSION = Decimal("0.800")
 
 
 class MypyVersion:
@@ -424,27 +427,38 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
                 ctx.reason,
             )
 
-        missing_pydantic_fields: Set["PydanticModelField"] = set(
+        potentially_missing_fields: Set["PydanticModelField"] = {
             f for f in pydantic_fields if f.name not in new_strawberry_fields
+        }
+
+        """
+        Need to check if all_fields=True from the pydantic decorator
+        There is no way to real check that Literal[True] was used
+        We just check if the strawberry type is missing all the fields
+        This means that the user is using all_fields=True
+        """
+        is_all_fields: bool = len(potentially_missing_fields) == len(pydantic_fields)
+        missing_pydantic_fields: Set["PydanticModelField"] = (
+            potentially_missing_fields if not is_all_fields else set()
         )
 
-        # Add to_pydantic
-        # TODO: Only add this if not manually defined
-        add_method(
-            ctx,
-            "to_pydantic",
-            args=[
-                f.to_argument(
-                    # TODO: use_alias should depend on config?
-                    info=model_type.type,
-                    typed=True,
-                    force_optional=False,
-                    use_alias=True,
-                )
-                for f in missing_pydantic_fields
-            ],
-            return_type=model_type,
-        )
+        # Add the default to_pydantic if undefined by the user
+        if "to_pydantic" not in ctx.cls.info.names:
+            add_method(
+                ctx,
+                "to_pydantic",
+                args=[
+                    f.to_argument(
+                        # TODO: use_alias should depend on config?
+                        info=model_type.type,
+                        typed=True,
+                        force_optional=False,
+                        use_alias=True,
+                    )
+                    for f in missing_pydantic_fields
+                ],
+                return_type=model_type,
+            )
 
         # Add from_pydantic
         model_argument = Argument(
@@ -751,7 +765,7 @@ class CustomDataclassTransformer:
             if MypyVersion.VERSION >= Decimal("0.800"):
                 params["info"] = cls.info
             if MypyVersion.VERSION >= Decimal("0.920"):
-                params["kw_only"] = False
+                params["kw_only"] = True
 
             attribute = DataclassAttribute(**params)  # type: ignore
             attrs.append(attribute)
@@ -788,28 +802,6 @@ class CustomDataclassTransformer:
                             super_attrs.append(attr)
                             break
             all_attrs = super_attrs + all_attrs
-
-        # Ensure that arguments without a default don't follow
-        # arguments that have a default.
-        found_default = False
-        for attr in all_attrs:
-            # If we find any attribute that is_in_init but that
-            # doesn't have a default after one that does have one,
-            # then that's an error.
-            if found_default and attr.is_in_init and not attr.has_default:
-                # If the issue comes from merging different classes, report it
-                # at the class definition point.
-                context = (
-                    Context(line=attr.line, column=attr.column)
-                    if attr in attrs
-                    else ctx.cls
-                )
-                ctx.api.fail(
-                    "Attributes without a default cannot follow attributes with one",
-                    context,
-                )
-
-            found_default = found_default or (attr.has_default and attr.is_in_init)
 
         return all_attrs
 
@@ -943,6 +935,10 @@ class StrawberryPlugin(Plugin):
                 "strawberry.object_type.type",
                 "strawberry.federation.type",
                 "strawberry.federation.object_type.type",
+                "strawberry.federation.input",
+                "strawberry.federation.object_type.input",
+                "strawberry.federation.interface",
+                "strawberry.federation.object_type.interface",
                 "strawberry.schema_directive.schema_directive",
                 "strawberry.object_type.input",
                 "strawberry.object_type.interface",
@@ -1003,7 +999,13 @@ class StrawberryPlugin(Plugin):
 
 
 def plugin(version: str):
-    # Save the version to be used by the plugin.
-    MypyVersion.VERSION = Decimal(version)
+    match = VERSION_RE.match(version)
+    if match:
+        MypyVersion.VERSION = Decimal(".".join(match.groups()))
+    else:
+        MypyVersion.VERSION = FALLBACK_VERSION
+        warnings.warn(
+            f"Mypy version {version} could not be parsed. Reverting to v0.800"
+        )
 
     return StrawberryPlugin

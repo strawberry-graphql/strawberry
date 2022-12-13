@@ -31,19 +31,26 @@ class StrawberrySchemaDirective:
     locations: List[Location]
     fields: List["StrawberryField"]
     description: Optional[str] = None
+    repeatable: bool = False
+    print_definition: bool = True
+    origin: Optional[Type] = None
 
 
 T = TypeVar("T", bound=Type)
 
 
 @__dataclass_transform__(
-    order_default=True, field_descriptors=(directive_field, field, StrawberryField)
+    order_default=True,
+    kw_only_default=True,
+    field_descriptors=(directive_field, field, StrawberryField),
 )
 def schema_directive(
     *,
     locations: List[Location],
     description: Optional[str] = None,
-    name: Optional[str] = None
+    name: Optional[str] = None,
+    repeatable: bool = False,
+    print_definition: bool = True,
 ):
     def _wrap(cls: T) -> T:
         cls = _wrap_dataclass(cls)
@@ -54,7 +61,10 @@ def schema_directive(
             graphql_name=name,
             locations=locations,
             description=description,
+            repeatable=repeatable,
             fields=fields,
+            print_definition=print_definition,
+            origin=cls,
         )
 
         return cls

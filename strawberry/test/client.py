@@ -2,7 +2,6 @@ import json
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Any, Coroutine, Dict, List, Mapping, Optional, Union
-
 from typing_extensions import Literal, TypedDict
 
 from graphql import GraphQLFormattedError
@@ -21,8 +20,9 @@ class Body(TypedDict, total=False):
 
 
 class BaseGraphQLTestClient(ABC):
-    def __init__(self, client):
+    def __init__(self, client, url: str = "/graphql/"):
         self._client = client
+        self.url = url
 
     def query(
         self,

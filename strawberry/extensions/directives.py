@@ -8,7 +8,6 @@ from strawberry.field import StrawberryField
 from strawberry.types import Info
 from strawberry.utils.await_maybe import AwaitableOrValue, await_maybe
 
-
 if TYPE_CHECKING:
     from strawberry.schema.schema import Schema
 

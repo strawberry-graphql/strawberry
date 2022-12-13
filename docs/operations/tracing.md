@@ -24,9 +24,29 @@ from strawberry.extensions.tracing import ApolloTracingExtensionSync
 schema = strawberry.Schema(query=Query, extensions=[ApolloTracingExtensionSync])
 ```
 
+## Datadog
+
+In addition to Apollo Tracing we also support tracing with
+[Datadog](https://www.datadoghq.com/). using the DatadogTracingExtension.
+
+```python
+from strawberry.extensions.tracing import DatadogTracingExtension
+
+schema = strawberry.Schema(query=Query, extensions=[DatadogTracingExtension])
+```
+
+Note that if you're not running under ASGI you'd need to use the sync version of
+DatadogTracingExtension:
+
+```python
+from strawberry.extensions.tracing import DatadogTracingExtensionSync
+
+schema = strawberry.Schema(query=Query, extensions=[DatadogTracingExtensionSync])
+```
+
 ## Open Telemetry
 
-In addition to Apollo Tracing we also support
+In addition to Datadog and Apollo Tracing we also support
 [opentelemetry](https://opentelemetry.io/), using the OpenTelemetryExtension.
 
 You also need to install the extras for opentelemetry by doing:
@@ -50,16 +70,22 @@ from strawberry.extensions.tracing import OpenTelemetryExtensionSync
 schema = strawberry.Schema(query=Query, extensions=[OpenTelemetryExtensionSync])
 ```
 
-Example Elasticsearch, Kibana, APM, Collector docker-compose to track django and strawberry tracing metrics
+Example Elasticsearch, Kibana, APM, Collector docker-compose to track django and
+strawberry tracing metrics
 
 This will spin up:
 
 - an elastic search instance to keep your data
 - kibana to visualize data
 - the elastic APM Server for processing incoming traces
-- a [collector binding](https://github.com/open-telemetry/opentelemetry-python/tree/main/exporter/opentelemetry-exporter-otlp) to transform the opentelemetry data (more exactly the Opentelementry Line Protocol OTLP) to something AMP can read ([our APM agent](https://github.com/open-telemetry/opentelemetry-collector))
+- a
+  [collector binding](https://github.com/open-telemetry/opentelemetry-python/tree/main/exporter/opentelemetry-exporter-otlp)
+  to transform the opentelemetry data (more exactly the Opentelementry Line
+  Protocol OTLP) to something AMP can read
+  ([our APM agent](https://github.com/open-telemetry/opentelemetry-collector))
 
-For more details see the elasticsearch [docs](https://www.elastic.co/guide/en/apm/get-started/current/open-telemetry-elastic.html)
+For more details see the elasticsearch
+[docs](https://www.elastic.co/guide/en/apm/get-started/current/open-telemetry-elastic.html)
 
 ```yaml
 version: "3"
@@ -84,7 +110,8 @@ services:
     healthcheck:
       interval: 10s
       retries: 12
-      test: curl -s http://localhost:9200/_cluster/health | grep -vq '"status":"red"'
+      test: curl -s http://localhost:9200/_cluster/health | grep -vq
+        '"status":"red"'
 
   kibana:
     image: docker.elastic.co/kibana/kibana:7.16.2
@@ -137,7 +164,9 @@ services:
     healthcheck:
       interval: 10s
       retries: 12
-      test: curl --write-out 'HTTP %{http_code}' --fail --silent --output /dev/null http://localhost:8200/
+      test:
+        curl --write-out 'HTTP %{http_code}' --fail --silent --output /dev/null
+        http://localhost:8200/
 
   otel-collector:
     image: otel/opentelemetry-collector:0.41.0
