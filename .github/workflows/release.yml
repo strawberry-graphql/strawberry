@@ -68,7 +68,7 @@ jobs:
         shell: python
         run: |
           import os
-          import pathlib
+          from pathlib import Path
           from autopub.base import get_project_version
 
           with Path(os.environ["GITHUB_OUTPUT"]).open('a') as f:
