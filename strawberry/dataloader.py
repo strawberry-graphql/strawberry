@@ -25,7 +25,6 @@ from typing import (
 
 from .exceptions import WrongNumberOfResultsReturned
 
-
 T = TypeVar("T")
 K = TypeVar("K")
 

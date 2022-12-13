@@ -13,7 +13,6 @@ from strawberry.types.execution import ExecutionContext
 
 from .utils import should_skip_tracing
 
-
 DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 
 ArgFilter = Callable[[Dict[str, Any], GraphQLResolveInfo], Dict[str, Any]]

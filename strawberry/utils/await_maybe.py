@@ -1,7 +1,6 @@
 import inspect
 from typing import Awaitable, TypeVar, Union
 
-
 T = TypeVar("T")
 
 AwaitableOrValue = Union[Awaitable[T], T]

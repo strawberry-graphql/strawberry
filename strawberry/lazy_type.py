@@ -4,7 +4,6 @@ import warnings
 from dataclasses import dataclass
 from typing import ForwardRef, Generic, Optional, Type, TypeVar, cast
 
-
 TypeName = TypeVar("TypeName")
 Module = TypeVar("Module")
 

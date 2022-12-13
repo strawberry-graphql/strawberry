@@ -158,7 +158,7 @@ stubPath = ""
 [tool.ruff]
 line-length = 88
 select = ["E", "F", "ERA", "I"]
-ignore = ["I252"]
+ignore = ["TID252"]
 fix = true
 exclude = [
     ".bzr",
@@ -189,18 +189,6 @@ src = ["strawberry", "tests"]
 "tests/test_printer/test_basic.py" = ["E501"]
 "tests/pyright/test_federation.py" = ["E501"]
 "tests/test_printer/test_schema_directives.py" = ["E501"]
-# temporary until https://github.com/charliermarsh/ruff/issues/960 is fixed
-"tests/federation/printer/test_entities.py" = ["F821"]
-"tests/federation/printer/test_keys.py" = ["F821"]
-"tests/federation/printer/test_provides.py" = ["F821"]
-"tests/schema/test_resolvers.py" = ["F821"]
-"tests/test_forward_references.py" = ["F821"]
-"tests/types/resolving/test_string_annotations.py" = ["F821"]
-"tests/types/test_argument_types.py" = ["F821"]
-"tests/types/test_object_types.py" = ["F821"]
-"tests/types/test_resolver_types.py" = ["F821"]
-"tests/federation/printer/test_requires.py" = ["F821"]
-"tests/schema/test_private_field.py" = ["F821"]
 
 [tool.ruff.isort]
 known-first-party = ["strawberry"]

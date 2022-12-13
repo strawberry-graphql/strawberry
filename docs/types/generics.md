@@ -2,6 +2,8 @@
 title: Generics
 ---
 
+# Generics
+
 Strawberry supports using Python's `Generic` typing to dynamically create
 reusable types.
 

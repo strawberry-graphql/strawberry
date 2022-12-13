@@ -7,7 +7,6 @@ import pytest
 import strawberry
 from strawberry.printer import print_schema
 
-
 if TYPE_CHECKING:
     import tests
 

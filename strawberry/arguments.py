@@ -27,7 +27,6 @@ from .types.types import TypeDefinition
 from .unset import UNSET as _deprecated_UNSET
 from .unset import _deprecated_is_unset  # noqa
 
-
 if TYPE_CHECKING:
     from strawberry.schema.config import StrawberryConfig
 

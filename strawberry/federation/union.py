@@ -2,7 +2,6 @@ from typing import Iterable, Optional, Tuple, Type, TypeVar, Union
 
 from strawberry.union import union as base_union
 
-
 Types = TypeVar("Types", bound=Type)
 
 

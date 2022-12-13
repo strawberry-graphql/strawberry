@@ -12,7 +12,6 @@ from strawberry.utils.cached_property import cached_property
 
 from ..exception_source import ExceptionSource
 
-
 if TYPE_CHECKING:
     from libcst import CSTNode, FunctionDef
 

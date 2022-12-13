@@ -18,7 +18,6 @@ from typing_extensions import Self
 from strawberry.type import StrawberryType, StrawberryTypeVar
 from strawberry.utils.typing import is_generic as is_type_generic
 
-
 if TYPE_CHECKING:
     from graphql import GraphQLResolveInfo
 

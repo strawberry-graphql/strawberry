@@ -2,7 +2,6 @@ from typing import TYPE_CHECKING, List, Optional
 
 import strawberry
 
-
 if TYPE_CHECKING:
     import tests.schema.test_lazy_types
 
