@@ -143,9 +143,9 @@ jobs:
 
         env:
           GITHUB_TOKEN: ${{ secrets.BOT_TOKEN }}
-          TAG: ${{ steps.release.outputs.version }}
-          CONTRIBUTOR_USERNAME: ${{ steps.get-contributor-info.outputs.contributor-username }}
-          PR_NUMBER: ${{ steps.get-contributor-info.outputs.pr-number }}
+          TAG: ${{ needs.release.outputs.version }}
+          CONTRIBUTOR_USERNAME: ${{ needs.get-contributor-info.outputs.contributor-username }}
+          PR_NUMBER: ${{ needs.get-contributor-info.outputs.pr-number }}
 
   read-tweet-md:
     name: Read TWEET.md
