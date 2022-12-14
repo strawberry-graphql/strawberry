@@ -201,24 +201,13 @@ class StrawberryUnion(StrawberryType):
         return _resolve_union_type
 
 
-Types = TypeVar("Types", bound=Type)
-
-
-# We return a Union type here in order to allow to use the union type as type
-# annotation.
-# For the `types` argument we'd ideally use a TypeVarTuple, but that's not
-# yet supported in any python implementation (or in typing_extensions).
-# See https://www.python.org/dev/peps/pep-0646/ for more information
-# TODO: add overload for deprecated
-
-
 def union(
     name: str,
-    types: Optional[Collection[Types]] = None,
+    types: Optional[Collection[Type[Any]]] = None,
     *,
     description: Optional[str] = None,
     directives: Iterable[object] = (),
-) -> Union[Types]:
+) -> StrawberryUnion:
     """Creates a new named Union type.
 
     Example usages:
@@ -243,11 +232,9 @@ def union(
         if not isinstance(type_, TypeVar) and not hasattr(type_, "_type_definition"):
             raise InvalidUnionTypeError(union_name=name, invalid_type=type_)
 
-    union_definition = StrawberryUnion(
+    return StrawberryUnion(
         name=name,
         type_annotations=tuple(StrawberryAnnotation(type_) for type_ in types),
         description=description,
         directives=directives,
     )
-
-    return union_definition  # type: ignore
