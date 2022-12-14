@@ -1,11 +1,10 @@
 import typing
 
 import pytest
-
 from starlette.testclient import TestClient
+from tests.fastapi.app import create_app
 
 import strawberry
-from tests.fastapi.app import create_app
 
 
 @pytest.fixture

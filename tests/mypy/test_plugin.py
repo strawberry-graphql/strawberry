@@ -4,7 +4,6 @@ import pytest
 
 from strawberry.ext.mypy_plugin import FALLBACK_VERSION, MypyVersion, plugin
 
-
 pytestmark = pytest.mark.usefixtures("maintain_version")
 
 

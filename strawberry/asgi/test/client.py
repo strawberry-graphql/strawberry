@@ -1,6 +1,5 @@
 import json
 from typing import Dict, Mapping, Optional
-
 from typing_extensions import Literal
 
 from strawberry.test import BaseGraphQLTestClient
@@ -37,7 +36,7 @@ class GraphQLTestClient(BaseGraphQLTestClient):
         files: Optional[Dict[str, object]] = None,
     ):
         return self._client.post(
-            "/graphql/",
+            self.url,
             json=body if not files else None,
             data=body if files else None,
             files=files,

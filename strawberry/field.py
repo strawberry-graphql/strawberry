@@ -17,20 +17,18 @@ from typing import (
     Union,
     overload,
 )
-
 from typing_extensions import Literal
 
 from strawberry.annotation import StrawberryAnnotation
 from strawberry.arguments import StrawberryArgument
-from strawberry.exceptions import InvalidDefaultFactoryError, InvalidFieldArgument
-from strawberry.type import StrawberryType, StrawberryTypeVar
+from strawberry.exceptions import InvalidArgumentTypeError, InvalidDefaultFactoryError
+from strawberry.type import StrawberryType
 from strawberry.types.info import Info
 from strawberry.union import StrawberryUnion
 from strawberry.utils.cached_property import cached_property
 
 from .permission import BasePermission
 from .types.fields.resolver import StrawberryResolver
-
 
 if TYPE_CHECKING:
     from .object_type import TypeDefinition
@@ -49,8 +47,21 @@ _RESOLVER_TYPE = Union[
 UNRESOLVED = object()
 
 
+def _is_generic(resolver_type: Union[StrawberryType, type]) -> bool:
+    """Returns True if `resolver_type` is generic else False"""
+    if isinstance(resolver_type, StrawberryType):
+        return resolver_type.is_generic
+
+    # solves the Generic subclass case
+    if hasattr(resolver_type, "_type_definition"):
+        return resolver_type._type_definition.is_generic
+
+    return False
+
+
 class StrawberryField(dataclasses.Field):
     python_name: str
+    type_annotation: Optional[StrawberryAnnotation]
     default_resolver: Callable[[Any, str], object] = getattr
 
     def __init__(
@@ -131,17 +142,15 @@ class StrawberryField(dataclasses.Field):
             if isinstance(argument.type_annotation.annotation, str):
                 continue
             elif isinstance(argument.type, StrawberryUnion):
-                raise InvalidFieldArgument(
-                    resolver.name,
-                    argument.python_name,
-                    "Union",
+                raise InvalidArgumentTypeError(
+                    resolver,
+                    argument,
                 )
             elif getattr(argument.type, "_type_definition", False):
                 if argument.type._type_definition.is_interface:  # type: ignore
-                    raise InvalidFieldArgument(
-                        resolver.name,
-                        argument.python_name,
-                        "Interface",
+                    raise InvalidArgumentTypeError(
+                        resolver,
+                        argument,
                     )
 
         self.base_resolver = resolver
@@ -229,29 +238,40 @@ class StrawberryField(dataclasses.Field):
         # our `type` property tries to find the field type from the global namespace
         # but it is not yet defined.
         try:
+            # Prioritise the field type over the resolver return type
+            if self.type_annotation is not None:
+                return self.type_annotation.resolve()
+
             if self.base_resolver is not None:
                 # Handle unannotated functions (such as lambdas)
                 if self.base_resolver.type is not None:
 
-                    # StrawberryTypeVar will raise MissingTypesForGenericError later
+                    # Generics will raise MissingTypesForGenericError later
                     # on if we let it be returned. So use `type_annotation` instead
                     # which is the same behaviour as having no type information.
-                    if not isinstance(self.base_resolver.type, StrawberryTypeVar):
+                    if not _is_generic(self.base_resolver.type):
                         return self.base_resolver.type
 
-            assert self.type_annotation is not None
+            # If we get this far it means that we don't have a field type and
+            # the resolver doesn't have a return type so all we can do is return
+            # UNRESOLVED here.
+            # This case will raise a MissingReturnAnnotationError exception in the
+            # _check_field_annotations function:
+            # https://github.com/strawberry-graphql/strawberry/blob/846f060a63cb568b3cdc0deb26c308a8d0718190/strawberry/object_type.py#L76-L80
+            return UNRESOLVED
 
-            if not isinstance(self.type_annotation, StrawberryAnnotation):
-                # TODO: This is because of dataclasses
-                return self.type_annotation
-
-            return self.type_annotation.resolve()
         except NameError:
             return UNRESOLVED
 
     @type.setter
     def type(self, type_: Any) -> None:
-        self.type_annotation = type_
+        # Note: we aren't setting a namespace here for the annotation. That
+        # happens in the `_get_fields` function in `types/type_resolver` so
+        # that we have access to the correct namespace for the object type
+        # the field is attached to.
+        self.type_annotation = StrawberryAnnotation.from_annotation(
+            type_, namespace=None
+        )
 
     # TODO: add this to arguments (and/or move it to StrawberryType)
     @property
@@ -270,19 +290,17 @@ class StrawberryField(dataclasses.Field):
     def copy_with(
         self, type_var_map: Mapping[TypeVar, Union[StrawberryType, builtins.type]]
     ) -> "StrawberryField":
-        new_type: Union[StrawberryType, type]
+        new_type: Union[StrawberryType, type] = self.type
 
         # TODO: Remove with creation of StrawberryObject. Will act same as other
         #       StrawberryTypes
         if hasattr(self.type, "_type_definition"):
-            type_definition: TypeDefinition = self.type._type_definition  # type: ignore
+            type_definition: TypeDefinition = self.type._type_definition
 
             if type_definition.is_generic:
                 type_ = type_definition
                 new_type = type_.copy_with(type_var_map)
-        else:
-            assert isinstance(self.type, StrawberryType)
-
+        elif isinstance(self.type, StrawberryType):
             new_type = self.type.copy_with(type_var_map)
 
         new_resolver = (

@@ -41,8 +41,8 @@ from graphql.utilities.print_schema import (
     print_description,
     print_implemented_interfaces,
     print_specified_by_url,
-    print_type as original_print_type,
 )
+from graphql.utilities.print_schema import print_type as original_print_type
 
 from strawberry.custom_scalar import ScalarWrapper
 from strawberry.enum import EnumDefinition
@@ -53,7 +53,6 @@ from strawberry.type import StrawberryContainer
 from strawberry.unset import UNSET
 
 from .ast_from_value import ast_from_value
-
 
 if TYPE_CHECKING:
     from strawberry.schema import BaseSchema
@@ -172,10 +171,8 @@ def print_field_directives(
     )
 
     return "".join(
-        (
-            print_schema_directive(directive, schema=schema, extras=extras)
-            for directive in directives
-        )
+        print_schema_directive(directive, schema=schema, extras=extras)
+        for directive in directives
     )
 
 
@@ -186,10 +183,8 @@ def print_argument_directives(
     directives = strawberry_type.directives if strawberry_type else []
 
     return "".join(
-        (
-            print_schema_directive(directive, schema=schema, extras=extras)
-            for directive in directives
-        )
+        print_schema_directive(directive, schema=schema, extras=extras)
+        for directive in directives
     )
 
 
@@ -264,10 +259,8 @@ def print_scalar(
     directives = strawberry_type.directives if strawberry_type else []
 
     printed_directives = "".join(
-        (
-            print_schema_directive(directive, schema=schema, extras=extras)
-            for directive in directives
-        )
+        print_schema_directive(directive, schema=schema, extras=extras)
+        for directive in directives
     )
 
     return (
@@ -290,10 +283,8 @@ def print_enum_value(
     directives = strawberry_type.directives if strawberry_type else []
 
     printed_directives = "".join(
-        (
-            print_schema_directive(directive, schema=schema, extras=extras)
-            for directive in directives
-        )
+        print_schema_directive(directive, schema=schema, extras=extras)
+        for directive in directives
     )
 
     return (
@@ -311,10 +302,8 @@ def print_enum(
     directives = strawberry_type.directives if strawberry_type else []
 
     printed_directives = "".join(
-        (
-            print_schema_directive(directive, schema=schema, extras=extras)
-            for directive in directives
-        )
+        print_schema_directive(directive, schema=schema, extras=extras)
+        for directive in directives
     )
 
     values = [
@@ -362,10 +351,8 @@ def print_type_directives(type_, schema: BaseSchema, *, extras: PrintExtras) -> 
     )
 
     return "".join(
-        (
-            print_schema_directive(directive, schema=schema, extras=extras)
-            for directive in directives
-        )
+        print_schema_directive(directive, schema=schema, extras=extras)
+        for directive in directives
     )
 
 
@@ -400,10 +387,19 @@ def print_input_value(name: str, arg: GraphQLArgument) -> str:
 
 
 def _print_input_object(type_, schema: BaseSchema, *, extras: PrintExtras) -> str:
-    fields = [
-        print_description(field, "  ", not i) + "  " + print_input_value(name, field)
-        for i, (name, field) in enumerate(type_.fields.items())
-    ]
+    fields = []
+    for i, (name, field) in enumerate(type_.fields.items()):
+        strawberry_field = field.extensions and field.extensions.get(
+            GraphQLCoreConverter.DEFINITION_BACKREF
+        )
+
+        fields.append(
+            print_description(field, "  ", not i)
+            + "  "
+            + print_input_value(name, field)
+            + print_field_directives(strawberry_field, schema=schema, extras=extras)
+        )
+
     return (
         print_description(type_)
         + f"input {type_.name}"
@@ -419,10 +415,8 @@ def print_union(
     directives = strawberry_type.directives if strawberry_type else []
 
     printed_directives = "".join(
-        (
-            print_schema_directive(directive, schema=schema, extras=extras)
-            for directive in directives
-        )
+        print_schema_directive(directive, schema=schema, extras=extras)
+        for directive in directives
     )
 
     types = type_.types
@@ -468,10 +462,8 @@ def print_schema_directives(schema: BaseSchema, *, extras: PrintExtras) -> str:
     )
 
     return "".join(
-        (
-            print_schema_directive(directive, schema=schema, extras=extras)
-            for directive in directives
-        )
+        print_schema_directive(directive, schema=schema, extras=extras)
+        for directive in directives
     )
 
 

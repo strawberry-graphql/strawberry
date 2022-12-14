@@ -9,6 +9,8 @@
 - [Mutations](./general/mutations.md)
 - [Subscriptions](./general/subscriptions.md)
 - [Why](./general/why.md)
+- [Breaking changes](./breaking-changes.md)
+- [FAQ](./faq.md)
 
 ## Types
 
@@ -50,6 +52,7 @@
 
 ## Editor integration
 
+- [Mypy](./editors/mypy.md)
 - [Visual Studio Code](./editors/vscode.md)
 
 ## Concepts

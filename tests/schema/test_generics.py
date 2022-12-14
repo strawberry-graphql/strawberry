@@ -1,6 +1,7 @@
 import textwrap
 from enum import Enum
 from typing import Any, Generic, List, Optional, TypeVar, Union
+from typing_extensions import Self
 
 import pytest
 
@@ -747,6 +748,72 @@ def test_generic_with_arguments():
     assert str(schema) == textwrap.dedent(expected_schema).strip()
 
 
+def test_generic_argument():
+    T = TypeVar("T")
+
+    @strawberry.type
+    class Node(Generic[T]):
+        @strawberry.field
+        def edge(self, arg: T) -> bool:
+            return bool(arg)
+
+        @strawberry.field
+        def edges(self, args: List[T]) -> int:
+            return len(args)
+
+    @strawberry.type
+    class Query:
+        i_node: Node[int]
+        b_node: Node[bool]
+
+    schema = strawberry.Schema(Query)
+
+    expected_schema = """
+    type BoolNode {
+      edge(arg: Boolean!): Boolean!
+      edges(args: [Boolean!]!): Int!
+    }
+
+    type IntNode {
+      edge(arg: Int!): Boolean!
+      edges(args: [Int!]!): Int!
+    }
+
+    type Query {
+      iNode: IntNode!
+      bNode: BoolNode!
+    }
+    """
+
+    assert str(schema) == textwrap.dedent(expected_schema).strip()
+
+
+def test_generic_extra_type():
+    T = TypeVar("T")
+
+    @strawberry.type
+    class Node(Generic[T]):
+        field: T
+
+    @strawberry.type
+    class Query:
+        name: str
+
+    schema = strawberry.Schema(Query, types=[Node[int]])
+
+    expected_schema = """
+    type IntNode {
+      field: Int!
+    }
+
+    type Query {
+      name: String!
+    }
+    """
+
+    assert str(schema) == textwrap.dedent(expected_schema).strip()
+
+
 def test_generic_extending_with_type_var():
     T = TypeVar("T")
 
@@ -785,6 +852,48 @@ def test_generic_extending_with_type_var():
     """
 
     assert str(schema) == textwrap.dedent(expected_schema).strip()
+
+
+def test_self():
+    @strawberry.interface
+    class INode:
+        field: Optional[Self]
+        fields: List[Self]
+
+    @strawberry.type
+    class Node(INode):
+        ...
+
+    schema = strawberry.Schema(query=Node)
+
+    expected_schema = """
+    schema {
+      query: Node
+    }
+
+    interface INode {
+      field: INode
+      fields: [INode!]!
+    }
+
+    type Node implements INode {
+      field: Node
+      fields: [Node!]!
+    }
+    """
+
+    assert str(schema) == textwrap.dedent(expected_schema).strip()
+
+    query = """{
+        field {
+            __typename
+        }
+        fields {
+            __typename
+        }
+    }"""
+    result = schema.execute_sync(query, root_value=Node(field=None, fields=[]))
+    assert result.data == {"field": None, "fields": []}
 
 
 def test_supports_generic_input_type():

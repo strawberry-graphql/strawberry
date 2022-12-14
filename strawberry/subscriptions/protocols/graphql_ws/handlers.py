@@ -3,7 +3,8 @@ from abc import ABC, abstractmethod
 from contextlib import suppress
 from typing import Any, AsyncGenerator, Dict, Optional, cast
 
-from graphql import ExecutionResult as GraphQLExecutionResult, GraphQLError
+from graphql import ExecutionResult as GraphQLExecutionResult
+from graphql import GraphQLError
 from graphql.error.graphql_error import format_error as format_graphql_error
 
 from strawberry.schema import BaseSchema

@@ -1,10 +1,8 @@
 import json
 
-import pytest
-
-from asgiref.sync import sync_to_async
-
 import django
+import pytest
+from asgiref.sync import sync_to_async
 from django.core.exceptions import BadRequest, SuspiciousOperation
 from django.test.client import RequestFactory
 from django.utils.http import urlencode
@@ -13,7 +11,6 @@ import strawberry
 from strawberry.django.views import AsyncGraphQLView as AsyncBaseGraphQLView
 
 from .app.models import Example
-
 
 pytestmark = [
     pytest.mark.asyncio,

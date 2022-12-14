@@ -1,7 +1,6 @@
 import textwrap
 from enum import Enum
 from typing import List, Optional
-
 from typing_extensions import Annotated
 
 import strawberry
@@ -75,13 +74,20 @@ def test_directive_on_types():
         reason: str
         meta: Optional[List[SensitiveValue]] = UNSET
 
+    @strawberry.schema_directive(locations=[Location.INPUT_FIELD_DEFINITION])
+    class RangeInput:
+        min: int
+        max: int
+
     @strawberry.input(directives=[SensitiveInput(reason="GDPR")])
     class Input:
         first_name: str
+        age: int = strawberry.field(directives=[RangeInput(min=1, max=100)])
 
     @strawberry.type(directives=[SensitiveData(reason="GDPR")])
     class User:
         first_name: str
+        age: int
         phone: str = strawberry.field(
             directives=[
                 SensitiveData(
@@ -102,17 +108,21 @@ def test_directive_on_types():
         def user(self, input: Input) -> User:
             return User(
                 first_name=input.first_name,
+                age=input.age,
                 phone="+551191551234",
                 phone_share_accepted=False,
             )
 
     expected_output = """
+    directive @rangeInput(min: Int!, max: Int!) on INPUT_FIELD_DEFINITION
+
     directive @sensitiveData(reason: String!, meta: [SensitiveValue!]) on OBJECT | FIELD_DEFINITION
 
     directive @sensitiveInput(reason: String!, meta: [SensitiveValue!]) on INPUT_OBJECT
 
     input Input @sensitiveInput(reason: "GDPR") {
       firstName: String!
+      age: Int! @rangeInput(min: 1, max: 100)
     }
 
     type Query {
@@ -121,6 +131,7 @@ def test_directive_on_types():
 
     type User @sensitiveData(reason: "GDPR") {
       firstName: String!
+      age: Int!
       phone: String! @sensitiveData(reason: "PRIVATE", meta: [{key: "can_share_field", value: "phone_share_accepted"}])
       phoneShareAccepted: Boolean!
     }

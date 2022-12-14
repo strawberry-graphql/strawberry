@@ -1,7 +1,6 @@
 import logging
 import sys
 from typing import Any, Optional
-
 from typing_extensions import Final
 
 from graphql.error import GraphQLError

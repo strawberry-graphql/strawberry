@@ -2,6 +2,7 @@ from asyncio import ensure_future
 from inspect import isawaitable
 from typing import (
     Awaitable,
+    Callable,
     Iterable,
     List,
     Optional,
@@ -12,14 +13,10 @@ from typing import (
     cast,
 )
 
-from graphql import (
-    ExecutionContext as GraphQLExecutionContext,
-    ExecutionResult as GraphQLExecutionResult,
-    GraphQLError,
-    GraphQLSchema,
-    execute as original_execute,
-    parse,
-)
+from graphql import ExecutionContext as GraphQLExecutionContext
+from graphql import ExecutionResult as GraphQLExecutionResult
+from graphql import GraphQLError, GraphQLSchema, parse
+from graphql import execute as original_execute
 from graphql.language import DocumentNode
 from graphql.validation import ASTValidationRule, validate
 
@@ -67,6 +64,7 @@ async def execute(
     extensions: Sequence[Union[Type[Extension], Extension]],
     execution_context: ExecutionContext,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
+    process_errors: Callable[[List[GraphQLError], Optional[ExecutionContext]], None],
 ) -> ExecutionResult:
     extensions_runner = ExtensionsRunner(
         execution_context=execution_context,
@@ -84,6 +82,7 @@ async def execute(
 
             except GraphQLError as error:
                 execution_context.errors = [error]
+                process_errors([error], execution_context)
                 return ExecutionResult(
                     data=None,
                     errors=[error],
@@ -94,6 +93,8 @@ async def execute(
                 error = GraphQLError(str(error), original_error=error)
 
                 execution_context.errors = [error]
+                process_errors([error], execution_context)
+
                 return ExecutionResult(
                     data=None,
                     errors=[error],
@@ -106,6 +107,7 @@ async def execute(
         async with extensions_runner.validation():
             _run_validation(execution_context)
             if execution_context.errors:
+                process_errors(execution_context.errors, execution_context)
                 return ExecutionResult(data=None, errors=execution_context.errors)
 
         async with extensions_runner.executing():
@@ -131,6 +133,12 @@ async def execute(
                 if result.errors:
                     execution_context.errors = result.errors
 
+                    # Run the `Schema.process_errors` function here before
+                    # extensions have a chance to modify them (see the MaskErrors
+                    # extension). That way we can log the original errors but
+                    # only return a sanitised version to the client.
+                    process_errors(result.errors, execution_context)
+
     return ExecutionResult(
         data=execution_context.result.data,
         errors=execution_context.result.errors,
@@ -146,6 +154,7 @@ def execute_sync(
     extensions: Sequence[Union[Type[Extension], Extension]],
     execution_context: ExecutionContext,
     execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
+    process_errors: Callable[[List[GraphQLError], Optional[ExecutionContext]], None],
 ) -> ExecutionResult:
     extensions_runner = ExtensionsRunner(
         execution_context=execution_context,
@@ -163,6 +172,7 @@ def execute_sync(
 
             except GraphQLError as error:
                 execution_context.errors = [error]
+                process_errors([error], execution_context)
                 return ExecutionResult(
                     data=None,
                     errors=[error],
@@ -173,6 +183,7 @@ def execute_sync(
                 error = GraphQLError(str(error), original_error=error)
 
                 execution_context.errors = [error]
+                process_errors([error], execution_context)
                 return ExecutionResult(
                     data=None,
                     errors=[error],
@@ -185,6 +196,7 @@ def execute_sync(
         with extensions_runner.validation():
             _run_validation(execution_context)
             if execution_context.errors:
+                process_errors(execution_context.errors, execution_context)
                 return ExecutionResult(data=None, errors=execution_context.errors)
 
         with extensions_runner.executing():
@@ -213,6 +225,12 @@ def execute_sync(
                 # to access in extensions
                 if result.errors:
                     execution_context.errors = result.errors
+
+                    # Run the `Schema.process_errors` function here before
+                    # extensions have a chance to modify them (see the MaskErrors
+                    # extension). That way we can log the original errors but
+                    # only return a sanitised version to the client.
+                    process_errors(result.errors, execution_context)
 
     return ExecutionResult(
         data=execution_context.result.data,

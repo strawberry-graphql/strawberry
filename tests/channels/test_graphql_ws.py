@@ -1,4 +1,5 @@
 import pytest
+from tests.channels.schema import schema
 
 from channels.testing import WebsocketCommunicator
 from strawberry.channels import GraphQLWSConsumer
@@ -14,8 +15,6 @@ from strawberry.subscriptions.protocols.graphql_ws import (
     GQL_START,
     GQL_STOP,
 )
-from tests.channels.schema import schema
-
 
 pytestmark = [
     pytest.mark.asyncio,

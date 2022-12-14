@@ -2,7 +2,6 @@ import re
 import warnings
 from decimal import Decimal
 from typing import Any, Callable, Dict, List, Optional, Set, Tuple, Union, cast
-
 from typing_extensions import Final
 
 import mypy
@@ -61,7 +60,6 @@ from mypy.types import (
 from mypy.typevars import fill_typevars
 from mypy.util import get_unique_redefinition_name
 
-
 # Backwards compatible with the removal of `TypeVarDef` in mypy 0.920.
 try:
     from mypy.types import TypeVarDef  # type: ignore
@@ -70,7 +68,8 @@ except ImportError:
 
 # To be compatible with user who don't use pydantic
 try:
-    from pydantic.mypy import METADATA_KEY as PYDANTIC_METADATA_KEY, PydanticModelField
+    from pydantic.mypy import METADATA_KEY as PYDANTIC_METADATA_KEY
+    from pydantic.mypy import PydanticModelField
 except ImportError:
     PYDANTIC_METADATA_KEY = ""
 
@@ -428,9 +427,9 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
                 ctx.reason,
             )
 
-        potentially_missing_fields: Set["PydanticModelField"] = set(
+        potentially_missing_fields: Set["PydanticModelField"] = {
             f for f in pydantic_fields if f.name not in new_strawberry_fields
-        )
+        }
 
         """
         Need to check if all_fields=True from the pydantic decorator

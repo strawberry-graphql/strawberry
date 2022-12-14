@@ -1,15 +1,13 @@
-# # TODO:
-# # 2. test fragments
-# # 3. test variables
-# # 7. test input objects
-# # 13. test mutations (raise?)
-# # 14. test subscriptions (raise)
+# - 1. test fragments
+# - 2. test variables
+# - 3. test input objects
+# - 4. test mutations (raise?)
+# - 5. test subscriptions (raise)
 
 from pathlib import Path
 from typing import Type
 
 import pytest
-
 from pytest_snapshot.plugin import Snapshot
 
 from strawberry.codegen import QueryCodegen, QueryCodegenPlugin
@@ -20,7 +18,6 @@ from strawberry.codegen.exceptions import (
 )
 from strawberry.codegen.plugins.python import PythonPlugin
 from strawberry.codegen.plugins.typescript import TypeScriptPlugin
-
 
 HERE = Path(__file__).parent
 QUERIES = list(HERE.glob("queries/*.graphql"))

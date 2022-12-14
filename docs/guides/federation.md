@@ -7,7 +7,7 @@ title: Federation 2
 <Note>
 
 This guide refers to Apollo Federation 2, if you're looking for the 1.0 guide,
-please see the [federation v1](docs/guides/federation-v1.md) guide.
+please see the [federation v1](federation-v1.md) guide.
 
 </Note>
 
@@ -188,6 +188,22 @@ defines a Query type, even if it ends up being empty/unused.
 Finally we also need to let Strawberry know about our Book and Review types.
 Since they are not reachable from the `Query` field itself, Strawberry won't be
 able to find them.
+
+<Note>
+
+If you don't need any custom logic for your resolve_reference, you can omit it
+and Strawberry will automatically instanciate the type for you. For example,
+if we had a `Book` type with only an `id` field, Strawberry would be able to
+instanciate it for us based on the data returned by the gateway.
+
+```python
+@strawberry.federation.type(keys=["id"])
+class Book:
+    id: strawberry.ID
+    reviews: List[Review] = strawberry.field(resolver=get_reviews)
+```
+
+</Note>
 
 ## Let's run our services
 

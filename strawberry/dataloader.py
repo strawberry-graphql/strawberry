@@ -1,4 +1,7 @@
+from __future__ import annotations
+
 import dataclasses
+from abc import ABC, abstractmethod
 from asyncio import create_task, gather, get_event_loop
 from asyncio.events import AbstractEventLoop
 from asyncio.futures import Future
@@ -9,6 +12,7 @@ from typing import (
     Callable,
     Dict,
     Generic,
+    Hashable,
     Iterable,
     List,
     Mapping,
@@ -20,7 +24,6 @@ from typing import (
 )
 
 from .exceptions import WrongNumberOfResultsReturned
-
 
 T = TypeVar("T")
 K = TypeVar("K")
@@ -45,10 +48,48 @@ class Batch(Generic[K, T]):
         return len(self.tasks)
 
 
+class AbstractCache(Generic[K, T], ABC):
+    @abstractmethod
+    def get(self, key: K) -> Union[Future[T], None]:
+        pass
+
+    @abstractmethod
+    def set(self, key: K, value: Future[T]) -> None:
+        pass
+
+    @abstractmethod
+    def delete(self, key: K) -> None:
+        pass
+
+    @abstractmethod
+    def clear(self) -> None:
+        pass
+
+
+class DefaultCache(AbstractCache[K, T]):
+    def __init__(self, cache_key_fn: Optional[Callable[[K], Hashable]] = None):
+        self.cache_key_fn: Callable[[K], Hashable] = (
+            cache_key_fn if cache_key_fn is not None else lambda x: x
+        )
+        self.cache_map: Dict[Hashable, Future[T]] = {}
+
+    def get(self, key: K) -> Union[Future[T], None]:
+        return self.cache_map.get(self.cache_key_fn(key))
+
+    def set(self, key: K, value: Future[T]) -> None:
+        self.cache_map[self.cache_key_fn(key)] = value
+
+    def delete(self, key: K) -> None:
+        del self.cache_map[self.cache_key_fn(key)]
+
+    def clear(self):
+        self.cache_map.clear()
+
+
 class DataLoader(Generic[K, T]):
     batch: Optional[Batch[K, T]] = None
     cache: bool = False
-    cache_map: Dict[K, Future]
+    cache_map: AbstractCache[K, T]
 
     @overload
     def __init__(
@@ -57,18 +98,22 @@ class DataLoader(Generic[K, T]):
         load_fn: Callable[[List[K]], Awaitable[Sequence[Union[T, BaseException]]]],
         max_batch_size: Optional[int] = None,
         cache: bool = True,
-        loop: AbstractEventLoop = None,
+        loop: Optional[AbstractEventLoop] = None,
+        cache_map: Optional[AbstractCache[K, T]] = None,
+        cache_key_fn: Optional[Callable[[K], Hashable]] = None,
     ) -> None:
         ...
 
     # fallback if load_fn is untyped and there's no other info for inference
     @overload
     def __init__(
-        self: "DataLoader[K, Any]",
+        self: DataLoader[K, Any],
         load_fn: Callable[[List[K]], Awaitable[List[Any]]],
         max_batch_size: Optional[int] = None,
         cache: bool = True,
-        loop: AbstractEventLoop = None,
+        loop: Optional[AbstractEventLoop] = None,
+        cache_map: Optional[AbstractCache[K, T]] = None,
+        cache_key_fn: Optional[Callable[[K], Hashable]] = None,
     ) -> None:
         ...
 
@@ -77,7 +122,9 @@ class DataLoader(Generic[K, T]):
         load_fn: Callable[[List[K]], Awaitable[Sequence[Union[T, BaseException]]]],
         max_batch_size: Optional[int] = None,
         cache: bool = True,
-        loop: AbstractEventLoop = None,
+        loop: Optional[AbstractEventLoop] = None,
+        cache_map: Optional[AbstractCache[K, T]] = None,
+        cache_key_fn: Optional[Callable[[K], Hashable]] = None,
     ):
         self.load_fn = load_fn
         self.max_batch_size = max_batch_size
@@ -87,7 +134,9 @@ class DataLoader(Generic[K, T]):
         self.cache = cache
 
         if self.cache:
-            self.cache_map = {}
+            self.cache_map = (
+                DefaultCache(cache_key_fn) if cache_map is None else cache_map
+            )
 
     @property
     def loop(self) -> AbstractEventLoop:
@@ -100,13 +149,13 @@ class DataLoader(Generic[K, T]):
         if self.cache:
             future = self.cache_map.get(key)
 
-            if future:
+            if future and not future.cancelled():
                 return future
 
         future = self.loop.create_future()
 
         if self.cache:
-            self.cache_map[key] = future
+            self.cache_map.set(key, future)
 
         batch = get_current_batch(self)
         batch.add_task(key, future)
@@ -118,12 +167,12 @@ class DataLoader(Generic[K, T]):
 
     def clear(self, key: K):
         if self.cache:
-            self.cache_map.pop(key, None)
+            self.cache_map.delete(key)
 
     def clear_many(self, keys: Iterable[K]):
         if self.cache:
             for key in keys:
-                self.cache_map.pop(key, None)
+                self.cache_map.delete(key)
 
     def clear_all(self):
         if self.cache:
@@ -136,10 +185,10 @@ class DataLoader(Generic[K, T]):
         # Populate the cache with the specified values
         if self.cache:
             for key, value in data.items():
-                if key not in self.cache_map or force:
+                if not self.cache_map.get(key) or force:
                     future: Future = Future(loop=self.loop)
                     future.set_result(value)
-                    self.cache_map[key] = future
+                    self.cache_map.set(key, future)
 
         # For keys that are pending on the current batch, but the
         # batch hasn't started fetching yet: Remove it from the
@@ -204,6 +253,11 @@ async def dispatch_batch(loader: DataLoader, batch: Batch) -> None:
             )
 
         for task, value in zip(batch.tasks, values):
+            # Trying to set_result in a cancelled future would raise
+            # asyncio.exceptions.InvalidStateError
+            if task.future.cancelled():
+                continue
+
             if isinstance(value, BaseException):
                 task.future.set_exception(value)
             else:
