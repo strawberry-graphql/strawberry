@@ -6,8 +6,6 @@ from typing_extensions import Annotated
 
 import pytest
 
-from typing_extensions import Annotated
-
 import strawberry
 from strawberry.lazy_type import lazy
 
