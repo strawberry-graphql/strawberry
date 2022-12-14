@@ -425,7 +425,9 @@ async def test_subscription_exceptions(ws):
 
 
 async def test_inject_connection_params(ws):
-    await ws.send_json_to(ConnectionInitMessage(payload="echo").as_dict())
+    await ws.send_json_to(
+        ConnectionInitMessage(payload={"strawberry": "rocks"}).as_dict()
+    )
 
     response = await ws.receive_json_from()
     assert response == ConnectionAckMessage().as_dict()
@@ -441,7 +443,7 @@ async def test_inject_connection_params(ws):
     assert (
         response
         == NextMessage(
-            id="sub1", payload={"data": {"connectionParams": "echo"}}
+            id="sub1", payload={"data": {"connectionParams": "rocks"}}
         ).as_dict()
     )
 

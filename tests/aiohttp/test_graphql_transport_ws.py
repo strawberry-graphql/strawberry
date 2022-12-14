@@ -964,7 +964,9 @@ async def test_injects_connection_params(aiohttp_client):
     async with aiohttp_app_client.ws_connect(
         "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
-        await ws.send_json(ConnectionInitMessage(payload="echo").as_dict())
+        await ws.send_json(
+            ConnectionInitMessage(payload={"strawberry": "rocks"}).as_dict()
+        )
 
         response = await ws.receive_json()
         assert response == ConnectionAckMessage().as_dict()
@@ -982,7 +984,7 @@ async def test_injects_connection_params(aiohttp_client):
         assert (
             response
             == NextMessage(
-                id="sub1", payload={"data": {"connectionParams": "echo"}}
+                id="sub1", payload={"data": {"connectionParams": "rocks"}}
             ).as_dict()
         )
 

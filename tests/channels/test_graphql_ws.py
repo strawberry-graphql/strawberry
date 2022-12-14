@@ -587,7 +587,7 @@ async def test_task_cancellation_separation():
 
 async def test_injects_connection_params(ws):
     await ws.send_json_to(
-        {"type": GQL_CONNECTION_INIT, "id": "demo", "payload": "echo"}
+        {"type": GQL_CONNECTION_INIT, "id": "demo", "payload": {"strawberry": "rocks"}}
     )
     await ws.send_json_to(
         {
@@ -605,7 +605,7 @@ async def test_injects_connection_params(ws):
     response = await ws.receive_json_from()
     assert response["type"] == GQL_DATA
     assert response["id"] == "demo"
-    assert response["payload"]["data"] == {"connectionParams": "echo"}
+    assert response["payload"]["data"] == {"connectionParams": "rocks"}
 
     await ws.send_json_to({"type": GQL_STOP, "id": "demo"})
     response = await ws.receive_json_from()

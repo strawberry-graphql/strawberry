@@ -834,7 +834,7 @@ def test_injects_connection_params(test_client):
     with test_client.websocket_connect(
         "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
-        ws.send_json(ConnectionInitMessage(payload="echo").as_dict())
+        ws.send_json(ConnectionInitMessage(payload={"strawberry": "rocks"}).as_dict())
 
         response = ws.receive_json()
         assert response == ConnectionAckMessage().as_dict()
@@ -852,7 +852,7 @@ def test_injects_connection_params(test_client):
         assert (
             response
             == NextMessage(
-                id="sub1", payload={"data": {"connectionParams": "echo"}}
+                id="sub1", payload={"data": {"connectionParams": "rocks"}}
             ).as_dict()
         )
 

@@ -520,7 +520,13 @@ def test_task_cancellation_separation(test_client):
 
 def test_injects_connection_params(test_client):
     with test_client.websocket_connect("/graphql", [GRAPHQL_WS_PROTOCOL]) as ws:
-        ws.send_json({"type": GQL_CONNECTION_INIT, "id": "demo", "payload": "echo"})
+        ws.send_json(
+            {
+                "type": GQL_CONNECTION_INIT,
+                "id": "demo",
+                "payload": {"strawberry": "rocks"},
+            }
+        )
         ws.send_json(
             {
                 "type": GQL_START,
@@ -537,7 +543,7 @@ def test_injects_connection_params(test_client):
         response = ws.receive_json()
         assert response["type"] == GQL_DATA
         assert response["id"] == "demo"
-        assert response["payload"]["data"] == {"connectionParams": "echo"}
+        assert response["payload"]["data"] == {"connectionParams": "rocks"}
 
         ws.send_json({"type": GQL_STOP, "id": "demo"})
         response = ws.receive_json()

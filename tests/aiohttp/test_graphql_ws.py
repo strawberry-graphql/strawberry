@@ -596,7 +596,11 @@ async def test_injects_connection_params(aiohttp_client):
         "/graphql", protocols=[GRAPHQL_WS_PROTOCOL]
     ) as ws:
         await ws.send_json(
-            {"type": GQL_CONNECTION_INIT, "id": "demo", "payload": "echo"}
+            {
+                "type": GQL_CONNECTION_INIT,
+                "id": "demo",
+                "payload": {"strawberry": "rocks"},
+            }
         )
         await ws.send_json(
             {
@@ -614,7 +618,7 @@ async def test_injects_connection_params(aiohttp_client):
         response = await ws.receive_json()
         assert response["type"] == GQL_DATA
         assert response["id"] == "demo"
-        assert response["payload"]["data"] == {"connectionParams": "echo"}
+        assert response["payload"]["data"] == {"connectionParams": "rocks"}
 
         await ws.send_json({"type": GQL_STOP, "id": "demo"})
         response = await ws.receive_json()

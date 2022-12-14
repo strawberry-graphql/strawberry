@@ -85,7 +85,7 @@ class ChannelsConsumer(AsyncConsumer):
     async def get_context(
         self,
         request: Optional["ChannelsConsumer"] = None,
-        connection_params: Optional[Any] = None,
+        connection_params: Optional[Dict[str, Any]] = None,
     ) -> StrawberryChannelsContext:
         return StrawberryChannelsContext(
             request=request or self, connection_params=connection_params

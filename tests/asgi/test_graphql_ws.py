@@ -522,7 +522,9 @@ def test_injects_connection_params(test_client):
             {
                 "type": GQL_CONNECTION_INIT,
                 "id": "demo",
-                "payload": "echo",
+                "payload": {
+                    "strawberry": "rocks",
+                },
             }
         )
         ws.send_json(
@@ -541,7 +543,7 @@ def test_injects_connection_params(test_client):
         response = ws.receive_json()
         assert response["type"] == GQL_DATA
         assert response["id"] == "demo"
-        assert response["payload"]["data"] == {"connectionParams": "echo"}
+        assert response["payload"]["data"] == {"connectionParams": "rocks"}
 
         ws.send_json({"type": GQL_STOP, "id": "demo"})
         response = ws.receive_json()

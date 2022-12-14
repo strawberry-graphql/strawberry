@@ -187,10 +187,12 @@ def test_class_context_injects_connection_params_over_transport_ws():
     @strawberry.type
     class Subscription:
         @strawberry.subscription
-        async def echo(self, info: Info, delay: float = 0) -> AsyncGenerator[str, None]:
+        async def connection_params(
+            self, info: Info, delay: float = 0
+        ) -> AsyncGenerator[str, None]:
             assert info.context.request is not None
             await asyncio.sleep(delay)
-            yield info.context.connection_params
+            yield info.context.connection_params["strawberry"]
 
     class Context(BaseContext):
         strawberry: str
@@ -210,7 +212,7 @@ def test_class_context_injects_connection_params_over_transport_ws():
     with test_client.websocket_connect(
         "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
-        ws.send_json(ConnectionInitMessage(payload="echo").as_dict())
+        ws.send_json(ConnectionInitMessage(payload={"strawberry": "rocks"}).as_dict())
 
         response = ws.receive_json()
         assert response == ConnectionAckMessage().as_dict()
@@ -218,14 +220,18 @@ def test_class_context_injects_connection_params_over_transport_ws():
         ws.send_json(
             SubscribeMessage(
                 id="sub1",
-                payload=SubscribeMessagePayload(query="subscription { echo }"),
+                payload=SubscribeMessagePayload(
+                    query="subscription { connectionParams }"
+                ),
             ).as_dict()
         )
 
         response = ws.receive_json()
         assert (
             response
-            == NextMessage(id="sub1", payload={"data": {"echo": "echo"}}).as_dict()
+            == NextMessage(
+                id="sub1", payload={"data": {"connectionParams": "rocks"}}
+            ).as_dict()
         )
 
         ws.send_json(CompleteMessage(id="sub1").as_dict())
@@ -241,10 +247,12 @@ def test_class_context_injects_connection_params_over_ws():
     @strawberry.type
     class Subscription:
         @strawberry.subscription
-        async def echo(self, info: Info, delay: float = 0) -> AsyncGenerator[str, None]:
+        async def connection_params(
+            self, info: Info, delay: float = 0
+        ) -> AsyncGenerator[str, None]:
             assert info.context.request is not None
             await asyncio.sleep(delay)
-            yield info.context.connection_params
+            yield info.context.connection_params["strawberry"]
 
     class Context(BaseContext):
         strawberry: str
@@ -262,13 +270,19 @@ def test_class_context_injects_connection_params_over_ws():
     test_client = TestClient(app)
 
     with test_client.websocket_connect("/graphql", [GRAPHQL_WS_PROTOCOL]) as ws:
-        ws.send_json({"type": GQL_CONNECTION_INIT, "id": "demo", "payload": "echo"})
+        ws.send_json(
+            {
+                "type": GQL_CONNECTION_INIT,
+                "id": "demo",
+                "payload": {"strawberry": "rocks"},
+            }
+        )
         ws.send_json(
             {
                 "type": GQL_START,
                 "id": "demo",
                 "payload": {
-                    "query": "subscription { echo }",
+                    "query": "subscription { connectionParams }",
                 },
             }
         )
@@ -279,7 +293,7 @@ def test_class_context_injects_connection_params_over_ws():
         response = ws.receive_json()
         assert response["type"] == GQL_DATA
         assert response["id"] == "demo"
-        assert response["payload"]["data"] == {"echo": "echo"}
+        assert response["payload"]["data"] == {"connectionParams": "rocks"}
 
         ws.send_json({"type": GQL_STOP, "id": "demo"})
         response = ws.receive_json()

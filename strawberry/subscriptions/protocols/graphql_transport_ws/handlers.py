@@ -42,7 +42,7 @@ class BaseGraphQLTransportWSHandler(ABC):
         self.subscriptions: Dict[str, AsyncGenerator] = {}
         self.tasks: Dict[str, asyncio.Task] = {}
         self.completed_tasks: List[asyncio.Task] = []
-        self.connection_params: Dict[str, Any] = {}
+        self.connection_params: Optional[Dict[str, Any]] = None
 
     @abstractmethod
     async def get_context(self) -> Any:
@@ -118,7 +118,7 @@ class BaseGraphQLTransportWSHandler(ABC):
         await self.reap_completed_tasks()
 
     async def handle_connection_init(self, message: ConnectionInitMessage) -> None:
-        self.connection_params = message.payload or {}
+        self.connection_params = message.payload
 
         if self.connection_init_received:
             reason = "Too many initialisation requests"

@@ -43,7 +43,7 @@ class BaseGraphQLWSHandler(ABC):
         self.keep_alive_task: Optional[asyncio.Task] = None
         self.subscriptions: Dict[str, AsyncGenerator] = {}
         self.tasks: Dict[str, asyncio.Task] = {}
-        self.connection_params: ConnectionInitPayload = dict()
+        self.connection_params: Optional[ConnectionInitPayload] = None
 
     @abstractmethod
     async def get_context(self) -> Any:
@@ -84,8 +84,8 @@ class BaseGraphQLWSHandler(ABC):
             await self.handle_stop(message)
 
     async def handle_connection_init(self, message: OperationMessage) -> None:
-        payload = cast(ConnectionInitPayload, message.get("payload"))
-        self.connection_params = payload or dict()
+        payload = cast(Optional[ConnectionInitPayload], message.get("payload"))
+        self.connection_params = payload
 
         data: OperationMessage = {"type": GQL_CONNECTION_ACK}
         await self.send_json(data)
