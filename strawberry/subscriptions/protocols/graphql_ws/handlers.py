@@ -11,6 +11,7 @@ from strawberry.schema import BaseSchema
 from strawberry.subscriptions.protocols.graphql_ws import (
     GQL_COMPLETE,
     GQL_CONNECTION_ACK,
+    GQL_CONNECTION_ERROR,
     GQL_CONNECTION_INIT,
     GQL_CONNECTION_KEEP_ALIVE,
     GQL_CONNECTION_TERMINATE,
@@ -84,7 +85,14 @@ class BaseGraphQLWSHandler(ABC):
             await self.handle_stop(message)
 
     async def handle_connection_init(self, message: OperationMessage) -> None:
-        payload = cast(Optional[ConnectionInitPayload], message.get("payload"))
+        payload = message.get("payload")
+        if payload is not None and not isinstance(payload, dict):
+            data: OperationMessage = {"type": GQL_CONNECTION_ERROR}
+            await self.send_json(data)
+            await self.close()
+            return
+
+        payload = cast(Optional[ConnectionInitPayload], payload)
         self.connection_params = payload
 
         data: OperationMessage = {"type": GQL_CONNECTION_ACK}

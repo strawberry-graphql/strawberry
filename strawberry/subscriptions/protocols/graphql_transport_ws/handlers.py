@@ -22,6 +22,7 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     SubscribeMessagePayload,
 )
 from strawberry.types.graphql import OperationType
+from strawberry.unset import UNSET
 from strawberry.utils.debug import pretty_print_graphql_operation
 from strawberry.utils.operation import get_operation_type
 
@@ -118,6 +119,10 @@ class BaseGraphQLTransportWSHandler(ABC):
         await self.reap_completed_tasks()
 
     async def handle_connection_init(self, message: ConnectionInitMessage) -> None:
+        if message.payload is not UNSET and not isinstance(message.payload, dict):
+            await self.close(code=4400, reason="Invalid connection init payload")
+            return
+
         self.connection_params = message.payload
 
         if self.connection_init_received:
