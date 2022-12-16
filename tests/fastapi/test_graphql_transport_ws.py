@@ -859,3 +859,14 @@ def test_injects_connection_params(test_client):
         ws.send_json(CompleteMessage(id="sub1").as_dict())
 
         ws.close()
+
+
+def test_rejects_connection_params(test_client):
+    with test_client.websocket_connect(
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+    ) as ws:
+        ws.send_json(ConnectionInitMessage(payload="gonna fail").as_dict())
+
+        data = ws.receive()
+        assert data["type"] == "websocket.close"
+        assert data["code"] == 4400

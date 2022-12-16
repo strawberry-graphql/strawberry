@@ -7,6 +7,7 @@ from strawberry.subscriptions import GRAPHQL_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_ws import (
     GQL_COMPLETE,
     GQL_CONNECTION_ACK,
+    GQL_CONNECTION_ERROR,
     GQL_CONNECTION_INIT,
     GQL_CONNECTION_KEEP_ALIVE,
     GQL_CONNECTION_TERMINATE,
@@ -613,6 +614,19 @@ async def test_injects_connection_params(ws):
     assert response["id"] == "demo"
 
     await ws.send_json_to({"type": GQL_CONNECTION_TERMINATE})
+
+    # make sure the websocket is disconnected now
+    data = await ws.receive_output()
+    assert data == {"type": "websocket.close", "code": 1000}
+
+
+async def test_rejects_connection_params(ws):
+    await ws.send_json_to(
+        {"type": GQL_CONNECTION_INIT, "id": "demo", "payload": "gonna fail"}
+    )
+
+    response = await ws.receive_json_from()
+    assert response["type"] == GQL_CONNECTION_ERROR
 
     # make sure the websocket is disconnected now
     data = await ws.receive_output()
