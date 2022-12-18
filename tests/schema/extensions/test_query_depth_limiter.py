@@ -5,7 +5,7 @@ import pytest
 from graphql import get_introspection_query, parse, specified_rules, validate
 
 import strawberry
-from strawberry.extensions import QueryDepthLimiter
+from strawberry.extensions import FieldAttributesRule, QueryDepthLimiter
 from strawberry.extensions.query_depth_limiter import create_validator
 
 
@@ -252,6 +252,86 @@ def test_should_raise_invalid_ignore():
             10,
             ignore=[True],
         )
+
+
+def test_should_ignore_field_attributes():
+    query = """
+  query read1 {
+    matt: user(name: "matt") {
+      email
+    }
+    andy: user(name: "andy") {
+      email
+      address {
+        city
+      }
+      pets {
+        name
+        owner {
+          name
+        }
+      }
+    }
+  }
+  """
+
+    errors, result = run_query(
+        query,
+        10,
+        ignore=[
+            FieldAttributesRule(field_name="user", field_arguments={"name": ["andy"]})
+        ],
+    )
+
+    expected = {"read1": 1}
+    assert not errors
+    assert result == expected
+
+    errors, result = run_query(
+        query,
+        10,
+        ignore=[
+            FieldAttributesRule(field_name="user", field_arguments={"name": ["matt"]})
+        ],
+    )
+
+    expected = {"read1": 3}
+    assert not errors
+    assert result == expected
+
+    errors, result = run_query(
+        query,
+        10,
+        ignore=[
+            FieldAttributesRule(
+                field_name="user", field_arguments={"name": ["andy", "matt"]}
+            )
+        ],
+    )
+
+    expected = {"read1": 0}
+    assert not errors
+    assert result == expected
+
+    errors, result = run_query(
+        query,
+        10,
+        ignore=[FieldAttributesRule(field_name="user")],
+    )
+
+    expected = {"read1": 0}
+    assert not errors
+    assert result == expected
+
+    errors, result = run_query(
+        query,
+        10,
+        ignore=[FieldAttributesRule(field_name="owner", field_keys=["name"])],
+    )
+
+    expected = {"read1": 2}
+    assert not errors
+    assert result == expected
 
 
 def test_should_work_as_extension():
