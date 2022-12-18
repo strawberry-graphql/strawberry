@@ -26,6 +26,7 @@
 # SOFTWARE.
 
 import re
+from dataclasses import dataclass
 from typing import Callable, Dict, Iterable, List, Optional, Type, Union
 
 from graphql import GraphQLError
@@ -43,7 +44,22 @@ from graphql.validation import ValidationContext, ValidationRule
 from strawberry.extensions import AddValidationRules
 from strawberry.extensions.utils import is_introspection_key
 
-IgnoreType = Union[Callable[[str], bool], re.Pattern, str]
+FieldNameRuleType = Union[Callable[[str], bool], re.Pattern, str]
+
+
+@dataclass
+class FieldAttributesRule:
+    """
+    Use this dataclass to specify which fields to ignore with options to
+    specify any rules on arguments and keys within the returned field.
+    """
+
+    field_name: FieldNameRuleType
+    field_arguments: Optional[Dict[str, List]] = None
+    field_keys: Optional[List[str]] = None
+
+
+IgnoreType = Union[FieldNameRuleType, FieldAttributesRule]
 
 
 class QueryDepthLimiter(AddValidationRules):
@@ -220,18 +236,62 @@ def is_ignored(node: FieldNode, ignore: Optional[List[IgnoreType]] = None) -> bo
     if ignore is None:
         return False
 
+    field_name = node.name.value
     for rule in ignore:
-        field_name = node.name.value
         if isinstance(rule, str):
             if field_name == rule:
                 return True
         elif isinstance(rule, re.Pattern):
             if rule.match(field_name):
                 return True
+        elif isinstance(rule, FieldAttributesRule):
+            return validate_field_attributes(node, rule)
         elif callable(rule):
             if rule(field_name):
                 return True
         else:
             raise ValueError(f"Invalid ignore option: {rule}")
+
+    return False
+
+
+def validate_field_name(node: FieldNode, rule: FieldNameRuleType) -> bool:
+    field_name = node.name.value
+    if isinstance(rule, str):
+        if field_name == rule:
+            return True
+    elif isinstance(rule, re.Pattern):
+        if rule.match(field_name):
+            return True
+    elif callable(rule):
+        if rule(field_name):
+            return True
+    else:
+        raise ValueError(f"Invalid ignore option: {rule}")
+
+    return False
+
+
+def validate_field_attributes(node: FieldNode, rule: FieldAttributesRule) -> bool:
+    if not validate_field_name(node, rule.field_name):
+        return False
+
+    if rule.field_arguments is None and rule.field_keys is None:
+        return True
+
+    if rule.field_arguments is not None:
+        arg_names = [arg.name.value for arg in node.arguments]
+        for key, value in rule.field_arguments.items():
+            if key in arg_names:
+                loc = arg_names.index(key)
+                arg_value = node.arguments[loc].value.value
+                for arg_rule in value:
+                    if arg_rule == arg_value:
+                        return True
+
+    if rule.field_keys is not None:
+        for key in rule.field_keys:
+            if key in node.keys:
+                return True
 
     return False
