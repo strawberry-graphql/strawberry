@@ -1,5 +1,4 @@
 import pytest
-from tests.channels.schema import schema
 
 from channels.layers import get_channel_layer
 from channels.testing import WebsocketCommunicator
@@ -14,6 +13,7 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     SubscribeMessage,
     SubscribeMessagePayload,
 )
+from tests.channels.schema import schema
 
 
 @pytest.fixture
