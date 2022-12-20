@@ -1,6 +1,35 @@
 CHANGELOG
 =========
 
+0.151.1 - 2022-12-20
+--------------------
+
+This release fixes an issue that prevented using generic
+that had a field of type enum. The following works now:
+
+```python
+@strawberry.enum
+class EstimatedValueEnum(Enum):
+    test = "test"
+    testtest = "testtest"
+
+
+@strawberry.type
+class EstimatedValue(Generic[T]):
+    value: T
+    type: EstimatedValueEnum
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def estimated_value(self) -> Optional[EstimatedValue[int]]:
+        return EstimatedValue(value=1, type=EstimatedValueEnum.test)
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2411](https://github.com/strawberry-graphql/strawberry/pull/2411/)
+
+
 0.151.0 - 2022-12-13
 --------------------
 
