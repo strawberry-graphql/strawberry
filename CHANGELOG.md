@@ -1,6 +1,22 @@
 CHANGELOG
 =========
 
+0.151.2 - 2022-12-23
+--------------------
+
+This release fixes `@strawberry.experimental.pydantic.type` and adds support for the metadata attribute on fields.
+
+Example:
+```python
+@strawberry.experimental.pydantic.type(model=User)
+class UserType:
+    private: strawberry.auto = strawberry.field(metadata={"admin_only": True})
+    public: strawberry.auto
+```
+
+Contributed by [Huy Z](https://github.com/huyz) via [PR #2415](https://github.com/strawberry-graphql/strawberry/pull/2415/)
+
+
 0.151.1 - 2022-12-20
 --------------------
 
