@@ -841,6 +841,7 @@ def test_alias_fields_with_use_pydantic_alias():
     assert field3.python_name == "country"
     assert field3.graphql_name == "countryPydantic"
 
+
 def test_field_metadata():
     class User(pydantic.BaseModel):
         private: bool
@@ -861,5 +862,3 @@ def test_field_metadata():
 
     assert field2.python_name == "public"
     assert not field2.metadata
-
-
