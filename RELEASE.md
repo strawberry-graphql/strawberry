@@ -1,8 +1,6 @@
 Release type: patch
 
-The recent addition of support for the metadata attribute for fields isn't handled for Pydantic support.
-This ensures that the metadata attribute on fields isn't lost when a @strawberry.experimental.pydantic.type
-is created.
+This release fixes `@strawberry.experimental.pydantic.type` and adds support for the metadata attribute on fields.
 
 Example:
 ```python
