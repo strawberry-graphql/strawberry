@@ -3,11 +3,13 @@ import inspect
 import sys
 import types
 from typing import (
+    Any,
     Callable,
     Dict,
     List,
     Optional,
     Sequence,
+    Tuple,
     Type,
     TypeVar,
     Union,
@@ -26,6 +28,8 @@ from .types.types import TypeDefinition
 from .utils.dataclasses import add_custom_init_fn
 from .utils.str_converters import to_camel_case
 from .utils.typing import __dataclass_transform__
+
+T = TypeVar("T")
 
 
 def _get_interfaces(cls: Type) -> List[TypeDefinition]:
@@ -364,9 +368,25 @@ def interface(
     )
 
 
+def asdict(obj: object, dict_factory: Callable[[List[Tuple[str, Any]]], T] = dict) -> T:
+    """Convert a strawberry object into a dictionary.
+    This wraps the dataclasses.asdict function to strawberry.
+
+    Example usage:
+    >>> @strawberry.type
+    >>> class User:
+    >>>     name: str
+    >>>     age: int
+    >>> # should be {"name": "Lorem", "age": 25}
+    >>> user_dict = strawberry.asdict(User(name="Lorem", age=25))
+    """
+    return dataclasses.asdict(obj, dict_factory=dict_factory)
+
+
 __all__ = [
     "TypeDefinition",
     "input",
     "interface",
     "type",
+    "asdict",
 ]
