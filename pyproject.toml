@@ -95,7 +95,7 @@ types-freezegun = "^1.1.9"
 types-chardet = "^5.0.4"
 types-certifi = "^2021.10.8"
 types-aiofiles = "^22.1.0"
-sanic-testing = "^22.9.0"
+sanic-testing = "^22.12.0"
 fastapi = {version = ">=0.65.0", optional = false}
 MarkupSafe = "2.1.1"
 pytest-snapshot = "^0.9.0"
