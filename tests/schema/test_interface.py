@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from typing import List
 
 import pytest
+from pytest_mock import MockerFixture
 
 import strawberry
 from strawberry.types.types import StrawberryObjectDefinition
@@ -241,7 +242,7 @@ def test_duplicated_interface_in_multi_inheritance():
     strawberry.Schema(Query)  # Final sanity check to ensure schema compiles
 
 
-def test_interface_resolve_type():
+def test_interface_resolve_type(mocker: MockerFixture):
     """Check that the default implemenetation of `resolve_type` functions as expected.
 
     In this test-case the default implementation of `resolve_type` defined in
@@ -255,21 +256,20 @@ def test_interface_resolve_type():
     called when `Query.node` returns an `Anime` object.
     """
 
-    n_calls = 0
+    class IsTypeOfTester:
+        @classmethod
+        def is_type_of(cls, obj, _info) -> bool:
+            return isinstance(obj, cls)
+
+    spy_is_type_of = mocker.spy(IsTypeOfTester, "is_type_of")
 
     @strawberry.interface
     class Node:
         id: int
 
     @strawberry.type
-    class Anime(Node):
+    class Anime(Node, IsTypeOfTester):
         name: str
-
-        @classmethod
-        def is_type_of(cls, obj, _info) -> bool:
-            nonlocal n_calls
-            n_calls += 1
-            return isinstance(obj, cls)
 
     @strawberry.type
     class Movie(Node):
@@ -292,23 +292,22 @@ def test_interface_resolve_type():
 
     assert not result.errors
     assert result.data == {"node": {"__typename": "Anime", "id": 1}}
-    assert n_calls == 1  # Ensure that only Anime.is_type_of is called once
+    spy_is_type_of.assert_called_once()
 
 
-def test_interface_specialized_resolve_type():
+def test_interface_specialized_resolve_type(mocker: MockerFixture):
     """Test that a specialized ``resolve_type`` is called."""
 
-    n_calls = 0
+    class InterfaceTester:
+        @classmethod
+        def resolve_type(cls, obj, *args) -> str:
+            return obj._type_definition.name
+
+    spy_resolve_type = mocker.spy(InterfaceTester, "resolve_type")
 
     @strawberry.interface
-    class Food:
+    class Food(InterfaceTester):
         id: int
-
-        @classmethod
-        def resolve_type(cls, obj, _info, _type) -> str:
-            nonlocal n_calls
-            n_calls += 1
-            return obj._type_definition.name
 
     @strawberry.type
     class Fruit(Food):
@@ -325,4 +324,4 @@ def test_interface_specialized_resolve_type():
 
     assert not result.errors
     assert result.data == {"food": {"name": "strawberry"}}
-    assert n_calls == 1
+    spy_resolve_type.assert_called_once()
