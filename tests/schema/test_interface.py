@@ -293,3 +293,36 @@ def test_interface_resolve_type():
     assert not result.errors
     assert result.data == {"node": {"__typename": "Anime", "id": 1}}
     assert n_calls == 1  # Ensure that only Anime.is_type_of is called once
+
+
+def test_interface_specialized_resolve_type():
+    """Test that a specialized ``resolve_type`` is called."""
+
+    n_calls = 0
+
+    @strawberry.interface
+    class Food:
+        id: int
+
+        @classmethod
+        def resolve_type(cls, obj, _info, _type) -> str:
+            nonlocal n_calls
+            n_calls += 1
+            return obj._type_definition.name
+
+    @strawberry.type
+    class Fruit(Food):
+        name: str
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def food(self) -> Food:
+            return Fruit(id=1, name="strawberry")
+
+    schema = strawberry.Schema(query=Query, types=[Fruit])
+    result = schema.execute_sync("query { food { ... on Fruit { name } } }")
+
+    assert not result.errors
+    assert result.data == {"food": {"name": "strawberry"}}
+    assert n_calls == 1
