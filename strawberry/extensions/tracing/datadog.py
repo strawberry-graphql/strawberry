@@ -31,7 +31,7 @@ class DatadogTracingExtension(Extension):
     def hash_query(self, query: str):
         return hashlib.md5(query.encode("utf-8")).hexdigest()
 
-    def on_request_start(self) -> None:
+    def on_request(self) -> None:
         self._operation_name = self.execution_context.operation_name
         span_name = (
             f"{self._operation_name}" if self._operation_name else "Anonymous Query"
@@ -57,13 +57,13 @@ class DatadogTracingExtension(Extension):
     def on_request_end(self) -> None:
         self.request_span.finish()
 
-    def on_validation_start(self):
+    def on_validate(self):
         self.validation_span = tracer.trace("Validation", span_type="graphql")
 
     def on_validation_end(self):
         self.validation_span.finish()
 
-    def on_parsing_start(self):
+    def on_parse(self):
         self.parsing_span = tracer.trace("Parsing", span_type="graphql")
 
     def on_parsing_end(self):

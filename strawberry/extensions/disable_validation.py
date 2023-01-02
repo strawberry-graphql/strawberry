@@ -24,5 +24,5 @@ class DisableValidation(Extension):
         # some in the future
         pass
 
-    def on_request_start(self) -> None:
+    def on_request(self) -> None:
         self.execution_context.validation_rules = ()  # remove all validation_rules

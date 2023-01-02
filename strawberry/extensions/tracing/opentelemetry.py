@@ -40,7 +40,7 @@ class OpenTelemetryExtension(Extension):
         if execution_context:
             self.execution_context = execution_context
 
-    def on_request_start(self):
+    def on_request(self):
         self._operation_name = self.execution_context.operation_name
         span_name = (
             f"GraphQL Query: {self._operation_name}"
@@ -67,7 +67,7 @@ class OpenTelemetryExtension(Extension):
             self._span_holder[RequestStage.REQUEST].update_name(span_name)
         self._span_holder[RequestStage.REQUEST].end()
 
-    def on_validation_start(self):
+    def on_validate(self):
         ctx = trace.set_span_in_context(self._span_holder[RequestStage.REQUEST])
         self._span_holder[RequestStage.VALIDATION] = self._tracer.start_span(
             "GraphQL Validation",
@@ -77,7 +77,7 @@ class OpenTelemetryExtension(Extension):
     def on_validation_end(self):
         self._span_holder[RequestStage.VALIDATION].end()
 
-    def on_parsing_start(self):
+    def on_parse(self):
         ctx = trace.set_span_in_context(self._span_holder[RequestStage.REQUEST])
         self._span_holder[RequestStage.PARSING] = self._tracer.start_span(
             "GraphQL Parsing", context=ctx

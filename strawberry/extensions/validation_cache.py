@@ -33,7 +33,7 @@ class ValidationCache(Extension):
     def __init__(self, maxsize: Optional[int] = None):
         self.cached_validate_document = lru_cache(maxsize=maxsize)(validate_document)
 
-    def on_validation_start(self) -> None:
+    def on_validate(self) -> None:
         execution_context = self.execution_context
 
         errors = self.cached_validate_document(

@@ -38,7 +38,7 @@ class AddValidationRules(Extension):
     def __init__(self, validation_rules: List[Type[ASTValidationRule]]):
         self.validation_rules = validation_rules
 
-    def on_request_start(self) -> None:
+    def on_request(self) -> None:
         self.execution_context.validation_rules = (
             self.execution_context.validation_rules + tuple(self.validation_rules)
         )
