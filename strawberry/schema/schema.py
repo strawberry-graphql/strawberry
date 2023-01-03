@@ -7,10 +7,8 @@ from graphql import (
     GraphQLNonNull,
     GraphQLSchema,
     get_introspection_query,
-    parse,
     validate_schema,
 )
-from graphql.subscription import subscribe
 from graphql.type.directives import specified_directives
 
 from strawberry.annotation import StrawberryAnnotation
@@ -34,7 +32,7 @@ from ..printer import print_schema
 from . import compat
 from .base import BaseSchema
 from .config import StrawberryConfig
-from .execute import execute, execute_sync
+from .execute import execute, execute_sync, subscribe
 
 DEFAULT_ALLOWED_OPERATION_TYPES = {
     OperationType.QUERY,
@@ -201,6 +199,39 @@ class Schema(BaseSchema):
             None,
         )
 
+    def execute_sync(
+        self,
+        query: str,
+        variable_values: Optional[Dict[str, Any]] = None,
+        context_value: Optional[Any] = None,
+        root_value: Optional[Any] = None,
+        operation_name: Optional[str] = None,
+        allowed_operation_types: Optional[Iterable[OperationType]] = None,
+    ) -> ExecutionResult:
+        if allowed_operation_types is None:
+            allowed_operation_types = DEFAULT_ALLOWED_OPERATION_TYPES
+
+        execution_context = ExecutionContext(
+            query=query,
+            schema=self,
+            context=context_value,
+            root_value=root_value,
+            variables=variable_values,
+            provided_operation_name=operation_name,
+        )
+
+        result = execute_sync(
+            self._schema,
+            query,
+            extensions=self.get_extensions(sync=True),
+            execution_context_class=self.execution_context_class,
+            execution_context=execution_context,
+            allowed_operation_types=allowed_operation_types,
+            process_errors=self.process_errors,
+        )
+
+        return result
+
     async def execute(
         self,
         query: str,
@@ -235,18 +266,16 @@ class Schema(BaseSchema):
 
         return result
 
-    def execute_sync(
+    async def subscribe(
         self,
         query: str,
         variable_values: Optional[Dict[str, Any]] = None,
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
         operation_name: Optional[str] = None,
-        allowed_operation_types: Optional[Iterable[OperationType]] = None,
-    ) -> ExecutionResult:
-        if allowed_operation_types is None:
-            allowed_operation_types = DEFAULT_ALLOWED_OPERATION_TYPES
+    ):
 
+        # Create execution context
         execution_context = ExecutionContext(
             query=query,
             schema=self,
@@ -256,34 +285,18 @@ class Schema(BaseSchema):
             provided_operation_name=operation_name,
         )
 
-        result = execute_sync(
+        return await subscribe(
             self._schema,
             query,
-            extensions=self.get_extensions(sync=True),
+            extensions=self.get_extensions(),
             execution_context_class=self.execution_context_class,
             execution_context=execution_context,
-            allowed_operation_types=allowed_operation_types,
+            allowed_operation_types=[OperationType.SUBSCRIPTION],
             process_errors=self.process_errors,
         )
 
-        return result
-
-    async def subscribe(
-        self,
-        query: str,
-        variable_values: Optional[Dict[str, Any]] = None,
-        context_value: Optional[Any] = None,
-        root_value: Optional[Any] = None,
-        operation_name: Optional[str] = None,
-    ):
-        return await subscribe(
-            self._schema,
-            parse(query),
-            root_value=root_value,
-            context_value=context_value,
-            variable_values=variable_values,
-            operation_name=operation_name,
-        )
+        # return await subscribe(
+        #     self._schema,
 
     def as_str(self) -> str:
         return print_schema(self)
