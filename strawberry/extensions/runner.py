@@ -41,7 +41,7 @@ class ExtensionsRunner:
 
         self.extensions = init_extensions
 
-    def request(self) -> RequestContextManager:
+    def operation(self) -> RequestContextManager:
         return RequestContextManager(self.extensions)
 
     def validation(self) -> ValidationContextManager:

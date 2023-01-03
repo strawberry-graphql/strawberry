@@ -71,7 +71,7 @@ async def execute(
         extensions=list(extensions),
     )
 
-    async with extensions_runner.request():
+    async with extensions_runner.operation():
         # Note: In graphql-core the schema would be validated here but in
         # Strawberry we are validating it at initialisation time instead
 
@@ -161,7 +161,7 @@ def execute_sync(
         extensions=list(extensions),
     )
 
-    with extensions_runner.request():
+    with extensions_runner.operation():
         # Note: In graphql-core the schema would be validated here but in
         # Strawberry we are validating it at initialisation time instead
 
