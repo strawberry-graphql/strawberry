@@ -1,92 +1,152 @@
 import contextlib
 import inspect
-from abc import ABC
+import warnings
 from asyncio import iscoroutinefunction
-from typing import AsyncIterator, Callable, Iterator, List, Union
+from typing import AsyncIterator, Callable, Iterator, List, NamedTuple, Optional, Union
 
 from strawberry.extensions import Extension
-from strawberry.utils.await_maybe import AsyncIteratorOrIterator
+from strawberry.utils.await_maybe import AsyncIteratorOrIterator, await_maybe
 
 
-class GeneratorsMapper:
-    __slots__ = ("validators", "parsers")
-
-    def __init__(self):
-        self.validators: list[AsyncIteratorOrIterator[None]] = []
-        self.parsers: list[AsyncIteratorOrIterator[None]] = []
+class IteratorContainer(NamedTuple):
+    aiter: Optional[AsyncIterator[None]] = None
+    iter: Optional[Iterator[None]] = None
 
 
-class ExtensionContextManager(ABC):
-    __slots__ = ("HOOK_NAME", "_generators", "_sync_generators")
+class ExtensionContextManagerBase:
+    __slots__ = ("_generators", "deprecation_message")
     HOOK_NAME: str
+    deprecation_message: str
+    LEGACY_ENTER: str
+    LEGACY_EXIT: str
+
+    def _legacy_extension_compat(self, extension: Extension) -> bool:
+        """
+        Returns: a flag if there was any legacy extension
+        """
+        enter = getattr(extension, self.LEGACY_ENTER, None)
+        exit_ = getattr(extension, self.LEGACY_EXIT, None)
+        enter_async = False
+        exit_async = False
+        if not enter and not exit_:
+            return False
+        warnings.warn(self.deprecation_message)
+        if enter:
+            if iscoroutinefunction(enter):
+                enter_async = True
+        if exit_:
+            if iscoroutinefunction(exit_):
+                exit_async = True
+
+        if enter_async or exit_async:
+
+            async def legacy_generator():
+                if enter:
+                    await await_maybe(enter())
+                yield
+                if exit_:
+                    await await_maybe(exit_())
+
+            self._generators.append(IteratorContainer(aiter=legacy_generator()))
+        else:
+
+            def legacy_generator():
+                if enter:
+                    enter()
+                yield
+                if exit_:
+                    exit_()
+
+            self._generators.append(IteratorContainer(iter=legacy_generator()))
+        return True
 
     def __init__(self, extensions: List[Extension]):
-        self._generators: List[AsyncIterator[None]] = []
-        self._sync_generators: List[Iterator[None]] = []
+
+        self._generators: List[IteratorContainer] = []
+
+        self.deprecation_message = (
+            f"Event driven styled extensions for "
+            f"{self.LEGACY_ENTER} or {self.LEGACY_EXIT}"
+            f" are deprecated, use {self.HOOK_NAME} instead"
+        )
         for extension in extensions:
-            generator_or_func: Union[AsyncIteratorOrIterator, Callable] = getattr(
-                extension, self.HOOK_NAME
-            )
-            if inspect.isgeneratorfunction(generator_or_func):
-                self._sync_generators.append(generator_or_func())
-            elif inspect.isasyncgenfunction(generator_or_func):
-                self._generators.append(generator_or_func())
-            # if it is just normal function make a fake generator:
-            else:
-                func = generator_or_func
-                if iscoroutinefunction(func):
-
-                    async def fake_gen():
-                        await func()
-                        yield
-
-                    self._generators.append(fake_gen())
+            # maybe it is a legacy extension, so find the old hooks first
+            if not self._legacy_extension_compat(extension):
+                generator_or_func: Union[AsyncIteratorOrIterator, Callable] = getattr(
+                    extension, self.HOOK_NAME
+                )
+                if inspect.isgeneratorfunction(generator_or_func):
+                    self._generators.append(IteratorContainer(iter=generator_or_func()))
+                elif inspect.isasyncgenfunction(generator_or_func):
+                    self._generators.append(
+                        IteratorContainer(aiter=generator_or_func())
+                    )
+                # if it is just normal function make a fake generator:
                 else:
+                    func = generator_or_func
+                    if iscoroutinefunction(func):
 
-                    def fake_gen():
-                        func()
-                        yield
+                        async def fake_gen():
+                            await func()
+                            yield
 
-                    self._sync_generators.append(fake_gen())
+                        self._generators.append(IteratorContainer(aiter=fake_gen()))
+                    else:
 
-    def sync_gen_enter(self) -> None:
-        for gen in self._sync_generators:
-            gen.__next__()
+                        def fake_gen():
+                            func()
+                            yield
 
-    def sync_gen_exit(self) -> None:
-        for sync_generator in self._sync_generators:
-            with contextlib.suppress(StopIteration):
-                sync_generator.__next__()
+                        self._generators.append(IteratorContainer(iter=fake_gen()))
+
+    def iter_gens(self):
+        # Note: we can't create similar async version
+        # because coroutines are not allowed to raise StopIteration
+        for gen in self._generators:
+            gen.iter.__next__()
 
     def __enter__(self):
-        self.sync_gen_enter()
+        self.iter_gens()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.sync_gen_exit()
+        with contextlib.suppress(StopIteration):
+            self.iter_gens()
 
     async def __aenter__(self):
-        self.sync_gen_enter()
         for gen in self._generators:
-            await gen.__anext__()
+            if gen.iter:
+                gen.iter.__next__()
+            else:
+                await gen.aiter.__anext__()
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        self.sync_gen_exit()
-        for gen in self._generators:
-            with contextlib.suppress(StopAsyncIteration):
-                await gen.__anext__()
+        with contextlib.suppress(StopAsyncIteration, StopIteration):
+            for gen in self._generators:
+                if gen.iter:
+                    gen.iter.__next__()
+                else:
+                    await gen.aiter.__anext__()
 
 
-class RequestContextManager(ExtensionContextManager):
+class RequestContextManager(ExtensionContextManagerBase):
     HOOK_NAME = Extension.on_request.__name__
+    LEGACY_ENTER = "on_request_start"
+    LEGACY_EXIT = "on_request_end"
 
 
-class ValidationContextManager(ExtensionContextManager):
+class ValidationContextManager(ExtensionContextManagerBase):
     HOOK_NAME = Extension.on_validate.__name__
+    LEGACY_ENTER = "on_validation_start"
+    LEGACY_EXIT = "on_validation_end"
 
 
-class ParsingContextManager(ExtensionContextManager):
+class ParsingContextManager(ExtensionContextManagerBase):
     HOOK_NAME = Extension.on_parse.__name__
+    LEGACY_ENTER = "on_parsing_start"
+    LEGACY_EXIT = "on_parsing_end"
 
 
-class ExecutingContextManager(ExtensionContextManager):
+class ExecutingContextManager(ExtensionContextManagerBase):
     HOOK_NAME = Extension.on_execute.__name__
+    LEGACY_ENTER = "on_executing_start"
+    LEGACY_EXIT = "on_executing_end"

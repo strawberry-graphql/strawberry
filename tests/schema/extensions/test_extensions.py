@@ -1,5 +1,6 @@
 import dataclasses
 import json
+import warnings
 from typing import Optional, Type
 from unittest.mock import patch
 
@@ -317,6 +318,56 @@ async def test_extension_no_yield(default_query_types_and_query):
     assert result.errors is None
 
     SyncExt.preform_test()
+
+
+async def test_old_style_extensions():
+    with warnings.catch_warnings(record=True) as w:
+
+        class CompatExtension(TestAbleExtension):
+            expected = {1, 2, 3, 4, 5, 6, 7, 8}
+
+            async def on_request_start(self):
+                self.called_hooks.add(1)
+
+            async def on_request_end(self):
+                self.called_hooks.add(2)
+
+            async def on_validation_start(self):
+                self.called_hooks.add(3)
+
+            async def on_validation_end(self):
+                self.called_hooks.add(4)
+
+            async def on_parsing_start(self):
+                self.called_hooks.add(5)
+
+            async def on_parsing_end(self):
+                self.called_hooks.add(6)
+
+            async def on_executing_start(self):
+                self.called_hooks.add(7)
+
+            async def on_executing_end(self):
+                self.called_hooks.add(8)
+
+        @strawberry.type
+        class Person:
+            name: str = "Jess"
+
+        @strawberry.type
+        class Query:
+            @strawberry.field
+            def person(self) -> Person:
+                return Person()
+
+        schema = strawberry.Schema(query=Query, extensions=[CompatExtension])
+        query = "query TestQuery { person { name } }"
+
+        result = await schema.execute(query)
+        assert result.errors is None
+
+        assert CompatExtension.called_hooks == {1, 2, 3, 4, 5, 6, 7, 8}
+        assert "Event driven styled extensions for" in w[0].message.args[0]
 
 
 def test_warning_about_async_get_results_hooks_in_sync_context():
