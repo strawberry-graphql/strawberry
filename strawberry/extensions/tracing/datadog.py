@@ -31,7 +31,7 @@ class DatadogTracingExtension(Extension):
     def hash_query(self, query: str):
         return hashlib.md5(query.encode("utf-8")).hexdigest()
 
-    def on_request(self) -> Iterator[None]:
+    def on_operation(self) -> Iterator[None]:
         self._operation_name = self.execution_context.operation_name
         span_name = (
             f"{self._operation_name}" if self._operation_name else "Anonymous Query"

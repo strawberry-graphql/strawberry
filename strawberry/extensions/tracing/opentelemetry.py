@@ -40,7 +40,7 @@ class OpenTelemetryExtension(Extension):
         if execution_context:
             self.execution_context = execution_context
 
-    def on_request(self):
+    def on_operation(self):
         self._operation_name = self.execution_context.operation_name
         span_name = (
             f"GraphQL Query: {self._operation_name}"

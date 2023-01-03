@@ -77,7 +77,7 @@ class ApolloTracingExtension(Extension):
         self._resolver_stats: typing.List[ApolloResolverStats] = []
         self.execution_context = execution_context
 
-    def on_request(self):
+    def on_operation(self):
         self.start_timestamp = self.now()
         self.start_time = datetime.utcnow()
         yield

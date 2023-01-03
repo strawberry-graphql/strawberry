@@ -82,7 +82,7 @@ def test_extension_access_to_errors():
     execution_errors = []
 
     class MyExtension(Extension):
-        def on_request(self):
+        def on_operation(self):
             nonlocal execution_errors
             yield
             execution_errors = self.execution_context.errors
@@ -117,7 +117,7 @@ def test_extension_access_to_root_value():
     root_value = None
 
     class MyExtension(Extension):
-        def on_request(self):
+        def on_operation(self):
             nonlocal root_value
             yield
             root_value = self.execution_context.root_value
@@ -176,7 +176,7 @@ def default_query_types_and_query() -> DefaultSchemaQuery:
 @pytest.fixture()
 def async_extension() -> Type[TestAbleExtension]:
     class MyExtension(TestAbleExtension):
-        async def on_request(self):
+        async def on_operation(self):
             self.called_hooks.add(1)
             yield
             self.called_hooks.add(2)
@@ -210,7 +210,7 @@ def async_extension() -> Type[TestAbleExtension]:
 @pytest.fixture()
 def sync_extension() -> Type[TestAbleExtension]:
     class MyExtension(TestAbleExtension):
-        def on_request(self):
+        def on_operation(self):
             self.called_hooks.add(1)
             yield
             self.called_hooks.add(2)
@@ -304,7 +304,7 @@ async def test_extension_no_yield(default_query_types_and_query):
     class SyncExt(TestAbleExtension):
         expected = {1, 2}
 
-        def on_request(self):
+        def on_operation(self):
             self.called_hooks.add(1)
 
         async def on_parse(self):
@@ -632,7 +632,7 @@ def test_extend_error_format_example():
     # Test that the example of how to extend error format
 
     class ExtendErrorFormat(Extension):
-        def on_request(self):
+        def on_operation(self):
             yield
             result = self.execution_context.result
             if getattr(result, "errors", None):

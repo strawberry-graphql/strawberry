@@ -142,7 +142,7 @@ class ExtensionContextManagerBase:
 
 
 class RequestContextManager(ExtensionContextManagerBase):
-    HOOK_NAME = _ExtensionHinter.on_request.__name__
+    HOOK_NAME = _ExtensionHinter.on_operation.__name__
     LEGACY_ENTER = "on_request_start"
     LEGACY_EXIT = "on_request_end"
 

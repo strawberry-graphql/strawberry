@@ -139,7 +139,7 @@ def test_execution_context_operation_name_and_type_with_fragments():
 
 def test_error_when_accessing_operation_type_before_parsing():
     class MyExtension(Extension):
-        def on_request(self):
+        def on_operation(self):
             execution_context = self.execution_context
 
             # This should raise a RuntimeError

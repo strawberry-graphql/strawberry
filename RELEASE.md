@@ -1,6 +1,6 @@
 Release type: minor
 
-This PR introduces context-styled extensions global hooks.
+Support Extensions on subscriptions
 i.e:
 ```python
 def on_request(self) -> Iterable[None]:
@@ -9,5 +9,3 @@ def on_request(self) -> Iterable[None]:
     # This part is called when a GraphQL request ends
 
 ```
-**Note: If you have any "old-style" hooks
-they will be called instead of any "context-styled" hooks.**

@@ -8,21 +8,21 @@ from strawberry.utils.await_maybe import AsyncIteratorOrIterator, AwaitableOrVal
 
 # just for getting function nams dynamically and editors auto-complete.
 class _ExtensionHinter:
-    def on_request(self) -> AsyncIteratorOrIterator[None]:
-        """Called before and after a GraphQL request starts"""
-        yield None  # pragma: nocover
+    def on_operation(self) -> AsyncIteratorOrIterator[None]:  # pragma: nocover
+        """Called before and after a GraphQL operation (query / mutation) starts"""
+        yield None
 
-    def on_validate(self) -> AsyncIteratorOrIterator[None]:
+    def on_validate(self) -> AsyncIteratorOrIterator[None]:  # pragma: nocover
         """Called before and after the validation step"""
-        yield None  # pragma: nocover
+        yield None
 
-    def on_parse(self) -> AsyncIteratorOrIterator[None]:
+    def on_parse(self) -> AsyncIteratorOrIterator[None]:  # pragma: nocover
         """Called before and after the parsing step"""
-        yield None  # pragma: nocover
+        yield None
 
-    def on_execute(self) -> AsyncIteratorOrIterator[None]:
+    def on_execute(self) -> AsyncIteratorOrIterator[None]:  # pragma: nocover
         """Called before and after the execution step"""
-        yield None  # pragma: nocover
+        yield None
 
 
 class Extension:
