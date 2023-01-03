@@ -56,7 +56,7 @@ class OpenTelemetryExtension(Extension):
             "query", self.execution_context.query
         )
 
-    def on_request_end(self):
+        yield
         # If the client doesn't provide an operation name then GraphQL will
         # execute the first operation in the query string. This might be a named
         # operation but we don't know until the parsing stage has finished. If
@@ -73,8 +73,7 @@ class OpenTelemetryExtension(Extension):
             "GraphQL Validation",
             context=ctx,
         )
-
-    def on_validation_end(self):
+        yield
         self._span_holder[RequestStage.VALIDATION].end()
 
     def on_parse(self):
@@ -83,7 +82,7 @@ class OpenTelemetryExtension(Extension):
             "GraphQL Parsing", context=ctx
         )
 
-    def on_parsing_end(self):
+        yield
         self._span_holder[RequestStage.PARSING].end()
 
     def filter_resolver_args(

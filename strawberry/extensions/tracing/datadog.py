@@ -53,20 +53,17 @@ class DatadogTracingExtension(Extension):
             operation_type = "subscription"
 
         self.request_span.set_tag("graphql.operation_type", operation_type)
-
-    def on_request_end(self) -> None:
+        yield
         self.request_span.finish()
 
     def on_validate(self):
         self.validation_span = tracer.trace("Validation", span_type="graphql")
-
-    def on_validation_end(self):
+        yield
         self.validation_span.finish()
 
     def on_parse(self):
         self.parsing_span = tracer.trace("Parsing", span_type="graphql")
-
-    def on_parsing_end(self):
+        yield
         self.parsing_span.finish()
 
     async def resolve(self, _next, root, info, *args, **kwargs):

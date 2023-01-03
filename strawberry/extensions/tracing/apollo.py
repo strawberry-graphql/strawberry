@@ -80,21 +80,18 @@ class ApolloTracingExtension(Extension):
     def on_request(self):
         self.start_timestamp = self.now()
         self.start_time = datetime.utcnow()
-
-    def on_request_end(self):
+        yield
         self.end_timestamp = self.now()
         self.end_time = datetime.utcnow()
 
     def on_parse(self):
         self._start_parsing = self.now()
-
-    def on_parsing_end(self):
+        yield
         self._end_parsing = self.now()
 
     def on_validate(self):
         self._start_validation = self.now()
-
-    def on_validation_end(self):
+        yield
         self._end_validation = self.now()
 
     def now(self) -> int:
