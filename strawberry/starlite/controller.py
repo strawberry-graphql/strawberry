@@ -314,7 +314,7 @@ def make_graphql_controller(
         ) -> Response[Union[GraphQLResource, str]]:
             actual_response: Response[Union[GraphQLResource, str]]
 
-            content_type = request.headers.get("content-type", "")
+            content_type, _ = request.content_type
 
             if "application/json" in content_type:
                 try:
