@@ -344,10 +344,10 @@ async def test_old_style_extensions():
             async def on_parsing_end(self):
                 self.called_hooks.add(6)
 
-            async def on_executing_start(self):
+            def on_executing_start(self):
                 self.called_hooks.add(7)
 
-            async def on_executing_end(self):
+            def on_executing_end(self):
                 self.called_hooks.add(8)
 
         @strawberry.type
