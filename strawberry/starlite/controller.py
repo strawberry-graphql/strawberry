@@ -36,6 +36,7 @@ from strawberry.http import (
 from strawberry.schema import BaseSchema
 from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
+from strawberry.subscriptions.constants import WS_4406_PROTOCOL_NOT_ACCEPTABLE
 from strawberry.types import ExecutionResult
 from strawberry.types.graphql import OperationType
 from strawberry.utils.debug import pretty_print_graphql_operation
@@ -280,8 +281,6 @@ def make_graphql_controller(
             context: CustomContext,
             root_value: Any,
         ) -> Response[Union[GraphQLResource, str]]:
-            actual_response: Response
-
             if request.query_params:
                 try:
                     query_data = parse_query_params(
@@ -383,8 +382,7 @@ def make_graphql_controller(
                     ws=socket,
                 ).handle()
             else:
-                # Code 4406 is "Subprotocol not acceptable"
-                await socket.close(code=4406)
+                await socket.close(code=WS_4406_PROTOCOL_NOT_ACCEPTABLE)
 
         def pick_preferred_protocol(self, socket: WebSocket) -> Optional[str]:
             protocols = socket.scope["subprotocols"]
