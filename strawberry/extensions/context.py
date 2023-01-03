@@ -5,7 +5,12 @@ from asyncio import iscoroutinefunction
 from typing import AsyncIterator, Callable, Iterator, List, NamedTuple, Optional, Union
 
 from strawberry.extensions import Extension
-from strawberry.utils.await_maybe import AsyncIteratorOrIterator, await_maybe
+from strawberry.extensions.base_extension import _ExtensionHinter
+from strawberry.utils.await_maybe import (
+    AsyncIteratorOrIterator,
+    AwaitableOrValue,
+    await_maybe,
+)
 
 
 class IteratorContainer(NamedTuple):
@@ -72,9 +77,12 @@ class ExtensionContextManagerBase:
         for extension in extensions:
             # maybe it is a legacy extension, so find the old hooks first
             if not self._legacy_extension_compat(extension):
-                generator_or_func: Union[AsyncIteratorOrIterator, Callable] = getattr(
-                    extension, self.HOOK_NAME
-                )
+                generator_or_func: Optional[
+                    Union[AsyncIteratorOrIterator, Callable]
+                ] = getattr(extension, self.HOOK_NAME, None)
+                if not generator_or_func:
+                    continue
+
                 if inspect.isgeneratorfunction(generator_or_func):
                     self._generators.append(IteratorContainer(iter=generator_or_func()))
                 elif inspect.isasyncgenfunction(generator_or_func):
@@ -83,7 +91,9 @@ class ExtensionContextManagerBase:
                     )
                 # if it is just normal function make a fake generator:
                 else:
-                    func = generator_or_func
+                    func: Callable[
+                        [], AwaitableOrValue
+                    ] = generator_or_func  # type: ignore
                     if iscoroutinefunction(func):
 
                         async def fake_gen():
@@ -103,6 +113,7 @@ class ExtensionContextManagerBase:
         # Note: we can't create similar async version
         # because coroutines are not allowed to raise StopIteration
         for gen in self._generators:
+            assert gen.iter
             gen.iter.__next__()
 
     def __enter__(self):
@@ -117,6 +128,7 @@ class ExtensionContextManagerBase:
             if gen.iter:
                 gen.iter.__next__()
             else:
+                assert gen.aiter
                 await gen.aiter.__anext__()
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
@@ -125,28 +137,29 @@ class ExtensionContextManagerBase:
                 if gen.iter:
                     gen.iter.__next__()
                 else:
+                    assert gen.aiter
                     await gen.aiter.__anext__()
 
 
 class RequestContextManager(ExtensionContextManagerBase):
-    HOOK_NAME = Extension.on_request.__name__
+    HOOK_NAME = _ExtensionHinter.on_request.__name__
     LEGACY_ENTER = "on_request_start"
     LEGACY_EXIT = "on_request_end"
 
 
 class ValidationContextManager(ExtensionContextManagerBase):
-    HOOK_NAME = Extension.on_validate.__name__
+    HOOK_NAME = _ExtensionHinter.on_validate.__name__
     LEGACY_ENTER = "on_validation_start"
     LEGACY_EXIT = "on_validation_end"
 
 
 class ParsingContextManager(ExtensionContextManagerBase):
-    HOOK_NAME = Extension.on_parse.__name__
+    HOOK_NAME = _ExtensionHinter.on_parse.__name__
     LEGACY_ENTER = "on_parsing_start"
     LEGACY_EXIT = "on_parsing_end"
 
 
 class ExecutingContextManager(ExtensionContextManagerBase):
-    HOOK_NAME = Extension.on_execute.__name__
+    HOOK_NAME = _ExtensionHinter.on_execute.__name__
     LEGACY_ENTER = "on_executing_start"
     LEGACY_EXIT = "on_executing_end"
