@@ -1,11 +1,10 @@
-from tests.starlite.schema import schema
-
 from starlite import Provide, Request, Starlite
 from strawberry.starlite import make_graphql_controller
 from strawberry.starlite.handlers.graphql_transport_ws_handler import (
     GraphQLTransportWSHandler,
 )
 from strawberry.starlite.handlers.graphql_ws_handler import GraphQLWSHandler
+from tests.starlite.schema import schema
 
 
 class DebuggableGraphQLTransportWSHandler(GraphQLTransportWSHandler):

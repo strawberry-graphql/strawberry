@@ -1,12 +1,11 @@
 from typing import Dict
 
-from tests.starlite.app import create_app
-
 import strawberry
 from starlite import Provide, Starlite
 from starlite.testing import TestClient
 from strawberry.starlite import BaseContext, make_graphql_controller
 from strawberry.types import Info
+from tests.starlite.app import create_app
 
 
 def test_base_context():

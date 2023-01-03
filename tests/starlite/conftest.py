@@ -1,7 +1,7 @@
 import pytest
-from tests.starlite.app import create_app
 
 from starlite.testing import TestClient
+from tests.starlite.app import create_app
 
 
 @pytest.fixture

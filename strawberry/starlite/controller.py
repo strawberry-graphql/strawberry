@@ -46,7 +46,6 @@ from .handlers.graphql_transport_ws_handler import (
 )
 from .handlers.graphql_ws_handler import GraphQLWSHandler as BaseGraphQLWSHandler
 
-
 if TYPE_CHECKING:
     from starlite.types import Dependencies
 

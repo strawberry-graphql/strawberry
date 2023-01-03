@@ -1,9 +1,9 @@
 import pytest
-from tests.starlite.app import create_app
 
 from starlite.exceptions import WebSocketDisconnect
 from starlite.testing import TestClient
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
+from tests.starlite.app import create_app
 
 
 def test_turning_off_graphql_ws():
