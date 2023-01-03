@@ -285,7 +285,7 @@ class Schema(BaseSchema):
             provided_operation_name=operation_name,
         )
 
-        return await subscribe(
+        return subscribe(
             self._schema,
             query,
             extensions=self.get_extensions(),
