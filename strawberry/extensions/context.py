@@ -20,8 +20,16 @@ class IteratorContainer(NamedTuple):
 
 class ExtensionContextManagerBase:
     __slots__ = ("_generators", "deprecation_message")
+
+    def __init_subclass__(cls, **kwargs):
+        cls.DEPRECATION_MESSAGE = (
+            f"Event driven styled extensions for "
+            f"{cls.LEGACY_ENTER} or {cls.LEGACY_EXIT}"
+            f" are deprecated, use {cls.HOOK_NAME} instead"
+        )
+
     HOOK_NAME: str
-    deprecation_message: str
+    DEPRECATION_MESSAGE: str
     LEGACY_ENTER: str
     LEGACY_EXIT: str
 
@@ -35,7 +43,7 @@ class ExtensionContextManagerBase:
         exit_async = False
         if not enter and not exit_:
             return False
-        warnings.warn(self.deprecation_message)
+        warnings.warn(self.DEPRECATION_MESSAGE)
         if enter:
             if iscoroutinefunction(enter):
                 enter_async = True
@@ -69,11 +77,6 @@ class ExtensionContextManagerBase:
 
         self._generators: List[IteratorContainer] = []
 
-        self.deprecation_message = (
-            f"Event driven styled extensions for "
-            f"{self.LEGACY_ENTER} or {self.LEGACY_EXIT}"
-            f" are deprecated, use {self.HOOK_NAME} instead"
-        )
         for extension in extensions:
             # maybe it is a legacy extension, so find the old hooks first
             if not self._legacy_extension_compat(extension):
