@@ -62,14 +62,14 @@ class MyExtension(Extension):
 Lifecycle hooks runs before graphql operation occur and after it is done.
 Lifecycle hooks uses generator syntax.
 In example:
-`on_request` hook can be used to run code when a GraphQL request
+`on_operation` hook can be used to run code when a GraphQL request
 starts and ends.
 
 ```python
 from strawberry.extensions import Extension
 
 class MyExtension(Extension):
-    def on_request(self):
+    def on_operation(self):
         print('GraphQL request start')
         yield
         print('GraphQL request end')
@@ -80,7 +80,7 @@ class MyExtension(Extension):
 
 ```python
 class ExtendErrorFormat(Extension):
-    def on_request(self):
+    def on_operation(self):
         yield
         result = self.execution_context.result
         if getattr(result, "errors", None):
@@ -238,9 +238,9 @@ from strawberry.extensions import Extension
 from mydb import get_db_session
 
 class MyExtension(Extension):
-    def on_request_start(self):
+    def on_operation_start(self):
         self.execution_context.context["db"] = get_db_session()
 
-    def on_request_end(self):
+    def on_operation_end(self):
         self.execution_context.context["db"].close()
 ```
