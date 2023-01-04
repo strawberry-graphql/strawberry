@@ -72,3 +72,4 @@ class ExecutionResult:
     data: Optional[Dict[str, Any]] = None
     errors: Optional[List[GraphQLError]] = None
     extensions: Dict[str, Any] = dataclasses.field(default_factory=dict)
+    validation_error: bool = False

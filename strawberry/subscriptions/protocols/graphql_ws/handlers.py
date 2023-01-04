@@ -1,13 +1,13 @@
 import asyncio
 from abc import ABC, abstractmethod
 from contextlib import suppress
-from typing import Any, AsyncGenerator, Dict, Optional, cast
+from typing import Any, Dict, Optional, cast
 
-from graphql import ExecutionResult as GraphQLExecutionResult
 from graphql import GraphQLError
 from graphql.error.graphql_error import format_error as format_graphql_error
 
 from strawberry.schema import BaseSchema
+from strawberry.schema.subscribe import Subscription
 from strawberry.subscriptions.protocols.graphql_ws import (
     GQL_COMPLETE,
     GQL_CONNECTION_ACK,
@@ -40,7 +40,7 @@ class BaseGraphQLWSHandler(ABC):
         self.keep_alive = keep_alive
         self.keep_alive_interval = keep_alive_interval
         self.keep_alive_task: Optional[asyncio.Task] = None
-        self.subscriptions: Dict[str, AsyncGenerator] = {}
+        self.subscriptions: Dict[str, Subscription] = {}
         self.tasks: Dict[str, asyncio.Task] = {}
 
     @abstractmethod
@@ -105,29 +105,16 @@ class BaseGraphQLWSHandler(ABC):
         if self.debug:
             pretty_print_graphql_operation(operation_name, query, variables)
 
-        try:
-            result_source = await self.schema.subscribe(
-                query=query,
-                variable_values=variables,
-                operation_name=operation_name,
-                context_value=context,
-                root_value=root_value,
-            )
-        except GraphQLError as error:
-            error_payload = format_graphql_error(error)
-            await self.send_message(GQL_ERROR, operation_id, error_payload)
-            self.schema.process_errors([error])
-            return
+        subscription = await self.schema.subscribe(
+            query=query,
+            variable_values=variables,
+            operation_name=operation_name,
+            context_value=context,
+            root_value=root_value,
+        )
 
-        if isinstance(result_source, GraphQLExecutionResult):
-            assert result_source.errors
-            error_payload = format_graphql_error(result_source.errors[0])
-            await self.send_message(GQL_ERROR, operation_id, error_payload)
-            self.schema.process_errors(result_source.errors)
-            return
-
-        self.subscriptions[operation_id] = result_source
-        result_handler = self.handle_async_results(result_source, operation_id)
+        self.subscriptions[operation_id] = subscription
+        result_handler = self.handle_async_results(subscription, operation_id)
         self.tasks[operation_id] = asyncio.create_task(result_handler)
 
     async def handle_stop(self, message: OperationMessage) -> None:
@@ -142,17 +129,20 @@ class BaseGraphQLWSHandler(ABC):
 
     async def handle_async_results(
         self,
-        result_source: AsyncGenerator,
+        subscription: Subscription,
         operation_id: str,
     ) -> None:
         try:
-            async for result in result_source:
+            async for result in subscription:
                 payload = {"data": result.data}
                 if result.errors:
                     payload["errors"] = [
                         format_graphql_error(err) for err in result.errors
                     ]
-                await self.send_message(GQL_DATA, operation_id, payload)
+                message_type = GQL_ERROR if result.validation_error else GQL_DATA
+                if message_type == GQL_ERROR:
+                    payload = payload["errors"]
+                await self.send_message(message_type, operation_id, payload)
                 # log errors after send_message to prevent potential
                 # slowdown of sending result
                 if result.errors:
@@ -174,7 +164,7 @@ class BaseGraphQLWSHandler(ABC):
         await self.send_message(GQL_COMPLETE, operation_id, None)
 
     async def cleanup_operation(self, operation_id: str) -> None:
-        await self.subscriptions[operation_id].aclose()
+        await self.subscriptions[operation_id].terminate()
         del self.subscriptions[operation_id]
 
         self.tasks[operation_id].cancel()

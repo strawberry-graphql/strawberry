@@ -32,7 +32,8 @@ from ..printer import print_schema
 from . import compat
 from .base import BaseSchema
 from .config import StrawberryConfig
-from .execute import execute, execute_sync, subscribe
+from .execute import AsyncExecution, execute_sync
+from .subscribe import Subscription
 
 DEFAULT_ALLOWED_OPERATION_TYPES = {
     OperationType.QUERY,
@@ -199,6 +200,24 @@ class Schema(BaseSchema):
             None,
         )
 
+    def _create_execution_context(
+        self,
+        query: str,
+        variable_values: Optional[Dict[str, Any]] = None,
+        context_value: Optional[Any] = None,
+        root_value: Optional[Any] = None,
+        operation_name: Optional[str] = None,
+    ):
+
+        return ExecutionContext(
+            query=query,
+            schema=self,
+            context=context_value,
+            root_value=root_value,
+            variables=variable_values,
+            provided_operation_name=operation_name,
+        )
+
     def execute_sync(
         self,
         query: str,
@@ -211,13 +230,8 @@ class Schema(BaseSchema):
         if allowed_operation_types is None:
             allowed_operation_types = DEFAULT_ALLOWED_OPERATION_TYPES
 
-        execution_context = ExecutionContext(
-            query=query,
-            schema=self,
-            context=context_value,
-            root_value=root_value,
-            variables=variable_values,
-            provided_operation_name=operation_name,
+        execution_context = self._create_execution_context(
+            query, variable_values, context_value, root_value, operation_name
         )
 
         result = execute_sync(
@@ -244,27 +258,18 @@ class Schema(BaseSchema):
         if allowed_operation_types is None:
             allowed_operation_types = DEFAULT_ALLOWED_OPERATION_TYPES
 
-        # Create execution context
-        execution_context = ExecutionContext(
-            query=query,
-            schema=self,
-            context=context_value,
-            root_value=root_value,
-            variables=variable_values,
-            provided_operation_name=operation_name,
+        execution_context = self._create_execution_context(
+            query, variable_values, context_value, root_value, operation_name
         )
 
-        result = await execute(
-            self._schema,
-            query,
+        return await AsyncExecution(
+            schema=self._schema,
             extensions=self.get_extensions(),
             execution_context_class=self.execution_context_class,
             execution_context=execution_context,
             allowed_operation_types=allowed_operation_types,
             process_errors=self.process_errors,
-        )
-
-        return result
+        ).execute()
 
     async def subscribe(
         self,
@@ -275,27 +280,17 @@ class Schema(BaseSchema):
         operation_name: Optional[str] = None,
     ):
 
-        # Create execution context
-        execution_context = ExecutionContext(
-            query=query,
-            schema=self,
-            context=context_value,
-            root_value=root_value,
-            variables=variable_values,
-            provided_operation_name=operation_name,
+        execution_context = self._create_execution_context(
+            query, variable_values, context_value, root_value, operation_name
         )
 
-        return subscribe(
-            self._schema,
-            query,
+        return await Subscription(
+            schema=self._schema,
             extensions=self.get_extensions(),
             execution_context=execution_context,
             allowed_operation_types=[OperationType.SUBSCRIPTION],
             process_errors=self.process_errors,
-        )
-
-        # return await subscribe(
-        #     self._schema,
+        ).subscribe()
 
     def as_str(self) -> str:
         return print_schema(self)
