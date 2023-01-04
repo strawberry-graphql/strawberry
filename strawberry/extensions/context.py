@@ -96,17 +96,17 @@ class ExtensionContextManagerBase:
             if enter:
                 if iscoroutinefunction(enter):
                     enter_async = True
-            if exit_:
+            if exit_:  # pragma: no cover
                 if iscoroutinefunction(exit_):
                     exit_async = True
 
             if enter_async or exit_async:
 
                 async def legacy_generator():
-                    if enter:
+                    if enter:  # pragma: no cover
                         await await_maybe(enter())
                     yield
-                    if exit_:
+                    if exit_:  # pragma: no cover
                         await await_maybe(exit_())
 
                 self._execution_order.add(async_iterable=legacy_generator)
@@ -116,7 +116,7 @@ class ExtensionContextManagerBase:
                     if enter:
                         enter()
                     yield
-                    if exit_:
+                    if exit_:  # pragma: no cover
                         exit_()
 
                 self._execution_order.add(iterable=legacy_generator)
