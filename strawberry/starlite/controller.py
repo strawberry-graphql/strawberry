@@ -9,6 +9,7 @@ import msgspec
 from starlite import (
     BackgroundTasks,
     Controller,
+    HttpMethod,
     MediaType,
     Provide,
     Request,
@@ -204,10 +205,9 @@ def make_graphql_controller(
                     media_type=MediaType.TEXT,
                 )
 
-            method = request.method
-            allowed_operation_types = OperationType.from_http(method)
+            allowed_operation_types = OperationType.from_http(request.method)
 
-            if not self._allow_queries_via_get and method == "GET":
+            if not self._allow_queries_via_get and request.method == HttpMethod.GET:
                 allowed_operation_types = allowed_operation_types - {
                     OperationType.QUERY
                 }
@@ -229,7 +229,7 @@ def make_graphql_controller(
                 )
             except InvalidOperationTypeError as e:
                 return Response(
-                    e.as_http_error_reason(method),
+                    e.as_http_error_reason(request.method),
                     status_code=HTTP_400_BAD_REQUEST,
                     media_type=MediaType.TEXT,
                 )
