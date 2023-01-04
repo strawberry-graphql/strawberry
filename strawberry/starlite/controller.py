@@ -50,7 +50,7 @@ from .handlers.graphql_ws_handler import GraphQLWSHandler as BaseGraphQLWSHandle
 if TYPE_CHECKING:
     from typing import Iterable, List, Type
 
-    from starlite.types import Dependencies
+    from starlite.types import AnyCallable, Dependencies
 
     MergedContext = Union[
         "BaseContext",
@@ -125,7 +125,7 @@ def make_graphql_controller(
     keep_alive: bool = False,
     keep_alive_interval: float = 1,
     debug: bool = False,
-    root_value_getter=None,
+    root_value_getter: "Optional[AnyCallable]" = None,
     context_getter=None,
     subscription_protocols=(GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL),
     connection_init_wait_timeout: "timedelta" = timedelta(minutes=1),
@@ -171,9 +171,9 @@ def make_graphql_controller(
             self,
             query: str,
             variables: "Optional[Dict[str, Any]]" = None,
-            context: "Any" = None,
+            context: "Optional[CustomContext]" = None,
             operation_name: "Optional[str]" = None,
-            root_value: "Any" = None,
+            root_value: "Optional[Any]" = None,
             allowed_operation_types: "Optional[Iterable[OperationType]]" = None,
         ):
             if self._debug:
@@ -194,7 +194,11 @@ def make_graphql_controller(
             return process_result(result)
 
         async def execute_request(
-            self, request: "Request", data: dict, context, root_value
+            self,
+            request: "Request",
+            data: dict,
+            context: "CustomContext",
+            root_value: "Any",
         ) -> "Response[Union[GraphQLResource, str]]":
             try:
                 request_data = parse_request_data(data or {})
