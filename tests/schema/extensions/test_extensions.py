@@ -271,6 +271,8 @@ async def test_async_extension_hooks(default_query_types_and_query, async_extens
 
 
 async def test_subscription(default_query_types_and_query, async_extension):
+    # `resolve` extension is not supported yet see https://github.com/graphql-python/graphql-core/issues/188
+    async_extension.expected = {1, 2, 3, 4, 5, 6, 7, 8, 9}
     schema = strawberry.Schema(
         query=default_query_types_and_query.query_type,
         subscription=default_query_types_and_query.subscription_type,

@@ -289,7 +289,6 @@ class Schema(BaseSchema):
             self._schema,
             query,
             extensions=self.get_extensions(),
-            execution_context_class=self.execution_context_class,
             execution_context=execution_context,
             allowed_operation_types=[OperationType.SUBSCRIPTION],
             process_errors=self.process_errors,

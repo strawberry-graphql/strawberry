@@ -69,6 +69,6 @@ class ExecutionContext:
 
 @dataclasses.dataclass
 class ExecutionResult:
-    data: Optional[Dict[str, Any]]
-    errors: Optional[List[GraphQLError]]
-    extensions: Optional[Dict[str, Any]] = None
+    data: Dict[str, Any] = dataclasses.field(default_factory=dict)
+    errors: List[GraphQLError] = dataclasses.field(default_factory=list)
+    extensions: Dict[str, Any] = dataclasses.field(default_factory=dict)

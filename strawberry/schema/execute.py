@@ -195,6 +195,29 @@ async def _parse_and_validate_runner(
             return ExecutionResult(data=None, errors=execution_context.errors)
 
 
+def _handle_execution_result(
+    result: GraphQLExecutionResult,
+    context: ExecutionContext,
+    process_errors: Callable[[List[GraphQLError], Optional[ExecutionContext]], None],
+) -> ExecutionResult:
+    context.result = result
+    # Also set errors on the execution_context so that it's easier
+    # to access in extensions
+    if result.errors:
+        context.errors = result.errors
+
+        # Run the `Schema.process_errors` function here before
+        # extensions have a chance to modify them (see the MaskErrors
+        # extension). That way we can log the original errors but
+        # only return a sanitised version to the client.
+        process_errors(result.errors, context)
+
+    return ExecutionResult(
+        data=result.data,
+        errors=result.errors,
+    )
+
+
 async def execute(
     schema: GraphQLSchema,
     query: str,
@@ -220,7 +243,8 @@ async def execute(
             process_errors=process_errors,
             allowed_operation_types=allowed_operation_types,
         )
-
+        assert execution_context.graphql_document
+        ret = ExecutionResult()
         async with extensions_runner.executing():
             if not execution_context.result:
                 result = original_execute(
@@ -236,25 +260,16 @@ async def execute(
 
                 if isawaitable(result):
                     result = await cast(Awaitable[GraphQLExecutionResult], result)
-
                 result = cast(GraphQLExecutionResult, result)
-                execution_context.result = result
-                # Also set errors on the execution_context so that it's easier
-                # to access in extensions
-                if result.errors:
-                    execution_context.errors = result.errors
-
-                    # Run the `Schema.process_errors` function here before
-                    # extensions have a chance to modify them (see the MaskErrors
-                    # extension). That way we can log the original errors but
-                    # only return a sanitised version to the client.
-                    process_errors(result.errors, execution_context)
-
-    return ExecutionResult(
-        data=execution_context.result.data,
-        errors=execution_context.result.errors,
-        extensions=await extensions_runner.get_extensions_results(),
-    )
+                ret = _handle_execution_result(
+                    result=result,
+                    context=execution_context,
+                    process_errors=process_errors,
+                )
+            else:
+                ret.data = execution_context.result.data
+        ret.extensions = await extensions_runner.get_extensions_results()
+        return ret
 
 
 async def subscribe(
@@ -264,7 +279,6 @@ async def subscribe(
     allowed_operation_types: Iterable[OperationType],
     extensions: Sequence[Union[Type[Extension], Extension]],
     execution_context: ExecutionContext,
-    execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
     process_errors: Callable[[List[GraphQLError], Optional[ExecutionContext]], None],
 ) -> AsyncIterator[ExecutionResult]:
     extensions_runner = ExtensionsRunner(
@@ -278,8 +292,10 @@ async def subscribe(
         process_errors=process_errors,
         allowed_operation_types=allowed_operation_types,
     )
+    assert execution_context.graphql_document
+
     async with extensions_runner.operation():
-        async_iterator_res = await original_subscribe(
+        async_iterator_or_res = await original_subscribe(
             schema,
             execution_context.graphql_document,
             root_value=execution_context.root_value,
@@ -287,17 +303,22 @@ async def subscribe(
             operation_name=execution_context.operation_name,
             context_value=execution_context.context,
         )
+        ret = ExecutionResult()
         async with extensions_runner.executing():
             if not execution_context.result:
-                result = await async_iterator_res.__anext__()
-                result = cast(GraphQLExecutionResult, result)
-                execution_context.result = result
-                if result.errors:
-                    execution_context.errors = result.errors
-                    process_errors(result.errors, execution_context)
-
-        yield ExecutionResult(
-            data=execution_context.result.data,
-            errors=execution_context.result.errors,
-            extensions=await extensions_runner.get_extensions_results(),
-        )
+                if isinstance(async_iterator_or_res, GraphQLExecutionResult):
+                    ret = _handle_execution_result(
+                        result=async_iterator_or_res,
+                        context=execution_context,
+                        process_errors=process_errors,
+                    )
+                else:
+                    assert hasattr(async_iterator_or_res, "__anext__")
+                    result = await async_iterator_or_res.__anext__()
+                    ret = _handle_execution_result(
+                        result=result,
+                        context=execution_context,
+                        process_errors=process_errors,
+                    )
+        ret.extensions = await extensions_runner.get_extensions_results()
+        yield ret
