@@ -245,9 +245,9 @@ def make_graphql_controller(
         def should_render_graphiql(self, request: "Request") -> bool:
             if not self._graphiql:
                 return False
-            return any(
-                supported_header in request.headers.get("accept", "")
-                for supported_header in ("text/html", "*/*")
+
+            return bool(
+                {"text/html", "*/*"} & (set(request.headers.getall("accept", set())))
             )
 
         def get_graphiql_response(self) -> "Response[str]":
