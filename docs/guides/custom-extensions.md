@@ -238,9 +238,8 @@ from strawberry.extensions import Extension
 from mydb import get_db_session
 
 class MyExtension(Extension):
-    def on_operation_start(self):
+    def on_operation(self):
         self.execution_context.context["db"] = get_db_session()
-
-    def on_operation_end(self):
+        yield
         self.execution_context.context["db"].close()
 ```
