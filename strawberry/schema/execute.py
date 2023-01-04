@@ -209,17 +209,17 @@ async def execute(
         execution_context=execution_context,
         extensions=list(extensions),
     )
-    await _parse_and_validate_runner(
-        query=query,
-        execution_context=execution_context,
-        extensions_runner=extensions_runner,
-        process_errors=process_errors,
-        allowed_operation_types=allowed_operation_types,
-    )
-
     async with extensions_runner.operation():
         # Note: In graphql-core the schema would be validated here but in
         # Strawberry we are validating it at initialisation time instead
+
+        await _parse_and_validate_runner(
+            query=query,
+            execution_context=execution_context,
+            extensions_runner=extensions_runner,
+            process_errors=process_errors,
+            allowed_operation_types=allowed_operation_types,
+        )
 
         async with extensions_runner.executing():
             if not execution_context.result:
