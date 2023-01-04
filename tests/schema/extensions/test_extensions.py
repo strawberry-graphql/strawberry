@@ -2,7 +2,7 @@ import contextlib
 import dataclasses
 import json
 import warnings
-from typing import Optional, Type
+from typing import AsyncGenerator, Optional, Type
 from unittest.mock import patch
 
 import pytest
@@ -141,9 +141,11 @@ def test_extension_access_to_root_value():
 
 
 @dataclasses.dataclass
-class DefaultSchemaQuery:
+class SchemaHelper:
     query_type: type
+    subscription_type: type
     query: str
+    subscription: str
 
 
 class TestAbleExtension(Extension):
@@ -160,7 +162,7 @@ class TestAbleExtension(Extension):
 
 
 @pytest.fixture()
-def default_query_types_and_query() -> DefaultSchemaQuery:
+def default_query_types_and_query() -> SchemaHelper:
     @strawberry.type
     class Person:
         name: str = "Jess"
@@ -171,8 +173,21 @@ def default_query_types_and_query() -> DefaultSchemaQuery:
         def person(self) -> Person:
             return Person()
 
+    @strawberry.type
+    class Subscription:
+        @strawberry.subscription
+        async def count(self) -> AsyncGenerator[int, None]:
+            for i in range(5):
+                yield i
+
+    subscription = "subscription TestSubscribe { count }"
     query = "query TestQuery { person { name } }"
-    return DefaultSchemaQuery(query_type=Query, query=query)
+    return SchemaHelper(
+        query_type=Query,
+        query=query,
+        subscription_type=Subscription,
+        subscription=subscription,
+    )
 
 
 @pytest.fixture()
@@ -251,6 +266,20 @@ async def test_async_extension_hooks(default_query_types_and_query, async_extens
 
     result = await schema.execute(default_query_types_and_query.query)
     assert result.errors is None
+
+    async_extension.preform_test()
+
+
+async def test_subscription(default_query_types_and_query, async_extension):
+    schema = strawberry.Schema(
+        query=default_query_types_and_query.query_type,
+        subscription=default_query_types_and_query.subscription_type,
+        extensions=[async_extension],
+    )
+
+    async for res in await schema.subscribe(default_query_types_and_query.subscription):
+        assert res.data
+        assert not res.errors
 
     async_extension.preform_test()
 

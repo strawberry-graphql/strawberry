@@ -287,22 +287,17 @@ async def subscribe(
             operation_name=execution_context.operation_name,
             context_value=execution_context.context,
         )
-        finnished = False
-        try:
-            while not finnished:
-                async with extensions_runner.executing():
-                    if not execution_context.result:
-                        result = await async_iterator_res.__anext__()
-                        result = cast(GraphQLExecutionResult, result)
-                        execution_context.result = result
-                        if result.errors:
-                            execution_context.errors = result.errors
-                            process_errors(result.errors, execution_context)
+        async with extensions_runner.executing():
+            if not execution_context.result:
+                result = await async_iterator_res.__anext__()
+                result = cast(GraphQLExecutionResult, result)
+                execution_context.result = result
+                if result.errors:
+                    execution_context.errors = result.errors
+                    process_errors(result.errors, execution_context)
 
-                yield ExecutionResult(
-                    data=execution_context.result.data,
-                    errors=execution_context.result.errors,
-                    extensions=await extensions_runner.get_extensions_results(),
-                )
-        except StopAsyncIteration:
-            finnished = True
+        yield ExecutionResult(
+            data=execution_context.result.data,
+            errors=execution_context.result.errors,
+            extensions=await extensions_runner.get_extensions_results(),
+        )
