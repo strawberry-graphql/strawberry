@@ -1,9 +1,8 @@
 """Starlite integration for strawberry-graphql."""
 import json
+from dataclasses import dataclass
 from datetime import timedelta
-from typing import TYPE_CHECKING, Any, Dict, Iterable, List, Optional, Type, Union, cast
-
-from pydantic import BaseModel
+from typing import TYPE_CHECKING, Any, Dict, Optional, Union, cast
 
 from starlite import (
     BackgroundTasks,
@@ -12,17 +11,19 @@ from starlite import (
     Provide,
     Request,
     Response,
-    ResponseSpec,
     WebSocket,
     get,
     post,
     websocket,
 )
-from starlite.exceptions import ImproperlyConfiguredException
+from starlite.exceptions import (
+    ImproperlyConfiguredException,
+    NotFoundException,
+    ValidationException,
+)
 from starlite.status_codes import (
     HTTP_200_OK,
     HTTP_400_BAD_REQUEST,
-    HTTP_404_NOT_FOUND,
     HTTP_415_UNSUPPORTED_MEDIA_TYPE,
 )
 from strawberry.exceptions import InvalidCustomContext, MissingQueryError
@@ -48,19 +49,25 @@ from .handlers.graphql_transport_ws_handler import (
 from .handlers.graphql_ws_handler import GraphQLWSHandler as BaseGraphQLWSHandler
 
 if TYPE_CHECKING:
+    from typing import Iterable, List, Type
+
     from starlite.types import Dependencies
 
+    MergedContext = Union[
+        "BaseContext",
+        Dict[str, Union[Any, BackgroundTasks, Request, Response, WebSocket]],
+    ]
+    SubscriptionProtocols = Iterable[
+        Union[GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL]
+    ]
 
 CustomContext = Union["BaseContext", Dict[str, Any]]
-MergedContext = Union[
-    "BaseContext", Dict[str, Union[Any, BackgroundTasks, Request, Response, WebSocket]]
-]
 
 
 async def _context_getter(
     custom_context: Optional[CustomContext],
-    request: Request,
-) -> MergedContext:
+    request: "Request",
+) -> "MergedContext":
     if isinstance(custom_context, BaseContext):
         custom_context.request = request
         return custom_context
@@ -77,40 +84,42 @@ async def _context_getter(
     raise InvalidCustomContext()
 
 
-class GraphQLResource(BaseModel):
-    data: Optional[Dict[str, object]]
-    errors: Optional[List[object]]
-    extensions: Optional[Dict[str, object]]
+@dataclass
+class GraphQLResource:
+    data: "Optional[Dict[str, object]]"
+    errors: "Optional[List[object]]"
+    extensions: "Optional[Dict[str, object]]"
 
 
-class EmptyResponseModel(BaseModel):
+@dataclass
+class EmptyResponseModel:
     pass
 
 
 class GraphQLWSHandler(BaseGraphQLWSHandler):
-    async def get_context(self) -> Any:
+    async def get_context(self) -> "Any":
         return await self._get_context()
 
-    async def get_root_value(self) -> Any:
+    async def get_root_value(self) -> "Any":
         return await self._get_root_value()
 
 
 class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
-    async def get_context(self) -> Any:
+    async def get_context(self) -> "Any":
         return await self._get_context()
 
-    async def get_root_value(self) -> Any:
+    async def get_root_value(self) -> "Any":
         return await self._get_root_value()
 
 
 class BaseContext:
     def __init__(self):
-        self.request: Optional[Union[Request, WebSocket]] = None
-        self.response: Optional[Response] = None
+        self.request: "Optional[Union[Request, WebSocket]]" = None
+        self.response: "Optional[Response]" = None
 
 
 def make_graphql_controller(
-    schema: BaseSchema,
+    schema: "BaseSchema",
     path: str = "",
     websocket_path: str = "/ws",
     graphiql: bool = True,
@@ -121,8 +130,8 @@ def make_graphql_controller(
     root_value_getter=None,
     context_getter=None,
     subscription_protocols=(GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL),
-    connection_init_wait_timeout: timedelta = timedelta(minutes=1),
-) -> Type[Controller]:
+    connection_init_wait_timeout: "timedelta" = timedelta(minutes=1),
+) -> "Type[Controller]":
     routes_path = path
 
     if not websocket_path:
@@ -146,31 +155,31 @@ def make_graphql_controller(
 
     class GraphQLController(Controller):
         path: str = routes_path
-        dependencies: Optional["Dependencies"] = {
+        dependencies: "Optional[Dependencies]" = {
             "custom_context": Provide(custom_context_getter_),
             "context": Provide(_context_getter),
             "root_value": Provide(root_value_getter_),
         }
-        graphql_ws_handler_class = GraphQLWSHandler
-        graphql_transport_ws_handler_class = GraphQLTransportWSHandler
+        graphql_ws_handler_class = "GraphQLWSHandler"
+        graphql_transport_ws_handler_class = "GraphQLTransportWSHandler"
 
-        _schema: BaseSchema = schema
+        _schema: "BaseSchema" = schema
         _graphiql: bool = graphiql
         _allow_queries_via_get: bool = allow_queries_via_get
         _keep_alive: bool = keep_alive
         _keep_alive_interval: float = keep_alive_interval
         _debug: bool = debug
-        _protocols = subscription_protocols
-        _connection_init_wait_timeout: timedelta = connection_init_wait_timeout
+        _protocols: "SubscriptionProtocols" = subscription_protocols
+        _connection_init_wait_timeout: "timedelta" = connection_init_wait_timeout
 
         async def execute(
             self,
             query: str,
-            variables: Optional[Dict[str, Any]] = None,
-            context: Any = None,
-            operation_name: Optional[str] = None,
-            root_value: Any = None,
-            allowed_operation_types: Optional[Iterable[OperationType]] = None,
+            variables: "Optional[Dict[str, Any]]" = None,
+            context: "Any" = None,
+            operation_name: "Optional[str]" = None,
+            root_value: "Any" = None,
+            allowed_operation_types: "Optional[Iterable[OperationType]]" = None,
         ):
             if self._debug:
                 pretty_print_graphql_operation(operation_name, query, variables)
@@ -184,12 +193,14 @@ def make_graphql_controller(
                 allowed_operation_types=allowed_operation_types,
             )
 
-        async def process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse:
+        async def process_result(
+            self, result: "ExecutionResult"
+        ) -> "GraphQLHTTPResponse":
             return process_result(result)
 
         async def execute_request(
-            self, request: Request, data: dict, context, root_value
-        ) -> Response[Union[GraphQLResource, str]]:
+            self, request: "Request", data: dict, context, root_value
+        ) -> "Response[Union[GraphQLResource, str]]":
             try:
                 request_data = parse_request_data(data or {})
             except MissingQueryError:
@@ -237,7 +248,7 @@ def make_graphql_controller(
 
             return self._merge_responses(response, actual_response)
 
-        def should_render_graphiql(self, request: Request) -> bool:
+        def should_render_graphiql(self, request: "Request") -> bool:
             if not self._graphiql:
                 return False
             return any(
@@ -245,14 +256,14 @@ def make_graphql_controller(
                 for supported_header in ("text/html", "*/*")
             )
 
-        def get_graphiql_response(self) -> Response[str]:
+        def get_graphiql_response(self) -> "Response[str]":
             html = get_graphiql_html()
             return Response(html, media_type=MediaType.HTML)
 
         @staticmethod
         def _merge_responses(
-            response: Response, actual_response: Response
-        ) -> Response[Union[GraphQLResource, str]]:
+            response: "Response", actual_response: "Response"
+        ) -> "Response[Union[GraphQLResource, str]]":
             actual_response.headers.update(response.headers)
             actual_response.cookies.extend(response.cookies)
             actual_response.background = response.background
@@ -261,36 +272,21 @@ def make_graphql_controller(
 
             return actual_response
 
-        @get(
-            responses={
-                HTTP_404_NOT_FOUND: ResponseSpec(
-                    description="Not found if GraphiQL is not enabled.",
-                    model=EmptyResponseModel,
-                    media_type=MediaType.TEXT,
-                ),
-                HTTP_400_BAD_REQUEST: ResponseSpec(
-                    description="Unable to parse request body as JSON",
-                    model=EmptyResponseModel,
-                    media_type=MediaType.TEXT,
-                ),
-            },
-        )
+        @get(raises=[ValidationException, NotFoundException])
         async def handle_http_get(
             self,
-            request: Request,
-            context: CustomContext,
-            root_value: Any,
-        ) -> Response[Union[GraphQLResource, str]]:
+            request: "Request",
+            context: "CustomContext",
+            root_value: "Any",
+        ) -> "Response[Union[GraphQLResource, str]]":
             if request.query_params:
                 try:
                     query_data = parse_query_params(
                         cast("Dict[str, Any]", request.query_params)
                     )
                 except json.JSONDecodeError:
-                    return Response(
-                        "Unable to parse request body as JSON",
-                        status_code=HTTP_400_BAD_REQUEST,
-                        media_type=MediaType.TEXT,
+                    raise ValidationException(
+                        detail="Unable to parse request body as JSON"
                     )
                 return await self.execute_request(
                     request=request,
@@ -303,16 +299,16 @@ def make_graphql_controller(
                     "Response[Union[GraphQLResource, str]]",
                     self.get_graphiql_response(),
                 )
-            return Response(content="Bad request", status_code=HTTP_404_NOT_FOUND)
+            raise NotFoundException()
 
         @post(status_code=HTTP_200_OK)
         async def handle_http_post(
             self,
-            request: Request,
-            context: CustomContext,
-            root_value: Any,
-        ) -> Response[Union[GraphQLResource, str]]:
-            actual_response: Response[Union[GraphQLResource, str]]
+            request: "Request",
+            context: "CustomContext",
+            root_value: "Any",
+        ) -> "Response[Union[GraphQLResource, str]]":
+            actual_response: "Response[Union[GraphQLResource, str]]"
 
             content_type, _ = request.content_type
 
@@ -328,8 +324,8 @@ def make_graphql_controller(
                     return actual_response
             elif content_type.startswith("multipart/form-data"):
                 multipart_data = await request.form()
-                operations: Dict[str, Any] = multipart_data.get("operations", "{}")
-                files_map: Dict[str, List[str]] = multipart_data.get("map", "{}")
+                operations: "Dict[str, Any]" = multipart_data.get("operations", "{}")
+                files_map: "Dict[str, List[str]]" = multipart_data.get("map", "{}")
                 data = replace_placeholders_with_files(
                     operations, files_map, multipart_data
                 )
@@ -351,9 +347,9 @@ def make_graphql_controller(
         @websocket(websocket_path)
         async def websocket_endpoint(
             self,
-            socket: WebSocket,
-            context: CustomContext,
-            root_value: Any,
+            socket: "WebSocket",
+            context: "CustomContext",
+            root_value: "Any",
         ) -> None:
             async def _get_context():
                 return context
@@ -384,7 +380,7 @@ def make_graphql_controller(
             else:
                 await socket.close(code=WS_4406_PROTOCOL_NOT_ACCEPTABLE)
 
-        def pick_preferred_protocol(self, socket: WebSocket) -> Optional[str]:
+        def pick_preferred_protocol(self, socket: "WebSocket") -> "Optional[str]":
             protocols = socket.scope["subprotocols"]
             intersection = set(protocols) & set(self._protocols)
             return min(
