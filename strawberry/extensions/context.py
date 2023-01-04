@@ -1,8 +1,9 @@
 import contextlib
+import dataclasses
 import inspect
 import warnings
 from asyncio import iscoroutinefunction
-from typing import AsyncIterator, Callable, Iterator, List, NamedTuple, Optional, Union
+from typing import AsyncIterator, Callable, Iterator, List, Optional, Union
 
 from strawberry.extensions import Extension
 from strawberry.extensions.base_extension import _ExtensionHinter
@@ -13,13 +14,62 @@ from strawberry.utils.await_maybe import (
 )
 
 
-class IteratorContainer(NamedTuple):
-    aiter: Optional[AsyncIterator[None]] = None
-    iter: Optional[Iterator[None]] = None
+@dataclasses.dataclass
+class ExecutionStepInitialized:
+    async_iterables: List[AsyncIterator[None]] = dataclasses.field(default_factory=list)
+    iterables: List[Iterator[None]] = dataclasses.field(default_factory=list)
+
+
+@dataclasses.dataclass
+class ExecutionStep:
+    async_iterables: List[Callable[[], AsyncIterator[None]]] = dataclasses.field(
+        default_factory=list
+    )
+    iterables: List[Callable[[], Iterator[None]]] = dataclasses.field(
+        default_factory=list
+    )
+
+
+class ExecutionOrderManager:
+    def __init__(self):
+        self.steps: List[ExecutionStep] = []
+
+    def add(
+        self,
+        iterable: Optional[Callable[[], Iterator[None]]] = None,
+        async_iterable: Optional[Callable[[], AsyncIterator[None]]] = None,
+    ):
+        try:
+            previous_step = self.steps[-1]
+        except IndexError:
+            previous_step = ExecutionStep([], [])
+
+        if async_iterable:
+            if previous_step.async_iterables:
+                previous_step.async_iterables.append(async_iterable)
+            else:
+                self.steps.append(ExecutionStep(async_iterables=[async_iterable]))
+        else:
+            assert iterable
+            if previous_step.iterables:
+                previous_step.iterables.append(iterable)
+            else:
+                self.steps.append(ExecutionStep(iterables=[iterable]))
+
+    def initialized(self) -> List[ExecutionStepInitialized]:
+        ret: List[ExecutionStepInitialized] = []
+        for step in self.steps:
+            initialized = ExecutionStepInitialized()
+            for it in step.iterables:
+                initialized.iterables.append(it())
+            for async_iter in step.async_iterables:
+                initialized.async_iterables.append(async_iter())
+            ret.append(initialized)
+        return ret
 
 
 class ExtensionContextManagerBase:
-    __slots__ = ("_generators", "deprecation_message")
+    __slots__ = ("_initialized_steps", "_execution_order")
 
     def __init_subclass__(cls, **kwargs):
         cls.DEPRECATION_MESSAGE = (
@@ -41,42 +91,41 @@ class ExtensionContextManagerBase:
         exit_ = getattr(extension, self.LEGACY_EXIT, None)
         enter_async = False
         exit_async = False
-        if not enter and not exit_:
-            return False
-        warnings.warn(self.DEPRECATION_MESSAGE)
-        if enter:
-            if iscoroutinefunction(enter):
-                enter_async = True
-        if exit_:
-            if iscoroutinefunction(exit_):
-                exit_async = True
+        if enter or exit_:
+            warnings.warn(self.DEPRECATION_MESSAGE)
+            if enter:
+                if iscoroutinefunction(enter):
+                    enter_async = True
+            if exit_:
+                if iscoroutinefunction(exit_):
+                    exit_async = True
 
-        if enter_async or exit_async:
+            if enter_async or exit_async:
 
-            async def legacy_generator():
-                if enter:
-                    await await_maybe(enter())
-                yield
-                if exit_:
-                    await await_maybe(exit_())
+                async def legacy_generator():
+                    if enter:
+                        await await_maybe(enter())
+                    yield
+                    if exit_:
+                        await await_maybe(exit_())
 
-            self._generators.append(IteratorContainer(aiter=legacy_generator()))
-        else:
+                self._execution_order.add(async_iterable=legacy_generator)
+            else:
 
-            def legacy_generator():
-                if enter:
-                    enter()
-                yield
-                if exit_:
-                    exit_()
+                def legacy_generator():
+                    if enter:
+                        enter()
+                    yield
+                    if exit_:
+                        exit_()
 
-            self._generators.append(IteratorContainer(iter=legacy_generator()))
-        return True
+                self._execution_order.add(iterable=legacy_generator)
+            return True
+        return False
 
     def __init__(self, extensions: List[Extension]):
-
-        self._generators: List[IteratorContainer] = []
-
+        self._execution_order: ExecutionOrderManager = ExecutionOrderManager()
+        self._initialized_steps: List[ExecutionStepInitialized]
         for extension in extensions:
             # maybe it is a legacy extension, so find the old hooks first
             if not self._legacy_extension_compat(extension):
@@ -86,12 +135,11 @@ class ExtensionContextManagerBase:
                 if not generator_or_func:
                     continue
 
-                if inspect.isgeneratorfunction(generator_or_func):
-                    self._generators.append(IteratorContainer(iter=generator_or_func()))
-                elif inspect.isasyncgenfunction(generator_or_func):
-                    self._generators.append(
-                        IteratorContainer(aiter=generator_or_func())
-                    )
+                if inspect.isasyncgenfunction(generator_or_func):
+                    self._execution_order.add(async_iterable=generator_or_func)
+
+                elif inspect.isgeneratorfunction(generator_or_func):
+                    self._execution_order.add(iterable=generator_or_func)
                 # if it is just normal function make a fake generator:
                 else:
                     func: Callable[
@@ -103,45 +151,48 @@ class ExtensionContextManagerBase:
                             await func()
                             yield
 
-                        self._generators.append(IteratorContainer(aiter=fake_gen()))
+                        self._execution_order.add(async_iterable=fake_gen)
                     else:
 
                         def fake_gen():
                             func()
                             yield
 
-                        self._generators.append(IteratorContainer(iter=fake_gen()))
+                        self._execution_order.add(iterable=fake_gen)
 
     def iter_gens(self):
         # Note: we can't create similar async version
         # because coroutines are not allowed to raise StopIteration
-        for gen in self._generators:
-            assert gen.iter
-            gen.iter.__next__()
+        for step in self._initialized_steps:
+            for iterable in step.iterables:
+                with contextlib.suppress(StopIteration):
+                    iterable.__next__()
 
     def __enter__(self):
+        self._initialized_steps = self._execution_order.initialized()
         self.iter_gens()
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        with contextlib.suppress(StopIteration):
-            self.iter_gens()
+        self.iter_gens()
+        self._initialized_steps = []
 
     async def __aenter__(self):
-        for gen in self._generators:
-            if gen.iter:
-                gen.iter.__next__()
-            else:
-                assert gen.aiter
-                await gen.aiter.__anext__()
+        self._initialized_steps = self._execution_order.initialized()
+        for step in self._initialized_steps:
+            for iterator in step.iterables:
+                iterator.__next__()
+            for async_iterator in step.async_iterables:
+                await async_iterator.__anext__()
 
     async def __aexit__(self, exc_type, exc_val, exc_tb):
-        with contextlib.suppress(StopAsyncIteration, StopIteration):
-            for gen in self._generators:
-                if gen.iter:
-                    gen.iter.__next__()
-                else:
-                    assert gen.aiter
-                    await gen.aiter.__anext__()
+        for step in self._initialized_steps:
+            for iterator in step.iterables:
+                with contextlib.suppress(StopIteration):
+                    iterator.__next__()
+            for async_iterator in step.async_iterables:
+                with contextlib.suppress(StopAsyncIteration):
+                    await async_iterator.__anext__()
+        self._initialized_steps = []
 
 
 class RequestContextManager(ExtensionContextManagerBase):

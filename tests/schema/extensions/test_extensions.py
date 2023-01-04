@@ -1,3 +1,4 @@
+import contextlib
 import dataclasses
 import json
 import warnings
@@ -12,6 +13,7 @@ from graphql import execute as original_execute
 import strawberry
 from strawberry.exceptions import StrawberryGraphQLError
 from strawberry.extensions import Extension
+from strawberry.extensions.base_extension import _ExtensionHinter
 
 
 def test_base_extension():
@@ -284,6 +286,74 @@ async def test_mixed_sync_and_async_extension_hooks(
     result = await schema.execute(default_query_types_and_query.query)
     assert result.errors is None
     MyExtension.preform_test()
+
+
+async def test_execution_order(default_query_types_and_query):
+    called_hooks = []
+
+    @contextlib.contextmanager
+    def register_hook(hook_name: str, klass: type):
+        called_hooks.append(f"{klass.__name__}, {hook_name} Entered")
+        yield
+        called_hooks.append(f"{klass.__name__}, {hook_name} Exited")
+
+    class A(TestAbleExtension):
+        async def on_operation(self):
+            with register_hook(_ExtensionHinter.on_operation.__name__, A):
+                yield
+
+        async def on_parse(self):
+            with register_hook(_ExtensionHinter.on_parse.__name__, A):
+                yield
+
+        def on_validate(self):
+            with register_hook(_ExtensionHinter.on_validate.__name__, A):
+                yield
+
+        def on_execute(self):
+            with register_hook(_ExtensionHinter.on_execute.__name__, A):
+                yield
+
+    class B(TestAbleExtension):
+        async def on_operation(self):
+            with register_hook(_ExtensionHinter.on_operation.__name__, B):
+                yield
+
+        def on_parse(self):
+            with register_hook(_ExtensionHinter.on_parse.__name__, B):
+                yield
+
+        def on_validate(self):
+            with register_hook(_ExtensionHinter.on_validate.__name__, B):
+                yield
+
+        async def on_execute(self):
+            with register_hook(_ExtensionHinter.on_execute.__name__, B):
+                yield
+
+    schema = strawberry.Schema(
+        query=default_query_types_and_query.query_type, extensions=[A, B]
+    )
+    result = await schema.execute(default_query_types_and_query.query)
+    assert result.errors is None
+    assert called_hooks == [
+        "A, on_operation Entered",
+        "B, on_operation Entered",
+        "A, on_parse Entered",
+        "B, on_parse Entered",
+        "A, on_parse Exited",
+        "B, on_parse Exited",
+        "A, on_validate Entered",
+        "B, on_validate Entered",
+        "A, on_validate Exited",
+        "B, on_validate Exited",
+        "A, on_execute Entered",
+        "B, on_execute Entered",
+        "A, on_execute Exited",
+        "B, on_execute Exited",
+        "A, on_operation Exited",
+        "B, on_operation Exited",
+    ]
 
 
 async def test_sync_extension_hooks(default_query_types_and_query, sync_extension):
