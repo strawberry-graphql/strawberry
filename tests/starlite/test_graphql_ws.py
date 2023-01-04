@@ -16,7 +16,7 @@ from strawberry.subscriptions.protocols.graphql_ws import (
 
 
 def test_simple_subscription(test_client):
-    with test_client.websocket_connect("/graphql/ws", [GRAPHQL_WS_PROTOCOL]) as ws:
+    with test_client.websocket_connect("/graphql", [GRAPHQL_WS_PROTOCOL]) as ws:
         ws.send_json({"type": GQL_CONNECTION_INIT})
         ws.send_json(
             {
@@ -49,7 +49,7 @@ def test_simple_subscription(test_client):
 
 
 def test_operation_selection(test_client):
-    with test_client.websocket_connect("/graphql/ws", [GRAPHQL_WS_PROTOCOL]) as ws:
+    with test_client.websocket_connect("/graphql", [GRAPHQL_WS_PROTOCOL]) as ws:
         ws.send_json({"type": GQL_CONNECTION_INIT})
         ws.send_json(
             {
@@ -87,7 +87,7 @@ def test_operation_selection(test_client):
 
 def test_sends_keep_alive(test_client_keep_alive):
     with test_client_keep_alive.websocket_connect(
-        "/graphql/ws", [GRAPHQL_WS_PROTOCOL]
+        "/graphql", [GRAPHQL_WS_PROTOCOL]
     ) as ws:
         ws.send_json({"type": GQL_CONNECTION_INIT})
         ws.send_json(
@@ -122,7 +122,7 @@ def test_sends_keep_alive(test_client_keep_alive):
 
 
 def test_subscription_cancellation(test_client):
-    with test_client.websocket_connect("/graphql/ws", [GRAPHQL_WS_PROTOCOL]) as ws:
+    with test_client.websocket_connect("/graphql", [GRAPHQL_WS_PROTOCOL]) as ws:
         ws.send_json({"type": GQL_CONNECTION_INIT})
         response = ws.receive_json()
         assert response["type"] == GQL_CONNECTION_ACK
@@ -186,7 +186,7 @@ def test_subscription_cancellation(test_client):
 
 
 def test_subscription_errors(test_client):
-    with test_client.websocket_connect("/graphql/ws", [GRAPHQL_WS_PROTOCOL]) as ws:
+    with test_client.websocket_connect("/graphql", [GRAPHQL_WS_PROTOCOL]) as ws:
         ws.send_json({"type": GQL_CONNECTION_INIT})
         ws.send_json(
             {
@@ -218,7 +218,7 @@ def test_subscription_errors(test_client):
 
 
 def test_subscription_exceptions(test_client):
-    with test_client.websocket_connect("/graphql/ws", [GRAPHQL_WS_PROTOCOL]) as ws:
+    with test_client.websocket_connect("/graphql", [GRAPHQL_WS_PROTOCOL]) as ws:
         ws.send_json({"type": GQL_CONNECTION_INIT})
         ws.send_json(
             {
@@ -250,7 +250,7 @@ def test_subscription_exceptions(test_client):
 
 
 def test_subscription_field_error(test_client):
-    with test_client.websocket_connect("/graphql/ws", [GRAPHQL_WS_PROTOCOL]) as ws:
+    with test_client.websocket_connect("/graphql", [GRAPHQL_WS_PROTOCOL]) as ws:
         ws.send_json({"type": GQL_CONNECTION_INIT})
         ws.send_json(
             {
@@ -281,7 +281,7 @@ def test_subscription_field_error(test_client):
 
 
 def test_subscription_syntax_error(test_client):
-    with test_client.websocket_connect("/graphql/ws", [GRAPHQL_WS_PROTOCOL]) as ws:
+    with test_client.websocket_connect("/graphql", [GRAPHQL_WS_PROTOCOL]) as ws:
         ws.send_json({"type": GQL_CONNECTION_INIT})
         ws.send_json(
             {
@@ -310,7 +310,7 @@ def test_subscription_syntax_error(test_client):
 
 
 def test_non_text_ws_messages_are_ignored(test_client):
-    with test_client.websocket_connect("/graphql/ws", [GRAPHQL_WS_PROTOCOL]) as ws:
+    with test_client.websocket_connect("/graphql", [GRAPHQL_WS_PROTOCOL]) as ws:
         ws.send_bytes(b"")
         ws.send_json({"type": GQL_CONNECTION_INIT})
 
@@ -348,7 +348,7 @@ def test_non_text_ws_messages_are_ignored(test_client):
 
 
 def test_unknown_protocol_messages_are_ignored(test_client):
-    with test_client.websocket_connect("/graphql/ws", [GRAPHQL_WS_PROTOCOL]) as ws:
+    with test_client.websocket_connect("/graphql", [GRAPHQL_WS_PROTOCOL]) as ws:
         ws.send_json({"type": "NotAProtocolMessage"})
         ws.send_json({"type": GQL_CONNECTION_INIT})
 
@@ -386,7 +386,7 @@ def test_unknown_protocol_messages_are_ignored(test_client):
 
 
 def test_custom_context(test_client):
-    with test_client.websocket_connect("/graphql/ws", [GRAPHQL_WS_PROTOCOL]) as ws:
+    with test_client.websocket_connect("/graphql", [GRAPHQL_WS_PROTOCOL]) as ws:
         ws.send_json({"type": GQL_CONNECTION_INIT})
         ws.send_json(
             {
@@ -419,7 +419,7 @@ def test_custom_context(test_client):
 
 
 def test_resolving_enums(test_client):
-    with test_client.websocket_connect("/graphql/ws", [GRAPHQL_WS_PROTOCOL]) as ws:
+    with test_client.websocket_connect("/graphql", [GRAPHQL_WS_PROTOCOL]) as ws:
         ws.send_json({"type": GQL_CONNECTION_INIT})
         ws.send_json(
             {
@@ -462,8 +462,8 @@ def test_resolving_enums(test_client):
 
 
 def test_task_cancellation_separation(test_client):
-    connection1 = test_client.websocket_connect("/graphql/ws", [GRAPHQL_WS_PROTOCOL])
-    connection2 = test_client.websocket_connect("/graphql/ws", [GRAPHQL_WS_PROTOCOL])
+    connection1 = test_client.websocket_connect("/graphql", [GRAPHQL_WS_PROTOCOL])
+    connection2 = test_client.websocket_connect("/graphql", [GRAPHQL_WS_PROTOCOL])
 
     with connection1 as ws1, connection2 as ws2:
         start_payload = {

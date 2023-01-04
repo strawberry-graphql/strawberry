@@ -18,11 +18,7 @@ from starlite import (
     post,
     websocket,
 )
-from starlite.exceptions import (
-    ImproperlyConfiguredException,
-    NotFoundException,
-    ValidationException,
-)
+from starlite.exceptions import NotFoundException, ValidationException
 from starlite.status_codes import (
     HTTP_200_OK,
     HTTP_400_BAD_REQUEST,
@@ -123,7 +119,6 @@ class BaseContext:
 def make_graphql_controller(
     schema: "BaseSchema",
     path: str = "",
-    websocket_path: str = "/ws",
     graphiql: bool = True,
     allow_queries_via_get: bool = True,
     keep_alive: bool = False,
@@ -135,9 +130,6 @@ def make_graphql_controller(
     connection_init_wait_timeout: "timedelta" = timedelta(minutes=1),
 ) -> "Type[Controller]":
     routes_path = path
-
-    if not websocket_path:
-        raise ImproperlyConfiguredException(detail="webocket_path must not be empty")
 
     if context_getter is None:
 
@@ -346,7 +338,7 @@ def make_graphql_controller(
                 root_value=root_value,
             )
 
-        @websocket(websocket_path)
+        @websocket()
         async def websocket_endpoint(
             self,
             socket: "WebSocket",

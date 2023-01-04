@@ -23,7 +23,7 @@ from tests.starlite.app import create_app
 
 def test_unknown_message_type(test_client):
     with test_client.websocket_connect(
-        "/graphql/ws", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         ws.send_json({"type": "NOT_A_MESSAGE_TYPE"})
 
@@ -34,7 +34,7 @@ def test_unknown_message_type(test_client):
 
 def test_missing_message_type(test_client):
     with test_client.websocket_connect(
-        "/graphql/ws", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         ws.send_json({"notType": None})
 
@@ -45,7 +45,7 @@ def test_missing_message_type(test_client):
 
 def test_parsing_an_invalid_message(test_client):
     with test_client.websocket_connect(
-        "/graphql/ws", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         ws.send_json({"type": "subscribe", "notPayload": None})
 
@@ -56,7 +56,7 @@ def test_parsing_an_invalid_message(test_client):
 
 def test_parsing_an_invalid_payload(test_client):
     with test_client.websocket_connect(
-        "/graphql/ws", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         ws.send_json({"type": "subscribe", "payload": {"unexpectedField": 42}})
 
@@ -67,7 +67,7 @@ def test_parsing_an_invalid_payload(test_client):
 
 def test_ws_messages_must_be_text(test_client):
     with test_client.websocket_connect(
-        "/graphql/ws", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         ws.send_bytes(json.dumps(ConnectionInitMessage().as_dict()).encode())
 
@@ -85,7 +85,7 @@ async def test_connection_init_timeout():
 
     try:
         with test_client.websocket_connect(
-            "/graphql/ws", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+            "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
         ) as ws:
             data = ws.receive()
             assert data["type"] == "websocket.close"
@@ -99,7 +99,7 @@ async def test_connection_init_timeout_cancellation():
     test_client = TestClient(app)
 
     with test_client.websocket_connect(
-        "/graphql/ws", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         ws.send_json(ConnectionInitMessage().as_dict())
 
@@ -131,7 +131,7 @@ async def test_connection_init_timeout_cancellation():
 
 def test_too_many_initialisation_requests(test_client):
     with test_client.websocket_connect(
-        "/graphql/ws", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         ws.send_json(ConnectionInitMessage().as_dict())
 
@@ -147,7 +147,7 @@ def test_too_many_initialisation_requests(test_client):
 
 def test_ping_pong(test_client):
     with test_client.websocket_connect(
-        "/graphql/ws", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         ws.send_json(ConnectionInitMessage().as_dict())
 
@@ -164,7 +164,7 @@ def test_ping_pong(test_client):
 
 def test_server_sent_ping(test_client):
     with test_client.websocket_connect(
-        "/graphql/ws", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         ws.send_json(ConnectionInitMessage().as_dict())
 
@@ -197,7 +197,7 @@ def test_server_sent_ping(test_client):
 
 def test_unauthorized_subscriptions(test_client):
     with test_client.websocket_connect(
-        "/graphql/ws", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         ws.send_json(
             SubscribeMessage(
@@ -215,7 +215,7 @@ def test_unauthorized_subscriptions(test_client):
 
 def test_duplicated_operation_ids(test_client):
     with test_client.websocket_connect(
-        "/graphql/ws", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         ws.send_json(ConnectionInitMessage().as_dict())
 
@@ -251,7 +251,7 @@ def test_reused_operation_ids(test_client):
     previously used for a completed operation
     """
     with test_client.websocket_connect(
-        "/graphql/ws", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         ws.send_json(ConnectionInitMessage().as_dict())
 
@@ -297,7 +297,7 @@ def test_reused_operation_ids(test_client):
 
 def test_simple_subscription(test_client):
     with test_client.websocket_connect(
-        "/graphql/ws", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         ws.send_json(ConnectionInitMessage().as_dict())
 
@@ -326,7 +326,7 @@ def test_simple_subscription(test_client):
 
 def test_subscription_syntax_error(test_client):
     with test_client.websocket_connect(
-        "/graphql/ws", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         ws.send_json(ConnectionInitMessage().as_dict())
 
@@ -347,7 +347,7 @@ def test_subscription_syntax_error(test_client):
 
 def test_subscription_field_errors(test_client):
     with test_client.websocket_connect(
-        "/graphql/ws", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         ws.send_json(ConnectionInitMessage().as_dict())
 
@@ -379,7 +379,7 @@ def test_subscription_field_errors(test_client):
 
 def test_subscription_cancellation(test_client):
     with test_client.websocket_connect(
-        "/graphql/ws", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         ws.send_json(ConnectionInitMessage().as_dict())
 
@@ -442,7 +442,7 @@ def test_subscription_cancellation(test_client):
 
 def test_subscription_errors(test_client):
     with test_client.websocket_connect(
-        "/graphql/ws", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         ws.send_json(ConnectionInitMessage().as_dict())
 
@@ -470,7 +470,7 @@ def test_subscription_errors(test_client):
 
 def test_subscription_exceptions(test_client):
     with test_client.websocket_connect(
-        "/graphql/ws", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         ws.send_json(ConnectionInitMessage().as_dict())
 
@@ -499,7 +499,7 @@ def test_subscription_exceptions(test_client):
 
 def test_single_result_query_operation(test_client):
     with test_client.websocket_connect(
-        "/graphql/ws", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         ws.send_json(ConnectionInitMessage().as_dict())
 
@@ -532,7 +532,7 @@ def test_single_result_query_operation_async(test_client):
     async delay
     """
     with test_client.websocket_connect(
-        "/graphql/ws", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         ws.send_json(ConnectionInitMessage().as_dict())
 
@@ -568,7 +568,7 @@ def test_single_result_query_operation_overlapped(test_client):
     query to be delivered first.
     """
     with test_client.websocket_connect(
-        "/graphql/ws", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         ws.send_json(ConnectionInitMessage().as_dict())
 
@@ -608,7 +608,7 @@ def test_single_result_query_operation_overlapped(test_client):
 
 def test_single_result_mutation_operation(test_client):
     with test_client.websocket_connect(
-        "/graphql/ws", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         ws.send_json(ConnectionInitMessage().as_dict())
 
@@ -636,7 +636,7 @@ def test_single_result_mutation_operation(test_client):
 
 def test_single_result_operation_selection(test_client):
     with test_client.websocket_connect(
-        "/graphql/ws", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         ws.send_json(ConnectionInitMessage().as_dict())
 
@@ -673,7 +673,7 @@ def test_single_result_operation_selection(test_client):
 
 def test_single_result_invalid_operation_selection(test_client):
     with test_client.websocket_connect(
-        "/graphql/ws", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         ws.send_json(ConnectionInitMessage().as_dict())
 
@@ -700,7 +700,7 @@ def test_single_result_invalid_operation_selection(test_client):
 
 def test_single_result_operation_error(test_client):
     with test_client.websocket_connect(
-        "/graphql/ws", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         ws.send_json(ConnectionInitMessage().as_dict())
 
@@ -729,7 +729,7 @@ def test_single_result_operation_exception(test_client):
     behave in the same way as streaming operations
     """
     with test_client.websocket_connect(
-        "/graphql/ws", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         ws.send_json(ConnectionInitMessage().as_dict())
 
@@ -761,7 +761,7 @@ def test_single_result_duplicate_ids_sub(test_client):
     error due to already existing ID
     """
     with test_client.websocket_connect(
-        "/graphql/ws", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         ws.send_json(ConnectionInitMessage().as_dict())
 
@@ -799,7 +799,7 @@ def test_single_result_duplicate_ids_query(test_client):
     with delay, then another with same id.  Expect error.
     """
     with test_client.websocket_connect(
-        "/graphql/ws", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         ws.send_json(ConnectionInitMessage().as_dict())
 
