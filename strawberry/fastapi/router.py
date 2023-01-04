@@ -339,14 +339,7 @@ class GraphQLRouter(APIRouter):
     async def execute_request(
         self, request: Request, response: Response, data: dict, context, root_value
     ) -> Response:
-        try:
-            request_data = parse_request_data(data)
-        except MissingQueryError:
-            missing_query_response = PlainTextResponse(
-                "No GraphQL query found in the request",
-                status_code=status.HTTP_400_BAD_REQUEST,
-            )
-            return self._merge_responses(response, missing_query_response)
+        request_data = parse_request_data(data)
 
         method = request.method
         allowed_operation_types = OperationType.from_http(method)
@@ -368,6 +361,12 @@ class GraphQLRouter(APIRouter):
                 e.as_http_error_reason(method),
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
+        except MissingQueryError:
+            missing_query_response = PlainTextResponse(
+                "No GraphQL query found in the request",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+            return self._merge_responses(response, missing_query_response)
 
         response_data = await self.process_result(request, result)
 

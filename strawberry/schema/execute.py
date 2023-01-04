@@ -20,6 +20,7 @@ from graphql import execute as original_execute
 from graphql.language import DocumentNode
 from graphql.validation import ASTValidationRule, validate
 
+from strawberry.exceptions import MissingQueryError
 from strawberry.extensions import Extension
 from strawberry.extensions.runner import ExtensionsRunner
 from strawberry.types import ExecutionContext, ExecutionResult
@@ -74,6 +75,8 @@ async def execute(
     async with extensions_runner.request():
         # Note: In graphql-core the schema would be validated here but in
         # Strawberry we are validating it at initialisation time instead
+        if not query:
+            raise MissingQueryError()
 
         async with extensions_runner.parsing():
             try:
@@ -164,6 +167,8 @@ def execute_sync(
     with extensions_runner.request():
         # Note: In graphql-core the schema would be validated here but in
         # Strawberry we are validating it at initialisation time instead
+        if not query:
+            raise MissingQueryError()
 
         with extensions_runner.parsing():
             try:
