@@ -1,6 +1,8 @@
 from datetime import timedelta
 from typing import Any
 
+import msgspec
+
 from starlite import WebSocket
 from starlite.exceptions import WebSocketDisconnect
 from strawberry.schema import BaseSchema
@@ -8,11 +10,6 @@ from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_transport_ws.handlers import (
     BaseGraphQLTransportWSHandler,
 )
-
-try:
-    from msgspec import MsgspecError as JSONDecodeError
-except ModuleNotFoundError:
-    from json import JSONDecodeError
 
 
 class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
@@ -50,7 +47,7 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
             while self._ws.connection_state != "disconnect":
                 try:
                     message = await self._ws.receive_json()
-                except (JSONDecodeError, ValueError):
+                except (msgspec.DecodeError, ValueError):
                     error_message = "WebSocket message type must be text"
                     await self.handle_invalid_message(error_message)
                 else:
