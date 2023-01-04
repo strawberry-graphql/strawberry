@@ -268,8 +268,8 @@ async def execute(
                 )
             else:
                 ret.data = execution_context.result.data
-        ret.extensions = await extensions_runner.get_extensions_results()
-        return ret
+    ret.extensions = await extensions_runner.get_extensions_results()
+    return ret
 
 
 async def subscribe(

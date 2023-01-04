@@ -6,7 +6,6 @@ from inspect import isawaitable
 
 from strawberry.extensions import Extension
 from strawberry.extensions.utils import get_path_from_info
-from strawberry.types.execution import ExecutionContext
 
 from .utils import should_skip_tracing
 
@@ -73,9 +72,9 @@ class ApolloTracingStats:
 
 
 class ApolloTracingExtension(Extension):
-    def __init__(self, execution_context: ExecutionContext):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self._resolver_stats: typing.List[ApolloResolverStats] = []
-        self.execution_context = execution_context
 
     def on_operation(self):
         self.start_timestamp = self.now()
