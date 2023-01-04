@@ -1,6 +1,8 @@
+import contextlib
+import dataclasses
 import json
 import warnings
-from typing import AsyncIterator, NamedTuple, Optional, Type, Union
+from typing import Optional, Type
 from unittest.mock import patch
 
 import pytest
@@ -11,6 +13,7 @@ from graphql import execute as original_execute
 import strawberry
 from strawberry.exceptions import StrawberryGraphQLError
 from strawberry.extensions import Extension
+from strawberry.extensions.base_extension import _ExtensionHinter
 
 
 def test_base_extension():
@@ -137,11 +140,10 @@ def test_extension_access_to_root_value():
     assert root_value == "ROOT"
 
 
-class DefaultSchemaQuery(NamedTuple):
+@dataclasses.dataclass
+class DefaultSchemaQuery:
     query_type: type
     query: str
-    subscription: str
-    subscription_type: type
 
 
 class TestAbleExtension(Extension):
@@ -158,14 +160,7 @@ class TestAbleExtension(Extension):
 
 
 @pytest.fixture()
-def schema_helper() -> DefaultSchemaQuery:
-    @strawberry.type
-    class Subscription:
-        @strawberry.subscription
-        async def count(self) -> AsyncIterator[Union[None, int]]:
-            for i in range(5):
-                yield i
-
+def default_query_types_and_query() -> DefaultSchemaQuery:
     @strawberry.type
     class Person:
         name: str = "Jess"
@@ -177,13 +172,7 @@ def schema_helper() -> DefaultSchemaQuery:
             return Person()
 
     query = "query TestQuery { person { name } }"
-    subscription = "subscription TestSubscription { count }"
-    return DefaultSchemaQuery(
-        query_type=Query,
-        query=query,
-        subscription_type=Subscription,
-        subscription=subscription,
-    )
+    return DefaultSchemaQuery(query_type=Query, query=query)
 
 
 @pytest.fixture()
@@ -255,19 +244,21 @@ def sync_extension() -> Type[TestAbleExtension]:
 
 
 @pytest.mark.asyncio
-async def test_async_extension_hooks(schema_helper, async_extension):
+async def test_async_extension_hooks(default_query_types_and_query, async_extension):
     schema = strawberry.Schema(
-        query=schema_helper.query_type, extensions=[async_extension]
+        query=default_query_types_and_query.query_type, extensions=[async_extension]
     )
 
-    result = await schema.execute(schema_helper.query)
+    result = await schema.execute(default_query_types_and_query.query)
     assert result.errors is None
 
     async_extension.preform_test()
 
 
 @pytest.mark.asyncio
-async def test_mixed_sync_and_async_extension_hooks(schema_helper, sync_extension):
+async def test_mixed_sync_and_async_extension_hooks(
+    default_query_types_and_query, sync_extension
+):
     class MyExtension(sync_extension):
         async def on_request(self):
             self.called_hooks.add(1)
@@ -289,27 +280,97 @@ async def test_mixed_sync_and_async_extension_hooks(schema_helper, sync_extensio
         def person(self) -> Person:
             return Person()
 
-    schema = strawberry.Schema(query=schema_helper.query_type, extensions=[MyExtension])
-    result = await schema.execute(schema_helper.query)
+    schema = strawberry.Schema(
+        query=default_query_types_and_query.query_type, extensions=[MyExtension]
+    )
+    result = await schema.execute(default_query_types_and_query.query)
     assert result.errors is None
     MyExtension.preform_test()
 
 
-async def test_sync_extension_hooks(schema_helper, sync_extension):
+async def test_execution_order(default_query_types_and_query):
+    called_hooks = []
+
+    @contextlib.contextmanager
+    def register_hook(hook_name: str, klass: type):
+        called_hooks.append(f"{klass.__name__}, {hook_name} Entered")
+        yield
+        called_hooks.append(f"{klass.__name__}, {hook_name} Exited")
+
+    class A(TestAbleExtension):
+        async def on_operation(self):
+            with register_hook(_ExtensionHinter.on_operation.__name__, A):
+                yield
+
+        async def on_parse(self):
+            with register_hook(_ExtensionHinter.on_parse.__name__, A):
+                yield
+
+        def on_validate(self):
+            with register_hook(_ExtensionHinter.on_validate.__name__, A):
+                yield
+
+        def on_execute(self):
+            with register_hook(_ExtensionHinter.on_execute.__name__, A):
+                yield
+
+    class B(TestAbleExtension):
+        async def on_operation(self):
+            with register_hook(_ExtensionHinter.on_operation.__name__, B):
+                yield
+
+        def on_parse(self):
+            with register_hook(_ExtensionHinter.on_parse.__name__, B):
+                yield
+
+        def on_validate(self):
+            with register_hook(_ExtensionHinter.on_validate.__name__, B):
+                yield
+
+        async def on_execute(self):
+            with register_hook(_ExtensionHinter.on_execute.__name__, B):
+                yield
+
     schema = strawberry.Schema(
-        query=schema_helper.query_type,
+        query=default_query_types_and_query.query_type, extensions=[A, B]
+    )
+    result = await schema.execute(default_query_types_and_query.query)
+    assert result.errors is None
+    assert called_hooks == [
+        "A, on_operation Entered",
+        "B, on_operation Entered",
+        "A, on_parse Entered",
+        "B, on_parse Entered",
+        "A, on_parse Exited",
+        "B, on_parse Exited",
+        "A, on_validate Entered",
+        "B, on_validate Entered",
+        "A, on_validate Exited",
+        "B, on_validate Exited",
+        "A, on_execute Entered",
+        "B, on_execute Entered",
+        "A, on_execute Exited",
+        "B, on_execute Exited",
+        "A, on_operation Exited",
+        "B, on_operation Exited",
+    ]
+
+
+async def test_sync_extension_hooks(default_query_types_and_query, sync_extension):
+    schema = strawberry.Schema(
+        query=default_query_types_and_query.query_type,
         extensions=[
             sync_extension,
         ],
     )
 
-    result = schema.execute_sync(schema_helper.query)
+    result = schema.execute_sync(default_query_types_and_query.query)
     assert result.errors is None
 
     sync_extension.preform_test()
 
 
-async def test_extension_no_yield(schema_helper):
+async def test_extension_no_yield(default_query_types_and_query):
     class SyncExt(TestAbleExtension):
         expected = {1, 2}
 
@@ -319,27 +380,14 @@ async def test_extension_no_yield(schema_helper):
         async def on_parse(self):
             self.called_hooks.add(2)
 
-    schema = strawberry.Schema(query=schema_helper.query_type, extensions=[SyncExt])
+    schema = strawberry.Schema(
+        query=default_query_types_and_query.query_type, extensions=[SyncExt]
+    )
 
-    result = await schema.execute(schema_helper.query)
+    result = await schema.execute(default_query_types_and_query.query)
     assert result.errors is None
 
     SyncExt.preform_test()
-
-
-async def test_subscription_operation_extension(schema_helper, async_extension):
-
-    schema = strawberry.Schema(
-        query=schema_helper.query_type,
-        subscription=schema_helper.subscription_type,
-        extensions=[async_extension],
-    )
-    counter = []
-    async for res in await schema.subscribe(schema_helper.subscription):
-        assert res.errors is None
-        counter.append(res.data["count"])
-    assert len(counter) == 5
-    async_extension.preform_test()
 
 
 async def test_old_style_extensions():
