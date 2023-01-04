@@ -55,6 +55,6 @@ def test_set_cookie_headers():
     assert response.json() == {"data": {"abc": "abc"}}
 
     assert response.headers["set-cookie"] == (
-        "Starlite=rocks; Path=/; SameSite=lax, "
-        "strawberry=rocks; Path=/; SameSite=lax"
+        "strawberry=rocks; Path=/; SameSite=lax, "
+        "Starlite=rocks; Path=/; SameSite=lax"
     )
