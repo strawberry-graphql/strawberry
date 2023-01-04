@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from datetime import timedelta
 from typing import TYPE_CHECKING, Any, Dict, Optional, Union, cast
 
+import msgspec
+
 from starlite import (
     BackgroundTasks,
     Controller,
@@ -315,7 +317,7 @@ def make_graphql_controller(
             if "application/json" in content_type:
                 try:
                     data = await request.json()
-                except json.JSONDecodeError:
+                except msgspec.DecodeError:
                     actual_response = Response(
                         "Unable to parse request body as JSON",
                         status_code=HTTP_400_BAD_REQUEST,
