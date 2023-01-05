@@ -3,6 +3,7 @@ from typing import Any, Dict, Iterable, List, Optional, Type, Union, cast
 
 from graphql import ExecutionContext as GraphQLExecutionContext
 from graphql import (
+    GraphQLError,
     GraphQLNamedType,
     GraphQLNonNull,
     GraphQLSchema,
@@ -29,6 +30,7 @@ from strawberry.types.types import TypeDefinition
 from strawberry.union import StrawberryUnion
 
 from ..printer import print_schema
+from ..utils.logging import StrawberryLogger
 from . import compat
 from .config import StrawberryConfig
 from .execute import AsyncExecution, execute_sync
@@ -307,3 +309,11 @@ class Schema:
             raise ValueError(f"Invalid Schema. Errors {introspection.errors!r}")
 
         return introspection.data
+
+    def process_errors(
+        self,
+        errors: List[GraphQLError],
+        execution_context: Optional[ExecutionContext] = None,
+    ) -> None:
+        for error in errors:
+            StrawberryLogger.error(error, execution_context)
