@@ -195,7 +195,7 @@ class ExtensionContextManagerBase:
         self._initialized_steps = []
 
 
-class RequestContextManager(ExtensionContextManagerBase):
+class OperationContextManager(ExtensionContextManagerBase):
     HOOK_NAME = _ExtensionHinter.on_operation.__name__
     LEGACY_ENTER = "on_request_start"
     LEGACY_EXIT = "on_request_end"

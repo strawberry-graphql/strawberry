@@ -260,7 +260,7 @@ async def test_mixed_sync_and_async_extension_hooks(
     default_query_types_and_query, sync_extension
 ):
     class MyExtension(sync_extension):
-        async def on_request(self):
+        async def on_operation(self):
             self.called_hooks.add(1)
             yield
             self.called_hooks.add(2)
