@@ -25,6 +25,7 @@ from strawberry.extensions.runner import ExtensionsRunner
 from strawberry.types import ExecutionContext, ExecutionResult
 from strawberry.types.graphql import OperationType
 
+from ..types.execution import ExecutionResultError
 from .exceptions import InvalidOperationTypeError
 
 
@@ -174,7 +175,7 @@ class AsyncExecutionBase:
             extensions=list(self.extensions),
         )
 
-    async def _parse_and_validate_runner(self) -> Optional[ExecutionResult]:
+    async def _parse_and_validate_runner(self) -> Optional[ExecutionResultError]:
         async with self.extensions_runner.parsing():
             try:
                 if not self.execution_context.graphql_document:
@@ -183,11 +184,10 @@ class AsyncExecutionBase:
             except GraphQLError as error:
                 self.execution_context.errors = [error]
                 self.process_errors([error], self.execution_context)
-                return ExecutionResult(
+                return ExecutionResultError(
                     data=None,
                     errors=[error],
                     extensions=await self.extensions_runner.get_extensions_results(),
-                    validation_error=True,
                 )
 
             except Exception as error:
@@ -196,11 +196,10 @@ class AsyncExecutionBase:
                 self.execution_context.errors = [error]
                 self.process_errors([error], self.execution_context)
 
-                return ExecutionResult(
+                return ExecutionResultError(
                     data=None,
                     errors=[error],
                     extensions=await self.extensions_runner.get_extensions_results(),
-                    validation_error=True,
                 )
 
         if self.execution_context.operation_type not in self.allowed_operation_types:
@@ -212,10 +211,9 @@ class AsyncExecutionBase:
                 self.process_errors(
                     self.execution_context.errors, self.execution_context
                 )
-                return ExecutionResult(
+                return ExecutionResultError(
                     data=None,
                     errors=self.execution_context.errors,
-                    validation_error=True,
                 )
 
     def _handle_execution_result(
@@ -242,12 +240,14 @@ class AsyncExecutionBase:
 
 
 class AsyncExecution(AsyncExecutionBase):
-    async def execute(self) -> ExecutionResult:
+    async def execute(self) -> Union[ExecutionResult, ExecutionResultError]:
         async with self.extensions_runner.operation():
             # Note: In graphql-core the schema would be validated here but in
             # Strawberry we are validating it at initialisation time instead
 
             ret = await self._parse_and_validate_runner()
+            if ret:
+                return ret
             assert self.execution_context.graphql_document
             # if there was no parsing error
             if not ret:

@@ -4,7 +4,6 @@ from contextlib import suppress
 from datetime import timedelta
 from typing import Any, AsyncGenerator, Callable, Dict, List, Optional
 
-from graphql import ExecutionResult as GraphQLExecutionResult
 from graphql import GraphQLError, GraphQLSyntaxError, parse
 from graphql.error.graphql_error import format_error as format_graphql_error
 
@@ -21,6 +20,7 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     SubscribeMessage,
     SubscribeMessagePayload,
 )
+from strawberry.types.execution import ExecutionResultError
 from strawberry.types.graphql import OperationType
 from strawberry.utils.debug import pretty_print_graphql_operation
 from strawberry.utils.operation import get_operation_type
@@ -189,7 +189,7 @@ class BaseGraphQLTransportWSHandler(ABC):
             result_source = get_result_source()
 
         # Handle initial validation errors
-        if isinstance(result_source, GraphQLExecutionResult):
+        if isinstance(result_source, ExecutionResultError):
             assert result_source.errors
             payload = [format_graphql_error(result_source.errors[0])]
             await self.send_message(ErrorMessage(id=message.id, payload=payload))

@@ -306,7 +306,7 @@ async def test_subscription_field_error(ws):
     assert response["id"] == "invalid-field"
     assert response["payload"] == {
         "locations": [{"line": 1, "column": 16}],
-        "message": ("The subscription field 'notASubscriptionField' is not defined."),
+        "message": "Cannot query field 'notASubscriptionField' on type 'Subscription'.",
     }
 
     await ws.send_json_to({"type": GQL_CONNECTION_TERMINATE})

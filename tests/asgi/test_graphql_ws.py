@@ -265,12 +265,10 @@ def test_subscription_field_error(test_client):
         assert response["type"] == GQL_ERROR
         assert response["id"] == "invalid-field"
         assert response["payload"] == {
-            "locations": [{"line": 1, "column": 16}],
-            "message": (
-                "The subscription field 'notASubscriptionField' is not defined."
-            ),
+            "locations": [{"column": 16, "line": 1}],
+            "message": "Cannot query field 'notASubscriptionField' on type "
+            "'Subscription'.",
         }
-
         ws.send_json({"type": GQL_CONNECTION_TERMINATE})
 
         # make sure the websocket is disconnected now

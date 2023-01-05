@@ -24,6 +24,7 @@ from strawberry.subscriptions.protocols.graphql_ws.types import (
     OperationMessagePayload,
     StartPayload,
 )
+from strawberry.types.execution import ExecutionResultError
 from strawberry.utils.debug import pretty_print_graphql_operation
 
 
@@ -105,7 +106,7 @@ class BaseGraphQLWSHandler(ABC):
         if self.debug:
             pretty_print_graphql_operation(operation_name, query, variables)
 
-        subscription = await self.schema.subscribe(
+        result_source = await self.schema.subscribe(
             query=query,
             variable_values=variables,
             operation_name=operation_name,
@@ -113,8 +114,15 @@ class BaseGraphQLWSHandler(ABC):
             root_value=root_value,
         )
 
-        self.subscriptions[operation_id] = subscription
-        result_handler = self.handle_async_results(subscription, operation_id)
+        if isinstance(result_source, ExecutionResultError):
+            assert result_source.errors
+            error_payload = format_graphql_error(result_source.errors[0])
+            await self.send_message(GQL_ERROR, operation_id, error_payload)
+            self.schema.process_errors(result_source.errors)
+            return
+
+        self.subscriptions[operation_id] = result_source
+        result_handler = self.handle_async_results(result_source, operation_id)
         self.tasks[operation_id] = asyncio.create_task(result_handler)
 
     async def handle_stop(self, message: OperationMessage) -> None:
@@ -139,10 +147,7 @@ class BaseGraphQLWSHandler(ABC):
                     payload["errors"] = [
                         format_graphql_error(err) for err in result.errors
                     ]
-                message_type = GQL_ERROR if result.validation_error else GQL_DATA
-                if message_type == GQL_ERROR:
-                    payload = payload["errors"]
-                await self.send_message(message_type, operation_id, payload)
+                await self.send_message(GQL_DATA, operation_id, payload)
                 # log errors after send_message to prevent potential
                 # slowdown of sending result
                 if result.errors:
@@ -164,7 +169,7 @@ class BaseGraphQLWSHandler(ABC):
         await self.send_message(GQL_COMPLETE, operation_id, None)
 
     async def cleanup_operation(self, operation_id: str) -> None:
-        await self.subscriptions[operation_id].terminate()
+        await self.subscriptions[operation_id].aclose()
         del self.subscriptions[operation_id]
 
         self.tasks[operation_id].cancel()

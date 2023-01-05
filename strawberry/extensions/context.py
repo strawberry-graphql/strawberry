@@ -176,7 +176,7 @@ class ExtensionContextManagerBase:
         self.iter_gens()
         self._initialized_steps = []
 
-    async def __aenter__(self):
+    async def __aenter__(self) -> None:
         self._initialized_steps = self._execution_order.initialized()
         for step in self._initialized_steps:
             for iterator in step.iterables:
@@ -184,7 +184,7 @@ class ExtensionContextManagerBase:
             for async_iterator in step.async_iterables:
                 await async_iterator.__anext__()
 
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
         for step in self._initialized_steps:
             for iterator in step.iterables:
                 with contextlib.suppress(StopIteration):
@@ -194,11 +194,17 @@ class ExtensionContextManagerBase:
                     await async_iterator.__anext__()
         self._initialized_steps = []
 
+    async def exit(self, exc: Exception) -> None:
+        await self.__aexit__(type(exc), exc.args, exc.__traceback__)
+
 
 class RequestContextManager(ExtensionContextManagerBase):
     HOOK_NAME = _ExtensionHinter.on_operation.__name__
     LEGACY_ENTER = "on_request_start"
     LEGACY_EXIT = "on_request_end"
+
+    async def __aenter__(self):
+        await super().__aenter__()
 
 
 class ValidationContextManager(ExtensionContextManagerBase):

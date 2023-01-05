@@ -1,39 +1,50 @@
-from typing import AsyncGenerator, Optional
+from typing import AsyncGenerator, Optional, Union
 
 from graphql import ExecutionResult as OriginalExecutionResult
 from graphql import subscribe as original_subscribe
 
 from strawberry.schema.execute import AsyncExecutionBase
 from strawberry.types import ExecutionResult
+from strawberry.types.execution import ExecutionResultError
 
 
 class Subscription(AsyncExecutionBase):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.initial_execution_error: Optional[ExecutionResult] = None
-        self.parsing_error: Optional[ExecutionResult] = None
-
-        self.original_generator: Optional[
+        self._operation_cm = self.extensions_runner.operation()
+        self._original_generator: Optional[
             AsyncGenerator[OriginalExecutionResult, None]
         ] = None
 
-    async def subscribe(self) -> "Subscription":
-        self.parsing_error = await self._parse_and_validate_runner()
-        self.extensions_runner.operation().__aenter__()
-        async_iterator_or_res = await original_subscribe(
-            self.schema,
-            self.execution_context.graphql_document,
-            root_value=self.execution_context.root_value,
-            variable_values=self.execution_context.variables,
-            operation_name=self.execution_context.operation_name,
-            context_value=self.execution_context.context,
-        )
-        if isinstance(async_iterator_or_res, ExecutionResult):
-            self.initial_execution_error = self._handle_execution_result(
-                result=async_iterator_or_res
+    async def subscribe(self) -> Union[ExecutionResultError, "Subscription"]:
+        initial_error = await self._parse_and_validate_runner()
+        generator_or_result = None
+        if not initial_error:
+            await self._operation_cm.__aenter__()
+            generator_or_result = await original_subscribe(
+                self.schema,
+                self.execution_context.graphql_document,
+                root_value=self.execution_context.root_value,
+                variable_values=self.execution_context.variables,
+                operation_name=self.execution_context.operation_name,
+                context_value=self.execution_context.context,
             )
-        else:
-            self.original_generator = async_iterator_or_res
+
+        # permission errors would return here.
+        if isinstance(generator_or_result, OriginalExecutionResult):
+            initial_error = ExecutionResultError(
+                data=generator_or_result.data, errors=generator_or_result.errors
+            )
+        if initial_error:
+            initial_error.extensions = (
+                await self.extensions_runner.get_extensions_results()
+            )
+            return initial_error
+
+        generator = generator_or_result
+        # there should not be any validation errors so the result is async generator
+        assert hasattr(generator, "__aiter__")
+        self._original_generator = generator.__aiter__()
         return self
 
     def __aiter__(self) -> "Subscription":
@@ -44,25 +55,25 @@ class Subscription(AsyncExecutionBase):
         return result
 
     async def __anext__(self) -> ExecutionResult:
-        if self.parsing_error:
-            return await self._collect_and_return(self.parsing_error)
-        if self.initial_execution_error:
-            return await self._collect_and_return(self.initial_execution_error)
-        # on the next loop raise stop flag
-        if self.initial_execution_error or self.parsing_error:
-            raise StopAsyncIteration
-        assert self.original_generator
+        assert self._original_generator
+        # clean result on every iteration
+        self.execution_context.result = None
         async with self.extensions_runner.executing():
             if not self.execution_context.result:
+
                 try:
-                    result = await self.original_generator.__anext__()
+                    result = await self._original_generator.__anext__()
                 except StopAsyncIteration as exc:
-                    await self.extensions_runner.operation().__aexit__()
+                    await self._operation_cm.exit(exc)
+                    raise StopAsyncIteration from exc
+                except Exception as exc:
+                    await self._operation_cm.exit(exc)
                     raise exc
+
                 ret = self._handle_execution_result(result=result)
             else:
                 ret = self.execution_context.result
         return await self._collect_and_return(ret)
 
-    async def terminate(self) -> None:
-        await self.original_generator.aclose()
+    async def aclose(self) -> None:
+        await self._original_generator.aclose()
