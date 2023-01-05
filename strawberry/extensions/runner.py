@@ -5,8 +5,8 @@ from graphql import MiddlewareManager
 
 from strawberry.extensions.context import (
     ExecutingContextManager,
+    OperationContextManager,
     ParsingContextManager,
-    RequestContextManager,
     ValidationContextManager,
 )
 from strawberry.types import ExecutionContext
@@ -41,8 +41,8 @@ class ExtensionsRunner:
 
         self.extensions = init_extensions
 
-    def operation(self) -> RequestContextManager:
-        return RequestContextManager(self.extensions)
+    def operation(self) -> OperationContextManager:
+        return OperationContextManager(self.extensions)
 
     def validation(self) -> ValidationContextManager:
         return ValidationContextManager(self.extensions)

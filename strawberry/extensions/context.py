@@ -198,7 +198,7 @@ class ExtensionContextManagerBase:
         await self.__aexit__(type(exc), exc.args, exc.__traceback__)
 
 
-class RequestContextManager(ExtensionContextManagerBase):
+class OperationContextManager(ExtensionContextManagerBase):
     HOOK_NAME = _ExtensionHinter.on_operation.__name__
     LEGACY_ENTER = "on_request_start"
     LEGACY_EXIT = "on_request_end"
