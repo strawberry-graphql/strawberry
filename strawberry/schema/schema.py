@@ -30,7 +30,6 @@ from strawberry.union import StrawberryUnion
 
 from ..printer import print_schema
 from . import compat
-from .base import BaseSchema
 from .config import StrawberryConfig
 from .execute import AsyncExecution, execute_sync
 from .subscribe import Subscription
@@ -42,7 +41,7 @@ DEFAULT_ALLOWED_OPERATION_TYPES = {
 }
 
 
-class Schema(BaseSchema):
+class Schema:
     def __init__(
         self,
         # TODO: can we make sure we only allow to pass

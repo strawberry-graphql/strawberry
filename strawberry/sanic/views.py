@@ -19,7 +19,7 @@ from strawberry.http import (
 from strawberry.http.temporal_response import TemporalResponse
 from strawberry.sanic.graphiql import should_render_graphiql
 from strawberry.sanic.utils import convert_request_to_files_dict
-from strawberry.schema import BaseSchema
+from strawberry.schema import Schema
 from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types import ExecutionResult
 from strawberry.types.graphql import OperationType
@@ -49,7 +49,7 @@ class GraphQLView(HTTPMethodView):
 
     def __init__(
         self,
-        schema: BaseSchema,
+        schema: Schema,
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
         json_encoder: Optional[Type[json.JSONEncoder]] = None,

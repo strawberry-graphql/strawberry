@@ -6,7 +6,7 @@ from typing import Any, Dict, Optional, cast
 from graphql import GraphQLError
 from graphql.error.graphql_error import format_error as format_graphql_error
 
-from strawberry.schema import BaseSchema
+from strawberry.schema import Schema
 from strawberry.schema.subscribe import Subscription
 from strawberry.subscriptions.protocols.graphql_ws import (
     GQL_COMPLETE,
@@ -30,7 +30,7 @@ from strawberry.utils.debug import pretty_print_graphql_operation
 class BaseGraphQLWSHandler(ABC):
     def __init__(
         self,
-        schema: BaseSchema,
+        schema: Schema,
         debug: bool,
         keep_alive: bool,
         keep_alive_interval: float,

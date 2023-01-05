@@ -8,7 +8,7 @@ from graphql import ExecutionResult as GraphQLExecutionResult
 from graphql import GraphQLError, GraphQLSyntaxError, parse
 from graphql.error.graphql_error import format_error as format_graphql_error
 
-from strawberry.schema import BaseSchema
+from strawberry.schema import Schema
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     CompleteMessage,
     ConnectionAckMessage,
@@ -29,7 +29,7 @@ from strawberry.utils.operation import get_operation_type
 class BaseGraphQLTransportWSHandler(ABC):
     def __init__(
         self,
-        schema: BaseSchema,
+        schema: Schema,
         debug: bool,
         connection_init_wait_timeout: timedelta,
     ):

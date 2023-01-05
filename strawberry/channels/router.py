@@ -8,7 +8,7 @@ on preferences and client support. Then it hands off to the appropriate consumer
 from django.urls import re_path
 
 from channels.routing import ProtocolTypeRouter, URLRouter
-from strawberry.schema import BaseSchema
+from strawberry.schema import Schema
 
 from .handlers.http_handler import GraphQLHTTPConsumer
 from .handlers.ws_handler import GraphQLWSConsumer
@@ -39,7 +39,7 @@ class GraphQLProtocolTypeRouter(ProtocolTypeRouter):
 
     def __init__(
         self,
-        schema: BaseSchema,
+        schema: Schema,
         django_application=None,
         url_pattern="^graphql",
     ):

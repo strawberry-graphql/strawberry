@@ -11,7 +11,7 @@ from strawberry.http import (
     process_result,
 )
 from strawberry.http.temporal_response import TemporalResponse
-from strawberry.schema import BaseSchema
+from strawberry.schema import Schema
 from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types import ExecutionResult
 from strawberry.types.graphql import OperationType
@@ -21,7 +21,7 @@ from strawberry.utils.graphiql import get_graphiql_html
 class GraphQLView:
     def __init__(
         self,
-        schema: BaseSchema,
+        schema: Schema,
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
         **kwargs

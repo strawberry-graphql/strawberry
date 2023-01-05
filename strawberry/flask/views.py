@@ -4,6 +4,7 @@ from typing import Dict
 from flask import Response, render_template_string, request
 from flask.typing import ResponseReturnValue
 from flask.views import View
+from strawberry import Schema
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.flask.graphiql import should_render_graphiql
@@ -13,7 +14,6 @@ from strawberry.http import (
     parse_request_data,
     process_result,
 )
-from strawberry.schema.base import BaseSchema
 from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types import ExecutionResult
 from strawberry.types.graphql import OperationType
@@ -25,7 +25,7 @@ class BaseGraphQLView(View):
 
     def __init__(
         self,
-        schema: BaseSchema,
+        schema: Schema,
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
     ):

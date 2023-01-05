@@ -9,7 +9,7 @@ from starlette.types import Receive, Scope, Send
 from strawberry.exceptions import MissingQueryError
 from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import parse_query_params, parse_request_data
-from strawberry.schema import BaseSchema
+from strawberry.schema import Schema
 from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types.graphql import OperationType
 from strawberry.utils.debug import pretty_print_graphql_operation
@@ -19,7 +19,7 @@ from strawberry.utils.graphiql import get_graphiql_html
 class HTTPHandler:
     def __init__(
         self,
-        schema: BaseSchema,
+        schema: Schema,
         graphiql: bool,
         allow_queries_via_get: bool,
         debug: bool,

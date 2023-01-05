@@ -1,7 +1,7 @@
 import datetime
 from typing import Optional, Sequence, Union
 
-from strawberry.schema import BaseSchema
+from strawberry.schema import Schema
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 
 from .base import ChannelsWSConsumer
@@ -40,7 +40,7 @@ class GraphQLWSConsumer(ChannelsWSConsumer):
 
     def __init__(
         self,
-        schema: BaseSchema,
+        schema: Schema,
         keep_alive: bool = False,
         keep_alive_interval: float = 1,
         debug: bool = False,

@@ -19,7 +19,7 @@ from strawberry.http import (
     parse_request_data,
     process_result,
 )
-from strawberry.schema import BaseSchema
+from strawberry.schema import Schema
 from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.types import ExecutionResult
 from strawberry.types.graphql import OperationType
@@ -67,7 +67,7 @@ class GraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
 
     def __init__(
         self,
-        schema: BaseSchema,
+        schema: Schema,
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
         subscriptions_enabled: bool = True,

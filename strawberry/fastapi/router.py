@@ -30,7 +30,7 @@ from strawberry.http import (
     parse_request_data,
     process_result,
 )
-from strawberry.schema import BaseSchema
+from strawberry.schema import Schema
 from strawberry.schema.exceptions import InvalidOperationTypeError
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 from strawberry.types import ExecutionResult
@@ -112,7 +112,7 @@ class GraphQLRouter(APIRouter):
 
     def __init__(
         self,
-        schema: BaseSchema,
+        schema: Schema,
         path: str = "",
         graphiql: bool = True,
         allow_queries_via_get: bool = True,

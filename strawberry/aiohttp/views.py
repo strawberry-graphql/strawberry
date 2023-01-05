@@ -10,7 +10,7 @@ from strawberry.aiohttp.handlers import (
     HTTPHandler,
 )
 from strawberry.http import GraphQLHTTPResponse, process_result
-from strawberry.schema import BaseSchema
+from strawberry.schema import Schema
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 from strawberry.types import ExecutionResult
 
@@ -26,7 +26,7 @@ class GraphQLView:
 
     def __init__(
         self,
-        schema: BaseSchema,
+        schema: Schema,
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
         keep_alive: bool = True,

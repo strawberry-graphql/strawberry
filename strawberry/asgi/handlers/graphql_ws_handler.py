@@ -3,7 +3,7 @@ from typing import Any, Optional
 
 from starlette.websockets import WebSocket, WebSocketDisconnect, WebSocketState
 
-from strawberry.schema import BaseSchema
+from strawberry.schema import Schema
 from strawberry.subscriptions import GRAPHQL_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_ws.handlers import BaseGraphQLWSHandler
 from strawberry.subscriptions.protocols.graphql_ws.types import OperationMessage
@@ -12,7 +12,7 @@ from strawberry.subscriptions.protocols.graphql_ws.types import OperationMessage
 class GraphQLWSHandler(BaseGraphQLWSHandler):
     def __init__(
         self,
-        schema: BaseSchema,
+        schema: Schema,
         debug: bool,
         keep_alive: bool,
         keep_alive_interval: float,
