@@ -153,6 +153,17 @@ class MyExtension(Extension):
 `on_execute` can be used to run code on the execution step of
 the GraphQL execution.
 
+<Note>
+on subscription operation this would be called on every `yield`.
+i.e:
+```python
+def on_execute(self):
+    #  This part is called before the async-generator yields
+    yield
+    #  This part is called after the async-generator yields
+```
+<\Note
+
 ```python
 from strawberry.extensions import Extension
 
