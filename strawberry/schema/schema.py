@@ -225,7 +225,6 @@ class Schema(BaseSchema):
 
         result = await execute(
             self._schema,
-            query,
             extensions=self.get_extensions(),
             execution_context_class=self.execution_context_class,
             execution_context=execution_context,
@@ -258,7 +257,6 @@ class Schema(BaseSchema):
 
         result = execute_sync(
             self._schema,
-            query,
             extensions=self.get_extensions(sync=True),
             execution_context_class=self.execution_context_class,
             execution_context=execution_context,

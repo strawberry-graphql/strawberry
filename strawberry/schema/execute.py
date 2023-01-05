@@ -59,7 +59,6 @@ def _run_validation(execution_context: ExecutionContext) -> None:
 
 async def execute(
     schema: GraphQLSchema,
-    query: str,
     *,
     allowed_operation_types: Iterable[OperationType],
     extensions: Sequence[Union[Type[Extension], Extension]],
@@ -153,7 +152,6 @@ async def execute(
 
 def execute_sync(
     schema: GraphQLSchema,
-    query: str,
     *,
     allowed_operation_types: Iterable[OperationType],
     extensions: Sequence[Union[Type[Extension], Extension]],
