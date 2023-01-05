@@ -602,3 +602,26 @@ def test_extension_can_set_query():
 
     assert not result.errors
     assert result.data == {"hi": "👋"}
+
+
+@pytest.mark.asyncio
+async def test_extension_can_set_query_async():
+    class MyExtension(Extension):
+        def on_request_start(self):
+            self.execution_context.query = "{ hi }"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        async def hi(self) -> str:
+            return "👋"
+
+    schema = strawberry.Schema(query=Query, extensions=[MyExtension])
+
+    # Query not set on input
+    query = ""
+
+    result = await schema.execute(query)
+
+    assert not result.errors
+    assert result.data == {"hi": "👋"}
