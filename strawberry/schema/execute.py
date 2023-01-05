@@ -75,13 +75,15 @@ async def execute(
     async with extensions_runner.request():
         # Note: In graphql-core the schema would be validated here but in
         # Strawberry we are validating it at initialisation time instead
-        if not query:
+        if not execution_context.query:
             raise MissingQueryError()
 
         async with extensions_runner.parsing():
             try:
                 if not execution_context.graphql_document:
-                    execution_context.graphql_document = parse_document(query)
+                    execution_context.graphql_document = parse_document(
+                        execution_context.query
+                    )
 
             except GraphQLError as error:
                 execution_context.errors = [error]
@@ -167,13 +169,15 @@ def execute_sync(
     with extensions_runner.request():
         # Note: In graphql-core the schema would be validated here but in
         # Strawberry we are validating it at initialisation time instead
-        if not query:
+        if not execution_context.query:
             raise MissingQueryError()
 
         with extensions_runner.parsing():
             try:
                 if not execution_context.graphql_document:
-                    execution_context.graphql_document = parse_document(query)
+                    execution_context.graphql_document = parse_document(
+                        execution_context.query
+                    )
 
             except GraphQLError as error:
                 execution_context.errors = [error]

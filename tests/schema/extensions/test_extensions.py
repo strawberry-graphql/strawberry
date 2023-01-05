@@ -580,3 +580,25 @@ def test_extend_error_format_example():
         result.errors[0].message == "This error occurred while querying the ping field"
     )
     assert result.data is None
+
+
+def test_extension_can_set_query():
+    class MyExtension(Extension):
+        def on_request_start(self):
+            self.execution_context.query = "{ hi }"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hi(self) -> str:
+            return "👋"
+
+    schema = strawberry.Schema(query=Query, extensions=[MyExtension])
+
+    # Query not set on input
+    query = ""
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data == {"hi": "👋"}
