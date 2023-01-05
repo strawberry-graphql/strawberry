@@ -447,3 +447,21 @@ def test_adding_custom_validation_rules():
         root_value=Query(),
     )
     assert not result.errors
+
+
+async def test_parse_broad_exception():
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def example(self) -> int:
+            return 2
+
+    schema = strawberry.Schema(query=Query)
+
+    query = 2
+
+    result = await schema.execute(
+        query,
+        root_value=Query(),
+    )
+    assert result.errors == [GraphQLError("object of type 'int' has no len()")]

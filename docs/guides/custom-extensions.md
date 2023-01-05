@@ -34,6 +34,12 @@ resolvers.
 
 Note that `resolve` can also be implemented asynchronously.
 
+<Warning>
+
+Subscription operations does not support this hook yet.
+
+</Warning>
+
 ```python
 from strawberry.types import Info
 from strawberry.extensions import Extension
