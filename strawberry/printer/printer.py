@@ -530,19 +530,20 @@ def is_builtin_directive(directive: GraphQLDirective) -> bool:
 
 
 def print_schema(schema: Schema) -> str:
-    graphql_core_schema = schema._schema  # type: ignore
+    graphql_core_schema = schema._schema
     extras = PrintExtras()
 
     directives = filter(
         lambda n: not is_builtin_directive(n), graphql_core_schema.directives
     )
     type_map = graphql_core_schema.type_map
-    types = filter(is_defined_type, map(type_map.get, sorted(type_map)))
+    # see https://github.com/python/mypy/issues/12682
+    types = filter(is_defined_type, map(type_map.get, sorted(type_map)))  # type: ignore
 
     types_printed = [_print_type(type_, schema, extras=extras) for type_ in types]
     schema_definition = print_schema_definition(schema, extras=extras)
 
-    directives = filter(
+    directives_str = filter(
         None, [print_directive(directive, schema=schema) for directive in directives]
     )
 
@@ -557,7 +558,7 @@ def print_schema(schema: Schema) -> str:
         chain(
             sorted(extras.directives),
             filter(None, [schema_definition]),
-            directives,
+            directives_str,
             types_printed,
             (
                 _print_type(

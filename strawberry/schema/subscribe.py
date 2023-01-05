@@ -21,6 +21,7 @@ class Subscription(AsyncExecutionBase):
         generator_or_result = None
         if not initial_error:
             await self._operation_cm.__aenter__()
+            assert self.execution_context.graphql_document
             generator_or_result = await original_subscribe(
                 self.schema,
                 self.execution_context.graphql_document,
@@ -44,7 +45,8 @@ class Subscription(AsyncExecutionBase):
         generator = generator_or_result
         # there should not be any validation errors so the result is async generator
         assert hasattr(generator, "__aiter__")
-        self._original_generator = generator.__aiter__()
+        # mypy couldn't catch the assertion before.
+        self._original_generator = generator.__aiter__()  # type: ignore
         return self
 
     def __aiter__(self) -> "Subscription":
@@ -70,10 +72,12 @@ class Subscription(AsyncExecutionBase):
                     await self._operation_cm.exit(exc)
                     raise exc
 
-                ret = self._handle_execution_result(result=result)
+                return await self._handle_execution_result(result=result)
             else:
-                ret = self.execution_context.result
-        return await self._collect_and_return(ret)
+                return await self._handle_execution_result(
+                    result=self.execution_context.result
+                )
 
     async def aclose(self) -> None:
+        assert self._original_generator
         await self._original_generator.aclose()

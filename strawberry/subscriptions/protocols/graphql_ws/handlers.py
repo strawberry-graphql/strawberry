@@ -24,7 +24,7 @@ from strawberry.subscriptions.protocols.graphql_ws.types import (
     OperationMessagePayload,
     StartPayload,
 )
-from strawberry.types.execution import ExecutionResultError
+from strawberry.types.execution import ExecutionResult, ExecutionResultError
 from strawberry.utils.debug import pretty_print_graphql_operation
 
 
@@ -141,8 +141,9 @@ class BaseGraphQLWSHandler(ABC):
         operation_id: str,
     ) -> None:
         try:
+            result: ExecutionResult
             async for result in subscription:
-                payload = {"data": result.data}
+                payload: dict[str, Any] = {"data": result.data}
                 if result.errors:
                     payload["errors"] = [
                         format_graphql_error(err) for err in result.errors
