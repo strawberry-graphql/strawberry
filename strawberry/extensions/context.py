@@ -200,9 +200,6 @@ class OperationContextManager(ExtensionContextManagerBase):
     LEGACY_ENTER = "on_request_start"
     LEGACY_EXIT = "on_request_end"
 
-    async def __aenter__(self):
-        await super().__aenter__()
-
 
 class ValidationContextManager(ExtensionContextManagerBase):
     HOOK_NAME = _ExtensionHinter.on_validate.__name__
