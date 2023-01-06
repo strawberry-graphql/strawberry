@@ -1,9 +1,8 @@
 import contextlib
-import dataclasses
 import inspect
 import warnings
 from asyncio import iscoroutinefunction
-from typing import AsyncIterator, Callable, Iterator, List, Optional, Union
+from typing import AsyncIterator, Callable, Iterator, List, NamedTuple, Optional, Union
 
 from strawberry.extensions import Extension
 from strawberry.extensions.base_extension import _ExtensionHinter
@@ -14,20 +13,14 @@ from strawberry.utils.await_maybe import (
 )
 
 
-@dataclasses.dataclass
-class ExecutionStepInitialized:
-    async_iterables: List[AsyncIterator[None]] = dataclasses.field(default_factory=list)
-    iterables: List[Iterator[None]] = dataclasses.field(default_factory=list)
+class ExecutionStepInitialized(NamedTuple):
+    async_iterables: List[AsyncIterator[None]]
+    iterables: List[Iterator[None]]
 
 
-@dataclasses.dataclass
-class ExecutionStep:
-    async_iterables: List[Callable[[], AsyncIterator[None]]] = dataclasses.field(
-        default_factory=list
-    )
-    iterables: List[Callable[[], Iterator[None]]] = dataclasses.field(
-        default_factory=list
-    )
+class ExecutionStep(NamedTuple):
+    async_iterables: List[Callable[[], AsyncIterator[None]]]
+    iterables: List[Callable[[], Iterator[None]]]
 
 
 class ExecutionOrderManager:
@@ -48,18 +41,22 @@ class ExecutionOrderManager:
             if previous_step.async_iterables:
                 previous_step.async_iterables.append(async_iterable)
             else:
-                self.steps.append(ExecutionStep(async_iterables=[async_iterable]))
+                self.steps.append(
+                    ExecutionStep(async_iterables=[async_iterable], iterables=[])
+                )
         else:
             assert iterable
             if previous_step.iterables:
                 previous_step.iterables.append(iterable)
             else:
-                self.steps.append(ExecutionStep(iterables=[iterable]))
+                self.steps.append(
+                    ExecutionStep(iterables=[iterable], async_iterables=[])
+                )
 
     def initialized(self) -> List[ExecutionStepInitialized]:
         ret: List[ExecutionStepInitialized] = []
         for step in self.steps:
-            initialized = ExecutionStepInitialized()
+            initialized = ExecutionStepInitialized([], [])
             for it in step.iterables:
                 initialized.iterables.append(it())
             for async_iter in step.async_iterables:
