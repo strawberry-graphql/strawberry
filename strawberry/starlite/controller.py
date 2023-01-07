@@ -35,8 +35,8 @@ from strawberry.http import (
 )
 from strawberry.schema import BaseSchema
 from strawberry.schema.exceptions import InvalidOperationTypeError
-from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
 from strawberry.subscriptions.constants import WS_4406_PROTOCOL_NOT_ACCEPTABLE
+from strawberry.subscriptions.protocols import SubscriptionProtocol
 from strawberry.types import ExecutionResult
 from strawberry.types.graphql import OperationType
 from strawberry.utils.debug import pretty_print_graphql_operation
@@ -48,16 +48,13 @@ from .handlers.graphql_transport_ws_handler import (
 from .handlers.graphql_ws_handler import GraphQLWSHandler as BaseGraphQLWSHandler
 
 if TYPE_CHECKING:
-    from typing import Iterable, List, Type
+    from typing import Iterable, List, Tuple, Type
 
     from starlite.types import AnyCallable, Dependencies
 
     MergedContext = Union[
         "BaseContext",
         Dict[str, Union[Any, BackgroundTasks, Request, Response, WebSocket]],
-    ]
-    SubscriptionProtocols = Iterable[
-        Union[GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL]
     ]
 
 CustomContext = Union["BaseContext", Dict[str, Any]]
@@ -127,7 +124,10 @@ def make_graphql_controller(
     debug: bool = False,
     root_value_getter: "Optional[AnyCallable]" = None,
     context_getter=None,
-    subscription_protocols=(GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL),
+    subscription_protocols: "Iterable[SubscriptionProtocol]" = (
+        SubscriptionProtocol.GRAPHQL_TRANSPORT_WS,
+        SubscriptionProtocol.GRAPHQL_WS,
+    ),
     connection_init_wait_timeout: "timedelta" = timedelta(minutes=1),
 ) -> "Type[Controller]":
     routes_path = path
@@ -155,8 +155,10 @@ def make_graphql_controller(
             "context": Provide(_context_getter),
             "root_value": Provide(root_value_getter_),
         }
-        graphql_ws_handler_class = "GraphQLWSHandler"
-        graphql_transport_ws_handler_class = "GraphQLTransportWSHandler"
+        graphql_ws_handler_class: "Type[GraphQLWSHandler]" = GraphQLWSHandler
+        graphql_transport_ws_handler_class: "Type[GraphQLTransportWSHandler]" = (
+            GraphQLTransportWSHandler
+        )
 
         _schema: "BaseSchema" = schema
         _graphiql: bool = graphiql
@@ -164,7 +166,9 @@ def make_graphql_controller(
         _keep_alive: bool = keep_alive
         _keep_alive_interval: float = keep_alive_interval
         _debug: bool = debug
-        _protocols: "SubscriptionProtocols" = subscription_protocols
+        _protocols: "Tuple[str, ...]" = tuple(
+            proto.value for proto in subscription_protocols
+        )
         _connection_init_wait_timeout: "timedelta" = connection_init_wait_timeout
 
         async def execute(
@@ -356,7 +360,7 @@ def make_graphql_controller(
                 return root_value
 
             preferred_protocol = self.pick_preferred_protocol(socket)
-            if preferred_protocol == GRAPHQL_TRANSPORT_WS_PROTOCOL:
+            if preferred_protocol == SubscriptionProtocol.GRAPHQL_TRANSPORT_WS.value:
                 await self.graphql_transport_ws_handler_class(
                     schema=self._schema,
                     debug=self._debug,
@@ -365,7 +369,7 @@ def make_graphql_controller(
                     get_root_value=_get_root_value,
                     ws=socket,
                 ).handle()
-            elif preferred_protocol == GRAPHQL_WS_PROTOCOL:
+            elif preferred_protocol == SubscriptionProtocol.GRAPHQL_WS.value:
                 await self.graphql_ws_handler_class(
                     schema=self._schema,
                     debug=self._debug,
