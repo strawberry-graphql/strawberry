@@ -256,24 +256,24 @@ def test_should_raise_invalid_ignore():
 
 def test_should_ignore_field_attributes():
     query = """
-  query read1 {
-    matt: user(name: "matt") {
-      email
-    }
-    andy: user(name: "andy") {
-      email
-      address {
-        city
+    query read1 {
+      matt: user(name: "matt") {
+        email
       }
-      pets {
-        name
-        owner {
+      andy: user(name: "andy") {
+        email
+        address {
+          city
+        }
+        pets {
           name
+          owner {
+            name
+          }
         }
       }
     }
-  }
-  """
+    """
 
     errors, result = run_query(
         query,
