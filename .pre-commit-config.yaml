@@ -6,7 +6,7 @@ repos:
         args: [--py37-plus, --keep-runtime-typing]
 
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.0.186
+    rev: v0.0.215
     hooks:
       - id: ruff
         exclude: ^tests/codegen/snapshots/python/
