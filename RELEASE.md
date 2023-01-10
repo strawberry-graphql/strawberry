@@ -1,10 +1,12 @@
 Release type: minor
 
-Support persisted query implementation via extensions.
+This release adds support for updating (or adding) the query document inside an
+extension's `on_request_start` method.
 
-View/controller implementations no longer return HTTP 400 if no query is present
-in the request, but will still do if no query is found during execution. This
-allows an extension to insert a query using the following template.
+This can be useful for implementing persisted queries. The old behavior of
+returning a 400 error if no query is present in the request is still supported.
+
+Example usage:
 
 ```python
 from strawberry.extensions import Extension
