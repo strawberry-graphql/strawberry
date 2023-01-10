@@ -1,6 +1,14 @@
 CHANGELOG
 =========
 
+0.151.3 - 2023-01-09
+--------------------
+
+This release adds support for FastAPI 0.89.0
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2440](https://github.com/strawberry-graphql/strawberry/pull/2440/)
+
+
 0.151.2 - 2022-12-23
 --------------------
 
