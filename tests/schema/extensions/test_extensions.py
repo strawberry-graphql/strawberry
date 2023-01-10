@@ -765,8 +765,9 @@ def test_extension_can_set_query():
 @pytest.mark.asyncio
 async def test_extension_can_set_query_async():
     class MyExtension(Extension):
-        def on_request_start(self):
+        def on_operation(self):
             self.execution_context.query = "{ hi }"
+            yield
 
     @strawberry.type
     class Query:
