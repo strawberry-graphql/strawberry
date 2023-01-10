@@ -29,8 +29,8 @@ from ..types.execution import ExecutionResultError
 from .exceptions import InvalidOperationTypeError
 
 
-def parse_document(query: str) -> DocumentNode:
-    return parse(query)
+def parse_document(query: Optional[str]) -> DocumentNode:
+    return parse(query)  # type: ignore
 
 
 def validate_document(
@@ -59,7 +59,6 @@ def _run_validation(execution_context: ExecutionContext) -> None:
 
 def execute_sync(
     schema: GraphQLSchema,
-    query: str,
     *,
     allowed_operation_types: Iterable[OperationType],
     extensions: Sequence[Union[Type[Extension], Extension]],
@@ -79,7 +78,9 @@ def execute_sync(
         with extensions_runner.parsing():
             try:
                 if not execution_context.graphql_document:
-                    execution_context.graphql_document = parse_document(query)
+                    execution_context.graphql_document = parse_document(
+                        execution_context.query
+                    )
 
             except GraphQLError as error:
                 execution_context.errors = [error]
@@ -164,7 +165,6 @@ class AsyncExecutionBase:
         execution_context_class: Optional[Type[GraphQLExecutionContext]] = None,
     ):
         self.schema = schema
-        self.query = execution_context.query
         self.execution_context = execution_context
         self.extensions = extensions
         self.execution_context_class = execution_context_class
@@ -179,7 +179,9 @@ class AsyncExecutionBase:
         async with self.extensions_runner.parsing():
             try:
                 if not self.execution_context.graphql_document:
-                    self.execution_context.graphql_document = parse_document(self.query)
+                    self.execution_context.graphql_document = parse_document(
+                        self.execution_context.query
+                    )
 
             except GraphQLError as error:
                 self.execution_context.errors = [error]

@@ -131,12 +131,7 @@ class BaseView(View):
         except KeyError:
             raise BadRequest("File(s) missing in form data")
 
-        try:
-            request_data = parse_request_data(data)
-        except MissingQueryError:
-            raise SuspiciousOperation("No GraphQL query found in the request")
-
-        return request_data
+        return parse_request_data(data)
 
     def _render_graphiql(self, request: HttpRequest, context=None):
         if not self.graphiql:
@@ -237,6 +232,8 @@ class GraphQLView(BaseView):
             )
         except InvalidOperationTypeError as e:
             raise BadRequest(e.as_http_error_reason(method)) from e
+        except MissingQueryError:
+            raise SuspiciousOperation("No GraphQL query found in the request")
 
         response_data = self.process_result(request=request, result=result)
 
@@ -291,6 +288,8 @@ class AsyncGraphQLView(BaseView):
             )
         except InvalidOperationTypeError as e:
             raise BadRequest(e.as_http_error_reason(method)) from e
+        except MissingQueryError:
+            raise SuspiciousOperation("No GraphQL query found in the request")
 
         response_data = await self.process_result(request=request, result=result)
 

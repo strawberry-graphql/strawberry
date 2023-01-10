@@ -160,14 +160,7 @@ class GraphQLView:
                 http_status_code=404,
             )
 
-        try:
-            request_data = parse_request_data(data)
-        except MissingQueryError:
-            return self.error_response(
-                error_code="BadRequestError",
-                message="No GraphQL query found in the request",
-                http_status_code=400,
-            )
+        request_data = parse_request_data(data)
 
         allowed_operation_types = OperationType.from_http(method)
 
@@ -190,6 +183,12 @@ class GraphQLView:
             return self.error_response(
                 error_code="BadRequestError",
                 message=e.as_http_error_reason(method),
+                http_status_code=400,
+            )
+        except MissingQueryError:
+            return self.error_response(
+                error_code="BadRequestError",
+                message="No GraphQL query found in the request",
                 http_status_code=400,
             )
 

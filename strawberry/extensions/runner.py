@@ -42,16 +42,16 @@ class ExtensionsRunner:
         self.extensions = init_extensions
 
     def operation(self) -> OperationContextManager:
-        return OperationContextManager(self.extensions)
+        return OperationContextManager(self.extensions, self.execution_context)
 
     def validation(self) -> ValidationContextManager:
-        return ValidationContextManager(self.extensions)
+        return ValidationContextManager(self.extensions, self.execution_context)
 
     def parsing(self) -> ParsingContextManager:
-        return ParsingContextManager(self.extensions)
+        return ParsingContextManager(self.extensions, self.execution_context)
 
     def executing(self) -> ExecutingContextManager:
-        return ExecutingContextManager(self.extensions)
+        return ExecutingContextManager(self.extensions, self.execution_context)
 
     def get_extensions_results_sync(self) -> Dict[str, Any]:
         data: Dict[str, Any] = {}
