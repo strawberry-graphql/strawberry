@@ -16,4 +16,5 @@ def on_execute(self):
     yield
     #  This part is called after the execution ends
 ```
+
 Note that the old style hooks entered to a deprecation progress.
