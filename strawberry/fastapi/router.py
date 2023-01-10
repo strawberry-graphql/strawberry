@@ -312,14 +312,14 @@ class GraphQLRouter(APIRouter):
 
     async def execute(
         self,
-        query: str,
+        query: Optional[str],
         variables: Optional[Dict[str, Any]] = None,
         context: Any = None,
         operation_name: Optional[str] = None,
         root_value: Any = None,
         allowed_operation_types: Optional[Iterable[OperationType]] = None,
     ):
-        if self.debug:
+        if self.debug and query:
             pretty_print_graphql_operation(operation_name, query, variables)
 
         return await self.schema.execute(

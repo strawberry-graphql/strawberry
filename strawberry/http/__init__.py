@@ -27,7 +27,9 @@ def process_result(result: ExecutionResult) -> GraphQLHTTPResponse:
 
 @dataclass
 class GraphQLRequestData:
-    query: str
+    # query is optional here as it can be added by an extensions
+    # (for example an extension for persisted queries)
+    query: Optional[str]
     variables: Optional[Dict[str, Any]]
     operation_name: Optional[str]
 
@@ -41,8 +43,6 @@ def parse_query_params(params: Dict[str, str]) -> Dict[str, Any]:
 
 def parse_request_data(data: Mapping[str, Any]) -> GraphQLRequestData:
     return GraphQLRequestData(
-        # query is optional here as it can be added by an extensions
-        # (for example an extension for persisted queries)
         query=data.get("query"),
         variables=data.get("variables"),
         operation_name=data.get("operationName"),
