@@ -8,6 +8,13 @@ from strawberry.channels import GraphQLHTTPConsumer
 from strawberry.channels.handlers.http_handler import SyncGraphQLHTTPConsumer
 from tests.channels.schema import schema
 
+pytestmark = pytest.mark.xfail(
+    reason=(
+        "Some of these tests seems to crash on windows "
+        "due to usage of database_sync_to_async"
+    )
+)
+
 
 def generate_body(query: str, variables: Optional[Dict[str, Any]] = None):
     body: Dict[str, Any] = {"query": query}
@@ -117,6 +124,7 @@ async def test_fails_on_multipart_body(consumer):
 @pytest.mark.parametrize("consumer", [GraphQLHTTPConsumer, SyncGraphQLHTTPConsumer])
 @pytest.mark.parametrize("body", [b"{}", b'{"foo": "bar"}'])
 async def test_fails_on_missing_query(consumer, body: bytes):
+
     client = HttpCommunicator(
         consumer.as_asgi(schema=schema),
         "POST",

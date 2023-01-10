@@ -29,7 +29,7 @@ class BaseSchema(Protocol):
     @abstractmethod
     async def execute(
         self,
-        query: str,
+        query: Optional[str],
         variable_values: Optional[Dict[str, Any]] = None,
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
@@ -41,7 +41,7 @@ class BaseSchema(Protocol):
     @abstractmethod
     def execute_sync(
         self,
-        query: str,
+        query: Optional[str],
         variable_values: Optional[Dict[str, Any]] = None,
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,

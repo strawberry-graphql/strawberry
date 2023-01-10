@@ -107,12 +107,7 @@ class GraphQLView(HTTPMethodView):
                     "Unable to parse request body as JSON", status_code=400
                 )
 
-            try:
-                request_data = parse_request_data(data)
-            except MissingQueryError:
-                raise ServerError(
-                    "No GraphQL query found in the request", status_code=400
-                )
+            request_data = parse_request_data(data)
 
             return await self.execute_request(
                 request=request, request_data=request_data, method="GET"
@@ -187,6 +182,8 @@ class GraphQLView(HTTPMethodView):
             raise ServerError(
                 e.as_http_error_reason(method=method), status_code=400
             ) from e
+        except MissingQueryError:
+            raise ServerError("No GraphQL query found in the request", status_code=400)
 
         response_data = await self.process_result(request, result)
 
@@ -198,12 +195,7 @@ class GraphQLView(HTTPMethodView):
         except json.JSONDecodeError:
             raise ServerError("Unable to parse request body as JSON", status_code=400)
 
-        try:
-            request_data = parse_request_data(data)
-        except MissingQueryError:
-            raise ServerError("No GraphQL query found in the request", status_code=400)
-
-        return request_data
+        return parse_request_data(data)
 
     def parse_request(self, request: Request) -> Dict[str, Any]:
         content_type = request.content_type or ""
