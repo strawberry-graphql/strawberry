@@ -1,19 +1,10 @@
 Release type: minor
 
-This release changes the way scoped extensions hooks work.
-**Before:**
-```python
-def on_execution_started(self):  # Called before the execution start
-    ...
-
-def on_execution_end(self):  # Called after the execution ends
-    ...
-```
-**After**
+Support Extensions on subscriptions
+i.e:
 ```python
 def on_execute(self):
-    #  This part is called before the execution start
+    #  This part is called before the async-generator yields
     yield
-    #  This part is called after the execution ends
+    #  This part is called after the async-generator yields
 ```
-Note that the old style hooks entered to a deprecation progress.
