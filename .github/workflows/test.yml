@@ -40,7 +40,7 @@ jobs:
 
       - name: pytest
         run:
-          poetry run pytest --cov=strawberry --cov-append --cov-report=xml -n auto --showlocals -vv -m "not
+          poetry run pytest --cov=strawberry --cov-append --cov-report=xml  --showlocals -vv -m "not
           starlette" -m "not django" --ignore=tests/mypy --ignore=tests/pyright
 
         if: ${{ always() }}
@@ -69,7 +69,7 @@ jobs:
 
       - name: pytest
         run:
-          poetry run pytest --cov=strawberry --cov-append --cov-report=xml -n auto --showlocals -vv -m "not
+          poetry run pytest --cov=strawberry --cov-append --cov-report=xml  --showlocals -vv -m "not
           django" --ignore=tests/mypy --ignore=tests/pyright
 
         if: ${{ always() }}
@@ -106,7 +106,7 @@ jobs:
 
       - name: pytest
         run:
-          poetry run pytest --cov=strawberry --cov-append --cov-report=xml -n auto --showlocals -vv -m django
+          poetry run pytest --cov=strawberry --cov-append --cov-report=xml  --showlocals -vv -m django
 
         if: ${{ always() }}
       - uses: codecov/codecov-action@v3
@@ -146,7 +146,7 @@ jobs:
 
       - name: pytest
         run:
-          poetry run pytest --cov=strawberry --cov-append --cov-report=xml -n auto --showlocals -vv -m
+          poetry run pytest --cov=strawberry --cov-append --cov-report=xml  --showlocals -vv -m
           starlette
 
         if: ${{ always() }}

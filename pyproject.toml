@@ -135,7 +135,7 @@ tests/codegen/snapshots/
 '''
 
 [tool.pytest.ini_options]
-addopts = "-s --emoji --mypy-ini-file=mypy.ini --benchmark-disable"
+addopts = "-s --emoji --mypy-ini-file=mypy.ini --benchmark-disable -n auto"
 DJANGO_SETTINGS_MODULE = "tests.django.django_settings"
 testpaths = ["tests/"]
 markers = ["django", "starlette", "channels"]
