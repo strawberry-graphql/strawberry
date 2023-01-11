@@ -28,6 +28,10 @@ include = ["strawberry/py.typed"]
 "Sponsor on GitHub" = "https://github.com/sponsors/strawberry-graphql"
 "Sponsor on Open Collective" = "https://opencollective.com/strawberry-graphql"
 
+[tool.poetry.group.dev.dependencies]
+pytest-xdist = {extras = ["psutil"], version = "^3.1.0"}
+pytest-cov = "^4.0.0"
+
 [build-system]
 requires = ["poetry>=0.12"]
 build-backend = "poetry.masonry.api"
