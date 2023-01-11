@@ -40,7 +40,7 @@ jobs:
 
       - name: pytest
         run:
-          poetry run coverage run -m pytest --showlocals -vv -m "not
+          poetry run pytest --cov-append  -vv -m "not
           starlette" -m "not django" --ignore=tests/mypy --ignore=tests/pyright -n auto
 
       - name: coverage xml
@@ -71,7 +71,7 @@ jobs:
 
       - name: pytest
         run:
-          poetry run coverage run -m pytest --showlocals -vv -m "not
+          poetry run pytest --cov-append  -vv -m "not
           django" --ignore=tests/mypy --ignore=tests/pyright  -n auto
 
       - name: coverage xml
@@ -110,7 +110,7 @@ jobs:
 
       - name: pytest
         run:
-          poetry run coverage run -m pytest --showlocals -vv -m django  -n auto
+          poetry run pytest --cov-append  -vv -m django  -n auto
 
       - name: coverage xml
         run: poetry run coverage xml -i
@@ -152,7 +152,7 @@ jobs:
 
       - name: pytest
         run:
-          poetry run coverage run -m pytest --showlocals -vv -m
+          poetry run pytest --cov-append  -vv -m
           starlette  -n auto
 
       - name: coverage xml
