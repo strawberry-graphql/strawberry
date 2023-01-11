@@ -41,7 +41,7 @@ jobs:
 
       - name: pytest
         run:
-          poetry run pytest tests/mypy
+          poetry run pytest tests/mypy  -n auto
 
   pyright:
     strategy:
@@ -69,4 +69,4 @@ jobs:
 
       - name: pytest
         run:
-          poetry run pytest tests/pyright
+          poetry run pytest tests/pyright  -n auto
