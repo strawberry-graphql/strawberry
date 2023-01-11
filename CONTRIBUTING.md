@@ -120,6 +120,8 @@ that the current tests are passing on your machine:
 $ poetry install
 $ poetry run pytest tests
 ```
+To run tests faster you can use `-n auto` argument from pytest-xdist.
+
 
 Strawberry uses the [black](https://github.com/ambv/black) coding style and you
 must ensure that your code follows it. If not, the CI will fail and your Pull Request will not be merged.
