@@ -15,6 +15,7 @@ Here we show a minimal example of how you can leverage Strawberry's generic Type
 to build the types required to comply with the relay spec.
 
 First, we'll implement a naive mock database. Name this file `db.py`:
+
 ```python
 import base64
 import typing
@@ -56,8 +57,8 @@ def build_book_cursor(book):
 
 def get_books(limit: int, cursor: typing.Optional[str]) -> typing.List[DBBook]:
     """
-    Return books from the mock db starting *after* the given cursor, limited to 
-    the given number of books, ordered by title. The cursor must be an encoded 
+    Return books from the mock db starting *after* the given cursor, limited to
+    the given number of books, ordered by title. The cursor must be an encoded
     title, or None in order to start at the beginning.
     """
     if cursor is None:
@@ -73,7 +74,7 @@ def get_books(limit: int, cursor: typing.Optional[str]) -> typing.List[DBBook]:
 
     # start *after*, not at, the given cursor
     start_idx = found_idx[0] + 1
-    
+
     # limit how many books are returned
     end_idx = start_idx + limit
     return books[start_idx:end_idx]
@@ -189,10 +190,12 @@ and run the following query to get the first two books:
       }
       cursor
     }
-  }	
+  }
 }
 ```
-The result should look like this: 
+
+The result should look like this:
+
 ```
 {
   "data": {
@@ -223,9 +226,10 @@ The result should look like this:
   }
 }
 ```
+
 Note that `hasPreviousPage` is `false`, to indicate that this is the first page.
 
-Get the next two books by running the same query, after changing `after` to be the 
-value of `endCursor` received in the result (`"VGl0bGUgMg=="`). 
+Get the next two books by running the same query, after changing `after` to be the
+value of `endCursor` received in the result (`"VGl0bGUgMg=="`).
 
 Repeat until `hasNextPage` is `false`.
