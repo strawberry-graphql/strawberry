@@ -994,7 +994,7 @@ async def test_injects_connection_params(aiohttp_client):
         assert ws.closed
 
 
-async def test_rejects_connection_params(aiohttp_client):
+async def test_rejects_connection_params_not_dict(aiohttp_client):
     app = create_app()
     aiohttp_app_client = await aiohttp_client(app)
 
@@ -1002,6 +1002,21 @@ async def test_rejects_connection_params(aiohttp_client):
         "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         await ws.send_json(ConnectionInitMessage(payload="gonna fail").as_dict())
+
+        data = await ws.receive(timeout=2)
+        assert ws.closed
+        assert ws.close_code == 4400
+        assert data.extra == "Invalid connection init payload"
+
+
+async def test_rejects_connection_params_not_unset(aiohttp_client):
+    app = create_app()
+    aiohttp_app_client = await aiohttp_client(app)
+
+    async with aiohttp_app_client.ws_connect(
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
+    ) as ws:
+        await ws.send_json(ConnectionInitMessage(payload=None).as_dict())
 
         data = await ws.receive(timeout=2)
         assert ws.closed

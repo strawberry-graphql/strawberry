@@ -450,8 +450,15 @@ async def test_injects_connection_params(ws):
     await ws.send_json_to(CompleteMessage(id="sub1").as_dict())
 
 
-async def test_rejects_connection_params(ws):
+async def test_rejects_connection_params_not_dict(ws):
     await ws.send_json_to(ConnectionInitMessage(payload="gonna fail").as_dict())
+    data = await ws.receive_output()
+    assert data["type"] == "websocket.close"
+    assert data["code"] == 4400
+
+
+async def test_rejects_connection_params_not_unset(ws):
+    await ws.send_json_to(ConnectionInitMessage(payload=None).as_dict())
     data = await ws.receive_output()
     assert data["type"] == "websocket.close"
     assert data["code"] == 4400
