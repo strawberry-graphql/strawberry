@@ -1,6 +1,93 @@
 CHANGELOG
 =========
 
+0.152.0 - 2023-01-10
+--------------------
+
+This release adds support for updating (or adding) the query document inside an
+extension's `on_request_start` method.
+
+This can be useful for implementing persisted queries. The old behavior of
+returning a 400 error if no query is present in the request is still supported.
+
+Example usage:
+
+```python
+from strawberry.extensions import Extension
+
+def get_doc_id(request) -> str:
+    """Implement this to get the document ID using your framework's request object"""
+    ...
+
+def load_persisted_query(doc_id: str) -> str:
+    """Implement this load a query by document ID. For example, from a database."""
+    ...
+
+class PersistedQuery(Extension):
+    def on_request_start(self):
+        request = self.execution_context.context.request
+
+        doc_id = get_doc_id(request)
+
+        self.execution_context.query = load_persisted_query(doc_id)
+```
+
+Contributed by [James Thorniley](https://github.com/jthorniley) via [PR #2431](https://github.com/strawberry-graphql/strawberry/pull/2431/)
+
+
+0.151.3 - 2023-01-09
+--------------------
+
+This release adds support for FastAPI 0.89.0
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2440](https://github.com/strawberry-graphql/strawberry/pull/2440/)
+
+
+0.151.2 - 2022-12-23
+--------------------
+
+This release fixes `@strawberry.experimental.pydantic.type` and adds support for the metadata attribute on fields.
+
+Example:
+```python
+@strawberry.experimental.pydantic.type(model=User)
+class UserType:
+    private: strawberry.auto = strawberry.field(metadata={"admin_only": True})
+    public: strawberry.auto
+```
+
+Contributed by [Huy Z](https://github.com/huyz) via [PR #2415](https://github.com/strawberry-graphql/strawberry/pull/2415/)
+
+
+0.151.1 - 2022-12-20
+--------------------
+
+This release fixes an issue that prevented using generic
+that had a field of type enum. The following works now:
+
+```python
+@strawberry.enum
+class EstimatedValueEnum(Enum):
+    test = "test"
+    testtest = "testtest"
+
+
+@strawberry.type
+class EstimatedValue(Generic[T]):
+    value: T
+    type: EstimatedValueEnum
+
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def estimated_value(self) -> Optional[EstimatedValue[int]]:
+        return EstimatedValue(value=1, type=EstimatedValueEnum.test)
+```
+
+Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2411](https://github.com/strawberry-graphql/strawberry/pull/2411/)
+
+
 0.151.0 - 2022-12-13
 --------------------
 

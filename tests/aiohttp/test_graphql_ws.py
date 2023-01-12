@@ -1,8 +1,5 @@
 import asyncio
 
-from tests.aiohttp.app import create_app
-from tests.aiohttp.schema import schema
-
 from aiohttp import web
 from strawberry.aiohttp.views import GraphQLView
 from strawberry.subscriptions import GRAPHQL_WS_PROTOCOL
@@ -18,6 +15,8 @@ from strawberry.subscriptions.protocols.graphql_ws import (
     GQL_START,
     GQL_STOP,
 )
+from tests.aiohttp.app import create_app
+from tests.aiohttp.schema import schema
 
 
 async def test_simple_subscription(aiohttp_client):

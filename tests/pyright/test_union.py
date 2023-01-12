@@ -16,7 +16,7 @@ class User:
 class Error:
     message: str
 
-UserOrError: TypeAlias = strawberry.union("UserOrError", (User, Error))
+UserOrError: TypeAlias = strawberry.union("UserOrError", (User, Error))  # type: ignore
 
 reveal_type(UserOrError)
 

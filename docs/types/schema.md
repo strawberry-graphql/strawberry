@@ -172,19 +172,46 @@ By default Strawberry will log any errors encountered during a query execution t
 The default functionality looks like this:
 
 ```python
-# strawberry/schema/schema.py
+# strawberry/schema/base.py
 from strawberry.types import ExecutionContext
 
 logger = logging.getLogger("strawberry.execution")
 
-class Schema:
+class BaseSchema:
     ...
 
-    def process_errors(self, errors: List[GraphQLError], execution_context: ExecutionContext) -> None:
-        for error in errors:
-            # A GraphQLError wraps the underlying error so we have to access it
-            # through the `original_error` property
-            # https://graphql-core-3.readthedocs.io/en/latest/modules/error.html#graphql.error.GraphQLError
-            actual_error = error.original_error or error
-            logger.error(actual_error, exc_info=actual_error)
+    def process_errors(
+        self,
+        errors: List[GraphQLError],
+        execution_context: Optional[ExecutionContext] = None,
+    ) -> None:
+            StrawberryLogger.error(error, execution_context)
+```
+
+```python
+# strawberry/utils/logging.py
+from strawberry.types import ExecutionContext
+
+
+class StrawberryLogger:
+    logger: Final[logging.Logger] = logging.getLogger("strawberry.execution")
+
+    @classmethod
+    def error(
+        cls,
+        error: GraphQLError,
+        execution_context: Optional[ExecutionContext] = None,
+        # https://www.python.org/dev/peps/pep-0484/#arbitrary-argument-lists-and-default-argument-values
+        **logger_kwargs: Any,
+    ) -> None:
+        # "stack_info" is a boolean; check for None explicitly
+        if logger_kwargs.get("stack_info") is None:
+            logger_kwargs["stack_info"] = True
+
+        # stacklevel was added in version 3.8
+        # https://docs.python.org/3/library/logging.html#logging.Logger.debug
+        if sys.version_info >= (3, 8):
+            logger_kwargs["stacklevel"] = 3
+
+        cls.logger.error(error, exc_info=error.original_error, **logger_kwargs)
 ```

@@ -3,7 +3,6 @@ import json
 from datetime import timedelta
 
 import pytest
-from tests.channels.schema import schema
 
 from channels.testing import WebsocketCommunicator
 from strawberry.channels import GraphQLWSConsumer
@@ -19,6 +18,7 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     SubscribeMessage,
     SubscribeMessagePayload,
 )
+from tests.channels.schema import schema
 
 pytestmark = [
     pytest.mark.asyncio,

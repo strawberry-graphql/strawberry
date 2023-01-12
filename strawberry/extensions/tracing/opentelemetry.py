@@ -52,9 +52,11 @@ class OpenTelemetryExtension(Extension):
             span_name, kind=SpanKind.SERVER
         )
         self._span_holder[RequestStage.REQUEST].set_attribute("component", "graphql")
-        self._span_holder[RequestStage.REQUEST].set_attribute(
-            "query", self.execution_context.query
-        )
+
+        if self.execution_context.query:
+            self._span_holder[RequestStage.REQUEST].set_attribute(
+                "query", self.execution_context.query
+            )
 
     def on_request_end(self):
         # If the client doesn't provide an operation name then GraphQL will

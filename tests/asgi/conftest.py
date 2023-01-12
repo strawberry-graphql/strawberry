@@ -2,9 +2,9 @@ import pathlib
 
 import pytest
 from starlette.testclient import TestClient
-from tests.asgi.app import create_app
 
 from strawberry.asgi.test import GraphQLTestClient
+from tests.asgi.app import create_app
 
 
 @pytest.fixture

@@ -21,6 +21,8 @@ class DatadogTracingExtension(Extension):
 
     @cached_property
     def _resource_name(self):
+        assert self.execution_context.query
+
         query_hash = self.hash_query(self.execution_context.query)
 
         if self.execution_context.operation_name:
@@ -46,6 +48,8 @@ class DatadogTracingExtension(Extension):
         self.request_span.set_tag("graphql.operation_name", self._operation_name)
 
         operation_type = "query"
+
+        assert self.execution_context.query
 
         if self.execution_context.query.strip().startswith("mutation"):
             operation_type = "mutation"

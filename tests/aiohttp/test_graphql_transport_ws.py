@@ -3,7 +3,6 @@ import json
 from datetime import timedelta
 
 import pytest
-from tests.aiohttp.app import create_app
 
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
@@ -17,6 +16,7 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     SubscribeMessage,
     SubscribeMessagePayload,
 )
+from tests.aiohttp.app import create_app
 
 
 async def test_unknown_message_type(aiohttp_client):
