@@ -161,7 +161,7 @@ class GraphQLRouter(APIRouter):
             response: Response,
             context=Depends(self.context_getter),
             root_value=Depends(self.root_value_getter),
-        ):
+        ) -> Response:
             if request.query_params:
                 try:
                     query_data = parse_query_params(request.query_params._dict)
@@ -189,7 +189,7 @@ class GraphQLRouter(APIRouter):
             response: Response,
             context=Depends(self.context_getter),
             root_value=Depends(self.root_value_getter),
-        ):
+        ) -> Response:
             actual_response: Response
 
             content_type = request.headers.get("content-type", "")
