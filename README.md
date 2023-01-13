@@ -76,7 +76,7 @@ A Django view is provided for adding a GraphQL endpoint to your application.
 
 ```python
 INSTALLED_APPS = [
-    ...
+    ...,  # your other apps
     strawberry.django,
 ]
 ```
@@ -89,7 +89,7 @@ from .schema import schema
 
 urlpatterns = [
     ...,
-    path('graphql', GraphQLView.as_view(schema=schema)),
+    path("graphql", GraphQLView.as_view(schema=schema)),
 ]
 ```
 
