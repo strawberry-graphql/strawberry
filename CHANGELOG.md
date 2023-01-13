@@ -1,6 +1,24 @@
 CHANGELOG
 =========
 
+0.154.0 - 2023-01-13
+--------------------
+
+Support constrained float field types in Pydantic models.
+
+i.e.
+
+```python
+import pydantic
+
+class Model(pydantic.BaseModel):
+    field: pydantic.confloat(le=100.0)
+	equivalent_field: float = pydantic.Field(le=100.0)
+```
+
+Contributed by [Etienne Wodey](https://github.com/airwoodix) via [PR #2455](https://github.com/strawberry-graphql/strawberry/pull/2455/)
+
+
 0.153.0 - 2023-01-13
 --------------------
 
