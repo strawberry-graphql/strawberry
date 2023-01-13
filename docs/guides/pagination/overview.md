@@ -13,13 +13,14 @@ Let us take a look at some of the common ways pagination can be implemented toda
 
 ### Offset-Based Pagination
 
-This type of pagination is widely used, and it is similar to the syntax we use when looking up database records. 
+This type of pagination is widely used, and it is similar to the syntax we use when looking up database records.
 
 Here, the client specifies:
+
 - `limit`: The number of items to be obtained at a time, and
 - `offset`: The number of items to be skipped from the beginning.
 
-Implementing offset-based pagination with an SQL database is straightforward. 
+Implementing offset-based pagination with an SQL database is straightforward.
 We use the `limit` and `offset` values given to query for the items.
 
 Offset-based pagination also provides us the ability to skip ahead to any offset,
@@ -74,7 +75,7 @@ To get the next two users, we can send another request, incrementing `offset` by
 
 We can repeat this process, incrementing `offset` by the value of `limit`, until we get an empty result.
 
-#### Pagination Metadata 
+#### Pagination Metadata
 
 In the example above, the result contained no metadata, only the items at the requested offset and limit.
 
@@ -95,20 +96,20 @@ are in total, so that the client knows what the greatest offset value can be.
 #### Using page_number Instead of offset
 
 Instead of using `limit` and `offset` as the pagination parameters, it may be more useful to use `page_number`
-and `page_size`. 
+and `page_size`.
 
 In such a case, the metadata in the result can be `pages_count`. The client starts the pagination at `page_number` 1,
 incrementing by 1 each time to get the next page, and ending when `page_size` is reached.
 
 This approach may be more in line with what a typical client actually needs when paginating.
 
-#### Limitations of Offset-Based Pagination 
+#### Limitations of Offset-Based Pagination
 
 Offset-based pagination has a few limitations:
 
 - It is not suitable for large datasets, because we need to access offset + limit number of items from the dataset, before discarding the offset
   and only returning the requested items.
-- It doesn't work well in environments where records are frequently added or removed, because in such cases, the page window becomes 
+- It doesn't work well in environments where records are frequently added or removed, because in such cases, the page window becomes
   inconsistent and unreliable. This may result in duplicate items or skipped items across pages.
 
 However, it provides a quick way to get started, and works well with small-medium datasets. When your dataset scales, you will
