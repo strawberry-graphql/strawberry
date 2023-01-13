@@ -84,12 +84,11 @@ very small resolvers.
 
 <Note>
 
-The _self_ argument is a bit special here, when executing a GraphQL
-query, in case of resolvers defined with a decorator, the _self_ argument
-corresponds to the _root_ value that field. In this example the _root_ value
-is the value `Query` type, which is usually `None`. You can change the _root_
-value when calling the `execute` method on a `Schema`. More on _root_ values
-below.
+The _self_ argument is a bit special here, when executing a GraphQL query, in
+case of resolvers defined with a decorator, the _self_ argument corresponds to
+the _root_ value that field. In this example the _root_ value is the value
+`Query` type, which is usually `None`. You can change the _root_ value when
+calling the `execute` method on a `Schema`. More on _root_ values below.
 
 </Note>
 
@@ -121,6 +120,56 @@ type User {
 
 type Query {
     user(id: ID!): User!
+}
+```
+
+### Optional arguments
+
+Optional or nullable arguments can be expressed using `Optional`. If you need to
+differentiate between `null` (maps to `None` in Python) and no arguments being
+passed, you can use `UNSET`:
+
+```python+schema
+from typing import Optional
+import strawberry
+
+@strawberry.type
+class Query:
+    @strawberry.field
+    def hello(self, name: Optional[str] = None) -> str:
+        if name is None:
+            return "Hello world!"
+        return f"Hello {name}!"
+
+    @strawberry.field
+    def greet(self, name: Optional[str] = strawberry.UNSET) -> str:
+        if name is strawberry.UNSET:
+            return "Name was not set!"
+        if name is None:
+            return "Name was null!"
+        return f"Hello {name}!"
+---
+type Query {
+    hello(name: String = null): String!
+    greet(name: String): String!
+}
+```
+
+Like this you will get the following responses:
+
+```graphql+response
+{
+  unset: greet
+  null: greet(name: null)
+  name: greet(name: "Dominique")
+}
+---
+{
+  "data": {
+    "unset": "Name was not set!",
+    "null": "Name was null!",
+    "name": "Hello Dominique!"
+  }
 }
 ```
 
@@ -174,7 +223,9 @@ class User:
 ## Accessing execution information
 
 Sometimes it is useful to access the information for the current execution
-context. To do so you can provide the `info` parameter to resolvers, like this:
+context. Strawberry allows to declare a parameter of type `Info` that will be
+automatically passed to the resolver. This parameter containes the information
+for the current execution context.
 
 ```python
 import strawberry
@@ -189,6 +240,13 @@ class User:
     last_name: str
     full_name: str = strawberry.field(resolver=full_name)
 ```
+
+<Tip>
+
+You don't have to call this parameter `info`, its name can be anything.
+Strawberry uses the type to pass the correct value to the resolver.
+
+</Tip>
 
 ### API
 

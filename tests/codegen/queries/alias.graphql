@@ -1,0 +1,8 @@
+query OperationName {
+  id
+  second_id: id
+  a_float: float
+  lazy {
+    lazy: something
+  }
+}

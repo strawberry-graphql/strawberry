@@ -1,12 +1,11 @@
 from .utils import Result, requires_pyright, run_pyright, skip_on_windows
 
-
 pytestmark = [skip_on_windows, requires_pyright]
 
 
 CODE = """
 import strawberry
-
+from typing_extensions import TypeAlias
 
 @strawberry.type
 class User:
@@ -17,7 +16,7 @@ class User:
 class Error:
     message: str
 
-UserOrError = strawberry.union("UserOrError", (User, Error))
+UserOrError: TypeAlias = strawberry.union("UserOrError", (User, Error))  # type: ignore
 
 reveal_type(UserOrError)
 

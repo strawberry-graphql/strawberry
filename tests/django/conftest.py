@@ -1,7 +1,6 @@
 import pathlib
 
 import pytest
-
 from django.test.client import Client
 
 from strawberry.django.test import GraphQLTestClient

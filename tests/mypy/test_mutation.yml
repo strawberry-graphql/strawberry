@@ -1,0 +1,46 @@
+- case: test_mutation_decorator
+  main: |
+    import strawberry
+
+    @strawberry.type
+    class Mutation:
+        @strawberry.mutation
+        def set_name(self, name: str) -> None:
+            self.name = name
+
+    Mutation()
+    Mutation(n="Patrick")
+  out: |
+    main:10: error: Unexpected keyword argument "n" for "Mutation"  [call-arg]
+
+
+- case: test_mutation_field
+  main: |
+    import strawberry
+
+    def set_name(self, name: str) -> None:
+        self.name = name
+
+    @strawberry.type
+    class Mutation:
+        set_name: None = strawberry.mutation(resolver=set_name)
+
+    Mutation()
+    Mutation(n="Patrick")
+  out: |
+    main:11: error: Unexpected keyword argument "n" for "Mutation"  [call-arg]
+
+
+- case: test_positional_arguments_in_mutation
+  main: |
+    import strawberry
+
+    def set_name(self, name: str) -> None:
+      self.name = name
+
+    @strawberry.type
+    class Example:
+      passed: None = strawberry.mutation(resolver=set_name)
+      failed: None = strawberry.mutation(set_name)
+  out: |
+    main:9: error: "field()" or "mutation()" only takes keyword arguments  [misc]

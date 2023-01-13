@@ -3,9 +3,11 @@ import sys
 
 import click
 
-from strawberry import Schema
-from strawberry.cli.constants import DEBUG_SERVER_SCHEMA_ENV_VAR_KEY
-from strawberry.utils.importer import import_module_symbol
+from strawberry.cli.constants import (
+    DEBUG_SERVER_LOG_OPERATIONS,
+    DEBUG_SERVER_SCHEMA_ENV_VAR_KEY,
+)
+from strawberry.cli.utils import load_schema
 
 
 @click.command("server", short_help="Starts debug server")
@@ -29,7 +31,14 @@ from strawberry.utils.importer import import_module_symbol
         "Works the same as `--app-dir` in uvicorn."
     ),
 )
-def server(schema, host, port, log_level, app_dir):
+@click.option(
+    "--log-operations",
+    default=True,
+    type=bool,
+    show_default=True,
+    help="Log GraphQL operations",
+)
+def server(schema, host, port, log_level, app_dir, log_operations):
     sys.path.insert(0, app_dir)
 
     try:
@@ -42,17 +51,10 @@ def server(schema, host, port, log_level, app_dir):
         )
         raise click.ClickException(message)
 
-    try:
-        schema_symbol = import_module_symbol(schema, default_symbol_name="schema")
-    except (ImportError, AttributeError) as exc:
-        message = str(exc)
-        raise click.BadArgumentUsage(message)
-
-    if not isinstance(schema_symbol, Schema):
-        message = "The `schema` must be an instance of strawberry.Schema"
-        raise click.BadArgumentUsage(message)
+    load_schema(schema, app_dir=app_dir)
 
     os.environ[DEBUG_SERVER_SCHEMA_ENV_VAR_KEY] = schema
+    os.environ[DEBUG_SERVER_LOG_OPERATIONS] = str(log_operations)
     app = "strawberry.cli.debug_server:app"
 
     # Windows doesn't support UTF-8 by default

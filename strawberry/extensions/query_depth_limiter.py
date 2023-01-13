@@ -26,7 +26,7 @@
 # SOFTWARE.
 
 import re
-from typing import Callable, Dict, List, Optional, Type, Union
+from typing import Callable, Dict, Iterable, List, Optional, Type, Union
 
 from graphql import GraphQLError
 from graphql.language import (
@@ -42,7 +42,6 @@ from graphql.validation import ValidationContext, ValidationRule
 
 from strawberry.extensions import AddValidationRules
 from strawberry.extensions.utils import is_introspection_key
-
 
 IgnoreType = Union[Callable[[str], bool], re.Pattern, str]
 
@@ -119,7 +118,7 @@ def create_validator(
 
 
 def get_fragments(
-    definitions: List[DefinitionNode],
+    definitions: Iterable[DefinitionNode],
 ) -> Dict[str, FragmentDefinitionNode]:
     fragments = {}
     for definition in definitions:
@@ -132,7 +131,7 @@ def get_fragments(
 # This will actually get both queries and mutations.
 # We can basically treat those the same
 def get_queries_and_mutations(
-    definitions: List[DefinitionNode],
+    definitions: Iterable[DefinitionNode],
 ) -> Dict[str, OperationDefinitionNode]:
     operations = {}
 
@@ -163,7 +162,8 @@ def determine_depth(
         return depth_so_far
 
     if isinstance(node, FieldNode):
-        # by default, ignore the introspection fields which begin with double underscores
+        # by default, ignore the introspection fields which begin
+        # with double underscores
         should_ignore = is_introspection_key(node.name.value) or is_ignored(
             node, ignore
         )

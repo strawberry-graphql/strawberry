@@ -42,18 +42,20 @@ app.include_router(graphql_app, prefix="/graphql")
 
 The `GraphQLRouter` accepts the following options:
 
-- schema: mandatory, the schema created by `strawberry.Schema`.
-- graphiql: optional, defaults to `True`, whether to enable the GraphiQL
+- `schema`: mandatory, the schema created by `strawberry.Schema`.
+- `graphiql`: optional, defaults to `True`, whether to enable the GraphiQL
   interface.
-- context_getter: optional FastAPI dependency for providing custom context
+- `allow_queries_via_get`: optional, defaults to `True`, whether to enable
+  queries via `GET` requests
+- `context_getter`: optional FastAPI dependency for providing custom context
   value.
-- root_value_getter: optional FastAPI dependency for providing custom root
+- `root_value_getter`: optional FastAPI dependency for providing custom root
   value.
 
 ## context_getter
 
-The `context_getter` option allows you to provide a custom context object that can be
-used in your resolver. `context_getter` is a
+The `context_getter` option allows you to provide a custom context object that
+can be used in your resolver. `context_getter` is a
 [FastAPI dependency](https://fastapi.tiangolo.com/tutorial/dependencies/) and
 can inject other dependencies if you so wish.
 
@@ -62,13 +64,13 @@ There are two options at your disposal here:
 1. Define your custom context as a dictionary,
 2. Define your custom context as a class.
 
-If no context is supplied, then the default context returned is a dictionary containing
-the request, the response, and any background tasks.
+If no context is supplied, then the default context returned is a dictionary
+containing the request, the response, and any background tasks.
 
 However, you can define a class-based custom context inline with
 [FastAPI practice](https://fastapi.tiangolo.com/tutorial/dependencies/classes-as-dependencies/).
-If you choose to do this, you must ensure that your custom context class inherits from
-`BaseContext` or an `InvalidCustomContext` exception is raised.
+If you choose to do this, you must ensure that your custom context class
+inherits from `BaseContext` or an `InvalidCustomContext` exception is raised.
 
 For dictionary-based custom contexts, an example might look like the following.
 
@@ -114,8 +116,8 @@ called "custom*value", which is injected from `custom_context_dependency`. This
 value exists alongside `request`, `response`, and `background_tasks` in the
 `info.context` \_dictionary* and so it requires `['request']` indexing.
 
-Then we use the context in a resolver.
-The resolver will return "Hello John" in this case.
+Then we use the context in a resolver. The resolver will return "Hello John" in
+this case.
 
 For class-based custom contexts, an example might look like the following.
 
@@ -160,14 +162,14 @@ app = FastAPI()
 app.include_router(graphql_app, prefix="/graphql")
 ```
 
-In this case, we are returning a custom context class that inherits
-from BaseContext with fields `name` and `greeting`, which is also
-injected by `custom_context_dependency`. These custom values exist
-alongside `request`, `response`, and `background_tasks` in the
-`info.context` _class_ and so it requires `.request` indexing.
+In this case, we are returning a custom context class that inherits from
+BaseContext with fields `name` and `greeting`, which is also injected by
+`custom_context_dependency`. These custom values exist alongside `request`,
+`response`, and `background_tasks` in the `info.context` _class_ and so it
+requires `.request` indexing.
 
-Then we use the context in a resolver.
-The resolver will return “Hello John, you rock!” in this case.
+Then we use the context in a resolver. The resolver will return “Hello John, you
+rock!” in this case.
 
 ### Setting background tasks
 
@@ -209,12 +211,13 @@ app = FastAPI()
 app.include_router(graphql_app, prefix="/graphql")
 ```
 
-If using a custom context class, then background tasks should be stored within the class object as `.background_tasks`.
+If using a custom context class, then background tasks should be stored within
+the class object as `.background_tasks`.
 
 ## root_value_getter
 
-The `root_value_getter` option allows you to provide a custom root value for your
-schema. This is most likely a rare usecase but might be useful in certain
+The `root_value_getter` option allows you to provide a custom root value for
+your schema. This is most likely a rare usecase but might be useful in certain
 situations.
 
 Here's an example:
@@ -252,12 +255,12 @@ the field name we'll return "Patrick".
 
 ## process_result
 
-The `process_result` option allows you to customize and/or process results before they are sent
-to the clients. This can be useful for logging errors or hiding them (for example to
-hide internal exceptions).
+The `process_result` option allows you to customize and/or process results
+before they are sent to the clients. This can be useful for logging errors or
+hiding them (for example to hide internal exceptions).
 
-It needs to return a `GraphQLHTTPResponse` object and accepts the request
-and execution results.
+It needs to return a `GraphQLHTTPResponse` object and accepts the request and
+execution results.
 
 ```python
 from fastapi import Request
@@ -265,7 +268,7 @@ from strawberry.fastapi import GraphQLRouter
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
 
-from graphql.error import format_error as format_graphql_error
+from graphql.error.graphql_error import format_error as format_graphql_error
 
 class MyGraphQLRouter(GraphQLRouter):
 
@@ -282,3 +285,14 @@ class MyGraphQLRouter(GraphQLRouter):
 
 In this case we are doing the default processing of the result, but it can be
 tweaked based on your needs.
+
+## encode_json
+
+`encode_json` allows to customize the encoding of the JSON response. By default
+we use `json.dumps` but you can override this method to use a different encoder.
+
+```python
+class MyGraphQLRouter(GraphQLRouter):
+    def encode_json(self, data: GraphQLHTTPResponse) -> str:
+        return json.dumps(data, indent=2)
+```

@@ -3,17 +3,15 @@ from copy import deepcopy
 from inspect import isawaitable
 from typing import Any, Callable, Dict, Optional
 
+from graphql import GraphQLResolveInfo
 from opentelemetry import trace
 from opentelemetry.trace import Span, SpanKind, Tracer
-
-from graphql import GraphQLResolveInfo
 
 from strawberry.extensions import Extension
 from strawberry.extensions.utils import get_path_from_info
 from strawberry.types.execution import ExecutionContext
 
 from .utils import should_skip_tracing
-
 
 DATETIME_FORMAT = "%Y-%m-%dT%H:%M:%S.%fZ"
 
@@ -28,7 +26,7 @@ class RequestStage(enum.Enum):
 
 class OpenTelemetryExtension(Extension):
     _arg_filter: Optional[ArgFilter]
-    _span_holder: Dict[str, Span] = dict()
+    _span_holder: Dict[RequestStage, Span] = dict()
     _tracer: Tracer
 
     def __init__(
@@ -54,9 +52,11 @@ class OpenTelemetryExtension(Extension):
             span_name, kind=SpanKind.SERVER
         )
         self._span_holder[RequestStage.REQUEST].set_attribute("component", "graphql")
-        self._span_holder[RequestStage.REQUEST].set_attribute(
-            "query", self.execution_context.query
-        )
+
+        if self.execution_context.query:
+            self._span_holder[RequestStage.REQUEST].set_attribute(
+                "query", self.execution_context.query
+            )
 
     def on_request_end(self):
         # If the client doesn't provide an operation name then GraphQL will

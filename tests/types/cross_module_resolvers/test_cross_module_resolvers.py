@@ -113,7 +113,9 @@ def test_c_inheritance_resolver_only():
 def test_c_composition_resolver():
     @strawberry.type
     class Query:
-        c: c_mod.CComposition = strawberry.field(resolver=c_mod.c_composition_resolver)
+        c: List[c_mod.CComposition] = strawberry.field(
+            resolver=c_mod.c_composition_resolver
+        )
 
     [field] = Query._type_definition.fields
     assert field.type == List[c_mod.CComposition]

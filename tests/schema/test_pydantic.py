@@ -15,7 +15,7 @@ def test_use_alias_as_gql_name():
 
     @strawberry.type
     class Query:
-        user: User = User(age_=5)
+        user: User = strawberry.field(default_factory=lambda: User(age_=5))
 
     schema = strawberry.Schema(query=Query)
     query = """{
@@ -46,7 +46,7 @@ def test_do_not_use_alias_as_gql_name():
 
     @strawberry.type
     class Query:
-        user: User = User(age_=5)
+        user: User = strawberry.field(default_factory=lambda: User(age_=5))
 
     schema = strawberry.Schema(query=Query)
     query = """{

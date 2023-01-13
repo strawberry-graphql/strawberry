@@ -4,7 +4,8 @@ title: Django
 
 # Django
 
-Strawberry comes with a basic [Django integration](https://github.com/strawberry-graphql/strawberry-graphql-django).
+Strawberry comes with a basic
+[Django integration](https://github.com/strawberry-graphql/strawberry-graphql-django).
 It provides a view that you can use to serve your GraphQL schema:
 
 ```python
@@ -24,25 +25,35 @@ project, this is needed to provide the template for the GraphiQL interface.
 
 ## Options
 
-The `GraphQLView` accepts five options at the moment:
+The `GraphQLView` accepts the following arguments:
 
 - `schema`: mandatory, the schema created by `strawberry.Schema`.
 - `graphiql`: optional, defaults to `True`, whether to enable the GraphiQL
   interface.
-- `subscriptions_enabled`: optional boolean paramenter enabling subscriptions
-  in the GraphiQL interface, defaults to `False`.
+- `allow_queries_via_get`: optional, defaults to `True`, whether to enable
+  queries via `GET` requests
+- `subscriptions_enabled`: optional boolean paramenter enabling subscriptions in
+  the GraphiQL interface, defaults to `False`.
+
+## Deprecated options
+
+The following options are deprecated and will be removed in a future release:
+
 - `json_encoder`: optional JSON encoder, defaults to `DjangoJSONEncoder`, will
   be used to serialize the data.
-- `json_dumps_params`: optional dictionary of keyword arguments to pass to
-  the `json.dumps` call used to generate the response. To get the most compact
-  JSON representation, you should specify `{"separators": (",", ":")}`,
-  defaults to `None`.
+- `json_dumps_params`: optional dictionary of keyword arguments to pass to the
+  `json.dumps` call used to generate the response. To get the most compact JSON
+  representation, you should specify `{"separators": (",", ":")}`, defaults to
+  `None`.
+
+You can extend the view and override `encode_json` to customize the JSON
+encoding process.
 
 ## Extending the view
 
 We allow to extend the base `GraphQLView`, by overriding the following methods:
 
-- `get_context(self, request: HttpRequest) -> Any`
+- `get_context(self, request: HttpRequest, response: HttpResponse) -> Any`
 - `get_root_value(self, request: HttpRequest) -> Any`
 - `process_result(self, request: HttpRequest, result: ExecutionResult) -> GraphQLHTTPResponse`
 
@@ -115,7 +126,7 @@ and the execution results.
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
 
-from graphql.error import format_error as format_graphql_error
+from graphql.error.graphql_error import format_error as format_graphql_error
 
 class MyGraphQLView(GraphQLView):
     def process_result(
@@ -153,11 +164,15 @@ project, this is needed to provide the template for the GraphiQL interface.
 
 ## Options
 
-The `AsyncGraphQLView` accepts two options at the moment:
+The `AsyncGraphQLView` accepts the following arguments:
 
-- schema: mandatory, the schema created by `strawberry.Schema`.
-- graphiql: optional, defaults to `True`, whether to enable the GraphiQL
+- `schema`: mandatory, the schema created by `strawberry.Schema`.
+- `graphiql`: optional, defaults to `True`, whether to enable the GraphiQL
   interface.
+- `allow_queries_via_get`: optional, defaults to `True`, whether to enable
+  queries via `GET` requests
+- `subscriptions_enabled`: optional boolean paramenter enabling subscriptions in
+  the GraphiQL interface, defaults to `False`.
 
 ## Extending the view
 
@@ -167,6 +182,7 @@ methods:
 - `async get_context(self, request: HttpRequest) -> Any`
 - `async get_root_value(self, request: HttpRequest) -> Any`
 - `async process_result(self, request: HttpRequest, result: ExecutionResult) -> GraphQLHTTPResponse`
+- `def encode_json(self, data: GraphQLHTTPResponse) -> str`
 
 ## get_context
 
@@ -227,7 +243,7 @@ and the execution results.
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
 
-from graphql.error import format_error as format_graphql_error
+from graphql.error.graphql_error import format_error as format_graphql_error
 
 class MyGraphQLView(AsyncGraphQLView):
     async def process_result(
@@ -243,3 +259,21 @@ class MyGraphQLView(AsyncGraphQLView):
 
 In this case we are doing the default processing of the result, but it can be
 tweaked based on your needs.
+
+## encode_json
+
+`encode_json` allows to customize the encoding of the JSON response. By default
+we use `json.dumps` but you can override this method to use a different encoder.
+
+```python
+class MyGraphQLView(AsyncGraphQLView):
+    def encode_json(self, data: GraphQLHTTPResponse) -> str:
+        return json.dumps(data, indent=2)
+```
+
+## Subscriptions
+
+Subscriptions run over websockets and thus depend on
+[channels](https://channels.readthedocs.io/). Take a look at our
+[channels integraton](/docs/integrations/channels.md) page for more information
+regarding it.

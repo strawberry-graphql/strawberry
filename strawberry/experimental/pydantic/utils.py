@@ -6,13 +6,13 @@ from pydantic.fields import ModelField
 from pydantic.typing import NoArgAnyCallable
 from pydantic.utils import smart_deepcopy
 
-from strawberry.arguments import UNSET, _Unset, is_unset  # type: ignore
 from strawberry.experimental.pydantic.exceptions import (
     AutoFieldsNotInBaseModelError,
     BothDefaultAndDefaultFactoryDefinedError,
     UnregisteredTypeException,
 )
 from strawberry.private import is_private
+from strawberry.unset import UNSET
 from strawberry.utils.typing import (
     get_list_annotation,
     get_optional_annotation,
@@ -52,45 +52,35 @@ class DataclassCreationFields(NamedTuple):
     """Fields required for the fields parameter of make_dataclass"""
 
     name: str
-    type_annotation: Type
+    field_type: Type
     field: dataclasses.Field
 
     def to_tuple(self) -> Tuple[str, Type, dataclasses.Field]:
         # fields parameter wants (name, type, Field)
-        return self.name, self.type_annotation, self.field
+        return self.name, self.field_type, self.field
 
 
-def sort_creation_fields(
-    fields: List[DataclassCreationFields],
-) -> List[DataclassCreationFields]:
-    """
-    Sort fields so that fields with missing defaults go first
-    because dataclasses require that fields with no defaults are defined
-    first
-    """
-
-    def has_default(model_field: DataclassCreationFields) -> bool:
-        """Check if field has defaults."""
-        return (model_field.field.default is not dataclasses.MISSING) or (
-            model_field.field.default_factory is not dataclasses.MISSING  # type: ignore
-        )
-
-    return sorted(fields, key=has_default)
-
-
-def get_default_factory_for_field(field: ModelField) -> Union[NoArgAnyCallable, _Unset]:
+def get_default_factory_for_field(
+    field: ModelField,
+) -> Union[NoArgAnyCallable, dataclasses._MISSING_TYPE]:
     """
     Gets the default factory for a pydantic field.
 
-    Handles mutable defaults when making the dataclass by using pydantic's smart_deepcopy
+    Handles mutable defaults when making the dataclass by
+    using pydantic's smart_deepcopy
 
     Returns optionally a NoArgAnyCallable representing a default_factory parameter
     """
-    default_factory = field.default_factory
-    default = field.default
+    # replace dataclasses.MISSING with our own UNSET to make comparisons easier
+    default_factory = (
+        field.default_factory
+        if field.default_factory is not dataclasses.MISSING
+        else UNSET
+    )
+    default = field.default if field.default is not dataclasses.MISSING else UNSET
 
-    has_factory = default_factory is not None and not is_unset(default_factory)
-    has_default = default is not None and not is_unset(default)
+    has_factory = default_factory is not None and default_factory is not UNSET
+    has_default = default is not None and default is not UNSET
 
     # defining both default and default_factory is not supported
 
@@ -119,7 +109,7 @@ def get_default_factory_for_field(field: ModelField) -> Union[NoArgAnyCallable, 
     if not field.required:
         return lambda: None
 
-    return UNSET
+    return dataclasses.MISSING
 
 
 def ensure_all_auto_fields_in_pydantic(

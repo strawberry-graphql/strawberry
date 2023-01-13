@@ -1,7 +1,9 @@
 from dataclasses import asdict, dataclass
 from typing import Any, Dict, List, Optional
 
-from strawberry.arguments import UNSET
+from graphql import GraphQLFormattedError
+
+from strawberry.unset import UNSET
 
 
 @dataclass
@@ -91,7 +93,7 @@ class ErrorMessage(GraphQLTransportMessage):
     """
 
     id: str
-    payload: List[Dict[str, Any]]  # TODO: shape like List[GraphQLError]
+    payload: List[GraphQLFormattedError]
     type: str = "error"
 
 

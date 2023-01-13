@@ -1,7 +1,8 @@
 """
 Abstraction layer for graphql-core field nodes.
 
-Call `convert_sections` on a list of GraphQL `FieldNode`s, such as in `info.field_nodes`.
+Call `convert_sections` on a list of GraphQL `FieldNode`s,
+such as in `info.field_nodes`.
 
 If a node has only one useful value, it's value is inlined.
 
@@ -10,22 +11,19 @@ Note Python dicts maintain ordering (for all supported versions).
 """
 
 import dataclasses
-from typing import Any, Dict, Iterable, List, Optional, Union
+from typing import Any, Collection, Dict, Iterable, List, Optional, Union
 
 from graphql import GraphQLResolveInfo
-from graphql.language import (
-    ArgumentNode as GQLArgumentNode,
-    DirectiveNode as GQLDirectiveNode,
-    FieldNode as GQLFieldNode,
-    FragmentSpreadNode as GQLFragmentSpreadNode,
-    InlineFragmentNode as GQLInlineFragment,
-    InlineFragmentNode as GQLInlineFragmentNode,
-    ListValueNode as GQLListValueNode,
-    ObjectValueNode as GQLObjectValueNode,
-    ValueNode as GQLValueNode,
-    VariableNode as GQLVariableNode,
-)
-
+from graphql.language import ArgumentNode as GQLArgumentNode
+from graphql.language import DirectiveNode as GQLDirectiveNode
+from graphql.language import FieldNode as GQLFieldNode
+from graphql.language import FragmentSpreadNode as GQLFragmentSpreadNode
+from graphql.language import InlineFragmentNode as GQLInlineFragment
+from graphql.language import InlineFragmentNode as GQLInlineFragmentNode
+from graphql.language import ListValueNode as GQLListValueNode
+from graphql.language import ObjectValueNode as GQLObjectValueNode
+from graphql.language import ValueNode as GQLValueNode
+from graphql.language import VariableNode as GQLVariableNode
 
 Arguments = Dict[str, Any]
 Directives = Dict[str, Arguments]
@@ -62,7 +60,7 @@ def convert_directives(
 
 
 def convert_selections(
-    info: GraphQLResolveInfo, field_nodes: List[GQLFieldNode]
+    info: GraphQLResolveInfo, field_nodes: Collection[GQLFieldNode]
 ) -> List[Selection]:
     """Return typed `Selection` based on node type."""
     selections: List[Selection] = []

@@ -3,14 +3,12 @@ from typing import Optional
 from unittest.mock import patch
 
 import pytest
-
-from graphql import (
-    ExecutionResult as GraphQLExecutionResult,
-    GraphQLError,
-    execute as original_execute,
-)
+from graphql import ExecutionResult as GraphQLExecutionResult
+from graphql import GraphQLError
+from graphql import execute as original_execute
 
 import strawberry
+from strawberry.exceptions import StrawberryGraphQLError
 from strawberry.extensions import Extension
 
 
@@ -293,7 +291,7 @@ def test_warning_about_async_get_results_hooks_in_sync_context():
     class Query:
         @strawberry.field
         def string(self) -> str:
-            return str()
+            return ""
 
     schema = strawberry.Schema(query=Query, extensions=[MyExtension])
     query = "query { string }"
@@ -541,3 +539,89 @@ def test_execution_reject_example(mock_original_execute):
     assert result.errors == [GraphQLError("Well you asked for it")]
 
     assert mock_original_execute.call_count == 1
+
+
+def test_extend_error_format_example():
+    # Test that the example of how to extend error format
+
+    class ExtendErrorFormat(Extension):
+        def on_request_end(self):
+            result = self.execution_context.result
+            if getattr(result, "errors", None):
+                result.errors = [
+                    StrawberryGraphQLError(
+                        extensions={"additional_key": "additional_value"},
+                        nodes=error.nodes,
+                        source=error.source,
+                        positions=error.positions,
+                        path=error.path,
+                        original_error=error.original_error,
+                        message=error.message,
+                    )
+                    for error in result.errors
+                ]
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def ping(self) -> str:
+            raise Exception("This error occurred while querying the ping field")
+
+    schema = strawberry.Schema(query=Query, extensions=[ExtendErrorFormat])
+    query = """
+        query TestQuery {
+            ping
+        }
+    """
+
+    result = schema.execute_sync(query)
+    assert result.errors[0].extensions == {"additional_key": "additional_value"}
+    assert (
+        result.errors[0].message == "This error occurred while querying the ping field"
+    )
+    assert result.data is None
+
+
+def test_extension_can_set_query():
+    class MyExtension(Extension):
+        def on_request_start(self):
+            self.execution_context.query = "{ hi }"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def hi(self) -> str:
+            return "👋"
+
+    schema = strawberry.Schema(query=Query, extensions=[MyExtension])
+
+    # Query not set on input
+    query = ""
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data == {"hi": "👋"}
+
+
+@pytest.mark.asyncio
+async def test_extension_can_set_query_async():
+    class MyExtension(Extension):
+        def on_request_start(self):
+            self.execution_context.query = "{ hi }"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        async def hi(self) -> str:
+            return "👋"
+
+    schema = strawberry.Schema(query=Query, extensions=[MyExtension])
+
+    # Query not set on input
+    query = ""
+
+    result = await schema.execute(query)
+
+    assert not result.errors
+    assert result.data == {"hi": "👋"}

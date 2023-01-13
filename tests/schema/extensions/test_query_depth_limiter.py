@@ -2,7 +2,6 @@ import re
 from typing import List, Optional
 
 import pytest
-
 from graphql import get_introspection_query, parse, specified_rules, validate
 
 import strawberry
@@ -71,7 +70,7 @@ def run_query(query: str, max_depth: int, ignore=None):
     errors = validate(
         schema._schema,
         document,
-        rules=(specified_rules + [validation_rule]),
+        rules=specified_rules + (validation_rule,),
     )
 
     return errors, result
