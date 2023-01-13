@@ -106,7 +106,7 @@ schema = strawberry.Schema(
     extensions=[
         QueryDepthLimiter(
           max_depth=2,
-          ignore=[re.compile(r".*favourite.*"]
+          ignore=[re.compile(r".*favourite.*")]
         ),
     ]
 )
