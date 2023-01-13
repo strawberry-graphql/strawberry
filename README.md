@@ -77,7 +77,7 @@ A Django view is provided for adding a GraphQL endpoint to your application.
 ```python
 INSTALLED_APPS = [
     ...,  # your other apps
-    strawberry.django,
+    "strawberry.django",
 ]
 ```
 
