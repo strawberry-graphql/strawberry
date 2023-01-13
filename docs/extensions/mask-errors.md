@@ -26,7 +26,7 @@ schema = strawberry.Schema(
 ## API reference:
 
 ```python
-class MaskErrors(should_mask_error=default_should_mask_error, error_message="Unexpected error.")`
+class MaskErrors(should_mask_error=default_should_mask_error, error_message="Unexpected error.")
 ```
 
 #### `should_mask_error: Callable[[GraphQLError], bool] = default_should_mask_error`
