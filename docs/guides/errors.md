@@ -144,7 +144,7 @@ class Query:
     @strawberry.field
     def get_user(self, id: str) -> Optional[User]:
         try:
-            user = # get a user by their ID
+            user = get_a_user_by_their_ID
             return user
         except UserDoesNotExist:
             return None
