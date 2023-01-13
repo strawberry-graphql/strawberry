@@ -509,7 +509,7 @@ async def channel_listen(
     *,
     timeout: float | None = None,
     groups: Sequence[str] | None = None
-) -> AsyncGenerator
+) # AsyncGenerator
 ```
 
 - `type` - The type of the message to wait for, equivalent to `scope['type']`
