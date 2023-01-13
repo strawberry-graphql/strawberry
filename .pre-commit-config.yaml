@@ -37,7 +37,7 @@ repos:
       - id: black
         exclude: ^tests/codegen/snapshots/python/
 
-  - repo: https://github.com/asottile/blacken-docs
+  - repo: https://github.com/adamchainz/blacken-docs
     rev: v1.12.1
     hooks:
       -   id: blacken-docs
