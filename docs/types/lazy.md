@@ -22,6 +22,7 @@ import strawberry
 if TYPE_CHECKING:
     from .users import User
 
+
 @strawberry.type
 class Post:
     title: str
@@ -36,6 +37,7 @@ import strawberry
 
 if TYPE_CHECKING:
     from .posts import Post
+
 
 @strawberry.type
 class User:
@@ -62,6 +64,7 @@ import strawberry
 
 if TYPE_CHECKING:
     from .posts import Post
+
 
 @strawberry.type
 class User:

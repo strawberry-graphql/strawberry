@@ -28,7 +28,7 @@ schema = strawberry.Schema(
     Query,
     extensions=[
         DatadogTracingExtension,
-    ]
+    ],
 )
 ```
 
@@ -45,7 +45,7 @@ schema = strawberry.Schema(
     Query,
     extensions=[
         DatadogTracingExtensionSync,
-    ]
+    ],
 )
 ```
 

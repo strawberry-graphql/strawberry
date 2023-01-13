@@ -24,12 +24,14 @@ Here's how we can use it in our schema:
 import strawberry
 from strawberry.schema_directive import Location
 
+
 @strawberry.schema_directive(locations=[Location.OBJECT])
 class Keys:
     fields: str
 
 
 from .directives import Keys
+
 
 @strawberry.type(directives=[Keys(fields="id")])
 class User:
