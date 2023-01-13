@@ -30,7 +30,7 @@ class Query:
 This exception is raised when `strawberry.field` is used with both `resolver`
 and `default` arguments.
 
-````python
+```python
 def test_resolver() -> str:
     return "I'm a resolver"
 
@@ -65,7 +65,7 @@ def name(
     return "Name"
 
 # Throws 'Annotation for argument `argument` on field `name` cannot have multiple `strawberry.argument`s'
-````
+```
 
 ### UnsupportedTypeError
 
