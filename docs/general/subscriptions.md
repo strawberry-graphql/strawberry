@@ -16,11 +16,13 @@ from typing import AsyncGenerator
 
 import strawberry
 
+
 @strawberry.type
 class Query:
     @strawberry.field
     def hello(self) -> str:
         return "world"
+
 
 @strawberry.type
 class Subscription:
@@ -29,6 +31,7 @@ class Subscription:
         for i in range(target):
             yield i
             await asyncio.sleep(0.5)
+
 
 schema = strawberry.Schema(query=Query, subscription=Subscription)
 ```
@@ -108,23 +111,28 @@ from strawberry.types import Info
 
 from .auth import authenticate_token
 
+
 @strawberry.type
 class Query:
     @strawberry.field
     def hello(self) -> str:
         return "world"
 
+
 @strawberry.type
 class Subscription:
     @strawberry.subscription
     async def count(self, info: Info, target: int = 100) -> AsyncGenerator[int, None]:
         connection_params: dict = info.context.get("connection_params")
-        token: str = connection_params.get("authToken") # equal to "Bearer I_AM_A_VALID_AUTH_TOKEN"
+        token: str = connection_params.get(
+            "authToken"
+        )  # equal to "Bearer I_AM_A_VALID_AUTH_TOKEN"
         if not authenticate_token(token):
             raise Exception("Forbidden!")
         for i in range(target):
             yield i
             await asyncio.sleep(0.5)
+
 
 schema = strawberry.Schema(query=Query, subscription=Subscription)
 ```
@@ -217,11 +225,13 @@ async def tail(proc: subprocess.Process) -> AsyncGenerator[str, None]:
         async for l in lines(proc.stdout):
             yield l
 
+
 @strawberry.type
 class Query:
     @strawberry.field
     def hello() -> str:
         return "world"
+
 
 @strawberry.type
 class Subscription:
@@ -269,10 +279,9 @@ from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_P
 from api.schema import schema
 
 
-view = GraphQLView(schema, subscription_protocols=[
-    GRAPHQL_TRANSPORT_WS_PROTOCOL,
-    GRAPHQL_WS_PROTOCOL
-])
+view = GraphQLView(
+    schema, subscription_protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL]
+)
 ```
 
 ##### ASGI
@@ -283,10 +292,13 @@ from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_P
 from api.schema import schema
 
 
-app = GraphQL(schema, subscription_protocols=[
-    GRAPHQL_TRANSPORT_WS_PROTOCOL,
-    GRAPHQL_WS_PROTOCOL,
-])
+app = GraphQL(
+    schema,
+    subscription_protocols=[
+        GRAPHQL_TRANSPORT_WS_PROTOCOL,
+        GRAPHQL_WS_PROTOCOL,
+    ],
+)
 ```
 
 ##### Django + Channels
@@ -297,7 +309,7 @@ import os
 from django.core.asgi import get_asgi_application
 from strawberry.channels import GraphQLProtocolTypeRouter
 
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'mysite.settings')
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "mysite.settings")
 django_asgi_app = get_asgi_application()
 
 # Import your Strawberry schema after creating the django ASGI application
@@ -322,12 +334,15 @@ from strawberry.fastapi import GraphQLRouter
 from fastapi import FastAPI
 from api.schema import schema
 
-graphql_router = GraphQLRouter(schema, subscription_protocols=[
-    GRAPHQL_TRANSPORT_WS_PROTOCOL,
-    GRAPHQL_WS_PROTOCOL,
-])
+graphql_router = GraphQLRouter(
+    schema,
+    subscription_protocols=[
+        GRAPHQL_TRANSPORT_WS_PROTOCOL,
+        GRAPHQL_WS_PROTOCOL,
+    ],
+)
 app = FastAPI()
-app.include_router(graphql_router, prefix='/graphql')
+app.include_router(graphql_router, prefix="/graphql")
 ```
 
 ### Single result operations

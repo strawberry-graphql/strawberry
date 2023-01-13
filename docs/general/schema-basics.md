@@ -60,15 +60,17 @@ look like this in Strawberry
 import typing
 import strawberry
 
+
 @strawberry.type
 class Book:
-  title: str
-  author: 'Author'
+    title: str
+    author: "Author"
+
 
 @strawberry.type
 class Author:
-  name: str
-  books: typing.List['Book']
+    name: str
+    books: typing.List["Book"]
 ```
 
 As you can see the code maps almost one to one with the schema, thanks to
@@ -127,15 +129,17 @@ Object types can refer to each other, as we had in our schema earlier:
 import typing
 import strawberry
 
+
 @strawberry.type
 class Book:
-  title: str
-  author: 'Author'
+    title: str
+    author: "Author"
+
 
 @strawberry.type
 class Author:
-  name: str
-  books: typing.List[Book]
+    name: str
+    books: typing.List[Book]
 ```
 
 ## Providing data to fields
@@ -292,9 +296,9 @@ the following:
 ```python
 @strawberry.type
 class Mutation:
-  @strawberry.field
-  def add_book(self, title: str, author: str) -> Book:
-    ...
+    @strawberry.field
+    def add_book(self, title: str, author: str) -> Book:
+        ...
 ```
 
 This Mutation type defines a single available mutation, `addBook`. The mutation
@@ -353,9 +357,9 @@ Consider our previous mutation to add a book:
 ```python
 @strawberry.type
 class Mutation:
-  @strawberry.field
-  def add_book(self, title: str, author: str) -> Book:
-    ...
+    @strawberry.field
+    def add_book(self, title: str, author: str) -> Book:
+        ...
 ```
 
 Instead of accepting two arguments, this mutation could accept a single input
@@ -368,15 +372,15 @@ keyword:
 ```python
 @strawberry.input
 class AddBookInput:
-  title: str
-  author: str
+    title: str
+    author: str
 
 
 @strawberry.type
 class Mutation:
-  @strawberry.field
-  def add_book(self, book: AddBookInput) -> Book:
-    ...
+    @strawberry.field
+    def add_book(self, book: AddBookInput) -> Book:
+        ...
 ```
 
 Not only does this facilitate passing the AddBookInput type around within
@@ -386,8 +390,8 @@ that are automatically exposed by GraphQL-enabled tools:
 ```python
 @strawberry.input
 class AddBookInput:
-  title: str = strawberry.field(description="The title of the book")
-  author: str = strawberry.field(description="The name of the author")
+    title: str = strawberry.field(description="The title of the book")
+    author: str = strawberry.field(description="The name of the author")
 ```
 
 Input types can sometimes be useful when multiple operations require the exact

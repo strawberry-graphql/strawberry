@@ -11,9 +11,10 @@ i.e.
 ```python
 import pydantic
 
+
 class Model(pydantic.BaseModel):
     field: pydantic.confloat(le=100.0)
-	equivalent_field: float = pydantic.Field(le=100.0)
+    equivalent_field: float = pydantic.Field(le=100.0)
 ```
 
 Contributed by [Etienne Wodey](https://github.com/airwoodix) via [PR #2455](https://github.com/strawberry-graphql/strawberry/pull/2455/)
@@ -55,13 +56,16 @@ Example usage:
 ```python
 from strawberry.extensions import Extension
 
+
 def get_doc_id(request) -> str:
     """Implement this to get the document ID using your framework's request object"""
     ...
 
+
 def load_persisted_query(doc_id: str) -> str:
     """Implement this load a query by document ID. For example, from a database."""
     ...
+
 
 class PersistedQuery(Extension):
     def on_request_start(self):
@@ -147,9 +151,12 @@ class Query:
     def c(self) -> str:
         return "3.4"
 
+
 schema = strawberry.Schema(Query)
 
-str(schema) == """
+str(
+    schema
+) == """
   type Query {
     a: String!
     b: Int!
@@ -220,13 +227,14 @@ Contributed by [Aman Choudhary](https://github.com/Techno-Tut) via [PR #2394](ht
 This release fixes support for generics in arguments, see the following example:
 
  ```python
- T = TypeVar('T')
+ T = TypeVar("T")
+
 
  @strawberry.type
  class Node(Generic[T]):
-    @strawberry.field
-    def data(self, arg: T) -> T:  # `arg` is also generic
-        return arg
+     @strawberry.field
+     def data(self, arg: T) -> T:  # `arg` is also generic
+         return arg
  ```
 
 Contributed by [A. Coady](https://github.com/coady) via [PR #2316](https://github.com/strawberry-graphql/strawberry/pull/2316/)
@@ -323,7 +331,7 @@ stack trace with no clear indication of where the error was. 🙈
 You can enable rich errors by installing Strawberry with the `cli` extra:
 
 ```bash
-pip install strawberry-graphql[cli]
+pip install "strawberry-graphql[cli]"
 ```
 
 Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2027](https://github.com/strawberry-graphql/strawberry/pull/2027/)
@@ -354,15 +362,18 @@ Contributed by [Dmitry Semenov](https://github.com/lonelyteapot) via [PR #2381](
 
 Generic types are now allowed in the schema's extra types.
 ```python
-T = TypeVar('T')
+T = TypeVar("T")
+
 
 @strawberry.type
 class Node(Generic[T]):
     field: T
 
+
 @strawberry.type
 class Query:
     name: str
+
 
 schema = strawberry.Schema(Query, types=[Node[int]])
 ```
@@ -435,6 +446,7 @@ This release adds support for `typing.Self` and `typing_extensions.Self` for typ
 ```python
 from typing_extensions import Self
 
+
 @strawberry.type
 class Node:
     @strawberry.field
@@ -458,6 +470,7 @@ example, the following:
 class Something:
     id: str
 
+
 @strawberry.federation.type(keys=["upc"])
 class Product:
     upc: str
@@ -465,9 +478,7 @@ class Product:
 
     @staticmethod
     def resolve_reference(**data):
-        return Product(
-            upc=data["upc"], something=Something(id=data["something_id"])
-        )
+        return Product(upc=data["upc"], something=Something(id=data["something_id"]))
 ```
 
 doesn't need the resolve_reference method anymore.
@@ -493,16 +504,19 @@ were using strawberry.enum_value, like the following example:
 from enum import Enum
 import strawberry
 
+
 @strawberry.enum
 class TestEnum(Enum):
     A = strawberry.enum_value("A")
     B = "B"
+
 
 @strawberry.type
 class Query:
     @strawberry.field
     def receive_enum(self, test: TestEnum) -> int:
         return 0
+
 
 schema = strawberry.Schema(query=Query)
 ```
@@ -540,21 +554,27 @@ This release changes the type resolution priority to prefer the field annotation
 def my_resolver() -> str:
     return "1.33"
 
+
 @strawberry.type
 class Query:
     a: float = strawberry.field(resolver=my_resolver)
 
+
 schema = strawberry.Schema(Query)
 
 # Before:
-str(schema) == """
+str(
+    schema
+) == """
 type Query {
   a: String!
 }
 """
 
 # After:
-str(schema) == """
+str(
+    schema
+) == """
 type Query {
   a: Float!
 }
@@ -589,13 +609,14 @@ Contributed by [Kristján Valur Jónsson](https://github.com/kristjanvalur) via 
 This release adds support for generic in arguments, see the following example:
 
 ```python
-T = TypeVar('T')
+T = TypeVar("T")
+
 
 @strawberry.type
 class Node(Generic[T]):
-   @strawberry.field
-   def data(self, arg: T) -> T:  # `arg` is also generic
-       return arg
+    @strawberry.field
+    def data(self, arg: T) -> T:  # `arg` is also generic
+        return arg
 ```
 
 Contributed by [A. Coady](https://github.com/coady) via [PR #2293](https://github.com/strawberry-graphql/strawberry/pull/2293/)
@@ -654,7 +675,7 @@ schema = strawberry.Schema(
     Query,
     extensions=[
         MaskErrors(),
-    ]
+    ],
 )
 ```
 
@@ -681,6 +702,7 @@ This release adds support for printing schema directives on an input type object
 class RangeInput:
     min: int
     max: int
+
 
 @strawberry.input
 class CreateUserInput:
@@ -739,9 +761,11 @@ T = TypeVar("T")
 
 TypeAType = Annotated["TypeA", strawberry.lazy("tests.schema.test_lazy.type_a")]
 
+
 @strawberry.type
 class Edge(Generic[T]):
     node: T
+
 
 @strawberry.type
 class Query:
@@ -766,7 +790,9 @@ from strawberry.asgi.test import GraphQLTestClient
 
 @pytest.fixture
 def graphql_client() -> GraphQLTestClient:
-    return GraphQLTestClient(TestClient(app, base_url="http://localhost:8000"), url="/api/")
+    return GraphQLTestClient(
+        TestClient(app, base_url="http://localhost:8000"), url="/api/"
+    )
 ```
 
 Contributed by [Etty](https://github.com/estyxx) via [PR #2238](https://github.com/strawberry-graphql/strawberry/pull/2238/)
@@ -830,6 +856,7 @@ adding any additional root field.
 class Location:
     id: strawberry.ID
     name: str = strawberry.federation.field(override="start")
+
 
 schema = strawberry.federation.Schema(types=[Location])
 ```
@@ -912,6 +939,7 @@ class MyModel(BaseModel):
 @strawberry.experimental.pydantic.input(model=MyModel, all_fields=True)
 class MyModelStrawberry:
     ...
+
 
 MyModelStrawberry(email="").to_pydantic()
 # previously would complain wrongly about missing email and password
@@ -996,12 +1024,12 @@ Thanks to @ThirVondukr for the bug report!
 Example:
 
 ```python
-class MyInfo(Info)
+class MyInfo(Info):
     pass
+
 
 @strawberry.type
 class Query:
-
     @strawberry.field
     def is_tasty(self, info: MyInfo) -> bool:
         """Subclassed ``info`` argument no longer raises deprecation warning."""
@@ -1038,6 +1066,7 @@ Example:
 from collections.abc import Sequence
 from typing import Tuple
 
+
 @strawberry.type
 class User:
     pets: Sequence[Pet]
@@ -1066,6 +1095,7 @@ import strawberry
 if TYPE_CHECKING:
     from .users import User
 
+
 @strawberry.type
 class Post:
     title: str
@@ -1080,6 +1110,7 @@ import strawberry
 
 if TYPE_CHECKING:
     from .posts import Post
+
 
 @strawberry.type
 class User:
@@ -1104,6 +1135,7 @@ For example:
 
 ```python
 # This no longer raises a TypeError
+
 
 @strawberry.type
 class MyType:
@@ -1246,7 +1278,8 @@ This release adds support for adding descriptions to enum values.
 class IceCreamFlavour(Enum):
     VANILLA = strawberry.enum_value("vanilla")
     STRAWBERRY = strawberry.enum_value(
-        "strawberry", description="Our favourite",
+        "strawberry",
+        description="Our favourite",
     )
     CHOCOLATE = "chocolate"
 
@@ -1254,6 +1287,7 @@ class IceCreamFlavour(Enum):
 @strawberry.type
 class Query:
     favorite_ice_cream: IceCreamFlavour = IceCreamFlavour.STRAWBERRY
+
 
 schema = strawberry.Schema(query=Query)
 ```
@@ -1308,9 +1342,11 @@ following example:
 class User:
     id: strawberry.ID
 
+
 @strawberry.type
 class Query:
     user: User
+
 
 schema = strawberry.federation.Schema(query=Query, enable_federation_2=True)
 ```
@@ -1341,15 +1377,15 @@ schema directives, for example the following schema:
 class Reason(str, Enum):
     EXAMPLE = "example"
 
+
 @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
 class Sensitive:
     reason: Reason
 
+
 @strawberry.type
 class Query:
-    first_name: str = strawberry.field(
-        directives=[Sensitive(reason=Reason.EXAMPLE)]
-    )
+    first_name: str = strawberry.field(directives=[Sensitive(reason=Reason.EXAMPLE)])
 ```
 
 prints the following:
@@ -1380,9 +1416,11 @@ schema directives, for example the following schema:
 ```python
 SensitiveConfiguration = strawberry.scalar(str, name="SensitiveConfiguration")
 
+
 @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
 class Sensitive:
     config: SensitiveConfiguration
+
 
 @strawberry.type
 class Query:
@@ -1417,9 +1455,11 @@ your GraphQL API. For printing the following schema:
 class Tag:
     name: str
 
+
 @strawberry.type
 class Query:
     first_name: str = strawberry.field(directives=[Tag(name="team-1")])
+
 
 schema = strawberry.Schema(query=Query, schema_directives=[Tag(name="team-1")])
 ```
@@ -1503,11 +1543,13 @@ function you like, for example you can allow returning dictionaries:
 class User:
     name: str
 
+
 @strawberry.type
 class Query:
     @strawberry.field
     def user(self) -> User:
         return {"name": "Patrick"}  # type: ignore
+
 
 schema = strawberry.Schema(
     query=Query,
@@ -1537,7 +1579,7 @@ schema = strawberry.Schema(
     Query,
     extensions=[
         DatadogTracingExtension,
-    ]
+    ],
 )
 ```
 
@@ -1563,28 +1605,35 @@ from typing import TypeVar, Generic, Union, List, Type
 
 T = TypeVar("T")
 
+
 @strawberry.type
 class Container(Generic[T]):
     items: List[T]
+
 
 @strawberry.type
 class TypeOne:
     attr: str
 
+
 @strawberry.type
 class TypeTwo:
     attr: str
 
+
 def resolver_one():
     return Container(items=[TypeOne("one")])
 
+
 def resolver_two():
     return Container(items=[TypeTwo("two")])
+
 
 @strawberry.type
 class Query:
     one: Union[Container[TypeOne], TypeOne] = strawberry.field(resolver_one)
     two: Union[Container[TypeTwo], TypeTwo] = strawberry.field(resolver_two)
+
 
 schema = strawberry.Schema(query=Query)
 ```
@@ -1635,15 +1684,17 @@ You can now pass keyword arguments to `to_pydantic`
 from pydantic import BaseModel
 import strawberry
 
+
 class MyModel(BaseModel):
-   email: str
-   password: str
+    email: str
+    password: str
 
 
 @strawberry.experimental.pydantic.input(model=MyModel)
 class MyModelStrawberry:
-   email: strawberry.auto
-   # no password field here
+    email: strawberry.auto
+    # no password field here
+
 
 MyModelStrawberry(email="").to_pydantic(password="hunter")
 ```
@@ -1695,9 +1746,7 @@ default values in resolvers such as dict and list. See example below:
 @strawberry.type
 class Query:
     @strawberry.field
-    def field(
-        self, x: List[str] = ["foo"], y: JSON = {"foo": 42}  # noqa: B006
-    ) -> str:
+    def field(self, x: List[str] = ["foo"], y: JSON = {"foo": 42}) -> str:  # noqa: B006
         return f"{x} {y}"
 ```
 
@@ -1757,7 +1806,9 @@ that generated them.
 From a GraphQLCore type you can now access the Strawberry type by doing:
 
 ```python
-strawberry_type: TypeDefinition = graphql_core_type.extensions[GraphQLCoreConverter.DEFINITION_BACKREF]
+strawberry_type: TypeDefinition = graphql_core_type.extensions[
+    GraphQLCoreConverter.DEFINITION_BACKREF
+]
 ```
 
 Contributed by [Paulo Costa](https://github.com/paulo-raca) via [PR #1766](https://github.com/strawberry-graphql/strawberry/pull/1766/)
@@ -1778,6 +1829,7 @@ Here's an example of how the old syntax works:
 def some_resolver(info) -> str:
     return info.context.get("some_key", "default")
 
+
 @strawberry.type
 class Example:
     a_field: str = strawberry.resolver(some_resolver)
@@ -1788,8 +1840,10 @@ and here's an example of how the new syntax works:
 ```python
 from strawberry.types import Info
 
+
 def some_resolver(info: Info) -> str:
     return info.context.get("some_key", "default")
+
 
 @strawberry.type
 class Example:
@@ -1806,16 +1860,19 @@ parameter in directives:
 from strawberry.types import Info
 from strawberry.directive import DirectiveLocation, DirectiveValue
 
+
 @strawberry.type
 class Cake:
     frosting: Optional[str] = None
     flavor: str = "Chocolate"
+
 
 @strawberry.type
 class Query:
     @strawberry.field
     def cake(self) -> Cake:
         return Cake()
+
 
 @strawberry.directive(
     locations=[DirectiveLocation.FIELD],
@@ -1824,7 +1881,9 @@ class Query:
 def add_frosting(value: str, v: DirectiveValue[Cake], my_info: Info):
     # Arbitrary argument name when using `DirectiveValue` is supported!
     assert isinstance(v, Cake)
-    if value in my_info.context["allergies"]:  # Info can now be accessed from directives!
+    if (
+        value in my_info.context["allergies"]
+    ):  # Info can now be accessed from directives!
         raise AllergyError("You are allergic to this frosting!")
     else:
         v.frosting = value  # Value can now be used as a GraphQL argument name!
@@ -1857,7 +1916,6 @@ T = TypeVar("T")
 
 @strawberry.type
 class Foo(Generic[T]):
-
     private_field: strawberry.Private[Sequence]  # instead of Sequence[Any]
 
 
@@ -1887,9 +1945,11 @@ import strawberry
 from strawberry.schema.config import StrawberryConfig
 from strawberry.schema_directive import Location
 
+
 @strawberry.schema_directive(locations=[Location.OBJECT])
 class CacheControl:
     max_age: int
+
 
 @strawberry.federation.type(
     keys=["id"], shareable=True, extend=True, directives=[CacheControl(max_age=42)]
@@ -1897,9 +1957,8 @@ class CacheControl:
 class FederatedType:
     id: strawberry.ID
 
-schema = strawberry.Schema(
-    query=Query, config=StrawberryConfig(auto_camel_case=False)
-)
+
+schema = strawberry.Schema(query=Query, config=StrawberryConfig(auto_camel_case=False))
 ```
 
 Resulting GQL Schema:
@@ -1934,8 +1993,10 @@ an error:
 ```python
 import strawberry
 
+
 def set_name(self, name: str) -> None:
     self.name = name
+
 
 @strawberry.type
 class Mutation:
@@ -2014,7 +2075,10 @@ from strawberry.flask.views import AsyncGraphQLView
 
 ...
 
-app.add_url_rule("/graphql", view_func=AsyncGraphQLView.as_view("graphql_view", schema=schema, **kwargs))
+app.add_url_rule(
+    "/graphql",
+    view_func=AsyncGraphQLView.as_view("graphql_view", schema=schema, **kwargs),
+)
 ```
 
 Contributed by [Scott Weitzner](https://github.com/scottweitzner) via [PR #1907](https://github.com/strawberry-graphql/strawberry/pull/1907/)
@@ -2072,19 +2136,23 @@ The below snippet demonstrates the @override directive.
 import strawberry
 from typing import List
 
+
 @strawberry.interface
 class SomeInterface:
     id: strawberry.ID
 
+
 @strawberry.federation.type(keys=["upc"], extend=True)
 class Product(SomeInterface):
     upc: str = strawberry.federation.field(external=True, override=["mySubGraph"])
+
 
 @strawberry.federation.type
 class Query:
     @strawberry.field
     def top_products(self, first: int) -> List[Product]:
         return []
+
 
 schema = strawberry.federation.Schema(query=Query)
 ```
@@ -2128,10 +2196,12 @@ by using `strawberry.directive_field`.
 ```python
 import strawberry
 
+
 @strawberry.schema_directive(locations=[Location.FIELD_DEFINITION])
 class Sensitive:
     reason: str = strawberry.directive_field(name="as")
     real_age_2: str = strawberry.directive_field(name="real_age")
+
 
 @strawberry.type
 class Query:
@@ -2185,20 +2255,20 @@ Fixes a bug when converting pydantic models with NewTypes in a List.
 This no longers causes an exception.
 
  ```python
-from typing import List, NewType
-from pydantic import BaseModel
-import strawberry
+ from typing import List, NewType
+ from pydantic import BaseModel
+ import strawberry
 
-password = NewType("password", str)
-
-class User(BaseModel):
-    passwords: List[password]
+ password = NewType("password", str)
 
 
-@strawberry.experimental.pydantic.type(User)
-class UserType:
-    passwords: strawberry.auto
+ class User(BaseModel):
+     passwords: List[password]
 
+
+ @strawberry.experimental.pydantic.type(User)
+ class UserType:
+     passwords: strawberry.auto
  ```
 
 Contributed by [James Chua](https://github.com/thejaminator) via [PR #1770](https://github.com/strawberry-graphql/strawberry/pull/1770/)
@@ -2230,9 +2300,7 @@ Added support for deprecating Enum values with `deprecation_reason` while using 
 @strawberry.enum
 class IceCreamFlavour(Enum):
     VANILLA = strawberry.enum_value("vanilla")
-    STRAWBERRY = strawberry.enum_value(
-        "strawberry", deprecation_reason="We ran out"
-    )
+    STRAWBERRY = strawberry.enum_value("strawberry", deprecation_reason="We ran out")
     CHOCOLATE = "chocolate"
 ```
 
@@ -2308,6 +2376,7 @@ If you are using `pytest` you can add a fixture in `conftest.py`
 import pytest
 
 from strawberry.aiohttp.test.client import GraphQLTestClient
+
 
 @pytest.fixture
 def graphql_client(aiohttp_client, myapp):
@@ -2440,9 +2509,11 @@ Fix an issue where there was no clean way to mark a Pydantic field as deprecated
 import pydantic
 import strawberry
 
+
 class MyModel(pydantic.BaseModel):
     age: int
     name: str
+
 
 @strawberry.experimental.pydantic.type(MyModel)
 class MyType:
@@ -2566,6 +2637,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
+
 @strawberry.type
 class Query:
     private_foo: strawberry.Private[SensitiveData]
@@ -2574,10 +2646,11 @@ class Query:
     def foo(self) -> int:
         return self.private_foo.visible
 
+
 @dataclass
 class SensitiveData:
     visible: int
-    not_visible int
+    not_visible: int
 ```
 
 Contributed by [San Kilkis](https://github.com/skilkis) via [PR #1684](https://github.com/strawberry-graphql/strawberry/pull/1684/)
@@ -2671,6 +2744,7 @@ they can be used like so:
 ```python
 from strawberry.scalar import Base16, Base32, Base64, JSON
 
+
 @strawberry.type
 class Example:
     a: Base16
@@ -2693,12 +2767,15 @@ Thus, we recommend always working on the pydantic type such that the validation 
 import strawberry
 from pydantic import BaseModel, conlist
 
+
 class Example(BaseModel):
     friends: conlist(str, min_items=1)
+
 
 @strawberry.experimental.pydantic.input(model=Example, all_fields=True)
 class ExampleGQL:
     ...
+
 
 @strawberry.type
 class Query:
@@ -2709,6 +2786,7 @@ class Query:
         # calling to_pydantic() runs the validation and raises
         # an error if friends is empty
         print(example.to_pydantic().friends)
+
 
 schema = strawberry.Schema(query=Query)
 ```
@@ -2794,12 +2872,12 @@ Decides if the all the GraphQL field names for the generated type should use the
 from pydantic import BaseModel, Field
 import strawberry
 
-class UserModel(BaseModel):
-      id: int = Field(..., alias="my_alias_name")
 
-@strawberry.experimental.pydantic.type(
-    UserModel, use_pydantic_alias=False
-)
+class UserModel(BaseModel):
+    id: int = Field(..., alias="my_alias_name")
+
+
+@strawberry.experimental.pydantic.type(UserModel, use_pydantic_alias=False)
 class User:
     id: strawberry.auto
 ```
@@ -2850,14 +2928,17 @@ T = TypeVar("T")
 K = TypeVar("K")
 V = TypeVar("V")
 
+
 @strawberry.type
 class Value(Generic[T]):
     value: T
+
 
 @strawberry.type
 class DictItem(Generic[K, V]):
     key: K
     value: V
+
 
 @strawberry.type
 class Query:
@@ -2904,12 +2985,15 @@ Adds mypy extension support as well.
 from pydantic import BaseModel
 import strawberry
 
+
 class UserPydantic(BaseModel):
     age: int
+
 
 @strawberry.experimental.pydantic.type(UserPydantic)
 class UserStrawberry:
     age: strawberry.auto
+
 
 reveal_type(UserStrawberry(age=123).to_pydantic())
 ```
@@ -2983,6 +3067,7 @@ the particular field defined.
 class User(BaseModel):
     age: int
 
+
 @strawberry.experimental.pydantic.type(User)
 class UserType:
     age: strawberry.auto
@@ -3030,15 +3115,18 @@ For example:
 class Cat:
     name: str
 
+
 @strawberry.type
 class Dog:
     name: str
 
+
 Animal = strawberry.union("Animal", (Cat, Dog))
+
 
 @strawberry.type
 class Query:
-    animal: Animal | None # This line no longer triggers a TypeError
+    animal: Animal | None  # This line no longer triggers a TypeError
 ```
 
 Contributed by [Yossi Rozantsev](https://github.com/Apakottur) [PR #1540](https://github.com/strawberry-graphql/strawberry/pull/1540/)
@@ -3209,6 +3297,7 @@ urlpatterns = [
     ),
 ]
 
+
 # … or set them in a custom view
 class CustomAsyncGraphQLView(AsyncGraphQLView):
     json_encoder = JSONEncoder
@@ -3340,6 +3429,7 @@ This release fixes an issue that prevented using `classmethod`s and `staticmetho
 ```python
 import strawberry
 
+
 @strawberry.type
 class Query:
     @strawberry.field
@@ -3367,9 +3457,11 @@ to use unions without any type issue, like so:
 class User:
     name: str
 
+
 @strawberry.type
 class Error:
     message: str
+
 
 UserOrError = strawberry.union("UserOrError", (User, Error))
 
@@ -3426,9 +3518,11 @@ passing a generic type to another generic, like so:
 class Edge(Generic[T]):
     node: T
 
+
 @strawberry.type
 class Connection(Generic[T]):
     edges: List[T]
+
 
 Connection[Edge[int]]
 ```
@@ -3561,11 +3655,13 @@ import strawberry
 from fastapi import FastAPI
 from strawberry.fastapi import GraphQLRouter
 
+
 @strawberry.type
 class Query:
     @strawberry.field
     def hello(self) -> str:
         return "Hello World"
+
 
 schema = strawberry.Schema(Query)
 
@@ -3620,8 +3716,10 @@ Pydantic fields' `description` are now copied to the GraphQL schema
 import pydantic
 import strawberry
 
+
 class UserModel(pydantic.BaseModel):
     age: str = pydantic.Field(..., description="Description")
+
 
 @strawberry.experimental.pydantic.type(UserModel)
 class User:
@@ -3704,6 +3802,7 @@ import pydantic
 import strawberry
 from strawberry.experimental.pydantic import auto
 
+
 class User(pydantic.BaseModel):
     age: int
     password: str
@@ -3746,13 +3845,16 @@ for the new union syntax, allowing to declare unions like this:
 ```python
 import strawberry
 
+
 @strawberry.type
 class User:
     name: str
 
+
 @strawberry.type
 class Error:
     code: str
+
 
 @strawberry.type
 class Query:
@@ -3846,11 +3948,11 @@ import strawberry
 from strawberry.extensions import ParserCache, ValidationCache
 
 schema = strawberry.Schema(
-  Query,
-  extensions=[
-    ParserCache(),
-    ValidationCache(),
-  ]
+    Query,
+    extensions=[
+        ParserCache(),
+        ValidationCache(),
+    ],
 )
 ```
 
@@ -3917,15 +4019,18 @@ These now function as expected:
 ```python
 T = TypeVar("T")
 
+
 @strawberry.enum
 class VehicleMake(Enum):
-    FORD = 'ford'
-    TOYOTA = 'toyota'
-    HONDA = 'honda'
+    FORD = "ford"
+    TOYOTA = "toyota"
+    HONDA = "honda"
+
 
 @strawberry.type
 class GenericForEnum(Generic[T]):
     generic_slot: T
+
 
 @strawberry.type
 class SomeType:
@@ -3945,9 +4050,11 @@ class TypeFromAnotherFile:
 ```python
 T = TypeVar("T")
 
+
 @strawberry.type
 class GenericType(Generic[T]):
     item: T
+
 
 @strawberry.type
 class RealType:
@@ -4001,19 +4108,23 @@ For example this will raise an exception:
 ```python
 import strawberry
 
+
 @strawberry.type
 class Noun:
     text: str
+
 
 @strawberry.type
 class Verb:
     text: str
 
+
 Word = strawberry.union("Word", types=(Noun, Verb))
+
 
 @strawberry.field
 def add_word(word: Word) -> bool:
-	...
+    ...
 ```
 
 Contributed by [Mohammad Hossein Yazdani](https://github.com/MAM-SYS) [PR #1222](https://github.com/strawberry-graphql/strawberry/pull/1222/)
@@ -4054,7 +4165,14 @@ from strawberry.django.views import AsyncGraphQLView
 
 from .schema import schema
 
-urlpatterns = [path("graphql", AsyncGraphQLView.as_view(schema=schema, graphiql=True, subscriptions_enabled=True))]
+urlpatterns = [
+    path(
+        "graphql",
+        AsyncGraphQLView.as_view(
+            schema=schema, graphiql=True, subscriptions_enabled=True
+        ),
+    )
+]
 ```
 
 Contributed by [lijok](https://github.com/lijok) [PR #1215](https://github.com/strawberry-graphql/strawberry/pull/1215/)
@@ -4092,17 +4210,19 @@ EpochDateTime = strawberry.scalar(
     parse_value=lambda value: datetime.fromtimestamp(int(value), timezone.utc),
 )
 
+
 @strawberry.type
 class Query:
     @strawberry.field
     def current_time(self) -> datetime:
         return datetime.now()
 
+
 schema = strawberry.Schema(
-  Query,
-  scalar_overrides={
-    datetime: EpochDateTime,
-  }
+    Query,
+    scalar_overrides={
+        datetime: EpochDateTime,
+    },
 )
 result = schema.execute_sync("{ currentTime }")
 assert result.data == {"currentTime": 1628683200}
@@ -4130,11 +4250,13 @@ using directives and async extensions.
 class Query:
     name: str = "Banana"
 
+
 @strawberry.directive(
     locations=[DirectiveLocation.FIELD], description="Make string uppercase"
 )
 async def uppercase(value: str):
     return value.upper()
+
 
 schema = strawberry.Schema(query=Query, directives=[uppercase])
 ```
@@ -4160,11 +4282,14 @@ This releases fixes a MyPy issue that prevented from using types created with
 import strawberry
 from strawberry.tools import create_type
 
+
 @strawberry.field
 def name() -> str:
     return "foo"
 
+
 MyType = create_type("MyType", [name])
+
 
 class Query(MyType):
     ...
@@ -4204,6 +4329,7 @@ This release allows background tasks to be set with the ASGI integration. Tasks 
 
 ```python
 from starlette.background import BackgroundTask
+
 
 @strawberry.mutation
 def create_flavour(self, info: Info) -> str:
@@ -4253,6 +4379,7 @@ It's also possible to mix both synchronous and asynchronous hooks within one ext
 
 ```python
 from strawberry.extensions import Extension
+
 
 class MyExtension(Extension):
     async def on_request_start(self):
@@ -4307,6 +4434,7 @@ their synchronous counterpart is that the `has_permission` method is asynchronou
 
 ```python
 from strawberry.permission import BasePermission
+
 
 class IsAuthenticated(BasePermission):
     message = "User is not authenticated"
@@ -4365,9 +4493,7 @@ from strawberry.tools import depth_limit_validator
 
 
 # Add the depth limit validator to the list of default validation rules
-validation_rules = (
-  default_validation_rules + [depth_limit_validator(3)]
-)
+validation_rules = default_validation_rules + [depth_limit_validator(3)]
 
 result = schema.execute_sync(
     """
@@ -4384,7 +4510,6 @@ result = schema.execute_sync(
     }
     """,
     validation_rules=validation_rules,
-  )
 )
 assert len(result.errors) == 1
 assert result.errors[0].message == "'MyQuery' exceeds maximum operation depth of 3"
@@ -4442,9 +4567,8 @@ You can use it like so:
 class Query:
     example_field: str = "Example"
 
-schema = strawberry.Schema(
-    query=Query, config=StrawberryConfig(auto_camel_case=False)
-)
+
+schema = strawberry.Schema(query=Query, config=StrawberryConfig(auto_camel_case=False))
 ```
 
 Contributed by [Patrick Arminio](https://github.com/patrick91) [PR #798](https://github.com/strawberry-graphql/strawberry/pull/798/)
@@ -4525,6 +4649,7 @@ This is now allowed:
 class SomeInterface:
     id: strawberry.ID
 
+
 @strawberry.federation.type(keys=["upc"], extend=True)
 class Product(SomeInterface):
     upc: str = strawberry.federation.field(external=True)
@@ -4597,8 +4722,7 @@ class HelloInput:
 class Query:
     @strawberry.field
     def hello(
-        self,
-        input_: Annotated[HelloInput, strawberry.argument(name="input")]
+        self, input_: Annotated[HelloInput, strawberry.argument(name="input")]
     ) -> str:
         return f"Hi {input_.name}"
 ```
@@ -4622,10 +4746,9 @@ class IceCreamFlavour(Enum):
     CHOCOLATE = "chocolate"
     PISTACHIO = "pistachio"
 
+
 @strawberry.mutation
-def create_flavour(
-    self, flavour: IceCreamFlavour = IceCreamFlavour.STRAWBERRY
-) -> str:
+def create_flavour(self, flavour: IceCreamFlavour = IceCreamFlavour.STRAWBERRY) -> str:
     return f"{flavour.name}"
 ```
 
@@ -4805,6 +4928,7 @@ Example:
 import strawberry
 from strawberry.extensions import Extension
 
+
 class MyExtension(Extension):
     def on_request_end(self):
         root_value = self.execution_context.root_value
@@ -4835,6 +4959,7 @@ from graphql import ExecutionResult as GraphQLExecutionResult
 from graphql.error.graphql_error import GraphQLError
 from graphql.language import DocumentNode as GraphQLDocumentNode
 
+
 @dataclasses.dataclass
 class ExecutionContext:
     query: str
@@ -4852,10 +4977,12 @@ and can be accessed in any of the extension hooks:
 ```python
 from strawberry.extensions import Extension
 
+
 class MyExtension(Extension):
     def on_request_end(self):
         result = self.execution_context.result
         # Do something with the result
+
 
 schema = strawberry.Schema(query=Query, extensions=[MyExtension])
 ```
@@ -4919,6 +5046,7 @@ You can use `@requires` to specify which fields you need to resolve a field
 
 ```python
 import strawberry
+
 
 @strawberry.federation.type(keys=["id"], extend=True)
 class Product:
@@ -5040,12 +5168,15 @@ This release adds a function called `create_type` to create a Strawberry type fr
 import strawberry
 from strawberry.tools import create_type
 
+
 @strawberry.field
 def hello(info) -> str:
     return "World"
 
+
 def get_name(info) -> str:
     return info.context.user.name
+
 
 my_name = strawberry.field(name="myName", resolver=get_name)
 
@@ -5063,9 +5194,11 @@ This release fixes an issue when using nested lists, this now works properly:
 def get_polygons() -> List[List[float]]:
     return [[2.0, 6.0]]
 
+
 @strawberry.type
 class Query:
     polygons: List[List[float]] = strawberry.field(resolver=get_polygons)
+
 
 schema = strawberry.Schema(query=Query)
 
@@ -5082,9 +5215,11 @@ This release fixes support for generic types so that now we can also use generic
 ```python
 T = typing.TypeVar("T")
 
+
 @strawberry.input
 class Input(typing.Generic[T]):
     field: T
+
 
 @strawberry.type
 class Query:
@@ -5102,6 +5237,7 @@ passing a type, like here:
 ```python
 T = typing.TypeVar("T")
 
+
 @strawberry.interface
 class Node(typing.Generic[T]):
     id: strawberry.ID
@@ -5109,9 +5245,11 @@ class Node(typing.Generic[T]):
     def _resolve(self) -> typing.Optional[T]:
         return None
 
+
 @strawberry.type
 class Book(Node[str]):
     name: str
+
 
 @strawberry.type
 class Query:
@@ -5208,6 +5346,7 @@ class Query:
     @strawberry.field
     def name(self) -> str:
         return "A"
+
 
 assert Query(1) == Query(1)
 assert Query(1) != Query(2)
@@ -5382,6 +5521,7 @@ Fix Generic name generation to use the custom name specified in Strawberry if av
 class EdgeName:
     node: str
 
+
 @strawberry.type
 class Connection(Generic[T]):
     edge: T
@@ -5397,6 +5537,7 @@ This release add the ability to disable query validation by setting
 
 ```python
 import strawberry
+
 
 @strawberry.type
 class Query:
@@ -5512,13 +5653,16 @@ supported:
 class Dog:
     name: str
 
+
 @strawberry.type
 class Cat:
     name: str
 
+
 @strawberry.type
 class Connection(Generic[T]):
     nodes: List[T]
+
 
 @strawberry.type
 class Query:
@@ -5546,15 +5690,14 @@ from pydantic import BaseModel
 
 class UserModel(BaseModel):
     id: int
-    name = 'John Doe'
+    name = "John Doe"
     signup_ts: Optional[datetime] = None
     friends: List[int] = []
 
-@strawberry.experimental.pydantic.type(model=UserModel, fields=[
-    'id',
-    'name',
-    'friends'
-])
+
+@strawberry.experimental.pydantic.type(
+    model=UserModel, fields=["id", "name", "friends"]
+)
 class UserType:
     pass
 ```
@@ -5572,6 +5715,7 @@ Fix issue preventing reusing the same resolver for multiple fields, like here:
 ```python
 def get_name(self) -> str:
     return "Name"
+
 
 @strawberry.type
 class Query:
@@ -5606,6 +5750,7 @@ Bugfix to allow the use of `UNSET` as a default value for arguments.
 import strawberry
 from strawberry.arguments import UNSET, is_unset
 
+
 @strawberry.type
 class Query:
     @strawberry.field
@@ -5613,6 +5758,7 @@ class Query:
         if is_unset(name):
             return "Hi there"
         return "Hi {name}"
+
 
 schema = strawberry.Schema(query=Query)
 
@@ -5672,7 +5818,6 @@ async def app():
         loader.load(3),
     )
 
-
     assert value_a == 1
     assert value_b == 2
     assert value_c == 3
@@ -5694,10 +5839,12 @@ import strawberry
 class Error:
     message: str
 
+
 @strawberry.interface
 class FieldError(Error):
     message: str
     field: str
+
 
 @strawberry.type
 class PasswordTooShort(FieldError):
@@ -5817,10 +5964,13 @@ Add support for adding a description to field arguments using the [`Annotated`](
 ```python
 from typing import Annotated
 
+
 @strawberry.type
 class Query:
     @strawberry.field
-    def user_by_id(id: Annotated[str, strawberry.argument(description="The ID of the user")]) -> User:
+    def user_by_id(
+        id: Annotated[str, strawberry.argument(description="The ID of the user")]
+    ) -> User:
         ...
 ```
 
@@ -5848,10 +5998,12 @@ from enum import Enum
 
 import strawberry
 
+
 class IceCreamFlavour(Enum):
     VANILLA = "vanilla"
     STRAWBERRY = "strawberry"
     CHOCOLATE = "chocolate"
+
 
 Flavour = strawberry.enum(IceCreamFlavour)
 ```
@@ -5952,6 +6104,7 @@ Example:
 ```python
 import strawberry
 
+
 @strawberry.type
 class User:
     age: strawberry.Private[int]
@@ -5974,9 +6127,10 @@ This release fixes an issue with mypy when doing the following:
 ```python
 import strawberry
 
+
 @strawberry.type
 class User:
-    name: str = strawberry.field(description='Example')
+    name: str = strawberry.field(description="Example")
 ```
 
 0.34.0 - 2020-09-30
@@ -5996,11 +6150,11 @@ And here's an example of custom extension:
 ```python
 from strawberry.extensions import Extension
 
+
 class MyExtension(Extension):
     def get_results(self):
-        return {
-            "example": "this is an example for an extension"
-        }
+        return {"example": "this is an example for an extension"}
+
 
 schema = strawberry.Schema(query=Query, extensions=[MyExtension])
 ```
@@ -6057,7 +6211,6 @@ documented without the keyword. The fix is very straight-forward: replace any
 ```python
 @strawberry.type
 class Query:
-
     my_int: int = strawberry.field(f=lambda: 5)
     # becomes
     my_int: int = strawberry.field(resolver=lambda: 5)
@@ -6066,7 +6219,6 @@ class Query:
     @strawberry.field
     def my_float(self) -> float:
         return 5.5
-
 ```
 
 Other (minor) breaking changes
@@ -6103,10 +6255,12 @@ from strawberry.django.views import GraphQLView as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
 
-class GraphQLView(BaseGraphQLView):
-    def process_result(self, request: HttpRequest, result: ExecutionResult) -> GraphQLHTTPResponse:
-        return {"data": result.data, "errors": result.errors or []}
 
+class GraphQLView(BaseGraphQLView):
+    def process_result(
+        self, request: HttpRequest, result: ExecutionResult
+    ) -> GraphQLHTTPResponse:
+        return {"data": result.data, "errors": result.errors or []}
 ```
 
 Flask example:
@@ -6117,10 +6271,10 @@ from strawberry.flask.views import GraphQLView as BaseGraphQLView
 from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
 
+
 class GraphQLView(BaseGraphQLView):
     def process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse:
         return {"data": result.data, "errors": result.errors or []}
-
 ```
 
 ASGI example:
@@ -6133,10 +6287,12 @@ from starlette.requests import Request
 
 from .schema import schema
 
-class GraphQL(BaseGraphQLView):
-    async def process_result(self, request: Request, result: ExecutionResult) -> GraphQLHTTPResponse:
-        return {"data": result.data, "errors": result.errors or []}
 
+class GraphQL(BaseGraphQLView):
+    async def process_result(
+        self, request: Request, result: ExecutionResult
+    ) -> GraphQLHTTPResponse:
+        return {"data": result.data, "errors": result.errors or []}
 ```
 
 0.30.1 - 2020-08-17
@@ -6155,6 +6311,7 @@ Django example:
 ```python
 # views.py
 from strawberry.django.views import GraphQLView as BaseGraphQLView
+
 
 class GraphQLView(BaseGraphQLView):
     def get_context(self, request):
@@ -6185,6 +6342,7 @@ Flask example:
 ```python
 # views.py
 from strawberry.flask.views import GraphQLView as BaseGraphQLView
+
 
 class GraphQLView(BaseGraphQLView):
     def get_context(self, request):
@@ -6221,6 +6379,7 @@ ASGI example:
 from strawberry.asgi import GraphQL as BaseGraphQL
 
 from .schema import schema
+
 
 class GraphQL(BaseGraphQLView):
     async def get_context(self, request):
@@ -6309,14 +6468,15 @@ like the following example:
 ```python
 from __future__ import annotations
 
+
 @strawberry.type
 class Query:
     me: MyType = strawberry.field(name="myself")
 
+
 @strawberry.type
 class MyType:
     id: strawberry.ID
-
 ```
 
 0.28.0 - 2020-07-24
@@ -6361,11 +6521,14 @@ for example using an optional union. This is now properly supported:
 class A:
     a: int
 
+
 @strawberry.type
 class B:
     b: int
 
+
 Result = strawberry.union("Result", (A, B))
+
 
 @strawberry.type
 class Query:
@@ -6452,9 +6615,9 @@ schema = strawberry.federation.Schema(query=Query, types=[Campaign])
 Default values make input arguments nullable when the default is None.
 ```python
 class Query:
-     @strawberry.field
-     def hello(self, i: int = 0, s: str = None) -> str:
-         return s
+    @strawberry.field
+    def hello(self, i: int = 0, s: str = None) -> str:
+        return s
 ```
 ```graphql
 type Query {
@@ -6536,15 +6699,15 @@ to specify root and info arguments:
 def function_resolver() -> str:
     return "I'm a function resolver"
 
+
 def function_resolver_with_params(x: str) -> str:
     return f"I'm {x}"
+
 
 @strawberry.type
 class Query:
     hello: str = strawberry.field(resolver=function_resolver)
-    hello_with_params: str = strawberry.field(
-        resolver=function_resolver_with_params
-    )
+    hello_with_params: str = strawberry.field(resolver=function_resolver_with_params)
 
 
 @strawberry.type
@@ -6590,10 +6753,12 @@ to reuse types, here's an example:
 ```python
 T = typing.TypeVar("T")
 
+
 @strawberry.type
 class Edge(typing.Generic[T]):
     cursor: strawberry.ID
     node: T
+
 
 @strawberry.type
 class Query:
@@ -6664,11 +6829,12 @@ import strawberry
 
 from strawberry.permission import BasePermission
 
+
 class IsAdmin(BasePermission):
     message = "You are not authorized"
 
     def has_permission(self, source, info):
-      return source.name.lower() == "Patrick" or _is_admin(info)
+        return source.name.lower() == "Patrick" or _is_admin(info)
 
 
 @strawberry.type
@@ -6681,7 +6847,7 @@ class User:
 class Query:
     @strawberry.field(permission_classes=[IsAdmin])
     def user(self, info) -> str:
-      return User(name="Patrick", email="example@email.com")
+        return User(name="Patrick", email="example@email.com")
 ```
 
 0.19.1 - 2019-12-20
@@ -6820,14 +6986,13 @@ Added a Django view that allows you to query the schema and interact with it via
 Usage:
 
 ```python
-
 # Install
-$ pip install 'strawberry-graphql[django]'
+# pip install "strawberry-graphql[django]"
 
 # settings.py
 INSTALLED_APPS = [
-    ...
-    'strawberry.django',
+    ...,
+    "strawberry.django",
 ]
 
 # urls.py
@@ -6835,9 +7000,8 @@ from strawberry.django.views import GraphQLView
 from your_project.schema import schema
 
 urlpatterns = [
-    path('graphql/', GraphQLView.as_view(schema=schema)),
+    path("graphql/", GraphQLView.as_view(schema=schema)),
 ]
-
 ```
 
 0.15.0 - 2019-09-04
@@ -6876,15 +7040,18 @@ Added support for defining query directives, example:
 import strawberry
 from strawberry.directive import DirectiveLocation
 
+
 @strawberry.type
 class Query:
     cake: str = "made_in_switzerland"
+
 
 @strawberry.directive(
     locations=[DirectiveLocation.FIELD], description="Make string uppercase"
 )
 def uppercase(value: str, example: str):
     return value.upper()
+
 
 schema = strawberry.Schema(query=Query, directives=[uppercase])
 ```
@@ -6915,15 +7082,18 @@ Allow the usage of Union types in the mutations
 class A:
     x: int
 
+
 @strawberry.type
 class B:
     y: int
+
 
 @strawberry.type
 class Mutation:
     @strawberry.mutation
     def hello(self, info) -> Union[A, B]:
         return B(y=5)
+
 
 schema = strawberry.Schema(query=A, mutation=Mutation)
 
@@ -6957,7 +7127,8 @@ class Parent:
 
     @strawberry.field
     def friend(self, info) -> str:
-        return 'food'
+        return "food"
+
 
 @strawberry.type
 class Schema(Parent):
@@ -6974,17 +7145,19 @@ import strawberry
 
 from strawberry.permission import BasePermission
 
+
 class IsAdmin(BasePermission):
     message = "You are not authorized"
 
     def has_permission(self, info):
-      return False
+        return False
+
 
 @strawberry.type
 class Query:
     @strawberry.field(permission_classes=[IsAdmin])
     def hello(self, info) -> str:
-      return "Hello"
+        return "Hello"
 ```
 
 0.12.0 - 2019-06-25
@@ -7036,6 +7209,7 @@ class Category:
     name: str
     id: InitVar[str]
 
+
 @strawberry.type
 class Query:
     @strawberry.field
@@ -7057,6 +7231,7 @@ Added support for passing resolver functions
 def resolver(root, info, par: str) -> str:
     return f"hello {par}"
 
+
 @strawberry.type
 class Query:
     example: str = strawberry.field(resolver=resolver)
@@ -7071,7 +7246,7 @@ Added support for renaming fields. Example usage:
 ```python
 @strawberry.type
 class Query:
-example: str = strawberry.field(name='test')
+    example: str = strawberry.field(name="test")
 ```
 
 0.7.0 - 2019-05-09
@@ -7082,7 +7257,7 @@ Example:
 ```python
 @strawberry.interface
 class Node:
-id: strawberry.ID
+    id: strawberry.ID
 ```
 
 0.6.0 - 2019-05-02

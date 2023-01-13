@@ -255,6 +255,7 @@ trace.get_tracer_provider().add_span_processor(span_processor)
 
 ...
 
+
 def main():
     DjangoInstrumentor().instrument()
     ...

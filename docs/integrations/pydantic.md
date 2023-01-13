@@ -33,6 +33,7 @@ import strawberry
 
 from .models import User
 
+
 @strawberry.experimental.pydantic.type(model=User)
 class UserType:
     id: strawberry.auto
@@ -56,6 +57,7 @@ import strawberry
 
 from .models import User
 
+
 @strawberry.experimental.pydantic.type(model=User, all_fields=True)
 class UserType:
     pass
@@ -70,6 +72,7 @@ Input types are similar to types; we can create one by using the
 import strawberry
 
 from .models import User
+
 
 @strawberry.experimental.pydantic.input(model=User)
 class UserInput:
@@ -88,16 +91,20 @@ import strawberry
 from pydantic import BaseModel
 from typing import List
 
+
 # pydantic types
 class User(BaseModel):
     id: int
     name: str
 
+
 class NormalUser(User):
     friends: List[int] = []
 
+
 class AdminUser(User):
     role: int
+
 
 # strawberry types
 @strawberry.experimental.pydantic.interface(model=User)
@@ -105,9 +112,11 @@ class UserType:
     id: strawberry.auto
     name: strawberry.auto
 
+
 @strawberry.experimental.pydantic.type(model=NormalUser)
 class NormalUserType(UserType):  # note the base class
     friends: strawberry.auto
+
 
 @strawberry.experimental.pydantic.type(model=AdminUser)
 class AdminUserType(UserType):
@@ -202,7 +211,8 @@ class UserType:
     id: strawberry.auto
     name: strawberry.auto
 
-instance = User(id='123', name='Jake')
+
+instance = User(id="123", name="Jake")
 
 data = UserType.from_pydantic(instance)
 ```
@@ -228,9 +238,10 @@ class UserType:
     name: strawberry.auto
     age: int
 
-instance = User(id='123', name='Jake')
 
-data = UserType.from_pydantic(instance, extra={'age': 10})
+instance = User(id="123", name="Jake")
+
+data = UserType.from_pydantic(instance, extra={"age": 10})
 ```
 
 The data dictionary structure follows the structure of your data -- if you have
@@ -259,7 +270,8 @@ class UserInput:
     id: strawberry.auto
     name: strawberry.auto
 
-input_data = UserInput(id='abc', name='Jake')
+
+input_data = UserInput(id="abc", name="Jake")
 
 # this will run pydantic's validation
 instance = input_data.to_pydantic()
@@ -397,7 +409,7 @@ class UserType:
 class Query:
     @strawberry.field
     def test() -> UserType:
-        return UserType.from_pydantic(User(id=123, hash=b'abcd'))
+        return UserType.from_pydantic(User(id=123, hash=b"abcd"))
 
 
 schema = strawberry.Schema(query=Query)
@@ -430,6 +442,7 @@ class ContentType(enum.Enum):
     NAME = "name"
     DESCRIPTION = "description"
 
+
 class User(BaseModel):
     id: str
     content: Dict[ContentType, str]
@@ -460,11 +473,12 @@ class UserType:
                 content[enum_member.value] = data.pop(key)
         return User(content=content, **data)
 
+
 user = User(id="abc", content={ContentType.NAME: "Bob"})
 print(UserType.from_pydantic(user))
 # UserType(id='abc', content_name='Bob', content_description=None)
 
-user_type = UserType(id='abc', content_name='Bob', content_description=None)
+user_type = UserType(id="abc", content_name="Bob", content_description=None)
 print(user_type.to_pydantic())
 # id='abc' content={<ContentType.NAME: 'name'>: 'Bob'}
 ```

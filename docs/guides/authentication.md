@@ -39,7 +39,6 @@ LoginResult = strawberry.union("LoginResult", (LoginSuccess, LoginError))
 class Mutation:
     @strawberry.field
     def login(self, username: str, password: str) -> LoginResult:
-
         # Your domain-specific authentication logic would go here
         user = ...
 
@@ -67,7 +66,7 @@ from strawberry.types.info import RootValueType
 
 @strawberry.type
 class User:
-    ... # This is just a stub for an actual user object
+    ...  # This is just a stub for an actual user object
 
 
 class Context(BaseContext):
@@ -104,5 +103,4 @@ graphql_app = GraphQLRouter(
 
 app = FastAPI()
 app.include_router(graphql_app, prefix="/graphql")
-
 ```
