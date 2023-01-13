@@ -7,23 +7,26 @@ title: Pagination - Overview
 Whenever we deal with lists in GraphQL, we usually need to limit the number of items returned. Surely, we don't want to send massive lists of
 items that take a considerable toll on the server! The goal of this guide is to help you get going fast with pagination!
 
-## Pagination at a glance
+## Pagination at a Glance
 
 Let us take a look at some of the common ways pagination can be implemented today!
 
-### Offset based pagination
+### Offset-Based Pagination
 
-This pagination style is similar to the syntax we use when looking up database records. Here, the client specifies the number of result to be
-obtained at a time, along with an offset which usually denotes the number of results to be skipped from the beginning. This type of pagination
-is widely used. Implementing offset-based pagination with an SQL database is straight-forward:
+This type of pagination is widely used, and it is similar to the syntax we use when looking up database records. 
 
-- We count all of the results to determine the total number of pages
-- We use the `limit` and `offset` values given to query for the items in the requested page.
+Here, the client specifies:
+- `limit`: The number of items to be obtained at a time, and
+- `offset`: The number of items to be skipped from the beginning.
 
-Offset based pagination also provides us the ability to jump to a specific page in a dataset.
+Implementing offset-based pagination with an SQL database is straightforward. 
+We use the `limit` and `offset` values given to query for the items.
 
-Let us understand offset based pagination better, with an example. Let us assume that we want to request a list of users, 2 at a time, from a server.
-We start out be sending a request to the server, with the desired limit and offset values.
+Offset-based pagination also provides us the ability to skip ahead to any offset,
+without first needing to get all the items before it.
+
+Let us understand offset-based pagination better, with an example. Let us assume that we want to request a list of users, two at a time, from a server.
+We start by sending a request to the server, with the desired `limit` and `offset` values.
 
 ```json
 {
@@ -35,7 +38,7 @@ We start out be sending a request to the server, with the desired limit and offs
 <Note>
 
 We are not sending GraphQL requests here, don't worry about the request format for now! We are looking into
-pagination conceptually, we'll implement pagination in GraphQL later!
+pagination conceptually. We'll implement pagination in GraphQL later!
 
 </Note>
 
@@ -56,17 +59,11 @@ The response from the server would be:
       "occupation": "Freelance Photographer, The Daily Bugle",
       "age": 20
     }
-  ],
-  "page_meta": {
-    "total": 4,
-    "page": 1,
-    "pages": 2
-  }
+  ]
 }
 ```
 
-Where `total` is the total number of items on all pages, `page` is the current page and `pages` is the total number of pages available.
-To get the next page in the dataset, we can send another request, incrementing the offset by the existing limit.
+To get the next two users, we can send another request, incrementing `offset` by the value of `limit`.
 
 ```json
 {
@@ -75,19 +72,47 @@ To get the next page in the dataset, we can send another request, incrementing t
 }
 ```
 
-<Note>
+We can repeat this process, incrementing `offset` by the value of `limit`, until we get an empty result.
 
-Offset based pagination has a few limitations:
+#### Pagination Metadata 
 
-- It is not suitable for large datasets, because we need access to offset + limit number of items from the dataset, before discarding the offset
-  and only returning the counted values.
-- It doesn't work well in environments where records are frequently updated, the page window becomes inconsistent and unreliable. This often
-  results in duplicate results and potentially skipping values.
+In the example above, the result contained no metadata, only the items at the requested offset and limit.
+
+It may be useful to add metadata to the result. For example, the metadata may specify how many items there
+are in total, so that the client knows what the greatest offset value can be.
+
+```json
+{
+  "users": [
+    ...
+  ]
+  "metadata": {
+    "count": 25
+  }
+}
+```
+
+#### Using page_number Instead of offset
+
+Instead of using `limit` and `offset` as the pagination parameters, it may be more useful to use `page_number`
+and `page_size`. 
+
+In such a case, the metadata in the result can be `pages_count`. The client starts the pagination at `page_number` 1,
+incrementing by 1 each time to get the next page, and ending when `page_size` is reached.
+
+This approach may be more in line with what a typical client actually needs when paginating.
+
+#### Limitations of Offset-Based Pagination 
+
+Offset-based pagination has a few limitations:
+
+- It is not suitable for large datasets, because we need to access offset + limit number of items from the dataset, before discarding the offset
+  and only returning the requested items.
+- It doesn't work well in environments where records are frequently added or removed, because in such cases, the page window becomes 
+  inconsistent and unreliable. This may result in duplicate items or skipped items across pages.
 
 However, it provides a quick way to get started, and works well with small-medium datasets. When your dataset scales, you will
 need a reliable and consistent way to handle pagination.
-
-</Note>
 
 ### Cursor based pagination
 
