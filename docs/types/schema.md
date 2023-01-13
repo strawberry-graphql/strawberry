@@ -28,7 +28,7 @@ schema = strawberry.Schema(Query)
 ## API reference
 
 ```python
-class Schema(Query, mutation=None, subscription=None, **kwargs)
+class Schema(Query, mutation=None, subscription=None, **kwargs):
 ```
 
 <!-- TODO: add docs on directives, types, extensions and execution context class -->
@@ -83,7 +83,7 @@ class Company(Customer):
 @strawberry.type
 class Query:
     @strawberry.field
-    def get_customer(self, id: strawberry.ID) -> Customer  # note we're returning the interface here
+    def get_customer(self, id: strawberry.ID) # -> Customer   note we're returning the interface here
         if id == "mark":
             return Individual(name="Mark", date_of_birth=date(1984, 5, 14))
 
@@ -112,7 +112,7 @@ Override the implementation of the built in scalars. [More information](/docs/ty
 Executes a GraphQL operation against a schema (async)
 
 ```python
-async def execute(query, variable_values, context_value, root_value, operation_name)
+async def execute(query, variable_values, context_value, root_value, operation_name):
 ```
 
 #### `query: str`
@@ -140,7 +140,7 @@ The name of the operation you want to execute, useful when sending a document wi
 Executes a GraphQL operation against a schema
 
 ```python
-def execute_sync(query, variable_values, context_value, root_value, operation_name)`
+def execute_sync(query, variable_values, context_value, root_value, operation_name):
 ```
 
 #### `query: str`
