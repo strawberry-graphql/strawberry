@@ -331,7 +331,7 @@ stack trace with no clear indication of where the error was. 🙈
 You can enable rich errors by installing Strawberry with the `cli` extra:
 
 ```bash
-pip install strawberry-graphql[cli]
+pip install "strawberry-graphql[cli]"
 ```
 
 Contributed by [Patrick Arminio](https://github.com/patrick91) via [PR #2027](https://github.com/strawberry-graphql/strawberry/pull/2027/)
@@ -6987,7 +6987,7 @@ Usage:
 
 ```python
 # Install
-# pip install strawberry-graphql[django]
+# pip install "strawberry-graphql[django]"
 
 # settings.py
 INSTALLED_APPS = [
