@@ -996,7 +996,7 @@ Thanks to @ThirVondukr for the bug report!
 Example:
 
 ```python
-class MyInfo(Info)
+class MyInfo(Info):
     pass
 
 @strawberry.type
@@ -2577,7 +2577,7 @@ class Query:
 @dataclass
 class SensitiveData:
     visible: int
-    not_visible int
+    not_visible: int
 ```
 
 Contributed by [San Kilkis](https://github.com/skilkis) via [PR #1684](https://github.com/strawberry-graphql/strawberry/pull/1684/)
@@ -4384,7 +4384,6 @@ result = schema.execute_sync(
     }
     """,
     validation_rules=validation_rules,
-  )
 )
 assert len(result.errors) == 1
 assert result.errors[0].message == "'MyQuery' exceeds maximum operation depth of 3"
@@ -6822,7 +6821,7 @@ Usage:
 ```python
 
 # Install
-$ pip install 'strawberry-graphql[django]'
+$ pip install strawberry-graphql[django]
 
 # settings.py
 INSTALLED_APPS = [
@@ -7071,7 +7070,7 @@ Added support for renaming fields. Example usage:
 ```python
 @strawberry.type
 class Query:
-example: str = strawberry.field(name='test')
+    example: str = strawberry.field(name='test')
 ```
 
 0.7.0 - 2019-05-09
@@ -7082,7 +7081,7 @@ Example:
 ```python
 @strawberry.interface
 class Node:
-id: strawberry.ID
+    id: strawberry.ID
 ```
 
 0.6.0 - 2019-05-02
