@@ -13,7 +13,6 @@ from graphql import execute as original_execute
 import strawberry
 from strawberry.exceptions import StrawberryGraphQLError
 from strawberry.extensions import Extension
-from strawberry.extensions.base_extension import _ExtensionHinter
 
 
 def test_base_extension():
@@ -42,6 +41,55 @@ def test_base_extension():
     assert not result.errors
 
     assert result.extensions == {}
+
+
+def test_called_only_if_overriden(monkeypatch):
+    called = False
+
+    def dont_call_me(self_):
+        nonlocal called
+        called = True
+
+    class ExtensionNoHooks(Extension):
+        ...
+
+    from strawberry.extensions import context
+
+    monkeypatch.setattr(context, "_EXTENSION_FILENAME", __file__)
+    for hook in (
+        ExtensionNoHooks.on_parse,
+        ExtensionNoHooks.on_operation,
+        ExtensionNoHooks.on_execute,
+        ExtensionNoHooks.on_validate,
+    ):
+        monkeypatch.setattr(Extension, hook.__name__, dont_call_me)
+
+    @strawberry.type
+    class Person:
+        name: str = "Jess"
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def person(self) -> Person:
+            return Person()
+
+    schema = strawberry.Schema(query=Query, extensions=[ExtensionNoHooks])
+
+    query = """
+        query {
+            person {
+                name
+            }
+        }
+    """
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+
+    assert result.extensions == {}
+    assert not called
 
 
 def test_extension_access_to_parsed_document():
@@ -299,36 +347,36 @@ async def test_execution_order(default_query_types_and_query):
 
     class A(TestAbleExtension):
         async def on_operation(self):
-            with register_hook(_ExtensionHinter.on_operation.__name__, A):
+            with register_hook(Extension.on_operation.__name__, A):
                 yield
 
         async def on_parse(self):
-            with register_hook(_ExtensionHinter.on_parse.__name__, A):
+            with register_hook(Extension.on_parse.__name__, A):
                 yield
 
         def on_validate(self):
-            with register_hook(_ExtensionHinter.on_validate.__name__, A):
+            with register_hook(Extension.on_validate.__name__, A):
                 yield
 
         def on_execute(self):
-            with register_hook(_ExtensionHinter.on_execute.__name__, A):
+            with register_hook(Extension.on_execute.__name__, A):
                 yield
 
     class B(TestAbleExtension):
         async def on_operation(self):
-            with register_hook(_ExtensionHinter.on_operation.__name__, B):
+            with register_hook(Extension.on_operation.__name__, B):
                 yield
 
         def on_parse(self):
-            with register_hook(_ExtensionHinter.on_parse.__name__, B):
+            with register_hook(Extension.on_parse.__name__, B):
                 yield
 
         def on_validate(self):
-            with register_hook(_ExtensionHinter.on_validate.__name__, B):
+            with register_hook(Extension.on_validate.__name__, B):
                 yield
 
         async def on_execute(self):
-            with register_hook(_ExtensionHinter.on_execute.__name__, B):
+            with register_hook(Extension.on_execute.__name__, B):
                 yield
 
     schema = strawberry.Schema(

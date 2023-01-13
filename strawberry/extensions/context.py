@@ -5,7 +5,7 @@ from asyncio import iscoroutinefunction
 from typing import AsyncIterator, Callable, Iterator, List, NamedTuple, Optional, Union
 
 from strawberry.extensions import Extension
-from strawberry.extensions.base_extension import _ExtensionHinter
+from strawberry.extensions.base_extension import _EXTENSION_FILENAME
 from strawberry.utils.await_maybe import (
     AsyncIteratorOrIterator,
     AwaitableOrValue,
@@ -129,7 +129,10 @@ class ExtensionContextManagerBase:
                 generator_or_func: Optional[
                     Union[AsyncIteratorOrIterator, Callable]
                 ] = getattr(extension, self.HOOK_NAME, None)
-                if not generator_or_func:
+                if (
+                    not generator_or_func
+                    or inspect.getfile(generator_or_func) == _EXTENSION_FILENAME
+                ):
                     continue
 
                 if inspect.isasyncgenfunction(generator_or_func):
@@ -193,24 +196,24 @@ class ExtensionContextManagerBase:
 
 
 class OperationContextManager(ExtensionContextManagerBase):
-    HOOK_NAME = _ExtensionHinter.on_operation.__name__
+    HOOK_NAME = Extension.on_operation.__name__
     LEGACY_ENTER = "on_request_start"
     LEGACY_EXIT = "on_request_end"
 
 
 class ValidationContextManager(ExtensionContextManagerBase):
-    HOOK_NAME = _ExtensionHinter.on_validate.__name__
+    HOOK_NAME = Extension.on_validate.__name__
     LEGACY_ENTER = "on_validation_start"
     LEGACY_EXIT = "on_validation_end"
 
 
 class ParsingContextManager(ExtensionContextManagerBase):
-    HOOK_NAME = _ExtensionHinter.on_parse.__name__
+    HOOK_NAME = Extension.on_parse.__name__
     LEGACY_ENTER = "on_parsing_start"
     LEGACY_EXIT = "on_parsing_end"
 
 
 class ExecutingContextManager(ExtensionContextManagerBase):
-    HOOK_NAME = _ExtensionHinter.on_execute.__name__
+    HOOK_NAME = Extension.on_execute.__name__
     LEGACY_ENTER = "on_executing_start"
     LEGACY_EXIT = "on_executing_end"
