@@ -50,7 +50,6 @@ passing any type to make it concrete.
 This exception is raised when `strawberry.argument` is used multiple times in a type
 annotation.
 
-```python
 import strawberry
 from typing_extensions import Annotated
 
@@ -186,7 +185,7 @@ class B:
 
 @strawberry.type
 class Query:
-    ab: Union[A, B] = "ciao" // missing `strawberry.field` !
+    ab: Union[A, B] = "ciao" # missing `strawberry.field` !
 
 query = """{
     ab {
