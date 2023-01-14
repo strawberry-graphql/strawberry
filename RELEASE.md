@@ -6,6 +6,7 @@ This release changes the way scoped extensions hooks work.
 def on_execution_started(self):  # Called before the execution start
     ...
 
+
 def on_execution_end(self):  # Called after the execution ends
     ...
 ```
