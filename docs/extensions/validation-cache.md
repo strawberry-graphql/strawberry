@@ -18,14 +18,15 @@ schema = strawberry.Schema(
     Query,
     extensions=[
         ValidationCache(),
-    ]
+    ],
 )
 ```
 
 ## API reference:
 
 ```python
-class ValidationCache(maxsize=None)
+class ValidationCache(maxsize=None):
+    ...
 ```
 
 #### `maxsize: Optional[int] = None`
@@ -47,7 +48,7 @@ schema = strawberry.Schema(
     Query,
     extensions=[
         ValidationCache(maxsize=100),
-    ]
+    ],
 )
 ```
 

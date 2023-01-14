@@ -12,6 +12,7 @@ for example the following code will throw this error:
 ```python
 import strawberry
 
+
 # note the lack of @strawberry.enum here:
 class IceCreamFlavour(Enum):
     VANILLA = strawberry.enum_value("vanilla")
@@ -40,6 +41,7 @@ You can fix this error by making sure the enum you're using is decorated with
 
 ```python
 import strawberry
+
 
 @strawberry.enum
 class IceCreamFlavour(Enum):

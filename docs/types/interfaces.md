@@ -103,20 +103,24 @@ from the interface:
 ```python
 import strawberry
 
+
 @strawberry.type
 class Individual(Customer):
     # additional fields
+    ...
+
 
 @strawberry.type
 class Company(Customer):
     # additional fields
+    ...
 ```
 
 <Tip>
 
-If you add an object type which implements an interface, but that object
-type doesn’t appear in your schema as a field return type or a union member,
-then you will need to add that object to the Schema definition directly.
+If you add an object type which implements an interface, but that object type
+doesn’t appear in your schema as a field return type or a union member, then you
+will need to add that object to the Schema definition directly.
 
 ```python
 schema = strawberry.Schema(query=Query, types=[Individual, Company])
@@ -167,6 +171,7 @@ Interfaces can provide field implementations as well. For example:
 ```python
 import strawberry
 
+
 @strawberry.interface
 class Customer:
     @strawberry.field
@@ -180,6 +185,7 @@ field:
 
 ```python
 import strawberry
+
 
 @strawberry.type
 class Company(Customer):
@@ -197,6 +203,7 @@ always return an instance of an object type from your resolver:
 
 ```python
 import strawberry
+
 
 @strawberry.type
 class Query:

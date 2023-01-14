@@ -43,6 +43,7 @@ Then you can use input types as argument for your fields or mutations:
 ```python
 import strawberry
 
+
 @strawberry.type
 class Mutation:
     @strawberry.mutation

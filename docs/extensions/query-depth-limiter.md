@@ -18,14 +18,15 @@ schema = strawberry.Schema(
     Query,
     extensions=[
         QueryDepthLimiter(max_depth=10),
-    ]
+    ],
 )
 ```
 
 ## API reference:
 
 ```python
-class QueryDepthLimiter(max_depth, ignore=None, callback=None)
+class QueryDepthLimiter(max_depth, ignore=None, callback=None):
+    ...
 ```
 
 #### `max_depth: int`
@@ -55,15 +56,13 @@ from strawberry.extensions import QueryDepthLimiter
 schema = strawberry.Schema(
     Query,
     extensions=[
-        QueryDepthLimiter(
-          max_depth=2,
-          ignore=["user"]
-        ),
-    ]
+        QueryDepthLimiter(max_depth=2, ignore=["user"]),
+    ],
 )
 
 # This query fails
-schema.execute("""
+schema.execute(
+    """
   query TooDeep {
     book {
       author {
@@ -73,10 +72,12 @@ schema.execute("""
       }
     }
   }
-""")
+"""
+)
 
 # This query succeeds because the `user` field is ignored
-schema.execute("""
+schema.execute(
+    """
   query NotTooDeep {
     user {
       favouriteBooks {
@@ -88,7 +89,8 @@ schema.execute("""
       }
     }
   }
-""")
+"""
+)
 ```
 
 </details>
@@ -104,15 +106,13 @@ from strawberry.extensions import QueryDepthLimiter
 schema = strawberry.Schema(
     Query,
     extensions=[
-        QueryDepthLimiter(
-          max_depth=2,
-          ignore=[re.compile(r".*favourite.*"]
-        ),
-    ]
+        QueryDepthLimiter(max_depth=2, ignore=[re.compile(r".*favourite.*")]),
+    ],
 )
 
 # This query succeeds because an field that contains `favourite` is ignored
-schema.execute("""
+schema.execute(
+    """
   query NotTooDeep {
     user {
       favouriteBooks {
@@ -124,7 +124,8 @@ schema.execute("""
       }
     }
   }
-""")
+"""
+)
 ```
 
 </details>
@@ -140,13 +141,13 @@ schema = strawberry.Schema(
     Query,
     extensions=[
         QueryDepthLimiter(
-          max_depth=2,
-          ignore=[lambda field_name: field_name == "user"]
+            max_depth=2, ignore=[lambda field_name: field_name == "user"]
         ),
-    ]
+    ],
 )
 
-schema.execute("""
+schema.execute(
+    """
   query NotTooDeep {
     user {
       favouriteBooks {
@@ -158,7 +159,8 @@ schema.execute("""
       }
     }
   }
-""")
+"""
+)
 ```
 
 </details>

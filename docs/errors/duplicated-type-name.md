@@ -14,18 +14,22 @@ For example, the following code will throw this error:
 ```python
 import strawberry
 
+
 @strawberry.type
 class User:
     name: str
+
 
 @strawberry.type(name="User")
 class UserB:
     name: str
 
+
 @strawberry.type
 class Query:
     user: User
     user_b: UserB
+
 
 schema = strawberry.Schema(query=Query)
 ```
@@ -39,9 +43,11 @@ the `name` argument of the `UserB` type:
 ```python
 import strawberry
 
+
 @strawberry.type
 class User:
     name: str
+
 
 # Note: Strawberry will automatically use the name of the class
 # if it is not provided, in this case we are passing the name
@@ -50,10 +56,12 @@ class User:
 class UserB:
     name: str
 
+
 @strawberry.type
 class Query:
     user: User
     user_b: UserB
+
 
 schema = strawberry.Schema(query=Query)
 ```

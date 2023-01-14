@@ -79,8 +79,10 @@ We'll get the following output inside `output/types.py`:
 class MyQueryResultUserPost:
     title: str
 
+
 class MyQueryResultUser:
     post: MyQueryResultUserPost
+
 
 class MyQueryResult:
     user: MyQueryResultUser
@@ -114,6 +116,7 @@ The interface for plugins looks like this:
 ```python
 from strawberry.codegen import CodegenPlugin, CodegenFile, CodegenResult
 from strawberry.codegen.types import GraphQLType, GraphQLOperation
+
 
 class QueryCodegenPlugin:
     def on_start(self) -> None:
