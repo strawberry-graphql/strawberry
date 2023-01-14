@@ -22,6 +22,7 @@ from starlette.websockets import WebSocket
 
 from fastapi import APIRouter, Depends
 from strawberry.exceptions import InvalidCustomContext, MissingQueryError
+from strawberry.fastapi.context import BaseContext, CustomContext, MergedContext
 from strawberry.fastapi.handlers import GraphQLTransportWSHandler, GraphQLWSHandler
 from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import (
@@ -37,18 +38,6 @@ from strawberry.types import ExecutionResult
 from strawberry.types.graphql import OperationType
 from strawberry.utils.debug import pretty_print_graphql_operation
 from strawberry.utils.graphiql import get_graphiql_html
-
-CustomContext = Union["BaseContext", Dict[str, Any]]
-MergedContext = Union[
-    "BaseContext", Dict[str, Union[Any, BackgroundTasks, Request, Response, WebSocket]]
-]
-
-
-class BaseContext:
-    def __init__(self):
-        self.request: Optional[Union[Request, WebSocket]] = None
-        self.background_tasks: Optional[BackgroundTasks] = None
-        self.response: Optional[Response] = None
 
 
 class GraphQLRouter(APIRouter):

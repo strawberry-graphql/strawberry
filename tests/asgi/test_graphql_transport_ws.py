@@ -792,3 +792,48 @@ def test_single_result_duplicate_ids_query(test_client):
         data = ws.receive()
         assert data["type"] == "websocket.close"
         assert data["code"] == 4409
+
+
+def test_injects_connection_params(test_client):
+    with test_client.websocket_connect("/", [GRAPHQL_TRANSPORT_WS_PROTOCOL]) as ws:
+        ws.send_json(ConnectionInitMessage(payload={"strawberry": "rocks"}).as_dict())
+
+        response = ws.receive_json()
+        assert response == ConnectionAckMessage().as_dict()
+
+        ws.send_json(
+            SubscribeMessage(
+                id="sub1",
+                payload=SubscribeMessagePayload(
+                    query="subscription { connectionParams }"
+                ),
+            ).as_dict()
+        )
+
+        response = ws.receive_json()
+        assert (
+            response
+            == NextMessage(
+                id="sub1", payload={"data": {"connectionParams": "rocks"}}
+            ).as_dict()
+        )
+
+        ws.send_json(CompleteMessage(id="sub1").as_dict())
+
+
+def test_rejects_connection_params_not_dict(test_client):
+    with test_client.websocket_connect("/", [GRAPHQL_TRANSPORT_WS_PROTOCOL]) as ws:
+        ws.send_json(ConnectionInitMessage(payload="gonna fail").as_dict())
+
+        data = ws.receive()
+        assert data["type"] == "websocket.close"
+        assert data["code"] == 4400
+
+
+def test_rejects_connection_params_not_unset(test_client):
+    with test_client.websocket_connect("/", [GRAPHQL_TRANSPORT_WS_PROTOCOL]) as ws:
+        ws.send_json(ConnectionInitMessage(payload=None).as_dict())
+
+        data = ws.receive()
+        assert data["type"] == "websocket.close"
+        assert data["code"] == 4400

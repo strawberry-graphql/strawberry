@@ -78,6 +78,7 @@ Scalar types can also be used as inputs:
 import datetime
 import strawberry
 
+
 @strawberry.type
 class Query:
     @strawberry.field
@@ -108,17 +109,19 @@ Base64 = strawberry.scalar(
     parse_value=lambda v: base64.b64decode(v).encode("utf-8"),
 )
 
+
 @strawberry.type
 class Query:
     @strawberry.field
     def base64(self) -> Base64:
         return Base64(b"hi")
 
+
 schema = strawberry.Schema(Query)
 
 result = schema.execute_sync("{ base64 }")
 
-assert results.data  == {"base64": "aGk="}
+assert results.data == {"base64": "aGk="}
 ```
 
 <Note>
@@ -145,7 +148,6 @@ JSON = strawberry.scalar(
     serialize=lambda v: v,
     parse_value=lambda v: v,
 )
-
 ```
 
 Usage:
@@ -156,7 +158,6 @@ class Query:
     @strawberry.field
     def data(self, info) -> JSON:
         return {"hello": {"a": 1}, "someNumbers": [1, 2, 3]}
-
 ```
 
 ```graphql+response
@@ -203,17 +204,19 @@ EpochDateTime = strawberry.scalar(
     parse_value=lambda value: datetime.fromtimestamp(int(value), timezone.utc),
 )
 
+
 @strawberry.type
 class Query:
     @strawberry.field
     def current_time(self) -> datetime:
         return datetime.now()
 
+
 schema = strawberry.Schema(
-  Query,
-  scalar_overrides={
-    datetime: EpochDateTime,
-  }
+    Query,
+    scalar_overrides={
+        datetime: EpochDateTime,
+    },
 )
 result = schema.execute_sync("{ currentTime }")
 assert result.data == {"currentTime": 1628683200}

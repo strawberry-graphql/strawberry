@@ -18,7 +18,7 @@ schema = strawberry.Schema(
     Query,
     extensions=[
         ApolloTracingExtension,
-    ]
+    ],
 )
 ```
 
@@ -34,7 +34,7 @@ schema = strawberry.Schema(
     Query,
     extensions=[
         ApolloTracingExtensionSync,
-    ]
+    ],
 )
 ```
 

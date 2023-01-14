@@ -15,11 +15,11 @@ class:
 import strawberry
 from strawberry.extensions import Extension
 
+
 class MyExtension(Extension):
     def get_results(self):
-        return {
-            "example": "this is an example for an extension"
-        }
+        return {"example": "this is an example for an extension"}
+
 
 schema = strawberry.Schema(query=Query, extensions=[MyExtension])
 ```
@@ -44,6 +44,7 @@ Subscription operations does not support this hook yet.
 from strawberry.types import Info
 from strawberry.extensions import Extension
 
+
 class MyExtension(Extension):
     def resolve(self, _next, root, info: Info, *args, **kwargs):
         return _next(root, info, *args, **kwargs)
@@ -57,6 +58,7 @@ resolving to a dictionary of data that will be included in the GraphQL response.
 ```python
 from typing import Any, Dict
 from strawberry.extensions import Extension
+
 
 class MyExtension(Extension):
     def get_results(self) -> Dict[str, Any]:
@@ -74,11 +76,12 @@ starts and ends.
 ```python
 from strawberry.extensions import Extension
 
+
 class MyExtension(Extension):
     def on_operation(self):
-        print('GraphQL request start')
+        print("GraphQL request start")
         yield
-        print('GraphQL request end')
+        print("GraphQL request end")
 ```
 
 <details>
@@ -126,11 +129,12 @@ step of the GraphQL execution.
 ```python
 from strawberry.extensions import Extension
 
+
 class MyExtension(Extension):
     def on_validate(self):
-        print('GraphQL validation start')
+        print("GraphQL validation start")
         yield
-        print('GraphQL validation end')
+        print("GraphQL validation end")
 ```
 
 - Parse
@@ -141,11 +145,12 @@ the GraphQL execution.
 ```python
 from strawberry.extensions import Extension
 
+
 class MyExtension(Extension):
     def on_parse(self):
-        print('GraphQL parsing start')
+        print("GraphQL parsing start")
         yield
-        print('GraphQL parsing end')
+        print("GraphQL parsing end")
 ```
 
 - Execution
@@ -167,11 +172,12 @@ def on_execute(self):
 ```python
 from strawberry.extensions import Extension
 
+
 class MyExtension(Extension):
     def on_execute(self):
-        print('GraphQL execution start')
+        print("GraphQL execution start")
         yield
-        print('GraphQL execution end')
+        print("GraphQL execution end")
 ```
 
 #### Examples:
@@ -186,6 +192,7 @@ from strawberry.extensions import Extension
 
 # Use an actual cache in production so that this doesn't grow unbounded
 response_cache = {}
+
 
 class ExecutionCache(Extension):
     def on_execute(self):
@@ -206,7 +213,7 @@ schema = strawberry.Schema(
     Query,
     extensions=[
         ExecutionCache,
-    ]
+    ],
 )
 ```
 
@@ -218,6 +225,7 @@ schema = strawberry.Schema(
 ```python
 import strawberry
 from strawberry.extensions import Extension
+
 
 class RejectSomeQueries(Extension):
     def on_execute(self):
@@ -234,7 +242,7 @@ schema = strawberry.Schema(
     Query,
     extensions=[
         RejectSomeQueries,
-    ]
+    ],
 )
 ```
 
@@ -253,6 +261,7 @@ for available data.
 from strawberry.extensions import Extension
 
 from mydb import get_db_session
+
 
 class MyExtension(Extension):
     def on_operation(self):

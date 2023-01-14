@@ -16,6 +16,7 @@ This is how you define a root query type in Strawberry:
 class Query:
     name: str
 
+
 schema = strawberry.Schema(query=Query)
 ```
 
@@ -33,9 +34,11 @@ name:
 def get_name() -> str:
     return "Strawberry"
 
+
 @strawberry.type
 class Query:
     name: str = strawberry.field(resolver=get_name)
+
 
 schema = strawberry.Schema(query=Query)
 ```

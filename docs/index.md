@@ -52,10 +52,12 @@ contents:
 import typing
 import strawberry
 
+
 @strawberry.type
 class Book:
     title: str
     author: str
+
 
 @strawberry.type
 class Query:
@@ -77,8 +79,8 @@ Let’s create a function that returns some books.
 def get_books():
     return [
         Book(
-            title='The Great Gatsby',
-            author='F. Scott Fitzgerald',
+            title="The Great Gatsby",
+            author="F. Scott Fitzgerald",
         ),
     ]
 ```

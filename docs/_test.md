@@ -35,7 +35,9 @@ class X:
 
 This is probably not implemented in the best way, but for now it works:
 
-```python
+<!-- TODO: passing the original syntax breaks black, find a better way -->
+
+```
 import ^[info](strawberry)
 
 @strawberry.type

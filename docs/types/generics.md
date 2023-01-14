@@ -20,7 +20,8 @@ from typing import Generic, List, TypeVar
 
 import strawberry
 
-T = TypeVar('T')
+T = TypeVar("T")
+
 
 @strawberry.type
 class Page(Generic[T]):

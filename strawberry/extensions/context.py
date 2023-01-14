@@ -4,10 +4,8 @@ import warnings
 from asyncio import iscoroutinefunction
 from typing import AsyncIterator, Callable, Iterator, List, NamedTuple, Optional, Union
 
-from strawberry.exceptions import MissingQueryError
 from strawberry.extensions import Extension
-from strawberry.extensions.base_extension import _ExtensionHinter
-from strawberry.types import ExecutionContext
+from strawberry.extensions.base_extension import _EXTENSION_FILENAME
 from strawberry.utils.await_maybe import (
     AsyncIteratorOrIterator,
     AwaitableOrValue,
@@ -68,7 +66,7 @@ class ExecutionOrderManager:
 
 
 class ExtensionContextManagerBase:
-    __slots__ = ("_initialized_steps", "_execution_order", "execution_context")
+    __slots__ = ("_initialized_steps", "_execution_order")
 
     def __init_subclass__(cls, **kwargs):
         cls.DEPRECATION_MESSAGE = (
@@ -122,10 +120,7 @@ class ExtensionContextManagerBase:
             return True
         return False
 
-    def __init__(
-        self, extensions: List[Extension], execution_context: ExecutionContext
-    ):
-        self.execution_context = execution_context
+    def __init__(self, extensions: List[Extension]):
         self._execution_order: ExecutionOrderManager = ExecutionOrderManager()
         self._initialized_steps: List[ExecutionStepInitialized]
         for extension in extensions:
@@ -134,7 +129,10 @@ class ExtensionContextManagerBase:
                 generator_or_func: Optional[
                     Union[AsyncIteratorOrIterator, Callable]
                 ] = getattr(extension, self.HOOK_NAME, None)
-                if not generator_or_func:
+                if not generator_or_func or (
+                    inspect.getfile(generator_or_func)  # type: ignore
+                    == _EXTENSION_FILENAME
+                ):
                     continue
 
                 if inspect.isasyncgenfunction(generator_or_func):
@@ -196,41 +194,26 @@ class ExtensionContextManagerBase:
                     await async_iterator.__anext__()
         self._initialized_steps = []
 
-    async def exit(self, exc: Exception) -> None:
-        await self.__aexit__(type(exc), exc.args, exc.__traceback__)
-
 
 class OperationContextManager(ExtensionContextManagerBase):
-    def ensure_query(self) -> None:
-        if not self.execution_context.query:
-            raise MissingQueryError()
-
-    async def __aenter__(self):
-        await super().__aenter__()
-        self.ensure_query()
-
-    def __enter__(self):
-        super().__enter__()
-        self.ensure_query()
-
-    HOOK_NAME = _ExtensionHinter.on_operation.__name__
+    HOOK_NAME = Extension.on_operation.__name__
     LEGACY_ENTER = "on_request_start"
     LEGACY_EXIT = "on_request_end"
 
 
 class ValidationContextManager(ExtensionContextManagerBase):
-    HOOK_NAME = _ExtensionHinter.on_validate.__name__
+    HOOK_NAME = Extension.on_validate.__name__
     LEGACY_ENTER = "on_validation_start"
     LEGACY_EXIT = "on_validation_end"
 
 
 class ParsingContextManager(ExtensionContextManagerBase):
-    HOOK_NAME = _ExtensionHinter.on_parse.__name__
+    HOOK_NAME = Extension.on_parse.__name__
     LEGACY_ENTER = "on_parsing_start"
     LEGACY_EXIT = "on_parsing_end"
 
 
 class ExecutingContextManager(ExtensionContextManagerBase):
-    HOOK_NAME = _ExtensionHinter.on_execute.__name__
+    HOOK_NAME = Extension.on_execute.__name__
     LEGACY_ENTER = "on_executing_start"
     LEGACY_EXIT = "on_executing_end"
