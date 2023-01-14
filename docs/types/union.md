@@ -127,6 +127,7 @@ to always return an instance of an object type from your resolver:
 from typing import Union
 import strawberry
 
+
 @strawberry.type
 class Query:
     @strawberry.field

@@ -54,7 +54,9 @@ the request and the response.
 
 ```python
 class MyGraphQL(GraphQL):
-    async def get_context(self, request: Union[Request, WebSocket], response: Optional[Response] = None) -> Any:
+    async def get_context(
+        self, request: Union[Request, WebSocket], response: Optional[Response] = None
+    ) -> Any:
         return {"example": 1}
 
 
@@ -98,8 +100,10 @@ on the response via the context:
 ```python
 from starlette.background import BackgroundTask
 
+
 async def notify_new_flavour(name: str):
     ...
+
 
 @strawberry.type
 class Mutation:
@@ -143,6 +147,7 @@ from strawberry.http import GraphQLHTTPResponse
 from strawberry.types import ExecutionResult
 
 from graphql.error.graphql_error import format_error as format_graphql_error
+
 
 class MyGraphQL(GraphQL):
     async def process_result(

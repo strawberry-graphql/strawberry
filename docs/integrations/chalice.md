@@ -49,7 +49,6 @@ def handle_graphql() -> Response:
     request: Request = app.current_request
     result = view.execute_request(request)
     return result
-
 ```
 
 And then run `chalice local` to start the localhost
@@ -138,10 +137,9 @@ from strawberry.types import ExecutionResult
 
 from graphql.error.graphql_error import format_error as format_graphql_error
 
+
 class MyGraphQLView(GraphQLView):
-    def process_result(
-        self, result: ExecutionResult
-    ) -> GraphQLHTTPResponse:
+    def process_result(self, result: ExecutionResult) -> GraphQLHTTPResponse:
         data: GraphQLHTTPResponse = {"data": result.data}
 
         if result.errors:
