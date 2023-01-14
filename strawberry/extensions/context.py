@@ -4,8 +4,10 @@ import warnings
 from asyncio import iscoroutinefunction
 from typing import AsyncIterator, Callable, Iterator, List, NamedTuple, Optional, Union
 
+from strawberry.exceptions import MissingQueryError
 from strawberry.extensions import Extension
 from strawberry.extensions.base_extension import _EXTENSION_FILENAME
+from strawberry.types import ExecutionContext
 from strawberry.utils.await_maybe import (
     AsyncIteratorOrIterator,
     AwaitableOrValue,
@@ -66,7 +68,7 @@ class ExecutionOrderManager:
 
 
 class ExtensionContextManagerBase:
-    __slots__ = ("_initialized_steps", "_execution_order")
+    __slots__ = ("_initialized_steps", "_execution_order", "execution_context")
 
     def __init_subclass__(cls, **kwargs):
         cls.DEPRECATION_MESSAGE = (
@@ -120,7 +122,10 @@ class ExtensionContextManagerBase:
             return True
         return False
 
-    def __init__(self, extensions: List[Extension]):
+    def __init__(
+        self, extensions: List[Extension], execution_context: ExecutionContext
+    ):
+        self.execution_context = execution_context
         self._execution_order: ExecutionOrderManager = ExecutionOrderManager()
         self._initialized_steps: List[ExecutionStepInitialized]
         for extension in extensions:
@@ -194,8 +199,25 @@ class ExtensionContextManagerBase:
                     await async_iterator.__anext__()
         self._initialized_steps = []
 
+    async def exit(self, exc: Exception) -> None:
+        await self.__aexit__(type(exc), exc.args, exc.__traceback__)
+
 
 class OperationContextManager(ExtensionContextManagerBase):
+    HOOK_NAME = Extension.on_operation.__name__
+
+    def ensure_query(self) -> None:
+        if not self.execution_context.query:
+            raise MissingQueryError()
+
+    async def __aenter__(self):
+        await super().__aenter__()
+        self.ensure_query()
+
+    def __enter__(self):
+        super().__enter__()
+        self.ensure_query()
+
     HOOK_NAME = Extension.on_operation.__name__
     LEGACY_ENTER = "on_request_start"
     LEGACY_EXIT = "on_request_end"
