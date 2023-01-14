@@ -395,6 +395,47 @@ def test_generic_with_enum_as_param_of_type_inside_unions():
     assert result.data == {"result": {"__typename": "CodesErrorNode", "code": "a"}}
 
 
+def test_generic_with_enum():
+    T = TypeVar("T")
+
+    @strawberry.enum
+    class EstimatedValueEnum(Enum):
+        test = "test"
+        testtest = "testtest"
+
+    @strawberry.type
+    class EstimatedValue(Generic[T]):
+        value: T
+        type: EstimatedValueEnum
+
+    @strawberry.type
+    class Query:
+        @strawberry.field
+        def estimated_value(self) -> Optional[EstimatedValue[int]]:
+            return EstimatedValue(value=1, type=EstimatedValueEnum.test)
+
+    schema = strawberry.Schema(query=Query)
+
+    query = """{
+        estimatedValue {
+            __typename
+            value
+            type
+        }
+    }"""
+
+    result = schema.execute_sync(query)
+
+    assert not result.errors
+    assert result.data == {
+        "estimatedValue": {
+            "__typename": "IntEstimatedValue",
+            "value": 1,
+            "type": "test",
+        }
+    }
+
+
 def test_supports_generic_in_unions_multiple_vars():
     A = TypeVar("A")
     B = TypeVar("B")

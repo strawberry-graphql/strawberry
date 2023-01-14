@@ -48,11 +48,13 @@ When a query is executed each field must resolve to the correct type. For exampl
 ```python
 import strawberry
 
+
 @strawberry.type
 class Query:
     @strawberry.field
     def hello() -> str:
         return None
+
 
 schema = strawberry.Schema(query=Query)
 ```
@@ -90,15 +92,18 @@ Sometimes a resolver will throw an unexpected error due to a programming error o
 ```python
 import strawberry
 
+
 @strawberry.type
 class User:
     name: str
+
 
 @strawberry.type
 class Query:
     @strawberry.field
     def user() -> User:
         raise Exception("Can't find user")
+
 
 schema = strawberry.Schema(query=Query)
 ```
@@ -139,12 +144,13 @@ This could be achieved by making the field optional when there is a possibility 
 from typing import Optional
 import strawberry
 
+
 @strawberry.type
 class Query:
     @strawberry.field
     def get_user(self, id: str) -> Optional[User]:
         try:
-            user = # get a user by their ID
+            user = get_a_user_by_their_ID
             return user
         except UserDoesNotExist:
             return None
@@ -157,33 +163,34 @@ For example, say you have a `registerUser` mutation where you need to deal with 
 ```python
 import strawberry
 
+
 @strawberry.type
 class RegisterUserSuccess:
     user: User
+
 
 @strawberry.type
 class UsernameAlreadyExistsError:
     username: str
     alternative_username: str
 
+
 # Create a Union type to represent the 2 results from the mutation
 Response = strawberry.union(
-    "RegisterUserResponse",
-    [RegisterUserSuccess, UsernameAlreadyExistsError]
+    "RegisterUserResponse", [RegisterUserSuccess, UsernameAlreadyExistsError]
 )
+
 
 @strawberry.mutation
 def register_user(username: str, password: str) -> Response:
     if username_already_exists(username):
         return UsernameAlreadyExistsError(
             username=username,
-            alternative_username=generate_username_suggestion(username)
+            alternative_username=generate_username_suggestion(username),
         )
 
     user = create_user(username, password)
-    return RegisterUserSuccess(
-        user=user
-    )
+    return RegisterUserSuccess(user=user)
 ```
 
 Then your client can look at the `__typename` of the result to determine what to do next:

@@ -1,12 +1,12 @@
 import pytest
 from starlette.testclient import TestClient
 from starlette.websockets import WebSocketDisconnect
-from tests.fastapi.app import create_app
 
 import strawberry
 from fastapi import FastAPI
 from strawberry.fastapi.router import GraphQLRouter
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL
+from tests.fastapi.app import create_app
 
 
 def test_turning_off_graphql_ws():

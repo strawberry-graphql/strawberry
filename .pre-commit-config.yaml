@@ -6,7 +6,7 @@ repos:
         args: [--py37-plus, --keep-runtime-typing]
 
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.0.176
+    rev: v0.0.215
     hooks:
       - id: ruff
         exclude: ^tests/codegen/snapshots/python/
@@ -36,3 +36,8 @@ repos:
     hooks:
       - id: black
         exclude: ^tests/codegen/snapshots/python/
+
+  - repo: https://github.com/adamchainz/blacken-docs
+    rev: v1.12.1
+    hooks:
+      -   id: blacken-docs

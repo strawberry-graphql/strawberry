@@ -40,11 +40,9 @@ jobs:
 
       - name: pytest
         run:
-          poetry run coverage run -m pytest --showlocals -vv -m "not
+          poetry run pytest --cov=strawberry --cov-append --cov-report=xml -n auto --showlocals -vv -m "not
           starlette" -m "not django" --ignore=tests/mypy --ignore=tests/pyright
 
-      - name: coverage xml
-        run: poetry run coverage xml -i
         if: ${{ always() }}
       - uses: codecov/codecov-action@v3
         if: ${{ always() }}
@@ -71,11 +69,9 @@ jobs:
 
       - name: pytest
         run:
-          poetry run coverage run -m pytest --showlocals -vv -m "not
+          poetry run pytest --cov=strawberry --cov-append --cov-report=xml -n auto --showlocals -vv -m "not
           django" --ignore=tests/mypy --ignore=tests/pyright
 
-      - name: coverage xml
-        run: poetry run coverage xml -i
         if: ${{ always() }}
       - uses: codecov/codecov-action@v3
         if: ${{ always() }}
@@ -110,10 +106,8 @@ jobs:
 
       - name: pytest
         run:
-          poetry run coverage run -m pytest --showlocals -vv -m django
+          poetry run pytest --cov=strawberry --cov-append --cov-report=xml -n auto --showlocals -vv -m django
 
-      - name: coverage xml
-        run: poetry run coverage xml -i
         if: ${{ always() }}
       - uses: codecov/codecov-action@v3
         if: ${{ always() }}
@@ -152,11 +146,9 @@ jobs:
 
       - name: pytest
         run:
-          poetry run coverage run -m pytest --showlocals -vv -m
+          poetry run pytest --cov=strawberry --cov-append --cov-report=xml -n auto --showlocals -vv -m
           starlette
 
-      - name: coverage xml
-        run: poetry run coverage xml -i
         if: ${{ always() }}
       - uses: codecov/codecov-action@v3
         if: ${{ always() }}

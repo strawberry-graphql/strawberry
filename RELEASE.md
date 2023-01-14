@@ -2,7 +2,7 @@ Release type: minor
 
 This change allows clients to define connectionParams when making Subscription requests similar to the way [Apollo-Server](https://www.apollographql.com/docs/apollo-server/data/subscriptions/#operation-context) does it.
 
-With [Apollo-Client (React)](https://www.apollographql.com/docs/react/data/subscriptions/#5-authenticate-over-websocket-optional) as an example, define a Websocket Link as so:
+With [Apollo-Client (React)](https://www.apollographql.com/docs/react/data/subscriptions/#5-authenticate-over-websocket-optional) as an example, define a Websocket Link:
 ```
 import { GraphQLWsLink } from '@apollo/client/link/subscriptions';
 import { createClient } from 'graphql-ws';

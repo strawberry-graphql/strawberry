@@ -27,6 +27,7 @@ only an id:
 ```python
 import strawberry
 
+
 @strawberry.type
 class User:
     id: strawberry.ID
@@ -37,6 +38,7 @@ keys passed:
 
 ```python
 from typing import List
+
 
 async def load_users(keys: List[int]) -> List[User]:
     return [User(id=key) for key in keys]
@@ -101,14 +103,16 @@ users_database = {
     2: User(id=2),
 }
 
+
 async def load_users(keys: List[int]) -> List[Union[User, ValueError]]:
     def lookup(key: int) -> Union[User, ValueError]:
-       if user := users_database.get(key):
-           return user
+        if user := users_database.get(key):
+            return user
 
-       return ValueError("not found")
+        return ValueError("not found")
 
     return [lookup(key) for key in keys]
+
 
 loader = DataLoader(load_fn=load_users)
 ```
@@ -138,21 +142,25 @@ function definition takes an input parameter and returns a `Hashable` type.
 from typing import List, Union
 from strawberry.dataloader import DataLoader
 
+
 class User:
     def __init__(self, custom_id: int, name: str):
         self.id: int = custom_id
         self.name: str = name
 
+
 async def loader_fn(keys):
     return keys
+
 
 def custom_cache_key(key):
     return key.id
 
+
 loader = DataLoader(load_fn=loader_fn, cache_key_fn=custom_cache_key)
 data1 = await loader.load(User(1, "Nick"))
 data2 = await loader.load(User(1, "Nick"))
-assert data1 == data2 #returns true
+assert data1 == data2  # returns true
 ```
 
 `loader.load(User(1, "Nick"))` will call `custom_cache_key` internally, passing
@@ -256,13 +264,13 @@ class UserCache(AbstractCache):
         self.cache = {}
 
     def get(self, key: Any) -> Union[Any, None]:
-        return self.cache.get(key)   # fetch data from persistent cache
+        return self.cache.get(key)  # fetch data from persistent cache
 
     def set(self, key: Any, value: Any) -> None:
-        self.cache[key] = value   # store data in the cache
+        self.cache[key] = value  # store data in the cache
 
     def delete(self, key: Any) -> None:
-        del self.cache[key]   # delete key from the cache
+        del self.cache[key]  # delete key from the cache
 
     def clear(self) -> None:
         self.cache.clear()  # clear the cache
@@ -279,13 +287,11 @@ async def load_users(keys) -> List[User]:
 
 
 class MyGraphQL(GraphQL):
-    async def get_context(self, request: Union[Request, WebSocket], response: Optional[Response]) -> Any:
-        return {
-            "user_loader": DataLoader(
-                load_fn=load_users,
-                cache_map=UserCache()
-            )
-        }
+    async def get_context(
+        self, request: Union[Request, WebSocket], response: Optional[Response]
+    ) -> Any:
+        return {"user_loader": DataLoader(load_fn=load_users, cache_map=UserCache())}
+
 
 @strawberry.type
 class Query:
@@ -308,9 +314,11 @@ from typing import List
 from strawberry.dataloader import DataLoader
 import strawberry
 
+
 @strawberry.type
 class User:
     id: strawberry.ID
+
 
 async def load_users(keys) -> List[User]:
     return [User(id=key) for key in keys]
@@ -318,11 +326,13 @@ async def load_users(keys) -> List[User]:
 
 loader = DataLoader(load_fn=load_users)
 
+
 @strawberry.type
 class Query:
     @strawberry.field
     async def get_user(self, id: strawberry.ID) -> User:
         return await loader.load(id)
+
 
 schema = strawberry.Schema(query=Query)
 ```
@@ -392,10 +402,10 @@ async def load_users(keys) -> List[User]:
 
 
 class MyGraphQL(GraphQL):
-    async def get_context(self, request: Union[Request, WebSocket], response: Optional[Response]) -> Any:
-        return {
-            "user_loader": DataLoader(load_fn=load_users)
-        }
+    async def get_context(
+        self, request: Union[Request, WebSocket], response: Optional[Response]
+    ) -> Any:
+        return {"user_loader": DataLoader(load_fn=load_users)}
 
 
 @strawberry.type
