@@ -223,6 +223,26 @@ def default_query_types_and_query() -> DefaultSchemaQuery:
     return DefaultSchemaQuery(query_type=Query, query=query)
 
 
+def test_can_initialize_extension(default_query_types_and_query):
+    class CustomizableExtension(Extension):
+        def __init__(self, arg: int):
+            self.arg = arg
+
+        def on_operation(self):
+            yield
+            self.execution_context.result.data = {"override": self.arg}
+
+    schema = strawberry.Schema(
+        query=default_query_types_and_query.query_type,
+        extensions=[
+            CustomizableExtension(20),
+        ],
+    )
+    res = schema.execute_sync(query=default_query_types_and_query.query)
+    assert not res.errors
+    assert res.data == {"override": 20}
+
+
 @pytest.fixture()
 def async_extension() -> Type[TestAbleExtension]:
     class MyExtension(TestAbleExtension):

@@ -129,9 +129,9 @@ class ExtensionContextManagerBase:
                 generator_or_func: Optional[
                     Union[AsyncIteratorOrIterator, Callable]
                 ] = getattr(extension, self.HOOK_NAME, None)
-                if (
-                    not generator_or_func
-                    or inspect.getfile(generator_or_func) == _EXTENSION_FILENAME
+                if not generator_or_func or (
+                    inspect.getfile(generator_or_func)  # type: ignore
+                    == _EXTENSION_FILENAME
                 ):
                     continue
 
