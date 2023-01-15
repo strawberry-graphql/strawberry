@@ -12,7 +12,8 @@ application = GraphQLWSConsumer.as_asgi(schema=schema, keep_alive_interval=50)
 async def communicator():
     com = GqlWsCommunicator(application=application, path="/graphql")
     await com.gql_init()
-    return com
+    yield com
+    await com.disconnect()
 
 
 async def test_subscribe(communicator):
