@@ -23,7 +23,7 @@ class GqlWsCommunicator(WebsocketCommunicator):
         application,
         path: str,
         headers: Optional[List[Tuple[bytes, bytes]]] = None,
-        subprotocols: Optional[list[str]] = None,
+        subprotocols: Optional[List[str]] = None,
     ):
         subprotocols = (
             subprotocols
