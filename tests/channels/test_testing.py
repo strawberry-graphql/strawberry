@@ -25,11 +25,7 @@ async def test_simple_subscribe(communicator):
 
 
 async def test_subscribe_unexpected_error(communicator):
-    try:
-        async for res in communicator.subscribe(
-            query='subscription { exception(message: "Hi") }'
-        ):
-            assert res.data == {"echo": "Hi"}
-
-    except RuntimeError as exc:
-        assert exc.args[0].message == "Hi"
+    async for res in communicator.subscribe(
+        query='subscription { exception(message: "Hi") }'
+    ):
+        assert res.errors[0].message == "Hi"

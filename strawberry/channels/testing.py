@@ -60,14 +60,15 @@ class GqlWsCommunicator(WebsocketCommunicator):
                     setattr(ret, field.name, payload.get(field.name, None))
                     yield ret
             elif message_type == "error":
-                raise RuntimeError(
-                    *[
+                yield ExecutionResult(
+                    data=None,
+                    errors=[
                         GraphQLError(
                             message=message["message"],
                             extensions=message.get("extensions", None),
                         )
                         for message in response["payload"]
-                    ]
+                    ],
                 )
             else:
                 return
