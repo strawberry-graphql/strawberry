@@ -1,6 +1,6 @@
 import dataclasses
 import uuid
-from typing import AsyncIterator, Dict, Optional, Union
+from typing import AsyncIterator, Dict, List, Optional, Tuple, Union
 
 from channels.testing.websocket import WebsocketCommunicator
 from strawberry.exceptions import GraphQLError
@@ -17,7 +17,13 @@ from strawberry.types import ExecutionResult
 class GqlWsCommunicator(WebsocketCommunicator):
     """exposes API like strawberry.Schema"""
 
-    def __init__(self, application, path, headers=None, subprotocols=None):
+    def __init__(
+        self,
+        application,
+        path: str,
+        headers: List[Tuple[bytes, bytes]] = None,
+        subprotocols: list[str] = None,
+    ):
         subprotocols = (
             subprotocols
             if subprotocols
