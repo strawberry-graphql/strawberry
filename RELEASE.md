@@ -1,4 +1,3 @@
-
 Release type: patch
 
 Add `GqlWsCommunicator` for testing websockets on channels.
