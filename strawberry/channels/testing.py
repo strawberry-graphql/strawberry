@@ -2,8 +2,9 @@ import dataclasses
 import uuid
 from typing import AsyncIterator, Dict, List, Optional, Tuple, Union
 
+from graphql import GraphQLError
+
 from channels.testing.websocket import WebsocketCommunicator
-from strawberry.exceptions import GraphQLError
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     ConnectionAckMessage,
@@ -21,8 +22,8 @@ class GqlWsCommunicator(WebsocketCommunicator):
         self,
         application,
         path: str,
-        headers: List[Tuple[bytes, bytes]] = None,
-        subprotocols: list[str] = None,
+        headers: Optional[List[Tuple[bytes, bytes]]] = None,
+        subprotocols: Optional[list[str]] = None,
     ):
         subprotocols = (
             subprotocols
