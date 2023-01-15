@@ -3,6 +3,7 @@ import uuid
 from typing import AsyncIterator, Dict, Optional, Union
 
 from channels.testing.websocket import WebsocketCommunicator
+from strawberry.exceptions import GraphQLError
 from strawberry.subscriptions import GRAPHQL_TRANSPORT_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
     ConnectionAckMessage,
@@ -45,11 +46,16 @@ class GqlWsCommunicator(WebsocketCommunicator):
         )
         while True:
             response = await self.receive_json_from(timeout=5)
-            if response["type"] == "next":
+            message_type = response["type"]
+            if message_type == "next":
                 payload = response["payload"]
                 ret = ExecutionResult(None, None)
                 for field in dataclasses.fields(ExecutionResult):
                     setattr(ret, field.name, payload.get(field.name, None))
                     yield ret
+            elif message_type == "error":
+                raise RuntimeError(
+                    *[GraphQLError(**message) for message in response["payload"]]
+                )
             else:
                 return

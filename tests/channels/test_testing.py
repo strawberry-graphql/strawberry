@@ -16,9 +16,20 @@ async def communicator():
     await com.disconnect()
 
 
-async def test_subscribe(communicator):
+async def test_simple_subscribe(communicator):
 
     async for res in communicator.subscribe(
         query='subscription { echo(message: "Hi") }'
     ):
         assert res.data == {"echo": "Hi"}
+
+
+async def test_subscribe_unexpected_error(communicator):
+    try:
+        async for res in communicator.subscribe(
+            query='subscription { exception(message: "Hi") }'
+        ):
+            assert res.data == {"echo": "Hi"}
+
+    except RuntimeError as exc:
+        assert exc.args[0].message == "Hi"
