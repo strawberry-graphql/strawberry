@@ -69,7 +69,7 @@ class Query:
     @strawberry.field(description="Get a list of users.")
     def users(self,
               order_by: str,
-              limit: int | None = None,
+              limit: int,
               offset: int = 0,
               name: str | None = None,
               occupation: str| None = None
@@ -131,12 +131,12 @@ user_data = [
 Here's the implementation of the `get_pagination_window` function. Note that it is generic and should work for all item types,
 not only for the `User` type.
 
-```py line=99-153
+```py line=100-146
 def get_pagination_window(
         dataset: List[GenericType],
         ItemType: type,
         order_by: str,
-        limit: int | None = None,
+        limit: int,
         offset: int = 0,
         filters: dict[str, str] = {}) -> PaginationWindow:
     """
@@ -145,30 +145,22 @@ def get_pagination_window(
     given filters
     """
 
-    # Validate the limit
-    if limit is not None and limit < 1:
-        raise Exception(f'limit ({limit}) must be greater than 0')
+    if limit <= 0 or limit > 100:
+        raise Exception(f'limit ({limit}) must be between 0-100')
 
-    # Sort the dataset
-    dataset.sort(key=lambda x: x[order_by])
-
-    # Filter the sorted dataset
     if filters:
         dataset = list(filter(lambda x: matches(x, filters), dataset))
 
-    # Validate the offset. Offset 0 is always valid, even for an empty dataset.
+    dataset.sort(key=lambda x: x[order_by])
+
     if offset != 0 and not 0 <= offset < len(dataset):
         raise Exception(f'offset ({offset}) is out of range '
                         f'(0-{len(dataset) - 1})')
 
-    # calculate the total number of items in the filtered dataset
     total_items_count = len(dataset)
 
-    # slice the relevant items
-    items = dataset[offset:] if limit is None \
-        else dataset[offset:offset + limit]
+    items = dataset[offset:offset + limit]
 
-    # convert the items from the dataset type to the schema type
     items = [ItemType.from_row(x) for x in items]
 
     return PaginationWindow(
@@ -189,8 +181,8 @@ def matches(item, filters):
     return True
 ```
 
-The above code first sorts the dataset according to the given `order_by` field, then filters the sorted dataset
-according to the given filters.
+The above code first filters the dataset according to the given filters, then sorts the dataset according to the 
+given `order_by` field.
 
 It then calculates `total_items_count` (this must be done after filtering), and then slices the relevant items
 according to `offset` and `limit`.
