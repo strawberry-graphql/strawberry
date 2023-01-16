@@ -26,10 +26,8 @@ class GqlWsCommunicator(WebsocketCommunicator):
 
     @pytest.fixture
     async def gql_communicator():
-        client = GqlWsCommunicator(application=application, path="/graphql")
-        await client.gql_init()
-        yield client
-        await client.disconnect()
+        async with GqlWsCommunicator(application, path="/graphql") as client:
+            yield client
 
 
     async def test_subscribe_echo(gql_communicator):
@@ -55,6 +53,13 @@ class GqlWsCommunicator(WebsocketCommunicator):
             ]
         )
         super().__init__(application, path, headers, subprotocols)
+
+    async def __aenter__(self) -> "GqlWsCommunicator":
+        await self.gql_init()
+        return self
+
+    async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
+        await self.disconnect()
 
     async def gql_init(self):
         res = await self.connect()

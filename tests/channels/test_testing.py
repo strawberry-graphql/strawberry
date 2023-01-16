@@ -10,10 +10,8 @@ application = GraphQLWSConsumer.as_asgi(schema=schema, keep_alive_interval=50)
 
 @pytest.fixture
 async def communicator():
-    com = GqlWsCommunicator(application=application, path="/graphql")
-    await com.gql_init()
-    yield com
-    await com.disconnect()
+    async with GqlWsCommunicator(application=application, path="/graphql") as client:
+        yield client
 
 
 async def test_simple_subscribe(communicator):

@@ -11,10 +11,8 @@ from myapp.asgi import application
 
 @pytest.fixture
 async def gql_communicator():
-    client = GqlWsCommunicator(application=application, path="/graphql")
-    await client.gql_init()
-    yield client
-    await client.disconnect()
+    async with GqlWsCommunicator(application=application, path="/graphql") as client:
+        yield client
 
 
 async def test_subscribe_echo(gql_communicator):
