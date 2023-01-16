@@ -181,7 +181,7 @@ def matches(item, filters):
     return True
 ```
 
-The above code first filters the dataset according to the given filters, then sorts the dataset according to the 
+The above code first filters the dataset according to the given filters, then sorts the dataset according to the
 given `order_by` field.
 
 It then calculates `total_items_count` (this must be done after filtering), and then slices the relevant items
