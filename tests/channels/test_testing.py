@@ -29,3 +29,10 @@ async def test_subscribe_unexpected_error(communicator):
         query='subscription { exception(message: "Hi") }'
     ):
         assert res.errors[0].message == "Hi"
+
+
+async def test_graphql_error(communicator):
+    async for res in communicator.subscribe(
+        query='subscription { error(message: "Hi") }'
+    ):
+        assert res.errors[0].message == "Hi"
