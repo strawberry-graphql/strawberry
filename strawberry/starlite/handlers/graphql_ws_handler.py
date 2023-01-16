@@ -1,10 +1,8 @@
 from contextlib import suppress
 from typing import Any, Optional
 
-import msgspec
-
 from starlite import WebSocket
-from starlite.exceptions import WebSocketDisconnect
+from starlite.exceptions import SerializationException, WebSocketDisconnect
 from strawberry.schema import BaseSchema
 from strawberry.subscriptions import GRAPHQL_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_ws.handlers import BaseGraphQLWSHandler
@@ -47,7 +45,7 @@ class GraphQLWSHandler(BaseGraphQLWSHandler):
             while self._ws.connection_state != "disconnect":
                 try:
                     message = await self._ws.receive_json()
-                except (msgspec.DecodeError, ValueError):
+                except (SerializationException, ValueError):
                     # Ignore non-text messages
                     continue
                 else:
