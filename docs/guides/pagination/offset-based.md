@@ -39,6 +39,7 @@ class User:
 ```
 
 Let us now model the `PaginationWindow`, which represents one "slice" of sorted, filtered, and paginated items.
+
 ```py line=27-38
 GenericType = TypeVar("GenericType")
 
@@ -54,13 +55,14 @@ class PaginationWindow(List[GenericType]):
     )
 ```
 
-Note that `PaginationWindow` is generic - it can represent a slice of users, or a slice of any other type of 
-items that we might want to paginate. 
+Note that `PaginationWindow` is generic - it can represent a slice of users, or a slice of any other type of
+items that we might want to paginate.
 
 `PaginationWindow` also contains `total_items_count`, which specifies how many items there are in total in the filtered
 dataset, so that the client knows what the highest offset value can be.
 
 Let's define the query:
+
 ```py line=41-70
 @strawberry.type
 class Query:
@@ -72,7 +74,7 @@ class Query:
               name: str | None = None,
               occupation: str| None = None
               ) -> PaginationWindow[User]:
-        
+
         filters = {}
 
         if name:
@@ -96,6 +98,7 @@ schema = strawberry.Schema(query=Query)
 Now we'll define a mock dataset and implement the `get_pagination_window` function, which is used by the `users` query.
 
 For the sake of simplicity, our dataset will be an in-memory list containing four users:
+
 ```py line=72-97
 user_data = [
   {
@@ -127,6 +130,7 @@ user_data = [
 
 Here's the implementation of the `get_pagination_window` function. Note that it is generic and should work for all item types,
 not only for the `User` type.
+
 ```py line=99-153
 def get_pagination_window(
         dataset: List[GenericType],
@@ -184,17 +188,18 @@ def matches(item, filters):
             return False
     return True
 ```
-The above code first sorts the dataset according to the given `order_by` field, then filters the sorted dataset 
-according to the given filters. 
 
-It then calculates `total_items_count` (this must be done after filtering), and then slices the relevant items 
+The above code first sorts the dataset according to the given `order_by` field, then filters the sorted dataset
+according to the given filters.
+
+It then calculates `total_items_count` (this must be done after filtering), and then slices the relevant items
 according to `offset` and `limit`.
 
 Finally, it converts the items to the given strawberry type, and returns a `PaginationWindow` containing these items,
 as well as the `total_items_count`.
 
 In a real project, you would probably replace this with code that fetches from a database using `offset` and `limit`.
-Check out [Prisma Client Python](https://prisma-client-py.readthedocs.io/en/stable/), 
+Check out [Prisma Client Python](https://prisma-client-py.readthedocs.io/en/stable/),
 which makes pagination and filtering a breeze. Prisma Client Python uses the terms `skip` and `take` instead of `offset`
 and `limit`, but they are essentially the same thing.
 
@@ -206,25 +211,26 @@ Django pagination API. You can check it out [here](https://docs.djangoproject.co
 </Tip>
 
 ## Running the Query
+
 Now, let us start the server and see offset-based pagination in action!
+
 ```
 strawberry server example:schema
 ```
+
 You will get the following message:
+
 ```
 Running strawberry on http://0.0.0.0:8000/graphql 🍓
 ```
+
 Go to [http://0.0.0.0:8000/graphql](http://0.0.0.0:8000/graphql) to
-open **GraphiQL**, and run the following query to get first two users, 
+open **GraphiQL**, and run the following query to get first two users,
 ordered by name:
 
 ```graphql
 {
-  users(
-    orderBy: "name",
-    offset: 0,
-    limit: 2
-  ) {
+  users(orderBy: "name", offset: 0, limit: 2) {
     items {
       name
       age
@@ -234,7 +240,9 @@ ordered by name:
   }
 }
 ```
-The result should look like this: 
+
+The result should look like this:
+
 ```graphql
 {
   "data": {
@@ -258,11 +266,12 @@ The result should look like this:
 ```
 
 The result contains:
-- `items` - A list of the users in this pagination window 
-- `totalItemsCount` - The total number of items in the filtered dataset. In this case, since no filter was given
-in the request, `totalItemsCount` is 4, which is equal to the total number of users in the in-memory dataset.
 
-Get the next page of users by running the same query, after incrementing 
+- `items` - A list of the users in this pagination window
+- `totalItemsCount` - The total number of items in the filtered dataset. In this case, since no filter was given
+  in the request, `totalItemsCount` is 4, which is equal to the total number of users in the in-memory dataset.
+
+Get the next page of users by running the same query, after incrementing
 `offset` by `limit`.
 
 Repeat until `offset` reaches `totalItemsCount`.
@@ -270,14 +279,10 @@ Repeat until `offset` reaches `totalItemsCount`.
 ## Running a Filtered Query
 
 Let's run the query again, but this time we'll filter out some users based on their occupation.
+
 ```graphql
 {
-  users(
-    orderBy: "name",
-    offset: 0,
-    limit: 2,
-    occupation: "ie"
-  ) {
+  users(orderBy: "name", offset: 0, limit: 2, occupation: "ie") {
     items {
       name
       age
@@ -287,10 +292,12 @@ Let's run the query again, but this time we'll filter out some users based on th
   }
 }
 ```
-By supplying `occupation: "ie"` in the query, we are requesting only users whose occupation 
-contains the substring "ie". 
+
+By supplying `occupation: "ie"` in the query, we are requesting only users whose occupation
+contains the substring "ie".
 
 This is the result:
+
 ```
 {
   "data": {
@@ -312,5 +319,6 @@ This is the result:
   }
 }
 ```
-Note that `totalItemsCount` is now 3 and not 4, because only 3 users in total 
+
+Note that `totalItemsCount` is now 3 and not 4, because only 3 users in total
 match the filter.
