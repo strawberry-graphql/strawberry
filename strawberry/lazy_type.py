@@ -47,12 +47,13 @@ class LazyType(Generic[TypeName, Module]):
             # Refer to: https://github.com/strawberry-graphql/strawberry/issues/2397
             if main_module.__spec__ and main_module.__spec__.name == self.module:
                 module = main_module
-            elif (
-                main_module.__file__
-                and module.__file__
-                and Path(main_module.__file__).samefile(module.__file__)
-            ):
-                module = main_module
+            elif hasattr(main_module, "__file__") and hasattr(module, "__file__"):
+                if (
+                    main_module.__file__
+                    and module.__file__
+                    and Path(main_module.__file__).samefile(module.__file__)
+                ):
+                    module = main_module
         return module.__dict__[self.type_name]
 
     # this empty call method allows LazyTypes to be used in generic types
