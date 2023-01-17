@@ -1,4 +1,5 @@
-from typing import Annotated, Generic, TypeVar
+from typing import Generic, TypeVar
+from typing_extensions import Annotated
 
 import strawberry
 
