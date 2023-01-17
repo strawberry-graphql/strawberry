@@ -1,6 +1,44 @@
 CHANGELOG
 =========
 
+0.154.1 - 2023-01-17
+--------------------
+
+Fix `DuplicatedTypeName` exception being raised on generics declared using
+`strawberry.lazy`. Previously the following would raise:
+
+```python
+# issue_2397.py
+from typing import Annotated, Generic, TypeVar
+
+import strawberry
+
+T = TypeVar("T")
+
+
+@strawberry.type
+class Item:
+    name: str
+
+
+@strawberry.type
+class Edge(Generic[T]):
+    node: T
+
+
+@strawberry.type
+class Query:
+    edges_normal: Edge[Item]
+    edges_lazy: Edge[Annotated["Item", strawberry.lazy("issue_2397")]]
+
+
+if __name__ == "__main__":
+    schema = strawberry.Schema(query=Query)
+```
+
+Contributed by [pre-commit-ci](https://github.com/pre-commit-ci) via [PR #2462](https://github.com/strawberry-graphql/strawberry/pull/2462/)
+
+
 0.154.0 - 2023-01-13
 --------------------
 
