@@ -191,9 +191,6 @@ Finally, it converts the items to the given strawberry type, and returns a `Pagi
 as well as the `total_items_count`.
 
 In a real project, you would probably replace this with code that fetches from a database using `offset` and `limit`.
-Check out [Prisma Client Python](https://prisma-client-py.readthedocs.io/en/stable/),
-which makes pagination and filtering a breeze. Prisma Client Python uses the terms `skip` and `take` instead of `offset`
-and `limit`, but they are essentially the same thing.
 
 <Tip>
 
