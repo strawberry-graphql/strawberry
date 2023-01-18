@@ -30,7 +30,7 @@ async def fastapi_get_context(
         {
             "request": request or ws,
             "background_tasks": background_tasks,
-        }
+        },
     )
 
 
@@ -42,7 +42,9 @@ class GraphQLRouter(BaseGraphQLRouter):
     result_override: ResultOverrideFunction = None
 
     async def process_result(
-        self, request: Request, result: ExecutionResult
+        self,
+        request: Request,
+        result: ExecutionResult,
     ) -> GraphQLHTTPResponse:
         if self.result_override:
             return self.result_override(result)
@@ -81,7 +83,10 @@ class FastAPIHttpClient(HttpClient):
         **kwargs,
     ) -> Response:
         body = self._build_body(
-            query=query, variables=variables, files=files, method=method
+            query=query,
+            variables=variables,
+            files=files,
+            method=method,
         )
 
         if body:

@@ -26,7 +26,7 @@ class GraphQLWSHandler(BaseGraphQLWSHandler):
 
     async def get_context(self) -> Any:
         return await self._get_context(
-            request=self._ws, connection_params=self.connection_params
+            request=self._ws, connection_params=self.connection_params,
         )
 
     async def get_root_value(self) -> Any:

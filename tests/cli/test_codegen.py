@@ -18,29 +18,33 @@ class ConsoleTestPlugin(ConsolePlugin):
 
 class QueryCodegenTestPlugin(QueryCodegenPlugin):
     def generate_code(
-        self, types: List[GraphQLType], operation: GraphQLOperation
+        self,
+        types: List[GraphQLType],
+        operation: GraphQLOperation,
     ) -> List[CodegenFile]:
         return [
             CodegenFile(
                 path="test.py",
                 content=f"# This is a test file for {operation.name}",
-            )
+            ),
         ]
 
 
 class EmptyPlugin(QueryCodegenPlugin):
     def generate_code(
-        self, types: List[GraphQLType], operation: GraphQLOperation
+        self,
+        types: List[GraphQLType],
+        operation: GraphQLOperation,
     ) -> List[CodegenFile]:
         return [
             CodegenFile(
                 path="test.py",
                 content="# Empty",
-            )
+            ),
         ]
 
 
-@pytest.fixture
+@pytest.fixture()
 def query_file_path(tmp_path: Path) -> Path:
     output_path = tmp_path / "query.graphql"
     output_path.write_text(
@@ -50,7 +54,7 @@ def query_file_path(tmp_path: Path) -> Path:
                 name
             }
         }
-        """
+        """,
     )
     return output_path
 
@@ -79,7 +83,9 @@ def test_codegen(cli_runner, query_file_path: Path, tmp_path: Path):
 
 
 def test_codegen_passing_plugin_symbol(
-    cli_runner, query_file_path: Path, tmp_path: Path
+    cli_runner,
+    query_file_path: Path,
+    tmp_path: Path,
 ):
     selector = "tests.fixtures.sample_package.sample_module:schema"
     result = cli_runner.invoke(
@@ -104,7 +110,8 @@ def test_codegen_passing_plugin_symbol(
 
 
 def test_codegen_returns_error_when_symbol_does_not_exist(
-    cli_runner, query_file_path: Path
+    cli_runner,
+    query_file_path: Path,
 ):
     selector = "tests.fixtures.sample_package.sample_module:schema"
     result = cli_runner.invoke(
@@ -125,7 +132,8 @@ def test_codegen_returns_error_when_symbol_does_not_exist(
 
 
 def test_codegen_returns_error_when_module_does_not_exist(
-    cli_runner, query_file_path: Path
+    cli_runner,
+    query_file_path: Path,
 ):
     selector = "tests.fixtures.sample_package.sample_module:schema"
     result = cli_runner.invoke(
@@ -138,7 +146,8 @@ def test_codegen_returns_error_when_module_does_not_exist(
 
 
 def test_codegen_returns_error_when_does_not_find_plugin(
-    cli_runner, query_file_path: Path
+    cli_runner,
+    query_file_path: Path,
 ):
     selector = "tests.fixtures.sample_package.sample_module:schema"
     result = cli_runner.invoke(

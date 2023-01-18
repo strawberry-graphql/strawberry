@@ -195,5 +195,5 @@ def test_mutation_with_validation_and_error_type():
     assert result.errors is None
     assert result.data["createUser"].get("name") is None
     assert result.data["createUser"]["nameErrors"] == [
-        ("ensure this value has at least 2 characters")
+        ("ensure this value has at least 2 characters"),
     ]

@@ -100,7 +100,9 @@ class QueryCodegenPlugin:
         ...
 
     def generate_code(
-        self, types: List[GraphQLType], operation: GraphQLOperation
+        self,
+        types: List[GraphQLType],
+        operation: GraphQLOperation,
     ) -> List[CodegenFile]:
         return []
 
@@ -110,7 +112,9 @@ class QueryCodegenPluginManager:
         self.plugins = plugins
 
     def generate_code(
-        self, types: List[GraphQLType], operation: GraphQLOperation
+        self,
+        types: List[GraphQLType],
+        operation: GraphQLOperation,
     ) -> CodegenResult:
         result = CodegenResult(files=[])
 
@@ -186,7 +190,8 @@ class QueryCodegen:
         raise ValueError(f"Unsupported type: {type(selection)}")  # pragma: no cover
 
     def _convert_selection_set(
-        self, selection_set: Optional[SelectionSetNode]
+        self,
+        selection_set: Optional[SelectionSetNode],
     ) -> List[GraphQLSelection]:
 
         if selection_set is None:
@@ -208,7 +213,7 @@ class QueryCodegen:
 
         if isinstance(value, ListValueNode):
             return GraphQLListValue(
-                [self._convert_value(item) for item in value.values]
+                [self._convert_value(item) for item in value.values],
             )
 
         if isinstance(value, EnumValueNode):
@@ -220,7 +225,8 @@ class QueryCodegen:
         raise ValueError(f"Unsupported type: {type(value)}")  # pragma: no cover
 
     def _convert_arguments(
-        self, arguments: Iterable[ArgumentNode]
+        self,
+        arguments: Iterable[ArgumentNode],
     ) -> List[GraphQLArgument]:
         return [
             GraphQLArgument(argument.name.value, self._convert_value(argument.value))
@@ -228,7 +234,8 @@ class QueryCodegen:
         ]
 
     def _convert_directives(
-        self, directives: Iterable[DirectiveNode]
+        self,
+        directives: Iterable[DirectiveNode],
     ) -> List[GraphQLDirective]:
         return [
             GraphQLDirective(
@@ -239,7 +246,8 @@ class QueryCodegen:
         ]
 
     def _convert_operation(
-        self, operation_definition: OperationDefinitionNode
+        self,
+        operation_definition: OperationDefinitionNode,
     ) -> GraphQLOperation:
         query_type = self.schema.get_type_by_name("Query")
         assert isinstance(query_type, TypeDefinition)
@@ -260,7 +268,8 @@ class QueryCodegen:
         )
 
         variables, variables_type = self._convert_variable_definitions(
-            operation_definition.variable_definitions, operation_name=operation_name
+            operation_definition.variable_definitions,
+            operation_name=operation_name,
         )
 
         return GraphQLOperation(
@@ -339,18 +348,19 @@ class QueryCodegen:
         raise ValueError(f"Unsupported type: {field_type}")  # pragma: no cover
 
     def _collect_type_from_strawberry_type(
-        self, strawberry_type: Union[type, StrawberryType]
+        self,
+        strawberry_type: Union[type, StrawberryType],
     ) -> GraphQLType:
         type_: GraphQLType
 
         if isinstance(strawberry_type, StrawberryOptional):
             return GraphQLOptional(
-                self._collect_type_from_strawberry_type(strawberry_type.of_type)
+                self._collect_type_from_strawberry_type(strawberry_type.of_type),
             )
 
         if isinstance(strawberry_type, StrawberryList):
             return GraphQLOptional(
-                self._collect_type_from_strawberry_type(strawberry_type.of_type)
+                self._collect_type_from_strawberry_type(strawberry_type.of_type),
             )
 
         if hasattr(strawberry_type, "_type_definition"):
@@ -373,13 +383,15 @@ class QueryCodegen:
         return type_
 
     def _collect_type_from_variable(
-        self, variable_type: TypeNode, parent_type: Optional[TypeNode] = None
+        self,
+        variable_type: TypeNode,
+        parent_type: Optional[TypeNode] = None,
     ) -> GraphQLType:
         type_: Optional[GraphQLType] = None
 
         if isinstance(variable_type, ListTypeNode):
             type_ = GraphQLList(
-                self._collect_type_from_variable(variable_type.type, variable_type)
+                self._collect_type_from_variable(variable_type.type, variable_type),
             )
 
         elif isinstance(variable_type, NonNullTypeNode):
@@ -400,7 +412,9 @@ class QueryCodegen:
         return GraphQLOptional(type_)
 
     def _field_from_selection(
-        self, selection: FieldNode, parent_type: TypeDefinition
+        self,
+        selection: FieldNode,
+        parent_type: TypeDefinition,
     ) -> GraphQLField:
         field = self.schema.get_field_for_type(selection.name.value, parent_type.name)
         assert field
@@ -408,13 +422,17 @@ class QueryCodegen:
         field_type = self._get_field_type(field.type)
 
         return GraphQLField(
-            field.name, selection.alias.value if selection.alias else None, field_type
+            field.name,
+            selection.alias.value if selection.alias else None,
+            field_type,
         )
 
     def _unwrap_type(
-        self, type_: Union[type, StrawberryType]
+        self,
+        type_: Union[type, StrawberryType],
     ) -> Tuple[
-        Union[type, StrawberryType], Optional[Callable[[GraphQLType], GraphQLType]]
+        Union[type, StrawberryType],
+        Optional[Callable[[GraphQLType], GraphQLType]],
     ]:
         wrapper = None
 
@@ -440,12 +458,16 @@ class QueryCodegen:
         return type_, wrapper
 
     def _field_from_selection_set(
-        self, selection: FieldNode, class_name: str, parent_type: TypeDefinition
+        self,
+        selection: FieldNode,
+        class_name: str,
+        parent_type: TypeDefinition,
     ) -> GraphQLField:
         assert selection.selection_set is not None
 
         selected_field = self.schema.get_field_for_type(
-            selection.name.value, parent_type.name
+            selection.name.value,
+            parent_type.name,
         )
         assert selected_field
 
@@ -457,11 +479,14 @@ class QueryCodegen:
 
         if isinstance(selected_field_type, StrawberryUnion):
             field_type = self._collect_types_with_inline_fragments(
-                selection, parent_type, class_name
+                selection,
+                parent_type,
+                class_name,
             )
         else:
             parent_type = cast(
-                TypeDefinition, selected_field_type._type_definition  # type: ignore
+                TypeDefinition,
+                selected_field_type._type_definition,  # type: ignore
             )
 
             field_type = self._collect_types(selection, parent_type, class_name)
@@ -476,7 +501,10 @@ class QueryCodegen:
         )
 
     def _get_field(
-        self, selection: FieldNode, class_name: str, parent_type: TypeDefinition
+        self,
+        selection: FieldNode,
+        class_name: str,
+        parent_type: TypeDefinition,
     ) -> GraphQLField:
 
         if selection.selection_set:
@@ -491,7 +519,9 @@ class QueryCodegen:
         class_name: str,
     ) -> Union[GraphQLObjectType, GraphQLUnion]:
         sub_types = self._collect_types_using_fragments(
-            selection, parent_type, class_name
+            selection,
+            parent_type,
+            class_name,
         )
 
         if len(sub_types) == 1:
@@ -517,7 +547,9 @@ class QueryCodegen:
             for selection in selection_set.selections
         ):
             return self._collect_types_with_inline_fragments(
-                selection, parent_type, class_name
+                selection,
+                parent_type,
+                class_name,
             )
 
         current_type = GraphQLObjectType(class_name, [])
@@ -535,7 +567,8 @@ class QueryCodegen:
 
     def generate_code(self) -> CodegenResult:
         return self.plugin_manager.generate_code(
-            types=self.types, operation=self.operation
+            types=self.types,
+            operation=self.operation,
         )
 
     def _collect_types_using_fragments(
@@ -553,7 +586,7 @@ class QueryCodegen:
         for sub_selection in selection.selection_set.selections:
             if isinstance(sub_selection, FieldNode):
                 common_fields.append(
-                    self._get_field(sub_selection, class_name, parent_type)
+                    self._get_field(sub_selection, class_name, parent_type),
                 )
 
             if isinstance(sub_selection, InlineFragmentNode):
@@ -581,7 +614,7 @@ class QueryCodegen:
                         selection=sub_selection,
                         class_name=fragment_class_name,
                         parent_type=parent_type,
-                    )
+                    ),
                 )
 
             sub_types.append(current_type)
@@ -591,7 +624,9 @@ class QueryCodegen:
         return sub_types
 
     def _collect_scalar(
-        self, scalar_definition: ScalarDefinition, python_type: Optional[Type]
+        self,
+        scalar_definition: ScalarDefinition,
+        python_type: Optional[Type],
     ) -> GraphQLScalar:
         graphql_scalar = GraphQLScalar(scalar_definition.name, python_type=python_type)
 

@@ -37,7 +37,8 @@ class GraphQLView(HTTPMethodView):
         graphiql: bool, default is True
         allow_queries_via_get: bool, default is True
 
-    Returns:
+    Returns
+    -------
         None
 
     Example:
@@ -79,7 +80,9 @@ class GraphQLView(HTTPMethodView):
         return None
 
     async def get_context(
-        self, request: Request, response: TemporalResponse
+        self,
+        request: Request,
+        response: TemporalResponse,
     ) -> StrawberrySanicContext:
         return {"request": request, "response": response}
 
@@ -87,7 +90,9 @@ class GraphQLView(HTTPMethodView):
         return html(template)
 
     async def process_result(
-        self, request: Request, result: ExecutionResult
+        self,
+        request: Request,
+        result: ExecutionResult,
     ) -> GraphQLHTTPResponse:
         return process_result(result)
 
@@ -104,13 +109,16 @@ class GraphQLView(HTTPMethodView):
                 data = parse_query_params(query_data)
             except json.JSONDecodeError:
                 raise ServerError(
-                    "Unable to parse request body as JSON", status_code=400
+                    "Unable to parse request body as JSON",
+                    status_code=400,
                 )
 
             request_data = parse_request_data(data)
 
             return await self.execute_request(
-                request=request, request_data=request_data, method="GET"
+                request=request,
+                request_data=request_data,
+                method="GET",
             )
 
         elif should_render_graphiql(self.graphiql, request):
@@ -120,7 +128,9 @@ class GraphQLView(HTTPMethodView):
         raise NotFound()
 
     async def get_response(
-        self, response_data: GraphQLHTTPResponse, context: StrawberrySanicContext
+        self,
+        response_data: GraphQLHTTPResponse,
+        context: StrawberrySanicContext,
     ) -> HTTPResponse:
         status_code = 200
 
@@ -140,7 +150,9 @@ class GraphQLView(HTTPMethodView):
             assert self.json_encoder
 
             return json.dumps(
-                response_data, cls=self.json_encoder, **self.json_dumps_params
+                response_data,
+                cls=self.json_encoder,
+                **self.json_dumps_params,
             )
 
         if self.json_encoder:
@@ -152,7 +164,9 @@ class GraphQLView(HTTPMethodView):
         request_data = self.get_request_data(request)
 
         return await self.execute_request(
-            request=request, request_data=request_data, method="POST"
+            request=request,
+            request_data=request_data,
+            method="POST",
         )
 
     async def execute_request(
@@ -180,7 +194,8 @@ class GraphQLView(HTTPMethodView):
             )
         except InvalidOperationTypeError as e:
             raise ServerError(
-                e.as_http_error_reason(method=method), status_code=400
+                e.as_http_error_reason(method=method),
+                status_code=400,
             ) from e
         except MissingQueryError:
             raise ServerError("No GraphQL query found in the request", status_code=400)
@@ -210,7 +225,8 @@ class GraphQLView(HTTPMethodView):
                 return replace_placeholders_with_files(operations, files_map, files)
             except KeyError:
                 raise SanicException(
-                    status_code=400, message="File(s) missing in form data"
+                    status_code=400,
+                    message="File(s) missing in form data",
                 )
 
         raise ServerError("Unsupported Media Type", status_code=415)

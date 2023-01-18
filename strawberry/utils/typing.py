@@ -15,7 +15,6 @@ from typing import (  # type: ignore
 
 def is_list(annotation: object) -> bool:
     """Returns True if annotation is a List"""
-
     annotation_origin = getattr(annotation, "__origin__", None)
 
     return annotation_origin == list
@@ -23,7 +22,6 @@ def is_list(annotation: object) -> bool:
 
 def is_union(annotation: object) -> bool:
     """Returns True if annotation is a Union"""
-
     # this check is needed because unions declared with the new syntax `A | B`
     # don't have a `__origin__` property on them, but they are instances of
     # `UnionType`, which is only available in Python 3.10+
@@ -42,7 +40,6 @@ def is_union(annotation: object) -> bool:
 
 def is_optional(annotation: Type) -> bool:
     """Returns True if the annotation is Optional[SomeType]"""
-
     # Optionals are represented as unions
 
     if not is_union(annotation):
@@ -51,13 +48,13 @@ def is_optional(annotation: Type) -> bool:
     types = annotation.__args__
 
     # A Union to be optional needs to have at least one None type
-    return any([x == None.__class__ for x in types])  # noqa:E711
+    return any([x == None.__class__ for x in types])
 
 
 def get_optional_annotation(annotation: Type) -> Type:
     types = annotation.__args__
 
-    non_none_types = tuple(x for x in types if x != None.__class__)  # noqa:E711
+    non_none_types = tuple(x for x in types if x != None.__class__)
 
     # if we have multiple non none types we want to return a copy of this
     # type (normally a Union type).
@@ -82,13 +79,13 @@ def is_concrete_generic(annotation: type) -> bool:
 
 def is_generic_subclass(annotation: type) -> bool:
     return isinstance(annotation, type) and issubclass(
-        annotation, Generic  # type:ignore
+        annotation,
+        Generic,  # type:ignore
     )
 
 
 def is_generic(annotation: type) -> bool:
     """Returns True if the annotation is or extends a generic."""
-
     return (
         # TODO: These two lines appear to have the same effect. When will an
         #       annotation have parameters but not satisfy the first condition?
@@ -99,7 +96,6 @@ def is_generic(annotation: type) -> bool:
 
 def is_type_var(annotation: Type) -> bool:
     """Returns True if the annotation is a TypeVar."""
-
     return isinstance(annotation, TypeVar)
 
 

@@ -40,7 +40,7 @@ def suppress_output(verbosity_level: int = 0) -> Generator[None, None, None]:
 class StrawberryExceptionsPlugin:
     def __init__(self, verbosity_level: int) -> None:
         self._info: DefaultDict[Type[StrawberryException], List[Result]] = defaultdict(
-            list
+            list,
         )
         self.verbosity_level = verbosity_level
 
@@ -94,12 +94,14 @@ class StrawberryExceptionsPlugin:
             )
 
             if self.verbosity_level >= 1:
-                print(f"Exception: {exception}")
+                pass
 
             pytest.fail(failure_message, pytrace=False)
 
     def _collect_exception(
-        self, test_name: str, raised_exception: StrawberryException
+        self,
+        test_name: str,
+        raised_exception: StrawberryException,
     ) -> None:
         console = rich.console.Console(record=True, width=120)
 
@@ -116,8 +118,6 @@ class StrawberryExceptionsPlugin:
                     max_frames=10,
                 )
                 console.print(traceback)
-
-            print(f"\n Exception class: {raised_exception.__class__.__name__}\n")
 
         exception_text = console.export_text()
 
@@ -137,7 +137,7 @@ class StrawberryExceptionsPlugin:
             )
 
         self._info[raised_exception.__class__].append(
-            Result(text=text, raised_exception=raised_exception)
+            Result(text=text, raised_exception=raised_exception),
         )
 
     def pytest_sessionfinish(self):

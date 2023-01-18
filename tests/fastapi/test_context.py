@@ -188,7 +188,7 @@ def test_class_context_injects_connection_params_over_transport_ws():
     class Subscription:
         @strawberry.subscription
         async def connection_params(
-            self, info: Info, delay: float = 0
+            self, info: Info, delay: float = 0,
         ) -> AsyncGenerator[str, None]:
             assert info.context.request is not None
             await asyncio.sleep(delay)
@@ -210,7 +210,7 @@ def test_class_context_injects_connection_params_over_transport_ws():
     test_client = TestClient(app)
 
     with test_client.websocket_connect(
-        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL]
+        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL],
     ) as ws:
         ws.send_json(ConnectionInitMessage(payload={"strawberry": "rocks"}).as_dict())
 
@@ -221,16 +221,16 @@ def test_class_context_injects_connection_params_over_transport_ws():
             SubscribeMessage(
                 id="sub1",
                 payload=SubscribeMessagePayload(
-                    query="subscription { connectionParams }"
+                    query="subscription { connectionParams }",
                 ),
-            ).as_dict()
+            ).as_dict(),
         )
 
         response = ws.receive_json()
         assert (
             response
             == NextMessage(
-                id="sub1", payload={"data": {"connectionParams": "rocks"}}
+                id="sub1", payload={"data": {"connectionParams": "rocks"}},
             ).as_dict()
         )
 
@@ -248,7 +248,7 @@ def test_class_context_injects_connection_params_over_ws():
     class Subscription:
         @strawberry.subscription
         async def connection_params(
-            self, info: Info, delay: float = 0
+            self, info: Info, delay: float = 0,
         ) -> AsyncGenerator[str, None]:
             assert info.context.request is not None
             await asyncio.sleep(delay)
@@ -275,7 +275,7 @@ def test_class_context_injects_connection_params_over_ws():
                 "type": GQL_CONNECTION_INIT,
                 "id": "demo",
                 "payload": {"strawberry": "rocks"},
-            }
+            },
         )
         ws.send_json(
             {
@@ -284,7 +284,7 @@ def test_class_context_injects_connection_params_over_ws():
                 "payload": {
                     "query": "subscription { connectionParams }",
                 },
-            }
+            },
         )
 
         response = ws.receive_json()

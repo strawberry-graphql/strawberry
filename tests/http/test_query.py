@@ -19,7 +19,8 @@ async def test_graphql_query(method: Literal["get", "post"], http_client: HttpCl
 
 @pytest.mark.parametrize("method", ["get", "post"])
 async def test_graphql_can_pass_variables(
-    method: Literal["get", "post"], http_client: HttpClient
+    method: Literal["get", "post"],
+    http_client: HttpClient,
 ):
     response = await http_client.query(
         method=method,
@@ -46,7 +47,8 @@ async def test_root_value(method: Literal["get", "post"], http_client: HttpClien
 
 @pytest.mark.parametrize("method", ["get", "post"])
 async def test_passing_invalid_query(
-    method: Literal["get", "post"], http_client: HttpClient
+    method: Literal["get", "post"],
+    http_client: HttpClient,
 ):
     response = await http_client.query(
         method=method,
@@ -58,7 +60,7 @@ async def test_passing_invalid_query(
         {
             "message": "Syntax Error: Expected Name, found <EOF>.",
             "locations": [{"line": 1, "column": 4}],
-        }
+        },
     ]
 
 
@@ -74,13 +76,14 @@ async def test_returns_errors(method: Literal["get", "post"], http_client: HttpC
         {
             "message": "Cannot query field 'maya' on type 'Query'.",
             "locations": [{"line": 1, "column": 3}],
-        }
+        },
     ]
 
 
 @pytest.mark.parametrize("method", ["get", "post"])
 async def test_returns_errors_and_data(
-    method: Literal["get", "post"], http_client: HttpClient
+    method: Literal["get", "post"],
+    http_client: HttpClient,
 ):
     response = await http_client.query(
         method=method,
@@ -96,7 +99,7 @@ async def test_returns_errors_and_data(
             "locations": [{"column": 10, "line": 1}],
             "message": "You are not authorized",
             "path": ["alwaysFail"],
-        }
+        },
     ]
     assert data == {"hello": "Hello world", "alwaysFail": None}
 
@@ -150,7 +153,8 @@ async def test_query_context(method: Literal["get", "post"], http_client: HttpCl
 
 @pytest.mark.parametrize("method", ["get", "post"])
 async def test_returning_status_code(
-    method: Literal["get", "post"], http_client: HttpClient
+    method: Literal["get", "post"],
+    http_client: HttpClient,
 ):
     response = await http_client.query(
         method=method,

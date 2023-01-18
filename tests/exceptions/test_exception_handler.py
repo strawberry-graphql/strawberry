@@ -25,7 +25,8 @@ def test_exception_handler(mocker):
 def test_exception_handler_other_exceptions(mocker):
     print_mock = mocker.patch("rich.print", autospec=True)
     original_exception_mock = mocker.patch(
-        "strawberry.exceptions.handler.original_exception_hook", autospec=True
+        "strawberry.exceptions.handler.original_exception_hook",
+        autospec=True,
     )
 
     exception = ValueError("abc")
@@ -38,7 +39,8 @@ def test_exception_handler_other_exceptions(mocker):
 
 def test_exception_handler_uses_original_when_rich_is_not_installed(mocker):
     original_exception_mock = mocker.patch(
-        "strawberry.exceptions.handler.original_exception_hook", autospec=True
+        "strawberry.exceptions.handler.original_exception_hook",
+        autospec=True,
     )
 
     mocker.patch.dict("sys.modules", {"rich": None})
@@ -51,13 +53,16 @@ def test_exception_handler_uses_original_when_rich_is_not_installed(mocker):
     strawberry_exception_handler(MissingFieldAnnotationError, exception, None)
 
     assert original_exception_mock.call_args == mocker.call(
-        MissingFieldAnnotationError, exception, None
+        MissingFieldAnnotationError,
+        exception,
+        None,
     )
 
 
 def test_exception_handler_uses_original_when_libcst_is_not_installed(mocker):
     original_exception_mock = mocker.patch(
-        "strawberry.exceptions.handler.original_exception_hook", autospec=True
+        "strawberry.exceptions.handler.original_exception_hook",
+        autospec=True,
     )
 
     mocker.patch.dict("sys.modules", {"libcst": None})
@@ -70,7 +75,9 @@ def test_exception_handler_uses_original_when_libcst_is_not_installed(mocker):
     strawberry_exception_handler(MissingFieldAnnotationError, exception, None)
 
     assert original_exception_mock.call_args == mocker.call(
-        MissingFieldAnnotationError, exception, None
+        MissingFieldAnnotationError,
+        exception,
+        None,
     )
 
 

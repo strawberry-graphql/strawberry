@@ -30,7 +30,7 @@ def _prepare_db():
     return ids
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 async def test_fetch_data_from_db(mocker):
     def _sync_batch_load(keys):
         data = Example.objects.filter(id__in=keys)
@@ -71,7 +71,9 @@ async def test_fetch_data_from_db(mocker):
 
     factory = RequestFactory()
     request = factory.post(
-        "/graphql/", {"query": query}, content_type="application/json"
+        "/graphql/",
+        {"query": query},
+        content_type="application/json",
     )
 
     response = await AsyncGraphQLView.as_view(schema=schema)(request)

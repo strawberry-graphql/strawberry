@@ -6,7 +6,6 @@ from typing import Any, Callable
 @lru_cache(maxsize=250)
 def get_func_args(func: Callable[[Any], Any]):
     """Returns a list of arguments for the function"""
-
     sig = inspect.signature(func)
 
     return [

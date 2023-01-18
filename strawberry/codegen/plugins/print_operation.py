@@ -24,7 +24,9 @@ from strawberry.codegen.types import (
 
 class PrintOperationPlugin(QueryCodegenPlugin):
     def generate_code(
-        self, types: List[GraphQLType], operation: GraphQLOperation
+        self,
+        types: List[GraphQLType],
+        operation: GraphQLOperation,
     ) -> List[CodegenFile]:
         code = "\n".join(
             [
@@ -35,7 +37,7 @@ class PrintOperationPlugin(QueryCodegenPlugin):
                 ),
                 self._print_selections(operation.selections),
                 "}",
-            ]
+            ],
         )
         return [CodegenFile("query.graphql", code)]
 
@@ -51,7 +53,9 @@ class PrintOperationPlugin(QueryCodegenPlugin):
         return f"({variables})"
 
     def _print_graphql_type(
-        self, type: GraphQLType, parent_type: Optional[GraphQLType] = None
+        self,
+        type: GraphQLType,
+        parent_type: Optional[GraphQLType] = None,
     ) -> str:
         if isinstance(type, GraphQLOptional):
             return self._print_graphql_type(type.of_type, type)
@@ -97,7 +101,7 @@ class PrintOperationPlugin(QueryCodegenPlugin):
                 [
                     f"{argument.name}: {self._print_argument_value(argument.value)}"
                     for argument in arguments
-                ]
+                ],
             )
             + ")"
         )
@@ -110,7 +114,7 @@ class PrintOperationPlugin(QueryCodegenPlugin):
             [
                 f"@{directive.name}{self._print_arguments(directive.arguments)}"
                 for directive in directives
-            ]
+            ],
         )
 
     def _print_field_selection(self, selection: GraphQLFieldSelection) -> str:
@@ -134,7 +138,7 @@ class PrintOperationPlugin(QueryCodegenPlugin):
                 f"... on {fragment.type_condition} {{",
                 self._print_selections(fragment.selections),
                 "}",
-            ]
+            ],
         )
 
     def _print_selection(self, selection: GraphQLSelection) -> str:
@@ -148,7 +152,7 @@ class PrintOperationPlugin(QueryCodegenPlugin):
 
     def _print_selections(self, selections: List[GraphQLSelection]) -> str:
         selections_text = "\n".join(
-            [self._print_selection(selection) for selection in selections]
+            [self._print_selection(selection) for selection in selections],
         )
 
         return textwrap.indent(selections_text, " " * 2)

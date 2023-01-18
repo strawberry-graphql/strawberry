@@ -53,7 +53,9 @@ class HTTPHandler:
                 raise web.HTTPBadRequest(reason="Unable to parse request body as JSON")
 
             return await self.execute_request(
-                request=request, request_data=request_data, method="GET"
+                request=request,
+                request_data=request_data,
+                method="GET",
             )
 
         elif self.should_render_graphiql(request):
@@ -64,7 +66,9 @@ class HTTPHandler:
         request_data = await self.get_request_data(request)
 
         return await self.execute_request(
-            request=request, request_data=request_data, method="POST"
+            request=request,
+            request_data=request_data,
+            method="POST",
         )
 
     async def execute_request(
@@ -94,7 +98,7 @@ class HTTPHandler:
             )
         except InvalidOperationTypeError as e:
             raise web.HTTPBadRequest(
-                reason=e.as_http_error_reason(method=method)
+                reason=e.as_http_error_reason(method=method),
             ) from e
         except MissingQueryError:
             raise web.HTTPBadRequest(reason="No GraphQL query found in the request")
@@ -117,7 +121,7 @@ class HTTPHandler:
             return await request.json()
         except json.JSONDecodeError as e:
             raise web.HTTPBadRequest(
-                reason="Unable to parse request body as JSON"
+                reason="Unable to parse request body as JSON",
             ) from e
 
     async def parse_multipart_body(self, request: web.Request) -> dict:

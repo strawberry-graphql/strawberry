@@ -7,7 +7,7 @@ import strawberry
 from strawberry.dataloader import DataLoader
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_can_use_dataloaders(mocker):
     @dataclass
     class User:

@@ -61,7 +61,7 @@ def test_cannot_convert_pydantic_type_to_strawberry_missing_field():
         AutoFieldsNotInBaseModelError,
         match=re.escape(
             "UserType defines ['password'] with strawberry.auto."
-            " Field(s) not present in User BaseModel."
+            " Field(s) not present in User BaseModel.",
         ),
     ):
 
@@ -85,7 +85,7 @@ def test_cannot_convert_pydantic_type_to_strawberry_property_auto():
         AutoFieldsNotInBaseModelError,
         match=re.escape(
             "UserType defines ['password'] with strawberry.auto."
-            " Field(s) not present in User BaseModel."
+            " Field(s) not present in User BaseModel.",
         ),
     ):
 
@@ -138,7 +138,9 @@ def test_convert_alias_name():
         password: Optional[str]
 
     @strawberry.experimental.pydantic.type(
-        UserModel, all_fields=True, use_pydantic_alias=True
+        UserModel,
+        all_fields=True,
+        use_pydantic_alias=True,
     )
     class User:
         ...
@@ -157,7 +159,9 @@ def test_do_not_convert_alias_name():
         password: Optional[str]
 
     @strawberry.experimental.pydantic.type(
-        UserModel, all_fields=True, use_pydantic_alias=False
+        UserModel,
+        all_fields=True,
+        use_pydantic_alias=False,
     )
     class User:
         ...
@@ -266,7 +270,7 @@ def test_can_convert_pydantic_type_with_list_of_nested_data_to_strawberry():
         work=[
             WorkModel(name="Ice Cream inc"),
             WorkModel(name="Wall Street"),
-        ]
+        ],
     )
     user = User.from_pydantic(origin_user)
 
@@ -286,7 +290,7 @@ def test_can_convert_pydantic_type_with_list_of_nested_int_to_strawberry():
             8,
             9,
             10,
-        ]
+        ],
     )
     user = User.from_pydantic(origin_user)
 
@@ -306,7 +310,7 @@ def test_can_convert_pydantic_type_with_matrix_list_of_nested_int_to_strawberry(
             [8, 10],
             [9, 11],
             [10, 12],
-        ]
+        ],
     )
     user = User.from_pydantic(origin_user)
 
@@ -346,7 +350,7 @@ def test_can_convert_pydantic_type_with_matrix_list_of_nested_model_to_strawberr
                 HourModel(hour=5),
                 HourModel(hour=6),
             ],
-        ]
+        ],
     )
     user = User.from_pydantic(origin_user)
 
@@ -607,7 +611,7 @@ def test_can_convert_pydantic_type_to_strawberry_with_additional_list_nested_fie
             "work": [
                 {"name": "Software inc"},
                 {"name": "Homemade inc"},
-            ]
+            ],
         },
     )
 
@@ -641,7 +645,7 @@ def test_can_convert_pydantic_type_to_strawberry_with_missing_data_in_nested_typ
         extra={
             "work": [
                 {"year": 2020},
-            ]
+            ],
         },
     )
 
@@ -670,7 +674,7 @@ def test_can_convert_pydantic_type_to_strawberry_with_missing_index_data_nested_
         work=[
             WorkModel(name="Software inc"),
             None,
-        ]
+        ],
     )
 
     user = User.from_pydantic(
@@ -679,7 +683,7 @@ def test_can_convert_pydantic_type_to_strawberry_with_missing_index_data_nested_
             "work": [
                 {"year": 2020},
                 {"name": "Alternative", "year": 3030},
-            ]
+            ],
         },
     )
 
@@ -839,7 +843,8 @@ def test_can_convert_pydantic_type_to_strawberry_newtype_list():
 
 def test_get_default_factory_for_field():
     def _get_field(
-        default: Any = dataclasses.MISSING, default_factory: Any = dataclasses.MISSING
+        default: Any = dataclasses.MISSING,
+        default_factory: Any = dataclasses.MISSING,
     ) -> ModelField:
         return ModelField(
             name="a",
@@ -962,7 +967,7 @@ def test_can_convert_both_output_and_input_type():
         users=[
             User(name="Alice", work=Work(time=10.0)),
             User(name="Bob", work=Work(time=5.0)),
-        ]
+        ],
     )
     group = GroupOutput.from_pydantic(origin_group)
     final_group = group.to_pydantic()

@@ -112,7 +112,9 @@ def test_arguments_lists_of_optionals():
 
 def test_basic_arguments_on_resolver():
     def name_resolver(
-        id: strawberry.ID, argument: str, optional_argument: Optional[str]
+        id: strawberry.ID,
+        argument: str,
+        optional_argument: Optional[str],
     ) -> str:
         return "Name"
 
@@ -139,7 +141,9 @@ def test_basic_arguments_on_resolver():
 
 def test_arguments_when_extending_a_type():
     def name_resolver(
-        id: strawberry.ID, argument: str, optional_argument: Optional[str]
+        id: strawberry.ID,
+        argument: str,
+        optional_argument: Optional[str],
     ) -> str:
         return "Name"
 
@@ -257,8 +261,8 @@ def test_annotated_argument_on_resolver():
         def name(  # type: ignore
             argument: Annotated[
                 str,
-                strawberry.argument(description="This is a description"),  # noqa: F722
-            ]
+                strawberry.argument(description="This is a description"),
+            ],
         ) -> str:
             return "Name"
 
@@ -281,8 +285,8 @@ def test_annotated_optional_arguments_on_resolver():
         def name(  # type: ignore
             argument: Annotated[
                 Optional[str],
-                strawberry.argument(description="This is a description"),  # noqa: F722
-            ]
+                strawberry.argument(description="This is a description"),
+            ],
         ) -> str:
             return "Name"
 
@@ -307,7 +311,7 @@ def test_annotated_argument_with_default_value():
             self,
             argument: Annotated[
                 str,
-                strawberry.argument(description="This is a description"),  # noqa: F722
+                strawberry.argument(description="This is a description"),
             ] = "Patrick",
         ) -> str:
             return "Name"
@@ -333,7 +337,7 @@ def test_annotated_argument_with_rename():
             self,
             arg: Annotated[
                 str,
-                strawberry.argument(name="argument"),  # noqa: F722
+                strawberry.argument(name="argument"),
             ] = "Patrick",
         ) -> str:
             return "Name"
@@ -361,8 +365,8 @@ def test_multiple_annotated_arguments_exception():
         def name(
             argument: Annotated[
                 str,
-                strawberry.argument(description="This is a description"),  # noqa: F722
-                strawberry.argument(description="Another description"),  # noqa: F722
+                strawberry.argument(description="This is a description"),
+                strawberry.argument(description="Another description"),
             ],
         ) -> str:
             return "Name"
@@ -378,9 +382,7 @@ def test_annotated_with_other_information():
     @strawberry.type
     class Query:
         @strawberry.field
-        def name(
-            self, argument: Annotated[str, "Some other info"]
-        ) -> str:  # noqa: F722
+        def name(self, argument: Annotated[str, "Some other info"]) -> str:
             return "Name"
 
     definition = Query._type_definition
@@ -409,7 +411,7 @@ def test_annotated_python_39():
             self,
             argument: Annotated[
                 str,
-                strawberry.argument(description="This is a description"),  # noqa: F722
+                strawberry.argument(description="This is a description"),
             ],
         ) -> str:
             return "Name"
@@ -490,7 +492,7 @@ def test_unset_deprecation_warning():
 
 def test_deprecated_unset():
     with pytest.deprecated_call():
-        from strawberry.unset import is_unset  # noqa: F401
+        from strawberry.unset import is_unset
     assert is_unset(UNSET)
     assert not is_unset(None)
     assert not is_unset(False)

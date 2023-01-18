@@ -33,7 +33,7 @@ def test_fetch_entities():
     result = schema.execute_sync(
         query,
         variable_values={
-            "representations": [{"__typename": "Product", "upc": "B00005N5PF"}]
+            "representations": [{"__typename": "Product", "upc": "B00005N5PF"}],
         },
     )
 
@@ -74,7 +74,7 @@ def test_info_param_in_resolve_reference():
     result = schema.execute_sync(
         query,
         variable_values={
-            "representations": [{"__typename": "Product", "upc": "B00005N5PF"}]
+            "representations": [{"__typename": "Product", "upc": "B00005N5PF"}],
         },
     )
 
@@ -112,7 +112,7 @@ def test_does_not_need_custom_resolve_reference_for_basic_things():
     result = schema.execute_sync(
         query,
         variable_values={
-            "representations": [{"__typename": "Product", "upc": "B00005N5PF"}]
+            "representations": [{"__typename": "Product", "upc": "B00005N5PF"}],
         },
     )
 
@@ -156,15 +156,19 @@ def test_does_not_need_custom_resolve_reference_nested():
         query,
         variable_values={
             "representations": [
-                {"__typename": "Product", "upc": "B00005N5PF", "something": {"id": "1"}}
-            ]
+                {
+                    "__typename": "Product",
+                    "upc": "B00005N5PF",
+                    "something": {"id": "1"},
+                },
+            ],
         },
     )
 
     assert not result.errors
 
     assert result.data == {
-        "_entities": [{"upc": "B00005N5PF", "something": {"id": "1"}}]
+        "_entities": [{"upc": "B00005N5PF", "something": {"id": "1"}}],
     }
 
 
@@ -207,8 +211,8 @@ def test_fails_properly_when_wrong_data_is_passed():
                     "__typename": "Product",
                     "upc": "B00005N5PF",
                     "not_something": {"id": "1"},
-                }
-            ]
+                },
+            ],
         },
     )
 
@@ -247,7 +251,7 @@ async def test_can_use_async_resolve_reference():
     result = await schema.execute(
         query,
         variable_values={
-            "representations": [{"__typename": "Product", "upc": "B00005N5PF"}]
+            "representations": [{"__typename": "Product", "upc": "B00005N5PF"}],
         },
     )
 
@@ -289,7 +293,7 @@ async def test_can_use_async_resolve_reference_multiple_representations():
             "representations": [
                 {"__typename": "Product", "upc": "B00005N5PF"},
                 {"__typename": "Product", "upc": "B00005N5PG"},
-            ]
+            ],
         },
     )
 

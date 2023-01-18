@@ -31,7 +31,8 @@ def test_can_set_camel_casing():
         example_field: str = "Example"
 
     schema = strawberry.Schema(
-        query=Query, config=StrawberryConfig(auto_camel_case=True)
+        query=Query,
+        config=StrawberryConfig(auto_camel_case=True),
     )
 
     query = """
@@ -56,7 +57,8 @@ def test_can_set_camel_casing_to_false():
         example_field: str = "Example"
 
     schema = strawberry.Schema(
-        query=Query, config=StrawberryConfig(auto_camel_case=False)
+        query=Query,
+        config=StrawberryConfig(auto_camel_case=False),
     )
 
     query = """
@@ -81,7 +83,8 @@ def test_can_set_camel_casing_to_false_uses_name():
         example_field: str = strawberry.field(name="exampleField")
 
     schema = strawberry.Schema(
-        query=Query, config=StrawberryConfig(auto_camel_case=False)
+        query=Query,
+        config=StrawberryConfig(auto_camel_case=False),
     )
 
     query = """
@@ -108,7 +111,8 @@ def test_can_set_camel_casing_to_false_uses_name_field_decorator():
             return "ABC"
 
     schema = strawberry.Schema(
-        query=Query, config=StrawberryConfig(auto_camel_case=False)
+        query=Query,
+        config=StrawberryConfig(auto_camel_case=False),
     )
 
     query = """
@@ -151,7 +155,7 @@ def test_camel_case_is_on_by_default_arguments():
 
     assert not result.errors
     assert result.data["__type"]["fields"] == [
-        {"args": [{"name": "exampleInput"}], "name": "exampleField"}
+        {"args": [{"name": "exampleInput"}], "name": "exampleField"},
     ]
 
 
@@ -163,7 +167,8 @@ def test_can_turn_camel_case_off_arguments():
             return example_input
 
     schema = strawberry.Schema(
-        query=Query, config=StrawberryConfig(auto_camel_case=False)
+        query=Query,
+        config=StrawberryConfig(auto_camel_case=False),
     )
 
     query = """
@@ -181,7 +186,7 @@ def test_can_turn_camel_case_off_arguments():
 
     assert not result.errors
     assert result.data["__type"]["fields"] == [
-        {"args": [{"name": "example_input"}], "name": "example_field"}
+        {"args": [{"name": "example_input"}], "name": "example_field"},
     ]
 
 
@@ -193,7 +198,8 @@ def test_can_turn_camel_case_off_arguments_conversion_works():
             return example_input
 
     schema = strawberry.Schema(
-        query=Query, config=StrawberryConfig(auto_camel_case=False)
+        query=Query,
+        config=StrawberryConfig(auto_camel_case=False),
     )
 
     query = """

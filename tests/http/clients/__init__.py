@@ -85,7 +85,11 @@ class HttpClient(abc.ABC):
         headers: Optional[Dict[str, str]] = None,
     ) -> Response:
         return await self._graphql_request(
-            method, query=query, headers=headers, variables=variables, files=files
+            method,
+            query=query,
+            headers=headers,
+            variables=variables,
+            files=files,
         )
 
     def _get_headers(
@@ -140,7 +144,8 @@ class HttpClient(abc.ABC):
 
     @staticmethod
     def _build_multipart_file_map(
-        variables: Dict[str, object], files: Dict[str, BytesIO]
+        variables: Dict[str, object],
+        files: Dict[str, BytesIO],
     ) -> Dict[str, List[str]]:
         # TODO: remove code duplication
 

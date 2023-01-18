@@ -12,9 +12,15 @@ class GraphQLTestClient(BaseGraphQLTestClient):
     ):
         if files:
             return self._client.post(
-                self.url, data=body, format="multipart", headers=headers
+                self.url,
+                data=body,
+                format="multipart",
+                headers=headers,
             )
 
         return self._client.post(
-            self.url, data=body, content_type="application/json", headers=headers
+            self.url,
+            data=body,
+            content_type="application/json",
+            headers=headers,
         )

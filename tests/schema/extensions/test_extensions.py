@@ -74,7 +74,7 @@ def test_extension():
     }
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_extension_async():
     class MyExtension(Extension):
         def get_results(self):
@@ -202,7 +202,7 @@ def test_extension_access_to_root_value():
     assert root_value == "ROOT"
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_async_extension_hooks():
     called_hooks = set()
 
@@ -252,7 +252,7 @@ async def test_async_extension_hooks():
     assert called_hooks == {1, 2, 3, 4, 5, 6, 7, 8}
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_mixed_sync_and_async_extension_hooks():
     called_hooks = set()
 
@@ -302,7 +302,7 @@ def test_warning_about_async_get_results_hooks_in_sync_context():
         assert str(exc_info.value) == msg
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_dont_swallow_errors_in_parsing_hooks():
     class MyExtension(Extension):
         def on_parsing_start(self):
@@ -381,7 +381,7 @@ def test_extension_override_execution():
     }
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_extension_override_execution_async():
     class MyExtension(Extension):
         def on_executing_start(self):
@@ -604,7 +604,7 @@ def test_extension_can_set_query():
     assert result.data == {"hi": "👋"}
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_extension_can_set_query_async():
     class MyExtension(Extension):
         def on_request_start(self):

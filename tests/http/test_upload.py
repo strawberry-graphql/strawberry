@@ -33,7 +33,7 @@ from .clients.sanic import SanicHttpClient
             ChaliceHttpClient,
             marks=pytest.mark.xfail(reason="Chalice does not support uploads"),
         ),
-    ]
+    ],
 )
 def http_client_class(request) -> Type[HttpClient]:
     return request.param
@@ -142,7 +142,7 @@ async def test_upload_invalid_query(http_client: HttpClient):
             {
                 "locations": [{"column": 5, "line": 4}],
                 "message": "Syntax Error: Expected Name, found <EOF>.",
-            }
+            },
         ],
     }
 

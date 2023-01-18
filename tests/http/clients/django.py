@@ -31,7 +31,9 @@ class GraphQLView(BaseGraphQLView):
         return get_context(context)
 
     def process_result(
-        self, request: HttpRequest, result: ExecutionResult
+        self,
+        request: HttpRequest,
+        result: ExecutionResult,
     ) -> GraphQLHTTPResponse:
         if self.result_override:
             return self.result_override(result)
@@ -94,7 +96,10 @@ class DjangoHttpClient(HttpClient):
         additional_arguments = {**kwargs, **headers}
 
         body = self._build_body(
-            query=query, variables=variables, files=files, method=method
+            query=query,
+            variables=variables,
+            files=files,
+            method=method,
         )
 
         data: Union[Dict[str, object], str, None] = None

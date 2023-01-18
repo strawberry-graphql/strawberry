@@ -16,7 +16,7 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
 from tests.channels.schema import schema
 
 
-@pytest.fixture
+@pytest.fixture()
 async def ws():
     client = WebsocketCommunicator(
         GraphQLWSConsumer.as_asgi(schema=schema),
@@ -58,7 +58,7 @@ async def test_channel_listen(ws: WebsocketCommunicator):
             payload=SubscribeMessagePayload(
                 query="subscription { listener }",
             ),
-        ).as_dict()
+        ).as_dict(),
     )
 
     channel_layer = get_channel_layer()
@@ -79,7 +79,8 @@ async def test_channel_listen(ws: WebsocketCommunicator):
     assert (
         response
         == NextMessage(
-            id="sub1", payload={"data": {"listener": "Hello there!"}}
+            id="sub1",
+            payload={"data": {"listener": "Hello there!"}},
         ).as_dict()
     )
 
@@ -98,7 +99,7 @@ async def test_channel_listen_timeout(ws: WebsocketCommunicator):
             payload=SubscribeMessagePayload(
                 query="subscription { listener(timeout: 0.5) }",
             ),
-        ).as_dict()
+        ).as_dict(),
     )
 
     channel_layer = get_channel_layer()
@@ -124,7 +125,7 @@ async def test_channel_listen_no_message_on_channel(ws: WebsocketCommunicator):
             payload=SubscribeMessagePayload(
                 query="subscription { listener(timeout: 0.5) }",
             ),
-        ).as_dict()
+        ).as_dict(),
     )
 
     channel_layer = get_channel_layer()
@@ -158,7 +159,7 @@ async def test_channel_listen_group(ws: WebsocketCommunicator):
             payload=SubscribeMessagePayload(
                 query='subscription { listener(group: "foobar") }',
             ),
-        ).as_dict()
+        ).as_dict(),
     )
 
     channel_layer = get_channel_layer()
@@ -179,7 +180,8 @@ async def test_channel_listen_group(ws: WebsocketCommunicator):
     assert (
         response
         == NextMessage(
-            id="sub1", payload={"data": {"listener": "Hello there!"}}
+            id="sub1",
+            payload={"data": {"listener": "Hello there!"}},
         ).as_dict()
     )
 
@@ -195,7 +197,8 @@ async def test_channel_listen_group(ws: WebsocketCommunicator):
     assert (
         response
         == NextMessage(
-            id="sub1", payload={"data": {"listener": "Hello there!"}}
+            id="sub1",
+            payload={"data": {"listener": "Hello there!"}},
         ).as_dict()
     )
 

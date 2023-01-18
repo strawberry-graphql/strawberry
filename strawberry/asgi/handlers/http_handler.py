@@ -113,7 +113,9 @@ class HTTPHandler:
 
                 try:
                     data = replace_placeholders_with_files(
-                        operations, files_map, multipart_data
+                        operations,
+                        files_map,
+                        multipart_data,
                     )
                 except KeyError:
                     return PlainTextResponse(

@@ -52,7 +52,10 @@ def create_app(schema=schema, **kwargs):
     app = FastAPI()
 
     graphql_app = GraphQLRouter(
-        schema, context_getter=get_context, root_value_getter=get_root_value, **kwargs
+        schema,
+        context_getter=get_context,
+        root_value_getter=get_root_value,
+        **kwargs,
     )
     app.include_router(graphql_app, prefix="/graphql")
 

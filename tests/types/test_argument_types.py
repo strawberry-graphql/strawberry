@@ -133,7 +133,8 @@ def test_custom_info(annotation):
 def test_custom_info_negative():
     """Test to ensure deprecation warning is emitted."""
     with pytest.warns(
-        DeprecationWarning, match=r"Argument name-based matching of 'info'"
+        DeprecationWarning,
+        match=r"Argument name-based matching of 'info'",
     ):
 
         @strawberry.field

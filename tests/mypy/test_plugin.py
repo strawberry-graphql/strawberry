@@ -7,17 +7,16 @@ from strawberry.ext.mypy_plugin import FALLBACK_VERSION, MypyVersion, plugin
 pytestmark = pytest.mark.usefixtures("maintain_version")
 
 
-@pytest.fixture
+@pytest.fixture()
 def maintain_version():
     """Clean-up side-effected version after tests"""
-
     yield
 
     del MypyVersion.VERSION
 
 
 @pytest.mark.parametrize(
-    "version, expected",
+    ("version", "expected"),
     [
         ("0.93", Decimal("0.93")),
         ("0.800", Decimal("0.800")),

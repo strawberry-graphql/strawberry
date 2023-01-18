@@ -86,7 +86,7 @@ def test_validation_cache_extension_max_size(mock_validate):
     assert mock_validate.call_count == 3
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_validation_cache_extension_async():
     @strawberry.type
     class Query:

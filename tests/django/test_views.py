@@ -68,7 +68,7 @@ class GraphQLView(BaseGraphQLView):
         return Query()
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 def test_graphql_query_model():
     Example.objects.create(name="This is a demo")
 
@@ -76,7 +76,9 @@ def test_graphql_query_model():
 
     factory = RequestFactory()
     request = factory.post(
-        "/graphql/", {"query": query}, content_type="application/json"
+        "/graphql/",
+        {"query": query},
+        content_type="application/json",
     )
 
     response = GraphQLView.as_view(schema=schema)(request)
@@ -103,7 +105,9 @@ def test_can_set_cookies():
 
     query = "{ abc }"
     request = factory.post(
-        "/graphql/", {"query": query}, content_type="application/json"
+        "/graphql/",
+        {"query": query},
+        content_type="application/json",
     )
 
     response = GraphQLView.as_view(schema=schema)(request)
@@ -129,7 +133,9 @@ def test_can_set_headers():
 
     query = "{ abc }"
     request = factory.post(
-        "/graphql/", {"query": query}, content_type="application/json"
+        "/graphql/",
+        {"query": query},
+        content_type="application/json",
     )
 
     response = GraphQLView.as_view(schema=schema)(request)
@@ -155,7 +161,9 @@ def test_can_change_status_code():
 
     query = "{ abc }"
     request = factory.post(
-        "/graphql/", {"query": query}, content_type="application/json"
+        "/graphql/",
+        {"query": query},
+        content_type="application/json",
     )
 
     response = GraphQLView.as_view(schema=schema)(request)
@@ -170,7 +178,9 @@ def test_custom_json_encoder():
 
     factory = RequestFactory()
     request = factory.post(
-        "/graphql/", {"query": query}, content_type="application/json"
+        "/graphql/",
+        {"query": query},
+        content_type="application/json",
     )
 
     class MyGraphQLView(BaseGraphQLView):
@@ -190,12 +200,14 @@ def test_json_encoder_as_class_works_with_warning():
 
     factory = RequestFactory()
     request = factory.post(
-        "/graphql/", {"query": query}, content_type="application/json"
+        "/graphql/",
+        {"query": query},
+        content_type="application/json",
     )
 
     with pytest.warns(DeprecationWarning):
         response1 = GraphQLView.as_view(schema=schema, json_encoder=CustomEncoder)(
-            request
+            request,
         )
 
         assert response1.content.decode() == "this is deprecated"
@@ -213,14 +225,16 @@ def test_json_dumps_params_deprecated_via_param():
 
     factory = RequestFactory()
     request = factory.post(
-        "/graphql/", {"query": query}, content_type="application/json"
+        "/graphql/",
+        {"query": query},
+        content_type="application/json",
     )
 
     dumps_params = {"separators": (",", ":")}
 
     with pytest.warns(DeprecationWarning):
         response1 = GraphQLView.as_view(schema=schema, json_dumps_params=dumps_params)(
-            request
+            request,
         )
         assert response1.content.decode() == '{"data":{"hello":"strawberry"}}'
 
@@ -230,7 +244,9 @@ def test_json_dumps_params_deprecated_via_property():
 
     factory = RequestFactory()
     request = factory.post(
-        "/graphql/", {"query": query}, content_type="application/json"
+        "/graphql/",
+        {"query": query},
+        content_type="application/json",
     )
 
     dumps_params = {"separators": (",", ":")}

@@ -19,6 +19,6 @@ async def aiohttp_app_client_no_get(event_loop, aiohttp_client):
     return await aiohttp_client(app)
 
 
-@pytest.fixture
+@pytest.fixture()
 def graphql_client(aiohttp_app_client):
-    yield GraphQLTestClient(aiohttp_app_client, url="/graphql")
+    return GraphQLTestClient(aiohttp_app_client, url="/graphql")

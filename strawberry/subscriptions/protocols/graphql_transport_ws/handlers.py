@@ -153,7 +153,8 @@ class BaseGraphQLTransportWSHandler(ABC):
 
         try:
             operation_type = get_operation_type(
-                graphql_document, message.payload.operationName
+                graphql_document,
+                message.payload.operationName,
             )
         except RuntimeError:
             await self.close(code=4400, reason="Can't get GraphQL operation type")
@@ -209,11 +210,13 @@ class BaseGraphQLTransportWSHandler(ABC):
         # Create task to handle this subscription, reserve the operation ID
         self.subscriptions[message.id] = result_source
         self.tasks[message.id] = asyncio.create_task(
-            self.operation_task(result_source, message.id)
+            self.operation_task(result_source, message.id),
         )
 
     async def operation_task(
-        self, result_source: AsyncGenerator, operation_id: str
+        self,
+        result_source: AsyncGenerator,
+        operation_id: str,
     ) -> None:
         """
         Operation task top level method.  Cleans up and de-registers the operation

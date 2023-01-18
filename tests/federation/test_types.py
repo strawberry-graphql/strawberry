@@ -26,7 +26,8 @@ def test_type_and_override_with_resolver():
     class Location:
         id: strawberry.ID
         address: str = strawberry.federation.field(
-            override="start", resolver=lambda: "ABC"
+            override="start",
+            resolver=lambda: "ABC",
         )
 
     location = Location(id=strawberry.ID("1"))

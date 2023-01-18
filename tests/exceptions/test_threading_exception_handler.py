@@ -21,7 +21,7 @@ def test_exception_handler(mocker):
     exception = MissingFieldAnnotationError("abc", Query)
 
     strawberry_threading_exception_handler(
-        (MissingFieldAnnotationError, exception, None, None)
+        (MissingFieldAnnotationError, exception, None, None),
     )
 
     assert print_mock.call_args == mocker.call(exception)
@@ -30,7 +30,8 @@ def test_exception_handler(mocker):
 def test_exception_handler_other_exceptions(mocker):
     print_mock = mocker.patch("rich.print", autospec=True)
     original_exception_mock = mocker.patch(
-        "strawberry.exceptions.handler.original_exception_hook", autospec=True
+        "strawberry.exceptions.handler.original_exception_hook",
+        autospec=True,
     )
 
     exception = ValueError("abc")
@@ -43,7 +44,8 @@ def test_exception_handler_other_exceptions(mocker):
 
 def test_exception_handler_uses_original_when_rich_is_not_installed(mocker):
     original_exception_mock = mocker.patch(
-        "strawberry.exceptions.handler.original_exception_hook", autospec=True
+        "strawberry.exceptions.handler.original_exception_hook",
+        autospec=True,
     )
 
     mocker.patch.dict("sys.modules", {"rich": None})
@@ -54,17 +56,20 @@ def test_exception_handler_uses_original_when_rich_is_not_installed(mocker):
     exception = MissingFieldAnnotationError("abc", Query)
 
     strawberry_threading_exception_handler(
-        (MissingFieldAnnotationError, exception, None, None)
+        (MissingFieldAnnotationError, exception, None, None),
     )
 
     assert original_exception_mock.call_args == mocker.call(
-        MissingFieldAnnotationError, exception, None
+        MissingFieldAnnotationError,
+        exception,
+        None,
     )
 
 
 def test_exception_handler_uses_original_when_libcst_is_not_installed(mocker):
     original_exception_mock = mocker.patch(
-        "strawberry.exceptions.handler.original_exception_hook", autospec=True
+        "strawberry.exceptions.handler.original_exception_hook",
+        autospec=True,
     )
 
     mocker.patch.dict("sys.modules", {"libcst": None})
@@ -75,16 +80,19 @@ def test_exception_handler_uses_original_when_libcst_is_not_installed(mocker):
     exception = MissingFieldAnnotationError("abc", Query)
 
     strawberry_threading_exception_handler(
-        (MissingFieldAnnotationError, exception, None, None)
+        (MissingFieldAnnotationError, exception, None, None),
     )
 
     assert original_exception_mock.call_args == mocker.call(
-        MissingFieldAnnotationError, exception, None
+        MissingFieldAnnotationError,
+        exception,
+        None,
     )
 
 
 @pytest.mark.skipif(
-    sys.version_info < (3, 8), reason="threading.excepthook is only available in 3.8+"
+    sys.version_info < (3, 8),
+    reason="threading.excepthook is only available in 3.8+",
 )
 def test_setup_install_handler(mocker):
     reset_exception_handler()
@@ -102,7 +110,8 @@ def test_setup_install_handler_does_add_attribute(mocker):
 
 
 @pytest.mark.skipif(
-    sys.version_info < (3, 8), reason="threading.excepthook is only available in 3.8+"
+    sys.version_info < (3, 8),
+    reason="threading.excepthook is only available in 3.8+",
 )
 def test_setup_does_not_install_handler_when_disabled_via_env(mocker):
     reset_exception_handler()

@@ -28,10 +28,11 @@ def test_generates_schema():
             name="Query",
             fields={
                 "example": GraphQLField(
-                    GraphQLNonNull(GraphQLString), resolve=lambda obj, info: "world"
-                )
+                    GraphQLNonNull(GraphQLString),
+                    resolve=lambda obj, info: "world",
+                ),
             },
-        )
+        ),
     )
 
     assert schema.as_str().strip() == graphql_core_print_schema(target_schema).strip()
@@ -71,7 +72,8 @@ def test_custom_execution_context():
             errors: List[GraphQLError],
         ) -> ExecutionResult:
             result = super(
-                CustomExecutionContext, CustomExecutionContext
+                CustomExecutionContext,
+                CustomExecutionContext,
             ).build_response(data, errors)
 
             if not result.data:
@@ -81,7 +83,7 @@ def test_custom_execution_context():
             result.data.update(
                 {
                     "extra": "data",
-                }
+                },
             )
             return result
 
@@ -90,7 +92,8 @@ def test_custom_execution_context():
         hello: str = "World"
 
     schema = strawberry.Schema(
-        query=Query, execution_context_class=CustomExecutionContext
+        query=Query,
+        execution_context_class=CustomExecutionContext,
     )
 
     result = schema.execute_sync("{ hello }", root_value=Query())

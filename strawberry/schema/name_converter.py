@@ -55,7 +55,8 @@ class NameConverter:
     def from_object(self, object_type: TypeDefinition) -> str:
         if object_type.concrete_of:
             return self.from_generic(
-                object_type, list(object_type.type_var_map.values())
+                object_type,
+                list(object_type.type_var_map.values()),
             )
 
         return object_type.name
@@ -70,7 +71,8 @@ class NameConverter:
         return enum.name
 
     def from_directive(
-        self, directive: Union[StrawberryDirective, StrawberrySchemaDirective]
+        self,
+        directive: Union[StrawberryDirective, StrawberrySchemaDirective],
     ) -> str:
         name = self.get_graphql_name(directive)
 
@@ -102,7 +104,9 @@ class NameConverter:
         return name
 
     def from_generic(
-        self, generic_type: TypeDefinition, types: List[Union[StrawberryType, type]]
+        self,
+        generic_type: TypeDefinition,
+        types: List[Union[StrawberryType, type]],
     ) -> str:
         generic_type_name = generic_type.name
 

@@ -26,7 +26,7 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
 
     async def get_context(self) -> Any:
         return await self._get_context(
-            request=self._ws, connection_params=self.connection_params
+            request=self._ws, connection_params=self.connection_params,
         )
 
     async def get_root_value(self) -> Any:
@@ -43,7 +43,7 @@ class GraphQLTransportWSHandler(BaseGraphQLTransportWSHandler):
                 "type": "websocket.close",
                 "code": code,
                 "reason": reason or "",
-            }
+            },
         )
 
     async def handle_request(self) -> Any:

@@ -255,5 +255,5 @@ def test_mutation_deprecation_reason():
 
         type Query {
           hello: String!
-        }"""
+        }""",
     )

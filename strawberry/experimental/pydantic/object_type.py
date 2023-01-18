@@ -136,7 +136,7 @@ def type(
         # these are the fields that matched a field name in the pydantic model
         # and should copy their alias from the pydantic model
         fields_set = original_fields_set.union(
-            {name for name, _ in existing_fields.items() if name in model_fields}
+            {name for name, _ in existing_fields.items() if name in model_fields},
         )
         # these are the fields that were marked with strawberry.auto and
         # should copy their type from the pydantic model
@@ -145,7 +145,7 @@ def type(
                 name
                 for name, type_ in existing_fields.items()
                 if isinstance(type_, StrawberryAuto)
-            }
+            },
         )
 
         if all_fields:
@@ -162,7 +162,9 @@ def type(
             raise MissingFieldsListError(cls)
 
         ensure_all_auto_fields_in_pydantic(
-            model=model, auto_fields=auto_fields_set, cls_name=cls.__name__
+            model=model,
+            auto_fields=auto_fields_set,
+            cls_name=cls.__name__,
         )
 
         wrapped = _wrap_dataclass(cls)
@@ -174,7 +176,11 @@ def type(
 
         all_model_fields: List[DataclassCreationFields] = [
             _build_dataclass_creation_fields(
-                field, is_input, extra_fields_dict, auto_fields_set, use_pydantic_alias
+                field,
+                is_input,
+                extra_fields_dict,
+                auto_fields_set,
+                use_pydantic_alias,
             )
             for field_name, field in model_fields.items()
             if field_name in fields_set
@@ -203,10 +209,12 @@ def type(
         # inherited. To tell the difference, we compare the class name to the
         # fully qualified name of the method, which will end in <class>.from_pydantic
         has_custom_from_pydantic = hasattr(
-            cls, "from_pydantic"
+            cls,
+            "from_pydantic",
         ) and cls.from_pydantic.__qualname__.endswith(f"{cls.__name__}.from_pydantic")
         has_custom_to_pydantic = hasattr(
-            cls, "to_pydantic"
+            cls,
+            "to_pydantic",
         ) and cls.to_pydantic.__qualname__.endswith(f"{cls.__name__}.to_pydantic")
 
         if has_custom_from_pydantic:
@@ -253,16 +261,19 @@ def type(
         cls._pydantic_type = model
 
         def from_pydantic_default(
-            instance: PydanticModel, extra: Optional[Dict[str, Any]] = None
+            instance: PydanticModel,
+            extra: Optional[Dict[str, Any]] = None,
         ) -> StrawberryTypeFromPydantic[PydanticModel]:
             return convert_pydantic_model_to_strawberry_class(
-                cls=cls, model_instance=instance, extra=extra
+                cls=cls,
+                model_instance=instance,
+                extra=extra,
             )
 
         def to_pydantic_default(self, **kwargs) -> PydanticModel:
             instance_kwargs = {
                 f.name: convert_strawberry_class_to_pydantic_model(
-                    getattr(self, f.name)
+                    getattr(self, f.name),
                 )
                 for f in dataclasses.fields(self)
             }

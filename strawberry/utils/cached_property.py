@@ -23,7 +23,9 @@ if TYPE_CHECKING:
 
         @overload  # type: ignore[no-overload-impl]
         def __get__(
-            self, instance: None, owner: Optional[Type[Any]] = ...
+            self,
+            instance: None,
+            owner: Optional[Type[Any]] = ...,
         ) -> cached_property[_T]:
             ...
 

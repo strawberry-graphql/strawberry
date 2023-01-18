@@ -86,7 +86,7 @@ def test_parser_cache_extension_max_size(mock_parse):
     assert mock_parse.call_count == 3
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_parser_cache_extension_async():
     @strawberry.type
     class Query:

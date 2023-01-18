@@ -11,8 +11,11 @@ class BasePermission:
     message: Optional[str] = None
 
     def has_permission(
-        self, source: Any, info: Info, **kwargs
+        self,
+        source: Any,
+        info: Info,
+        **kwargs,
     ) -> Union[bool, Awaitable[bool]]:
         raise NotImplementedError(
-            "Permission classes should override has_permission method"
+            "Permission classes should override has_permission method",
         )

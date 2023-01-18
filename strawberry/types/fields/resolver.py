@@ -57,7 +57,9 @@ class Signature(inspect.Signature):
 
 class ReservedParameterSpecification(Protocol):
     def find(
-        self, parameters: Tuple[inspect.Parameter, ...], resolver: StrawberryResolver
+        self,
+        parameters: Tuple[inspect.Parameter, ...],
+        resolver: StrawberryResolver,
     ) -> Optional[inspect.Parameter]:
         """Finds the reserved parameter from ``parameters``."""
 
@@ -66,7 +68,9 @@ class ReservedName(NamedTuple):
     name: str
 
     def find(
-        self, parameters: Tuple[inspect.Parameter, ...], _: StrawberryResolver
+        self,
+        parameters: Tuple[inspect.Parameter, ...],
+        _: StrawberryResolver,
     ) -> Optional[inspect.Parameter]:
         return next((p for p in parameters if p.name == self.name), None)
 
@@ -75,7 +79,9 @@ class ReservedNameBoundParameter(NamedTuple):
     name: str
 
     def find(
-        self, parameters: Tuple[inspect.Parameter, ...], _: StrawberryResolver
+        self,
+        parameters: Tuple[inspect.Parameter, ...],
+        _: StrawberryResolver,
     ) -> Optional[inspect.Parameter]:
         if parameters:  # Add compatibility for resolvers with no arguments
             first_parameter = parameters[0]
@@ -95,7 +101,9 @@ class ReservedType(NamedTuple):
     type: Type
 
     def find(
-        self, parameters: Tuple[inspect.Parameter, ...], resolver: StrawberryResolver
+        self,
+        parameters: Tuple[inspect.Parameter, ...],
+        resolver: StrawberryResolver,
     ) -> Optional[inspect.Parameter]:
         for parameter in parameters:
             annotation = parameter.annotation
@@ -121,7 +129,7 @@ class ReservedType(NamedTuple):
                 f"Argument name-based matching of '{self.name}' is deprecated and will "
                 "be removed in v1.0. Ensure that reserved arguments are annotated "
                 "their respective types (i.e. use value: 'DirectiveValue[str]' instead "
-                "of 'value: str' and 'info: Info' instead of a plain 'info')."
+                "of 'value: str' and 'info: Info' instead of a plain 'info').",
             )
             warnings.warn(warning)
             return reserved_name
@@ -216,7 +224,8 @@ class StrawberryResolver(Generic[T]):
                     python_name=param.name,
                     graphql_name=None,
                     type_annotation=StrawberryAnnotation(
-                        annotation=annotation, namespace=self._namespace
+                        annotation=annotation,
+                        namespace=self._namespace,
                     ),
                     default=param.default,
                 )
@@ -268,7 +277,8 @@ class StrawberryResolver(Generic[T]):
             return None
         else:
             type_annotation = StrawberryAnnotation(
-                annotation=return_annotation, namespace=self._namespace
+                annotation=return_annotation,
+                namespace=self._namespace,
             )
         return type_annotation
 
@@ -283,11 +293,12 @@ class StrawberryResolver(Generic[T]):
     @cached_property
     def is_async(self) -> bool:
         return iscoroutinefunction(self._unbound_wrapped_func) or isasyncgenfunction(
-            self._unbound_wrapped_func
+            self._unbound_wrapped_func,
         )
 
     def copy_with(
-        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, builtins.type]]
+        self,
+        type_var_map: Mapping[TypeVar, Union[StrawberryType, builtins.type]],
     ) -> StrawberryResolver:
         type_override = None
 

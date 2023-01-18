@@ -151,7 +151,7 @@ def test_info_field_fragments():
                                 },
                             },
                             selections=[],
-                        )
+                        ),
                     ],
                 ),
                 FragmentSpread(
@@ -164,11 +164,11 @@ def test_info_field_fragments():
                             directives={},
                             arguments={},
                             selections=[],
-                        )
+                        ),
                     ],
                 ),
             ],
-        )
+        ),
     ]
 
 
@@ -184,7 +184,10 @@ def test_info_arguments():
     class Query:
         @strawberry.field
         def test_arg(
-            self, info: Info[str, str], input: TestInput, another_arg: bool = True
+            self,
+            info: Info[str, str],
+            input: TestInput,
+            another_arg: bool = True,
         ) -> str:
             nonlocal selected_fields
             selected_fields = info.selected_fields
@@ -209,7 +212,7 @@ def test_info_arguments():
                 },
             },
             selections=[],
-        )
+        ),
     ]
 
     query = """query TestQuery($input: TestInput!) {
@@ -237,7 +240,7 @@ def test_info_arguments():
                 },
             },
             selections=[],
-        )
+        ),
     ]
 
 
@@ -252,7 +255,9 @@ def test_info_selected_fields_undefined_variable():
     class Query:
         @strawberry.field
         def hello(
-            self, info: Info[str, str], optional_input: Optional[str] = "hi"
+            self,
+            info: Info[str, str],
+            optional_input: Optional[str] = "hi",
         ) -> Result:
             nonlocal selected_fields
             selected_fields = info.selected_fields
@@ -284,14 +289,14 @@ def test_info_selected_fields_undefined_variable():
                     arguments={},
                     directives={},
                     selections=[],
-                )
+                ),
             ],
-        )
+        ),
     ]
 
 
 @pytest.mark.parametrize(
-    "return_type,return_value",
+    ("return_type", "return_value"),
     [
         (str, "text"),
         (List[str], ["text"]),

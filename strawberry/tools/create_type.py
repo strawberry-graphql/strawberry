@@ -14,7 +14,6 @@ def create_type(name: str, fields: List[StrawberryField]) -> Type:
     >>>
     >>> Query = create_type(name="Query", fields=[hello])
     """
-
     if not fields:
         raise ValueError(f'Can\'t create type "{name}" with no fields')
 
@@ -29,7 +28,7 @@ def create_type(name: str, fields: List[StrawberryField]) -> Type:
             raise ValueError(
                 "Field doesn't have a name. Fields passed to "
                 "`create_type` must define a name by passing the "
-                "`name` argument to `strawberry.field`."
+                "`name` argument to `strawberry.field`.",
             )
 
         namespace[field.python_name] = field

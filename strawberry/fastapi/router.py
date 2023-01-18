@@ -51,8 +51,9 @@ class GraphQLRouter(APIRouter):
     @staticmethod
     def __get_context_getter(
         custom_getter: Callable[
-            ..., Union[Optional[CustomContext], Awaitable[Optional[CustomContext]]]
-        ]
+            ...,
+            Union[Optional[CustomContext], Awaitable[Optional[CustomContext]]],
+        ],
     ) -> Callable[..., Awaitable[CustomContext]]:
         async def dependency(
             custom_context: Optional[CustomContext],
@@ -89,7 +90,7 @@ class GraphQLRouter(APIRouter):
             parameters=[
                 *list(sig.parameters.values())[1:],
                 sig.parameters["custom_context"].replace(
-                    default=Depends(custom_getter)
+                    default=Depends(custom_getter),
                 ),
             ],
         )
@@ -129,7 +130,7 @@ class GraphQLRouter(APIRouter):
         self.debug = debug
         self.root_value_getter = root_value_getter or self.__get_root_value
         self.context_getter = self.__get_context_getter(
-            context_getter or (lambda: None)
+            context_getter or (lambda: None),
         )
         self.protocols = subscription_protocols
         self.connection_init_wait_timeout = connection_init_wait_timeout
@@ -209,7 +210,9 @@ class GraphQLRouter(APIRouter):
 
                 try:
                     data = replace_placeholders_with_files(
-                        operations, files_map, multipart_data
+                        operations,
+                        files_map,
+                        multipart_data,
                     )
                 except KeyError:
                     actual_response = PlainTextResponse(
@@ -321,12 +324,19 @@ class GraphQLRouter(APIRouter):
         )
 
     async def process_result(
-        self, request: Request, result: ExecutionResult
+        self,
+        request: Request,
+        result: ExecutionResult,
     ) -> GraphQLHTTPResponse:
         return process_result(result)
 
     async def execute_request(
-        self, request: Request, response: Response, data: dict, context, root_value
+        self,
+        request: Request,
+        response: Response,
+        data: dict,
+        context,
+        root_value,
     ) -> Response:
         request_data = parse_request_data(data)
 

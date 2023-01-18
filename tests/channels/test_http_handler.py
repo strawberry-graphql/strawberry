@@ -12,7 +12,7 @@ pytestmark = pytest.mark.xfail(
     reason=(
         "Some of these tests seems to crash on windows "
         "due to usage of database_sync_to_async"
-    )
+    ),
 )
 
 
@@ -34,7 +34,9 @@ def generate_get_path(path, query: str, variables: Optional[Dict[str, Any]] = No
 
 
 def assert_response(
-    response: Dict[str, Any], expected: Any, errors: Optional[Any] = None
+    response: Dict[str, Any],
+    expected: Any,
+    errors: Optional[Any] = None,
 ):
     assert response["status"] == 200
     body = json.loads(response["body"])
@@ -176,7 +178,7 @@ async def test_graphql_post_query_fails_using_params(consumer):
 # @pytest.mark.django_db. Probably because of the `database_sync_to_async`?
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 @pytest.mark.parametrize("consumer", [GraphQLHTTPConsumer, SyncGraphQLHTTPConsumer])
 async def test_graphql_query(consumer):
     client = HttpCommunicator(
@@ -191,7 +193,7 @@ async def test_graphql_query(consumer):
     )
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 @pytest.mark.parametrize("consumer", [GraphQLHTTPConsumer, SyncGraphQLHTTPConsumer])
 async def test_graphql_can_pass_variables(consumer):
     client = HttpCommunicator(
@@ -209,7 +211,7 @@ async def test_graphql_can_pass_variables(consumer):
     )
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 @pytest.mark.parametrize("consumer", [GraphQLHTTPConsumer, SyncGraphQLHTTPConsumer])
 async def test_graphql_get_query_using_params(consumer):
     client = HttpCommunicator(
@@ -223,7 +225,7 @@ async def test_graphql_get_query_using_params(consumer):
     )
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 @pytest.mark.parametrize("consumer", [GraphQLHTTPConsumer, SyncGraphQLHTTPConsumer])
 async def test_graphql_can_pass_variables_using_params(consumer):
     client = HttpCommunicator(
@@ -241,7 +243,7 @@ async def test_graphql_can_pass_variables_using_params(consumer):
     )
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 @pytest.mark.parametrize("consumer", [GraphQLHTTPConsumer, SyncGraphQLHTTPConsumer])
 async def test_returns_errors_and_data(consumer):
     client = HttpCommunicator(
@@ -259,12 +261,12 @@ async def test_returns_errors_and_data(consumer):
                 "locations": [{"column": 10, "line": 1}],
                 "message": "You are not authorized",
                 "path": ["alwaysFail"],
-            }
+            },
         ],
     }
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 @pytest.mark.parametrize("consumer", [GraphQLHTTPConsumer, SyncGraphQLHTTPConsumer])
 async def test_graphql_get_does_not_allow_mutation(consumer):
     client = HttpCommunicator(
@@ -280,7 +282,7 @@ async def test_graphql_get_does_not_allow_mutation(consumer):
     }
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 @pytest.mark.parametrize("consumer", [GraphQLHTTPConsumer, SyncGraphQLHTTPConsumer])
 async def test_graphql_get_not_allowed(consumer):
     client = HttpCommunicator(

@@ -7,7 +7,7 @@ from starlette.websockets import WebSocket
 
 CustomContext = Union["BaseContext", Dict[str, Any]]
 MergedContext = Union[
-    "BaseContext", Dict[str, Union[Any, BackgroundTasks, Request, Response, WebSocket]]
+    "BaseContext", Dict[str, Union[Any, BackgroundTasks, Request, Response, WebSocket]],
 ]
 
 

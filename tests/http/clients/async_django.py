@@ -26,7 +26,9 @@ class AsyncGraphQLView(BaseAsyncGraphQLView):
         return get_context(context)
 
     async def process_result(
-        self, request: HttpRequest, result: ExecutionResult
+        self,
+        request: HttpRequest,
+        result: ExecutionResult,
     ) -> GraphQLHTTPResponse:
         if self.result_override:
             return self.result_override(result)

@@ -140,7 +140,8 @@ def test_error_with_empty_type_list():
 
 
 @pytest.mark.raises_strawberry_exception(
-    InvalidUnionTypeError, match="Type `int` cannot be used in a GraphQL Union"
+    InvalidUnionTypeError,
+    match="Type `int` cannot be used in a GraphQL Union",
 )
 def test_error_with_scalar_types():
     strawberry.union(
@@ -155,7 +156,8 @@ def test_error_with_scalar_types():
 
 
 @pytest.mark.raises_strawberry_exception(
-    InvalidUnionTypeError, match="Type `CustomScalar` cannot be used in a GraphQL Union"
+    InvalidUnionTypeError,
+    match="Type `CustomScalar` cannot be used in a GraphQL Union",
 )
 def test_error_with_custom_scalar_types():
     CustomScalar = strawberry.scalar(
@@ -168,7 +170,8 @@ def test_error_with_custom_scalar_types():
 
 
 @pytest.mark.raises_strawberry_exception(
-    InvalidUnionTypeError, match="Type `A` cannot be used in a GraphQL Union"
+    InvalidUnionTypeError,
+    match="Type `A` cannot be used in a GraphQL Union",
 )
 def test_error_with_non_strawberry_type():
     @dataclass

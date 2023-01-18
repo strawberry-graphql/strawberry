@@ -51,7 +51,9 @@ async def test_async_graphql_query():
 
     factory = RequestFactory()
     request = factory.post(
-        "/graphql/", {"query": query}, content_type="application/json"
+        "/graphql/",
+        {"query": query},
+        content_type="application/json",
     )
 
     response = await AsyncGraphQLView.as_view(schema=schema)(request)
@@ -93,11 +95,12 @@ async def test_async_graphql_post_query_fails_using_params():
     request = factory.post(
         "/graphql",
         **{"QUERY_STRING": urlencode(params, doseq=True)},
-        content_type="application/x-www-form-urlencoded"
+        content_type="application/x-www-form-urlencoded",
     )
 
     with pytest.raises(
-        SuspiciousOperation, match="No GraphQL query found in the request"
+        SuspiciousOperation,
+        match="No GraphQL query found in the request",
     ):
         await AsyncGraphQLView.as_view(schema=schema)(request)
 
@@ -126,7 +129,7 @@ async def test_async_graphql_get_does_get_when_disabled():
 
     with pytest.raises(BadRequest, match="queries are not allowed when using GET"):
         await AsyncGraphQLView.as_view(schema=schema, allow_queries_via_get=False)(
-            request
+            request,
         )
 
 
@@ -149,7 +152,8 @@ async def test_fails_when_not_sending_query():
     request = factory.post("/graphql/")
 
     with pytest.raises(
-        SuspiciousOperation, match="No GraphQL query found in the request"
+        SuspiciousOperation,
+        match="No GraphQL query found in the request",
     ):
         await AsyncGraphQLView.as_view(schema=schema)(request)
 
@@ -158,19 +162,22 @@ async def test_fails_when_request_body_has_invalid_json():
     factory = RequestFactory()
 
     request = factory.post(
-        "/graphql/", "definitely-not-json-string", content_type="application/json"
+        "/graphql/",
+        "definitely-not-json-string",
+        content_type="application/json",
     )
 
     with pytest.raises(
-        SuspiciousOperation, match="Unable to parse request body as JSON"
+        SuspiciousOperation,
+        match="Unable to parse request body as JSON",
     ):
         await AsyncGraphQLView.as_view(schema=schema, graphiql=False)(request)
 
 
-@pytest.mark.django_db
+@pytest.mark.django_db()
 async def test_async_graphql_query_model():
     prepare_db = sync_to_async(
-        lambda: Example.objects.create(name="This is a demo async")
+        lambda: Example.objects.create(name="This is a demo async"),
     )
     await prepare_db()
 
@@ -178,7 +185,9 @@ async def test_async_graphql_query_model():
 
     factory = RequestFactory()
     request = factory.post(
-        "/graphql/", {"query": query}, content_type="application/json"
+        "/graphql/",
+        {"query": query},
+        content_type="application/json",
     )
 
     response = await AsyncGraphQLView.as_view(schema=schema)(request)

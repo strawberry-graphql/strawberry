@@ -39,7 +39,8 @@ class EnumDefinition(StrawberryType):
         return hash(self.name)
 
     def copy_with(
-        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
+        self,
+        type_var_map: Mapping[TypeVar, Union[StrawberryType, type]],
     ) -> Union[StrawberryType, type]:
         # enum don't support type parameters, so we can safely return self
         return self
@@ -134,7 +135,7 @@ def enum(
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
-    directives: Iterable[object] = ()
+    directives: Iterable[object] = (),
 ) -> EnumType:
     ...
 
@@ -145,7 +146,7 @@ def enum(
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
-    directives: Iterable[object] = ()
+    directives: Iterable[object] = (),
 ) -> Callable[[EnumType], EnumType]:
     ...
 
@@ -155,7 +156,7 @@ def enum(
     *,
     name: Optional[str] = None,
     description: Optional[str] = None,
-    directives: Iterable[object] = ()
+    directives: Iterable[object] = (),
 ) -> Union[EnumType, Callable[[EnumType], EnumType]]:
     """Registers the enum in the GraphQL type system.
 

@@ -26,7 +26,7 @@ def test_mask_all_errors():
             "locations": [{"column": 9, "line": 1}],
             "message": "Unexpected error.",
             "path": ["hiddenError"],
-        }
+        },
     ]
 
 
@@ -51,7 +51,8 @@ def test_mask_some_errors():
         return True
 
     schema = strawberry.Schema(
-        query=Query, extensions=[MaskErrors(should_mask_error=should_mask_error)]
+        query=Query,
+        extensions=[MaskErrors(should_mask_error=should_mask_error)],
     )
 
     query = "query { hiddenError }"
@@ -64,7 +65,7 @@ def test_mask_some_errors():
             "locations": [{"column": 9, "line": 1}],
             "message": "Unexpected error.",
             "path": ["hiddenError"],
-        }
+        },
     ]
 
     query = "query { visibleError }"
@@ -77,7 +78,7 @@ def test_mask_some_errors():
             "locations": [{"column": 9, "line": 1}],
             "message": "This error is visible",
             "path": ["visibleError"],
-        }
+        },
     ]
 
 
@@ -107,7 +108,7 @@ def test_process_errors_original_error():
             "locations": [{"column": 9, "line": 1}],
             "message": "Unexpected error.",
             "path": ["hiddenError"],
-        }
+        },
     ]
 
     assert mock_process_error.call_count == 1
@@ -135,5 +136,5 @@ def test_graphql_error_masking():
             "locations": [{"column": 9, "line": 1}],
             "message": "Unexpected error.",
             "path": ["graphqlError"],
-        }
+        },
     ]

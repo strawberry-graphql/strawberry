@@ -36,7 +36,8 @@ _re_integer_string = re.compile("^-?(?:0|[1-9][0-9]*)$")
 
 
 def ast_from_leaf_type(
-    serialized: object, type_: Optional[GraphQLInputType]
+    serialized: object,
+    type_: Optional[GraphQLInputType],
 ) -> ValueNode:
     # Others serialize based on their corresponding Python scalar types.
     if isinstance(serialized, bool):
@@ -70,11 +71,11 @@ def ast_from_leaf_type(
                     value=ast_from_leaf_type(value, None),
                 )
                 for key, value in serialized.items()
-            ]
+            ],
         )
 
     raise TypeError(
-        f"Cannot convert value to AST: {inspect(serialized)}."
+        f"Cannot convert value to AST: {inspect(serialized)}.",
     )  # pragma: no cover
 
 

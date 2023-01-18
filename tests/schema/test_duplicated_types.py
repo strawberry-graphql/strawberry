@@ -152,7 +152,7 @@ def test_allows_multiple_instance_of_same_generic():
           first: IntA!
           second: IntA!
         }
-        """
+        """,
     ).strip()
 
     assert str(schema) == expected_schema

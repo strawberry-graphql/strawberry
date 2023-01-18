@@ -13,7 +13,10 @@ def test_additional_schema_directives_printed_correctly_object():
         max_age: int
 
     @strawberry.federation.type(
-        keys=["id"], shareable=True, extend=True, directives=[CacheControl(max_age=42)]
+        keys=["id"],
+        shareable=True,
+        extend=True,
+        directives=[CacheControl(max_age=42)],
     )
     class FederatedType:
         id: strawberry.ID
@@ -35,7 +38,8 @@ def test_additional_schema_directives_printed_correctly_object():
     """
 
     schema = strawberry.Schema(
-        query=Query, config=StrawberryConfig(auto_camel_case=False)
+        query=Query,
+        config=StrawberryConfig(auto_camel_case=False),
     )
     assert schema.as_str() == textwrap.dedent(expected_type).strip()
 
@@ -77,6 +81,7 @@ def test_additional_schema_directives_printed_in_order_object():
     """
 
     schema = strawberry.Schema(
-        query=Query, config=StrawberryConfig(auto_camel_case=False)
+        query=Query,
+        config=StrawberryConfig(auto_camel_case=False),
     )
     assert schema.as_str() == textwrap.dedent(expected_type).strip()

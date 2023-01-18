@@ -61,17 +61,19 @@ def test_unsupported_ws_protocol():
 
 def test_clients_can_prefer_protocols():
     app = create_app(
-        subscription_protocols=[GRAPHQL_WS_PROTOCOL, GRAPHQL_TRANSPORT_WS_PROTOCOL]
+        subscription_protocols=[GRAPHQL_WS_PROTOCOL, GRAPHQL_TRANSPORT_WS_PROTOCOL],
     )
     test_client = TestClient(app)
 
     with test_client.websocket_connect(
-        "/graphql", [GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL]
+        "/graphql",
+        [GRAPHQL_TRANSPORT_WS_PROTOCOL, GRAPHQL_WS_PROTOCOL],
     ) as ws:
         assert ws.accepted_subprotocol == GRAPHQL_TRANSPORT_WS_PROTOCOL
 
     with test_client.websocket_connect(
-        "/graphql", [GRAPHQL_WS_PROTOCOL, GRAPHQL_TRANSPORT_WS_PROTOCOL]
+        "/graphql",
+        [GRAPHQL_WS_PROTOCOL, GRAPHQL_TRANSPORT_WS_PROTOCOL],
     ) as ws:
         assert ws.accepted_subprotocol == GRAPHQL_WS_PROTOCOL
 

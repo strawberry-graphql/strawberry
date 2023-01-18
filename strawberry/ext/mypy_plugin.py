@@ -188,7 +188,7 @@ def union_hook(ctx: DynamicClassDefContext) -> None:
     if isinstance(types, TupleExpr):
         try:
             type_ = UnionType(
-                tuple(_get_type_for_expr(x, ctx.api) for x in types.items)
+                tuple(_get_type_for_expr(x, ctx.api) for x in types.items),
             )
         except InvalidNodeTypeException:
             type_alias = TypeAlias(
@@ -213,7 +213,8 @@ def union_hook(ctx: DynamicClassDefContext) -> None:
         )
 
         ctx.api.add_symbol_table_node(
-            ctx.name, SymbolTableNode(GDEF, type_alias, plugin_generated=False)
+            ctx.name,
+            SymbolTableNode(GDEF, type_alias, plugin_generated=False),
         )
 
 
@@ -228,7 +229,7 @@ def enum_hook(ctx: DynamicClassDefContext) -> None:
 
         if isinstance(first_argument.node, Var):
             var_type = first_argument.node.type or AnyType(
-                TypeOfAny.implementation_artifact
+                TypeOfAny.implementation_artifact,
             )
 
             type_alias = TypeAlias(
@@ -239,7 +240,8 @@ def enum_hook(ctx: DynamicClassDefContext) -> None:
             )
 
             ctx.api.add_symbol_table_node(
-                ctx.name, SymbolTableNode(GDEF, type_alias, plugin_generated=False)
+                ctx.name,
+                SymbolTableNode(GDEF, type_alias, plugin_generated=False),
             )
             return
 
@@ -261,7 +263,8 @@ def enum_hook(ctx: DynamicClassDefContext) -> None:
     )
 
     ctx.api.add_symbol_table_node(
-        ctx.name, SymbolTableNode(GDEF, type_alias, plugin_generated=False)
+        ctx.name,
+        SymbolTableNode(GDEF, type_alias, plugin_generated=False),
     )
 
 
@@ -276,7 +279,7 @@ def scalar_hook(ctx: DynamicClassDefContext) -> None:
 
         if isinstance(first_argument.node, Var):
             var_type = first_argument.node.type or AnyType(
-                TypeOfAny.implementation_artifact
+                TypeOfAny.implementation_artifact,
             )
 
             type_alias = TypeAlias(
@@ -287,7 +290,8 @@ def scalar_hook(ctx: DynamicClassDefContext) -> None:
             )
 
             ctx.api.add_symbol_table_node(
-                ctx.name, SymbolTableNode(GDEF, type_alias, plugin_generated=False)
+                ctx.name,
+                SymbolTableNode(GDEF, type_alias, plugin_generated=False),
             )
             return
 
@@ -311,7 +315,8 @@ def scalar_hook(ctx: DynamicClassDefContext) -> None:
     )
 
     ctx.api.add_symbol_table_node(
-        ctx.name, SymbolTableNode(GDEF, type_alias, plugin_generated=False)
+        ctx.name,
+        SymbolTableNode(GDEF, type_alias, plugin_generated=False),
     )
 
 
@@ -353,7 +358,11 @@ def add_static_method_to_class(
         arg_kinds.append(arg.kind)
 
     signature = CallableType(
-        arg_types, arg_kinds, arg_names, return_type, function_type
+        arg_types,
+        arg_kinds,
+        arg_names,
+        return_type,
+        function_type,
     )
     if tvar_def:
         signature.variables = [tvar_def]
@@ -394,12 +403,13 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
     else:
         # Add __init__
         init_args = [
-            Argument(Var("kwargs"), AnyType(TypeOfAny.explicit), None, ARG_STAR2)
+            Argument(Var("kwargs"), AnyType(TypeOfAny.explicit), None, ARG_STAR2),
         ]
         add_method(ctx, "__init__", init_args, NoneType())
 
         model_type = cast(
-            mypy.types.Instance, _get_type_for_expr(model_expression, ctx.api)
+            mypy.types.Instance,
+            _get_type_for_expr(model_expression, ctx.api),
         )
 
         # these are the fields that the user added to the strawberry type
@@ -413,7 +423,7 @@ def strawberry_pydantic_class_callback(ctx: ClassDefContext) -> None:
 
         pydantic_fields: Set["PydanticModelField"] = set()
         try:
-            for name, data in model_type.type.metadata[PYDANTIC_METADATA_KEY][
+            for _name, data in model_type.type.metadata[PYDANTIC_METADATA_KEY][
                 "fields"
             ].items():
                 field = PydanticModelField.deserialize(ctx.cls.info, data)
@@ -489,7 +499,8 @@ def is_dataclasses_field_or_strawberry_field(expr: Expression) -> bool:
             return True
 
         if isinstance(expr.callee, MemberExpr) and isinstance(
-            expr.callee.expr, NameExpr
+            expr.callee.expr,
+            NameExpr,
         ):
             return (
                 expr.callee.name in {"field", "mutation"}
@@ -500,13 +511,13 @@ def is_dataclasses_field_or_strawberry_field(expr: Expression) -> bool:
 
 
 def _collect_field_args(
-    ctx: ClassDefContext, expr: Expression
+    ctx: ClassDefContext,
+    expr: Expression,
 ) -> Tuple[bool, Dict[str, Expression]]:
     """Returns a tuple where the first value represents whether or not
     the expression is a call to dataclass.field and the second is a
     dictionary of the keyword arguments that field() was called with.
     """
-
     if is_dataclasses_field_or_strawberry_field(expr):
         expr = cast(CallExpr, expr)
 
@@ -515,7 +526,8 @@ def _collect_field_args(
         for name, arg in zip(expr.arg_names, expr.args):
             if name is None:
                 ctx.api.fail(
-                    '"field()" or "mutation()" only takes keyword arguments', expr
+                    '"field()" or "mutation()" only takes keyword arguments',
+                    expr,
                 )
                 return False, {}
 
@@ -587,7 +599,10 @@ class CustomDataclassTransformer:
             # Type variable for self types in generated methods.
             obj_type = ctx.api.named_type("__builtins__.object")
             self_tvar_expr = TypeVarExpr(
-                SELF_TVAR_NAME, info.fullname + "." + SELF_TVAR_NAME, [], obj_type
+                SELF_TVAR_NAME,
+                info.fullname + "." + SELF_TVAR_NAME,
+                [],
+                obj_type,
             )
             info.names[SELF_TVAR_NAME] = SymbolTableNode(MDEF, self_tvar_expr)
 
@@ -617,8 +632,11 @@ class CustomDataclassTransformer:
                 order_return_type = ctx.api.named_type("__builtins__.bool")
                 order_args = [
                     Argument(
-                        Var("other", order_other_type), order_other_type, None, ARG_POS
-                    )
+                        Var("other", order_other_type),
+                        order_other_type,
+                        None,
+                        ARG_POS,
+                    ),
                 ]
 
                 existing_method = info.get(method_name)
@@ -652,7 +670,9 @@ class CustomDataclassTransformer:
         }
 
     def reset_init_only_vars(
-        self, info: TypeInfo, attributes: List[DataclassAttribute]
+        self,
+        info: TypeInfo,
+        attributes: List[DataclassAttribute],
     ) -> None:
         """Remove init-only vars from the class and reset init var declarations."""
         for attr in attributes:
@@ -678,7 +698,6 @@ class CustomDataclassTransformer:
             b: SomeOtherType = ...
         are collected.
         """
-
         # First, collect attributes belonging to the current class.
         ctx = self._ctx
         cls = self._ctx.cls
@@ -850,7 +869,8 @@ def custom_dataclass_class_maker_callback(ctx: ClassDefContext) -> None:
 
 class StrawberryPlugin(Plugin):
     def get_dynamic_class_hook(
-        self, fullname: str
+        self,
+        fullname: str,
     ) -> Optional[Callable[[DynamicClassDefContext], None]]:
         # TODO: investigate why we need this instead of `strawberry.union.union` on CI
         # we have the same issue in the other hooks
@@ -869,7 +889,8 @@ class StrawberryPlugin(Plugin):
         return None
 
     def get_function_hook(
-        self, fullname: str
+        self,
+        fullname: str,
     ) -> Optional[Callable[[FunctionContext], Type]]:
         if self._is_strawberry_field(fullname):
             return strawberry_field_hook
@@ -883,7 +904,8 @@ class StrawberryPlugin(Plugin):
         return None
 
     def get_class_decorator_hook(
-        self, fullname: str
+        self,
+        fullname: str,
     ) -> Optional[Callable[[ClassDefContext], None]]:
         if self._is_strawberry_decorator(fullname):
             return custom_dataclass_class_maker_callback
@@ -895,7 +917,7 @@ class StrawberryPlugin(Plugin):
 
     def _is_strawberry_union(self, fullname: str) -> bool:
         return fullname == "strawberry.union.union" or fullname.endswith(
-            "strawberry.union"
+            "strawberry.union",
         )
 
     def _is_strawberry_field(self, fullname: str) -> bool:
@@ -917,12 +939,12 @@ class StrawberryPlugin(Plugin):
 
     def _is_strawberry_enum(self, fullname: str) -> bool:
         return fullname == "strawberry.enum.enum" or fullname.endswith(
-            "strawberry.enum"
+            "strawberry.enum",
         )
 
     def _is_strawberry_scalar(self, fullname: str) -> bool:
         return fullname == "strawberry.custom_scalar.scalar" or fullname.endswith(
-            "strawberry.scalar"
+            "strawberry.scalar",
         )
 
     def _is_strawberry_lazy_type(self, fullname: str) -> bool:
@@ -1005,7 +1027,7 @@ def plugin(version: str):
     else:
         MypyVersion.VERSION = FALLBACK_VERSION
         warnings.warn(
-            f"Mypy version {version} could not be parsed. Reverting to v0.800"
+            f"Mypy version {version} could not be parsed. Reverting to v0.800",
         )
 
     return StrawberryPlugin

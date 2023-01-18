@@ -196,7 +196,7 @@ class DataLoader(Generic[K, T]):
         if self.batch is not None and not self.batch.dispatched:
             batch_updated = False
             for task in self.batch.tasks:
-                if task.key in data.keys():
+                if task.key in data:
                     batch_updated = True
                     task.future.set_result(data[task.key])
             if batch_updated:
@@ -249,7 +249,8 @@ async def dispatch_batch(loader: DataLoader, batch: Batch) -> None:
 
         if len(values) != len(batch):
             raise WrongNumberOfResultsReturned(
-                expected=len(batch), received=len(values)
+                expected=len(batch),
+                received=len(values),
             )
 
         for task, value in zip(batch.tasks, values):

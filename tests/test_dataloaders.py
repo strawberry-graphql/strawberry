@@ -429,7 +429,7 @@ async def test_cache_override():
     assert list(custom_cache.cache.keys()) == [3]
 
     data = await loader.load(3)
-    assert 3 == data
+    assert data == 3
 
     loader.prime(3, 4)
     assert await custom_cache.cache[3] == 3

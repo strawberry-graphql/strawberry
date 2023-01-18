@@ -170,7 +170,7 @@ def test_fields_with_defaults_inheritance():
                 "text": "more text",
                 "attachments": None,
                 "delay": None,
-            }
+            },
         ],
     }
 

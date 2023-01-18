@@ -80,7 +80,10 @@ class FlaskHttpClient(HttpClient):
         **kwargs,
     ) -> Response:
         body = self._build_body(
-            query=query, variables=variables, files=files, method=method
+            query=query,
+            variables=variables,
+            files=files,
+            method=method,
         )
 
         data: Union[Dict[str, object], str, None] = None
@@ -127,7 +130,12 @@ class FlaskHttpClient(HttpClient):
         loop = asyncio.get_running_loop()
         ctx = contextvars.copy_context()
         func_call = functools.partial(
-            ctx.run, self._do_request, url=url, method=method, headers=headers, **kwargs
+            ctx.run,
+            self._do_request,
+            url=url,
+            method=method,
+            headers=headers,
+            **kwargs,
         )
         return await loop.run_in_executor(None, func_call)  # type: ignore
 

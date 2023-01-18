@@ -63,7 +63,8 @@ class BaseSchema(Protocol):
 
     @abstractmethod
     def get_type_by_name(
-        self, name: str
+        self,
+        name: str,
     ) -> Optional[
         Union[TypeDefinition, ScalarDefinition, EnumDefinition, StrawberryUnion]
     ]:

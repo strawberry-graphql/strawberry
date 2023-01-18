@@ -84,7 +84,9 @@ class Mutation:
 class Subscription:
     @strawberry.subscription
     async def echo(
-        self, message: str, delay: float = 0
+        self,
+        message: str,
+        delay: float = 0,
     ) -> typing.AsyncGenerator[str, None]:
         await asyncio.sleep(delay)
         yield message
@@ -114,7 +116,7 @@ class Subscription:
         raise ValueError(message)
 
         # Without this yield, the method is not recognised as an async generator
-        yield "Hi"  # noqa
+        yield "Hi"
 
     @strawberry.subscription
     async def flavors(self) -> typing.AsyncGenerator[Flavor, None]:

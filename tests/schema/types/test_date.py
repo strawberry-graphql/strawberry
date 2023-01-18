@@ -102,7 +102,6 @@ def test_serialization_of_incorrect_date_string(value):
     Test GraphQLError is raised for incorrect date.
     The error should exclude "original_error".
     """
-
     result = execute_mutation(value)
     assert result.errors
     assert isinstance(result.errors[0], GraphQLError)
@@ -114,7 +113,6 @@ def test_serialization_error_message_for_incorrect_date_string():
     Test if error message is using original error message from
     date lib, and is properly formatted
     """
-
     result = execute_mutation("2021-13-01")
     assert result.errors
     assert result.errors[0].message == (

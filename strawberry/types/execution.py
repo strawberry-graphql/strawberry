@@ -22,7 +22,7 @@ class ExecutionContext:
     variables: Optional[Dict[str, Any]] = None
     root_value: Optional[Any] = None
     validation_rules: Tuple[Type[ASTValidationRule], ...] = dataclasses.field(
-        default_factory=lambda: tuple(specified_rules)
+        default_factory=lambda: tuple(specified_rules),
     )
 
     # The operation name that is provided by the request

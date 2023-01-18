@@ -143,7 +143,12 @@ def test_input_types():
         was: int = strawberry.field(name="having")
 
     args = {
-        "input": {"abc": "example", "sayHelloTo": "Patrick", "having": 10, "fun": "yes"}
+        "input": {
+            "abc": "example",
+            "sayHelloTo": "Patrick",
+            "having": 10,
+            "fun": "yes",
+        },
     }
 
     arguments = [
@@ -262,7 +267,7 @@ def test_nested_input_types():
                 "changeType": ChangeType.MAJOR,
                 "changelog": "example",
             },
-        }
+        },
     }
 
     arguments = [
@@ -283,7 +288,7 @@ def test_nested_input_types():
             pr_number=12,
             status=ReleaseFileStatus.OK,
             release_info=ReleaseInfo(change_type=ChangeType.MAJOR, changelog="example"),
-        )
+        ),
     }
 
     args = {
@@ -291,7 +296,7 @@ def test_nested_input_types():
             "prNumber": 12,
             "status": ReleaseFileStatus.OK,
             "releaseInfo": None,
-        }
+        },
     }
 
     arguments = [
@@ -309,8 +314,10 @@ def test_nested_input_types():
         config=StrawberryConfig(),
     ) == {
         "input": AddReleaseFileCommentInput(
-            pr_number=12, status=ReleaseFileStatus.OK, release_info=None
-        )
+            pr_number=12,
+            status=ReleaseFileStatus.OK,
+            release_info=None,
+        ),
     }
 
 
@@ -405,7 +412,7 @@ def test_when_optional():
             graphql_name=None,
             python_name="input",
             type_annotation=StrawberryAnnotation(Optional[Input]),
-        )
+        ),
     ]
 
     assert (
@@ -430,7 +437,7 @@ def test_fails_when_passing_non_strawberry_classes():
     args = {
         "input": {
             "numbers": [1, 2],
-        }
+        },
     }
 
     arguments = [
@@ -438,7 +445,7 @@ def test_fails_when_passing_non_strawberry_classes():
             graphql_name=None,
             python_name="input",
             type_annotation=StrawberryAnnotation(Optional[Input]),
-        )
+        ),
     ]
 
     assert (

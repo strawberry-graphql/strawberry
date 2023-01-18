@@ -55,7 +55,7 @@ def test_supports_default_directives():
     assert result.data["person"] == {"name": "Jess", "points": 2000}
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_supports_default_directives_async():
     @strawberry.type
     class Person:
@@ -101,7 +101,8 @@ def test_can_declare_directives():
         cake: str = "made_in_switzerland"
 
     @strawberry.directive(
-        locations=[DirectiveLocation.FIELD], description="Make string uppercase"
+        locations=[DirectiveLocation.FIELD],
+        description="Make string uppercase",
     )
     def uppercase(value: str, example: str):
         return value.upper()
@@ -168,7 +169,8 @@ def test_runs_directives():
             return Person()
 
     @strawberry.directive(
-        locations=[DirectiveLocation.FIELD], description="Make string uppercase"
+        locations=[DirectiveLocation.FIELD],
+        description="Make string uppercase",
     )
     def turn_uppercase(value: str):
         return value.upper()
@@ -211,7 +213,8 @@ def test_runs_directives_camel_case_off():
             return Person()
 
     @strawberry.directive(
-        locations=[DirectiveLocation.FIELD], description="Make string uppercase"
+        locations=[DirectiveLocation.FIELD],
+        description="Make string uppercase",
     )
     def turn_uppercase(value: str):
         return value.upper()
@@ -246,7 +249,7 @@ def test_runs_directives_camel_case_off():
     assert result.data["johnDoe"].get("name") is None
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_runs_directives_async():
     @strawberry.type
     class Person:
@@ -259,7 +262,8 @@ async def test_runs_directives_async():
             return Person()
 
     @strawberry.directive(
-        locations=[DirectiveLocation.FIELD], description="Make string uppercase"
+        locations=[DirectiveLocation.FIELD],
+        description="Make string uppercase",
     )
     async def uppercase(value: str):
         return value.upper()
@@ -279,7 +283,7 @@ async def test_runs_directives_async():
     assert result.data["person"]["name"] == "JESS"
 
 
-@pytest.mark.xfail
+@pytest.mark.xfail()
 def test_runs_directives_with_list_params():
     @strawberry.type
     class Person:
@@ -324,7 +328,8 @@ def test_runs_directives_with_extensions():
             return Person()
 
     @strawberry.directive(
-        locations=[DirectiveLocation.FIELD], description="Make string uppercase"
+        locations=[DirectiveLocation.FIELD],
+        description="Make string uppercase",
     )
     def uppercase(value: str):
         return value.upper()
@@ -334,7 +339,9 @@ def test_runs_directives_with_extensions():
             return _next(root, info, *args, **kwargs)
 
     schema = strawberry.Schema(
-        query=Query, directives=[uppercase], extensions=[ExampleExtension]
+        query=Query,
+        directives=[uppercase],
+        extensions=[ExampleExtension],
     )
 
     query = """query {
@@ -350,7 +357,7 @@ def test_runs_directives_with_extensions():
     assert result.data["person"]["name"] == "JESS"
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_runs_directives_with_extensions_async():
     @strawberry.type
     class Person:
@@ -363,7 +370,8 @@ async def test_runs_directives_with_extensions_async():
             return Person()
 
     @strawberry.directive(
-        locations=[DirectiveLocation.FIELD], description="Make string uppercase"
+        locations=[DirectiveLocation.FIELD],
+        description="Make string uppercase",
     )
     def uppercase(value: str):
         return value.upper()
@@ -373,7 +381,9 @@ async def test_runs_directives_with_extensions_async():
             return await await_maybe(_next(root, info, *args, **kwargs))
 
     schema = strawberry.Schema(
-        query=Query, directives=[uppercase], extensions=[ExampleExtension]
+        query=Query,
+        directives=[uppercase],
+        extensions=[ExampleExtension],
     )
 
     query = """query {
@@ -389,7 +399,7 @@ async def test_runs_directives_with_extensions_async():
     assert result.data["person"]["name"] == "JESS"
 
 
-@pytest.fixture
+@pytest.fixture()
 def info_directive_schema() -> strawberry.Schema:
     """Returns a schema with directive that validates if info is recieved."""
 
@@ -448,16 +458,18 @@ def test_info_directive_schema(info_directive_schema: strawberry.Schema):
 def test_info_directive(info_directive_schema: strawberry.Schema):
     query = "query { greetingTemplate @interpolate }"
     result = info_directive_schema.execute_sync(
-        query, context_value={"userdata": {"username": "Foo"}}
+        query,
+        context_value={"userdata": {"username": "Foo"}},
     )
     assert result.data == {"greetingTemplate": "Hello Foo"}
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_info_directive_async(info_directive_schema: strawberry.Schema):
     query = "query { greetingTemplate @interpolate }"
     result = await info_directive_schema.execute(
-        query, context_value={"userdata": {"username": "Foo"}}
+        query,
+        context_value={"userdata": {"username": "Foo"}},
     )
     assert result.data == {"greetingTemplate": "Hello Foo"}
 
@@ -494,7 +506,7 @@ def test_directive_value():
                 flavor
             }
         }
-        """
+        """,
     )
     assert result.data == {"cake": {"frosting": "Vanilla", "flavor": "Chocolate"}}
 
@@ -534,7 +546,7 @@ def test_directive_value_forward_ref():
                 flavor
             }
         }
-        """
+        """,
     )
     assert result.data == {"cake": {"frosting": "Vanilla", "flavor": "Chocolate"}}
 
@@ -575,9 +587,11 @@ def test_named_based_directive_value_is_deprecated():
 
 
 @pytest.mark.xfail(
-    reason="List arguments are not yet supported", raises=AttributeError, strict=True
+    reason="List arguments are not yet supported",
+    raises=AttributeError,
+    strict=True,
 )
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_directive_list_argument():
     @strawberry.type
     class Query:
@@ -593,7 +607,7 @@ async def test_directive_list_argument():
     schema = strawberry.Schema(query=Query, directives=[append_names])
 
     result = await schema.execute(
-        'query { greeting @appendNames(names: ["foo", "bar"])}'
+        'query { greeting @appendNames(names: ["foo", "bar"])}',
     )
 
     assert result.errors
@@ -610,7 +624,8 @@ def test_directives_with_custom_types():
         cake: str = "made_in_switzerland"
 
     @strawberry.directive(
-        locations=[DirectiveLocation.FIELD], description="Make string uppercase"
+        locations=[DirectiveLocation.FIELD],
+        description="Make string uppercase",
     )
     def uppercase(value: str, input: DirectiveInput):
         return value.upper()
@@ -641,7 +656,8 @@ def test_directives_with_scalar():
         cake: str = "made_in_switzerland"
 
     @strawberry.directive(
-        locations=[DirectiveLocation.FIELD], description="Make string uppercase"
+        locations=[DirectiveLocation.FIELD],
+        description="Make string uppercase",
     )
     def uppercase(value: str, input: DirectiveInput):
         return value.upper()

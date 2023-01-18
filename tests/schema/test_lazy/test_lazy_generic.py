@@ -66,7 +66,7 @@ def test_no_generic_type_duplication_with_lazy():
         type TypeBEdge {
           node: TypeB!
         }
-        """
+        """,
     ).strip()
 
     assert str(schema) == expected_schema
@@ -83,6 +83,7 @@ def test_lazy_types_loaded_from_same_module(commands: Sequence[str]):
     """Test if lazy types resolved from the same module produce duplication error.
 
     Note:
+    ----
       `subprocess` is used since the test must be run as the main module / script.
     """
     result = subprocess.run(
@@ -123,7 +124,7 @@ def test_lazy_types_declared_within_optional():
         type TypeCOptionalEdge {
           node: TypeC
         }
-        """
+        """,
     ).strip()
 
     assert str(schema) == expected_schema

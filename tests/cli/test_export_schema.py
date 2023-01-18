@@ -28,7 +28,8 @@ def test_default_schema_symbol_name(cli_runner):
 def test_app_dir_option(cli_runner):
     selector = "sample_module"
     result = cli_runner.invoke(
-        cmd_export_schema, ["--app-dir=./tests/fixtures/sample_package", selector]
+        cmd_export_schema,
+        ["--app-dir=./tests/fixtures/sample_package", selector],
     )
 
     assert result.exit_code == 0

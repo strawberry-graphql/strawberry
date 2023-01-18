@@ -59,7 +59,8 @@ class GraphQLWSConsumer(ChannelsWSConsumer):
         super().__init__()
 
     def pick_preferred_protocol(
-        self, accepted_subprotocols: Sequence[str]
+        self,
+        accepted_subprotocols: Sequence[str],
     ) -> Optional[str]:
         intersection = set(accepted_subprotocols) & set(self.protocols)
         sorted_intersection = sorted(intersection, key=accepted_subprotocols.index)
@@ -92,6 +93,7 @@ class GraphQLWSConsumer(ChannelsWSConsumer):
             return await self.close(code=4406)
 
         await self._handler.handle()
+        return None
 
     async def receive(self, *args, **kwargs):
         # Overriding this so that we can pass the errors to handle_invalid_message

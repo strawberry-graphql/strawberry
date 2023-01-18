@@ -1,7 +1,7 @@
 try:
     # import modules and objects from external strawberry-graphql-django
     # package so that it can be used through strawberry.django namespace
-    from strawberry_django import *  # noqa: F401, F403
+    from strawberry_django import *  # noqa: F403
 except ModuleNotFoundError:
     import importlib
 
@@ -14,5 +14,5 @@ except ModuleNotFoundError:
             raise AttributeError(
                 f"Attempted import of {import_symbol} failed. Make sure to install the"
                 "'strawberry-graphql-django' package to use the Strawberry Django "
-                "extension API."
+                "extension API.",
             )

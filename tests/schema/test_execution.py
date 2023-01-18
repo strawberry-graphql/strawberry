@@ -42,7 +42,7 @@ def test_enabling_query_validation_sync(mock_validate, validate_queries):
     assert mock_validate.called is validate_queries
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 @pytest.mark.parametrize("validate_queries", (True, False))
 async def test_enabling_query_validation(validate_queries):
     @strawberry.type
@@ -75,7 +75,7 @@ async def test_enabling_query_validation(validate_queries):
         assert mock_validate.called is validate_queries
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_invalid_query_with_validation_enabled():
     @strawberry.type
     class Query:
@@ -99,7 +99,7 @@ async def test_invalid_query_with_validation_enabled():
     )
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_asking_for_wrong_field():
     @strawberry.type
     class Query:
@@ -122,7 +122,7 @@ async def test_asking_for_wrong_field():
     assert result.data == {}
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_sending_wrong_variables():
     @strawberry.type
     class Query:
@@ -154,12 +154,12 @@ async def test_sending_wrong_variables():
             3 |             example(value: 123)
               |                            ^
             4 |         }
-            """
+            """,
         ).strip()
     )
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_logging_exceptions(caplog):
     @strawberry.type
     class Query:
@@ -174,7 +174,7 @@ async def test_logging_exceptions(caplog):
         query {
             example
         }
-    """
+    """,
     ).strip()
 
     result = await schema.execute(
@@ -201,14 +201,14 @@ async def test_logging_exceptions(caplog):
         2 |     example
           |     ^
         3 | }
-    """
+    """,
         ).strip()
     )
     assert record.name == "strawberry.execution"
     assert record.exc_info[0] is ValueError
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_logging_graphql_exceptions(caplog):
     @strawberry.type
     class Query:
@@ -240,7 +240,7 @@ async def test_logging_graphql_exceptions(caplog):
     assert record.exc_info[0] is TypeError
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_logging_parsing_error(caplog):
     @strawberry.type
     class Query:
@@ -303,7 +303,7 @@ def test_logging_parsing_error_sync(caplog):
     assert "Syntax Error" in record.message
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_logging_validation_errors(caplog):
     @strawberry.type
     class Query:

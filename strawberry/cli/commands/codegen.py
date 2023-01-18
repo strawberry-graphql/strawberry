@@ -76,7 +76,10 @@ def _load_plugins(plugins: List[str]) -> List[QueryCodegenPlugin]:
 
 class ConsolePlugin(QueryCodegenPlugin):
     def __init__(
-        self, query: Path, output_dir: Path, plugins: List[QueryCodegenPlugin]
+        self,
+        query: Path,
+        output_dir: Path,
+        plugins: List[QueryCodegenPlugin],
     ):
         self.query = query
         self.output_dir = output_dir
@@ -89,7 +92,7 @@ class ConsolePlugin(QueryCodegenPlugin):
                 "https://github.com/strawberry-graphql/strawberry\n",
                 fg="yellow",
                 bold=True,
-            )
+            ),
         )
 
         plugin_names = [plugin.__class__.__name__ for plugin in self.plugins]
@@ -99,7 +102,7 @@ class ConsolePlugin(QueryCodegenPlugin):
                 f"Generating code for {self.query} using "
                 f"{', '.join(plugin_names)} plugin(s)",
                 fg="green",
-            )
+            ),
         )
 
     def on_end(self, result: CodegenResult):
@@ -108,8 +111,9 @@ class ConsolePlugin(QueryCodegenPlugin):
 
         click.echo(
             click.style(
-                f"Generated {len(result.files)} files in {self.output_dir}", fg="green"
-            )
+                f"Generated {len(result.files)} files in {self.output_dir}",
+                fg="green",
+            ),
         )
 
 

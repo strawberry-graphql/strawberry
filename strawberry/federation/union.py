@@ -24,7 +24,6 @@ def union(
     ... class B: ...
     >>> strawberry.federation.union("Name", (A, Optional[B]))
     """
-
     from strawberry.federation.schema_directives import Inaccessible, Tag
 
     directives = list(directives)

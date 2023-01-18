@@ -3,7 +3,8 @@ from typing import Optional
 
 
 def import_module_symbol(
-    selector: str, default_symbol_name: Optional[str] = None
+    selector: str,
+    default_symbol_name: Optional[str] = None,
 ) -> object:
     if ":" in selector:
         module_name, symbol_name = selector.split(":", 1)

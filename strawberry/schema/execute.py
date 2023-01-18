@@ -81,7 +81,7 @@ async def execute(
             try:
                 if not execution_context.graphql_document:
                     execution_context.graphql_document = parse_document(
-                        execution_context.query
+                        execution_context.query,
                     )
 
             except GraphQLError as error:
@@ -174,7 +174,7 @@ def execute_sync(
             try:
                 if not execution_context.graphql_document:
                     execution_context.graphql_document = parse_document(
-                        execution_context.query
+                        execution_context.query,
                     )
 
             except GraphQLError as error:
@@ -223,7 +223,7 @@ def execute_sync(
                     result = cast(Awaitable[GraphQLExecutionResult], result)
                     ensure_future(result).cancel()
                     raise RuntimeError(
-                        "GraphQL execution failed to complete synchronously."
+                        "GraphQL execution failed to complete synchronously.",
                     )
 
                 result = cast(GraphQLExecutionResult, result)

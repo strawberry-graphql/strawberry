@@ -49,13 +49,14 @@ class OpenTelemetryExtension(Extension):
         )
 
         self._span_holder[RequestStage.REQUEST] = self._tracer.start_span(
-            span_name, kind=SpanKind.SERVER
+            span_name,
+            kind=SpanKind.SERVER,
         )
         self._span_holder[RequestStage.REQUEST].set_attribute("component", "graphql")
 
         if self.execution_context.query:
             self._span_holder[RequestStage.REQUEST].set_attribute(
-                "query", self.execution_context.query
+                "query", self.execution_context.query,
             )
 
     def on_request_end(self):
@@ -82,14 +83,17 @@ class OpenTelemetryExtension(Extension):
     def on_parsing_start(self):
         ctx = trace.set_span_in_context(self._span_holder[RequestStage.REQUEST])
         self._span_holder[RequestStage.PARSING] = self._tracer.start_span(
-            "GraphQL Parsing", context=ctx
+            "GraphQL Parsing",
+            context=ctx,
         )
 
     def on_parsing_end(self):
         self._span_holder[RequestStage.PARSING].end()
 
     def filter_resolver_args(
-        self, args: Dict[str, Any], info: GraphQLResolveInfo
+        self,
+        args: Dict[str, Any],
+        info: GraphQLResolveInfo,
     ) -> Dict[str, Any]:
         if not self._arg_filter:
             return args

@@ -85,7 +85,7 @@ def test_c_inheritance_resolver():
     @strawberry.type
     class Query:
         c: List[c_mod.CInheritance] = strawberry.field(
-            resolver=c_mod.c_inheritance_resolver
+            resolver=c_mod.c_inheritance_resolver,
         )
 
     [field] = Query._type_definition.fields
@@ -114,7 +114,7 @@ def test_c_composition_resolver():
     @strawberry.type
     class Query:
         c: List[c_mod.CComposition] = strawberry.field(
-            resolver=c_mod.c_composition_resolver
+            resolver=c_mod.c_composition_resolver,
         )
 
     [field] = Query._type_definition.fields

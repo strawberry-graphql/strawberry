@@ -29,14 +29,18 @@ class GraphQLView(BaseGraphQLView):
         return Query()
 
     async def get_context(
-        self, request: SanicRequest, response: TemporalResponse
+        self,
+        request: SanicRequest,
+        response: TemporalResponse,
     ) -> object:
         context = {"request": request, "response": response}
 
         return get_context(context)
 
     async def process_result(
-        self, request: SanicRequest, result: ExecutionResult
+        self,
+        request: SanicRequest,
+        result: ExecutionResult,
     ) -> GraphQLHTTPResponse:
         if self.result_override:
             return self.result_override(result)
@@ -75,7 +79,10 @@ class SanicHttpClient(HttpClient):
         **kwargs,
     ) -> Response:
         body = self._build_body(
-            query=query, variables=variables, files=files, method=method
+            query=query,
+            variables=variables,
+            files=files,
+            method=method,
         )
 
         if body:
@@ -127,7 +134,10 @@ class SanicHttpClient(HttpClient):
     ) -> Response:
         body = data or dumps(json)
         request, response = await self.app.asgi_client.request(
-            "post", url, content=body, headers=headers
+            "post",
+            url,
+            content=body,
+            headers=headers,
         )
 
         return Response(status_code=response.status_code, data=response.content)

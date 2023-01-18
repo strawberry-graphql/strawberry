@@ -27,7 +27,7 @@ def test_runs_parsing():
     assert result.errors[0].message == "Syntax Error: Expected Name, found <EOF>."
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 @pytest.mark.filterwarnings("ignore:.* was never awaited:RuntimeWarning")
 async def test_errors_when_running_async_in_sync_mode():
     @strawberry.type
@@ -50,7 +50,7 @@ async def test_errors_when_running_async_in_sync_mode():
     assert e.value.args[0] == "GraphQL execution failed to complete synchronously."
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_runs_parsing_async():
     @strawberry.type
     class Query:

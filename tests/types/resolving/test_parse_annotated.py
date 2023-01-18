@@ -39,7 +39,7 @@ def test_parse_annotated_optional_union():
     )
     assert (
         StrawberryAnnotation.parse_annotated(
-            Annotated[Optional[Union[str, int]], "foo"]
+            Annotated[Optional[Union[str, int]], "foo"],
         )
         == Optional[Union[str, int]]
     )
@@ -59,7 +59,7 @@ def test_parse_annotated_list_union():
 def test_parse_annotated_recursive():
     assert (
         StrawberryAnnotation.parse_annotated(
-            Annotated[List[Annotated[Union[str, int], "bar"]], "foo"]
+            Annotated[List[Annotated[Union[str, int], "bar"]], "foo"],
         )
         == List[Union[str, int]]
     )

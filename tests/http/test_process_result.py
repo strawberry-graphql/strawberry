@@ -24,7 +24,8 @@ def http_client(http_client_class) -> HttpClient:
 
 @pytest.mark.parametrize("method", ["get", "post"])
 async def test_custom_process_result(
-    method: Literal["get", "post"], http_client: HttpClient
+    method: Literal["get", "post"],
+    http_client: HttpClient,
 ):
     response = await http_client.query(
         method=method,

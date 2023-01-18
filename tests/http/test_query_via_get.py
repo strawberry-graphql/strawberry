@@ -5,7 +5,9 @@ async def test_sending_empty_query(http_client_class):
     http_client = http_client_class()
 
     response = await http_client.query(
-        method="get", query="", variables={"fake": "variable"}
+        method="get",
+        query="",
+        variables={"fake": "variable"},
     )
 
     assert response.status_code == 400

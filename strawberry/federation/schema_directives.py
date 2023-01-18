@@ -19,31 +19,40 @@ class FederationDirective:
 
 
 @schema_directive(
-    locations=[Location.FIELD_DEFINITION], name="external", print_definition=False
+    locations=[Location.FIELD_DEFINITION],
+    name="external",
+    print_definition=False,
 )
 class External(FederationDirective):
     imported_from: ClassVar[ImportedFrom] = ImportedFrom(
-        name="external", url="https://specs.apollo.dev/federation/v2.0"
+        name="external",
+        url="https://specs.apollo.dev/federation/v2.0",
     )
 
 
 @schema_directive(
-    locations=[Location.FIELD_DEFINITION], name="requires", print_definition=False
+    locations=[Location.FIELD_DEFINITION],
+    name="requires",
+    print_definition=False,
 )
 class Requires(FederationDirective):
     fields: FieldSet
     imported_from: ClassVar[ImportedFrom] = ImportedFrom(
-        name="requires", url="https://specs.apollo.dev/federation/v2.0"
+        name="requires",
+        url="https://specs.apollo.dev/federation/v2.0",
     )
 
 
 @schema_directive(
-    locations=[Location.FIELD_DEFINITION], name="provides", print_definition=False
+    locations=[Location.FIELD_DEFINITION],
+    name="provides",
+    print_definition=False,
 )
 class Provides(FederationDirective):
     fields: FieldSet
     imported_from: ClassVar[ImportedFrom] = ImportedFrom(
-        name="provides", url="https://specs.apollo.dev/federation/v2.0"
+        name="provides",
+        url="https://specs.apollo.dev/federation/v2.0",
     )
 
 
@@ -57,7 +66,8 @@ class Key(FederationDirective):
     fields: FieldSet
     resolvable: Optional[bool] = True
     imported_from: ClassVar[ImportedFrom] = ImportedFrom(
-        name="key", url="https://specs.apollo.dev/federation/v2.0"
+        name="key",
+        url="https://specs.apollo.dev/federation/v2.0",
     )
 
 
@@ -68,12 +78,16 @@ class Key(FederationDirective):
 )
 class Shareable(FederationDirective):
     imported_from: ClassVar[ImportedFrom] = ImportedFrom(
-        name="shareable", url="https://specs.apollo.dev/federation/v2.0"
+        name="shareable",
+        url="https://specs.apollo.dev/federation/v2.0",
     )
 
 
 @schema_directive(
-    locations=[Location.SCHEMA], name="link", repeatable=True, print_definition=False
+    locations=[Location.SCHEMA],
+    name="link",
+    repeatable=True,
+    print_definition=False,
 )
 class Link:
     url: Optional[str]
@@ -114,17 +128,21 @@ class Link:
 class Tag(FederationDirective):
     name: str
     imported_from: ClassVar[ImportedFrom] = ImportedFrom(
-        name="tag", url="https://specs.apollo.dev/federation/v2.0"
+        name="tag",
+        url="https://specs.apollo.dev/federation/v2.0",
     )
 
 
 @schema_directive(
-    locations=[Location.FIELD_DEFINITION], name="override", print_definition=False
+    locations=[Location.FIELD_DEFINITION],
+    name="override",
+    print_definition=False,
 )
 class Override(FederationDirective):
     override_from: str = directive_field(name="from")
     imported_from: ClassVar[ImportedFrom] = ImportedFrom(
-        name="override", url="https://specs.apollo.dev/federation/v2.0"
+        name="override",
+        url="https://specs.apollo.dev/federation/v2.0",
     )
 
 
@@ -146,5 +164,6 @@ class Override(FederationDirective):
 )
 class Inaccessible(FederationDirective):
     imported_from: ClassVar[ImportedFrom] = ImportedFrom(
-        name="inaccessible", url="https://specs.apollo.dev/federation/v2.0"
+        name="inaccessible",
+        url="https://specs.apollo.dev/federation/v2.0",
     )

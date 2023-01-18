@@ -85,7 +85,9 @@ class CustomGraphQLEnumType(GraphQLEnumType):
         return self.wrapped_cls(super().parse_value(input_value))
 
     def parse_literal(
-        self, value_node: ValueNode, _variables: Optional[Dict[str, Any]] = None
+        self,
+        value_node: ValueNode,
+        _variables: Optional[Dict[str, Any]] = None,
     ) -> Any:
         return self.wrapped_cls(super().parse_literal(value_node, _variables))
 
@@ -143,7 +145,8 @@ class GraphQLCoreConverter:
         )
 
         self.type_map[enum_name] = ConcreteType(
-            definition=enum, implementation=graphql_enum
+            definition=enum,
+            implementation=graphql_enum,
         )
 
         return graphql_enum
@@ -179,7 +182,8 @@ class GraphQLCoreConverter:
 
     def from_schema_directive(self, cls: Type) -> GraphQLDirective:
         strawberry_directive = cast(
-            StrawberrySchemaDirective, cls.__strawberry_directive__
+            StrawberrySchemaDirective,
+            cls.__strawberry_directive__,
         )
         module = sys.modules[cls.__module__]
 
@@ -199,7 +203,7 @@ class GraphQLCoreConverter:
                         namespace=module.__dict__,
                     ),
                     default=default,
-                )
+                ),
             )
 
         return GraphQLDirective(
@@ -277,7 +281,8 @@ class GraphQLCoreConverter:
         schema conversion time) ensures that all types to be included in the schema
         should have already been resolved.
 
-        Raises:
+        Raises
+        ------
             TypeError: If the type of a field in ``fields`` is `UNRESOLVED`
         """
         thunk_mapping = {}
@@ -292,7 +297,8 @@ class GraphQLCoreConverter:
         return thunk_mapping
 
     def get_graphql_fields(
-        self, type_definition: TypeDefinition
+        self,
+        type_definition: TypeDefinition,
     ) -> Dict[str, GraphQLField]:
         return self._get_thunk_mapping(
             type_definition=type_definition,
@@ -301,7 +307,8 @@ class GraphQLCoreConverter:
         )
 
     def get_graphql_input_fields(
-        self, type_definition: TypeDefinition
+        self,
+        type_definition: TypeDefinition,
     ) -> Dict[str, GraphQLInputField]:
         return self._get_thunk_mapping(
             type_definition=type_definition,
@@ -332,7 +339,8 @@ class GraphQLCoreConverter:
         )
 
         self.type_map[type_name] = ConcreteType(
-            definition=type_definition, implementation=graphql_object_type
+            definition=type_definition,
+            implementation=graphql_object_type,
         )
 
         return graphql_object_type
@@ -361,7 +369,8 @@ class GraphQLCoreConverter:
         )
 
         self.type_map[interface_name] = ConcreteType(
-            definition=interface, implementation=graphql_interface
+            definition=interface,
+            implementation=graphql_interface,
         )
 
         return graphql_interface
@@ -379,7 +388,9 @@ class GraphQLCoreConverter:
         cached_type = self.type_map.get(object_type_name, None)
         if cached_type:
             self.validate_same_type_definition(
-                object_type_name, object_type, cached_type
+                object_type_name,
+                object_type,
+                cached_type,
             )
             graphql_object_type = cached_type.implementation
             assert isinstance(graphql_object_type, GraphQLObjectType)  # For mypy
@@ -415,13 +426,15 @@ class GraphQLCoreConverter:
         )
 
         self.type_map[object_type_name] = ConcreteType(
-            definition=object_type, implementation=graphql_object_type
+            definition=object_type,
+            implementation=graphql_object_type,
         )
 
         return graphql_object_type
 
     def from_resolver(
-        self, field: StrawberryField
+        self,
+        field: StrawberryField,
     ) -> Callable:  # TODO: Take StrawberryResolver
         field.default_resolver = self.config.default_resolver
 
@@ -483,14 +496,16 @@ class GraphQLCoreConverter:
                     raise PermissionError(message)
 
         async def _check_permissions_async(
-            source: Any, info: Info, kwargs: Dict[str, Any]
+            source: Any,
+            info: Info,
+            kwargs: Dict[str, Any],
         ):
             for permission_class in field.permission_classes:
                 permission = permission_class()
                 has_permission: bool
 
                 has_permission = await await_maybe(
-                    permission.has_permission(source, info, **kwargs)
+                    permission.has_permission(source, info, **kwargs),
                 )
 
                 if not has_permission:
@@ -505,11 +520,16 @@ class GraphQLCoreConverter:
 
         def _get_result(_source: Any, info: Info, **kwargs):
             field_args, field_kwargs = _get_arguments(
-                source=_source, info=info, kwargs=kwargs
+                source=_source,
+                info=info,
+                kwargs=kwargs,
             )
 
             return field.get_result(
-                _source, info=info, args=field_args, kwargs=field_kwargs
+                _source,
+                info=info,
+                args=field_args,
+                kwargs=field_kwargs,
             )
 
         def _resolver(_source: Any, info: GraphQLResolveInfo, **kwargs):
@@ -554,7 +574,8 @@ class GraphQLCoreConverter:
             )
 
             self.type_map[scalar_name] = ConcreteType(
-                definition=scalar_definition, implementation=implementation
+                definition=scalar_definition,
+                implementation=implementation,
             )
         else:
             other_definition = self.type_map[scalar_name].definition
@@ -568,13 +589,15 @@ class GraphQLCoreConverter:
                 raise ScalarAlreadyRegisteredError(scalar_definition, other_definition)
 
             implementation = cast(
-                GraphQLScalarType, self.type_map[scalar_name].implementation
+                GraphQLScalarType,
+                self.type_map[scalar_name].implementation,
             )
 
         return implementation
 
     def from_maybe_optional(
-        self, type_: Union[StrawberryType, type]
+        self,
+        type_: Union[StrawberryType, type],
     ) -> Union[GraphQLNullableType, GraphQLNonNull]:
         NoneType = type(None)
         if type_ is None or type_ is NoneType:
@@ -610,7 +633,8 @@ class GraphQLCoreConverter:
         elif isinstance(type_, LazyType):
             return self.from_type(type_.resolve_type())
         elif compat.is_scalar(
-            type_, self.scalar_registry
+            type_,
+            self.scalar_registry,
         ):  # TODO: Replace with StrawberryScalar
             return self.from_scalar(type_)
 
@@ -646,7 +670,8 @@ class GraphQLCoreConverter:
         )
 
         self.type_map[union_name] = ConcreteType(
-            definition=union, implementation=graphql_union
+            definition=union,
+            implementation=graphql_union,
         )
 
         return graphql_union
@@ -674,7 +699,10 @@ class GraphQLCoreConverter:
         return None
 
     def validate_same_type_definition(
-        self, name: str, type_definition: StrawberryType, cached_type: ConcreteType
+        self,
+        name: str,
+        type_definition: StrawberryType,
+        cached_type: ConcreteType,
     ) -> None:
         # if the type definitions are the same we can return
         if cached_type.definition == type_definition:
@@ -722,14 +750,14 @@ class GraphQLCoreConverter:
                 if isinstance(type1, LazyType):
                     type1 = type1.resolve_type()
                 elif isinstance(type1, StrawberryOptional) and isinstance(
-                    type1.of_type, LazyType
+                    type1.of_type, LazyType,
                 ):
                     type1.of_type = type1.of_type.resolve_type()
 
                 if isinstance(type2, LazyType):
                     type2 = type2.resolve_type()
                 elif isinstance(type2, StrawberryOptional) and isinstance(
-                    type2.of_type, LazyType
+                    type2.of_type, LazyType,
                 ):
                     type2.of_type = type2.of_type.resolve_type()
 

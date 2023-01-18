@@ -25,7 +25,7 @@ from .clients.sanic import SanicHttpClient
         FastAPIHttpClient,
         FlaskHttpClient,
         SanicHttpClient,
-    ]
+    ],
 )
 def http_client_class(request) -> Type[HttpClient]:
     return request.param

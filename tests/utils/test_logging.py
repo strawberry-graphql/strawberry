@@ -12,5 +12,5 @@ def test_strawberry_logger_error(caplog):
     StrawberryLogger.error(exc)
 
     assert caplog.record_tuples == [
-        ("strawberry.execution", logging.ERROR, "test exception")
+        ("strawberry.execution", logging.ERROR, "test exception"),
     ]

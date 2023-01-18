@@ -33,7 +33,8 @@ def _get_interfaces(cls: Type) -> List[TypeDefinition]:
 
     for base in cls.__bases__:
         type_definition = cast(
-            Optional[TypeDefinition], getattr(base, "_type_definition", None)
+            Optional[TypeDefinition],
+            getattr(base, "_type_definition", None),
         )
 
         if type_definition and type_definition.is_interface:
@@ -84,7 +85,8 @@ def _check_field_annotations(cls: Type):
                 #       field
                 if field_.base_resolver.type_annotation is None:
                     raise MissingReturnAnnotationError(
-                        field_name, resolver=field_.base_resolver
+                        field_name,
+                        resolver=field_.base_resolver,
                     )
 
                 cls_annotations[field_name] = field_.base_resolver.type_annotation
@@ -104,8 +106,8 @@ def _check_field_annotations(cls: Type):
 
 def _wrap_dataclass(cls: Type):
     """Wrap a strawberry.type class with a dataclass and check for any issues
-    before doing so"""
-
+    before doing so
+    """
     # Ensure all Fields have been properly type-annotated
     _check_field_annotations(cls)
 
@@ -184,7 +186,9 @@ T = TypeVar("T", bound=Type)
 
 @overload
 @__dataclass_transform__(
-    order_default=True, kw_only_default=True, field_descriptors=(field, StrawberryField)
+    order_default=True,
+    kw_only_default=True,
+    field_descriptors=(field, StrawberryField),
 )
 def type(
     cls: T,
@@ -201,7 +205,9 @@ def type(
 
 @overload
 @__dataclass_transform__(
-    order_default=True, kw_only_default=True, field_descriptors=(field, StrawberryField)
+    order_default=True,
+    kw_only_default=True,
+    field_descriptors=(field, StrawberryField),
 )
 def type(
     *,
@@ -263,7 +269,9 @@ def type(
 
 @overload
 @__dataclass_transform__(
-    order_default=True, kw_only_default=True, field_descriptors=(field, StrawberryField)
+    order_default=True,
+    kw_only_default=True,
+    field_descriptors=(field, StrawberryField),
 )
 def input(
     cls: T,
@@ -277,7 +285,9 @@ def input(
 
 @overload
 @__dataclass_transform__(
-    order_default=True, kw_only_default=True, field_descriptors=(field, StrawberryField)
+    order_default=True,
+    kw_only_default=True,
+    field_descriptors=(field, StrawberryField),
 )
 def input(
     *,
@@ -301,7 +311,6 @@ def input(
     >>> class X:
     >>>     field_abc: str = "ABC"
     """
-
     return type(  # type: ignore # not sure why mypy complains here
         cls,
         name=name,
@@ -313,7 +322,9 @@ def input(
 
 @overload
 @__dataclass_transform__(
-    order_default=True, kw_only_default=True, field_descriptors=(field, StrawberryField)
+    order_default=True,
+    kw_only_default=True,
+    field_descriptors=(field, StrawberryField),
 )
 def interface(
     cls: T,
@@ -327,7 +338,9 @@ def interface(
 
 @overload
 @__dataclass_transform__(
-    order_default=True, kw_only_default=True, field_descriptors=(field, StrawberryField)
+    order_default=True,
+    kw_only_default=True,
+    field_descriptors=(field, StrawberryField),
 )
 def interface(
     *,
@@ -339,7 +352,9 @@ def interface(
 
 
 @__dataclass_transform__(
-    order_default=True, kw_only_default=True, field_descriptors=(field, StrawberryField)
+    order_default=True,
+    kw_only_default=True,
+    field_descriptors=(field, StrawberryField),
 )
 def interface(
     cls: Optional[T] = None,
@@ -354,7 +369,6 @@ def interface(
     >>> class X:
     >>>     field_abc: str
     """
-
     return type(  # type: ignore # not sure why mypy complains here
         cls,
         name=name,

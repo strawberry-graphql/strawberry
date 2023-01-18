@@ -119,7 +119,7 @@ class GraphQLHTTPConsumer(ChannelsConsumer, AsyncHttpConsumer):
                 {
                     k: v[0]
                     for k, v in parse_qs(self.scope["query_string"].decode()).items()
-                }
+                },
             )
 
             try:
@@ -206,7 +206,8 @@ class SyncGraphQLHTTPConsumer(GraphQLHTTPConsumer):
         return StrawberryChannelsContext(request=request or self)
 
     def process_result(  # type:ignore [override]
-        self, result: ExecutionResult
+        self,
+        result: ExecutionResult,
     ) -> GraphQLHTTPResponse:
         return process_result(result)
 

@@ -14,7 +14,7 @@ def test_link_directive():
         schema_directives=[
             Link(
                 url="https://specs.apollo.dev/link/v1.0",
-            )
+            ),
         ],
     )
 
@@ -59,7 +59,7 @@ def test_link_directive_imports():
                     "@inaccessible",
                     "@override",
                 ],
-            )
+            ),
         ],
     )
 
@@ -135,7 +135,9 @@ def test_adds_link_directive_from_interface():
         user: User
 
     schema = strawberry.federation.Schema(
-        query=Query, types=[SomeInterface], enable_federation_2=True
+        query=Query,
+        types=[SomeInterface],
+        enable_federation_2=True,
     )
 
     expected = """
@@ -180,7 +182,9 @@ def test_adds_link_directive_from_input_types():
         user: User
 
     schema = strawberry.federation.Schema(
-        query=Query, types=[SomeInput], enable_federation_2=True
+        query=Query,
+        types=[SomeInput],
+        enable_federation_2=True,
     )
 
     expected = """

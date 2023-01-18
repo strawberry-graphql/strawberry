@@ -12,8 +12,9 @@ def test_argument_descriptions():
         @strawberry.field
         def hello(  # type: ignore
             name: Annotated[
-                str, strawberry.argument(description="Your name")  # noqa: F722
-            ] = "Patrick"
+                str,
+                strawberry.argument(description="Your name"),
+            ] = "Patrick",
         ) -> str:
             return f"Hi {name}"
 
@@ -26,7 +27,7 @@ def test_argument_descriptions():
             """Your name"""
             name: String! = "Patrick"
           ): String!
-        }'''
+        }''',
     )
 
 
@@ -36,8 +37,9 @@ def test_argument_deprecation_reason():
         @strawberry.field
         def hello(  # type: ignore
             name: Annotated[
-                str, strawberry.argument(deprecation_reason="Your reason")  # noqa: F722
-            ] = "Patrick"
+                str,
+                strawberry.argument(deprecation_reason="Your reason"),
+            ] = "Patrick",
         ) -> str:
             return f"Hi {name}"
 
@@ -47,7 +49,7 @@ def test_argument_deprecation_reason():
         """\
         type Query {
           hello(name: String! = "Patrick" @deprecated(reason: "Your reason")): String!
-        }"""
+        }""",
     )
 
 
@@ -60,7 +62,8 @@ def test_argument_names():
     class Query:
         @strawberry.field
         def hello(
-            self, input_: Annotated[HelloInput, strawberry.argument(name="input")]
+            self,
+            input_: Annotated[HelloInput, strawberry.argument(name="input")],
         ) -> str:
             return f"Hi {input_.name}"
 
@@ -75,7 +78,7 @@ def test_argument_names():
 
         type Query {
           hello(input: HelloInput!): String!
-        }'''
+        }''',
     )
 
 
@@ -92,7 +95,7 @@ def test_argument_with_default_value_none():
         """\
         type Query {
           hello(name: String = null): String!
-        }"""
+        }""",
     )
 
 
@@ -111,7 +114,7 @@ def test_optional_argument_unset():
         """\
         type Query {
           hello(name: String, age: Int): String!
-        }"""
+        }""",
     )
 
     result = schema.execute_sync(
@@ -119,7 +122,7 @@ def test_optional_argument_unset():
         query {
             hello
         }
-    """
+    """,
     )
     assert not result.errors
     assert result.data == {"hello": "Hi there"}
@@ -153,7 +156,7 @@ def test_optional_input_field_unset():
           name: String
           age: Int
         }
-        """
+        """,
         ).strip()
     )
 
@@ -162,7 +165,7 @@ def test_optional_input_field_unset():
         query {
             hello(input: {})
         }
-    """
+    """,
     )
     assert not result.errors
     assert result.data == {"hello": "Hi there"}

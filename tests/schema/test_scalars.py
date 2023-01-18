@@ -45,7 +45,7 @@ def test_void_function():
 
       """Represents NULL values"""
       scalar Void
-    '''
+    ''',
         ).strip()
     )
 
@@ -84,7 +84,7 @@ def test_uuid_field_string_value():
       }
 
       scalar UUID
-    """
+    """,
         ).strip()
     )
 
@@ -116,7 +116,7 @@ def test_uuid_field_uuid_value():
       }
 
       scalar UUID
-    """
+    """,
         ).strip()
     )
 
@@ -151,7 +151,7 @@ def test_uuid_input():
         mutation {
             uuidInput(inputId: "e350746c-33b6-4469-86b0-5f16e1e12232")
         }
-    """
+    """,
     )
 
     assert not result.errors
@@ -184,7 +184,7 @@ def test_json():
           echoJson(data: JSON!): JSON!
           echoJsonNullable(data: JSON): JSON
         }
-        '''  # noqa: E501
+        ''',  # noqa: E501
     ).strip()
 
     assert str(schema) == expected_schema
@@ -195,7 +195,7 @@ def test_json():
             echoJson(data: {hello: {a: 1}, someNumbers: [1, 2, 3], null: null})
             echoJsonNullable(data: {hello: {a: 1}, someNumbers: [1, 2, 3], null: null})
         }
-    """
+    """,
     )
 
     assert not result.errors
@@ -209,7 +209,7 @@ def test_json():
         query {
             echoJson(data: null)
         }
-    """
+    """,
     )
     assert result.errors  # echoJson is not-null null
 
@@ -218,7 +218,7 @@ def test_json():
         query {
             echoJsonNullable(data: null)
         }
-    """
+    """,
     )
     assert not result.errors
     assert result.data == {
@@ -280,7 +280,7 @@ def test_base16():
           base64Encode(data: String!): Base64!
           base64Decode(data: Base64!): String!
         }
-    '''  # noqa: E501
+    ''',  # noqa: E501
         ).strip()
     )
 
@@ -294,7 +294,7 @@ def test_base16():
             base64Encode(data: "Hello")
             base64Decode(data: "SGVsbG8=")
         }
-    """
+    """,
     )
 
     assert not result.errors
@@ -338,7 +338,7 @@ def test_override_built_in_scalars():
             currentTime
             isoformat(inputDatetime: 1628683200)
         }
-        """
+        """,
     )
 
     assert not result.errors
@@ -386,7 +386,7 @@ def test_decimal():
             stringDecimal: decimal(value: "3.14")
             stringDecimal2: decimal(value: "3.1499999991")
         }
-    """
+    """,
     )
 
     assert not result.errors

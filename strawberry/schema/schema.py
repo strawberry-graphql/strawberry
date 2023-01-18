@@ -70,7 +70,8 @@ class Schema(BaseSchema):
         self.config = config or StrawberryConfig()
 
         SCALAR_OVERRIDES_DICT_TYPE = Dict[
-            object, Union[ScalarWrapper, ScalarDefinition]
+            object,
+            Union[ScalarWrapper, ScalarDefinition],
         ]
 
         scalar_registry: SCALAR_OVERRIDES_DICT_TYPE = {**DEFAULT_SCALAR_REGISTRY}
@@ -102,7 +103,7 @@ class Schema(BaseSchema):
         for type_ in types:
             if compat.is_schema_directive(type_):
                 graphql_directives.append(
-                    self.schema_converter.from_schema_directive(type_)
+                    self.schema_converter.from_schema_directive(type_),
                 )
             else:
                 if hasattr(type_, "_type_definition"):
@@ -150,7 +151,8 @@ class Schema(BaseSchema):
             raise ValueError(f"Invalid Schema. Errors:\n\n{formatted_errors}")
 
     def get_extensions(
-        self, sync: bool = False
+        self,
+        sync: bool = False,
     ) -> List[Union[Type[Extension], Extension]]:
         extensions = list(self.extensions)
 
@@ -161,7 +163,8 @@ class Schema(BaseSchema):
 
     @lru_cache()
     def get_type_by_name(
-        self, name: str
+        self,
+        name: str,
     ) -> Optional[
         Union[TypeDefinition, ScalarDefinition, EnumDefinition, StrawberryUnion]
     ]:
@@ -172,7 +175,9 @@ class Schema(BaseSchema):
         return None
 
     def get_field_for_type(
-        self, field_name: str, type_name: str
+        self,
+        field_name: str,
+        type_name: str,
     ) -> Optional[StrawberryField]:
         type_ = self.get_type_by_name(type_name)
 
@@ -292,7 +297,8 @@ class Schema(BaseSchema):
     def introspect(self) -> Dict[str, Any]:
         """Return the introspection query result for the current schema
 
-        Raises:
+        Raises
+        ------
             ValueError: If the introspection query fails due to an invalid schema
         """
         introspection = self.execute_sync(get_introspection_query())

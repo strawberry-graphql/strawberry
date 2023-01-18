@@ -54,7 +54,8 @@ class InvalidUnionTypeError(StrawberryException):
 
 class InvalidTypeForUnionMergeError(StrawberryException):
     """A specialized version of InvalidUnionTypeError for when trying
-    to merge unions using the pipe operator."""
+    to merge unions using the pipe operator.
+    """
 
     invalid_type: Type
 

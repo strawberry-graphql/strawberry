@@ -8,7 +8,7 @@ from strawberry.extensions.tracing.opentelemetry import (
 )
 
 
-@pytest.fixture
+@pytest.fixture()
 def global_tracer_mock(mocker):
     return mocker.patch("strawberry.extensions.tracing.opentelemetry.trace.get_tracer")
 
@@ -25,7 +25,7 @@ class Query:
         return Person()
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_opentelemetry_uses_global_tracer(global_tracer_mock):
     schema = strawberry.Schema(query=Query, extensions=[OpenTelemetryExtension])
 
@@ -42,7 +42,7 @@ async def test_opentelemetry_uses_global_tracer(global_tracer_mock):
     global_tracer_mock.assert_called_once_with("strawberry")
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_opentelemetry_sync_uses_global_tracer(global_tracer_mock):
     schema = strawberry.Schema(query=Query, extensions=[OpenTelemetryExtensionSync])
 
@@ -72,7 +72,7 @@ def _instrumentation_stages(mocker, query):
     ]
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_open_tracing(global_tracer_mock, mocker):
     schema = strawberry.Schema(query=Query, extensions=[OpenTelemetryExtension])
     query = """
@@ -88,7 +88,7 @@ async def test_open_tracing(global_tracer_mock, mocker):
     # start_span is called by the Extension framework to instrument
     # phases of pre-request handling logic; parsing, validation, etc
     global_tracer_mock.return_value.start_span.assert_has_calls(
-        _instrumentation_stages(mocker, query)
+        _instrumentation_stages(mocker, query),
     )
 
     # start_as_current_span is called at the very start of request handling
@@ -101,11 +101,11 @@ async def test_open_tracing(global_tracer_mock, mocker):
             mocker.call().__enter__().set_attribute("graphql.parentType", "Query"),
             mocker.call().__enter__().set_attribute("graphql.path", "person"),
             mocker.call().__exit__(None, None, None),
-        ]
+        ],
     )
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_open_tracing_uses_operation_name(global_tracer_mock, mocker):
     schema = strawberry.Schema(query=Query, extensions=[OpenTelemetryExtension])
     query = """
@@ -123,11 +123,11 @@ async def test_open_tracing_uses_operation_name(global_tracer_mock, mocker):
             # if operation_name is supplied it is added to this span's tag
             mocker.call("GraphQL Query: Example", kind=SpanKind.SERVER),
             *_instrumentation_stages(mocker, query)[1:],
-        ]
+        ],
     )
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_open_tracing_gets_operation_name(global_tracer_mock, mocker):
     schema = strawberry.Schema(query=Query, extensions=[OpenTelemetryExtension])
     query = """
@@ -154,11 +154,11 @@ async def test_open_tracing_gets_operation_name(global_tracer_mock, mocker):
         [
             # if operation_name is supplied it is added to this span's tag
             mocker.call("GraphQL Query: Example"),
-        ]
+        ],
     )
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_tracing_add_kwargs(global_tracer_mock, mocker):
     @strawberry.type
     class Query:
@@ -181,11 +181,11 @@ async def test_tracing_add_kwargs(global_tracer_mock, mocker):
             mocker.call().__enter__().set_attribute("graphql.parentType", "Query"),
             mocker.call().__enter__().set_attribute("graphql.path", "hi"),
             mocker.call().__enter__().set_attribute("graphql.param.name", "Patrick"),
-        ]
+        ],
     )
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_tracing_filter_kwargs(global_tracer_mock, mocker):
     def arg_filter(kwargs, info):
         return {"name": "[...]"}
@@ -197,7 +197,8 @@ async def test_tracing_filter_kwargs(global_tracer_mock, mocker):
             return f"Hi {name}"
 
     schema = strawberry.Schema(
-        query=Query, extensions=[OpenTelemetryExtension(arg_filter=arg_filter)]
+        query=Query,
+        extensions=[OpenTelemetryExtension(arg_filter=arg_filter)],
     )
 
     query = """
@@ -213,5 +214,5 @@ async def test_tracing_filter_kwargs(global_tracer_mock, mocker):
             mocker.call().__enter__().set_attribute("graphql.parentType", "Query"),
             mocker.call().__enter__().set_attribute("graphql.path", "hi"),
             mocker.call().__enter__().set_attribute("graphql.param.name", "[...]"),
-        ]
+        ],
     )

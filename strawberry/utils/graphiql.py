@@ -3,7 +3,8 @@ import pathlib
 
 
 def get_graphiql_html(
-    subscription_enabled: bool = True, replace_variables: bool = True
+    subscription_enabled: bool = True,
+    replace_variables: bool = True,
 ) -> str:
     here = pathlib.Path(__file__).parents[1]
     path = here / "static/graphiql.html"
@@ -12,7 +13,8 @@ def get_graphiql_html(
 
     if replace_variables:
         template = template.replace(
-            "{{ SUBSCRIPTION_ENABLED }}", json.dumps(subscription_enabled)
+            "{{ SUBSCRIPTION_ENABLED }}",
+            json.dumps(subscription_enabled),
         )
 
     return template

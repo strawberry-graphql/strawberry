@@ -5,7 +5,7 @@ import pytest
 import strawberry
 
 
-@pytest.fixture
+@pytest.fixture()
 def datadog_extension(mocker):
     datadog_mock = mocker.MagicMock()
 
@@ -16,7 +16,7 @@ def datadog_extension(mocker):
     return DatadogTracingExtension, datadog_mock
 
 
-@pytest.fixture
+@pytest.fixture()
 def datadog_extension_sync(mocker):
     datadog_mock = mocker.MagicMock()
 
@@ -61,7 +61,7 @@ class Subscription:
 # and maybe we could unify datadog and opentelemetry extensions by doing that
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_datadog_tracer(datadog_extension, mocker):
     extension, mock = datadog_extension
 
@@ -107,11 +107,11 @@ async def test_datadog_tracer(datadog_extension, mocker):
             mocker.call.trace().__enter__().set_tag("graphql.path", "personAsync"),
             mocker.call.trace().__exit__(None, None, None),
             mocker.call.trace().finish(),
-        ]
+        ],
     )
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_uses_operation_name_and_hash(datadog_extension):
     extension, mock = datadog_extension
 
@@ -135,7 +135,7 @@ async def test_uses_operation_name_and_hash(datadog_extension):
     )
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_uses_operation_type(datadog_extension):
     extension, mock = datadog_extension
 
@@ -148,10 +148,10 @@ async def test_uses_operation_type(datadog_extension):
     """
 
     await schema.execute(query, operation_name="MyMutation")
-    mock.tracer.trace().set_tag.assert_any_call("graphql.operation_type", "mutation"),
+    mock.tracer.trace().set_tag.assert_any_call("graphql.operation_type", "mutation")
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio()
 async def test_uses_operation_subscription(datadog_extension):
     extension, mock = datadog_extension
 
@@ -165,8 +165,9 @@ async def test_uses_operation_subscription(datadog_extension):
 
     await schema.execute(query, operation_name="MySubscription")
     mock.tracer.trace().set_tag.assert_any_call(
-        "graphql.operation_type", "subscription"
-    ),
+        "graphql.operation_type",
+        "subscription",
+    )
 
 
 def test_datadog_tracer_sync(datadog_extension_sync, mocker):
@@ -207,7 +208,7 @@ def test_datadog_tracer_sync(datadog_extension_sync, mocker):
             mocker.call.trace().__enter__().set_tag("graphql.path", "person"),
             mocker.call.trace().__exit__(None, None, None),
             mocker.call.trace().finish(),
-        ]
+        ],
     )
 
 
@@ -247,4 +248,4 @@ def test_uses_operation_type_sync(datadog_extension_sync):
 
     schema.execute_sync(query, operation_name="MyMutation")
 
-    mock.tracer.trace().set_tag.assert_any_call("graphql.operation_type", "mutation"),
+    mock.tracer.trace().set_tag.assert_any_call("graphql.operation_type", "mutation")

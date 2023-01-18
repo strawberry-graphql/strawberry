@@ -13,7 +13,10 @@ from strawberry.utils.importer import import_module_symbol
 
 app = Starlette(debug=True)
 app.add_middleware(
-    CORSMiddleware, allow_headers=["*"], allow_origins=["*"], allow_methods=["*"]
+    CORSMiddleware,
+    allow_headers=["*"],
+    allow_origins=["*"],
+    allow_methods=["*"],
 )
 
 schema_import_string = os.environ[DEBUG_SERVER_SCHEMA_ENV_VAR_KEY]

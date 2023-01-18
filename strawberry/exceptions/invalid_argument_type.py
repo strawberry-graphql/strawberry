@@ -32,7 +32,9 @@ class InvalidArgumentTypeError(StrawberryException):
             argument_type = "union"
         else:
             type_definition: Optional[TypeDefinition] = getattr(
-                argument.type, "_type_definition", None
+                argument.type,
+                "_type_definition",
+                None,
             )
 
             if type_definition and type_definition.is_interface:
@@ -64,5 +66,6 @@ class InvalidArgumentTypeError(StrawberryException):
         source_finder = SourceFinder()
 
         return source_finder.find_argument_from_object(
-            self.function, self.argument_name  # type: ignore
+            self.function,
+            self.argument_name,  # type: ignore
         )

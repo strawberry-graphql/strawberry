@@ -33,11 +33,12 @@ class DebuggableGraphQLTransportWSConsumer(GraphQLWSConsumer):
         return context
 
 
-@pytest.fixture
+@pytest.fixture()
 async def ws():
     client = WebsocketCommunicator(
         DebuggableGraphQLTransportWSConsumer.as_asgi(
-            schema=schema, subscription_protocols=(GRAPHQL_TRANSPORT_WS_PROTOCOL,)
+            schema=schema,
+            subscription_protocols=(GRAPHQL_TRANSPORT_WS_PROTOCOL,),
         ),
         "/graphql",
         subprotocols=[
@@ -138,9 +139,9 @@ async def test_connection_init_timeout_cancellation():
         SubscribeMessage(
             id="sub1",
             payload=SubscribeMessagePayload(
-                query="subscription { debug { isConnectionInitTimeoutTaskDone } }"
+                query="subscription { debug { isConnectionInitTimeoutTaskDone } }",
             ),
-        ).as_dict()
+        ).as_dict(),
     )
 
     response = await client.receive_json_from()
@@ -188,7 +189,7 @@ async def test_server_sent_ping(ws):
         SubscribeMessage(
             id="sub1",
             payload=SubscribeMessagePayload(query="subscription { requestPing }"),
-        ).as_dict()
+        ).as_dict(),
     )
 
     response = await ws.receive_json_from()
@@ -211,9 +212,9 @@ async def test_unauthorized_subscriptions(ws):
         SubscribeMessage(
             id="sub1",
             payload=SubscribeMessagePayload(
-                query='subscription { echo(message: "Hi") }'
+                query='subscription { echo(message: "Hi") }',
             ),
-        ).as_dict()
+        ).as_dict(),
     )
 
     data = await ws.receive_output()
@@ -231,18 +232,18 @@ async def test_duplicated_operation_ids(ws):
         SubscribeMessage(
             id="sub1",
             payload=SubscribeMessagePayload(
-                query='subscription { echo(message: "Hi", delay: 5) }'
+                query='subscription { echo(message: "Hi", delay: 5) }',
             ),
-        ).as_dict()
+        ).as_dict(),
     )
 
     await ws.send_json_to(
         SubscribeMessage(
             id="sub1",
             payload=SubscribeMessagePayload(
-                query='subscription { echo(message: "Hi", delay: 5) }'
+                query='subscription { echo(message: "Hi", delay: 5) }',
             ),
-        ).as_dict()
+        ).as_dict(),
     )
 
     data = await ws.receive_output()
@@ -260,9 +261,9 @@ async def test_simple_subscription(ws):
         SubscribeMessage(
             id="sub1",
             payload=SubscribeMessagePayload(
-                query='subscription { echo(message: "Hi") }'
+                query='subscription { echo(message: "Hi") }',
             ),
-        ).as_dict()
+        ).as_dict(),
     )
 
     response = await ws.receive_json_from()
@@ -283,7 +284,7 @@ async def test_subscription_syntax_error(ws):
         SubscribeMessage(
             id="sub1",
             payload=SubscribeMessagePayload(query="subscription { INVALID_SYNTAX "),
-        ).as_dict()
+        ).as_dict(),
     )
 
     # An invalid syntax will close the websocket
@@ -307,7 +308,7 @@ async def test_subscription_field_errors(ws):
             payload=SubscribeMessagePayload(
                 query="subscription { notASubscriptionField }",
             ),
-        ).as_dict()
+        ).as_dict(),
     )
 
     response = await ws.receive_json_from()
@@ -331,9 +332,9 @@ async def test_subscription_cancellation(ws):
         SubscribeMessage(
             id="sub1",
             payload=SubscribeMessagePayload(
-                query='subscription { echo(message: "Hi", delay: 99) }'
+                query='subscription { echo(message: "Hi", delay: 99) }',
             ),
-        ).as_dict()
+        ).as_dict(),
     )
 
     await ws.send_json_to(
@@ -342,14 +343,15 @@ async def test_subscription_cancellation(ws):
             payload=SubscribeMessagePayload(
                 query="subscription { debug { numActiveResultHandlers } }",
             ),
-        ).as_dict()
+        ).as_dict(),
     )
 
     response = await ws.receive_json_from()
     assert (
         response
         == NextMessage(
-            id="sub2", payload={"data": {"debug": {"numActiveResultHandlers": 2}}}
+            id="sub2",
+            payload={"data": {"debug": {"numActiveResultHandlers": 2}}},
         ).as_dict()
     )
 
@@ -364,14 +366,15 @@ async def test_subscription_cancellation(ws):
             payload=SubscribeMessagePayload(
                 query="subscription { debug { numActiveResultHandlers } }",
             ),
-        ).as_dict()
+        ).as_dict(),
     )
 
     response = await ws.receive_json_from()
     assert (
         response
         == NextMessage(
-            id="sub3", payload={"data": {"debug": {"numActiveResultHandlers": 1}}}
+            id="sub3",
+            payload={"data": {"debug": {"numActiveResultHandlers": 1}}},
         ).as_dict()
     )
 
@@ -391,7 +394,7 @@ async def test_subscription_errors(ws):
             payload=SubscribeMessagePayload(
                 query='subscription { error(message: "TEST ERR") }',
             ),
-        ).as_dict()
+        ).as_dict(),
     )
 
     response = await ws.receive_json_from()
@@ -414,7 +417,7 @@ async def test_subscription_exceptions(ws):
             payload=SubscribeMessagePayload(
                 query='subscription { exception(message: "TEST EXC") }',
             ),
-        ).as_dict()
+        ).as_dict(),
     )
 
     response = await ws.receive_json_from()
@@ -426,7 +429,7 @@ async def test_subscription_exceptions(ws):
 
 async def test_injects_connection_params(ws):
     await ws.send_json_to(
-        ConnectionInitMessage(payload={"strawberry": "rocks"}).as_dict()
+        ConnectionInitMessage(payload={"strawberry": "rocks"}).as_dict(),
     )
 
     response = await ws.receive_json_from()
@@ -436,14 +439,14 @@ async def test_injects_connection_params(ws):
         SubscribeMessage(
             id="sub1",
             payload=SubscribeMessagePayload(query="subscription { connectionParams }"),
-        ).as_dict()
+        ).as_dict(),
     )
 
     response = await ws.receive_json_from()
     assert (
         response
         == NextMessage(
-            id="sub1", payload={"data": {"connectionParams": "rocks"}}
+            id="sub1", payload={"data": {"connectionParams": "rocks"}},
         ).as_dict()
     )
 

@@ -420,7 +420,7 @@ def test_union_used_multiple_times():
         type Query {
           field1: MyUnion!
           field2: MyUnion!
-        }"""
+        }""",
     )
 
 
@@ -521,7 +521,8 @@ def test_union_with_input_types():
         something: Union[A, B]
 
     with pytest.raises(
-        TypeError, match="Union for A is not supported because it is an Input type"
+        TypeError,
+        match="Union for A is not supported because it is an Input type",
     ):
 
         @strawberry.type
