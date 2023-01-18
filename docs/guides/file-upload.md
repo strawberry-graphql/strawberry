@@ -47,13 +47,13 @@ class FolderInput:
 class Mutation:
     @strawberry.mutation
     async def read_file(self, file: Upload) -> str:
-        return (await file.read()).decode('utf-8')
+        return (await file.read()).decode("utf-8")
 
     @strawberry.mutation
     async def read_files(self, files: typing.List[Upload]) -> typing.List[str]:
         contents = []
         for file in files:
-            content = (await file.read()).decode('utf-8')
+            content = (await file.read()).decode("utf-8")
             contents.append(content)
         return contents
 
@@ -61,7 +61,7 @@ class Mutation:
     async def read_folder(self, folder: FolderInput) -> typing.List[str]:
         contents = []
         for file in folder.files:
-            content = (await file.read()).decode('utf-8')
+            content = (await file.read()).decode("utf-8")
             contents.append(content)
         return contents
 ```
@@ -85,13 +85,13 @@ class FolderInput:
 class Mutation:
     @strawberry.mutation
     def read_file(self, file: Upload) -> str:
-        return file.read().decode('utf-8')
+        return file.read().decode("utf-8")
 
     @strawberry.mutation
     def read_files(self, files: typing.List[Upload]) -> typing.List[str]:
         contents = []
         for file in files:
-            content = file.read().decode('utf-8')
+            content = file.read().decode("utf-8")
             contents.append(content)
         return contents
 
@@ -99,7 +99,7 @@ class Mutation:
     def read_folder(self, folder: FolderInput) -> typing.List[str]:
         contents = []
         for file in folder.files:
-            contents.append(file.read().decode('utf-8'))
+            contents.append(file.read().decode("utf-8"))
         return contents
 ```
 
