@@ -399,7 +399,7 @@ async def test_runs_directives_with_extensions_async():
     assert result.data["person"]["name"] == "JESS"
 
 
-@pytest.fixture()
+@pytest.fixture
 def info_directive_schema() -> strawberry.Schema:
     """Returns a schema with directive that validates if info is recieved."""
 

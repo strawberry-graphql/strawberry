@@ -18,6 +18,6 @@ def pytest_collection_modifyitems(config, items):
             item.add_marker(pytest.mark.django)
 
 
-@pytest.fixture()
+@pytest.fixture
 def graphql_client():
     return GraphQLTestClient(Client())

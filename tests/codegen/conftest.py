@@ -98,6 +98,6 @@ class Query:
         return True
 
 
-@pytest.fixture()
+@pytest.fixture
 def schema():
     return strawberry.Schema(query=Query, types=[BlogPost, Image])

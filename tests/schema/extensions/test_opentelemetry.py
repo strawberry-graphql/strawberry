@@ -8,7 +8,7 @@ from strawberry.extensions.tracing.opentelemetry import (
 )
 
 
-@pytest.fixture()
+@pytest.fixture
 def global_tracer_mock(mocker):
     return mocker.patch("strawberry.extensions.tracing.opentelemetry.trace.get_tracer")
 

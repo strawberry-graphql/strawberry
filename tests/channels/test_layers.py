@@ -16,7 +16,7 @@ from strawberry.subscriptions.protocols.graphql_transport_ws.types import (
 from tests.channels.schema import schema
 
 
-@pytest.fixture()
+@pytest.fixture
 async def ws():
     client = WebsocketCommunicator(
         GraphQLWSConsumer.as_asgi(schema=schema),

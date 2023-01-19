@@ -5,7 +5,7 @@ import pytest
 import strawberry
 
 
-@pytest.fixture()
+@pytest.fixture
 def datadog_extension(mocker):
     datadog_mock = mocker.MagicMock()
 
@@ -16,7 +16,7 @@ def datadog_extension(mocker):
     return DatadogTracingExtension, datadog_mock
 
 
-@pytest.fixture()
+@pytest.fixture
 def datadog_extension_sync(mocker):
     datadog_mock = mocker.MagicMock()
 

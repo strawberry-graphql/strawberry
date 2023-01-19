@@ -33,7 +33,7 @@ class DebuggableGraphQLTransportWSConsumer(GraphQLWSConsumer):
         return context
 
 
-@pytest.fixture()
+@pytest.fixture
 async def ws():
     client = WebsocketCommunicator(
         DebuggableGraphQLTransportWSConsumer.as_asgi(

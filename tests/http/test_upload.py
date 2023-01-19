@@ -39,7 +39,7 @@ def http_client_class(request) -> Type[HttpClient]:
     return request.param
 
 
-@pytest.fixture()
+@pytest.fixture
 def http_client(http_client_class) -> HttpClient:
     return http_client_class()
 

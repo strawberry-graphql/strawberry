@@ -44,7 +44,7 @@ class EmptyPlugin(QueryCodegenPlugin):
         ]
 
 
-@pytest.fixture()
+@pytest.fixture
 def query_file_path(tmp_path: Path) -> Path:
     output_path = tmp_path / "query.graphql"
     output_path.write_text(

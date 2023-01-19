@@ -234,6 +234,8 @@ ignore = [
     "FBT002",
     "FBT003",
 
+    "PT001",
+
     # enable these, we have some in tests
     "B006",
     "PT004",

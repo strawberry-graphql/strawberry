@@ -7,7 +7,7 @@ import strawberry
 from tests.fastapi.app import create_app
 
 
-@pytest.fixture()
+@pytest.fixture
 def test_client():
     @strawberry.type
     class Query:
