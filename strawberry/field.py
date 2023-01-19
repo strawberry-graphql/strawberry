@@ -60,7 +60,6 @@ def _is_generic(resolver_type: Union[StrawberryType, type]) -> bool:
 
 
 class StrawberryField(dataclasses.Field):
-    python_name: str
     type_annotation: Optional[StrawberryAnnotation]
     default_resolver: Callable[[Any, str], object] = getattr
 
@@ -206,7 +205,7 @@ class StrawberryField(dataclasses.Field):
     # using the function syntax for property here in order to make it easier
     # to ignore this mypy error:
     # https://github.com/python/mypy/issues/4125
-    # type: ignore
+    python_name: str = property(_python_name, _set_python_name)  # type: ignore[assignment]  # noqa: E501
 
     @property
     def base_resolver(self) -> Optional[StrawberryResolver]:
