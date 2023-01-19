@@ -832,7 +832,8 @@ def test_injects_connection_params(test_client):
         assert (
             response
             == NextMessage(
-                id="sub1", payload={"data": {"connectionParams": "rocks"}},
+                id="sub1",
+                payload={"data": {"connectionParams": "rocks"}},
             ).as_dict()
         )
 

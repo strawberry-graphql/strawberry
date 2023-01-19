@@ -88,7 +88,8 @@ class ChannelsConsumer(AsyncConsumer):
         connection_params: Optional[Dict[str, Any]] = None,
     ) -> StrawberryChannelsContext:
         return StrawberryChannelsContext(
-            request=request or self, connection_params=connection_params,
+            request=request or self,
+            connection_params=connection_params,
         )
 
     async def dispatch(self, message: ChannelsMessage):

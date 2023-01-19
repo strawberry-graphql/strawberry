@@ -446,7 +446,8 @@ async def test_injects_connection_params(ws):
     assert (
         response
         == NextMessage(
-            id="sub1", payload={"data": {"connectionParams": "rocks"}},
+            id="sub1",
+            payload={"data": {"connectionParams": "rocks"}},
         ).as_dict()
     )
 

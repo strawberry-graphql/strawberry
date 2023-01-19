@@ -56,7 +56,8 @@ class OpenTelemetryExtension(Extension):
 
         if self.execution_context.query:
             self._span_holder[RequestStage.REQUEST].set_attribute(
-                "query", self.execution_context.query,
+                "query",
+                self.execution_context.query,
             )
 
     def on_request_end(self):
