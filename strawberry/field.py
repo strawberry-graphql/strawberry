@@ -200,10 +200,7 @@ class StrawberryField(dataclasses.Field):
     def _set_python_name(self, name: str) -> None:
         self.name = name
 
-    # using the function syntax for property here in order to make it easier
-    # to ignore this mypy error:
-    # https://github.com/python/mypy/issues/4125
-    python_name = property(_python_name, _set_python_name)  # type: ignore[assignment]  # noqa: E501
+    python_name: str = property(_python_name, _set_python_name)  # type: ignore[assignment]  # noqa: E501
 
     @property
     def base_resolver(self) -> Optional[StrawberryResolver]:
