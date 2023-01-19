@@ -98,10 +98,7 @@ class GraphQLView(BaseGraphQLView):
         else:
             return Response("Unsupported Media Type", 415)
 
-        try:
-            request_data = parse_request_data(data)
-        except MissingQueryError:
-            return Response("No GraphQL query found in the request", 400)
+        request_data = parse_request_data(data)
 
         response = Response(status=200, content_type="application/json")
         context = self.get_context(response)
@@ -122,6 +119,8 @@ class GraphQLView(BaseGraphQLView):
             )
         except InvalidOperationTypeError as e:
             return Response(e.as_http_error_reason(method), 400)
+        except MissingQueryError:
+            return Response("No GraphQL query found in the request", 400)
 
         response_data = self.process_result(result)
         response.set_data(self.encode_json(response_data))
@@ -190,10 +189,7 @@ class AsyncGraphQLView(BaseGraphQLView):
         else:
             return Response("Unsupported Media Type", 415)
 
-        try:
-            request_data = parse_request_data(data)
-        except MissingQueryError:
-            return Response("No GraphQL query found in the request", 400)
+        request_data = parse_request_data(data)
 
         response = Response(status=200, content_type="application/json")
         context = await self.get_context(response)
@@ -216,6 +212,8 @@ class AsyncGraphQLView(BaseGraphQLView):
             )
         except InvalidOperationTypeError as e:
             return Response(e.as_http_error_reason(method), 400)
+        except MissingQueryError:
+            return Response("No GraphQL query found in the request", 400)
 
         response_data = await self.process_result(result)
         response.set_data(self.encode_json(response_data))

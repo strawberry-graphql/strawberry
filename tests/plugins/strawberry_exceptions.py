@@ -117,10 +117,6 @@ class StrawberryExceptionsPlugin:
                 )
                 console.print(traceback)
 
-            print(  # noqa: T201
-                f"\n Exception class: {raised_exception.__class__.__name__}\n"
-            )
-
         exception_text = console.export_text()
 
         text = f"## {test_name}\n"
