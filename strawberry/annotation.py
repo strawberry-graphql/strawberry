@@ -272,7 +272,7 @@ class StrawberryAnnotation:
         """Returns True if annotation is a List"""
         annotation_origin = getattr(annotation, "__origin__", None)
 
-        return annotation_origin in (list, tuple)
+        return (annotation_origin in (list, tuple)) or annotation_origin is abc.Sequence
 
     @classmethod
     def _is_strawberry_type(cls, evaled_type: Any) -> bool:
