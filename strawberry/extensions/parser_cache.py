@@ -10,7 +10,7 @@ class ParserCache(Extension):
     Add LRU caching the parsing step during execution to improve performance.
 
     Example:
-    -------
+
     >>> import strawberry
     >>> from strawberry.extensions import ParserCache
     >>>
@@ -22,7 +22,7 @@ class ParserCache(Extension):
     ... )
 
     Arguments:
-    ---------
+
     `maxsize: Optional[int]`
         Set the maxsize of the cache. If `maxsize` is set to `None` then the
         cache will grow without bound.

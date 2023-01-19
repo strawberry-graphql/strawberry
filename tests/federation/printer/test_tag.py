@@ -14,16 +14,14 @@ def test_field_tag_printed_correctly():
     @strawberry.federation.type(tags=["myTag", "anotherTag"])
     class Product(SomeInterface):
         upc: str = strawberry.federation.field(
-            external=True,
-            tags=["myTag", "anotherTag"],
+            external=True, tags=["myTag", "anotherTag"]
         )
 
     @strawberry.federation.type
     class Query:
         @strawberry.field
         def top_products(
-            self,
-            first: Annotated[int, strawberry.federation.argument(tags=["myTag"])],
+            self, first: Annotated[int, strawberry.federation.argument(tags=["myTag"])]
         ) -> List[Product]:
             return []
 
@@ -218,9 +216,7 @@ def test_tag_printed_correctly_on_inputs():
         hello: str
 
     schema = strawberry.federation.Schema(
-        query=Query,
-        types=[Input],
-        enable_federation_2=True,
+        query=Query, types=[Input], enable_federation_2=True
     )
 
     expected = """

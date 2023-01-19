@@ -32,9 +32,7 @@ class TypeScriptPlugin(QueryCodegenPlugin):
     }
 
     def generate_code(
-        self,
-        types: List[GraphQLType],
-        operation: GraphQLOperation,
+        self, types: List[GraphQLType], operation: GraphQLOperation
     ) -> List[CodegenFile]:
         printed_types = list(filter(None, (self._print_type(type) for type in types)))
 
@@ -90,7 +88,7 @@ class TypeScriptPlugin(QueryCodegenPlugin):
                 f"enum {type_.name} {{",
                 textwrap.indent(values, " " * 4),
                 "}",
-            ],
+            ]
         )
 
     def _print_scalar_type(self, type_: GraphQLScalar) -> str:

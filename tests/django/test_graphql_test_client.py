@@ -4,4 +4,5 @@ def test_assertion_error_not_raised_when_asserts_errors_is_false(graphql_client)
     try:
         graphql_client.query(query, asserts_errors=False)
     except AssertionError:
-        raise AssertionError()
+        # TODO: fix this, use pytest.raises instead
+        assert False  # noqa: B011

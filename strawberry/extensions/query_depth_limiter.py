@@ -51,7 +51,7 @@ class QueryDepthLimiter(AddValidationRules):
     Add a validator to limit the query depth of GraphQL operations
 
     Example:
-    -------
+
     >>> import strawberry
     >>> from strawberry.extensions import QueryDepthLimiter
     >>>
@@ -63,7 +63,7 @@ class QueryDepthLimiter(AddValidationRules):
     ... )
 
     Arguments:
-    ---------
+
     `max_depth: int`
         The maximum allowed depth for any operation in a GraphQL document.
     `ignore: Optional[List[IgnoreType]]`
@@ -157,7 +157,7 @@ def determine_depth(
             GraphQLError(
                 f"'{operation_name}' exceeds maximum operation depth of {max_depth}",
                 [node],
-            ),
+            )
         )
         return depth_so_far
 
@@ -165,8 +165,7 @@ def determine_depth(
         # by default, ignore the introspection fields which begin
         # with double underscores
         should_ignore = is_introspection_key(node.name.value) or is_ignored(
-            node,
-            ignore,
+            node, ignore
         )
 
         if should_ignore or not node.selection_set:
@@ -184,7 +183,7 @@ def determine_depth(
                     ignore=ignore,
                 ),
                 node.selection_set.selections,
-            ),
+            )
         )
     elif isinstance(node, FragmentSpreadNode):
         return determine_depth(
@@ -197,8 +196,7 @@ def determine_depth(
             ignore=ignore,
         )
     elif isinstance(
-        node,
-        (InlineFragmentNode, FragmentDefinitionNode, OperationDefinitionNode),
+        node, (InlineFragmentNode, FragmentDefinitionNode, OperationDefinitionNode)
     ):
         return max(
             map(
@@ -212,7 +210,7 @@ def determine_depth(
                     ignore=ignore,
                 ),
                 node.selection_set.selections,
-            ),
+            )
         )
     else:
         raise Exception(f"Depth crawler cannot handle: {node.kind}")  # pragma: no cover

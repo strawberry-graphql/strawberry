@@ -88,8 +88,7 @@ def get_default_factory_for_field(
         default_factory = cast(NoArgAnyCallable, default_factory)
 
         raise BothDefaultAndDefaultFactoryDefinedError(
-            default=default,
-            default_factory=default_factory,
+            default=default, default_factory=default_factory
         )
 
     # if we have a default_factory, we should return it
@@ -114,18 +113,14 @@ def get_default_factory_for_field(
 
 
 def ensure_all_auto_fields_in_pydantic(
-    model: Type[BaseModel],
-    auto_fields: Set[str],
-    cls_name: str,
+    model: Type[BaseModel], auto_fields: Set[str], cls_name: str
 ) -> Union[NoReturn, None]:
     # Raise error if user defined a strawberry.auto field not present in the model
     non_existing_fields = list(auto_fields - model.__fields__.keys())
 
     if non_existing_fields:
         raise AutoFieldsNotInBaseModelError(
-            fields=non_existing_fields,
-            cls_name=cls_name,
-            model=model,
+            fields=non_existing_fields, cls_name=cls_name, model=model
         )
     else:
         return None

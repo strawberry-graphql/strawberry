@@ -88,6 +88,7 @@ class Schema(BaseSchema):
         The _service field is added by default, but the _entities field is only
         added if the schema contains an entity type.
         """
+
         # note we don't add the _entities field here, as we need to know if the
         # schema contains an entity type first and we do that by leveraging
         # the schema converter type map, so we don't have to do that twice
@@ -242,7 +243,7 @@ class Schema(BaseSchema):
         for directive in self.schema_directives_in_use:
             if isinstance(directive, FederationDirective):
                 directive_by_url[directive.imported_from.url].add(
-                    f"@{directive.imported_from.name}",
+                    f"@{directive.imported_from.name}"
                 )
 
         link_directives = tuple(
@@ -260,8 +261,8 @@ class Schema(BaseSchema):
             GraphQLNonNull(GraphQLList(entity_type)),
             args={
                 "representations": GraphQLArgument(
-                    GraphQLNonNull(GraphQLList(GraphQLNonNull(self.Any))),
-                ),
+                    GraphQLNonNull(GraphQLList(GraphQLNonNull(self.Any)))
+                )
             },
             resolve=self.entities_resolver,
         )
@@ -303,12 +304,7 @@ def _is_key(directive: Any) -> bool:
 
 
 def _has_federation_keys(
-    definition: Union[
-        TypeDefinition,
-        ScalarDefinition,
-        EnumDefinition,
-        StrawberryUnion,
-    ],
+    definition: Union[TypeDefinition, ScalarDefinition, EnumDefinition, StrawberryUnion]
 ) -> bool:
     if isinstance(definition, TypeDefinition):
         return any(_is_key(directive) for directive in definition.directives or [])

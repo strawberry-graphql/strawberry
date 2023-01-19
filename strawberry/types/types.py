@@ -41,7 +41,7 @@ class TypeDefinition(StrawberryType):
     concrete_of: Optional[TypeDefinition] = None
     """Concrete implementations of Generic TypeDefinitions fill this in"""
     type_var_map: Mapping[TypeVar, Union[StrawberryType, type]] = dataclasses.field(
-        default_factory=dict,
+        default_factory=dict
     )
 
     def __post_init__(self):
@@ -69,8 +69,7 @@ class TypeDefinition(StrawberryType):
 
     # TODO: Return a StrawberryObject
     def copy_with(
-        self,
-        type_var_map: Mapping[TypeVar, Union[StrawberryType, type]],
+        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
     ) -> type:
         # TODO: Logic unnecessary with StrawberryObject
         fields = [field.copy_with(type_var_map) for field in self.fields]
@@ -102,8 +101,7 @@ class TypeDefinition(StrawberryType):
 
     def get_field(self, python_name: str) -> Optional[StrawberryField]:
         return next(
-            (field for field in self.fields if field.python_name == python_name),
-            None,
+            (field for field in self.fields if field.python_name == python_name), None
         )
 
     @property

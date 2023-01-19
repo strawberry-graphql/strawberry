@@ -54,7 +54,7 @@ def error_type(
     name: Optional[str] = None,
     description: Optional[str] = None,
     directives: Optional[Sequence[object]] = (),
-    all_fields: bool = False,
+    all_fields: bool = False
 ):
     def wrap(cls):
         model_fields = model.__fields__
@@ -72,7 +72,7 @@ def error_type(
                 name
                 for name, type_ in existing_fields.items()
                 if isinstance(type_, StrawberryAuto)
-            },
+            }
         )
 
         if all_fields:

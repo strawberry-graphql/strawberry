@@ -60,6 +60,7 @@ def _is_generic(resolver_type: Union[StrawberryType, type]) -> bool:
 
 
 class StrawberryField(dataclasses.Field):
+    python_name: str
     type_annotation: Optional[StrawberryAnnotation]
     default_resolver: Callable[[Any, str], object] = getattr
 
@@ -132,6 +133,7 @@ class StrawberryField(dataclasses.Field):
 
     def __call__(self, resolver: _RESOLVER_TYPE) -> "StrawberryField":
         """Add a resolver to the field"""
+
         # Allow for StrawberryResolvers or bare functions to be provided
         if not isinstance(resolver, StrawberryResolver):
             resolver = StrawberryResolver(resolver)
@@ -156,17 +158,14 @@ class StrawberryField(dataclasses.Field):
         return self
 
     def get_result(
-        self,
-        source: Any,
-        info: Optional[Info],
-        args: List[Any],
-        kwargs: Dict[str, Any],
+        self, source: Any, info: Optional[Info], args: List[Any], kwargs: Dict[str, Any]
     ) -> Union[Awaitable[Any], Any]:
         """
         Calls the resolver defined for the StrawberryField.
         If the field doesn't have a resolver defined we default
         to using the default resolver specified in StrawberryConfig.
         """
+
         if self.base_resolver:
             return self.base_resolver(*args, **kwargs)
 
@@ -205,7 +204,6 @@ class StrawberryField(dataclasses.Field):
     # using the function syntax for property here in order to make it easier
     # to ignore this mypy error:
     # https://github.com/python/mypy/issues/4125
-    python_name: str = property(_python_name, _set_python_name)  # type: ignore[assignment]  # noqa: E501
 
     @property
     def base_resolver(self) -> Optional[StrawberryResolver]:
@@ -271,8 +269,7 @@ class StrawberryField(dataclasses.Field):
         # that we have access to the correct namespace for the object type
         # the field is attached to.
         self.type_annotation = StrawberryAnnotation.from_annotation(
-            type_,
-            namespace=None,
+            type_, namespace=None
         )
 
     # TODO: add this to arguments (and/or move it to StrawberryType)
@@ -290,8 +287,7 @@ class StrawberryField(dataclasses.Field):
         return []
 
     def copy_with(
-        self,
-        type_var_map: Mapping[TypeVar, Union[StrawberryType, builtins.type]],
+        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, builtins.type]]
     ) -> "StrawberryField":
         new_type: Union[StrawberryType, type] = self.type
 
@@ -331,10 +327,10 @@ class StrawberryField(dataclasses.Field):
 
     @property
     def _has_async_permission_classes(self) -> bool:
-        return any(
-            inspect.iscoroutinefunction(permission_class.has_permission)
-            for permission_class in self.permission_classes
-        )
+        for permission_class in self.permission_classes:
+            if inspect.iscoroutinefunction(permission_class.has_permission):
+                return True
+        return False
 
     @property
     def _has_async_base_resolver(self) -> bool:
@@ -432,6 +428,7 @@ def field(
 
     it can be used both as decorator and as a normal function.
     """
+
     type_annotation = StrawberryAnnotation.from_annotation(graphql_type)
 
     field_ = StrawberryField(

@@ -35,9 +35,7 @@ class GraphQLView(BaseGraphQLView):
         return get_context(context)
 
     async def process_result(
-        self,
-        request: Request,
-        result: ExecutionResult,
+        self, request: Request, result: ExecutionResult
     ) -> GraphQLHTTPResponse:
         if self.result_override:
             return self.result_override(result)
@@ -71,10 +69,7 @@ class AsgiHttpClient(HttpClient):
         **kwargs,
     ) -> Response:
         body = self._build_body(
-            query=query,
-            variables=variables,
-            files=files,
-            method=method,
+            query=query, variables=variables, files=files, method=method
         )
 
         if method == "get":

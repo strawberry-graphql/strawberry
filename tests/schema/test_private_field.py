@@ -53,8 +53,7 @@ def test_private_field_access_in_resolver():
     schema = strawberry.Schema(query=Query)
 
     result = schema.execute_sync(
-        "query { ageInMonths }",
-        root_value=Query(name="Dave", age=7),
+        "query { ageInMonths }", root_value=Query(name="Dave", age=7)
     )
 
     assert not result.errors
@@ -80,6 +79,7 @@ class SensitiveData:
 
 def test_private_field_with_str_annotations():
     """Check compatibility of strawberry.Private with annotations as string."""
+
     schema = strawberry.Schema(query=Query)
 
     result = schema.execute_sync(
@@ -91,14 +91,14 @@ def test_private_field_with_str_annotations():
     # Check if querying `notSeen` raises error and no data is returned
     assert "notSeen" not in str(schema)
     failed_result = schema.execute_sync(
-        "query { notSeen }",
-        root_value=Query(not_seen=SensitiveData(1, "foo")),
+        "query { notSeen }", root_value=Query(not_seen=SensitiveData(1, "foo"))
     )
     assert failed_result.data is None
 
 
 def test_private_field_defined_outside_module_scope():
     """Check compatibility of strawberry.Private when defined outside module scope."""
+
     global LocallyScopedSensitiveData
 
     @strawberry.type
@@ -126,6 +126,7 @@ def test_private_field_type_resolution_with_generic_type():
 
     Refer to: https://github.com/strawberry-graphql/strawberry/issues/1938
     """
+
     T = TypeVar("T")
 
     class GenericPrivateType(Generic[T]):

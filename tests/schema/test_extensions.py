@@ -40,7 +40,7 @@ def test_extensions_schema_directive():
     graphql_scheme_directive = graphql_schema.get_directive("schemaDirective")
     """
     graphql_scheme_directive = schema.schema_converter.from_schema_directive(
-        Query._type_definition.directives[0],
+        Query._type_definition.directives[0]
     )
     assert (
         graphql_scheme_directive.extensions[DEFINITION_BACKREF]

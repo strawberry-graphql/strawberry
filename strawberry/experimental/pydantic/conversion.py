@@ -9,9 +9,7 @@ from strawberry.union import StrawberryUnion
 
 
 def _convert_from_pydantic_to_strawberry_type(
-    type_: Union[StrawberryType, type],
-    data_from_model=None,
-    extra=None,
+    type_: Union[StrawberryType, type], data_from_model=None, extra=None
 ):
     data = data_from_model if data_from_model is not None else extra
 
@@ -19,9 +17,7 @@ def _convert_from_pydantic_to_strawberry_type(
         if data is None:
             return data
         return _convert_from_pydantic_to_strawberry_type(
-            type_.of_type,
-            data_from_model=data,
-            extra=extra,
+            type_.of_type, data_from_model=data, extra=extra
         )
     if isinstance(type_, StrawberryUnion):
         for option_type in type_.types:
@@ -31,9 +27,7 @@ def _convert_from_pydantic_to_strawberry_type(
                 source_type = cast(type, option_type)
             if isinstance(data, source_type):
                 return _convert_from_pydantic_to_strawberry_type(
-                    option_type,
-                    data_from_model=data,
-                    extra=extra,
+                    option_type, data_from_model=data, extra=extra
                 )
     if isinstance(type_, EnumDefinition):
         return data
@@ -45,7 +39,7 @@ def _convert_from_pydantic_to_strawberry_type(
                     type_.of_type,
                     data_from_model=item,
                     extra=extra[index] if extra else None,
-                ),
+                )
             )
 
         return items
@@ -59,9 +53,7 @@ def _convert_from_pydantic_to_strawberry_type(
         if hasattr(type_, "from_pydantic"):
             return type_.from_pydantic(data_from_model, extra)
         return convert_pydantic_model_to_strawberry_class(
-            type_,
-            model_instance=data_from_model,
-            extra=extra,
+            type_, model_instance=data_from_model, extra=extra
         )
 
     return data
@@ -84,9 +76,7 @@ def convert_pydantic_model_to_strawberry_class(cls, *, model_instance=None, extr
         # method of the class
         if field.init:
             kwargs[python_name] = _convert_from_pydantic_to_strawberry_type(
-                field.type,
-                data_from_model,
-                extra=data_from_extra,
+                field.type, data_from_model, extra=data_from_extra
             )
 
     return cls(**kwargs)

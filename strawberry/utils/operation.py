@@ -16,8 +16,7 @@ def get_first_operation(
 
 
 def get_operation_type(
-    graphql_document: DocumentNode,
-    operation_name: Optional[str] = None,
+    graphql_document: DocumentNode, operation_name: Optional[str] = None
 ) -> OperationType:
     definition: Optional[OperationDefinitionNode] = None
 

@@ -101,6 +101,7 @@ def test_serialization_of_incorrect_time_string(value):
     Test GraphQLError is raised for incorrect time.
     The error should exclude "original_error".
     """
+
     result = execute_mutation(value)
     assert result.errors
     assert isinstance(result.errors[0], GraphQLError)
@@ -112,6 +113,7 @@ def test_serialization_error_message_for_incorrect_time_string():
     Test if error message is using original error message
     from time lib, and is properly formatted
     """
+
     result = execute_mutation("25:00")
     assert result.errors
     assert result.errors[0].message == (

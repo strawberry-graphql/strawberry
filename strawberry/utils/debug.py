@@ -10,21 +10,19 @@ class StrawberryJSONEncoder(JSONEncoder):
 
 
 def pretty_print_graphql_operation(
-    operation_name: Optional[str],
-    query: str,
-    variables: Optional[Dict["str", Any]],
+    operation_name: Optional[str], query: str, variables: Optional[Dict["str", Any]]
 ):
     """Pretty print a GraphQL operation using pygments.
 
-    Won't print introspection operation to prevent noise in the output.
-    """
+    Won't print introspection operation to prevent noise in the output."""
+
     try:
         from pygments import highlight, lexers
         from pygments.formatters import Terminal256Formatter
     except ImportError as e:
         raise ImportError(
             "pygments is not installed but is required for debug output, install it "
-            "directly or run `pip install strawberry-graphql[debug-server]`",
+            "directly or run `pip install strawberry-graphql[debug-server]`"
         ) from e
 
     from .graphql_lexer import GraphQLLexer
@@ -41,5 +39,5 @@ def pretty_print_graphql_operation(
         variables_json = json.dumps(variables, indent=4, cls=StrawberryJSONEncoder)
 
         print(  # noqa: T201
-            highlight(variables_json, lexers.JsonLexer(), Terminal256Formatter()),
+            highlight(variables_json, lexers.JsonLexer(), Terminal256Formatter())
         )

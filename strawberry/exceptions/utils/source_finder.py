@@ -71,9 +71,7 @@ class LibCSTSourceFinder:
         return m.findall(self._metadata_wrapper, matcher)
 
     def _find_definition_by_qualname(
-        self,
-        qualname: str,
-        nodes: Sequence[CSTNode],
+        self, qualname: str, nodes: Sequence[CSTNode]
     ) -> Optional[CSTNode]:
         from libcst import ClassDef, CSTNode, FunctionDef
 
@@ -101,9 +99,7 @@ class LibCSTSourceFinder:
         return None
 
     def _find_function_definition(
-        self,
-        source: SourcePath,
-        function: Callable,
+        self, source: SourcePath, function: Callable
     ) -> Optional[FunctionDef]:
         import libcst.matchers as m
         from libcst import FunctionDef
@@ -118,9 +114,7 @@ class LibCSTSourceFinder:
         )
 
     def _find_class_definition(
-        self,
-        source: SourcePath,
-        cls: Type,
+        self, source: SourcePath, cls: Type
     ) -> Optional[CSTNode]:
         import libcst.matchers as m
 
@@ -154,9 +148,7 @@ class LibCSTSourceFinder:
         )
 
     def find_class_attribute(
-        self,
-        cls: Type,
-        attribute_name: str,
+        self, cls: Type, attribute_name: str
     ) -> Optional[ExceptionSource]:
         source = self.find_source(cls.__module__)
 
@@ -231,9 +223,7 @@ class LibCSTSourceFinder:
         )
 
     def find_argument(
-        self,
-        function: Callable,
-        argument_name: str,
+        self, function: Callable, argument_name: str
     ) -> Optional[ExceptionSource]:
         source = self.find_source(function.__module__)
 
@@ -271,10 +261,7 @@ class LibCSTSourceFinder:
         )
 
     def find_union_call(
-        self,
-        path: Path,
-        union_name: str,
-        invalid_type: object,
+        self, path: Path, union_name: str, invalid_type: object
     ) -> Optional[ExceptionSource]:
         import libcst.matchers as m
         from libcst import Call
@@ -298,7 +285,7 @@ class LibCSTSourceFinder:
                         m.Element(value=m.Name(value=invalid_type_name)),
                         m.ZeroOrMore(),
                     ],
-                ),
+                )
             ]
             if invalid_type_name is not None
             else []
@@ -351,10 +338,7 @@ class LibCSTSourceFinder:
         )
 
     def find_union_merge(
-        self,
-        union: StrawberryUnion,
-        other: object,
-        frame: Traceback,
+        self, union: StrawberryUnion, other: object, frame: Traceback
     ) -> Optional[ExceptionSource]:
         import libcst.matchers as m
         from libcst import BinaryOperation
@@ -391,8 +375,7 @@ class LibCSTSourceFinder:
         )
 
     def find_scalar_call(
-        self,
-        scalar_definition: ScalarDefinition,
+        self, scalar_definition: ScalarDefinition
     ) -> Optional[ExceptionSource]:
         if scalar_definition._source_file is None:
             return None  # pragma: no cover
@@ -457,30 +440,22 @@ class SourceFinder:
         return self.cst.find_class(cls) if self.cst else None
 
     def find_class_attribute_from_object(
-        self,
-        cls: Type,
-        attribute_name: str,
+        self, cls: Type, attribute_name: str
     ) -> Optional[ExceptionSource]:
         return self.cst.find_class_attribute(cls, attribute_name) if self.cst else None
 
     def find_function_from_object(
-        self,
-        function: Callable,
+        self, function: Callable
     ) -> Optional[ExceptionSource]:
         return self.cst.find_function(function) if self.cst else None
 
     def find_argument_from_object(
-        self,
-        function: Callable,
-        argument_name: str,
+        self, function: Callable, argument_name: str
     ) -> Optional[ExceptionSource]:
         return self.cst.find_argument(function, argument_name) if self.cst else None
 
     def find_union_call(
-        self,
-        path: Path,
-        union_name: str,
-        invalid_type: object,
+        self, path: Path, union_name: str, invalid_type: object
     ) -> Optional[ExceptionSource]:
         return (
             self.cst.find_union_call(path, union_name, invalid_type)
@@ -489,15 +464,11 @@ class SourceFinder:
         )
 
     def find_union_merge(
-        self,
-        union: StrawberryUnion,
-        other: object,
-        frame: Traceback,
+        self, union: StrawberryUnion, other: object, frame: Traceback
     ) -> Optional[ExceptionSource]:
         return self.cst.find_union_merge(union, other, frame) if self.cst else None
 
     def find_scalar_call(
-        self,
-        scalar_definition: ScalarDefinition,
+        self, scalar_definition: ScalarDefinition
     ) -> Optional[ExceptionSource]:
         return self.cst.find_scalar_call(scalar_definition) if self.cst else None

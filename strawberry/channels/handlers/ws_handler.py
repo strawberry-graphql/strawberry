@@ -59,8 +59,7 @@ class GraphQLWSConsumer(ChannelsWSConsumer):
         super().__init__()
 
     def pick_preferred_protocol(
-        self,
-        accepted_subprotocols: Sequence[str],
+        self, accepted_subprotocols: Sequence[str]
     ) -> Optional[str]:
         intersection = set(accepted_subprotocols) & set(self.protocols)
         sorted_intersection = sorted(intersection, key=accepted_subprotocols.index)

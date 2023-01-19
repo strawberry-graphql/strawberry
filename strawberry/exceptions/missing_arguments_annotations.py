@@ -53,6 +53,5 @@ class MissingArgumentsAnnotationsError(StrawberryException):
         source_finder = SourceFinder()
 
         return source_finder.find_argument_from_object(
-            self.function,  # type: ignore[arg-type]
-            self.argument_name,
+            self.function, self.argument_name  # type: ignore
         )

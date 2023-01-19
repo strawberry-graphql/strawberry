@@ -24,7 +24,7 @@ class GraphQLView:
         schema: BaseSchema,
         graphiql: bool = True,
         allow_queries_via_get: bool = True,
-        **kwargs,
+        **kwargs
     ):
         if "render_graphiql" in kwargs:
             self.graphiql = kwargs.pop("render_graphiql")
@@ -49,8 +49,7 @@ class GraphQLView:
         the result using lru cache.
         This saves loading from disk each time it is invoked.
 
-        Returns
-        -------
+        Returns:
             The GraphiQL html page as a string
         """
         return get_graphiql_html(subscription_enabled=False)
@@ -62,8 +61,7 @@ class GraphQLView:
         Args:
             headers: A dictionary containing the headers in the request
 
-        Returns
-        -------
+        Returns:
             Whether html has been requested True for yes, False for no
         """
         if not graphiql:
@@ -91,16 +89,12 @@ class GraphQLView:
         return Response(body=body, status_code=http_status_code, headers=headers)
 
     def get_context(
-        self,
-        request: Request,
-        response: TemporalResponse,
+        self, request: Request, response: TemporalResponse
     ) -> Mapping[str, object]:
         return {"request": request, "response": response}
 
     def process_result(
-        self,
-        request: Request,
-        result: ExecutionResult,
+        self, request: Request, result: ExecutionResult
     ) -> GraphQLHTTPResponse:
         return process_result(result)
 
@@ -110,10 +104,10 @@ class GraphQLView:
         Args:
             request: The chalice request this contains the headers and body
 
-        Returns
-        -------
+        Returns:
             A chalice response
         """
+
         method = request.method
 
         if method not in {"POST", "GET"}:
@@ -166,7 +160,14 @@ class GraphQLView:
                 http_status_code=404,
             )
 
-        request_data = parse_request_data(data)
+        try:
+            request_data = parse_request_data(data)
+        except MissingQueryError:
+            return self.error_response(
+                error_code="BadRequestError",
+                message="No GraphQL query found in the request",
+                http_status_code=400,
+            )
 
         allowed_operation_types = OperationType.from_http(method)
 
@@ -189,12 +190,6 @@ class GraphQLView:
             return self.error_response(
                 error_code="BadRequestError",
                 message=e.as_http_error_reason(method),
-                http_status_code=400,
-            )
-        except MissingQueryError:
-            return self.error_response(
-                error_code="BadRequestError",
-                message="No GraphQL query found in the request",
                 http_status_code=400,
             )
 

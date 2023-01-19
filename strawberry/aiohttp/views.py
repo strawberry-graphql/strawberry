@@ -91,16 +91,12 @@ class GraphQLView:
         return None
 
     async def get_context(
-        self,
-        request: web.Request,
-        response: web.StreamResponse,
+        self, request: web.Request, response: web.StreamResponse
     ) -> object:
         return {"request": request, "response": response}
 
     async def process_result(
-        self,
-        request: web.Request,
-        result: ExecutionResult,
+        self, request: web.Request, result: ExecutionResult
     ) -> GraphQLHTTPResponse:
         return process_result(result)
 

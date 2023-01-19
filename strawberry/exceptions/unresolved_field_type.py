@@ -45,8 +45,7 @@ class UnresolvedFieldTypeError(StrawberryException):
         # field could be attached to the class or not
 
         source = source_finder.find_class_attribute_from_object(
-            self.type_definition.origin,
-            self.field.name,
+            self.type_definition.origin, self.field.name
         )
 
         if source is not None:
@@ -54,7 +53,7 @@ class UnresolvedFieldTypeError(StrawberryException):
 
         if self.field.base_resolver:
             return source_finder.find_function_from_object(
-                self.field.base_resolver.wrapped_func,  # type: ignore
+                self.field.base_resolver.wrapped_func  # type: ignore
             )
 
         return None  # pragma: no cover

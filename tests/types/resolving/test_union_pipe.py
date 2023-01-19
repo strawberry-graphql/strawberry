@@ -75,7 +75,7 @@ def test_strawberry_union_and_none():
         of_type=StrawberryUnion(
             name="UserOrError",
             type_annotations=(StrawberryAnnotation(User), StrawberryAnnotation(Error)),
-        ),
+        )
     )
 
 

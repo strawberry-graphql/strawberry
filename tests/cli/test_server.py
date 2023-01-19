@@ -25,8 +25,7 @@ def test_cli_cmd_server(cli_runner):
 
 def test_cli_cmd_server_app_dir_option(cli_runner):
     result = cli_runner.invoke(
-        cmd_server,
-        ["--app-dir=./tests/fixtures/sample_package", "sample_module"],
+        cmd_server, ["--app-dir=./tests/fixtures/sample_package", "sample_module"]
     )
 
     assert result.exit_code == 0

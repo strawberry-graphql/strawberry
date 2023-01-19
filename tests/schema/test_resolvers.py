@@ -25,7 +25,7 @@ def test_resolver():
     assert result.data["hello"] == "I'm a resolver"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_resolver_function():
     def function_resolver(root) -> str:
         return "I'm a function resolver"
@@ -77,7 +77,7 @@ def test_resolvers_on_types():
     class Example:
         hello: str = strawberry.field(resolver=function_resolver)
         hello_with_params: str = strawberry.field(
-            resolver=function_resolver_with_params,
+            resolver=function_resolver_with_params
         )
 
     @strawberry.type
@@ -117,7 +117,7 @@ def test_optional_info_and_root_params_function_resolver():
         hello: str = strawberry.field(resolver=function_resolver)
         hello_with_root: str = strawberry.field(resolver=function_resolver_with_root)
         hello_with_params: str = strawberry.field(
-            resolver=function_resolver_with_params,
+            resolver=function_resolver_with_params
         )
 
         def __post_init__(self):
@@ -184,7 +184,7 @@ def test_only_info_function_resolvers():
     class Query:
         hello: str = strawberry.field(resolver=function_resolver)
         hello_with_params: str = strawberry.field(
-            resolver=function_resolver_with_params,
+            resolver=function_resolver_with_params
         )
 
     schema = strawberry.Schema(query=Query)
@@ -317,7 +317,7 @@ def test_extending_type():
     assert result.data == {"name": "Name", "name2": "Name 2"}
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_list_resolver():
     @strawberry.type
     class Query:

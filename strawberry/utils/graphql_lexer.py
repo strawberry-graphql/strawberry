@@ -26,5 +26,5 @@ class GraphQLLexer(RegexLexer):
             (r"[!$():=@\[\]{|}]+?", token.Punctuation),
             (r"[_A-Za-z][_0-9A-Za-z]*", token.Keyword),
             (r"(\s|,)", token.Text),
-        ],
+        ]
     }

@@ -85,12 +85,8 @@ class ChannelsConsumer(AsyncConsumer):
     async def get_context(
         self,
         request: Optional["ChannelsConsumer"] = None,
-        connection_params: Optional[Dict[str, Any]] = None,
     ) -> StrawberryChannelsContext:
-        return StrawberryChannelsContext(
-            request=request or self,
-            connection_params=connection_params,
-        )
+        return StrawberryChannelsContext(request=request or self)
 
     async def dispatch(self, message: ChannelsMessage):
         # AsyncConsumer will try to get a function for message["type"] to handle
@@ -116,8 +112,7 @@ class ChannelsConsumer(AsyncConsumer):
         Utility to listen for channels messages for this consumer inside
         a resolver (usually inside a subscription).
 
-        Parameters
-        ----------
+        Parameters:
             type:
                 The type of the message to wait for.
             timeout:
@@ -134,7 +129,7 @@ class ChannelsConsumer(AsyncConsumer):
             raise RuntimeError(
                 "Layers integration is required listening for channels.\n"
                 "Check https://channels.readthedocs.io/en/stable/topics/channel_layers.html "  # noqa:E501
-                "for more information",
+                "for more information"
             )
 
         added_groups = []

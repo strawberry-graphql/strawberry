@@ -54,10 +54,7 @@ ASYNC_TYPES = (
 
 class StrawberryAnnotation:
     def __init__(
-        self,
-        annotation: Union[object, str],
-        *,
-        namespace: Optional[Dict] = None,
+        self, annotation: Union[object, str], *, namespace: Optional[Dict] = None
     ):
         self.annotation = annotation
         self.namespace = namespace
@@ -70,8 +67,7 @@ class StrawberryAnnotation:
 
     @staticmethod
     def from_annotation(
-        annotation: object,
-        namespace: Optional[Dict] = None,
+        annotation: object, namespace: Optional[Dict] = None
     ) -> Optional["StrawberryAnnotation"]:
         if annotation is None:
             return None
@@ -197,7 +193,7 @@ class StrawberryAnnotation:
             filter(
                 lambda x: x is not type(None) and x is not type(UNSET),
                 types,
-            ),
+            )
         )
 
         # Note that passing a single type to `Union` is equivalent to not using `Union`
@@ -258,6 +254,7 @@ class StrawberryAnnotation:
     @classmethod
     def _is_optional(cls, annotation: Any) -> bool:
         """Returns True if the annotation is Optional[SomeType]"""
+
         # Optionals are represented as unions
         if not cls._is_union(annotation):
             return False
@@ -270,6 +267,7 @@ class StrawberryAnnotation:
     @classmethod
     def _is_list(cls, annotation: Any) -> bool:
         """Returns True if annotation is a List"""
+
         annotation_origin = getattr(annotation, "__origin__", None)
 
         return (annotation_origin in (list, tuple)) or annotation_origin is abc.Sequence
@@ -293,8 +291,7 @@ class StrawberryAnnotation:
         elif isinstance(evaled_type, StrawberryOptional):
             return True
         elif isinstance(
-            evaled_type,
-            ScalarDefinition,
+            evaled_type, ScalarDefinition
         ):  # TODO: Replace with StrawberryScalar
             return True
         elif isinstance(evaled_type, StrawberryUnion):
@@ -305,6 +302,7 @@ class StrawberryAnnotation:
     @classmethod
     def _is_union(cls, annotation: Any) -> bool:
         """Returns True if annotation is a Union"""
+
         # this check is needed because unions declared with the new syntax `A | B`
         # don't have a `__origin__` property on them, but they are instances of
         # `UnionType`, which is only available in Python 3.10+

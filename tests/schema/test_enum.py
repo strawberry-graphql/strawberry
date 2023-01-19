@@ -104,8 +104,7 @@ def test_enum_arguments():
 
 def test_lazy_enum_arguments():
     LazyEnum = Annotated[
-        "LazyEnum",
-        lazy("tests.schema.test_lazy_types.test_lazy_enums"),
+        "LazyEnum", lazy("tests.schema.test_lazy_types.test_lazy_enums")
     ]
 
     @strawberry.type
@@ -202,7 +201,7 @@ def test_enum_in_optional_list():
     assert result.data["bestFlavours"] is None
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_enum_resolver_async():
     @strawberry.enum
     class IceCreamFlavour(Enum):
@@ -226,7 +225,7 @@ async def test_enum_resolver_async():
     assert result.data["bestFlavour"] == "STRAWBERRY"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_enum_in_list_async():
     @strawberry.enum
     class IceCreamFlavour(Enum):
@@ -279,7 +278,7 @@ def test_enum_as_argument():
         type Query {
           createFlavour(flavour: IceCreamFlavour!): String!
         }
-        """,
+        """
     ).strip()
 
     assert str(schema) == expected
@@ -309,8 +308,7 @@ def test_enum_as_default_argument():
     class Query:
         @strawberry.field
         def create_flavour(
-            self,
-            flavour: IceCreamFlavour = IceCreamFlavour.STRAWBERRY,
+            self, flavour: IceCreamFlavour = IceCreamFlavour.STRAWBERRY
         ) -> str:
             return f"{flavour.name}"
 
@@ -328,7 +326,7 @@ def test_enum_as_default_argument():
         type Query {
           createFlavour(flavour: IceCreamFlavour! = STRAWBERRY): String!
         }
-        """,
+        """
     ).strip()
 
     assert str(schema) == expected
@@ -369,8 +367,7 @@ def test_enum_deprecated_value():
     class IceCreamFlavour(Enum):
         VANILLA = "vanilla"
         STRAWBERRY = strawberry.enum_value(
-            "strawberry",
-            deprecation_reason="We ran out",
+            "strawberry", deprecation_reason="We ran out"
         )
         CHOCOLATE = strawberry.enum_value("chocolate")
 

@@ -22,7 +22,6 @@ from starlette.websockets import WebSocket
 
 from fastapi import APIRouter, Depends
 from strawberry.exceptions import InvalidCustomContext, MissingQueryError
-from strawberry.fastapi.context import BaseContext, CustomContext, MergedContext
 from strawberry.fastapi.handlers import GraphQLTransportWSHandler, GraphQLWSHandler
 from strawberry.file_uploads.utils import replace_placeholders_with_files
 from strawberry.http import (
@@ -39,6 +38,18 @@ from strawberry.types.graphql import OperationType
 from strawberry.utils.debug import pretty_print_graphql_operation
 from strawberry.utils.graphiql import get_graphiql_html
 
+CustomContext = Union["BaseContext", Dict[str, Any]]
+MergedContext = Union[
+    "BaseContext", Dict[str, Union[Any, BackgroundTasks, Request, Response, WebSocket]]
+]
+
+
+class BaseContext:
+    def __init__(self):
+        self.request: Optional[Union[Request, WebSocket]] = None
+        self.background_tasks: Optional[BackgroundTasks] = None
+        self.response: Optional[Response] = None
+
 
 class GraphQLRouter(APIRouter):
     graphql_ws_handler_class = GraphQLWSHandler
@@ -51,9 +62,8 @@ class GraphQLRouter(APIRouter):
     @staticmethod
     def __get_context_getter(
         custom_getter: Callable[
-            ...,
-            Union[Optional[CustomContext], Awaitable[Optional[CustomContext]]],
-        ],
+            ..., Union[Optional[CustomContext], Awaitable[Optional[CustomContext]]]
+        ]
     ) -> Callable[..., Awaitable[CustomContext]]:
         async def dependency(
             custom_context: Optional[CustomContext],
@@ -90,7 +100,7 @@ class GraphQLRouter(APIRouter):
             parameters=[
                 *list(sig.parameters.values())[1:],
                 sig.parameters["custom_context"].replace(
-                    default=Depends(custom_getter),
+                    default=Depends(custom_getter)
                 ),
             ],
         )
@@ -130,7 +140,7 @@ class GraphQLRouter(APIRouter):
         self.debug = debug
         self.root_value_getter = root_value_getter or self.__get_root_value
         self.context_getter = self.__get_context_getter(
-            context_getter or (lambda: None),
+            context_getter or (lambda: None)
         )
         self.protocols = subscription_protocols
         self.connection_init_wait_timeout = connection_init_wait_timeout
@@ -151,7 +161,7 @@ class GraphQLRouter(APIRouter):
             response: Response,
             context=Depends(self.context_getter),
             root_value=Depends(self.root_value_getter),
-        ) -> Response:
+        ):
             if request.query_params:
                 try:
                     query_data = parse_query_params(request.query_params._dict)
@@ -179,7 +189,7 @@ class GraphQLRouter(APIRouter):
             response: Response,
             context=Depends(self.context_getter),
             root_value=Depends(self.root_value_getter),
-        ) -> Response:
+        ):
             actual_response: Response
 
             content_type = request.headers.get("content-type", "")
@@ -210,9 +220,7 @@ class GraphQLRouter(APIRouter):
 
                 try:
                     data = replace_placeholders_with_files(
-                        operations,
-                        files_map,
-                        multipart_data,
+                        operations, files_map, multipart_data
                     )
                 except KeyError:
                     actual_response = PlainTextResponse(
@@ -304,14 +312,14 @@ class GraphQLRouter(APIRouter):
 
     async def execute(
         self,
-        query: Optional[str],
+        query: str,
         variables: Optional[Dict[str, Any]] = None,
         context: Any = None,
         operation_name: Optional[str] = None,
         root_value: Any = None,
         allowed_operation_types: Optional[Iterable[OperationType]] = None,
     ):
-        if self.debug and query:
+        if self.debug:
             pretty_print_graphql_operation(operation_name, query, variables)
 
         return await self.schema.execute(
@@ -324,21 +332,21 @@ class GraphQLRouter(APIRouter):
         )
 
     async def process_result(
-        self,
-        request: Request,
-        result: ExecutionResult,
+        self, request: Request, result: ExecutionResult
     ) -> GraphQLHTTPResponse:
         return process_result(result)
 
     async def execute_request(
-        self,
-        request: Request,
-        response: Response,
-        data: dict,
-        context,
-        root_value,
+        self, request: Request, response: Response, data: dict, context, root_value
     ) -> Response:
-        request_data = parse_request_data(data)
+        try:
+            request_data = parse_request_data(data)
+        except MissingQueryError:
+            missing_query_response = PlainTextResponse(
+                "No GraphQL query found in the request",
+                status_code=status.HTTP_400_BAD_REQUEST,
+            )
+            return self._merge_responses(response, missing_query_response)
 
         method = request.method
         allowed_operation_types = OperationType.from_http(method)
@@ -360,12 +368,6 @@ class GraphQLRouter(APIRouter):
                 e.as_http_error_reason(method),
                 status_code=status.HTTP_400_BAD_REQUEST,
             )
-        except MissingQueryError:
-            missing_query_response = PlainTextResponse(
-                "No GraphQL query found in the request",
-                status_code=status.HTTP_400_BAD_REQUEST,
-            )
-            return self._merge_responses(response, missing_query_response)
 
         response_data = await self.process_result(request, result)
 

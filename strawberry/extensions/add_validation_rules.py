@@ -10,7 +10,7 @@ class AddValidationRules(Extension):
     Add graphql-core validation rules
 
     Example:
-    -------
+
     >>> import strawberry
     >>> from strawberry.extensions import AddValidationRules
     >>> from graphql import ValidationRule, GraphQLError

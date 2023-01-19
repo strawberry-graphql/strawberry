@@ -8,9 +8,7 @@ def test_use_alias_as_gql_name():
         age_: int = Field(..., alias="age_alias")
 
     @strawberry.experimental.pydantic.type(
-        UserModel,
-        all_fields=True,
-        use_pydantic_alias=True,
+        UserModel, all_fields=True, use_pydantic_alias=True
     )
     class User:
         ...
@@ -41,9 +39,7 @@ def test_do_not_use_alias_as_gql_name():
         age_: int = Field(..., alias="age_alias")
 
     @strawberry.experimental.pydantic.type(
-        UserModel,
-        all_fields=True,
-        use_pydantic_alias=False,
+        UserModel, all_fields=True, use_pydantic_alias=False
     )
     class User:
         ...

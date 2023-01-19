@@ -93,9 +93,7 @@ class Mutation:
 class Subscription:
     @strawberry.subscription
     async def echo(
-        self,
-        message: str,
-        delay: float = 0,
+        self, message: str, delay: float = 0
     ) -> typing.AsyncGenerator[str, None]:
         await asyncio.sleep(delay)
         yield message
@@ -150,10 +148,6 @@ class Subscription:
             num_active_result_handlers=len(active_result_handlers),
             is_connection_init_timeout_task_done=is_connection_init_timeout_task_done,
         )
-
-    @strawberry.subscription
-    async def connection_params(self, info: Info) -> typing.AsyncGenerator[str, None]:
-        yield info.context["connection_params"]["strawberry"]
 
 
 schema = strawberry.Schema(Query, mutation=Mutation, subscription=Subscription)

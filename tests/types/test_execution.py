@@ -129,7 +129,7 @@ def test_execution_context_operation_name_and_type_with_fragments():
             ping
             ...MyFragment
         }
-        """,
+        """
     )
     assert not result.errors
 

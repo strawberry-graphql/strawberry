@@ -46,24 +46,21 @@ def convert_value(info: GraphQLResolveInfo, node: GQLValueNode) -> Any:
 
 
 def convert_arguments(
-    info: GraphQLResolveInfo,
-    nodes: Iterable[GQLArgumentNode],
+    info: GraphQLResolveInfo, nodes: Iterable[GQLArgumentNode]
 ) -> Arguments:
     """Return mapping of arguments."""
     return {node.name.value: convert_value(info, node.value) for node in nodes}
 
 
 def convert_directives(
-    info: GraphQLResolveInfo,
-    nodes: Iterable[GQLDirectiveNode],
+    info: GraphQLResolveInfo, nodes: Iterable[GQLDirectiveNode]
 ) -> Directives:
     """Return mapping of directives."""
     return {node.name.value: convert_arguments(info, node.arguments) for node in nodes}
 
 
 def convert_selections(
-    info: GraphQLResolveInfo,
-    field_nodes: Collection[GQLFieldNode],
+    info: GraphQLResolveInfo, field_nodes: Collection[GQLFieldNode]
 ) -> List[Selection]:
     """Return typed `Selection` based on node type."""
     selections: List[Selection] = []
@@ -99,8 +96,7 @@ class FragmentSpread:
             directives=convert_directives(info, node.directives),
             type_condition=fragment.type_condition.name.value,
             selections=convert_selections(
-                info,
-                getattr(fragment.selection_set, "selections", []),
+                info, getattr(fragment.selection_set, "selections", [])
             ),
         )
 
@@ -118,8 +114,7 @@ class InlineFragment:
         return cls(
             type_condition=node.type_condition.name.value,
             selections=convert_selections(
-                info,
-                getattr(node.selection_set, "selections", []),
+                info, getattr(node.selection_set, "selections", [])
             ),
             directives=convert_directives(info, node.directives),
         )
@@ -143,7 +138,6 @@ class SelectedField:
             alias=getattr(node.alias, "value", None),
             arguments=convert_arguments(info, node.arguments),
             selections=convert_selections(
-                info,
-                getattr(node.selection_set, "selections", []),
+                info, getattr(node.selection_set, "selections", [])
             ),
         )

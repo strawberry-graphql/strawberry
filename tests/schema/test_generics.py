@@ -36,7 +36,7 @@ def test_supports_generic_simple_type():
 
     assert not result.errors
     assert result.data == {
-        "example": {"__typename": "IntEdge", "cursor": "1", "nodeField": 1},
+        "example": {"__typename": "IntEdge", "cursor": "1", "nodeField": 1}
     }
 
 
@@ -78,7 +78,7 @@ def test_supports_generic():
             "__typename": "PersonEdge",
             "cursor": "1",
             "node": {"name": "Example"},
-        },
+        }
     }
 
 
@@ -111,7 +111,7 @@ def test_supports_multiple_generic():
 
     assert not result.errors
     assert result.data == {
-        "multiple": {"__typename": "IntStrMultiple", "a": 123, "b": "123"},
+        "multiple": {"__typename": "IntStrMultiple", "a": 123, "b": "123"}
     }
 
 
@@ -157,7 +157,7 @@ def test_support_nested_generics():
         "users": {
             "__typename": "UserConnection",
             "edge": {"__typename": "UserEdge", "node": {"name": "Patrick"}},
-        },
+        }
     }
 
 
@@ -287,8 +287,7 @@ def test_can_extend_generics():
         @strawberry.field
         def users(self) -> ConnectionWithMeta[User]:
             return ConnectionWithMeta(
-                meta="123",
-                edges=[Edge(node=User(name="Patrick"))],
+                meta="123", edges=[Edge(node=User(name="Patrick"))]
             )
 
     schema = strawberry.Schema(query=Query)
@@ -314,7 +313,7 @@ def test_can_extend_generics():
             "__typename": "UserConnectionWithMeta",
             "meta": "123",
             "edges": [{"__typename": "UserEdge", "node": {"name": "Patrick"}}],
-        },
+        }
     }
 
 
@@ -353,7 +352,7 @@ def test_supports_generic_in_unions():
 
     assert not result.errors
     assert result.data == {
-        "example": {"__typename": "IntEdge", "cursor": "1", "node": 1},
+        "example": {"__typename": "IntEdge", "cursor": "1", "node": 1}
     }
 
 
@@ -433,7 +432,7 @@ def test_generic_with_enum():
             "__typename": "IntEstimatedValue",
             "value": 1,
             "type": "test",
-        },
+        }
     }
 
 
@@ -473,7 +472,7 @@ def test_supports_generic_in_unions_multiple_vars():
 
     assert not result.errors
     assert result.data == {
-        "example": {"__typename": "IntStrEdge", "node": "string", "info": 1},
+        "example": {"__typename": "IntStrEdge", "node": "string", "info": 1}
     }
 
 
@@ -525,7 +524,7 @@ def test_supports_generic_in_unions_with_nesting():
         "users": {
             "__typename": "UserConnection",
             "edge": {"__typename": "UserEdge", "node": {"name": "Patrick"}},
-        },
+        }
     }
 
 
@@ -591,7 +590,7 @@ def test_supports_multiple_generics_in_union():
         "example": [
             {"__typename": "IntEdge", "cursor": "1", "intNode": 1},
             {"__typename": "StrEdge", "cursor": "2", "strNode": "string"},
-        ],
+        ]
     }
 
 
@@ -612,8 +611,7 @@ def test_generated_names():
         @strawberry.field
         def person_edge(self) -> EdgeWithCursor[SpecialPerson]:
             return EdgeWithCursor(
-                cursor=strawberry.ID("1"),
-                node=SpecialPerson(name="Example"),
+                cursor=strawberry.ID("1"), node=SpecialPerson(name="Example")
             )
 
     schema = strawberry.Schema(query=Query)
@@ -636,7 +634,7 @@ def test_generated_names():
             "__typename": "SpecialPersonEdgeWithCursor",
             "cursor": "1",
             "node": {"name": "Example"},
-        },
+        }
     }
 
 
@@ -998,7 +996,7 @@ def test_generic_interface():
                     repr
                 }
             }
-        """,
+        """
     )
 
     assert not query_result.errors
@@ -1007,5 +1005,5 @@ def test_generic_interface():
             "__typename": "StrGenericObject",
             "value": "foo",
             "repr": "foo",
-        },
+        }
     }

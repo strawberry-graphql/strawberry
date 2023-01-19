@@ -233,7 +233,7 @@ def test_basic_type_with_list_of_nested_model():
                 hobbies=[
                     HobbyType(name="Skii"),
                     HobbyType(name="Cooking"),
-                ],
+                ]
             )
 
     schema = strawberry.Schema(query=Query)

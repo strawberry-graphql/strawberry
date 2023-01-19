@@ -6,7 +6,6 @@ from strawberry.subscriptions import GRAPHQL_WS_PROTOCOL
 from strawberry.subscriptions.protocols.graphql_ws import (
     GQL_COMPLETE,
     GQL_CONNECTION_ACK,
-    GQL_CONNECTION_ERROR,
     GQL_CONNECTION_INIT,
     GQL_CONNECTION_KEEP_ALIVE,
     GQL_CONNECTION_TERMINATE,
@@ -34,8 +33,7 @@ class DebuggableGraphQLWSConsumer(GraphQLWSConsumer):
 async def ws():
     client = WebsocketCommunicator(
         DebuggableGraphQLWSConsumer.as_asgi(
-            schema=schema,
-            subscription_protocols=(GRAPHQL_WS_PROTOCOL,),
+            schema=schema, subscription_protocols=(GRAPHQL_WS_PROTOCOL,)
         ),
         "/graphql",
         subprotocols=[
@@ -59,7 +57,7 @@ async def test_simple_subscription(ws):
             "payload": {
                 "query": 'subscription { echo(message: "Hi") }',
             },
-        },
+        }
     )
 
     response = await ws.receive_json_from()
@@ -95,7 +93,7 @@ async def test_operation_selection(ws):
                 """,
                 "operationName": "Subscription2",
             },
-        },
+        }
     )
 
     response = await ws.receive_json_from()
@@ -139,7 +137,7 @@ async def test_sends_keep_alive():
             "type": GQL_START,
             "id": "demo",
             "payload": {"query": 'subscription { echo(message: "Hi", delay: 0.15) }'},
-        },
+        }
     )
 
     response = await client.receive_json_from()
@@ -175,7 +173,7 @@ async def test_subscription_cancellation(ws):
             "type": GQL_START,
             "id": "demo",
             "payload": {"query": 'subscription { echo(message: "Hi", delay: 99) }'},
-        },
+        }
     )
 
     await ws.send_json_to(
@@ -185,7 +183,7 @@ async def test_subscription_cancellation(ws):
             "payload": {
                 "query": "subscription { debug { numActiveResultHandlers } }",
             },
-        },
+        }
     )
 
     response = await ws.receive_json_from()
@@ -209,7 +207,7 @@ async def test_subscription_cancellation(ws):
             "payload": {
                 "query": "subscription { debug { numActiveResultHandlers} }",
             },
-        },
+        }
     )
 
     response = await ws.receive_json_from()
@@ -235,7 +233,7 @@ async def test_subscription_errors(ws):
             "type": GQL_START,
             "id": "demo",
             "payload": {"query": 'subscription { error(message: "TEST ERR") }'},
-        },
+        }
     )
 
     response = await ws.receive_json_from()
@@ -266,7 +264,7 @@ async def test_subscription_exceptions(ws):
             "type": GQL_START,
             "id": "demo",
             "payload": {"query": 'subscription { exception(message: "TEST EXC") }'},
-        },
+        }
     )
 
     response = await ws.receive_json_from()
@@ -297,7 +295,7 @@ async def test_subscription_field_error(ws):
             "type": GQL_START,
             "id": "invalid-field",
             "payload": {"query": "subscription { notASubscriptionField }"},
-        },
+        }
     )
 
     response = await ws.receive_json_from()
@@ -325,7 +323,7 @@ async def test_subscription_syntax_error(ws):
             "type": GQL_START,
             "id": "syntax-error",
             "payload": {"query": "subscription { example "},
-        },
+        }
     )
 
     response = await ws.receive_json_from()
@@ -358,7 +356,7 @@ async def test_non_text_ws_messages_are_ignored(ws):
             "payload": {
                 "query": 'subscription { echo(message: "Hi") }',
             },
-        },
+        }
     )
 
     response = await ws.receive_json_from()
@@ -395,7 +393,7 @@ async def test_unknown_protocol_messages_are_ignored(ws):
             "payload": {
                 "query": 'subscription { echo(message: "Hi") }',
             },
-        },
+        }
     )
 
     response = await ws.receive_json_from()
@@ -429,8 +427,7 @@ async def test_custom_context():
 
     client = WebsocketCommunicator(
         CustomDebuggableGraphQLWSConsumer.as_asgi(
-            schema=schema,
-            subscription_protocols=(GRAPHQL_WS_PROTOCOL,),
+            schema=schema, subscription_protocols=(GRAPHQL_WS_PROTOCOL,)
         ),
         "/graphql",
         subprotocols=[
@@ -447,7 +444,7 @@ async def test_custom_context():
             "payload": {
                 "query": "subscription { context }",
             },
-        },
+        }
     )
 
     response = await client.receive_json_from()
@@ -479,7 +476,7 @@ async def test_resolving_enums(ws):
             "payload": {
                 "query": "subscription { flavors }",
             },
-        },
+        }
     )
 
     response = await ws.receive_json_from()
@@ -515,8 +512,7 @@ async def test_resolving_enums(ws):
 async def test_task_cancellation_separation():
     ws1 = WebsocketCommunicator(
         DebuggableGraphQLWSConsumer.as_asgi(
-            schema=schema,
-            subscription_protocols=(GRAPHQL_WS_PROTOCOL,),
+            schema=schema, subscription_protocols=(GRAPHQL_WS_PROTOCOL,)
         ),
         "/graphql",
         subprotocols=[
@@ -527,8 +523,7 @@ async def test_task_cancellation_separation():
     assert res == (True, GRAPHQL_WS_PROTOCOL)
     ws2 = WebsocketCommunicator(
         DebuggableGraphQLWSConsumer.as_asgi(
-            schema=schema,
-            subscription_protocols=(GRAPHQL_WS_PROTOCOL,),
+            schema=schema, subscription_protocols=(GRAPHQL_WS_PROTOCOL,)
         ),
         "/graphql",
         subprotocols=[
@@ -575,7 +570,7 @@ async def test_task_cancellation_separation():
             "payload": {
                 "query": "subscription { debug { numActiveResultHandlers } }",
             },
-        },
+        }
     )
 
     response = await ws1.receive_json_from()
@@ -588,50 +583,3 @@ async def test_task_cancellation_separation():
     response = await ws1.receive_json_from()
     assert response["type"] == GQL_COMPLETE
     assert response["id"] == "debug1"
-
-
-async def test_injects_connection_params(ws):
-    await ws.send_json_to(
-        {"type": GQL_CONNECTION_INIT, "id": "demo", "payload": {"strawberry": "rocks"}},
-    )
-    await ws.send_json_to(
-        {
-            "type": GQL_START,
-            "id": "demo",
-            "payload": {
-                "query": "subscription { connectionParams }",
-            },
-        },
-    )
-
-    response = await ws.receive_json_from()
-    assert response["type"] == GQL_CONNECTION_ACK
-
-    response = await ws.receive_json_from()
-    assert response["type"] == GQL_DATA
-    assert response["id"] == "demo"
-    assert response["payload"]["data"] == {"connectionParams": "rocks"}
-
-    await ws.send_json_to({"type": GQL_STOP, "id": "demo"})
-    response = await ws.receive_json_from()
-    assert response["type"] == GQL_COMPLETE
-    assert response["id"] == "demo"
-
-    await ws.send_json_to({"type": GQL_CONNECTION_TERMINATE})
-
-    # make sure the websocket is disconnected now
-    data = await ws.receive_output()
-    assert data == {"type": "websocket.close", "code": 1000}
-
-
-async def test_rejects_connection_params(ws):
-    await ws.send_json_to(
-        {"type": GQL_CONNECTION_INIT, "id": "demo", "payload": "gonna fail"},
-    )
-
-    response = await ws.receive_json_from()
-    assert response["type"] == GQL_CONNECTION_ERROR
-
-    # make sure the websocket is disconnected now
-    data = await ws.receive_output()
-    assert data == {"type": "websocket.close", "code": 1000}

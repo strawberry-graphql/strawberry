@@ -17,15 +17,14 @@ def process_result(result: ExecutionResult) -> GraphQLHTTPResponse:
     return {}
 
 
-@pytest.fixture
+@pytest.fixture()
 def http_client(http_client_class) -> HttpClient:
     return http_client_class(result_override=process_result)
 
 
 @pytest.mark.parametrize("method", ["get", "post"])
 async def test_custom_process_result(
-    method: Literal["get", "post"],
-    http_client: HttpClient,
+    method: Literal["get", "post"], http_client: HttpClient
 ):
     response = await http_client.query(
         method=method,

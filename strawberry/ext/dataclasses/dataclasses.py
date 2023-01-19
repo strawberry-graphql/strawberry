@@ -36,7 +36,7 @@ def dataclass_init_fn(fields, frozen, has_post_init, self_name, globals_):
         {
             "MISSING": MISSING,
             "_HAS_DEFAULT_FACTORY": _HAS_DEFAULT_FACTORY,
-        },
+        }
     )
 
     body_lines = []

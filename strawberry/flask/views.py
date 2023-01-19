@@ -56,8 +56,7 @@ class GraphQLView(BaseGraphQLView):
 
         if request.method not in {"POST", "GET"}:
             return Response(
-                "Unsupported method, must be of request type POST or GET",
-                405,
+                "Unsupported method, must be of request type POST or GET", 405
             )
 
         if "application/json" in content_type:
@@ -65,8 +64,7 @@ class GraphQLView(BaseGraphQLView):
                 data = json.loads(request.data)
             except json.JSONDecodeError:
                 return Response(
-                    status=400,
-                    response="Unable to parse request body as JSON",
+                    status=400, response="Unable to parse request body as JSON"
                 )
         elif content_type.startswith("multipart/form-data"):
 
@@ -75,15 +73,12 @@ class GraphQLView(BaseGraphQLView):
                 files_map = json.loads(request.form.get("map", "{}"))
             except json.JSONDecodeError:
                 return Response(
-                    status=400,
-                    response="Unable to parse request body as JSON",
+                    status=400, response="Unable to parse request body as JSON"
                 )
 
             try:
                 data = replace_placeholders_with_files(
-                    operations,
-                    files_map,
-                    request.files,
+                    operations, files_map, request.files
                 )
             except KeyError:
                 return Response(status=400, response="File(s) missing in form data")
@@ -92,8 +87,7 @@ class GraphQLView(BaseGraphQLView):
                 data = parse_query_params(request.args.to_dict())
             except json.JSONDecodeError:
                 return Response(
-                    status=400,
-                    response="Unable to parse request body as JSON",
+                    status=400, response="Unable to parse request body as JSON"
                 )
         elif method == "GET" and should_render_graphiql(self.graphiql, request):
             template = get_graphiql_html(False)
@@ -104,7 +98,10 @@ class GraphQLView(BaseGraphQLView):
         else:
             return Response("Unsupported Media Type", 415)
 
-        request_data = parse_request_data(data)
+        try:
+            request_data = parse_request_data(data)
+        except MissingQueryError:
+            return Response("No GraphQL query found in the request", 400)
 
         response = Response(status=200, content_type="application/json")
         context = self.get_context(response)
@@ -125,8 +122,6 @@ class GraphQLView(BaseGraphQLView):
             )
         except InvalidOperationTypeError as e:
             return Response(e.as_http_error_reason(method), 400)
-        except MissingQueryError:
-            return Response("No GraphQL query found in the request", 400)
 
         response_data = self.process_result(result)
         response.set_data(self.encode_json(response_data))
@@ -152,8 +147,7 @@ class AsyncGraphQLView(BaseGraphQLView):
 
         if request.method not in {"POST", "GET"}:
             return Response(
-                "Unsupported method, must be of request type POST or GET",
-                405,
+                "Unsupported method, must be of request type POST or GET", 405
             )
 
         if "application/json" in content_type:
@@ -161,8 +155,7 @@ class AsyncGraphQLView(BaseGraphQLView):
                 data = json.loads(request.data)
             except json.JSONDecodeError:
                 return Response(
-                    status=400,
-                    response="Unable to parse request body as JSON",
+                    status=400, response="Unable to parse request body as JSON"
                 )
         elif content_type.startswith("multipart/form-data"):
 
@@ -171,15 +164,12 @@ class AsyncGraphQLView(BaseGraphQLView):
                 files_map = json.loads(request.form.get("map", "{}"))
             except json.JSONDecodeError:
                 return Response(
-                    status=400,
-                    response="Unable to parse request body as JSON",
+                    status=400, response="Unable to parse request body as JSON"
                 )
 
             try:
                 data = replace_placeholders_with_files(
-                    operations,
-                    files_map,
-                    request.files,
+                    operations, files_map, request.files
                 )
             except KeyError:
                 return Response(status=400, response="File(s) missing in form data")
@@ -188,8 +178,7 @@ class AsyncGraphQLView(BaseGraphQLView):
                 data = parse_query_params(request.args.to_dict())
             except json.JSONDecodeError:
                 return Response(
-                    status=400,
-                    response="Unable to parse request body as JSON",
+                    status=400, response="Unable to parse request body as JSON"
                 )
 
         elif method == "GET" and should_render_graphiql(self.graphiql, request):
@@ -201,7 +190,10 @@ class AsyncGraphQLView(BaseGraphQLView):
         else:
             return Response("Unsupported Media Type", 415)
 
-        request_data = parse_request_data(data)
+        try:
+            request_data = parse_request_data(data)
+        except MissingQueryError:
+            return Response("No GraphQL query found in the request", 400)
 
         response = Response(status=200, content_type="application/json")
         context = await self.get_context(response)
@@ -224,8 +216,6 @@ class AsyncGraphQLView(BaseGraphQLView):
             )
         except InvalidOperationTypeError as e:
             return Response(e.as_http_error_reason(method), 400)
-        except MissingQueryError:
-            return Response("No GraphQL query found in the request", 400)
 
         response_data = await self.process_result(result)
         response.set_data(self.encode_json(response_data))

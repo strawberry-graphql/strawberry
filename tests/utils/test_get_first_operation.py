@@ -9,7 +9,7 @@ def test_document_without_operation_definition_notes():
         fragment Test on Query {
             hello
         }
-    """,
+    """
     )
     assert get_first_operation(document) is None
 
@@ -20,7 +20,7 @@ def test_single_operation_definition_note():
         query Operation1 {
             hello
         }
-    """,
+    """
     )
     assert get_first_operation(document) is not None
     assert get_first_operation(document).operation == OperationType.QUERY
@@ -35,7 +35,7 @@ def test_multiple_operation_definition_notes():
         query Operation2 {
             hello
         }
-    """,
+    """
     )
     assert get_first_operation(document) is not None
     assert get_first_operation(document).operation == OperationType.MUTATION

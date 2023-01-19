@@ -56,8 +56,7 @@ class DuplicatedTypeName(StrawberryException):
 
         if second_class_source is None:
             return self._get_error_inline(
-                first_class_source,
-                "first class defined here",
+                first_class_source, "first class defined here"
             )
 
         return Group(

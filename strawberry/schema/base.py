@@ -29,7 +29,7 @@ class BaseSchema(Protocol):
     @abstractmethod
     async def execute(
         self,
-        query: Optional[str],
+        query: str,
         variable_values: Optional[Dict[str, Any]] = None,
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
@@ -41,7 +41,7 @@ class BaseSchema(Protocol):
     @abstractmethod
     def execute_sync(
         self,
-        query: Optional[str],
+        query: str,
         variable_values: Optional[Dict[str, Any]] = None,
         context_value: Optional[Any] = None,
         root_value: Optional[Any] = None,
@@ -63,8 +63,7 @@ class BaseSchema(Protocol):
 
     @abstractmethod
     def get_type_by_name(
-        self,
-        name: str,
+        self, name: str
     ) -> Optional[
         Union[TypeDefinition, ScalarDefinition, EnumDefinition, StrawberryUnion]
     ]:

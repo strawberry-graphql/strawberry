@@ -88,23 +88,6 @@ def test_conint():
     assert field.type is int
 
 
-def test_confloat():
-    class Model(pydantic.BaseModel):
-        field: pydantic.confloat(lt=100.5)
-
-    @strawberry.experimental.pydantic.type(Model)
-    class Type:
-        field: strawberry.auto
-
-    definition: TypeDefinition = Type._type_definition
-    assert definition.name == "Type"
-
-    [field] = definition.fields
-
-    assert field.python_name == "field"
-    assert field.type is float
-
-
 def test_constr():
     class Model(pydantic.BaseModel):
         field: pydantic.constr(max_length=100)
@@ -180,7 +163,7 @@ def test_unsupported_types(pydantic_type):
         field: pydantic_type
 
     with pytest.raises(
-        strawberry.experimental.pydantic.exceptions.UnsupportedTypeError,
+        strawberry.experimental.pydantic.exceptions.UnsupportedTypeError
     ):
 
         @strawberry.experimental.pydantic.type(Model)

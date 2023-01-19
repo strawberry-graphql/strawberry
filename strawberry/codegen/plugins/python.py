@@ -41,9 +41,7 @@ class PythonPlugin(QueryCodegenPlugin):
         self.imports: Dict[str, Set[str]] = defaultdict(set)
 
     def generate_code(
-        self,
-        types: List[GraphQLType],
-        operation: GraphQLOperation,
+        self, types: List[GraphQLType], operation: GraphQLOperation
     ) -> List[CodegenFile]:
         printed_types = list(filter(None, (self._print_type(type) for type in types)))
         imports = self._print_imports()
@@ -116,7 +114,7 @@ class PythonPlugin(QueryCodegenPlugin):
             [
                 f"class {type_.name}:",
                 textwrap.indent(fields, " " * 4),
-            ],
+            ]
         )
 
     def _print_enum_type(self, type_: GraphQLEnum) -> str:
@@ -126,7 +124,7 @@ class PythonPlugin(QueryCodegenPlugin):
             [
                 f"class {type_.name}(Enum):",
                 textwrap.indent(values, " " * 4),
-            ],
+            ]
         )
 
     def _print_scalar_type(self, type_: GraphQLScalar) -> str:

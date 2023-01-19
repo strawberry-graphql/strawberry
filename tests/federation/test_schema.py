@@ -70,7 +70,7 @@ def test_entities_type():
     assert not result.errors
 
     assert result.data == {
-        "__type": {"kind": "UNION", "possibleTypes": [{"name": "Product"}]},
+        "__type": {"kind": "UNION", "possibleTypes": [{"name": "Product"}]}
     }
 
 
@@ -260,6 +260,6 @@ def test_can_create_schema_without_query():
                 type _Service {
                   sdl: String!
                 }
-            """,
+            """
         ).strip()
     )

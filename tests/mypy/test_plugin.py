@@ -10,6 +10,7 @@ pytestmark = pytest.mark.usefixtures("maintain_version")
 @pytest.fixture
 def maintain_version():
     """Clean-up side-effected version after tests"""
+
     yield
 
     del MypyVersion.VERSION

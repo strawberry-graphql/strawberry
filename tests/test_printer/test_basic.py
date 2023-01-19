@@ -49,8 +49,7 @@ def test_printer_with_camel_case_on():
     """
 
     schema = strawberry.Schema(
-        query=Query,
-        config=StrawberryConfig(auto_camel_case=True),
+        query=Query, config=StrawberryConfig(auto_camel_case=True)
     )
 
     assert print_schema(schema) == textwrap.dedent(expected_type).strip()
@@ -68,8 +67,7 @@ def test_printer_with_camel_case_off():
     """
 
     schema = strawberry.Schema(
-        query=Query,
-        config=StrawberryConfig(auto_camel_case=False),
+        query=Query, config=StrawberryConfig(auto_camel_case=False)
     )
 
     assert print_schema(schema) == textwrap.dedent(expected_type).strip()
@@ -145,10 +143,10 @@ def test_input_defaults():
         x: Optional[int] = UNSET
         l: List[str] = strawberry.field(default_factory=list)  # noqa: E741
         list_with_values: List[str] = strawberry.field(
-            default_factory=lambda: ["a", "b"],
+            default_factory=lambda: ["a", "b"]
         )
         list_from_generator: List[str] = strawberry.field(
-            default_factory=lambda: (x for x in ["a", "b"]),
+            default_factory=lambda: (x for x in ["a", "b"])
         )
         list_from_string: List[str] = "ab"  # type: ignore - we do this for testing purposes
 
@@ -231,7 +229,7 @@ def test_input_defaults_scalars():
         j: JSON = strawberry.field(default_factory=dict)
         j2: JSON = strawberry.field(default_factory=lambda: {"hello": "world"})
         j3: JSON = strawberry.field(
-            default_factory=lambda: {"hello": {"nice": "world"}},
+            default_factory=lambda: {"hello": {"nice": "world"}}
         )
 
     @strawberry.type
@@ -268,7 +266,7 @@ def test_arguments_scalar():
         j: JSON = strawberry.field(default_factory=dict)
         j2: JSON = strawberry.field(default_factory=lambda: {"hello": "world"})
         j3: JSON = strawberry.field(
-            default_factory=lambda: {"hello": {"nice": "world"}},
+            default_factory=lambda: {"hello": {"nice": "world"}}
         )
 
     @strawberry.type
@@ -370,9 +368,7 @@ def test_root_objects_with_different_names():
     """
 
     schema = strawberry.Schema(
-        query=Domanda,
-        mutation=Mutazione,
-        subscription=Abbonamento,
+        query=Domanda, mutation=Mutazione, subscription=Abbonamento
     )
 
     assert print_schema(schema) == textwrap.dedent(expected_type).strip()

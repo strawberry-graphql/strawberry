@@ -53,7 +53,7 @@ class GraphQLProtocolTypeRouter(ProtocolTypeRouter):
                 "websocket": URLRouter(
                     [
                         re_path(url_pattern, GraphQLWSConsumer.as_asgi(schema=schema)),
-                    ],
+                    ]
                 ),
-            },
+            }
         )

@@ -74,7 +74,7 @@ def test_generics_name():
         edge: T
 
     definition_copy = Connection._type_definition.copy_with(
-        {T: EdgeName},
+        {T: EdgeName}
     )._type_definition
 
     assert not definition_copy.is_generic

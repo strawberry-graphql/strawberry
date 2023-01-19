@@ -26,18 +26,14 @@ class GraphQLView(BaseGraphQLView):
         return Query()
 
     def get_context(
-        self,
-        request: ChaliceRequest,
-        response: TemporalResponse,
+        self, request: ChaliceRequest, response: TemporalResponse
     ) -> object:
         context = super().get_context(request, response)
 
         return get_context(context)
 
     def process_result(
-        self,
-        request: ChaliceRequest,
-        result: ExecutionResult,
+        self, request: ChaliceRequest, result: ExecutionResult
     ) -> GraphQLHTTPResponse:
         if self.result_override:
             return self.result_override(result)
@@ -62,9 +58,7 @@ class ChaliceHttpClient(HttpClient):
         view.result_override = result_override
 
         @self.app.route(
-            "/graphql",
-            methods=["GET", "POST"],
-            content_types=["application/json"],
+            "/graphql", methods=["GET", "POST"], content_types=["application/json"]
         )
         def handle_graphql():
             return view.execute_request(self.app.current_request)
@@ -79,10 +73,7 @@ class ChaliceHttpClient(HttpClient):
         **kwargs,
     ) -> Response:
         body = self._build_body(
-            query=query,
-            variables=variables,
-            files=files,
-            method=method,
+            query=query, variables=variables, files=files, method=method
         )
 
         data: Union[Dict[str, object], str, None] = None

@@ -34,8 +34,7 @@ def test_print_simple_directive():
 
 def test_print_directive_with_name():
     @strawberry.schema_directive(
-        name="sensitive",
-        locations=[Location.FIELD_DEFINITION],
+        name="sensitive", locations=[Location.FIELD_DEFINITION]
     )
     class SensitiveDirective:
         reason: str
@@ -43,7 +42,7 @@ def test_print_directive_with_name():
     @strawberry.type
     class Query:
         first_name: str = strawberry.field(
-            directives=[SensitiveDirective(reason="GDPR")],
+            directives=[SensitiveDirective(reason="GDPR")]
         )
 
     expected_output = """
@@ -95,12 +94,11 @@ def test_directive_on_types():
                     reason="PRIVATE",
                     meta=[
                         SensitiveValue(
-                            key="can_share_field",
-                            value="phone_share_accepted",
-                        ),
+                            key="can_share_field", value="phone_share_accepted"
+                        )
                     ],
-                ),
-            ],
+                )
+            ]
         )
         phone_share_accepted: bool
 
@@ -159,7 +157,7 @@ def test_using_different_names_for_directive_field():
     @strawberry.type
     class Query:
         first_name: str = strawberry.field(
-            directives=[Sensitive(reason="GDPR", real_age="1", real_age_2="2")],
+            directives=[Sensitive(reason="GDPR", real_age="1", real_age_2="2")]
         )
 
     expected_output = """
@@ -193,8 +191,7 @@ def test_respects_schema_config_for_names():
     """
 
     schema = strawberry.Schema(
-        query=Query,
-        config=StrawberryConfig(auto_camel_case=False),
+        query=Query, config=StrawberryConfig(auto_camel_case=False)
     )
 
     assert print_schema(schema) == textwrap.dedent(expected_output).strip()
@@ -218,8 +215,7 @@ def test_respects_schema_parameter_types_for_arguments_int():
     """
 
     schema = strawberry.Schema(
-        query=Query,
-        config=StrawberryConfig(auto_camel_case=False),
+        query=Query, config=StrawberryConfig(auto_camel_case=False)
     )
 
     assert print_schema(schema) == textwrap.dedent(expected_output).strip()
@@ -243,8 +239,7 @@ def test_respects_schema_parameter_types_for_arguments_list_of_ints():
     """
 
     schema = strawberry.Schema(
-        query=Query,
-        config=StrawberryConfig(auto_camel_case=False),
+        query=Query, config=StrawberryConfig(auto_camel_case=False)
     )
 
     assert print_schema(schema) == textwrap.dedent(expected_output).strip()
@@ -268,8 +263,7 @@ def test_respects_schema_parameter_types_for_arguments_list_of_strings():
     """
 
     schema = strawberry.Schema(
-        query=Query,
-        config=StrawberryConfig(auto_camel_case=False),
+        query=Query, config=StrawberryConfig(auto_camel_case=False)
     )
 
     assert print_schema(schema) == textwrap.dedent(expected_output).strip()
@@ -311,8 +305,7 @@ def test_prints_multiple_directives_on_schema():
         first_name: str
 
     schema = strawberry.Schema(
-        query=Query,
-        schema_directives=[Tag(name="team-1"), Tag(name="team-2")],
+        query=Query, schema_directives=[Tag(name="team-1"), Tag(name="team-2")]
     )
 
     expected_output = """
@@ -342,7 +335,7 @@ def test_prints_with_types():
     @strawberry.type
     class Query:
         first_name: str = strawberry.field(
-            directives=[Sensitive(config=SensitiveConfiguration(reason="example"))],
+            directives=[Sensitive(config=SensitiveConfiguration(reason="example"))]
         )
 
     expected_output = """
@@ -400,7 +393,7 @@ def test_prints_with_enum():
     @strawberry.type
     class Query:
         first_name: str = strawberry.field(
-            directives=[Sensitive(reason=Reason.EXAMPLE)],
+            directives=[Sensitive(reason=Reason.EXAMPLE)]
         )
 
     expected_output = """
@@ -422,8 +415,7 @@ def test_prints_with_enum():
 
 def test_does_not_print_definition():
     @strawberry.schema_directive(
-        locations=[Location.FIELD_DEFINITION],
-        print_definition=False,
+        locations=[Location.FIELD_DEFINITION], print_definition=False
     )
     class Sensitive:
         reason: str
@@ -449,9 +441,7 @@ def test_print_directive_on_scalar():
         reason: str
 
     SensitiveString = strawberry.scalar(
-        str,
-        name="SensitiveString",
-        directives=[Sensitive(reason="example")],
+        str, name="SensitiveString", directives=[Sensitive(reason="example")]
     )
 
     @strawberry.type
@@ -511,8 +501,7 @@ def test_print_directive_on_enum_value():
     @strawberry.enum
     class SomeEnum(Enum):
         EXAMPLE = strawberry.enum_value(
-            "example",
-            directives=[Sensitive(reason="example")],
+            "example", directives=[Sensitive(reason="example")]
         )
 
     @strawberry.type
@@ -589,12 +578,10 @@ def test_print_directive_on_argument():
         def hello(
             self,
             name: Annotated[
-                str,
-                strawberry.argument(directives=[Sensitive(reason="example")]),
+                str, strawberry.argument(directives=[Sensitive(reason="example")])
             ],
             age: Annotated[
-                str,
-                strawberry.argument(directives=[Sensitive(reason="example")]),
+                str, strawberry.argument(directives=[Sensitive(reason="example")])
             ],
         ) -> str:
             return f"Hello {name} of {age}"
@@ -625,13 +612,11 @@ def test_print_directive_on_argument_with_description():
             name: Annotated[
                 str,
                 strawberry.argument(
-                    description="Name",
-                    directives=[Sensitive(reason="example")],
+                    description="Name", directives=[Sensitive(reason="example")]
                 ),
             ],
             age: Annotated[
-                str,
-                strawberry.argument(directives=[Sensitive(reason="example")]),
+                str, strawberry.argument(directives=[Sensitive(reason="example")])
             ],
         ) -> str:
             return f"Hello {name} of {age}"

@@ -102,7 +102,7 @@ class StrawberryUnion(StrawberryType):
         # TODO: check if order is important:
         # https://github.com/strawberry-graphql/strawberry/issues/445
         return list(
-            set(itertools.chain(*(_get_type_params(type_) for type_ in self.types))),
+            set(itertools.chain(*(_get_type_params(type_) for type_ in self.types)))
         )
 
     @property
@@ -110,8 +110,7 @@ class StrawberryUnion(StrawberryType):
         return len(self.type_params) > 0
 
     def copy_with(
-        self,
-        type_var_map: Mapping[TypeVar, Union[StrawberryType, type]],
+        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
     ) -> StrawberryType:
         if not self.is_generic:
             return self
@@ -147,9 +146,7 @@ class StrawberryUnion(StrawberryType):
 
     def get_type_resolver(self, type_map: "TypeMap") -> GraphQLTypeResolver:
         def _resolve_union_type(
-            root: Any,
-            info: GraphQLResolveInfo,
-            type_: GraphQLAbstractType,
+            root: Any, info: GraphQLResolveInfo, type_: GraphQLAbstractType
         ) -> str:
             assert isinstance(type_, GraphQLUnionType)
 
@@ -160,8 +157,7 @@ class StrawberryUnion(StrawberryType):
             if not hasattr(root, "_type_definition"):
                 for inner_type in type_.types:
                     if inner_type.is_type_of is not None and inner_type.is_type_of(
-                        root,
-                        info,
+                        root, info
                     ):
                         return inner_type.name
 
@@ -177,8 +173,7 @@ class StrawberryUnion(StrawberryType):
 
             # TODO: do we still need to iterate over all types in `type_map`?
             for possible_concrete_type in chain(
-                concrete_types_for_union,
-                type_map.values(),
+                concrete_types_for_union, type_map.values()
             ):
                 possible_type = possible_concrete_type.definition
                 if not isinstance(possible_type, TypeDefinition):
@@ -192,9 +187,7 @@ class StrawberryUnion(StrawberryType):
             # Make sure the found type is expected by the Union
             if return_type is None or return_type not in type_.types:
                 raise UnallowedReturnTypeForUnion(
-                    info.field_name,
-                    str(type(root)),
-                    set(type_.types),
+                    info.field_name, str(type(root)), set(type_.types)
                 )
 
             # Return the name of the type. Returning the actual type is now deprecated
@@ -233,6 +226,7 @@ def union(
     ... class B: ...
     >>> strawberry.union("Name", (A, Optional[B]))
     """
+
     # Validate types
     if not types:
         raise TypeError("No types passed to `union`")

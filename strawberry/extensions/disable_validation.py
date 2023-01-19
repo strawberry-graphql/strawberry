@@ -6,7 +6,7 @@ class DisableValidation(Extension):
     Disable query validation
 
     Example:
-    -------
+
     >>> import strawberry
     >>> from strawberry.extensions import DisableValidation
     >>>

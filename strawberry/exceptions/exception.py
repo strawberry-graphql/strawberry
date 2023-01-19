@@ -82,9 +82,7 @@ class StrawberryException(Exception, ABC):
         )
 
     def _get_error_inline(
-        self,
-        exception_source: ExceptionSource,
-        message: str,
+        self, exception_source: ExceptionSource, message: str
     ) -> "RenderableType":
         source_file = exception_source.path
         relative_path = exception_source.path_relative_to_cwd

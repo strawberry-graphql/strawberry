@@ -20,9 +20,7 @@ class GraphQLView(BaseGraphQLView):
     result_override: ResultOverrideFunction = None
 
     async def get_context(
-        self,
-        request: web.Request,
-        response: web.StreamResponse,
+        self, request: web.Request, response: web.StreamResponse
     ) -> object:
         context = await super().get_context(request, response)
 
@@ -32,9 +30,7 @@ class GraphQLView(BaseGraphQLView):
         return Query()
 
     async def process_result(
-        self,
-        request: web.Request,
-        result: ExecutionResult,
+        self, request: web.Request, result: ExecutionResult
     ) -> GraphQLHTTPResponse:
         if self.result_override:
             return self.result_override(result)
@@ -74,10 +70,7 @@ class AioHttpClient(HttpClient):
     ) -> Response:
         async with TestClient(TestServer(self.app)) as client:
             body = self._build_body(
-                query=query,
-                variables=variables,
-                files=files,
-                method=method,
+                query=query, variables=variables, files=files, method=method
             )
 
             if body and files:
@@ -129,10 +122,7 @@ class AioHttpClient(HttpClient):
     ) -> Response:
         async with TestClient(TestServer(self.app)) as client:
             response = await client.post(
-                "/graphql",
-                headers=headers,
-                data=data,
-                json=json,
+                "/graphql", headers=headers, data=data, json=json
             )
 
             return Response(

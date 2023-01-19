@@ -49,7 +49,7 @@ def test_raises_graphql_error_when_permission_is_denied():
     assert result.errors[0].message == "User is not authenticated"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_raises_permission_error_for_subscription():
     class IsAdmin(BasePermission):
         message = "You are not authorized"
@@ -76,7 +76,7 @@ async def test_raises_permission_error_for_subscription():
     assert result.errors[0].message == "You are not authorized"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_sync_permissions_work_with_async_resolvers():
     class IsAuthorized(BasePermission):
         message = "User is not authorized"
@@ -205,7 +205,7 @@ def test_can_use_on_simple_fields():
     assert result.errors[0].message == "Cannot see email for this user"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_dataclass_field_with_async_permission_class():
     class CanSeeEmail(BasePermission):
         message = "Cannot see email for this user"
@@ -235,7 +235,7 @@ async def test_dataclass_field_with_async_permission_class():
     assert result.errors[0].message == "Cannot see email for this user"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_async_resolver_with_async_permission_class():
     class IsAuthorized(BasePermission):
         message = "User is not authorized"
@@ -265,7 +265,7 @@ async def test_async_resolver_with_async_permission_class():
     assert result.errors[0].message == "User is not authorized"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_sync_resolver_with_async_permission_class():
     class IsAuthorized(BasePermission):
         message = "User is not authorized"
@@ -295,7 +295,7 @@ async def test_sync_resolver_with_async_permission_class():
     assert result.errors[0].message == "User is not authorized"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_mixed_sync_and_async_permission_classes():
     class IsAuthorizedAsync(BasePermission):
         message = "User is not authorized (async)"

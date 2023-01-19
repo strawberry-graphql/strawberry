@@ -37,12 +37,7 @@ class Extension:
         """This method is called after the executing step"""
 
     def resolve(
-        self,
-        _next,
-        root,
-        info: GraphQLResolveInfo,
-        *args,
-        **kwargs,
+        self, _next, root, info: GraphQLResolveInfo, *args, **kwargs
     ) -> AwaitableOrValue[object]:
         return _next(root, info, *args, **kwargs)
 

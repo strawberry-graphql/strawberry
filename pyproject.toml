@@ -171,23 +171,8 @@ ignore = [
     "S104",
     "S324",
     # maybe we can enable this in future
-    "D100",
-    "D101",
-    "D102",
-    "D103",
-    "D104",
-    "D105",
-    "D106",
-    "D107",
-    "D200",
-    "D203",
-    "D205",
-    "D212",
-    "D213",
-    "D400",
-    "D404",
-    "D415",
-    "D417",
+    # we'd want to have consistent docstrings in future
+    "D",
     "ANN101", # missing annotation for self?
     # definitely enable these, maybe not in tests
     "ANN001",
@@ -235,6 +220,7 @@ ignore = [
     "FBT003",
 
     "PT001",
+    "PT023",
 
     # enable these, we have some in tests
     "B006",

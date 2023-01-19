@@ -14,8 +14,7 @@ class StrawberryType(ABC):
 
     @abstractmethod
     def copy_with(
-        self,
-        type_var_map: Mapping[TypeVar, Union[StrawberryType, type]],
+        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
     ) -> Union[StrawberryType, type]:
         raise NotImplementedError()
 
@@ -80,8 +79,7 @@ class StrawberryContainer(StrawberryType):
             return []
 
     def copy_with(
-        self,
-        type_var_map: Mapping[TypeVar, Union[StrawberryType, type]],
+        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
     ) -> StrawberryType:
         of_type_copy: Union[StrawberryType, type] = self.of_type
 
@@ -128,8 +126,7 @@ class StrawberryTypeVar(StrawberryType):
         self.type_var = type_var
 
     def copy_with(
-        self,
-        type_var_map: Mapping[TypeVar, Union[StrawberryType, type]],
+        self, type_var_map: Mapping[TypeVar, Union[StrawberryType, type]]
     ) -> Union[StrawberryType, type]:
         return type_var_map[self.type_var]
 

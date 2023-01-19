@@ -20,7 +20,6 @@ from graphql import execute as original_execute
 from graphql.language import DocumentNode
 from graphql.validation import ASTValidationRule, validate
 
-from strawberry.exceptions import MissingQueryError
 from strawberry.extensions import Extension
 from strawberry.extensions.runner import ExtensionsRunner
 from strawberry.types import ExecutionContext, ExecutionResult
@@ -59,6 +58,7 @@ def _run_validation(execution_context: ExecutionContext) -> None:
 
 async def execute(
     schema: GraphQLSchema,
+    query: str,
     *,
     allowed_operation_types: Iterable[OperationType],
     extensions: Sequence[Union[Type[Extension], Extension]],
@@ -74,15 +74,11 @@ async def execute(
     async with extensions_runner.request():
         # Note: In graphql-core the schema would be validated here but in
         # Strawberry we are validating it at initialisation time instead
-        if not execution_context.query:
-            raise MissingQueryError()
 
         async with extensions_runner.parsing():
             try:
                 if not execution_context.graphql_document:
-                    execution_context.graphql_document = parse_document(
-                        execution_context.query,
-                    )
+                    execution_context.graphql_document = parse_document(query)
 
             except GraphQLError as error:
                 execution_context.errors = [error]
@@ -152,6 +148,7 @@ async def execute(
 
 def execute_sync(
     schema: GraphQLSchema,
+    query: str,
     *,
     allowed_operation_types: Iterable[OperationType],
     extensions: Sequence[Union[Type[Extension], Extension]],
@@ -167,15 +164,11 @@ def execute_sync(
     with extensions_runner.request():
         # Note: In graphql-core the schema would be validated here but in
         # Strawberry we are validating it at initialisation time instead
-        if not execution_context.query:
-            raise MissingQueryError()
 
         with extensions_runner.parsing():
             try:
                 if not execution_context.graphql_document:
-                    execution_context.graphql_document = parse_document(
-                        execution_context.query,
-                    )
+                    execution_context.graphql_document = parse_document(query)
 
             except GraphQLError as error:
                 execution_context.errors = [error]
@@ -223,7 +216,7 @@ def execute_sync(
                     result = cast(Awaitable[GraphQLExecutionResult], result)
                     ensure_future(result).cancel()
                     raise RuntimeError(
-                        "GraphQL execution failed to complete synchronously.",
+                        "GraphQL execution failed to complete synchronously."
                     )
 
                 result = cast(GraphQLExecutionResult, result)

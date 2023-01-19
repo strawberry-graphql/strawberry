@@ -15,8 +15,7 @@ else:
     original_threading_exception_hook = None
 
 ExceptionHandler = Callable[
-    [Type[BaseException], BaseException, Optional[TracebackType]],
-    None,
+    [Type[BaseException], BaseException, Optional[TracebackType]], None
 ]
 
 
@@ -66,7 +65,7 @@ def strawberry_threading_exception_handler(
         Optional[BaseException],
         Optional[TracebackType],
         Optional[threading.Thread],
-    ],
+    ]
 ):
     (exception_type, exception, traceback, _) = args
 

@@ -110,7 +110,7 @@ class StrawberryArgument:
             if isinstance(arg, StrawberryArgumentAnnotation):
                 if argument_annotation_seen:
                     raise MultipleStrawberryArgumentsError(
-                        argument_name=self.python_name,
+                        argument_name=self.python_name
                     )
 
                 argument_annotation_seen = True
@@ -122,7 +122,7 @@ class StrawberryArgument:
 
             if isinstance(arg, StrawberryLazyReference):
                 self.type_annotation = StrawberryAnnotation(
-                    arg.resolve_forward_ref(annotated_args[0]),
+                    arg.resolve_forward_ref(annotated_args[0])
                 )
 
 
@@ -174,10 +174,7 @@ def convert_argument(
 
             if graphql_name in value:
                 kwargs[field.python_name] = convert_argument(
-                    value[graphql_name],
-                    field.type,
-                    scalar_registry,
-                    config,
+                    value[graphql_name], field.type, scalar_registry, config
                 )
 
         type_ = cast(type, type_)
@@ -195,8 +192,8 @@ def convert_arguments(
     """Converts a nested dictionary to a dictionary of actual types.
 
     It deals with conversion of input types to proper dataclasses and
-    also uses a sentinel value for unset values.
-    """
+    also uses a sentinel value for unset values."""
+
     if not arguments:
         return {}
 

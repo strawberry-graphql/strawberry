@@ -41,9 +41,7 @@ def test_returns_directives_extension_when_passing_directives():
 
 def test_returns_extension_passed_by_user_and_directives_extension():
     schema = strawberry.Schema(
-        query=Query,
-        extensions=[MyExtension],
-        directives=[uppercase],
+        query=Query, extensions=[MyExtension], directives=[uppercase]
     )
 
     assert schema.get_extensions() == [MyExtension, DirectivesExtension]
@@ -57,9 +55,7 @@ def test_returns_directives_extension_when_passing_directives_sync():
 
 def test_returns_extension_passed_by_user_and_directives_extension_sync():
     schema = strawberry.Schema(
-        query=Query,
-        extensions=[MyExtension],
-        directives=[uppercase],
+        query=Query, extensions=[MyExtension], directives=[uppercase]
     )
 
     assert schema.get_extensions(sync=True) == [MyExtension, DirectivesExtensionSync]

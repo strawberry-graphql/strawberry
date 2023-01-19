@@ -44,10 +44,7 @@ class UnallowedReturnTypeForUnion(Exception):
     """The return type is not in the list of Union types"""
 
     def __init__(
-        self,
-        field_name: str,
-        result_type: str,
-        allowed_types: Set[GraphQLObjectType],
+        self, field_name: str, result_type: str, allowed_types: Set[GraphQLObjectType]
     ):
         formatted_allowed_types = list(sorted(type_.name for type_ in allowed_types))
 

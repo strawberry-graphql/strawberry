@@ -90,8 +90,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
                 and field.base_resolver is not None
             ):
                 raise FieldWithResolverAndDefaultValueError(
-                    field.python_name,
-                    cls.__name__,
+                    field.python_name, cls.__name__
                 )
 
             # Check that default_factory is not set if a resolver is defined
@@ -104,8 +103,7 @@ def _get_fields(cls: Type) -> List[StrawberryField]:
                 and field.base_resolver is not None
             ):
                 raise FieldWithResolverAndDefaultFactoryError(
-                    field.python_name,
-                    cls.__name__,
+                    field.python_name, cls.__name__
                 )
 
             # we make sure that the origin is either the field's resolver when

@@ -24,8 +24,7 @@ async def test_unknown_message_type(aiohttp_client):
     aiohttp_app_client = await aiohttp_client(app)
 
     async with aiohttp_app_client.ws_connect(
-        "/graphql",
-        protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL],
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         await ws.send_json({"type": "NOT_A_MESSAGE_TYPE"})
 
@@ -40,8 +39,7 @@ async def test_missing_message_type(aiohttp_client):
     aiohttp_app_client = await aiohttp_client(app)
 
     async with aiohttp_app_client.ws_connect(
-        "/graphql",
-        protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL],
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         await ws.send_json({"notType": None})
 
@@ -56,8 +54,7 @@ async def test_parsing_an_invalid_message(aiohttp_client):
     aiohttp_app_client = await aiohttp_client(app)
 
     async with aiohttp_app_client.ws_connect(
-        "/graphql",
-        protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL],
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         await ws.send_json({"type": "subscribe", "notPayload": None})
 
@@ -72,8 +69,7 @@ async def test_parsing_an_invalid_payload(aiohttp_client):
     aiohttp_app_client = await aiohttp_client(app)
 
     async with aiohttp_app_client.ws_connect(
-        "/graphql",
-        protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL],
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         await ws.send_json({"type": "subscribe", "payload": {"unexpectedField": 42}})
 
@@ -88,8 +84,7 @@ async def test_ws_messages_must_be_text(aiohttp_client):
     aiohttp_app_client = await aiohttp_client(app)
 
     async with aiohttp_app_client.ws_connect(
-        "/graphql",
-        protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL],
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         await ws.send_bytes(json.dumps(ConnectionInitMessage().as_dict()).encode())
 
@@ -110,8 +105,7 @@ async def test_connection_init_timeout(aiohttp_client):
     await asyncio.sleep(0.1)
 
     async with aiohttp_app_client.ws_connect(
-        "/graphql",
-        protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL],
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         data = await ws.receive(timeout=2)
         assert ws.closed
@@ -124,8 +118,7 @@ async def test_connection_init_timeout_cancellation(aiohttp_client):
     aiohttp_app_client = await aiohttp_client(app)
 
     async with aiohttp_app_client.ws_connect(
-        "/graphql",
-        protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL],
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         await ws.send_json(ConnectionInitMessage().as_dict())
 
@@ -138,9 +131,9 @@ async def test_connection_init_timeout_cancellation(aiohttp_client):
             SubscribeMessage(
                 id="sub1",
                 payload=SubscribeMessagePayload(
-                    query="subscription { debug { isConnectionInitTimeoutTaskDone } }",
+                    query="subscription { debug { isConnectionInitTimeoutTaskDone } }"
                 ),
-            ).as_dict(),
+            ).as_dict()
         )
 
         response = await ws.receive_json()
@@ -161,8 +154,7 @@ async def test_too_many_initialisation_requests(aiohttp_client):
     aiohttp_app_client = await aiohttp_client(app)
 
     async with aiohttp_app_client.ws_connect(
-        "/graphql",
-        protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL],
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         await ws.send_json(ConnectionInitMessage().as_dict())
 
@@ -182,8 +174,7 @@ async def test_ping_pong(aiohttp_client):
     aiohttp_app_client = await aiohttp_client(app)
 
     async with aiohttp_app_client.ws_connect(
-        "/graphql",
-        protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL],
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         await ws.send_json(ConnectionInitMessage().as_dict())
 
@@ -204,8 +195,7 @@ async def test_server_sent_ping(aiohttp_client):
     aiohttp_app_client = await aiohttp_client(app)
 
     async with aiohttp_app_client.ws_connect(
-        "/graphql",
-        protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL],
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         await ws.send_json(ConnectionInitMessage().as_dict())
 
@@ -216,7 +206,7 @@ async def test_server_sent_ping(aiohttp_client):
             SubscribeMessage(
                 id="sub1",
                 payload=SubscribeMessagePayload(query="subscription { requestPing }"),
-            ).as_dict(),
+            ).as_dict()
         )
 
         response = await ws.receive_json()
@@ -242,16 +232,15 @@ async def test_unauthorized_subscriptions(aiohttp_client):
     aiohttp_app_client = await aiohttp_client(app)
 
     async with aiohttp_app_client.ws_connect(
-        "/graphql",
-        protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL],
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         await ws.send_json(
             SubscribeMessage(
                 id="sub1",
                 payload=SubscribeMessagePayload(
-                    query='subscription { echo(message: "Hi") }',
+                    query='subscription { echo(message: "Hi") }'
                 ),
-            ).as_dict(),
+            ).as_dict()
         )
 
         data = await ws.receive(timeout=2)
@@ -265,8 +254,7 @@ async def test_duplicated_operation_ids(aiohttp_client):
     aiohttp_app_client = await aiohttp_client(app)
 
     async with aiohttp_app_client.ws_connect(
-        "/graphql",
-        protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL],
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         await ws.send_json(ConnectionInitMessage().as_dict())
 
@@ -277,18 +265,18 @@ async def test_duplicated_operation_ids(aiohttp_client):
             SubscribeMessage(
                 id="sub1",
                 payload=SubscribeMessagePayload(
-                    query='subscription { echo(message: "Hi", delay: 5) }',
+                    query='subscription { echo(message: "Hi", delay: 5) }'
                 ),
-            ).as_dict(),
+            ).as_dict()
         )
 
         await ws.send_json(
             SubscribeMessage(
                 id="sub1",
                 payload=SubscribeMessagePayload(
-                    query='subscription { echo(message: "Hi", delay: 5) }',
+                    query='subscription { echo(message: "Hi", delay: 5) }'
                 ),
-            ).as_dict(),
+            ).as_dict()
         )
 
         data = await ws.receive(timeout=2)
@@ -306,8 +294,7 @@ async def test_reused_operation_ids(aiohttp_client):
     aiohttp_app_client = await aiohttp_client(app)
 
     async with aiohttp_app_client.ws_connect(
-        "/graphql",
-        protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL],
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         await ws.send_json(ConnectionInitMessage().as_dict())
 
@@ -319,9 +306,9 @@ async def test_reused_operation_ids(aiohttp_client):
             SubscribeMessage(
                 id="sub1",
                 payload=SubscribeMessagePayload(
-                    query='subscription { echo(message: "Hi") }',
+                    query='subscription { echo(message: "Hi") }'
                 ),
-            ).as_dict(),
+            ).as_dict()
         )
 
         response = await ws.receive_json()
@@ -339,9 +326,9 @@ async def test_reused_operation_ids(aiohttp_client):
             SubscribeMessage(
                 id="sub1",
                 payload=SubscribeMessagePayload(
-                    query='subscription { echo(message: "Hi") }',
+                    query='subscription { echo(message: "Hi") }'
                 ),
-            ).as_dict(),
+            ).as_dict()
         )
 
         response = await ws.receive_json()
@@ -358,8 +345,7 @@ async def test_simple_subscription(aiohttp_client):
     aiohttp_app_client = await aiohttp_client(app)
 
     async with aiohttp_app_client.ws_connect(
-        "/graphql",
-        protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL],
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         await ws.send_json(ConnectionInitMessage().as_dict())
 
@@ -370,9 +356,9 @@ async def test_simple_subscription(aiohttp_client):
             SubscribeMessage(
                 id="sub1",
                 payload=SubscribeMessagePayload(
-                    query='subscription { echo(message: "Hi") }',
+                    query='subscription { echo(message: "Hi") }'
                 ),
-            ).as_dict(),
+            ).as_dict()
         )
 
         response = await ws.receive_json()
@@ -392,8 +378,7 @@ async def test_subscription_syntax_error(aiohttp_client):
     aiohttp_app_client = await aiohttp_client(app)
 
     async with aiohttp_app_client.ws_connect(
-        "/graphql",
-        protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL],
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         await ws.send_json(ConnectionInitMessage().as_dict())
 
@@ -404,7 +389,7 @@ async def test_subscription_syntax_error(aiohttp_client):
             SubscribeMessage(
                 id="sub1",
                 payload=SubscribeMessagePayload(query="subscription { INVALID_SYNTAX "),
-            ).as_dict(),
+            ).as_dict()
         )
 
         data = await ws.receive(timeout=2)
@@ -418,8 +403,7 @@ async def test_subscription_field_errors(aiohttp_client):
     aiohttp_app_client = await aiohttp_client(app)
 
     async with aiohttp_app_client.ws_connect(
-        "/graphql",
-        protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL],
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         await ws.send_json(ConnectionInitMessage().as_dict())
 
@@ -432,7 +416,7 @@ async def test_subscription_field_errors(aiohttp_client):
                 payload=SubscribeMessagePayload(
                     query="subscription { notASubscriptionField }",
                 ),
-            ).as_dict(),
+            ).as_dict()
         )
 
         response = await ws.receive_json()
@@ -455,8 +439,7 @@ async def test_subscription_cancellation(aiohttp_client):
     aiohttp_app_client = await aiohttp_client(app)
 
     async with aiohttp_app_client.ws_connect(
-        "/graphql",
-        protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL],
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         await ws.send_json(ConnectionInitMessage().as_dict())
 
@@ -467,9 +450,9 @@ async def test_subscription_cancellation(aiohttp_client):
             SubscribeMessage(
                 id="sub1",
                 payload=SubscribeMessagePayload(
-                    query='subscription { echo(message: "Hi", delay: 99) }',
+                    query='subscription { echo(message: "Hi", delay: 99) }'
                 ),
-            ).as_dict(),
+            ).as_dict()
         )
 
         await ws.send_json(
@@ -478,15 +461,14 @@ async def test_subscription_cancellation(aiohttp_client):
                 payload=SubscribeMessagePayload(
                     query="subscription { debug { numActiveResultHandlers } }",
                 ),
-            ).as_dict(),
+            ).as_dict()
         )
 
         response = await ws.receive_json()
         assert (
             response
             == NextMessage(
-                id="sub2",
-                payload={"data": {"debug": {"numActiveResultHandlers": 2}}},
+                id="sub2", payload={"data": {"debug": {"numActiveResultHandlers": 2}}}
             ).as_dict()
         )
 
@@ -501,15 +483,14 @@ async def test_subscription_cancellation(aiohttp_client):
                 payload=SubscribeMessagePayload(
                     query="subscription { debug { numActiveResultHandlers } }",
                 ),
-            ).as_dict(),
+            ).as_dict()
         )
 
         response = await ws.receive_json()
         assert (
             response
             == NextMessage(
-                id="sub3",
-                payload={"data": {"debug": {"numActiveResultHandlers": 1}}},
+                id="sub3", payload={"data": {"debug": {"numActiveResultHandlers": 1}}}
             ).as_dict()
         )
 
@@ -525,8 +506,7 @@ async def test_subscription_errors(aiohttp_client):
     aiohttp_app_client = await aiohttp_client(app)
 
     async with aiohttp_app_client.ws_connect(
-        "/graphql",
-        protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL],
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         await ws.send_json(ConnectionInitMessage().as_dict())
 
@@ -539,7 +519,7 @@ async def test_subscription_errors(aiohttp_client):
                 payload=SubscribeMessagePayload(
                     query='subscription { error(message: "TEST ERR") }',
                 ),
-            ).as_dict(),
+            ).as_dict()
         )
 
         response = await ws.receive_json()
@@ -558,8 +538,7 @@ async def test_subscription_exceptions(aiohttp_client):
     aiohttp_app_client = await aiohttp_client(app)
 
     async with aiohttp_app_client.ws_connect(
-        "/graphql",
-        protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL],
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         await ws.send_json(ConnectionInitMessage().as_dict())
 
@@ -572,7 +551,7 @@ async def test_subscription_exceptions(aiohttp_client):
                 payload=SubscribeMessagePayload(
                     query='subscription { exception(message: "TEST EXC") }',
                 ),
-            ).as_dict(),
+            ).as_dict()
         )
 
         response = await ws.receive_json()
@@ -592,8 +571,7 @@ async def test_single_result_query_operation(aiohttp_client):
     aiohttp_app_client = await aiohttp_client(app)
 
     async with aiohttp_app_client.ws_connect(
-        "/graphql",
-        protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL],
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         await ws.send_json(ConnectionInitMessage().as_dict())
 
@@ -604,15 +582,14 @@ async def test_single_result_query_operation(aiohttp_client):
             SubscribeMessage(
                 id="sub1",
                 payload=SubscribeMessagePayload(query="query { hello }"),
-            ).as_dict(),
+            ).as_dict()
         )
 
         response = await ws.receive_json()
         assert (
             response
             == NextMessage(
-                id="sub1",
-                payload={"data": {"hello": "Hello world"}},
+                id="sub1", payload={"data": {"hello": "Hello world"}}
             ).as_dict()
         )
 
@@ -633,8 +610,7 @@ async def test_single_result_query_operation_async(aiohttp_client):
     aiohttp_app_client = await aiohttp_client(app)
 
     async with aiohttp_app_client.ws_connect(
-        "/graphql",
-        protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL],
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         await ws.send_json(ConnectionInitMessage().as_dict())
 
@@ -645,17 +621,16 @@ async def test_single_result_query_operation_async(aiohttp_client):
             SubscribeMessage(
                 id="sub1",
                 payload=SubscribeMessagePayload(
-                    query='query { asyncHello(name: "Dolly", delay:0.01)}',
+                    query='query { asyncHello(name: "Dolly", delay:0.01)}'
                 ),
-            ).as_dict(),
+            ).as_dict()
         )
 
         response = await ws.receive_json()
         assert (
             response
             == NextMessage(
-                id="sub1",
-                payload={"data": {"asyncHello": "Hello Dolly"}},
+                id="sub1", payload={"data": {"asyncHello": "Hello Dolly"}}
             ).as_dict()
         )
 
@@ -677,8 +652,7 @@ async def test_single_result_query_operation_overlapped(aiohttp_client):
     aiohttp_app_client = await aiohttp_client(app)
 
     async with aiohttp_app_client.ws_connect(
-        "/graphql",
-        protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL],
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         await ws.send_json(ConnectionInitMessage().as_dict())
 
@@ -690,18 +664,18 @@ async def test_single_result_query_operation_overlapped(aiohttp_client):
             SubscribeMessage(
                 id="sub1",
                 payload=SubscribeMessagePayload(
-                    query='query { asyncHello(name: "Dolly", delay:1)}',
+                    query='query { asyncHello(name: "Dolly", delay:1)}'
                 ),
-            ).as_dict(),
+            ).as_dict()
         )
         # second query
         await ws.send_json(
             SubscribeMessage(
                 id="sub2",
                 payload=SubscribeMessagePayload(
-                    query='query { asyncHello(name: "Dolly", delay:0)}',
+                    query='query { asyncHello(name: "Dolly", delay:0)}'
                 ),
-            ).as_dict(),
+            ).as_dict()
         )
 
         # we expect the response to the second query to arrive first
@@ -709,8 +683,7 @@ async def test_single_result_query_operation_overlapped(aiohttp_client):
         assert (
             response
             == NextMessage(
-                id="sub2",
-                payload={"data": {"asyncHello": "Hello Dolly"}},
+                id="sub2", payload={"data": {"asyncHello": "Hello Dolly"}}
             ).as_dict()
         )
         response = await ws.receive_json()
@@ -725,8 +698,7 @@ async def test_single_result_mutation_operation(aiohttp_client):
     aiohttp_app_client = await aiohttp_client(app)
 
     async with aiohttp_app_client.ws_connect(
-        "/graphql",
-        protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL],
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         await ws.send_json(ConnectionInitMessage().as_dict())
 
@@ -737,15 +709,14 @@ async def test_single_result_mutation_operation(aiohttp_client):
             SubscribeMessage(
                 id="sub1",
                 payload=SubscribeMessagePayload(query="mutation { hello }"),
-            ).as_dict(),
+            ).as_dict()
         )
 
         response = await ws.receive_json()
         assert (
             response
             == NextMessage(
-                id="sub1",
-                payload={"data": {"hello": "strawberry"}},
+                id="sub1", payload={"data": {"hello": "strawberry"}}
             ).as_dict()
         )
 
@@ -761,8 +732,7 @@ async def test_single_result_operation_selection(aiohttp_client):
     aiohttp_app_client = await aiohttp_client(app)
 
     async with aiohttp_app_client.ws_connect(
-        "/graphql",
-        protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL],
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         await ws.send_json(ConnectionInitMessage().as_dict())
 
@@ -782,15 +752,14 @@ async def test_single_result_operation_selection(aiohttp_client):
             SubscribeMessage(
                 id="sub1",
                 payload=SubscribeMessagePayload(query=query, operationName="Query2"),
-            ).as_dict(),
+            ).as_dict()
         )
 
         response = await ws.receive_json()
         assert (
             response
             == NextMessage(
-                id="sub1",
-                payload={"data": {"hello": "Hello Strawberry"}},
+                id="sub1", payload={"data": {"hello": "Hello Strawberry"}}
             ).as_dict()
         )
 
@@ -806,8 +775,7 @@ async def test_single_result_invalid_operation_selection(aiohttp_client):
     aiohttp_app_client = await aiohttp_client(app)
 
     async with aiohttp_app_client.ws_connect(
-        "/graphql",
-        protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL],
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         await ws.send_json(ConnectionInitMessage().as_dict())
 
@@ -824,7 +792,7 @@ async def test_single_result_invalid_operation_selection(aiohttp_client):
             SubscribeMessage(
                 id="sub1",
                 payload=SubscribeMessagePayload(query=query, operationName="Query2"),
-            ).as_dict(),
+            ).as_dict()
         )
 
         data = await ws.receive(timeout=2)
@@ -838,8 +806,7 @@ async def test_single_result_operation_error(aiohttp_client):
     aiohttp_app_client = await aiohttp_client(app)
 
     async with aiohttp_app_client.ws_connect(
-        "/graphql",
-        protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL],
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         await ws.send_json(ConnectionInitMessage().as_dict())
 
@@ -852,7 +819,7 @@ async def test_single_result_operation_error(aiohttp_client):
                 payload=SubscribeMessagePayload(
                     query="query { alwaysFail }",
                 ),
-            ).as_dict(),
+            ).as_dict()
         )
 
         response = await ws.receive_json()
@@ -874,8 +841,7 @@ async def test_single_result_operation_exception(aiohttp_client):
     aiohttp_app_client = await aiohttp_client(app)
 
     async with aiohttp_app_client.ws_connect(
-        "/graphql",
-        protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL],
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         await ws.send_json(ConnectionInitMessage().as_dict())
 
@@ -888,7 +854,7 @@ async def test_single_result_operation_exception(aiohttp_client):
                 payload=SubscribeMessagePayload(
                     query='query { exception(message: "bummer") }',
                 ),
-            ).as_dict(),
+            ).as_dict()
         )
 
         response = await ws.receive_json()
@@ -910,8 +876,7 @@ async def test_single_result_duplicate_ids_sub(aiohttp_client):
     aiohttp_app_client = await aiohttp_client(app)
 
     async with aiohttp_app_client.ws_connect(
-        "/graphql",
-        protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL],
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         await ws.send_json(ConnectionInitMessage().as_dict())
 
@@ -923,9 +888,9 @@ async def test_single_result_duplicate_ids_sub(aiohttp_client):
             SubscribeMessage(
                 id="sub1",
                 payload=SubscribeMessagePayload(
-                    query='subscription { echo(message: "Hi", delay: 5) }',
+                    query='subscription { echo(message: "Hi", delay: 5) }'
                 ),
-            ).as_dict(),
+            ).as_dict()
         )
         # single result subscription with duplicate id
         await ws.send_json(
@@ -934,7 +899,7 @@ async def test_single_result_duplicate_ids_sub(aiohttp_client):
                 payload=SubscribeMessagePayload(
                     query="query { hello }",
                 ),
-            ).as_dict(),
+            ).as_dict()
         )
 
         data = await ws.receive(timeout=2)
@@ -956,8 +921,7 @@ async def test_single_result_duplicate_ids_query(aiohttp_client):
     aiohttp_app_client = await aiohttp_client(app)
 
     async with aiohttp_app_client.ws_connect(
-        "/graphql",
-        protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL],
+        "/graphql", protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL]
     ) as ws:
         await ws.send_json(ConnectionInitMessage().as_dict())
 
@@ -969,9 +933,9 @@ async def test_single_result_duplicate_ids_query(aiohttp_client):
             SubscribeMessage(
                 id="sub1",
                 payload=SubscribeMessagePayload(
-                    query='query { asyncHello(name: "Hi", delay: 5) }',
+                    query='query { asyncHello(name: "Hi", delay: 5) }'
                 ),
-            ).as_dict(),
+            ).as_dict()
         )
         # single result subscription with duplicate id
         await ws.send_json(
@@ -980,7 +944,7 @@ async def test_single_result_duplicate_ids_query(aiohttp_client):
                 payload=SubscribeMessagePayload(
                     query="query { hello }",
                 ),
-            ).as_dict(),
+            ).as_dict()
         )
 
         # We expect the remote to close the socket due to duplicate ID in use
@@ -991,74 +955,3 @@ async def test_single_result_duplicate_ids_query(aiohttp_client):
 
         await ws.close()
         assert ws.closed
-
-
-async def test_injects_connection_params(aiohttp_client):
-    app = create_app()
-    aiohttp_app_client = await aiohttp_client(app)
-
-    async with aiohttp_app_client.ws_connect(
-        "/graphql",
-        protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL],
-    ) as ws:
-        await ws.send_json(
-            ConnectionInitMessage(payload={"strawberry": "rocks"}).as_dict(),
-        )
-
-        response = await ws.receive_json()
-        assert response == ConnectionAckMessage().as_dict()
-
-        await ws.send_json(
-            SubscribeMessage(
-                id="sub1",
-                payload=SubscribeMessagePayload(
-                    query="subscription { connectionParams }",
-                ),
-            ).as_dict(),
-        )
-
-        response = await ws.receive_json()
-        assert (
-            response
-            == NextMessage(
-                id="sub1",
-                payload={"data": {"connectionParams": "rocks"}},
-            ).as_dict()
-        )
-
-        await ws.send_json(CompleteMessage(id="sub1").as_dict())
-
-        await ws.close()
-        assert ws.closed
-
-
-async def test_rejects_connection_params_not_dict(aiohttp_client):
-    app = create_app()
-    aiohttp_app_client = await aiohttp_client(app)
-
-    async with aiohttp_app_client.ws_connect(
-        "/graphql",
-        protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL],
-    ) as ws:
-        await ws.send_json(ConnectionInitMessage(payload="gonna fail").as_dict())
-
-        data = await ws.receive(timeout=2)
-        assert ws.closed
-        assert ws.close_code == 4400
-        assert data.extra == "Invalid connection init payload"
-
-
-async def test_rejects_connection_params_not_unset(aiohttp_client):
-    app = create_app()
-    aiohttp_app_client = await aiohttp_client(app)
-
-    async with aiohttp_app_client.ws_connect(
-        "/graphql",
-        protocols=[GRAPHQL_TRANSPORT_WS_PROTOCOL],
-    ) as ws:
-        await ws.send_json(ConnectionInitMessage(payload=None).as_dict())
-
-        data = await ws.receive(timeout=2)
-        assert ws.closed
-        assert ws.close_code == 4400
-        assert data.extra == "Invalid connection init payload"

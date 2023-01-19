@@ -125,7 +125,7 @@ def test_create_schema():
                 id
             }
         }
-    """,
+    """
     )
 
     assert not result.errors

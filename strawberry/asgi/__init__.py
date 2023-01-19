@@ -103,9 +103,7 @@ class GraphQL:
         return {"request": request, "response": response}
 
     async def process_result(
-        self,
-        request: Request,
-        result: ExecutionResult,
+        self, request: Request, result: ExecutionResult
     ) -> GraphQLHTTPResponse:
         return process_result(result)
 

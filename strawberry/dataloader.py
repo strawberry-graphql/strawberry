@@ -249,8 +249,7 @@ async def dispatch_batch(loader: DataLoader, batch: Batch) -> None:
 
         if len(values) != len(batch):
             raise WrongNumberOfResultsReturned(
-                expected=len(batch),
-                received=len(values),
+                expected=len(batch), received=len(values)
             )
 
         for task, value in zip(batch.tasks, values):

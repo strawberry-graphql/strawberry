@@ -112,9 +112,7 @@ def test_arguments_lists_of_optionals():
 
 def test_basic_arguments_on_resolver():
     def name_resolver(
-        id: strawberry.ID,
-        argument: str,
-        optional_argument: Optional[str],
+        id: strawberry.ID, argument: str, optional_argument: Optional[str]
     ) -> str:
         return "Name"
 
@@ -141,9 +139,7 @@ def test_basic_arguments_on_resolver():
 
 def test_arguments_when_extending_a_type():
     def name_resolver(
-        id: strawberry.ID,
-        argument: str,
-        optional_argument: Optional[str],
+        id: strawberry.ID, argument: str, optional_argument: Optional[str]
     ) -> str:
         return "Name"
 
@@ -262,7 +258,7 @@ def test_annotated_argument_on_resolver():
             argument: Annotated[
                 str,
                 strawberry.argument(description="This is a description"),
-            ],
+            ]
         ) -> str:
             return "Name"
 
@@ -286,7 +282,7 @@ def test_annotated_optional_arguments_on_resolver():
             argument: Annotated[
                 Optional[str],
                 strawberry.argument(description="This is a description"),
-            ],
+            ]
         ) -> str:
             return "Name"
 

@@ -46,7 +46,7 @@ class ScalarAlreadyRegisteredError(StrawberryException):
     @cached_property
     def exception_source(self) -> Optional[ExceptionSource]:
         if not all(
-            (self.scalar_definition._source_file, self.scalar_definition._source_line),
+            (self.scalar_definition._source_file, self.scalar_definition._source_line)
         ):
             return None  # pragma: no cover
 

@@ -26,8 +26,7 @@ def test_raises_exception_with_unsupported_types():
         example: SomeType
 
     with pytest.raises(
-        TypeError,
-        match="Query fields cannot be resolved. Unexpected type '.*'",
+        TypeError, match="Query fields cannot be resolved. Unexpected type '.*'"
     ):
         strawberry.Schema(query=Query)
 
@@ -371,8 +370,7 @@ def test_parent_class_fields_are_inherited():
 
 def test_can_return_compatible_type():
     """Test that we can return a different type that has the same fields,
-    for example when returning a Django Model.
-    """
+    for example when returning a Django Model."""
 
     @dataclass
     class Example:
@@ -483,7 +481,7 @@ def test_str_magic_method_prints_schema_sdl():
     """
     assert str(schema) == textwrap.dedent(expected).strip()
     assert "<strawberry.schema.schema.Schema object" in repr(
-        schema,
+        schema
     ), "Repr should not be affected"
 
 
@@ -556,8 +554,7 @@ def test_with_types():
         name: str
 
     schema = strawberry.Schema(
-        query=Query,
-        types=[Type, Interface, Input, Base64, ID, str, int, SpecifiedBy],
+        query=Query, types=[Type, Interface, Input, Base64, ID, str, int, SpecifiedBy]
     )
     expected = '''
         directive @specifiedBy(name: String!) on SCALAR
@@ -609,13 +606,11 @@ def test_kw_only():
 
     for FooBar in (FooBar1, FooBar2):
         with pytest.raises(
-            TypeError,
-            match="missing 1 required keyword-only argument: 'bar'",
+            TypeError, match="missing 1 required keyword-only argument: 'bar'"
         ):
             FooBar()
         with pytest.raises(
-            TypeError,
-            match="missing 1 required keyword-only argument: 'bar'",
+            TypeError, match="missing 1 required keyword-only argument: 'bar'"
         ):
             FooBar(foo=1)
         FooBar(bar=2)

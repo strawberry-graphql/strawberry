@@ -76,8 +76,7 @@ def test_can_deprecate_enum_values():
     class IceCreamFlavour(Enum):
         VANILLA = strawberry.enum_value("vanilla")
         STRAWBERRY = strawberry.enum_value(
-            "strawberry",
-            deprecation_reason="We ran out",
+            "strawberry", deprecation_reason="We ran out"
         )
         CHOCOLATE = "chocolate"
 
@@ -122,8 +121,7 @@ def test_can_describe_enum_values():
 
 
 @pytest.mark.raises_strawberry_exception(
-    NotAStrawberryEnumError,
-    match='Enum "IceCreamFlavour" is not a Strawberry enum',
+    NotAStrawberryEnumError, match='Enum "IceCreamFlavour" is not a Strawberry enum'
 )
 def test_raises_error_when_using_enum_not_decorated():
     class IceCreamFlavour(Enum):

@@ -9,7 +9,7 @@ import pytest
 import strawberry
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_subscription():
     @strawberry.type
     class Query:
@@ -32,7 +32,7 @@ async def test_subscription():
     assert result.data["example"] == "Hi"
 
 
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_subscription_with_arguments():
     @strawberry.type
     class Query:
@@ -72,7 +72,7 @@ requires_builtin_generics = pytest.mark.skipif(
         pytest.param("abc.AsyncIterable[str]", marks=requires_builtin_generics),
     ),
 )
-@pytest.mark.asyncio()
+@pytest.mark.asyncio
 async def test_subscription_return_annotations(return_annotation: str):
     async def async_resolver():
         yield "Hi"
