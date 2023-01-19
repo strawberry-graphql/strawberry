@@ -32,10 +32,12 @@ def pretty_print_graphql_operation(
 
     now = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-    print(f"[{now}]: {operation_name or 'No operation name'}")
-    print(highlight(query, GraphQLLexer(), Terminal256Formatter()))
+    print(f"[{now}]: {operation_name or 'No operation name'}")  # noqa: T201
+    print(highlight(query, GraphQLLexer(), Terminal256Formatter()))  # noqa: T201
 
     if variables:
         variables_json = json.dumps(variables, indent=4, cls=StrawberryJSONEncoder)
 
-        print(highlight(variables_json, lexers.JsonLexer(), Terminal256Formatter()))
+        print(  # noqa: T201
+            highlight(variables_json, lexers.JsonLexer(), Terminal256Formatter())
+        )

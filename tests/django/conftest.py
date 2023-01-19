@@ -20,4 +20,4 @@ def pytest_collection_modifyitems(config, items):
 
 @pytest.fixture()
 def graphql_client():
-    yield GraphQLTestClient(Client())
+    return GraphQLTestClient(Client())

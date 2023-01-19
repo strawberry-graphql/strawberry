@@ -20,4 +20,4 @@ from strawberry.printer import print_schema
 def export_schema(schema: str, app_dir: str):
     schema_symbol = load_schema(schema, app_dir)
 
-    print(print_schema(schema_symbol))
+    print(print_schema(schema_symbol))  # noqa: T201
