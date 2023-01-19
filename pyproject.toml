@@ -279,6 +279,9 @@ ignore = [
     # code complexity
     "C",
 
+    # trailing commas
+    "COM812",
+
     "PLR",
     "INP",
 ]
