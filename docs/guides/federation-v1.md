@@ -151,6 +151,17 @@ by the books service. Recall that above we defined the `id` field as the `key`
 for the `Book` type. In this example we are creating an instance of `Book` with
 the requested `id` and a fixed number of reviews.
 
+<Note>
+
+If the class implements `resolve_references` (focus on plural form), this can be used.
+The parameter ideeentifing entities is considered as a list of identificators. Such 
+implementation allows resolve multiple entities in a single call. This speeds up 
+resolving, especially if communication with a database server is needed as this can 
+be done with single database query.
+
+</Note>
+
+
 If we were to add more fields to `Book` that were stored in a database, this
 would be where we could perform queries for these fields' values.
 
